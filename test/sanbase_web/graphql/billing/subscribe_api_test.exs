@@ -47,9 +47,9 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
          StripeApiTestResponse.update_subscription_resp()
        end
      ]},
-    {Sanbase.Billing.StripeEvent, [:passthrough],
+    {Sanbase.Notifications.Discord, [:passthrough],
      [
-       send_cancel_event_to_discord: fn _ -> :ok end
+       send_notification: fn _, _, _ -> :ok end
      ]}
   ]) do
     # Needs to be staked to apply the discount
@@ -411,22 +411,44 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
   describe "cancel_subscription mutation" do
     test "successfully cancel subscription", context do
-      tomorrow = Timex.shift(Timex.now(), days: 1)
+      period_end = Timex.shift(Timex.now(), days: 3) |> DateTime.truncate(:second)
 
       subscription =
         insert(:subscription_essential,
           user: context.user,
           stripe_id: "stripe_id",
-          current_period_end: tomorrow
+          current_period_end: period_end
         )
 
-      query = cancel_subscription_mutation(subscription.id)
-      response = execute_mutation(context.conn, query, "cancelSubscription")
+      self = self()
+      ref = make_ref()
 
-      assert response["isScheduledForCancellation"]
+      Sanbase.Mock.prepare_mock(
+        Sanbase.Notifications.Discord,
+        :send_notification,
+        fn _, _, payload ->
+          send(self, {ref, payload})
+          :ok
+        end
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = cancel_subscription_mutation(subscription.id)
+        response = execute_mutation(context.conn, query, "cancelSubscription")
 
-      assert response["scheduledForCancellationAt"] ==
-               DateTime.to_iso8601(DateTime.truncate(tomorrow, :second))
+        assert response["isScheduledForCancellation"]
+
+        assert response["scheduledForCancellationAt"] == DateTime.to_iso8601(period_end)
+
+        assert_receive({^ref, msg}, 1000)
+
+        # The subscription lastest a few seconds and it has 2 days, 23 hours left,
+        # so this is rounded to just 2 days. The messages are an approxiamation
+        # and does not change the behaviour in any way
+        assert msg =~ "New cancellation scheduled for `#{period_end}`"
+        assert msg =~ "Subscription status before cancellation: `active`"
+        assert msg =~ "Subscription time left: 2 days"
+        assert msg =~ "Subscription lasted: 0 days"
+      end)
     end
 
     test "returns error if subscription is scheduled for cancellation", context do

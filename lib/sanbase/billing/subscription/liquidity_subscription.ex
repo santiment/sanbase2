@@ -4,8 +4,6 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   Uniswap liquidity pools. They are present only in Sanbase but not synced in Stripe.
   """
 
-  import Sanbase.Billing.EventEmitter, only: [emit_event: 3]
-
   alias Sanbase.Billing.Subscription
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
@@ -18,18 +16,22 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   @spec create_liquidity_subscription(non_neg_integer()) ::
           {:ok, %Subscription{}} | {:error, any()}
   def create_liquidity_subscription(user_id) do
-    Subscription.create(%{
-      user_id: user_id,
-      plan_id: @san_stake_free_plan,
-      status: "active",
-      current_period_end: Timex.shift(Timex.now(), days: 30)
-    })
-    |> emit_event(:create_subscription, %{type: :liquidity_subscription})
+    Subscription.create(
+      %{
+        user_id: user_id,
+        plan_id: @san_stake_free_plan,
+        status: "active",
+        current_period_end: Timex.shift(Timex.now(), days: 30)
+      },
+      event_args: %{type: :liquidity_subscription}
+    )
   end
 
   def remove_liquidity_subscription(liquidity_subscription) do
-    Repo.delete(liquidity_subscription)
-    |> emit_event(:delete_subscription, %{type: :liquidity_subscription})
+    Subscription.delete(
+      liquidity_subscription,
+      event_args: %{type: :liquidity_subscription}
+    )
   end
 
   @doc """
@@ -81,7 +83,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   def maybe_create_liquidity_subscriptions_staked_users() do
     user_ids_with_enough_staked()
     |> Enum.each(fn user_id ->
-      unless user_has_active_sanbase_subscriptions?(user_id) do
+      if not user_has_active_sanbase_subscriptions?(user_id) do
         create_liquidity_subscription(user_id)
       end
     end)
@@ -96,7 +98,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
 
     liquidity_subscriptions
     |> Enum.each(fn %{user_id: user_id} = liquidity_subscription ->
-      unless user_id in user_ids_with_enough_staked do
+      if user_id not in user_ids_with_enough_staked do
         remove_liquidity_subscription(liquidity_subscription)
       end
     end)

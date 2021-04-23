@@ -154,6 +154,13 @@ defmodule Sanbase.KafkaExporter do
   defp send_data([], _), do: :ok
   defp send_data(nil, _), do: :ok
 
+  # In case there is no wait period between sends, do not execute the sleep_until
+  # at all
+  defp send_data(data, %{topic: topic, can_send_after_interval: 0, size: size}) do
+    Logger.info("Sending #{size} events to Kafka topic: #{topic}")
+    @producer.send_data(topic, data)
+  end
+
   defp send_data(data, %{topic: topic, can_send_after: can_send_after, size: size}) do
     Sanbase.DateTimeUtils.sleep_until(can_send_after)
     Logger.info("Sending #{size} events to Kafka topic: #{topic}")

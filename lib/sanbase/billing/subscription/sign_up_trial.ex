@@ -1,7 +1,7 @@
 defmodule Sanbase.Billing.Subscription.SignUpTrial do
   @moduledoc """
-  Module for creating free trial and sending follow-up emails after user signs up.
-  We send 6 types of emails in the span of the 14-day free trial:
+  Module for creating free trial and sending follow-up emails after user signs
+  up. We send 6 types of emails in the span of the 14-day free trial:
 
   1. A welcome email - immediately post registration.
   2. An educational email on **day 4** of free trial.
@@ -10,12 +10,14 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   5. An email to users with credit card **1 day before charging them**.
   6. An email to users without credit card when we cancel expired free trial.
 
-  A cron job runs twice a day and makes sure to send email at the proper day of the user's trial.
+  A cron job runs twice a day and makes sure to send email at the proper day of
+  the user's trial.
   """
   use Ecto.Schema
 
-  import Ecto.Changeset
   import Ecto.Query
+  import Ecto.Changeset
+  # import Sanbase.Billing.EventEmitter, only: [emit_event: 3]
 
   require Logger
 
@@ -99,7 +101,9 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   end
 
   def create(user_id) do
-    %__MODULE__{} |> changeset(%{user_id: user_id}) |> Repo.insert()
+    %__MODULE__{}
+    |> changeset(%{user_id: user_id})
+    |> Repo.insert()
   end
 
   def remove_sign_up_trial(user) do
@@ -214,7 +218,8 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     end)
   end
 
-  # helpers
+  # Helper functions
+
   defp cancel_trial_when_user_subscribed(sign_up_trial) do
     case StripeApi.delete_subscription(sign_up_trial.subscription.stripe_id) do
       {:ok, _} ->

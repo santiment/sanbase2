@@ -1,6 +1,8 @@
 defmodule Sanbase.UserList.EventEmitter do
   use Sanbase.EventBus.EventEmitter
+
   @topic :watchlist_events
+  def topic(), do: @topic
 
   def handle_event({:error, _}, _event_type, _extra_args), do: :ok
 

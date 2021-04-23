@@ -43,6 +43,11 @@ defmodule Sanbase.Billing.Plan do
     |> cast(attrs, [:amount, :name, :stripe_id, :is_deprecated, :order])
   end
 
+  def by_ids(plan_ids) when is_list(plan_ids) do
+    from(p in __MODULE__, where: p.id in ^plan_ids)
+    |> Repo.all()
+  end
+
   def free_plan() do
     %__MODULE__{name: "FREE"}
   end

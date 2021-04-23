@@ -11,8 +11,7 @@ defmodule SanbaseWeb.StripeController do
 
     case StripeEvent.by_id(stripe_event["id"]) do
       nil ->
-        StripeEvent.create(stripe_event)
-        |> case do
+        case StripeEvent.create(stripe_event) do
           {:ok, _} ->
             # spawn a separate process to handle the event and return immediately
             StripeEvent.handle_event_async(stripe_event)

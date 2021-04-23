@@ -11,15 +11,14 @@ defmodule Sanbase.Billing.StripeEvent do
   use Ecto.Schema
 
   import Ecto.Changeset
+  import Sanbase.Billing.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.StripeApi
-  alias Sanbase.Notifications.Discord
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
 
   @primary_key false
   schema "stripe_events" do
@@ -66,81 +65,20 @@ defmodule Sanbase.Billing.StripeEvent do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       handle_event(stripe_event)
     end)
-
-    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-      handle_discord_notification(stripe_event)
-    end)
   end
 
-  def send_cancel_event_to_discord(subscription) do
-    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-      subscription = subscription |> Repo.preload([:user, plan: [:product]])
-      created_months_ago = Timex.diff(Timex.now(), subscription.inserted_at, :months)
+  defp to_event_type("invoice.payment_succeeded"), do: :payment_success
+  defp to_event_type("invoice.payment_failed"), do: :payment_fail
 
-      duration =
-        if created_months_ago == 0 do
-          "#{Timex.diff(Timex.now(), subscription.inserted_at, :days)} days"
-        else
-          "#{created_months_ago} months"
-        end
-
-      message = """
-      New cancellation scheduled for `#{subscription.current_period_end}` from `#{
-        mask_user(subscription.user)
-      }` for `#{Plan.plan_full_name(subscription.plan)}` | #{subscription.user.stripe_customer_id}.
-      Subscription status before cancellation: `#{subscription.status}`.
-      Subscription lasted #{duration}
-      """
-
-      if subscription.status == :active do
-        do_send_to_discord(message, "Stripe Cancellation")
-      end
-    end)
-  end
-
-  defp handle_discord_notification(
+  defp handle_event(
          %{
-           "type" => "invoice.payment_succeeded",
-           "data" => %{"object" => %{"total" => total}}
-         } = event
+           "id" => id,
+           "type" => type,
+           "data" => %{"object" => %{"subscription" => subscription_id}}
+         } = stripe_event
        )
-       when total > 1 do
-    message = build_payload(event)
-    do_send_to_discord(message, "Stripe Payment")
-  end
-
-  defp handle_discord_notification(%{
-         "id" => id,
-         "type" => "charge.failed",
-         "data" => %{"object" => %{"amount" => amount} = data}
-       })
-       when amount > 1 do
-    message = """
-    Failed card charge for #{format_cents_amount(amount)}.
-    Details: #{data["failure_message"]}. #{get_in(data, ["outcome", "seller_message"]) || ""}
-    Event: https://dashboard.stripe.com/events/#{id}
-    """
-
-    do_send_to_discord(message, "Stripe Payment")
-  end
-
-  defp handle_discord_notification(_), do: :ok
-
-  defp do_send_to_discord(message, title) do
-    payload = [message] |> Discord.encode!(publish_user())
-
-    Discord.send_notification(webhook_url(), title, payload)
-  end
-
-  defp handle_event(%{
-         "id" => id,
-         "type" => type,
-         "data" => %{"object" => %{"subscription" => subscription_id}}
-       })
-       when type in [
-              "invoice.payment_succeeded",
-              "invoice.payment_failed"
-            ] do
+       when type in ["invoice.payment_succeeded", "invoice.payment_failed"] do
+    emit_event({:ok, stripe_event}, to_event_type(type), %{})
     handle_event_common(id, type, subscription_id)
   end
 
@@ -185,46 +123,37 @@ defmodule Sanbase.Billing.StripeEvent do
   defp handle_event(_), do: :ok
 
   defp handle_subscription_created(id, type, subscription_id) do
-    with {:ok, stripe_subscription} <-
+    with {:ok, stripe_sub} <-
            StripeApi.retrieve_subscription(subscription_id),
-         {:user_nil?, %User{} = user} <-
-           {:user_nil?, Repo.get_by(User, stripe_customer_id: stripe_subscription.customer)},
-         {:plan_nil?, %Plan{} = plan} <-
-           {:plan_nil?, Plan.by_stripe_id(stripe_subscription.plan.id)},
-         {:ok, _subscription} <-
-           Subscription.create_subscription_db(stripe_subscription, user, plan) do
+         {_, {:ok, %User{} = user}} <- {:user?, User.by_stripe_customer_id(stripe_sub.customer)},
+         {_, %Plan{} = plan} <- {:plan?, Plan.by_stripe_id(stripe_sub.plan.id)},
+         {:ok, _sub} <- Subscription.create_subscription_db(stripe_sub, user, plan) do
       update(id, %{is_processed: true})
     else
-      {:user_nil?, _} ->
+      {:user?, _} ->
         error_msg = "Customer for subscription_id #{subscription_id} does not exist"
-
         Logger.error(error_msg)
         {:error, error_msg}
 
-      {:plan_nil?, _} ->
+      {:plan?, _} ->
         error_msg = "Plan for subscription_id #{subscription_id} does not exist"
         Logger.error(error_msg)
         {:error, error_msg}
 
       {:error, reason} ->
-        Logger.error("Error handling #{type} event: reason #{inspect(reason)}")
+        Logger.error("Error handling #{type} event. Reason: #{inspect(reason)}")
         {:error, reason}
     end
   end
 
   defp handle_event_common(id, type, subscription_id) do
-    with {:ok, stripe_subscription} <-
-           StripeApi.retrieve_subscription(subscription_id),
-         {:nil?, %Subscription{} = subscription} <-
-           {:nil?, Repo.get_by(Subscription, stripe_id: stripe_subscription.id)},
+    with {:ok, stripe_sub} <- StripeApi.retrieve_subscription(subscription_id),
+         {_, %Subscription{} = subscription} <- {:sub?, Subscription.by_stripe_id(stripe_sub.id)},
          {:ok, _subscription} <-
-           Subscription.sync_subscription_with_stripe(
-             stripe_subscription,
-             subscription
-           ) do
+           Subscription.sync_subscription_with_stripe(stripe_sub, subscription) do
       update(id, %{is_processed: true})
     else
-      {:nil?, _} ->
+      {:sub?, _} ->
         error_msg = "Subscription with stripe_id: #{subscription_id} does not exist"
 
         Logger.error(error_msg)
@@ -234,123 +163,5 @@ defmodule Sanbase.Billing.StripeEvent do
         Logger.error("Error handling #{type} event: reason #{inspect(reason)}")
         {:error, reason}
     end
-  end
-
-  defp build_payload(%{
-         "data" => %{
-           "object" => %{
-             "total" => total,
-             "starting_balance" => starting_balance,
-             "subscription" => subscription
-           }
-         }
-       })
-       when is_binary(subscription) do
-    Repo.get_by(Subscription, stripe_id: subscription)
-    |> Repo.preload([:user, plan: [:product]])
-    |> payload_for_subscription(total, starting_balance)
-  end
-
-  defp build_payload(%{
-         "id" => id,
-         "data" => %{
-           "object" => %{
-             "total" => total,
-             "starting_balance" => starting_balance
-           }
-         }
-       })
-       when total == abs(starting_balance) do
-    "New 🔥 for #{format_cents_amount(total)} received. Details: https://dashboard.stripe.com/events/#{
-      id
-    }"
-  end
-
-  defp build_payload(%{
-         "id" => id,
-         "data" => %{"object" => %{"total" => total}}
-       }) do
-    "New payment for #{format_cents_amount(total)} received. Details: https://dashboard.stripe.com/events/#{
-      id
-    }"
-  end
-
-  defp payload_for_subscription(
-         %Subscription{
-           plan: plan,
-           user: user
-         },
-         total,
-         starting_balance
-       )
-       when total == abs(starting_balance) do
-    "New 🔥 for #{format_cents_amount(total)} for #{Plan.plan_full_name(plan)} by #{
-      mask_user(user)
-    }"
-  end
-
-  defp payload_for_subscription(
-         %Subscription{
-           plan: plan,
-           inserted_at: inserted_at,
-           user: user
-         },
-         total,
-         _
-       ) do
-    calculate_recurring_month(inserted_at)
-    |> case do
-      1 ->
-        "🎉 New payment for #{format_cents_amount(total)} for #{Plan.plan_full_name(plan)} by #{
-          mask_user(user)
-        }"
-
-      count ->
-        "Recurring payment for #{format_cents_amount(total)} for #{Plan.plan_full_name(plan)} (month #{
-          count
-        }) by #{mask_user(user)}"
-    end
-  end
-
-  defp payload_for_subscription(_, total, starting_balance)
-       when total == abs(starting_balance) do
-    "New 🔥 for #{format_cents_amount(total)} received."
-  end
-
-  defp payload_for_subscription(_, total, _) do
-    "New payment for #{format_cents_amount(total)} received."
-  end
-
-  defp mask_user(%User{email: email}) when is_binary(email) do
-    [username, domain] = email |> String.split("@")
-
-    masked_username =
-      String.duplicate("*", String.length(username))
-      |> String.replace_prefix("*", String.at(username, 0))
-      |> String.replace_suffix("*", String.at(username, -1))
-
-    "#{masked_username}@#{domain}"
-  end
-
-  defp mask_user(_) do
-    "Metamask user"
-  end
-
-  # checks which month of recurring subscription it is by the subscription creation date
-  defp calculate_recurring_month(inserted_at) do
-    created_at_dt = inserted_at |> DateTime.from_naive!("Etc/UTC")
-    Timex.diff(Timex.now(), created_at_dt, :months) + 1
-  end
-
-  defp format_cents_amount(amount) do
-    "$" <> Number.Delimit.number_to_delimited(amount / 100, precision: 0)
-  end
-
-  defp webhook_url() do
-    Config.get(:webhook_url)
-  end
-
-  defp publish_user() do
-    Config.get(:publish_user)
   end
 end

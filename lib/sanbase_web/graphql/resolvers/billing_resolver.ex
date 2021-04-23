@@ -95,8 +95,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
 
     with {_, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Subscription.by_id(subscription_id)},
-         {_, %Subscription{cancel_at_period_end: true}} <-
-           {:cancelled?, subscription},
+         {_, %Subscription{cancel_at_period_end: true}} <- {:cancelled?, subscription},
          {:ok, subscription} <- Billing.renew_cancelled_subscription(subscription) do
       {:ok, subscription}
     else

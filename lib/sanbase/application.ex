@@ -247,8 +247,6 @@ defmodule Sanbase.Application do
          global_ttl: :timer.minutes(5),
          acquire_lock_timeout: 30_000
        ]},
-      Sanbase.EventBus.KafkaExporterSubscriber,
-      Sanbase.EventBus.UserEventsSubscriber,
 
       # Service for fast checking if a slug is valid
       # `:available_slugs_module` option changes the module
@@ -257,7 +255,8 @@ defmodule Sanbase.Application do
 
       # Process that starts test-only deps
       start_in(Sanbase.TestSetupService, [:test])
-    ]
+    ] ++
+      Sanbase.EventBus.children()
   end
 
   def config_change(changed, _new, removed) do

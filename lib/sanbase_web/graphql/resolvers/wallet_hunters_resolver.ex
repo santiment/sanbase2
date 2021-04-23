@@ -7,24 +7,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
-  def create_wallet_hunter_proposal(_root, args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    args = Map.put(args, :user_id, current_user.id)
-
-    Proposal.create(args)
-    |> case do
-      {:ok, result} ->
-        {:ok, result}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error, message: changeset_errors_string(changeset)}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
   def create_wh_proposal(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do

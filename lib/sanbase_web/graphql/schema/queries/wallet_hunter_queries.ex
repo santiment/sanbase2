@@ -23,21 +23,6 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
   end
 
   object :wallet_hunter_mutations do
-    field :create_wallet_hunter_proposal, :wallet_hunter_proposal do
-      meta(access: :free)
-
-      arg(:proposal_id, non_null(:integer))
-      arg(:transaction_id, :string)
-      arg(:title, non_null(:string))
-      arg(:text, non_null(:string))
-      arg(:proposed_address, non_null(:binary_blockchain_address))
-      arg(:hunter_address, non_null(:binary_blockchain_address))
-      arg(:user_labels, list_of(:string), default_value: [])
-
-      middleware(JWTAuth)
-      resolve(&WalletHuntersResolver.create_wallet_hunter_proposal/3)
-    end
-
     field :create_wh_proposal, :wallet_hunter_proposal do
       meta(access: :free)
 

@@ -2,7 +2,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
   import Sanbase.Utils.Transform
 
-  alias Sanbase.Clickhouse.Erc20Transfers
+  alias Sanbase.Trasnfers.Erc20Transfers
 
   require Sanbase.Utils.Config, as: Config
 

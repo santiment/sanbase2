@@ -13,14 +13,29 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       cache_resolve(&BlockchainAddressResolver.list_all_labels/3)
     end
 
+    @desc """
+    Top transactions for the given slug and timerange arguments.
+    """
+    field :top_transactions, list_of(:transaction) do
+      meta(access: :free)
+
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:page, :integer)
+      arg(:page_size, :integer)
+
+      cache_resolve(&BlockchainAddressResolver.top_transactions/3)
+    end
+
     @desc "Recent transactions for this address"
     field :recent_transactions, list_of(:transaction) do
       meta(access: :free)
 
       arg(:address, non_null(:string))
       arg(:type, non_null(:recent_transactions_type))
-      arg(:page, non_null(:integer), default_value: 1)
-      arg(:page_size, non_null(:integer), default_value: 10)
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       arg(:only_sender, non_null(:boolean), default_value: true)
 
       cache_resolve(&BlockchainAddressResolver.recent_transactions/3)

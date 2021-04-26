@@ -10,7 +10,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
-  alias Sanbase.Clickhouse.{Label, EthTransfers, Erc20Transfers, MarkExchanges}
+  alias Sanbase.Clickhouse.{Label, MarkExchanges}
+  alias Sanbase.Transfers.{EthTransfers, Erc20Transfers}
 
   @recent_transactions_type_map %{
     eth: %{module: EthTransfers, slug: "ethereum"},
@@ -22,38 +23,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     |> Label.list_all()
   end
 
+  def top_transactions(_root, %{slug: slug, from: from, to: to} = args, _resolution) do
+    %{page: page, page_size: page_size} = args_to_page_args(args)
+    Sanbase.Transfers.top_transactions(slug, from, to, page, page_size)
+  end
+
   def recent_transactions(
         _root,
-        %{
-          address: address,
-          type: type,
-          page: page,
-          page_size: page_size,
-          only_sender: only_sender
-        },
+        %{address: address, type: type, only_sender: only_sender} = args,
         _resolution
       ) do
-    page_size = Enum.min([page_size, 100])
-    page_size = Enum.max([page_size, 1])
+    %{page: page, page_size: page_size} = args_to_page_args(args)
 
     module = @recent_transactions_type_map[type].module
     slug = @recent_transactions_type_map[type].slug
+    opts = [page: page, page_size: page_size, only_sender: only_sender]
 
-    with {:ok, recent_transactions} <-
-           module.recent_transactions(address,
-             page: page,
-             page_size: page_size,
-             only_sender: only_sender
-           ),
-         {:ok, recent_transactions} <-
-           MarkExchanges.mark_exchange_wallets(recent_transactions),
-         {:ok, recent_transactions} <-
-           Label.add_labels(slug, recent_transactions) do
-      {:ok, recent_transactions}
+    with {:ok, transactions} <- module.recent_transactions(address, opts),
+         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
+         {:ok, transactions} <- Label.add_labels(slug, transactions) do
+      {:ok, transactions}
     else
       {:error, error} ->
         {:error, handle_graphql_error("Recent transactions", %{address: address}, error)}
     end
+  end
+
+  defp args_to_page_args(args) do
+    page = Map.get(args, :page, 1)
+    page_size = Map.get(args, :page_size, 10)
+    page_size = Enum.min([page_size, 100])
+    page_size = Enum.max([page_size, 1])
+
+    %{page: page, page_size: page_size}
   end
 
   def blockchain_address(_root, %{selector: selector}, _resolution) do

@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.EthTransfers do
+defmodule Sanbase.Transfers.EthTransfers do
   @moduledoc ~s"""
   Uses ClickHouse to work with ETH transfers.
   """
@@ -69,10 +69,10 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     end)
   end
 
-  @spec top_transactions(%DateTime{}, %DateTime{}, integer) ::
-          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def top_transactions(from, to, limit) do
-    {query, args} = top_transactions_query(from, to, limit)
+  @spec top_transactions(%DateTime{}, %DateTime{}, non_neg_integer(), non_neg_integer()) ::
+          {:ok, list(t)} | {:error, String.t()}
+  def top_transactions(from, to, page, page_size) do
+    {query, args} = top_transactions_query(from, to, page, page_size)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
@@ -198,12 +198,13 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     {query, args}
   end
 
-  defp top_transactions_query(from, to, limit) do
+  defp top_transactions_query(from, to, page, page_size) do
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
 
     # only > 10K ETH transfers if range is > 1 week, otherwise only bigger than 1K
     value_filter = if Timex.diff(to, from, :days) > 7, do: 10_000, else: 1_000
+    offset = (page - 1) * page_size
 
     query = """
     SELECT
@@ -215,14 +216,15 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       dt >= toDateTime(?2) AND
       dt <= toDateTime(?3)
     ORDER BY value DESC
-    LIMIT ?4
+    LIMIT ?4 OFFSET ?5
     """
 
     args = [
       value_filter,
       from_unix,
       to_unix,
-      limit
+      page_size,
+      offset
     ]
 
     {query, args}

@@ -34,14 +34,13 @@ alias Sanbase.Insight.{
 alias Sanbase.UserList
 alias Sanbase.UserList.ListItem
 
-alias Sanbase.Clickhouse.{
+
+alias Sanbase.Transfers.{
   EthTransfers,
-  DailyActiveAddresses,
-  EthDailyActiveAddresses,
-  Erc20DailyActiveAddresses,
   Erc20Transfers,
-  MarkExchanges
+  BtcTransfers
 }
+
 
 alias Sanbase.{
   Repo,

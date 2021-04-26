@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.Erc20Transfers do
+defmodule Sanbase.Transfers.Erc20Transfers do
   @moduledoc ~s"""
   Uses ClickHouse to work with ERC20 transfers.
   """
@@ -54,24 +54,26 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   If the top transactions for SAN token are needed, the SAN contract address must be
   provided as a first argument.
   """
-  @spec top_transactions(String.t(), %DateTime{}, %DateTime{}, String.t(), integer) ::
-          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def top_transactions(
-        contract,
-        from_datetime,
-        to_datetime,
-        limit,
-        decimals \\ 0,
-        excluded_addresses \\ []
-      ) do
+  @spec top_transactions(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          list(String.t())
+        ) ::
+          {:ok, list(t)} | {:error, String.t()}
+  def top_transactions(contract, from, to, page, page_size, decimals, excluded_addresses \\ []) do
     decimals = Sanbase.Math.ipow(10, decimals)
 
     {query, args} =
       top_transactions_query(
         contract,
-        from_datetime,
-        to_datetime,
-        limit,
+        from,
+        to,
+        page,
+        page_size,
         decimals,
         excluded_addresses
       )
@@ -178,12 +180,14 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
          contract,
          from_datetime,
          to_datetime,
-         limit,
+         page,
+         page_size,
          token_decimals,
          excluded_addresses
        ) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
+    offset = (page - 1) * page_size
 
     query = """
     SELECT
@@ -197,9 +201,9 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
       assetRefId = cityHash64('ETH_' || ?2) AND
       dt >= toDateTime(?3) AND
       dt <= toDateTime(?4)
-      #{maybe_exclude_addresses(excluded_addresses, arg_position: 6)}
+      #{maybe_exclude_addresses(excluded_addresses, arg_position: 7)}
     ORDER BY value DESC
-    LIMIT ?5
+    LIMIT ?5 OFFSET ?6
     """
 
     maybe_extra_params = if excluded_addresses == [], do: [], else: [excluded_addresses]
@@ -210,7 +214,8 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
         contract,
         from_datetime_unix,
         to_datetime_unix,
-        limit
+        page_size,
+        offset
       ] ++ maybe_extra_params
 
     {query, args}

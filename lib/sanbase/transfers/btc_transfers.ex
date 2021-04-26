@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.BtcTransfers do
+defmodule Sanbase.Transfers.BtcTransfers do
   @type transaction :: %{
           from_address: String.t(),
           to_address: String.t(),
@@ -7,10 +7,16 @@ defmodule Sanbase.Clickhouse.BtcTransfers do
           datetime: Datetime.t()
         }
 
-  @spec top_transactions(%DateTime{}, %DateTime{}, non_neg_integer(), list()) ::
+  @spec top_transactions(
+          %DateTime{},
+          %DateTime{},
+          non_neg_integer(),
+          non_neg_integer(),
+          list(String.t())
+        ) ::
           {:ok, list(transaction)} | {:error, String.t()}
-  def top_transactions(from, to, limit, excluded_addresses \\ []) do
-    {query, args} = top_transactions_query(from, to, limit, excluded_addresses)
+  def top_transactions(from, to, page, page_size, excluded_addresses \\ []) do
+    {query, args} = top_transactions_query(from, to, page, page_size, excluded_addresses)
 
     Sanbase.ClickhouseRepo.query_transform(
       query,
@@ -27,10 +33,10 @@ defmodule Sanbase.Clickhouse.BtcTransfers do
     )
   end
 
-  defp top_transactions_query(from, to, limit, excluded_addresses) do
+  defp top_transactions_query(from, to, page, page_size, excluded_addresses) do
     to_unix = DateTime.to_unix(to)
     from_unix = DateTime.to_unix(from)
-
+    offset = (page - 1) * page_size
     # only > 100 BTC transfers if range is > 1 week, otherwise only bigger than 20
     amount_filter = if Timex.diff(to, from, :days) > 7, do: 100, else: 20
 
@@ -47,11 +53,11 @@ defmodule Sanbase.Clickhouse.BtcTransfers do
       dt < toDateTime(?3)
       #{maybe_exclude_addresses(excluded_addresses, arg_position: 5)}
     ORDER BY amount DESC
-    LIMIT ?4
+    LIMIT ?4 OFFSET ?5
     """
 
     args =
-      [amount_filter, from_unix, to_unix, limit] ++
+      [amount_filter, from_unix, to_unix, page_size, offset] ++
         if excluded_addresses == [], do: [], else: [excluded_addresses]
 
     {query, args}

@@ -92,7 +92,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
         _resolution
       ) do
     with {:ok, contract, decimals} <- Sanbase.Model.Project.contract_info_by_slug(slug) do
-      Sanbase.Clickhouse.Erc20Transfers.transaction_volume_per_address(
+      Sanbase.Transfers.Erc20Transfers.transaction_volume_per_address(
         addresses,
         contract,
         from,

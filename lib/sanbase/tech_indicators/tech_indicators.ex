@@ -4,8 +4,6 @@ defmodule Sanbase.TechIndicators do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.TechIndicators.MetricAnomaly
-
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 

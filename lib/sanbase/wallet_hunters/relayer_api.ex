@@ -31,7 +31,7 @@ defmodule Sanbase.WalletHunters.RelayerApi do
       {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in 200..299 ->
         {:ok, Jason.decode!(body)}
 
-      {:ok, %HTTPoison.Response{status_code: code, body: body} = response} when is_binary(body) ->
+      {:ok, %HTTPoison.Response{body: body} = response} when is_binary(body) ->
         Logger.error("Relaying request failed: #{inspect(response)}")
         {:error, "Relaying request failed: #{body}"}
 

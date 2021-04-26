@@ -354,7 +354,7 @@ defmodule Sanbase.WalletHunters.Proposal do
       {:ok, %__MODULE__{} = proposal} ->
         {:ok, proposal}
 
-      error ->
+      _error ->
         Process.sleep(@sleep_time)
         check_trx_events(transaction_id, retries_so_far + 1)
     end

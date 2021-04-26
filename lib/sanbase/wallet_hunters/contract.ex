@@ -13,6 +13,7 @@ defmodule Sanbase.WalletHunters.Contract do
                       raise("Missing wallet hunters Ropsten address.")
   @mainnet_contract get_in(@abi_file, ["networks", "mainnet", "address"]) ||
                       raise("Missing wallet hunters Mainnet address.")
+  @mainnet_start_block "0xBBF049"
 
   def contract() do
     if localhost_or_stage?(), do: @rinkeby_contract, else: @mainnet_contract
@@ -56,8 +57,9 @@ defmodule Sanbase.WalletHunters.Contract do
   end
 
   def get_event_filter_id(event_name, opts \\ []) do
+    default_from_block = if contract() == @mainnet_contract, do: @mainnet_start_block, else: "0x1"
     address = Keyword.get(opts, :address, contract())
-    from_block = Keyword.get(opts, :from_block, "0x1")
+    from_block = Keyword.get(opts, :from_block, default_from_block)
     to_block = Keyword.get(opts, :to_block, "latest")
 
     maybe_replace_rinkeby(

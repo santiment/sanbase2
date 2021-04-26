@@ -80,7 +80,7 @@ defmodule Sanbase.WalletHunters.Vote do
       {:ok, %__MODULE__{} = proposal} ->
         {:ok, proposal}
 
-      error ->
+      _error ->
         Process.sleep(@sleep_time)
         check_transaction_status(transaction_id, retries_so_far + 1)
     end

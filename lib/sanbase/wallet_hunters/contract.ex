@@ -7,9 +7,12 @@ defmodule Sanbase.WalletHunters.Contract do
             |> Jason.decode!()
 
   @abi Map.get(@abi_file, "abi")
-  @rinkeby_contract get_in(@abi_file, ["networks", "rinkeby", "address"])
-  @ropsten_contract get_in(@abi_file, ["networks", "ropsten", "address"])
-  @mainnet_contract get_in(@abi_file, ["networks", "mainnet", "address"])
+  @rinkeby_contract get_in(@abi_file, ["networks", "rinkeby", "address"]) ||
+                      raise("Missing wallet hunters Rinkeby address.")
+  @ropsten_contract get_in(@abi_file, ["networks", "ropsten", "address"]) ||
+                      raise("Missing wallet hunters Ropsten address.")
+  @mainnet_contract get_in(@abi_file, ["networks", "mainnet", "address"]) ||
+                      raise("Missing wallet hunters Mainnet address.")
 
   def contract() do
     if localhost_or_stage?(), do: @rinkeby_contract, else: @mainnet_contract
@@ -166,11 +169,14 @@ defmodule Sanbase.WalletHunters.Contract do
 
     try do
       {elapsed, result} = :timer.tc(fn -> func.() end)
+
       Logger.info("Contract call: #{func_name}, elapsed: #{elapsed / 1_000_000}")
+
       result
     rescue
       e ->
         Logger.error("Error occurred while executing smart contract call: #{inspect(e)}")
+
         {:error, "Error occurred while executing smart contract call."}
     after
       if localhost_or_stage?() do
@@ -181,6 +187,8 @@ defmodule Sanbase.WalletHunters.Contract do
 
   defp localhost_or_stage? do
     frontend_url = SanbaseWeb.Endpoint.frontend_url()
-    is_binary(frontend_url) && String.contains?(frontend_url, ["stage", "localhost"])
+
+    is_binary(frontend_url) &&
+      String.contains?(frontend_url, ["stage", "localhost"])
   end
 end

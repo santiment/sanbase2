@@ -12,15 +12,12 @@ defmodule Sanbase.WalletHunters.Contract do
   @mainnet_contract get_in(@abi_file, ["networks", "mainnet", "address"])
 
   def contract() do
-    if localhost_or_stage?() do
-      @rinkeby_contract
-    else
-      @mainnet_contract
-    end
+    if localhost_or_stage?(), do: @rinkeby_contract, else: @mainnet_contract
   end
 
   def rinkeby_contract(), do: @rinkeby_contract
   def ropsten_contract(), do: @ropsten_contract
+  def mainnet_contract(), do: @mainnet_contract
   def abi(), do: @abi
 
   def function_abi(function) do

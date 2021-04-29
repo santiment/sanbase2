@@ -223,8 +223,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "All Time High Price USD",
-    "name": "all_time_high_price_usd",
+    "human_readable_name": "Price all time high (USD)",
+    "name": "price_usd_all_time_high",
     "signal": "ath_price_usd",
     "access": "free",
     "selectors": ["slug"],

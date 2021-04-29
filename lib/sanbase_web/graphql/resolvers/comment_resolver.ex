@@ -35,6 +35,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
         %{comment_id: comment_id, content: content},
         %{context: %{auth: %{current_user: user}}}
       ) do
+    content =
+      case Sanbase.WalletHunters.ProposalComment.has_type?(comment_id) do
+        true -> sanitize_markdown(content)
+        false -> content
+      end
+
     Comment.update(comment_id, user.id, content)
   end
 

@@ -74,12 +74,25 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
 
     target_list
     |> Enum.map(fn address ->
+      address = Sanbase.BlockchainAddress.to_internal_format(address)
+
       with {:ok, [%{address: ^address} = result]} <- balance_change(selector, address, from, to) do
         {address,
          [
            %{datetime: from, balance: result.balance_start},
            %{datetime: to, balance: result.balance_end}
          ]}
+      else
+        {:ok, [%{address: returned_address}]} ->
+          raise("""
+          The address returned from balance_change in WalletTriggerSettings has \
+          different format than the provided address or it returned a completely \
+          different address. \
+          Got: #{inspect(returned_address)}, Expected: #{inspect(address)}
+          """)
+
+        _ ->
+          {:ok, []}
       end
     end)
     |> Enum.reject(&match?({:error, _}, &1))

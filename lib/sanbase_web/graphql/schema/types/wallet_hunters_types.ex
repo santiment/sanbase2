@@ -64,6 +64,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
   end
 
   object :wallet_hunter_proposal do
+    field(:id, :integer)
     field(:proposal_id, :id)
     field(:user, :public_user)
     field(:title, :string)

@@ -11,7 +11,7 @@ defmodule Sanbase.Comments.EntityComment do
   alias Sanbase.Insight.PostComment
   alias Sanbase.ShortUrl.ShortUrlComment
   alias Sanbase.BlockchainAddress.BlockchainAddressComment
-  alias Sanbase.WalletHunters.ProposalComment
+  alias Sanbase.WalletHunters.WalletHuntersProposalComment
 
   @type entity ::
           :insight | :timeline_event | :short_url | :blockchain_address | :wallet_hunters_proposal
@@ -73,10 +73,10 @@ defmodule Sanbase.Comments.EntityComment do
   end
 
   @spec link(:wallet_hunters_proposal, non_neg_integer(), non_neg_integer()) ::
-          {:ok, %ProposalComment{}} | {:error, Ecto.Changeset.t()}
+          {:ok, %WalletHuntersProposalComment{}} | {:error, Ecto.Changeset.t()}
   def link(:wallet_hunters_proposal, entity_id, comment_id) do
-    %ProposalComment{}
-    |> ProposalComment.changeset(%{
+    %WalletHuntersProposalComment{}
+    |> WalletHuntersProposalComment.changeset(%{
       comment_id: comment_id,
       proposal_id: entity_id
     })
@@ -126,7 +126,7 @@ defmodule Sanbase.Comments.EntityComment do
 
   def all_comments_query() do
     from(c in Comment,
-      left_join: pc in ProposalComment,
+      left_join: pc in WalletHuntersProposalComment,
       on: c.id == pc.comment_id,
       where: is_nil(pc.proposal_id),
       preload: [:user, :insights, :timeline_events, :short_urls, :blockchain_addresses]
@@ -176,7 +176,7 @@ defmodule Sanbase.Comments.EntityComment do
   end
 
   defp entity_comments_query(:wallet_hunters_proposal, entity_id) do
-    from(comment in ProposalComment,
+    from(comment in WalletHuntersProposalComment,
       preload: [:comment, comment: :user]
     )
     |> maybe_add_entity_id_clause(:proposal_id, entity_id)

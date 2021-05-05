@@ -1,4 +1,4 @@
-defmodule Sanbase.WalletHunters.ProposalComment do
+defmodule Sanbase.WalletHunters.WalletHuntersProposalComment do
   @moduledoc ~s"""
   A mapping table connecting comments and wallet hunters proposals.
   """

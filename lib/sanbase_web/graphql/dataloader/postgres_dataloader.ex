@@ -65,7 +65,7 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
   def query(:comment_proposal_id, comment_ids) do
     ids = Enum.to_list(comment_ids)
 
-    from(mapping in Sanbase.WalletHunters.ProposalComment,
+    from(mapping in Sanbase.WalletHunters.WalletHuntersProposalComment,
       where: mapping.comment_id in ^ids,
       select: {mapping.comment_id, mapping.proposal_id}
     )
@@ -140,7 +140,7 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
   def query(:wallet_hunters_proposals_comments_count, proposal_ids) do
     ids = Enum.to_list(proposal_ids)
 
-    from(mapping in Sanbase.WalletHunters.ProposalComment,
+    from(mapping in Sanbase.WalletHunters.WalletHuntersProposalComment,
       where: mapping.proposal_id in ^ids,
       group_by: mapping.proposal_id,
       select: {mapping.proposal_id, fragment("COUNT(*)")}

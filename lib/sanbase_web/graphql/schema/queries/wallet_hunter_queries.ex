@@ -16,7 +16,8 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
     field :wallet_hunters_proposal, :wallet_hunter_proposal do
       meta(access: :free)
 
-      arg(:id, non_null(:integer))
+      arg(:id, :integer)
+      arg(:proposal_id, :integer)
 
       resolve(&WalletHuntersResolver.wallet_hunters_proposal/3)
     end

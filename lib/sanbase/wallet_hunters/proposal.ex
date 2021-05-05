@@ -166,7 +166,7 @@ defmodule Sanbase.WalletHunters.Proposal do
     end
   end
 
-  def fetch_by_id(proposal_id) do
+  def fetch_by_proposal_id(proposal_id) do
     with proposal <- Contract.wallet_proposal(proposal_id) do
       proposal
       |> List.wrap()

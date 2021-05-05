@@ -43,8 +43,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
     Sanbase.WalletHunters.Proposal.fetch_all(selector)
   end
 
-  def wallet_hunters_proposal(_root, args, _resolution) do
-    Sanbase.WalletHunters.Proposal.fetch_by_id(args.id)
+  def wallet_hunters_proposal(_root, %{proposal_id: proposal_id}, _resolution) do
+    Sanbase.WalletHunters.Proposal.fetch_by_proposal_id(proposal_id)
+  end
+
+  # TODO: Once the frontend migrates to fully use `proposal_id` as argument
+  # instead of `id`, we'll switch this id to mean the internal database id
+  # of the onchain proposal id
+  def wallet_hunters_proposal(_root, %{id: id}, _resolution) do
+    Sanbase.WalletHunters.Proposal.fetch_by_proposal_id(id)
   end
 
   def proposal_id(%{id: id}, _args, %{context: %{loader: loader}}) do

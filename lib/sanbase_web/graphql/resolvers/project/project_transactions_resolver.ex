@@ -50,7 +50,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     excluded_addresses = Map.get(args, :excluded_addresses, [])
 
     with {:ok, transactions} <-
-           Transfers.top_transactions(slug, from, to, 1, limit, excluded_addresses),
+           Transfers.top_transactions(
+             slug,
+             from,
+             to,
+             _page = 1,
+             _page_size = limit,
+             excluded_addresses
+           ),
          {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
          {:ok, transactions} <- Label.add_labels(slug, transactions) do
       {:ok, transactions}
@@ -186,7 +193,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     limit = Enum.min([limit, 100])
 
     with {:ok, transactions} <-
-           Sanbase.Transfers.top_transactions("ethereum", from, to, 1, limit),
+           Sanbase.Transfers.top_transactions("ethereum", from, to, _page = 1, _page_size = limit),
          {:ok, transactions} <-
            MarkExchanges.mark_exchange_wallets(transactions),
          {:ok, transactions} <- Label.add_labels("ethereum", transactions) do
@@ -209,11 +216,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
     with {:ok, addresses} <- Project.eth_addresses(project),
          {:ok, transactions} <-
-           Sanbase.Transfers.EthTransfers.top_wallet_transfers(
+           Sanbase.Transfers.EthTransfers.top_wallet_transactions(
              addresses,
              from,
              to,
-             limit,
+             _page = 1,
+             _page_size = limit,
              trx_type
            ),
          {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),

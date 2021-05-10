@@ -210,7 +210,7 @@ defmodule Sanbase.Clickhouse.Label do
     |> Enum.flat_map(fn transaction ->
       [
         transaction.from_address && transaction.from_address.address,
-        transaction.to_address.address
+        transaction.to_address && transaction.to_address.address
       ]
     end)
     |> Enum.uniq()
@@ -219,11 +219,28 @@ defmodule Sanbase.Clickhouse.Label do
 
   defp do_add_labels("bitcoin", transactions, address_labels_map) do
     transactions
-    |> Enum.map(fn %{to_address: to} = transaction ->
-      to_labels = Map.get(address_labels_map, to.address, [])
-      to = Map.put(to, :labels, to_labels)
+    |> Enum.map(fn %{to_address: to_address, from_address: from_address} = transaction ->
+      from_address =
+        case from_address do
+          nil ->
+            nil
 
-      %{transaction | to_address: to}
+          %{address: address} ->
+            labels = Map.get(address_labels_map, address, [])
+            Map.put(from_address, :labels, labels)
+        end
+
+      to_address =
+        case to_address do
+          nil ->
+            nil
+
+          %{address: address} ->
+            labels = Map.get(address_labels_map, address, [])
+            Map.put(to_address, :labels, labels)
+        end
+
+      %{transaction | to_address: to_address, from_address: from_address}
     end)
   end
 

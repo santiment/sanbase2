@@ -1,4 +1,6 @@
 defmodule Sanbase.Transfers.BtcTransfers do
+  alias Sanbase.ClickhouseRepo
+
   @type transaction :: %{
           from_address: String.t(),
           to_address: String.t(),
@@ -31,6 +33,99 @@ defmodule Sanbase.Transfers.BtcTransfers do
         }
       end
     )
+  end
+
+  @spec top_wallet_transactions(
+          list(String.t()),
+          DateTime.t(),
+          DateTime.t(),
+          non_neg_integer,
+          non_neg_integer,
+          String.t()
+        ) ::
+          {:ok, nil} | {:ok, list(map())} | {:error, String.t()}
+  def top_wallet_transactions([], _from, _to, _page, _page_size, _type), do: {:ok, []}
+
+  def top_wallet_transactions(wallets, from, to, page, page_size, type) do
+    {query, args} = top_wallet_transactions_query(wallets, from, to, page, page_size, type)
+
+    ClickhouseRepo.query_transform(query, args, fn
+      [timestamp, address, trx_hash, balance, old_balance, abs_value] ->
+        # if the new balance is bigger then the address is the receiver
+        {from_address, to_address} =
+          case balance > old_balance do
+            true -> {nil, address}
+            false -> {address, nil}
+          end
+
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          from_address: from_address,
+          to_address: to_address,
+          trx_hash: trx_hash,
+          trx_value: abs_value
+        }
+    end)
+  end
+
+  # Private functions
+
+  defp top_wallet_transactions_query(wallets, from, to, page, page_size, type) do
+    query = """
+    SELECT
+      toUnixTimestamp(dt),
+      address,
+      txID,
+      balance,
+      oldBalance,
+      abs(balance - oldBalance) AS absValue
+    FROM btc_balances FINAL
+    PREWHERE
+      #{top_wallet_transactions_address_clause(type, arg_position: 1, trailing_and: true)}
+      dt >= toDateTime(?2) AND
+      dt <= toDateTime(?3)
+    ORDER BY absValue DESC
+    LIMIT ?4 OFFSET ?5
+    """
+
+    offset = (page - 1) * page_size
+
+    args = [
+      wallets,
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix(),
+      page_size,
+      offset
+    ]
+
+    {query, args}
+  end
+
+  defp top_wallet_transactions_address_clause(:in, opts) do
+    arg_position = Keyword.fetch!(opts, :arg_position)
+    trailing_and = Keyword.fetch!(opts, :trailing_and)
+
+    str = "address IN (?#{arg_position}) AND balance > oldBalance"
+    if trailing_and, do: str <> " AND", else: str
+  end
+
+  defp top_wallet_transactions_address_clause(:out, opts) do
+    arg_position = Keyword.fetch!(opts, :arg_position)
+    trailing_and = Keyword.fetch!(opts, :trailing_and)
+
+    str = "address IN (?#{arg_position}) AND balance < oldBalance"
+    if trailing_and, do: str <> " AND", else: str
+  end
+
+  defp top_wallet_transactions_address_clause(:all, opts) do
+    arg_position = Keyword.fetch!(opts, :arg_position)
+    trailing_and = Keyword.fetch!(opts, :trailing_and)
+
+    str = """
+    address IN (?#{arg_position})
+    """
+
+    if trailing_and, do: str <> " AND", else: str
   end
 
   defp top_transactions_query(from, to, page, page_size, excluded_addresses) do

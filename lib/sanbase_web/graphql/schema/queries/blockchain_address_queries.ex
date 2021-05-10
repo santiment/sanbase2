@@ -19,6 +19,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
     field :top_transactions, list_of(:transaction) do
       meta(access: :free)
 
+      arg(:address_selector, :address_selector)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))

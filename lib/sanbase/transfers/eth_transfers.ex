@@ -46,16 +46,24 @@ defmodule Sanbase.Transfers.EthTransfers do
   end
 
   @doc ~s"""
-  Return the `limit` biggest transfers for a list of wallets and time period.
-  Only transfers which `from` address is in the list and `to` address is
-  not in the list are selected.
-  """
-  @spec top_wallet_transfers(wallets, %DateTime{}, %DateTime{}, integer, String.t()) ::
-          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def top_wallet_transfers([], _from, _to, _limit, _type), do: {:ok, []}
+  Return the biggest transfers for a list of wallets and time period.
 
-  def top_wallet_transfers(wallets, from, to, limit, type) do
-    {query, args} = wallet_transactions_query(wallets, from, to, limit, type)
+  The `type` argument control wheteher only incoming, outgoing or all transactions
+  are included.
+  """
+  @spec top_wallet_transactions(
+          list(String.t()),
+          DateTime.t(),
+          DateTime.t(),
+          non_neg_integer,
+          non_neg_integer,
+          String.t()
+        ) ::
+          {:ok, nil} | {:ok, list(map())} | {:error, String.t()}
+  def top_wallet_transactions([], _from, _to, _page, _page_size, _type), do: {:ok, []}
+
+  def top_wallet_transactions(wallets, from, to, page, page_size, type) do
+    {query, args} = top_wallet_transactions_query(wallets, from, to, page, page_size, type)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
@@ -109,7 +117,7 @@ defmodule Sanbase.Transfers.EthTransfers do
 
   # Private functions
 
-  defp wallet_transactions_query(wallets, from, to, limit, :out) do
+  defp top_wallet_transactions_query(wallets, from, to, page, page_size, type) do
     query = """
     SELECT
       toUnixTimestamp(dt),
@@ -119,83 +127,55 @@ defmodule Sanbase.Transfers.EthTransfers do
       value / #{@eth_decimals}
     FROM #{@table} FINAL
     PREWHERE
-      from IN (?1) AND
-      NOT to IN (?1) AND
+      #{top_wallet_transactions_address_clause(type, arg_position: 1, trailing_and: true)}
       dt >= toDateTime(?2) AND
       dt <= toDateTime(?3) AND
       type = 'call'
     ORDER BY value DESC
-    LIMIT ?4
+    LIMIT ?4 OFFSET ?5
     """
+
+    offset = (page - 1) * page_size
 
     args = [
       wallets,
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
-      limit
+      page_size,
+      offset
     ]
 
     {query, args}
   end
 
-  defp wallet_transactions_query(wallets, from, to, limit, :in) do
-    query = """
-    SELECT
-      toUnixTimestamp(dt),
-      from,
-      to,
-      transactionHash,
-      value / #{@eth_decimals}
-    FROM #{@table} FINAL
-    PREWHERE
-      from NOT IN (?1) AND
-      to IN (?1) AND
-      dt >= toDateTime(?2) AND
-      dt <= toDateTime(?3) AND
-      type = 'call'
-    ORDER BY value DESC
-    LIMIT ?4
-    """
+  defp top_wallet_transactions_address_clause(:in, opts) do
+    arg_position = Keyword.fetch!(opts, :arg_position)
+    trailing_and = Keyword.fetch!(opts, :trailing_and)
 
-    args = [
-      wallets,
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
-      limit
-    ]
-
-    {query, args}
+    str = "from NOT IN (?#{arg_position}) AND to IN (?#{arg_position})"
+    if trailing_and, do: str <> " AND", else: str
   end
 
-  defp wallet_transactions_query(wallets, from, to, limit, :all) do
-    query = """
-    SELECT
-      toUnixTimestamp(dt),
-      from,
-      to,
-      transactionHash,
-      value / #{@eth_decimals}
-    FROM #{@table} FINAL
-    PREWHERE
-      (
-        (from IN (?1) AND NOT to IN (?1)) OR
-        (NOT from IN (?1) AND to IN (?1))
-      ) AND
-      dt >= toDateTime(?2) AND
-      dt <= toDateTime(?3) AND
-      type = 'call'
-    ORDER BY value DESC
-    LIMIT ?4
+  defp top_wallet_transactions_address_clause(:out, opts) do
+    arg_position = Keyword.fetch!(opts, :arg_position)
+    trailing_and = Keyword.fetch!(opts, :trailing_and)
+
+    str = "from IN (?#{arg_position}) AND to NOT IN (?#{arg_position})"
+    if trailing_and, do: str <> " AND", else: str
+  end
+
+  defp top_wallet_transactions_address_clause(:all, opts) do
+    arg_position = Keyword.fetch!(opts, :arg_position)
+    trailing_and = Keyword.fetch!(opts, :trailing_and)
+
+    str = """
+    (
+      (from IN (?#{arg_position}) AND NOT to IN (?#{arg_position})) OR
+      (NOT from IN (?#{arg_position}) AND to IN (?#{arg_position}))
+    )
     """
 
-    args = [
-      wallets,
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
-      limit
-    ]
-
-    {query, args}
+    if trailing_and, do: str <> " AND", else: str
   end
 
   defp top_transactions_query(from, to, page, page_size) do

@@ -10,6 +10,17 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
     value(:erc20)
   end
 
+  input_object :address_selector do
+    field(:address, non_null(:string))
+    field(:transaction_type, :transaction_type)
+  end
+
+  input_object :blockchain_address_selector_input_object do
+    field(:id, :id)
+    field(:address, :binary_blockchain_address)
+    field(:infrastructure, :string)
+  end
+
   object :current_user_blockchain_address_data do
     field(:pair_id, :integer)
     field(:notes, :string)
@@ -22,12 +33,6 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
     field(:labels, list_of(:blockchain_address_label))
     field(:blockchain_address, :blockchain_address)
     field(:user, :user)
-  end
-
-  input_object :blockchain_address_selector_input_object do
-    field(:id, :id)
-    field(:address, :binary_blockchain_address)
-    field(:infrastructure, :string)
   end
 
   object :blockchain_address_label do

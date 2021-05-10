@@ -84,7 +84,7 @@ config :sanbase, Sanbase.Accounts.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRE
 config :sanbase, SanbaseWeb.Endpoint,
   http: [protocol_options: [max_request_line_length: 16_384, max_header_value_length: 8192]],
   url: [host: "localhost"],
-  secret_key_base: "Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",
+  secret_key_base: "not_secret_Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",
   render_errors: [view: SanbaseWeb.ErrorView, accepts: ~w(json)],
   # should be removed after app.santiment.net migration
   website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},
@@ -92,7 +92,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   frontend_url: {:system, "FRONTEND_URL", "http://localhost:4000"},
   insights_url: {:system, "INSIGHTS_URL", "https://insights.santiment.net"},
   pubsub_server: Sanbase.PubSub,
-  live_view: [signing_salt: "FkOgrxfW5aw3HjLOoxCVMvB0py5+Uk5+"]
+  live_view: [signing_salt: "not_secret_FkOgrxfW5aw3HjLOoxCVMvB0py5+Uk5+"]
 
 # Do not log SASL crash reports
 config :sasl, sasl_error_logger: false
@@ -116,11 +116,19 @@ config :earmark,
   mapper: &Enum.map/2
 
 config :hammer,
-  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
+  backend: {
+    Hammer.Backend.ETS,
+    [
+      expiry_ms: 60_000 * 60 * 4,
+      cleanup_interval_ms: 60_000 * 10
+    ]
+  }
 
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 
-config :tesla, adapter: Tesla.Adapter.Hackney, recv_timeout: 30_000
+config :tesla,
+  adapter: Tesla.Adapter.Hackney,
+  recv_timeout: 30_000
 
 config :sanbase, SanbaseWeb.Guardian,
   issuer: "santiment",
@@ -208,6 +216,7 @@ config :sanbase, Sanbase.GrafanaApi,
   grafana_pass: {:system, "GRAFANA_PASS"}
 
 config :sanbase, Sanbase.Intercom, api_key: {:system, "INTERCOM_API_KEY"}
+
 config :sanbase, Sanbase.Email.Mailchimp, api_key: {:system, "MAILCHIMP_API_KEY"}
 
 config :sanbase, Sanbase.Promoters.FirstPromoterApi,
@@ -221,7 +230,6 @@ import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"
 import_config "scrapers_config.exs"
 import_config "notifications_config.exs"
-import_config "prometheus_config.exs"
 import_config "stripe_config.exs"
 import_config "scheduler_config.exs"
 

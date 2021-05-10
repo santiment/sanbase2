@@ -42,11 +42,78 @@ defmodule Sanbase.Alert.Scheduler do
 
   # Private functions
 
+  @batch_size 20
   defp run(type) do
-    {updated_user_triggers, sent_list_results} =
+    Logger.info("Schedule evaluation for the alerts of type #{type}")
+
+    run_uuid = UUID.uuid4() |> String.split("-") |> List.first()
+
+    info_map = %{type: type, run_uuid: run_uuid, batch_size: @batch_size}
+
+    alerts =
       type
       |> UserTrigger.get_active_triggers_by_type()
-      |> filter_receivable_triggers(type)
+      |> filter_receivable_triggers(info_map)
+
+    # The batches are run sequentially for now. If they start running in parallel
+    # the batches creation becomes more complicated - all the alerts of a user
+    # must end up in a single batch so no race conditions updating the DB can occur.
+    batches =
+      alerts
+      |> Enum.chunk_every(@batch_size)
+
+    alerts_count = length(alerts)
+
+    # Extend the info map with the data that is not not prior the first definition
+    # of it.
+    info_map =
+      Map.merge(info_map, %{
+        alerts_count: alerts_count,
+        batches_count: length(batches)
+      })
+
+    Logger.info("""
+    [#{info_map.run_uuid}] Start evaluating alerts of type #{type} in batches. \
+    In total #{alerts_count} alerts will be processed in #{length(batches)} \
+    batches of size #{@batch_size}.
+    """)
+
+    run_batches(batches, info_map)
+  end
+
+  defp run_batches([], info_map) do
+    Logger.info("""
+    [#{info_map.run_uuid}] There are no active alerts of type #{info_map.type} \
+    to be run.
+    """)
+  end
+
+  defp run_batches(trigger_batches, info_map) do
+    trigger_batches
+    |> Enum.with_index(1)
+    |> Enum.each(fn {triggers_batch, index} ->
+      try do
+        info_map = Map.put(info_map, :index, index)
+        run_batch(triggers_batch, info_map)
+      rescue
+        e ->
+          Logger.error("""
+          [#{info_map.run_uuid}] Raised an exception while evaluating alerts of type #{
+            info_map.type
+          } - batch #{index}. \
+
+          #{Exception.format(:error, e, __STACKTRACE__)}
+          """)
+      end
+    end)
+  end
+
+  defp run_batch(triggers_batch, info_map) do
+    %{type: type} = info_map
+    log_current_batch_message(info_map)
+
+    {updated_user_triggers, sent_list_results} =
+      triggers_batch
       |> Evaluator.run(type)
       |> send_and_mark_as_sent()
 
@@ -61,10 +128,31 @@ defmodule Sanbase.Alert.Scheduler do
 
     sent_list_results
     |> List.flatten()
-    |> log_sent_messages_stats(type)
+    |> log_sent_messages_stats(type, info_map)
   end
 
-  defp filter_receivable_triggers(user_triggers, type) do
+  defp log_current_batch_message(info_map) do
+    %{
+      type: type,
+      index: index,
+      alerts_count: alerts_count,
+      batches_count: batches_count,
+      batch_size: batch_size,
+      run_uuid: run_uuid
+    } = info_map
+
+    from_alert = (index - 1) * batch_size
+    to_alert = Enum.min([alerts_count, index * batch_size])
+
+    Logger.info("""
+    [#{run_uuid}] Run batch of alerts of type #{type}. Batch #{index}/#{batches_count}, \
+    Alerts #{from_alert}-#{to_alert}/#{alerts_count}.
+    """)
+  end
+
+  defp filter_receivable_triggers(user_triggers, info_map) do
+    %{type: type, run_uuid: run_uuid} = info_map
+
     filtered =
       Enum.filter(user_triggers, fn %{trigger: trigger, user: user} ->
         channels = List.wrap(trigger.settings.channel)
@@ -83,8 +171,10 @@ defmodule Sanbase.Alert.Scheduler do
     disabled_count = total_count - length(filtered)
 
     Logger.info("""
-    In total #{disabled_count}/#{total_count} active alerts of type #{type} are not being computed because they cannot be sent.
-    The owners of these alerts have disabled the notification channels or has no telegram/email linked to their account.
+    [#{run_uuid}] In total #{disabled_count}/#{total_count} active alerts of type \
+    #{type} are not being computed because they cannot be sent. The owners of \
+    these alerts have disabled the notification channels or has no telegram/email \
+    linked to their account.
     """)
 
     filtered
@@ -135,9 +225,6 @@ defmodule Sanbase.Alert.Scheduler do
     end)
   end
 
-  # Note that the `user_trigger` that came as an argument is returned with
-  # modified `last_triggered`.
-  # TODO: Research if this is really needed
   defp update_trigger_last_triggered(user_trigger, last_triggered) do
     {:ok, updated_user_trigger} =
       UserTrigger.update_user_trigger(user_trigger.user, %{
@@ -247,16 +334,16 @@ defmodule Sanbase.Alert.Scheduler do
     |> Sanbase.Timeline.TimelineEvent.create_trigger_fired_events()
   end
 
-  defp log_sent_messages_stats([], type) do
-    Logger.info("There were no #{type} alerts triggered.")
+  defp log_sent_messages_stats([], type, info_map) do
+    Logger.info("[#{info_map.run_uuid}] There were no #{type} alerts triggered.")
   end
 
-  defp log_sent_messages_stats(list, type) do
+  defp log_sent_messages_stats(list, type, info_map) do
     successful_messages_count = list |> Enum.count(fn {_elem, status} -> status == :ok end)
     errors = for {_, {:error, error}} <- list, do: error
 
     Enum.each(errors, fn error ->
-      Logger.warn("Cannot send a #{type} alert. Reason: #{inspect(error)}")
+      Logger.warn("[#{info_map.run_uuid}] Cannot send a #{type} alert. Reason: #{inspect(error)}")
     end)
 
     errors_to_count_map =
@@ -269,13 +356,15 @@ defmodule Sanbase.Alert.Scheduler do
       |> Enum.reject(fn {_reason, count} -> count == 0 end)
       |> Map.new()
 
-    Logger.info("""
-    In total #{successful_messages_count}/#{length(list)} #{type} alerts were sent successfully.
-    #{
+    fail_reasons =
       Enum.map(errors_to_count_map, fn {reason, count} ->
         "#{count} failed with the reason #{reason}\n"
       end)
-    }
+
+    Logger.info("""
+    [#{info_map.run_uuid}] In total #{successful_messages_count}/#{length(list)} \
+    #{type} alerts were sent successfully.
+    #{fail_reasons}
     """)
   end
 

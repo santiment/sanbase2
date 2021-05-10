@@ -27,6 +27,7 @@ defimpl Sanbase.Alert, for: Any do
     # `{identifier, {:error, error}}`. If an alert is sent to more than 1 channel
     # this is handled properly by the caller that puts the triggered identifiers
     # in a map, so duplicates disappear.
+
     result =
       channel
       |> List.wrap()

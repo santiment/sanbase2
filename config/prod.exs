@@ -29,8 +29,8 @@ config :sanbase, Sanbase.ClickhouseRepo,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   hostname: "clickhouse",
   port: 8123,
-  database: "default",
-  username: "default",
+  database: "not_secret_default",
+  username: "not_secret_default",
   password: "",
   timeout: 60_000,
   pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "30"},
@@ -52,7 +52,7 @@ config :sanbase, SanbaseWeb.Plug.SessionPlug,
 
 config :ethereumex,
   url: "${PARITY_URL}",
-  http_options: [timeout: 25000, recv_timeout: 25000]
+  http_options: [timeout: 25_000, recv_timeout: 25_000]
 
 if File.exists?("config/prod.secret.exs") do
   import_config "prod.secret.exs"

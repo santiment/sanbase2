@@ -109,14 +109,14 @@ defmodule Sanbase.WalletHunters.Proposal do
          {:ok, %{"hash" => transaction_id}} <- RelayerApi.relay(request, signature),
          {:ok, proposal} <- create_db_proposal(Map.put(args, :transaction_id, transaction_id)),
          {:ok, _} <- RelayQuota.create_or_update(args.user_id) do
-      async_poll_transaction_events(transaction_id)
+      async_poll_transaction_status(transaction_id)
       {:ok, proposal}
     end
   end
 
   def create_proposal(%{transaction_id: transaction_id} = args) do
     with {:ok, proposal} <- create_db_proposal(args) do
-      async_poll_transaction_events(transaction_id)
+      async_poll_transaction_status(transaction_id)
       {:ok, proposal}
     end
   end
@@ -334,13 +334,7 @@ defmodule Sanbase.WalletHunters.Proposal do
     end
   end
 
-  defp normalize_text(changeset, _field, nil), do: changeset
-
-  defp normalize_text(changeset, field, value) do
-    put_change(changeset, field, sanitize_markdown(value))
-  end
-
-  defp async_poll_transaction_events(transaction_id) do
+  defp async_poll_transaction_status(transaction_id) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       check_trx_events(transaction_id, 0)
     end)
@@ -384,6 +378,12 @@ defmodule Sanbase.WalletHunters.Proposal do
     fetch_by_transaction_id(transaction_id)
     |> changeset(params)
     |> Repo.update()
+  end
+
+  defp normalize_text(changeset, _field, nil), do: changeset
+
+  defp normalize_text(changeset, field, value) do
+    put_change(changeset, field, sanitize_markdown(value))
   end
 
   defp validate_address(field, address) do

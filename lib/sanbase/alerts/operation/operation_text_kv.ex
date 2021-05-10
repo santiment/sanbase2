@@ -35,10 +35,9 @@ defmodule Sanbase.Alert.OperationText.KV do
 
   def to_template_kv(value, operation, opts \\ [])
 
-  # Absolute value operations (below, below or equal, above, above or equal)
-  def to_template_kv(%{current: value}, %{} = op, opts)
-      when is_absolute_value_operation(op),
-      do: to_template_kv(value, op, opts)
+  # Absolute value operations (below, below_or_equal, above, above_or_equal)
+  def to_template_kv(%{current: value}, %{} = op, opts) when is_absolute_value_operation(op),
+    do: to_template_kv(value, op, opts)
 
   def to_template_kv(value, op, opts) when is_absolute_value_operation(op) do
     [op_key | _] = Map.keys(op)

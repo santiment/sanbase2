@@ -108,7 +108,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
 
     assert capture_log(fn ->
              Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
-           end) =~ "There were no trending_words alerts triggered"
+           end) =~ "There are no active alerts of type trending_words to be run"
   end
 
   test "Non repeating alerts are deactivated", context do

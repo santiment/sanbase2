@@ -23,8 +23,6 @@ defmodule Sanbase.Alert.Evaluator do
   def run([], _), do: []
 
   def run(user_triggers, type) do
-    Logger.info("Start evaluating #{length(user_triggers)} alerts of type #{type}")
-
     user_triggers
     |> Sanbase.Parallel.map(
       &evaluate/1,
@@ -102,7 +100,20 @@ defmodule Sanbase.Alert.Evaluator do
 
       payload =
         Enum.into(template_kv, %{}, fn {identifier, {template, kv}} ->
-          {identifier, Trigger.payload_to_string({template, kv})}
+          try do
+            {identifier, Trigger.payload_to_string({template, kv})}
+          rescue
+            e ->
+              Logger.error("""
+              Error in populate_payload/1 for alert with id #{user_trigger.id}
+
+              Template: #{inspect(template)}
+
+              KV: #{inspect(kv)}
+              """)
+
+              reraise e, __STACKTRACE__
+          end
         end)
 
       user_trigger

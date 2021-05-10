@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  alias Sanbase.WalletHunters.{RelayQuota, RelayerApi}
+  alias Sanbase.WalletHunters.{RelayQuota, RelayerApi, Contract}
 
   setup do
     user = insert(:user)
@@ -56,6 +56,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         &Sanbase.ClickhouseRepo.query/2,
         {:ok, %{rows: labels_rows()}}
       )
+      |> Sanbase.Mock.prepare_mock2(&Contract.get_trx_by_id/1, {:ok, %{"blockNumber" => "0x1"}})
+      |> Sanbase.Mock.prepare_mock2(&Contract.get_trx_receipt_by_id/1, {:ok, %{"logs" => []}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           execute_mutation(context.conn, create_proposal_mutation(args), "createWhProposal")

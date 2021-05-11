@@ -35,8 +35,49 @@ defmodule SanbaseWeb.StripeWebhookTest do
     {:ok, user: user}
   end
 
+  describe "invoice.payment_failed event" do
+    test "handle payment failed eent",
+         context do
+      {:ok, %Stripe.Subscription{id: stripe_id}} =
+        StripeApiTestResponse.retrieve_subscription_resp(stripe_id: @stripe_id)
+
+      insert(:subscription_essential,
+        user: context.user,
+        stripe_id: stripe_id
+      )
+
+      payload = payment_failed_json()
+      self = self()
+      ref = make_ref()
+
+      Sanbase.Mock.prepare_mock(
+        Sanbase.Notifications.Discord,
+        :send_notification,
+        fn _, _, payload ->
+          send(self, {ref, payload})
+          :ok
+        end
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        response = post_stripe_webhook(:payment_failed)
+
+        assert_receive({_, {:ok, %StripeEvent{is_processed: true}}}, 1000)
+
+        assert StripeEvent |> Repo.all() |> hd() |> Map.get(:event_id) ==
+                 Jason.decode!(payload) |> Map.get("id")
+
+        assert response.status == 200
+
+        assert_receive({^ref, msg}, 1000)
+
+        assert msg =~ "⛔ Failed card charge for $10"
+        assert msg =~ "Event: https://dashboard.stripe.com/events/evt_1Eud0qCA0hGU8IEVdOgcTrft"
+      end)
+    end
+  end
+
   describe "invoice.payment_succeeded event" do
-    test "when event with this id doesn't exist - create and process event successfully",
+    test "when event with id that doesn't exist - create and process event successfully",
          context do
       {:ok, %Stripe.Subscription{id: stripe_id}} =
         StripeApiTestResponse.retrieve_subscription_resp(stripe_id: @stripe_id)
@@ -78,8 +119,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
       end)
     end
 
-    test "when event with this id exists - return 200 and don't process",
-         context do
+    test "when event with this id exists - return 200 and don't process", context do
       payment_succeded_json()
       |> Jason.decode!()
       |> StripeEvent.create()
@@ -231,6 +271,9 @@ defmodule SanbaseWeb.StripeWebhookTest do
 
         :subscription_created ->
           subscription_created_json()
+
+        :payment_failed ->
+          payment_failed_json()
       end
 
     build_conn()
@@ -394,6 +437,100 @@ defmodule SanbaseWeb.StripeWebhookTest do
           "tax_percent": null,
           "trial_end": null,
           "trial_start": null
+        }
+      }
+    }
+    """
+  end
+
+  defp payment_failed_json do
+    """
+    {
+      "created": 1326853478,
+      "livemode": false,
+      "id": "evt_1Eud0qCA0hGU8IEVdOgcTrft",
+      "type": "invoice.payment_failed",
+      "object": "event",
+      "request": null,
+      "pending_webhooks": 1,
+      "api_version": "2017-08-15",
+      "data": {
+        "object": {
+          "id": "evt_1alsdljasl921j",
+          "object": "invoice",
+          "amount": 1000,
+          "amount_due": 0,
+          "application_fee": null,
+          "attempt_count": 0,
+          "attempted": true,
+          "billing": "charge_automatically",
+          "charge": null,
+          "closed": false,
+          "currency": "usd",
+          "customer": "cus_00000000000000",
+          "date": 1505770975,
+          "description": null,
+          "discount": null,
+          "ending_balance": null,
+          "forgiven": false,
+          "lines": {
+            "data": [
+              {
+                "id": "sub_BQNmhjeDUv5aw0",
+                "object": "line_item",
+                "amount": 999,
+                "currency": "usd",
+                "description": null,
+                "discountable": true,
+                "livemode": true,
+                "metadata": {
+                },
+                "period": {
+                  "start": 1508362975,
+                  "end": 1511041375
+                },
+                "plan": {
+                  "id": "vwv3ww",
+                  "object": "plan",
+                  "amount": 19900,
+                  "created": 1407112740,
+                  "currency": "usd",
+                  "interval": "month",
+                  "interval_count": 1,
+                  "livemode": false,
+                  "metadata": {
+                  },
+                  "name": "Analytics",
+                  "statement_descriptor": null,
+                  "trial_period_days": null
+                },
+                "proration": false,
+                "quantity": 1,
+                "subscription": "#{@stripe_id}",
+                "subscription_item": "si_1B3X112eZvKYlo2CIQmgTwPZ",
+                "type": "subscription"
+              }
+            ],
+            "total_count": 1,
+            "object": "list",
+            "url": "/v1/invoices/in_BQNmR26copjyyy/lines"
+          },
+          "livemode": false,
+          "metadata": {
+          },
+          "next_payment_attempt": 1505774575,
+          "number": "17d12e06df-0001",
+          "paid": false,
+          "period_end": 1505770975,
+          "period_start": 1505770975,
+          "receipt_number": null,
+          "starting_balance": 0,
+          "statement_descriptor": null,
+          "subscription": "#{@stripe_id}",
+          "subtotal": 0,
+          "tax": null,
+          "tax_percent": null,
+          "webhooks_delivered_at": null
         }
       }
     }

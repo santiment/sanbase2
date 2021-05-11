@@ -9,12 +9,12 @@ defmodule Sanbase.Billing.DiscordNotification do
         :payment_success,
         %{
           data: %{
-            total_amount: total_amount,
+            total: total,
             extra_in_memory_data: %{stripe_event: stripe_event}
           }
         } = event
       )
-      when total_amount > 1 do
+      when total > 1 do
     build_payload(stripe_event, event)
     |> do_send_to_discord("Stripe Payment")
   end
@@ -23,16 +23,16 @@ defmodule Sanbase.Billing.DiscordNotification do
         :payment_fail,
         %{
           data: %{
-            total_amount: total_amount,
+            amount: amount,
             stripe_event_id: stripe_event_id,
             extra_in_memory_data: %{stripe_event: stripe_event}
           }
         }
       )
-      when total_amount > 1 do
+      when amount > 1 do
     seller_message = stripe_event["data"]["outcome"]["seller_message"]
     failure_message = stripe_event["data"]["failure_message"]
-    formatted_amount = format_cents_amount(total_amount)
+    formatted_amount = format_cents_amount(amount)
 
     message = """
     ⛔ Failed card charge for #{formatted_amount}.

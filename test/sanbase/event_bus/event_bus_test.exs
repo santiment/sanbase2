@@ -20,10 +20,10 @@ defmodule Sanbase.EventBusTest do
     :ok = EventBus.register_topic(test_events_topic)
     :ok = EventBus.subscribe({EventBusTestSubscriber, ["test_events"]})
 
-    # on_exit(fn ->
-    #   EventBus.unregister_topic(test_events_topic)
-    #   EventBus.unsubscribe(EventBusTestSubscriber)
-    # end)
+    on_exit(fn ->
+      EventBus.unsubscribe(EventBusTestSubscriber)
+      EventBus.unregister_topic(test_events_topic)
+    end)
 
     # register_topic is done via GenServer.call/2, but EventBus.subscribe is
     # done via GenServer.cast/2. Adding a small wait loop to make sure the test

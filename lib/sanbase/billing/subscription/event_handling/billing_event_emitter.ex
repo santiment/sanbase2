@@ -45,6 +45,8 @@ defmodule Sanbase.Billing.EventEmitter do
       stripe_event_id: stripe_event["id"],
       invoice_url: object["hosted_invoice_url"],
       total_amount: object["total"] || object["amount"],
+      total: object["total"],
+      amount: object["amount"],
       starting_balance: object["starting_balance"],
       coupon_id: object["discount"]["coupon"]["id"],
       coupon_name: object["discount"]["coupon"]["name"],

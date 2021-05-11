@@ -47,7 +47,6 @@ defmodule Sanbase.Transfers do
     case Project.contract_info_infrastructure_by_slug(slug) do
       {:ok, "ETH", _, _} ->
         EthTransfers.top_transactions(from, to, page, page_size)
-        |> IO.inspect(label: "HENLO", limit: :infinity)
 
       {:ok, "BTC", _, _} ->
         excluded_addresses = Keyword.get(opts, :excluded_addresses, [])

@@ -9,12 +9,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   import ExUnit.CaptureLog
   import Sanbase.TestHelpers
 
-  @datetime1 DateTime.from_naive!(~N[2017-05-13 15:00:00], "Etc/UTC")
-  @datetime2 DateTime.from_naive!(~N[2017-05-14 16:00:00], "Etc/UTC")
-  @datetime3 DateTime.from_naive!(~N[2017-05-15 17:00:00], "Etc/UTC")
-  @datetime4 DateTime.from_naive!(~N[2017-05-16 18:00:00], "Etc/UTC")
-  @datetime5 DateTime.from_naive!(~N[2017-05-17 19:00:00], "Etc/UTC")
-  @datetime6 DateTime.from_naive!(~N[2017-05-18 20:00:00], "Etc/UTC")
+  @datetime1 ~U[2017-05-13 15:00:00Z]
+  @datetime2 ~U[2017-05-14 16:00:00Z]
+  @datetime3 ~U[2017-05-15 17:00:00Z]
+  @datetime4 ~U[2017-05-16 18:00:00Z]
+  @datetime5 ~U[2017-05-17 19:00:00Z]
+  @datetime6 ~U[2017-05-18 20:00:00Z]
   @exchange_wallet "0xe1e1e1e1e1e1e1"
 
   setup_all_with_mocks([

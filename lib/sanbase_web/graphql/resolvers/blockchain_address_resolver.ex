@@ -32,7 +32,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
         %{address_selector: address_selector, slug: slug, from: from, to: to} = args,
         _resolution
       ) do
-    IO.inspect("IN HERE WITH ARGS #{inspect(args)}")
     %{page: page, page_size: page_size} = args_to_page_args(args)
     address = Map.fetch!(address_selector, :address)
     type = Map.get(address_selector, :transacion_type, :all)
@@ -43,7 +42,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
          {:ok, transactions} <- Label.add_labels(slug, transactions) do
       {:ok, transactions}
     end
-    |> IO.inspect(label: "46", limit: :infinity)
   end
 
   def top_transactions(
@@ -59,7 +57,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
          {:ok, transactions} <- Label.add_labels(slug, transactions) do
       {:ok, transactions}
     end
-    |> IO.inspect(label: "61", limit: :infinity)
   end
 
   def recent_transactions(

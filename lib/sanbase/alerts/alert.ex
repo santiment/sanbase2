@@ -235,7 +235,7 @@ defimpl Sanbase.Alert, for: Any do
 
   def do_send_webhook(
         "https://hooks.slack.com/services" <> _rest = webhook_url,
-        identifier,
+        _identifier,
         payload,
         trigger_id
       ) do

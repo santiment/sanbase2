@@ -339,8 +339,16 @@ defmodule Sanbase.Alert.Scheduler do
   end
 
   defp log_sent_messages_stats(list, type, info_map) do
+    list_length = length(list)
     successful_messages_count = list |> Enum.count(fn {_elem, status} -> status == :ok end)
     errors = for {_, {:error, error}} <- list, do: error
+
+    if successful_messages_count + length(errors) != list_length do
+      Logger.error("""
+      [#{info_map.run_uuid}] Some of the sent alerts of type #{type} have returned \
+      a result format that is not recognizned neither as :ok nor as :error case.
+      """)
+    end
 
     Enum.each(errors, fn error ->
       Logger.warn("[#{info_map.run_uuid}] Cannot send a #{type} alert. Reason: #{inspect(error)}")
@@ -362,7 +370,7 @@ defmodule Sanbase.Alert.Scheduler do
       end)
 
     Logger.info("""
-    [#{info_map.run_uuid}] In total #{successful_messages_count}/#{length(list)} \
+    [#{info_map.run_uuid}] In total #{successful_messages_count}/#{list_length} \
     #{type} alerts were sent successfully.
     #{fail_reasons}
     """)

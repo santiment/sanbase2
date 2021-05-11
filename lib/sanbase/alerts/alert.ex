@@ -246,7 +246,7 @@ defimpl Sanbase.Alert, for: Any do
       |> Jason.encode!()
 
     HTTPoison.post(webhook_url, encoded_json_payload, [{"Content-Type", "application/json"}])
-    |> handle_webhook_response(identifier, trigger_id)
+    |> handle_webhook_response(trigger_id)
   end
 
   def do_send_webhook(webhook_url, identifier, payload, trigger_id) do
@@ -261,21 +261,19 @@ defimpl Sanbase.Alert, for: Any do
       |> Jason.encode!()
 
     HTTPoison.post(webhook_url, encoded_json_payload, [{"Content-Type", "application/json"}])
-    |> handle_webhook_response(identifier, trigger_id)
+    |> handle_webhook_response(trigger_id)
   end
 
-  defp handle_webhook_response(response, identifier, trigger_id) do
+  defp handle_webhook_response(response, trigger_id) do
     case response do
       {:ok, %HTTPoison.Response{status_code: status_code}} when status_code in 200..299 ->
-        {identifier, :ok}
+        :ok
 
       {:ok, %HTTPoison.Response{status_code: code}} ->
-        {identifier,
-         {:error, %{reason: :webhook_send_fail, status_code: code, trigger_id: trigger_id}}}
+        {:error, %{reason: :webhook_send_fail, status_code: code, trigger_id: trigger_id}}
 
       {:error, error} ->
-        {identifier,
-         {:error, %{reason: :webhook_send_fail, error: error, trigger_id: trigger_id}}}
+        {:error, %{reason: :webhook_send_fail, error: error, trigger_id: trigger_id}}
     end
   end
 

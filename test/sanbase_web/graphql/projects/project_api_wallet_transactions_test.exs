@@ -9,12 +9,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   import ExUnit.CaptureLog
   import Sanbase.TestHelpers
 
-  @datetime1 DateTime.from_naive!(~N[2017-05-13 15:00:00], "Etc/UTC")
-  @datetime2 DateTime.from_naive!(~N[2017-05-14 16:00:00], "Etc/UTC")
-  @datetime3 DateTime.from_naive!(~N[2017-05-15 17:00:00], "Etc/UTC")
-  @datetime4 DateTime.from_naive!(~N[2017-05-16 18:00:00], "Etc/UTC")
-  @datetime5 DateTime.from_naive!(~N[2017-05-17 19:00:00], "Etc/UTC")
-  @datetime6 DateTime.from_naive!(~N[2017-05-18 20:00:00], "Etc/UTC")
+  @datetime1 ~U[2017-05-13 15:00:00Z]
+  @datetime2 ~U[2017-05-14 16:00:00Z]
+  @datetime3 ~U[2017-05-15 17:00:00Z]
+  @datetime4 ~U[2017-05-16 18:00:00Z]
+  @datetime5 ~U[2017-05-17 19:00:00Z]
+  @datetime6 ~U[2017-05-18 20:00:00Z]
   @exchange_wallet "0xe1e1e1e1e1e1e1"
 
   setup_all_with_mocks([
@@ -39,8 +39,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   end
 
   test "project in transactions for the whole interval", context do
-    with_mock Sanbase.Clickhouse.EthTransfers,
-      top_wallet_transfers: fn _, _, _, _, _ ->
+    with_mock Sanbase.Transfers.EthTransfers,
+      top_wallet_transactions: fn _, _, _, _, _, _ ->
         {:ok, eth_transfers_in()}
       end do
       query = """
@@ -96,8 +96,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   end
 
   test "project out transactions for the whole interval", context do
-    with_mock Sanbase.Clickhouse.EthTransfers,
-      top_wallet_transfers: fn _, _, _, _, _ ->
+    with_mock Sanbase.Transfers.EthTransfers,
+      top_wallet_transactions: fn _, _, _, _, _, _ ->
         {:ok, eth_transfers_out()}
       end do
       query = """
@@ -168,8 +168,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   end
 
   test "project all wallet transactions in interval", context do
-    with_mock Sanbase.Clickhouse.EthTransfers,
-      top_wallet_transfers: fn _, _, _, _, _ ->
+    with_mock Sanbase.Transfers.EthTransfers,
+      top_wallet_transactions: fn _, _, _, _, _, _ ->
         {:ok, eth_transfers_in() ++ eth_transfers_out()}
       end do
       query = """
@@ -297,7 +297,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
   defp eth_transfers_in() do
     [
-      %Sanbase.Clickhouse.EthTransfers{
+      %Sanbase.Transfers.EthTransfers{
         block_number: 5_527_472,
         datetime: @datetime4,
         from_address: "0x2",
@@ -306,7 +306,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         trx_hash: "0xd4341953103d0d850d3284910213482dae5f7677c929f768d72f121e5a556fb3",
         trx_value: 20_000.0
       },
-      %Sanbase.Clickhouse.EthTransfers{
+      %Sanbase.Transfers.EthTransfers{
         block_number: 5_569_715,
         datetime: @datetime5,
         from_address: "0x2",
@@ -320,7 +320,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
   defp eth_transfers_out() do
     [
-      %Sanbase.Clickhouse.EthTransfers{
+      %Sanbase.Transfers.EthTransfers{
         block_number: 5_619_729,
         datetime: @datetime1,
         from_address: "0x1",
@@ -329,7 +329,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         trx_hash: "0x9a561c88bb59a1f6dfe63ed4fe036466b3a328d1d86d039377481ab7c4defe4e",
         trx_value: 500.0
       },
-      %Sanbase.Clickhouse.EthTransfers{
+      %Sanbase.Transfers.EthTransfers{
         block_number: 5_769_021,
         datetime: @datetime2,
         from_address: "0x1",
@@ -338,7 +338,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         trx_hash: "0xccbb803caabebd3665eec49673e23ef5cd08bd0be50a2b1f1506d77a523827ce",
         trx_value: 1500.0
       },
-      %Sanbase.Clickhouse.EthTransfers{
+      %Sanbase.Transfers.EthTransfers{
         block_number: 5_770_231,
         datetime: @datetime3,
         from_address: "0x1",
@@ -347,7 +347,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         trx_hash: "0x923f8054bf571ecd56db56f8aaf7b71b97f03ac7cf63e5cac929869cdbdd3863",
         trx_value: 2500.0
       },
-      %Sanbase.Clickhouse.EthTransfers{
+      %Sanbase.Transfers.EthTransfers{
         block_number: 5_527_438,
         datetime: @datetime4,
         from_address: "0x1",
@@ -356,7 +356,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         trx_hash: "0xa891e1bbe292e546f40d23772b53a396ae2d37697665157bc6e019c647e9531a",
         trx_value: 3500.0
       },
-      %Sanbase.Clickhouse.EthTransfers{
+      %Sanbase.Transfers.EthTransfers{
         block_number: 5_569_693,
         datetime: @datetime5,
         from_address: "0x1",
@@ -365,7 +365,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         trx_hash: "0x398772430a2e39f5f1addfbba56b7db1e30e5417de52c15001e157e350c18e52",
         trx_value: 5500.0
       },
-      %Sanbase.Clickhouse.EthTransfers{
+      %Sanbase.Transfers.EthTransfers{
         block_number: 5_527_047,
         datetime: @datetime6,
         from_address: "0x1",

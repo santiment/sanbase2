@@ -39,7 +39,7 @@ config :sanbase, SanbaseWeb.Plug.BasicAuth,
   username: {:system, "ADMIN_BASIC_AUTH_USERNAME", "admin"},
   password: {:system, "ADMIN_BASIC_AUTH_PASSWORD", "admin"}
 
-config :sanbase, Sanbase.Clickhouse.Erc20Transfers,
+config :sanbase, Sanbase.Transfers.Erc20Transfers,
   dt_ordered_table: {:system, "DT_ORDERED_ERC20_TRANFERS_TABLE", "erc20_transfers_new"},
   address_ordered_table: {:system, "ADDRESS_ORDERED_ERC20_TRANSFERS_TABLE", "erc20_transfers"}
 

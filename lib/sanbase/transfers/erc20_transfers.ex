@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.Erc20Transfers do
+defmodule Sanbase.Transfers.Erc20Transfers do
   @moduledoc ~s"""
   Uses ClickHouse to work with ERC20 transfers.
   """
@@ -49,29 +49,60 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     raise "Should not try to change eth daily active addresses"
   end
 
+  @spec top_wallet_transactions(
+          list(String.t()),
+          String.t(),
+          DateTime.t(),
+          DateTime.t(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          String.t()
+        ) ::
+          {:ok, nil} | {:ok, list(map())} | {:error, String.t()}
+  def top_wallet_transactions(_contract, [], _from, _to, _page, _page_size, _type), do: {:ok, []}
+
+  def top_wallet_transactions(contract, wallets, from, to, decimals, page, page_size, type) do
+    {query, args} =
+      top_wallet_transactions_query(contract, wallets, from, to, decimals, page, page_size, type)
+
+    ClickhouseRepo.query_transform(query, args, fn
+      [timestamp, from_address, to_address, trx_hash, trx_value] ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          from_address: maybe_transform_from_address(from_address),
+          to_address: maybe_transform_to_address(to_address),
+          trx_hash: trx_hash,
+          trx_value: trx_value
+        }
+    end)
+  end
+
   @doc ~s"""
   Return the `limit` biggest transaction for a given contract and time period.
   If the top transactions for SAN token are needed, the SAN contract address must be
   provided as a first argument.
   """
-  @spec top_transactions(String.t(), %DateTime{}, %DateTime{}, String.t(), integer) ::
-          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def top_transactions(
-        contract,
-        from_datetime,
-        to_datetime,
-        limit,
-        decimals \\ 0,
-        excluded_addresses \\ []
-      ) do
+  @spec top_transactions(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          list(String.t())
+        ) ::
+          {:ok, list(t)} | {:error, String.t()}
+  def top_transactions(contract, from, to, page, page_size, decimals, excluded_addresses \\ []) do
     decimals = Sanbase.Math.ipow(10, decimals)
 
     {query, args} =
       top_transactions_query(
         contract,
-        from_datetime,
-        to_datetime,
-        limit,
+        from,
+        to,
+        page,
+        page_size,
         decimals,
         excluded_addresses
       )
@@ -174,17 +205,71 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
 
   # Private functions
 
-  defp top_transactions_query(
-         contract,
-         from_datetime,
-         to_datetime,
-         limit,
-         token_decimals,
-         excluded_addresses
-       ) do
-    from_datetime_unix = DateTime.to_unix(from_datetime)
-    to_datetime_unix = DateTime.to_unix(to_datetime)
+  defp top_wallet_transactions_query(wallets, contract, from, to, decimals, page, page_size, type) do
+    query = """
+    SELECT
+      toUnixTimestamp(dt),
+      from,
+      to,
+      transactionHash,
+      value / ?7
+    FROM erc20_transfers FINAL
+    PREWHERE
+    #{top_wallet_transactions_address_clause(type, arg_position: 1, trailing_and: true)}
+      assetRefId = cityHash64('ETH_' || ?2) AND
+      dt >= toDateTime(?3) AND
+      dt <= toDateTime(?4) AND
+      type = 'call'
+    ORDER BY value DESC
+    LIMIT ?5 OFFSET ?6
+    """
 
+    offset = (page - 1) * page_size
+
+    args = [
+      wallets,
+      contract,
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix(),
+      page_size,
+      offset,
+      Sanbase.Math.ipow(10, decimals)
+    ]
+
+    {query, args}
+  end
+
+  defp top_wallet_transactions_address_clause(:in, opts) do
+    arg_position = Keyword.fetch!(opts, :arg_position)
+    trailing_and = Keyword.fetch!(opts, :trailing_and)
+
+    str = "from NOT IN (?#{arg_position}) AND to IN (?#{arg_position})"
+    if trailing_and, do: str <> " AND", else: str
+  end
+
+  defp top_wallet_transactions_address_clause(:out, opts) do
+    arg_position = Keyword.fetch!(opts, :arg_position)
+    trailing_and = Keyword.fetch!(opts, :trailing_and)
+
+    str = "from IN (?#{arg_position}) AND to NOT IN (?#{arg_position})"
+    if trailing_and, do: str <> " AND", else: str
+  end
+
+  defp top_wallet_transactions_address_clause(:all, opts) do
+    arg_position = Keyword.fetch!(opts, :arg_position)
+    trailing_and = Keyword.fetch!(opts, :trailing_and)
+
+    str = """
+    (
+      (from IN (?#{arg_position}) AND NOT to IN (?#{arg_position})) OR
+      (NOT from IN (?#{arg_position}) AND to IN (?#{arg_position}))
+    )
+    """
+
+    if trailing_and, do: str <> " AND", else: str
+  end
+
+  defp top_transactions_query(contract, from, to, page, page_size, decimals, excluded_addresses) do
     query = """
     SELECT
       toUnixTimestamp(dt) AS datetime,
@@ -197,20 +282,22 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
       assetRefId = cityHash64('ETH_' || ?2) AND
       dt >= toDateTime(?3) AND
       dt <= toDateTime(?4)
-      #{maybe_exclude_addresses(excluded_addresses, arg_position: 6)}
+      #{maybe_exclude_addresses(excluded_addresses, arg_position: 7)}
     ORDER BY value DESC
-    LIMIT ?5
+    LIMIT ?5 OFFSET ?6
     """
 
+    offset = (page - 1) * page_size
     maybe_extra_params = if excluded_addresses == [], do: [], else: [excluded_addresses]
 
     args =
       [
-        token_decimals,
+        decimals,
         contract,
-        from_datetime_unix,
-        to_datetime_unix,
-        limit
+        from |> DateTime.to_unix(),
+        to |> DateTime.to_unix(),
+        page_size,
+        offset
       ] ++ maybe_extra_params
 
     {query, args}

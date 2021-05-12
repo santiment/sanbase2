@@ -4,12 +4,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   import SanbaseWeb.Graphql.Helpers.Async
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
+  alias Sanbase.Transfers
   alias Sanbase.Model.Project
-  alias Sanbase.Clickhouse
-  alias SanbaseWeb.Graphql.Cache
-  alias SanbaseWeb.Graphql.SanbaseDataloader
-  alias Sanbase.Clickhouse.{Label, EthTransfers, Erc20Transfers, MarkExchanges}
-  alias Sanbase.Clickhouse.BtcTransfers
+  alias SanbaseWeb.Graphql.{Cache, SanbaseDataloader}
+  alias Sanbase.Clickhouse.{Label, MarkExchanges, HistoricalBalance.EthSpent}
 
   @max_concurrency 100
 
@@ -21,17 +19,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     async(fn -> calculate_token_top_transactions(project, args) end)
   end
 
-  defp calculate_token_top_transactions(%Project{slug: "bitcoin"} = project, args) do
+  defp calculate_token_top_transactions(
+         %Project{slug: "bitcoin" = slug} = project,
+         args
+       ) do
     %{from: from, to: to, limit: limit} = args
     limit = Enum.min([limit, 100])
     excluded_addresses = Map.get(args, :excluded_addresses, [])
 
-    with {:ok, token_transactions} <-
-           BtcTransfers.top_transactions(from, to, limit, excluded_addresses),
-         {:ok, token_transactions} <-
-           MarkExchanges.mark_exchange_wallets(token_transactions),
-         {:ok, token_transactions} <- Label.add_labels("bitcoin", token_transactions) do
-      {:ok, token_transactions}
+    with {:ok, transactions} <-
+           Transfers.top_transactions(slug, from, to, 1, limit, excluded_addresses),
+         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
+         {:ok, transactions} <- Label.add_labels(slug, transactions) do
+      {:ok, transactions}
     else
       error ->
         Logger.warn(
@@ -49,20 +49,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     limit = Enum.min([limit, 100])
     excluded_addresses = Map.get(args, :excluded_addresses, [])
 
-    with {:ok, contract_address, token_decimals} <- Project.contract_info(project),
-         {:ok, token_transactions} <-
-           Erc20Transfers.top_transactions(
-             contract_address,
+    with {:ok, transactions} <-
+           Transfers.top_transactions(
+             slug,
              from,
              to,
-             limit,
-             token_decimals,
+             _page = 1,
+             _page_size = limit,
              excluded_addresses
            ),
-         {:ok, token_transactions} <-
-           MarkExchanges.mark_exchange_wallets(token_transactions),
-         {:ok, token_transactions} <- Label.add_labels(slug, token_transactions) do
-      {:ok, token_transactions}
+         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
+         {:ok, transactions} <- Label.add_labels(slug, transactions) do
+      {:ok, transactions}
     else
       {:error, {:missing_contract, _}} ->
         {:ok, []}
@@ -78,7 +76,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     end
   end
 
-  def eth_spent(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
+  def eth_spent(%Project{} = project, %{days: days}, %{
+        context: %{loader: loader}
+      }) do
     loader
     |> Dataloader.load(SanbaseDataloader, :eth_spent, %{
       project: project,
@@ -185,16 +185,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     async(fn -> calculate_eth_top_transactions(project, args) end)
   end
 
-  defp calculate_eth_top_transactions(%Project{slug: "ethereum"} = project, args) do
+  defp calculate_eth_top_transactions(
+         %Project{slug: "ethereum"} = project,
+         args
+       ) do
     %{from: from, to: to, transaction_type: _trx_type, limit: limit} = args
     limit = Enum.min([limit, 100])
 
-    with {:ok, eth_transactions} <-
-           EthTransfers.top_transactions(from, to, limit),
-         {:ok, eth_transactions} <-
-           MarkExchanges.mark_exchange_wallets(eth_transactions),
-         {:ok, eth_transactions} <- Label.add_labels("ethereum", eth_transactions) do
-      {:ok, eth_transactions}
+    with {:ok, transactions} <-
+           Sanbase.Transfers.top_transactions("ethereum", from, to, _page = 1, _page_size = limit),
+         {:ok, transactions} <-
+           MarkExchanges.mark_exchange_wallets(transactions),
+         {:ok, transactions} <- Label.add_labels("ethereum", transactions) do
+      {:ok, transactions}
     else
       error ->
         Logger.warn(
@@ -211,19 +214,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     %{from: from, to: to, transaction_type: trx_type, limit: limit} = args
     limit = Enum.min([limit, 100])
 
-    with {:ok, eth_addresses} <- Project.eth_addresses(project),
-         {:ok, eth_transactions} <-
-           EthTransfers.top_wallet_transfers(
-             eth_addresses,
+    with {:ok, addresses} <- Project.eth_addresses(project),
+         {:ok, transactions} <-
+           Sanbase.Transfers.EthTransfers.top_wallet_transactions(
+             addresses,
              from,
              to,
-             limit,
+             _page = 1,
+             _page_size = limit,
              trx_type
            ),
-         {:ok, eth_transactions} <-
-           MarkExchanges.mark_exchange_wallets(eth_transactions),
-         {:ok, eth_transactions} <- Label.add_labels(slug, eth_transactions) do
-      {:ok, eth_transactions}
+         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
+         {:ok, transactions} <- Label.add_labels(slug, transactions) do
+      {:ok, transactions}
     else
       error ->
         Logger.warn(
@@ -238,7 +241,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
   # Private functions
 
-  defp calculate_eth_spent_cached(%Project{id: id} = project, from_datetime, to_datetime) do
+  defp calculate_eth_spent_cached(
+         %Project{id: id} = project,
+         from_datetime,
+         to_datetime
+       ) do
     Cache.wrap(
       fn -> calculate_eth_spent(project, from_datetime, to_datetime) end,
       {:eth_spent, id},
@@ -249,12 +256,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   defp calculate_eth_spent(%Project{} = project, from_datetime, to_datetime) do
     with {_, {:ok, eth_addresses}} when eth_addresses != [] <-
            {:eth_addresses, Project.eth_addresses(project)},
-         {:ok, eth_spent} <-
-           Clickhouse.HistoricalBalance.EthSpent.eth_spent(
-             eth_addresses,
-             from_datetime,
-             to_datetime
-           ) do
+         {:ok, eth_spent} <- EthSpent.eth_spent(eth_addresses, from_datetime, to_datetime) do
       {:ok, eth_spent}
     else
       {:eth_addresses, _} ->
@@ -286,12 +288,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     with {_, {:ok, eth_addresses}} when eth_addresses != [] <-
            {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent_over_time} <-
-           Clickhouse.HistoricalBalance.EthSpent.eth_spent_over_time(
-             eth_addresses,
-             from,
-             to,
-             interval
-           ) do
+           EthSpent.eth_spent_over_time(eth_addresses, from, to, interval) do
       {:ok, eth_spent_over_time}
     else
       {:eth_addresses, _} ->

@@ -4,17 +4,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
   import Sanbase.Utils.ErrorHandling,
-    only: [handle_graphql_error: 3, handle_graphql_error: 4, maybe_handle_graphql_error: 2]
+    only: [
+      handle_graphql_error: 3,
+      handle_graphql_error: 4,
+      maybe_handle_graphql_error: 2
+    ]
 
   alias Sanbase.BlockchainAddress
   alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
-  alias Sanbase.Clickhouse.{Label, EthTransfers, Erc20Transfers, MarkExchanges}
+  alias Sanbase.Clickhouse.{Label, MarkExchanges}
+  alias Sanbase.Transfers
 
   @recent_transactions_type_map %{
-    eth: %{module: EthTransfers, slug: "ethereum"},
-    erc20: %{module: Erc20Transfers, slug: nil}
+    eth: %{module: Transfers.EthTransfers, slug: "ethereum"},
+    erc20: %{module: Transfers.Erc20Transfers, slug: nil}
   }
 
   def list_all_labels(_root, args, _resolution) do
@@ -22,38 +27,67 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     |> Label.list_all()
   end
 
-  def recent_transactions(
+  def top_transactions(
         _root,
-        %{
-          address: address,
-          type: type,
-          page: page,
-          page_size: page_size,
-          only_sender: only_sender
-        },
+        %{address_selector: address_selector, slug: slug, from: from, to: to} = args,
         _resolution
       ) do
-    page_size = Enum.min([page_size, 100])
-    page_size = Enum.max([page_size, 1])
+    %{page: page, page_size: page_size} = args_to_page_args(args)
+    address = Map.fetch!(address_selector, :address)
+    type = Map.get(address_selector, :transacion_type, :all)
+
+    with {:ok, transactions} <-
+           Transfers.top_wallet_transactions(slug, address, from, to, page, page_size, type),
+         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
+         {:ok, transactions} <- Label.add_labels(slug, transactions) do
+      {:ok, transactions}
+    end
+  end
+
+  def top_transactions(
+        _root,
+        %{slug: slug, from: from, to: to} = args,
+        _resolution
+      ) do
+    %{page: page, page_size: page_size} = args_to_page_args(args)
+
+    with {:ok, transactions} <-
+           Sanbase.Transfers.top_transactions(slug, from, to, page, page_size),
+         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
+         {:ok, transactions} <- Label.add_labels(slug, transactions) do
+      {:ok, transactions}
+    end
+  end
+
+  def recent_transactions(
+        _root,
+        %{address: address, type: type, only_sender: only_sender} = args,
+        _resolution
+      ) do
+    %{page: page, page_size: page_size} = args_to_page_args(args)
 
     module = @recent_transactions_type_map[type].module
     slug = @recent_transactions_type_map[type].slug
+    opts = [page: page, page_size: page_size, only_sender: only_sender]
 
-    with {:ok, recent_transactions} <-
-           module.recent_transactions(address,
-             page: page,
-             page_size: page_size,
-             only_sender: only_sender
-           ),
-         {:ok, recent_transactions} <-
-           MarkExchanges.mark_exchange_wallets(recent_transactions),
-         {:ok, recent_transactions} <-
-           Label.add_labels(slug, recent_transactions) do
-      {:ok, recent_transactions}
+    with {:ok, transactions} <- module.recent_transactions(address, opts),
+         {:ok, transactions} <-
+           MarkExchanges.mark_exchange_wallets(transactions),
+         {:ok, transactions} <- Label.add_labels(slug, transactions) do
+      {:ok, transactions}
     else
       {:error, error} ->
         {:error, handle_graphql_error("Recent transactions", %{address: address}, error)}
     end
+  end
+
+  defp args_to_page_args(args) do
+    page = Map.get(args, :page, 1)
+    page_size = Map.get(args, :page_size, 10)
+    page_size = Enum.min([page_size, 100])
+    page_size = Enum.max([page_size, 1])
+
+    %{page: page, page_size: page_size}
   end
 
   def blockchain_address(_root, %{selector: selector}, _resolution) do
@@ -78,7 +112,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
       {:error, _error} ->
         case selector do
           %{address: address, infrastructure: infrastructure} ->
-            BlockchainAddressUserPair.create(address, infrastructure, current_user.id)
+            BlockchainAddressUserPair.create(
+              address,
+              infrastructure,
+              current_user.id
+            )
 
           %{id: id} ->
             {:error,
@@ -99,10 +137,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
-  def update_blockchain_address_user_pair(_root, %{selector: selector} = args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    with {:ok, pair} <- BlockchainAddressUserPair.by_selector(selector, current_user.id),
+  def update_blockchain_address_user_pair(
+        _root,
+        %{selector: selector} = args,
+        %{
+          context: %{auth: %{current_user: current_user}}
+        }
+      ) do
+    with {:ok, pair} <-
+           BlockchainAddressUserPair.by_selector(selector, current_user.id),
          {:ok, pair} <- BlockchainAddressUserPair.update(pair, args) do
       {:ok, pair}
     end
@@ -129,7 +172,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
         |> Dataloader.load(SanbaseDataloader, :address_labels, address)
         |> on_load(fn loader ->
           santiment_labels =
-            Dataloader.get(loader, SanbaseDataloader, :address_labels, address) || []
+            Dataloader.get(loader, SanbaseDataloader, :address_labels, address) ||
+              []
 
           # The root can be built either from a BlockchainAddress in case the
           # `blockchain_address` query is used, or from a BlockchainAddressUserPair
@@ -140,7 +184,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
           # the user-defined labels.
           user_labels =
             Map.get(root, :labels, [])
-            |> Enum.map(fn label -> label |> Map.from_struct() |> Map.put(:origin, "user") end)
+            |> Enum.map(fn label ->
+              label |> Map.from_struct() |> Map.put(:origin, "user")
+            end)
 
           {:ok, user_labels ++ santiment_labels}
         end)
@@ -154,7 +200,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
 
       %{infrastructure_id: infrastructure_id} ->
         loader
-        |> Dataloader.load(SanbaseDataloader, :infrastructure, infrastructure_id)
+        |> Dataloader.load(
+          SanbaseDataloader,
+          :infrastructure,
+          infrastructure_id
+        )
         |> on_load(fn loader ->
           {:ok,
            Dataloader.get(
@@ -171,7 +221,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     address = root |> root_to_raw_address() |> BlockchainAddress.to_internal_format()
 
     loader
-    |> Dataloader.load(SanbaseDataloader, :address_selector_current_balance, {address, selector})
+    |> Dataloader.load(
+      SanbaseDataloader,
+      :address_selector_current_balance,
+      {address, selector}
+    )
     |> on_load(fn loader ->
       {:ok,
        Dataloader.get(
@@ -183,11 +237,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
-  def balance_dominance(root, %{selector: selector}, %{context: %{loader: loader}}) do
+  def balance_dominance(root, %{selector: selector}, %{
+        context: %{loader: loader}
+      }) do
     address = root |> root_to_raw_address() |> BlockchainAddress.to_internal_format()
 
     loader
-    |> Dataloader.load(SanbaseDataloader, :address_selector_current_balance, {address, selector})
+    |> Dataloader.load(
+      SanbaseDataloader,
+      :address_selector_current_balance,
+      {address, selector}
+    )
     |> on_load(fn loader ->
       [address_balance, total_balance] =
         Dataloader.get_many(
@@ -227,11 +287,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
-  def blockchain_address_id(%Sanbase.Comment{id: id}, _args, %{context: %{loader: loader}}) do
+  def blockchain_address_id(%Sanbase.Comment{id: id}, _args, %{
+        context: %{loader: loader}
+      }) do
     loader
     |> Dataloader.load(SanbaseDataloader, :comment_blockchain_address_id, id)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :comment_blockchain_address_id, id)}
+      {:ok,
+       Dataloader.get(
+         loader,
+         SanbaseDataloader,
+         :comment_blockchain_address_id,
+         id
+       )}
     end)
   end
 
@@ -240,10 +308,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     id = root_address.id
 
     loader
-    |> Dataloader.load(SanbaseDataloader, :blockchain_addresses_comments_count, id)
+    |> Dataloader.load(
+      SanbaseDataloader,
+      :blockchain_addresses_comments_count,
+      id
+    )
     |> on_load(fn loader ->
       {:ok,
-       Dataloader.get(loader, SanbaseDataloader, :blockchain_addresses_comments_count, id) || 0}
+       Dataloader.get(
+         loader,
+         SanbaseDataloader,
+         :blockchain_addresses_comments_count,
+         id
+       ) || 0}
     end)
   end
 
@@ -252,8 +329,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   defp root_to_blockchain_address(%{blockchain_address: blockchain_address}),
     do: blockchain_address
 
-  defp root_to_blockchain_address(%{address: _} = blockchain_address), do: blockchain_address
+  defp root_to_blockchain_address(%{address: _} = blockchain_address),
+    do: blockchain_address
 
-  defp root_to_raw_address(%{blockchain_address: %{address: address}}), do: address
+  defp root_to_raw_address(%{blockchain_address: %{address: address}}),
+    do: address
+
   defp root_to_raw_address(%{address: address}), do: address
 end

@@ -73,6 +73,15 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
               }
           }
 
+        %{from_address: from, to_address: nil} = transaction ->
+          %{
+            transaction
+            | from_address: %{
+                address: from,
+                is_exchange: MapSet.member?(exchanges, from)
+              }
+          }
+
         %{from_address: from, to_address: to} = transaction ->
           %{
             transaction

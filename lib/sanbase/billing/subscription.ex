@@ -58,10 +58,24 @@ defmodule Sanbase.Billing.Subscription do
     |> foreign_key_constraint(:plan_id, name: :subscriptions_plan_id_fkey)
   end
 
-  def create(params) do
+  def create(params, opts \\ []) do
     %__MODULE__{}
     |> changeset(params)
-    |> Repo.insert()
+    |> Repo.insert(Keyword.take(opts, [:on_conflict]))
+    |> case do
+      {:ok, %{id: nil}} = result ->
+        # If opts has on_conflict: :nothing and a new subscription is not created
+        # the id will be nil. In this case do not emit an event
+        result
+
+      result ->
+        result |> emit_event(:create_subscription, Keyword.get(opts, :event_args, %{}))
+    end
+  end
+
+  def delete(%__MODULE__{} = subscription, opts \\ []) do
+    Repo.delete(subscription)
+    |> emit_event(:delete_subscription, Keyword.get(opts, :event_args, %{}))
   end
 
   def by_id(id) do
@@ -79,8 +93,7 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   def create_subscription_db(stripe_subscription, user, plan) do
-    %__MODULE__{}
-    |> changeset(%{
+    %{
       stripe_id: stripe_subscription.id,
       user_id: user.id,
       plan_id: plan.id,
@@ -89,12 +102,8 @@ defmodule Sanbase.Billing.Subscription do
       status: stripe_subscription.status,
       trial_end: format_trial_end(stripe_subscription.trial_end),
       inserted_at: DateTime.from_unix!(stripe_subscription.created) |> DateTime.to_naive()
-    })
-    |> Repo.insert(on_conflict: :nothing)
-    |> case do
-      {:ok, %{id: nil}} = result -> result
-      result -> result |> emit_event(:create_subscription, %{})
-    end
+    }
+    |> create(on_conflict: :nothing)
   end
 
   def update_subscription_db(subscription, params) do
@@ -118,8 +127,7 @@ defmodule Sanbase.Billing.Subscription do
     with :ok <- active_subscriptions_for_this_plan(user, plan),
          {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
-         {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan),
-         {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
+         {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       # Remove sign up trial if exists.
       plan.product_id == @product_sanbase && SignUpTrial.remove_sign_up_trial(user)
 
@@ -138,8 +146,7 @@ defmodule Sanbase.Billing.Subscription do
            StripeApi.update_subscription_item_by_id(db_subscription, plan),
          {:ok, db_subscription} <-
            sync_subscription_with_stripe(stripe_subscription, db_subscription),
-         db_subscription <- default_preload(db_subscription, force: true),
-         {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(db_subscription.user) do
+         db_subscription <- default_preload(db_subscription, force: true) do
       {:ok, db_subscription}
     end
   end
@@ -157,9 +164,8 @@ defmodule Sanbase.Billing.Subscription do
     with {:ok, stripe_subscription} <- StripeApi.cancel_subscription(stripe_id),
          {:ok, _canceled_sub} <-
            sync_subscription_with_stripe(stripe_subscription, db_subscription),
-         db_subscription <- default_preload(db_subscription, force: true),
-         {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(db_subscription.user) do
-      Sanbase.Billing.StripeEvent.send_cancel_event_to_discord(db_subscription)
+         db_subscription <- default_preload(db_subscription, force: true) do
+      emit_event({:ok, db_subscription}, :cancel_subscription, %{})
 
       {:ok,
        %{
@@ -185,15 +191,16 @@ defmodule Sanbase.Billing.Subscription do
            StripeApi.update_subscription(db_subscription.stripe_id, %{cancel_at_period_end: false}),
          {:ok, db_subscription} <-
            sync_subscription_with_stripe(stripe_subscription, db_subscription),
-         db_subscription = default_preload(db_subscription, force: true),
-         {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(db_subscription.user) do
+         db_subscription = default_preload(db_subscription, force: true) do
+      emit_event({:ok, db_subscription}, :renew_subscription, %{})
       {:ok, db_subscription}
     else
       {:end_period_reached?, _} ->
         {:end_period_reached_error,
-         "Cancelled subscription has already reached the end period at #{
-           db_subscription.current_period_end
-         }"}
+         """
+         Cancelled subscription has already reached the end period at \
+         #{db_subscription.current_period_end}
+         """}
 
       {:error, reason} ->
         {:error, reason}

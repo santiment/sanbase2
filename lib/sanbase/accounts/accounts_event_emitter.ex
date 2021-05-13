@@ -2,6 +2,7 @@ defmodule Sanbase.Accounts.EventEmitter do
   use Sanbase.EventBus.EventEmitter
 
   @topic :user_events
+  def topic(), do: @topic
 
   def handle_event({:error, _}, _event, _args), do: :ok
 

@@ -1,14 +1,12 @@
 defmodule Sanbase.Billing.Subscription.PromoTrial do
   use Ecto.Schema
 
-  import Ecto.Query
   import Ecto.Changeset
 
   alias Sanbase.Billing
   alias Sanbase.StripeApi
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Plan}
-  alias Sanbase.Repo
 
   require Logger
 
@@ -79,19 +77,17 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
     end
   end
 
-  defp promo_subscribe(user, plans, trial_days) when is_list(plans) do
+  defp promo_subscribe(user, plan_ids, trial_days) when is_list(plan_ids) do
     subscriptions =
-      from(p in Plan, where: p.id in ^plans)
-      |> Repo.all()
+      Plan.by_ids(plan_ids)
       |> Enum.map(&subscribe_to_plan(user, &1, trial_days))
 
-    oks = subscriptions |> Enum.filter(&match?({:ok, _}, &1))
-    errors = subscriptions |> Enum.filter(&match?({:error, _}, &1))
+    groups = Enum.group_by(subscriptions, fn {ok_or_error, _} -> ok_or_error end)
 
-    if length(errors) > 0 do
+    if errors = Map.get(groups, :error) do
       hd(errors)
     else
-      {:ok, Enum.map(oks, &elem(&1, 1))}
+      {:ok, Map.get(groups, :ok, []) |> Enum.map(&elem(&1, 1))}
     end
   end
 
@@ -102,11 +98,10 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   end
 
   defp subscribe_to_plan(user, plan, trial_days) do
-    with {:ok, stripe_subscription} <-
-           promotional_subsciption_data(user, plan, trial_days) |> StripeApi.create_subscription(),
-         {:ok, subscription} <-
-           Subscription.create_subscription_db(stripe_subscription, user, plan),
-         {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
+    subscription_data = promotional_subsciption_data(user, plan, trial_days)
+
+    with {:ok, stripe_sub} <- StripeApi.create_subscription(subscription_data),
+         {:ok, subscription} <- Subscription.create_subscription_db(stripe_sub, user, plan) do
       {:ok, subscription}
     end
   end

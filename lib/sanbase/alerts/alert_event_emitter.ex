@@ -2,6 +2,7 @@ defmodule Sanbase.Alert.EventEmitter do
   use Sanbase.EventBus.EventEmitter
 
   @topic :alert_events
+  def topic(), do: @topic
 
   def handle_event({:error, _}, _), do: :ok
 

@@ -34,10 +34,10 @@ defmodule Sanbase.EventBus do
 
   @topics [
     :alert_events,
+    :billing_events,
     :comment_topic,
     :insight_events,
     :invalid_events,
-    :payment_events,
     :user_events,
     :watchlist_events
   ]
@@ -45,8 +45,11 @@ defmodule Sanbase.EventBus do
   @subscribers [
     __MODULE__.KafkaExporterSubscriber,
     __MODULE__.UserEventsSubscriber,
-    __MODULE__.PaymentSubscriber
+    __MODULE__.BillingEventSubscriber
   ]
+
+  def children(), do: @subscribers
+
   def init() do
     for topic <- @topics, do: EventBus.register_topic(topic)
     for subscriber <- @subscribers, do: EventBus.subscribe({subscriber, subscriber.topics()})

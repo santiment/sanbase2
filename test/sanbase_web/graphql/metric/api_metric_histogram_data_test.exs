@@ -53,7 +53,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     %{conn: conn, slug: slug, from: from, to: to} = context
 
     metrics =
-      Metric.available_histogram_metrics() |> Enum.reject(&String.contains?(&1, "uniswap"))
+      Metric.available_histogram_metrics()
+      |> Enum.reject(&String.contains?(&1, "uniswap"))
+      |> Enum.shuffle()
+      |> Enum.take(100)
 
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Clickhouse.MetricAdapter.histogram_data/6,

@@ -220,6 +220,13 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
+  def by_stripe_customer_id(stripe_customer_id) do
+    case Repo.get_by(User, stripe_customer_id: stripe_customer_id) do
+      nil -> {:error, "Cannot fetch user with stripe_customer_id #{stripe_customer_id}"}
+      %__MODULE__{} = user -> {:ok, user}
+    end
+  end
+
   def by_selector(%{id: id}), do: by_id(Sanbase.Math.to_integer(id))
   def by_selector(%{email: email}), do: by_email(email)
   def by_selector(%{username: username}), do: by_username(username)

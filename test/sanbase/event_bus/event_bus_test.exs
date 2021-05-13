@@ -1,5 +1,5 @@
 defmodule Sanbase.EventBusTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   defmodule EventBusTestSubscriber do
     @receiver_name :__internal_event_test_process_name_given__
@@ -18,7 +18,12 @@ defmodule Sanbase.EventBusTest do
   setup do
     test_events_topic = :test_events
     :ok = EventBus.register_topic(test_events_topic)
-    :ok = EventBus.subscribe({EventBusTestSubscriber, [".*"]})
+    :ok = EventBus.subscribe({EventBusTestSubscriber, ["test_events"]})
+
+    on_exit(fn ->
+      EventBus.unsubscribe(EventBusTestSubscriber)
+      EventBus.unregister_topic(test_events_topic)
+    end)
 
     # register_topic is done via GenServer.call/2, but EventBus.subscribe is
     # done via GenServer.cast/2. Adding a small wait loop to make sure the test

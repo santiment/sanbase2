@@ -122,24 +122,11 @@ defmodule Sanbase.EventBus.EventValidation do
         valid_integer_id?(subscription_id) and valid_integer_id?(user_id) and
           valid_subscription_stripe_id?(event)
 
-  %{
-    data: %{
-      coupon: nil,
-      event_type: :payment_success,
-      invoice_url: "https://pay.stripe.com/invoice/invst_DymQGTG6xOZjHdROmZc8kPZuPN",
-      starting_balance: 0,
-      stripe_event_id: "evt_1Eud0qCA0hGU8IEVdOgcTrft",
-      total_amount: 9520,
-      user_id: nil
-    },
-    topic: :billing_events
-  }
-
   #############################################################################
   ## Payment Events
   #############################################################################
   def valid?(%{event_type: event_type, user_id: user_id, stripe_event_id: stripe_event_id})
-      when event_type in [:payment_success, :payment_fail],
+      when event_type in [:payment_success, :payment_fail, :charge_fail],
       do: (is_nil(user_id) or valid_integer_id?(user_id)) and valid_string_id?(stripe_event_id)
 
   def valid?(%{

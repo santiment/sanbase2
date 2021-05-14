@@ -82,6 +82,10 @@ defmodule Sanbase.Billing.StripeEvent do
     handle_event_common(id, type, subscription_id)
   end
 
+  defp handle_event(%{"type" => "charge.failed"} = stripe_event) do
+    emit_event({:ok, stripe_event}, :charge_fail, %{})
+  end
+
   # skip processing when payment is not connected to subscription
   defp handle_event(%{"id" => id, "type" => type})
        when type in ["invoice.payment_succeeded", "invoice.payment_failed"] do
@@ -160,7 +164,7 @@ defmodule Sanbase.Billing.StripeEvent do
         {:error, error_msg}
 
       {:error, reason} ->
-        Logger.error("Error handling #{type} event: reason #{inspect(reason)}")
+        Logger.error("Error handling #{type} event. Reason: #{inspect(reason)}")
         {:error, reason}
     end
   end

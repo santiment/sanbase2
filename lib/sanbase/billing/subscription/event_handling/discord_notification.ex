@@ -20,7 +20,7 @@ defmodule Sanbase.Billing.DiscordNotification do
   end
 
   def handle_event(
-        :payment_fail,
+        fail_type,
         %{
           data: %{
             amount: amount,
@@ -29,7 +29,7 @@ defmodule Sanbase.Billing.DiscordNotification do
           }
         }
       )
-      when amount > 1 do
+      when fail_type in [:payment_fail, :charge_fail] and amount > 1 do
     seller_message = stripe_event["data"]["outcome"]["seller_message"]
     failure_message = stripe_event["data"]["failure_message"]
     formatted_amount = format_cents_amount(amount)
@@ -40,7 +40,13 @@ defmodule Sanbase.Billing.DiscordNotification do
     Event: https://dashboard.stripe.com/events/#{stripe_event_id}
     """
 
-    do_send_to_discord(message, "Stripe Payment")
+    title =
+      case fail_type do
+        :payment_fail -> "Stripe Payment"
+        :charge_fail -> "Stripe Charge"
+      end
+
+    do_send_to_discord(message, title)
   end
 
   def handle_event(:cancel_subscription, %{

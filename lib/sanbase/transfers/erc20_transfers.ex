@@ -93,7 +93,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
           list(String.t())
         ) ::
           {:ok, list(t)} | {:error, String.t()}
-  def top_transactions(contract, from, to, page, page_size, decimals, excluded_addresses \\ []) do
+  def top_transactions(contract, from, to, decimals, page, page_size, excluded_addresses \\ []) do
     decimals = Sanbase.Math.ipow(10, decimals)
 
     {query, args} =

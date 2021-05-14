@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
     @desc """
     Top transactions for the given slug and timerange arguments.
     """
-    field :top_transactions, list_of(:transaction) do
+    field :top_transfers, list_of(:transaction) do
       meta(access: :free)
 
       arg(:address_selector, :address_selector)

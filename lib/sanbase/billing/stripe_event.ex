@@ -82,8 +82,10 @@ defmodule Sanbase.Billing.StripeEvent do
     handle_event_common(id, type, subscription_id)
   end
 
-  defp handle_event(%{"type" => "charge.failed"} = stripe_event) do
+  defp handle_event(%{"id" => id, "type" => "charge.failed"} = stripe_event) do
     emit_event({:ok, stripe_event}, :charge_fail, %{})
+
+    update(id, %{is_processed: true})
   end
 
   # skip processing when payment is not connected to subscription

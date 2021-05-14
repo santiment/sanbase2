@@ -23,9 +23,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
      ]},
     {Sanbase.Notifications.Discord, [],
      [
-       send_notification: fn _, _, _ ->
-         :ok
-       end,
+       send_notification: fn _, _, _ -> :ok end,
        encode!: fn _, _ -> "{}" end
      ]}
   ]) do
@@ -35,18 +33,15 @@ defmodule SanbaseWeb.StripeWebhookTest do
     {:ok, user: user}
   end
 
-  describe "invoice.payment_failed event" do
-    test "handle payment failed eent",
+  describe "charge.failed event" do
+    test "handle charged.failed event",
          context do
       {:ok, %Stripe.Subscription{id: stripe_id}} =
         StripeApiTestResponse.retrieve_subscription_resp(stripe_id: @stripe_id)
 
-      insert(:subscription_essential,
-        user: context.user,
-        stripe_id: stripe_id
-      )
+      insert(:subscription_essential, user: context.user, stripe_id: stripe_id)
 
-      payload = payment_failed_json()
+      payload = charge_failed_json()
       self = self()
       ref = make_ref()
 
@@ -59,7 +54,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
         end
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
-        response = post_stripe_webhook(:payment_failed)
+        response = post_stripe_webhook(:charge_failed)
 
         assert_receive({_, {:ok, %StripeEvent{is_processed: true}}}, 1000)
 
@@ -70,7 +65,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
 
         assert_receive({^ref, msg}, 1000)
 
-        assert msg =~ "⛔ Failed card charge for $10"
+        assert msg =~ "⛔ Failed card charge for $529"
         assert msg =~ "Event: https://dashboard.stripe.com/events/evt_1Eud0qCA0hGU8IEVdOgcTrft"
       end)
     end
@@ -274,6 +269,9 @@ defmodule SanbaseWeb.StripeWebhookTest do
 
         :payment_failed ->
           payment_failed_json()
+
+        :charge_failed ->
+          charge_failed_json()
       end
 
     build_conn()
@@ -437,6 +435,144 @@ defmodule SanbaseWeb.StripeWebhookTest do
           "tax_percent": null,
           "trial_end": null,
           "trial_start": null
+        }
+      }
+    }
+    """
+  end
+
+  defp charge_failed_json do
+    """
+    {
+      "created": 1326853478,
+      "livemode": false,
+      "id": "evt_1Eud0qCA0hGU8IEVdOgcTrft",
+      "type": "charge.failed",
+      "object": "event",
+      "request": null,
+      "pending_webhooks": 1,
+      "api_version": "2017-08-15",
+      "data": {
+        "object": {
+          "id": "ch_1I",
+          "object": "charge",
+          "amount": 52900,
+          "amount_captured": 0,
+          "amount_refunded": 0,
+          "application": null,
+          "application_fee": null,
+          "application_fee_amount": null,
+          "balance_transaction": null,
+          "billing_details": {
+            "address": {
+              "city": null,
+              "country": null,
+              "line1": null,
+              "line2": null,
+              "postal_code": null,
+              "state": null
+            },
+            "email": null,
+            "name": null,
+            "phone": null
+          },
+          "calculated_statement_descriptor": "SANTIMENT",
+          "captured": false,
+          "created": 1620980672,
+          "currency": "usd",
+          "customer": "cus_JTd44randstuff",
+          "description": "Subscription creation",
+          "destination": null,
+          "dispute": null,
+          "disputed": false,
+          "failure_code": "card_declined",
+          "failure_message": "Your card was declined.",
+          "fraud_details": {
+          },
+          "invoice": "in_1IqfqYCA0hGU8IEVShG79rS5",
+          "livemode": false,
+          "metadata": {
+          },
+          "on_behalf_of": null,
+          "order": null,
+          "outcome": {
+            "network_status": "declined_by_network",
+            "reason": "generic_decline",
+            "risk_level": "normal",
+            "risk_score": 34,
+            "seller_message": "The bank did not return any further details with this decline.",
+            "type": "issuer_declined"
+          },
+          "paid": false,
+          "payment_intent": "pi_1IqfqYCA0hGU8IEVrandstuff",
+          "payment_method": "card_1IqwJ6CA0hGU8Irandstuff",
+          "payment_method_details": {
+            "card": {
+              "brand": "visa",
+              "checks": {
+                "address_line1_check": null,
+                "address_postal_code_check": null,
+                "cvc_check": "pass"
+              },
+              "country": "US",
+              "exp_month": 1,
+              "exp_year": 2022,
+              "fingerprint": "vQb5YIkrandstuff",
+              "funding": "credit",
+              "installments": null,
+              "last4": "0341",
+              "network": "visa",
+              "three_d_secure": null,
+              "wallet": null
+            },
+            "type": "card"
+          },
+          "receipt_email": "test@gsantiment.net",
+          "receipt_number": null,
+          "receipt_url": null,
+          "refunded": false,
+          "refunds": {
+            "object": "list",
+            "data": [
+            ],
+            "has_more": false,
+            "total_count": 0,
+            "url": "/v1/charges/ch_1IqwJwCA0hGrandstuff/refunds"
+          },
+          "review": null,
+          "shipping": null,
+          "source": {
+            "id": "card_1IqwJ6CA0hrandstuff",
+            "object": "card",
+            "address_city": null,
+            "address_country": null,
+            "address_line1": null,
+            "address_line1_check": null,
+            "address_line2": null,
+            "address_state": null,
+            "address_zip": null,
+            "address_zip_check": null,
+            "brand": "Visa",
+            "country": "US",
+            "customer": "cus_JTd44gNrandstuff",
+            "cvc_check": "pass",
+            "dynamic_last4": null,
+            "exp_month": 1,
+            "exp_year": 2022,
+            "fingerprint": "vQb5YIkbranfstuff",
+            "funding": "credit",
+            "last4": "0341",
+            "metadata": {
+            },
+            "name": null,
+            "tokenization_method": null
+          },
+          "source_transfer": null,
+          "statement_descriptor": null,
+          "statement_descriptor_suffix": null,
+          "status": "failed",
+          "transfer_data": null,
+          "transfer_group": null
         }
       }
     }

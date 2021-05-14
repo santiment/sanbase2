@@ -98,7 +98,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :table_configurations,
           :timeline_event,
           :timeline_events,
-          :top_transactions,
+          :top_transfers,
           :transaction_volume_per_address,
           :twitter_data,
           :twitter_mention_count,

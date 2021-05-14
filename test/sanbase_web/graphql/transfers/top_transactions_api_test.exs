@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     ]
   end
 
-  test "top transactions for a slug", context do
+  test "top transfers for a slug", context do
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Transfers.Erc20Transfers.top_transactions/7,
       {:ok, all_transfers()}
@@ -44,7 +44,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
-        topTransactions(
+        topTransfers(
           slug: "#{context.slug}"
           from: "#{context.datetime_from}"
           to: "#{context.datetime_to}"){
@@ -58,9 +58,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
       result =
         context.conn
-        |> post("/graphql", query_skeleton(query, "topTransactions"))
+        |> post("/graphql", query_skeleton(query, "topTransfers"))
 
-      transactions = json_response(result, 200)["data"]["topTransactions"]
+      transactions = json_response(result, 200)["data"]["topTransfers"]
 
       assert_called(Sanbase.Transfers.Erc20Transfers.top_transactions(:_, :_, :_, :_, :_, :_, :_))
 
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     end)
   end
 
-  test "top transactions for an address and slug", context do
+  test "top transfers for an address and slug", context do
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Transfers.Erc20Transfers.top_wallet_transactions/8,
       {:ok, address_transfers()}
@@ -109,7 +109,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
-        topTransactions(
+        topTransfers(
           slug: "#{context.slug}"
           from: "#{context.datetime_from}"
           to: "#{context.datetime_to}"
@@ -124,14 +124,14 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
       result =
         context.conn
-        |> post("/graphql", query_skeleton(query, "topTransactions"))
+        |> post("/graphql", query_skeleton(query, "topTransfers"))
         |> json_response(200)
 
       assert_called(
         Sanbase.Transfers.Erc20Transfers.top_wallet_transactions(:_, :_, :_, :_, :_, :_, :_, :_)
       )
 
-      transactions = result["data"]["topTransactions"]
+      transactions = result["data"]["topTransfers"]
 
       assert transactions ==
                [

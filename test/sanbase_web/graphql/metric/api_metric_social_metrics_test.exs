@@ -132,58 +132,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
       end)
     end
 
-    test "social_volume - one source returns more data", context do
-      %{conn: conn, project: project, from: from, to: to, interval: interval, after_to: after_to} =
-        context
-
-      metrics = social_volume_metrics()
-
-      resp1 = """
-        {"data":{"#{from}":100,"#{to}":200,"#{after_to}":300}}
-      """
-
-      resp2 = """
-        {"data":{"#{from}":100,"#{to}":200}}
-      """
-
-      res = {:ok, [%{datetime: from, value: 100.0}, %{datetime: to, value: 200.0}]}
-
-      Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _, _, options ->
-        source =
-          Enum.find(Keyword.get(options, :params), &match?({"source", _}, &1))
-          |> elem(1)
-          |> to_string()
-
-        case source do
-          "telegram" -> {:ok, %HTTPoison.Response{body: resp1, status_code: 200}}
-          _ -> {:ok, %HTTPoison.Response{body: resp2, status_code: 200}}
-        end
-      end)
-      |> Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, res)
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        for metric <- metrics do
-          result =
-            get_timeseries_metric(conn, metric, :slug, project.slug, from, to, interval)
-            |> extract_timeseries_data()
-
-          case metric do
-            "social_volume_telegram" ->
-              assert result == [
-                       %{"value" => 100.0, "datetime" => from |> DateTime.to_iso8601()},
-                       %{"value" => 200.0, "datetime" => to |> DateTime.to_iso8601()},
-                       %{"value" => 300.0, "datetime" => after_to |> DateTime.to_iso8601()}
-                     ]
-
-            _ ->
-              assert result == [
-                       %{"value" => 100.0, "datetime" => from |> DateTime.to_iso8601()},
-                       %{"value" => 200.0, "datetime" => to |> DateTime.to_iso8601()}
-                     ]
-          end
-        end
-      end)
-    end
-
     test "social dominance test", context do
       %{conn: conn, project: project, from: from, to: to, interval: interval} = context
       metrics = social_dominance_metrics()

@@ -54,7 +54,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   def timeseries_data_complexity(_root, args, resolution) do
-    complexity = SanbaseWeb.Graphql.Complexity.from_to_interval(args, 2, resolution)
+    complexity =
+      SanbaseWeb.Graphql.Complexity.from_to_interval(args, _child_complexity = 2, resolution)
+
     {:ok, complexity |> Sanbase.Math.to_integer()}
   end
 

@@ -359,7 +359,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     social_metric_error =
       get_timeseries_metric(
         context.conn,
-        "social_volume_telegram",
+        "twitter_followers",
         %{slug: slug},
         from,
         to,

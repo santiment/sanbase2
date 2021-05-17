@@ -21,20 +21,6 @@ config :postgrex, :json_library, Jason
 
 config :sanbase, Sanbase, env: Mix.env()
 
-config :ueberauth, Ueberauth,
-  providers: [
-    google: {Ueberauth.Strategy.Google, []},
-    twitter: {Ueberauth.Strategy.Twitter, []}
-  ]
-
-config :ueberauth, Ueberauth.Strategy.Google.OAuth,
-  client_id: {System, :get_env, ["GOOGLE_OAUTH_CLIENT_ID"]},
-  client_secret: {System, :get_env, ["GOOGLE_OAUTH_CLIENT_SECRET"]}
-
-config :ueberauth, Ueberauth.Strategy.Twitter.OAuth,
-  consumer_key: {System, :get_env, ["TWITTER_OAUTH_CONSUMER_KEY"]},
-  consumer_secret: {System, :get_env, ["TWITTER_OAUTH_CONSUMER_SECRET"]}
-
 config :sanbase, SanbaseWeb.Plug.BasicAuth,
   username: {:system, "ADMIN_BASIC_AUTH_USERNAME", "admin"},
   password: {:system, "ADMIN_BASIC_AUTH_PASSWORD", "admin"}
@@ -130,10 +116,6 @@ config :tesla,
   adapter: Tesla.Adapter.Hackney,
   recv_timeout: 30_000
 
-config :sanbase, SanbaseWeb.Guardian,
-  issuer: "santiment",
-  secret_key: {SanbaseWeb.Guardian, :get_config, [:secret_key_base]}
-
 config :sanbase, Sanbase.InternalServices.Ethauth,
   url: {:system, "ETHAUTH_URL"},
   basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},
@@ -226,6 +208,7 @@ config :sanbase, Sanbase.Promoters.FirstPromoterApi,
 config :sanbase, Sanbase.WalletHunters.Contract, rinkeby_url: {:system, "RINKEBY_URL"}
 
 # Import configs
+import_config "ueberauth_config.exs"
 import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"
 import_config "scrapers_config.exs"

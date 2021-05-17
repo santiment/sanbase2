@@ -87,6 +87,7 @@ defmodule Sanbase.Mixfile do
       {:floki, "~> 0.20"},
       {:gettext, "~> 0.11"},
       {:guardian, "~> 2.0"},
+      {:guardian_db, "~> 2.0"},
       {:hackney, "~> 1.17", override: true},
       {:hammer, "~> 6.0"},
       {:httpoison, "~> 1.2", override: true},

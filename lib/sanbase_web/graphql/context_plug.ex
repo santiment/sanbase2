@@ -14,10 +14,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   @compile {:inline,
             build_context: 2,
             build_error_msg: 1,
-            bearer_auth_token_authentication: 1,
-            bearer_auth_header_authentication: 1,
-            bearer_authorize: 1,
-            basic_authentication: 1,
+            jwt_access_token_authorization: 1,
+            jwt_auth_header_authorization: 1,
+            bearer_authorize: 2,
+            basic_authorization: 1,
             basic_authorize: 1,
             apikey_authorize: 1,
             get_no_auth_product_id: 1,
@@ -36,10 +36,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   require Logger
 
   @auth_methods [
-    &ContextPlug.bearer_auth_token_authentication/1,
-    &ContextPlug.bearer_auth_header_authentication/1,
-    &ContextPlug.apikey_authentication/1,
-    &ContextPlug.basic_authentication/1
+    &ContextPlug.jwt_access_token_authorization/1,
+    &ContextPlug.jwt_auth_header_authorization/1,
+    &ContextPlug.apikey_authorization/1,
+    &ContextPlug.basic_authorization/1
   ]
 
   @should_halt_methods [
@@ -63,7 +63,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   def call(conn, _) do
     {conn, context} = build_context(conn, @auth_methods)
-
+    conn = maybe_put_new_access_token(conn, context)
     %{origin_host: origin_host, origin_url: origin_url} = get_origin(conn)
 
     context =
@@ -72,10 +72,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       |> Map.put(:origin_url, origin_url)
       |> Map.put(:origin_host, origin_host)
       |> Map.put(:rate_limiting_enabled, Config.get(:rate_limiting_enabled))
+      |> Map.delete(:new_access_token)
+      |> Map.put(:jwt_tokens, conn_to_jwt_tokens(conn))
 
-    conn =
-      conn
-      |> put_private(:absinthe, %{context: context})
+    conn = put_private(conn, :absinthe, %{context: context})
 
     case should_halt?(conn, context, @should_halt_methods) do
       {false, conn} ->
@@ -88,6 +88,25 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         |> put_resp_content_type("application/json", "charset=utf-8")
         |> send_resp(error_code, build_error_msg(error_msg))
         |> halt()
+    end
+  end
+
+  defp conn_to_jwt_tokens(conn) do
+    %{
+      access_token: get_session(conn, :access_token) || get_session(conn, :auth_token),
+      refresh_token: get_session(conn, :refresh_token)
+    }
+  end
+
+  defp maybe_put_new_access_token(conn, context) do
+    case Map.has_key?(context, :new_access_token) do
+      true ->
+        conn
+        |> put_session(:auth_token, context.new_access_token)
+        |> put_session(:access_token, context.new_access_token)
+
+      false ->
+        conn
     end
   end
 
@@ -258,12 +277,14 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  # Authenticate with token in cookie
-  def bearer_auth_token_authentication(%Plug.Conn{
-        private: %{plug_session: %{"auth_token" => token}}
-      }) do
-    case bearer_authorize(token) do
-      {:ok, current_user} ->
+  # TODO: After these changes, the session will now also contain `access_token`
+  # insted of only `auth_token`, which is better named and should be used. This
+  # is a process of authorization, not authentication
+  def jwt_access_token_authorization(%Plug.Conn{} = conn) do
+    access_token = get_session(conn, :access_token) || get_session(conn, :auth_token)
+
+    case access_token && bearer_authorize(conn, access_token) do
+      {:ok, %{current_user: current_user} = map} ->
         subscription =
           Subscription.current_subscription(current_user, @product_id_sanbase) ||
             @free_subscription
@@ -279,17 +300,16 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           },
           product_id: @product_id_sanbase
         }
+        |> Map.merge(Map.take(map, [:new_access_token]))
 
       _ ->
         :try_next
     end
   end
 
-  def bearer_auth_token_authentication(_), do: :try_next
-
-  def bearer_auth_header_authentication(%Plug.Conn{} = conn) do
+  def jwt_auth_header_authorization(%Plug.Conn{} = conn) do
     with {_, ["Bearer " <> token]} <- {:has_header?, get_req_header(conn, "authorization")},
-         {:ok, current_user} <- bearer_authorize(token) do
+         {:ok, %{current_user: current_user} = map} <- bearer_authorize(conn, token) do
       subscription =
         Subscription.current_subscription(current_user, @product_id_sanbase) ||
           @free_subscription
@@ -305,13 +325,14 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         },
         product_id: @product_id_sanbase
       }
+      |> Map.merge(Map.take(map, [:new_access_token]))
     else
       {:has_header?, _} -> :try_next
       error -> error
     end
   end
 
-  def basic_authentication(%Plug.Conn{} = conn) do
+  def basic_authorization(%Plug.Conn{} = conn) do
     case get_req_header(conn, "authorization") do
       ["Basic " <> auth_attempt] ->
         case basic_authorize(auth_attempt) do
@@ -340,7 +361,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  def apikey_authentication(%Plug.Conn{} = conn) do
+  def apikey_authorization(%Plug.Conn{} = conn) do
     with {_, ["Apikey " <> apikey]} <- {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- apikey_authorize(apikey),
          {:ok, {token, _apikey}} <- Sanbase.Accounts.Hmac.split_apikey(apikey) do
@@ -380,19 +401,29 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     Map.put(@anon_user_base_context, :product_id, product_id)
   end
 
-  defp bearer_authorize(token) do
+  defp bearer_authorize(conn, token) do
     case SanbaseWeb.Guardian.resource_from_token(token) do
       {:ok, %User{salt: salt} = user, %{"salt" => salt}} ->
-        {:ok, user}
+        {:ok, %{current_user: user}}
 
       {:error, :token_expired} ->
-        %{permissions: User.Permissions.no_permissions()}
+        bearer_authorize_refresh_token(conn)
 
       {:error, :invalid_token} ->
         %{permissions: User.Permissions.no_permissions()}
 
       _ ->
         {:error, "Invalid JSON Web Token (JWT)"}
+    end
+  end
+
+  defp bearer_authorize_refresh_token(conn) do
+    case try_refresh_token(conn) do
+      {:ok, %{current_user: _, new_access_token: _}} = result ->
+        result
+
+      _ ->
+        %{permissions: User.Permissions.no_permissions()}
     end
   end
 
@@ -412,6 +443,34 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   defp apikey_authorize(apikey) do
     Sanbase.Accounts.Apikey.apikey_to_user(apikey)
+  end
+
+  defp try_refresh_token(conn) do
+    case get_session(conn, :refresh_token) do
+      refresh_token when is_binary(refresh_token) ->
+        exchange_refresh_for_access_token(refresh_token)
+
+      _ ->
+        {:error, :no_refresh_token}
+    end
+  end
+
+  defp exchange_refresh_for_access_token(refresh_token) do
+    opts = [ttl: SanbaseWeb.Guardian.access_token_ttl()]
+
+    case SanbaseWeb.Guardian.exchange(refresh_token, "refresh", "access", opts) do
+      {:ok, _old_stuff, {new_access_token, _claims}} ->
+        case SanbaseWeb.Guardian.resource_from_token(new_access_token) do
+          {:ok, %User{salt: salt} = user, %{"salt" => salt}} ->
+            {:ok, %{current_user: user, new_access_token: new_access_token}}
+
+          _ ->
+            {:error, :invalid_new_access_token}
+        end
+
+      _ ->
+        {:error, :invalid_refresh_token}
+    end
   end
 
   defp san_balance(%User{} = user) do

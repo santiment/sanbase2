@@ -250,6 +250,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
   object :login do
     field(:token, non_null(:string))
+    field(:access_token, non_null(:string))
+    field(:refresh_token, non_null(:string))
     field(:user, non_null(:user))
   end
 

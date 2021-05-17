@@ -6,11 +6,12 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.{
     AccessControlResolver,
-    UserResolver,
     ApikeyResolver,
-    UserSettingsResolver,
+    AuthenticationResolver,
     TelegramResolver,
-    UserFollowerResolver
+    UserFollowerResolver,
+    UserResolver,
+    UserSettingsResolver
   }
 
   alias SanbaseWeb.Graphql.Middlewares.{
@@ -59,12 +60,17 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
   end
 
   object :user_mutations do
+    field :destroy_sessions, :boolean do
+      middleware(JWTAuth)
+      resolve(&AuthenticationResolver.revoke_refresh_token/3)
+    end
+
     field :eth_login, :login do
       arg(:signature, non_null(:string))
       arg(:address, non_null(:string))
       arg(:message_hash, non_null(:string))
 
-      resolve(&UserResolver.eth_login/3)
+      resolve(&AuthenticationResolver.eth_login/3)
       middleware(CreateOrDeleteSession)
     end
 
@@ -78,7 +84,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:consent, :string)
       arg(:subscribe_to_weekly_newsletter, :boolean)
 
-      resolve(&UserResolver.email_login/2)
+      resolve(&AuthenticationResolver.email_login/2)
     end
 
     @desc ~s"""
@@ -88,7 +94,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:email, non_null(:string))
       arg(:token, non_null(:string))
 
-      resolve(&UserResolver.email_login_verify/2)
+      resolve(&AuthenticationResolver.email_login_verify/2)
       middleware(CreateOrDeleteSession)
     end
 

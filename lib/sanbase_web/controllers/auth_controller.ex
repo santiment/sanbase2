@@ -28,10 +28,10 @@ defmodule SanbaseWeb.AccountsController do
     with true <- is_binary(email),
          {:ok, user} <-
            User.find_or_insert_by(:email, email, %{login_origin: :google}),
-         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
+         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user),
          {:ok, _} <- User.mark_as_registered(user, %{login_origin: :google}) do
       conn
-      |> put_session(:auth_token, token)
+      |> put_jwt_tokens_in_session(jwt_tokens_map)
       |> redirect(external: redirect_urls.success)
     else
       _ ->
@@ -47,16 +47,23 @@ defmodule SanbaseWeb.AccountsController do
     email = auth.info.email
 
     with {:ok, user} <- twitter_login(email, twitter_id),
-         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
+         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user),
          {:ok, _} <- User.mark_as_registered(user, %{login_origin: :twitter}) do
       conn
-      |> put_session(:auth_token, token)
+      |> put_jwt_tokens_in_session(jwt_tokens_map)
       |> redirect(external: redirect_urls.success)
     else
       _ ->
         conn
         |> redirect(external: redirect_urls.fail)
     end
+  end
+
+  defp put_jwt_tokens_in_session(conn, jwt_tokens_map) do
+    conn
+    |> put_session(:auth_token, jwt_tokens_map.access_token)
+    |> put_session(:access_token, jwt_tokens_map.access_token)
+    |> put_session(:refresh_token, jwt_tokens_map.refresh_token)
   end
 
   # In case the twitter profile has an email address, try fetching the user with

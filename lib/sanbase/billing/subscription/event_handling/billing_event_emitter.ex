@@ -57,6 +57,22 @@ defmodule Sanbase.Billing.EventEmitter do
     |> notify()
   end
 
+  def handle_event({:ok, stripe_event}, :charge_fail = event_type, %{} = args) do
+    object = stripe_event["data"]["object"]
+
+    %{
+      event_type: event_type,
+      user_id: stripe_event_to_user_id(stripe_event),
+      stripe_event_id: stripe_event["id"],
+      total_amount: object["total"] || object["amount"],
+      total: object["total"],
+      amount: object["amount"],
+      extra_in_memory_data: %{stripe_event: stripe_event}
+    }
+    |> Map.merge(args)
+    |> notify()
+  end
+
   def handle_event({:ok, subscription}, event_type, %{} = args)
       when event_type in [
              :create_subscription,
@@ -83,8 +99,8 @@ defmodule Sanbase.Billing.EventEmitter do
 
   defp stripe_event_to_user_id(stripe_event) do
     with customer_id when not is_nil(customer_id) <- stripe_event["data"]["object"]["customer"],
-         %User{} = user <- User.by_stripe_customer_id(customer_id) do
-      user.id
+         %User{id: user_id} <- User.by_stripe_customer_id(customer_id) do
+      user_id
     else
       _ -> nil
     end

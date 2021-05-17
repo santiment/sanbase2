@@ -37,7 +37,7 @@ defmodule Sanbase.Oauth2.Hydra do
             accept_consent(consent, access_token, user)
 
           {:error, reason} ->
-            Logger.error("Error find_or_create_grafana_user: reason #{inspect(reason)}")
+            Logger.error("Error find_or_create_grafana_user. Reason: #{inspect(reason)}")
 
             reject_consent(
               consent,

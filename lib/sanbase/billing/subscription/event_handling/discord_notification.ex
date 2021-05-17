@@ -20,7 +20,7 @@ defmodule Sanbase.Billing.DiscordNotification do
   end
 
   def handle_event(
-        :payment_fail,
+        :charge_fail,
         %{
           data: %{
             amount: amount,
@@ -40,7 +40,7 @@ defmodule Sanbase.Billing.DiscordNotification do
     Event: https://dashboard.stripe.com/events/#{stripe_event_id}
     """
 
-    do_send_to_discord(message, "Stripe Payment")
+    do_send_to_discord(message, "Stripe Charge")
   end
 
   def handle_event(:cancel_subscription, %{

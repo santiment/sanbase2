@@ -105,6 +105,17 @@ defmodule Sanbase.Accounts.UserTest do
       # Intercom attributes
       {:ok, _} = Sanbase.Intercom.UserAttributes.save(%{user_id: user.id, properties: %{}})
 
+      # User intercom or other events
+      Sanbase.Intercom.UserEvent.create([
+        %{
+          user_id: user.id,
+          event_name: "test",
+          created_at: Timex.now() |> DateTime.truncate(:second),
+          inserted_at: Timex.now() |> DateTime.truncate(:second),
+          updated_at: Timex.now() |> DateTime.truncate(:second)
+        }
+      ])
+
       {:ok, deleted} = Repo.delete(user)
       assert deleted.id == user.id
     end

@@ -27,6 +27,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
     field(:type, :type_filter)
     field(:watchlists, list_of(:integer))
     field(:assets, list_of(:integer))
+    field(:only_not_seen, :boolean)
   end
 
   object :timeline_events_paginated do
@@ -54,5 +55,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
 
   object :upvote do
     field(:user_id, :integer)
+  end
+
+  object :seen_event do
+    field(:event_id, non_null(:id))
+    field(:seen_at, non_null(:datetime))
   end
 end

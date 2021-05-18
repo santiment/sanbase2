@@ -15,11 +15,23 @@ defmodule Sanbase.Timeline.Filter do
 
   def filter_by_query(query, filter_by, user_id) do
     query
+    |> filter_by_not_seen(filter_by, user_id)
     |> filter_by_author_query(filter_by, user_id)
     |> filter_by_watchlists_query(filter_by)
     |> filter_by_assets_query(filter_by, user_id)
     |> filter_by_type_query(filter_by)
   end
+
+  defp filter_by_not_seen(query, %{only_not_seen: true}, user_id) do
+    event_id = Sanbase.Timeline.SeenEvent.last_seen_for_user(user_id)
+    filter_by_last_seen_event(query, %{last_seen_event_id: event_id})
+  end
+
+  defp filter_by_last_seen_event(query, %{last_seen_event_id: last_seen_event_id}) do
+    from(event in query, where: event.id > ^last_seen_event_id)
+  end
+
+  defp filter_by_last_seen_event(query, _), do: query
 
   defp filter_by_type_query(query, %{type: :insight}) do
     from(event in query, join: p in assoc(event, :post), where: not p.is_pulse)

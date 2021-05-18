@@ -59,6 +59,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
     end
   end
 
+  def update_last_seen_event(_root, %{timeline_event_id: timeline_event_id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    Sanbase.Timeline.SeenEvent.fetch_or_create(%{
+      event_id: timeline_event_id,
+      user_id: current_user.id
+    })
+  end
+
   def timeline_event_id(%Sanbase.Comment{id: id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :comment_timeline_event_id, id)

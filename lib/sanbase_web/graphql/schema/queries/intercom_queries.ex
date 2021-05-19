@@ -29,6 +29,8 @@ defmodule SanbaseWeb.Graphql.Schema.IntercomQueries do
     * to: end datetime, default: now
     """
     field :get_attributes_for_users, list_of(:user_attribute) do
+      meta(access: :free)
+
       arg(:users, non_null(list_of(:id)))
       arg(:days, non_null(:integer), default_value: 30)
       arg(:from, :datetime)
@@ -40,6 +42,8 @@ defmodule SanbaseWeb.Graphql.Schema.IntercomQueries do
     end
 
     field :get_events_for_users, list_of(:user_event) do
+      meta(access: :free)
+
       arg(:users, non_null(list_of(:id)))
       arg(:days, non_null(:integer), default_value: 30)
       arg(:from, :datetime)

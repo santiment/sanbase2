@@ -10,6 +10,8 @@ defmodule SanbaseWeb.Graphql.Schema.CommentQueries do
 
   object :comment_queries do
     field :comments_feed, list_of(:comments_feed_item) do
+      meta(access: :free)
+
       arg(:cursor, :cursor_input, default_value: nil)
       arg(:limit, :integer, default_value: 50)
 
@@ -17,6 +19,8 @@ defmodule SanbaseWeb.Graphql.Schema.CommentQueries do
     end
 
     field :comments, list_of(:comment) do
+      meta(access: :free)
+
       arg(:entity_type, :comment_entity_type_enum, default_value: :insight)
 
       arg(:id, :id)
@@ -27,6 +31,8 @@ defmodule SanbaseWeb.Graphql.Schema.CommentQueries do
     end
 
     field :subcomments, list_of(:comment) do
+      meta(access: :free)
+
       arg(:comment_id, non_null(:id))
       arg(:limit, :integer, default_value: 100)
 

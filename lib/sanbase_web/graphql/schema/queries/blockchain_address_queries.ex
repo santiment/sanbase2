@@ -8,6 +8,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
 
   object :blockchain_address_queries do
     field :blockchain_address_labels, list_of(:string) do
+      meta(access: :free)
+
       arg(:blockchain, :string)
 
       cache_resolve(&BlockchainAddressResolver.list_all_labels/3)

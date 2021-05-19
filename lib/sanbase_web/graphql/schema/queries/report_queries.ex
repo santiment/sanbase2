@@ -8,6 +8,8 @@ defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
     List all reports.
     """
     field :get_reports, list_of(:report) do
+      meta(access: :free)
+
       resolve(&ReportResolver.get_reports/3)
     end
 
@@ -15,6 +17,8 @@ defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
     Get all reports by asset tags.
     """
     field :get_reports_by_tags, list_of(:report) do
+      meta(access: :free)
+
       arg(:tags, non_null(list_of(:string)))
 
       resolve(&ReportResolver.get_reports_by_tags/3)

@@ -117,6 +117,10 @@ defmodule Sanbase.Billing.GraphqlSchema do
     end)
   end
 
+  def get_queries_without_access_level() do
+    get_queries_with_access_level(nil) -- [:__typename, :__type, :__schema]
+  end
+
   def get_queries_with_access_level(level) do
     get_field_value_matches([:access], [level])
   end

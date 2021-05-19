@@ -11,7 +11,7 @@ defmodule Sanbase.Signal.FileHandler do
     # The selected field is required by default
     # A missing required field will result in a compile time error
     def name_to_field_map(map, field, opts \\ []) do
-      Sanbase.Break.if_kw_invalid?(opts, valid_keys: [:transform_fn, :required?])
+      Break.if_kw_invalid?(opts, valid_keys: [:transform_fn, :required?])
 
       transform_fn = Keyword.get(opts, :transform_fn, &Function.identity/1)
       required? = Keyword.get(opts, :required?, true)

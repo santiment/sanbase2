@@ -1,22 +1,40 @@
-defmodule SanbaseWeb.Graphql.Resolvers.AuthenticationResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts.{User, EthAccount}
   alias Sanbase.Billing
 
   require Logger
 
-  def revoke_refresh_token(_root, _args, %{context: %{auth: %{current_user: current_user}}}) do
+  def get_active_sessions(_root, _args, %{context: %{auth: %{current_user: user}} = context}) do
+    refresh_token = context[:jwt_tokens][:refresh_token]
+
+    SanbaseWeb.Guardian.Token.refresh_tokens(user.id, refresh_token)
+  end
+
+  def revoke_refresh_token(_root, _args, %{context: %{jwt_tokens: jwt_tokens}}) do
+    case Map.get(jwt_tokens, :refresh_token) do
+      nil ->
+        {:ok, true}
+
+      refresh_token ->
+        {:ok, _} = SanbaseWeb.Guardian.revoke(refresh_token)
+        {:ok, true}
+    end
   end
 
   def eth_login(
         _root,
         %{signature: signature, address: address, message_hash: message_hash} = args,
-        _resolution
+        %{context: %{device_data: device_data}}
       ) do
     with true <- address_message_hash(address) == message_hash,
          true <- Ethauth.verify_signature(signature, address, message_hash),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
-         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user),
+         {:ok, %{} = jwt_tokens_map} <-
+           SanbaseWeb.Guardian.get_jwt_tokens(user,
+             platform: device_data.platform,
+             client: device_data.client
+           ),
          _ <- Billing.maybe_create_liquidity_or_trial_subscription(user.id),
          {:ok, user} <- User.mark_as_registered(user, %{login_origin: :eth_login}) do
       {:ok,
@@ -49,10 +67,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthenticationResolver do
     end
   end
 
-  def email_login_verify(%{token: token, email: email}, _resolution) do
+  def email_login_verify(%{token: token, email: email}, %{context: %{device_data: device_data}}) do
     with {:ok, user} <- User.find_or_insert_by(:email, email),
          true <- User.email_token_valid?(user, token),
-         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user),
+         {:ok, %{} = jwt_tokens_map} <-
+           SanbaseWeb.Guardian.get_jwt_tokens(user,
+             platform: device_data.platform,
+             client: device_data.client
+           ),
          {:ok, user} <- User.mark_email_token_as_validated(user),
          _ <- Billing.maybe_create_liquidity_or_trial_subscription(user.id),
          {:ok, user} <- User.mark_as_registered(user, %{login_origin: :email}) do

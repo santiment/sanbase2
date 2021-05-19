@@ -32,6 +32,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.CustomTypes.IntervalOrNow)
   import_types(Graphql.CustomTypes.JSON)
   # End of custom types
+  import_types(Graphql.AuthTypes)
   import_types(Graphql.AggregationTypes)
   import_types(Graphql.AlertsHistoricalActivityTypes)
   import_types(Graphql.BillingTypes)
@@ -73,11 +74,11 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.SheetsTemplateTypes)
 
   # Queries and mutations
-  import_types(Graphql.Schema.SignalQueries)
+  import_types(Graphql.Schema.AuthQueries)
   import_types(Graphql.Schema.BillingQueries)
-  import_types(Graphql.Schema.BlockchainQueries)
   import_types(Graphql.Schema.BlockchainAddressQueries)
   import_types(Graphql.Schema.BlockchainMetricQueries)
+  import_types(Graphql.Schema.BlockchainQueries)
   import_types(Graphql.Schema.ChartConfigurationQueries)
   import_types(Graphql.Schema.CommentQueries)
   import_types(Graphql.Schema.EmailQueries)
@@ -94,17 +95,18 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.PromoterQueries)
   import_types(Graphql.Schema.ReportQueries)
   import_types(Graphql.Schema.ResearchQueries)
+  import_types(Graphql.Schema.SheetsTemplateQueries)
   import_types(Graphql.Schema.ShortUrlQueries)
+  import_types(Graphql.Schema.SignalQueries)
   import_types(Graphql.Schema.SocialDataQueries)
   import_types(Graphql.Schema.TableConfigurationQueries)
   import_types(Graphql.Schema.TechIndicatorsQueries)
   import_types(Graphql.Schema.TimelineQueries)
+  import_types(Graphql.Schema.UserListQueries)
   import_types(Graphql.Schema.UserQueries)
   import_types(Graphql.Schema.UserTriggerQueries)
-  import_types(Graphql.Schema.UserListQueries)
-  import_types(Graphql.Schema.WidgetQueries)
   import_types(Graphql.Schema.WalletHunterQueries)
-  import_types(Graphql.Schema.SheetsTemplateQueries)
+  import_types(Graphql.Schema.WidgetQueries)
 
   def dataloader() do
     Dataloader.new(timeout: :timer.seconds(20), get_policy: :return_nil_on_error)
@@ -142,6 +144,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   query do
     import_fields(:alert_queries)
+    import_fields(:auth_queries)
     import_fields(:billing_queries)
     import_fields(:blockchain_address_queries)
     import_fields(:blockchain_metric_queries)
@@ -177,6 +180,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   mutation do
     import_fields(:alert_mutations)
+    import_fields(:auth_mutations)
     import_fields(:billing_mutations)
     import_fields(:blockchain_address_mutations)
     import_fields(:comment_mutations)

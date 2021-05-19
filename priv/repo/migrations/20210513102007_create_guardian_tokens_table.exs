@@ -12,6 +12,7 @@ defmodule Sanbase.Repo.Migrations.CreateGuardianTokensTable do
       add(:jwt, :text)
       add(:claims, :map)
 
+      add(:last_exchanged_at, :utc_datetime)
       timestamps()
     end
   end

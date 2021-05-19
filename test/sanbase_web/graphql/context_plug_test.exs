@@ -35,28 +35,6 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     assert conn_context.remote_ip == {127, 0, 0, 1}
   end
 
-  test "verifying the user's salt when loading", %{conn: conn} do
-    user =
-      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
-      |> Repo.insert!()
-
-    conn =
-      conn
-      |> get("/get_routed_conn")
-      |> setup_jwt_auth(user)
-
-    user
-    |> Ecto.Changeset.change(salt: User.generate_salt())
-    |> Repo.update!()
-
-    conn = ContextPlug.call(conn, %{})
-
-    {:ok, result} = conn.resp_body |> Jason.decode()
-
-    assert conn.status == 400
-    assert result["errors"]["details"] == "Bad authorization header: Invalid JSON Web Token (JWT)"
-  end
-
   test "invalid token returns error" do
     conn =
       build_conn()

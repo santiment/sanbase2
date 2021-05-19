@@ -29,20 +29,42 @@ defmodule SanbaseWeb.Guardian do
 
   alias Sanbase.Accounts.User
 
-  @access_token_ttl {10, :seconds}
+  @access_token_ttl {5, :minutes}
   @refresh_token_ttl {4, :weeks}
 
   def access_token_ttl(), do: @access_token_ttl
 
-  def get_jwt_tokens(%User{} = user) do
+  def get_jwt_tokens(%User{} = user, opts \\ []) do
+    platform = Keyword.get(opts, :platform, :unknown)
+    client = Keyword.get(opts, :client, :unknown)
+
     with {:ok, access_token, _claims} <-
-           SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}, ttl: @access_token_ttl),
+           SanbaseWeb.Guardian.encode_and_sign(
+             user,
+             %{client: client, platform: platform},
+             ttl: @access_token_ttl
+           ),
          {:ok, refresh_token, _claims} <-
-           SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt},
+           SanbaseWeb.Guardian.encode_and_sign(
+             user,
+             %{client: client, platform: platform},
              token_type: "refresh",
              ttl: @refresh_token_ttl
            ) do
       {:ok, %{access_token: access_token, refresh_token: refresh_token}}
+    end
+  end
+
+  def device_data(conn) do
+    case List.first(Plug.Conn.get_req_header(conn, "user-agent")) do
+      nil ->
+        %{platform: :unknown, client: :unknown}
+
+      ua ->
+        %{
+          platform: Browser.full_platform_name(ua),
+          client: Browser.full_browser_name(ua)
+        }
     end
   end
 
@@ -84,6 +106,17 @@ defmodule SanbaseWeb.Guardian do
   #### tokens are stateless, so no further actions are needed (or could) to
   #### be performed
   ##############################################################################
+
+  @doc ~s"""
+  After a refresh token is created and signed, it is stored in the database.
+
+  This is done only for the refresh token while the access token continues to be
+  stateless and can be validated without DB calls. The refresh token is only
+  accessed when it is exchanged for a new access token, which cannot happen more
+  than once per 5 minutes.
+
+  The operation is no-op for access tokens.
+  """
   @impl Guardian
   def after_encode_and_sign(resource, %{"typ" => "refresh"} = claims, token, _options) do
     with {:ok, _} <- Guardian.DB.after_encode_and_sign(resource, claims["typ"], claims, token) do
@@ -93,6 +126,15 @@ defmodule SanbaseWeb.Guardian do
 
   def after_encode_and_sign(_resource, _claims, token, _options), do: {:ok, token}
 
+  @doc ~s"""
+  Verify that a refresh token is present in the database.
+
+  A refresh token is valid if its signature is verified and it is present in the
+  database. When a refresh token is revoked it is removed from the database so
+  it is immediately invalidated and woudl fail this step.
+
+  The operation is no-op for access tokens.
+  """
   @impl Guardian
   def on_verify(%{"typ" => "refresh"} = claims, token, _options) do
     with {:ok, _} <- Guardian.DB.on_verify(claims, token) do
@@ -102,6 +144,14 @@ defmodule SanbaseWeb.Guardian do
 
   def on_verify(claims, _token, _options), do: {:ok, claims}
 
+  @doc ~s"""
+  Revoke a refresh token by removing it from the database.
+
+  When a refresh token is removed from the database it can no longer be verified
+  so it is immediately invalidated.
+
+  The operation is no-op for access tokens.
+  """
   @impl Guardian
   def on_revoke(%{"typ" => "refresh"} = claims, token, _options) do
     with {:ok, _} <- Guardian.DB.on_revoke(claims, token) do
@@ -110,4 +160,23 @@ defmodule SanbaseWeb.Guardian do
   end
 
   def on_revoke(claims, _token, _options), do: {:ok, claims}
+
+  @doc ~s"""
+  When a refresh token is exchanged for an access token update the proper field
+  in the database so it can be track how active it is.
+
+  The operation is no-op for access tokens.
+  """
+  @impl Guardian
+  def on_exchange(
+        {_, %{"typ" => "refresh"} = claims} = refresh_token_tuple,
+        {_, _} = new_access_token,
+        _options
+      ) do
+    {:ok, true} = __MODULE__.Token.refresh_last_exchanged_at(claims)
+
+    {:ok, refresh_token_tuple, new_access_token}
+  end
+
+  def on_exchange(old_stuff, new_stuff, _options), do: {:ok, old_stuff, new_stuff}
 end

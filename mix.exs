@@ -52,6 +52,7 @@ defmodule Sanbase.Mixfile do
       {:absinthe_plug, "~> 1.5"},
       {:absinthe, "~> 1.5"},
       {:async_with, github: "fertapric/async_with"},
+      {:browser, "~> 0.4.4"},
       {:cidr, "~> 1.1"},
       {:clickhouse_ecto, github: "santiment/clickhouse_ecto", branch: "migrate-ecto-3"},
       {:waffle, "~> 1.1"},

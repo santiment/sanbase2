@@ -748,6 +748,7 @@ CREATE TABLE public.guardian_tokens (
     exp bigint,
     jwt text,
     claims jsonb,
+    last_exchanged_at timestamp(0) without time zone,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );

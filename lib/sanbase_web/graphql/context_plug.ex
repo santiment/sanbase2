@@ -72,8 +72,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       |> Map.put(:origin_url, origin_url)
       |> Map.put(:origin_host, origin_host)
       |> Map.put(:rate_limiting_enabled, Config.get(:rate_limiting_enabled))
-      |> Map.delete(:new_access_token)
+      |> Map.put(:device_data, SanbaseWeb.Guardian.device_data(conn))
       |> Map.put(:jwt_tokens, conn_to_jwt_tokens(conn))
+      |> Map.delete(:new_access_token)
 
     conn = put_private(conn, :absinthe, %{context: context})
 
@@ -119,7 +120,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  def halt_sansheets_request?(conn, %{auth: %{subscription: %{plan: %{name: plan_name}}}}) do
+  def halt_sansheets_request?(conn, %{
+        auth: %{subscription: %{plan: %{name: plan_name}}}
+      }) do
     case is_sansheets_request(conn) and plan_name == "FREE" do
       true ->
         error_map = %{
@@ -146,7 +149,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       }) do
     case ApiCallLimit.get_quota(:user, user, auth_method) do
       {:error, %{blocked_for_seconds: _} = rate_limit_map} ->
-        conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(rate_limit_map))
+        conn =
+          Sanbase.Utils.Conn.put_extra_resp_headers(
+            conn,
+            rate_limit_headers(rate_limit_map)
+          )
 
         {true, conn, rate_limit_map_to_error_map(rate_limit_map)}
 
@@ -154,7 +161,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         {false, conn}
 
       {:ok, %{quota: _} = quota_map} ->
-        conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(quota_map))
+        conn =
+          Sanbase.Utils.Conn.put_extra_resp_headers(
+            conn,
+            rate_limit_headers(quota_map)
+          )
 
         {false, conn}
     end
@@ -173,7 +184,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
     case ApiCallLimit.get_quota(:remote_ip, remote_ip, auth_method) do
       {:error, %{blocked_for_seconds: _} = rate_limit_map} ->
-        conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(rate_limit_map))
+        conn =
+          Sanbase.Utils.Conn.put_extra_resp_headers(
+            conn,
+            rate_limit_headers(rate_limit_map)
+          )
 
         {true, conn, rate_limit_map_to_error_map(rate_limit_map)}
 
@@ -181,7 +196,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         {false, conn}
 
       {:ok, %{quota: _} = quota_map} ->
-        conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(quota_map))
+        conn =
+          Sanbase.Utils.Conn.put_extra_resp_headers(
+            conn,
+            rate_limit_headers(quota_map)
+          )
 
         {false, conn}
     end
@@ -308,8 +327,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   def jwt_auth_header_authorization(%Plug.Conn{} = conn) do
-    with {_, ["Bearer " <> token]} <- {:has_header?, get_req_header(conn, "authorization")},
-         {:ok, %{current_user: current_user} = map} <- bearer_authorize(conn, token) do
+    with {_, ["Bearer " <> token]} <-
+           {:has_header?, get_req_header(conn, "authorization")},
+         {:ok, %{current_user: current_user} = map} <-
+           bearer_authorize(conn, token) do
       subscription =
         Subscription.current_subscription(current_user, @product_id_sanbase) ||
           @free_subscription
@@ -362,7 +383,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   def apikey_authorization(%Plug.Conn{} = conn) do
-    with {_, ["Apikey " <> apikey]} <- {:has_header?, get_req_header(conn, "authorization")},
+    with {_, ["Apikey " <> apikey]} <-
+           {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- apikey_authorize(apikey),
          {:ok, {token, _apikey}} <- Sanbase.Accounts.Hmac.split_apikey(apikey) do
       product_id =
@@ -403,7 +425,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   defp bearer_authorize(conn, token) do
     case SanbaseWeb.Guardian.resource_from_token(token) do
-      {:ok, %User{salt: salt} = user, %{"salt" => salt}} ->
+      {:ok, %User{} = user, _} ->
         {:ok, %{current_user: user}}
 
       {:error, :token_expired} ->
@@ -461,7 +483,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     case SanbaseWeb.Guardian.exchange(refresh_token, "refresh", "access", opts) do
       {:ok, _old_stuff, {new_access_token, _claims}} ->
         case SanbaseWeb.Guardian.resource_from_token(new_access_token) do
-          {:ok, %User{salt: salt} = user, %{"salt" => salt}} ->
+          {:ok, %User{} = user, _} ->
             {:ok, %{current_user: user, new_access_token: new_access_token}}
 
           _ ->

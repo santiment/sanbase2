@@ -22,13 +22,17 @@ defmodule SanbaseWeb.AccountsController do
 
   def callback(%{assigns: %{ueberauth_auth: %{provider: :google} = auth}} = conn, params) do
     redirect_urls = get_redirect_urls(params)
-
+    device_data = SanbaseWeb.Guardian.device_data(conn)
     email = auth.info.email
 
     with true <- is_binary(email),
          {:ok, user} <-
            User.find_or_insert_by(:email, email, %{login_origin: :google}),
-         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user),
+         {:ok, %{} = jwt_tokens_map} <-
+           SanbaseWeb.Guardian.get_jwt_tokens(user,
+             platform: device_data.platform,
+             client: device_data.client
+           ),
          {:ok, _} <- User.mark_as_registered(user, %{login_origin: :google}) do
       conn
       |> put_jwt_tokens_in_session(jwt_tokens_map)
@@ -42,12 +46,17 @@ defmodule SanbaseWeb.AccountsController do
 
   def callback(%{assigns: %{ueberauth_auth: %{provider: :twitter} = auth}} = conn, params) do
     redirect_urls = get_redirect_urls(params)
+    device_data = SanbaseWeb.Guardian.device_data(conn)
 
     twitter_id = auth.uid
     email = auth.info.email
 
     with {:ok, user} <- twitter_login(email, twitter_id),
-         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user),
+         {:ok, %{} = jwt_tokens_map} <-
+           SanbaseWeb.Guardian.get_jwt_tokens(user,
+             platform: device_data.platform,
+             client: device_data.client
+           ),
          {:ok, _} <- User.mark_as_registered(user, %{login_origin: :twitter}) do
       conn
       |> put_jwt_tokens_in_session(jwt_tokens_map)

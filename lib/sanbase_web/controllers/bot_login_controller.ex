@@ -16,7 +16,7 @@ defmodule SanbaseWeb.BotLoginController do
   end
 
   defp send_response(user, conn) do
-    {:ok, token, _claims} = SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt})
+    {:ok, token, _claims} = SanbaseWeb.Guardian.encode_and_sign(user, %{})
 
     conn
     |> Plug.Conn.put_session(:auth_token, token)

@@ -248,22 +248,6 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:username, :string)
   end
 
-  object :login do
-    field(:token, non_null(:string))
-    field(:access_token, non_null(:string))
-    field(:refresh_token, non_null(:string))
-    field(:user, non_null(:user))
-  end
-
-  object :logout do
-    field(:success, non_null(:boolean))
-  end
-
-  object :email_login_request do
-    field(:success, non_null(:boolean))
-    field(:first_login, :boolean, default_value: false)
-  end
-
   object :access_level do
     field(:api, non_null(:boolean))
     field(:sanbase, non_null(:boolean))

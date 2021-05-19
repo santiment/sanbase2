@@ -86,7 +86,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   end
 
   def setup_jwt_auth(conn, user) do
-    {:ok, token, _claims} = SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt})
+    {:ok, token, _claims} = SanbaseWeb.Guardian.encode_and_sign(user, %{})
 
     conn
     |> put_req_header("authorization", "Bearer " <> token)

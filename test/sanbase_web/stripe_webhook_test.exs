@@ -66,6 +66,10 @@ defmodule SanbaseWeb.StripeWebhookTest do
         assert_receive({^ref, msg}, 1000)
 
         assert msg =~ "⛔ Failed card charge for $529"
+
+        assert msg =~
+                 "Details: Your card was declined. The bank did not return any further details with this decline."
+
         assert msg =~ "Event: https://dashboard.stripe.com/events/evt_1Eud0qCA0hGU8IEVdOgcTrft"
       end)
     end

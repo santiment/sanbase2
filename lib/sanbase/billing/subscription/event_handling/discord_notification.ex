@@ -30,13 +30,13 @@ defmodule Sanbase.Billing.DiscordNotification do
         }
       )
       when amount > 1 do
-    seller_message = stripe_event["data"]["outcome"]["seller_message"]
-    failure_message = stripe_event["data"]["failure_message"]
+    seller_message = stripe_event["data"]["object"]["outcome"]["seller_message"]
+    failure_message = stripe_event["data"]["object"]["failure_message"]
     formatted_amount = format_cents_amount(amount)
 
     message = """
     ⛔ Failed card charge for #{formatted_amount}.
-    Details: #{failure_message}. #{seller_message}
+    Details: #{failure_message} #{seller_message}
     Event: https://dashboard.stripe.com/events/#{stripe_event_id}
     """
 

@@ -17,7 +17,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
 
         %{"name" => name} ->
           if required? do
-            Break.break("The field \"#{field}\" in the #{Jason.encode!(name)} metric is required")
+            # TODO: This logic is the same as it is in the signal file handler,
+            # with the exeption of the words in the error.
+            # It should be extracted to avoid code duplication.
+            Break.break("The field \"#{field}\" in the #{name} metric is required")
           else
             {name, nil}
           end

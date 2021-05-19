@@ -81,7 +81,7 @@ defmodule Sanbase.Mixfile do
       {:ex_aws, "~> 2.0"},
       {:ex_machina, "~> 2.2", only: [:dev, :test]},
       {:ex_unit_notifier, "~> 1.0", only: :test},
-      {:excoveralls, "~> 0.8", optional: true, only: [:dev, :test]},
+      {:excoveralls, "~> 0.8", optional: true, only: [:test]},
       {:exprof, "~> 0.2.0"},
       {:extwitter, "~> 0.11"},
       {:faker, "~> 0.12", only: [:dev, :test]},

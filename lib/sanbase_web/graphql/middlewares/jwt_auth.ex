@@ -46,9 +46,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.JWTAuth do
             }
           }
         } = resolution,
-        config
+        opts
       ) do
-    Helpers.handle_user_access(current_user, san_balance, config, resolution)
+    Helpers.handle_user_access(current_user, san_balance, opts, resolution)
   end
 
   def call(resolution, _) do

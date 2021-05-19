@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     SanbaseWeb.Guardian.Token.refresh_tokens(user.id, refresh_token)
   end
 
-  def revoke_refresh_token(_root, _args, %{context: %{jwt_tokens: jwt_tokens}}) do
+  def revoke_current_refresh_token(_root, _args, %{context: %{jwt_tokens: jwt_tokens}}) do
     case Map.get(jwt_tokens, :refresh_token) do
       nil ->
         {:ok, true}
@@ -19,6 +19,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
       refresh_token ->
         {:ok, _} = SanbaseWeb.Guardian.revoke(refresh_token)
         {:ok, true}
+    end
+  end
+
+  def revoke_refresh_token(
+        _root,
+        %{refresh_token_jti: jti},
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    case SanbaseWeb.Guardian.Token.revoke(jti, user.id) do
+      :ok -> {:ok, true}
+      _ -> {:ok, false}
+    end
+  end
+
+  def revoke_all_refresh_tokens(_root, _args, %{context: %{auth: %{current_user: user}}}) do
+    case SanbaseWeb.Guardian.Token.revoke_all_with_user_id(user.id) do
+      :ok -> {:ok, true}
+      _ -> {:error, false}
     end
   end
 

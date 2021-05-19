@@ -27,9 +27,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.Helpers do
     end
   end
 
-  def handle_user_access(current_user, san_tokens, config, resolution) do
-    required_san_tokens = Keyword.get(config, :san_tokens, 0) |> Sanbase.Math.to_float()
-    allow_access = Keyword.get(config, :allow_access, false)
+  def handle_user_access(current_user, san_tokens, opts, resolution) do
+    required_san_tokens = Keyword.get(opts, :san_tokens, 0) |> Sanbase.Math.to_float()
+    allow_access = Keyword.get(opts, :allow_access, false)
 
     with true <- Helpers.allow_access?(current_user, allow_access),
          true <- Helpers.has_enough_san_tokens?(san_tokens, required_san_tokens) do

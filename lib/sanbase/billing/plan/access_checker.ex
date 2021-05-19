@@ -55,8 +55,6 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @free_query_or_argument_mapset MapSet.new(@free_query_or_argument)
   def free_query_or_argument_mapset(), do: @free_query_or_argument_mapset
 
-  @free_metrics @free_query_or_argument |> Enum.reject(&match?({:signal, _}, &1))
-
   @restricted_metrics GraphqlSchema.get_all_with_access_level(:restricted)
   @restricted_metrics_mapset MapSet.new(@restricted_metrics)
   def restricted_metrics_mapset(), do: @restricted_metrics_mapset
@@ -128,7 +126,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
         when plan: atom(), product: binary(), restriction_type: atom()
   def get_available_metrics_for_plan(product, plan, restriction_type \\ :all) do
     case restriction_type do
-      :free -> @free_metrics
+      :free -> @free_query_or_argument
       :restricted -> @restricted_metrics
       :custom -> @custom_access_queries
       :all -> @all_metrics

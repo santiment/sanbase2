@@ -7,6 +7,8 @@ defmodule SanbaseWeb.Graphql.Schema.SheetsTemplateQueries do
     List all sheets templates.
     """
     field :get_sheets_templates, list_of(:sheets_template) do
+      meta(access: :free)
+
       resolve(&SheetsTemplateResolver.get_sheets_templates/3)
     end
   end

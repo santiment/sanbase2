@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.TestHelpers do
   import Plug.Conn
   import Phoenix.ConnTest
+
+  alias Sanbase.{Metric, Signal}
   alias Sanbase.Billing.Plan.AccessChecker
 
   # The default endpoint for testing
@@ -16,29 +18,49 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   end
 
   def all_v2_restricted_metrics_for_plan(product, plan_name) do
-    (Sanbase.Metric.restricted_metrics() -- @custom_access_metrics)
+    (Metric.restricted_metrics() -- @custom_access_metrics)
     |> Enum.filter(&AccessChecker.plan_has_access?(plan_name, product, {:metric, &1}))
   end
 
-  def v2_free_timeseries_metric(position, product) do
-    free_access_metrics = Sanbase.Metric.free_metrics()
-    timeseries_metrics = Sanbase.Metric.available_timeseries_metrics()
+  def restricted_signal_for_plan(position, product, plan_name) do
+    Signal.restricted_signals()
+    |> Enum.filter(&AccessChecker.plan_has_access?(plan_name, product, {:signal, &1}))
+    |> Stream.cycle()
+    |> Enum.at(position)
+  end
 
-    free_metrics_per_plan =
-      Sanbase.Metric.min_plan_map()
-      |> Enum.filter(fn
-        {_, :free} -> true
-        %{^product => :free} -> true
-        _ -> false
-      end)
-      |> Enum.map(fn {metric, _} -> metric end)
-
-    MapSet.new(free_metrics_per_plan)
-    |> MapSet.intersection(MapSet.new(free_access_metrics))
-    |> MapSet.intersection(MapSet.new(timeseries_metrics))
+  def get_free_timeseries_element(position, product, argument)
+      when argument in [:metric, :signal] do
+    free_timeseries_elements(product, argument)
     |> Enum.to_list()
     |> Stream.cycle()
     |> Enum.at(position)
+  end
+
+  defp free_timeseries_elements(product, :metric) do
+    Metric.min_plan_map()
+    |> Enum.filter(fn
+      {_, :free} -> true
+      {_, %{^product => :free}} -> true
+      _ -> false
+    end)
+    |> Enum.map(fn {metric, _} -> metric end)
+    |> MapSet.new()
+    |> MapSet.intersection(MapSet.new(Metric.free_metrics()))
+    |> MapSet.intersection(MapSet.new(Metric.available_timeseries_metrics()))
+  end
+
+  defp free_timeseries_elements(product, :signal) do
+    Signal.min_plan_map()
+    |> Enum.filter(fn
+      {_, :free} -> true
+      {_, %{^product => :free}} -> true
+      _ -> false
+    end)
+    |> Enum.map(fn {signal, _} -> signal end)
+    |> MapSet.new()
+    |> MapSet.intersection(MapSet.new(Signal.free_signals()))
+    |> MapSet.intersection(MapSet.new(Signal.available_timeseries_signals()))
   end
 
   def from_to(from_days_shift, to_days_shift) do

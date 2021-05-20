@@ -6,17 +6,28 @@ defmodule Sanbase.Signal.FileHandler do
 
     alias Sanbase.TemplateEngine
 
-    def name_to_field_map(map, field, transform_fn \\ fn x -> x end) do
+    require Sanbase.Break, as: Break
+
+    # The selected field is required by default
+    # A missing required field will result in a compile time error
+    def name_to_field_map(map, field, opts \\ []) do
+      Break.if_kw_invalid?(opts, valid_keys: [:transform_fn, :required?])
+
+      transform_fn = Keyword.get(opts, :transform_fn, &Function.identity/1)
+      required? = Keyword.get(opts, :required?, true)
+
       map
-      |> Enum.map(fn
+      |> Enum.into(%{}, fn
         %{"name" => name, ^field => value} ->
           {name, transform_fn.(value)}
 
-        _ ->
-          nil
+        %{"name" => name} ->
+          if required? do
+            Break.break("The field \"#{field}\" in the #{Jason.encode!(name)} signal is required")
+          else
+            {name, nil}
+          end
       end)
-      |> Enum.reject(&is_nil/1)
-      |> Map.new()
     end
 
     def fields_to_name_map(map, fields) do
@@ -84,22 +95,38 @@ defmodule Sanbase.Signal.FileHandler do
   @signals_json Helper.expand_timebound_signals(@signals_json_pre_timebound_expand)
 
   @aggregations [:none] ++ Sanbase.Metric.SqlQuery.Helper.aggregations()
-  @signal_map Helper.name_to_field_map(@signals_json, "signal")
+  @signal_map Helper.name_to_field_map(@signals_json, "signal", required?: true)
   @name_to_signal_map @signal_map
   @signal_to_name_map Map.new(@name_to_signal_map, fn {k, v} -> {v, k} end)
-  @access_map Helper.name_to_field_map(@signals_json, "access", &String.to_atom/1)
-  @table_map Helper.name_to_field_map(@signals_json, "table")
-  @aggregation_map Helper.name_to_field_map(@signals_json, "aggregation", &String.to_atom/1)
-  @min_interval_map Helper.name_to_field_map(@signals_json, "min_interval")
+  @access_map Helper.name_to_field_map(@signals_json, "access", transform_fn: &String.to_atom/1)
+  @table_map Helper.name_to_field_map(@signals_json, "table", required?: true)
+  @aggregation_map Helper.name_to_field_map(@signals_json, "aggregation",
+                     transform_fn: &String.to_atom/1
+                   )
+  @min_interval_map Helper.name_to_field_map(@signals_json, "min_interval", required?: true)
   @human_readable_name_map Helper.name_to_field_map(@signals_json, "human_readable_name")
-  @data_type_map Helper.name_to_field_map(@signals_json, "data_type", &String.to_atom/1)
+  @data_type_map Helper.name_to_field_map(@signals_json, "data_type",
+                   transform_fn: &String.to_atom/1
+                 )
 
   @signals_list @signals_json |> Enum.map(fn %{"name" => name} -> name end)
   @signals_mapset MapSet.new(@signals_list)
+  @min_plan_map Helper.name_to_field_map(@signals_json, "min_plan",
+                  transform_fn: fn plan_map ->
+                    Enum.into(plan_map, %{}, fn {k, v} -> {k, String.to_atom(v)} end)
+                  end
+                )
 
-  @selectors_map Helper.name_to_field_map(@signals_json, "selectors", fn list ->
-                   Enum.map(list, &String.to_atom/1)
-                 end)
+  @signals_data_type_map Helper.name_to_field_map(@signals_json, "data_type",
+                           transform_fn: &String.to_atom/1
+                         )
+
+  @selectors_map Helper.name_to_field_map(@signals_json, "selectors",
+                   transform_fn: fn list ->
+                     Enum.map(list, &String.to_atom/1)
+                   end
+                 )
+
   Enum.group_by(
     @signals_json_pre_timebound_expand,
     fn signal -> {signal["signal"], signal["data_type"]} end
@@ -107,8 +134,6 @@ defmodule Sanbase.Signal.FileHandler do
   |> Map.values()
   |> Enum.filter(fn group -> Enum.count(group) > 1 end)
   |> Enum.each(fn duplicate_signals ->
-    require Sanbase.Break, as: Break
-
     Break.break("""
       Duplicate signals found: #{inspect(duplicate_signals)}
     """)
@@ -123,6 +148,7 @@ defmodule Sanbase.Signal.FileHandler do
   def human_readable_name_map(), do: @human_readable_name_map
   def table_map(), do: @table_map
   def data_type_map(), do: @data_type_map
+  def min_plan_map(), do: @min_plan_map
   def selectors_map(), do: @selectors_map
   def name_to_signal_map(), do: @name_to_signal_map
   def signal_to_name_map(), do: @signal_to_name_map
@@ -130,6 +156,12 @@ defmodule Sanbase.Signal.FileHandler do
   def signals_with_access(level) when level in [:free, :restricted] do
     @access_map
     |> Enum.filter(fn {_signal, access_level} -> access_level == level end)
+    |> Enum.map(&elem(&1, 0))
+  end
+
+  def signals_with_data_type(type) do
+    @signals_data_type_map
+    |> Enum.filter(fn {_signal, data_type} -> data_type == type end)
     |> Enum.map(&elem(&1, 0))
   end
 end

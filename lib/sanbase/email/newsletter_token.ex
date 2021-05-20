@@ -53,7 +53,9 @@ defmodule Sanbase.Email.NewsletterToken do
 
   def send_email(%__MODULE__{email: email, token: token}) do
     link = verify_url(token, email, "weekly_digest")
-    Sanbase.MandrillApi.send("verify_email_weekly_digest", email, %{VERIFY_LINK: link})
+
+    Sanbase.Email.Template.verification_email_template()
+    |> Sanbase.MandrillApi.send(email, %{VERIFY_LINK: link})
   end
 
   def subscribe_to_newsletter(email) do

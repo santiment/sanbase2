@@ -2,24 +2,24 @@ defmodule Sanbase.Email.Template do
   @sanbase_login_templates %{login: "sanbase-sign-in", register: "sanbase-sign-up"}
   @neuro_login_templates %{login: "neuro-sign-in", register: "neuro-sign-up"}
   @sheets_login_templates %{login: "sheets-sign-in", register: "sheets-sign-up"}
-  @verification_email_template "verify email"
+  @verification_email_template "sanbase_verify_email"
   @alerts_template "signals"
   @sign_up_trial_templates %{
     # immediately after sign up
-    sent_welcome_email: "sanbase-post-registration2",
+    sent_welcome_email: "sanbase-post-registration",
     # on the 4th day
-    sent_first_education_email: "first-edu-email2",
+    sent_first_education_email: "first-edu-email",
     # on the 7th day
-    sent_second_education_email: "second-edu-email2",
+    sent_second_education_email: "second-edu-email",
     # 3 days before end with coupon code
-    sent_trial_will_end_email: "trial-three-days-before-end2",
+    sent_trial_will_end_email: "trial-three-days-before-end",
     # when we cancel - ~ 2 hours before end
-    sent_trial_finished_without_cc: "trial-finished-without-card2"
+    sent_trial_finished_without_cc: "trial-finished-without-card"
   }
 
   @comment_notification_template "notification"
   @verify_email_weekly_digest_template "verify_email_weekly_digest"
-  @monitoring_watchlist_template "Monitoring watchlist"
+  @monitoring_watchlist_template "monitoring_watchlist"
 
   def alerts_template, do: @alerts_template
   def sign_up_trial_templates, do: @sign_up_trial_templates

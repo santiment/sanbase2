@@ -186,6 +186,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "age_destroyed",
         "nvt",
         "nvt_transaction_volume",
+        "nvt_5min",
         "network_growth",
         "active_deposits",
         "deposit_transactions",
@@ -219,6 +220,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "stock_to_flow",
         "miners_total_supply",
         "rank",
+        "percent_of_whale_stablecoin_total_supply",
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",

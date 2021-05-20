@@ -34,6 +34,13 @@ defmodule SanbaseWeb.Guardian do
 
   def access_token_ttl(), do: @access_token_ttl
 
+  def add_jwt_tokens_to_conn_session(conn, jwt_tokens_map) do
+    conn
+    |> Plug.Conn.put_session(:auth_token, jwt_tokens_map.access_token)
+    |> Plug.Conn.put_session(:access_token, jwt_tokens_map.access_token)
+    |> Plug.Conn.put_session(:refresh_token, jwt_tokens_map.refresh_token)
+  end
+
   def get_jwt_tokens(%User{} = user, opts \\ []) do
     platform = Keyword.get(opts, :platform, :unknown)
     client = Keyword.get(opts, :client, :unknown)

@@ -321,6 +321,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         }
         |> Map.merge(Map.take(map, [:new_access_token]))
 
+      {:error, error} ->
+        {:error, error}
+
       _ ->
         :try_next
     end

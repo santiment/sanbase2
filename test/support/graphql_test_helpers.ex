@@ -86,10 +86,10 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   end
 
   def setup_jwt_auth(conn, user) do
-    {:ok, token, _claims} = SanbaseWeb.Guardian.encode_and_sign(user, %{})
+    {:ok, tokens} = SanbaseWeb.Guardian.get_jwt_tokens(user)
 
     conn
-    |> put_req_header("authorization", "Bearer " <> token)
+    |> Plug.Test.init_test_session(tokens)
   end
 
   def setup_apikey_auth(conn, apikey) do

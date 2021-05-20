@@ -86,7 +86,13 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   end
 
   def setup_jwt_auth(conn, user) do
-    {:ok, tokens} = SanbaseWeb.Guardian.get_jwt_tokens(user)
+    device_data = SanbaseWeb.Guardian.device_data(conn)
+
+    {:ok, tokens} =
+      SanbaseWeb.Guardian.get_jwt_tokens(user,
+        platform: device_data.platform,
+        client: device_data.client
+      )
 
     conn
     |> Plug.Test.init_test_session(tokens)

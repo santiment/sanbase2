@@ -55,7 +55,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.RefreshTokenAgeCheck do
 
     """
     Unauthorized. Reason: The authentication must have been done less than \
-    #{less_than_human_readable} ago. Repeat the authentication process and try
+    #{less_than_human_readable} ago. Repeat the authentication process and try \
     again.
     """
   end

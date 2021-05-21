@@ -27,7 +27,7 @@ defmodule Sanbase.Billing.SignUpTrialTest do
 
       sign_up_trial = SignUpTrial |> Repo.all() |> hd()
 
-      assert_called(Sanbase.MandrillApi.send("first-edu-email", :_, :_))
+      assert_called(Sanbase.MandrillApi.send("first_edu_email", :_, :_))
       assert sign_up_trial.sent_first_education_email
     end
 
@@ -36,7 +36,7 @@ defmodule Sanbase.Billing.SignUpTrialTest do
 
       SignUpTrial.send_email_on_trial_day()
 
-      refute called(Sanbase.MandrillApi.send("first-edu-email", :_, :_))
+      refute called(Sanbase.MandrillApi.send("first_edu_email", :_, :_))
     end
 
     test "day 7 email is sent successfully and marked as sent", context do
@@ -45,7 +45,7 @@ defmodule Sanbase.Billing.SignUpTrialTest do
 
       sign_up_trial = SignUpTrial |> Repo.all() |> hd()
 
-      assert_called(Sanbase.MandrillApi.send("second-edu-email", :_, :_))
+      assert_called(Sanbase.MandrillApi.send("second_edu_email", :_, :_))
       assert sign_up_trial.sent_second_education_email
     end
   end
@@ -75,7 +75,7 @@ defmodule Sanbase.Billing.SignUpTrialTest do
         SignUpTrial.cancel_about_to_expire_trials()
 
         assert_called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
-        assert_called(Sanbase.MandrillApi.send("trial-finished-without-card", :_, :_))
+        assert_called(Sanbase.MandrillApi.send("trial_finished_without_card", :_, :_))
       end
     end
 
@@ -103,7 +103,7 @@ defmodule Sanbase.Billing.SignUpTrialTest do
         SignUpTrial.cancel_about_to_expire_trials()
 
         assert_called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
-        assert_called(Sanbase.MandrillApi.send("trial-finished-without-card", :_, :_))
+        assert_called(Sanbase.MandrillApi.send("trial_finished_without_card", :_, :_))
       end
     end
 
@@ -126,7 +126,7 @@ defmodule Sanbase.Billing.SignUpTrialTest do
         SignUpTrial.cancel_about_to_expire_trials()
 
         assert_called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
-        refute called(Sanbase.MandrillApi.send("trial-finished-without-card", :_, :_))
+        refute called(Sanbase.MandrillApi.send("trial_finished_without_card", :_, :_))
       end
     end
 
@@ -146,7 +146,7 @@ defmodule Sanbase.Billing.SignUpTrialTest do
         SignUpTrial.cancel_about_to_expire_trials()
 
         refute called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
-        refute called(Sanbase.MandrillApi.send("trial-finished-without-card", :_, :_))
+        refute called(Sanbase.MandrillApi.send("trial_finished_without_card", :_, :_))
       end
     end
   end

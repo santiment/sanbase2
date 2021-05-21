@@ -6,15 +6,15 @@ defmodule Sanbase.Email.Template do
   @alerts_template "signals"
   @sign_up_trial_templates %{
     # immediately after sign up
-    sent_welcome_email: "sanbase-post-registration",
+    sent_welcome_email: "sanbase_post_registration",
     # on the 4th day
-    sent_first_education_email: "first-edu-email",
+    sent_first_education_email: "first_edu_email",
     # on the 7th day
-    sent_second_education_email: "second-edu-email",
+    sent_second_education_email: "second_edu_email",
     # 3 days before end with coupon code
-    sent_trial_will_end_email: "trial-three-days-before-end",
+    sent_trial_will_end_email: "trial_three_days_before_end",
     # when we cancel - ~ 2 hours before end
-    sent_trial_finished_without_cc: "trial-finished-without-card"
+    sent_trial_finished_without_cc: "trial_finished_without_card"
   }
 
   @comment_notification_template "notification"

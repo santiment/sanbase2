@@ -55,7 +55,6 @@ defmodule Sanbase.Mixfile do
       {:browser, "~> 0.4.4"},
       {:cidr, "~> 1.1"},
       {:clickhouse_ecto, github: "santiment/clickhouse_ecto", branch: "migrate-ecto-3"},
-      {:waffle, "~> 1.1"},
       {:clickhousex, github: "santiment/clickhousex", override: true},
       {:con_cache, "~> 1.0"},
       {:corsica, "~> 1.0"},
@@ -65,19 +64,21 @@ defmodule Sanbase.Mixfile do
       {:csv, "~> 2.1"},
       {:dataloader, "~> 1.0.0"},
       {:db_connection, "~> 2.2", override: true},
-      {:ecto_psql_extras, "~> 0.3"},
       {:decimal, "~> 1.0"},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
       {:distillery, "~> 2.0", runtime: false},
       {:earmark, "~> 1.2"},
       {:ecto_enum, "~> 1.4"},
+      {:ecto_psql_extras, "~> 0.3"},
       {:ecto_sql, "~> 3.6"},
       {:ecto, "~> 3.6"},
       {:envy, "~> 1.1.1", only: [:dev, :test]},
       # TODO: Remove after the OTP 24 version is released
       {:jose, github: "potatosalad/erlang-jose", override: true},
       {:erlex, "~> 0.2.6", override: true},
+      {:ethereumex, "~> 0.7.0"},
       {:event_bus, "~> 1.6.2"},
+      {:ex_abi, "~> 0.5.4"},
       {:ex_admin, github: "santiment/ex_admin"},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_aws, "~> 2.0"},
@@ -145,8 +146,8 @@ defmodule Sanbase.Mixfile do
       {:ueberauth_twitter, github: "santiment/ueberauth_twitter"},
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.8.0", override: true},
-      {:ethereumex, "~> 0.7.0"},
-      {:ex_abi, "~> 0.5.4"}
+      {:waffle, "~> 1.1"},
+      {:websockex, "~> 0.4.3"}
     ]
   end
 

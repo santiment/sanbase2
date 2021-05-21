@@ -166,8 +166,23 @@ defmodule Sanbase.Application do
             id: :prices_exporter,
             name: :prices_exporter,
             topic: Config.module_get!(Sanbase.KafkaExporter, :prices_topic),
-            buffering_max_messages: 10_000,
+            buffering_max_messages: 5_000,
             can_send_after_interval: 250
+          )
+        end,
+        fn -> container_type in ["all", "scrapers"] end
+      ),
+
+      # Cryptocmpare prices exporter is started only in `scrapers` and `all` pods.
+      start_if(
+        fn ->
+          Sanbase.KafkaExporter.child_spec(
+            id: :cryptocompare_prices_exporter,
+            name: :cryptocompare_prices_exporter,
+            topic: Config.module_get!(Sanbase.KafkaExporter, :cryptocompare_prices_topic),
+            buffering_max_messages: 1000,
+            can_send_after_interval: 250,
+            kafka_flush_timeout: 2000
           )
         end,
         fn -> container_type in ["all", "scrapers"] end

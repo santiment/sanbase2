@@ -27,7 +27,10 @@ defmodule Sanbase.Timeline.Filter do
     filter_by_last_seen_event(query, %{last_seen_event_id: event_id})
   end
 
-  defp filter_by_last_seen_event(query, %{last_seen_event_id: last_seen_event_id}) do
+  defp filter_by_not_seen(query, _, _), do: query
+
+  defp filter_by_last_seen_event(query, %{last_seen_event_id: last_seen_event_id})
+       when last_seen_event_id != nil do
     from(event in query, where: event.id > ^last_seen_event_id)
   end
 

@@ -108,13 +108,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
 
   def email_change_verify(
         %{token: email_candidate_token, email_candidate: email_candidate},
-        _resolution
+        %{context: %{device_data: device_data}}
       ) do
     with {:ok, user} <- User.find_by_email_candidate(email_candidate, email_candidate_token),
          true <- User.email_candidate_token_valid?(user, email_candidate_token),
-         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{}),
+         {:ok, jwt_tokens} <- SanbaseWeb.Guardian.get_jwt_tokens(user),
          {:ok, user} <- User.update_email_from_email_candidate(user) do
-      {:ok, %{user: user, token: token}}
+      {:ok,
+       %{
+         user: user,
+         token: jwt_tokens.access_token,
+         access_token: jwt_tokens.access_token,
+         refresh_token: jwt_tokens.refresh_token
+       }}
     else
       _ -> {:error, message: "Login failed"}
     end

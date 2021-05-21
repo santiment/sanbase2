@@ -101,7 +101,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
         %{signature: signature, address: address, message_hash: message_hash} = args,
         _resolution
       ) do
-    with true <- Ethauth.verify_signature(signature, address, message_hash),
+    with true <- address_message_hash(address) == message_hash,
+         true <- Ethauth.verify_signature(signature, address, message_hash),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
          _ <- Billing.maybe_create_liquidity_or_trial_subscription(user.id),
@@ -307,5 +308,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   # Existing eth account, login as the user of the eth account
   defp fetch_user(_, %EthAccount{user_id: user_id}) do
     User.by_id(user_id)
+  end
+
+  defp address_message_hash(address) do
+    message = "Login in Santiment with address #{address}"
+    full_message = "\x19Ethereum Signed Message:\n" <> "#{String.length(message)}" <> message
+    {:ok, hash} = ExKeccak.hash_256(full_message)
+    "0x" <> Base.encode16(hash, case: :lower)
   end
 end

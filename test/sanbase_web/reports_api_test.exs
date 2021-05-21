@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
     user = insert(:user)
 
     conn = setup_jwt_auth(build_conn(), user)
-    basic_auth_conn = setup_basic_auth(conn, "user", "pass")
+    basic_auth_conn = setup_basic_auth(build_conn(), "user", "pass")
 
     {:ok, conn: conn, basic_auth_conn: basic_auth_conn}
   end

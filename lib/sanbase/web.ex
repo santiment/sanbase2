@@ -27,6 +27,8 @@ defmodule Sanbase.Application.Web do
       # Time sereies Twitter DB connection
       Sanbase.Twitter.Store.child_spec(),
 
+      # Sweeping the Guardian JWT refresh tokens
+      {Guardian.DB.Token.SweeperServer, []},
       # Rehydrating cache
       Sanbase.Cache.RehydratingCache.Supervisor,
 

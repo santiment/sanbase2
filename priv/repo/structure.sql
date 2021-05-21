@@ -736,6 +736,25 @@ ALTER SEQUENCE public.github_organizations_id_seq OWNED BY public.github_organiz
 
 
 --
+-- Name: guardian_tokens; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.guardian_tokens (
+    jti character varying(255) NOT NULL,
+    typ character varying(255),
+    aud character varying(255),
+    iss character varying(255),
+    sub character varying(255),
+    exp bigint,
+    jwt text,
+    claims jsonb,
+    last_exchanged_at timestamp(0) without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
 -- Name: ico_currencies; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3578,6 +3597,14 @@ ALTER TABLE ONLY public.github_organizations
 
 
 --
+-- Name: guardian_tokens guardian_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.guardian_tokens
+    ADD CONSTRAINT guardian_tokens_pkey PRIMARY KEY (jti);
+
+
+--
 -- Name: ico_currencies ico_currencies_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5881,6 +5908,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200826101751);
 INSERT INTO public."schema_migrations" (version) VALUES (20200826114101);
 INSERT INTO public."schema_migrations" (version) VALUES (20200908092849);
 INSERT INTO public."schema_migrations" (version) VALUES (20200923090710);
+INSERT INTO public."schema_migrations" (version) VALUES (20200930103424);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016091443);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016105225);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016124426);
@@ -5930,3 +5958,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210419130213);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419183855);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419190728);
 INSERT INTO public."schema_migrations" (version) VALUES (20210420120610);
+INSERT INTO public."schema_migrations" (version) VALUES (20210423142550);
+INSERT INTO public."schema_migrations" (version) VALUES (20210513102007);

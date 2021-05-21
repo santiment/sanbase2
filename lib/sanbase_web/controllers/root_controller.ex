@@ -13,6 +13,8 @@ defmodule SanbaseWeb.RootController do
     |> Plug.Conn.send_file(200, path("priv/static/index.html"))
   end
 
+  def get_routed_conn(conn, _params), do: conn
+
   def healthcheck(conn, _params) do
     conn
     |> put_resp_content_type("text/plain")
@@ -56,7 +58,7 @@ defmodule SanbaseWeb.RootController do
 
   defp bearer_authorize(token) do
     case SanbaseWeb.Guardian.resource_from_token(token) do
-      {:ok, %User{salt: salt} = user, %{"salt" => salt}} ->
+      {:ok, %User{} = user, _} ->
         {:ok, user}
 
       _ ->

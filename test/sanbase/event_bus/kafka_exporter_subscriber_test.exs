@@ -1,6 +1,5 @@
 defmodule Sanbase.EventBus.KafkaExporterSubscriberTest do
   use Sanbase.DataCase, async: false
-  import Sanbase.Factory
 
   test "check kafka message format" do
     # NOTE: This test is consistently failing for unknown reasons. Remove it for

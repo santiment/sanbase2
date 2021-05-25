@@ -127,14 +127,14 @@ defmodule Sanbase.Alert.TriggersTest do
         assert error_msg =~ "Trigger structure is invalid. Key `settings` is not valid. "
 
         assert error_msg =~
-                 ~s/Reason: [\"\\\"unknown\\\" is not a valid notification channel. The available notification channels are [telegram, email, web_push, webhook]\\n\"]/
+                 ~s/Reason: [\"\\\"unknown\\\" is not a valid notification channel. The available notification channels are [telegram_channel, telegram, email, web_push, webhook]\\n\"]/
       end)
 
     assert error_log =~
              "UserTrigger struct is not valid."
 
     assert error_log =~
-             ~s/Reason: [\"\\\"unknown\\\" is not a valid notification channel. The available notification channels are [telegram, email, web_push, webhook]\\n\"]/
+             ~s/Reason: [\"\\\"unknown\\\" is not a valid notification channel. The available notification channels are [telegram_channel, telegram, email, web_push, webhook]\\n\"]/
   end
 
   test "try creating user trigger with required field in struct" do
@@ -159,7 +159,7 @@ defmodule Sanbase.Alert.TriggersTest do
              assert error_msg =~ "Trigger structure is invalid. Key `settings` is not valid."
 
              assert error_msg =~
-                      ~s/Reason: ["nil is not a valid notification channel. The available notification channels are [telegram, email, web_push, webhook]\\n\"]/
+                      ~s/Reason: ["nil is not a valid notification channel. The available notification channels are [telegram_channel, telegram, email, web_push, webhook]\\n\"]/
            end) =~ "UserTrigger struct is not valid"
   end
 

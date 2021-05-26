@@ -112,7 +112,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       ) do
     with {:ok, user} <- User.find_by_email_candidate(email_candidate, email_candidate_token),
          true <- User.email_candidate_token_valid?(user, email_candidate_token),
-         {:ok, jwt_tokens} <- SanbaseWeb.Guardian.get_jwt_tokens(user),
+         {:ok, jwt_tokens} <-
+           SanbaseWeb.Guardian.get_jwt_tokens(user,
+             platform: device_data.platform,
+             client: device_data.client
+           ),
          {:ok, user} <- User.update_email_from_email_candidate(user) do
       {:ok,
        %{

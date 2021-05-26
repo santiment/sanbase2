@@ -266,6 +266,39 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
              )
     end
 
+    test "with a valid email token, succeeds login after more than 5 minutes" do
+      {:ok, user} =
+        insert(:user, email: "example@santiment.net")
+        |> User.update_email_token()
+
+      mutation = email_login_verify_mutation(user)
+
+      conn =
+        build_conn()
+        |> post("/graphql", mutation_skeleton(mutation))
+
+      new_now = DateTime.utc_now() |> DateTime.to_unix() |> Kernel.+(3600)
+
+      # Guardian uses System.system_time(:second) in the expiry checks
+      Sanbase.Mock.prepare_mock2(&System.system_time/1, new_now)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        new_conn =
+          conn
+          |> post("/graphql", query_skeleton("{ currentUser{ id } }"))
+
+        # Still logged in
+        assert json_response(new_conn, 200)["data"]["currentUser"]["id"] == to_string(user.id)
+
+        old_session = Plug.Conn.get_session(conn)
+        new_session = Plug.Conn.get_session(new_conn)
+
+        # Asser that the access token has been silently updated as 1 hour has
+        # passed since it was issued
+        assert old_session["refresh_token"] == new_session["refresh_token"]
+        assert old_session["access_token"] != new_session["access_token"]
+      end)
+    end
+
     test "with invalid token for a user, fail to login", %{conn: conn} do
       user = insert(:user, email: "example@santiment.net")
 

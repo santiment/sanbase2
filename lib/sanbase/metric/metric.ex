@@ -165,6 +165,9 @@ defmodule Sanbase.Metric do
         end
 
         execute_if_aggregation_valid(fun, metric, aggregation)
+        |> Sanbase.Utils.Transform.maybe_apply_function(fn list ->
+          Enum.sort_by(list, & &1.datetime, {:asc, DateTime})
+        end)
     end
   end
 

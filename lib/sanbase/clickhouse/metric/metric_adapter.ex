@@ -99,7 +99,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     |> maybe_apply_function(fn list ->
       list
       |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
-      |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
     end)
   end
 

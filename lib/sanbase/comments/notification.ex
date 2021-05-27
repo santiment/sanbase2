@@ -301,7 +301,7 @@ defmodule Sanbase.Comments.Notification do
 
   defp send_email(email, params) do
     Sanbase.Email.Template.comment_notification_template()
-    |> Sanbase.MandrillApi.send(@email_template, email, params, %{
+    |> Sanbase.MandrillApi.send(email, params, %{
       merge_language: "handlebars"
     })
   end

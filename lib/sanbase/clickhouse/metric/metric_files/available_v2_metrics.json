@@ -2139,10 +2139,10 @@
     "name": "rank",
     "metric": "rank",
     "version": "2019-01-01",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",

@@ -41,6 +41,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "twitter_followers",
         "total_supply",
         "mcd_erc20_supply",
+        "rank",
         # change metrics
         "volume_usd_change_1d",
         "volume_usd_change_7d",
@@ -219,7 +220,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mvrv_usd_z_score",
         "stock_to_flow",
         "miners_total_supply",
-        "rank",
         "percent_of_whale_stablecoin_total_supply",
         # social metrics
         "community_messages_count_telegram",

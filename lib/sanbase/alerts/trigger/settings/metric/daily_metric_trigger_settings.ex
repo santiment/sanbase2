@@ -25,6 +25,8 @@ defmodule Sanbase.Alert.Trigger.DailyMetricTriggerSettings do
             # Private fields, not stored in DB.
             filtered_target: %{list: []},
             triggered?: false,
+            extra_explanation: nil,
+            template: nil,
             payload: %{},
             template_kv: %{}
 
@@ -45,6 +47,8 @@ defmodule Sanbase.Alert.Trigger.DailyMetricTriggerSettings do
           # Private fields, not stored in DB.
           filtered_target: Type.filtered_target(),
           triggered?: boolean(),
+          extra_explanation: Type.extra_explanation(),
+          template: Type.template(),
           payload: Type.payload(),
           template_kv: Type.template_kv()
         }

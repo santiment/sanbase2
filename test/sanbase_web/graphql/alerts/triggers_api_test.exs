@@ -524,7 +524,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "target" => %{"slug" => "santiment"},
       "channel" => "telegram",
       "time_window" => "1d",
-      "operation" => %{"percent_up" => 300.0}
+      "operation" => %{"percent_up" => 300.0},
+      "extra_explanation" => nil,
+      "template" => nil
     }
   end
 

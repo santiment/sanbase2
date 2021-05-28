@@ -138,6 +138,61 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
       end)
     end
 
+    test "signal with a metric and extra explanation works ", context do
+      %{project: project, user: user} = context
+
+      trigger_settings = %{
+        type: "metric_signal",
+        metric: "active_addresses_24h",
+        target: %{slug: project.slug},
+        channel: "telegram",
+        operation: %{above: 300},
+        extra_explanation:
+          "Daily Active Addresses 24h is the active addresses for the past 24 hours"
+      }
+
+      {:ok, trigger} =
+        UserTrigger.create_user_trigger(user, %{
+          title: "Generic title",
+          is_public: true,
+          cooldown: "12h",
+          settings: trigger_settings
+        })
+
+      # Return a fun with arity 5 that will return different results
+      # for consecutive calls
+      mock_fun =
+        [
+          fn -> {:ok, %{project.slug => 100}} end,
+          fn -> {:ok, %{project.slug => 5000}} end
+        ]
+        |> Sanbase.Mock.wrap_consecutives(arity: 5)
+
+      Sanbase.Mock.prepare_mock(
+        Sanbase.Clickhouse.MetricAdapter,
+        :aggregated_timeseries_data,
+        mock_fun
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        [triggered] =
+          MetricTriggerSettings.type()
+          |> UserTrigger.get_active_triggers_by_type()
+          |> Evaluator.run()
+
+        assert triggered.id == trigger.id
+        payload = triggered.trigger.settings.payload |> Map.values() |> hd
+
+        # Assert that the extra explanation is in the text, one line after the
+        # `Generate at ... UTC` line
+        assert payload =~
+                 """
+                 UTC
+
+                 Daily Active Addresses 24h is the active addresses for the past 24 hours
+                 """
+      end)
+    end
+
     test "signal with metric works - percent change operation", context do
       %{project: project, user: user} = context
 

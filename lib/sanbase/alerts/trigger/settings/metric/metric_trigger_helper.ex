@@ -211,6 +211,6 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
   defp maybe_extend_extra_explanation(template, nil), do: template
 
   defp maybe_extend_extra_explanation(template, _extra_explanation) do
-    template <> "\n{{extra_exaplanation}}\n"
+    template <> "{{extra_explanation}}\n"
   end
 end

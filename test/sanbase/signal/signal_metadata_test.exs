@@ -27,7 +27,7 @@ defmodule Sanbase.SignalMetadataTest do
     for signal <- signals do
       {:ok, metadata} = Signal.metadata(signal)
       assert metadata.default_aggregation in aggregations
-      assert metadata.min_interval in ["1m", "5m", "1h", "6h", "8h", "1d"]
+      assert metadata.min_interval == "1m"
     end
   end
 end

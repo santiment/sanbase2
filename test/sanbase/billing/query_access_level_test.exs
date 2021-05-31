@@ -27,6 +27,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :all_projects,
           :all_public_triggers,
           :all_tags,
+          :api_metric_distribution,
+          :api_metric_distribution_per_user,
           :assets_held_by_address,
           :blockchain_address_user_pair,
           :blockchain_address,

@@ -81,6 +81,56 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     end
   end
 
+  def api_metric_distribution() do
+    query = """
+    SELECT query, count(*) as count
+    FROM api_call_data
+    PREWHERE auth_method = 'apikey' AND user_id != 0
+    GROUP BY query
+    ORDER BY count desc
+    """
+
+    ClickhouseRepo.query_transform(query, [], fn [metric, count] ->
+      %{metric: metric, count: count}
+    end)
+    |> case do
+      {:ok, result} -> result
+      {:error, _error} -> []
+    end
+  end
+
+  def api_metric_distribution_per_user() do
+    query = """
+    SELECT user_id, query, count(*) as count
+    FROM api_call_data
+    PREWHERE auth_method = 'apikey' AND user_id != 0
+    GROUP BY user_id, query
+    ORDER BY count desc
+    """
+
+    ClickhouseRepo.query_reduce(query, [], %{}, fn [user_id, metric, count], acc ->
+      Map.update(acc, user_id, %{}, fn previous ->
+        count_all = (previous[:count] || 0) + count
+
+        current =
+          Map.update(previous, :metrics, [], fn metrics ->
+            [%{metric: metric, count: count} | metrics]
+          end)
+
+        Map.put(current, :count, count_all)
+      end)
+    end)
+    |> case do
+      {:ok, result} ->
+        result
+        |> Enum.sort_by(fn {_, map} -> map[:count] || 0 end, :desc)
+        |> Enum.map(fn {user_id, map} -> Map.put(map, :user_id, user_id) end)
+
+      {:error, _error} ->
+        []
+    end
+  end
+
   defp api_call_history_query(user_id, from, to, interval, auth_method) do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
 

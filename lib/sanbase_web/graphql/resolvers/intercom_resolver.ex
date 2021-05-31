@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
-  alias Sanbase.Intercom.UserEvent
   import Norm
+
+  alias Sanbase.Intercom.UserEvent
+  alias Sanbase.Clickhouse.ApiCallData
 
   def get_attributes_for_users(_, %{users: users, days: days} = args, _) do
     from = Map.get(args, :from, Sanbase.DateTimeUtils.days_ago(days))
@@ -14,6 +16,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
     to = Map.get(args, :to, Timex.now())
 
     {:ok, UserEvent.get_events_for_users(users, from, to)}
+  end
+
+  def api_metric_distribution(_, _, _) do
+    {:ok, ApiCallData.api_metric_distribution()}
+  end
+
+  def api_metric_distribution_per_user(_, _, _) do
+    {:ok, ApiCallData.api_metric_distribution_per_user()}
   end
 
   def track_events(_, %{events: events}, %{context: %{auth: %{current_user: user}}}) do

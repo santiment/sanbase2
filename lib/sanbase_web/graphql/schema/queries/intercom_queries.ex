@@ -17,6 +17,17 @@ defmodule SanbaseWeb.Graphql.Schema.IntercomQueries do
     field(:metadata, :json)
   end
 
+  object :api_metric_distribution_per_user do
+    field(:user_id, :id)
+    field(:metrics, list_of(:metrics_count))
+    field(:count, :integer)
+  end
+
+  object :metrics_count do
+    field(:metric, :string)
+    field(:count, :integer)
+  end
+
   object :intercom_queries do
     @desc ~s"""
     Get user attributes over time.
@@ -52,6 +63,20 @@ defmodule SanbaseWeb.Graphql.Schema.IntercomQueries do
       middleware(BasicAuth)
 
       resolve(&IntercomResolver.get_events_for_users/3)
+    end
+
+    field :api_metric_distribution, list_of(:metrics_count) do
+      meta(access: :free)
+      middleware(BasicAuth)
+
+      resolve(&IntercomResolver.api_metric_distribution/3)
+    end
+
+    field :api_metric_distribution_per_user, list_of(:api_metric_distribution_per_user) do
+      meta(access: :free)
+      middleware(BasicAuth)
+
+      resolve(&IntercomResolver.api_metric_distribution_per_user/3)
     end
   end
 

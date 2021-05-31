@@ -39,7 +39,8 @@ defmodule Sanbase.UserList.Monitor do
       when is_list(watchlists) and is_list(insights) and length(watchlists) > 0 and
              length(insights) > 0 do
     send_result =
-      Sanbase.MandrillApi.send("Monitoring watchlist", user.email, send_params, %{
+      Sanbase.Email.Template.monitoring_watchlist_template()
+      |> Sanbase.MandrillApi.send(user.email, send_params, %{
         merge_language: "handlebars"
       })
 

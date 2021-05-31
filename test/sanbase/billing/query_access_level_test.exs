@@ -3,10 +3,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
   # Assert that a query's access level does not change incidentally
   describe "subscription meta" do
-    test "there are no queries without defined subscription" do
-      assert Sanbase.Billing.GraphqlSchema.get_all_without_access_level() == []
-    end
-
     test "free queries defined in the schema" do
       free_queries =
         Sanbase.Billing.GraphqlSchema.get_queries_with_access_level(:free)
@@ -31,16 +27,22 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :all_projects,
           :all_public_triggers,
           :all_tags,
+          :api_metric_distribution,
+          :api_metric_distribution_per_user,
           :assets_held_by_address,
           :blockchain_address_user_pair,
           :blockchain_address,
+          :blockchain_address_labels,
           :chart_configuration,
           :chart_configurations,
+          :comments,
+          :comments_feed,
           :currencies_market_segments,
           :current_user,
           :daily_active_addresses,
           :dev_activity,
           :erc20_market_segments,
+          :eth_fees_distribution,
           :eth_spent_by_all_projects,
           :eth_spent_by_erc20_projects,
           :eth_spent_over_time_by_all_projects,
@@ -58,13 +60,19 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :fetch_user_lists,
           :fetch_watchlists,
           :get_access_restrictions,
+          :get_auth_sessions,
+          :get_attributes_for_users,
           :get_available_blockchains,
           :get_available_metrics,
           :get_available_signals,
           :get_coupon,
+          :get_events_for_users,
           :get_full_url,
           :get_metric,
           :get_raw_signals,
+          :get_reports,
+          :get_reports_by_tags,
+          :get_sheets_templates,
           :get_signal,
           :get_telegram_deep_link,
           :get_trigger_by_id,
@@ -76,6 +84,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :history_price,
           :history_twitter_data,
           :insight,
+          :insight_comments,
           :news,
           :ohlc,
           :payments,
@@ -84,8 +93,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :post,
           :price_volume_diff,
           :products_with_plans,
-          :project_by_slug,
           :project,
+          :project_by_slug,
           :projects_count,
           :projects_list_history_stats,
           :projects_list_stats,
@@ -94,6 +103,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :show_promoter,
           :signals_historical_activity,
           :social_volume_projects,
+          :subcomments,
           :table_configuration,
           :table_configurations,
           :timeline_event,
@@ -102,11 +112,13 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :transaction_volume_per_address,
           :twitter_data,
           :twitter_mention_count,
+          :uniswap_value_distribution,
+          :uniswap_who_claimed,
           :user_list,
           :wallet_hunters_proposal,
           :wallet_hunters_proposals,
-          :watchlist_by_slug,
-          :watchlist
+          :watchlist,
+          :watchlist_by_slug
         ]
         |> Enum.sort()
 

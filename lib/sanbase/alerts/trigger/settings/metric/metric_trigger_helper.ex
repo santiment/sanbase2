@@ -141,15 +141,20 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
         operation: settings.operation,
         search_text: text,
         metric: settings.metric,
-        metric_human_readable_name: human_readable_name
+        metric_human_readable_name: human_readable_name,
+        extra_explanation: settings.extra_explanation
       }
       |> Map.merge(operation_kv)
       |> Map.merge(curr_value_kv)
 
-    template = """
-    🔔 The search term '#{text}''s {{metric_human_readable_name}} #{operation_template}.
-    #{curr_value_template}.
-    """
+    template =
+      """
+      🔔 The search term '#{text}''s {{metric_human_readable_name}} #{operation_template}.
+      #{curr_value_template}.
+      """
+      |> maybe_extend_extra_explanation(settings.extra_explanation)
+
+    template = settings.template || template
 
     {template, kv}
   end
@@ -180,21 +185,32 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
         project_slug: project.slug,
         project_ticker: project.ticker,
         metric: settings.metric,
-        metric_human_readable_name: human_readable_name
+        metric_human_readable_name: human_readable_name,
+        extra_explanation: settings.extra_explanation
       }
       |> Map.merge(operation_kv)
       |> Map.merge(curr_value_kv)
       |> Map.merge(details_kv)
 
-    template = """
-    🔔 \#{{project_ticker}} | **{{project_name}}**'s {{metric_human_readable_name}} #{
-      operation_template
-    }.
-    #{curr_value_template}.
+    template =
+      """
+      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{metric_human_readable_name}} #{
+        operation_template
+      }.
+      #{curr_value_template}.
 
-    #{details_template}
-    """
+      #{details_template}
+      """
+      |> maybe_extend_extra_explanation(settings.extra_explanation)
+
+    template = settings.template || template
 
     {template, kv}
+  end
+
+  defp maybe_extend_extra_explanation(template, nil), do: template
+
+  defp maybe_extend_extra_explanation(template, _extra_explanation) do
+    template <> "{{extra_explanation}}\n"
   end
 end

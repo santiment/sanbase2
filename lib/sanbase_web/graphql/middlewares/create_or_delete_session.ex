@@ -3,17 +3,24 @@ defmodule SanbaseWeb.Graphql.Middlewares.CreateOrDeleteSession do
 
   alias Absinthe.Resolution
 
-  def call(%Resolution{value: %{token: token, user: _user}} = resolution, _) do
-    Map.update!(resolution, :context, fn ctx ->
-      ctx
+  def call(
+        %Resolution{
+          value: %{access_token: access_token, refresh_token: refresh_token, user: _user}
+        } = resolution,
+        _
+      ) do
+    Map.update!(resolution, :context, fn context ->
+      context
       |> Map.put(:create_session, true)
-      |> Map.put(:auth_token, token)
+      |> Map.put(:auth_token, access_token)
+      |> Map.put(:access_token, access_token)
+      |> Map.put(:refresh_token, refresh_token)
     end)
   end
 
   def call(%Resolution{value: %{success: true}} = resolution, _) do
-    Map.update!(resolution, :context, fn ctx ->
-      Map.put(ctx, :delete_session, true)
+    Map.update!(resolution, :context, fn context ->
+      Map.put(context, :delete_session, true)
     end)
   end
 

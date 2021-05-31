@@ -37,18 +37,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     7 => :sent_second_education_email
   }
 
-  @templates %{
-    # immediately after sign up
-    sent_welcome_email: "sanbase-post-registration2",
-    # on the 4th day
-    sent_first_education_email: "first-edu-email2",
-    # on the 7th day
-    sent_second_education_email: "second-edu-email2",
-    # 3 days before end with coupon code
-    sent_trial_will_end_email: "trial-three-days-before-end2",
-    # when we cancel - ~ 2 hours before end
-    sent_trial_finished_without_cc: "trial-finished-without-card2"
-  }
+  @templates Sanbase.Email.Template.sign_up_trial_templates()
 
   schema "sign_up_trials" do
     belongs_to(:user, User)

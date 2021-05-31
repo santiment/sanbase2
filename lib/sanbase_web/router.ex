@@ -124,6 +124,12 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/", SanbaseWeb do
+    pipe_through(:api)
+
+    get("/get_routed_conn", RootController, :get_routed_conn)
+  end
+
+  scope "/", SanbaseWeb do
     pipe_through(:browser)
 
     get("/consent", RootController, :consent)

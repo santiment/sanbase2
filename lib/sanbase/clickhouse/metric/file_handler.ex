@@ -4,11 +4,26 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   require Sanbase.Break, as: Break
 
   defmodule Helper do
-    def name_to_field_map(map, field, transform_fn \\ fn x -> x end) do
+    def name_to_field_map(map, field, opts \\ []) do
+      Break.if_kw_invalid?(opts, valid_keys: [:transform_fn, :required?])
+
+      transform_fn = Keyword.get(opts, :transform_fn, &Function.identity/1)
+      required? = Keyword.get(opts, :required?, true)
+
       map
       |> Enum.into(%{}, fn
-        %{"name" => name, ^field => value} -> {name, transform_fn.(value)}
-        %{"name" => name} -> {name, nil}
+        %{"name" => name, ^field => value} ->
+          {name, transform_fn.(value)}
+
+        %{"name" => name} ->
+          if required? do
+            # TODO: This logic is the same as it is in the signal file handler,
+            # with the exeption of the words in the error.
+            # It should be extracted to avoid code duplication.
+            Break.break("The field \"#{field}\" in the #{name} metric is required")
+          else
+            {name, nil}
+          end
       end)
     end
 
@@ -75,24 +90,34 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
 
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
-  @metrics_data_type_map Helper.name_to_field_map(@metrics_json, "data_type", &String.to_atom/1)
+  @metrics_data_type_map Helper.name_to_field_map(@metrics_json, "data_type",
+                           transform_fn: &String.to_atom/1
+                         )
   @name_to_metric_map Helper.name_to_field_map(@metrics_json, "metric")
   @metric_to_name_map @name_to_metric_map |> Map.new(fn {k, v} -> {v, k} end)
-  @access_map Helper.name_to_field_map(@metrics_json, "access", &String.to_atom/1)
+  @access_map Helper.name_to_field_map(@metrics_json, "access", transform_fn: &String.to_atom/1)
   @table_map Helper.name_to_field_map(@metrics_json, "table")
-  @aggregation_map Helper.name_to_field_map(@metrics_json, "aggregation", &String.to_atom/1)
+  @aggregation_map Helper.name_to_field_map(@metrics_json, "aggregation",
+                     transform_fn: &String.to_atom/1
+                   )
   @min_interval_map Helper.name_to_field_map(@metrics_json, "min_interval")
-  @min_plan_map Helper.name_to_field_map(@metrics_json, "min_plan", fn plan_map ->
-                  Enum.into(plan_map, %{}, fn {k, v} -> {k, String.to_atom(v)} end)
-                end)
+  @min_plan_map Helper.name_to_field_map(@metrics_json, "min_plan",
+                  transform_fn: fn plan_map ->
+                    Enum.into(plan_map, %{}, fn {k, v} -> {k, String.to_atom(v)} end)
+                  end
+                )
 
   @human_readable_name_map Helper.name_to_field_map(@metrics_json, "human_readable_name")
   @metric_version_map Helper.name_to_field_map(@metrics_json, "version")
-  @metrics_label_map Helper.name_to_field_map(@metrics_json, "label")
+  @metrics_label_map Helper.name_to_field_map(@metrics_json, "label", required?: false)
   @incomplete_data_map Helper.name_to_field_map(@metrics_json, "has_incomplete_data")
-  @selectors_map Helper.name_to_field_map(@metrics_json, "selectors", fn list ->
-                   Enum.map(list, &String.to_atom/1)
-                 end)
+  @selectors_map Helper.name_to_field_map(
+                   @metrics_json,
+                   "selectors",
+                   transform_fn: fn list ->
+                     Enum.map(list, &String.to_atom/1)
+                   end
+                 )
 
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)

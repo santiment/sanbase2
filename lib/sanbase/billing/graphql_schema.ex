@@ -47,14 +47,29 @@ defmodule Sanbase.Billing.GraphqlSchema do
     # meta(access: :restricted, min_plan: [sanapi: :pro, sanbase: :free])
     query_min_plan_map = get_query_min_plan_map()
 
-    Sanbase.Metric.min_plan_map()
-    |> Enum.into(query_min_plan_map, fn
-      {metric, product_plan_map} when is_map(product_plan_map) ->
-        {{:metric, metric}, product_plan_map}
+    metric_min_plan_map =
+      Sanbase.Metric.min_plan_map()
+      |> Enum.into(%{}, fn
+        {metric, product_plan_map} when is_map(product_plan_map) ->
+          {{:metric, metric}, product_plan_map}
 
-      {metric, _} ->
-        {{:metric, metric}, %{"SANAPI" => :free, "SANBASE" => :free}}
-    end)
+        {metric, _} ->
+          {{:metric, metric}, %{"SANAPI" => :free, "SANBASE" => :free}}
+      end)
+
+    signal_min_plan_map =
+      Sanbase.Signal.min_plan_map()
+      |> Enum.into(%{}, fn
+        {signal, product_plan_map} when is_map(product_plan_map) ->
+          {{:signal, signal}, product_plan_map}
+
+        {signal, _} ->
+          {{:signal, signal}, %{"SANAPI" => :free, "SANBASE" => :free}}
+      end)
+
+    query_min_plan_map
+    |> Map.merge(metric_min_plan_map)
+    |> Map.merge(signal_min_plan_map)
   end
 
   @doc ~s"""
@@ -80,23 +95,34 @@ defmodule Sanbase.Billing.GraphqlSchema do
   end
 
   def get_all_with_access_level(level) do
+    signals_with_access_level =
+      Sanbase.Signal.access_map()
+      |> get_with_access_level(level)
+      |> Enum.map(&{:signal, &1})
+
+    metrics_with_access_level =
+      Sanbase.Metric.access_map()
+      |> get_with_access_level(level)
+      |> Enum.map(&{:metric, &1})
+
     Enum.map(get_queries_with_access_level(level), &{:query, &1}) ++
-      Enum.map(get_metrics_with_access_level(level), &{:metric, &1})
+      signals_with_access_level ++ metrics_with_access_level
   end
 
-  def get_metrics_with_access_level(level) do
-    Enum.filter(Sanbase.Metric.access_map(), fn {_metric, metric_level} ->
-      level == metric_level
+  def get_with_access_level(access_map, level) do
+    access_map
+    |> Enum.reduce([], fn
+      {argument, ^level}, acc -> [argument | acc]
+      _, acc -> acc
     end)
-    |> Enum.map(fn {metric, _access} -> metric end)
+  end
+
+  def get_queries_without_access_level() do
+    get_queries_with_access_level(nil) -- [:__typename, :__type, :__schema]
   end
 
   def get_queries_with_access_level(level) do
     get_field_value_matches([:access], [level])
-  end
-
-  def get_all_without_access_level() do
-    get_metrics_with_access_level(nil) -- [:__typename, :__type, :__schema]
   end
 
   # Private functions

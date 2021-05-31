@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
+defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock, only: [assert_called: 1]

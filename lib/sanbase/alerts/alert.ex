@@ -222,7 +222,8 @@ defimpl Sanbase.Alert, for: Any do
   end
 
   defp do_send_email(email, payload, trigger_id) do
-    Sanbase.MandrillApi.send("signals", email, %{
+    Sanbase.Email.Template.alerts_template()
+    |> Sanbase.MandrillApi.send(email, %{
       payload:
         extend_payload(payload, trigger_id)
         |> Earmark.as_html!(breaks: true, timeout: nil, mapper: &Enum.map/2)
@@ -339,7 +340,8 @@ defimpl Sanbase.Alert, for: Any do
   end
 
   defp send_limit_reached_notification("email", user) do
-    Sanbase.MandrillApi.send("signals", user.email, %{
+    Sanbase.Email.Template.alerts_template()
+    |> Sanbase.MandrillApi.send(user.email, %{
       payload: limit_reached_payload("email") |> Earmark.as_html!(breaks: true)
     })
     |> case do

@@ -32,10 +32,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   @doc documentation_ref: "# DOCS access-plans/index.md"
 
-  @type query_or_metric :: {:metric, String.t()} | {:query, atom()}
-
-  # Raise an error if there is any query without subscription plan
-  case GraphqlSchema.get_all_without_access_level() do
+  case GraphqlSchema.get_queries_without_access_level() do
     [] ->
       :ok
 
@@ -45,23 +42,24 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       Break.break("""
       There are GraphQL queries defined without specifying their access level.
       The access level could be either `free` or `restricted`.
-
       Queries without access level: #{inspect(queries)}
       """)
   end
 
+  @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
+
   @extension_metrics GraphqlSchema.get_all_with_access_level(:extension)
   def extension_metrics(), do: @extension_metrics
 
-  @free_metrics GraphqlSchema.get_all_with_access_level(:free)
-  @free_metrics_mapset MapSet.new(@free_metrics)
-  def free_metrics_mapset(), do: @free_metrics_mapset
+  @free_query_or_argument GraphqlSchema.get_all_with_access_level(:free)
+  @free_query_or_argument_mapset MapSet.new(@free_query_or_argument)
+  def free_query_or_argument_mapset(), do: @free_query_or_argument_mapset
 
   @restricted_metrics GraphqlSchema.get_all_with_access_level(:restricted)
   @restricted_metrics_mapset MapSet.new(@restricted_metrics)
   def restricted_metrics_mapset(), do: @restricted_metrics_mapset
 
-  @all_metrics @free_metrics ++ @restricted_metrics
+  @all_metrics @free_query_or_argument ++ @restricted_metrics
   def all_metrics, do: @all_metrics
 
   @custom_access_queries_stats CustomAccess.get()
@@ -77,7 +75,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   # be applied
 
   free_and_custom_intersection =
-    MapSet.intersection(@custom_access_queries_mapset, @free_metrics_mapset)
+    MapSet.intersection(@custom_access_queries_mapset, @free_query_or_argument_mapset)
 
   case Enum.empty?(free_and_custom_intersection) do
     true ->
@@ -101,13 +99,14 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   A query can be restricted but still accessible by not-paid users or users with
   lower plans. In this case historical and/or realtime data access can be cut off
   """
-  @spec is_restricted?(query_or_metric) :: boolean()
-  def is_restricted?(query_or_metric), do: query_or_metric not in @free_metrics_mapset
+  @spec is_restricted?(query_or_argument) :: boolean()
+  def is_restricted?(query_or_argument),
+    do: query_or_argument not in @free_query_or_argument_mapset
 
-  @spec plan_has_access?(plan, product, query_or_metric) :: boolean()
+  @spec plan_has_access?(plan, product, query_or_argument) :: boolean()
         when plan: atom(), product: binary()
-  def plan_has_access?(plan, product, query_or_metric) do
-    case min_plan(product, query_or_metric) do
+  def plan_has_access?(plan, product, query_or_argument) do
+    case min_plan(product, query_or_argument) do
       :free -> true
       :basic -> plan != :free
       :pro -> plan not in [:free, :basic]
@@ -118,16 +117,16 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     end
   end
 
-  @spec min_plan(product, query_or_metric) :: atom() when product: binary()
-  def min_plan(product, query_or_metric) do
-    @min_plan_map[query_or_metric][product] || :free
+  @spec min_plan(product, query_or_argument) :: atom() when product: binary()
+  def min_plan(product, query_or_argument) do
+    @min_plan_map[query_or_argument][product] || :free
   end
 
   @spec get_available_metrics_for_plan(product, plan, restriction_type) :: list(binary())
         when plan: atom(), product: binary(), restriction_type: atom()
   def get_available_metrics_for_plan(product, plan, restriction_type \\ :all) do
     case restriction_type do
-      :free -> @free_metrics
+      :free -> @free_query_or_argument
       :restricted -> @restricted_metrics
       :custom -> @custom_access_queries
       :all -> @all_metrics
@@ -145,31 +144,31 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     {Product.product_sanbase(), SanbaseAccessChecker}
   ]
 
-  @spec historical_data_in_days(atom(), non_neg_integer(), query_or_metric()) ::
+  @spec historical_data_in_days(atom(), non_neg_integer(), query_or_argument()) ::
           non_neg_integer() | nil
-  def historical_data_in_days(plan, _product_id, query_or_metric)
-      when query_or_metric in @custom_access_queries do
-    Map.get(@custom_access_queries_stats, query_or_metric)
+  def historical_data_in_days(plan, _product_id, query_or_argument)
+      when query_or_argument in @custom_access_queries do
+    Map.get(@custom_access_queries_stats, query_or_argument)
     |> get_in([:plan_access, plan, :historical_data_in_days])
   end
 
   for {product_id, module} <- @product_to_access_module do
-    def historical_data_in_days(plan, unquote(product_id), query_or_metric) do
-      unquote(module).historical_data_in_days(plan, query_or_metric)
+    def historical_data_in_days(plan, unquote(product_id), query_or_argument) do
+      unquote(module).historical_data_in_days(plan, query_or_argument)
     end
   end
 
-  @spec realtime_data_cut_off_in_days(atom(), non_neg_integer(), query_or_metric()) ::
+  @spec realtime_data_cut_off_in_days(atom(), non_neg_integer(), query_or_argument()) ::
           non_neg_integer() | nil
-  def realtime_data_cut_off_in_days(plan, _product_id, query_or_metric)
-      when query_or_metric in @custom_access_queries do
-    Map.get(@custom_access_queries_stats, query_or_metric)
+  def realtime_data_cut_off_in_days(plan, _product_id, query_or_argument)
+      when query_or_argument in @custom_access_queries do
+    Map.get(@custom_access_queries_stats, query_or_argument)
     |> get_in([:plan_access, plan, :realtime_data_cut_off_in_days])
   end
 
   for {product_id, module} <- @product_to_access_module do
-    def realtime_data_cut_off_in_days(plan, unquote(product_id), query_or_metric) do
-      unquote(module).realtime_data_cut_off_in_days(plan, query_or_metric)
+    def realtime_data_cut_off_in_days(plan, unquote(product_id), query_or_argument) do
+      unquote(module).realtime_data_cut_off_in_days(plan, query_or_argument)
     end
   end
 

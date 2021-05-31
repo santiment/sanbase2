@@ -1,14 +1,15 @@
 defmodule Sanbase.Billing.MetricAccessLevelTest do
   use ExUnit.Case, async: true
 
-  # Assert that a query's access level does not change incidentally
-  test "there are no queries without defined subscription" do
-    assert Sanbase.Billing.GraphqlSchema.get_all_without_access_level() == []
+  setup do
+    metrics_access_map = Sanbase.Metric.access_map()
+
+    %{metrics_access_map: metrics_access_map}
   end
 
-  test "free metrics" do
+  test "free metrics", %{metrics_access_map: access_map} do
     free_metrics =
-      Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:free)
+      Sanbase.Billing.GraphqlSchema.get_with_access_level(access_map, :free)
       |> Enum.sort()
 
     expected_free_metrics =
@@ -40,6 +41,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "twitter_followers",
         "total_supply",
         "mcd_erc20_supply",
+        "rank",
         # change metrics
         "volume_usd_change_1d",
         "volume_usd_change_7d",
@@ -88,9 +90,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
     assert free_metrics == expected_free_metrics
   end
 
-  test "restricted metrics" do
+  test "restricted metrics", %{metrics_access_map: access_map} do
     restricted_metrics =
-      Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:restricted)
+      Sanbase.Billing.GraphqlSchema.get_with_access_level(access_map, :restricted)
       |> Enum.sort()
 
     expected_restricted_metrics =
@@ -185,6 +187,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "age_destroyed",
         "nvt",
         "nvt_transaction_volume",
+        "nvt_5min",
         "network_growth",
         "active_deposits",
         "deposit_transactions",
@@ -217,7 +220,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mvrv_usd_z_score",
         "stock_to_flow",
         "miners_total_supply",
-        "rank",
+        "percent_of_whale_stablecoin_total_supply",
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",
@@ -766,18 +769,18 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
            |> Enum.to_list() == []
   end
 
-  test "extension needed metrics" do
+  test "extension needed metrics", %{metrics_access_map: access_map} do
     # Forbidden queries are acessible only by basic authorization
     extension_metrics =
-      Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:extension)
+      Sanbase.Billing.GraphqlSchema.get_with_access_level(access_map, :extension)
       |> Enum.sort()
 
     assert extension_metrics == []
   end
 
-  test "forbidden metrics" do
+  test "forbidden metrics", %{metrics_access_map: access_map} do
     forbidden_metrics =
-      Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:forbidden)
+      Sanbase.Billing.GraphqlSchema.get_with_access_level(access_map, :forbidden)
       |> Enum.sort()
 
     expected_forbidden_metrics =

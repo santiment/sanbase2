@@ -391,6 +391,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
     end
 
     field :eth_fees_distribution, list_of(:fees_distribution) do
+      meta(access: :free)
+
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:limit, :integer, default_value: 20)

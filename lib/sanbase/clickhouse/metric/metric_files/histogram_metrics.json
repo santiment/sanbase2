@@ -10,7 +10,11 @@
     "min_interval": "5m",
     "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
-    "data_type": "histogram"
+    "data_type": "histogram",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Spent Coins Cost",
@@ -23,7 +27,11 @@
     "min_interval": "5m",
     "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
-    "data_type": "histogram"
+    "data_type": "histogram",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "All Spent Coins Cost",
@@ -36,7 +44,11 @@
     "min_interval": "5m",
     "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
-    "data_type": "histogram"
+    "data_type": "histogram",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Age Distribution Histogram",

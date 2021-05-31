@@ -42,7 +42,7 @@ defmodule Sanbase.Alert.Scheduler do
 
   # Private functions
 
-  @batch_size 20
+  @batch_size 200
   defp run(type) do
     Logger.info("Schedule evaluation for the alerts of type #{type}")
 
@@ -74,8 +74,8 @@ defmodule Sanbase.Alert.Scheduler do
 
     Logger.info("""
     [#{info_map.run_uuid}] Start evaluating alerts of type #{type} in batches. \
-    In total #{alerts_count} alerts will be processed in #{length(batches)} \
-    batches of size #{@batch_size}.
+    In total #{alerts_count} alerts will be processed in #{info_map.batches_count} \
+    #{if info_map.batches_count == 1, do: "batch", else: "batches"} of size #{@batch_size}.
     """)
 
     run_batches(batches, info_map)

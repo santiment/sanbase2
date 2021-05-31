@@ -16,11 +16,17 @@ defmodule SanbaseWeb.BotLoginController do
   end
 
   defp send_response(user, conn) do
-    {:ok, token, _claims} = SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt})
+    device_data = SanbaseWeb.Guardian.device_data(conn)
+
+    {:ok, jwt_tokens} =
+      SanbaseWeb.Guardian.get_jwt_tokens(user,
+        platform: device_data.platform,
+        client: device_data.platform
+      )
 
     conn
-    |> Plug.Conn.put_session(:auth_token, token)
-    |> resp(200, token)
+    |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens)
+    |> resp(200, jwt_tokens.access_token)
     |> send_resp()
   end
 end

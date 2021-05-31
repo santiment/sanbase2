@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
 
   alias Sanbase.Signal
   alias SanbaseWeb.Graphql.SanbaseDataloader
+  alias Sanbase.Billing.Plan.Restrictions
 
   require Logger
 
@@ -39,7 +40,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   def get_available_slugs(_root, _args, %{source: %{signal: signal}}),
     do: Signal.available_slugs(signal)
 
-  def get_metadata(_root, _args, %{source: %{signal: signal}}), do: Signal.metadata(signal)
+  def get_metadata(_root, _args, %{source: %{signal: signal}} = resolution) do
+    %{context: %{product_id: product_id, auth: %{plan: plan}}} = resolution
+
+    case Signal.metadata(signal) do
+      {:ok, metadata} ->
+        access_restrictions = Restrictions.get({:signal, signal}, plan, product_id)
+        {:ok, Map.merge(access_restrictions, metadata)}
+
+      {:error, error} ->
+        {:error, handle_graphql_error("metadata", %{signal: signal}, error)}
+    end
+  end
 
   def available_since(_root, args, %{source: %{signal: signal}}) do
     with {:ok, selector} <- args_to_selector(args),

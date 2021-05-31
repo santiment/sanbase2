@@ -77,6 +77,14 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
     field(:available_aggregations, list_of(:aggregation))
 
     field(:data_type, :signal_data_type)
+
+    field(:is_accessible, :boolean)
+
+    field(:is_restricted, :boolean)
+
+    field(:restricted_from, :datetime)
+
+    field(:restricted_to, :datetime)
   end
 
   object :signal do

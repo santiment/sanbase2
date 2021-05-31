@@ -130,8 +130,11 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     end
   end
 
-  defp maybe_create_or_drop_session(conn, %{create_session: true, auth_token: auth_token}) do
-    Plug.Conn.put_session(conn, :auth_token, auth_token)
+  defp maybe_create_or_drop_session(conn, %{create_session: true} = context) do
+    SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(
+      conn,
+      Map.take(context, [:access_token, :refresh_token])
+    )
   end
 
   defp maybe_create_or_drop_session(conn, %{delete_session: true}) do

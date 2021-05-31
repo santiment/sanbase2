@@ -10,7 +10,6 @@ defmodule Sanbase.Comments.Notification do
   alias Sanbase.Timeline.TimelineEventComment
   alias Sanbase.Repo
 
-  @email_template "notification"
   @default_avatar "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png"
 
   schema "comment_notifications" do
@@ -301,7 +300,8 @@ defmodule Sanbase.Comments.Notification do
   end
 
   defp send_email(email, params) do
-    Sanbase.MandrillApi.send(@email_template, email, params, %{
+    Sanbase.Email.Template.comment_notification_template()
+    |> Sanbase.MandrillApi.send(email, params, %{
       merge_language: "handlebars"
     })
   end

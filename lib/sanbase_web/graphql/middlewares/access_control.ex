@@ -55,9 +55,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       definition.name
       |> Macro.underscore()
       |> String.to_existing_atom()
-      |> get_query_or_metric(source, arguments)
+      |> get_query_or_argument(source, arguments)
 
-    context = context |> Map.put(:__query_or_metric_atom_name__, query_atom_name)
+    context = context |> Map.put(:__query_argument_atom_name__, query_atom_name)
 
     %Resolution{resolution | context: context}
   end
@@ -73,27 +73,28 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   defp check_plan(
-         %Resolution{context: %{__query_or_metric_atom_name__: query_or_metric} = context} =
+         %Resolution{context: %{__query_argument_atom_name__: query_or_argument} = context} =
            resolution
        ) do
     plan = context[:auth][:plan] || :free
     product = Product.code_by_id(context[:product_id]) || "SANAPI"
 
-    case AccessChecker.plan_has_access?(plan, product, query_or_metric) do
+    case AccessChecker.plan_has_access?(plan, product, query_or_argument) do
       true ->
         resolution
 
       false ->
-        min_plan = AccessChecker.min_plan(product, query_or_metric)
+        min_plan = AccessChecker.min_plan(product, query_or_argument)
         product = String.capitalize(product)
         plan = plan |> to_string() |> String.capitalize()
         min_plan = min_plan |> to_string() |> String.capitalize()
+        {argument, argument_name} = query_or_argument
 
         Resolution.put_result(
           resolution,
           {:error,
            """
-           The metric #{elem(query_or_metric, 1)} is not accessible with the currently used
+           The #{argument} #{argument_name} is not accessible with the currently used
            #{product} #{plan} subscription. Please upgrade to #{product} #{min_plan} subscription.
 
            If you have a subscription for one product but attempt to fetch data using
@@ -134,7 +135,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   # Some specific queries/metrics are available only when a special extension is
   # present.
-  defp do_call(%Resolution{context: %{__query_or_metric_atom_name__: query}} = resolution, _)
+  defp do_call(%Resolution{context: %{__query_argument_atom_name__: query}} = resolution, _)
        when query in @extension_metrics do
     case resolution.context[:auth][:current_user] do
       %Sanbase.Accounts.User{} = user ->
@@ -155,7 +156,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # different functions if there are `from` and `to` parameters
   defp do_call(
          %Resolution{
-           context: %{__query_or_metric_atom_name__: query},
+           context: %{__query_argument_atom_name__: query},
            arguments: %{from: _from, to: _to}
          } = resolution,
          middleware_args
@@ -171,25 +172,34 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
-  defp get_query_or_metric(:timeseries_data, %{metric: metric}, _args),
+  # metrics
+  defp get_query_or_argument(:timeseries_data, %{metric: metric}, _args),
     do: {:metric, metric}
 
-  defp get_query_or_metric(:timeseries_data_per_slug, %{metric: metric}, _args),
+  defp get_query_or_argument(:timeseries_data_per_slug, %{metric: metric}, _args),
     do: {:metric, metric}
 
-  defp get_query_or_metric(:aggregated_timeseries_data, %{metric: metric}, _args),
+  defp get_query_or_argument(:aggregated_timeseries_data, %{metric: metric}, _args),
     do: {:metric, metric}
 
-  defp get_query_or_metric(:aggregated_timeseries_data, _source, %{metric: metric}),
+  defp get_query_or_argument(:aggregated_timeseries_data, _source, %{metric: metric}),
     do: {:metric, metric}
 
-  defp get_query_or_metric(:histogram_data, %{metric: metric}, _args),
+  defp get_query_or_argument(:histogram_data, %{metric: metric}, _args),
     do: {:metric, metric}
 
-  defp get_query_or_metric(:table_data, %{metric: metric}, _args),
+  defp get_query_or_argument(:table_data, %{metric: metric}, _args),
     do: {:metric, metric}
 
-  defp get_query_or_metric(query, _source, _args), do: {:query, query}
+  # signals
+  defp get_query_or_argument(:timeseries_data, %{signal: signal}, _args),
+    do: {:signal, signal}
+
+  defp get_query_or_argument(:aggregated_timeseries_data, %{signal: signal}, _args),
+    do: {:signal, signal}
+
+  # query
+  defp get_query_or_argument(query, _source, _args), do: {:query, query}
 
   defp restricted_query(
          %Resolution{arguments: %{from: from, to: to}, context: context} = resolution,
@@ -284,9 +294,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         # now true. If that happens - both from and to are outside the allowed interval
         %{restricted_from: restricted_from, restricted_to: restricted_to} =
           Sanbase.Billing.Plan.Restrictions.get(
-            context[:__query_or_metric_atom_name__],
-            context[:auth][:plan],
-            context[:product_id]
+            context[:__query_argument_atom_name__],
+            context[:auth][:plan] || :free,
+            context[:product_id] || Product.product_api()
           )
 
         resolution
@@ -294,7 +304,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
           {:error,
            """
            Both `from` and `to` parameters are outside the allowed interval you can query #{
-             context[:__query_or_metric_atom_name__] |> elem(1)
+             context[:__query_argument_atom_name__] |> elem(1)
            } with your current subscription #{context[:product_id] |> Product.code_by_id()} #{
              context[:auth][:plan] || :free
            }. Upgrade to a higher tier in order to access more data.

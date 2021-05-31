@@ -49,7 +49,7 @@ defmodule Sanbase.Accounts.UserSettings do
     user_settings |> modify_settings()
   end
 
-  @spec max_alerts_to_send(%User{}) :: %{channel => count}
+  @spec max_alerts_to_send(%User{}) :: {:ok, %{required(channel) => count}}
         when channel: String.t(), count: non_neg_integer()
   def max_alerts_to_send(%User{} = user) do
     # Force the settings to be fetched and not taken from the user struct

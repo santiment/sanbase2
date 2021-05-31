@@ -48,15 +48,11 @@ defmodule Sanbase.SocialData.SocialVolume do
             HTTPoison.Error.message(error)
           }"
         )
-
-      {:error, error} ->
-        {:error, error}
     end
   end
 
   defp handle_list_response(response, selector) do
-    response
-    |> case do
+    case response do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         body
         |> Jason.decode!()

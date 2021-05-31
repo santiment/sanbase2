@@ -28,17 +28,22 @@ defmodule Sanbase.TemplateEngine do
     "Human Readable BigNum: 1,000.00 Billion"
   """
 
+  @spec run(String.t(), map) :: String.t()
   def run(template, kv) do
     {human_readable_map, kv} = Map.split(kv, [:human_readable])
-    human_readable = Map.get(human_readable_map, :human_readable, [])
+    human_readable_mapset = Map.get(human_readable_map, :human_readable, []) |> MapSet.new()
 
     Enum.reduce(kv, template, fn {key, value}, acc ->
-      String.replace(acc, "{{#{key}}}", fn _ ->
-        case key in human_readable do
-          true -> value |> human_readable |> to_string()
-          false -> value |> to_string()
-        end
-      end)
+      replace(acc, key, value, human_readable_mapset)
+    end)
+  end
+
+  defp replace(string, key, value, human_readable_mapset) do
+    String.replace(string, "{{#{key}}}", fn _ ->
+      case key in human_readable_mapset do
+        true -> value |> human_readable |> to_string()
+        false -> value |> to_string()
+      end
     end)
   end
 

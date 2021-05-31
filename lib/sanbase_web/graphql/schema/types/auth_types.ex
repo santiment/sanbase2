@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.AuthTypes do
     field(:platform, non_null(:string))
     field(:client, non_null(:string))
     field(:is_current, non_null(:boolean))
+    field(:has_expired, non_null(:boolean))
   end
 
   object :login do

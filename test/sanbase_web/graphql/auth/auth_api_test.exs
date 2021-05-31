@@ -126,12 +126,13 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
 
     query = """
     {
-      getActiveSessions {
+      getAuthSessions {
         jti
         type
         createdAt
         expiresAt
         isCurrent
+        hasExpired
         client
         lastActiveAt
         platform
@@ -144,7 +145,7 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
       |> post("/graphql", query_skeleton(query))
       |> json_response(200)
 
-    sessions = result["data"]["getActiveSessions"]
+    sessions = result["data"]["getAuthSessions"]
 
     assert length(sessions) == 3
     assert [session1, session2, session3] = sessions
@@ -153,6 +154,7 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
     assert session1["platform"] == "unknown"
     assert session1["type"] == "refresh"
     assert session1["isCurrent"] == true
+    assert session1["hasExpired"] == false
     assert %DateTime{} = from_iso8601!(session1["createdAt"])
     assert %DateTime{} = from_iso8601!(session1["expiresAt"])
     assert %DateTime{} = from_iso8601!(session1["lastActiveAt"])
@@ -161,6 +163,7 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
     assert session2["platform"] == "iOS 12"
     assert session2["type"] == "refresh"
     assert session2["isCurrent"] == false
+    assert session2["hasExpired"] == false
     assert %DateTime{} = from_iso8601!(session2["createdAt"])
     assert %DateTime{} = from_iso8601!(session2["expiresAt"])
     assert %DateTime{} = from_iso8601!(session2["lastActiveAt"])
@@ -169,6 +172,7 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
     assert session3["platform"] == "MacOS 10.11.6 El Capitan"
     assert session3["type"] == "refresh"
     assert session3["isCurrent"] == false
+    assert session3["hasExpired"] == false
     assert %DateTime{} = from_iso8601!(session3["createdAt"])
     assert %DateTime{} = from_iso8601!(session3["expiresAt"])
     assert %DateTime{} = from_iso8601!(session3["lastActiveAt"])

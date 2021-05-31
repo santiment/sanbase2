@@ -14,10 +14,10 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
   }
 
   object :auth_queries do
-    field :get_active_sessions, list_of(:auth_session) do
+    field :get_auth_sessions, list_of(:auth_session) do
       meta(access: :free)
       middleware(JWTAuth)
-      resolve(&AuthResolver.get_active_sessions/3)
+      resolve(&AuthResolver.get_auth_sessions/3)
     end
   end
 

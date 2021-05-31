@@ -45,16 +45,18 @@ defmodule SanbaseWeb.Guardian.Token do
       |> Enum.map(fn token ->
         is_current = not is_nil(current_refresh_token) and current_refresh_token == token.jwt
         created_at = DateTime.from_naive!(token.inserted_at, "Etc/UTC")
+        expires_at = DateTime.from_unix!(token.exp)
 
         %{
           type: token.typ,
           jti: token.jti,
-          expires_at: DateTime.from_unix!(token.exp),
+          expires_at: expires_at,
           client: Map.get(token.claims, "client", "unknown"),
           platform: Map.get(token.claims, "platform", "unknown"),
           last_active_at: last_active_at(token, created_at, is_current),
           created_at: created_at,
-          is_current: is_current
+          is_current: is_current,
+          has_expired: DateTime.compare(DateTime.utc_now(), expires_at) == :gt
         }
       end)
 

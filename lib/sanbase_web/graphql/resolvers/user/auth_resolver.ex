@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
   require Logger
 
-  def get_active_sessions(_root, _args, %{context: %{auth: %{current_user: user}} = context}) do
+  def get_auth_sessions(_root, _args, %{context: %{auth: %{current_user: user}} = context}) do
     refresh_token = context[:jwt_tokens][:refresh_token]
 
     SanbaseWeb.Guardian.Token.refresh_tokens(user.id, refresh_token)

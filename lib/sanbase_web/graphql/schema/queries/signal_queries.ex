@@ -25,13 +25,13 @@ defmodule SanbaseWeb.Graphql.Schema.SignalQueries do
 
     field :get_raw_signals, list_of(:raw_signal) do
       meta(access: :free)
-      # TODO: Implement later. Now use all assets by default
-      # arg(:selector, ...)
+
+      arg(:selector, :signal_target_selector_input_object)
       arg(:signals, list_of(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      cache_resolve(&SignalResolver.get_raw_signals/3, ttl: 60, max_ttl_offset: 60)
+      cache_resolve(&SignalResolver.get_raw_signals/3, ttl: 30, max_ttl_offset: 30)
     end
   end
 end

@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   import Sanbase.Utils.ErrorHandling,
     only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]
 
-  import Sanbase.Metric.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
+  import Sanbase.Model.Project.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
   import SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.Metric

@@ -16,6 +16,7 @@ defmodule Sanbase.Signal do
   @type aggregation :: Type.aggregation()
   @type interval :: Type.interval()
   @type selector :: Type.selector()
+  @type raw_signals_selector :: :all | selector()
 
   @spec has_signal?(signal) :: true | {:error, String.t()}
   def has_signal?(signal), do: SignalAdapter.has_signal?(signal)
@@ -94,11 +95,11 @@ defmodule Sanbase.Signal do
   @doc ~s"""
   Get metadata for a given signal
   """
-  @spec metadata(signal) :: Type.metadata() | {:error, String.t()}
+  @spec metadata(signal) :: {:ok, Type.metadata()} | {:error, String.t()}
   def metadata(signal) do
     case SignalAdapter.has_signal?(signal) do
       true -> SignalAdapter.metadata(signal)
-      error -> error
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -122,9 +123,9 @@ defmodule Sanbase.Signal do
   If the `signals` arguments has a list of signals as a value, then all of those
   signals that occured in the given from-to interval are returned.
   """
-  @spec raw_data(signals, datetime, datetime) :: Type.raw_data_result()
-  def raw_data(signals, from, to) do
-    SignalAdapter.raw_data(signals, from, to)
+  @spec raw_data(signals, raw_signals_selector, datetime, datetime) :: Type.raw_data_result()
+  def raw_data(signals, selector, from, to) do
+    SignalAdapter.raw_data(signals, selector, from, to)
   end
 
   @doc ~s"""

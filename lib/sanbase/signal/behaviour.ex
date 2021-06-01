@@ -1,6 +1,6 @@
 defmodule Sanbase.Signal.Behaviour do
   @type slug :: String.t()
-  @type selector :: slug | map()
+  @type selector :: map()
   @type signal :: String.t()
   @type interval :: String.t()
   @type available_data_types :: :timeseries | :histogram | :table
@@ -55,6 +55,7 @@ defmodule Sanbase.Signal.Behaviour do
 
   @callback raw_data(
               signals :: :all | list(signal),
+              selector :: :all | selector(),
               from :: DateTime.t(),
               to :: DateTime.t()
             ) :: raw_data_result()

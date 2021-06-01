@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   import SanbaseWeb.Graphql.Helpers.Utils
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
-  import Sanbase.Metric.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
+  import Sanbase.Model.Project.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
 
   import Sanbase.Utils.ErrorHandling,
     only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]
@@ -32,7 +32,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
 
   def get_raw_signals(_root, %{from: from, to: to} = args, _resolution) do
     signals = Map.get(args, :signals, :all)
-    Signal.raw_data(signals, from, to)
+
+    selector =
+      case Map.has_key?(args, :selector) do
+        false ->
+          :all
+
+        true ->
+          {:ok, selector} = args_to_selector(args)
+          selector
+      end
+
+    Signal.raw_data(signals, selector, from, to)
   end
 
   def get_available_signals(_root, _args, _resolution), do: {:ok, Signal.available_signals()}

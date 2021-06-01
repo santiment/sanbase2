@@ -179,12 +179,7 @@ defmodule Sanbase.Kaiko do
       # for the same datetime and the Map.merge/3 function was triggered.
       # The call to Map.merge/2 here overrides the prices that are present
       # in the map parameter
-      %{
-        price_usd: nil,
-        price_btc: nil,
-        marketcap_usd: nil,
-        volume_usd: nil
-      }
+      %{price_usd: nil, price_btc: nil, marketcap_usd: nil, volume_usd: nil}
       |> Map.merge(map)
       |> Map.put(:datetime, datetime)
     end)

@@ -43,6 +43,7 @@ defmodule Sanbase.Accounts.EthAccount do
     |> Repo.all()
   end
 
+  @spec san_balance(%__MODULE__{}) :: float | :error
   def san_balance(%__MODULE__{address: address}) do
     case ethauth().san_balance(address) do
       {:ok, san_balance} ->

@@ -202,7 +202,7 @@ defimpl Sanbase.Alert, for: Any do
   end
 
   defp maybe_transform_telegram_response({:error, error}, trigger) do
-    case is_binary(error) and String.contains?(error, "blocked the telegram bot") do
+    case String.contains?(error, "blocked the telegram bot") do
       true ->
         %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = trigger
         {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}

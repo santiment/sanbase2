@@ -12,6 +12,7 @@ defmodule Sanbase.Signal do
 
   @type datetime :: DateTime.t()
   @type signal :: Type.signal()
+  @type signals :: :all | list(signal)
   @type aggregation :: Type.aggregation()
   @type interval :: Type.interval()
   @type selector :: Type.selector()
@@ -61,7 +62,7 @@ defmodule Sanbase.Signal do
   @doc ~s"""
   Get all available signals in the json files
   """
-  @spec available_signals() :: Type.available_signals_result()
+  @spec available_signals() :: list(signal)
   def available_signals() do
     SignalAdapter.available_signals()
   end
@@ -121,7 +122,7 @@ defmodule Sanbase.Signal do
   If the `signals` arguments has a list of signals as a value, then all of those
   signals that occured in the given from-to interval are returned.
   """
-  @spec raw_data(signal, datetime, datetime) :: Type.raw_data_result()
+  @spec raw_data(signals, datetime, datetime) :: Type.raw_data_result()
   def raw_data(signals, from, to) do
     SignalAdapter.raw_data(signals, from, to)
   end

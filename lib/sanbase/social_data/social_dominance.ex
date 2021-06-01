@@ -62,9 +62,6 @@ defmodule Sanbase.SocialData.SocialDominance do
             HTTPoison.Error.message(error)
           }"
         )
-
-      {:error, error} ->
-        {:error, error}
     end
   end
 

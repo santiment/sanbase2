@@ -50,8 +50,8 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   end
 
   @spec top_wallet_transactions(
-          list(String.t()),
           String.t(),
+          list(String.t()),
           DateTime.t(),
           DateTime.t(),
           non_neg_integer(),
@@ -59,7 +59,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
           non_neg_integer(),
           String.t()
         ) ::
-          {:ok, nil} | {:ok, list(map())} | {:error, String.t()}
+          {:ok, list(map())} | {:error, String.t()}
   def top_wallet_transactions(_contract, [], _from, _to, _page, _page_size, _type), do: {:ok, []}
 
   def top_wallet_transactions(contract, wallets, from, to, decimals, page, page_size, type) do

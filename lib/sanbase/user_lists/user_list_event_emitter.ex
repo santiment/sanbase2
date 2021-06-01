@@ -14,6 +14,7 @@ defmodule Sanbase.UserList.EventEmitter do
 
   defp notify(data) do
     Sanbase.EventBus.notify(%{topic: @topic, data: data})
+
     :ok
   end
 end

@@ -209,27 +209,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
 
   def list_items(%UserList{type: :blockchain_address} = user_list, _args, _resolution) do
     async(fn ->
-      case UserList.get_blockchain_addresses(user_list) do
-        {:ok, %{blockchain_addresses: blockchain_addresses}} ->
-          result =
-            blockchain_addresses
-            |> Enum.map(
-              &%{
-                blockchain_address: %{
-                  id: &1.id,
-                  address: &1.blockchain_address.address,
-                  labels: &1.labels,
-                  notes: &1.notes,
-                  infrastructure: &1.blockchain_address.infrastructure.code
-                }
-              }
-            )
+      {:ok, %{blockchain_addresses: blockchain_addresses}} =
+        UserList.get_blockchain_addresses(user_list)
 
-          {:ok, result}
+      result =
+        blockchain_addresses
+        |> Enum.map(
+          &%{
+            blockchain_address: %{
+              id: &1.id,
+              address: &1.blockchain_address.address,
+              labels: &1.labels,
+              notes: &1.notes,
+              infrastructure: &1.blockchain_address.infrastructure.code
+            }
+          }
+        )
 
-        {:error, error} ->
-          {:error, error}
-      end
+      {:ok, result}
     end)
   end
 

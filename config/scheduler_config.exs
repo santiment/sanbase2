@@ -45,6 +45,7 @@ config :sanbase, Sanbase.Alerts.Scheduler,
 config :sanbase, Sanbase.Scrapers.Scheduler,
   scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
   timeout: 30_000,
+  overlap: false,
   jobs: [
     update_api_call_limit_plans: [
       schedule: "@daily",
@@ -72,13 +73,11 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     ],
     sync_stripe_subscriptions: [
       schedule: "2-59/20 * * * *",
-      task: {Sanbase.Billing, :sync_stripe_subscriptions, []},
-      overlap: false
+      task: {Sanbase.Billing, :sync_stripe_subscriptions, []}
     ],
     remove_duplicate_subscriptions: [
       schedule: "*/20 * * * *",
-      task: {Sanbase.Billing, :remove_duplicate_subscriptions, []},
-      overlap: false
+      task: {Sanbase.Billing, :remove_duplicate_subscriptions, []}
     ],
     logo_fetcher: [
       schedule: "@daily",

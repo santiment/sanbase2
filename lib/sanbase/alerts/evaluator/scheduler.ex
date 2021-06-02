@@ -58,6 +58,8 @@ defmodule Sanbase.Alert.Scheduler do
     # The batches are run sequentially for now. If they start running in parallel
     # the batches creation becomes more complicated - all the alerts of a user
     # must end up in a single batch so no race conditions updating the DB can occur.
+    # batches = split_into_batches(alerts)
+
     batches =
       alerts
       |> Enum.chunk_every(@batch_size)
@@ -80,6 +82,12 @@ defmodule Sanbase.Alert.Scheduler do
 
     run_batches(batches, info_map)
   end
+
+  # defp split_into_batches(alerts) do
+  #   user_groups = Enum.group_by(alerts, & &1.user_id)
+
+  #   Enum.reduce(user_groups, )
+  # end
 
   defp run_batches([], info_map) do
     Logger.info("""

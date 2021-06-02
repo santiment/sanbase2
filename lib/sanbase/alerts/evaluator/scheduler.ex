@@ -42,7 +42,7 @@ defmodule Sanbase.Alert.Scheduler do
 
   # Private functions
 
-  @batch_size 200
+  @batch_size 100
   defp run(type) do
     Logger.info("Schedule evaluation for the alerts of type #{type}")
 
@@ -58,11 +58,9 @@ defmodule Sanbase.Alert.Scheduler do
     # The batches are run sequentially for now. If they start running in parallel
     # the batches creation becomes more complicated - all the alerts of a user
     # must end up in a single batch so no race conditions updating the DB can occur.
-    # batches = split_into_batches(alerts)
-
     batches =
-      alerts
-      |> Enum.chunk_every(@batch_size)
+      split_into_batches(alerts)
+      |> batches_to_maps()
 
     alerts_count = length(alerts)
 
@@ -77,17 +75,52 @@ defmodule Sanbase.Alert.Scheduler do
     Logger.info("""
     [#{info_map.run_uuid}] Start evaluating alerts of type #{type} in batches. \
     In total #{alerts_count} alerts will be processed in #{info_map.batches_count} \
-    #{if info_map.batches_count == 1, do: "batch", else: "batches"} of size #{@batch_size}.
+    #{if info_map.batches_count == 1, do: "batch", else: "batches"} of size \
+    approximately #{@batch_size}.
     """)
 
     run_batches(batches, info_map)
   end
 
-  # defp split_into_batches(alerts) do
-  #   user_groups = Enum.group_by(alerts, & &1.user_id)
+  defp split_into_batches(alerts) do
+    # The state is going to be a list of mapsets, each of which will have a size
+    # slightly larger than the @batch_size. All of a given users' alerts are put
+    # in the same batch, so they can be run concurrently. Because the intial state
+    # contains an empty mapset, if there are no alerts the result must be run
+    # through Enum.reject(&Enum.empty?)
+    init_state = [MapSet.new()]
 
-  #   Enum.reduce(user_groups, )
-  # end
+    Enum.group_by(alerts, & &1.user_id)
+    |> Enum.reduce(init_state, fn {_user_id, list}, [mapset | rest] = acc ->
+      case MapSet.size(mapset) < @batch_size do
+        true ->
+          [MapSet.union(MapSet.new(list), mapset) | rest]
+
+        false ->
+          [MapSet.new(list) | acc]
+      end
+    end)
+    |> Enum.reject(&Enum.empty?/1)
+  end
+
+  # Transform the list of batches represented as lists to a list of batches
+  # represented as maps. The map includes extra information for the number of
+  # alerts in the batch and what part of the whole alerts list this batch
+  # covers
+  defp batches_to_maps(batches) do
+    batches
+    |> Enum.reduce({[], 0}, fn alerts, {batches, size_so_far} ->
+      elem = %{
+        alerts: Enum.to_list(alerts),
+        batch_size: MapSet.size(alerts),
+        alerts_from: size_so_far,
+        alerts_to: size_so_far + MapSet.size(alerts)
+      }
+
+      {[elem | batches], size_so_far + elem.alerts_to + 1}
+    end)
+    |> elem(0)
+  end
 
   defp run_batches([], info_map) do
     Logger.info("""
@@ -97,9 +130,7 @@ defmodule Sanbase.Alert.Scheduler do
   end
 
   defp run_batches(trigger_batches, info_map) do
-    trigger_batches
-    |> Enum.with_index(1)
-    |> Enum.each(fn {triggers_batch, index} ->
+    run_batch_fun = fn {triggers_batch, index} ->
       try do
         info_map = Map.put(info_map, :index, index)
         run_batch(triggers_batch, info_map)
@@ -113,15 +144,24 @@ defmodule Sanbase.Alert.Scheduler do
           #{Exception.format(:error, e, __STACKTRACE__)}
           """)
       end
-    end)
+    end
+
+    trigger_batches
+    |> Enum.with_index(1)
+    |> Sanbase.Parallel.map(run_batch_fun,
+      max_concurrency: 4,
+      timeout: 600 * 1000,
+      ordered: false,
+      on_timeout: :kill_task
+    )
   end
 
-  defp run_batch(triggers_batch, info_map) do
+  defp run_batch(batch_map, info_map) do
     %{type: type} = info_map
-    log_current_batch_message(info_map)
+    log_current_batch_message(info_map, batch_map)
 
     {updated_user_triggers, sent_list_results} =
-      triggers_batch
+      batch_map.alerts
       |> Evaluator.run(type)
       |> send_and_mark_as_sent()
 
@@ -139,22 +179,19 @@ defmodule Sanbase.Alert.Scheduler do
     |> log_sent_messages_stats(type, info_map)
   end
 
-  defp log_current_batch_message(info_map) do
+  defp log_current_batch_message(info_map, batch_map) do
     %{
       type: type,
       index: index,
-      alerts_count: alerts_count,
       batches_count: batches_count,
-      batch_size: batch_size,
-      run_uuid: run_uuid
+      run_uuid: run_uuid,
+      alerts_count: alerts_count
     } = info_map
-
-    from_alert = (index - 1) * batch_size
-    to_alert = Enum.min([alerts_count, index * batch_size])
 
     Logger.info("""
     [#{run_uuid}] Run batch of alerts of type #{type}. Batch #{index}/#{batches_count}, \
-    Alerts #{from_alert}-#{to_alert}/#{alerts_count}.
+    with size #{batch_map.batch_size}. Alerts #{batch_map.alerts_from}-#{batch_map.alerts_to} \
+    out of #{alerts_count}.
     """)
   end
 
@@ -189,7 +226,8 @@ defmodule Sanbase.Alert.Scheduler do
   end
 
   defp deactivate_non_repeating(triggers) do
-    for %UserTrigger{id: id, user: user, trigger: %{is_repeating: false}} <- triggers do
+    for %UserTrigger{id: id, user: user, trigger: %{is_repeating: false}} <-
+          triggers do
       UserTrigger.update_user_trigger(user, %{
         id: id,
         is_active: false
@@ -228,6 +266,7 @@ defmodule Sanbase.Alert.Scheduler do
           {:ok, %{last_triggered: last_triggered}} = handle_send_results_list(user_trigger, list)
 
           user_trigger = update_trigger_last_triggered(user_trigger, last_triggered)
+
           {user_trigger, list}
       end
     end)
@@ -305,14 +344,20 @@ defmodule Sanbase.Alert.Scheduler do
         id: id,
         user_id: user_id,
         trigger: %{
-          settings: %{triggered?: true, payload: payload, template_kv: template_kv},
+          settings: %{
+            triggered?: true,
+            payload: payload,
+            template_kv: template_kv
+          },
           last_triggered: last_triggered
         }
       }
       when is_non_empty_map(last_triggered) ->
         identifier_kv_map =
           template_kv
-          |> Enum.into(%{}, fn {identifier, {_template, kv}} -> {identifier, kv} end)
+          |> Enum.into(%{}, fn {identifier, {_template, kv}} ->
+            {identifier, kv}
+          end)
 
         %{
           user_trigger_id: id,
@@ -348,7 +393,9 @@ defmodule Sanbase.Alert.Scheduler do
 
   defp log_sent_messages_stats(list, type, info_map) do
     list_length = length(list)
+
     successful_messages_count = list |> Enum.count(fn {_elem, status} -> status == :ok end)
+
     errors = for {_, {:error, error}} <- list, do: error
 
     if successful_messages_count + length(errors) != list_length do
@@ -384,7 +431,8 @@ defmodule Sanbase.Alert.Scheduler do
     """)
   end
 
-  defp max_last_triggered(last_triggered) when is_non_empty_map(last_triggered) do
+  defp max_last_triggered(last_triggered)
+       when is_non_empty_map(last_triggered) do
     last_triggered
     |> Map.values()
     |> Enum.map(fn

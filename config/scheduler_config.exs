@@ -10,6 +10,7 @@ alias Sanbase.Alert.Trigger
 config :sanbase, Sanbase.Alerts.Scheduler,
   scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
   timeout: 30_000,
+  overlap: false,
   jobs: [
     price_volume_difference_sonar_alert: [
       schedule: "1-59/5 * * * *",

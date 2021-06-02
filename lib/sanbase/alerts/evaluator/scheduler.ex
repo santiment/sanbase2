@@ -100,7 +100,7 @@ defmodule Sanbase.Alert.Scheduler do
           Logger.error("""
           [#{info_map.run_uuid}] Raised an exception while evaluating alerts of type #{
             info_map.type
-          } - batch #{index}. \
+          } - batch #{index}.
 
           #{Exception.format(:error, e, __STACKTRACE__)}
           """)

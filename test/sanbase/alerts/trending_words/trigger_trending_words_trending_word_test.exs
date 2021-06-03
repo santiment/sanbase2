@@ -21,8 +21,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingWordTest do
       channel: "telegram",
       operation: %{trending_word: true},
       target: %{word: ["san", "santiment"]},
-      extra_explanation:
-        "A coin's appearance in trending words may suggest an increased risk of local tops and short-term price correction."
+      include_default_explanation: true
     }
 
     {:ok, trigger_trending_words} =

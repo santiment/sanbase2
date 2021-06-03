@@ -37,6 +37,9 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
             payload: %{},
             template_kv: %{},
             extra_explanation: nil,
+            include_default_explanation: false,
+            default_explanation:
+              "A coin's appearance in trending words may suggest an increased risk of local tops and short-term price correction.",
             template: nil
 
   @type t :: %__MODULE__{
@@ -48,7 +51,9 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
           triggered?: boolean(),
           payload: Type.payload(),
           template_kv: Type.template_kv(),
-          extra_explanation: Type.extra_explanation()
+          extra_explanation: Type.extra_explanation(),
+          include_default_explanation: boolean(),
+          default_explanation: String.t()
         }
 
   # Validations
@@ -194,21 +199,18 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
         operation: settings,
         trending_words_list: top_words,
         trending_words_str: trending_words_str,
-        sonar_url: SanbaseWeb.Endpoint.sonar_url(),
-        extra_explanation: settings.extra_explanation
+        sonar_url: SanbaseWeb.Endpoint.sonar_url()
       }
 
-      template =
-        """
-        🔔 Trending words at: {{datetime}}
+      template = """
+      🔔 Trending words at: {{datetime}}
 
-        ```
-        {{trending_words_str}}
-        ```
-        """
-        |> maybe_extend_extra_explanation(settings.extra_explanation)
+      ```
+      {{trending_words_str}}
+      ```
+      """
 
-      {template, kv}
+      {template, kv} |> maybe_extend_with_explanation(settings)
     end
 
     defp template_kv(%{operation: %{trending_word: true}} = settings, [word]) do
@@ -217,17 +219,14 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
         operation: settings,
         trending_words_list: [word],
         trending_words_str: "**#{word}**",
-        trending_words_url: SanbaseWeb.Endpoint.trending_word_url(word),
-        extra_explanation: settings.extra_explanation
+        trending_words_url: SanbaseWeb.Endpoint.trending_word_url(word)
       }
 
-      template =
-        """
-        🔔 The word {{trending_words_str}} is in the trending words.
-        """
-        |> maybe_extend_extra_explanation(settings.extra_explanation)
+      template = """
+      🔔 The word {{trending_words_str}} is in the trending words.
+      """
 
-      {template, kv}
+      {template, kv} |> maybe_extend_with_explanation(settings)
     end
 
     defp template_kv(%{operation: %{trending_word: true}} = settings, [_, _ | _] = words) do
@@ -239,17 +238,14 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
         operation: settings,
         trending_words_list: words,
         trending_words_str: words_str,
-        trending_words_url: SanbaseWeb.Endpoint.trending_word_url(words),
-        extra_explanation: settings.extra_explanation
+        trending_words_url: SanbaseWeb.Endpoint.trending_word_url(words)
       }
 
-      template =
-        """
-        🔔 The words {{trending_words_str}} are in the trending words.
-        """
-        |> maybe_extend_extra_explanation(settings.extra_explanation)
+      template = """
+      🔔 The words {{trending_words_str}} are in the trending words.
+      """
 
-      {template, kv}
+      {template, kv} |> maybe_extend_with_explanation(settings)
     end
 
     defp template_kv(%{operation: %{trending_project: true}} = settings, project) do
@@ -258,17 +254,14 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
         operation: settings,
         project_name: project.name,
         project_ticker: project.ticker,
-        project_slug: project.slug,
-        extra_explanation: settings.extra_explanation
+        project_slug: project.slug
       }
 
-      template =
-        """
-        🔔 \#{{project_ticker}} | **{{project_name}}** is in the trending words.
-        """
-        |> maybe_extend_extra_explanation(settings.extra_explanation)
+      template = """
+      🔔 \#{{project_ticker}} | **{{project_name}}** is in the trending words.
+      """
 
-      {template, kv}
+      {template, kv} |> maybe_extend_with_explanation(settings)
     end
 
     defp get_max_len(top_words) do
@@ -277,9 +270,21 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       |> Enum.max()
     end
 
-    defp maybe_extend_extra_explanation(template, nil), do: template
+    defp maybe_extend_with_explanation({template, kv}, settings) do
+      default_explanation =
+        case settings.include_default_explanation do
+          true -> settings.default_explanation
+          false -> nil
+        end
 
-    defp maybe_extend_extra_explanation(template, _extra_explanation) do
+      explanation = settings.extra_explanation || default_explanation
+
+      {maybe_extend_template(template, explanation), Map.put(kv, :extra_explanation, explanation)}
+    end
+
+    defp maybe_extend_template(template, nil), do: template
+
+    defp maybe_extend_template(template, _extra_explanation) do
       template <> "{{extra_explanation}}\n"
     end
   end

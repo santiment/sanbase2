@@ -42,7 +42,7 @@ defmodule Sanbase.Alert.Scheduler do
 
   # Private functions
 
-  @batch_size 100
+  @batch_size 60
   defp run(type) do
     Logger.info("Schedule evaluation for the alerts of type #{type}")
 

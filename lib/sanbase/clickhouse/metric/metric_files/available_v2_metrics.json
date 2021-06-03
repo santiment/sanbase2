@@ -221,179 +221,22 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 10 years",
-    "name": "mean_realized_price_usd_10y",
-    "metric": "mean_realized_price_usd_10y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 5 years",
-    "name": "mean_realized_price_usd_5y",
-    "metric": "mean_realized_price_usd_5y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 3 years",
-    "name": "mean_realized_price_usd_3y",
-    "metric": "mean_realized_price_usd_3y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 2 years",
-    "name": "mean_realized_price_usd_2y",
-    "metric": "mean_realized_price_usd_2y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 1 year",
-    "name": "mean_realized_price_usd_365d",
-    "metric": "mean_realized_price_usd_365d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 180 days",
-    "name": "mean_realized_price_usd_180d",
-    "metric": "mean_realized_price_usd_180d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 90 days",
-    "name": "mean_realized_price_usd_90d",
-    "metric": "mean_realized_price_usd_90d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 60 days",
-    "name": "mean_realized_price_usd_60d",
-    "metric": "mean_realized_price_usd_60d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 30 days",
-    "name": "mean_realized_price_usd_30d",
-    "metric": "mean_realized_price_usd_30d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 7 days",
-    "name": "mean_realized_price_usd_7d",
-    "metric": "mean_realized_price_usd_7d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 1 day",
-    "name": "mean_realized_price_usd_1d",
-    "metric": "mean_realized_price_usd_1d",
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past {{timebound_human_readable}}",
+    "name": "mean_realized_price_usd_{{timebound}}",
+    "metric": "mean_realized_price_usd_{{timebound}}",
+    "timebound": [
+      "1d",
+      "7d",
+      "30d",
+      "60d",
+      "90d",
+      "180d",
+      "365d",
+      "2y",
+      "3y",
+      "5y",
+      "10y"
+    ],
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
@@ -442,9 +285,22 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "MVRV for coins that moved in the past 10 years",
-    "name": "mvrv_usd_10y",
-    "metric": "mvrv_usd_10y",
+    "human_readable_name": "MVRV for coins that moved in the past {{timebound_human_readable}}",
+    "name": "mvrv_usd_{{timebound}}",
+    "metric": "mvrv_usd_{{timebound}}",
+    "timebound": [
+      "1d",
+      "7d",
+      "30d",
+      "60d",
+      "90d",
+      "180d",
+      "365d",
+      "2y",
+      "3y",
+      "5y",
+      "10y"
+    ],
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
@@ -458,177 +314,6 @@
     "has_incomplete_data": true,
     "data_type": "timeseries"
   },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 5 years",
-    "name": "mvrv_usd_5y",
-    "metric": "mvrv_usd_5y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 3 years",
-    "name": "mvrv_usd_3y",
-    "metric": "mvrv_usd_3y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 2 years",
-    "name": "mvrv_usd_2y",
-    "metric": "mvrv_usd_2y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 1 year",
-    "name": "mvrv_usd_365d",
-    "metric": "mvrv_usd_365d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 180 days",
-    "name": "mvrv_usd_180d",
-    "metric": "mvrv_usd_180d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 90 days",
-    "name": "mvrv_usd_90d",
-    "metric": "mvrv_usd_90d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 60 days",
-    "name": "mvrv_usd_60d",
-    "metric": "mvrv_usd_60d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 30 days",
-    "name": "mvrv_usd_30d",
-    "metric": "mvrv_usd_30d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 7 days",
-    "name": "mvrv_usd_7d",
-    "metric": "mvrv_usd_7d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 1 day",
-    "name": "mvrv_usd_1d",
-    "metric": "mvrv_usd_1d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-
   {
     "human_readable_name": "MVRV",
     "name": "mvrv_usd_intraday",
@@ -647,9 +332,22 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "MVRV for coins that moved in the past 10 years",
-    "name": "mvrv_usd_intraday_10y",
-    "metric": "mvrv_usd_intraday_10y",
+    "human_readable_name": "MVRV for coins that moved in the past {{timebound_human_readable}}",
+    "name": "mvrv_usd_intraday_{{timebound}}",
+    "metric": "mvrv_usd_intraday_{{timebound}}",
+    "timebound": [
+      "1d",
+      "7d",
+      "30d",
+      "60d",
+      "90d",
+      "180d",
+      "365d",
+      "2y",
+      "3y",
+      "5y",
+      "10y"
+    ],
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
@@ -663,177 +361,6 @@
     "has_incomplete_data": false,
     "data_type": "timeseries"
   },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 5 years",
-    "name": "mvrv_usd_intraday_5y",
-    "metric": "mvrv_usd_intraday_5y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 3 years",
-    "name": "mvrv_usd_intraday_3y",
-    "metric": "mvrv_usd_intraday_3y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 2 years",
-    "name": "mvrv_usd_intraday_2y",
-    "metric": "mvrv_usd_intraday_2y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 1 year",
-    "name": "mvrv_usd_intraday_365d",
-    "metric": "mvrv_usd_intraday_365d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 180 days",
-    "name": "mvrv_usd_intraday_180d",
-    "metric": "mvrv_usd_intraday_180d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 90 days",
-    "name": "mvrv_usd_intraday_90d",
-    "metric": "mvrv_usd_intraday_90d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 60 days",
-    "name": "mvrv_usd_intraday_60d",
-    "metric": "mvrv_usd_intraday_60d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 30 days",
-    "name": "mvrv_usd_intraday_30d",
-    "metric": "mvrv_usd_intraday_30d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 7 days",
-    "name": "mvrv_usd_intraday_7d",
-    "metric": "mvrv_usd_intraday_7d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "MVRV for coins that moved in the past 1 day",
-    "name": "mvrv_usd_intraday_1d",
-    "metric": "mvrv_usd_intraday_1d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-
   {
     "human_readable_name": "Circulation",
     "name": "circulation",
@@ -852,179 +379,22 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Circulation for coins that moved in the past 10 years",
-    "name": "circulation_10y",
-    "metric": "stack_circulation_10y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that moved in the past 5 years",
-    "name": "circulation_5y",
-    "metric": "stack_circulation_5y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that moved in the past 3 years",
-    "name": "circulation_3y",
-    "metric": "stack_circulation_3y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that moved in the past 2 years",
-    "name": "circulation_2y",
-    "metric": "stack_circulation_2y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that moved in the past 1 year",
-    "name": "circulation_365d",
-    "metric": "stack_circulation_365d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that moved in the past 180 days",
-    "name": "circulation_180d",
-    "metric": "stack_circulation_180d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that moved in the past 90 days",
-    "name": "circulation_90d",
-    "metric": "stack_circulation_90d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that moved in the past 60 days",
-    "name": "circulation_60d",
-    "metric": "stack_circulation_60d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that moved in the past 30 days",
-    "name": "circulation_30d",
-    "metric": "stack_circulation_30d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that moved in the past 7 days",
-    "name": "circulation_7d",
-    "metric": "stack_circulation_7d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that moved in the past 1 day",
-    "name": "circulation_1d",
-    "metric": "stack_circulation_1d",
+    "human_readable_name": "Circulation for coins that moved in the past {{timebound_human_readable}}",
+    "name": "circulation_{{timebound}}",
+    "metric": "stack_circulation_{{timebound}}",
+    "timebound": [
+      "1d",
+      "7d",
+      "30d",
+      "60d",
+      "90d",
+      "180d",
+      "365d",
+      "2y",
+      "3y",
+      "5y",
+      "10y"
+    ],
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
@@ -1213,179 +583,22 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Realized Value for coins that moved in the past 10 years",
-    "name": "realized_value_usd_10y",
-    "metric": "stack_realized_cap_usd_10y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Realized Value for coins that moved in the past 5 years",
-    "name": "realized_value_usd_5y",
-    "metric": "stack_realized_cap_usd_5y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Realized Value for coins that moved in the past 3 years",
-    "name": "realized_value_usd_3y",
-    "metric": "stack_realized_cap_usd_3y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Realized Value for coins that moved in the past 2 years",
-    "name": "realized_value_usd_2y",
-    "metric": "stack_realized_cap_usd_2y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Realized Value for coins that moved in the past 1 year",
-    "name": "realized_value_usd_365d",
-    "metric": "stack_realized_cap_usd_365d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Realized Value for coins that moved in the past 180 days",
-    "name": "realized_value_usd_180d",
-    "metric": "stack_realized_cap_usd_180d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Realized Value for coins that moved in the past 90 days",
-    "name": "realized_value_usd_90d",
-    "metric": "stack_realized_cap_usd_90d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Realized Value for coins that moved in the past 60 days",
-    "name": "realized_value_usd_60d",
-    "metric": "stack_realized_cap_usd_60d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Realized Value for coins that moved in the past 30 days",
-    "name": "realized_value_usd_30d",
-    "metric": "stack_realized_cap_usd_30d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Realized Value for coins that moved in the past 7 days",
-    "name": "realized_value_usd_7d",
-    "metric": "stack_realized_cap_usd_7d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Realized Value for coins that moved in the past 1 day",
-    "name": "realized_value_usd_1d",
-    "metric": "stack_realized_cap_usd_1d",
+    "human_readable_name": "Realized Value for coins that moved in the past {{timebound_human_readable}}",
+    "name": "realized_value_usd_{{timebound}}",
+    "metric": "stack_realized_cap_usd_{{timebound}}",
+    "timebound": [
+      "1d",
+      "7d",
+      "30d",
+      "60d",
+      "90d",
+      "180d",
+      "365d",
+      "2y",
+      "3y",
+      "5y",
+      "10y"
+    ],
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],

@@ -4,6 +4,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   require Sanbase.Break, as: Break
 
   defmodule Helper do
+    import Sanbase.DateTimeUtils, only: [interval_to_str: 1]
+
+    alias Sanbase.TemplateEngine
+
     def name_to_field_map(map, field, opts \\ []) do
       Break.if_kw_invalid?(opts, valid_keys: [:transform_fn, :required?])
 
@@ -27,12 +31,49 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
       end)
     end
 
-    def resolve_metric_aliases(metric, aliases) do
+    def resolve_metric_aliases(aliases, metric) do
       duplicates =
         aliases
         |> Enum.map(&Map.put(metric, "name", &1))
 
       [metric | duplicates]
+    end
+
+    def resolve_timebound_metrics(metric_map, timebound_values) do
+      %{
+        "name" => name,
+        "metric" => metric,
+        "human_readable_name" => human_readable_name
+      } = metric_map
+
+      timebound_values
+      |> Enum.map(fn timebound ->
+        %{
+          metric_map
+          | "name" => TemplateEngine.run(name, %{timebound: timebound}),
+            "metric" => TemplateEngine.run(metric, %{timebound: timebound}),
+            "human_readable_name" =>
+              TemplateEngine.run(
+                human_readable_name,
+                %{timebound_human_readable: interval_to_str(timebound)}
+              )
+        }
+      end)
+    end
+
+    def expand_timebound_metrics(metrics_json_pre_timebound_expand) do
+      Enum.flat_map(
+        metrics_json_pre_timebound_expand,
+        fn metric ->
+          case Map.get(metric, "timebound") do
+            nil ->
+              [metric]
+
+            timebound_values ->
+              resolve_timebound_metrics(metric, timebound_values)
+          end
+        end
+      )
     end
   end
 
@@ -80,13 +121,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                                    (File.read!(file) |> Jason.decode!()) ++ acc
                                  end)
 
-  @metrics_json Enum.flat_map(
-                  @metrics_json_pre_alias_expand,
-                  fn metric ->
-                    aliases = Map.get(metric, "aliases", [])
-                    Helper.resolve_metric_aliases(metric, aliases)
-                  end
-                )
+  @metrics_json_pre_timebound_expand Enum.flat_map(
+                                       @metrics_json_pre_alias_expand,
+                                       fn metric ->
+                                         Map.get(metric, "aliases", [])
+                                         |> Helper.resolve_metric_aliases(metric)
+                                       end
+                                     )
+
+  @metrics_json Helper.expand_timebound_metrics(@metrics_json_pre_timebound_expand)
 
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 

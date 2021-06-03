@@ -163,7 +163,7 @@ defmodule Sanbase.Alert.Scheduler do
     {updated_user_triggers, sent_list_results} =
       batch_map.alerts
       |> Evaluator.run(type)
-      |> send_and_mark_as_sent()
+      |> send_and_mark_as_sent(info_map)
 
     fired_alerts =
       updated_user_triggers
@@ -236,7 +236,7 @@ defmodule Sanbase.Alert.Scheduler do
   end
 
   # returns a tuple {updated_user_triggers, send_result_list}
-  defp send_and_mark_as_sent(triggers) do
+  defp send_and_mark_as_sent(triggers, info_map) do
     # Group by user. Separate user groups can be executed concurrently, but
     # the triggers of the same user must not be concurrent. By doing this we
     # drop the Mutex dependency while sending notifications that were necessary
@@ -250,8 +250,12 @@ defmodule Sanbase.Alert.Scheduler do
       fn {_user_id, triggers} -> send_triggers_sequentially(triggers) end,
       max_concurrency: 15,
       ordered: false,
-      map_type: :flat_map
+      map_type: :flat_map,
+      timeout: 60_000,
+      on_timeout: :kill_task
     )
+    |> Enum.reject(&match?({:exit, :timeout}, &1))
+    |> report_sending_alert_timeout(triggers, info_map)
     |> Enum.unzip()
   end
 
@@ -270,6 +274,29 @@ defmodule Sanbase.Alert.Scheduler do
           {user_trigger, list}
       end
     end)
+  end
+
+  # This function is called after the timeouts are removed from the result
+  # The missing alerts are those which task for sending them to the user timed out
+  defp report_sending_alert_timeout(result, triggers, info_map) do
+    %{type: type, run_uuid: run_uuid, index: index} = info_map
+
+    sent_trigger_ids = Enum.map(result, fn {ut, _} -> ut.id end)
+    all_trigger_ids = Enum.map(triggers, & &1.id)
+
+    case all_trigger_ids -- sent_trigger_ids do
+      [] ->
+        :ok
+
+      failed_ids ->
+        Logger.info("""
+        [#{run_uuid}] In total #{length(failed_ids)} triggered alerts of type #{type} \
+        from batch #{index} task for sending them timed out. List of timedout alerts: \
+        #{Enum.join(failed_ids, ", ")}
+        """)
+    end
+
+    result
   end
 
   defp update_trigger_last_triggered(user_trigger, last_triggered) do

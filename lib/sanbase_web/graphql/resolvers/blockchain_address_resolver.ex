@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     |> Label.list_all()
   end
 
-  def top_transactions(
+  def top_transfers(
         _root,
         %{address_selector: address_selector, slug: slug, from: from, to: to} = args,
         _resolution
@@ -38,13 +38,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
 
     with {:ok, transactions} <-
            Transfers.top_wallet_transactions(slug, address, from, to, page, page_size, type),
-         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
          {:ok, transactions} <- Label.add_labels(slug, transactions) do
       {:ok, transactions}
     end
   end
 
-  def top_transactions(
+  def top_transfers(
         _root,
         %{slug: slug, from: from, to: to} = args,
         _resolution
@@ -53,10 +52,42 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
 
     with {:ok, transactions} <-
            Sanbase.Transfers.top_transactions(slug, from, to, page, page_size),
-         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
+         {:ok, transactions} <- transform_address_to_map(transactions, slug),
          {:ok, transactions} <- Label.add_labels(slug, transactions) do
       {:ok, transactions}
     end
+  end
+
+  defp transform_address_to_map(transactions, slug) do
+    {:ok, _, _, infr} = Sanbase.Model.Project.contract_info_infrastructure_by_slug(slug)
+
+    result =
+      transactions
+      |> Enum.map(fn %{from_address: from_address, to_address: to_address} = trx ->
+        trx
+        |> Map.put(:from_address, %{address: from_address, infrastructure: infr})
+        |> Map.put(:to_address, %{address: to_address, infrastructure: infr})
+      end)
+
+    {:ok, result}
+  end
+
+  def user_address_details(%{address: address, infrastructure: infrastructure}, _args, %{
+        context: %{loader: loader, auth: %{current_user: user}}
+      }) do
+    elem = %{user_id: user.id, address: address, infrastructure: infrastructure}
+
+    loader
+    |> Dataloader.load(SanbaseDataloader, :user_address_details, elem)
+    |> on_load(fn loader ->
+      result = Dataloader.get(loader, SanbaseDataloader, :user_address_details, elem)
+
+      {:ok, result}
+    end)
+  end
+
+  def user_address_details(root, _args, _resolution) do
+    {:ok, nil}
   end
 
   def recent_transactions(

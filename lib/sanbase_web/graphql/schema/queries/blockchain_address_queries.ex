@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
     @desc """
     Top transactions for the given slug and timerange arguments.
     """
-    field :top_transfers, list_of(:transaction) do
+    field :top_transfers, list_of(:account_based_transfer) do
       meta(access: :free)
 
       arg(:address_selector, :address_selector)
@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       arg(:page, :integer)
       arg(:page_size, :integer)
 
-      cache_resolve(&BlockchainAddressResolver.top_transactions/3)
+      cache_resolve(&BlockchainAddressResolver.top_transfers/3)
     end
 
     @desc "Recent transactions for this address"

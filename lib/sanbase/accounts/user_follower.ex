@@ -16,12 +16,13 @@ defmodule Sanbase.Accounts.UserFollower do
   schema "user_followers" do
     belongs_to(:user, User, foreign_key: :user_id, primary_key: true)
     belongs_to(:follower, User, foreign_key: :follower_id, primary_key: true)
+    field(:disable_notifications, :boolean, default: false)
     timestamps()
   end
 
   def changeset(%__MODULE__{} = user_follower, attrs \\ %{}) do
     user_follower
-    |> cast(attrs, [:user_id, :follower_id])
+    |> cast(attrs, [:user_id, :follower_id, :disable_notifications])
     |> unique_constraint(:user_id_follower_id, name: :user_followers_user_id_follower_id_index)
   end
 
@@ -45,6 +46,21 @@ defmodule Sanbase.Accounts.UserFollower do
     end
   end
 
+  def following_toggle_notification(user_id, follower_id, disable_notifications)
+      when user_id != follower_id do
+    from(uf in __MODULE__, where: uf.user_id == ^user_id and uf.follower_id == ^follower_id)
+    |> Repo.one()
+    |> case do
+      %__MODULE__{} = user_follower ->
+        user_follower
+        |> changeset(%{disable_notifications: disable_notifications})
+        |> Repo.update()
+
+      nil ->
+        {:error, "This user is not followed!"}
+    end
+  end
+
   @doc """
   Returns all user ids of users that are followed by certain user
   """
@@ -54,6 +70,26 @@ defmodule Sanbase.Accounts.UserFollower do
       inner_join: u in User,
       on: u.id == uf.user_id,
       where: uf.follower_id == ^user_id,
+      select: u
+    )
+    |> Repo.all()
+  end
+
+  def followed_by2(user_id) do
+    from(
+      uf in __MODULE__,
+      where: uf.follower_id == ^user_id,
+      preload: [:user]
+    )
+    |> Repo.all()
+  end
+
+  def followed_by_with_notifications_enabled(user_id) do
+    from(
+      uf in __MODULE__,
+      inner_join: u in User,
+      on: u.id == uf.user_id,
+      where: uf.follower_id == ^user_id and uf.disable_notifications != true,
       select: u
     )
     |> Repo.all()
@@ -73,6 +109,16 @@ defmodule Sanbase.Accounts.UserFollower do
     |> Repo.all()
   end
 
+  def followers_of2(user_id) do
+    from(
+      uf in __MODULE__,
+      where: uf.user_id == ^user_id,
+      preload: [:follower]
+    )
+    |> Repo.all()
+    |> Enum.map(fn uf -> %{user: uf.follower, disable_notifications: uf.disable_notifications} end)
+  end
+
   def user_id_to_followers_count() do
     from(
       uf in __MODULE__,
@@ -82,6 +128,8 @@ defmodule Sanbase.Accounts.UserFollower do
     |> Repo.all()
     |> Map.new()
   end
+
+  # helpers
 
   defp get_pair(user_id, follower_id) do
     from(uf in __MODULE__, where: uf.user_id == ^user_id and uf.follower_id == ^follower_id)

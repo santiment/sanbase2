@@ -18,6 +18,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserFollowerResolver do
     |> handle_result("unfollow", current_user)
   end
 
+  def following_toggle_notification(_root, args, %{
+        context: %{auth: %{auth_method: :user_token, current_user: current_user}}
+      }) do
+    UserFollower.following_toggle_notification(
+      to_string(args.user_id),
+      to_string(current_user.id),
+      args.disable_notifications
+    )
+    |> handle_result("toggle notifications of", current_user)
+  end
+
   defp handle_result(result, operation, current_user) do
     case result do
       {:ok, _} ->

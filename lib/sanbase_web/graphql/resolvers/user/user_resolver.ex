@@ -86,8 +86,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     {:ok, %{count: length(following), users: following}}
   end
 
+  def following2(%User{id: user_id}, _args, _resolution) do
+    following = UserFollower.followed_by2(user_id)
+
+    {:ok, %{count: length(following), users: following}}
+  end
+
   def followers(%User{id: user_id}, _args, _resolution) do
     followers = UserFollower.followers_of(user_id)
+
+    {:ok, %{count: length(followers), users: followers}}
+  end
+
+  def followers2(%User{id: user_id}, _args, _resolution) do
+    followers = UserFollower.followers_of2(user_id)
 
     {:ok, %{count: length(followers), users: followers}}
   end

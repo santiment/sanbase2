@@ -243,6 +243,15 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       resolve(&UserFollowerResolver.unfollow/3)
     end
 
+    field :following_toggle_notification, :user do
+      arg(:user_id, non_null(:id))
+      arg(:disable_notifications, :boolean, default_value: false)
+
+      middleware(JWTAuth)
+
+      resolve(&UserFollowerResolver.following_toggle_notification/3)
+    end
+
     field :update_user_settings, :user_settings do
       arg(:settings, :user_settings_input_object)
       middleware(JWTAuth)

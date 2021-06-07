@@ -16,9 +16,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
 
   describe "current user following/followers lists" do
     test "when no followers/following - returns empty lists", %{conn: conn} do
-      result =
-        current_user_query()
-        |> execute_and_handle_success("currentUser", conn)
+      result = execute_query(conn, current_user_query(), "currentUser")
 
       assert result == %{
                "followers" => %{"count" => 0, "users" => []},
@@ -31,9 +29,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
       user_to_follow = insert(:user)
       UserFollower.follow(user_to_follow.id, current_user.id)
 
-      result =
-        current_user_query()
-        |> execute_and_handle_success("currentUser", conn)
+      result = execute_query(conn, current_user_query(), "currentUser")
 
       assert result == %{
                "followers" => %{"count" => 0, "users" => []},
@@ -46,9 +42,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
       follower = insert(:user)
       UserFollower.follow(current_user.id, follower.id)
 
-      result =
-        current_user_query()
-        |> execute_and_handle_success("currentUser", conn)
+      result = execute_query(conn, current_user_query(), "currentUser")
 
       assert result == %{
                "followers" => %{"count" => 1, "users" => [%{"id" => "#{follower.id}"}]},
@@ -57,30 +51,72 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
     end
   end
 
+  describe "current user following2/followers2 lists" do
+    test "when no followers/following - returns empty lists", %{conn: conn} do
+      result = execute_query(conn, current_user_query2(), "currentUser")
+
+      assert result == %{
+               "followers2" => %{"count" => 0, "users" => []},
+               "following2" => %{"count" => 0, "users" => []}
+             }
+    end
+
+    test "when following another user - following list includes users that he follows",
+         %{conn: conn, current_user: current_user} do
+      user_to_follow = insert(:user)
+      UserFollower.follow(user_to_follow.id, current_user.id)
+
+      result = execute_query(conn, current_user_query2(), "currentUser")
+
+      assert result == %{
+               "followers2" => %{"count" => 0, "users" => []},
+               "following2" => %{
+                 "count" => 1,
+                 "users" => [
+                   %{"disableNotifications" => false, "user" => %{"id" => "#{user_to_follow.id}"}}
+                 ]
+               }
+             }
+    end
+
+    test "when current user is followed by another user - followers list includes user's followers",
+         %{conn: conn, current_user: current_user} do
+      follower = insert(:user)
+      UserFollower.follow(current_user.id, follower.id)
+
+      result = execute_query(conn, current_user_query2(), "currentUser")
+
+      assert result == %{
+               "followers2" => %{
+                 "count" => 1,
+                 "users" => [
+                   %{"disableNotifications" => false, "user" => %{"id" => "#{follower.id}"}}
+                 ]
+               },
+               "following2" => %{"count" => 0, "users" => []}
+             }
+    end
+  end
+
   describe "#follow" do
     test "can follow user", %{conn: conn} do
       user_to_follow = insert(:user)
 
-      result =
-        user_to_follow.id
-        |> follow_unfollow_mutation("follow")
-        |> execute_follow_unfollow(conn)
-        |> get_in(["data", "follow"])
+      result = execute_mutation(conn, follow_mutation(user_to_follow.id), "follow")
 
       assert result == %{
-               "followers" => %{"count" => 0, "users" => []},
-               "following" => %{"count" => 1, "users" => [%{"id" => "#{user_to_follow.id}"}]}
+               "followers2" => %{"count" => 0, "users" => []},
+               "following2" => %{
+                 "count" => 1,
+                 "users" => [
+                   %{"disableNotifications" => false, "user" => %{"id" => "#{user_to_follow.id}"}}
+                 ]
+               }
              }
     end
 
     test "can't follow himself", %{conn: conn, current_user: current_user} do
-      result =
-        current_user.id
-        |> follow_unfollow_mutation("follow")
-        |> execute_follow_unfollow(conn)
-        |> Map.get("errors")
-        |> hd()
-        |> Map.get("message")
+      result = execute_mutation_with_error(conn, follow_mutation(current_user.id))
 
       assert result == "User can't follow oneself"
     end
@@ -90,13 +126,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
       conn = build_conn()
       user = insert(:user)
 
-      result =
-        user.id
-        |> follow_unfollow_mutation("follow")
-        |> execute_follow_unfollow(conn)
-        |> Map.get("errors")
-        |> hd()
-        |> Map.get("message")
+      result = execute_mutation_with_error(conn, follow_mutation(user.id))
 
       assert result == "unauthorized"
     end
@@ -107,45 +137,122 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
       user_to_follow = insert(:user)
       UserFollower.follow(user_to_follow.id, current_user.id)
 
-      result =
-        user_to_follow.id
-        |> follow_unfollow_mutation("unfollow")
-        |> execute_follow_unfollow(conn)
-        |> get_in(["data", "unfollow"])
+      result = execute_mutation(conn, unfollow_mutation(user_to_follow.id), "unfollow")
 
       assert result == %{
-               "followers" => %{"count" => 0, "users" => []},
-               "following" => %{"count" => 0, "users" => []}
+               "followers2" => %{"count" => 0, "users" => []},
+               "following2" => %{"count" => 0, "users" => []}
              }
     end
 
     test "can't unfollow user that has not been followed", %{conn: conn, current_user: user} do
       user_to_follow = insert(:user)
 
-      result =
-        user_to_follow.id
-        |> follow_unfollow_mutation("unfollow")
-        |> execute_follow_unfollow(conn)
-        |> Map.get("errors")
-        |> hd()
-        |> Map.get("message")
+      result = execute_mutation_with_error(conn, unfollow_mutation(user_to_follow.id))
 
       assert result ==
                "User with id #{user_to_follow.id} is not followed by user with id #{user.id}"
     end
   end
 
-  defp follow_unfollow_mutation(user_id, type) do
+  describe "#followingToggelNotification" do
+    test "disable notification", %{conn: conn, current_user: current_user} do
+      user_to_follow = insert(:user)
+      UserFollower.follow(user_to_follow.id, current_user.id)
+
+      result =
+        execute_mutation(
+          conn,
+          following_toggle_notification(user_to_follow.id, true),
+          "followingToggleNotification"
+        )
+
+      assert result == %{
+               "followers2" => %{"count" => 0, "users" => []},
+               "following2" => %{
+                 "count" => 1,
+                 "users" => [
+                   %{"disableNotifications" => true, "user" => %{"id" => "#{user_to_follow.id}"}}
+                 ]
+               }
+             }
+    end
+
+    test "disabling notification for not followed user returns error", %{conn: conn} do
+      user_to_follow = insert(:user)
+
+      error =
+        execute_mutation_with_error(conn, following_toggle_notification(user_to_follow.id, true))
+
+      assert error =~ "This user is not followed!"
+    end
+  end
+
+  defp follow_mutation(user_id) do
     """
     mutation {
-      #{type}(user_id: "#{user_id}") {
-        following {
+      follow(user_id: "#{user_id}") {
+        following2 {
           count
-          users { id }
+          users {
+            user { id }
+            disableNotifications
+          }
         }
-        followers {
+        followers2 {
           count
-          users { id }
+          users {
+            user { id }
+            disableNotifications
+          }
+        }
+      }
+    }
+    """
+  end
+
+  defp unfollow_mutation(user_id) do
+    """
+    mutation {
+      unfollow(user_id: "#{user_id}") {
+        following2 {
+          count
+          users {
+            user { id }
+            disableNotifications
+          }
+        }
+        followers2 {
+          count
+          users {
+            user { id }
+            disableNotifications
+          }
+        }
+      }
+    }
+    """
+  end
+
+  defp following_toggle_notification(user_id, disable_notifications) do
+    """
+    mutation {
+      followingToggleNotification(user_id: "#{user_id}", disable_notifications: #{
+      disable_notifications
+    }) {
+        following2 {
+          count
+          users {
+            user { id }
+            disableNotifications
+          }
+        }
+        followers2 {
+          count
+          users {
+            user { id }
+            disableNotifications
+          }
         }
       }
     }
@@ -169,16 +276,26 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
     """
   end
 
-  defp execute_follow_unfollow(mutation, conn) do
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
-  end
-
-  defp execute_and_handle_success(query, query_name, conn) do
-    conn
-    |> post("/graphql", query_skeleton(query, query_name))
-    |> json_response(200)
-    |> get_in(["data", query_name])
+  defp current_user_query2() do
+    """
+    {
+      currentUser {
+        following2 {
+          count
+          users {
+            user {id}
+            disableNotifications
+          }
+        }
+        followers2 {
+          count
+          users {
+            user { id }
+            disableNotifications
+          }
+        }
+      }
+    }
+    """
   end
 end

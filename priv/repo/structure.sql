@@ -1964,6 +1964,39 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: seen_timeline_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.seen_timeline_events (
+    id bigint NOT NULL,
+    seen_at timestamp(0) without time zone,
+    user_id bigint,
+    event_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: seen_timeline_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.seen_timeline_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: seen_timeline_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.seen_timeline_events_id_seq OWNED BY public.seen_timeline_events.id;
+
+
+--
 -- Name: sheets_templates; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2452,6 +2485,7 @@ CREATE TABLE public.user_followers (
     user_id bigint NOT NULL,
     follower_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
+    disable_notifications boolean DEFAULT false,
     CONSTRAINT user_cannot_follow_self CHECK ((user_id <> follower_id))
 );
 
@@ -3278,6 +3312,13 @@ ALTER TABLE ONLY public.schedule_rescrape_prices ALTER COLUMN id SET DEFAULT nex
 
 
 --
+-- Name: seen_timeline_events id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.seen_timeline_events ALTER COLUMN id SET DEFAULT nextval('public.seen_timeline_events_id_seq'::regclass);
+
+
+--
 -- Name: sheets_templates id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3890,6 +3931,14 @@ ALTER TABLE ONLY public.schedule_rescrape_prices
 
 ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: seen_timeline_events seen_timeline_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.seen_timeline_events
+    ADD CONSTRAINT seen_timeline_events_pkey PRIMARY KEY (id);
 
 
 --
@@ -4550,6 +4599,13 @@ CREATE UNIQUE INDEX promo_coupons_email_index ON public.promo_coupons USING btre
 --
 
 CREATE INDEX schedule_rescrape_prices_project_id_index ON public.schedule_rescrape_prices USING btree (project_id);
+
+
+--
+-- Name: seen_timeline_events_user_id_event_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX seen_timeline_events_user_id_event_id_index ON public.seen_timeline_events USING btree (user_id, event_id);
 
 
 --
@@ -5304,6 +5360,22 @@ ALTER TABLE ONLY public.schedule_rescrape_prices
 
 
 --
+-- Name: seen_timeline_events seen_timeline_events_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.seen_timeline_events
+    ADD CONSTRAINT seen_timeline_events_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.timeline_events(id);
+
+
+--
+-- Name: seen_timeline_events seen_timeline_events_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.seen_timeline_events
+    ADD CONSTRAINT seen_timeline_events_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: short_url_comments_mapping short_url_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5908,7 +5980,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200826101751);
 INSERT INTO public."schema_migrations" (version) VALUES (20200826114101);
 INSERT INTO public."schema_migrations" (version) VALUES (20200908092849);
 INSERT INTO public."schema_migrations" (version) VALUES (20200923090710);
-INSERT INTO public."schema_migrations" (version) VALUES (20200930103424);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016091443);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016105225);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016124426);
@@ -5958,5 +6029,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210419130213);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419183855);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419190728);
 INSERT INTO public."schema_migrations" (version) VALUES (20210420120610);
-INSERT INTO public."schema_migrations" (version) VALUES (20210423142550);
 INSERT INTO public."schema_migrations" (version) VALUES (20210513102007);
+INSERT INTO public."schema_migrations" (version) VALUES (20210518083003);
+INSERT INTO public."schema_migrations" (version) VALUES (20210604163821);

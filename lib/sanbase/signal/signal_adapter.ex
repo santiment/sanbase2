@@ -96,7 +96,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   end
 
   @impl Sanbase.Signal.Behaviour
-  def raw_data(signals, from, to) do
+  def raw_data(signals, selector, from, to) do
     {query, args} = raw_data_query(signals, from, to)
 
     ClickhouseRepo.query_transform(query, args, fn [unix, signal, slug, value, metadata] ->
@@ -115,6 +115,7 @@ defmodule Sanbase.Signal.SignalAdapter do
       }
     end)
     |> maybe_apply_function(fn list -> Enum.filter(list, & &1.signal) end)
+    |> maybe_apply_function(fn list -> filter_slugs_by_selector(list, selector) end)
   end
 
   @impl Sanbase.Signal.Behaviour
@@ -178,5 +179,12 @@ defmodule Sanbase.Signal.SignalAdapter do
       close: Enum.find(@signals_mapset, &(String.jaro_distance(signal, &1) > 0.8)),
       error_msg: "The signal '#{signal}' is not supported or is mistyped."
     }
+  end
+
+  defp filter_slugs_by_selector(list, :all), do: list
+
+  defp filter_slugs_by_selector(list, %{slug: slug_or_slugs}) do
+    slugs = List.wrap(slug_or_slugs)
+    Enum.filter(list, &(&1.slug in slugs))
   end
 end

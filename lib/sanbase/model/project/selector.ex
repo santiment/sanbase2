@@ -1,4 +1,4 @@
-defmodule Sanbase.Metric.Selector do
+defmodule Sanbase.Model.Project.Selector do
   @moduledoc """
   Module that is used for transforming selector from user-facing facing to the
   internal format.

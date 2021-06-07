@@ -13,6 +13,15 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
     field(:slugs, list_of(:string))
   end
 
+  input_object :signal_target_selector_input_object do
+    field(:slug, :string)
+    field(:slugs, list_of(:string))
+    field(:market_segments, list_of(:string))
+    field(:ignored_slugs, list_of(:string))
+    field(:watchlist_id, :integer)
+    field(:watchlist_slug, :string)
+  end
+
   object :raw_signal do
     field(:datetime, non_null(:datetime))
     field(:slug, non_null(:string))
@@ -75,15 +84,10 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
     aggregations see the documentation for `defaultAggregation`
     """
     field(:available_aggregations, list_of(:aggregation))
-
     field(:data_type, :signal_data_type)
-
     field(:is_accessible, :boolean)
-
     field(:is_restricted, :boolean)
-
     field(:restricted_from, :datetime)
-
     field(:restricted_to, :datetime)
   end
 

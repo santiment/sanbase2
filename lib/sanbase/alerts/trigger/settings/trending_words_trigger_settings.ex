@@ -38,8 +38,6 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
             template_kv: %{},
             extra_explanation: nil,
             include_default_explanation: false,
-            default_explanation:
-              "A coin's appearance in trending words may suggest an increased risk of local tops and short-term price correction.",
             template: nil
 
   @type t :: %__MODULE__{
@@ -52,8 +50,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
           payload: Type.payload(),
           template_kv: Type.template_kv(),
           extra_explanation: Type.extra_explanation(),
-          include_default_explanation: boolean(),
-          default_explanation: String.t()
+          include_default_explanation: boolean()
         }
 
   # Validations
@@ -75,6 +72,8 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
   # private functions
 
   defimpl Sanbase.Alert.Settings, for: TrendingWordsTriggerSettings do
+    @default_explanation "A coin's appearance in trending words may suggest an increased risk of local tops and short-term price correction."
+
     alias Sanbase.Model.Project
 
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
@@ -196,7 +195,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       kv = %{
         type: TrendingWordsTriggerSettings.type(),
         datetime: "#{Date.utc_today()} #{trigger_time}",
-        operation: settings,
+        operation: settings.operation,
         trending_words_list: top_words,
         trending_words_str: trending_words_str,
         sonar_url: SanbaseWeb.Endpoint.sonar_url()
@@ -216,14 +215,14 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
     defp template_kv(%{operation: %{trending_word: true}} = settings, [word]) do
       kv = %{
         type: TrendingWordsTriggerSettings.type(),
-        operation: settings,
+        operation: settings.operation,
         trending_words_list: [word],
         trending_words_str: "**#{word}**",
         trending_words_url: SanbaseWeb.Endpoint.trending_word_url(word)
       }
 
       template = """
-      🔔 The word {{trending_words_str}} is in the trending words.
+      🔔 The word {{trending_words_str}} is in the top 10 trending words on crypto social media.
       """
 
       {template, kv} |> maybe_extend_with_explanation(settings)
@@ -235,14 +234,14 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
 
       kv = %{
         type: TrendingWordsTriggerSettings.type(),
-        operation: settings,
+        operation: settings.operation,
         trending_words_list: words,
         trending_words_str: words_str,
         trending_words_url: SanbaseWeb.Endpoint.trending_word_url(words)
       }
 
       template = """
-      🔔 The words {{trending_words_str}} are in the trending words.
+      🔔 The words {{trending_words_str}} are in the top 10 trending words on crypto social media.
       """
 
       {template, kv} |> maybe_extend_with_explanation(settings)
@@ -251,14 +250,14 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
     defp template_kv(%{operation: %{trending_project: true}} = settings, project) do
       kv = %{
         type: TrendingWordsTriggerSettings.type(),
-        operation: settings,
+        operation: settings.operation,
         project_name: project.name,
         project_ticker: project.ticker,
         project_slug: project.slug
       }
 
       template = """
-      🔔 \#{{project_ticker}} | **{{project_name}}** is in the trending words.
+      🔔 \#{{project_ticker}} | **{{project_name}}** is in the top 10 trending words on crypto social media.
       """
 
       {template, kv} |> maybe_extend_with_explanation(settings)
@@ -273,7 +272,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
     defp maybe_extend_with_explanation({template, kv}, settings) do
       default_explanation =
         case settings.include_default_explanation do
-          true -> settings.default_explanation
+          true -> @default_explanation
           false -> nil
         end
 

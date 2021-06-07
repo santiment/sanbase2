@@ -54,7 +54,9 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingProjectTest do
 
       assert context.trigger_trending_words.id == triggered.id
       payload = triggered.trigger.settings.payload |> Map.values() |> List.first()
-      assert payload =~ "**#{context.project.name}** is in the trending words"
+
+      assert payload =~
+               "**#{context.project.name}** is in the top 10 trending words on crypto social media."
     end
   end
 

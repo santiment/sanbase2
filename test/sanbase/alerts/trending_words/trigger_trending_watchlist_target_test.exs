@@ -68,7 +68,8 @@ defmodule Sanbase.Alert.TriggerTrendingWordsWatchlistTargetTest do
         |> Map.values()
         |> List.first()
 
-      assert payload =~ "**#{context.p1.name}** is in the trending words"
+      assert payload =~
+               "**#{context.p1.name}** is in the top 10 trending words on crypto social media."
     end
   end
 

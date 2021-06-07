@@ -16,13 +16,13 @@ defmodule Sanbase.Accounts.UserFollower do
   schema "user_followers" do
     belongs_to(:user, User, foreign_key: :user_id, primary_key: true)
     belongs_to(:follower, User, foreign_key: :follower_id, primary_key: true)
-    field(:disable_notifications, :boolean, default: false)
+    field(:is_notification_disabled, :boolean, default: false)
     timestamps()
   end
 
   def changeset(%__MODULE__{} = user_follower, attrs \\ %{}) do
     user_follower
-    |> cast(attrs, [:user_id, :follower_id, :disable_notifications])
+    |> cast(attrs, [:user_id, :follower_id, :is_notification_disabled])
     |> unique_constraint(:user_id_follower_id, name: :user_followers_user_id_follower_id_index)
   end
 
@@ -53,7 +53,7 @@ defmodule Sanbase.Accounts.UserFollower do
     |> case do
       %__MODULE__{} = user_follower ->
         user_follower
-        |> changeset(%{disable_notifications: disable_notifications})
+        |> changeset(%{is_notification_disabled: disable_notifications})
         |> Repo.update()
 
       nil ->
@@ -89,7 +89,7 @@ defmodule Sanbase.Accounts.UserFollower do
       uf in __MODULE__,
       inner_join: u in User,
       on: u.id == uf.user_id,
-      where: uf.follower_id == ^user_id and uf.disable_notifications != true,
+      where: uf.follower_id == ^user_id and uf.is_notification_disabled != true,
       select: u
     )
     |> Repo.all()
@@ -116,7 +116,9 @@ defmodule Sanbase.Accounts.UserFollower do
       preload: [:follower]
     )
     |> Repo.all()
-    |> Enum.map(fn uf -> %{user: uf.follower, disable_notifications: uf.disable_notifications} end)
+    |> Enum.map(fn uf ->
+      %{user: uf.follower, is_notification_disabled: uf.is_notification_disabled}
+    end)
   end
 
   def user_id_to_followers_count() do

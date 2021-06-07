@@ -2485,7 +2485,7 @@ CREATE TABLE public.user_followers (
     user_id bigint NOT NULL,
     follower_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    disable_notifications boolean DEFAULT false,
+    is_notification_disabled boolean DEFAULT false,
     CONSTRAINT user_cannot_follow_self CHECK ((user_id <> follower_id))
 );
 
@@ -6029,7 +6029,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210419130213);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419183855);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419190728);
 INSERT INTO public."schema_migrations" (version) VALUES (20210420120610);
-INSERT INTO public."schema_migrations" (version) VALUES (20210423142550);
 INSERT INTO public."schema_migrations" (version) VALUES (20210513102007);
 INSERT INTO public."schema_migrations" (version) VALUES (20210518083003);
 INSERT INTO public."schema_migrations" (version) VALUES (20210604163821);

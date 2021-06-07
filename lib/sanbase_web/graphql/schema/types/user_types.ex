@@ -276,7 +276,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   object :user_follower do
     field(:user_id, non_null(:id))
     field(:follower_id, non_null(:id))
-    field(:disable_notifications, :boolean)
+    field(:is_notification_disabled, :boolean)
     field(:user, :public_user)
   end
 end

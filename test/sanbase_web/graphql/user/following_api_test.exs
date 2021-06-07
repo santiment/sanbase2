@@ -73,7 +73,10 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
                "following2" => %{
                  "count" => 1,
                  "users" => [
-                   %{"disableNotifications" => false, "user" => %{"id" => "#{user_to_follow.id}"}}
+                   %{
+                     "isNotificationDisabled" => false,
+                     "user" => %{"id" => "#{user_to_follow.id}"}
+                   }
                  ]
                }
              }
@@ -90,7 +93,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
                "followers2" => %{
                  "count" => 1,
                  "users" => [
-                   %{"disableNotifications" => false, "user" => %{"id" => "#{follower.id}"}}
+                   %{"isNotificationDisabled" => false, "user" => %{"id" => "#{follower.id}"}}
                  ]
                },
                "following2" => %{"count" => 0, "users" => []}
@@ -109,7 +112,10 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
                "following2" => %{
                  "count" => 1,
                  "users" => [
-                   %{"disableNotifications" => false, "user" => %{"id" => "#{user_to_follow.id}"}}
+                   %{
+                     "isNotificationDisabled" => false,
+                     "user" => %{"id" => "#{user_to_follow.id}"}
+                   }
                  ]
                }
              }
@@ -172,7 +178,10 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
                "following2" => %{
                  "count" => 1,
                  "users" => [
-                   %{"disableNotifications" => true, "user" => %{"id" => "#{user_to_follow.id}"}}
+                   %{
+                     "isNotificationDisabled" => true,
+                     "user" => %{"id" => "#{user_to_follow.id}"}
+                   }
                  ]
                }
              }
@@ -196,14 +205,14 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
           count
           users {
             user { id }
-            disableNotifications
+            isNotificationDisabled
           }
         }
         followers2 {
           count
           users {
             user { id }
-            disableNotifications
+            isNotificationDisabled
           }
         }
       }
@@ -219,14 +228,14 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
           count
           users {
             user { id }
-            disableNotifications
+            isNotificationDisabled
           }
         }
         followers2 {
           count
           users {
             user { id }
-            disableNotifications
+            isNotificationDisabled
           }
         }
       }
@@ -244,14 +253,14 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
           count
           users {
             user { id }
-            disableNotifications
+            isNotificationDisabled
           }
         }
         followers2 {
           count
           users {
             user { id }
-            disableNotifications
+            isNotificationDisabled
           }
         }
       }
@@ -284,14 +293,14 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
           count
           users {
             user {id}
-            disableNotifications
+            isNotificationDisabled
           }
         }
         followers2 {
           count
           users {
             user { id }
-            disableNotifications
+            isNotificationDisabled
           }
         }
       }

@@ -61,6 +61,7 @@ defimpl Sanbase.Alert, for: Any do
     %{id: user_trigger_id} = trigger
 
     fun = fn identifier, payload ->
+      payload = transform_payload(payload, trigger.id, :webhook)
       do_send_webhook(webhook_url, identifier, payload, user_trigger_id)
     end
 
@@ -78,6 +79,7 @@ defimpl Sanbase.Alert, for: Any do
        )
        when is_binary(email) do
     fun = fn _identifier, payload ->
+      payload = transform_payload(payload, trigger.id, :email)
       do_send_email(email, payload, trigger.id)
     end
 
@@ -132,7 +134,9 @@ defimpl Sanbase.Alert, for: Any do
        )
        when is_integer(telegram_chat_id) and telegram_chat_id > 0 do
     fun = fn _identifier, payload ->
-      Sanbase.Telegram.send_message(trigger.user, extend_payload(payload, trigger.id, :telegram))
+      payload = transform_payload(payload, trigger.id, :telegram)
+
+      Sanbase.Telegram.send_message(trigger.user, payload)
       |> maybe_transform_telegram_response(trigger)
     end
 
@@ -150,7 +154,7 @@ defimpl Sanbase.Alert, for: Any do
              }
            }
          } = trigger,
-         _
+         _max_alerts_to_send
        )
        when is_integer(telegram_chat_id) and telegram_chat_id > 0 do
     %{
@@ -190,10 +194,8 @@ defimpl Sanbase.Alert, for: Any do
          %{"telegram_channel" => max_alerts_to_send}
        ) do
     fun = fn _identifier, payload ->
-      # Do not extend the payload with the trigger id and link. This channel
-      # would be used when serving the same alert to many users and not only
-      # to its owner. Having the link makes sense only for the owner as the
-      # other users cannot change it. Maybe it
+      payload = transform_payload(payload, trigger.id, :telegram_channel)
+
       Sanbase.Telegram.send_message_to_chat_id(channel, payload)
       |> maybe_transform_telegram_response(trigger)
     end
@@ -214,6 +216,12 @@ defimpl Sanbase.Alert, for: Any do
 
   defp maybe_transform_telegram_response(response, _trigger), do: response
 
+  defp transform_payload(payload, user_trigger_id, channel) do
+    payload
+    |> extend_payload(user_trigger_id, channel)
+    |> String.replace("\n\n\n", "\n\n")
+  end
+
   defp extend_payload(payload, user_trigger_id, :telegram) do
     """
     #{payload}
@@ -221,19 +229,20 @@ defimpl Sanbase.Alert, for: Any do
     """
   end
 
-  defp extend_payload(payload, user_trigger_id, _channel) do
+  defp extend_payload(payload, user_trigger_id, :email) do
     """
     #{payload}
     Triggered by #{SanbaseWeb.Endpoint.show_alert_url(user_trigger_id)}
     """
   end
 
+  defp extend_payload(payload, _, :webhook), do: payload
+  defp extend_payload(payload, _trigger_id, :telegram_channel), do: payload
+
   defp do_send_email(email, payload, trigger_id) do
     Sanbase.Email.Template.alerts_template()
     |> Sanbase.MandrillApi.send(email, %{
-      payload:
-        extend_payload(payload, trigger_id, :email)
-        |> Earmark.as_html!(breaks: true, timeout: nil, mapper: &Enum.map/2)
+      payload: Earmark.as_html!(payload, breaks: true, timeout: nil, mapper: &Enum.map/2)
     })
     |> case do
       {:ok, _} -> :ok

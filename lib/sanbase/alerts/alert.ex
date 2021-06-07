@@ -132,7 +132,7 @@ defimpl Sanbase.Alert, for: Any do
        )
        when is_integer(telegram_chat_id) and telegram_chat_id > 0 do
     fun = fn _identifier, payload ->
-      Sanbase.Telegram.send_message(trigger.user, extend_payload(payload, trigger.id))
+      Sanbase.Telegram.send_message(trigger.user, extend_payload(payload, trigger.id, :telegram))
       |> maybe_transform_telegram_response(trigger)
     end
 
@@ -214,7 +214,14 @@ defimpl Sanbase.Alert, for: Any do
 
   defp maybe_transform_telegram_response(response, _trigger), do: response
 
-  defp extend_payload(payload, user_trigger_id) do
+  defp extend_payload(payload, user_trigger_id, :telegram) do
+    """
+    #{payload}
+    [View Alert](#{SanbaseWeb.Endpoint.show_alert_url(user_trigger_id)})
+    """
+  end
+
+  defp extend_payload(payload, user_trigger_id, _channel) do
     """
     #{payload}
     Triggered by #{SanbaseWeb.Endpoint.show_alert_url(user_trigger_id)}
@@ -225,7 +232,7 @@ defimpl Sanbase.Alert, for: Any do
     Sanbase.Email.Template.alerts_template()
     |> Sanbase.MandrillApi.send(email, %{
       payload:
-        extend_payload(payload, trigger_id)
+        extend_payload(payload, trigger_id, :email)
         |> Earmark.as_html!(breaks: true, timeout: nil, mapper: &Enum.map/2)
     })
     |> case do
@@ -240,11 +247,7 @@ defimpl Sanbase.Alert, for: Any do
         payload,
         trigger_id
       ) do
-    encoded_json_payload =
-      %{
-        text: payload
-      }
-      |> Jason.encode!()
+    encoded_json_payload = Jason.encode!(%{text: payload})
 
     HTTPoison.post(webhook_url, encoded_json_payload, [{"Content-Type", "application/json"}])
     |> handle_webhook_response(trigger_id)

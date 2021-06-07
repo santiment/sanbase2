@@ -20,7 +20,8 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingWordTest do
       type: TrendingWordsTriggerSettings.type(),
       channel: "telegram",
       operation: %{trending_word: true},
-      target: %{word: ["san", "santiment"]}
+      target: %{word: ["san", "santiment"]},
+      include_default_explanation: true
     }
 
     {:ok, trigger_trending_words} =
@@ -49,7 +50,9 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingWordTest do
 
       assert context.trigger_trending_words.id == triggered.id
       payload = triggered.trigger.settings.payload |> Map.values() |> List.first()
-      assert payload =~ "The word **santiment** is in the trending words"
+
+      assert payload =~
+               "The word **santiment** is in the top 10 trending words on crypto social media."
     end
   end
 
@@ -116,7 +119,13 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingWordTest do
 
       assert context.trigger_trending_words.id == triggered.id
       payload = triggered.trigger.settings.payload |> Map.values() |> List.first()
-      assert payload =~ "The words **san** and **santiment** are in the trending words"
+
+      IO.inspect(payload)
+
+      assert payload =~ """
+             The words **san** and **santiment** are in the top 10 trending words on crypto social media.
+             A coin's appearance in trending words may suggest an increased risk of local tops and short-term price correction.
+             """
     end
   end
 

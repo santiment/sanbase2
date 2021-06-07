@@ -43,7 +43,6 @@ defmodule Sanbase.Email.Template do
     cond do
       String.contains?(origin_url, "neuro") -> @neuro_login_templates[template]
       String.contains?(origin_url, "sheets") -> @sheets_login_templates[template]
-      String.contains?(origin_url, "devcon") -> @devcon_templates[template]
       true -> @sanbase_login_templates[template]
     end
   end

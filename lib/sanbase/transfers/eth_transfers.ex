@@ -51,7 +51,7 @@ defmodule Sanbase.Transfers.EthTransfers do
   The `type` argument control wheteher only incoming, outgoing or all transactions
   are included.
   """
-  @spec top_wallet_transactions(
+  @spec top_wallet_transfers(
           list(String.t()),
           DateTime.t(),
           DateTime.t(),
@@ -60,10 +60,10 @@ defmodule Sanbase.Transfers.EthTransfers do
           String.t()
         ) ::
           {:ok, nil} | {:ok, list(map())} | {:error, String.t()}
-  def top_wallet_transactions([], _from, _to, _page, _page_size, _type), do: {:ok, []}
+  def top_wallet_transfers([], _from, _to, _page, _page_size, _type), do: {:ok, []}
 
-  def top_wallet_transactions(wallets, from, to, page, page_size, type) do
-    {query, args} = top_wallet_transactions_query(wallets, from, to, page, page_size, type)
+  def top_wallet_transfers(wallets, from, to, page, page_size, type) do
+    {query, args} = top_wallet_transfers_query(wallets, from, to, page, page_size, type)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
@@ -77,10 +77,10 @@ defmodule Sanbase.Transfers.EthTransfers do
     end)
   end
 
-  @spec top_transactions(%DateTime{}, %DateTime{}, non_neg_integer(), non_neg_integer()) ::
+  @spec top_transfers(%DateTime{}, %DateTime{}, non_neg_integer(), non_neg_integer()) ::
           {:ok, list(t)} | {:error, String.t()}
-  def top_transactions(from, to, page, page_size) do
-    {query, args} = top_transactions_query(from, to, page, page_size)
+  def top_transfers(from, to, page, page_size) do
+    {query, args} = top_transfers_query(from, to, page, page_size)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
@@ -117,7 +117,7 @@ defmodule Sanbase.Transfers.EthTransfers do
 
   # Private functions
 
-  defp top_wallet_transactions_query(wallets, from, to, page, page_size, type) do
+  defp top_wallet_transfers_query(wallets, from, to, page, page_size, type) do
     query = """
     SELECT
       toUnixTimestamp(dt),
@@ -127,7 +127,7 @@ defmodule Sanbase.Transfers.EthTransfers do
       value / #{@eth_decimals}
     FROM #{@table} FINAL
     PREWHERE
-      #{top_wallet_transactions_address_clause(type, arg_position: 1, trailing_and: true)}
+      #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
       dt >= toDateTime(?2) AND
       dt <= toDateTime(?3) AND
       type = 'call'
@@ -148,7 +148,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     {query, args}
   end
 
-  defp top_wallet_transactions_address_clause(:in, opts) do
+  defp top_wallet_transfers_address_clause(:in, opts) do
     arg_position = Keyword.fetch!(opts, :arg_position)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
@@ -156,7 +156,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     if trailing_and, do: str <> " AND", else: str
   end
 
-  defp top_wallet_transactions_address_clause(:out, opts) do
+  defp top_wallet_transfers_address_clause(:out, opts) do
     arg_position = Keyword.fetch!(opts, :arg_position)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
@@ -164,7 +164,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     if trailing_and, do: str <> " AND", else: str
   end
 
-  defp top_wallet_transactions_address_clause(:all, opts) do
+  defp top_wallet_transfers_address_clause(:all, opts) do
     arg_position = Keyword.fetch!(opts, :arg_position)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
@@ -178,7 +178,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     if trailing_and, do: str <> " AND", else: str
   end
 
-  defp top_transactions_query(from, to, page, page_size) do
+  defp top_transfers_query(from, to, page, page_size) do
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
 

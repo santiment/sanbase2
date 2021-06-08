@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
   require Logger
 
   import SanbaseWeb.Graphql.Helpers.Async
@@ -11,15 +11,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
   @max_concurrency 100
 
-  def token_top_transactions(
+  def token_top_transfers(
         %Project{} = project,
         args,
         _resolution
       ) do
-    async(fn -> calculate_token_top_transactions(project, args) end)
+    async(fn -> calculate_token_top_transfers(project, args) end)
   end
 
-  defp calculate_token_top_transactions(
+  defp calculate_token_top_transfers(
          %Project{slug: "bitcoin" = slug} = project,
          args
        ) do
@@ -27,15 +27,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     limit = Enum.min([limit, 100])
     excluded_addresses = Map.get(args, :excluded_addresses, [])
 
-    with {:ok, transactions} <-
-           Transfers.top_transactions(slug, from, to, 1, limit, excluded_addresses),
-         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
-         {:ok, transactions} <- Label.add_labels(slug, transactions) do
-      {:ok, transactions}
+    with {:ok, transfers} <-
+           Transfers.top_transfers(slug, from, to, 1, limit, excluded_addresses),
+         {:ok, transfers} <- MarkExchanges.mark_exchange_wallets(transfers),
+         {:ok, transfers} <- Label.add_labels(slug, transfers) do
+      {:ok, transfers}
     else
       error ->
         Logger.warn(
-          "Cannot fetch top token transactions for project with id #{project.id}. Reason: #{
+          "Cannot fetch top token transfers for project with id #{project.id}. Reason: #{
             inspect(error)
           }"
         )
@@ -44,13 +44,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     end
   end
 
-  defp calculate_token_top_transactions(%Project{slug: slug} = project, args) do
+  defp calculate_token_top_transfers(%Project{slug: slug} = project, args) do
     %{from: from, to: to, limit: limit} = args
     limit = Enum.min([limit, 100])
     excluded_addresses = Map.get(args, :excluded_addresses, [])
 
-    with {:ok, transactions} <-
-           Transfers.top_transactions(
+    with {:ok, transfers} <-
+           Transfers.top_transfers(
              slug,
              from,
              to,
@@ -58,16 +58,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
              _page_size = limit,
              excluded_addresses
            ),
-         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
-         {:ok, transactions} <- Label.add_labels(slug, transactions) do
-      {:ok, transactions}
+         {:ok, transfers} <- MarkExchanges.mark_exchange_wallets(transfers),
+         {:ok, transfers} <- Label.add_labels(slug, transfers) do
+      {:ok, transfers}
     else
       {:error, {:missing_contract, _}} ->
         {:ok, []}
 
       error ->
         Logger.warn(
-          "Cannot fetch top token transactions for project with id #{project.id}. Reason: #{
+          "Cannot fetch top token transfers for project with id #{project.id}. Reason: #{
             inspect(error)
           }"
         )
@@ -177,31 +177,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     |> combine_eth_spent_by_all_projects()
   end
 
-  def eth_top_transactions(
+  def eth_top_transfers(
         %Project{} = project,
         args,
         _resolution
       ) do
-    async(fn -> calculate_eth_top_transactions(project, args) end)
+    async(fn -> calculate_eth_top_transfers(project, args) end)
   end
 
-  defp calculate_eth_top_transactions(
+  defp calculate_eth_top_transfers(
          %Project{slug: "ethereum"} = project,
          args
        ) do
     %{from: from, to: to, transaction_type: _trx_type, limit: limit} = args
     limit = Enum.min([limit, 100])
 
-    with {:ok, transactions} <-
-           Sanbase.Transfers.top_transactions("ethereum", from, to, _page = 1, _page_size = limit),
-         {:ok, transactions} <-
-           MarkExchanges.mark_exchange_wallets(transactions),
-         {:ok, transactions} <- Label.add_labels("ethereum", transactions) do
-      {:ok, transactions}
+    with {:ok, transfers} <-
+           Sanbase.Transfers.top_transfers("ethereum", from, to, _page = 1, _page_size = limit),
+         {:ok, transfers} <-
+           MarkExchanges.mark_exchange_wallets(transfers),
+         {:ok, transfers} <- Label.add_labels("ethereum", transfers) do
+      {:ok, transfers}
     else
       error ->
         Logger.warn(
-          "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{
+          "Cannot fetch top ETH transfers for #{Project.describe(project)}. Reason: #{
             inspect(error)
           }"
         )
@@ -210,13 +210,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     end
   end
 
-  defp calculate_eth_top_transactions(%Project{slug: slug} = project, args) do
+  defp calculate_eth_top_transfers(%Project{slug: slug} = project, args) do
     %{from: from, to: to, transaction_type: trx_type, limit: limit} = args
     limit = Enum.min([limit, 100])
 
     with {:ok, addresses} <- Project.eth_addresses(project),
-         {:ok, transactions} <-
-           Sanbase.Transfers.EthTransfers.top_wallet_transactions(
+         {:ok, transfers} <-
+           Sanbase.Transfers.EthTransfers.top_wallet_transfers(
              addresses,
              from,
              to,
@@ -224,13 +224,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
              _page_size = limit,
              trx_type
            ),
-         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
-         {:ok, transactions} <- Label.add_labels(slug, transactions) do
-      {:ok, transactions}
+         {:ok, transfers} <- MarkExchanges.mark_exchange_wallets(transfers),
+         {:ok, transfers} <- Label.add_labels(slug, transfers) do
+      {:ok, transfers}
     else
       error ->
         Logger.warn(
-          "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{
+          "Cannot fetch top ETH transfers for #{Project.describe(project)}. Reason: #{
             inspect(error)
           }"
         )

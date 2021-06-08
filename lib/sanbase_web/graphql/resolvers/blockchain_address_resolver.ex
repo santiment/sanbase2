@@ -36,10 +36,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     address = Map.fetch!(address_selector, :address)
     type = Map.get(address_selector, :transacion_type, :all)
 
-    with {:ok, transactions} <-
-           Transfers.top_wallet_transactions(slug, address, from, to, page, page_size, type),
-         {:ok, transactions} <- Label.add_labels(slug, transactions) do
-      {:ok, transactions}
+    with {:ok, transfers} <-
+           Transfers.top_wallet_transfers(slug, address, from, to, page, page_size, type),
+         {:ok, transfers} <- transform_address_to_map(transfers, slug),
+         {:ok, transfers} <- Label.add_labels(slug, transfers) do
+      {:ok, transfers}
     end
   end
 
@@ -50,19 +51,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
       ) do
     %{page: page, page_size: page_size} = args_to_page_args(args)
 
-    with {:ok, transactions} <-
-           Sanbase.Transfers.top_transactions(slug, from, to, page, page_size),
-         {:ok, transactions} <- transform_address_to_map(transactions, slug),
-         {:ok, transactions} <- Label.add_labels(slug, transactions) do
-      {:ok, transactions}
+    with {:ok, transfers} <-
+           Sanbase.Transfers.top_transfers(slug, from, to, page, page_size),
+         {:ok, transfers} <- transform_address_to_map(transfers, slug),
+         {:ok, transfers} <- Label.add_labels(slug, transfers) do
+      {:ok, transfers}
     end
   end
 
-  defp transform_address_to_map(transactions, slug) do
+  defp transform_address_to_map(transfers, slug) do
     {:ok, _, _, infr} = Sanbase.Model.Project.contract_info_infrastructure_by_slug(slug)
 
     result =
-      transactions
+      transfers
       |> Enum.map(fn %{from_address: from_address, to_address: to_address} = trx ->
         trx
         |> Map.put(:from_address, %{address: from_address, infrastructure: infr})

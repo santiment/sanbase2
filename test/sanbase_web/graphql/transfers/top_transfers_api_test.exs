@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
 
   test "top transfers for a slug", context do
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Transfers.Erc20Transfers.top_transactions/7,
+      &Sanbase.Transfers.Erc20Transfers.top_transfers/7,
       {:ok, all_transfers()}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -50,8 +50,8 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
           to: "#{context.datetime_to}"){
             datetime
             trxValue
-            fromAddress{ address isExchange labels { name metadata } }
-            toAddress{ address isExchange labels { name metadata } }
+            fromAddress{ address labels { name metadata } }
+            toAddress{ address labels { name metadata } }
         }
       }
       """
@@ -62,39 +62,31 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
 
       transactions = json_response(result, 200)["data"]["topTransfers"]
 
-      assert_called(Sanbase.Transfers.Erc20Transfers.top_transactions(:_, :_, :_, :_, :_, :_, :_))
+      assert_called(Sanbase.Transfers.Erc20Transfers.top_transfers(:_, :_, :_, :_, :_, :_, :_))
 
       assert transactions == [
                %{
                  "datetime" => "2017-05-13T15:00:00Z",
-                 "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
-                 "toAddress" => %{
-                   "address" => "0xe1e1e1e1e1e1e1",
-                   "isExchange" => true,
-                   "labels" => []
-                 },
+                 "fromAddress" => %{"address" => "0x1", "labels" => []},
+                 "toAddress" => %{"address" => "0xe1e1e1e1e1e1e1", "labels" => []},
                  "trxValue" => 500.0
                },
                %{
                  "datetime" => "2017-05-14T16:00:00Z",
-                 "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
-                 "toAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
+                 "fromAddress" => %{"address" => "0x1", "labels" => []},
+                 "toAddress" => %{"address" => "0x2", "labels" => []},
                  "trxValue" => 1.5e3
                },
                %{
                  "datetime" => "2017-05-16T18:00:00Z",
-                 "fromAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
-                 "toAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+                 "fromAddress" => %{"address" => "0x2", "labels" => []},
+                 "toAddress" => %{"address" => "0x1", "labels" => []},
                  "trxValue" => 2.0e4
                },
                %{
                  "datetime" => "2017-05-17T19:00:00Z",
-                 "fromAddress" => %{
-                   "address" => "0xe1e1e1e1e1e1e1",
-                   "isExchange" => true,
-                   "labels" => []
-                 },
-                 "toAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+                 "fromAddress" => %{"address" => "0xe1e1e1e1e1e1e1", "labels" => []},
+                 "toAddress" => %{"address" => "0x1", "labels" => []},
                  "trxValue" => 4.5e4
                }
              ]
@@ -103,7 +95,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
 
   test "top transfers for an address and slug", context do
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Transfers.Erc20Transfers.top_wallet_transactions/8,
+      &Sanbase.Transfers.Erc20Transfers.top_wallet_transfers/8,
       {:ok, address_transfers()}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -116,8 +108,8 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
           addressSelector: {address: "#{@exchange_wallet}" transaction_type: ALL}){
             datetime
             trxValue
-            fromAddress{ address isExchange labels { name metadata } }
-            toAddress{ address isExchange labels { name metadata } }
+            fromAddress{ address labels { name metadata } }
+            toAddress{ address labels { name metadata } }
         }
       }
       """
@@ -128,7 +120,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
         |> json_response(200)
 
       assert_called(
-        Sanbase.Transfers.Erc20Transfers.top_wallet_transactions(:_, :_, :_, :_, :_, :_, :_, :_)
+        Sanbase.Transfers.Erc20Transfers.top_wallet_transfers(:_, :_, :_, :_, :_, :_, :_, :_)
       )
 
       transactions = result["data"]["topTransfers"]
@@ -137,32 +129,20 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                [
                  %{
                    "datetime" => "2017-05-13T15:00:00Z",
-                   "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
-                   "toAddress" => %{
-                     "address" => "0xe1e1e1e1e1e1e1",
-                     "isExchange" => true,
-                     "labels" => []
-                   },
+                   "fromAddress" => %{"address" => "0x1", "labels" => []},
+                   "toAddress" => %{"address" => "0xe1e1e1e1e1e1e1", "labels" => []},
                    "trxValue" => 500.0
                  },
                  %{
                    "datetime" => "2017-05-15T17:00:00Z",
-                   "fromAddress" => %{
-                     "address" => "0xe1e1e1e1e1e1e1",
-                     "isExchange" => true,
-                     "labels" => []
-                   },
-                   "toAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
+                   "fromAddress" => %{"address" => "0xe1e1e1e1e1e1e1", "labels" => []},
+                   "toAddress" => %{"address" => "0x2", "labels" => []},
                    "trxValue" => 1.5e3
                  },
                  %{
                    "datetime" => "2017-05-18T20:00:00Z",
-                   "fromAddress" => %{
-                     "address" => "0xe1e1e1e1e1e1e1",
-                     "isExchange" => true,
-                     "labels" => []
-                   },
-                   "toAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
+                   "fromAddress" => %{"address" => "0xe1e1e1e1e1e1e1", "labels" => []},
+                   "toAddress" => %{"address" => "0x2", "labels" => []},
                    "trxValue" => 2.5e3
                  }
                ]

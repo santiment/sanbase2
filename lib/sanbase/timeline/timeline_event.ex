@@ -108,6 +108,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(%{order_by: order_by, filter_by: filter_by, limit: limit}) do
     TimelineEvent
+    |> Cursor.filter_by_min_dt()
     |> Filter.filter_by_query(filter_by)
     |> Query.events_by_sanfamily_query()
     |> Query.events_with_public_entities_query()
@@ -146,6 +147,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(%User{id: user_id}, %{order_by: order_by, filter_by: filter_by, limit: limit}) do
     TimelineEvent
+    |> Cursor.filter_by_min_dt()
     |> Filter.filter_by_query(filter_by, user_id)
     |> Query.events_with_public_entities_query(user_id)
     |> Query.events_with_event_type([@publish_insight_type, @trigger_fired])

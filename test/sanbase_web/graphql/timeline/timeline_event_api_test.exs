@@ -722,6 +722,34 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
            ]
   end
 
+  test "timeline events api doesn't return data more than 6 months", context do
+    user_to_follow = insert(:user)
+    UserFollower.follow(user_to_follow.id, context.user.id)
+    insight = insert(:post, user: user_to_follow)
+
+    insert(:timeline_event,
+      post: insight,
+      user: user_to_follow,
+      event_type: TimelineEvent.publish_insight_type(),
+      inserted_at: Timex.shift(Timex.now(), months: -7)
+    )
+
+    result = get_timeline_events(context.conn, "limit: 5")
+
+    assert result |> hd() |> Map.get("events") |> length() == 0
+
+    insert(:timeline_event,
+      post: insight,
+      user: user_to_follow,
+      event_type: TimelineEvent.publish_insight_type(),
+      inserted_at: Timex.shift(Timex.now(), months: -5)
+    )
+
+    result = get_timeline_events(context.conn, "limit: 5")
+
+    assert result |> hd() |> Map.get("events") |> length() == 1
+  end
+
   defp get_timeline_events(conn, args_str) do
     query = ~s|
     {

@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.TransferTypes do
     field(:slug, :string)
   end
 
-  object :user_address_details do
+  object :current_user_address_details do
     field(:watchlists, list_of(:address_watchlist_subtype))
     field(:notes, :string)
   end
@@ -19,8 +19,8 @@ defmodule SanbaseWeb.Graphql.TransferTypes do
     field(:infrastructure, non_null(:string))
     field(:labels, non_null(list_of(:label)))
 
-    field :current_user_fields, :user_address_details do
-      resolve(&BlockchainAddressResolver.user_address_details/3)
+    field :current_user_address_details, :current_user_address_details do
+      resolve(&BlockchainAddressResolver.current_user_address_details/3)
     end
   end
 

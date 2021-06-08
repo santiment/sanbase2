@@ -73,21 +73,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     {:ok, result}
   end
 
-  def user_address_details(%{address: address, infrastructure: infrastructure}, _args, %{
+  def current_user_address_details(%{address: address, infrastructure: infrastructure}, _args, %{
         context: %{loader: loader, auth: %{current_user: user}}
       }) do
     elem = %{user_id: user.id, address: address, infrastructure: infrastructure}
 
     loader
-    |> Dataloader.load(SanbaseDataloader, :user_address_details, elem)
+    |> Dataloader.load(SanbaseDataloader, :current_user_address_details, elem)
     |> on_load(fn loader ->
-      result = Dataloader.get(loader, SanbaseDataloader, :user_address_details, elem)
+      result = Dataloader.get(loader, SanbaseDataloader, :current_user_address_details, elem)
 
       {:ok, result}
     end)
   end
 
-  def user_address_details(root, _args, _resolution) do
+  def current_user_address_details(root, _args, _resolution) do
     {:ok, nil}
   end
 

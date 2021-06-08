@@ -149,7 +149,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Map.new()
   end
 
-  def query(:user_address_details, data) do
+  def query(:current_user_address_details, data) do
     Enum.group_by(data, &{&1.user_id, &1.infrastructure}, & &1.address)
     |> Enum.map(fn {{user_id, infrastructure}, addresses} ->
       from(
@@ -170,7 +170,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
         }
       )
       |> Sanbase.Repo.all()
-      |> combine_user_address_details(user_id, infrastructure)
+      |> combine_current_user_address_details(user_id, infrastructure)
     end)
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
   end
@@ -182,7 +182,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Enum.into(%{}, fn %{slug: slug} = project -> {slug, project} end)
   end
 
-  defp combine_user_address_details(list, user_id, infrastructure) do
+  defp combine_current_user_address_details(list, user_id, infrastructure) do
     list
     |> Enum.reduce(%{}, fn row, acc ->
       key = %{user_id: user_id, address: row.address, infrastructure: infrastructure}

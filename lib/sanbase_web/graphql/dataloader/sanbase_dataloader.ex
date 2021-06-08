@@ -50,7 +50,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :project_by_slug,
     :short_urls_comments_count,
     :timeline_events_comments_count,
-    :user_address_details,
+    :current_user_address_details,
     :wallet_hunters_proposals_comments_count
   ]
 

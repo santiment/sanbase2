@@ -24,23 +24,19 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
   setup do
     project = insert(:random_erc20_project)
 
-    # MarkExchanges GenServer is started by the top-level supervisor and not this process.
-    # Due to the SQL Sandbox the added exchange address is not seen from the genserver.
-    # Adding it manually
-    Sanbase.Clickhouse.MarkExchanges.add_exchange_wallets([@exchange_wallet])
+    user = insert(:user)
+    conn = setup_jwt_auth(build_conn(), user)
 
     [
       slug: project.slug,
+      conn: conn,
       datetime_from: @datetime1,
       datetime_to: @datetime6
     ]
   end
 
   test "top transfers for a slug", context do
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Transfers.Erc20Transfers.top_transfers/7,
-      {:ok, all_transfers()}
-    )
+    Sanbase.Mock.prepare_mock2(&Sanbase.Transfers.top_transfers/5, {:ok, all_transfers()})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
@@ -50,8 +46,16 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
           to: "#{context.datetime_to}"){
             datetime
             trxValue
-            fromAddress{ address labels { name metadata } }
-            toAddress{ address labels { name metadata } }
+            fromAddress{
+              address
+              labels { name metadata }
+              currentUserAddressDetails { notes watchlists { id name } }
+            }
+            toAddress{
+              address
+              labels { name metadata }
+              currentUserAddressDetails { notes watchlists { id name } }
+            }
         }
       }
       """
@@ -59,34 +63,66 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
       result =
         context.conn
         |> post("/graphql", query_skeleton(query, "topTransfers"))
+        |> json_response(200)
 
-      transactions = json_response(result, 200)["data"]["topTransfers"]
-
-      assert_called(Sanbase.Transfers.Erc20Transfers.top_transfers(:_, :_, :_, :_, :_, :_, :_))
+      transactions = result["data"]["topTransfers"]
+      assert_called(Sanbase.Transfers.top_transfers(:_, :_, :_, :_, :_))
 
       assert transactions == [
                %{
                  "datetime" => "2017-05-13T15:00:00Z",
-                 "fromAddress" => %{"address" => "0x1", "labels" => []},
-                 "toAddress" => %{"address" => "0xe1e1e1e1e1e1e1", "labels" => []},
+                 "fromAddress" => %{
+                   "address" => "0x1",
+                   "labels" => [],
+                   "currentUserAddressDetails" => nil
+                 },
+                 "toAddress" => %{
+                   "address" => "0xe1e1e1e1e1e1e1",
+                   "labels" => [],
+                   "currentUserAddressDetails" => nil
+                 },
                  "trxValue" => 500.0
                },
                %{
                  "datetime" => "2017-05-14T16:00:00Z",
-                 "fromAddress" => %{"address" => "0x1", "labels" => []},
-                 "toAddress" => %{"address" => "0x2", "labels" => []},
+                 "fromAddress" => %{
+                   "address" => "0x1",
+                   "labels" => [],
+                   "currentUserAddressDetails" => nil
+                 },
+                 "toAddress" => %{
+                   "address" => "0x2",
+                   "labels" => [],
+                   "currentUserAddressDetails" => nil
+                 },
                  "trxValue" => 1.5e3
                },
                %{
                  "datetime" => "2017-05-16T18:00:00Z",
-                 "fromAddress" => %{"address" => "0x2", "labels" => []},
-                 "toAddress" => %{"address" => "0x1", "labels" => []},
+                 "fromAddress" => %{
+                   "address" => "0x2",
+                   "labels" => [],
+                   "currentUserAddressDetails" => nil
+                 },
+                 "toAddress" => %{
+                   "address" => "0x1",
+                   "labels" => [],
+                   "currentUserAddressDetails" => nil
+                 },
                  "trxValue" => 2.0e4
                },
                %{
                  "datetime" => "2017-05-17T19:00:00Z",
-                 "fromAddress" => %{"address" => "0xe1e1e1e1e1e1e1", "labels" => []},
-                 "toAddress" => %{"address" => "0x1", "labels" => []},
+                 "fromAddress" => %{
+                   "address" => "0xe1e1e1e1e1e1e1",
+                   "labels" => [],
+                   "currentUserAddressDetails" => nil
+                 },
+                 "toAddress" => %{
+                   "address" => "0x1",
+                   "labels" => [],
+                   "currentUserAddressDetails" => nil
+                 },
                  "trxValue" => 4.5e4
                }
              ]
@@ -95,7 +131,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
 
   test "top transfers for an address and slug", context do
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Transfers.Erc20Transfers.top_wallet_transfers/8,
+      &Sanbase.Transfers.top_wallet_transfers/7,
       {:ok, address_transfers()}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -108,8 +144,16 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
           addressSelector: {address: "#{@exchange_wallet}" transaction_type: ALL}){
             datetime
             trxValue
-            fromAddress{ address labels { name metadata } }
-            toAddress{ address labels { name metadata } }
+            fromAddress{
+              address
+              labels { name metadata }
+              currentUserAddressDetails { notes watchlists { id name } }
+            }
+            toAddress{
+              address
+              labels { name metadata }
+              currentUserAddressDetails { notes watchlists { id name } }
+            }
         }
       }
       """
@@ -119,30 +163,51 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
         |> post("/graphql", query_skeleton(query, "topTransfers"))
         |> json_response(200)
 
-      assert_called(
-        Sanbase.Transfers.Erc20Transfers.top_wallet_transfers(:_, :_, :_, :_, :_, :_, :_, :_)
-      )
-
+      assert_called(Sanbase.Transfers.top_wallet_transfers(:_, :_, :_, :_, :_, :_, :_))
       transactions = result["data"]["topTransfers"]
 
       assert transactions ==
                [
                  %{
                    "datetime" => "2017-05-13T15:00:00Z",
-                   "fromAddress" => %{"address" => "0x1", "labels" => []},
-                   "toAddress" => %{"address" => "0xe1e1e1e1e1e1e1", "labels" => []},
+                   "fromAddress" => %{
+                     "address" => "0x1",
+                     "labels" => [],
+                     "currentUserAddressDetails" => nil
+                   },
+                   "toAddress" => %{
+                     "address" => "0xe1e1e1e1e1e1e1",
+                     "labels" => [],
+                     "currentUserAddressDetails" => nil
+                   },
                    "trxValue" => 500.0
                  },
                  %{
                    "datetime" => "2017-05-15T17:00:00Z",
-                   "fromAddress" => %{"address" => "0xe1e1e1e1e1e1e1", "labels" => []},
-                   "toAddress" => %{"address" => "0x2", "labels" => []},
+                   "fromAddress" => %{
+                     "address" => "0xe1e1e1e1e1e1e1",
+                     "labels" => [],
+                     "currentUserAddressDetails" => nil
+                   },
+                   "toAddress" => %{
+                     "address" => "0x2",
+                     "labels" => [],
+                     "currentUserAddressDetails" => nil
+                   },
                    "trxValue" => 1.5e3
                  },
                  %{
                    "datetime" => "2017-05-18T20:00:00Z",
-                   "fromAddress" => %{"address" => "0xe1e1e1e1e1e1e1", "labels" => []},
-                   "toAddress" => %{"address" => "0x2", "labels" => []},
+                   "fromAddress" => %{
+                     "address" => "0xe1e1e1e1e1e1e1",
+                     "labels" => [],
+                     "currentUserAddressDetails" => nil
+                   },
+                   "toAddress" => %{
+                     "address" => "0x2",
+                     "labels" => [],
+                     "currentUserAddressDetails" => nil
+                   },
                    "trxValue" => 2.5e3
                  }
                ]

@@ -2485,6 +2485,7 @@ CREATE TABLE public.user_followers (
     user_id bigint NOT NULL,
     follower_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
+    is_notification_disabled boolean DEFAULT false,
     CONSTRAINT user_cannot_follow_self CHECK ((user_id <> follower_id))
 );
 
@@ -5979,7 +5980,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200826101751);
 INSERT INTO public."schema_migrations" (version) VALUES (20200826114101);
 INSERT INTO public."schema_migrations" (version) VALUES (20200908092849);
 INSERT INTO public."schema_migrations" (version) VALUES (20200923090710);
-INSERT INTO public."schema_migrations" (version) VALUES (20200930103424);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016091443);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016105225);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016124426);
@@ -6029,6 +6029,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210419130213);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419183855);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419190728);
 INSERT INTO public."schema_migrations" (version) VALUES (20210420120610);
-INSERT INTO public."schema_migrations" (version) VALUES (20210518083003);
-INSERT INTO public."schema_migrations" (version) VALUES (20210423142550);
 INSERT INTO public."schema_migrations" (version) VALUES (20210513102007);
+INSERT INTO public."schema_migrations" (version) VALUES (20210518083003);
+INSERT INTO public."schema_migrations" (version) VALUES (20210604163821);

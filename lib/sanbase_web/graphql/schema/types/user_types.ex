@@ -137,6 +137,14 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       cache_resolve(&UserResolver.followers/3)
     end
 
+    field :following2, :follower_data2 do
+      cache_resolve(&UserResolver.following2/3)
+    end
+
+    field :followers2, :follower_data2 do
+      cache_resolve(&UserResolver.followers2/3)
+    end
+
     field :insights_count, :insights_count do
       cache_resolve(&InsightResolver.insights_count/3, ttl: 60)
     end
@@ -260,8 +268,15 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:users, non_null(list_of(:public_user)))
   end
 
+  object :follower_data2 do
+    field(:count, non_null(:integer))
+    field(:users, non_null(list_of(:user_follower)))
+  end
+
   object :user_follower do
     field(:user_id, non_null(:id))
     field(:follower_id, non_null(:id))
+    field(:is_notification_disabled, :boolean)
+    field(:user, :public_user)
   end
 end

@@ -139,6 +139,8 @@ $$;
 
 SET default_tablespace = '';
 
+SET default_table_access_method = heap;
+
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
 --
@@ -2948,6 +2950,75 @@ CREATE TABLE public.watchlist_settings (
 
 
 --
+-- Name: webinar_registrations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.webinar_registrations (
+    id bigint NOT NULL,
+    user_id bigint,
+    webinar_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: webinar_registrations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.webinar_registrations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: webinar_registrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.webinar_registrations_id_seq OWNED BY public.webinar_registrations.id;
+
+
+--
+-- Name: webinars; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.webinars (
+    id bigint NOT NULL,
+    title character varying(255),
+    description text,
+    url character varying(255),
+    image_url character varying(255),
+    start_time timestamp(0) without time zone,
+    end_time timestamp(0) without time zone,
+    is_pro boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: webinars_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.webinars_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: webinars_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.webinars_id_seq OWNED BY public.webinars.id;
+
+
+--
 -- Name: active_widgets id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3491,6 +3562,20 @@ ALTER TABLE ONLY public.wallet_hunters_relays_quota ALTER COLUMN id SET DEFAULT 
 --
 
 ALTER TABLE ONLY public.wallet_hunters_votes ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_votes_id_seq'::regclass);
+
+
+--
+-- Name: webinar_registrations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.webinar_registrations ALTER COLUMN id SET DEFAULT nextval('public.webinar_registrations_id_seq'::regclass);
+
+
+--
+-- Name: webinars id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.webinars ALTER COLUMN id SET DEFAULT nextval('public.webinars_id_seq'::regclass);
 
 
 --
@@ -4179,6 +4264,22 @@ ALTER TABLE ONLY public.wallet_hunters_votes
 
 ALTER TABLE ONLY public.watchlist_settings
     ADD CONSTRAINT watchlist_settings_pkey PRIMARY KEY (user_id, watchlist_id);
+
+
+--
+-- Name: webinar_registrations webinar_registrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.webinar_registrations
+    ADD CONSTRAINT webinar_registrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: webinars webinars_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.webinars
+    ADD CONSTRAINT webinars_pkey PRIMARY KEY (id);
 
 
 --
@@ -4893,6 +4994,27 @@ CREATE INDEX wallet_hunters_votes_user_id_index ON public.wallet_hunters_votes U
 --
 
 CREATE INDEX watchlist_settings_watchlist_id_index ON public.watchlist_settings USING btree (watchlist_id);
+
+
+--
+-- Name: webinar_registrations_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX webinar_registrations_user_id_index ON public.webinar_registrations USING btree (user_id);
+
+
+--
+-- Name: webinar_registrations_user_id_webinar_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX webinar_registrations_user_id_webinar_id_index ON public.webinar_registrations USING btree (user_id, webinar_id);
+
+
+--
+-- Name: webinar_registrations_webinar_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX webinar_registrations_webinar_id_index ON public.webinar_registrations USING btree (webinar_id);
 
 
 --
@@ -5712,6 +5834,22 @@ ALTER TABLE ONLY public.watchlist_settings
 
 
 --
+-- Name: webinar_registrations webinar_registrations_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.webinar_registrations
+    ADD CONSTRAINT webinar_registrations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: webinar_registrations webinar_registrations_webinar_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.webinar_registrations
+    ADD CONSTRAINT webinar_registrations_webinar_id_fkey FOREIGN KEY (webinar_id) REFERENCES public.webinars(id) ON DELETE CASCADE;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
@@ -6032,3 +6170,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210420120610);
 INSERT INTO public."schema_migrations" (version) VALUES (20210513102007);
 INSERT INTO public."schema_migrations" (version) VALUES (20210518083003);
 INSERT INTO public."schema_migrations" (version) VALUES (20210604163821);
+INSERT INTO public."schema_migrations" (version) VALUES (20210608133141);
+INSERT INTO public."schema_migrations" (version) VALUES (20210609082745);

@@ -152,24 +152,25 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:current_user_address_details, data) do
     Enum.group_by(data, &{&1.user_id, &1.infrastructure}, & &1.address)
     |> Enum.map(fn {{user_id, infrastructure}, addresses} ->
-      from(
-        baup in Sanbase.BlockchainAddress.BlockchainAddressUserPair,
-        where: baup.user_id == ^user_id,
-        inner_join: ba in Sanbase.BlockchainAddress,
-        on: baup.blockchain_address_id == ba.id,
-        left_join: li in Sanbase.UserList.ListItem,
-        on: li.blockchain_address_user_pair_id == baup.id,
-        left_join: ul in Sanbase.UserList,
-        on: ul.id == li.user_list_id,
-        select: %{
-          notes: baup.notes,
-          address: ba.address,
-          user_list_id: ul.id,
-          user_list_name: ul.name,
-          user_list_slug: ul.slug
-        }
-      )
-      |> Sanbase.Repo.all()
+      query =
+        from(
+          baup in Sanbase.BlockchainAddress.BlockchainAddressUserPair,
+          where: baup.user_id == ^user_id,
+          preload: [:labels],
+          inner_join: ba in Sanbase.BlockchainAddress,
+          on: baup.blockchain_address_id == ba.id and ba.address in ^addresses,
+          left_join: li in Sanbase.UserList.ListItem,
+          on: li.blockchain_address_user_pair_id == baup.id,
+          left_join: ul in Sanbase.UserList,
+          on: ul.id == li.user_list_id,
+          select: %{
+            blockchain_address_user_pair: baup,
+            address: ba.address,
+            watchlist: %{id: ul.id, name: ul.name, slug: ul.slug}
+          }
+        )
+
+      Sanbase.Repo.all(query)
       |> combine_current_user_address_details(user_id, infrastructure)
     end)
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
@@ -190,12 +191,18 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
       # If the row has a watchlist create a list with it, otherwise make it
       # an empty list. This way this watchlist can be prepened to the list of
       # watchlists without any conditionals
-      watchlist =
-        if row.user_list_id,
-          do: [%{id: row.user_list_id, name: row.user_list_name, slug: row.user_list_slug}],
-          else: []
+      watchlist = if row.watchlist.id, do: [row.watchlist], else: []
 
-      elem = Map.put(row, :watchlists, watchlist)
+      labels =
+        Enum.map(row.blockchain_address_user_pair.labels, &%{name: &1.name, origin: "user"})
+
+      elem =
+        row
+        |> Map.merge(%{
+          notes: row.blockchain_address_user_pair.notes,
+          watchlists: watchlist,
+          labels: labels
+        })
 
       Map.update(acc, key, elem, fn user_address_pair ->
         Map.update!(user_address_pair, :watchlists, &sort_watchlists(watchlist ++ &1))

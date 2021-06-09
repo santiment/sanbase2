@@ -10,14 +10,17 @@ defmodule SanbaseWeb.Graphql.TransferTypes do
   end
 
   object :current_user_address_details do
+    # current user origin labels
+    field(:labels, non_null(list_of(:label)))
     field(:watchlists, list_of(:address_watchlist_subtype))
     field(:notes, :string)
   end
 
   object :account_based_transfer_address do
+    # santiment origin labels
+    field(:labels, non_null(list_of(:label)))
     field(:address, non_null(:string))
     field(:infrastructure, non_null(:string))
-    field(:labels, non_null(list_of(:label)))
 
     field :current_user_address_details, :current_user_address_details do
       resolve(&BlockchainAddressResolver.current_user_address_details/3)

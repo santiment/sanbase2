@@ -39,9 +39,23 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
     Sanbase.UserList.update_user_list(user, %{
       id: watchlist.id,
       list_items: [
-        %{blockchain_address: %{address: @address1, infrastructure: "ETH", notes: "note1"}},
+        %{
+          blockchain_address: %{
+            address: @address1,
+            infrastructure: "ETH",
+            notes: "note1",
+            labels: ["MyLabel1"]
+          }
+        },
         %{blockchain_address: %{address: @address2, infrastructure: "ETH", notes: "note2"}},
-        %{blockchain_address: %{address: @address3, infrastructure: "ETH", notes: "note3"}},
+        %{
+          blockchain_address: %{
+            address: @address3,
+            infrastructure: "ETH",
+            notes: "note3",
+            labels: ["MyLabel3"]
+          }
+        },
         %{blockchain_address: %{address: @address4, infrastructure: "ETH", notes: "note4"}}
       ]
     })
@@ -77,12 +91,20 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
             fromAddress{
               address
               labels { name metadata }
-              currentUserAddressDetails { notes watchlists { id name } }
+              currentUserAddressDetails {
+                notes
+                labels { name }
+                watchlists { id name }
+              }
             }
             toAddress{
               address
               labels { name metadata }
-              currentUserAddressDetails { notes watchlists { id name } }
+              currentUserAddressDetails {
+                notes
+                labels { name }
+                watchlists { id name }
+              }
             }
         }
       }
@@ -103,6 +125,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                    "address" => @address2,
                    "currentUserAddressDetails" => %{
                      "notes" => "note2",
+                     "labels" => [],
                      "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
                    },
                    "labels" => []
@@ -111,6 +134,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                    "address" => @address1,
                    "currentUserAddressDetails" => %{
                      "notes" => "note5",
+                     "labels" => [%{"name" => "MyLabel1"}],
                      "watchlists" => [
                        %{"id" => context.watchlist2.id, "name" => "My Other Watchlist"},
                        %{"id" => context.watchlist.id, "name" => "My Watchlist"}
@@ -126,6 +150,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                    "address" => @address4,
                    "currentUserAddressDetails" => %{
                      "notes" => "note4",
+                     "labels" => [],
                      "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
                    },
                    "labels" => []
@@ -134,6 +159,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                    "address" => @address1,
                    "currentUserAddressDetails" => %{
                      "notes" => "note5",
+                     "labels" => [%{"name" => "MyLabel1"}],
                      "watchlists" => [
                        %{"id" => context.watchlist2.id, "name" => "My Other Watchlist"},
                        %{"id" => context.watchlist.id, "name" => "My Watchlist"}
@@ -149,6 +175,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                    "address" => @address1,
                    "currentUserAddressDetails" => %{
                      "notes" => "note5",
+                     "labels" => [%{"name" => "MyLabel1"}],
                      "watchlists" => [
                        %{"id" => context.watchlist2.id, "name" => "My Other Watchlist"},
                        %{"id" => context.watchlist.id, "name" => "My Watchlist"}
@@ -160,6 +187,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                    "address" => @address2,
                    "currentUserAddressDetails" => %{
                      "notes" => "note2",
+                     "labels" => [],
                      "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
                    },
                    "labels" => []
@@ -172,6 +200,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                    "address" => @address3,
                    "currentUserAddressDetails" => %{
                      "notes" => "note3",
+                     "labels" => [%{"name" => "MyLabel3"}],
                      "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
                    },
                    "labels" => []
@@ -180,6 +209,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                    "address" => @address2,
                    "currentUserAddressDetails" => %{
                      "notes" => "note2",
+                     "labels" => [],
                      "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
                    },
                    "labels" => []
@@ -208,12 +238,20 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
             fromAddress{
               address
               labels { name metadata }
-              currentUserAddressDetails { notes watchlists { id name } }
+              currentUserAddressDetails {
+                notes
+                labels { name }
+                watchlists { id name }
+              }
             }
             toAddress{
               address
               labels { name metadata }
-              currentUserAddressDetails { notes watchlists { id name } }
+              currentUserAddressDetails {
+                notes
+                labels { name }
+                watchlists { id name }
+              }
             }
         }
       }
@@ -235,6 +273,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                      "address" => @address2,
                      "currentUserAddressDetails" => %{
                        "notes" => "note2",
+                       "labels" => [],
                        "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
                      },
                      "labels" => []
@@ -243,6 +282,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                      "address" => @address1,
                      "currentUserAddressDetails" => %{
                        "notes" => "note5",
+                       "labels" => [%{"name" => "MyLabel1"}],
                        "watchlists" => [
                          %{"id" => context.watchlist2.id, "name" => "My Other Watchlist"},
                          %{"id" => context.watchlist.id, "name" => "My Watchlist"}
@@ -258,6 +298,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                      "address" => @address1,
                      "currentUserAddressDetails" => %{
                        "notes" => "note5",
+                       "labels" => [%{"name" => "MyLabel1"}],
                        "watchlists" => [
                          %{"id" => context.watchlist2.id, "name" => "My Other Watchlist"},
                          %{"id" => context.watchlist.id, "name" => "My Watchlist"}
@@ -269,6 +310,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                      "address" => @address2,
                      "currentUserAddressDetails" => %{
                        "notes" => "note2",
+                       "labels" => [],
                        "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
                      },
                      "labels" => []
@@ -281,6 +323,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                      "address" => @address1,
                      "currentUserAddressDetails" => %{
                        "notes" => "note5",
+                       "labels" => [%{"name" => "MyLabel1"}],
                        "watchlists" => [
                          %{"id" => context.watchlist2.id, "name" => "My Other Watchlist"},
                          %{"id" => context.watchlist.id, "name" => "My Watchlist"}
@@ -292,6 +335,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                      "address" => @address2,
                      "currentUserAddressDetails" => %{
                        "notes" => "note2",
+                       "labels" => [],
                        "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
                      },
                      "labels" => []

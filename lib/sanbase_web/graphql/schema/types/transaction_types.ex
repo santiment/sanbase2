@@ -17,6 +17,7 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
 
   object :label do
     field(:name, :string)
+    field(:origin, :string, default_value: "santiment")
     field(:metadata, :json, default_value: %{})
   end
 

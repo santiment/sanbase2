@@ -73,8 +73,7 @@ defmodule Sanbase.Webinar do
     end)
   end
 
-  defp show_only_preview_fields?(webinars, %{is_logged_in: true, plan_atom_name: plan})
-       when plan == :pro do
+  defp show_only_preview_fields?(webinars, %{is_logged_in: true, plan_atom_name: :pro}) do
     webinars
   end
 end

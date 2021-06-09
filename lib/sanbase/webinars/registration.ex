@@ -28,17 +28,17 @@ defmodule Sanbase.Webinars.Registration do
   def create(params) do
     %__MODULE__{}
     |> changeset(params)
-    |> Repo.insert()
+    |> Repo.insert(on_conflict: :nothing)
   end
 
   def list_users_in_webinar(webinar_id) do
-    from(wr in __MODULE__, where: wr.webinar_id == ^webinar_id, preload: [:user, :webinar])
+    from(wr in __MODULE__, where: wr.webinar_id == ^webinar_id, preload: [:user])
     |> Repo.all()
     |> Enum.map(& &1.user)
   end
 
   def list_webinars_for_users(user_id) do
-    from(wr in __MODULE__, where: wr.user_id == ^user_id, preload: [:user, :webinar])
+    from(wr in __MODULE__, where: wr.user_id == ^user_id, preload: [:webinar])
     |> Repo.all()
     |> Enum.map(& &1.webinar)
   end

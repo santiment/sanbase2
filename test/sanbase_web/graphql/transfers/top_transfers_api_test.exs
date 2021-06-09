@@ -13,7 +13,10 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
   @datetime5 ~U[2017-05-17 19:00:00Z]
   @datetime6 ~U[2017-05-18 20:00:00Z]
 
-  @exchange_wallet "0xe1e1e1e1e1e1e1"
+  @address1 "0xffas2df5ecf00aa47c87f2a69db2b69b3af281e9"
+  @address2 "0x123f8054bf571ecd56db56f8aaf7b71b97f03ac7"
+  @address3 "0x5095d24e2fa078b88b49bd1180f6b29dfe145bb5"
+  @address4 "0xbbb61c88bb59a1f6dfe63ed4fe036466b3a328d1"
 
   setup_all_with_mocks([
     {Sanbase.ClickhouseRepo, [:passthrough], [query: fn _, _ -> {:ok, %{rows: []}} end]}
@@ -27,7 +30,32 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
 
+    watchlist =
+      insert(:watchlist, type: :blockchain_address, is_public: true, name: "My Watchlist")
+
+    watchlist2 =
+      insert(:watchlist, type: :blockchain_address, is_public: true, name: "My Other Watchlist")
+
+    Sanbase.UserList.update_user_list(user, %{
+      id: watchlist.id,
+      list_items: [
+        %{blockchain_address: %{address: @address1, infrastructure: "ETH", notes: "note1"}},
+        %{blockchain_address: %{address: @address2, infrastructure: "ETH", notes: "note2"}},
+        %{blockchain_address: %{address: @address3, infrastructure: "ETH", notes: "note3"}},
+        %{blockchain_address: %{address: @address4, infrastructure: "ETH", notes: "note4"}}
+      ]
+    })
+
+    Sanbase.UserList.update_user_list(user, %{
+      id: watchlist2.id,
+      list_items: [
+        %{blockchain_address: %{address: @address1, infrastructure: "ETH", notes: "note5"}}
+      ]
+    })
+
     [
+      watchlist: watchlist,
+      watchlist2: watchlist2,
       slug: project.slug,
       conn: conn,
       datetime_from: @datetime1,
@@ -65,63 +93,96 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
         |> post("/graphql", query_skeleton(query, "topTransfers"))
         |> json_response(200)
 
-      transactions = result["data"]["topTransfers"]
+      transfers = result["data"]["topTransfers"]
       assert_called(Sanbase.Transfers.top_transfers(:_, :_, :_, :_, :_))
 
-      assert transactions == [
+      assert transfers == [
                %{
                  "datetime" => "2017-05-13T15:00:00Z",
                  "fromAddress" => %{
-                   "address" => "0x1",
-                   "labels" => [],
-                   "currentUserAddressDetails" => nil
+                   "address" => @address2,
+                   "currentUserAddressDetails" => %{
+                     "notes" => "note2",
+                     "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
+                   },
+                   "labels" => []
                  },
                  "toAddress" => %{
-                   "address" => "0xe1e1e1e1e1e1e1",
-                   "labels" => [],
-                   "currentUserAddressDetails" => nil
+                   "address" => @address1,
+                   "currentUserAddressDetails" => %{
+                     "notes" => "note5",
+                     "watchlists" => [
+                       %{"id" => context.watchlist2.id, "name" => "My Other Watchlist"},
+                       %{"id" => context.watchlist.id, "name" => "My Watchlist"}
+                     ]
+                   },
+                   "labels" => []
                  },
                  "trxValue" => 500.0
                },
                %{
                  "datetime" => "2017-05-14T16:00:00Z",
                  "fromAddress" => %{
-                   "address" => "0x1",
-                   "labels" => [],
-                   "currentUserAddressDetails" => nil
+                   "address" => @address4,
+                   "currentUserAddressDetails" => %{
+                     "notes" => "note4",
+                     "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
+                   },
+                   "labels" => []
                  },
                  "toAddress" => %{
-                   "address" => "0x2",
-                   "labels" => [],
-                   "currentUserAddressDetails" => nil
+                   "address" => @address1,
+                   "currentUserAddressDetails" => %{
+                     "notes" => "note5",
+                     "watchlists" => [
+                       %{"id" => context.watchlist2.id, "name" => "My Other Watchlist"},
+                       %{"id" => context.watchlist.id, "name" => "My Watchlist"}
+                     ]
+                   },
+                   "labels" => []
                  },
                  "trxValue" => 1.5e3
                },
                %{
                  "datetime" => "2017-05-16T18:00:00Z",
                  "fromAddress" => %{
-                   "address" => "0x2",
-                   "labels" => [],
-                   "currentUserAddressDetails" => nil
+                   "address" => @address1,
+                   "currentUserAddressDetails" => %{
+                     "notes" => "note5",
+                     "watchlists" => [
+                       %{"id" => context.watchlist2.id, "name" => "My Other Watchlist"},
+                       %{"id" => context.watchlist.id, "name" => "My Watchlist"}
+                     ]
+                   },
+                   "labels" => []
                  },
                  "toAddress" => %{
-                   "address" => "0x1",
-                   "labels" => [],
-                   "currentUserAddressDetails" => nil
+                   "address" => @address2,
+                   "currentUserAddressDetails" => %{
+                     "notes" => "note2",
+                     "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
+                   },
+                   "labels" => []
                  },
                  "trxValue" => 2.0e4
                },
                %{
                  "datetime" => "2017-05-17T19:00:00Z",
                  "fromAddress" => %{
-                   "address" => "0xe1e1e1e1e1e1e1",
-                   "labels" => [],
-                   "currentUserAddressDetails" => nil
+                   "address" => @address3,
+                   "currentUserAddressDetails" => %{
+                     "notes" => "note3",
+                     "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
+                   },
+                   "labels" => []
                  },
                  "toAddress" => %{
-                   "address" => "0x1",
-                   "labels" => [],
-                   "currentUserAddressDetails" => nil
+                   "address" => @address2,
+                   "currentUserAddressDetails" => %{
+                     "notes" => "note2",
+                     "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
+                   },
+                   "labels" => []
                  },
                  "trxValue" => 4.5e4
                }
@@ -141,7 +202,7 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
           slug: "#{context.slug}"
           from: "#{context.datetime_from}"
           to: "#{context.datetime_to}"
-          addressSelector: {address: "#{@exchange_wallet}" transaction_type: ALL}){
+          addressSelector: {address: "#{@address1}" transaction_type: ALL}){
             datetime
             trxValue
             fromAddress{
@@ -171,42 +232,69 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
                  %{
                    "datetime" => "2017-05-13T15:00:00Z",
                    "fromAddress" => %{
-                     "address" => "0x1",
-                     "labels" => [],
-                     "currentUserAddressDetails" => nil
+                     "address" => @address2,
+                     "currentUserAddressDetails" => %{
+                       "notes" => "note2",
+                       "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
+                     },
+                     "labels" => []
                    },
                    "toAddress" => %{
-                     "address" => "0xe1e1e1e1e1e1e1",
-                     "labels" => [],
-                     "currentUserAddressDetails" => nil
+                     "address" => @address1,
+                     "currentUserAddressDetails" => %{
+                       "notes" => "note5",
+                       "watchlists" => [
+                         %{"id" => context.watchlist2.id, "name" => "My Other Watchlist"},
+                         %{"id" => context.watchlist.id, "name" => "My Watchlist"}
+                       ]
+                     },
+                     "labels" => []
                    },
                    "trxValue" => 500.0
                  },
                  %{
                    "datetime" => "2017-05-15T17:00:00Z",
                    "fromAddress" => %{
-                     "address" => "0xe1e1e1e1e1e1e1",
-                     "labels" => [],
-                     "currentUserAddressDetails" => nil
+                     "address" => @address1,
+                     "currentUserAddressDetails" => %{
+                       "notes" => "note5",
+                       "watchlists" => [
+                         %{"id" => context.watchlist2.id, "name" => "My Other Watchlist"},
+                         %{"id" => context.watchlist.id, "name" => "My Watchlist"}
+                       ]
+                     },
+                     "labels" => []
                    },
                    "toAddress" => %{
-                     "address" => "0x2",
-                     "labels" => [],
-                     "currentUserAddressDetails" => nil
+                     "address" => @address2,
+                     "currentUserAddressDetails" => %{
+                       "notes" => "note2",
+                       "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
+                     },
+                     "labels" => []
                    },
                    "trxValue" => 1.5e3
                  },
                  %{
                    "datetime" => "2017-05-18T20:00:00Z",
                    "fromAddress" => %{
-                     "address" => "0xe1e1e1e1e1e1e1",
-                     "labels" => [],
-                     "currentUserAddressDetails" => nil
+                     "address" => @address1,
+                     "currentUserAddressDetails" => %{
+                       "notes" => "note5",
+                       "watchlists" => [
+                         %{"id" => context.watchlist2.id, "name" => "My Other Watchlist"},
+                         %{"id" => context.watchlist.id, "name" => "My Watchlist"}
+                       ]
+                     },
+                     "labels" => []
                    },
                    "toAddress" => %{
-                     "address" => "0x2",
-                     "labels" => [],
-                     "currentUserAddressDetails" => nil
+                     "address" => @address2,
+                     "currentUserAddressDetails" => %{
+                       "notes" => "note2",
+                       "watchlists" => [%{"id" => context.watchlist.id, "name" => "My Watchlist"}]
+                     },
+                     "labels" => []
                    },
                    "trxValue" => 2.5e3
                  }
@@ -220,34 +308,34 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
     [
       %{
         datetime: @datetime1,
-        from_address: "0x1",
+        from_address: @address2,
         trx_position: 0,
-        to_address: "0xe1e1e1e1e1e1e1",
+        to_address: @address1,
         trx_hash: "0x9a561c88bb59a1f6dfe63ed4fe036466b3a328d1d86d039377481ab7c4defe4e",
         trx_value: 500.0
       },
       %{
         datetime: @datetime2,
-        from_address: "0x1",
+        from_address: @address4,
         trx_position: 2,
-        to_address: "0x2",
+        to_address: @address1,
         trx_hash: "0xccbb803caabebd3665eec49673e23ef5cd08bd0be50a2b1f1506d77a523827ce",
         trx_value: 1500.0
       },
       %{
         datetime: @datetime4,
-        from_address: "0x2",
+        from_address: @address1,
         trx_position: 62,
-        to_address: "0x1",
-        trx_hash: "0xd4341953103d0d850d3284910213482dae5f7677c929f768d72f121e5a556fb3",
+        to_address: @address2,
+        trx_hash: "0x9a561c88bb59a1f6dfe63ed4fe036466b3a328d1d86d039377481ab7c4def5a2",
         trx_value: 20_000.0
       },
       %{
         datetime: @datetime5,
-        from_address: "0xe1e1e1e1e1e1e1",
+        from_address: @address3,
         trx_position: 7,
-        to_address: "0x1",
-        trx_hash: "0x31a5d24e2fa078b88b49bd1180f6b29dfe145bb51b6f98543fe9bccf6e15bba2",
+        to_address: @address2,
+        trx_hash: "0x9a561c88bb59a1f6dfe63ed4fe036466b3a328d1d86d039377481ab7c4def5e",
         trx_value: 45_000.0
       }
     ]
@@ -257,26 +345,26 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
     [
       %{
         datetime: @datetime1,
-        from_address: "0x1",
+        from_address: @address2,
         trx_position: 0,
-        to_address: "0xe1e1e1e1e1e1e1",
+        to_address: @address1,
         trx_hash: "0x9a561c88bb59a1f6dfe63ed4fe036466b3a328d1d86d039377481ab7c4defe4e",
         trx_value: 500.0
       },
       %{
         datetime: @datetime3,
-        from_address: "0xe1e1e1e1e1e1e1",
+        from_address: @address1,
         trx_position: 2,
-        to_address: "0x2",
+        to_address: @address2,
         trx_hash: "0xccbb803caabebd3665eec49673e23ef5cd08bd0be50a2b1f1506d77a523827ce",
         trx_value: 1500.0
       },
       %{
         datetime: @datetime6,
-        from_address: "0xe1e1e1e1e1e1e1",
+        from_address: @address1,
         trx_position: 7,
-        to_address: "0x2",
-        trx_hash: "0x923f8054bf571ecd56db56f8aaf7b71b97f03ac7cf63e5cac929869cdbdd3863",
+        to_address: @address2,
+        trx_hash: "0x9a561c88bb59a1f6dfe63ed4fe036466b3a328d1d86d039377481ab7c4defffff",
         trx_value: 2500.0
       }
     ]

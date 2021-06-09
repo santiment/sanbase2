@@ -198,8 +198,13 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
       elem = Map.put(row, :watchlists, watchlist)
 
       Map.update(acc, key, elem, fn user_address_pair ->
-        Map.update!(user_address_pair, :watchlists, &(watchlist ++ &1))
+        Map.update!(user_address_pair, :watchlists, &sort_watchlists(watchlist ++ &1))
       end)
     end)
+  end
+
+  defp sort_watchlists(watchlists) do
+    # Do this in order to have e specific order in the tests
+    Enum.sort_by(watchlists, & &1.id, :desc)
   end
 end

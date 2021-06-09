@@ -15,8 +15,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
 
   test "top token transactons for a project", %{conn: conn, project: project} do
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Transfers.Erc20Transfers.top_transactions/7,
-      transactions()
+      &Sanbase.Transfers.Erc20Transfers.top_transfers/7,
+      transfers()
     )
     |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: labels_rows()}})
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -128,7 +128,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
     """
   end
 
-  defp transactions() do
+  defp transfers() do
     {:ok,
      [
        %Sanbase.Transfers.Erc20Transfers{

@@ -130,19 +130,19 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :following, :follower_data do
-      cache_resolve(&UserResolver.following/3)
+      resolve(&UserResolver.following/3)
     end
 
     field :followers, :follower_data do
-      cache_resolve(&UserResolver.followers/3)
+      resolve(&UserResolver.followers/3)
     end
 
     field :following2, :follower_data2 do
-      cache_resolve(&UserResolver.following2/3)
+      resolve(&UserResolver.following2/3)
     end
 
     field :followers2, :follower_data2 do
-      cache_resolve(&UserResolver.followers2/3)
+      resolve(&UserResolver.followers2/3)
     end
 
     field :insights_count, :insights_count do

@@ -278,13 +278,21 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
     end
 
     defp extend_with_datetime_link({template, kv}) do
-      datetime_iso = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601()
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      datetime_iso = now |> DateTime.to_iso8601()
+      datetime_human_readable = now |> Sanbase.DateTimeUtils.to_human_readable()
 
       template =
-        template <>
-          "[Trending words at #{datetime_iso}](#{
-            SanbaseWeb.Endpoint.trending_words_datetime_url(datetime_iso)
-          })\n"
+        template <> "[Trending words at {{datetime_human_readable}}]({{trending_words_url}})\n"
+
+      kv =
+        kv
+        |> Map.put(:datetime_human_readable, datetime_human_readable)
+        |> Map.put(:datetime_iso, datetime_iso)
+        |> Map.put(
+          :trending_words_url,
+          SanbaseWeb.Endpoint.trending_words_datetime_url(datetime_iso)
+        )
 
       {template, kv}
     end

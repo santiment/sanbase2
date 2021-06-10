@@ -175,4 +175,8 @@ defmodule SanbaseWeb.Endpoint do
   def show_alert_url(id) do
     sonar_url() <> "/signal/#{id}"
   end
+
+  def trending_words_datetime_url(datetime_iso) do
+    frontend_url() <> "/labs/trends?datetime=#{datetime_iso}"
+  end
 end

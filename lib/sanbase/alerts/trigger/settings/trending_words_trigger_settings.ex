@@ -209,7 +209,9 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       ```
       """
 
-      {template, kv} |> maybe_extend_with_explanation(settings)
+      {template, kv}
+      |> extend_with_datetime_link()
+      |> maybe_extend_with_explanation(settings)
     end
 
     defp template_kv(%{operation: %{trending_word: true}} = settings, [word]) do
@@ -225,7 +227,9 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       🔔 The word {{trending_words_str}} is in the top 10 trending words on crypto social media.
       """
 
-      {template, kv} |> maybe_extend_with_explanation(settings)
+      {template, kv}
+      |> extend_with_datetime_link()
+      |> maybe_extend_with_explanation(settings)
     end
 
     defp template_kv(%{operation: %{trending_word: true}} = settings, [_, _ | _] = words) do
@@ -244,7 +248,9 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       🔔 The words {{trending_words_str}} are in the top 10 trending words on crypto social media.
       """
 
-      {template, kv} |> maybe_extend_with_explanation(settings)
+      {template, kv}
+      |> extend_with_datetime_link()
+      |> maybe_extend_with_explanation(settings)
     end
 
     defp template_kv(%{operation: %{trending_project: true}} = settings, project) do
@@ -260,13 +266,27 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       🔔 \#{{project_ticker}} | **{{project_name}}** is in the top 10 trending words on crypto social media.
       """
 
-      {template, kv} |> maybe_extend_with_explanation(settings)
+      {template, kv}
+      |> extend_with_datetime_link()
+      |> maybe_extend_with_explanation(settings)
     end
 
     defp get_max_len(top_words) do
       top_words
       |> Enum.map(&String.length(&1.word))
       |> Enum.max()
+    end
+
+    defp extend_with_datetime_link({template, kv}) do
+      datetime_iso = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601()
+
+      template =
+        template <>
+          "[Trending words at #{datetime_iso}](#{
+            SanbaseWeb.Endpoint.trending_words_datetime_url(datetime_iso)
+          })\n"
+
+      {template, kv}
     end
 
     defp maybe_extend_with_explanation({template, kv}, settings) do

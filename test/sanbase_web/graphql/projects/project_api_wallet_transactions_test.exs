@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
   test "project in transactions for the whole interval", context do
     with_mock Sanbase.Transfers.EthTransfers,
-      top_wallet_transactions: fn _, _, _, _, _, _ ->
+      top_wallet_transfers: fn _, _, _, _, _, _ ->
         {:ok, eth_transfers_in()}
       end do
       query = """
@@ -97,7 +97,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
   test "project out transactions for the whole interval", context do
     with_mock Sanbase.Transfers.EthTransfers,
-      top_wallet_transactions: fn _, _, _, _, _, _ ->
+      top_wallet_transfers: fn _, _, _, _, _, _ ->
         {:ok, eth_transfers_out()}
       end do
       query = """
@@ -169,7 +169,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
   test "project all wallet transactions in interval", context do
     with_mock Sanbase.Transfers.EthTransfers,
-      top_wallet_transactions: fn _, _, _, _, _, _ ->
+      top_wallet_transfers: fn _, _, _, _, _, _ ->
         {:ok, eth_transfers_in() ++ eth_transfers_out()}
       end do
       query = """

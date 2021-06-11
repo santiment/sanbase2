@@ -137,7 +137,7 @@ defmodule Sanbase.Model.Project.ListSelector do
     case Process.get(@cycle_detection_key) do
       nil ->
         Process.put(@cycle_detection_key, %{
-          iterations_left: 5,
+          iterations_left: 20,
           args_seen_so_far: MapSet.new([args]),
           original_args: args
         })

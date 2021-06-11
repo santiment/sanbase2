@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     |> Label.list_all()
   end
 
-  def top_transactions(
+  def top_transfers(
         _root,
         %{address_selector: address_selector, slug: slug, from: from, to: to} = args,
         _resolution
@@ -36,27 +36,59 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     address = Map.fetch!(address_selector, :address)
     type = Map.get(address_selector, :transacion_type, :all)
 
-    with {:ok, transactions} <-
-           Transfers.top_wallet_transactions(slug, address, from, to, page, page_size, type),
-         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
-         {:ok, transactions} <- Label.add_labels(slug, transactions) do
-      {:ok, transactions}
+    with {:ok, transfers} <-
+           Transfers.top_wallet_transfers(slug, address, from, to, page, page_size, type),
+         {:ok, transfers} <- transform_address_to_map(transfers, slug),
+         {:ok, transfers} <- Label.add_labels(slug, transfers) do
+      {:ok, transfers}
     end
   end
 
-  def top_transactions(
+  def top_transfers(
         _root,
         %{slug: slug, from: from, to: to} = args,
         _resolution
       ) do
     %{page: page, page_size: page_size} = args_to_page_args(args)
 
-    with {:ok, transactions} <-
-           Sanbase.Transfers.top_transactions(slug, from, to, page, page_size),
-         {:ok, transactions} <- MarkExchanges.mark_exchange_wallets(transactions),
-         {:ok, transactions} <- Label.add_labels(slug, transactions) do
-      {:ok, transactions}
+    with {:ok, transfers} <-
+           Sanbase.Transfers.top_transfers(slug, from, to, page, page_size),
+         {:ok, transfers} <- transform_address_to_map(transfers, slug),
+         {:ok, transfers} <- Label.add_labels(slug, transfers) do
+      {:ok, transfers}
     end
+  end
+
+  defp transform_address_to_map(transfers, slug) do
+    {:ok, _, _, infr} = Sanbase.Model.Project.contract_info_infrastructure_by_slug(slug)
+
+    result =
+      transfers
+      |> Enum.map(fn %{from_address: from_address, to_address: to_address} = trx ->
+        trx
+        |> Map.put(:from_address, %{address: from_address, infrastructure: infr})
+        |> Map.put(:to_address, %{address: to_address, infrastructure: infr})
+      end)
+
+    {:ok, result}
+  end
+
+  def current_user_address_details(%{address: address, infrastructure: infrastructure}, _args, %{
+        context: %{loader: loader, auth: %{current_user: user}}
+      }) do
+    elem = %{user_id: user.id, address: address, infrastructure: infrastructure}
+
+    loader
+    |> Dataloader.load(SanbaseDataloader, :current_user_address_details, elem)
+    |> on_load(fn loader ->
+      result = Dataloader.get(loader, SanbaseDataloader, :current_user_address_details, elem)
+
+      {:ok, result}
+    end)
+  end
+
+  def current_user_address_details(root, _args, _resolution) do
+    {:ok, nil}
   end
 
   def recent_transactions(

@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     PriceResolver,
     ProjectResolver,
     ProjectListResolver,
-    ProjectTransactionsResolver,
+    ProjectTransfersResolver,
     MarketSegmentResolver
   }
 
@@ -165,7 +165,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
 
-      cache_resolve(&ProjectTransactionsResolver.eth_spent_by_all_projects/3,
+      cache_resolve(&ProjectTransfersResolver.eth_spent_by_all_projects/3,
         ttl: 600,
         max_ttl_offset: 240
       )
@@ -181,7 +181,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
 
-      cache_resolve(&ProjectTransactionsResolver.eth_spent_by_erc20_projects/3,
+      cache_resolve(&ProjectTransfersResolver.eth_spent_by_erc20_projects/3,
         ttl: 600,
         max_ttl_offset: 240
       )
@@ -201,7 +201,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
 
-      cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3,
+      cache_resolve(&ProjectTransfersResolver.eth_spent_over_time_by_erc20_projects/3,
         ttl: 600,
         max_ttl_offset: 240
       )
@@ -221,7 +221,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
 
-      cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_all_projects/3,
+      cache_resolve(&ProjectTransfersResolver.eth_spent_over_time_by_all_projects/3,
         ttl: 600,
         max_ttl_offset: 240
       )

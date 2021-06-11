@@ -9,7 +9,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
           datetime: Datetime.t()
         }
 
-  @spec top_transactions(
+  @spec top_transfers(
           %DateTime{},
           %DateTime{},
           non_neg_integer(),
@@ -17,8 +17,8 @@ defmodule Sanbase.Transfers.BtcTransfers do
           list(String.t())
         ) ::
           {:ok, list(transaction)} | {:error, String.t()}
-  def top_transactions(from, to, page, page_size, excluded_addresses \\ []) do
-    {query, args} = top_transactions_query(from, to, page, page_size, excluded_addresses)
+  def top_transfers(from, to, page, page_size, excluded_addresses \\ []) do
+    {query, args} = top_transfers_query(from, to, page, page_size, excluded_addresses)
 
     Sanbase.ClickhouseRepo.query_transform(
       query,
@@ -35,7 +35,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
     )
   end
 
-  @spec top_wallet_transactions(
+  @spec top_wallet_transfers(
           list(String.t()),
           DateTime.t(),
           DateTime.t(),
@@ -44,10 +44,10 @@ defmodule Sanbase.Transfers.BtcTransfers do
           String.t()
         ) ::
           {:ok, nil} | {:ok, list(map())} | {:error, String.t()}
-  def top_wallet_transactions([], _from, _to, _page, _page_size, _type), do: {:ok, []}
+  def top_wallet_transfers([], _from, _to, _page, _page_size, _type), do: {:ok, []}
 
-  def top_wallet_transactions(wallets, from, to, page, page_size, type) do
-    {query, args} = top_wallet_transactions_query(wallets, from, to, page, page_size, type)
+  def top_wallet_transfers(wallets, from, to, page, page_size, type) do
+    {query, args} = top_wallet_transfers_query(wallets, from, to, page, page_size, type)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, address, trx_hash, balance, old_balance, abs_value] ->
@@ -70,7 +70,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
 
   # Private functions
 
-  defp top_wallet_transactions_query(wallets, from, to, page, page_size, type) do
+  defp top_wallet_transfers_query(wallets, from, to, page, page_size, type) do
     query = """
     SELECT
       toUnixTimestamp(dt),
@@ -81,7 +81,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
       abs(balance - oldBalance) AS absValue
     FROM btc_balances FINAL
     PREWHERE
-      #{top_wallet_transactions_address_clause(type, arg_position: 1, trailing_and: true)}
+      #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
       dt >= toDateTime(?2) AND
       dt <= toDateTime(?3)
     ORDER BY absValue DESC
@@ -101,7 +101,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
     {query, args}
   end
 
-  defp top_wallet_transactions_address_clause(:in, opts) do
+  defp top_wallet_transfers_address_clause(:in, opts) do
     arg_position = Keyword.fetch!(opts, :arg_position)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
@@ -109,7 +109,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
     if trailing_and, do: str <> " AND", else: str
   end
 
-  defp top_wallet_transactions_address_clause(:out, opts) do
+  defp top_wallet_transfers_address_clause(:out, opts) do
     arg_position = Keyword.fetch!(opts, :arg_position)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
@@ -117,7 +117,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
     if trailing_and, do: str <> " AND", else: str
   end
 
-  defp top_wallet_transactions_address_clause(:all, opts) do
+  defp top_wallet_transfers_address_clause(:all, opts) do
     arg_position = Keyword.fetch!(opts, :arg_position)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
@@ -128,7 +128,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
     if trailing_and, do: str <> " AND", else: str
   end
 
-  defp top_transactions_query(from, to, page, page_size, excluded_addresses) do
+  defp top_transfers_query(from, to, page, page_size, excluded_addresses) do
     to_unix = DateTime.to_unix(to)
     from_unix = DateTime.to_unix(from)
     offset = (page - 1) * page_size

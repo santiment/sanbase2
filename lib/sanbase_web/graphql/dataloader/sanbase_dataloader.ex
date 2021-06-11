@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     BalanceDataloader,
     ClickhouseDataloader,
     LabelsDataloader,
-    MetricPostgresDataloader,
+    PostgresDataloader,
     ParityDataloader,
     PriceDataloader
   }
@@ -36,21 +36,22 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
 
   @parity_dataloader [:eth_balance]
 
-  @metric_postgres_dataloader [
-    :comment_insight_id,
-    :comment_timeline_event_id,
+  @postgres_dataloader [
+    :blockchain_addresses_comments_count,
     :comment_blockchain_address_id,
+    :comment_insight_id,
     :comment_proposal_id,
     :comment_short_url_id,
+    :comment_timeline_event_id,
     :infrastructure,
-    :market_segment,
     :insights_comments_count,
     :insights_count_per_user,
-    :timeline_events_comments_count,
-    :blockchain_addresses_comments_count,
-    :wallet_hunters_proposals_comments_count,
+    :market_segment,
+    :project_by_slug,
     :short_urls_comments_count,
-    :project_by_slug
+    :timeline_events_comments_count,
+    :current_user_address_details,
+    :wallet_hunters_proposals_comments_count
   ]
 
   def query(queryable, args) do
@@ -70,8 +71,8 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
       x when x in @parity_dataloader ->
         ParityDataloader.query(queryable, args)
 
-      x when x in @metric_postgres_dataloader ->
-        MetricPostgresDataloader.query(queryable, args)
+      x when x in @postgres_dataloader ->
+        PostgresDataloader.query(queryable, args)
     end
   end
 end

@@ -94,6 +94,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
       end
     end)
     |> Sanbase.KafkaExporter.persist_sync(@prices_exporter)
+  rescue
+    e ->
+      Logger.error(
+        "[CMC] Realtime exporter failed to export to Kafka. Reason: #{Exception.message(e)}"
+      )
   end
 
   # Helper functions

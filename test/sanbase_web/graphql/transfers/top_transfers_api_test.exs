@@ -31,10 +31,27 @@ defmodule SanbaseWeb.Graphql.TopTransactionsApiTest do
     conn = setup_jwt_auth(build_conn(), user)
 
     watchlist =
-      insert(:watchlist, type: :blockchain_address, is_public: true, name: "My Watchlist")
+      insert(:watchlist,
+        type: :blockchain_address,
+        is_public: true,
+        name: "My Watchlist",
+        user: user
+      )
 
     watchlist2 =
-      insert(:watchlist, type: :blockchain_address, is_public: true, name: "My Other Watchlist")
+      insert(:watchlist,
+        type: :blockchain_address,
+        is_public: true,
+        name: "My Other Watchlist",
+        user: user
+      )
+
+    _ =
+      insert(:watchlist,
+        type: :blockchain_address,
+        is_public: true,
+        name: "Another user watchlist, should not be shown"
+      )
 
     Sanbase.UserList.update_user_list(user, %{
       id: watchlist.id,

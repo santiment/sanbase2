@@ -155,7 +155,6 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
       query =
         from(
           baup in Sanbase.BlockchainAddress.BlockchainAddressUserPair,
-          where: baup.user_id == ^user_id,
           preload: [:labels],
           inner_join: ba in Sanbase.BlockchainAddress,
           on: baup.blockchain_address_id == ba.id and ba.address in ^addresses,
@@ -163,6 +162,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
           on: li.blockchain_address_user_pair_id == baup.id,
           left_join: ul in Sanbase.UserList,
           on: ul.id == li.user_list_id,
+          where: baup.user_id == ^user_id and ul.user_id == ^user_id,
           select: %{
             blockchain_address_user_pair: baup,
             address: ba.address,

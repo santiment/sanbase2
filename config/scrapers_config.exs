@@ -25,3 +25,7 @@ config :sanbase, Sanbase.Twitter.Worker,
   # 6 hours
   update_interval: 1000 * 60 * 60 * 6,
   sync_enabled: {:system, "TWITTER_SCRAPER_ENABLED", false}
+
+config :sanbase, Sanbase.Price.Scraper.Cryptocompare.Websocket,
+  apikey: {:system, "CRYPTOCOMPARE_API_KEY"},
+  enabled?: {:system, "CRYPTOCOMPARE_WEBSOCKET_PRICES_SCRAPER_ENABLED", "false"}

@@ -1,4 +1,4 @@
-defmodule Sanbase.Price.Scraper.Cryptocompare do
+defmodule Sanbase.Price.Scraper.Cryptocompare.Websocket do
   @moduledoc ~s"""
   Scrape the prices from Cryptocompare websocket API
   https://min-api.cryptocompare.com/documentation/websockets
@@ -13,9 +13,18 @@ defmodule Sanbase.Price.Scraper.Cryptocompare do
   use WebSockex
 
   require Logger
+  require Sanbase.Utils.Config, as: Config
 
   # giving it a name makes sure only one instance of the scraper is alive at a time
   @name :cryptocompare_websocket_scraper
+
+  def child_spec(_opts \\ []) do
+    %{
+      id: :__cryptocompare_websocket_price_scraper__,
+      start: {__MODULE__, :start_link, []}
+    }
+  end
+
   def start_link() do
     state = %{
       last_points: %{},
@@ -23,24 +32,27 @@ defmodule Sanbase.Price.Scraper.Cryptocompare do
       msg_number: 0
     }
 
-    WebSockex.start_link(url(), __MODULE__, state, name: @name)
+    WebSockex.start_link(websocket_url(), __MODULE__, state, name: @name)
+  end
+
+  def enabled?() do
+    Config.get(:enabled?) |> String.to_existing_atom()
   end
 
   def terminate(_, _), do: :ok
 
   def handle_info(:init_wildcard_subscription, state) do
     Logger.info("""
-    [Cryptocompare] Start the wildcard 5~CCCAGG~*~* subscription
+    [CryptocompareWS] Start the wildcard 5~CCCAGG~*~* subscription
     """)
 
     sub = %{action: "SubAdd", subs: ["5~CCCAGG~*~*"]}
-
     frame = {:text, Jason.encode!(sub)}
     {:reply, frame, state}
   end
 
   def handle_info(msg, state) do
-    Logger.warn("Unhandled message received: #{inspect(msg)}")
+    Logger.warn("[CryptocompareWS] Unhandled message received: #{inspect(msg)}")
     {:ok, state}
   end
 
@@ -51,7 +63,7 @@ defmodule Sanbase.Price.Scraper.Cryptocompare do
   end
 
   def handle_frame(%{"MESSAGE" => "STREAMERWELCOME"} = msg, _frame, state) do
-    Logger.info("Successfully connected websocket #{msg["SOCKET_ID"]}")
+    Logger.info("[CryptocompareWS] Successfully connected websocket #{msg["SOCKET_ID"]}")
     state = Map.put(state, :socket_id, msg["SOCKET_ID"])
 
     # Subscribe if the subscriptions list is empty.
@@ -90,7 +102,9 @@ defmodule Sanbase.Price.Scraper.Cryptocompare do
 
   def handle_frame(%{"MESSAGE" => "FORCE_DISCONNECT"} = msg, _frame, state) do
     Logger.warn("""
-    [Cryptocompare] Received FORCE_DISCONNET for socket #{state.socket_id}. Reason: #{msg["INFO"]}
+    [CryptocompareWS] Received FORCE_DISCONNET for socket #{state.socket_id}. Reason: #{
+      msg["INFO"]
+    }
     """)
 
     # The reconnect is done in the handle_disconnect function
@@ -109,7 +123,7 @@ defmodule Sanbase.Price.Scraper.Cryptocompare do
   def handle_frame(map, _frame, state) when map_size(map) == 0, do: {:ok, state}
 
   def handle_frame(_msg, frame, state) do
-    Logger.info("[Cryptocompare] Unhandled frame: #{inspect(frame)}")
+    Logger.info("[CryptocompareWS] Unhandled frame: #{inspect(frame)}")
 
     {:ok, state}
   end
@@ -141,7 +155,6 @@ defmodule Sanbase.Price.Scraper.Cryptocompare do
     }
   end
 
-  # @asset_prices_topic_exporter :prices_exporter
   @cryptocompare_prices_topic_exporter :cryptocompare_prices_exporter
 
   defp export_data_point(point) do
@@ -153,6 +166,6 @@ defmodule Sanbase.Price.Scraper.Cryptocompare do
     :ok = Sanbase.KafkaExporter.persist_async(tuple, @cryptocompare_prices_topic_exporter)
   end
 
-  defp url(), do: "wss://streamer.cryptocompare.com/v2?api_key=#{apikey()}"
-  defp apikey(), do: System.get_env("CRYPTOCOMPARE_API_KEY")
+  defp apikey(), do: Config.get(:api_key)
+  defp websocket_url(), do: "wss://streamer.cryptocompare.com/v2?api_key=#{apikey()}"
 end

@@ -4,13 +4,15 @@ defmodule SanbaseWeb.MetricNameController do
   alias Sanbase.Model.Project
   require Logger
 
-  def clickhouse_metric_aliases(conn, _params) do
+  def api_metric_name_mapping(conn, _params) do
     map = Sanbase.Clickhouse.MetricAdapter.FileHandler.name_to_metric_map()
 
     data =
       Enum.map(map, fn {k, v} ->
         %{public_name: k, internal_name: v}
+        |> Jason.encode!()
       end)
+      |> Enum.join("\n")
 
     conn
     |> put_resp_header("content-type", "application/json; charset=utf-8")

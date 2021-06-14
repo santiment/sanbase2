@@ -488,6 +488,7 @@ defmodule Sanbase.Model.Project.List do
     |> maybe_order_by_slugs_list(opts)
     |> maybe_paginate(opts)
     |> maybe_include_hidden_projects(opts)
+    |> maybe_order_by_rank_optional(opts)
     |> maybe_order_by_rank_above_volume(opts)
   end
 
@@ -547,6 +548,23 @@ defmodule Sanbase.Model.Project.List do
     query
     |> offset(^((page - 1) * page_size))
     |> limit(^page_size)
+  end
+
+  # Add an optional ordering by rank. If the project has no known rank, the project
+  # is not excluded but is put at the end of the list. The order of projects
+  # with no known rank is not defined
+  defp maybe_order_by_rank_optional(query, opts) do
+    case Keyword.get(opts, :order_by_rank, false) do
+      true ->
+        from(
+          p in query,
+          left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+          order_by: latest_cmc.rank
+        )
+
+      false ->
+        query
+    end
   end
 
   defp order_by_rank(query, opts) do

@@ -92,5 +92,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
     |> Repo.all()
   end
 
-  defp all_query(), do: from(p in ScheduleRescrapePrice, preload: :project)
+  # All rescrapes ordered by the rank of the project, so higher ranked projects
+  # are prioritized
+  defp all_query() do
+    from(
+      srp in ScheduleRescrapePrice,
+      inner_join: p in assoc(srp, :project),
+      left_join: latest_cmc in Sanbase.Model.LatestCoinmarketcapData,
+      on: latest_cmc.coinmarketcap_id == p.slug,
+      order_by: latest_cmc.rank,
+      preload: :project
+    )
+  end
 end

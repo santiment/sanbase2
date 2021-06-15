@@ -30,6 +30,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.BlockchainAddress
   alias Sanbase.SheetsTemplate
   alias Sanbase.WalletHunters.Proposal
+  alias Sanbase.Webinar
 
   def user_factory() do
     %User{
@@ -672,6 +673,17 @@ defmodule Sanbase.Factory do
     %SheetsTemplate{
       url: "https://example.com/#{rand_hex_str()}",
       name: "Top Transactions"
+    }
+  end
+
+  def webinar_factory do
+    %Webinar{
+      url: "https://example.com/#{rand_hex_str()}",
+      title: "Webinar title",
+      description: "Webinar description",
+      image_url: "https://example.com/#{rand_hex_str()}",
+      start_time: Timex.shift(Timex.now(), days: 1),
+      end_time: Timex.shift(Timex.now(), days: 2)
     }
   end
 

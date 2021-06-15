@@ -120,6 +120,7 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/", SanbaseWeb do
+    get("/api_metric_name_mapping", MetricNameController, :api_metric_name_mapping)
     get("/projects_data", ProjectDataController, :data)
     post("/stripe_webhook", StripeController, :webhook)
   end

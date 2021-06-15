@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ProjectSignalsResolver,
     ProjectMetricsResolver,
     ProjectBalanceResolver,
-    ProjectTransactionsResolver,
+    ProjectTransfersResolver,
     IcoResolver,
     TwitterResolver
   }
@@ -576,7 +576,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :eth_spent, :float do
       arg(:days, :integer, default_value: 30)
 
-      cache_resolve(&ProjectTransactionsResolver.eth_spent/3,
+      cache_resolve(&ProjectTransfersResolver.eth_spent/3,
         ttl: 600,
         max_ttl_offset: 240
       )
@@ -590,7 +590,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
       complexity(&Complexity.from_to_interval/3)
 
-      cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time/3,
+      cache_resolve(&ProjectTransfersResolver.eth_spent_over_time/3,
         ttl: 600,
         max_ttl_offset: 240
       )
@@ -604,7 +604,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:limit, :integer, default_value: 10)
 
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&ProjectTransactionsResolver.eth_top_transactions/3)
+      cache_resolve(&ProjectTransfersResolver.eth_top_transfers/3)
     end
 
     @desc "Top transactions for the token of a given project"
@@ -615,7 +615,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:excluded_addresses, list_of(:string))
 
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&ProjectTransactionsResolver.token_top_transactions/3)
+      cache_resolve(&ProjectTransfersResolver.token_top_transfers/3)
     end
 
     @desc "Average daily active addresses for a ERC20 project or Ethereum and given time period"

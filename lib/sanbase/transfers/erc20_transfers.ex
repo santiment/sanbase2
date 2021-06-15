@@ -49,7 +49,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     raise "Should not try to change eth daily active addresses"
   end
 
-  @spec top_wallet_transactions(
+  @spec top_wallet_transfers(
           String.t(),
           list(String.t()),
           DateTime.t(),
@@ -60,11 +60,11 @@ defmodule Sanbase.Transfers.Erc20Transfers do
           String.t()
         ) ::
           {:ok, list(map())} | {:error, String.t()}
-  def top_wallet_transactions(_contract, [], _from, _to, _page, _page_size, _type), do: {:ok, []}
+  def top_wallet_transfers(_contract, [], _from, _to, _page, _page_size, _type), do: {:ok, []}
 
-  def top_wallet_transactions(contract, wallets, from, to, decimals, page, page_size, type) do
+  def top_wallet_transfers(contract, wallets, from, to, decimals, page, page_size, type) do
     {query, args} =
-      top_wallet_transactions_query(contract, wallets, from, to, decimals, page, page_size, type)
+      top_wallet_transfers_query(contract, wallets, from, to, decimals, page, page_size, type)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
@@ -83,7 +83,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   If the top transactions for SAN token are needed, the SAN contract address must be
   provided as a first argument.
   """
-  @spec top_transactions(
+  @spec top_transfers(
           String.t(),
           %DateTime{},
           %DateTime{},
@@ -93,11 +93,11 @@ defmodule Sanbase.Transfers.Erc20Transfers do
           list(String.t())
         ) ::
           {:ok, list(t)} | {:error, String.t()}
-  def top_transactions(contract, from, to, decimals, page, page_size, excluded_addresses \\ []) do
+  def top_transfers(contract, from, to, decimals, page, page_size, excluded_addresses \\ []) do
     decimals = Sanbase.Math.ipow(10, decimals)
 
     {query, args} =
-      top_transactions_query(
+      top_transfers_query(
         contract,
         from,
         to,
@@ -205,7 +205,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
 
   # Private functions
 
-  defp top_wallet_transactions_query(wallets, contract, from, to, decimals, page, page_size, type) do
+  defp top_wallet_transfers_query(wallets, contract, from, to, decimals, page, page_size, type) do
     query = """
     SELECT
       toUnixTimestamp(dt),
@@ -215,7 +215,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       value / ?7
     FROM erc20_transfers FINAL
     PREWHERE
-    #{top_wallet_transactions_address_clause(type, arg_position: 1, trailing_and: true)}
+    #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
       assetRefId = cityHash64('ETH_' || ?2) AND
       dt >= toDateTime(?3) AND
       dt <= toDateTime(?4) AND
@@ -239,7 +239,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     {query, args}
   end
 
-  defp top_wallet_transactions_address_clause(:in, opts) do
+  defp top_wallet_transfers_address_clause(:in, opts) do
     arg_position = Keyword.fetch!(opts, :arg_position)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
@@ -247,7 +247,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     if trailing_and, do: str <> " AND", else: str
   end
 
-  defp top_wallet_transactions_address_clause(:out, opts) do
+  defp top_wallet_transfers_address_clause(:out, opts) do
     arg_position = Keyword.fetch!(opts, :arg_position)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
@@ -255,7 +255,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     if trailing_and, do: str <> " AND", else: str
   end
 
-  defp top_wallet_transactions_address_clause(:all, opts) do
+  defp top_wallet_transfers_address_clause(:all, opts) do
     arg_position = Keyword.fetch!(opts, :arg_position)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
@@ -269,7 +269,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     if trailing_and, do: str <> " AND", else: str
   end
 
-  defp top_transactions_query(contract, from, to, page, page_size, decimals, excluded_addresses) do
+  defp top_transfers_query(contract, from, to, page, page_size, decimals, excluded_addresses) do
     query = """
     SELECT
       toUnixTimestamp(dt) AS datetime,

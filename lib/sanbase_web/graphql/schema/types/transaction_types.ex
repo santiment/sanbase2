@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.TransactionTypes do
   use Absinthe.Schema.Notation
 
+  alias SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver
+
   enum :transaction_type do
     value(:in)
     value(:out)
@@ -15,6 +17,7 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
 
   object :label do
     field(:name, :string)
+    field(:origin, :string, default_value: "santiment")
     field(:metadata, :json, default_value: %{})
   end
 

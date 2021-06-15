@@ -104,7 +104,7 @@ alias SanbaseWeb.Graphql.Resolvers.{
   PriceResolver,
   ProjectBalanceResolver,
   ProjectResolver,
-  ProjectTransactionsResolver,
+  ProjectTransfersResolver,
   TechIndicatorsResolver,
   TwitterResolver,
   UserListResolver,

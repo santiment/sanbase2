@@ -120,10 +120,13 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingWordTest do
       assert context.trigger_trending_words.id == triggered.id
       payload = triggered.trigger.settings.payload |> Map.values() |> List.first()
 
-      assert payload =~ """
-             The words **san** and **santiment** are in the top 10 trending words on crypto social media.
-             A coin's appearance in trending words may suggest an increased risk of local tops and short-term price correction.
-             """
+      assert payload =~
+               "The words **san** and **santiment** are in the top 10 trending words on crypto social media."
+
+      assert payload =~ "Trending words at"
+
+      assert payload =~
+               "A coin's appearance in trending words may suggest an increased risk of local tops and short-term price correction."
     end
   end
 

@@ -178,6 +178,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
     for %ScheduleRescrapePrice{} = srp <- rescrapes do
       maybe_revert_original_rescrape_datetime(srp)
+      maybe_restart_lost_scrape(srp)
     end
   end
 
@@ -197,6 +198,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       srp
       |> ScheduleRescrapePrice.changeset(%{finished: true, in_progres: false})
       |> ScheduleRescrapePrice.update()
+    end
+  end
+
+  defp maybe_restart_lost_scrape(srp) do
+    case project_rescrape_registry_entry(srp.project) do
+      [{:running, _pid}] ->
+        :ok
+
+      [] ->
+        # if we reach here, then this is a rescrape in progress for which there is
+        # no running task.
+        do_fetch_prices(srp.project)
     end
   end
 
@@ -303,8 +316,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
   end
 
+  defp project_rescrape_registry_entry(project) do
+    Registry.lookup(Sanbase.Registry, price_scraping_registry_key(project))
+  end
+
   defp kill_scheduled_scraping(project) do
-    case Registry.lookup(Sanbase.Registry, price_scraping_registry_key(project)) do
+    case project_rescrape_registry_entry(project) do
       [{pid, :running}] -> Process.exit(pid, :kill)
       _ -> :ok
     end

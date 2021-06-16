@@ -6,10 +6,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
+    free_user = insert(:user)
+
     conn = setup_jwt_auth(build_conn(), user)
+    free_conn = setup_jwt_auth(build_conn(), free_user)
 
     [
       conn: conn,
+      free_conn: free_conn,
       from: ~U[2019-01-01 00:00:00Z],
       to: ~U[2019-01-02 00:00:00Z]
     ]
@@ -24,7 +28,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
         "dai_mint",
         "multi-collateral-dai",
-        21029,
+        21_029,
         ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
       ],
       [
@@ -50,9 +54,10 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
                    "txHash" =>
                      "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
                  },
-                 "value" => 21029.0,
+                 "value" => 21_029.0,
                  "signal" => "dai_mint",
-                 "slug" => "multi-collateral-dai"
+                 "slug" => "multi-collateral-dai",
+                 "isHidden" => false
                },
                %{
                  "datetime" => "2019-01-02T00:00:00Z",
@@ -63,7 +68,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
                  },
                  "value" => 12_308_120.0,
                  "signal" => "dai_mint",
-                 "slug" => "multi-collateral-dai"
+                 "slug" => "multi-collateral-dai",
+                 "isHidden" => false
                }
              ]
     end)
@@ -77,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
         "dai_mint",
         "multi-collateral-dai",
-        21029,
+        21_029,
         ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
       ],
       [
@@ -103,9 +109,10 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
                    "txHash" =>
                      "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
                  },
-                 "value" => 21029.0,
+                 "value" => 21_029.0,
                  "signal" => "dai_mint",
-                 "slug" => "multi-collateral-dai"
+                 "slug" => "multi-collateral-dai",
+                 "isHidden" => false
                },
                %{
                  "datetime" => "2019-01-02T00:00:00Z",
@@ -116,7 +123,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
                  },
                  "value" => 12_308_120.0,
                  "signal" => "dai_mint",
-                 "slug" => "multi-collateral-dai"
+                 "slug" => "multi-collateral-dai",
+                 "isHidden" => false
                }
              ]
     end)
@@ -134,7 +142,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
         ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
         "dai_mint",
         "multi-collateral-dai",
-        21029,
+        21_029,
         ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
       ],
       [
@@ -160,9 +168,118 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
                    "txHash" =>
                      "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
                  },
-                 "value" => 21029.0,
+                 "value" => 21_029.0,
                  "signal" => "dai_mint",
-                 "slug" => "multi-collateral-dai"
+                 "slug" => "multi-collateral-dai",
+                 "isHidden" => false
+               }
+             ]
+    end)
+  end
+
+  test "restricted signal shown for fro user", context do
+    %{free_conn: free_conn, from: from, to: to} = context
+    insert(:random_erc20_project, slug: "multi-collateral-dai")
+
+    rows = [
+      [
+        ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
+        "mcd_art_liquidations",
+        "multi-collateral-dai",
+        21_029,
+        ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
+      ],
+      [
+        ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
+        "dai_mint",
+        "multi-collateral-dai",
+        12_308_120,
+        ~s|{"txHash": "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd", "address": "0x61c808d82a3ac53231750dadc13c777b59310bd9"}|
+      ]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        get_raw_signals(free_conn, :all, :all, from, to)
+        |> get_in(["data", "getRawSignals"])
+
+      assert result == [
+               %{
+                 "datetime" => nil,
+                 "metadata" => nil,
+                 "value" => nil,
+                 "signal" => "mcd_art_liquidations",
+                 "slug" => nil,
+                 "isHidden" => true
+               },
+               %{
+                 "datetime" => "2019-01-02T00:00:00Z",
+                 "metadata" => %{
+                   "address" => "0x61c808d82a3ac53231750dadc13c777b59310bd9",
+                   "txHash" =>
+                     "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd"
+                 },
+                 "value" => 12_308_120.0,
+                 "signal" => "dai_mint",
+                 "slug" => "multi-collateral-dai",
+                 "isHidden" => false
+               }
+             ]
+    end)
+  end
+
+  test "restricted signal not shown for free user", context do
+    %{conn: conn, from: from, to: to} = context
+    insert(:random_erc20_project, slug: "multi-collateral-dai")
+
+    rows = [
+      [
+        ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
+        "mcd_art_liquidations",
+        "multi-collateral-dai",
+        21_029,
+        ~s|{"txHash": "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6", "address": "0x183c9077fb7b74f02d3badda6c85a19c92b1f648"}|
+      ],
+      [
+        ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
+        "dai_mint",
+        "multi-collateral-dai",
+        12_308_120,
+        ~s|{"txHash": "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd", "address": "0x61c808d82a3ac53231750dadc13c777b59310bd9"}|
+      ]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        get_raw_signals(conn, :all, :all, from, to)
+        |> get_in(["data", "getRawSignals"])
+
+      assert result == [
+               %{
+                 "datetime" => "2019-01-01T00:00:00Z",
+                 "isHidden" => false,
+                 "metadata" => %{
+                   "address" => "0x183c9077fb7b74f02d3badda6c85a19c92b1f648",
+                   "txHash" =>
+                     "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
+                 },
+                 "signal" => "mcd_art_liquidations",
+                 "slug" => "multi-collateral-dai",
+                 "value" => 21_029.0
+               },
+               %{
+                 "datetime" => "2019-01-02T00:00:00Z",
+                 "metadata" => %{
+                   "address" => "0x61c808d82a3ac53231750dadc13c777b59310bd9",
+                   "txHash" =>
+                     "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd"
+                 },
+                 "value" => 12_308_120.0,
+                 "signal" => "dai_mint",
+                 "slug" => "multi-collateral-dai",
+                 "isHidden" => false
                }
              ]
     end)
@@ -187,6 +304,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
           slug
           value
           metadata
+          isHidden
         }
       }
     """
@@ -201,6 +319,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
           slug
           value
           metadata
+          isHidden
         }
       }
     """
@@ -217,6 +336,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
           slug
           value
           metadata
+          isHidden
         }
       }
     """

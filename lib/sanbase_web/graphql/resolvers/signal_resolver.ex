@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
-  import SanbaseWeb.Graphql.Helpers.Utils
-  import SanbaseWeb.Graphql.Helpers.CalibrateInterval
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+
+  import SanbaseWeb.Graphql.Helpers.{Utils, CalibrateInterval}
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
   import Sanbase.Model.Project.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
 
@@ -30,7 +31,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
     end
   end
 
-  def get_raw_signals(_root, %{from: from, to: to} = args, _resolution) do
+  def get_raw_signals(_root, %{from: from, to: to} = args, resolution) do
     signals = Map.get(args, :signals, :all)
 
     selector =
@@ -44,6 +45,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
       end
 
     Signal.raw_data(signals, selector, from, to)
+    |> maybe_apply_function(&overwrite_not_accessible_signals(&1, resolution))
   end
 
   def get_available_signals(_root, _args, _resolution), do: {:ok, Signal.available_signals()}
@@ -51,13 +53,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   def get_available_slugs(_root, _args, %{source: %{signal: signal}}),
     do: Signal.available_slugs(signal)
 
-  def get_metadata(_root, _args, %{source: %{signal: signal}} = resolution) do
-    %{context: %{product_id: product_id, auth: %{plan: plan}}} = resolution
+  def get_metadata(_root, _args, resolution) do
+    %{source: %{signal: signal}} = resolution
 
     case Signal.metadata(signal) do
       {:ok, metadata} ->
-        access_restrictions = Restrictions.get({:signal, signal}, plan, product_id)
-        {:ok, Map.merge(access_restrictions, metadata)}
+        restrictions = resolution_to_signal_restrictions(resolution)
+        {:ok, Map.merge(restrictions, metadata)}
 
       {:error, error} ->
         {:error, handle_graphql_error("metadata", %{signal: signal}, error)}
@@ -109,5 +111,59 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
     |> maybe_handle_graphql_error(fn error ->
       handle_graphql_error(signal, args_to_raw_selector(args), error)
     end)
+  end
+
+  defp overwrite_not_accessible_signals(list, resolution) do
+    restrictions_map =
+      resolution_to_all_signals_restrictions(resolution) |> Map.new(&{&1.name, &1})
+
+    list
+    |> Enum.map(fn signal ->
+      case should_hide_signal?(signal, restrictions_map) do
+        true -> hide_signal_details(signal)
+        false -> Map.put(signal, :is_hidden, false)
+      end
+    end)
+  end
+
+  defp should_hide_signal?(signal_map, restrictions_map) do
+    case Map.get(restrictions_map, signal_map.signal) do
+      %{is_accessible: false} ->
+        true
+
+      %{is_accessible: true, is_restricted: false} ->
+        false
+
+      %{restricted_from: from, restricted_to: to} ->
+        before_from? = from and DateTime.compare(signal_map.datetime, from) == :lt
+        after_to? = to and DateTime.compare(signal_map.datetime, to) == :gt
+
+        before_from? or after_to?
+    end
+  end
+
+  defp hide_signal_details(signal) do
+    signal
+    |> Map.merge(%{
+      is_hidden: true,
+      datetime: nil,
+      value: nil,
+      slug: nil,
+      metadata: nil
+    })
+  end
+
+  defp resolution_to_signal_restrictions(resolution) do
+    %{context: %{product_id: product_id, auth: %{plan: plan}}} = resolution
+    %{source: %{signal: signal}} = resolution
+
+    Restrictions.get({:signal, signal}, plan, product_id)
+  end
+
+  defp resolution_to_all_signals_restrictions(resolution) do
+    %{context: %{product_id: product_id, auth: %{plan: plan}}} = resolution
+
+    Restrictions.get_all(plan, product_id)
+    |> Enum.filter(&(&1.type == "signal"))
   end
 end

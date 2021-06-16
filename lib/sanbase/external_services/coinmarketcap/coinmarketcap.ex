@@ -182,7 +182,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
   end
 
-  defp maybe_revert_original_scrape_datetime(%ScheduleRescrapePrice{} = srp) do
+  defp maybe_revert_original_rescrape_datetime(%ScheduleRescrapePrice{} = srp) do
     %ScheduleRescrapePrice{project: project, to: to} = srp
 
     to = DateTime.from_naive!(to, "Etc/UTC")
@@ -196,7 +196,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       PriceScrapingProgress.store_progress(project.slug, @source, original_last_update)
 
       srp
-      |> ScheduleRescrapePrice.changeset(%{finished: true, in_progres: false})
+      |> ScheduleRescrapePrice.changeset(%{finished: true, in_progress: false})
       |> ScheduleRescrapePrice.update()
     end
   end

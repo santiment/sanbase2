@@ -134,6 +134,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     {:noreply, state}
   end
 
+  # Private functions
+
   # For all rescrapes that are not started the following will be done:
   # 1. If there is a running task for scraping that project it will be killed
   # 2. The `last_updated` time will be fetched and recorded in the database so it can be later restored
@@ -174,25 +176,29 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
     rescrapes = ScheduleRescrapePrice.all_in_progress()
 
-    for %ScheduleRescrapePrice{project: project, to: to} = srp <- rescrapes do
-      to = DateTime.from_naive!(to, "Etc/UTC")
-      last_updated = PriceScrapingProgress.last_scraped(project.slug, @source)
-
-      if last_updated && DateTime.compare(last_updated, to) == :gt do
-        kill_scheduled_scraping(project)
-
-        {:ok, original_last_update} = srp.original_last_updated |> DateTime.from_naive("Etc/UTC")
-
-        PriceScrapingProgress.store_progress(project.slug, @source, original_last_update)
-
-        srp
-        |> ScheduleRescrapePrice.changeset(%{finished: true, in_progres: false})
-        |> ScheduleRescrapePrice.update()
-      end
+    for %ScheduleRescrapePrice{} = srp <- rescrapes do
+      maybe_revert_original_rescrape_datetime(srp)
     end
   end
 
-  # Private functions
+  defp maybe_revert_original_scrape_datetime(%ScheduleRescrapePrice{} = srp) do
+    %ScheduleRescrapePrice{project: project, to: to} = srp
+
+    to = DateTime.from_naive!(to, "Etc/UTC")
+    last_updated = PriceScrapingProgress.last_scraped(project.slug, @source)
+
+    if last_updated && DateTime.compare(last_updated, to) == :gt do
+      kill_scheduled_scraping(project)
+
+      {:ok, original_last_update} = srp.original_last_updated |> DateTime.from_naive("Etc/UTC")
+
+      PriceScrapingProgress.store_progress(project.slug, @source, original_last_update)
+
+      srp
+      |> ScheduleRescrapePrice.changeset(%{finished: true, in_progres: false})
+      |> ScheduleRescrapePrice.update()
+    end
+  end
 
   # Fetch project info from Coinmarketcap and Etherscan. Fill only missing info
   # and does not override existing info.

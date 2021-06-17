@@ -5,6 +5,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
   use Tesla
 
+  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, PriceScrapingProgress}
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
@@ -26,18 +27,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   """
   @spec first_datetime(%Project{} | String.t()) :: {:ok, DateTime.t()} | {:error, any()}
   def first_datetime(%Project{} = project) do
-    project
-    |> Project.coinmarketcap_id()
-    |> Sanbase.Model.LatestCoinmarketcapData.by_coinmarketcap_id()
-    |> case do
+    case coinmarketcap_integer_id(project) do
       nil ->
         {:error,
          "Cannot fetch first datetime for #{Project.describe(project)}. Reason: Missing coinmarketcap integer id"}
 
-      latest_cmc_data ->
-        latest_cmc_data
-        |> Map.get(:coinmarketcap_integer_id)
-        |> get_first_datetime()
+      coinmarketcap_integer_id ->
+        get_first_datetime(coinmarketcap_integer_id)
     end
   end
 
@@ -88,20 +84,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     }
     """)
 
-    coinmarketcap_integer_id =
-      project
-      |> Project.coinmarketcap_id()
-      |> Sanbase.Model.LatestCoinmarketcapData.by_coinmarketcap_id()
-      |> case do
-        %{coinmarketcap_integer_id: id} -> id
-        _ -> nil
-      end
-
-    case coinmarketcap_integer_id do
+    case coinmarketcap_integer_id(project) do
       nil ->
         :ok
 
-      _ ->
+      coinmarketcap_integer_id ->
         # Consume 10 price point intervals. Break early in case of errors.
         # Errors should not be ignored as this can cause a gap in the prices
         # in case the next fetch succeeds and we store a later progress datetime
@@ -136,6 +123,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
       _, acc ->
         {:halt, acc}
     end)
+  end
+
+  defp latest_coinmarketcap_data(project) do
+    with cmc_id when not is_nil(cmc_id) <- Project.coinmarketcap_id(project),
+         %LatestCoinmarketcapData{} = latest_cmc <-
+           LatestCoinmarketcapData.by_coinmarketcap_id(cmc_id) do
+      latest_cmc
+    else
+      _ -> nil
+    end
+  end
+
+  defp coinmarketcap_integer_id(project) do
+    case latest_coinmarketcap_data(project) do
+      %{coinmarketcap_integer_id: id} -> id
+      _ -> nil
+    end
   end
 
   # In case there is gap in the data store the end of the interval. This is done

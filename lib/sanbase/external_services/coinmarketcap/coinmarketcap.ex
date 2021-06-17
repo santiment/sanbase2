@@ -177,27 +177,46 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     rescrapes = ScheduleRescrapePrice.all_in_progress()
 
     for %ScheduleRescrapePrice{} = srp <- rescrapes do
-      maybe_revert_original_rescrape_datetime(srp)
+      maybe_mark_rescrape_as_finished(srp)
+      maybe_remove_impossible_rescrape(srp)
       maybe_restart_lost_scrape(srp)
     end
   end
 
-  defp maybe_revert_original_rescrape_datetime(%ScheduleRescrapePrice{} = srp) do
+  defp maybe_mark_rescrape_as_finished(%ScheduleRescrapePrice{} = srp) do
     %ScheduleRescrapePrice{project: project, to: to} = srp
 
     to = DateTime.from_naive!(to, "Etc/UTC")
     last_updated = PriceScrapingProgress.last_scraped(project.slug, @source)
 
     if last_updated && DateTime.compare(last_updated, to) == :gt do
-      kill_scheduled_scraping(project)
+      mark_rescrape_as_finished(srp)
+    end
+  end
 
-      {:ok, original_last_update} = srp.original_last_updated |> DateTime.from_naive("Etc/UTC")
+  defp mark_rescrape_as_finished(%ScheduleRescrapePrice{} = srp) do
+    %ScheduleRescrapePrice{project: project, to: to} = srp
 
-      PriceScrapingProgress.store_progress(project.slug, @source, original_last_update)
+    kill_scheduled_scraping(project)
 
-      srp
-      |> ScheduleRescrapePrice.changeset(%{finished: true, in_progress: false})
-      |> ScheduleRescrapePrice.update()
+    {:ok, original_last_update} = srp.original_last_updated |> DateTime.from_naive("Etc/UTC")
+
+    PriceScrapingProgress.store_progress(project.slug, @source, original_last_update)
+
+    srp
+    |> ScheduleRescrapePrice.changeset(%{finished: true, in_progress: false})
+    |> ScheduleRescrapePrice.update()
+  end
+
+  defp maybe_remove_impossible_rescrape(srp) do
+    case LatestCoinmarketcapData.coinmarketcap_integer_id(srp.project) do
+      nil ->
+        # If the project does not have a coinmarketcap integer id the rescrape
+        # can not be done. Just mark it as finished in this case
+        mark_rescrape_as_finished(srp)
+
+      _ ->
+        :ok
     end
   end
 

@@ -50,6 +50,13 @@ defmodule Sanbase.Model.LatestCoinmarketcapData do
     |> unique_constraint(:coinmarketcap_id)
   end
 
+  def coinmarketcap_integer_id(%Sanbase.Model.Project{} = project) do
+    case latest_coinmarketcap_data(project) do
+      %{coinmarketcap_integer_id: id} -> id
+      _ -> nil
+    end
+  end
+
   def get_or_build(coinmarketcap_id) do
     by_coinmarketcap_id(coinmarketcap_id) ||
       %LatestCoinmarketcapData{coinmarketcap_id: coinmarketcap_id}
@@ -57,5 +64,14 @@ defmodule Sanbase.Model.LatestCoinmarketcapData do
 
   def by_coinmarketcap_id(coinmarketcap_id) do
     Repo.get_by(LatestCoinmarketcapData, coinmarketcap_id: coinmarketcap_id)
+  end
+
+  defp latest_coinmarketcap_data(project) do
+    with cmc_id when not is_nil(cmc_id) <- Sanbase.Model.Project.coinmarketcap_id(project),
+         %__MODULE__{} = latest_cmc <- by_coinmarketcap_id(cmc_id) do
+      latest_cmc
+    else
+      _ -> nil
+    end
   end
 end

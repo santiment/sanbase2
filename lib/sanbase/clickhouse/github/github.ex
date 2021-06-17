@@ -5,7 +5,7 @@ defmodule Sanbase.Clickhouse.Github do
   be more clearly calculated by excluding events releated to commenting, issues, forks, stars, etc.
   """
 
-  @type t :: %__MODULE__{
+  @type t :: %{
           datetime: DateTime.t(),
           owner: String.t(),
           repo: String.t(),
@@ -13,43 +13,12 @@ defmodule Sanbase.Clickhouse.Github do
           event: String.t()
         }
 
-  use Ecto.Schema
-
+  import __MODULE__.SqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
-  require Logger
   alias Sanbase.ClickhouseRepo
 
-  @non_dev_events [
-    "IssueCommentEvent",
-    "IssuesEvent",
-    "ForkEvent",
-    "CommitCommentEvent",
-    "FollowEvent",
-    "ForkEvent",
-    "DownloadEvent",
-    "WatchEvent",
-    "ProjectCardEvent",
-    "ProjectColumnEvent",
-    "ProjectEvent"
-  ]
-
-  @table "github_v2"
-
-  @primary_key false
-  @timestamps_opts [updated_at: false]
-  schema @table do
-    field(:datetime, :utc_datetime, source: :dt, primary_key: true)
-    field(:repo, :string, primary_key: true)
-    field(:event, :string, primary_key: true)
-    field(:owner, :string)
-    field(:actor, :string)
-  end
-
-  @spec changeset(any(), any()) :: no_return
-  def changeset(_, _) do
-    raise "Cannot change github ClickHouse table!"
-  end
+  require Logger
 
   @doc ~s"""
   Return the number of all github events for a given organization and time period
@@ -57,7 +26,7 @@ defmodule Sanbase.Clickhouse.Github do
 
   @spec total_github_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
           {:ok, map()} | {:error, String.t()}
-  def total_github_activity([], _from, _to), do: {:ok, []}
+  def total_github_activity([], _from, _to), do: {:ok, %{}}
 
   def total_github_activity(organizations, from, to) when length(organizations) > 20 do
     total_github_activity =
@@ -85,12 +54,12 @@ defmodule Sanbase.Clickhouse.Github do
 
   @doc ~s"""
   Return the number of github events, excluding the non-development related events (#{
-    @non_dev_events
+    non_dev_events()
   }) for a given organization and time period
   """
   @spec total_dev_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
           {:ok, list({String.t(), non_neg_integer()})} | {:error, String.t()}
-  def total_dev_activity([], _from, _to), do: {:ok, []}
+  def total_dev_activity([], _from, _to), do: {:ok, %{}}
 
   def total_dev_activity(organizations, from, to) when length(organizations) > 20 do
     total_dev_activity =
@@ -158,9 +127,7 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   def dev_activity(organizations, from, to, interval, "None", _) do
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
-
-    dev_activity_query(organizations, from, to, interval_sec)
+    dev_activity_query(organizations, from, to, interval)
     |> datetime_activity_execute()
   end
 
@@ -168,7 +135,7 @@ defmodule Sanbase.Clickhouse.Github do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
-    dev_activity_query(organizations, from, to, interval_sec)
+    dev_activity_query(organizations, from, to, interval)
     |> datetime_activity_execute()
     |> case do
       {:ok, result} -> Sanbase.Math.simple_moving_average(result, ma_base, value_key: :activity)
@@ -191,9 +158,7 @@ defmodule Sanbase.Clickhouse.Github do
   def github_activity([], _, _, _, _, _), do: {:ok, []}
 
   def github_activity(organizations, from, to, interval, "None", _) do
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
-
-    github_activity_query(organizations, from, to, interval_sec)
+    github_activity_query(organizations, from, to, interval)
     |> datetime_activity_execute()
   end
 
@@ -201,7 +166,7 @@ defmodule Sanbase.Clickhouse.Github do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
-    github_activity_query(organizations, from, to, interval_sec)
+    github_activity_query(organizations, from, to, interval)
     |> datetime_activity_execute()
     |> case do
       {:ok, result} -> Sanbase.Math.simple_moving_average(result, ma_base, value_key: :activity)
@@ -210,13 +175,7 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   def first_datetime(organization) when is_binary(organization) do
-    query = """
-    SELECT toUnixTimestamp(min(dt))
-    FROM #{@table}
-    PREWHERE owner = ?1
-    """
-
-    args = [organization]
+    {query, args} = first_datetime_query(organization)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
       datetime |> DateTime.from_unix!()
@@ -225,13 +184,7 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   def last_datetime_computed_at(organization) when is_binary(organization) do
-    query = """
-    SELECT toUnixTimestamp(max(dt))
-    FROM #{@table}
-    PREWHERE owner = ?1
-    """
-
-    args = [organization]
+    {query, args} = last_datetime_computed_at_query(organization)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
       datetime |> DateTime.from_unix!()
@@ -311,207 +264,14 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   defp datetime_activity_execute({query, args}) do
-    ClickhouseRepo.query_transform(query, args, fn [datetime, events_count] ->
+    ClickhouseRepo.query_transform(query, args, & &1)
+    |> IO.inspect(label: "267", limit: :infinity)
+
+    ClickhouseRepo.query_transform(query, args, fn [datetime, value] ->
       %{
         datetime: datetime |> DateTime.from_unix!(),
-        activity: events_count |> Sanbase.Math.to_integer(0)
+        activity: value |> Sanbase.Math.to_integer(0)
       }
     end)
-  end
-
-  defp dev_activity_contributors_count_query(organizations, from, to, interval) do
-    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-    interval = Sanbase.DateTimeUtils.str_to_sec(interval)
-
-    query = """
-    SELECT time, toUInt32(SUM(uniq_actors)) AS uniq_actors
-    FROM (
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        uniqExact(actor) AS uniq_actors
-      FROM #{@table}
-      PREWHERE
-        owner IN (?2) AND
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4) AND
-        event NOT IN (?5)
-      GROUP BY time
-    )
-    GROUP BY time
-    ORDER BY time
-    WITH FILL FROM toUnixTimestamp(intDiv(toUInt32(?3), ?1) * ?1) TO ?4 STEP ?1
-    """
-
-    args = [
-      interval,
-      organizations |> Enum.map(&String.downcase/1),
-      from_unix,
-      to_unix,
-      @non_dev_events
-    ]
-
-    {query, args}
-  end
-
-  defp github_activity_contributors_count_query(organizations, from, to, interval) do
-    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-    interval = Sanbase.DateTimeUtils.str_to_sec(interval)
-
-    query = """
-    SELECT time, toUInt32(SUM(uniq_actors)) AS uniq_actors
-    FROM (
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        uniqExact(actor) AS uniq_actors
-      FROM #{@table}
-      PREWHERE
-        owner IN (?2) AND
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4)
-      GROUP BY time
-    )
-    GROUP BY time
-    ORDER BY time
-    WITH FILL FROM toUnixTimestamp(intDiv(toUInt32(?3), ?1) * ?1) TO ?4 STEP ?1
-    """
-
-    args = [
-      interval,
-      organizations |> Enum.map(&String.downcase/1),
-      from_unix,
-      to_unix
-    ]
-
-    {query, args}
-  end
-
-  defp dev_activity_query(organizations, from, to, interval) do
-    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-
-    query = """
-    SELECT time, SUM(events)
-    FROM (
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        count(events) AS events
-      FROM (
-        SELECT any(event) AS events, dt
-        FROM #{@table}
-        PREWHERE
-          owner IN (?2) AND
-          dt >= toDateTime(?3) AND
-          dt < toDateTime(?4) AND
-          event NOT IN (?5)
-        GROUP BY owner, repo, dt, event
-      )
-      GROUP BY time
-    )
-    GROUP BY time
-    ORDER BY time
-    WITH FILL FROM toUnixTimestamp(intDiv(toUInt32(?3), ?1) * ?1) TO ?4 STEP ?1
-    """
-
-    args = [
-      interval,
-      organizations |> Enum.map(&String.downcase/1),
-      from_unix,
-      to_unix,
-      @non_dev_events
-    ]
-
-    {query, args}
-  end
-
-  defp github_activity_query(organizations, from, to, interval) do
-    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-
-    query = """
-    SELECT time, SUM(events)
-    FROM (
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        count(events) AS events
-      FROM (
-        SELECT any(event) AS events, dt
-        FROM #{@table}
-        PREWHERE
-          owner IN (?2) AND
-          dt >= toDateTime(?3) AND
-          dt < toDateTime(?4)
-        GROUP BY owner, repo, dt, event
-      )
-      GROUP BY time
-    )
-    GROUP BY time
-    ORDER BY time
-    WITH FILL FROM toUnixTimestamp(intDiv(toUInt32(?3), ?1) * ?1) TO ?4 STEP ?1
-    """
-
-    args = [
-      interval,
-      organizations |> Enum.map(&String.downcase/1),
-      from_unix,
-      to_unix
-    ]
-
-    {query, args}
-  end
-
-  defp total_github_activity_query(organizations, from, to) do
-    query = """
-    SELECT owner, toUInt64(COUNT(*))
-    FROM(
-      SELECT owner, COUNT(*)
-      FROM #{@table}
-      PREWHERE
-        owner IN (?1) AND
-        dt >= toDateTime(?2) AND
-        dt <= toDateTime(?3)
-      GROUP BY owner, repo, dt, event
-    )
-    GROUP BY owner
-    """
-
-    args = [
-      organizations |> Enum.map(&String.downcase/1),
-      DateTime.to_unix(from),
-      DateTime.to_unix(to)
-    ]
-
-    {query, args}
-  end
-
-  defp total_dev_activity_query(organizations, from, to) do
-    query = """
-    SELECT owner, toUInt64(COUNT(*))
-    FROM(
-      SELECT owner, COUNT(*)
-      FROM #{@table}
-      PREWHERE
-        owner IN (?1) AND
-        dt >= toDateTime(?2) AND
-        dt <= toDateTime(?3) AND
-        event NOT IN (?4)
-      GROUP BY owner, repo, dt, event
-    )
-    GROUP BY owner
-    """
-
-    args = [
-      organizations |> Enum.map(&String.downcase/1),
-      DateTime.to_unix(from),
-      DateTime.to_unix(to),
-      @non_dev_events
-    ]
-
-    {query, args}
   end
 end

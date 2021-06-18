@@ -64,7 +64,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     # Store the data in LatestCoinmarketcapData in postgres
 
     tickers
-    |> Enum.each(&store_latest_coinmarketcap_data!(&1, cmc_id_to_slugs_mapping))
+    |> Enum.each(&store_latest_coinmarketcap_data!/1)
 
     # Store the data in Influxdb
     if Application.get_env(:sanbase, :influx_store_enabled, true) do
@@ -110,37 +110,26 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     {:noreply, state}
   end
 
-  defp store_latest_coinmarketcap_data!(
-         %Ticker{slug: coinmarketcap_id} = ticker,
-         cmc_id_to_slugs_mapping
-       ) do
-    case Map.get(cmc_id_to_slugs_mapping, coinmarketcap_id, []) do
-      [] ->
-        :ok
-
-      slugs ->
-        Enum.each(slugs, fn slug ->
-          slug
-          |> LatestCoinmarketcapData.get_or_build()
-          |> LatestCoinmarketcapData.changeset(%{
-            coinmarketcap_integer_id: ticker.id,
-            market_cap_usd: ticker.market_cap_usd,
-            name: ticker.name,
-            price_usd: ticker.price_usd,
-            price_btc: ticker.price_btc,
-            rank: ticker.rank,
-            volume_usd: ticker.volume_usd,
-            available_supply: ticker.available_supply,
-            total_supply: ticker.total_supply,
-            symbol: ticker.symbol,
-            percent_change_1h: ticker.percent_change_1h,
-            percent_change_24h: ticker.percent_change_24h,
-            percent_change_7d: ticker.percent_change_7d,
-            update_time: DateTimeUtils.from_iso8601!(ticker.last_updated)
-          })
-          |> Repo.insert_or_update!()
-        end)
-    end
+  defp store_latest_coinmarketcap_data!(%Ticker{} = ticker) do
+    ticker.slug
+    |> LatestCoinmarketcapData.get_or_build()
+    |> LatestCoinmarketcapData.changeset(%{
+      coinmarketcap_integer_id: ticker.id,
+      market_cap_usd: ticker.market_cap_usd,
+      name: ticker.name,
+      price_usd: ticker.price_usd,
+      price_btc: ticker.price_btc,
+      rank: ticker.rank,
+      volume_usd: ticker.volume_usd,
+      available_supply: ticker.available_supply,
+      total_supply: ticker.total_supply,
+      symbol: ticker.symbol,
+      percent_change_1h: ticker.percent_change_1h,
+      percent_change_24h: ticker.percent_change_24h,
+      percent_change_7d: ticker.percent_change_7d,
+      update_time: DateTimeUtils.from_iso8601!(ticker.last_updated)
+    })
+    |> Repo.insert_or_update!()
   end
 
   defp insert_or_update_project(%Ticker{slug: slug, name: name, symbol: ticker}) do

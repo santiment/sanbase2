@@ -61,6 +61,7 @@ defmodule Sanbase.Model.Project do
     belongs_to(:infrastructure, Infrastructure, on_replace: :nilify)
     belongs_to(:market_segment, MarketSegment, on_replace: :nilify)
 
+    # TODO: Rework. This is no longer true
     belongs_to(
       :latest_coinmarketcap_data,
       LatestCoinmarketcapData,
@@ -179,19 +180,6 @@ defmodule Sanbase.Model.Project do
 
   def sanbase_link(%Project{slug: slug}) when not is_nil(slug) do
     SanbaseWeb.Endpoint.frontend_url() <> "/projects/#{slug}"
-  end
-
-  def supply(%Project{} = project) do
-    case get_supply(project) do
-      nil -> nil
-      s -> Decimal.to_float(s)
-    end
-  end
-
-  defp get_supply(%Project{total_supply: ts, latest_coinmarketcap_data: nil}), do: ts
-
-  defp get_supply(%Project{total_supply: ts, latest_coinmarketcap_data: lcd}) do
-    lcd.available_supply || lcd.total_supply || ts
   end
 
   @doc ~s"""

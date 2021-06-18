@@ -73,22 +73,32 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   end
 
   defp logo_changed?(project, filepath) do
-    latest_cmc_data = LatestCoinmarketcapData.get_or_build(project.slug)
-    {:ok, file_hash} = FileHash.calculate(filepath)
+    coinmarketcap_id = Project.coinmarketcap_id(project)
 
-    case latest_cmc_data.logo_hash do
-      ^file_hash ->
-        Logger.info("#{@log_tag} Logo for project: #{project.slug} has not changed.")
+    case coinmarketcap_id && LatestCoinmarketcapData.get_or_build(coinmarketcap_id) do
+      nil ->
         false
 
-      _ ->
-        latest_cmc_data
-        |> LatestCoinmarketcapData.changeset(%{logo_hash: file_hash, logo_updated_at: Timex.now()})
-        |> Repo.insert_or_update!()
+      latest_cmc_data ->
+        {:ok, file_hash} = FileHash.calculate(filepath)
 
-        Logger.info("#{@log_tag} Logo for project: #{project.slug} has changed.")
+        case latest_cmc_data.logo_hash do
+          ^file_hash ->
+            Logger.info("#{@log_tag} Logo for project: #{project.slug} has not changed.")
+            false
 
-        true
+          _ ->
+            latest_cmc_data
+            |> LatestCoinmarketcapData.changeset(%{
+              logo_hash: file_hash,
+              logo_updated_at: Timex.now()
+            })
+            |> Repo.insert_or_update!()
+
+            Logger.info("#{@log_tag} Logo for project: #{project.slug} has changed.")
+
+            true
+        end
     end
   end
 

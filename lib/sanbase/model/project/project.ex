@@ -61,6 +61,7 @@ defmodule Sanbase.Model.Project do
     belongs_to(:infrastructure, Infrastructure, on_replace: :nilify)
     belongs_to(:market_segment, MarketSegment, on_replace: :nilify)
 
+    # TODO: Rework. This is no longer true
     belongs_to(
       :latest_coinmarketcap_data,
       LatestCoinmarketcapData,

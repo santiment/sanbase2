@@ -66,7 +66,7 @@ defmodule Sanbase.Model.LatestCoinmarketcapData do
     Repo.get_by(LatestCoinmarketcapData, coinmarketcap_id: coinmarketcap_id)
   end
 
-  defp latest_coinmarketcap_data(project) do
+  def latest_coinmarketcap_data(project) do
     with cmc_id when not is_nil(cmc_id) <- Sanbase.Model.Project.coinmarketcap_id(project),
          %__MODULE__{} = latest_cmc <- by_coinmarketcap_id(cmc_id) do
       latest_cmc

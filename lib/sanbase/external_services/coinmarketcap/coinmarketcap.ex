@@ -9,6 +9,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
+  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Model.Project
 
   alias Sanbase.ExternalServices.Coinmarketcap.{

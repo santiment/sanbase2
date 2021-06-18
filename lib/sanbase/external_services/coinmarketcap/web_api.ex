@@ -27,7 +27,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   """
   @spec first_datetime(%Project{} | String.t()) :: {:ok, DateTime.t()} | {:error, any()}
   def first_datetime(%Project{} = project) do
-    case coinmarketcap_integer_id(project) do
+    case LatestCoinmarketcapData.coinmarketcap_integer_id(project) do
       nil ->
         {:error,
          "Cannot fetch first datetime for #{Project.describe(project)}. Reason: Missing coinmarketcap integer id"}
@@ -84,7 +84,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     }
     """)
 
-    case coinmarketcap_integer_id(project) do
+    case LatestCoinmarketcapData.coinmarketcap_integer_id(project) do
       nil ->
         :ok
 
@@ -123,23 +123,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
       _, acc ->
         {:halt, acc}
     end)
-  end
-
-  defp latest_coinmarketcap_data(project) do
-    with cmc_id when not is_nil(cmc_id) <- Project.coinmarketcap_id(project),
-         %LatestCoinmarketcapData{} = latest_cmc <-
-           LatestCoinmarketcapData.by_coinmarketcap_id(cmc_id) do
-      latest_cmc
-    else
-      _ -> nil
-    end
-  end
-
-  defp coinmarketcap_integer_id(project) do
-    case latest_coinmarketcap_data(project) do
-      %{coinmarketcap_integer_id: id} -> id
-      _ -> nil
-    end
   end
 
   # In case there is gap in the data store the end of the interval. This is done

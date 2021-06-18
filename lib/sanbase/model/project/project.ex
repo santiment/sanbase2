@@ -182,19 +182,6 @@ defmodule Sanbase.Model.Project do
     SanbaseWeb.Endpoint.frontend_url() <> "/projects/#{slug}"
   end
 
-  def supply(%Project{} = project) do
-    case get_supply(project) do
-      nil -> nil
-      s -> Decimal.to_float(s)
-    end
-  end
-
-  defp get_supply(%Project{total_supply: ts, latest_coinmarketcap_data: nil}), do: ts
-
-  defp get_supply(%Project{total_supply: ts, latest_coinmarketcap_data: lcd}) do
-    lcd.available_supply || lcd.total_supply || ts
-  end
-
   @doc ~s"""
   Return a project with a matching ticker. `Repo.one` fails if there are more
   than one project with the same ticker.

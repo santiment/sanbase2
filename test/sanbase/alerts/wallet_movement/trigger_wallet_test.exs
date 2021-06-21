@@ -111,7 +111,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
       assert message =~
                "**#{context.project.name}**'s ethereum balance on the Ethereum blockchain has increased by 50"
 
-      assert message =~ "was: 20, now: 70"
+      assert message =~ "Was: 20\nNow: 70"
     end
   end
 
@@ -150,12 +150,12 @@ defmodule Sanbase.Alert.WalletTriggerTest do
       assert Enum.at(sorted_messages, 0) =~
                "**#{context.project.name}**'s ethereum balance on the Ethereum blockchain has increased by 280"
 
-      assert Enum.at(sorted_messages, 0) =~ "was: 20, now: 300"
+      assert Enum.at(sorted_messages, 0) =~ "Was: 20\nNow: 300"
 
       assert Enum.at(sorted_messages, 1) =~
                "The address #{context.address}'s some-weird-token balance on the Ethereum blockchain has increased by 280."
 
-      assert Enum.at(sorted_messages, 1) =~ "was: 20, now: 300"
+      assert Enum.at(sorted_messages, 1) =~ "Was: 20\nNow: 300"
     end
   end
 
@@ -189,7 +189,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
       assert message =~
                "The address #{context.address}'s BTC balance on the Ripple blockchain has decreased by 100"
 
-      assert message =~ "was: 100, now: 0"
+      assert message =~ "Was: 100\nNow: 0"
     end
   end
 

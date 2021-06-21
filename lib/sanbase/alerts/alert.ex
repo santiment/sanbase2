@@ -80,7 +80,7 @@ defimpl Sanbase.Alert, for: Any do
        when is_binary(email) do
     fun = fn _identifier, payload ->
       payload = transform_payload(payload, trigger.id, :email)
-      do_send_email(email, payload, trigger.id)
+      do_send_email(email, payload)
     end
 
     send_or_limit("email", trigger, max_alerts_to_send, fun)
@@ -239,7 +239,7 @@ defimpl Sanbase.Alert, for: Any do
   defp extend_payload(payload, _, :webhook), do: payload
   defp extend_payload(payload, _trigger_id, :telegram_channel), do: payload
 
-  defp do_send_email(email, payload, trigger_id) do
+  defp do_send_email(email, payload) do
     Sanbase.Email.Template.alerts_template()
     |> Sanbase.MandrillApi.send(email, %{
       payload: Earmark.as_html!(payload, breaks: true, timeout: nil, mapper: &Enum.map/2)

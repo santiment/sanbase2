@@ -133,6 +133,7 @@ defmodule Sanbase.Model.Project.ListSelector do
   defp watchlist_args_to_str(%{watchlist_id: id}), do: "watchlist with id #{id}"
   defp watchlist_args_to_str(%{watchlist_slug: slug}), do: "watchlist with slug #{slug}"
 
+  # TODO: Try reworking it to use an ETS table instead of the process dictionary
   defp detect_cycles!(args) do
     case Process.get(@cycle_detection_key) do
       nil ->

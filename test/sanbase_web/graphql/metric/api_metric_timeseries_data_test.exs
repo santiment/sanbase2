@@ -205,7 +205,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
           get_timeseries_metric(
             conn,
             metric,
-            %{slug: slug},
+            %{slug: slug, source: "twitter"},
             from,
             to,
             interval,

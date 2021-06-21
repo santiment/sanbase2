@@ -133,7 +133,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         from AS address,
         0 AS incoming,
         value AS outgoing
-      FROM #{dt_ordered_table()} FINAL
+      FROM erc20_transfers FINAL
       PREWHERE
         from IN (?1) AND
         assetRefId = cityHash64('ETH_' || ?2) AND
@@ -146,7 +146,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         to AS address,
         value AS incoming,
         0 AS outgoing
-      FROM #{dt_ordered_table()} FINAL
+      FROM erc20_transfers_to FINAL
       PREWHERE
         to in (?1) AND
         assetRefId = cityHash64('ETH_' || ?2) AND

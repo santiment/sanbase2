@@ -123,8 +123,11 @@ defmodule Sanbase.WalletHunters.Contract do
   def wallet_proposals() do
     count = wallet_proposals_count()
 
-    if count > 0 do
-      contract_execute("walletProposals", [0, count])
+    if is_integer(count) and count > 0 do
+      case contract_execute("walletProposals", [0, count]) do
+        {:error, _} -> []
+        result -> result
+      end
     else
       []
     end

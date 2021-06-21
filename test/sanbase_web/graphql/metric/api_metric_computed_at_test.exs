@@ -13,6 +13,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
 
   test "returns last datetime computed at for all available metric", context do
     %{conn: conn, project: project} = context
+
     metrics = Metric.available_metrics() |> Enum.shuffle() |> Enum.take(100)
 
     datetime = ~U[2020-01-01 12:45:40Z]
@@ -55,7 +56,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
     query = """
     {
       getMetric(metric: "#{metric}"){
-        lastDatetimeComputedAt(slug: "#{slug}")
+        lastDatetimeComputedAt(selector: {slug: "#{slug}", source: "twitter"})
       }
     }
     """

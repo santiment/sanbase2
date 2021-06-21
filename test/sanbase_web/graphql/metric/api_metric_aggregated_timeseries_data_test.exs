@@ -39,7 +39,11 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
 
   test "returns data for all available metrics", context do
     %{conn: conn, slug: slug, from: from, to: to} = context
-    metrics = Metric.available_timeseries_metrics() |> Enum.shuffle() |> Enum.take(100)
+
+    metrics =
+      Metric.available_timeseries_metrics()
+      |> Enum.shuffle()
+      |> Enum.take(100)
 
     Sanbase.Mock.prepare_mock(Metric, :aggregated_timeseries_data, fn _, slug_arg, _, _, _ ->
       {:ok, %{slug_arg => 100}}
@@ -153,7 +157,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
       {
         getMetric(metric: "#{metric}"){
           aggregatedTimeseriesData(
-            slug: "#{slug}"
+            selector: {slug: "#{slug}", source: "twitter"}
             from: "#{from}"
             to: "#{to}"
             #{

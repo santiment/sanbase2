@@ -75,7 +75,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   def last_datetime_computed_at(_root, args, %{source: %{metric: metric}}) do
-    with {:ok, selector} <- args_to_selector(args) do
+    with {:ok, selector} <- args_to_selector(args),
+         true <- valid_metric_selector_pair?(metric, selector) do
       Metric.last_datetime_computed_at(metric, selector)
     end
     |> maybe_handle_graphql_error(fn error ->
@@ -105,6 +106,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
 
     with {:ok, selector} <- args_to_selector(args),
+         true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
          {:ok, opts} = selector_args_to_opts(args),
          {:ok, from, to} <-
@@ -130,6 +132,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     with true <- valid_histogram_args?(metric, args),
          {:ok, selector} <- args_to_selector(args),
+         true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
          {:ok, data} <-
            Metric.histogram_data(metric, selector, from, to, interval, limit),
@@ -147,6 +150,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     with {:ok, selector} <- args_to_selector(args),
+         true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
          {:ok, data} <- Metric.table_data(metric, selector, from, to) do
       {:ok, data}
@@ -167,6 +171,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       |> Map.update!(:type, &Inflex.underscore/1)
 
     with {:ok, selector} <- args_to_selector(args),
+         true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
          true <- valid_timeseries_selection?(requested_fields, args),
          {:ok, opts} <- selector_args_to_opts(args),
@@ -341,4 +346,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         true
     end
   end
+
+  defguard has_binary_key?(selector, key)
+           when is_map_key(selector, key) and is_binary(:erlang.map_get(key, selector))
+
+  defp valid_metric_selector_pair?("social_active_users", selector)
+       when not has_binary_key?(selector, :source) do
+    {:error,
+     """
+     The 'social_active_users' metric provides data for a social 'source' argument \
+     (twitter, telegram, etc.). All the slug-related arguments are ignored. \
+     Provide a 'source' argument.
+     """}
+  end
+
+  defp valid_metric_selector_pair?(_metric, _selector), do: true
 end

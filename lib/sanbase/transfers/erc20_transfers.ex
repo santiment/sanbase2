@@ -215,11 +215,10 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       value / ?7
     FROM erc20_transfers FINAL
     PREWHERE
-    #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
+      #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
       assetRefId = cityHash64('ETH_' || ?2) AND
       dt >= toDateTime(?3) AND
-      dt <= toDateTime(?4) AND
-      type = 'call'
+      dt <= toDateTime(?4)
     ORDER BY value DESC
     LIMIT ?5 OFFSET ?6
     """

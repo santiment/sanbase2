@@ -35,12 +35,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
 
   def wallet_hunters_proposals(_root, args, %{context: %{auth: %{current_user: current_user}}}) do
     selector = args[:selector] || %{}
+
     Sanbase.WalletHunters.Proposal.fetch_all(selector, current_user)
+    |> wrap_ok()
   end
 
   def wallet_hunters_proposals(_root, args, _resolution) do
     selector = args[:selector] || %{}
+
     Sanbase.WalletHunters.Proposal.fetch_all(selector)
+    |> wrap_ok()
   end
 
   def wallet_hunters_proposal(_root, %{proposal_id: proposal_id}, _resolution) do
@@ -71,4 +75,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
          0}
     end)
   end
+
+  defp wrap_ok([]), do: {:nocache, {:ok, []}}
+  defp wrap_ok(proposals), do: {:ok, proposals}
 end

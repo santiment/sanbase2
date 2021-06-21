@@ -147,12 +147,11 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
       |> Map.merge(operation_kv)
       |> Map.merge(curr_value_kv)
 
-    template =
-      """
-      🔔 The search term '#{text}''s {{metric_human_readable_name}} #{operation_template}.
-      #{curr_value_template}.
-      """
-      |> maybe_extend_extra_explanation(settings.extra_explanation)
+    template = """
+    🔔 The search term '#{text}''s {{metric_human_readable_name}} #{operation_template}.
+    #{curr_value_template}.
+    #{maybe_add_extra_explanation(settings.extra_explanation)}
+    """
 
     template = settings.template || template
 
@@ -184,6 +183,7 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
         project_name: project.name,
         project_slug: project.slug,
         project_ticker: project.ticker,
+        sanbase_project_link: "https://app.santiment.net/charts?slug=#{project.slug}",
         metric: settings.metric,
         metric_human_readable_name: human_readable_name,
         extra_explanation: settings.extra_explanation
@@ -192,25 +192,21 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
       |> Map.merge(curr_value_kv)
       |> Map.merge(details_kv)
 
-    template =
-      """
-      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{metric_human_readable_name}} #{
-        operation_template
-      }.
-      #{curr_value_template}.
+    template = """
+    🔔 [\#{{project_ticker}}]({{sanbase_project_link}}) | *{{project_name}}'s {{metric_human_readable_name}} #{
+      operation_template
+    }* 💥
 
-      #{details_template}
-      """
-      |> maybe_extend_extra_explanation(settings.extra_explanation)
+    #{curr_value_template}
+    #{maybe_add_extra_explanation(settings.extra_explanation)}
+    #{details_template}
+    """
 
     template = settings.template || template
 
     {template, kv}
   end
 
-  defp maybe_extend_extra_explanation(template, nil), do: template
-
-  defp maybe_extend_extra_explanation(template, _extra_explanation) do
-    template <> "{{extra_explanation}}\n"
-  end
+  defp maybe_add_extra_explanation(nil), do: ""
+  defp maybe_add_extra_explanation(_), do: "\n🧐 {{extra_explanation}}\n"
 end

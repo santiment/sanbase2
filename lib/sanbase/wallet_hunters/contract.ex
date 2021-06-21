@@ -1,6 +1,6 @@
 defmodule Sanbase.WalletHunters.Contract do
-  require Logger
   import Sanbase.SmartContracts.Utils
+  require Logger
 
   @abi_file Path.join(__DIR__, "abis/wallet_hunters_abi.json")
             |> File.read!()
@@ -41,6 +41,7 @@ defmodule Sanbase.WalletHunters.Contract do
   def get_trx_by_id(trx_id) do
     maybe_replace_rinkeby(
       fn ->
+        Logger.info("[Parity] Get eth transaction by hash via Ethereumex client.")
         Ethereumex.HttpClient.eth_get_transaction_by_hash(trx_id)
       end,
       :eth_get_transaction_by_hash
@@ -50,6 +51,7 @@ defmodule Sanbase.WalletHunters.Contract do
   def get_trx_receipt_by_id(trx_id) do
     maybe_replace_rinkeby(
       fn ->
+        Logger.info("[Parity] Get eth transaction receipt via Ethereumex client.")
         Ethereumex.HttpClient.eth_get_transaction_receipt(trx_id)
       end,
       :eth_get_transaction_receipt
@@ -64,6 +66,8 @@ defmodule Sanbase.WalletHunters.Contract do
 
     maybe_replace_rinkeby(
       fn ->
+        Logger.info("[Parity] Get eth new filter via Ethereumex client.")
+
         {:ok, filter_id} =
           Ethereumex.HttpClient.eth_new_filter(%{
             address: address,
@@ -105,6 +109,7 @@ defmodule Sanbase.WalletHunters.Contract do
 
     maybe_replace_rinkeby(
       fn ->
+        Logger.info("[Parity] Get eth filter logs via Ethereumex client.")
         Ethereumex.HttpClient.eth_get_filter_logs(filter_id)
       end,
       :fetch_all_events

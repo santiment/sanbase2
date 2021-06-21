@@ -341,4 +341,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         true
     end
   end
+
+  defguard has_binary_key?(map, key)
+           when is_map_key(selector, key) and is_binary(:erlang.map_get(key, selector))
+
+  defp valid_metric_selector_pair?("social_active_users", selector)
+       when not has_binary_key?(selector, :source) do
+    {:error, nil}
+  end
+
+  defp valid_metric_selector_pair?(_metric, _selector), do: true
 end

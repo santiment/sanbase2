@@ -454,7 +454,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
   describe "Email login" do
     setup_with_mocks([
-      {Sanbase.MandrillApi, [], [send: fn _, _, _ -> {:ok, %{}} end]}
+      {Sanbase.MandrillApi, [], [send: fn _, _, _, _ -> {:ok, %{}} end]}
     ]) do
       mutation_func = fn args ->
         graphql_args_string =
@@ -506,7 +506,8 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
           "john@example.com",
           :meck.is(fn %{LOGIN_LINK: login_link} ->
             assert login_link =~ "subscribe_to_weekly_newsletter=true"
-          end)
+          end),
+          :_
         )
       )
     end

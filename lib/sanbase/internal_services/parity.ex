@@ -1,6 +1,7 @@
 defmodule Sanbase.InternalServices.Parity do
   use Tesla
 
+  require Logger
   require Sanbase.Utils.Config, as: Config
 
   @eth_decimals 1_000_000_000_000_000_000
@@ -13,6 +14,8 @@ defmodule Sanbase.InternalServices.Parity do
   end
 
   def get_transaction_by_hash(transaction_hash) do
+    Logger.info("[Parity] Get transaction by hash.")
+
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
            post(
              client(),
@@ -40,6 +43,8 @@ defmodule Sanbase.InternalServices.Parity do
   end
 
   def get_eth_balance(addresses) when is_list(addresses) do
+    Logger.info("[Parity] Get eth balance for a list of #{length(addresses)} addresses.")
+
     addresses = Enum.zip(Stream.iterate(1, &(&1 + 1)), addresses)
 
     batch =
@@ -67,6 +72,8 @@ defmodule Sanbase.InternalServices.Parity do
   end
 
   def get_eth_balance(address) do
+    Logger.info("[Parity] Get eth balance for an address.")
+
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
            post(
              client(),

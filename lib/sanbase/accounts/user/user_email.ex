@@ -106,9 +106,13 @@ defmodule Sanbase.Accounts.User.Email do
   def send_login_email(user, origin_url, args \\ %{}) do
     origin_url
     |> Sanbase.Email.Template.choose_login_template(first_login?: user.first_login)
-    |> mandrill_api().send(user.email, %{
-      LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url, args)
-    })
+    |> mandrill_api().send(
+      user.email,
+      %{
+        LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url, args)
+      },
+      %{subaccount: "login-emails"}
+    )
   end
 
   def send_verify_email(user) do
@@ -118,7 +122,8 @@ defmodule Sanbase.Accounts.User.Email do
       %{
         VERIFY_LINK:
           SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
-      }
+      },
+      %{subaccount: "login-emails"}
     )
   end
 end

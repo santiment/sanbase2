@@ -177,17 +177,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{from: from, to: to, interval: interval},
         _resolution
       ) do
-    with {:ok, %{projects: projects}} <- UserList.get_projects(user_list),
-         slugs when is_list(slugs) <- Enum.map(projects, & &1.slug),
-         {:ok, result} <- Sanbase.Price.combined_marketcap_and_volume(slugs, from, to, interval) do
-      {:ok, result}
-    else
-      {:error, error} ->
-        {:error, "Can't fetch historical stats for a watchlist. Reason: #{inspect(error)}"}
+    async(fn ->
+      with {:ok, %{projects: projects}} <- UserList.get_projects(user_list),
+           slugs when is_list(slugs) <- Enum.map(projects, & &1.slug),
+           {:ok, result} <- Sanbase.Price.combined_marketcap_and_volume(slugs, from, to, interval) do
+        {:ok, result}
+      else
+        {:error, error} ->
+          {:error, "Can't fetch historical stats for a watchlist. Reason: #{inspect(error)}"}
 
-      _ ->
-        {:error, "Can't fetch historical stats for a watchlist."}
-    end
+        _ ->
+          {:error, "Can't fetch historical stats for a watchlist."}
+      end
+    end)
   end
 
   def list_items(%UserList{type: :project} = user_list, _args, _resolution) do

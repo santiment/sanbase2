@@ -1,4 +1,6 @@
 defmodule Sanbase.SmartContracts.Utils do
+  require Logger
+
   @type address :: String.t()
   @type contract_function :: String.t() | %ABI.FunctionSelector{}
 
@@ -53,6 +55,8 @@ defmodule Sanbase.SmartContracts.Utils do
   def call_contract(contract, contract_function, args, return_types) do
     # https://docs.soliditylang.org/en/latest/abi-spec.html#function-selector-and-argument-encoding
     function_signature = ABI.encode(contract_function, args) |> Base.encode16(case: :lower)
+
+    Logger.info("[Parity] Eth call contract.")
 
     with {:ok, hex_encoded_binary_response} <-
            Ethereumex.HttpClient.eth_call(%{data: "0x" <> function_signature, to: contract}) do

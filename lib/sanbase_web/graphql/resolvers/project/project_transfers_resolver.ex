@@ -19,31 +19,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     async(fn -> calculate_token_top_transfers(project, args) end)
   end
 
-  defp calculate_token_top_transfers(
-         %Project{slug: "bitcoin" = slug} = project,
-         args
-       ) do
-    %{from: from, to: to, limit: limit} = args
-    limit = Enum.min([limit, 100])
-    excluded_addresses = Map.get(args, :excluded_addresses, [])
-
-    with {:ok, transfers} <-
-           Transfers.top_transfers(slug, from, to, 1, limit, excluded_addresses),
-         {:ok, transfers} <- MarkExchanges.mark_exchange_wallets(transfers),
-         {:ok, transfers} <- Label.add_labels(slug, transfers) do
-      {:ok, transfers}
-    else
-      error ->
-        Logger.warn(
-          "Cannot fetch top token transfers for project with id #{project.id}. Reason: #{
-            inspect(error)
-          }"
-        )
-
-        {:nocache, {:ok, []}}
-    end
-  end
-
   defp calculate_token_top_transfers(%Project{slug: slug} = project, args) do
     %{from: from, to: to, limit: limit} = args
     limit = Enum.min([limit, 100])
@@ -56,7 +31,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
              to,
              _page = 1,
              _page_size = limit,
-             excluded_addresses
+             excluded_addresses: excluded_addresses
            ),
          {:ok, transfers} <- MarkExchanges.mark_exchange_wallets(transfers),
          {:ok, transfers} <- Label.add_labels(slug, transfers) do
@@ -66,11 +41,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
         {:ok, []}
 
       error ->
-        Logger.warn(
-          "Cannot fetch top token transfers for project with id #{project.id}. Reason: #{
-            inspect(error)
-          }"
-        )
+        Logger.warn("Cannot fetch top token transfers for project with slug #{slug}. \
+          Reason: #{inspect(error)}")
 
         {:nocache, {:ok, []}}
     end

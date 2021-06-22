@@ -139,39 +139,6 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   def custom_access_queries_stats(), do: @custom_access_queries_stats
   def custom_access_queries(), do: @custom_access_queries
 
-  @product_to_access_module [
-    {Product.product_api(), ApiAccessChecker},
-    {Product.product_sanbase(), SanbaseAccessChecker}
-  ]
-
-  @spec historical_data_in_days(atom(), non_neg_integer(), query_or_argument()) ::
-          non_neg_integer() | nil
-  def historical_data_in_days(plan, _product_id, query_or_argument)
-      when query_or_argument in @custom_access_queries do
-    Map.get(@custom_access_queries_stats, query_or_argument)
-    |> get_in([:plan_access, plan, :historical_data_in_days])
-  end
-
-  for {product_id, module} <- @product_to_access_module do
-    def historical_data_in_days(plan, unquote(product_id), query_or_argument) do
-      unquote(module).historical_data_in_days(plan, query_or_argument)
-    end
-  end
-
-  @spec realtime_data_cut_off_in_days(atom(), non_neg_integer(), query_or_argument()) ::
-          non_neg_integer() | nil
-  def realtime_data_cut_off_in_days(plan, _product_id, query_or_argument)
-      when query_or_argument in @custom_access_queries do
-    Map.get(@custom_access_queries_stats, query_or_argument)
-    |> get_in([:plan_access, plan, :realtime_data_cut_off_in_days])
-  end
-
-  for {product_id, module} <- @product_to_access_module do
-    def realtime_data_cut_off_in_days(plan, unquote(product_id), query_or_argument) do
-      unquote(module).realtime_data_cut_off_in_days(plan, query_or_argument)
-    end
-  end
-
   def is_historical_data_allowed?({:metric, metric}) do
     Sanbase.Metric.is_historical_data_allowed?(metric)
   end
@@ -186,6 +153,55 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   def is_realtime_data_allowed?({:signal, signal}) do
     Sanbase.Signal.is_realtime_data_allowed?(signal)
+  end
+
+  @product_to_access_module [
+    {Product.product_api(), ApiAccessChecker},
+    {Product.product_sanbase(), SanbaseAccessChecker}
+  ]
+
+  @spec historical_data_in_days(atom(), non_neg_integer(), query_or_argument()) ::
+          non_neg_integer() | nil
+  def historical_data_in_days(plan, _product_id, query_or_argument)
+      when query_or_argument in @custom_access_queries do
+    if is_historical_data_allowed?(query_or_argument) do
+      nil
+    else
+      Map.get(@custom_access_queries_stats, query_or_argument)
+      |> get_in([:plan_access, plan, :historical_data_in_days])
+    end
+  end
+
+  for {product_id, module} <- @product_to_access_module do
+    def historical_data_in_days(plan, unquote(product_id), query_or_argument) do
+      if is_historical_data_allowed?(query_or_argument) do
+        nil
+      else
+        unquote(module).historical_data_in_days(plan, query_or_argument)
+      end
+    end
+  end
+
+  @spec realtime_data_cut_off_in_days(atom(), non_neg_integer(), query_or_argument()) ::
+          non_neg_integer() | nil
+  def realtime_data_cut_off_in_days(plan, _product_id, query_or_argument)
+      when query_or_argument in @custom_access_queries do
+    if is_realtime_data_allowed?(query_or_argument) do
+      nil
+    else
+      Map.get(@custom_access_queries_stats, query_or_argument)
+      |> get_in([:plan_access, plan, :realtime_data_cut_off_in_days])
+    end
+  end
+
+  for {product_id, module} <- @product_to_access_module do
+    def realtime_data_cut_off_in_days(plan, unquote(product_id), query_or_argument) do
+      if is_realtime_data_allowed?(query_or_argument) do
+        nil
+      else
+        unquote(module).realtime_data_cut_off_in_days(plan, query_or_argument)
+      end
+    end
   end
 
   def user_can_create_alert?(user, subscription) do

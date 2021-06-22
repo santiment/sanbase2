@@ -147,6 +147,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     Sanbase.Signal.is_historical_data_allowed?(signal)
   end
 
+  def is_historical_data_allowed?(_), do: false
+
   def is_realtime_data_allowed?({:metric, metric}) do
     Sanbase.Metric.is_realtime_data_allowed?(metric)
   end
@@ -154,6 +156,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   def is_realtime_data_allowed?({:signal, signal}) do
     Sanbase.Signal.is_realtime_data_allowed?(signal)
   end
+
+  def is_realtime_data_allowed?(_), do: false
 
   @product_to_access_module [
     {Product.product_api(), ApiAccessChecker},

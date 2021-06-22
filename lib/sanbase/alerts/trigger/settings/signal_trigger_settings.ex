@@ -177,9 +177,7 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
         |> Map.merge(details_kv)
 
       template = """
-      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{signal_human_readable_name}} #{
-        operation_template
-      }.
+      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{signal_human_readable_name}} #{operation_template}.
       #{curr_value_template}.
 
       #{details_template}

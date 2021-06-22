@@ -272,9 +272,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
   defp change_favorite_metrics_query(favorite_metrics) do
     """
     mutation {
-      updateUserSettings(settings: #{
-      map_to_input_object_str(%{favorite_metrics: favorite_metrics})
-    })
+      updateUserSettings(settings: #{map_to_input_object_str(%{favorite_metrics: favorite_metrics})})
       {
         favoriteMetrics
       }

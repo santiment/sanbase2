@@ -23,9 +23,7 @@ defmodule Sanbase.TechIndicators do
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch twitter mention count data for ticker #{ticker}: #{
-            HTTPoison.Error.message(error)
-          }"
+          "Cannot fetch twitter mention count data for ticker #{ticker}: #{HTTPoison.Error.message(error)}"
         )
     end
   end

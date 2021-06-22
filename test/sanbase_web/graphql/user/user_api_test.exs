@@ -120,9 +120,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
       mutation = """
       mutation {
-        emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{
-        user.email_candidate_token
-      }") {
+        emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{user.email_candidate_token}") {
           user {
             email
           },
@@ -163,9 +161,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
       mutation = """
       mutation {
-        emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{
-        user.email_candidate_token
-      }") {
+        emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{user.email_candidate_token}") {
           user {
             email
           }
@@ -192,9 +188,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
       query = """
       mutation {
-        emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{
-        user.email_candidate_token
-      }") {
+        emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{user.email_candidate_token}") {
           user {
             email
           }

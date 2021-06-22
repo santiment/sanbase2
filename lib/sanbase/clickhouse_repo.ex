@@ -109,9 +109,7 @@ defmodule Sanbase.ClickhouseRepo do
     ordering_count = Enum.max_by(ordering, fn x -> x end, fn -> 0 end)
 
     if ordering_count != length(params) do
-      raise "\nError: number of params received (#{length(params)}) does not match expected (#{
-              ordering_count
-            })"
+      raise "\nError: number of params received (#{length(params)}) does not match expected (#{ordering_count})"
     end
 
     ordered_params =

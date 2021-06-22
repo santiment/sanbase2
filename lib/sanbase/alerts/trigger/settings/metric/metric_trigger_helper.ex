@@ -193,9 +193,7 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
       |> Map.merge(details_kv)
 
     template = """
-    🔔 [\#{{project_ticker}}]({{sanbase_project_link}}) | *{{project_name}}'s {{metric_human_readable_name}} #{
-      operation_template
-    }* 💥
+    🔔 [\#{{project_ticker}}]({{sanbase_project_link}}) | *{{project_name}}'s {{metric_human_readable_name}} #{operation_template}* 💥
 
     #{curr_value_template}
     #{maybe_add_extra_explanation(settings.extra_explanation)}

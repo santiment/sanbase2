@@ -158,9 +158,7 @@ defmodule Sanbase.WalletHunters.Contract do
 
       {:error, reason} ->
         Logger.error(
-          "Error occurred during executing smart contract call #{function_name} with args: #{
-            inspect(args)
-          }. reason: #{inspect(reason)}"
+          "Error occurred during executing smart contract call #{function_name} with args: #{inspect(args)}. reason: #{inspect(reason)}"
         )
 
         {:error, "Error occured during executing smart contract call"}

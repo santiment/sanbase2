@@ -204,21 +204,40 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp restricted_query(
          %Resolution{arguments: %{from: from, to: to}, context: context} = resolution,
          middleware_args,
-         query
+         query_or_argument
        ) do
     plan = context[:auth][:plan] || :free
     product_id = context[:product_id] || Product.product_api()
 
-    historical_data_in_days = AccessChecker.historical_data_in_days(plan, product_id, query)
+    historical_data_in_days =
+      AccessChecker.historical_data_in_days(plan, product_id, query_or_argument)
 
     realtime_data_cut_off_in_days =
-      AccessChecker.realtime_data_cut_off_in_days(plan, product_id, query)
+      AccessChecker.realtime_data_cut_off_in_days(plan, product_id, query_or_argument)
 
-    resolution
-    |> update_resolution_from_to(
-      restrict_from(from, middleware_args, historical_data_in_days),
-      restrict_to(to, middleware_args, realtime_data_cut_off_in_days)
-    )
+    case elem(query_or_argument, 0) do
+      :query ->
+        resolution
+        |> update_resolution_from_to(
+          restrict_from(from, middleware_args, historical_data_in_days),
+          restrict_to(to, middleware_args, realtime_data_cut_off_in_days)
+        )
+
+      _metric_or_signal ->
+        resolution
+        |> update_resolution_from_to(
+          restrict_from(
+            from,
+            %{allow_historical_data: AccessChecker.is_historical_data_allowed(query_or_argument)},
+            historical_data_in_days
+          ),
+          restrict_to(
+            to,
+            %{allow_realtime_data: AccessChecker.is_realtime_data_allowed(query_or_argument)},
+            realtime_data_cut_off_in_days
+          )
+        )
+    end
   end
 
   defp not_restricted_query(resolution, _middleware_args) do

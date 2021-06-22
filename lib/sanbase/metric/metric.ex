@@ -607,6 +607,22 @@ defmodule Sanbase.Metric do
   def access_map(), do: @access_map
 
   @doc ~s"""
+  Checks if historical data is allowed for a given `metric`
+  """
+  @spec is_historical_data_allowed?(metric) :: boolean
+  def is_historical_data_allowed?(metric) do
+    get_in(@access_map, [metric, :historical]) === :free
+  end
+
+  @doc ~s"""
+  Checks if realtime data is allowed for a given `metric`
+  """
+  @spec is_realtime_data_allowed?(metric) :: boolean
+  def is_realtime_data_allowed?(metric) do
+    get_in(@access_map, [metric, :realtime]) === :free
+  end
+
+  @doc ~s"""
   Get a map where the key is a metric and the value is the min plan it is
   accessible in.
   """

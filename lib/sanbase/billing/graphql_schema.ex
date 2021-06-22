@@ -111,6 +111,9 @@ defmodule Sanbase.Billing.GraphqlSchema do
 
   def get_with_access_level(access_map, level) do
     access_map
+    |> Stream.map(fn {argument, level} ->
+      {argument, access_map_to_atom(level)}
+    end)
     |> Enum.reduce([], fn
       {argument, ^level}, acc -> [argument | acc]
       _, acc -> acc
@@ -139,5 +142,12 @@ defmodule Sanbase.Billing.GraphqlSchema do
       {query, _} ->
         {{:query, query}, %{"SANAPI" => :free, "SANBASE" => :free}}
     end)
+  end
+
+  defp access_map_to_atom(access_map) do
+    case access_map do
+      %{"historical" => :free, "realtime" => :free} -> :free
+      _ -> :restricted
+    end
   end
 end

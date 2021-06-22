@@ -76,6 +76,21 @@ defmodule Sanbase.Signal.FileHandler do
         end
       )
     end
+
+    def access_level_to_atom(access) when is_binary(access), do: String.to_atom(access)
+
+    def access_level_to_atom(access) when is_map(access) do
+      Enum.into(access, %{}, fn {k, v} -> {k, String.to_atom(v)} end)
+    end
+
+    def resolve_access_level(access) when is_atom(access), do: access
+
+    def resolve_access_level(access) when is_map(access) do
+      case access do
+        %{"historical" => :free, "realtime" => :free} -> :free
+        _ -> :restricted
+      end
+    end
   end
 
   # Structure
@@ -98,7 +113,9 @@ defmodule Sanbase.Signal.FileHandler do
   @signal_map Helper.name_to_field_map(@signals_json, "signal", required?: true)
   @name_to_signal_map @signal_map
   @signal_to_name_map Map.new(@name_to_signal_map, fn {k, v} -> {v, k} end)
-  @access_map Helper.name_to_field_map(@signals_json, "access", transform_fn: &String.to_atom/1)
+  @access_map Helper.name_to_field_map(@signals_json, "access",
+                transform_fn: &Helper.access_level_to_atom/1
+              )
   @table_map Helper.name_to_field_map(@signals_json, "table", required?: true)
   @aggregation_map Helper.name_to_field_map(@signals_json, "aggregation",
                      transform_fn: &String.to_atom/1
@@ -155,7 +172,9 @@ defmodule Sanbase.Signal.FileHandler do
 
   def signals_with_access(level) when level in [:free, :restricted] do
     @access_map
-    |> Enum.filter(fn {_signal, access_level} -> access_level == level end)
+    |> Enum.filter(fn {_signal, restrictions} ->
+      Helper.resolve_access_level(restrictions) === level
+    end)
     |> Enum.map(&elem(&1, 0))
   end
 

@@ -52,6 +52,22 @@ defmodule Sanbase.Signal do
   def access_map(), do: SignalAdapter.access_map()
 
   @doc ~s"""
+  Checks if historical data is allowed for a given `signal`
+  """
+  @spec is_historical_data_allowed?(signal) :: boolean
+  def is_historical_data_allowed?(signal) do
+    get_in(access_map(), [signal, :historical]) === :free
+  end
+
+  @doc ~s"""
+  Checks if realtime data is allowed for a given `signal`
+  """
+  @spec is_realtime_data_allowed?(signal) :: boolean
+  def is_realtime_data_allowed?(signal) do
+    get_in(access_map(), [signal, :realtime]) === :free
+  end
+
+  @doc ~s"""
   Get a map where the key is a signal and the value is the min plan it is
   accessible in.
   """

@@ -75,6 +75,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
         end
       )
     end
+
+    def access_level_to_atom(access) when is_binary(access), do: String.to_atom(access)
+
+    def access_level_to_atom(access) when is_map(access) do
+      Enum.into(access, %{}, fn {k, v} -> {k, String.to_atom(v)} end)
+    end
+
+    def resolve_access_level(access) when is_atom(access), do: access
+
+    def resolve_access_level(access) when is_map(access) do
+      case access do
+        %{"historical" => :free, "realtime" => :free} -> :free
+        _ -> :restricted
+      end
+    end
   end
 
   # Structure
@@ -130,19 +145,22 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                                      )
 
   @metrics_json Helper.expand_timebound_metrics(@metrics_json_pre_timebound_expand)
-
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
-
   @metrics_data_type_map Helper.name_to_field_map(@metrics_json, "data_type",
                            transform_fn: &String.to_atom/1
                          )
+
   @name_to_metric_map Helper.name_to_field_map(@metrics_json, "metric")
   @metric_to_name_map @name_to_metric_map |> Map.new(fn {k, v} -> {v, k} end)
-  @access_map Helper.name_to_field_map(@metrics_json, "access", transform_fn: &String.to_atom/1)
+  @access_map Helper.name_to_field_map(@metrics_json, "access",
+                transform_fn: &Helper.access_level_to_atom/1
+              )
+
   @table_map Helper.name_to_field_map(@metrics_json, "table")
   @aggregation_map Helper.name_to_field_map(@metrics_json, "aggregation",
                      transform_fn: &String.to_atom/1
                    )
+
   @min_interval_map Helper.name_to_field_map(@metrics_json, "min_interval")
   @min_plan_map Helper.name_to_field_map(@metrics_json, "min_plan",
                   transform_fn: fn plan_map ->
@@ -209,7 +227,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
 
   def metrics_with_access(level) when level in [:free, :restricted] do
     @access_map
-    |> Enum.filter(fn {_metric, access_level} -> access_level == level end)
+    |> Enum.filter(fn {_metric, restrictions} ->
+      Helper.resolve_access_level(restrictions) === level
+    end)
     |> Enum.map(&elem(&1, 0))
   end
 

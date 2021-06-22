@@ -15,15 +15,18 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     days_ago = Timex.shift(Timex.now(), days: -29)
     over_two_years_ago = Timex.shift(Timex.now(), days: -(2 * 365 + 1))
 
-    for %{is_restricted: true} = restriction <- get_access_restrictions(conn) do
-      from = restriction["availableFrom"] |> Sanbase.DateTimeUtils.from_erl!()
-      to = restriction["availableTo"] |> Sanbase.DateTimeUtils.from_erl!()
+    for %{"isRestricted" => true} = restriction <- get_access_restrictions(conn) do
+      from = restriction["restrictedFrom"]
+      to = restriction["restrictedTo"]
 
-      assert DateTime.compare(from, over_two_years_ago) == :gt
-      assert DateTime.compare(to, days_ago) == :lt
+      assert is_nil(from) ||
+               Sanbase.DateTimeUtils.from_iso8601!(from)
+               |> DateTime.compare(over_two_years_ago) == :gt
+
+      assert is_nil(to) ||
+               Sanbase.DateTimeUtils.from_iso8601!(to)
+               |> DateTime.compare(days_ago) == :lt
     end
-
-    get_access_restrictions(conn)
   end
 
   test "pro sanbase user", %{conn: conn, user: user} do
@@ -31,12 +34,17 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     one_hour_ago = Timex.shift(Timex.now(), hours: -1)
     over_five_years_ago = Timex.shift(Timex.now(), days: -(5 * 365 + 1))
 
-    for %{is_restricted: true} = restriction <- get_access_restrictions(conn) do
-      from = restriction["availableFrom"] |> Sanbase.DateTimeUtils.from_erl!()
-      to = restriction["availableTo"] |> Sanbase.DateTimeUtils.from_erl!()
+    for %{"isRestricted" => true} = restriction <- get_access_restrictions(conn) do
+      from = restriction["restrictedFrom"]
+      to = restriction["restrictedTo"]
 
-      assert DateTime.compare(from, over_five_years_ago) == :gt
-      assert DateTime.compare(to, one_hour_ago) == :lt
+      assert is_nil(from) ||
+               Sanbase.DateTimeUtils.from_iso8601!(from)
+               |> DateTime.compare(over_five_years_ago) == :gt
+
+      assert is_nil(to) ||
+               Sanbase.DateTimeUtils.from_iso8601!(to)
+               |> DateTime.compare(one_hour_ago) == :lt
     end
   end
 
@@ -46,7 +54,7 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
     apikey_conn = setup_apikey_auth(build_conn(), apikey)
 
-    for %{is_restricted: is_restrictred} <- get_access_restrictions(apikey_conn) do
+    for %{"isRestricted" => is_restrictred} <- get_access_restrictions(apikey_conn) do
       assert is_restrictred == false
     end
   end
@@ -67,5 +75,6 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     conn
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)
+    |> get_in(["data", "getAccessRestrictions"])
   end
 end

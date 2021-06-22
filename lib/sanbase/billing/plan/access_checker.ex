@@ -139,6 +139,28 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   def custom_access_queries_stats(), do: @custom_access_queries_stats
   def custom_access_queries(), do: @custom_access_queries
 
+  def is_historical_data_allowed?({:metric, metric}) do
+    Sanbase.Metric.is_historical_data_allowed?(metric)
+  end
+
+  def is_historical_data_allowed?({:signal, signal}) do
+    Sanbase.Signal.is_historical_data_allowed?(signal)
+  end
+
+  # The call in historical_data_in_days/3 may pass down {:query, _}
+  def is_historical_data_allowed?({:query, _}), do: false
+
+  def is_realtime_data_allowed?({:metric, metric}) do
+    Sanbase.Metric.is_realtime_data_allowed?(metric)
+  end
+
+  def is_realtime_data_allowed?({:signal, signal}) do
+    Sanbase.Signal.is_realtime_data_allowed?(signal)
+  end
+
+  # The call in realtime_data_cut_off_in_days/3 may pass down {:query, _}
+  def is_realtime_data_allowed?({:query, _}), do: false
+
   @product_to_access_module [
     {Product.product_api(), ApiAccessChecker},
     {Product.product_sanbase(), SanbaseAccessChecker}
@@ -148,13 +170,17 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
           non_neg_integer() | nil
   def historical_data_in_days(plan, _product_id, query_or_argument)
       when query_or_argument in @custom_access_queries do
-    Map.get(@custom_access_queries_stats, query_or_argument)
-    |> get_in([:plan_access, plan, :historical_data_in_days])
+    if not is_historical_data_allowed?(query_or_argument) do
+      Map.get(@custom_access_queries_stats, query_or_argument)
+      |> get_in([:plan_access, plan, :historical_data_in_days])
+    end
   end
 
   for {product_id, module} <- @product_to_access_module do
     def historical_data_in_days(plan, unquote(product_id), query_or_argument) do
-      unquote(module).historical_data_in_days(plan, query_or_argument)
+      if not is_historical_data_allowed?(query_or_argument) do
+        unquote(module).historical_data_in_days(plan, query_or_argument)
+      end
     end
   end
 
@@ -162,13 +188,17 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
           non_neg_integer() | nil
   def realtime_data_cut_off_in_days(plan, _product_id, query_or_argument)
       when query_or_argument in @custom_access_queries do
-    Map.get(@custom_access_queries_stats, query_or_argument)
-    |> get_in([:plan_access, plan, :realtime_data_cut_off_in_days])
+    if not is_realtime_data_allowed?(query_or_argument) do
+      Map.get(@custom_access_queries_stats, query_or_argument)
+      |> get_in([:plan_access, plan, :realtime_data_cut_off_in_days])
+    end
   end
 
   for {product_id, module} <- @product_to_access_module do
     def realtime_data_cut_off_in_days(plan, unquote(product_id), query_or_argument) do
-      unquote(module).realtime_data_cut_off_in_days(plan, query_or_argument)
+      if not is_realtime_data_allowed?(query_or_argument) do
+        unquote(module).realtime_data_cut_off_in_days(plan, query_or_argument)
+      end
     end
   end
 

@@ -789,4 +789,40 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
 
     assert forbidden_metrics == expected_forbidden_metrics
   end
+
+  test "metrics with free realtime and restricted historical data", %{
+    metrics_access_map: access_map
+  } do
+    result =
+      access_map
+      |> Enum.filter(&match?({_, %{"historical" => :restricted, "realtime" => :free}}, &1))
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.sort()
+
+    expected =
+      [
+        "social_volume_bitcointalk",
+        "social_volume_discord",
+        "social_volume_professional_traders_chat",
+        "social_volume_reddit",
+        "social_volume_telegram",
+        "social_volume_total",
+        "social_volume_twitter"
+      ]
+      |> Enum.sort()
+
+    assert result == expected
+  end
+
+  test "metrics with restricted realtime and free historical data", %{
+    metrics_access_map: access_map
+  } do
+    result =
+      access_map
+      |> Enum.filter(&match?({_, %{"historical" => :free, "realtime" => :restricted}}, &1))
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.sort()
+
+    assert result == []
+  end
 end

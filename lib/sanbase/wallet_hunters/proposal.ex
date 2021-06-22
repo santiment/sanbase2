@@ -180,16 +180,13 @@ defmodule Sanbase.WalletHunters.Proposal do
   end
 
   def fetch_all(selector \\ %{}, user \\ nil) do
-    proposals =
-      Contract.wallet_proposals()
-      |> map_response()
-      |> merge_db_proposals()
-      |> filter_response(selector[:filter])
-      |> filter_by_type(selector[:type], user)
-      |> sort_response(selector[:sort_by])
-      |> paginate(selector[:page], selector[:page_size])
-
-    {:ok, proposals}
+    Contract.wallet_proposals()
+    |> map_response()
+    |> merge_db_proposals()
+    |> filter_response(selector[:filter])
+    |> filter_by_type(selector[:type], user)
+    |> sort_response(selector[:sort_by])
+    |> paginate(selector[:page], selector[:page_size])
   end
 
   defp votes_for_proposal(votes, proposal_id) do

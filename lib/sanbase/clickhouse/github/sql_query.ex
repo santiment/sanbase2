@@ -75,7 +75,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       span
     ]
 
-    query = {query, args}
+    {query, args}
   end
 
   def github_activity_contributors_count_query(organizations, from, to, interval) do

@@ -317,13 +317,16 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       value,
       name,
       decimals
-    FROM erc20_transfers FINAL
+    FROM (
+      SELECT assetRefId, from, to, value, dt, transactionHash
+      FROM erc20_transfers
+      PREWHERE #{if only_sender, do: "from = ?1", else: "(from = ?1 OR to = ?1)"}
+      GROUP BY assetRefId, from, to, value, dt, transactionHash
+    )
     INNER JOIN (
       SELECT asset_ref_id AS assetRefId, name, decimals
       FROM asset_metadata FINAL
     ) USING (assetRefId)
-    PREWHERE
-      #{if only_sender, do: "from = ?1", else: "(from = ?1 OR to = ?1)"}
     ORDER BY dt DESC
     LIMIT ?2 OFFSET ?3
     """

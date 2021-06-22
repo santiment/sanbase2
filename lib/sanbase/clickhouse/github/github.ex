@@ -265,7 +265,6 @@ defmodule Sanbase.Clickhouse.Github do
 
   defp datetime_activity_execute({query, args}) do
     ClickhouseRepo.query_transform(query, args, & &1)
-    |> IO.inspect(label: "267", limit: :infinity)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime, value] ->
       %{

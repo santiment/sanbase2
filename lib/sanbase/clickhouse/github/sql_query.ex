@@ -257,7 +257,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     SELECT owner, SUM(value)
     FROM (
       SELECT
-      arrayJoin(['tetherto']) AS owner,
+      arrayJoin([?#{o_pos}]) AS owner,
       toUInt64(0) AS value
 
       UNION ALL

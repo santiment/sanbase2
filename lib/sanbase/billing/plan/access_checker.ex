@@ -172,19 +172,19 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     end
   end
 
-  def is_historical_data_allowed({:metric, metric}) do
+  def is_historical_data_allowed?({:metric, metric}) do
     Sanbase.Metric.is_historical_data_allowed?(metric)
   end
 
-  def is_historical_data_allowed({:signal, signal}) do
+  def is_historical_data_allowed?({:signal, signal}) do
     Sanbase.Signal.is_historical_data_allowed?(signal)
   end
 
-  def is_realtime_data_allowed({:metric, metric}) do
+  def is_realtime_data_allowed?({:metric, metric}) do
     Sanbase.Metric.is_realtime_data_allowed?(metric)
   end
 
-  def is_realtime_data_allowed({:signal, signal}) do
+  def is_realtime_data_allowed?({:signal, signal}) do
     Sanbase.Signal.is_realtime_data_allowed?(signal)
   end
 

@@ -206,6 +206,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          middleware_args,
          query_or_argument
        ) do
+    IO.inspect(to)
     plan = context[:auth][:plan] || :free
     product_id = context[:product_id] || Product.product_api()
 
@@ -228,12 +229,14 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         |> update_resolution_from_to(
           restrict_from(
             from,
-            %{allow_historical_data: AccessChecker.is_historical_data_allowed(query_or_argument)},
+            %{
+              allow_historical_data: AccessChecker.is_historical_data_allowed?(query_or_argument)
+            },
             historical_data_in_days
           ),
           restrict_to(
             to,
-            %{allow_realtime_data: AccessChecker.is_realtime_data_allowed(query_or_argument)},
+            %{allow_realtime_data: AccessChecker.is_realtime_data_allowed?(query_or_argument)},
             realtime_data_cut_off_in_days
           )
         )

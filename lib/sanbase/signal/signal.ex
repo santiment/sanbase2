@@ -56,7 +56,7 @@ defmodule Sanbase.Signal do
   """
   @spec is_historical_data_allowed?(signal) :: boolean
   def is_historical_data_allowed?(signal) do
-    get_in(access_map(), [signal, :historical]) === :free
+    get_in(access_map(), [signal, "historical"]) === :free
   end
 
   @doc ~s"""
@@ -64,7 +64,7 @@ defmodule Sanbase.Signal do
   """
   @spec is_realtime_data_allowed?(signal) :: boolean
   def is_realtime_data_allowed?(signal) do
-    get_in(access_map(), [signal, :realtime]) === :free
+    get_in(access_map(), [signal, "realtime"]) === :free
   end
 
   @doc ~s"""

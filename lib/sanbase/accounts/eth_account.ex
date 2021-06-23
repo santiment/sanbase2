@@ -66,6 +66,8 @@ defmodule Sanbase.Accounts.EthAccount do
   end
 
   def san_staked_addresses(addresses, contract) when is_list(addresses) and is_binary(contract) do
+    data_map = contract_data_map(contract)
+
     result =
       addresses
       |> Enum.chunk_every(250)
@@ -73,7 +75,7 @@ defmodule Sanbase.Accounts.EthAccount do
 
     Enum.zip(addresses, result)
     |> Map.new(fn {addr, [balance]} ->
-      {addr, calculate_san_staked(balance, contract_data_map(contract))}
+      {addr, calculate_san_staked(balance, data_map)}
     end)
   end
 

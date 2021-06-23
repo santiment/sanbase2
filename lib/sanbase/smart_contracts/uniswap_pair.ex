@@ -1,6 +1,6 @@
 defmodule Sanbase.SmartContracts.UniswapPair do
   import Sanbase.SmartContracts.Utils,
-    only: [call_contract: 4, format_address: 1, format_number: 2]
+    only: [call_contract: 4, call_contract_batch: 5, format_address: 1, format_number: 2]
 
   @type address :: String.t()
 
@@ -55,6 +55,19 @@ defmodule Sanbase.SmartContracts.UniswapPair do
     address = format_address(address)
     [balance] = call_contract(contract, "balanceOf(address)", [address], [{:uint, 256}])
     format_number(balance, @decimals)
+  end
+
+  def balances_of(addresses, contract) do
+    addresses_args = Enum.map(addresses, &format_address/1) |> Enum.map(&List.wrap/1)
+    # balanceOf has 2 optional parameters - block number and opts. In case of
+    # batching, the batch_request/1 function automatically appends `batch: true`
+    # to the arguments list. If the first optional param is not explicilty set
+    # to "latest", then it is populated by a keyword list and fails.
+    opts = [transform_args_list_fun: fn list -> list ++ ["latest"] end]
+
+    balances =
+      call_contract_batch(contract, "balanceOf(address)", addresses_args, [{:uint, 256}], opts)
+      |> Enum.map(fn [balance] -> [format_number(balance, @decimals)] end)
   end
 
   @spec get_san_position(address) :: 0 | 1

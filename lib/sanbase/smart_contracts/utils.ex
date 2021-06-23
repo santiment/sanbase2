@@ -70,6 +70,28 @@ defmodule Sanbase.SmartContracts.Utils do
     end
   end
 
+  def call_contract_batch(contract, contract_function, args_lists, return_types, opts \\ []) do
+    transform_args = Keyword.get(opts, :transform_args_list_fun, fn x -> x end)
+
+    requests =
+      Enum.map(args_lists, fn args ->
+        function_signature = ABI.encode(contract_function, args) |> Base.encode16(case: :lower)
+        eth_call_args = [%{data: "0x" <> function_signature, to: contract}] |> transform_args.()
+
+        {:eth_call, eth_call_args}
+      end)
+
+    with {:ok, result} <- Ethereumex.HttpClient.batch_request(requests) do
+      Enum.map(result, fn hex_encoded_binary_response ->
+        hex_encoded_binary_response
+        # Strip `0x` prefix
+        |> String.slice(2..-1)
+        |> Base.decode16!(case: :lower)
+        |> ABI.TypeDecoder.decode_raw(return_types)
+      end)
+    end
+  end
+
   def format_number(number, decimals \\ 18)
 
   def format_number(number, decimals) do

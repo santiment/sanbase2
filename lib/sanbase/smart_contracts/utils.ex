@@ -56,7 +56,9 @@ defmodule Sanbase.SmartContracts.Utils do
     # https://docs.soliditylang.org/en/latest/abi-spec.html#function-selector-and-argument-encoding
     function_signature = ABI.encode(contract_function, args) |> Base.encode16(case: :lower)
 
-    Logger.info("[Parity] Eth call contract.")
+    Logger.info(
+      "[Parity] Eth call contract with function #{get_function_name(contract_function)}."
+    )
 
     with {:ok, hex_encoded_binary_response} <-
            Ethereumex.HttpClient.eth_call(%{data: "0x" <> function_signature, to: contract}) do
@@ -98,4 +100,7 @@ defmodule Sanbase.SmartContracts.Utils do
 
     "0x" <> address
   end
+
+  defp get_function_name(function) when is_binary(function), do: function
+  defp get_function_name(%{function: function}), do: function
 end

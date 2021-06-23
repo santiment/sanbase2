@@ -88,7 +88,8 @@ config :waffle,
   storage_dir_prefix: "/"
 
 config :ethereumex,
-  url: "http://parity.stage.san:30954"
+  url: "http://parity.stage.san:30954",
+  http_options: [timeout: 25_000, recv_timeout: 25_000]
 
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"

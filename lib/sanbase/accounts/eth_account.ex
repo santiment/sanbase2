@@ -60,24 +60,39 @@ defmodule Sanbase.Accounts.EthAccount do
   Fetch wallet staked SAN tokens for given Uniswap pair contract
   """
   @spec san_staked_address(String.t(), String.t()) :: float()
-  def san_staked_address(address, contract) do
+  def san_staked_address(address, contract) when is_binary(address) and is_binary(contract) do
     UniswapPair.balance_of(address, contract)
-    |> calculate_san_staked(contract)
+    |> calculate_san_staked(contract_data_map(contract))
+  end
+
+  def san_staked_addresses(addresses, contract) when is_list(addresses) and is_binary(contract) do
+    result =
+      addresses
+      |> Enum.chunk_every(250)
+      |> Enum.flat_map(&UniswapPair.balances_of(&1, contract))
+
+    Enum.zip(addresses, result)
+    |> Map.new(fn {addr, [balance]} ->
+      {addr, calculate_san_staked(balance, contract_data_map(contract))}
+    end)
   end
 
   # Helpers
 
-  defp calculate_san_staked(_, address_staked_tokens) when address_staked_tokens == 0.0 do
+  defp contract_data_map(contract) do
+    %{
+      total_supply: UniswapPair.total_supply(contract),
+      reserves: UniswapPair.reserves(contract) |> elem(UniswapPair.get_san_position(contract))
+    }
+  end
+
+  defp calculate_san_staked(address_staked_tokens, _data_map) when address_staked_tokens == 0.0 do
     0.0
   end
 
-  defp calculate_san_staked(address_staked_tokens, contract) do
-    san_position_in_pair = UniswapPair.get_san_position(contract)
-
-    total_staked_tokens = UniswapPair.total_supply(contract)
-    address_share = address_staked_tokens / total_staked_tokens
-
-    total_san_staked = UniswapPair.reserves(contract) |> elem(san_position_in_pair)
-    address_share * total_san_staked
+  defp calculate_san_staked(address_staked_tokens, data_map) do
+    # Convert the LP tokens to the actual value of SAN tokens
+    address_share = address_staked_tokens / data_map.total_supply
+    address_share * data_map.reserves
   end
 end

@@ -121,17 +121,28 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
     setup do
       insert(:wallet_hunters_proposal, proposal_id: 0, transaction_id: "0x0")
       insert(:wallet_hunters_proposal, proposal_id: 1, transaction_id: "0x1")
-      :ok
+
+      mock_fun =
+        [
+          fn -> {:ok, "0x0000000000000000000000000000000000000000000000000000000000000003"} end,
+          fn -> all_proposals_resp() end
+        ]
+        |> Sanbase.Mock.wrap_consecutives(arity: 1)
+
+      global_mock =
+        Sanbase.Mock.prepare_mock(Ethereumex.HttpClient, :eth_call, mock_fun)
+        |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_new_filter/1, filter_id_resp())
+        |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_get_filter_logs/1, votes_resp())
+        |> Sanbase.Mock.prepare_mock2(
+          &Sanbase.ClickhouseRepo.query/2,
+          {:ok, %{rows: labels_rows()}}
+        )
+
+      {:ok, global_mock: global_mock}
     end
 
-    test "when fetching all" do
-      Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_new_filter/1, filter_id_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_get_filter_logs/1, votes_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, all_proposals_resp())
-      |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, %{rows: labels_rows()}}
-      )
+    test "when fetching all", context do
+      context.global_mock
       |> Sanbase.Mock.run_with_mocks(fn ->
         result = execute_query(build_conn(), wallet_hunters_query(), "walletHuntersProposals")
 
@@ -139,14 +150,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
       end)
     end
 
-    test "when fetching with sorting and pagination" do
-      Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_new_filter/1, filter_id_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_get_filter_logs/1, votes_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, all_proposals_resp())
-      |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, %{rows: labels_rows()}}
-      )
+    test "when fetching with sorting and pagination", context do
+      context.global_mock
       |> Sanbase.Mock.run_with_mocks(fn ->
         selector = %{sort_by: %{field: "created_at", direction: :desc}, page: 1, page_size: 2}
 
@@ -158,14 +163,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
       end)
     end
 
-    test "when fetching with filter" do
-      Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_new_filter/1, filter_id_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_get_filter_logs/1, votes_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, all_proposals_resp())
-      |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, %{rows: labels_rows()}}
-      )
+    test "when fetching with filter", context do
+      context.global_mock
       |> Sanbase.Mock.run_with_mocks(fn ->
         selector = %{
           filter: [
@@ -182,13 +181,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
     end
 
     test "when fetching only mine", context do
-      Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_new_filter/1, filter_id_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_get_filter_logs/1, votes_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, all_proposals_resp())
-      |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, %{rows: labels_rows()}}
-      )
+      context.global_mock
       |> Sanbase.Mock.run_with_mocks(fn ->
         selector = %{type: :only_mine}
 
@@ -204,7 +197,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
       end)
     end
 
-    test "when fetching only voted", _context do
+    test "when fetching only voted", context do
       user =
         insert(:user,
           eth_accounts: [
@@ -214,13 +207,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
 
       conn = setup_jwt_auth(build_conn(), user)
 
-      Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_new_filter/1, filter_id_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_get_filter_logs/1, votes_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, all_proposals_resp())
-      |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, %{rows: labels_rows()}}
-      )
+      context.global_mock
       |> Sanbase.Mock.run_with_mocks(fn ->
         selector = %{type: :only_voted}
 

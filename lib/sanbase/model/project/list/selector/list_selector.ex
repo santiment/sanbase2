@@ -205,8 +205,9 @@ defmodule Sanbase.Model.Project.ListSelector do
 
           slugs |> MapSet.new()
         end,
+        timeout: 40_000,
         ordered: false,
-        max_concurrency: 8
+        max_concurrency: 4
       )
 
     case filters_combinator do

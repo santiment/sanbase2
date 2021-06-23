@@ -98,7 +98,13 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
       Enum.flat_map(users, fn user -> Enum.map(user.eth_accounts, fn acc -> acc.address end) end)
 
     UniswapPair.all_pair_contracts()
-    |> Enum.map(&EthAccount.san_staked_addresses(addresses, &1))
+    |> Enum.map(fn contract ->
+      &EthAccount.san_staked_addresses(
+        addresses,
+        contract,
+        UniswapPair.contract_data_map(contract)
+      )
+    end)
     |> Enum.reduce(%{}, &Map.merge(&1, &2, fn _k, v1, v2 -> v1 + v2 end))
   end
 

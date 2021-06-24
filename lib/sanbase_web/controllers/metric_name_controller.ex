@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.MetricNameController do
   use SanbaseWeb, :controller
 
-  alias Sanbase.Model.Project
   require Logger
 
   def api_metric_name_mapping(conn, _params) do

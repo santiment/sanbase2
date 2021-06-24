@@ -146,7 +146,7 @@ defmodule Sanbase.Mixfile do
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.8.0", override: true},
       {:ethereumex, "~> 0.7.0"},
-      {:ex_abi, "~> 0.5.2"}
+      {:ex_abi, "~> 0.5.4"}
     ]
   end
 

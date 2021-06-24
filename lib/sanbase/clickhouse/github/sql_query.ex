@@ -273,7 +273,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     f_pos = Keyword.fetch!(opts, :from_datetime_pos)
     s_pos = Keyword.fetch!(opts, :span_pos)
 
-    query = """
+    """
     SELECT time, SUM(value)
     FROM (
       SELECT

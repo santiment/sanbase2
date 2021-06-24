@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     async(fn -> calculate_token_top_transfers(project, args) end)
   end
 
-  defp calculate_token_top_transfers(%Project{slug: slug} = project, args) do
+  defp calculate_token_top_transfers(%Project{slug: slug}, args) do
     %{from: from, to: to, limit: limit} = args
     limit = Enum.min([limit, 100])
     excluded_addresses = Map.get(args, :excluded_addresses, [])

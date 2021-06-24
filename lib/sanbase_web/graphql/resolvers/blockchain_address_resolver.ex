@@ -87,7 +87,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
-  def current_user_address_details(root, _args, _resolution) do
+  def current_user_address_details(_root, _args, _resolution) do
     {:ok, nil}
   end
 

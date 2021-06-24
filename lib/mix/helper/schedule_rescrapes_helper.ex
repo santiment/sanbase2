@@ -9,22 +9,21 @@ defmodule Sanbase.Mix.Helper.ScheduleRescrapeHelpers do
 
     last_scraped_map = PriceScrapingProgress.last_scraped_all_source("coinmarketcap")
 
-    data =
-      Enum.each(projects, fn p ->
-        case Map.get(last_scraped_map, p.slug) do
-          nil ->
-            :ok
+    Enum.each(projects, fn p ->
+      case Map.get(last_scraped_map, p.slug) do
+        nil ->
+          :ok
 
-          last_scraped_dt ->
-            %ScheduleRescrapePrice{}
-            |> ScheduleRescrapePrice.changeset(%{
-              project_id: p.id,
-              from: from,
-              to: to,
-              original_last_updated: last_scraped_dt
-            })
-            |> Sanbase.Repo.insert!()
-        end
-      end)
+        last_scraped_dt ->
+          %ScheduleRescrapePrice{}
+          |> ScheduleRescrapePrice.changeset(%{
+            project_id: p.id,
+            from: from,
+            to: to,
+            original_last_updated: last_scraped_dt
+          })
+          |> Sanbase.Repo.insert!()
+      end
+    end)
   end
 end

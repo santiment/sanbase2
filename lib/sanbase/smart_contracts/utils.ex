@@ -73,6 +73,10 @@ defmodule Sanbase.SmartContracts.Utils do
   def call_contract_batch(contract, contract_function, args_lists, return_types, opts \\ []) do
     transform_args = Keyword.get(opts, :transform_args_list_fun, fn x -> x end)
 
+    Logger.info(
+      "[Parity] Eth call contract batch with function #{get_function_name(contract_function)}."
+    )
+
     requests =
       Enum.map(args_lists, fn args ->
         function_signature = ABI.encode(contract_function, args) |> Base.encode16(case: :lower)

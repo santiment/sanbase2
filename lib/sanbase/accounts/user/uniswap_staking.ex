@@ -45,11 +45,15 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
     users_san_staked =
       users
       |> Enum.map(fn user ->
-        address = user.eth_accounts |> hd() |> Map.get(:address)
+        san_staked =
+          Enum.map(user.eth_accounts, fn account ->
+            Map.get(users_staked_map, account.address, 0)
+          end)
+          |> Enum.sum()
 
         %{
           user_id: user.id,
-          san_staked: Map.get(users_staked_map, address, 0),
+          san_staked: san_staked,
           inserted_at: naive_now,
           updated_at: naive_now
         }

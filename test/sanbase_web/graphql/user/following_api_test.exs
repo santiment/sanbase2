@@ -246,9 +246,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
   defp following_toggle_notification(user_id, disable_notifications) do
     """
     mutation {
-      followingToggleNotification(user_id: "#{user_id}", disable_notifications: #{
-      disable_notifications
-    }) {
+      followingToggleNotification(user_id: "#{user_id}", disable_notifications: #{disable_notifications}) {
         following2 {
           count
           users {

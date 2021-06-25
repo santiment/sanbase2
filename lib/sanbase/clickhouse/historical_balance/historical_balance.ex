@@ -247,9 +247,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   def selector_to_args(%{infrastructure: infrastructure} = selector) do
     {:error,
-     "Invalid historical balance selector. The infrastructure #{inspect(infrastructure)} is not supported. Provided selector: #{
-       inspect(selector)
-     }"}
+     "Invalid historical balance selector. The infrastructure #{inspect(infrastructure)} is not supported. Provided selector: #{inspect(selector)}"}
   end
 
   def selector_to_args(%{slug: slug} = selector) when not is_nil(slug) do
@@ -258,9 +256,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     else
       {:error, {:missing_contract, _}} ->
         {:error,
-         "Invalid historical balance selector. The provided slug has no contract data available. Provided selector: #{
-           inspect(selector)
-         }"}
+         "Invalid historical balance selector. The provided slug has no contract data available. Provided selector: #{inspect(selector)}"}
 
       error ->
         error

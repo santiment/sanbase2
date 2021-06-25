@@ -40,9 +40,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
     )
 
     Logger.info(
-      "GraphQL API Usage: RemoteIP: #{remote_ip}, UserID: #{user.id}, API Token: #{token}, Query: #{
-        definition.name
-      }, Complexity: #{definition.complexity}"
+      "GraphQL API Usage: RemoteIP: #{remote_ip}, UserID: #{user.id}, API Token: #{token}, Query: #{definition.name}, Complexity: #{definition.complexity}"
     )
 
     Logger.reset_metadata([{:query, definition.name} | metadata])
@@ -72,9 +70,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
     )
 
     Logger.info(
-      "GraphQL API Usage: RemoteIP: #{remote_ip}, UserID: #{user.id}, Query: #{definition.name}, Complexity: #{
-        definition.complexity
-      }"
+      "GraphQL API Usage: RemoteIP: #{remote_ip}, UserID: #{user.id}, Query: #{definition.name}, Complexity: #{definition.complexity}"
     )
 
     Logger.reset_metadata([{:query, definition.name} | metadata])
@@ -93,9 +89,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
     )
 
     Logger.info(
-      "GraphQL API Usage: RemoteIP: #{remote_ip}, Query: #{definition.name}, Complexity: #{
-        definition.complexity
-      }"
+      "GraphQL API Usage: RemoteIP: #{remote_ip}, Query: #{definition.name}, Complexity: #{definition.complexity}"
     )
 
     Logger.reset_metadata([{:query, definition.name} | metadata])

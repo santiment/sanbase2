@@ -1,7 +1,7 @@
 defmodule Sanbase.ClickhouseRepo do
   # Clickhouse tests are done only through mocking the results.
   @env Application.compile_env(:sanbase, :env)
-  @adapter if @env() == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
+  @adapter if @env == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
 
   use Ecto.Repo, otp_app: :sanbase, adapter: @adapter
 
@@ -109,9 +109,7 @@ defmodule Sanbase.ClickhouseRepo do
     ordering_count = Enum.max_by(ordering, fn x -> x end, fn -> 0 end)
 
     if ordering_count != length(params) do
-      raise "\nError: number of params received (#{length(params)}) does not match expected (#{
-              ordering_count
-            })"
+      raise "\nError: number of params received (#{length(params)}) does not match expected (#{ordering_count})"
     end
 
     ordered_params =

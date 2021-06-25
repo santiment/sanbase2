@@ -137,9 +137,7 @@ defmodule Sanbase.Alert.Scheduler do
       rescue
         e ->
           Logger.error("""
-          [#{info_map.run_uuid}] Raised an exception while evaluating alerts of type #{
-            info_map.type
-          } - batch #{index}.
+          [#{info_map.run_uuid}] Raised an exception while evaluating alerts of type #{info_map.type} - batch #{index}.
 
           #{Exception.format(:error, e, __STACKTRACE__)}
           """)

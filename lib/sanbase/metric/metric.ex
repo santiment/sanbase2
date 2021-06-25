@@ -75,6 +75,8 @@ defmodule Sanbase.Metric do
     end
   end
 
+  def foo(), do: 5
+
   @doc ~s"""
   Check if a metric has incomplete data.
 

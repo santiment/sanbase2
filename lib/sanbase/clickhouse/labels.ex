@@ -196,12 +196,8 @@ defmodule Sanbase.Clickhouse.Label do
     position = Keyword.fetch!(opts, :position)
 
     """
-    label_raw='whale' AND asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{
-      position
-    }), 'Whale',
-    label_raw='whale' AND asset_id != (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{
-      position
-    }), 'whale_wrong',
+    label_raw='whale' AND asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{position}), 'Whale',
+    label_raw='whale' AND asset_id != (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{position}), 'whale_wrong',
     """
   end
 

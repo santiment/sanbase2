@@ -72,9 +72,6 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
     end)
   end
 
-  defguard is_proper_signal_data(data)
-           when is_number(data) or is_map(data)
-
   defp fetch_signal(selector, settings) do
     %{signal: signal, time_window: time_window} = settings
 
@@ -92,9 +89,9 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
     slug = selector.slug
 
     Cache.get_or_store(cache_key, fn ->
-      with {:ok, %{^slug => value1} = data1} when is_proper_signal_data(data1) <-
+      with {:ok, %{^slug => value1}} <-
              Signal.aggregated_timeseries_data(signal, selector, first_start, first_end, nil),
-           {:ok, %{^slug => value2} = data2} when is_proper_signal_data(data2) <-
+           {:ok, %{^slug => value2}} <-
              Signal.aggregated_timeseries_data(signal, selector, second_start, second_end, nil) do
         [
           %{datetime: first_start, value: value1},
@@ -177,9 +174,7 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
         |> Map.merge(details_kv)
 
       template = """
-      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{signal_human_readable_name}} #{
-        operation_template
-      }.
+      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{signal_human_readable_name}} #{operation_template}.
       #{curr_value_template}.
 
       #{details_template}

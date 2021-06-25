@@ -25,9 +25,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
             sum(measure) AS tokens_amount
         FROM distribution_deltas_5min FINAL
         PREWHERE
-          metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{
-      metric
-    }' ) AND
+          metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{metric}' ) AND
           asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
           dt < toDateTime(?2)
         GROUP BY t
@@ -78,9 +76,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
             -sum(measure) AS tokens_amount
         FROM distribution_deltas_5min FINAL
         PREWHERE
-          metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{
-      metric
-    }' ) AND
+          metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{metric}' ) AND
           asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
           dt >= toDateTime(?2) AND
           dt < toDateTime(?3) AND
@@ -330,9 +326,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     label_str_as = Keyword.get(opts, :label_str_as, "label_str")
 
     """
-    dictGet('default.eth_label_dict', 'labels', (cityHash64(address), toUInt64(0))) AS #{
-      label_str_as
-    },
+    dictGet('default.eth_label_dict', 'labels', (cityHash64(address), toUInt64(0))) AS #{label_str_as},
     splitByChar(',', #{label_str_as}) AS label_arr_internal,
     multiIf(
       has(label_arr_internal, 'decentralized_exchange'), 'DEX',

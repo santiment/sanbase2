@@ -192,16 +192,12 @@ defmodule Sanbase.Intercom do
 
       {:ok, %HTTPoison.Response{} = response} ->
         Logger.error(
-          "Error sending to intercom stats: #{inspect(stats_json |> Jason.decode!())}}. Response: #{
-            inspect(response)
-          }"
+          "Error sending to intercom stats: #{inspect(stats_json |> Jason.decode!())}}. Response: #{inspect(response)}"
         )
 
       {:error, reason} ->
         Logger.error(
-          "Error sending to intercom stats: #{inspect(stats_json |> Jason.decode!())}}. Reason: #{
-            inspect(reason)
-          }"
+          "Error sending to intercom stats: #{inspect(stats_json |> Jason.decode!())}}. Reason: #{inspect(reason)}"
         )
     end
   end

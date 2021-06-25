@@ -29,9 +29,7 @@ defmodule Sanbase.SocialData.Sentiment do
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch sentiment #{type} data for #{inspect(selector)}: #{
-            HTTPoison.Error.message(error)
-          }"
+          "Cannot fetch sentiment #{type} data for #{inspect(selector)}: #{HTTPoison.Error.message(error)}"
         )
 
       {:error, error} ->

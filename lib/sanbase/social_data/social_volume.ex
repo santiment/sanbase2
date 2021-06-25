@@ -44,9 +44,7 @@ defmodule Sanbase.SocialData.SocialVolume do
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch social volume data for #{inspect(selector)}: #{
-            HTTPoison.Error.message(error)
-          }"
+          "Cannot fetch social volume data for #{inspect(selector)}: #{HTTPoison.Error.message(error)}"
         )
     end
   end
@@ -70,9 +68,7 @@ defmodule Sanbase.SocialData.SocialVolume do
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch social volume data for #{inspect(selector)}: #{
-            HTTPoison.Error.message(error)
-          }"
+          "Cannot fetch social volume data for #{inspect(selector)}: #{HTTPoison.Error.message(error)}"
         )
 
       {:error, error} ->

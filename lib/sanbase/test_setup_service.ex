@@ -1,6 +1,6 @@
 defmodule Sanbase.TestSetupService do
   @moduledoc ~s"""
-  Module for fast checking if a slug is existing.
+  Module for fast checking if a slug exists.
 
   The slugs are stored in an ETS table and the check is done via :ets.lookup/2.
   This is faster than caching all slugs, retrieving them in the caller process and

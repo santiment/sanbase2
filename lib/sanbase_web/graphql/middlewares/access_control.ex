@@ -303,7 +303,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         |> Resolution.put_result(
           {:error,
            """
-           Both `from` and `to` parameters are outside the allowed interval you can query #{context[:__query_argument_atom_name__] |> elem(1)} with your current subscription #{context[:product_id] |> Product.code_by_id()} #{context[:auth][:plan] || :free}. Upgrade to a higher tier in order to access more data.
+           Both `from` and `to` parameters are outside the allowed interval you can query #{
+             context[:__query_argument_atom_name__] |> elem(1)
+           } with your current subscription #{context[:product_id] |> Product.code_by_id()} #{
+             context[:auth][:plan] || :free
+           }. Upgrade to a higher tier in order to access more data.
 
            Allowed time restrictions:
              - `from` - #{restricted_from || "unrestricted"}

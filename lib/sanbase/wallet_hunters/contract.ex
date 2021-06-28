@@ -158,7 +158,9 @@ defmodule Sanbase.WalletHunters.Contract do
 
       {:error, reason} ->
         Logger.error(
-          "Error occurred during executing smart contract call #{function_name} with args: #{inspect(args)}. reason: #{inspect(reason)}"
+          "Error occurred during executing smart contract call #{function_name} with args: #{
+            inspect(args)
+          }. reason: #{inspect(reason)}"
         )
 
         {:error, "Error occured during executing smart contract call"}
@@ -170,7 +172,7 @@ defmodule Sanbase.WalletHunters.Contract do
 
   # TODO - remove after testing on Rinkeby Ethereum Test Network
   defp maybe_replace_rinkeby(func, func_name) do
-    maybe_put_rinkeby_url()
+    maybe_put_rinkeby()
 
     try do
       {elapsed, result} = :timer.tc(fn -> func.() end)
@@ -184,18 +186,18 @@ defmodule Sanbase.WalletHunters.Contract do
 
         {:error, "Error occurred while executing smart contract call."}
     after
-      maybe_put_parity_url()
+      maybe_put_parity()
     end
   end
 
-  defp maybe_put_rinkeby_url() do
+  defp maybe_put_rinkeby() do
     if localhost_or_stage?() do
       rinkeby_url = System.get_env("RINKEBY_URL")
       Application.put_env(:ethereumex, :url, rinkeby_url)
     end
   end
 
-  defp maybe_put_parity_url() do
+  defp maybe_put_parity() do
     if localhost_or_stage?() do
       Application.put_env(:ethereumex, :url, System.get_env("PARITY_URL"))
     end

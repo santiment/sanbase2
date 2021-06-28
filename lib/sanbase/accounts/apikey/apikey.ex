@@ -59,7 +59,9 @@ defmodule Sanbase.Accounts.Apikey do
     else
       error ->
         {:error,
-         "Error generating new apikey for user with id #{user_id}. Inspecting error: #{inspect(error)}"}
+         "Error generating new apikey for user with id #{user_id}. Inspecting error: #{
+           inspect(error)
+         }"}
     end
   end
 

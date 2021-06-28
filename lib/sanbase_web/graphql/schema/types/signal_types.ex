@@ -69,7 +69,12 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
     The default aggregation can be changed by the `aggregation` parameter of
     the `timeseriesData` field. Available aggregations are:
     [
-    #{Signal.available_aggregations() |> Enum.map(&Atom.to_string/1) |> Enum.map(&String.upcase/1) |> Enum.join(",")}
+    #{
+      Signal.available_aggregations()
+      |> Enum.map(&Atom.to_string/1)
+      |> Enum.map(&String.upcase/1)
+      |> Enum.join(",")
+    }
     ]
     """
     field(:default_aggregation, :aggregation)

@@ -65,8 +65,9 @@ defmodule Sanbase.SmartContracts.UniswapPair do
     # to "latest", then it is populated by a keyword list and fails.
     opts = [transform_args_list_fun: fn list -> list ++ ["latest"] end]
 
-    call_contract_batch(contract, "balanceOf(address)", addresses_args, [{:uint, 256}], opts)
-    |> Enum.map(fn [balance] -> [format_number(balance, @decimals)] end)
+    balances =
+      call_contract_batch(contract, "balanceOf(address)", addresses_args, [{:uint, 256}], opts)
+      |> Enum.map(fn [balance] -> [format_number(balance, @decimals)] end)
   end
 
   @spec get_san_position(address) :: 0 | 1

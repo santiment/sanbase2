@@ -43,7 +43,7 @@ defmodule Sanbase.Accounts.Hmac do
 
   @spec hmac(String.t()) :: String.t()
   def hmac(token) when is_binary(token) do
-    :crypto.mac(:hmac, :sha256, secret_key(), token)
+    :crypto.hmac(:sha256, secret_key(), token)
     |> Base.encode32(case: :lower)
     |> binary_part(0, byte_size(token))
   end

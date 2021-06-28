@@ -328,7 +328,9 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
   defp update_table_configuration(conn, table_configuration_id, settings) do
     query = """
     mutation {
-      updateTableConfiguration(id: #{table_configuration_id}, settings: #{map_to_input_object_str(settings)}) {
+      updateTableConfiguration(id: #{table_configuration_id}, settings: #{
+      map_to_input_object_str(settings)
+    }) {
         id
         title
         type

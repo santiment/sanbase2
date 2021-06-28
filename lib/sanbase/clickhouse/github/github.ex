@@ -53,7 +53,9 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   @doc ~s"""
-  Return the number of github events, excluding the non-development related events (#{non_dev_events()}) for a given organization and time period
+  Return the number of github events, excluding the non-development related events (#{
+    non_dev_events()
+  }) for a given organization and time period
   """
   @spec total_dev_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
           {:ok, list({String.t(), non_neg_integer()})} | {:error, String.t()}

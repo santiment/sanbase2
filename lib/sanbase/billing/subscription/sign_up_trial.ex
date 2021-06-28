@@ -300,7 +300,9 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
        when plan_id in @free_trial_plans do
     if by_subscription_id(subscription.id) do
       Logger.info(
-        "Deleting subscription with id: #{subscription.stripe_id} for user: #{subscription.user_id}"
+        "Deleting subscription with id: #{subscription.stripe_id} for user: #{
+          subscription.user_id
+        }"
       )
 
       StripeApi.delete_subscription(subscription.stripe_id)

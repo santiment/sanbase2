@@ -12,6 +12,8 @@ defmodule Sanbase.Utils.JsonLogger do
     ]
   rescue
     error ->
-      "Could not format log message as json: #{inspect({level, timestamp, message, metadata})}. Reason: #{inspect(error)}.\n"
+      "Could not format log message as json: #{inspect({level, timestamp, message, metadata})}. Reason: #{
+        inspect(error)
+      }.\n"
   end
 end

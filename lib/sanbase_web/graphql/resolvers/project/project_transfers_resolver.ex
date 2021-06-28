@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     async(fn -> calculate_token_top_transfers(project, args) end)
   end
 
-  defp calculate_token_top_transfers(%Project{slug: slug}, args) do
+  defp calculate_token_top_transfers(%Project{slug: slug} = project, args) do
     %{from: from, to: to, limit: limit} = args
     limit = Enum.min([limit, 100])
     excluded_addresses = Map.get(args, :excluded_addresses, [])
@@ -173,7 +173,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     else
       error ->
         Logger.warn(
-          "Cannot fetch top ETH transfers for #{Project.describe(project)}. Reason: #{inspect(error)}"
+          "Cannot fetch top ETH transfers for #{Project.describe(project)}. Reason: #{
+            inspect(error)
+          }"
         )
 
         {:nocache, {:ok, []}}
@@ -200,7 +202,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     else
       error ->
         Logger.warn(
-          "Cannot fetch top ETH transfers for #{Project.describe(project)}. Reason: #{inspect(error)}"
+          "Cannot fetch top ETH transfers for #{Project.describe(project)}. Reason: #{
+            inspect(error)
+          }"
         )
 
         {:nocache, {:ok, []}}
@@ -264,7 +268,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
 
       error ->
         Logger.warn(
-          "Cannot calculate ETH spent over time for for #{Project.describe(project)}. Reason: #{inspect(error)}"
+          "Cannot calculate ETH spent over time for for #{Project.describe(project)}. Reason: #{
+            inspect(error)
+          }"
         )
 
         {:nocache, {:ok, []}}

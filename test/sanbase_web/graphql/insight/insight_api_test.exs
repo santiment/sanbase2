@@ -730,7 +730,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
       mutation = """
         mutation {
-          updateInsight(id: #{post.id} title: "Awesome post2", text: "Example body2", tags: ["#{tag2.name}"], imageUrls: ["#{image_url}"]) {
+          updateInsight(id: #{post.id} title: "Awesome post2", text: "Example body2", tags: ["#{
+        tag2.name
+      }"], imageUrls: ["#{image_url}"]) {
             id,
             title,
             text,

@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
   alias Sanbase.Accounts.User.UniswapStaking
 
   setup_with_mocks([
-    {SignUpTrial, [], [create_trial_subscription: fn _ -> {:ok, %{}} end]}
+    {SignUpTrial, [:passtrough], [create_trial_subscription: fn _ -> {:ok, %{}} end]}
   ]) do
     user = insert(:user)
 
@@ -120,7 +120,9 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
       mutation = """
       mutation {
-        emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{user.email_candidate_token}") {
+        emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{
+        user.email_candidate_token
+      }") {
           user {
             email
           },
@@ -161,7 +163,9 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
       mutation = """
       mutation {
-        emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{user.email_candidate_token}") {
+        emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{
+        user.email_candidate_token
+      }") {
           user {
             email
           }
@@ -188,7 +192,9 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
       query = """
       mutation {
-        emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{user.email_candidate_token}") {
+        emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{
+        user.email_candidate_token
+      }") {
           user {
             email
           }
@@ -507,7 +513,9 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     end
   end
 
-  test "logout clears session", %{conn: conn} do
+  test "logout clears session", %{
+    conn: conn
+  } do
     query = """
     mutation {
       logout {

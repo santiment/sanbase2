@@ -79,7 +79,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
   def fetch_and_store_prices(%Project{} = project, %DateTime{} = last_fetched_datetime) do
     Logger.info("""
-    [CMC] Fetching and storing prices for #{Project.describe(project)} with last fetched datetime #{last_fetched_datetime}
+    [CMC] Fetching and storing prices for #{Project.describe(project)} with last fetched datetime #{
+      last_fetched_datetime
+    }
     """)
 
     case LatestCoinmarketcapData.coinmarketcap_integer_id(project) do
@@ -255,10 +257,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
          {from_unix, to_unix} = interval
        ) do
     Logger.info("""
-      [CMC] Extracting price points for TOTAL_MARKET and interval [#{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}]
+      [CMC] Extracting price points for TOTAL_MARKET and interval [#{
+      DateTime.from_unix!(from_unix)
+    } - #{DateTime.from_unix!(to_unix)}]
     """)
 
-    "/v1.1/global-metrics/quotes/historical?format=chart&interval=5m&time_start=#{from_unix}&time_end=#{to_unix}"
+    "/v1.1/global-metrics/quotes/historical?format=chart&interval=5m&time_start=#{from_unix}&time_end=#{
+      to_unix
+    }"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
@@ -283,10 +289,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   defp extract_price_points_for_interval(id, {from_unix, to_unix} = interval)
        when is_integer(id) do
     Logger.info("""
-      [CMC] Extracting price points for coinmarketcap integer id #{id} and interval [#{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}]
+      [CMC] Extracting price points for coinmarketcap integer id #{id} and interval [#{
+      DateTime.from_unix!(from_unix)
+    } - #{DateTime.from_unix!(to_unix)}]
     """)
 
-    "/v1.1/cryptocurrency/quotes/historical?convert=USD,BTC&format=chart_crypto_details&id=#{id}&time_start=#{from_unix}&time_end=#{to_unix}"
+    "/v1.1/cryptocurrency/quotes/historical?convert=USD,BTC&format=chart_crypto_details&id=#{id}&time_start=#{
+      from_unix
+    }&time_end=#{to_unix}"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
@@ -298,7 +308,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
       {:ok, %Tesla.Env{status: status}} ->
         error_msg = """
-        [CMC] Error fetching data for project with coinmarketcap integer id #{id}. Status code: #{status}
+        [CMC] Error fetching data for project with coinmarketcap integer id #{id}. Status code: #{
+          status
+        }
         """
 
         Logger.error(error_msg)

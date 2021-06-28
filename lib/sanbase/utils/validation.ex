@@ -43,7 +43,9 @@ defmodule Sanbase.Validation do
 
       false ->
         {:error,
-         "Time window should be bigger than #{min_time_window}. Time window provided: #{time_window}"}
+         "Time window should be bigger than #{min_time_window}. Time window provided: #{
+           time_window
+         }"}
     end
   end
 

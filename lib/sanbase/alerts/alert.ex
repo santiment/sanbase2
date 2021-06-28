@@ -368,9 +368,13 @@ defimpl Sanbase.Alert, for: Any do
     """
     Your maximum amount of #{channel} alert notifications per day has been reached.
 
-    To see the full list of triggered alerts today, please visit your [Sanbase Feed](#{SanbaseWeb.Endpoint.feed_url()}).
+    To see the full list of triggered alerts today, please visit your [Sanbase Feed](#{
+      SanbaseWeb.Endpoint.feed_url()
+    }).
 
-    If you’d like to raise your daily notification limit, you can do so anytime in your [Sanbase Account Settings](#{SanbaseWeb.Endpoint.user_account_url()}).
+    If you’d like to raise your daily notification limit, you can do so anytime in your [Sanbase Account Settings](#{
+      SanbaseWeb.Endpoint.user_account_url()
+    }).
     """
   end
 end

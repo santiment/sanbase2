@@ -202,7 +202,9 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
         |> Map.merge(asset_target_blockchain_kv)
 
       template = """
-      The address {{address}}'s {{asset}} balance on the {{target_blockchain}} blockchain has #{operation_template}.
+      The address {{address}}'s {{asset}} balance on the {{target_blockchain}} blockchain has #{
+        operation_template
+      }.
       #{curr_value_template}
       """
 
@@ -232,7 +234,9 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
         |> Map.merge(asset_target_blockchain_kv)
 
       template = """
-      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{asset}} balance on the {{target_blockchain}} blockchain has #{operation_template}.
+      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{asset}} balance on the {{target_blockchain}} blockchain has #{
+        operation_template
+      }.
       #{curr_value_template}
       """
 

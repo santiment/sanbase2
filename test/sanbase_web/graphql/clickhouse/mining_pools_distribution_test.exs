@@ -138,7 +138,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
     with_mock MiningPoolsDistribution, distribution: fn _, _, _, _ -> {:ok, []} end do
       query = """
         {
-          miningPoolsDistribution(slug: "#{context.slug}", from: "#{context.from}", to: "#{context.to}"){
+          miningPoolsDistribution(slug: "#{context.slug}", from: "#{context.from}", to: "#{
+        context.to
+      }"){
             datetime,
             top3,
             top10,
@@ -170,7 +172,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
   defp mining_pools_distribution_query(slug, from, to, interval) do
     """
       {
-        miningPoolsDistribution(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "#{interval}"){
+        miningPoolsDistribution(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "#{
+      interval
+    }"){
           datetime,
           top3,
           top10,

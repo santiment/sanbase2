@@ -32,7 +32,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
       update_interval = Config.get(:update_interval) |> String.to_integer()
 
       Logger.info(
-        "[CMC] Starting TickerFetcher scraper. It will query coinmarketcap every #{update_interval} seconds."
+        "[CMC] Starting TickerFetcher scraper. It will query coinmarketcap every #{
+          update_interval
+        } seconds."
       )
 
       {:ok, %{update_interval: update_interval}}

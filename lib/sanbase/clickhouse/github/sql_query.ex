@@ -75,7 +75,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       span
     ]
 
-    {query, args}
+    query = {query, args}
   end
 
   def github_activity_contributors_count_query(organizations, from, to, interval) do
@@ -273,7 +273,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     f_pos = Keyword.fetch!(opts, :from_datetime_pos)
     s_pos = Keyword.fetch!(opts, :span_pos)
 
-    """
+    query = """
     SELECT time, SUM(value)
     FROM (
       SELECT

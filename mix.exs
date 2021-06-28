@@ -6,7 +6,7 @@ defmodule Sanbase.Mixfile do
       app: :sanbase,
       name: "Sanbase",
       version: "0.0.1",
-      elixir: "~> 1.12",
+      elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -74,15 +74,11 @@ defmodule Sanbase.Mixfile do
       {:ecto_sql, "~> 3.6"},
       {:ecto, "~> 3.6"},
       {:envy, "~> 1.1.1", only: [:dev, :test]},
-      # TODO: Remove after the OTP 24 version is released
-      {:jose, github: "potatosalad/erlang-jose", override: true},
       {:erlex, "~> 0.2.6", override: true},
       {:event_bus, "~> 1.6.2"},
       {:ex_admin, github: "santiment/ex_admin"},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_aws, "~> 2.0"},
-      # TODO: Move back to hex once the OTP 24 version is released
-      {:ex_keccak, github: "tzumby/ex_keccak", override: true},
       {:ex_machina, "~> 2.2", only: [:dev, :test]},
       {:ex_unit_notifier, "~> 1.0", only: :test},
       {:excoveralls, "~> 0.8", optional: true, only: [:test]},
@@ -113,8 +109,6 @@ defmodule Sanbase.Mixfile do
       {:mutex, "~> 1.1"},
       {:norm, "~> 0.12"},
       {:number, "~> 1.0"},
-      # TODO: Go back to original once https://github.com/lexmag/oauther/pull/22 is merged
-      {:oauther, github: "tobstarr/oauther", override: true},
       {:observer_cli, "~> 1.3"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_live_dashboard, "~> 0.3"},
@@ -146,7 +140,7 @@ defmodule Sanbase.Mixfile do
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.8.0", override: true},
       {:ethereumex, "~> 0.7.0"},
-      {:ex_abi, "~> 0.5.4"}
+      {:ex_abi, "~> 0.5.2"}
     ]
   end
 

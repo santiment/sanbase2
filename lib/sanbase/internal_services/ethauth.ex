@@ -67,7 +67,9 @@ defmodule Sanbase.InternalServices.Ethauth do
 
       {:ok, %Tesla.Env{status: status, body: body}} ->
         {:error,
-         "Error fetching SAN balance for address. #{address}. Status: #{status}. Body: #{inspect(body)}"}
+         "Error fetching SAN balance for address. #{address}. Status: #{status}. Body: #{
+           inspect(body)
+         }"}
 
       {:error, error} ->
         {:error, "Error fetching SAN balance for address. #{address}. Reason: #{inspect(error)}"}

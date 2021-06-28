@@ -370,7 +370,9 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
                error_msg = execute_mutation_with_error(context.conn, query)
 
                assert error_msg =~
-                        "Cannot find subscription with id #{subscription.id} for user with id #{context.user.id}. Either this subscription doesn not exist or it does not belong to the user."
+                        "Cannot find subscription with id #{subscription.id} for user with id #{
+                          context.user.id
+                        }. Either this subscription doesn not exist or it does not belong to the user."
              end) =~ "Cannot find subscription with id"
     end
 
@@ -479,7 +481,9 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
                error_msg = execute_mutation_with_error(context.conn, query)
 
                assert error_msg =~
-                        "Cannot find subscription with id #{subscription.id} for user with id #{context.user.id}. Either this subscription doesn not exist or it does not belong to the user."
+                        "Cannot find subscription with id #{subscription.id} for user with id #{
+                          context.user.id
+                        }. Either this subscription doesn not exist or it does not belong to the user."
              end) =~ "Cannot find subscription with id"
     end
 
@@ -577,7 +581,9 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
                error_msg = execute_mutation_with_error(context.conn, query)
 
                assert error_msg =~
-                        "Cannot find subscription with id #{subscription.id} for user with id #{context.user.id}. Either this subscription doesn not exist or it does not belong to the user."
+                        "Cannot find subscription with id #{subscription.id} for user with id #{
+                          context.user.id
+                        }. Either this subscription doesn not exist or it does not belong to the user."
              end) =~ "Cannot find subscription with id"
     end
 

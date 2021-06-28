@@ -41,7 +41,9 @@ defmodule Sanbase.SocialData.Community do
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch community messages count data for project #{slug}: #{HTTPoison.Error.message(error)}"
+          "Cannot fetch community messages count data for project #{slug}: #{
+            HTTPoison.Error.message(error)
+          }"
         )
     end
   end

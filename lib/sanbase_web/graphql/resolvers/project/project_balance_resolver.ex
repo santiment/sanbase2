@@ -86,7 +86,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     else
       error ->
         Logger.warn(
-          "Cannot calculate USD balance for #{Project.describe(project)}. Reason: #{inspect(error)}"
+          "Cannot calculate USD balance for #{Project.describe(project)}. Reason: #{
+            inspect(error)
+          }"
         )
 
         {:nocache, {:ok, nil}}

@@ -31,7 +31,9 @@ defmodule Sanbase.WatchlistFunction do
     else
       {%{}, %{} = unsupported_keys_map} ->
         {:error,
-         "Dynamic watchlist 'selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys_map))}"}
+         "Dynamic watchlist 'selector' has unsupported fields: #{
+           inspect(Map.keys(unsupported_keys_map))
+         }"}
 
       {:error, error} ->
         {:error, error}
@@ -145,7 +147,9 @@ defmodule Sanbase.WatchlistFunction do
 
       {_selector, unsupported_keys_map} ->
         {:error,
-         "Dynamic watchlist 'selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys_map))}"}
+         "Dynamic watchlist 'selector' has unsupported fields: #{
+           inspect(Map.keys(unsupported_keys_map))
+         }"}
     end
   end
 

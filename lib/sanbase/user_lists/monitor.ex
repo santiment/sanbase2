@@ -52,7 +52,9 @@ defmodule Sanbase.UserList.Monitor do
 
   def send_email(send_params, user) do
     Logger.warn(
-      "Failed sending watchlist monitor digest to user: #{inspect(user)}. Send params: #{inspect(send_params)}"
+      "Failed sending watchlist monitor digest to user: #{inspect(user)}. Send params: #{
+        inspect(send_params)
+      }"
     )
 
     :ok
@@ -137,7 +139,9 @@ defmodule Sanbase.UserList.Monitor do
 
       {:error, error} ->
         Logger.error(
-          "error computing combined marketcap for slugs: #{inspect(slugs)}. Reason: #{inspect(error)}"
+          "error computing combined marketcap for slugs: #{inspect(slugs)}. Reason: #{
+            inspect(error)
+          }"
         )
 
         nil

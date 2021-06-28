@@ -87,7 +87,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
       {:error, error} ->
         error_msg =
-          "Error fetching top #{projects_number} projects' information. Error message #{inspect(error)}"
+          "Error fetching top #{projects_number} projects' information. Error message #{
+            inspect(error)
+          }"
 
         Logger.error(error_msg)
 

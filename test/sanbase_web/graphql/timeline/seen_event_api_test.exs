@@ -4,16 +4,21 @@ defmodule SanbaseWeb.Graphql.SeenEventApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Insight.Post
+  alias Sanbase.UserList
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Accounts.UserFollower
+  alias Sanbase.Comments.EntityComment
+  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Timeline.SeenEvent
 
+  @entity_type :timeline_event
   @inight_type TimelineEvent.publish_insight_type()
 
   setup do
     user = insert(:user, email: "test@example.com")
     conn = setup_jwt_auth(build_conn(), user)
-    _role_san_clan = insert(:role_san_clan)
+    role_san_clan = insert(:role_san_clan)
     san_author = insert(:user)
 
     UserFollower.follow(san_author.id, user.id)

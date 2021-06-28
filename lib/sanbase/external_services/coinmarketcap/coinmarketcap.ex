@@ -196,7 +196,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   defp mark_rescrape_as_finished(%ScheduleRescrapePrice{} = srp) do
-    %ScheduleRescrapePrice{project: project} = srp
+    %ScheduleRescrapePrice{project: project, to: to} = srp
 
     kill_scheduled_scraping(project)
 

@@ -1,4 +1,4 @@
-FROM elixir:1.12.1-alpine
+FROM santimentjenkins/elixir:1.12
 
 RUN apk add --no-cache make \
                        g++ \

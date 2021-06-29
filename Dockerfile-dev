@@ -1,17 +1,19 @@
-FROM elixir:1.12.1-alpine
+FROM elixir:1.12.1-slim
 
-RUN apk add --no-cache make \
-                       g++ \
-                       git \
-                       postgresql-client \
-                       nodejs \
-                       nodejs-npm \
-                       inotify-tools \
-                       imagemagick \
-                       openssl \
-                       wget \
-                       rust \
-                       cargo
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+	make \
+	g++ \
+	git \
+	postgresql-client \
+	nodejs \
+	nodejs-npm \
+	inotify-tools \
+	imagemagick \
+	openssl \
+	wget \
+	rust \
+	cargo
 
 RUN mix local.hex --force
 RUN mix local.rebar --force

@@ -1,6 +1,8 @@
-FROM elixir:1.12.1-alpine
+FROM elixir:1.12.1-slim
 
-RUN apk add --no-cache curl
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+	curl
 
 RUN curl https://sh.rustup.rs -sSf | \
   sh -s -- --default-toolchain stable -y
@@ -9,15 +11,17 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 
 ENV PATH=/root/.cargo/bin:$PATH
 
-RUN apk add --no-cache make \
-  g++ \
-  git \
-  postgresql-client \
-  imagemagick \
-  openssl \
-  wget
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+	make \
+	g++ \
+	git \
+	postgresql-client \
+	imagemagick \
+	openssl \
+	wget
 
-ENV MIX_ENV test
+ENV MIX_ENV=test
 
 RUN mix local.hex --force
 RUN mix local.rebar --force

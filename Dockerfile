@@ -1,5 +1,5 @@
 # Elixir and phoenix assets build image
-FROM elixir:1.12.1-alpine as code_builder
+FROM santimentjenkins/elixir:1.12 as code_builder
 
 ENV MIX_ENV prod
 
@@ -44,7 +44,7 @@ RUN mix phx.digest
 RUN mix distillery.release
 
 # Release image
-FROM elixir:1.12.1-alpine
+FROM santimentjenkins/elixir:1.12
 
 ENV MIX_ENV prod
 

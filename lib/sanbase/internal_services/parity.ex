@@ -40,6 +40,13 @@ defmodule Sanbase.InternalServices.Parity do
     end
   end
 
+  def get_eth_balance(addresses) when is_list(addresses) and length(addresses) > 100 do
+    addresses
+    |> Enum.chunk_every(100)
+    |> Enum.map(&get_eth_balance/1)
+    |> Enum.reduce(%{}, &Map.merge(&1, &2))
+  end
+
   def get_eth_balance(addresses) when is_list(addresses) do
     Logger.info("[Parity] Get eth balance for a list of #{length(addresses)} addresses.")
 
@@ -51,7 +58,7 @@ defmodule Sanbase.InternalServices.Parity do
       end
 
     {:ok, %Tesla.Env{status: 200, body: body}} =
-      post(client(), "/", batch, opts: [adapter: [recv_timeout: 15_000]])
+      post(client(), "/", batch, opts: [adapter: [recv_timeout: 25_000]])
 
     case body do
       "" ->

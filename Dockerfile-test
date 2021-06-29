@@ -19,10 +19,13 @@ RUN apt-get update \
 	postgresql-client \
 	imagemagick \
 	openssl \
-	wget
+	wget \
+	apt-transport-https \
+	ca-certificates
 
 ENV MIX_ENV=test
 
+RUN update-ca-certificates
 RUN mix local.hex --force
 RUN mix local.rebar --force
 

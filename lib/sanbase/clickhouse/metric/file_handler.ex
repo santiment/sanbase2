@@ -167,7 +167,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
 
   Enum.group_by(
     @metrics_json_pre_alias_expand,
-    fn metric -> {metric["metric"], metric["data_type"]} end
+    fn metric -> {metric["metric"], metric["data_type"], metric["aggregation"]} end
   )
   |> Map.values()
   |> Enum.filter(fn grouped_metrics -> Enum.count(grouped_metrics) > 1 end)

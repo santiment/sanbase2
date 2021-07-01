@@ -1,6 +1,6 @@
 defmodule Sanbase.Seeds.Helpers do
   @moduledoc ~s"""
-  Provides helper functions for easier consturcing of seeds.
+  Provides helper functions for easier construction of seeds.
   """
   def contract1(), do: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
   def contract2(), do: "0x123123"

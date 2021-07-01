@@ -6171,3 +6171,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210604163821);
 INSERT INTO public."schema_migrations" (version) VALUES (20210608133141);
 INSERT INTO public."schema_migrations" (version) VALUES (20210609082745);
 INSERT INTO public."schema_migrations" (version) VALUES (20210616123403);
+INSERT INTO public."schema_migrations" (version) VALUES (20210701130227);

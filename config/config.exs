@@ -30,6 +30,7 @@ config :sanbase, Sanbase.Transfers.Erc20Transfers,
   address_ordered_table: {:system, "ADDRESS_ORDERED_ERC20_TRANSFERS_TABLE", "erc20_transfers"}
 
 config :sanbase, Sanbase.Kaiko, apikey: {:system, "KAIKO_APIKEY"}
+config :sanbase, Sanbase.Cryptocompare, api_key: {:system, "CRYPTOCOMPARE_API_KEY"}
 
 config :sanbase, Sanbase.KafkaExporter,
   supervisor: SanExporterEx.Producer.Supervisor,
@@ -37,6 +38,7 @@ config :sanbase, Sanbase.KafkaExporter,
   kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
   kafka_port: {:system, "KAFKA_PORT", "9092"},
   prices_topic: {:system, "KAFKA_PRICES_TOPIC", "asset_prices"},
+  asset_price_pairs_topic: {:system, "KAFKA_CRYPTOCOMPARE_PRICES_TOPIC", "asset_price_pairs"},
   api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"}
 
 config :sanbase, Sanbase.EventBus.KafkaExporterSubscriber,

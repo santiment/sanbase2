@@ -148,5 +148,6 @@
   "uuid": {:hex, :uuid, "1.1.8", "e22fc04499de0de3ed1116b770c7737779f226ceefa0badb3592e64d5cfb4eb9", [:mix], [], "hexpm", "c790593b4c3b601f5dc2378baae7efaf5b3d73c4c6456ba85759905be792f2ac"},
   "vex": {:hex, :vex, "0.8.0", "0a04e3aebe5ec443525c88f3833b4481d97de272f891243b62b18efbda85b121", [:mix], [], "hexpm", "36a37f264b36fe4b0430c9f174d71c59845cf56d9e2ae32960038432b16961ea"},
   "waffle": {:hex, :waffle, "1.1.4", "4cad1c2fd67b5c18a0e9fa9278b0de70cd1a143e8fbc73cddca248749cfa8b04", [:mix], [{:ex_aws, "~> 2.1", [hex: :ex_aws, repo: "hexpm", optional: true]}, {:ex_aws_s3, "~> 2.1", [hex: :ex_aws_s3, repo: "hexpm", optional: true]}, {:hackney, "~> 1.9", [hex: :hackney, repo: "hexpm", optional: false]}, {:sweet_xml, "~> 0.6", [hex: :sweet_xml, repo: "hexpm", optional: true]}], "hexpm", "f0ccb04e7e8d8529c3a885750e8014c69b20e9b9881cd80bb4a6f1ce1c1cc88f"},
+  "websockex": {:hex, :websockex, "0.4.3", "92b7905769c79c6480c02daacaca2ddd49de936d912976a4d3c923723b647bf0", [:mix], [], "hexpm", "95f2e7072b85a3a4cc385602d42115b73ce0b74a9121d0d6dbbf557645ac53e4"},
   "xain": {:hex, :xain, "0.6.2", "c43e3f30dc500ee4ed1146e1d6ec2440652d8e7b076f23dd5599fc251b0d84b2", [:mix], [{:phoenix_html, "~> 2.12", [hex: :phoenix_html, repo: "hexpm", optional: false]}], "hexpm", "c67435ac8ca90e242cc44e97be1631f9e920e5c4ca64db60cf97eda441aca58e"},
 }

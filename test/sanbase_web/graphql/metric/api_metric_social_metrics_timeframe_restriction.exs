@@ -39,7 +39,8 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
       {from, to} = from_to(2, 0)
       slug = context.project.slug
       metric = Enum.random(context.metrics)
-      query = metric_query(metric, slug, from, to)
+      interval = "5m"
+      query = metric_query(metric, slug, from, to, interval)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -50,11 +51,14 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
       {from, to} = from_to(5 * 365, 2 * 365)
       slug = context.project.slug
       metric = Enum.random(context.metrics)
-      query = metric_query(metric, slug, from, to)
-      result = execute_query(context.conn, query, "getMetric")
+      interval = "1d"
+      query = metric_query(metric, slug, from, to, interval)
+      result = execute_query_with_error(context.conn, query, "getMetric")
 
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
-      assert result == nil
+
+      assert result =~
+               "Both `from` and `to` parameters are outside the allowed interval you can query"
     end
   end
 
@@ -68,7 +72,8 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
       {from, to} = from_to(2, 0)
       slug = context.project.slug
       metric = Enum.random(context.metrics)
-      query = metric_query(metric, slug, from, to)
+      interval = "5m"
+      query = metric_query(metric, slug, from, to, interval)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -79,7 +84,8 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
       {from, to} = from_to(5 * 365, 2 * 365)
       slug = context.project.slug
       metric = Enum.random(context.metrics)
-      query = metric_query(metric, slug, from, to)
+      interval = "1d"
+      query = metric_query(metric, slug, from, to, interval)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -89,7 +95,7 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
 
   # Private functions
 
-  defp metric_query(metric, slug, from, to) do
+  defp metric_query(metric, slug, from, to, interval) do
     """
       {
         getMetric(metric: "#{metric}") {
@@ -97,7 +103,7 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
             slug: "#{slug}"
             from: "#{from}"
             to: "#{to}"
-            interval: "5m"){
+            interval: "#{interval}"){
               datetime
               value
           }

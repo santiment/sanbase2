@@ -12,7 +12,7 @@ defmodule Sanbase.Application do
     Code.ensure_loaded?(Envy) && Envy.auto_load()
 
     # Container type is one of: web, scrapers, signals, all
-    container_type = System.get_env("CONTAINER_TYPE") || "all"
+    container_type = container_type()
 
     print_starting_log(container_type)
 
@@ -166,8 +166,9 @@ defmodule Sanbase.Application do
             id: :prices_exporter,
             name: :prices_exporter,
             topic: Config.module_get!(Sanbase.KafkaExporter, :prices_topic),
-            buffering_max_messages: 10_000,
-            can_send_after_interval: 250
+            buffering_max_messages: 5_000,
+            can_send_after_interval: 250,
+            kafka_flush_timeout: 1000
           )
         end,
         fn -> container_type in ["all", "scrapers"] end

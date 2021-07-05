@@ -57,11 +57,14 @@ defmodule Sanbase.Application.Scrapers do
         time_between_requests: 10
       ),
 
-      # Price fetcher
+      # Historical coinmarketcap price fetcher
       Sanbase.ExternalServices.Coinmarketcap,
 
-      # Current marketcap fetcher
+      # Realtime coinmarketcap price fetcher
       Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
+
+      # Scrape and export Cryptocompare realtime prices
+      Sanbase.Cryptocompare.Supervisor,
 
       # Twitter account data tracking worker
       Sanbase.Twitter.Worker,

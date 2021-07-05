@@ -226,9 +226,7 @@
     "metric": "dex_traders_to_whale_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -245,9 +243,7 @@
     "metric": "whale_to_dex_traders_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -264,9 +260,7 @@
     "metric": "dex_traders_whale_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -283,9 +277,7 @@
     "metric": "other_to_dex_traders_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -302,9 +294,7 @@
     "metric": "dex_traders_to_other_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -321,9 +311,7 @@
     "metric": "other_dex_traders_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -493,9 +481,7 @@
     "metric": "traders_to_whale_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -512,9 +498,7 @@
     "metric": "whale_to_traders_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -531,9 +515,7 @@
     "metric": "traders_whale_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -550,9 +532,7 @@
     "metric": "other_to_traders_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -569,9 +549,7 @@
     "metric": "traders_to_other_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -588,9 +566,7 @@
     "metric": "other_traders_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -607,9 +583,7 @@
     "metric": "defi_to_cexes_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -626,9 +600,7 @@
     "metric": "cexes_to_defi_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -645,9 +617,7 @@
     "metric": "defi_cex_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -664,9 +634,7 @@
     "metric": "whale_to_cexes_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -683,9 +651,7 @@
     "metric": "cexes_to_whale_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -702,9 +668,7 @@
     "metric": "whale_cex_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -721,9 +685,7 @@
     "metric": "dex_to_cexes_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -740,9 +702,7 @@
     "metric": "cexes_to_dex_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -759,9 +719,7 @@
     "metric": "dex_cex_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -778,9 +736,7 @@
     "metric": "other_to_cexes_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -797,9 +753,7 @@
     "metric": "cexes_to_other_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -816,9 +770,7 @@
     "metric": "other_cex_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -835,9 +787,7 @@
     "metric": "defi_to_dexes_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -854,9 +804,7 @@
     "metric": "dexes_to_defi_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -873,9 +821,7 @@
     "metric": "defi_dex_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -892,9 +838,7 @@
     "metric": "whale_to_dexes_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -911,9 +855,7 @@
     "metric": "dexes_to_whale_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -930,9 +872,7 @@
     "metric": "whale_dex_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -949,9 +889,7 @@
     "metric": "other_to_dexes_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -968,9 +906,7 @@
     "metric": "dexes_to_other_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -987,9 +923,7 @@
     "metric": "other_dex_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1006,9 +940,7 @@
     "metric": "whale_to_defi_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1025,9 +957,7 @@
     "metric": "defi_to_whale_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1044,9 +974,7 @@
     "metric": "whale_defi_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1063,9 +991,7 @@
     "metric": "other_to_defi_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1082,9 +1008,7 @@
     "metric": "defi_to_other_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1101,9 +1025,7 @@
     "metric": "other_defi_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1120,9 +1042,7 @@
     "metric": "other_to_whale_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1139,9 +1059,7 @@
     "metric": "whale_to_other_flow",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1158,9 +1076,7 @@
     "metric": "other_whale_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"

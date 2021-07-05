@@ -42,6 +42,17 @@ defmodule Sanbase.DateTimeUtils do
     0..(count - 1) |> Enum.map(fn offset -> Timex.shift(from, seconds: interval_sec * offset) end)
   end
 
+  def generate_dates_inclusive(%Date{} = from, %Date{} = to) do
+    do_generate_dates_inclusive(from, to, [])
+  end
+
+  defp do_generate_dates_inclusive(from, to, acc) do
+    case Date.compare(from, to) do
+      :gt -> Enum.reverse(acc)
+      _ -> do_generate_dates_inclusive(Date.add(from, 1), to, [from | acc])
+    end
+  end
+
   @doc ~s"""
   Sleep until `datetime` if and only if it is in the future.
   """

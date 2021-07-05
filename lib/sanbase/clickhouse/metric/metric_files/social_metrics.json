@@ -8,10 +8,7 @@
       "historical": "restricted",
       "realtime": "free"
     },
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -28,10 +25,7 @@
     "metric": "social_dominance",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -42,16 +36,14 @@
     "has_incomplete_data": false,
     "data_type": "timeseries"
   },
+
   {
     "human_readable_name": "Sentiment Volume Consumed Total",
     "name": "sentiment_volume_consumed_total",
     "metric": "sentiment_volume_consumed",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -68,10 +60,7 @@
     "metric": "sentiment_positive",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -88,10 +77,7 @@
     "metric": "sentiment_negative",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -108,10 +94,7 @@
     "metric": "sentiment_balance",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -131,10 +114,7 @@
       "historical": "restricted",
       "realtime": "free"
     },
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -144,18 +124,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Social Dominance Telegram",
     "name": "social_dominance_telegram",
     "metric": "social_dominance_telegram",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -165,18 +141,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Volume Consumed Telegram",
     "name": "sentiment_volume_consumed_telegram",
     "metric": "sentiment_volume_consumed_telegram",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -186,18 +158,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Positive Telegram",
     "name": "sentiment_positive_telegram",
     "metric": "sentiment_positive_telegram",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -207,18 +175,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Negative Telegram",
     "name": "sentiment_negative_telegram",
     "metric": "sentiment_negative_telegram",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -228,18 +192,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Balance Telegram",
     "name": "sentiment_balance_telegram",
     "metric": "sentiment_balance_telegram",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -249,8 +209,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Social Volume Reddit",
     "name": "social_volume_reddit",
@@ -260,10 +219,7 @@
       "historical": "restricted",
       "realtime": "free"
     },
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -273,18 +229,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Social Dominance Reddit",
     "name": "social_dominance_reddit",
     "metric": "social_dominance_reddit",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -294,18 +246,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Volume Consumed Reddit",
     "name": "sentiment_volume_consumed_reddit",
     "metric": "sentiment_volume_consumed_reddit",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -315,18 +263,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Positive Reddit",
     "name": "sentiment_positive_reddit",
     "metric": "sentiment_positive_reddit",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -336,18 +280,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Negative Reddit",
     "name": "sentiment_negative_reddit",
     "metric": "sentiment_negative_reddit",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -357,18 +297,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Balance Reddit",
     "name": "sentiment_balance_reddit",
     "metric": "sentiment_balance_reddit",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -378,9 +314,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
-
+  },
   {
     "human_readable_name": "Social Volume Discord",
     "name": "social_volume_discord",
@@ -390,10 +324,7 @@
       "historical": "restricted",
       "realtime": "free"
     },
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -403,18 +334,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Social Dominance Discord",
     "name": "social_dominance_discord",
     "metric": "social_dominance_discord",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -424,18 +351,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Volume Consumed Discord",
     "name": "sentiment_volume_consumed_discord",
     "metric": "sentiment_volume_consumed_discord",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -445,18 +368,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Positive Discord",
     "name": "sentiment_positive_discord",
     "metric": "sentiment_positive_discord",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -466,18 +385,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Negative Discord",
     "name": "sentiment_negative_discord",
     "metric": "sentiment_negative_discord",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -487,18 +402,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Balance Discord",
     "name": "sentiment_balance_discord",
     "metric": "sentiment_balance_discord",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -508,8 +419,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Social Volume Professional Traders Chat",
     "name": "social_volume_professional_traders_chat",
@@ -519,10 +429,7 @@
       "historical": "restricted",
       "realtime": "free"
     },
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -532,18 +439,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Social Dominance Professional Traders Chat",
     "name": "social_dominance_professional_traders_chat",
     "metric": "social_dominance_professional_traders_chat",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -553,18 +456,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Volume Consumed Professional Traders Chat",
     "name": "sentiment_volume_consumed_professional_traders_chat",
     "metric": "sentiment_volume_consumed_professional_traders_chat",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -574,18 +473,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Positive Professional Traders Chat",
     "name": "sentiment_positive_professional_traders_chat",
     "metric": "sentiment_positive_professional_traders_chat",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -595,18 +490,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Negative Professional Traders Chat",
     "name": "sentiment_negative_professional_traders_chat",
     "metric": "sentiment_negative_professional_traders_chat",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -616,18 +507,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Balance Professional Traders Chat",
     "name": "sentiment_balance_professional_traders_chat",
     "metric": "sentiment_balance_professional_traders_chat",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -637,8 +524,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Social Volume Twitter",
     "name": "social_volume_twitter",
@@ -648,10 +534,7 @@
       "historical": "restricted",
       "realtime": "free"
     },
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -661,18 +544,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Social Dominance Twitter",
     "name": "social_dominance_twitter",
     "metric": "social_dominance_twitter",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -682,18 +561,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Volume Consumed Twitter",
     "name": "sentiment_volume_consumed_twitter",
     "metric": "sentiment_volume_consumed_twitter",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -703,18 +578,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Positive Twitter",
     "name": "sentiment_positive_twitter",
     "metric": "sentiment_positive_twitter",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -724,18 +595,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Negative Twitter",
     "name": "sentiment_negative_twitter",
     "metric": "sentiment_negative_twitter",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -745,18 +612,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Balance Twitter",
     "name": "sentiment_balance_twitter",
     "metric": "sentiment_balance_twitter",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -766,8 +629,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Social Volume Bitcointalk",
     "name": "social_volume_bitcointalk",
@@ -777,10 +639,7 @@
       "historical": "restricted",
       "realtime": "free"
     },
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -790,18 +649,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Social Dominance Bitcointalk",
     "name": "social_dominance_bitcointalk",
     "metric": "social_dominance_bitcointalk",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -811,18 +666,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Volume Consumed Bitcointalk",
     "name": "sentiment_volume_consumed_bitcointalk",
     "metric": "sentiment_volume_consumed_bitcointalk",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -832,18 +683,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Positive Bitcointalk",
     "name": "sentiment_positive_bitcointalk",
     "metric": "sentiment_positive_bitcointalk",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -853,18 +700,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Negative Bitcointalk",
     "name": "sentiment_negative_bitcointalk",
     "metric": "sentiment_negative_bitcointalk",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -874,18 +717,14 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Balance Bitcointalk",
     "name": "sentiment_balance_bitcointalk",
     "metric": "sentiment_balance_bitcointalk",
     "version": "2020-07-31",
     "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
+    "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"

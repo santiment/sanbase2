@@ -3,6 +3,14 @@ defmodule Sanbase.ApplicationUtils do
   require Sanbase.Utils.Config, as: Config
 
   @doc ~s"""
+  Get the container type of the currently running pod. It can be one of web,
+  signals, scrapers or all. If no container typer is defined, it defaults to all.
+  """
+  def container_type() do
+    System.get_env("CONTAINER_TYPE") || "all"
+  end
+
+  @doc ~s"""
   Start a worker/supervisor only in particular environment(s).
   Example: Not startuing `MySupervisor` in tests can now be done by replacing
   `{MySupervisor, []}` in the supervisor children by

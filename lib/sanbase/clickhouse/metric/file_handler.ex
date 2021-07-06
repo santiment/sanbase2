@@ -76,9 +76,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
       )
     end
 
-    def access_level_to_atom(access) when is_binary(access), do: String.to_existing_atom(access)
+    def atomize_access_level_value(access) when is_binary(access),
+      do: String.to_existing_atom(access)
 
-    def access_level_to_atom(access) when is_map(access) do
+    def atomize_access_level_value(access) when is_map(access) do
       Enum.into(access, %{}, fn {k, v} -> {k, String.to_existing_atom(v)} end)
     end
 
@@ -153,7 +154,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @name_to_metric_map Helper.name_to_field_map(@metrics_json, "metric")
   @metric_to_name_map @name_to_metric_map |> Map.new(fn {k, v} -> {v, k} end)
   @access_map Helper.name_to_field_map(@metrics_json, "access",
-                transform_fn: &Helper.access_level_to_atom/1
+                transform_fn: &Helper.atomize_access_level_value/1
               )
 
   @table_map Helper.name_to_field_map(@metrics_json, "table")

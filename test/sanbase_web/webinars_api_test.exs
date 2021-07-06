@@ -14,8 +14,10 @@ defmodule SanbaseWeb.Graphql.WebinarsApiTest do
 
   describe "get webinars" do
     setup do
-      free_webinar = insert(:webinar, is_pro: false)
-      pro_webinar = insert(:webinar, is_pro: true)
+      now = Timex.now()
+      one_min_ago = Timex.shift(now, minutes: -1)
+      free_webinar = insert(:webinar, is_pro: false, inserted_at: now)
+      pro_webinar = insert(:webinar, is_pro: true, inserted_at: one_min_ago)
 
       free_user = insert(:user)
       free_conn = setup_jwt_auth(build_conn(), free_user)
@@ -120,6 +122,7 @@ defmodule SanbaseWeb.Graphql.WebinarsApiTest do
         startTime
         endTime
         imageUrl
+        insertedAt
       }
     }
     """

@@ -1,6 +1,7 @@
 defmodule Sanbase.Webinar do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Repo
 
@@ -33,7 +34,8 @@ defmodule Sanbase.Webinar do
   end
 
   def list() do
-    Repo.all(__MODULE__)
+    from(w in __MODULE__, order_by: [desc: w.inserted_at])
+    |> Repo.all()
   end
 
   def create(params) do

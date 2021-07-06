@@ -10,6 +10,7 @@
     <tr><td class="border px-4 py-2">PRO?</td> <td class="border px-4 py-2"><%= @webinar.is_pro %></td></tr>
     <tr><td class="border px-4 py-2">Start time</td> <td class="border px-4 py-2"><%= @webinar.start_time %></td></tr>
     <tr><td class="border px-4 py-2">End time</td> <td class="border px-4 py-2"><%= @webinar.end_time %></td></tr>
+    <tr><td class="border px-4 py-2">Inserted at</td> <td class="border px-4 py-2"><%= @webinar.inserted_at %></td></tr>
   </tbody>
 </table>
 

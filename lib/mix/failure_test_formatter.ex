@@ -36,7 +36,7 @@ defmodule Sanbase.FailedTestFormatter do
     {:noreply, config}
   end
 
-  def handle_cast({:suite_finished, _run_us, _load_us}, config) do
+  def handle_cast({:suite_finished, _times_us}, config) do
     print_suite(config)
     {:noreply, config}
   end

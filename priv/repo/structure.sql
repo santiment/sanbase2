@@ -16,6 +16,7 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+
 --
 -- Name: sanbase_scrapers; Type: SCHEMA; Schema: -; Owner: -
 --
@@ -5324,7 +5325,7 @@ CREATE INDEX oban_jobs_queue_state_priority_scheduled_at_id_index ON sanbase_scr
 -- Name: oban_jobs oban_notify; Type: TRIGGER; Schema: sanbase_scrapers; Owner: -
 --
 
-CREATE TRIGGER oban_notify AFTER INSERT ON sanbase_scrapers.oban_jobs FOR EACH ROW EXECUTE FUNCTION sanbase_scrapers.oban_jobs_notify();
+CREATE TRIGGER oban_notify AFTER INSERT ON sanbase_scrapers.oban_jobs FOR EACH ROW EXECUTE PROCEDURE sanbase_scrapers.oban_jobs_notify();
 
 
 --

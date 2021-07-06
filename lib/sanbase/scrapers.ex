@@ -63,7 +63,11 @@ defmodule Sanbase.Application.Scrapers do
       # Realtime coinmarketcap price fetcher
       Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
 
-      # Scrape and export Cryptocompare realtime prices
+      # Oban for scraper jobs
+      {Oban, Application.fetch_env!(:sanbase, Oban.Scrapers)},
+
+      # Scrape and export Cryptocompare realtime and historical prices.
+      # Historical prices work is scheduled by Oban
       Sanbase.Cryptocompare.Supervisor,
 
       # Twitter account data tracking worker

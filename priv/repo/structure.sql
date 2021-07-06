@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 13.1
+-- Dumped by pg_dump version 13.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -15,6 +15,13 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
+
+--
+-- Name: sanbase_scrapers; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA sanbase_scrapers;
+
 
 --
 -- Name: citext; Type: EXTENSION; Schema: -; Owner: -
@@ -104,6 +111,21 @@ CREATE TYPE public.watchlist_type AS ENUM (
 
 
 --
+-- Name: oban_job_state; Type: TYPE; Schema: sanbase_scrapers; Owner: -
+--
+
+CREATE TYPE sanbase_scrapers.oban_job_state AS ENUM (
+    'available',
+    'scheduled',
+    'executing',
+    'retryable',
+    'completed',
+    'discarded',
+    'cancelled'
+);
+
+
+--
 -- Name: jsonb_rename_keys(jsonb, text[]); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -133,6 +155,29 @@ BEGIN
   END LOOP;
 
   RETURN result;
+END;
+$$;
+
+
+--
+-- Name: oban_jobs_notify(); Type: FUNCTION; Schema: sanbase_scrapers; Owner: -
+--
+
+CREATE FUNCTION sanbase_scrapers.oban_jobs_notify() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  channel text;
+  notice json;
+BEGIN
+  IF NEW.state = 'available' THEN
+    channel = 'sanbase_scrapers.oban_insert';
+    notice = json_build_object('queue', NEW.queue);
+
+    PERFORM pg_notify(channel, notice::text);
+  END IF;
+
+  RETURN NULL;
 END;
 $$;
 
@@ -205,6 +250,41 @@ CREATE SEQUENCE public.api_call_limits_id_seq
 --
 
 ALTER SEQUENCE public.api_call_limits_id_seq OWNED BY public.api_call_limits.id;
+
+
+--
+-- Name: asset_exchange_pairs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.asset_exchange_pairs (
+    id bigint NOT NULL,
+    base_asset character varying(255) NOT NULL,
+    quote_asset character varying(255) NOT NULL,
+    exchange character varying(255) NOT NULL,
+    source character varying(255) NOT NULL,
+    last_update timestamp(0) without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: asset_exchange_pairs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.asset_exchange_pairs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: asset_exchange_pairs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.asset_exchange_pairs_id_seq OWNED BY public.asset_exchange_pairs.id;
 
 
 --
@@ -3017,6 +3097,63 @@ ALTER SEQUENCE public.webinars_id_seq OWNED BY public.webinars.id;
 
 
 --
+-- Name: oban_jobs; Type: TABLE; Schema: sanbase_scrapers; Owner: -
+--
+
+CREATE TABLE sanbase_scrapers.oban_jobs (
+    id bigint NOT NULL,
+    state sanbase_scrapers.oban_job_state DEFAULT 'available'::sanbase_scrapers.oban_job_state NOT NULL,
+    queue text DEFAULT 'default'::text NOT NULL,
+    worker text NOT NULL,
+    args jsonb DEFAULT '{}'::jsonb NOT NULL,
+    errors jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,
+    attempt integer DEFAULT 0 NOT NULL,
+    max_attempts integer DEFAULT 20 NOT NULL,
+    inserted_at timestamp without time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
+    scheduled_at timestamp without time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
+    attempted_at timestamp without time zone,
+    completed_at timestamp without time zone,
+    attempted_by text[],
+    discarded_at timestamp without time zone,
+    priority integer DEFAULT 0 NOT NULL,
+    tags character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    meta jsonb DEFAULT '{}'::jsonb,
+    cancelled_at timestamp without time zone,
+    CONSTRAINT attempt_range CHECK (((attempt >= 0) AND (attempt <= max_attempts))),
+    CONSTRAINT positive_max_attempts CHECK ((max_attempts > 0)),
+    CONSTRAINT priority_range CHECK (((priority >= 0) AND (priority <= 3))),
+    CONSTRAINT queue_length CHECK (((char_length(queue) > 0) AND (char_length(queue) < 128))),
+    CONSTRAINT worker_length CHECK (((char_length(worker) > 0) AND (char_length(worker) < 128)))
+);
+
+
+--
+-- Name: TABLE oban_jobs; Type: COMMENT; Schema: sanbase_scrapers; Owner: -
+--
+
+COMMENT ON TABLE sanbase_scrapers.oban_jobs IS '10';
+
+
+--
+-- Name: oban_jobs_id_seq; Type: SEQUENCE; Schema: sanbase_scrapers; Owner: -
+--
+
+CREATE SEQUENCE sanbase_scrapers.oban_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: oban_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: sanbase_scrapers; Owner: -
+--
+
+ALTER SEQUENCE sanbase_scrapers.oban_jobs_id_seq OWNED BY sanbase_scrapers.oban_jobs.id;
+
+
+--
 -- Name: active_widgets id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3028,6 +3165,13 @@ ALTER TABLE ONLY public.active_widgets ALTER COLUMN id SET DEFAULT nextval('publ
 --
 
 ALTER TABLE ONLY public.api_call_limits ALTER COLUMN id SET DEFAULT nextval('public.api_call_limits_id_seq'::regclass);
+
+
+--
+-- Name: asset_exchange_pairs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.asset_exchange_pairs ALTER COLUMN id SET DEFAULT nextval('public.asset_exchange_pairs_id_seq'::regclass);
 
 
 --
@@ -3577,6 +3721,13 @@ ALTER TABLE ONLY public.webinars ALTER COLUMN id SET DEFAULT nextval('public.web
 
 
 --
+-- Name: oban_jobs id; Type: DEFAULT; Schema: sanbase_scrapers; Owner: -
+--
+
+ALTER TABLE ONLY sanbase_scrapers.oban_jobs ALTER COLUMN id SET DEFAULT nextval('sanbase_scrapers.oban_jobs_id_seq'::regclass);
+
+
+--
 -- Name: active_widgets active_widgets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3590,6 +3741,14 @@ ALTER TABLE ONLY public.active_widgets
 
 ALTER TABLE ONLY public.api_call_limits
     ADD CONSTRAINT api_call_limits_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: asset_exchange_pairs asset_exchange_pairs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.asset_exchange_pairs
+    ADD CONSTRAINT asset_exchange_pairs_pkey PRIMARY KEY (id);
 
 
 --
@@ -4278,6 +4437,14 @@ ALTER TABLE ONLY public.webinar_registrations
 
 ALTER TABLE ONLY public.webinars
     ADD CONSTRAINT webinars_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oban_jobs oban_jobs_pkey; Type: CONSTRAINT; Schema: sanbase_scrapers; Owner: -
+--
+
+ALTER TABLE ONLY sanbase_scrapers.oban_jobs
+    ADD CONSTRAINT oban_jobs_pkey PRIMARY KEY (id);
 
 
 --
@@ -5013,6 +5180,34 @@ CREATE UNIQUE INDEX webinar_registrations_user_id_webinar_id_index ON public.web
 --
 
 CREATE INDEX webinar_registrations_webinar_id_index ON public.webinar_registrations USING btree (webinar_id);
+
+
+--
+-- Name: oban_jobs_args_index; Type: INDEX; Schema: sanbase_scrapers; Owner: -
+--
+
+CREATE INDEX oban_jobs_args_index ON sanbase_scrapers.oban_jobs USING gin (args);
+
+
+--
+-- Name: oban_jobs_meta_index; Type: INDEX; Schema: sanbase_scrapers; Owner: -
+--
+
+CREATE INDEX oban_jobs_meta_index ON sanbase_scrapers.oban_jobs USING gin (meta);
+
+
+--
+-- Name: oban_jobs_queue_state_priority_scheduled_at_id_index; Type: INDEX; Schema: sanbase_scrapers; Owner: -
+--
+
+CREATE INDEX oban_jobs_queue_state_priority_scheduled_at_id_index ON sanbase_scrapers.oban_jobs USING btree (queue, state, priority, scheduled_at, id);
+
+
+--
+-- Name: oban_jobs oban_notify; Type: TRIGGER; Schema: sanbase_scrapers; Owner: -
+--
+
+CREATE TRIGGER oban_notify AFTER INSERT ON sanbase_scrapers.oban_jobs FOR EACH ROW EXECUTE FUNCTION sanbase_scrapers.oban_jobs_notify();
 
 
 --
@@ -6116,6 +6311,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200826101751);
 INSERT INTO public."schema_migrations" (version) VALUES (20200826114101);
 INSERT INTO public."schema_migrations" (version) VALUES (20200908092849);
 INSERT INTO public."schema_migrations" (version) VALUES (20200923090710);
+INSERT INTO public."schema_migrations" (version) VALUES (20200930103424);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016091443);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016105225);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016124426);
@@ -6165,10 +6361,13 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210419130213);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419183855);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419190728);
 INSERT INTO public."schema_migrations" (version) VALUES (20210420120610);
+INSERT INTO public."schema_migrations" (version) VALUES (20210423142550);
 INSERT INTO public."schema_migrations" (version) VALUES (20210513102007);
 INSERT INTO public."schema_migrations" (version) VALUES (20210518083003);
 INSERT INTO public."schema_migrations" (version) VALUES (20210604163821);
 INSERT INTO public."schema_migrations" (version) VALUES (20210608133141);
 INSERT INTO public."schema_migrations" (version) VALUES (20210609082745);
+INSERT INTO public."schema_migrations" (version) VALUES (20210609121501);
 INSERT INTO public."schema_migrations" (version) VALUES (20210616123403);
+INSERT INTO public."schema_migrations" (version) VALUES (20210628114840);
 INSERT INTO public."schema_migrations" (version) VALUES (20210701130227);

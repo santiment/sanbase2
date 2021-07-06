@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 11.12 (Debian 11.12-0+deb10u1)
+-- Dumped by pg_dump version 11.12 (Debian 11.12-0+deb10u1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -138,6 +138,8 @@ $$;
 
 
 SET default_tablespace = '';
+
+SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -567,6 +569,38 @@ CREATE SEQUENCE public.currencies_id_seq
 --
 
 ALTER SEQUENCE public.currencies_id_seq OWNED BY public.currencies.id;
+
+
+--
+-- Name: email_login_attempts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.email_login_attempts (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    ip_address character varying(15),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: email_login_attempts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.email_login_attempts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: email_login_attempts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.email_login_attempts_id_seq OWNED BY public.email_login_attempts.id;
 
 
 --
@@ -3143,6 +3177,13 @@ ALTER TABLE ONLY public.currencies ALTER COLUMN id SET DEFAULT nextval('public.c
 
 
 --
+-- Name: email_login_attempts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_login_attempts ALTER COLUMN id SET DEFAULT nextval('public.email_login_attempts_id_seq'::regclass);
+
+
+--
 -- Name: eth_accounts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3720,6 +3761,14 @@ ALTER TABLE ONLY public.contract_addresses
 
 ALTER TABLE ONLY public.currencies
     ADD CONSTRAINT currencies_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: email_login_attempts email_login_attempts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_login_attempts
+    ADD CONSTRAINT email_login_attempts_pkey PRIMARY KEY (id);
 
 
 --
@@ -5207,6 +5256,14 @@ ALTER TABLE ONLY public.contract_addresses
 
 
 --
+-- Name: email_login_attempts email_login_attempts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_login_attempts
+    ADD CONSTRAINT email_login_attempts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: eth_accounts eth_accounts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6243,4 +6300,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210608133141);
 INSERT INTO public."schema_migrations" (version) VALUES (20210609082745);
 INSERT INTO public."schema_migrations" (version) VALUES (20210616123403);
 INSERT INTO public."schema_migrations" (version) VALUES (20210701130227);
+INSERT INTO public."schema_migrations" (version) VALUES (20210705104243);
 INSERT INTO public."schema_migrations" (version) VALUES (20210707135227);

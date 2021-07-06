@@ -232,6 +232,23 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     assert result["username"] == new_username
   end
 
+  test "logout clears session", %{conn: conn} do
+    query = """
+    mutation {
+      logout {
+        success
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    assert json_response(result, 200)["data"]["logout"]["success"]
+    assert result.private.plug_session_info == :drop
+  end
+
   describe "Change avatar" do
     test "change avatar of current user", %{conn: conn} do
       new_avatar =

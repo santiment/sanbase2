@@ -3,7 +3,7 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Tag
   alias Sanbase.UserList
-  alias Sanbase.Accounts.{User, UserSettings, Role, UserRole}
+  alias Sanbase.Accounts.{User, UserSettings, Role, UserRole, EmailLoginAttempt}
   alias Sanbase.Insight.Post
   alias Sanbase.Comment
 
@@ -711,6 +711,10 @@ defmodule Sanbase.Factory do
 
   def wallet_hunters_proposal_factory do
     %Proposal{}
+  end
+
+  def email_login_attempt_factory() do
+    %EmailLoginAttempt{}
   end
 
   def rand_str(length \\ 10) do

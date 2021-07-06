@@ -284,6 +284,34 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
         )
       )
     end
+
+    test "succeeds if the user has attempted to login 5 times", context do
+      user = insert(:user, email: "john@example.com")
+
+      for _ <- 1..5,
+          do: insert(:email_login_attempt, user_id: user.id, ip_address: "127.0.0.1")
+
+      result =
+        email_login(context.conn, %{email: "john@example.com"})
+        |> get_in(["data", "emailLogin"])
+
+      assert result["success"]
+    end
+
+    test "fails if the user has attempted to login more than 5 times", context do
+      user = insert(:user, email: "john@example.com")
+
+      for _ <- 1..6,
+          do: insert(:email_login_attempt, user_id: user.id, ip_address: "127.0.0.1")
+
+      msg =
+        email_login(context.conn, %{email: "john@example.com"})
+        |> Map.get("errors")
+        |> hd()
+        |> Map.get("message")
+
+      assert msg =~ "Too many login attempts"
+    end
   end
 
   defp email_login_verify_mutation(user) do

@@ -38,7 +38,8 @@ defmodule Sanbase.Signal.AvailableSignalsTest do
         "large_transactions",
         "mcd_art_liquidations",
         "old_coins_moved",
-        "price_usd_all_time_high"
+        "price_usd_all_time_high",
+        "project_in_trending_words"
       ]
       |> Enum.sort()
 

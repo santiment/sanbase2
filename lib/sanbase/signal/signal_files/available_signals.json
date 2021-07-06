@@ -327,5 +327,20 @@
       "SANAPI": "free",
       "SANBASE": "free"
     }
+  },
+  {
+    "human_readable_name": "Project In Trending Words",
+    "name": "project_in_trending_words",
+    "signal": "project_in_trends",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "1m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   }
 ]

@@ -9,5 +9,6 @@ defmodule SanbaseWeb.Graphql.WebinarTypes do
     field(:image_url, non_null(:string))
     field(:start_time, non_null(:datetime))
     field(:end_time, non_null(:datetime))
+    field(:inserted_at, non_null(:datetime))
   end
 end

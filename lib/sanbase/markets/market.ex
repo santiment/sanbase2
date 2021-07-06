@@ -36,11 +36,7 @@ defmodule Sanbase.Market do
     exchange = String.downcase(exchange)
 
     result =
-      from(pair in __MODULE__,
-        inner_join: ssm in SourceSlugMapping,
-        on: ssm.slug == pair.base_asset,
-        inner_join: project in Project,
-        on: ssm.project_id == project.id,
+      from([pair: pair, ssm: ssm, project: project] in base_query(),
         where: fragment("lower(?)", pair.exchange) == ^exchange,
         select: project.slug,
         distinct: true
@@ -54,11 +50,7 @@ defmodule Sanbase.Market do
     exchanges = Enum.map(exchanges, &String.downcase/1)
 
     result =
-      from(pair in __MODULE__,
-        inner_join: ssm in SourceSlugMapping,
-        on: ssm.slug == pair.base_asset,
-        inner_join: project in Project,
-        on: ssm.project_id == project.id,
+      from([pair: pair, ssm: ssm, project: project] in base_query(),
         where: fragment("lower(?)", pair.exchange) in ^exchanges,
         select: project.slug,
         distinct: true
@@ -66,5 +58,35 @@ defmodule Sanbase.Market do
       |> Repo.all()
 
     {:ok, result}
+  end
+
+  def exchanges_per_slug(slugs) when is_list(slugs) do
+    from([pair: pair, ssm: ssm, project: project] in base_query(),
+      where: project.slug in ^slugs,
+      group_by: project.slug,
+      select: {project.slug, fragment("array_agg(DISTINCT ?)", pair.exchange)}
+    )
+    |> Repo.all()
+  end
+
+  def exchanges_count_per_slug(slugs) when is_list(slugs) do
+    from([pair: pair, ssm: ssm, project: project] in base_query(),
+      where: project.slug in ^slugs,
+      group_by: project.slug,
+      select: {project.slug, fragment("count(DISTINCT ?)", pair.exchange)}
+    )
+    |> Repo.all()
+  end
+
+  defp base_query() do
+    from(pair in __MODULE__,
+      as: :pair,
+      inner_join: ssm in SourceSlugMapping,
+      as: :ssm,
+      on: ssm.slug == pair.base_asset and ssm.source == "cryptocompare",
+      inner_join: project in Project,
+      as: :project,
+      on: ssm.project_id == project.id
+    )
   end
 end

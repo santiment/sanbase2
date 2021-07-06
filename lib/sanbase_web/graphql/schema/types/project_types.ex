@@ -252,6 +252,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectMetricsResolver.available_table_metrics/3, ttl: 1200)
     end
 
+    field :traded_on_exchanges, list_of(:string) do
+      cache_resolve(&ProjectResolver.traded_on_exchanges/3)
+    end
+
+    field :traded_on_exchanges_count, :integer do
+      cache_resolve(&ProjectResolver.traded_on_exchanges_count/3)
+    end
+
     @desc ~s"""
     Returns a list of GraphQL queries that have data for the given slug.
 

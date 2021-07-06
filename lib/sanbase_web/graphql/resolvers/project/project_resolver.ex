@@ -58,15 +58,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       }) do
     loader
     |> Dataloader.load(SanbaseDataloader, :infrastructure, infrastructure_id)
-    |> on_load(&infrastructure_from_loader(&1, infrastructure_id))
+    |> on_load(fn loader ->
+      infrastructure =
+        Dataloader.get(loader, SanbaseDataloader, :infrastructure, infrastructure_id)
+
+      {:ok, infrastructure}
+    end)
   end
 
-  defp infrastructure_from_loader(loader, infrastructure_id) do
-    infrastructure =
-      loader
-      |> Dataloader.get(SanbaseDataloader, :infrastructure, infrastructure_id)
+  def traded_on_exchanges(%Project{slug: slug}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :traded_on_exchanges, slug)
+    |> on_load(fn loader ->
+      exchanges = Dataloader.get(loader, SanbaseDataloader, :traded_on_exchanges, slug)
+      {:ok, exchanges}
+    end)
+  end
 
-    {:ok, infrastructure}
+  def traded_on_exchanges_count(%Project{slug: slug}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :traded_on_exchanges_count, slug)
+    |> on_load(fn loader ->
+      count = Dataloader.get(loader, SanbaseDataloader, :traded_on_exchanges_count, slug)
+
+      {:ok, count}
+    end)
   end
 
   def roi_usd(%Project{} = project, _args, _resolution) do

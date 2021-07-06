@@ -166,6 +166,10 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     {Product.product_sanbase(), SanbaseAccessChecker}
   ]
 
+  @doc """
+  If the result from this function is nil, then no restrictions are applied.
+  In this case the `restrictedFrom` field has a value of nil as well.
+  """
   @spec historical_data_in_days(atom(), non_neg_integer(), query_or_argument()) ::
           non_neg_integer() | nil
   def historical_data_in_days(plan, _product_id, query_or_argument)
@@ -184,6 +188,10 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     end
   end
 
+  @doc """
+  If the result from this function is nil, then no restrictions are applied.
+  In this case the `restrictedTo` field has a value of nil as well.
+  """
   @spec realtime_data_cut_off_in_days(atom(), non_neg_integer(), query_or_argument()) ::
           non_neg_integer() | nil
   def realtime_data_cut_off_in_days(plan, _product_id, query_or_argument)

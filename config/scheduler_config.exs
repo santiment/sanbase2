@@ -151,5 +151,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     poll_pending_wallet_hunters_vote_transactions: [
       schedule: "6 * * * *",
       task: {Sanbase.WalletHunters.Vote, :poll_pending_transactions, []}
+    ],
+    scrape_cryptocompare_market_pairs: [
+      schedule: "@daily",
+      task: {Sanbase.Cryptocompare.Markets.Scraper, :run, []}
     ]
   ]

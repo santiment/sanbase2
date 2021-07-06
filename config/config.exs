@@ -138,6 +138,8 @@ config :ex_aws,
   secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],
   region: "eu-central-1"
 
+config :sanbase, Sanbase.Cryptocompare, api_key: {:system, "CRYPTOCOMPARE_API_KEY"}
+
 config :sanbase, Sanbase.MandrillApi,
   apikey: {:system, "MANDRILL_APIKEY"},
   from_email: {:system, "MANDRILL_FROM_EMAIL", "admin@santiment.net"}

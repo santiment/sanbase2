@@ -1,0 +1,37 @@
+defmodule Sanbase.Accounts.EmailLoginAttempt do
+  use Ecto.Schema
+
+  import Ecto.Query
+
+  alias Sanbase.Repo
+
+  @interval_in_minutes 15
+  @allowed_login_attempts 3
+
+  schema "email_login_attempts" do
+    belongs_to(:user, Sanbase.Accounts.User)
+
+    timestamps()
+  end
+
+  def has_allowed_login_attempts(user) do
+    login_attempts = login_attempts_count(user)
+
+    login_attempts <= @allowed_login_attempts
+  end
+
+  def record_login_attempt(%{id: user_id}) do
+    %__MODULE__{user_id: user_id}
+    |> Repo.insert!()
+  end
+
+  # Private
+  defp login_attempts_count(%{id: user_id}) do
+    interval_limit = Timex.shift(Timex.now(), minutes: -@interval_in_minutes)
+
+    from(attempt in __MODULE__,
+      where: attempt.user_id == ^user_id and attempt.inserted_at > ^interval_limit
+    )
+    |> Repo.aggregate(:count, :id)
+  end
+end

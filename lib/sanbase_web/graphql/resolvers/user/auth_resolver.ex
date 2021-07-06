@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   alias Sanbase.InternalServices.Ethauth
-  alias Sanbase.Accounts.{User, EthAccount}
+  alias Sanbase.Accounts.{User, EthAccount, EmailLoginAttempt}
   alias Sanbase.Billing
 
   require Logger
@@ -77,8 +77,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
         context: %{origin_url: origin_url}
       }) do
     with {:ok, user} <- User.find_or_insert_by(:email, email, %{username: args[:username]}),
+         true <- EmailLoginAttempt.has_allowed_login_attempts(user),
          {:ok, user} <- User.update_email_token(user, args[:consent]),
          {:ok, _user} <- User.send_login_email(user, origin_url, args) do
+      EmailLoginAttempt.record_login_attempt(user)
       {:ok, %{success: true, first_login: user.first_login}}
     else
       _ -> {:error, message: "Can't login"}

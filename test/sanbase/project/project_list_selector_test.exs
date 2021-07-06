@@ -410,5 +410,39 @@ defmodule Sanbase.Model.ProjectListSelectorTest do
         assert p4.slug not in slugs
       end)
     end
+
+    test "traded on exchanges" do
+      p1 = insert(:random_project)
+      p2 = insert(:random_project)
+      p3 = insert(:random_project)
+      p4 = insert(:random_project)
+
+      insert(:source_slug_mapping, source: "cryptocompare", slug: p1.ticker, project_id: p1.id)
+      insert(:source_slug_mapping, source: "cryptocompare", slug: p2.ticker, project_id: p2.id)
+      insert(:source_slug_mapping, source: "cryptocompare", slug: p3.ticker, project_id: p3.id)
+      insert(:source_slug_mapping, source: "cryptocompare", slug: p4.ticker, project_id: p4.id)
+
+      insert(:market, base_asset: p1.ticker, exchange: "Binance")
+      insert(:market, base_asset: p2.ticker, exchange: "Binance")
+      insert(:market, base_asset: p3.ticker, exchange: "Bitfinex")
+      insert(:market, base_asset: p3.ticker, exchange: "LAFinance")
+
+      selector = %{
+        filters: [
+          %{
+            name: "traded_on_exchanges",
+            args: %{exchanges: ["Binance", "Bitfinex"]}
+          }
+        ]
+      }
+
+      {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
+        ListSelector.slugs(%{selector: selector})
+
+      assert total_projects_count == 3
+      assert p1.slug in slugs
+      assert p2.slug in slugs
+      assert p3.slug in slugs
+    end
   end
 end

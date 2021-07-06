@@ -43,6 +43,16 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def market_factory() do
+    %Sanbase.Market{
+      base_asset: "BTC",
+      quote_asset: "USD",
+      exchange: "Binance",
+      source: "cryptocompare",
+      last_update: DateTime.utc_now()
+    }
+  end
+
   def insights_fallback_user_factory() do
     %User{
       salt: User.generate_salt(),

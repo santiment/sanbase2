@@ -714,4 +714,40 @@
     "has_incomplete_data": false,
     "data_type": "timeseries"
   }
+  ,
+  {
+    "human_readable_name": "Unique Social Volume Total (5m)",
+    "name": "unique_social_volume_total_5m",
+    "metric": "unique_social_volume_5m",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+  ,
+  {
+    "human_readable_name": "Unique Social Volume Total (1h)",
+    "name": "unique_social_volume_total_1h",
+    "metric": "unique_social_volume_1h",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
 ]

@@ -48,8 +48,7 @@ defmodule Sanbase.Factory do
       base_asset: "BTC",
       quote_asset: "USD",
       exchange: "Binance",
-      source: "cryptocompare",
-      last_update: DateTime.utc_now()
+      source: "cryptocompare"
     }
   end
 

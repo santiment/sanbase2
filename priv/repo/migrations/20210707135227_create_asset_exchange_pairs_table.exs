@@ -1,8 +1,9 @@
-defmodule Sanbase.Repo.Migrations.CreateAssetMarketsTable do
+defmodule Sanbase.Repo.Migrations.CreateAssetExchangeTable do
   use Ecto.Migration
 
+  @table :asset_exchange_pairs
   def change do
-    create table(:asset_exchange_pairs) do
+    create table(@table) do
       add(:base_asset, :string, null: false)
       add(:quote_asset, :string, null: false)
       add(:exchange, :string, null: false)
@@ -11,5 +12,9 @@ defmodule Sanbase.Repo.Migrations.CreateAssetMarketsTable do
 
       timestamps()
     end
+
+    create(index(@table, [:base_asset]))
+    create(index(@table, [:exchange]))
+    create(unique_index(@table, [:base_asset, :quote_asset, :exchange, :source]))
   end
 end

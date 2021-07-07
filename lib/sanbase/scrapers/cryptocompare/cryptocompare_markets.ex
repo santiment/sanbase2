@@ -7,7 +7,9 @@ defmodule Sanbase.Cryptocompare.Markets.Scraper do
   end
 
   defp get_data() do
-    {:ok, %{body: body}} = HTTPoison.get(url())
+    headers = [{"Authorization", "Apikey #{api_key()}"}]
+
+    {:ok, %{body: body}} = HTTPoison.get(url(), headers)
     data = body |> Jason.decode!() |> Map.get("Data")
 
     Enum.reduce(data, %{}, fn {exchange, list}, acc ->
@@ -15,12 +17,7 @@ defmodule Sanbase.Cryptocompare.Markets.Scraper do
         value = %{
           base_asset: elem["fsym"],
           quote_asset: elem["tsym"],
-          exchange: exchange,
-          last_update:
-            elem["last_update"]
-            |> Kernel.trunc()
-            |> DateTime.from_unix!()
-            |> DateTime.truncate(:second)
+          exchange: exchange
         }
 
         Map.update(inner_acc, elem["fsym"], [], &[value | &1])
@@ -50,7 +47,6 @@ defmodule Sanbase.Cryptocompare.Markets.Scraper do
   defp api_key(), do: Config.module_get(Sanbase.Cryptocompare, :api_key)
 
   defp url() do
-    "https://min-api.cryptocompare.com/data/v2/pair/mapping/exchange" <>
-      "\?extraParams\=Santiment\&api_key\=#{api_key()}"
+    "https://min-api.cryptocompare.com/data/v2/pair/mapping/exchange\?extraParams\=Santiment"
   end
 end

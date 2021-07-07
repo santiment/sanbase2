@@ -4345,6 +4345,27 @@ CREATE UNIQUE INDEX api_call_limits_user_id_index ON public.api_call_limits USIN
 
 
 --
+-- Name: asset_exchange_pairs_base_asset_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX asset_exchange_pairs_base_asset_index ON public.asset_exchange_pairs USING btree (base_asset);
+
+
+--
+-- Name: asset_exchange_pairs_base_asset_quote_asset_exchange_source_ind; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX asset_exchange_pairs_base_asset_quote_asset_exchange_source_ind ON public.asset_exchange_pairs USING btree (base_asset, quote_asset, exchange, source);
+
+
+--
+-- Name: asset_exchange_pairs_exchange_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX asset_exchange_pairs_exchange_index ON public.asset_exchange_pairs USING btree (exchange);
+
+
+--
 -- Name: blockchain_address_comments_mapping_blockchain_address_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6220,6 +6241,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210518083003);
 INSERT INTO public."schema_migrations" (version) VALUES (20210604163821);
 INSERT INTO public."schema_migrations" (version) VALUES (20210608133141);
 INSERT INTO public."schema_migrations" (version) VALUES (20210609082745);
-INSERT INTO public."schema_migrations" (version) VALUES (20210609121501);
 INSERT INTO public."schema_migrations" (version) VALUES (20210616123403);
 INSERT INTO public."schema_migrations" (version) VALUES (20210701130227);
+INSERT INTO public."schema_migrations" (version) VALUES (20210707135227);

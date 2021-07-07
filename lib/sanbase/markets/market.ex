@@ -11,7 +11,6 @@ defmodule Sanbase.Market do
     field(:quote_asset, :string)
     field(:exchange, :string)
     field(:source, :string)
-    field(:last_update, :utc_datetime)
 
     timestamps()
   end

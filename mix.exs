@@ -93,8 +93,8 @@ defmodule Sanbase.Mixfile do
       {:faker, "~> 0.12", only: [:dev, :test]},
       {:floki, "~> 0.20"},
       {:gettext, "~> 0.11"},
-      {:guardian, "~> 2.0"},
       {:guardian_db, "~> 2.0"},
+      {:guardian, "~> 2.0"},
       {:hackney, "~> 1.17", override: true},
       {:hammer, "~> 6.0"},
       {:httpoison, "~> 1.2", override: true},
@@ -113,6 +113,7 @@ defmodule Sanbase.Mixfile do
       {:mockery, "~> 2.2"},
       {:mogrify, "~> 0.8"},
       {:mutex, "~> 1.1"},
+      {:neuron, "~> 5.0", only: :dev},
       {:norm, "~> 0.12"},
       {:number, "~> 1.0"},
       # TODO: Go back to original once https://github.com/lexmag/oauther/pull/22 is merged

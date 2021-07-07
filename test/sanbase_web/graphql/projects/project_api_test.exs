@@ -9,6 +9,67 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
 
   alias Sanbase.Model.Project
 
+  test "projects by function for traded on exchanges", context do
+    [p1, p2, p3, p4] = projects = for _ <- 1..4, do: insert(:random_project)
+
+    for p <- projects do
+      insert(:source_slug_mapping, source: "cryptocompare", slug: p.ticker, project_id: p.id)
+    end
+
+    pairs = [
+      {p1, "Binance"},
+      {p2, "Binance"},
+      {p2, "LFinance"},
+      {p3, "Binance"},
+      {p3, "Bitfinex"},
+      {p3, "Uniswap"},
+      {p4, "Bitfinex"},
+      {p4, "LFinance"}
+    ]
+
+    for {p, exchange} <- pairs, do: insert(:market, base_asset: p.ticker, exchange: exchange)
+
+    query = """
+    {
+      allProjects{
+        slug
+        tradedOnExchanges
+        tradedOnExchangesCount
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+      |> get_in(["data", "allProjects"])
+
+    assert %{
+             "slug" => p1.slug,
+             "tradedOnExchanges" => ["Binance"],
+             "tradedOnExchangesCount" => 1
+           } in result
+
+    assert %{
+             "slug" => p2.slug,
+             "tradedOnExchanges" => ["Binance", "LFinance"],
+             "tradedOnExchangesCount" => 2
+           } in result
+
+    assert %{
+             "slug" => p3.slug,
+             "tradedOnExchanges" => ["Binance", "Bitfinex", "Uniswap"],
+             "tradedOnExchangesCount" => 3
+           } in result
+
+    assert %{
+             "slug" => p4.slug,
+             "tradedOnExchanges" => ["Bitfinex", "LFinance"],
+             "tradedOnExchangesCount" => 2
+           } in result
+  end
+
   test "fetch market segments and tags for projects", context do
     ms1 = insert(:market_segment, name: "Ethereum", type: "Infrastructure")
     ms2 = insert(:market_segment, name: "DeFi", type: "Financial")

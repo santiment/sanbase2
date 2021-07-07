@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Router do
   use SanbaseWeb, :router
+  require Logger
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -16,6 +17,7 @@ defmodule SanbaseWeb.Router do
   pipeline :api do
     plug(:accepts, ["json"])
     plug(RemoteIp)
+    plug(:log_headers_plug)
     plug(:fetch_session)
     plug(SanbaseWeb.Graphql.ContextPlug)
   end
@@ -138,4 +140,22 @@ defmodule SanbaseWeb.Router do
   end
 
   get("/", SanbaseWeb.RootController, :healthcheck)
+
+  def log_headers_plug(conn, _opts) do
+    remote_ip = to_string(:inet_parse.ntoa(conn.remote_ip))
+    req_headers = conn.req_headers
+
+    forwarded_headers =
+      req_headers
+      |> Enum.filter(fn {k, _v} ->
+        header = String.downcase(k)
+        header in ["forwarded", "x-forwarded-for", "x-client-ip", "x-real-ip"]
+      end)
+
+    if forwarded_headers do
+      Logger.info("Forwarded headers for #{remote_ip}:  #{inspect(forwarded_headers)}")
+    end
+
+    conn
+  end
 end

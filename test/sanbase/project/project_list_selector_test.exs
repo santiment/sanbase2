@@ -424,25 +424,41 @@ defmodule Sanbase.Model.ProjectListSelectorTest do
 
       insert(:market, base_asset: p1.ticker, exchange: "Binance")
       insert(:market, base_asset: p2.ticker, exchange: "Binance")
+      insert(:market, base_asset: p2.ticker, exchange: "Bitfinex")
       insert(:market, base_asset: p3.ticker, exchange: "Bitfinex")
       insert(:market, base_asset: p3.ticker, exchange: "LAFinance")
 
-      selector = %{
+      # Test OR selector
+      or_selector = %{
         filters: [
           %{
             name: "traded_on_exchanges",
-            args: %{exchanges: ["Binance", "Bitfinex"]}
+            args: %{exchanges: ["Binance", "Bitfinex"], exchanges_combinator: "or"}
           }
         ]
       }
 
       {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
-        ListSelector.slugs(%{selector: selector})
+        ListSelector.slugs(%{selector: or_selector})
 
       assert total_projects_count == 3
-      assert p1.slug in slugs
-      assert p2.slug in slugs
-      assert p3.slug in slugs
+      assert Enum.sort(slugs) == Enum.sort([p1.slug, p2.slug, p3.slug])
+
+      # Test AND selector
+      and_selector = %{
+        filters: [
+          %{
+            name: "traded_on_exchanges",
+            args: %{exchanges: ["Binance", "Bitfinex"], exchanges_combinator: "and"}
+          }
+        ]
+      }
+
+      {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
+        ListSelector.slugs(%{selector: and_selector})
+
+      assert total_projects_count == 1
+      assert slugs == [p2.slug]
     end
   end
 end

@@ -32,12 +32,12 @@ defmodule Sanbase.Market do
     {:ok, result}
   end
 
-  def slugs_by_exchange(exchange) when is_binary(exchange) do
-    exchange = String.downcase(exchange)
+  def slugs_by_exchange_any_of(exchanges) when is_list(exchanges) do
+    exchanges = Enum.map(exchanges, &String.downcase/1)
 
     result =
       from([pair: pair, ssm: ssm, project: project] in base_query(),
-        where: fragment("lower(?)", pair.exchange) == ^exchange,
+        where: fragment("lower(?)", pair.exchange) in ^exchanges,
         select: project.slug,
         distinct: true
       )
@@ -46,13 +46,14 @@ defmodule Sanbase.Market do
     {:ok, result}
   end
 
-  def slugs_by_exchange(exchanges) when is_list(exchanges) do
+  def slugs_by_exchange_all_of(exchanges) when is_list(exchanges) do
     exchanges = Enum.map(exchanges, &String.downcase/1)
 
     result =
       from([pair: pair, ssm: ssm, project: project] in base_query(),
-        where: fragment("lower(?)", pair.exchange) in ^exchanges,
         select: project.slug,
+        group_by: project.slug,
+        having: fragment("array_agg(DISTINCT(lower(?))) @> (?)", pair.exchange, ^exchanges),
         distinct: true
       )
       |> Repo.all()

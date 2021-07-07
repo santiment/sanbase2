@@ -259,7 +259,15 @@ defmodule Sanbase.Model.Project.ListSelector do
   end
 
   defp slugs_by_filter(%{name: "traded_on_exchanges", args: args}) do
-    Sanbase.Market.slugs_by_exchange(args[:exchanges])
+    combinator = Map.get(args, :exchanges_combinator, "and")
+
+    case combinator do
+      "and" ->
+        Sanbase.Market.slugs_by_exchange_all_of(args[:exchanges])
+
+      "or" ->
+        Sanbase.Market.slugs_by_exchange_any_of(args[:exchanges])
+    end
   end
 
   defp ordered_slugs_by_order_by(nil, slugs), do: slugs

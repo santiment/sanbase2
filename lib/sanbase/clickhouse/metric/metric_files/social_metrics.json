@@ -19,7 +19,7 @@
   {
     "human_readable_name": "Social Dominance Total",
     "name": "social_dominance_total",
-    "metric": "social_dominance",
+    "metric": "social_dominance_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -122,7 +122,7 @@
   {
     "human_readable_name": "Social Dominance Telegram",
     "name": "social_dominance_telegram",
-    "metric": "social_dominance_telegram",
+    "metric": "social_dominance_telegram_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -224,7 +224,7 @@
   {
     "human_readable_name": "Social Dominance Reddit",
     "name": "social_dominance_reddit",
-    "metric": "social_dominance_reddit",
+    "metric": "social_dominance_reddit_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -530,7 +530,7 @@
   {
     "human_readable_name": "Social Dominance Twitter",
     "name": "social_dominance_twitter",
-    "metric": "social_dominance_twitter",
+    "metric": "social_dominance_twitter_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -632,7 +632,7 @@
   {
     "human_readable_name": "Social Dominance Bitcointalk",
     "name": "social_dominance_bitcointalk",
-    "metric": "social_dominance_bitcointalk",
+    "metric": "social_dominance_bitcointalk_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],

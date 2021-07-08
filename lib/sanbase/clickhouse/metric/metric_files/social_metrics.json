@@ -750,4 +750,184 @@
     "has_incomplete_data": false,
     "data_type": "timeseries"
   }
+  ,
+  {
+    "human_readable_name": "1h Moving Average Of Social Dominance Total",
+    "name": "social_dominance_total_1h",
+    "metric": "social_dominance_1h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "24h Moving Average Of Social Dominance Total",
+    "name": "social_dominance_total_24h",
+    "metric": "social_dominance_24h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "1h Moving Average Of Social Dominance Telegram",
+    "name": "social_dominance_telegram_1h",
+    "metric": "social_dominance_telegram_1h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "24h Moving Average Of Social Dominance Telegram",
+    "name": "social_dominance_telegram_24h",
+    "metric": "social_dominance_telegram_24h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "1h Moving Average Of Social Dominance Reddit",
+    "name": "social_dominance_reddit_1h",
+    "metric": "social_dominance_reddit_1h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "24h Moving Average Of Social Dominance Reddit",
+    "name": "social_dominance_reddit_24h",
+    "metric": "social_dominance_reddit_24h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "1h Moving Average Of Social Dominance Twitter",
+    "name": "social_dominance_twitter_1h",
+    "metric": "social_dominance_twitter_1h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "24h Moving Average Of Social Dominance Twitter",
+    "name": "social_dominance_twitter_24h",
+    "metric": "social_dominance_twitter_24h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "1h Moving Average Of Social Dominance Bitcointalk",
+    "name": "social_dominance_bitcointalk_1h",
+    "metric": "social_dominance_bitcointalk_1h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "24h Moving Average Of Social Dominance Bitcointalk",
+    "name": "social_dominance_bitcointalk_24h",
+    "metric": "social_dominance_bitcointalk_24h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
 ]

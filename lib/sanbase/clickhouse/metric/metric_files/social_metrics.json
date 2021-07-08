@@ -4,7 +4,10 @@
     "name": "social_volume_total",
     "metric": "social_volume",
     "version": "2020-07-31",
-    "access": "restricted",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -107,7 +110,10 @@
     "name": "social_volume_telegram",
     "metric": "social_volume_telegram",
     "version": "2020-07-31",
-    "access": "restricted",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -209,7 +215,10 @@
     "name": "social_volume_reddit",
     "metric": "social_volume_reddit",
     "version": "2020-07-31",
-    "access": "restricted",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -311,7 +320,10 @@
     "name": "social_volume_discord",
     "metric": "social_volume_discord",
     "version": "2020-07-31",
-    "access": "restricted",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -413,7 +425,10 @@
     "name": "social_volume_professional_traders_chat",
     "metric": "social_volume_professional_traders_chat",
     "version": "2020-07-31",
-    "access": "restricted",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -515,7 +530,10 @@
     "name": "social_volume_twitter",
     "metric": "social_volume_twitter",
     "version": "2020-07-31",
-    "access": "restricted",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -617,7 +635,10 @@
     "name": "social_volume_bitcointalk",
     "metric": "social_volume_bitcointalk",
     "version": "2020-07-31",
-    "access": "restricted",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",

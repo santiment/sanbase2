@@ -108,7 +108,13 @@ defmodule Sanbase.Metric.Helper do
   @table_metrics Enum.map(@table_metric_module_mapping, & &1.metric)
   @table_metrics_mapset MapSet.new(@table_metrics)
 
-  def access_map(), do: @access_map
+  def access_map() do
+    @access_map
+    |> Enum.into(%{}, fn {metric, restrictions} ->
+      {metric, resolve_restrictions(restrictions)}
+    end)
+  end
+
   def aggregations_per_metric(), do: @aggregations_per_metric
   def aggregations(), do: @aggregations
   def free_metrics(), do: @free_metrics
@@ -141,4 +147,11 @@ defmodule Sanbase.Metric.Helper do
 
   def timeseries_metrics_mapset(), do: @timeseries_metrics_mapset
   def timeseries_metrics(), do: @timeseries_metrics
+
+  # Private
+  defp resolve_restrictions(restrictions) when is_map(restrictions), do: restrictions
+
+  defp resolve_restrictions(restriction) when restriction in [:restricted, :free] do
+    %{"historical" => restriction, "realtime" => restriction}
+  end
 end

@@ -19,8 +19,9 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :restricted} end)
   @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
 
-  @free_metrics @metrics
-  @restricted_metrics []
+  @free_metrics Enum.filter(@access_map, &match?({_, :free}, &1)) |> Enum.map(&elem(&1, 0))
+  @restricted_metrics Enum.filter(@access_map, &match?({_, :restricted}, &1))
+                      |> Enum.map(&elem(&1, 0))
 
   @default_complexity_weight 0.3
 

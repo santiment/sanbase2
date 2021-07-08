@@ -47,7 +47,12 @@ defmodule Sanbase.Signal.SignalAdapter do
 
   def available_timeseries_signals(), do: @timeseries_signals
 
-  def access_map(), do: @access_map
+  def access_map() do
+    @access_map
+    |> Enum.into(%{}, fn {signal, restrictions} ->
+      {signal, resolve_restrictions(restrictions)}
+    end)
+  end
 
   def min_plan_map(), do: @min_plan_map
 
@@ -186,5 +191,16 @@ defmodule Sanbase.Signal.SignalAdapter do
   defp filter_slugs_by_selector(list, %{slug: slug_or_slugs}) do
     slugs = List.wrap(slug_or_slugs)
     Enum.filter(list, &(&1.slug in slugs))
+  end
+
+  # In case more signal adapters are added, functions such as this
+  # should be packed in a Helper module to be used on all the signal data.
+  # The same way the metric modules are structured
+  defp resolve_restrictions(restrictions) when is_map(restrictions) do
+    Enum.into(restrictions, %{}, fn {k, v} -> {k, String.to_atom(v)} end)
+  end
+
+  defp resolve_restrictions(restriction) when restriction in [:restricted, :free] do
+    %{"historical" => restriction, "realtime" => restriction}
   end
 end

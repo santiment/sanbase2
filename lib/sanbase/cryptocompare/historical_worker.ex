@@ -1,7 +1,7 @@
 defmodule Sanbase.Cryptocompare.HistoricalWorker do
   use Oban.Worker,
     queue: :cryptocompare_historical_jobs_queue,
-    unique: [period: 30 * 24 * 60 * 60]
+    unique: [period: 60 * 86_400]
 
   require Sanbase.Utils.Config, as: Config
 

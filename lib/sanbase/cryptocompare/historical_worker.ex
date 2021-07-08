@@ -1,4 +1,19 @@
 defmodule Sanbase.Cryptocompare.HistoricalWorker do
+  @moduledoc ~s"""
+  An Oban Worker that processes the jobs in the cryptocompare_historical_jobs_queue
+  queue.
+
+  An Oban Worker has one main function `perform/1` which receives as argument
+  one record from the oban jobs table. If it returns :ok or {:ok, _}, then the
+  job is considered successful and is completed. In order to have retries in case
+  of Kafka downtime, the export to Kafka is done via persist_sync/2. This guarantees
+  that if get_data/3 and export_data/1 return :ok, then the data is in Kafka.
+
+  If perform/1 returns :error or {:error, _} then the task is scheduled for retry.
+  An exponential backoff algorithm is used in order to decide when to retry. The
+  default 20 attempts and the default algorithm used first retry after some seconds
+  and the last attempt is done after about 3 weeks.
+  """
   use Oban.Worker,
     queue: :cryptocompare_historical_jobs_queue,
     unique: [period: 60 * 86_400]

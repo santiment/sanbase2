@@ -118,6 +118,28 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
     end
   end
 
+  defp valid_filter?(%{name: "traded_on_exchanges", args: %{exchanges: list} = args}) do
+    combinator = Map.get(args, :exchanges_combinator, "and")
+
+    case is_list(list) and list != [] do
+      true ->
+        case combinator in ["and", "or"] do
+          true ->
+            true
+
+          false ->
+            {:error,
+             """
+             Unsupported exchanges_combinator: #{inspect(combinator)}.
+             Supported values for that combinator are 'and' and 'or'.
+             """}
+        end
+
+      false ->
+        {:error, "The traded_on_exchanges filter must provide a non-empty list of 'exchanges'."}
+    end
+  end
+
   defp valid_filter?(%{name: "market_segments", args: %{market_segments: list} = args}) do
     combinator = Map.get(args, :market_segments_combinator, "and")
 
@@ -131,7 +153,7 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
             {:error,
              """
              Unsupported market_segments_combinator: #{inspect(combinator)}.
-             Supported filter combinators are 'and' and 'or'.
+             Supported values for that combinators are 'and' and 'or'.
              """}
         end
 

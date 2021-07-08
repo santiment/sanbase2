@@ -29,7 +29,10 @@ config :sanbase, Sanbase.Twitter.Worker,
 config :sanbase, Oban.Scrapers,
   prefix: "sanbase_scrapers",
   repo: Sanbase.Repo,
-  queues: [cryptocompare_historical_jobs_queue: [limit: 25, paused: true]]
+  queues: [
+    cryptocompare_historical_jobs_queue: [limit: 25, paused: true],
+    cryptocompare_historical_jobs_pause_resume_queue: 1
+  ]
 
 config :sanbase, Sanbase.Cryptocompare.WebsocketScraper,
   enabled?: {:system, "CRYPTOCOMPARE_WEBSOCKET_PRICES_SCRAPER_ENABLED", "false"}

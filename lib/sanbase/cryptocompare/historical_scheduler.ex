@@ -20,9 +20,14 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
+  @oban_queue :cryptocompare_historical_jobs_queue
+
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
+
+  def resume(), do: Oban.resume_queue(queue: @oban_queue)
+  def pause(), do: Oban.pause_queue(queue: @oban_queue)
 
   def init(_opts) do
     # In order to be able to stop the historical scraper via env variables
@@ -30,7 +35,7 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
     if enabled?() do
       Logger.info("[Cryptocompare Historical] Start exporting OHLCV historical data.")
 
-      Oban.resume_queue(queue: :cryptocompare_historical_jobs_queue)
+      resume()
     end
 
     {:ok, %{}}

@@ -1,4 +1,19 @@
 defmodule Sanbase.Cryptocompare.HistoricalWorker do
+  @moduledoc ~s"""
+  An Oban Worker that processes the jobs in the cryptocompare_historical_jobs_queue
+  queue.
+
+  An Oban Worker has one main function `perform/1` which receives as argument
+  one record from the oban jobs table. If it returns :ok or {:ok, _}, then the
+  job is considered successful and is completed. In order to have retries in case
+  of Kafka downtime, the export to Kafka is done via persist_sync/2. This guarantees
+  that if get_data/3 and export_data/1 return :ok, then the data is in Kafka.
+
+  If perform/1 returns :error or {:error, _} then the task is scheduled for retry.
+  An exponential backoff algorithm is used in order to decide when to retry. The
+  default 20 attempts and the default algorithm used first retry after some seconds
+  and the last attempt is done after about 3 weeks.
+  """
   use Oban.Worker,
     queue: :cryptocompare_historical_jobs_queue,
     unique: [period: 60 * 86_400]
@@ -38,12 +53,40 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
     url = @url <> "?" <> URI.encode_query(query_params)
 
     case HTTPoison.get(url, headers, recv_timeout: 15_000) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        csv_to_ohlcv_list(body)
+      {:ok, %HTTPoison.Response{status_code: 200, body: body} = resp} ->
+        case rate_limited?(resp) do
+          true ->
+            Sanbase.Cryptocompare.HistoricalScheduler.pause()
+            reset_after_seconds = 1000
+
+            %{"type" => "resume"}
+            |> Sanbase.Cryptocompare.PauseResumeWorker.new(schedule_in: reset_after_seconds)
+            |> Oban.insert()
+
+            {:error, :rate_limit}
+
+          false ->
+            csv_to_ohlcv_list(body)
+        end
 
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  defp rate_limited?(resp) do
+    case get_header(resp, "X-RateLimit-Remaining") do
+      {_, "0"} ->
+        reset = 0
+        {:error, :rate_limit}
+
+      _ ->
+        false
+    end
+  end
+
+  defp get_header(%HTTPoison.Response{} = resp, header) do
+    Enum.find(resp.headers, &match?({^header, _}, &1))
   end
 
   defp csv_to_ohlcv_list(data) do

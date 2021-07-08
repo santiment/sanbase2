@@ -43,6 +43,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :comment_proposal_id,
     :comment_short_url_id,
     :comment_timeline_event_id,
+    :current_user_address_details,
     :infrastructure,
     :insights_comments_count,
     :insights_count_per_user,
@@ -50,7 +51,8 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :project_by_slug,
     :short_urls_comments_count,
     :timeline_events_comments_count,
-    :current_user_address_details,
+    :traded_on_exchanges_count,
+    :traded_on_exchanges,
     :wallet_hunters_proposals_comments_count
   ]
 

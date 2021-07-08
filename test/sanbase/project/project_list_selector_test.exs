@@ -410,5 +410,55 @@ defmodule Sanbase.Model.ProjectListSelectorTest do
         assert p4.slug not in slugs
       end)
     end
+
+    test "traded on exchanges" do
+      p1 = insert(:random_project)
+      p2 = insert(:random_project)
+      p3 = insert(:random_project)
+      p4 = insert(:random_project)
+
+      insert(:source_slug_mapping, source: "cryptocompare", slug: p1.ticker, project_id: p1.id)
+      insert(:source_slug_mapping, source: "cryptocompare", slug: p2.ticker, project_id: p2.id)
+      insert(:source_slug_mapping, source: "cryptocompare", slug: p3.ticker, project_id: p3.id)
+      insert(:source_slug_mapping, source: "cryptocompare", slug: p4.ticker, project_id: p4.id)
+
+      insert(:market, base_asset: p1.ticker, exchange: "Binance")
+      insert(:market, base_asset: p2.ticker, exchange: "Binance")
+      insert(:market, base_asset: p2.ticker, exchange: "Bitfinex")
+      insert(:market, base_asset: p3.ticker, exchange: "Bitfinex")
+      insert(:market, base_asset: p3.ticker, exchange: "LAFinance")
+
+      # Test OR selector
+      or_selector = %{
+        filters: [
+          %{
+            name: "traded_on_exchanges",
+            args: %{exchanges: ["Binance", "Bitfinex"], exchanges_combinator: "or"}
+          }
+        ]
+      }
+
+      {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
+        ListSelector.slugs(%{selector: or_selector})
+
+      assert total_projects_count == 3
+      assert Enum.sort(slugs) == Enum.sort([p1.slug, p2.slug, p3.slug])
+
+      # Test AND selector
+      and_selector = %{
+        filters: [
+          %{
+            name: "traded_on_exchanges",
+            args: %{exchanges: ["Binance", "Bitfinex"], exchanges_combinator: "and"}
+          }
+        ]
+      }
+
+      {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
+        ListSelector.slugs(%{selector: and_selector})
+
+      assert total_projects_count == 1
+      assert slugs == [p2.slug]
+    end
   end
 end

@@ -208,6 +208,41 @@ ALTER SEQUENCE public.api_call_limits_id_seq OWNED BY public.api_call_limits.id;
 
 
 --
+-- Name: asset_exchange_pairs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.asset_exchange_pairs (
+    id bigint NOT NULL,
+    base_asset character varying(255) NOT NULL,
+    quote_asset character varying(255) NOT NULL,
+    exchange character varying(255) NOT NULL,
+    source character varying(255) NOT NULL,
+    last_update timestamp(0) without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: asset_exchange_pairs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.asset_exchange_pairs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: asset_exchange_pairs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.asset_exchange_pairs_id_seq OWNED BY public.asset_exchange_pairs.id;
+
+
+--
 -- Name: blockchain_address_comments_mapping; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3031,6 +3066,13 @@ ALTER TABLE ONLY public.api_call_limits ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: asset_exchange_pairs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.asset_exchange_pairs ALTER COLUMN id SET DEFAULT nextval('public.asset_exchange_pairs_id_seq'::regclass);
+
+
+--
 -- Name: blockchain_address_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3590,6 +3632,14 @@ ALTER TABLE ONLY public.active_widgets
 
 ALTER TABLE ONLY public.api_call_limits
     ADD CONSTRAINT api_call_limits_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: asset_exchange_pairs asset_exchange_pairs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.asset_exchange_pairs
+    ADD CONSTRAINT asset_exchange_pairs_pkey PRIMARY KEY (id);
 
 
 --
@@ -4292,6 +4342,27 @@ CREATE UNIQUE INDEX api_call_limits_remote_ip_index ON public.api_call_limits US
 --
 
 CREATE UNIQUE INDEX api_call_limits_user_id_index ON public.api_call_limits USING btree (user_id);
+
+
+--
+-- Name: asset_exchange_pairs_base_asset_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX asset_exchange_pairs_base_asset_index ON public.asset_exchange_pairs USING btree (base_asset);
+
+
+--
+-- Name: asset_exchange_pairs_base_asset_quote_asset_exchange_source_ind; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX asset_exchange_pairs_base_asset_quote_asset_exchange_source_ind ON public.asset_exchange_pairs USING btree (base_asset, quote_asset, exchange, source);
+
+
+--
+-- Name: asset_exchange_pairs_exchange_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX asset_exchange_pairs_exchange_index ON public.asset_exchange_pairs USING btree (exchange);
 
 
 --
@@ -6172,3 +6243,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210608133141);
 INSERT INTO public."schema_migrations" (version) VALUES (20210609082745);
 INSERT INTO public."schema_migrations" (version) VALUES (20210616123403);
 INSERT INTO public."schema_migrations" (version) VALUES (20210701130227);
+INSERT INTO public."schema_migrations" (version) VALUES (20210707135227);

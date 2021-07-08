@@ -46,8 +46,13 @@ defmodule Sanbase.Utils.ErrorHandling do
           {Ecto.UUID.generate(), reason}
       end
 
-    error_msg =
-      "[#{uuid}] Can't fetch #{metric} for #{target_description} #{identifier_to_string(identifier)}"
+    target_str =
+      case target_description do
+        nil -> ""
+        _ -> "for #{target_description} "
+      end
+
+    error_msg = "[#{uuid}] Can't fetch #{metric} #{target_str}#{identifier_to_string(identifier)}"
 
     error_msg_with_reason = error_msg <> ", Reason: #{inspect(message)}"
 

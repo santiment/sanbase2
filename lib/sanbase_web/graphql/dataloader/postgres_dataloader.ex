@@ -21,11 +21,21 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:infrastructure, infrastructure_ids) do
     infrastructure_ids = Enum.to_list(infrastructure_ids)
 
-    from(inf in Infrastructure,
-      where: inf.id in ^infrastructure_ids
-    )
-    |> Repo.all()
-    |> Enum.map(fn %Infrastructure{id: id, code: code} -> {id, code} end)
+    Infrastructure.by_ids(infrastructure_ids)
+    |> Map.new(fn %Infrastructure{id: id, code: code} -> {id, code} end)
+  end
+
+  def query(:traded_on_exchanges, slugs_mapset) do
+    slugs = Enum.to_list(slugs_mapset)
+
+    Sanbase.Market.exchanges_per_slug(slugs)
+    |> Map.new()
+  end
+
+  def query(:traded_on_exchanges_count, slugs_mapset) do
+    slugs = Enum.to_list(slugs_mapset)
+
+    Sanbase.Market.exchanges_count_per_slug(slugs)
     |> Map.new()
   end
 

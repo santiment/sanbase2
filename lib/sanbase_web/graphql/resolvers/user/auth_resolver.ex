@@ -155,7 +155,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   defp address_message_hash(address) do
     message = "Login in Santiment with address #{address}"
     full_message = "\x19Ethereum Signed Message:\n" <> "#{String.length(message)}" <> message
-    {:ok, hash} = ExKeccak.hash_256(full_message)
+    hash = ExKeccak.hash_256(full_message)
     "0x" <> Base.encode16(hash, case: :lower)
   end
 end

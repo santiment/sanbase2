@@ -147,38 +147,39 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     "[" <> str <> "]"
   end
 
-  def map_to_input_object_str(%{} = map, opts \\ []) do
+  def map_to_args(%{} = map, opts \\ []) do
     map_as_input_object? = Keyword.get(opts, :map_as_input_object, false)
 
-    str =
-      Enum.map(map, fn
-        {k, [%{} | _] = l} ->
-          ~s/#{k}: [#{Enum.map(l, &map_to_input_object_str/1) |> Enum.join(",")}]/
+    Enum.map(map, fn
+      {k, [%{} | _] = l} ->
+        ~s/#{k}: [#{Enum.map(l, &map_to_input_object_str/1) |> Enum.join(",")}]/
 
-        {k, %DateTime{} = dt} ->
-          ~s/#{k}: "#{dt |> DateTime.truncate(:second) |> DateTime.to_iso8601()}"/
+      {k, %DateTime{} = dt} ->
+        ~s/#{k}: "#{dt |> DateTime.truncate(:second) |> DateTime.to_iso8601()}"/
 
-        {k, m} when is_map(m) ->
-          if map_as_input_object? do
-            ~s/#{k}: #{map_to_input_object_str(m)}/
-          else
-            ~s/#{k}: '#{Jason.encode!(m)}'/
-            |> String.replace(~r|\"|, ~S|\\"|)
-            |> String.replace(~r|'|, ~S|"|)
-          end
+      {k, m} when is_map(m) ->
+        if map_as_input_object? do
+          ~s/#{k}: #{map_to_input_object_str(m)}/
+        else
+          ~s/#{k}: '#{Jason.encode!(m)}'/
+          |> String.replace(~r|\"|, ~S|\\"|)
+          |> String.replace(~r|'|, ~S|"|)
+        end
 
-        {k, a} when a in [true, false, nil] ->
-          ~s/#{k}: #{inspect(a)}/
+      {k, a} when a in [true, false, nil] ->
+        ~s/#{k}: #{inspect(a)}/
 
-        {k, a} when is_atom(a) ->
-          ~s/#{k}: #{a |> Atom.to_string() |> String.upcase()}/
+      {k, a} when is_atom(a) ->
+        ~s/#{k}: #{a |> Atom.to_string() |> String.upcase()}/
 
-        {k, v} ->
-          ~s/#{k}: #{inspect(v)}/
-      end)
-      |> Enum.join(", ")
+      {k, v} ->
+        ~s/#{k}: #{inspect(v)}/
+    end)
+    |> Enum.join(", ")
+  end
 
-    "{" <> str <> "}"
+  def map_to_input_object_str(%{} = map, opts \\ []) do
+    "{" <> map_to_args(map, opts) <> "}"
   end
 
   def graphql_error_msg(metric_name, error) do

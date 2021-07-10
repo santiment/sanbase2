@@ -115,52 +115,58 @@ defmodule Sanbase.Clickhouse.TopHolders do
     page_size = Keyword.get(opts, :page_size)
     offset = (page - 1) * page_size
 
+    args = [
+      slug,
+      contract,
+      token_decimals,
+      DateTime.to_unix(from),
+      DateTime.to_unix(to),
+      page_size,
+      offset
+    ]
+
+    {labels_owners_filter, args} = maybe_add_labels_owners_filter(opts, args)
+
     query = """
     SELECT
-      toUnixTimestamp(dt),
-      address,
-      val as value,
-      val * price as value_usd,
-      partOfTotal
+      toUnixTimestamp(dt), address, val as value, val * price as value_usd, partOfTotal
     FROM (
       SELECT
-        max(dt) as dt,
-        address,
-        anyLast(value) as val,
-        any(partOfTotal) as partOfTotal
+        dt, address, val, partOfTotal
       FROM(
         SELECT
-          dt,
-          contract,
-          address,
-          rank,
-          value / pow(10, ?3) AS value,
-          multiIf(valueTotal > 0,
-          value / (valueTotal / pow(10, ?3)), 0) AS partOfTotal
+          max(dt) as dt, address, anyLast(value) as val, any(partOfTotal) as partOfTotal
         FROM (
-          SELECT *
-          FROM #{@table} FINAL
-          WHERE
-            contract = ?2
-            AND rank > 0
-            AND address NOT IN ('TOTAL', 'freeze')
-            AND dt >= toStartOfDay(toDateTime(?4))
-            AND dt <= toStartOfDay(toDateTime(?5))
-        )
-        GLOBAL ANY LEFT JOIN (
           SELECT
-            dt,
-            sum(value) AS valueTotal
-          FROM #{@table} FINAL
-          WHERE
-            contract = ?2
-            AND address IN ('TOTAL','freeze') AND rank < 0
-            AND dt >= toStartOfDay(toDateTime(?4))
-            AND dt <= toStartOfDay(toDateTime(?5))
-          GROUP BY dt
-        ) USING (dt) )
-      GROUP BY address
-      ORDER BY val DESC
+            dt, contract, address, rank, value / pow(10, ?3) AS value,
+            multiIf(valueTotal > 0, value / (valueTotal / pow(10, ?3)), 0) AS partOfTotal
+          FROM (
+            SELECT *
+            FROM #{@table} FINAL
+            WHERE
+              contract = ?2
+              AND rank > 0
+              AND address NOT IN ('TOTAL', 'freeze')
+              AND dt >= toStartOfDay(toDateTime(?4))
+              AND dt <= toStartOfDay(toDateTime(?5))
+          )
+          GLOBAL ANY LEFT JOIN (
+            SELECT
+              dt,
+              sum(value) AS valueTotal
+            FROM #{@table} FINAL
+            WHERE
+              contract = ?2
+              AND address IN ('TOTAL','freeze') AND rank < 0
+              AND dt >= toStartOfDay(toDateTime(?4))
+              AND dt <= toStartOfDay(toDateTime(?5))
+            GROUP BY dt
+          ) USING (dt)
+        )
+        GROUP BY address
+        ORDER BY val DESC
+      )
+      #{labels_owners_filter}
       LIMIT ?6 OFFSET ?7
     )
     GLOBAL ANY JOIN (
@@ -175,17 +181,42 @@ defmodule Sanbase.Clickhouse.TopHolders do
     ) USING (dt)
     """
 
-    args = [
-      slug,
-      contract,
-      token_decimals,
-      DateTime.to_unix(from),
-      DateTime.to_unix(to),
-      page_size,
-      offset
-    ]
-
     {query, args}
+  end
+
+  defp maybe_add_labels_owners_filter(opts, args) do
+    {labels_str, args} = filter_str(:labels, :label, opts, args)
+    {owners_str, args} = filter_str(:owners, :owner, opts, args)
+
+    case labels_str == nil and owners_str == nil do
+      true ->
+        {"", args}
+
+      false ->
+        clause = [labels_str, owners_str] |> Enum.reject(&is_nil/1) |> Enum.join(" AND ")
+
+        str = """
+        GLOBAL ANY INNER JOIN
+        (
+          SELECT address
+          FROM blockchain_address_labels
+          PREWHERE blockchain = 'ethereum' AND #{clause}
+        ) USING (address)
+        """
+
+        {str, args}
+    end
+  end
+
+  defp filter_str(opts_key, db_column, opts, args) do
+    case Keyword.get(opts, opts_key) do
+      :all ->
+        {nil, args}
+
+      values ->
+        str = "#{db_column} IN (?#{length(args) + 1})"
+        {str, args ++ [values]}
+    end
   end
 
   defp percent_of_total_supply_query(

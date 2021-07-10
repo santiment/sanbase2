@@ -242,6 +242,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
       arg(:page_size, non_null(:integer), default_value: 20)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
+      arg(:owners, list_of(:string))
+      arg(:labels, list_of(:string))
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)

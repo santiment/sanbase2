@@ -26,8 +26,7 @@ defmodule SanbaseWeb.AccountsController do
     email = auth.info.email
 
     with true <- is_binary(email),
-         {:ok, user} <-
-           User.find_or_insert_by(:email, email, %{login_origin: :google}),
+         {:ok, user} <- User.find_or_insert_by(:email, email, %{login_origin: :google}),
          {:ok, %{} = jwt_tokens_map} <-
            SanbaseWeb.Guardian.get_jwt_tokens(user,
              platform: device_data.platform,

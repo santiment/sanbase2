@@ -17,7 +17,11 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
   def has_allowed_login_attempts(user) do
     login_attempts = login_attempts_count(user)
 
-    login_attempts <= @allowed_login_attempts
+    if login_attempts <= @allowed_login_attempts do
+      :ok
+    else
+      {:error, :too_many_login_attempts}
+    end
   end
 
   def record_login_attempt(%{id: user_id}) do

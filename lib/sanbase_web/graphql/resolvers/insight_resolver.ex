@@ -131,9 +131,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     ]
 
     # Search is done only on the publicly visible (published) insights.
-    search_result_insights =
-      Post.public_insights_query(opts)
-      |> Sanbase.Insight.Search.run(search_term)
+    search_result_insights = Post.search_published_insights(search_term, opts)
 
     {:ok, search_result_insights}
   end

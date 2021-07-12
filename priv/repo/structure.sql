@@ -578,6 +578,7 @@ ALTER SEQUENCE public.currencies_id_seq OWNED BY public.currencies.id;
 CREATE TABLE public.email_login_attempts (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
+    ip_address character varying(15),
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );

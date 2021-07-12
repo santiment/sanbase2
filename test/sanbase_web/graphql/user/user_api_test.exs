@@ -494,7 +494,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
             context.mutation_func.(%{email: "john@example.com"})
           )
 
-        assert msg == "Can't login"
+        assert msg =~ "Too many login attempts"
       end)
     end
 

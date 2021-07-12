@@ -177,4 +177,21 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
     assert %DateTime{} = from_iso8601!(session3["expiresAt"])
     assert %DateTime{} = from_iso8601!(session3["lastActiveAt"])
   end
+
+  test "logout clears session", %{conn: conn} do
+    query = """
+    mutation {
+      logout {
+        success
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    assert json_response(result, 200)["data"]["logout"]["success"]
+    assert result.private.plug_session_info == :drop
+  end
 end

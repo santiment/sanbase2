@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
   use SanbaseWeb.ConnCase
 
   import Mock
-  import Mockery
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 

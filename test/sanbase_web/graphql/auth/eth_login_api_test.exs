@@ -1,28 +1,16 @@
 defmodule SanbaseWeb.Graphql.EthLoginApiTest do
   use SanbaseWeb.ConnCase
 
+  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 
-  test "eth login success case", context do
+  test "eth login success", context do
     # This address is an unused address on the Ropsten testnet. It is not a mainnet
     # address holding any coins. The signature is not a real signature as the
     # call to verify_signature/3 will be mocked
     address = "0x9024d48cc7be15343dfd76ef051fa5264cfbf7a9"
-    messageHash = "0xff8ca2965b505cabd1156342c1dfa72c11e7c5e00ff839a12af71e8a7d231731"
+    message_hash = "0xff8ca2965b505cabd1156342c1dfa72c11e7c5e00ff839a12af71e8a7d231731"
     signature = "0xeba4d1a091ca6e7cb0_signature_check_will_be_mocked"
-
-    mutation = """
-    mutation {
-      ethLogin(
-        signature: "#{signature}"
-        address: "#{address}"
-        messageHash: "#{messageHash}"){
-          user{ id firstLogin }
-          accessToken
-          refreshToken
-        }
-    }
-    """
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
     Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.verify_signature/3, true)
@@ -32,9 +20,7 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        context.conn
-        |> post("/graphql", mutation_skeleton(mutation))
-        |> json_response(200)
+        eth_login(context.conn, address, signature, message_hash)
         |> get_in(["data", "ethLogin"])
 
       assert is_binary(result["user"]["id"])
@@ -45,6 +31,43 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
     end)
   end
 
-  test "eth login fail case", context do
+  test "eth login fail", context do
+    address = "0x9024d48cc7be15343dfd76ef051fa5264cfbf7a9"
+    message_hash = "0xff8ca2965b_invalid_hash"
+    signature = "0xeba4d1a091ca6e7cb0_signature_check_will_be_mocked"
+
+    # Mock the external call to Ethauth
+    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.verify_signature/3, true)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      log =
+        capture_log(fn ->
+          error_msg =
+            eth_login(context.conn, address, signature, message_hash)
+            |> get_in(["errors", Access.at(0), "message"])
+
+          assert error_msg == "Login failed"
+        end)
+
+      assert log =~ "Login failed: invalid signature"
+    end)
+  end
+
+  defp eth_login(conn, address, signature, message_hash) do
+    mutation = """
+    mutation {
+      ethLogin(
+        signature: "#{signature}"
+        address: "#{address}"
+        messageHash: "#{message_hash}"){
+          user{ id firstLogin }
+          accessToken
+          refreshToken
+        }
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
   end
 end

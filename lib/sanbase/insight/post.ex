@@ -288,6 +288,10 @@ defmodule Sanbase.Insight.Post do
     end
   end
 
+  def search_published_insights(search_term, opts \\ []) do
+    public_insights_query(opts) |> Sanbase.Insight.Search.run(search_term)
+  end
+
   def related_projects(%Post{} = post) do
     tags =
       post

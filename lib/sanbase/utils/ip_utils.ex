@@ -19,4 +19,6 @@ defmodule Sanbase.Utils.IP do
   def is_localhost?("::1"), do: true
   def is_localhost?("0:0:0:0:0:0:0:1"), do: true
   def is_localhost?(_), do: false
+
+  def ip_tuple_to_string(ip), do: ip |> :inet_parse.ntoa() |> to_string()
 end

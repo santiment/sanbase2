@@ -32,6 +32,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Product}
   alias SanbaseWeb.Graphql.ContextPlug
+  alias Sanbase.Utils.IP
 
   require Logger
 
@@ -179,7 +180,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           remote_ip: remote_ip
         } = context
       ) do
-    remote_ip = remote_ip |> :inet_parse.ntoa() |> to_string()
+    remote_ip = IP.ip_tuple_to_string(remote_ip)
     auth_method = context[:auth][:auth_method] || :unauthorized
 
     case ApiCallLimit.get_quota(:remote_ip, remote_ip, auth_method) do

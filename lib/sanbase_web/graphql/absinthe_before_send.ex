@@ -25,6 +25,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   Only queries with many resolvers are included in the list of allowed queries.
   """
   alias SanbaseWeb.Graphql.Cache
+  alias Sanbase.Utils.IP
 
   @compile inline: [
              cache_result: 2,
@@ -93,7 +94,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
          count
        ) do
     auth_method = context[:auth][:auth_method] || :unauthorized
-    remote_ip = remote_ip |> :inet_parse.ntoa() |> to_string()
+    remote_ip = IP.ip_tuple_to_string(remote_ip)
 
     Sanbase.ApiCallLimit.update_usage(:remote_ip, remote_ip, count, auth_method)
   end
@@ -199,7 +200,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   defp construct_query_name(query), do: query
 
   defp remote_ip(blueprint) do
-    blueprint.execution.context.remote_ip |> :inet_parse.ntoa() |> to_string()
+    blueprint.execution.context.remote_ip |> IP.ip_tuple_to_string()
   end
 
   defp extract_caller_data(%{

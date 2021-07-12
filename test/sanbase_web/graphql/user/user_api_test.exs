@@ -482,6 +482,22 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       assert result["firstLogin"]
     end
 
+    test "fails if the user has no allowed attempts left", context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Accounts.EmailLoginAttempt.has_allowed_login_attempts/1,
+        false
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        msg =
+          execute_mutation_with_error(
+            context.conn,
+            context.mutation_func.(%{email: "john@example.com"})
+          )
+
+        assert msg =~ "Too many login attempts"
+      end)
+    end
+
     test "emailLogin with newsletter subscription adds newsletter subscription param", context do
       result =
         execute_mutation(

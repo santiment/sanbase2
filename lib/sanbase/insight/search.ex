@@ -5,15 +5,24 @@ defmodule Sanbase.Insight.Search do
   Provided a query which has `document_tokens` tsvector field and a search term,
   filter the results of the query that match the searching conditions only.
   """
+
   def run(query, search_term) do
-    where(
-      query,
-      fragment(
-        """
-        document_tokens @@ plainto_tsquery(?)
-        """,
-        ^search_term
-      )
+    from(
+      post in query,
+      join:
+        id_and_rank in fragment(
+          """
+          SELECT posts.id AS id,
+          ts_rank(posts.document_tokens, plainto_tsquery(?)) AS rank
+          FROM posts
+          WHERE posts.document_tokens @@ plainto_tsquery(?) OR posts.title ILIKE ?
+          """,
+          ^search_term,
+          ^search_term,
+          ^"%#{search_term}%"
+        ),
+      on: post.id == id_and_rank.id,
+      order_by: [desc: id_and_rank.rank]
     )
     |> Sanbase.Repo.all()
   end
@@ -25,12 +34,11 @@ defmodule Sanbase.Insight.Search do
         UPDATE posts
         SET document_tokens = (
           SELECT
-            to_tsvector(
-              posts.title || ' ' ||
-              posts.text ||' ' ||
-              coalesce((string_agg(tags.name, ' ')), '') || ' ' ||
-              coalesce((string_agg(metrics.name, ' ')), '')
-            )
+          ( setweight(to_tsvector('english', posts.title), 'A') ||
+            setweight(to_tsvector('english', posts.text), 'C') ||
+            setweight(to_tsvector('english', coalesce((string_agg(tags.name, ' ')), '')), 'B') ||
+            setweight(to_tsvector('english', coalesce((string_agg(metrics.name, ' ')), '')), 'B')
+          )
           FROM posts
           LEFT OUTER JOIN posts_tags ON posts.id = posts_tags.post_id
           LEFT OUTER JOIN tags ON tags.id = posts_tags.tag_id
@@ -53,12 +61,11 @@ defmodule Sanbase.Insight.Search do
       WITH cte AS (
         SELECT
           posts.id AS post_id,
-          to_tsvector(
-            posts.title || ' ' ||
-            posts.text || ' ' ||
-            coalesce((string_agg(tags.name, ' ')), '') || ' ' ||
-            coalesce((string_agg(metrics.name, ' ')), '')
-          ) AS doc_tokens
+            ( setweight(to_tsvector('english', posts.title), 'A') ||
+              setweight(to_tsvector('english', posts.text), 'C') ||
+              setweight(to_tsvector('english', coalesce((string_agg(tags.name, ' ')), '')), 'B') ||
+              setweight(to_tsvector('english', coalesce((string_agg(metrics.name, ' ')), '')), 'B')
+            ) AS doc_tokens
         FROM posts
         JOIN posts_tags ON posts.id = posts_tags.post_id
         JOIN tags ON tags.id = posts_tags.tag_id

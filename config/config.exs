@@ -19,7 +19,10 @@ config :phoenix, :json_library, Jason
 
 config :postgrex, :json_library, Jason
 
-config :sanbase, Sanbase, env: Mix.env()
+config :sanbase, Sanbase,
+  # will be stage or prod
+  deployment_env: {:system, "DEPLOYMENT_ENVIRONMENT", "dev"},
+  env: Mix.env()
 
 config :sanbase, SanbaseWeb.Plug.BasicAuth,
   username: {:system, "ADMIN_BASIC_AUTH_USERNAME", "admin"},

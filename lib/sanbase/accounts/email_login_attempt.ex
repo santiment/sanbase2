@@ -1,7 +1,7 @@
 defmodule Sanbase.Accounts.EmailLoginAttempt do
   use Ecto.Schema
 
-  import Ecto.Query
+  import Ecto.{Query, Changeset}
 
   alias Sanbase.Repo
 
@@ -27,9 +27,17 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
     end
   end
 
-  def record_login_attempt(%{id: user_id}, remote_ip) do
-    %__MODULE__{user_id: user_id, ip_address: remote_ip}
+  def create(%{id: user_id}, remote_ip) do
+    %__MODULE__{}
+    |> changeset(%{user_id: user_id, ip_address: remote_ip})
     |> Repo.insert()
+  end
+
+  def changeset(%__MODULE__{} = attempt, attrs \\ %{}) do
+    attempt
+    |> cast(attrs, [:user_id, :ip_address])
+    |> validate_required([:user_id, :ip_address])
+    |> foreign_key_constraint(:user_id)
   end
 
   # Private

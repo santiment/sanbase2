@@ -5,7 +5,7 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
 
   alias Sanbase.Repo
 
-  @interval_in_minutes 15
+  @interval_in_minutes 5
   @allowed_login_attempts 5
   @allowed_ip_attempts 20
 

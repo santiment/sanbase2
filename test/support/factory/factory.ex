@@ -714,7 +714,12 @@ defmodule Sanbase.Factory do
   end
 
   def email_login_attempt_factory() do
-    %EmailLoginAttempt{}
+    rand_octet = fn -> :rand.uniform(255) end
+
+    %EmailLoginAttempt{
+      user: build(:user),
+      ip_address: "#{rand_octet.()}.#{rand_octet.()}.#{rand_octet.()}.#{rand_octet.()}"
+    }
   end
 
   def rand_str(length \\ 10) do

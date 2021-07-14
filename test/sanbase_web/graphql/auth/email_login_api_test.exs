@@ -289,7 +289,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       user = insert(:user, email: "john@example.com")
 
       for _ <- 1..5,
-          do: insert(:email_login_attempt, user_id: user.id, ip_address: "127.0.0.1")
+          do: insert(:email_login_attempt, user: user, ip_address: "127.0.0.1")
 
       result =
         email_login(context.conn, %{email: "john@example.com"})
@@ -305,16 +305,16 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       user4 = insert(:user, email: "joel@example.com")
 
       for _ <- 1..5,
-          do: insert(:email_login_attempt, user_id: user1.id, ip_address: "127.0.0.1")
+          do: insert(:email_login_attempt, user: user1, ip_address: "127.0.0.1")
 
       for _ <- 1..5,
-          do: insert(:email_login_attempt, user_id: user2.id, ip_address: "127.0.0.1")
+          do: insert(:email_login_attempt, user: user2, ip_address: "127.0.0.1")
 
       for _ <- 1..5,
-          do: insert(:email_login_attempt, user_id: user3.id, ip_address: "127.0.0.1")
+          do: insert(:email_login_attempt, user: user3, ip_address: "127.0.0.1")
 
       for _ <- 1..5,
-          do: insert(:email_login_attempt, user_id: user4.id, ip_address: "127.0.0.1")
+          do: insert(:email_login_attempt, user: user4, ip_address: "127.0.0.1")
 
       result =
         email_login(context.conn, %{email: "john@example.com"})
@@ -329,7 +329,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
       for _ <- 1..6,
           # As the login attemt in this test is made on localhost, the below ip should not match
-          do: insert(:email_login_attempt, user_id: user.id, ip_address: "157.7.7.7")
+          do: insert(:email_login_attempt, user: user, ip_address: "157.7.7.7")
 
       msg =
         email_login(context.conn, %{email: "john@example.com"})
@@ -346,10 +346,10 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       user2 = insert(:user, email: "jane@example.com")
 
       for _ <- 1..11,
-          do: insert(:email_login_attempt, user_id: user1.id, ip_address: "127.0.0.1")
+          do: insert(:email_login_attempt, user: user1, ip_address: "127.0.0.1")
 
       for _ <- 1..11,
-          do: insert(:email_login_attempt, user_id: user2.id, ip_address: "127.0.0.1")
+          do: insert(:email_login_attempt, user: user2, ip_address: "127.0.0.1")
 
       msg =
         email_login(context.conn, %{email: "john@example.com"})

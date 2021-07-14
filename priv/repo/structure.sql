@@ -4492,6 +4492,20 @@ CREATE INDEX document_tokens_index ON public.posts USING gin (document_tokens);
 
 
 --
+-- Name: email_login_attempts_ip_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_login_attempts_ip_address_index ON public.email_login_attempts USING btree (ip_address);
+
+
+--
+-- Name: email_login_attempts_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_login_attempts_user_id_index ON public.email_login_attempts USING btree (user_id);
+
+
+--
 -- Name: email_token_uk; Type: INDEX; Schema: public; Owner: -
 --
 

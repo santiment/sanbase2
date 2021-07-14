@@ -19,7 +19,7 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
     email_login_attempts = login_attempts_count(user)
     ip_login_attempts = login_attempts_count(remote_ip)
 
-    if email_login_attempts <= @allowed_login_attempts ||
+    if email_login_attempts <= @allowed_login_attempts &&
          ip_login_attempts <= @allowed_login_attempts do
       :ok
     else

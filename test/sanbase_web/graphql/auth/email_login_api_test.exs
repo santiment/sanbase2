@@ -298,11 +298,33 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       assert result["success"]
     end
 
-    test "fails if the user has attempted to login more than 5 times", context do
+    test "fails if the user has attempted to login more than 5 times having the same email",
+         context do
       user = insert(:user, email: "john@example.com")
 
       for _ <- 1..6,
-          do: insert(:email_login_attempt, user_id: user.id, ip_address: "127.0.0.1")
+          # As the login attemt in this test is made on localhost, the below ip should not match
+          do: insert(:email_login_attempt, user_id: user.id, ip_address: "157.7.7.7")
+
+      msg =
+        email_login(context.conn, %{email: "john@example.com"})
+        |> Map.get("errors")
+        |> hd()
+        |> Map.get("message")
+
+      assert msg =~ "Too many login attempts"
+    end
+
+    test "fails if the user has attempted to login more than 5 times having the same ip",
+         context do
+      user1 = insert(:user, email: "john@example.com")
+      user2 = insert(:user, email: "jane@example.com")
+
+      for _ <- 1..3,
+          do: insert(:email_login_attempt, user_id: user1.id, ip_address: "127.0.0.1")
+
+      for _ <- 1..3,
+          do: insert(:email_login_attempt, user_id: user2.id, ip_address: "127.0.0.1")
 
       msg =
         email_login(context.conn, %{email: "john@example.com"})

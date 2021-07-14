@@ -29,7 +29,7 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
 
   def record_login_attempt(%{id: user_id}, remote_ip) do
     %__MODULE__{user_id: user_id, ip_address: remote_ip}
-    |> Repo.insert!()
+    |> Repo.insert()
   end
 
   # Private

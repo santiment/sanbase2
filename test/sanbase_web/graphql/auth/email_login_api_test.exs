@@ -318,7 +318,6 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
       result =
         email_login(context.conn, %{email: "john@example.com"})
-        |> IO.inspect()
         |> get_in(["data", "emailLogin"])
 
       assert result["success"]

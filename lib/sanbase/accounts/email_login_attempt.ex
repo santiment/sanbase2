@@ -28,9 +28,14 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
   end
 
   def create(%{id: user_id}, remote_ip) do
-    %__MODULE__{}
-    |> changeset(%{user_id: user_id, ip_address: remote_ip})
-    |> Repo.insert()
+    attempt =
+      %__MODULE__{}
+      |> changeset(%{user_id: user_id, ip_address: remote_ip})
+      |> Repo.insert()
+      |> case do
+        {:error, _} -> {:error, :too_many_login_attempts}
+        attempt -> attempt
+      end
   end
 
   def changeset(%__MODULE__{} = attempt, attrs \\ %{}) do

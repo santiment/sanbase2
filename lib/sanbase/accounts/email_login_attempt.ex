@@ -7,6 +7,7 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
 
   @interval_in_minutes 15
   @allowed_login_attempts 5
+  @allowed_ip_attempts 20
 
   schema "email_login_attempts" do
     belongs_to(:user, Sanbase.Accounts.User)
@@ -20,7 +21,7 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
     ip_login_attempts = login_attempts_count(remote_ip)
 
     if email_login_attempts <= @allowed_login_attempts &&
-         ip_login_attempts <= @allowed_login_attempts do
+         ip_login_attempts <= @allowed_ip_attempts do
       :ok
     else
       {:error, :too_many_login_attempts}

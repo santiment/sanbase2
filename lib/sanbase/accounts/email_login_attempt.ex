@@ -37,6 +37,7 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
     attempt
     |> cast(attrs, [:user_id, :ip_address])
     |> validate_required([:user_id, :ip_address])
+    |> validate_length(:ip_address, min: 7, max: 15)
     |> foreign_key_constraint(:user_id)
   end
 

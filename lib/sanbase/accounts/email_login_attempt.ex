@@ -17,14 +17,13 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
   end
 
   def has_allowed_login_attempts(user, remote_ip) do
-    email_login_attempts = login_attempts_count(user)
-    ip_login_attempts = login_attempts_count(remote_ip)
+    too_many_login_attempts? = login_attempts_count(user) > @allowed_login_attempts
+    too_many_ip_attempts? = login_attempts_count(remote_ip) > @allowed_ip_attempts
 
-    if email_login_attempts <= @allowed_login_attempts &&
-         ip_login_attempts <= @allowed_ip_attempts do
-      :ok
-    else
+    if too_many_login_attempts? or too_many_ip_attempts? do
       {:error, :too_many_login_attempts}
+    else
+      :ok
     end
   end
 

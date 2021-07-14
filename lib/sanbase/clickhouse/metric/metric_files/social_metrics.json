@@ -30,7 +30,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -136,7 +136,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -241,7 +241,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -346,7 +346,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -451,7 +451,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -556,7 +556,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -661,7 +661,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -734,8 +734,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-  ,
+  },
   {
     "human_readable_name": "Unique Social Volume Total (5m)",
     "name": "unique_social_volume_total_5m",
@@ -752,8 +751,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-  ,
+  },
   {
     "human_readable_name": "Unique Social Volume Total (1h)",
     "name": "unique_social_volume_total_1h",
@@ -770,8 +768,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-  ,
+  },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Total",
     "name": "social_dominance_total_1h_moving_average",
@@ -788,8 +785,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance Total",
     "name": "social_dominance_total_24h_moving_average",
@@ -806,8 +802,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Telegram",
     "name": "social_dominance_telegram_1h_moving_average",
@@ -824,8 +819,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance Telegram",
     "name": "social_dominance_telegram_24h_moving_average",
@@ -842,8 +836,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Reddit",
     "name": "social_dominance_reddit_1h_moving_average",
@@ -860,8 +853,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance Reddit",
     "name": "social_dominance_reddit_24h_moving_average",
@@ -878,8 +870,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Twitter",
     "name": "social_dominance_twitter_1h_moving_average",
@@ -896,8 +887,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance Twitter",
     "name": "social_dominance_twitter_24h_moving_average",
@@ -914,8 +904,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Bitcointalk",
     "name": "social_dominance_bitcointalk_1h_moving_average",
@@ -932,8 +921,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance Bitcointalk",
     "name": "social_dominance_bitcointalk_24h_moving_average",

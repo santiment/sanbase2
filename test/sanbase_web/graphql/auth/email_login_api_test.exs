@@ -254,9 +254,21 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       |> json_response(200)
     end
 
+    test "emailLogin fails when origin is not santiment", context do
+      error_msg =
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiemnt.net")
+        |> email_login(%{email: "john@example.com"})
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg == "Can't login"
+    end
+
     test "emailLogin returns true if the login email was sent successfully", context do
       result =
-        email_login(context.conn, %{email: "john@example.com"})
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
+        |> email_login(%{email: "john@example.com"})
         |> get_in(["data", "emailLogin"])
 
       assert {:ok, %User{}} = User.by_email("john@example.com")
@@ -266,7 +278,9 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
     test "emailLogin with newsletter subscription adds newsletter subscription param", context do
       result =
-        email_login(context.conn, %{email: "john@example.com", subscribeToWeeklyNewsletter: true})
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
+        |> email_login(%{email: "john@example.com", subscribeToWeeklyNewsletter: true})
         |> get_in(["data", "emailLogin"])
 
       assert {:ok, %User{}} = User.by_email("john@example.com")

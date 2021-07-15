@@ -64,13 +64,16 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def call(conn, _) do
     {conn, context} = build_context(conn, @auth_methods)
     conn = maybe_put_new_access_token(conn, context)
-    %{origin_host: origin_host, origin_url: origin_url} = get_origin(conn)
+
+    %{origin_host: origin_host, origin_url: origin_url, origin_host_parts: origin_host_parts} =
+      get_origin(conn)
 
     context =
       context
       |> Map.put(:remote_ip, conn.remote_ip)
       |> Map.put(:origin_url, origin_url)
       |> Map.put(:origin_host, origin_host)
+      |> Map.put(:origin_host_parts, origin_host_parts)
       |> Map.put(:rate_limiting_enabled, Config.get(:rate_limiting_enabled))
       |> Map.put(:device_data, SanbaseWeb.Guardian.device_data(conn))
       |> Map.put(:jwt_tokens, conn_to_jwt_tokens(conn))
@@ -537,16 +540,19 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       origin_url when is_binary(origin_url) ->
         # Strip trailing backslashes, ports, etc.
         %URI{host: origin_host} = origin_url |> URI.parse()
+        origin_host_parts = String.split(origin_host, ".")
 
         %{
           origin_host: origin_host,
-          origin_url: origin_url
+          origin_url: origin_url,
+          origin_host_parts: origin_host_parts
         }
 
       _ ->
         %{
           origin_host: nil,
-          origin_url: nil
+          origin_url: nil,
+          origin_host_parts: nil
         }
     end
   end

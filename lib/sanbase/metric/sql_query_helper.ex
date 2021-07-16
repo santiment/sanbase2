@@ -61,6 +61,22 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     """
   end
 
+  def metric_id_filter(metric, opts) when is_binary(metric) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+
+    """
+    metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?#{arg_position} LIMIT 1 )
+    """
+  end
+
+  def metric_id_filter(metrics, opts) when is_list(metrics) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+
+    """
+    metric_id IN ( SELECT DISTINCT(metric_id) FROM metric_metadata FINAL PREWHERE name IN (?#{arg_position}) )
+    """
+  end
+
   # Add additional `=`/`in` filters to the query. This is mostly used with labeled
   # metrics where additional column filters must be applied.
   def additional_filters([], _opts), do: []

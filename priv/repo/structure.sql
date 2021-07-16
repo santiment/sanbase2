@@ -4639,6 +4639,20 @@ CREATE UNIQUE INDEX post_images_image_url_index ON public.post_images USING btre
 
 
 --
+-- Name: post_images_post_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX post_images_post_id_index ON public.post_images USING btree (post_id);
+
+
+--
+-- Name: posts_metrics_post_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX posts_metrics_post_id_index ON public.posts_metrics USING btree (post_id);
+
+
+--
 -- Name: posts_metrics_post_id_metric_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4650,6 +4664,13 @@ CREATE UNIQUE INDEX posts_metrics_post_id_metric_id_index ON public.posts_metric
 --
 
 CREATE UNIQUE INDEX posts_projects_post_id_project_id_index ON public.posts_projects USING btree (post_id, project_id);
+
+
+--
+-- Name: posts_tags_post_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX posts_tags_post_id_index ON public.posts_tags USING btree (post_id);
 
 
 --
@@ -4870,6 +4891,13 @@ CREATE INDEX timeline_event_comments_mapping_timeline_event_id_index ON public.t
 
 
 --
+-- Name: timeline_events_post_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX timeline_events_post_id_index ON public.timeline_events USING btree (post_id);
+
+
+--
 -- Name: timeline_events_user_id_inserted_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5000,6 +5028,13 @@ CREATE UNIQUE INDEX users_twitter_id_index ON public.users USING btree (twitter_
 --
 
 CREATE UNIQUE INDEX users_username_index ON public.users USING btree (username);
+
+
+--
+-- Name: votes_post_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX votes_post_id_index ON public.votes USING btree (post_id);
 
 
 --
@@ -6245,3 +6280,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210616123403);
 INSERT INTO public."schema_migrations" (version) VALUES (20210701130227);
 INSERT INTO public."schema_migrations" (version) VALUES (20210707135227);
 INSERT INTO public."schema_migrations" (version) VALUES (20210712125345);
+INSERT INTO public."schema_migrations" (version) VALUES (20210716075649);

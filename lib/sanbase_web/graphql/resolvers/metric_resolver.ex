@@ -160,11 +160,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
+  def latest_metrics_data(_root, %{selector: selector, metrics: metrics} = args, _resolution) do
+    with {:ok, selector} <- args_to_selector(args),
+         {:ok, opts} <- selector_args_to_opts(args),
+         :ok <- check_metrics_slugs_cartesian_limit(metrics, selector, 20_000),
+         {:ok, data} <- Metric.LatestMetric.latest_metrics_data(metrics, selector) do
+      {:ok, data}
+    end
+  end
+
   # Private functions
 
   # timeseries_data and timeseries_data_per_slug are processed and fetched in
   # exactly the same way. The only difference is the function that is called
   # from the Metric module.
+
+  defp check_metrics_slugs_cartesian_limit(metrics, %{slug: slug_or_slugs}, limit) do
+    slugs = List.wrap(slug_or_slugs)
+    cartesian_product_length = length(metrics) * length(slugs)
+
+    case cartesian_product_length <= limit do
+      true -> :ok
+      false -> {:error, "The length of the metrics multiplied by the length of\
+      the slugs must not exceed #{limit}."}
+    end
+  end
+
   defp fetch_timeseries_data(metric, args, requested_fields, function) do
     transform =
       Map.get(args, :transform, %{type: "none"})

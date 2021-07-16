@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
   alias SanbaseWeb.Graphql.Middlewares.TransformResolution
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   object :metric_queries do
     @desc ~s"""
@@ -38,7 +39,8 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
       arg(:selector, :metric_target_selector_input_object)
       arg(:metrics, list_of(:string))
 
-      cache_resolve(&MetricResolver.latest_metrics_data/3, ttl: 600)
+      middleware(AccessControl)
+      cache_resolve(&MetricResolver.latest_metrics_data/3, ttl: 30)
     end
   end
 end

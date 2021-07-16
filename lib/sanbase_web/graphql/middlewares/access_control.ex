@@ -68,7 +68,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   defp check_plan(%Resolution{arguments: %{slug: slug}} = resolution)
-       when slug in @freely_available_slugs do
+       when is_binary(slug) and slug in @freely_available_slugs do
     resolution
   end
 

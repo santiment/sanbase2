@@ -23,6 +23,8 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
 
   @url "https://min-api.cryptocompare.com/data/histo/minute/daily"
 
+  def queue(), do: :cryptocompare_historical_jobs_queue
+
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
     %{"base_asset" => base_asset, "quote_asset" => quote_asset, "date" => date} = args
@@ -51,6 +53,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
     ]
 
     headers = [{"authorization", "Apikey #{api_key()}"}]
+
     url = @url <> "?" <> URI.encode_query(query_params)
 
     case HTTPoison.get(url, headers, recv_timeout: 15_000) do
@@ -68,6 +71,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   defp rate_limited?(resp) do
     zero_remainings =
       get_header(resp, "X-RateLimit-Remaining-All")
+      |> elem(1)
       |> parse_value_list()
       |> Enum.filter(&(&1.value == 0))
 
@@ -82,6 +86,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
 
     reset_after_seconds =
       get_header(resp, "X-RateLimit-Reset-All")
+      |> elem(1)
       |> parse_value_list()
       |> Enum.find(&(&1.time_window == biggest_rate_limited_window))
       |> Map.get(:value)

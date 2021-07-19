@@ -13,8 +13,6 @@ config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4001],
   server: true
 
-config :sanbase, Oban, queues: false, plugins: false
-
 # Print only warnings and errors during test. Do not log JSON in tests.
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
@@ -83,6 +81,11 @@ config :waffle,
 config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook, webhook_secret: "stripe_webhook_secret"
 
 config :sanbase, Sanbase.Alert, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "true"}
+
+config :sanbase, Oban, queues: false, plugins: false, crontab: false, prune: :disabled
+
+config :sanbase, Sanbase.Cryptocompare.HistoricalScheduler,
+  enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OHLCV_PRICES_SCHEDULER_ENABLED", "true"}
 
 # So the router can read it compile time
 System.put_env("TELEGRAM_ENDPOINT_RANDOM_STRING", "random_string")

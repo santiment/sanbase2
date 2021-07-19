@@ -18,6 +18,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
     queue: :cryptocompare_historical_jobs_queue,
     unique: [period: 60 * 86_400]
 
+  import Sanbase.Cryptocompare.HTTPHeaderUtils, only: [parse_value_list: 1]
   require Sanbase.Utils.Config, as: Config
 
   @url "https://min-api.cryptocompare.com/data/histo/minute/daily"
@@ -55,18 +56,8 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
     case HTTPoison.get(url, headers, recv_timeout: 15_000) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body} = resp} ->
         case rate_limited?(resp) do
-          true ->
-            Sanbase.Cryptocompare.HistoricalScheduler.pause()
-            reset_after_seconds = 1000
-
-            %{"type" => "resume"}
-            |> Sanbase.Cryptocompare.PauseResumeWorker.new(schedule_in: reset_after_seconds)
-            |> Oban.insert()
-
-            {:error, :rate_limit}
-
-          false ->
-            csv_to_ohlcv_list(body)
+          false -> csv_to_ohlcv_list(body)
+          biggest_rate_limited_window -> handle_rate_limit(resp, biggest_rate_limited_window)
         end
 
       {:error, error} ->
@@ -75,14 +66,31 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   end
 
   defp rate_limited?(resp) do
-    case get_header(resp, "X-RateLimit-Remaining") do
-      {_, "0"} ->
-        reset = 0
-        {:error, :rate_limit}
+    zero_remainings =
+      get_header(resp, "X-RateLimit-Remaining-All")
+      |> parse_value_list()
+      |> Enum.filter(&(&1.value == 0))
 
-      _ ->
-        false
+    case zero_remainings do
+      [] -> false
+      list -> Enum.max_by(list, & &1.time_window).time_window
     end
+  end
+
+  defp handle_rate_limit(resp, biggest_rate_limited_window) do
+    Sanbase.Cryptocompare.HistoricalScheduler.pause()
+
+    reset_after_seconds =
+      get_header(resp, "X-RateLimit-Reset-All")
+      |> parse_value_list()
+      |> Enum.find(&(&1.time_window == biggest_rate_limited_window))
+      |> Map.get(:value)
+
+    %{"type" => "resume"}
+    |> Sanbase.Cryptocompare.PauseResumeWorker.new(schedule_in: reset_after_seconds)
+    |> Oban.insert()
+
+    {:error, :rate_limit}
   end
 
   defp get_header(%HTTPoison.Response{} = resp, header) do

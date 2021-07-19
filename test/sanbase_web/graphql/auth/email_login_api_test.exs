@@ -306,7 +306,9 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
           do: insert(:email_login_attempt, user: user, ip_address: "127.0.0.1")
 
       result =
-        email_login(context.conn, %{email: "john@example.com"})
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
+        |> email_login(%{email: "john@example.com"})
         |> get_in(["data", "emailLogin"])
 
       assert result["success"]
@@ -331,7 +333,9 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
           do: insert(:email_login_attempt, user: user4, ip_address: "127.0.0.1")
 
       result =
-        email_login(context.conn, %{email: "john@example.com"})
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
+        |> email_login(%{email: "john@example.com"})
         |> get_in(["data", "emailLogin"])
 
       assert result["success"]
@@ -346,7 +350,9 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
           do: insert(:email_login_attempt, user: user, ip_address: "157.7.7.7")
 
       msg =
-        email_login(context.conn, %{email: "john@example.com"})
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
+        |> email_login(%{email: "john@example.com"})
         |> Map.get("errors")
         |> hd()
         |> Map.get("message")
@@ -366,7 +372,9 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
           do: insert(:email_login_attempt, user: user2, ip_address: "127.0.0.1")
 
       msg =
-        email_login(context.conn, %{email: "john@example.com"})
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
+        |> email_login(%{email: "john@example.com"})
         |> Map.get("errors")
         |> hd()
         |> Map.get("message")

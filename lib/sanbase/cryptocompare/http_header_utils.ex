@@ -33,9 +33,9 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
 
     iex> Sanbase.Cryptocompare.HTTPHeaderUtils.parse_value_list("1220397, 9500;window=1, 9500;window=60, 9500;window=3600, 38673;window=86400, 1220397;window=2592000")
     [
-      %{value: 1, time_period: 1},
-      %{value: 33, time_period: 60},
-      %{value: 2673, time_period: 3600},
+      %{value: 9500, time_period: 1},
+      %{value: 9500, time_period: 60},
+      %{value: 9500, time_period: 3600},
       %{value: 38673, time_period: 86400},
       %{value: 1220397, time_period: 2592000}
     ]

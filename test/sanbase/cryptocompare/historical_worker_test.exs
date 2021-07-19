@@ -28,7 +28,6 @@ defmodule Sanbase.Cryptocompare.HistoricalWorkerTest do
     from = ~D[2021-01-01]
     to = ~D[2021-01-10]
 
-    #
     Sanbase.Cryptocompare.HistoricalScheduler.add_jobs(base_asset, quote_asset, from, to)
 
     Sanbase.Mock.prepare_mock(HTTPoison, :get, fn url, _header, _ops ->

@@ -44,18 +44,10 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   def enabled?(), do: Config.get(:enabled?) |> String.to_existing_atom()
 
   def add_jobs(base_asset, quote_asset, from, to) do
-    Ecto.Multi.new()
-    |> add_jobs_to_multi(base_asset, quote_asset, from, to)
-    |> Sanbase.Repo.transaction()
-  end
-
-  defp add_jobs_to_multi(multi, base_asset, quote_asset, from, to) do
     generate_dates_inclusive(from, to)
-    |> Enum.reduce(multi, fn date, multi ->
-      key = {base_asset, quote_asset, date}
-      job = HistoricalWorker.new(%{base_asset: base_asset, quote_asset: quote_asset, date: date})
-
-      multi |> Oban.insert(key, job)
+    |> Enum.map(fn date ->
+      HistoricalWorker.new(%{base_asset: base_asset, quote_asset: quote_asset, date: date})
     end)
+    |> Oban.insert_all()
   end
 end

@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
   alias SanbaseWeb.Graphql.Middlewares.TransformResolution
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   object :metric_queries do
     @desc ~s"""
@@ -25,6 +26,21 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
       arg(:plan, :plans_enum)
 
       cache_resolve(&MetricResolver.get_available_metrics/3, ttl: 600)
+    end
+
+    field :get_latest_metric_data, list_of(:latest_metric_data) do
+      deprecate("""
+      This API is not intended for widespread use. \
+      It will be deprecated once Websocket Subscriptions are added
+      """)
+
+      meta(access: :restricted, min_plan: [sanapi: :pro, sanbase: :pro])
+
+      arg(:selector, :metric_target_selector_input_object)
+      arg(:metrics, list_of(:string))
+
+      middleware(AccessControl)
+      cache_resolve(&MetricResolver.latest_metrics_data/3, ttl: 30)
     end
   end
 end

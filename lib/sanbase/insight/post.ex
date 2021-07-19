@@ -288,6 +288,10 @@ defmodule Sanbase.Insight.Post do
     end
   end
 
+  def search_published_insights(search_term, opts \\ []) do
+    public_insights_query(opts) |> Sanbase.Insight.Search.run(search_term)
+  end
+
   def related_projects(%Post{} = post) do
     tags =
       post
@@ -601,7 +605,7 @@ defmodule Sanbase.Insight.Post do
     |> Enum.map(fn %{image_url: image_url} -> image_url end)
   end
 
-  defp delete_post_images(%Post{} = post) do
+  def delete_post_images(%Post{} = post) do
     extract_image_url_from_post(post)
     |> Enum.map(&Sanbase.FileStore.delete/1)
   end

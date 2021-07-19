@@ -5,6 +5,8 @@ end
 defimpl Sanbase.Alert, for: Any do
   alias Sanbase.Accounts.{UserSettings, Settings, User}
 
+  require Sanbase.Utils.Config, as: Config
+
   @default_alerts_limit_per_day Settings.default_alerts_limit_per_day()
 
   @channels Map.keys(@default_alerts_limit_per_day)
@@ -218,26 +220,34 @@ defimpl Sanbase.Alert, for: Any do
 
   defp transform_payload(payload, user_trigger_id, channel) do
     payload
-    |> extend_payload(user_trigger_id, channel)
+    |> maybe_add_stage_tag(user_trigger_id, channel)
+    |> maybe_add_alert_link(user_trigger_id, channel)
     |> String.replace("\n\n\n", "\n\n")
   end
 
-  defp extend_payload(payload, user_trigger_id, :telegram) do
+  defp maybe_add_stage_tag(payload, _id, _channel) do
+    case Config.module_get(Sanbase, :deployment_env) do
+      "stage" -> "[STAGE]" <> payload
+      _ -> payload
+    end
+  end
+
+  defp maybe_add_alert_link(payload, user_trigger_id, :telegram) do
     """
     #{payload}
     [View Alert](#{SanbaseWeb.Endpoint.show_alert_url(user_trigger_id)})
     """
   end
 
-  defp extend_payload(payload, user_trigger_id, :email) do
+  defp maybe_add_alert_link(payload, user_trigger_id, :email) do
     """
     #{payload}
     Triggered by #{SanbaseWeb.Endpoint.show_alert_url(user_trigger_id)}
     """
   end
 
-  defp extend_payload(payload, _, :webhook), do: payload
-  defp extend_payload(payload, _trigger_id, :telegram_channel), do: payload
+  defp maybe_add_alert_link(payload, _, :webhook), do: payload
+  defp maybe_add_alert_link(payload, _trigger_id, :telegram_channel), do: payload
 
   defp do_send_email(email, payload) do
     Sanbase.Email.Template.alerts_template()

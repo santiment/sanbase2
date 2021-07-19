@@ -103,14 +103,14 @@ defmodule Sanbase.Accounts.User.Email do
         @token_valid_window_minutes
   end
 
-  def send_login_email(user, origin_url, args \\ %{}) do
+  def send_login_email(user, [_, "santiment", "net"] = origin_host_parts, args \\ %{}) do
+    origin_url = "https://" <> Enum.join(origin_host_parts, ".")
+
     origin_url
     |> Sanbase.Email.Template.choose_login_template(first_login?: user.first_login)
     |> mandrill_api().send(
       user.email,
-      %{
-        LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url, args)
-      },
+      %{LOGIN_LINK: generate_login_link(user, origin_host_parts, args)},
       %{subaccount: "login-emails"}
     )
   end
@@ -125,5 +125,11 @@ defmodule Sanbase.Accounts.User.Email do
       },
       %{subaccount: "login-emails"}
     )
+  end
+
+  defp generate_login_link(user, origin_host_parts, args) do
+    [origin_app, "santiment", "net"] = origin_host_parts
+    origin_url = "https://#{origin_app}.santiment.net"
+    SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url, args)
   end
 end

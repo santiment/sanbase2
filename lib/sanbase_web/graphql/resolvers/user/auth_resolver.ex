@@ -75,13 +75,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
   def email_login(%{email: email} = args, %{
         context: %{
-          origin_url: origin_url,
+          origin_host_parts: origin_host_parts,
           remote_ip: remote_ip
         }
       }) do
     remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
 
-    with {:ok, user} <- User.find_or_insert_by(:email, email, %{username: args[:username]}),
+    with true <- allowed_origin?(origin_host_parts),
+         {:ok, user} <- User.find_or_insert_by(:email, email, %{username: args[:username]}),
          :ok <- EmailLoginAttempt.has_allowed_login_attempts(user, remote_ip),
          {:ok, user} <- User.update_email_token(user, args[:consent]),
          {:ok, _user} <- User.send_login_email(user, origin_url, args),
@@ -120,6 +121,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   end
 
   # No eth account and there is a user logged in
+
+  defp allowed_origin?(["santiment", "net"] = _hosted_parts), do: true
+  defp allowed_origin?([_origin_app, "santiment", "net"] = _hosted_parts), do: true
+  defp allowed_origin?(_hosted_parts), do: {:error, "Origin header is not supported."}
 
   defp fetch_user(
          %{address: address, context: %{auth: %{auth_method: :user_token, current_user: user}}},

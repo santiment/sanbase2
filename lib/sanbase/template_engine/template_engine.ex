@@ -52,9 +52,20 @@ defmodule Sanbase.TemplateEngine do
   # Number bigger than 1000000 are made human readable: 1.54 Million, 85.00 Billion
   defp human_readable(data) do
     case data do
-      num when is_number(num) and num >= 1_000_000 -> Number.Human.number_to_human(num)
-      num when is_number(num) and num >= 1000 -> Number.Delimit.number_to_delimited(num)
-      _ -> data
+      num when is_number(num) and (num >= 1_000_000 or num <= -1_000_000) ->
+        Number.Human.number_to_human(num)
+
+      num when is_number(num) and (num >= 1000 or num <= -1000) ->
+        Number.Delimit.number_to_delimited(num)
+
+      num when is_number(num) and (num > -1 and num < 1) ->
+        Number.Delimit.number_to_delimited(num, precision: 8)
+
+      num when is_float(num) ->
+        Number.Delimit.number_to_delimited(num, precision: 2)
+
+      num when is_integer(num) ->
+        Integer.to_string(num)
     end
   end
 end

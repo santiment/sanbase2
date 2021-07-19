@@ -139,6 +139,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :daily_active_deposits,
           :emojis_sentiment,
           :exchange_funds_flow,
+          :get_latest_metric_data,
           :gas_used,
           :get_project_trending_history,
           :get_word_trending_history,

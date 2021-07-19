@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   alias Sanbase.InternalServices.Ethauth
-  alias Sanbase.Accounts.{User, EthAccount}
+  alias Sanbase.Accounts.{User, EthAccount, EmailLoginAttempt}
   alias Sanbase.Billing
 
   require Logger
@@ -73,14 +73,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     end
   end
 
-  def email_login(%{email: email} = args, %{context: %{origin_host_parts: origin_host_parts}}) do
+  def email_login(%{email: email} = args, %{
+        context: %{
+          origin_host_parts: origin_host_parts,
+          remote_ip: remote_ip
+        }
+      }) do
+    remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
+
     with true <- allowed_origin?(origin_host_parts),
          {:ok, user} <- User.find_or_insert_by(:email, email, %{username: args[:username]}),
+         :ok <- EmailLoginAttempt.has_allowed_login_attempts(user, remote_ip),
          {:ok, user} <- User.update_email_token(user, args[:consent]),
-         {:ok, _user} <- User.send_login_email(user, origin_host_parts, args) do
+         {:ok, _user} <- User.send_login_email(user, origin_host_parts, args),
+         {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip) do
       {:ok, %{success: true, first_login: user.first_login}}
     else
-      _ -> {:error, message: "Can't login"}
+      {:error, :too_many_login_attempts} ->
+        {:error, message: "Too many login attempts, try again after a few minutes"}
+
+      _ ->
+        {:error, message: "Can't login"}
     end
   end
 

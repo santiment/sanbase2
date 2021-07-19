@@ -298,6 +298,89 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
         )
       )
     end
+
+    test "succeeds if the user has attempted to login 5 times", context do
+      user = insert(:user, email: "john@example.com")
+
+      for _ <- 1..5,
+          do: insert(:email_login_attempt, user: user, ip_address: "127.0.0.1")
+
+      result =
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
+        |> email_login(%{email: "john@example.com"})
+        |> get_in(["data", "emailLogin"])
+
+      assert result["success"]
+    end
+
+    test "succeeds when different users login from the same ip not more than 20 times", context do
+      user1 = insert(:user, email: "john@example.com")
+      user2 = insert(:user, email: "jane@example.com")
+      user3 = insert(:user, email: "jake@example.com")
+      user4 = insert(:user, email: "joel@example.com")
+
+      for _ <- 1..5,
+          do: insert(:email_login_attempt, user: user1, ip_address: "127.0.0.1")
+
+      for _ <- 1..5,
+          do: insert(:email_login_attempt, user: user2, ip_address: "127.0.0.1")
+
+      for _ <- 1..5,
+          do: insert(:email_login_attempt, user: user3, ip_address: "127.0.0.1")
+
+      for _ <- 1..5,
+          do: insert(:email_login_attempt, user: user4, ip_address: "127.0.0.1")
+
+      result =
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
+        |> email_login(%{email: "john@example.com"})
+        |> get_in(["data", "emailLogin"])
+
+      assert result["success"]
+    end
+
+    test "fails if the user has attempted to login more than 5 times having the same email",
+         context do
+      user = insert(:user, email: "john@example.com")
+
+      for _ <- 1..6,
+          # As the login attemt in this test is made on localhost, the below ip should not match
+          do: insert(:email_login_attempt, user: user, ip_address: "157.7.7.7")
+
+      msg =
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
+        |> email_login(%{email: "john@example.com"})
+        |> Map.get("errors")
+        |> hd()
+        |> Map.get("message")
+
+      assert msg =~ "Too many login attempts"
+    end
+
+    test "fails if the user has attempted to login more than 20 having the same ip",
+         context do
+      user1 = insert(:user, email: "john@example.com")
+      user2 = insert(:user, email: "jane@example.com")
+
+      for _ <- 1..11,
+          do: insert(:email_login_attempt, user: user1, ip_address: "127.0.0.1")
+
+      for _ <- 1..11,
+          do: insert(:email_login_attempt, user: user2, ip_address: "127.0.0.1")
+
+      msg =
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
+        |> email_login(%{email: "john@example.com"})
+        |> Map.get("errors")
+        |> hd()
+        |> Map.get("message")
+
+      assert msg =~ "Too many login attempts"
+    end
   end
 
   defp email_login_verify_mutation(user) do

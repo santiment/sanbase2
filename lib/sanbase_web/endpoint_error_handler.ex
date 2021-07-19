@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
       end
 
       defp export_api_call_data(conn, kind, reason) do
-        remote_ip = conn.remote_ip |> :inet_parse.ntoa() |> to_string
+        remote_ip = conn.remote_ip |> Sanbase.Utils.IP.ip_tuple_to_string()
 
         status_code =
           if is_map(reason) do

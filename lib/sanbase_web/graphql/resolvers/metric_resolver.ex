@@ -160,8 +160,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  def latest_metrics_data(_root, %{metrics: metrics} = args, _resolution) do
+  def latest_metrics_data(_root, %{selector: selector, metrics: metrics} = args, _resolution) do
     with {:ok, selector} <- args_to_selector(args),
+         {:ok, opts} <- selector_args_to_opts(args),
          :ok <- check_metrics_slugs_cartesian_limit(metrics, selector, 20_000),
          {:ok, data} <- Metric.LatestMetric.latest_metrics_data(metrics, selector) do
       {:ok, data}

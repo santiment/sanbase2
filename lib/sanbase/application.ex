@@ -220,7 +220,7 @@ defmodule Sanbase.Application do
       Sanbase.ApiCallLimit.ETS,
 
       # Time series Prices DB connection
-      Sanbase.Prices.Store,
+      Sanbase.Prices.Store.child_spec(),
 
       # Start the Task Supervisor
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},

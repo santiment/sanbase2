@@ -52,7 +52,8 @@ defmodule Sanbase.Model.Project.SocialVolumeQuery.CronJob do
   end
 
   defp project_id_to_autogen_query_map() do
-    all_projects = Project.List.projects(preload: [:social_volume_query])
+    all_projects =
+      Project.List.projects(preload: [:social_volume_query], include_hidden_projects?: true)
 
     Map.new(
       all_projects,

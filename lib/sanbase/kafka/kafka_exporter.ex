@@ -72,7 +72,7 @@ defmodule Sanbase.KafkaExporter do
   """
 
   @spec persist_async(data | [data], pid() | atom()) :: :ok
-  def persist_async(data, exporter \\ __MODULE__) do
+  def persist_async(data, exporter) do
     GenServer.cast(exporter, {:persist, data})
   end
 

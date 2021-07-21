@@ -18,13 +18,25 @@ defmodule Sanbase.Model.Project.SocialVolumeQuery do
     |> unique_constraint(:project_id)
   end
 
-  def default_query(%Project{} = project) do
+  def default_query_parts(%Project{} = project) do
     %Project{ticker: ticker, name: name, slug: slug} = project
 
-    [ticker, name, slug]
+    # Handle the case where when a project is hidden its name is set to Delete
+    tokens =
+      case String.downcase(name) do
+        "delete" -> [ticker, slug]
+        _ -> [ticker, name, slug]
+      end
+
+    tokens
     |> Enum.reject(&is_nil/1)
     |> Enum.map(&String.downcase/1)
     |> Enum.uniq()
+  end
+
+  def default_query(%Project{} = project) do
+    project
+    |> default_query_parts()
     |> Enum.map(fn elem -> ~s/"#{elem}"/ end)
     |> Enum.join(" OR ")
   end

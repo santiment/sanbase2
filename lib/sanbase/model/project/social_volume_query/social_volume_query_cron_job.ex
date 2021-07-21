@@ -59,10 +59,15 @@ defmodule Sanbase.Model.Project.SocialVolumeQuery.CronJob do
       all_projects,
       fn
         %Project{} = project ->
+          default_query_parts = SocialVolumeQuery.default_query_parts(project)
+
           exclusion_string =
             all_projects
             |> filter_similar_projects(project)
-            |> Enum.map(fn excluded_project -> "NOT \"#{excluded_project.name}\"" end)
+            |> Enum.map(&String.downcase(&1.name))
+            |> Enum.reject(&(&1 in default_query_parts))
+            |> Enum.uniq()
+            |> Enum.map(fn excluded_project_name -> "NOT \"#{excluded_project_name}\"" end)
             |> Enum.join(" ")
 
           query = SocialVolumeQuery.default_query(project)
@@ -72,19 +77,16 @@ defmodule Sanbase.Model.Project.SocialVolumeQuery.CronJob do
     )
   end
 
-  defp filter_similar_projects(all_projects, project) do
-    %Project{ticker: project_ticker, slug: project_slug, name: project_name} = project
+  defp filter_similar_projects(all_projects, %Project{slug: project_slug} = project) do
+    default_query_parts = SocialVolumeQuery.default_query_parts(project)
 
-    Enum.filter(all_projects, fn other_project ->
-      %Project{name: other_name, slug: other_slug} = other_project
-      name_tokens = String.downcase(other_name) |> String.split([" ", "-"])
-      project_name = String.downcase(project_name)
+    Enum.filter(all_projects, fn
+      %Project{slug: ^project_slug} ->
+        false
 
-      if project_slug != other_slug do
-        Enum.any?(name_tokens, fn element ->
-          element == project_name || element == project_slug || element == project_ticker
-        end)
-      end
+      %Project{name: other_name} ->
+        name_tokens = String.downcase(other_name) |> String.split([" ", "-"])
+        Enum.any?(name_tokens, &(&1 in default_query_parts))
     end)
   end
 end

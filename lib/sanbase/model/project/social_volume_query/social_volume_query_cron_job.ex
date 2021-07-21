@@ -33,7 +33,10 @@ defmodule Sanbase.Model.Project.SocialVolumeQuery.CronJob do
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {changeset, offset}, multi ->
       multi
-      |> Ecto.Multi.insert(offset, changeset, on_conflict: :nothing)
+      |> Ecto.Multi.insert(offset, changeset,
+        conflict_target: [:project_id],
+        on_conflict: :replace_all
+      )
     end)
     |> Sanbase.Repo.transaction()
     |> case do

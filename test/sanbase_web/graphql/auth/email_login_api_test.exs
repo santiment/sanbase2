@@ -264,6 +264,18 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       assert error_msg == "Can't login"
     end
 
+    test "emailLogin returns true with santiment.net origin", context do
+      result =
+        context.conn
+        |> Plug.Conn.put_req_header("origin", "https://santiment.net")
+        |> email_login(%{email: "john@example.com"})
+        |> get_in(["data", "emailLogin"])
+
+      assert {:ok, %User{}} = User.by_email("john@example.com")
+      assert result["success"]
+      assert result["firstLogin"]
+    end
+
     test "emailLogin returns true if the login email was sent successfully", context do
       result =
         context.conn

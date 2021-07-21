@@ -130,14 +130,12 @@ defmodule Sanbase.Accounts.User.Email do
     |> Sanbase.Email.Template.choose_login_template(first_login?: user.first_login)
     |> mandrill_api().send(
       user.email,
-      %{LOGIN_LINK: generate_login_link(user, origin_host_parts, args)},
+      %{LOGIN_LINK: generate_login_link(user, origin_url, args)},
       %{subaccount: "login-emails"}
     )
   end
 
-  defp generate_login_link(user, origin_host_parts, args) do
-    [origin_app, "santiment", "net"] = origin_host_parts
-    origin_url = "https://#{origin_app}.santiment.net"
+  defp generate_login_link(user, origin_url, args) do
     SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url, args)
   end
 end

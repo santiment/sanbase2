@@ -19,7 +19,7 @@ defmodule Sanbase.FailedTestFormatter do
         when is_list(failures) ->
           # Add a leading dot so the file:line string can be copy-pasted in the
           # terminal to directly execute it
-          file = String.replace_leading(test.tags.file, File.cwd!(), ".")
+          file = String.replace_leading(test.tags.file, File.cwd!() <> "/", "")
           line = test.tags.line
 
           %{
@@ -47,8 +47,12 @@ defmodule Sanbase.FailedTestFormatter do
 
   defp print_suite(config) do
     if config.failure_counter > 0 do
-      message = config.failed |> Enum.join("\n")
-      IO.puts("Failed tests:\n" <> message)
+      message = config.failed |> Enum.map(&(" " <> &1)) |> Enum.join("\n")
+
+      formatted_message =
+        IO.ANSI.red() <> "\n\nFailed tests:\n" <> message <> "\n" <> IO.ANSI.reset()
+
+      IO.puts(formatted_message)
     end
   end
 end

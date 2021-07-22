@@ -7,7 +7,7 @@ defmodule Sanbase.WalletHunters.Proposal do
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.{User, EthAccount}
-  alias Sanbase.WalletHunters.Contract
+  alias Sanbase.WalletHunters.{Contract, Bounty}
   alias Sanbase.WalletHunters.{RelayerApi, RelayQuota}
 
   @states_map %{
@@ -33,6 +33,7 @@ defmodule Sanbase.WalletHunters.Proposal do
     field(:user_labels, {:array, :string}, default: [])
 
     belongs_to(:user, User)
+    belongs_to(:bounty, Bounty)
 
     timestamps()
   end
@@ -49,7 +50,8 @@ defmodule Sanbase.WalletHunters.Proposal do
       :user_id,
       :proposed_address,
       :user_labels,
-      :transaction_status
+      :transaction_status,
+      :bounty_id
     ])
     |> validate_required([
       :transaction_id,

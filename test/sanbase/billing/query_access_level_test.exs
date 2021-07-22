@@ -119,6 +119,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :user_list,
           :wallet_hunters_proposal,
           :wallet_hunters_proposals,
+          :wallet_hunters_bounties,
+          :wallet_hunters_bounty,
           :watchlist,
           :watchlist_by_slug
         ]

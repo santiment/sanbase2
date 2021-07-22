@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
     field(:insight, :post)
     field(:short_url, :short_url)
     field(:timeline_event, :timeline_event)
-    field(:blockchain_address, :blockchain_address)
+    field(:blockchain_address, :blockchain_address_db_stored)
 
     field(:content, non_null(:string))
     field(:user, non_null(:public_user), resolve: dataloader(SanbaseRepo))

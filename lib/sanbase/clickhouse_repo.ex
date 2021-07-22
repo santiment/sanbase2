@@ -35,6 +35,7 @@ defmodule Sanbase.ClickhouseRepo do
     __MODULE__.query(sanitized_query, ordered_params)
     |> case do
       {:ok, result} ->
+        IO.inspect(result)
         {:ok, Enum.map(result.rows, transform_fn)}
 
       {:error, error} ->

@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
 
   object :list_item do
     field(:project, :project)
-    field(:blockchain_address, :blockchain_address)
+    field(:blockchain_address, :blockchain_address_db_stored)
   end
 
   object :watchlist_stats do

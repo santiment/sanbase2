@@ -2918,7 +2918,8 @@ CREATE TABLE public.wallet_hunters_proposals (
     proposed_address character varying(255),
     user_labels character varying(255)[] DEFAULT ARRAY[]::character varying[],
     transaction_id character varying(255) NOT NULL,
-    transaction_status character varying(255) DEFAULT 'pending'::character varying NOT NULL
+    transaction_status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    bounty_id bigint
 );
 
 
@@ -6020,6 +6021,14 @@ ALTER TABLE ONLY public.wallet_hunters_bounties
 
 
 --
+-- Name: wallet_hunters_proposals wallet_hunters_proposals_bounty_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_proposals
+    ADD CONSTRAINT wallet_hunters_proposals_bounty_id_fkey FOREIGN KEY (bounty_id) REFERENCES public.wallet_hunters_bounties(id) ON DELETE CASCADE;
+
+
+--
 -- Name: wallet_hunters_proposals_comments_mapping wallet_hunters_proposals_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6421,3 +6430,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210707135227);
 INSERT INTO public."schema_migrations" (version) VALUES (20210712125345);
 INSERT INTO public."schema_migrations" (version) VALUES (20210716075649);
 INSERT INTO public."schema_migrations" (version) VALUES (20210721140912);
+INSERT INTO public."schema_migrations" (version) VALUES (20210722141655);

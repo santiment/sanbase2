@@ -9,7 +9,7 @@ defmodule Sanbase.Repo.Migrations.CreateWalletHuntersBounties do
       add(:proposals_count, :integer)
       add(:proposal_reward, :integer)
       add(:transaction_id, :string)
-      add(:transaction_status, :string)
+      add(:transaction_status, :string, dafault: "pending")
       add(:hash_digest, :string)
       add(:user_id, references(:users, on_delete: :nothing))
 

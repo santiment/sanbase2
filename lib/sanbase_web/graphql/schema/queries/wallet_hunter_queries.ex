@@ -47,11 +47,12 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
       arg(:request, :wallet_hunters_request_object)
       arg(:signature, :string)
 
-      arg(:title, non_null(:string))
-      arg(:text, non_null(:string))
+      arg(:title, :string)
+      arg(:text, :string)
       arg(:proposed_address, non_null(:binary_blockchain_address))
       arg(:hunter_address, non_null(:binary_blockchain_address))
       arg(:user_labels, list_of(:string), default_value: [])
+      arg(:bounty_id, :id)
 
       middleware(JWTAuth)
       resolve(&WalletHuntersResolver.create_wh_proposal/3)

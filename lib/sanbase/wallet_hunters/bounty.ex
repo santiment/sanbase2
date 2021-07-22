@@ -1,4 +1,9 @@
 defmodule Sanbase.WalletHunters.Bounty do
+  @moduledoc """
+  Wallet Hunters Bounty is a wanted list with a set reward.
+  Hunters can make new proposals based on this wanted list and reap
+  the set reward.
+  """
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query

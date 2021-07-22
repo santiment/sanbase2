@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 11.12 (Debian 11.12-0+deb10u1)
--- Dumped by pg_dump version 11.12 (Debian 11.12-0+deb10u1)
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -138,8 +138,6 @@ $$;
 
 
 SET default_tablespace = '';
-
-SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -2866,6 +2864,45 @@ ALTER SEQUENCE public.votes_id_seq OWNED BY public.votes.id;
 
 
 --
+-- Name: wallet_hunters_bounties; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.wallet_hunters_bounties (
+    id bigint NOT NULL,
+    title character varying(255),
+    description text,
+    duration character varying(255),
+    proposals_count integer,
+    proposal_reward integer,
+    transaction_id character varying(255),
+    transaction_status character varying(255),
+    hash_digest character varying(255),
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: wallet_hunters_bounties_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.wallet_hunters_bounties_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: wallet_hunters_bounties_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.wallet_hunters_bounties_id_seq OWNED BY public.wallet_hunters_bounties.id;
+
+
+--
 -- Name: wallet_hunters_proposals; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3618,6 +3655,13 @@ ALTER TABLE ONLY public.votes ALTER COLUMN id SET DEFAULT nextval('public.votes_
 
 
 --
+-- Name: wallet_hunters_bounties id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_bounties ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_bounties_id_seq'::regclass);
+
+
+--
 -- Name: wallet_hunters_proposals id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4321,6 +4365,14 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: wallet_hunters_bounties wallet_hunters_bounties_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_bounties
+    ADD CONSTRAINT wallet_hunters_bounties_pkey PRIMARY KEY (id);
 
 
 --
@@ -5112,6 +5164,13 @@ CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (pos
 --
 
 CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING btree (timeline_event_id, user_id);
+
+
+--
+-- Name: wallet_hunters_bounties_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX wallet_hunters_bounties_user_id_index ON public.wallet_hunters_bounties USING btree (user_id);
 
 
 --
@@ -5953,6 +6012,14 @@ ALTER TABLE ONLY public.votes
 
 
 --
+-- Name: wallet_hunters_bounties wallet_hunters_bounties_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_bounties
+    ADD CONSTRAINT wallet_hunters_bounties_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: wallet_hunters_proposals_comments_mapping wallet_hunters_proposals_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6353,3 +6420,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210705104243);
 INSERT INTO public."schema_migrations" (version) VALUES (20210707135227);
 INSERT INTO public."schema_migrations" (version) VALUES (20210712125345);
 INSERT INTO public."schema_migrations" (version) VALUES (20210716075649);
+INSERT INTO public."schema_migrations" (version) VALUES (20210721140912);

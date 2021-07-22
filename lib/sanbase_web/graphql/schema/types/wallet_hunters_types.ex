@@ -63,6 +63,18 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
     field(:transaction_status, :string)
   end
 
+  object :wallet_hunters_bounty do
+    field(:id, :integer)
+    field(:user, :public_user)
+    field(:title, :string)
+    field(:description, :string)
+    field(:duration, :interval)
+    field(:proposal_reward, :integer)
+    field(:proposals_count, :integer)
+    field(:transaction_id, :string)
+    field(:transaction_status, :string)
+  end
+
   object :wallet_hunter_proposal do
     field(:id, :integer)
     field(:proposal_id, :id)

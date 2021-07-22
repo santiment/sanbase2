@@ -2,10 +2,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
   import Absinthe.Resolution.Helpers
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
-  alias Sanbase.WalletHunters.Proposal
-  alias Sanbase.WalletHunters.Vote
-
+  alias Sanbase.WalletHunters.{Proposal, Vote, Bounty}
   alias SanbaseWeb.Graphql.SanbaseDataloader
+
+  def create_wh_bounty(_root, args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    Bounty.create_bounty(current_user.id, args)
+    |> case do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, message: changeset_errors_string(changeset)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
   def create_wh_proposal(_root, args, %{
         context: %{auth: %{current_user: current_user}}
@@ -31,6 +45,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
     args = Map.put(args, :user_id, current_user.id)
 
     Vote.vote(args)
+  end
+
+  def wallet_hunters_bounties(_root, _args, _resolution) do
+    {:ok, Sanbase.WalletHunters.Bounty.list_bounties()}
+  end
+
+  def wallet_hunters_bounty(_root, args, _resolution) do
+    Sanbase.WalletHunters.Bounty.by_id(args.id)
+    |> case do
+      nil -> {:error, "Bounty does not exist with id: #{args.id}"}
+      bounty -> {:ok, bounty}
+    end
   end
 
   def wallet_hunters_proposals(_root, args, %{context: %{auth: %{current_user: current_user}}}) do

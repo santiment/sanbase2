@@ -35,3 +35,46 @@ defmodule Sanbase.Intercom.UserAttributes do
     |> Repo.all()
   end
 end
+
+defmodule Sanbase.Intercom.UserAttributes.KafkaDump do
+  import Ecto.Query
+  alias Sanbase.Intercom.UserAttributes
+  alias Sanbase.Repo
+
+  @topic "sanbase_user_intercom_attributes"
+
+  def run_async() do
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      run()
+    end)
+  end
+
+  def run() do
+    query =
+      from(ua in UserAttributes,
+        select: %{user_id: ua.user_id, attributes: ua.properties, timestamp: ua.inserted_at}
+      )
+
+    stream = Repo.stream(query, timeout: :infinity)
+
+    Repo.transaction(
+      fn ->
+        stream
+        |> Enum.each(fn %{user_id: user_id, attributes: attributes, timestamp: timestamp} ->
+          timestamp = DateTime.to_unix(timestamp)
+          key = "#{user_id}_#{timestamp}" |> IO.inspect()
+
+          data = %{
+            user_id: user_id,
+            attributes:
+              attributes |> Map.delete("email") |> Map.delete("name") |> Jason.encode!(),
+            timestamp: timestamp
+          }
+
+          SanExporterEx.Producer.send_data(@topic, [{key, Jason.encode!(data)}])
+        end)
+      end,
+      timeout: :infinity
+    )
+  end
+end

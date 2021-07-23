@@ -8,8 +8,6 @@ defmodule Sanbase.Repo.Migrations.MigrateSlackLinkToDiscord do
 
   def up do
     Application.ensure_all_started(:tzdata)
-    Application.ensure_all_started(:prometheus_ecto)
-    Sanbase.Prometheus.EctoInstrumenter.setup()
 
     migrate_discord_links()
   end

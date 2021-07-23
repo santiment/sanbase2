@@ -14,8 +14,6 @@ defmodule Sanbase.Repo.Migrations.MigrateOldTriggersSettingsFields do
   alias Sanbase.Repo
 
   def up do
-    Application.ensure_all_started(:prometheus_ecto)
-    Sanbase.Prometheus.EctoInstrumenter.setup()
     run()
   end
 

@@ -6,8 +6,6 @@ defmodule Sanbase.Repo.Migrations.UpdateApiAndSandataProductNames do
 
   def up do
     Application.ensure_all_started(:tzdata)
-    Application.ensure_all_started(:prometheus_ecto)
-    Sanbase.Prometheus.EctoInstrumenter.setup()
 
     %{
       Product.product_api() => "SanAPI by Santiment",

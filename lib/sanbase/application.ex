@@ -17,7 +17,7 @@ defmodule Sanbase.Application do
     print_starting_log(container_type)
 
     # Do some initialization. This includes increasing the backtrace depth,
-    # setting up some monitoring instruments, etc.
+    # starting the event bus, etc.
     init(container_type)
 
     # Get the proper children that have to be started in the current container type

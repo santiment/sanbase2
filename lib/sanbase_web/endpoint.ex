@@ -57,12 +57,6 @@ defmodule SanbaseWeb.Endpoint do
   # Some things are configured at runtime in SanbaseWeb.Plug.SessionPlug.call
   plug(SanbaseWeb.Plug.SessionPlug, @session_options)
 
-  # makes the /metrics URL happen
-  plug(Sanbase.Prometheus.Exporter)
-
-  # measures pipeline exec times
-  plug(Sanbase.Prometheus.PipelineInstrumenter)
-
   plug(SanbaseWeb.Router)
 
   @doc """

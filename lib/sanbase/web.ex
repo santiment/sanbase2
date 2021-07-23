@@ -4,12 +4,9 @@ defmodule Sanbase.Application.Web do
 
   def init() do
     # Overwrite kaffe consumer group with a new name
-    Sanbase.Kafka.Consumer.init()
+    Sanbase.Kafka.Consumear.init()
 
-    # API metrics
-    SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.install(SanbaseWeb.Graphql.Schema)
-
-    SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.install(SanbaseWeb.Graphql.Schema)
+    :ok
   end
 
   @doc ~s"""

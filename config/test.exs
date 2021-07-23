@@ -37,12 +37,6 @@ config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.TestServer
 
 # Configure postgres database
-config :sanbase, Sanbase.MigrationRepo,
-  pool: Ecto.Adapters.SQL.Sandbox,
-  username: "postgres",
-  password: "postgres",
-  database: "sanbase_test"
-
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   username: "postgres",

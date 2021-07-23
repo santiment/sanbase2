@@ -198,6 +198,9 @@ defmodule Sanbase.Application do
       # Start the endpoint when the application starts
       SanbaseWeb.Endpoint,
 
+      # Start the Postgres Ecto repository that will execute the migrations
+      Sanbase.MigrationRepo,
+
       # Start the Postgres Ecto repository
       Sanbase.Repo,
 

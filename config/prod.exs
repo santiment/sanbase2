@@ -20,8 +20,6 @@ config :sanbase, SanbaseWeb.Endpoint,
   live_view: [signing_salt: "${PHOENIX_LIVE_VIEW_SIGNING_SALT}"],
   check_origin: ["//*.santiment.net"]
 
-config :sanbase, ecto_repos: [Sanbase.Repo]
-
 # Clickhousex does not support `:system` tuples. The configuration is done
 # by defining defining `:url` in the ClickhouseRepo `init` function.
 config :sanbase, Sanbase.ClickhouseRepo,

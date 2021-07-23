@@ -42,6 +42,13 @@ config :sanbase, Sanbase.KafkaExporter,
 
 # Configure the postgres database access. These values are default values that
 # are used locally when developing.
+config :sanbase, Sanbase.MigrationRepo,
+  username: "postgress",
+  password: "postgress",
+  database: "sanbase_dev",
+  hostname: "localhost",
+  show_sensitive_data_on_connection_error: true
+
 config :sanbase, Sanbase.Repo,
   username: "postgres",
   password: "postgres",

@@ -2,7 +2,7 @@ defmodule Sanbase.MigrationRepo do
   use Ecto.Repo, otp_app: :sanbase, adapter: Ecto.Adapters.Postgres
 
   require Sanbase.Utils.Config, as: Config
-  @database_url_env_var_name "DATABASE_URL_MIGRATION_USER"
+  @database_url_env_var_name "DATABASE_URL_MIGRATIONS_USER"
   def database_url_env_var(), do: @database_url_env_var_name
 
   @doc """

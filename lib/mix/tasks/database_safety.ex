@@ -23,7 +23,7 @@ defmodule Mix.Tasks.DatabaseSafety do
     end
 
     env = Config.module_get(Sanbase, :env)
-    database_url = System.get_env(Sanbase.MigrationRepo.database_url_env_var())
+    database_url = System.get_env("DATABASE_URL")
 
     database_hostname = Config.module_get(Sanbase.Repo, :hostname)
 

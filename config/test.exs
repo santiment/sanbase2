@@ -44,6 +44,13 @@ config :sanbase, Sanbase.Repo,
   database: "sanbase_test",
   pool_size: 5
 
+config :sanbase, Sanbase.MigrationRepo,
+  username: "postgres",
+  password: "postgres",
+  database: "sanbase_dev",
+  hostname: "localhost",
+  show_sensitive_data_on_connection_error: true
+
 config :sanbase, Sanbase.ClickhouseRepo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",

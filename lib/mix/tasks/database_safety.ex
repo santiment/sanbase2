@@ -22,6 +22,10 @@ defmodule Mix.Tasks.DatabaseSafety do
       raise(Mix.Error, "Cannot load Envy")
     end
 
+    # When migrations are run with `mix ecto.migrate` the DATABSE_URL env var is
+    # used. Only in prod environment the DATABASE_URL_MIGRATIONS_USER env var is
+    # used, so here we do not check for it. The purposes of this task is to guard
+    # against running migrations against stage/prod when developing locally.
     env = Config.module_get(Sanbase, :env)
     database_url = System.get_env("DATABASE_URL")
 

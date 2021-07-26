@@ -12,7 +12,7 @@ config :tzdata, :autoupdate, :disabled
 # General application configuration
 config :sanbase,
   env: Mix.env(),
-  ecto_repos: [Sanbase.Repo],
+  ecto_repos: [Sanbase.Repo, Sanbase.MigrationRepo],
   available_slugs_module: Sanbase.AvailableSlugs
 
 config :phoenix, :json_library, Jason
@@ -57,6 +57,17 @@ config :sanbase, Sanbase.ClickhouseRepo,
   adapter: Ecto.Adapters.Postgres,
   queue_target: 10_000,
   queue_interval: 2000
+
+config :sanbase, Sanbase.MigrationRepo,
+  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
+  adapter: Ecto.Adapters.Postgres,
+  pool_size: 0,
+  max_overflow: 5,
+  queue_target: 5000,
+  queue_interval: 1000,
+  # because of pgbouncer
+  prepare: :unnamed,
+  migration_timestamps: [type: :naive_datetime_usec]
 
 config :sanbase, Sanbase.Repo,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],

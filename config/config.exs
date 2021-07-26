@@ -67,8 +67,7 @@ config :sanbase, Sanbase.Repo,
   queue_interval: 1000,
   # because of pgbouncer
   prepare: :unnamed,
-  migration_timestamps: [type: :naive_datetime_usec],
-  show_sensitive_data_on_connection_error: true
+  migration_timestamps: [type: :naive_datetime_usec]
 
 config :sanbase, Sanbase.Accounts.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}
 

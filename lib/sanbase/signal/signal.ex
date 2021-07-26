@@ -17,6 +17,7 @@ defmodule Sanbase.Signal do
   @type interval :: Type.interval()
   @type selector :: Type.selector()
   @type raw_signals_selector :: :all | selector()
+  @type opts :: Keyword.t()
 
   @spec has_signal?(signal) :: true | {:error, String.t()}
   def has_signal?(signal), do: SignalAdapter.has_signal?(signal)
@@ -163,9 +164,9 @@ defmodule Sanbase.Signal do
   The signal's aggregation function can be changed by the last optional parameter.
   If no aggregation is provided, a default one will be used (currently COUNT).
   """
-  @spec aggregated_timeseries_data(signal, selector, datetime, datetime, aggregation) ::
+  @spec aggregated_timeseries_data(signal, selector, datetime, datetime, opts) ::
           Type.aggregated_timeseries_data_result()
-  def aggregated_timeseries_data(signal, selector, from, to, aggregation) do
-    SignalAdapter.aggregated_timeseries_data(signal, selector, from, to, aggregation)
+  def aggregated_timeseries_data(signal, selector, from, to, opts) do
+    SignalAdapter.aggregated_timeseries_data(signal, selector, from, to, opts)
   end
 end

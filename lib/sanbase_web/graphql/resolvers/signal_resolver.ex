@@ -89,8 +89,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
          {:ok, opts} = selector_args_to_opts(args),
          {:ok, from, to, interval} <-
            calibrate(Signal, signal, selector, from, to, interval, 86_400, @datapoints),
-         {:ok, result} <-
-           Signal.timeseries_data(signal, selector, from, to, interval, opts) do
+         {:ok, result} <- Signal.timeseries_data(signal, selector, from, to, interval, opts) do
       {:ok, result |> Enum.reject(&is_nil/1)}
     else
       {:error, error} ->
@@ -134,9 +133,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
       %{is_accessible: true, is_restricted: false} ->
         false
 
-      %{restricted_from: from, restricted_to: to} ->
-        before_from? = from and DateTime.compare(signal_map.datetime, from) == :lt
-        after_to? = to and DateTime.compare(signal_map.datetime, to) == :gt
+      %{restricted_from: restricted_from, restricted_to: restricted_to} ->
+        before_from? =
+          match?(%DateTime{}, restricted_from) and
+            DateTime.compare(signal_map.datetime, restricted_from) == :lt
+
+        after_to? =
+          match?(%DateTime{}, restricted_to) and
+            DateTime.compare(signal_map.datetime, restricted_to) == :gt
 
         before_from? or after_to?
     end

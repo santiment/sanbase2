@@ -90,7 +90,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorkerTest do
               "{\"base_asset\":\"#{base_asset}\",\"price\":6217.993237443811,\"quote_asset\":\"USD\",\"source\":\"cryptocompare\",\"timestamp\":1609977840}"} in price_pairs_only_topic
     end)
 
-    # Seems to fix some ereor
+    # Seems to fix some error
     Sanbase.Cryptocompare.HistoricalScheduler.pause()
   end
 end

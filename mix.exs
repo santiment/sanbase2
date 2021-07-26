@@ -158,45 +158,45 @@ defmodule Sanbase.Mixfile do
       "ecto.load": [
         "load_dotenv",
         "database_safety",
-        "ecto.load -r Sanbase.Repo"
+        "ecto.load -r Sanbase.MigrationRepo"
       ],
       "ecto.create": [
         "load_dotenv",
         "database_safety",
-        "ecto.create -r Sanbase.Repo"
+        "ecto.create -r Sanbase.MigrationRepo"
       ],
       "ecto.drop": [
         "load_dotenv",
         "database_safety",
-        "ecto.drop -r Sanbase.Repo"
+        "ecto.drop -r Sanbase.MigrationRepo"
       ],
       "ecto.setup": [
         "load_dotenv",
         "database_safety",
-        "ecto.drop -r Sanbase.Repo",
-        "ecto.create -r Sanbase.Repo",
-        "ecto.load -r Sanbase.Repo"
+        "ecto.drop -r Sanbase.MigrationRepo",
+        "ecto.create -r Sanbase.MigrationRepo",
+        "ecto.load -r Sanbase.MigrationRepo"
       ],
       "ecto.migrate": [
         "load_dotenv",
         "database_safety",
-        "ecto.migrate -r Sanbase.Repo",
-        "ecto.dump -r Sanbase.Repo"
+        "ecto.migrate -r Sanbase.MigrationRepo",
+        "ecto.dump -r Sanbase.MigrationRepo"
       ],
       "ecto.gen.migration": [
-        "ecto.gen.migration -r Sanbase.Repo"
+        "ecto.gen.migration -r Sanbase.MigrationRepo"
       ],
       "ecto.rollback": [
         "load_dotenv",
         "database_safety",
-        "ecto.rollback -r Sanbase.Repo",
-        "ecto.dump -r Sanbase.Repo"
+        "ecto.rollback -r Sanbase.MigrationRepo",
+        "ecto.dump -r Sanbase.MigrationRepo"
       ],
       test: [
         "load_dotenv",
         "database_safety",
-        "ecto.create -r Sanbase.Repo --quiet",
-        "ecto.load -r Sanbase.Repo --skip-if-loaded",
+        "ecto.create -r Sanbase.MigrationRepo --quiet",
+        "ecto.load -r Sanbase.MigrationRepo --skip-if-loaded",
         "test"
       ]
     ]

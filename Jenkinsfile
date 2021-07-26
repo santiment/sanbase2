@@ -31,6 +31,7 @@ slaveTemplates.dockerTemplate { label ->
         try {
           sh "docker run --rm \
             --link test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}:test-db \
+            --env DATABASE_URL_MIGRATIONS_USER=postgres://postgres:password@test-db:5432/postgres \
             --env DATABASE_URL=postgres://postgres:password@test-db:5432/postgres \
             -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}"
         } finally {

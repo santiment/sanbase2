@@ -49,13 +49,6 @@ config :sanbase, Sanbase.Repo,
   hostname: "localhost",
   show_sensitive_data_on_connection_error: true
 
-config :sanbase, Sanbase.MigrationRepo,
-  username: "postgres",
-  password: "postgres",
-  database: "sanbase_dev",
-  hostname: "localhost",
-  show_sensitive_data_on_connection_error: true
-
 # Clickhousex does not support `:system` tuples. The configuration is done
 # by defining defining `:url` in the ClickhouseRepo `init` function.
 # These values are default values that are used locally when developing.

@@ -20,11 +20,6 @@ config :sanbase, SanbaseWeb.Endpoint,
   live_view: [signing_salt: "${PHOENIX_LIVE_VIEW_SIGNING_SALT}"],
   check_origin: ["//*.santiment.net"]
 
-# On production use a special migration_repo with more privileges.
-# This is set only for production otherwise on stage the mix tasks would cause
-# issues like ecto.load will create priv/repo and priv/migration_repo dirs
-config :sanbase, Sanbase.Repo, migration_repo: Sanbase.MigrationRepo
-
 # Clickhousex does not support `:system` tuples. The configuration is done
 # by defining defining `:url` in the ClickhouseRepo `init` function.
 config :sanbase, Sanbase.ClickhouseRepo,

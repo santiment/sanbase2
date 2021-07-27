@@ -41,7 +41,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   @spec list_liquidity_subscriptions() :: list(%Subscription{})
   def list_liquidity_subscriptions() do
     Subscription
-    |> Subscription.Query.all_active_and_trialing_subscriptions_for_plan(@san_stake_free_plan)
+    |> Subscription.Query.all_active_subscriptions_for_plan(@san_stake_free_plan)
     |> Subscription.Query.liquidity_subscriptions()
     |> Repo.all()
   end
@@ -53,7 +53,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   @spec user_has_active_sanbase_subscriptions?(non_neg_integer()) :: boolean()
   def user_has_active_sanbase_subscriptions?(user_id) do
     Subscription
-    |> Subscription.Query.all_active_and_trialing_subscriptions_for_plan(@san_stake_free_plan)
+    |> Subscription.Query.all_active_subscriptions_for_plan(@san_stake_free_plan)
     |> Subscription.Query.filter_user(user_id)
     |> Repo.all()
     |> Enum.any?()

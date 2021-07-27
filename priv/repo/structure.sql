@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 13.1
+-- Dumped by pg_dump version 13.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -52,6 +52,21 @@ CREATE TYPE public.color AS ENUM (
 CREATE TYPE public.lang AS ENUM (
     'en',
     'jp'
+);
+
+
+--
+-- Name: oban_job_state; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.oban_job_state AS ENUM (
+    'available',
+    'scheduled',
+    'executing',
+    'retryable',
+    'completed',
+    'discarded',
+    'cancelled'
 );
 
 
@@ -133,6 +148,29 @@ BEGIN
   END LOOP;
 
   RETURN result;
+END;
+$$;
+
+
+--
+-- Name: oban_jobs_notify(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.oban_jobs_notify() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  channel text;
+  notice json;
+BEGIN
+  IF NEW.state = 'available' THEN
+    channel = 'public.oban_insert';
+    notice = json_build_object('queue', NEW.queue);
+
+    PERFORM pg_notify(channel, notice::text);
+  END IF;
+
+  RETURN NULL;
 END;
 $$;
 
@@ -1230,6 +1268,63 @@ CREATE SEQUENCE public.notifications_id_seq
 --
 
 ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
+
+
+--
+-- Name: oban_jobs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oban_jobs (
+    id bigint NOT NULL,
+    state public.oban_job_state DEFAULT 'available'::public.oban_job_state NOT NULL,
+    queue text DEFAULT 'default'::text NOT NULL,
+    worker text NOT NULL,
+    args jsonb DEFAULT '{}'::jsonb NOT NULL,
+    errors jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,
+    attempt integer DEFAULT 0 NOT NULL,
+    max_attempts integer DEFAULT 20 NOT NULL,
+    inserted_at timestamp without time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
+    scheduled_at timestamp without time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
+    attempted_at timestamp without time zone,
+    completed_at timestamp without time zone,
+    attempted_by text[],
+    discarded_at timestamp without time zone,
+    priority integer DEFAULT 0 NOT NULL,
+    tags character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    meta jsonb DEFAULT '{}'::jsonb,
+    cancelled_at timestamp without time zone,
+    CONSTRAINT attempt_range CHECK (((attempt >= 0) AND (attempt <= max_attempts))),
+    CONSTRAINT positive_max_attempts CHECK ((max_attempts > 0)),
+    CONSTRAINT priority_range CHECK (((priority >= 0) AND (priority <= 3))),
+    CONSTRAINT queue_length CHECK (((char_length(queue) > 0) AND (char_length(queue) < 128))),
+    CONSTRAINT worker_length CHECK (((char_length(worker) > 0) AND (char_length(worker) < 128)))
+);
+
+
+--
+-- Name: TABLE oban_jobs; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.oban_jobs IS '10';
+
+
+--
+-- Name: oban_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.oban_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: oban_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.oban_jobs_id_seq OWNED BY public.oban_jobs.id;
 
 
 --
@@ -3341,6 +3436,13 @@ ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: oban_jobs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oban_jobs ALTER COLUMN id SET DEFAULT nextval('public.oban_jobs_id_seq'::regclass);
+
+
+--
 -- Name: plans id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3966,6 +4068,14 @@ ALTER TABLE ONLY public.notification_type
 
 ALTER TABLE ONLY public.notifications
     ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oban_jobs oban_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oban_jobs
+    ADD CONSTRAINT oban_jobs_pkey PRIMARY KEY (id);
 
 
 --
@@ -4720,6 +4830,27 @@ CREATE INDEX notifications_project_id_type_id_index ON public.notifications USIN
 
 
 --
+-- Name: oban_jobs_args_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX oban_jobs_args_index ON public.oban_jobs USING gin (args);
+
+
+--
+-- Name: oban_jobs_meta_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX oban_jobs_meta_index ON public.oban_jobs USING gin (meta);
+
+
+--
+-- Name: oban_jobs_queue_state_priority_scheduled_at_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX oban_jobs_queue_state_priority_scheduled_at_id_index ON public.oban_jobs USING btree (queue, state, priority, scheduled_at, id);
+
+
+--
 -- Name: one_mapping_per_source; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5242,6 +5373,13 @@ CREATE UNIQUE INDEX webinar_registrations_user_id_webinar_id_index ON public.web
 --
 
 CREATE INDEX webinar_registrations_webinar_id_index ON public.webinar_registrations USING btree (webinar_id);
+
+
+--
+-- Name: oban_jobs oban_notify; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE PROCEDURE public.oban_jobs_notify();
 
 
 --
@@ -6431,3 +6569,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210712125345);
 INSERT INTO public."schema_migrations" (version) VALUES (20210716075649);
 INSERT INTO public."schema_migrations" (version) VALUES (20210721140912);
 INSERT INTO public."schema_migrations" (version) VALUES (20210722141655);
+INSERT INTO public."schema_migrations" (version) VALUES (20210723151014);

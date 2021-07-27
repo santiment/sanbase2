@@ -118,6 +118,7 @@ defmodule Sanbase.Mixfile do
       {:number, "~> 1.0"},
       # TODO: Go back to original once https://github.com/lexmag/oauther/pull/22 is merged
       {:oauther, github: "tobstarr/oauther", override: true},
+      {:oban, "~> 2.7"},
       {:observer_cli, "~> 1.3"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_live_dashboard, "~> 0.3"},

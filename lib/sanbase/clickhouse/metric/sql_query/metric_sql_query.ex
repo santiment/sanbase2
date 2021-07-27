@@ -17,7 +17,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       aggregation: 3,
       generate_comparison_string: 3,
       asset_id_filter: 2,
-      additional_filters: 2
+      additional_filters: 2,
+      dt_to_unix: 2
     ]
 
   alias Sanbase.Clickhouse.MetricAdapter.FileHandler
@@ -59,8 +60,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     args = [
       str_to_sec(interval),
       Map.get(@name_to_metric_map, metric),
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to),
       slug_or_slugs
     ]
 
@@ -106,8 +107,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     args = [
       str_to_sec(interval),
       Map.get(@name_to_metric_map, metric),
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to),
       slug_or_slugs
     ]
 
@@ -144,8 +145,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       slug_or_slugs,
       # Fetch internal metric name used. Fallback to the same name if missing.
       Map.get(@name_to_metric_map, metric),
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix()
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to)
     ]
 
     {query, args}
@@ -207,8 +208,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     args = [
       # Fetch internal metric name used. Fallback to the same name if missing.
       Map.get(@name_to_metric_map, metric),
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix()
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to)
     ]
 
     {query, args}

@@ -3,7 +3,8 @@ defmodule Sanbase.Metric.LatestMetric do
   ##
   ## This is a temprorary test module that won't live long
   ##
-  import Sanbase.Metric.SqlQuery.Helper
+  import Sanbase.Metric.SqlQuery.Helper, only: [asset_id_filter: 2, metric_id_filter: 2]
+
   alias Sanbase.Clickhouse.MetricAdapter.FileHandler
 
   @name_to_metric_map FileHandler.name_to_metric_map()
@@ -62,7 +63,7 @@ defmodule Sanbase.Metric.LatestMetric do
         value
       FROM #{table}
       PREWHERE
-        dt >= now() - INTERVAL 7 DAY AND
+        dt >= now() - INTERVAL 7 DAY AND dt <= now() AND
         #{metric_id_filter(metrics, argument_position: 1)} AND
         #{asset_id_filter(slugs, argument_position: 2)}
     )

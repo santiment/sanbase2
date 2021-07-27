@@ -51,7 +51,7 @@ defmodule Sanbase.Metric.LatestMetric do
       name AS slug,
       metric_id,
       argMax(value, dt) AS value,
-      toUnixTimestamp(max(dt)) AS max_dt,
+      toUnixTimestamp(max(toDateTime(dt))) AS max_dt,
       toUnixTimestamp(argMax(computed_at, dt)) AS computed_at
     FROM(
       SELECT

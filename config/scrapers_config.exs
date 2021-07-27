@@ -26,5 +26,17 @@ config :sanbase, Sanbase.Twitter.Worker,
   update_interval: 1000 * 60 * 60 * 6,
   sync_enabled: {:system, "TWITTER_SCRAPER_ENABLED", false}
 
+config :sanbase, Oban.Scrapers,
+  # uncomment in case you connect to the stage DB
+  prefix: "sanbase",
+  repo: Sanbase.Repo,
+  queues: [
+    cryptocompare_historical_jobs_queue: [limit: 25, paused: true],
+    cryptocompare_historical_jobs_pause_resume_queue: 1
+  ]
+
 config :sanbase, Sanbase.Cryptocompare.WebsocketScraper,
   enabled?: {:system, "CRYPTOCOMPARE_WEBSOCKET_PRICES_SCRAPER_ENABLED", "false"}
+
+config :sanbase, Sanbase.Cryptocompare.HistoricalScheduler,
+  enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OHLCV_PRICES_SCHEDULER_ENABLED", "false"}

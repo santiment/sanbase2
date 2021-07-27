@@ -52,7 +52,7 @@ defimpl Sanbase.Alert, for: Any do
 
     update_user_alerts_sent_per_day(user, result)
 
-    result |> Enum.flat_map(fn {_type, list} -> list end)
+    Enum.flat_map(result, fn {_type, list} -> list end)
   end
 
   defp send_webhook(

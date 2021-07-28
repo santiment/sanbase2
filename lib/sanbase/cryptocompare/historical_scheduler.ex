@@ -44,10 +44,34 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   def enabled?(), do: Config.get(:enabled?) |> String.to_existing_atom()
 
   def add_jobs(base_asset, quote_asset, from, to) do
+    # The jobs are added via Ecto.Multi instead of using Oban.insert_all as
+    # the latter is not able to handle the uniqueness check and it's ignored.
+    result =
+      Ecto.Multi.new()
+      |> add_jobs_to_multi(base_asset, quote_asset, from, to)
+      |> Sanbase.Repo.transaction()
+
+    case result do
+      {:ok, map} ->
+        total_jobs_count = map_size(map)
+        unique_jobs_count = Enum.count(map, fn {_k, job} -> job.conflict? == false end)
+
+        {:ok,
+         inserted_unique_jobs_count: unique_jobs_count,
+         ignored_non_unique_jobs_count: total_jobs_count - unique_jobs_count}
+
+      error ->
+        error
+    end
+  end
+
+  defp add_jobs_to_multi(multi, base_asset, quote_asset, from, to) do
     generate_dates_inclusive(from, to)
-    |> Enum.map(fn date ->
-      HistoricalWorker.new(%{base_asset: base_asset, quote_asset: quote_asset, date: date})
+    |> Enum.reduce(multi, fn date, multi ->
+      key = {base_asset, quote_asset, date}
+      job = HistoricalWorker.new(%{base_asset: base_asset, quote_asset: quote_asset, date: date})
+
+      multi |> Oban.insert(key, job)
     end)
-    |> Oban.insert_all()
   end
 end

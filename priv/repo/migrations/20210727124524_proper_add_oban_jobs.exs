@@ -13,7 +13,7 @@ defmodule Sanbase.Repo.Migrations.ProperAddObanJobs do
 
   defp get_prefix() do
     case Config.module_get(Sanbase, :deployment_env) do
-      env when env in ["stage", "prod"] -> "sanbase"
+      env when env in ["stage", "prod"] -> "sanbase2"
       _ -> "public"
     end
   end

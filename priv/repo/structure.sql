@@ -17,6 +17,13 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: sanbase2; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA IF NOT EXISTS sanbase2;
+
+
+--
 -- Name: citext; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -6570,3 +6577,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210716075649);
 INSERT INTO public."schema_migrations" (version) VALUES (20210721140912);
 INSERT INTO public."schema_migrations" (version) VALUES (20210722141655);
 INSERT INTO public."schema_migrations" (version) VALUES (20210723151014);
+INSERT INTO public."schema_migrations" (version) VALUES (20210727124520);
+INSERT INTO public."schema_migrations" (version) VALUES (20210727124524);

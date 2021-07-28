@@ -14,6 +14,7 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
 
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint, as: AssetPricesPoint
   alias Sanbase.Cryptocompare.PricePoint, as: CryptocompareAssetPricesPoint
+  alias Sanbase.Cryptocompare.PriceOnlPyoint, as: CryptocompareAssetPricesOnlyPoint
 
   require Logger
   require Sanbase.Utils.Config, as: Config
@@ -22,6 +23,7 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
   @name :cryptocompare_websocket_scraper
 
   @asset_price_pairs_exporter :asset_price_pairs_exporter
+  @asset_price_pairs_only_exporter :asset_price_pairs_only_exporter
   @asset_prices_exporter :prices_exporter
 
   def child_spec(_opts \\ []) do
@@ -179,7 +181,8 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
 
   defp export_data_point(point, last_points) do
     export_asset_prices_topic(point, last_points)
-    export_cryptocompare_asset_prices_topic(point)
+    export_asset_price_pairs_topic(point)
+    export_asset_price_pairs_only_topic(point)
   end
 
   defp export_asset_prices_topic(%{quote_asset: quote_asset} = point, last_points)
@@ -214,13 +217,22 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
 
   defp export_asset_prices_topic(_point, _last_points), do: :ok
 
-  defp export_cryptocompare_asset_prices_topic(point) do
+  defp export_asset_price_pairs_topic(point) do
     tuple =
       point
       |> CryptocompareAssetPricesPoint.new()
       |> CryptocompareAssetPricesPoint.json_kv_tuple()
 
     :ok = Sanbase.KafkaExporter.persist_async(tuple, @asset_price_pairs_exporter)
+  end
+
+  defp export_asset_price_pairs_only_topic(point) do
+    tuple =
+      point
+      |> CryptocompareAssetPricesOnlyPoint.new()
+      |> CryptocompareAssetPricesOnlyPoint.json_kv_tuple()
+
+    :ok = Sanbase.KafkaExporter.persist_async(tuple, @asset_price_pairs_only_exporter)
   end
 
   defp slug_data_map() do

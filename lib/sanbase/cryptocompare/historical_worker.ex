@@ -139,17 +139,41 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   end
 
   @asset_ohlcv_price_pairs_topic_exporter :asset_ohlcv_price_pairs_exporter
+  @asset_price_pairs_only_exporter :asset_price_pairs_only_exporter
 
   defp export_data(data) do
+    export_asset_ohlcv_price_pairs_topic(data)
+    export_asset_price_pairs_only_topic(data)
+  end
+
+  defp export_asset_ohlcv_price_pairs_topic(data) do
     data
     |> Enum.map(&to_ohlcv_price_point/1)
     |> Sanbase.KafkaExporter.persist_sync(@asset_ohlcv_price_pairs_topic_exporter)
+  end
+
+  defp export_asset_price_pairs_only_topic(data) do
+    data
+    |> Enum.map(&to_price_only_point/1)
+    |> Sanbase.KafkaExporter.persist_sync(@asset_price_pairs_only_exporter)
   end
 
   defp to_ohlcv_price_point(point) do
     point
     |> Sanbase.Cryptocompare.OHLCVPricePoint.new()
     |> Sanbase.Cryptocompare.OHLCVPricePoint.json_kv_tuple()
+  end
+
+  defp to_price_only_point(point) do
+    %{
+      price: point.close,
+      datetime: point.datetime,
+      base_asset: point.base_asset,
+      quote_asset: point.quote_asset,
+      source: point.source
+    }
+    |> Sanbase.Cryptocompare.PriceOnlyPoint.new()
+    |> Sanbase.Cryptocompare.PriceOnlyPoint.json_kv_tuple()
   end
 
   defp api_key(), do: Config.module_get(Sanbase.Cryptocompare, :api_key)

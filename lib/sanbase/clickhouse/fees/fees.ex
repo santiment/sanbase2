@@ -20,19 +20,18 @@ defmodule Sanbase.Clickhouse.Fees do
       Enum.map(data, &Enum.at(&1, 0))
       |> Project.List.by_field(:slug, preload?: true, preload: [:contract_addresses])
 
-    projects_map =
-      projects
-      |> Enum.flat_map(fn %Project{} = project ->
-        [{project.slug, project}] ++
-          Enum.map(project.contract_addresses, fn %{address: address} ->
-            {address |> String.downcase(), project}
-          end)
-      end)
-      |> Map.new()
+    projects_map = contract_address_to_project_map(projects)
 
-    # If an address points to a known address, the value will be added to the
-    # project's slug and not to the actual address. This helps grouping fees
-    # for a project with more than one address.
+    data
+    |> enrich_data_with_projects(projects_map)
+    |> transform_data_group_by_same_entity()
+    |> Enum.sort_by(& &1.fees, :desc)
+  end
+
+  # If an address points to a known address, the value will be added to the
+  # project's slug and not to the actual address. This helps grouping fees
+  # for a project with more than one address.
+  defp enrich_data_with_projects(data, projects_map) do
     Enum.map(data, fn [value, fees] ->
       case Map.get(projects_map, value) do
         %Project{slug: slug, ticker: ticker} = project ->
@@ -42,13 +41,30 @@ defmodule Sanbase.Clickhouse.Fees do
           %{slug: nil, ticker: nil, project: nil, address: value, fees: fees}
       end
     end)
+  end
+
+  # Group the data for the same slug and for the same address. If both slug and
+  # address are present, the slug takes precedence. This way if a project has
+  # multiple contract addresses, the data for them will be grouped together.
+  defp transform_data_group_by_same_entity(data) do
+    data
     |> Enum.group_by(fn %{slug: slug, address: address} -> slug || address end)
     |> Enum.map(fn {_key, list} ->
       [elem | _] = list
       fees = Enum.map(list, & &1.fees) |> Enum.sum()
       %{elem | fees: fees}
     end)
-    |> Enum.sort_by(& &1.fees, :desc)
+  end
+
+  defp contract_address_to_project_map(projects) do
+    projects
+    |> Enum.flat_map(fn %Project{} = project ->
+      [{project.slug, project}] ++
+        Enum.map(project.contract_addresses, fn %{address: address} ->
+          {address |> String.downcase(), project}
+        end)
+    end)
+    |> Map.new()
   end
 
   defp eth_fees_distribution_query(from, to, limit) do

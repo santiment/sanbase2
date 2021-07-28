@@ -2,7 +2,7 @@ defmodule Sanbase.WalletHunters.RelayerApi do
   require Logger
 
   @relayer_url "http://san-rewards-relay.default.svc.cluster.local/"
-  @opts [recv_timeout: 20000]
+  @opts [recv_timeout: 20_000]
 
   # Only for testing
   def generate_request do

@@ -150,13 +150,13 @@ defmodule Sanbase.Signal do
   of arguments.
 
   Get a given signal for an interval and time range. The signal's aggregation
-  function can be changed by the last optional parameter.
+  function can be changed by providing the :aggregation key in the last argument.
   If no aggregation is provided, a default one will be used (currently COUNT).
   """
-  @spec timeseries_data(signal, selector, datetime, datetime, interval, aggregation) ::
+  @spec timeseries_data(signal, selector, datetime, datetime, interval, opts) ::
           Type.timeseries_data_result()
-  def timeseries_data(signal, selector, from, to, interval, aggregation) do
-    SignalAdapter.timeseries_data(signal, selector, from, to, interval, aggregation)
+  def timeseries_data(signal, selector, from, to, interval, opts) do
+    SignalAdapter.timeseries_data(signal, selector, from, to, interval, opts)
   end
 
   @doc ~s"""

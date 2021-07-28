@@ -27,8 +27,7 @@ config :sanbase, Sanbase.Twitter.Worker,
   sync_enabled: {:system, "TWITTER_SCRAPER_ENABLED", false}
 
 config :sanbase, Oban.Scrapers,
-  # uncomment in case you connect to the stage DB
-  prefix: "sanbase",
+  prefix: "sanbase2",
   repo: Sanbase.Repo,
   queues: [
     cryptocompare_historical_jobs_queue: [limit: 25, paused: true],

@@ -621,7 +621,7 @@ ALTER SEQUENCE public.currencies_id_seq OWNED BY public.currencies.id;
 CREATE TABLE public.email_login_attempts (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    ip_address character varying(15),
+    ip_address character varying(39),
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
@@ -6576,6 +6576,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210712125345);
 INSERT INTO public."schema_migrations" (version) VALUES (20210716075649);
 INSERT INTO public."schema_migrations" (version) VALUES (20210721140912);
 INSERT INTO public."schema_migrations" (version) VALUES (20210722141655);
-INSERT INTO public."schema_migrations" (version) VALUES (20210723151014);
 INSERT INTO public."schema_migrations" (version) VALUES (20210727124520);
 INSERT INTO public."schema_migrations" (version) VALUES (20210727124524);
+INSERT INTO public."schema_migrations" (version) VALUES (20210728101938);

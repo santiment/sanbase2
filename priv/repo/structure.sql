@@ -16,12 +16,6 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
---
--- Name: sanbase2; Type: SCHEMA; Schema: -; Owner: -
---
-
-CREATE SCHEMA IF NOT EXISTS sanbase2;
-
 
 --
 -- Name: citext; Type: EXTENSION; Schema: -; Owner: -

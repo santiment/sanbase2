@@ -2,6 +2,7 @@ defmodule Sanbase.Application.Scrapers do
   import Sanbase.ApplicationUtils
 
   alias Sanbase.ExternalServices.RateLimiting
+
   def init(), do: :ok
 
   @doc ~s"""
@@ -63,7 +64,11 @@ defmodule Sanbase.Application.Scrapers do
       # Realtime coinmarketcap price fetcher
       Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
 
-      # Scrape and export Cryptocompare realtime prices
+      # Oban for scraper jobs
+      {Oban, oban_config()},
+
+      # Scrape and export Cryptocompare realtime and historical prices.
+      # Historical prices work is scheduled by Oban
       Sanbase.Cryptocompare.Supervisor,
 
       # Twitter account data tracking worker
@@ -84,5 +89,18 @@ defmodule Sanbase.Application.Scrapers do
     ]
 
     {children, opts}
+  end
+
+  defp oban_config() do
+    config = Application.fetch_env!(:sanbase, Oban.Scrapers)
+
+    # In case the DB config or URL is pointing to production, put the proper
+    # schema in the config. This will be used both on prod and locally when
+    # connecting to the stage DB. This is automated so when the stage DB is
+    # used, the config should not be changed manually to include the schema
+    case Sanbase.Utils.prod_db?() do
+      true -> Keyword.put(config, :prefix, "sanbase2")
+      false -> config
+    end
   end
 end

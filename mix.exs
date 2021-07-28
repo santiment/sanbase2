@@ -20,8 +20,9 @@ defmodule Sanbase.Mixfile do
         "coveralls.html": :test
       ],
       source_url: "https://github.com/santiment/sanbase2/",
-      homepage_url: "https://app.santiment.net/projects"
+      homepage_url: "https://app.santiment.net/projects",
       # Supress errors that should not be shown
+      xref: [exclude: [Oban]]
     ]
   end
 

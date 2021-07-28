@@ -4,6 +4,7 @@ defmodule Sanbase.Signal.Behaviour do
   @type signal :: String.t()
   @type interval :: String.t()
   @type available_data_types :: :timeseries | :histogram | :table
+  @type opts :: Keyword.t()
 
   @type metadata :: %{
           signal: signal,
@@ -66,7 +67,7 @@ defmodule Sanbase.Signal.Behaviour do
               from :: DateTime.t(),
               to :: DateTime.t(),
               interval :: interval,
-              aggregation :: aggregation
+              opts :: opts
             ) :: timeseries_data_result()
 
   @callback aggregated_timeseries_data(
@@ -74,6 +75,6 @@ defmodule Sanbase.Signal.Behaviour do
               selector :: selector,
               from :: DateTime.t(),
               to :: DateTime.t(),
-              aggregation :: aggregation
+              opts :: opts
             ) :: aggregated_timeseries_data_result()
 end

@@ -197,7 +197,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   # should be packed in a Helper module to be used on all the signal data.
   # The same way the metric modules are structured
   defp resolve_restrictions(restrictions) when is_map(restrictions) do
-    Enum.into(restrictions, %{}, fn {k, v} -> {k, String.to_atom(v)} end)
+    Enum.into(restrictions, %{}, fn {k, v} -> {k, String.to_existing_atom(v)} end)
   end
 
   defp resolve_restrictions(restriction) when restriction in [:restricted, :free] do

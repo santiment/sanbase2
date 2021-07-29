@@ -35,6 +35,71 @@ defmodule Sanbase.Alert.HistoricalActivity do
     |> Repo.insert()
   end
 
+  def stats(user_id) do
+    now = Timex.now()
+    day_ago = Timex.shift(now, days: -1)
+    week_ago = Timex.shift(now, days: -7)
+    query = from(ha in __MODULE__, where: ha.user_id == ^user_id, select: ha.data)
+    day_ago_query = from(ha in query, where: ha.triggered_at > ^day_ago)
+    compute_stats = from(ha in query, where: ha.triggered_at > ^week_ago)
+
+    stats_day = compute_stats(day_ago_query)
+
+    stats_week =
+      compute_stats(compute_stats)
+      |> Enum.reduce(%{}, fn {slug, alerts}, acc -> Map.merge(acc, %{slug => alerts}) end)
+
+    total =
+      stats_day
+      |> Enum.reduce(0, fn {slug, alerts}, acc -> acc + length(alerts.alerts) end)
+      |> IO.inspect()
+
+    stats =
+      stats_day
+      |> Enum.map(fn {slug, alerts} ->
+        avg_week = stats_week[slug].count / 7
+        {percent, move} = percent_change(avg_week, alerts.count)
+        percent_change = "#{Float.round(percent, 2)}% #{move}"
+        metrics = alerts.alerts |> Enum.map(fn alerts -> alerts.metric end)
+        [slug, alerts.count, percent_change, metrics]
+      end)
+  end
+
+  def compute_stats(query) do
+    Repo.all(query)
+    |> Enum.flat_map(fn data ->
+      data["user_trigger_data"]
+      |> Enum.reduce(%{}, fn {slug, utd}, acc ->
+        alert = %{
+          type: utd["type"],
+          metric: utd["metric"],
+          signal: utd["signal"]
+        }
+
+        Map.update(acc, slug, [alert], fn old -> old ++ [alert] end)
+      end)
+    end)
+    |> Enum.reduce(%{}, fn {slug, alerts}, acc ->
+      Map.update(acc, slug, alerts, fn old -> old ++ alerts end)
+    end)
+    |> Enum.into(%{}, fn {slug, alerts} ->
+      {slug, %{alerts: alerts, count: length(alerts)}}
+    end)
+    |> Enum.sort_by(fn {_slug, data} -> data.count end, :desc)
+  end
+
+  def percent_change(old, new) do
+    diff = new - old
+    diff / old * 100
+
+    if diff > 0 do
+      {diff / old * 100, "more"}
+    else
+      diff = old - new
+      {diff / old * 100, "less"}
+    end
+  end
+
   @doc """
   Fetch alert historical activity for user with cursor ordered by triggered_at
   descending. Cursor is a map with `type` (one of `:before` and `:after`) and

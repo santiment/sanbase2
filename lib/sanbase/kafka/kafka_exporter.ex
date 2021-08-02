@@ -81,6 +81,10 @@ defmodule Sanbase.KafkaExporter do
     GenServer.call(exporter, {:persist, data}, timeout)
   end
 
+  def send_data_to_topic_from_current_process(data, topic) do
+    send_data_immediately(data, %{topic: topic, size: length(data)})
+  end
+
   def flush(exporter \\ __MODULE__) do
     GenServer.call(exporter, :flush)
   end

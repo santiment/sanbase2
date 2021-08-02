@@ -156,25 +156,29 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
     end
   end
 
-  defp csv_line_to_point([_, _, _, "NaN", "NaN", "NaN", "NaN", _, _]), do: :error
+  defp csv_line_to_point([time, fsym, tsym, o, h, l, c, vol_from, vol_to] = list) do
+    case Enum.any?(list, &(&1 == "NaN")) do
+      true ->
+        :error
 
-  defp csv_line_to_point([time, fsym, tsym, o, h, l, c, vol_from, vol_to]) do
-    [o, h, l, c, vol_from, vol_to] =
-      [o, h, l, c, vol_from, vol_to] |> Enum.map(&Sanbase.Math.to_float/1)
+      false ->
+        [o, h, l, c, vol_from, vol_to] =
+          [o, h, l, c, vol_from, vol_to] |> Enum.map(&Sanbase.Math.to_float/1)
 
-    %{
-      source: "cryptocompare",
-      interval_seconds: 60,
-      datetime: time |> String.to_integer() |> DateTime.from_unix!(),
-      base_asset: fsym,
-      quote_asset: tsym,
-      open: o,
-      high: h,
-      low: l,
-      close: c,
-      volume_from: vol_from,
-      volume_to: vol_to
-    }
+        %{
+          source: "cryptocompare",
+          interval_seconds: 60,
+          datetime: time |> String.to_integer() |> DateTime.from_unix!(),
+          base_asset: fsym,
+          quote_asset: tsym,
+          open: o,
+          high: h,
+          low: l,
+          close: c,
+          volume_from: vol_from,
+          volume_to: vol_to
+        }
+    end
   end
 
   defp csv_line_to_point([time, "CCCAGG", fsym, tsym, c, h, l, o, vol_from, vol_to]) do

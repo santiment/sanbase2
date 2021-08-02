@@ -137,7 +137,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   end
 
   defp csv_to_ohlcv_list(data) do
-    [_headers | rest] = data |> String.trim() |> CSVLixir.read()
+    [_headers | rest] = data |> String.trim() |> CSVLixir.parse()
 
     result = Enum.map(rest, &csv_line_to_point/1)
 

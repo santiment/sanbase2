@@ -156,7 +156,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
     %{
       source: "cryptocompare",
       interval_seconds: 60,
-      datetime: time |> String.to_integer() |> DateTime.from_unix!(),
+      datetime: time |> Sanbase.Math.to_integer() |> DateTime.from_unix!(),
       base_asset: fsym,
       quote_asset: tsym,
       open: o,

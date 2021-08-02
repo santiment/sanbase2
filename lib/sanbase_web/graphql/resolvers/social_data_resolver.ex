@@ -46,17 +46,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     # The `*_discussion_overview` are counting the total number of messages in a given medium
     # Deprecated. To be replaced with `getMetric(metric: "community_messages_count_*")` and
     # `getMetric(metric: "social_volume_*")`
-    source =
-      case type do
-        :professional_traders_chat_overview -> "professional_traders_chat"
-        _ -> type |> Atom.to_string() |> String.split("_") |> hd
-      end
+    source = Atom.to_string() |> String.split("_") |> hd
 
-    case type in [:telegram_discussion_overview, :discord_discussion_overview] do
-      true ->
+    case type do
+      :telegram_discussion_overview ->
         SocialData.community_messages_count(%{slug: slug}, from, to, interval, source)
 
-      false ->
+      _ ->
         SocialData.social_volume(%{slug: slug}, from, to, interval, source)
     end
   end

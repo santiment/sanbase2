@@ -292,16 +292,11 @@ All `social_volume_*` metrics also support the `text` target.
 
 ##### Social data
 
-- "community_messages_count_discord"
 - "community_messages_count_telegram"
 - "community_messages_count_total"
-- "social_dominance_discord"
-- "social_dominance_professional_traders_chat"
 - "social_dominance_reddit"
 - "social_dominance_telegram"
 - "social_dominance_total"
-- "social_volume_discord"
-- "social_volume_professional_traders_chat"
 - "social_volume_reddit"
 - "social_volume_twitter"
 - "social_volume_bitcointalk"

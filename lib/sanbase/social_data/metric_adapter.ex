@@ -19,9 +19,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     # A project can be addressed by different words.
     # Example: `btc` and `bitcoin` refer to bitcoin
     "social_volume_telegram",
-    "social_volume_discord",
     "social_volume_reddit",
-    "social_volume_professional_traders_chat",
     "social_volume_twitter",
     "social_volume_bitcointalk",
     "social_volume_total"
@@ -36,9 +34,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @social_dominance_timeseries_metrics [
     "social_dominance_telegram",
-    "social_dominance_discord",
     "social_dominance_reddit",
-    "social_dominance_professional_traders_chat",
     "social_dominance_total"
   ]
 
@@ -260,7 +256,5 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp source_first_datetime("telegram"), do: {:ok, ~U[2016-03-29 00:00:00Z]}
   defp source_first_datetime("twitter"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
   defp source_first_datetime("reddit"), do: {:ok, ~U[2016-01-01 00:00:00Z]}
-  defp source_first_datetime("discord"), do: {:ok, ~U[2016-05-21 00:00:00Z]}
   defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2011-06-01 00:00:00Z]}
-  defp source_first_datetime("professional_traders_chat"), do: {:ok, ~U[2018-02-09 00:00:00Z]}
 end

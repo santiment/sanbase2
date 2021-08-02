@@ -187,24 +187,21 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
     csv_line_to_point([time, fsym, tsym, o, h, l, c, vol_from, vol_to])
   end
 
-  @asset_ohlcv_price_pairs_topic_exporter :asset_ohlcv_price_pairs_exporter
-  @asset_price_pairs_only_exporter :asset_price_pairs_only_exporter
-
   defp export_data(data) do
     export_asset_ohlcv_price_pairs_topic(data)
     export_asset_price_pairs_only_topic(data)
   end
 
   defp export_asset_ohlcv_price_pairs_topic(data) do
-    data
-    |> Enum.map(&to_ohlcv_price_point/1)
-    |> Sanbase.KafkaExporter.persist_sync(@asset_ohlcv_price_pairs_topic_exporter)
+    data = Enum.map(data, &to_ohlcv_price_point/1)
+    topic = Config.module_get!(Sanbase.KafkaExporter, :asset_ohlcv_price_pairs_topic)
+    Sanbase.KafkaExporter.send_data_to_topic_from_current_process(data, topic)
   end
 
   defp export_asset_price_pairs_only_topic(data) do
-    data
-    |> Enum.map(&to_price_only_point/1)
-    |> Sanbase.KafkaExporter.persist_sync(@asset_price_pairs_only_exporter)
+    data = Enum.map(data, &to_price_only_point/1)
+    topic = Config.module_get!(Sanbase.KafkaExporter, :asset_price_pairs_only_topic)
+    Sanbase.KafkaExporter.send_data_to_topic_from_current_process(data, topic)
   end
 
   defp to_ohlcv_price_point(point) do

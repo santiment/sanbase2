@@ -111,7 +111,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
 
     case zero_remainings do
       [] -> false
-      list -> Enum.max_by(list, & &1.time_window).time_window
+      list -> Enum.max_by(list, & &1.time_period).time_period
     end
   end
 
@@ -122,7 +122,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
       get_header(resp, "X-RateLimit-Reset-All")
       |> elem(1)
       |> parse_value_list()
-      |> Enum.find(&(&1.time_window == biggest_rate_limited_window))
+      |> Enum.find(&(&1.time_period == biggest_rate_limited_window))
       |> Map.get(:value)
 
     %{"type" => "resume"}

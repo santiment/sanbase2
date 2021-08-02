@@ -31,6 +31,10 @@ config :sanbase, Oban.Scrapers,
   queues: [
     cryptocompare_historical_jobs_queue: [limit: 25, paused: true],
     cryptocompare_historical_jobs_pause_resume_queue: 1
+  ],
+  plugins: [
+    # The default values of interval: 1000, limit: 5000 cause the stager to timeout
+    {Oban.Plugins.Stager, interval: 2000, limit: 2000}
   ]
 
 config :sanbase, Sanbase.Cryptocompare.WebsocketScraper,

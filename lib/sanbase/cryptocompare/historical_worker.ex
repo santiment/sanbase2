@@ -38,7 +38,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
 
   def perform(%Oban.Job{args: args}) do
     %{"base_asset" => base_asset, "quote_asset" => quote_asset, "date" => date} = args
-
+    t1 = System.monotonic_time(:millisecond)
     should_snooze? = base_asset not in available_base_assets()
 
     case should_snooze? do
@@ -48,7 +48,11 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
       false ->
         case get_data(base_asset, quote_asset, date) do
           {:ok, data} ->
-            export_data(data)
+            t2 = System.monotonic_time(:millisecond)
+            result = export_data(data)
+            t3 = System.monotonic_time(:millisecond)
+            log_time_spent(t1, t2, t3)
+            result
 
           {:error, error} ->
             {:error, error}
@@ -60,6 +64,15 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   def timeout(_job), do: :timer.minutes(5)
 
   # Private functions
+
+  defp log_time_spent(t1, t2, t3) do
+    get_data_time = ((t2 - t1) / 1000) |> Float.round(2)
+    export_data_time = ((t3 - t2) / 1000) |> Float.round(2)
+
+    Logger.info(
+      "[Cryptocompare Historical] Get data: #{get_data_time}s, Export data: #{export_data_time}s"
+    )
+  end
 
   defp available_base_assets() do
     # TODO: Remove once all the used assets are scrapped

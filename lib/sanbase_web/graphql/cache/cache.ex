@@ -109,6 +109,13 @@ defmodule SanbaseWeb.Graphql.Cache do
     CacheProvider.size(@cache_name, :megabytes)
   end
 
+  @doc ~s"""
+  The number of entries in the cache
+  """
+  def count() do
+    CacheProvider.count(@cache_name)
+  end
+
   def get(key) do
     CacheProvider.get(@cache_name, key)
   end
@@ -248,7 +255,6 @@ defmodule SanbaseWeb.Graphql.Cache do
 
     args = args |> convert_values(ttl)
     cache_key = [name, args] |> Sanbase.Cache.hash()
-
     {cache_key, ttl}
   end
 

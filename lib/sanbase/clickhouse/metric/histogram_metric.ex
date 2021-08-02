@@ -90,18 +90,22 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     end)
   end
 
-  def first_datetime(metric, %{slug: slug})
+  def first_datetime(metric, selector, opts \\ [])
+
+  def first_datetime(metric, %{slug: slug}, opts)
       when metric in @spent_coins_cost_histograms do
-    with {:ok, dt1} <- Metric.first_datetime("price_usd", %{slug: slug}),
-         {:ok, dt2} <- Metric.first_datetime("age_distribution", %{slug: slug}) do
+    with {:ok, dt1} <- Metric.first_datetime("price_usd", %{slug: slug}, opts),
+         {:ok, dt2} <- Metric.first_datetime("age_distribution", %{slug: slug}, opts) do
       {:ok, Enum.max([dt1, dt2], DateTime)}
     end
   end
 
-  def last_datetime_computed_at(metric, %{slug: slug})
+  def last_datetime_computed_at(metric, selector, opts \\ [])
+
+  def last_datetime_computed_at(metric, %{slug: slug}, opts)
       when metric in @spent_coins_cost_histograms do
-    with {:ok, dt1} <- Metric.last_datetime_computed_at("price_usd", %{slug: slug}),
-         {:ok, dt2} <- Metric.last_datetime_computed_at("age_distribution", %{slug: slug}) do
+    with {:ok, dt1} <- Metric.last_datetime_computed_at("price_usd", %{slug: slug}, opts),
+         {:ok, dt2} <- Metric.last_datetime_computed_at("age_distribution", %{slug: slug}, opts) do
       {:ok, Enum.min([dt1, dt2], DateTime)}
     end
   end

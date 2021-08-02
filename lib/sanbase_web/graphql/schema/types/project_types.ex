@@ -302,8 +302,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       middleware(AccessControl)
 
       cache_resolve(&ProjectMetricsResolver.aggregated_timeseries_data/3,
-        ttl: 600,
-        max_ttl_offset: 600
+        ttl: 120,
+        max_ttl_offset: 60
       )
     end
 

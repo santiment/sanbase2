@@ -21,7 +21,7 @@ defmodule Sanbase.Metric do
 
   @compile inline: [
              execute_if_aggregation_valid: 3,
-             maybe_change_module: 3,
+             maybe_change_module: 4,
              combine_metrics_in_modules: 2
            ]
 
@@ -113,7 +113,7 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector)
+        module = maybe_change_module(module, metric, selector, opts)
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
@@ -152,7 +152,7 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector)
+        module = maybe_change_module(module, metric, selector, opts)
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
@@ -191,7 +191,7 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector)
+        module = maybe_change_module(module, metric, selector, opts)
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
@@ -295,7 +295,7 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :histogram)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector)
+        module = maybe_change_module(module, metric, selector, [])
 
         module.histogram_data(
           metric,
@@ -325,7 +325,7 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :table)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector)
+        module = maybe_change_module(module, metric, selector, opts)
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
@@ -394,8 +394,8 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get the first datetime for which a given metric is available for a given slug
   """
-  @spec first_datetime(metric, selector) :: Type.first_datetime_result()
-  def first_datetime(metric, selector) do
+  @spec first_datetime(metric, selector, opts) :: Type.first_datetime_result()
+  def first_datetime(metric, selector, opts) do
     metric = maybe_replace_metric(metric, selector)
 
     case Map.get(@metric_to_module_map, metric) do
@@ -403,7 +403,7 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector)
+        module = maybe_change_module(module, metric, selector, opts)
         module.first_datetime(metric, selector)
     end
   end
@@ -412,8 +412,9 @@ defmodule Sanbase.Metric do
   Get the datetime for which the data point with latest dt for the given metric/slug
   pair is computed.
   """
-  @spec last_datetime_computed_at(metric, selector) :: Type.last_datetime_computed_at_result()
-  def last_datetime_computed_at(metric, selector) do
+  @spec last_datetime_computed_at(metric, selector, opts) ::
+          Type.last_datetime_computed_at_result()
+  def last_datetime_computed_at(metric, selector, opts) do
     metric = maybe_replace_metric(metric, selector)
 
     case Map.get(@metric_to_module_map, metric) do
@@ -421,7 +422,7 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module = maybe_change_module(module, metric, selector)
+        module = maybe_change_module(module, metric, selector, opts)
         module.last_datetime_computed_at(metric, selector)
     end
   end
@@ -429,13 +430,17 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get all available slugs for a given metric
   """
-  @spec available_slugs(metric) :: Type.available_slugs_result()
-  def available_slugs(metric) do
+  @spec available_slugs(metric, opts) :: Type.available_slugs_result()
+  def available_slugs(metric, opts \\ [])
+
+  def available_slugs(metric, opts) do
     case Map.get(@metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
+        module = maybe_change_module(module, metric, %{}, opts)
+
         module.available_slugs(metric)
     end
   end
@@ -717,14 +722,22 @@ defmodule Sanbase.Metric do
   # When using slug, the social metrics are fetched from clickhouse
   # But when text selector is used, the metric should be fetched from Elasticsearch
   # as it cannot be precomputed due to the vast number of possible text arguments
-  defp maybe_change_module(module, metric, %{text: _text}) do
+  defp maybe_change_module(module, metric, %{text: _text}, _opts) do
     case metric in @social_metrics do
       true -> Sanbase.SocialData.MetricAdapter
       false -> module
     end
   end
 
-  defp maybe_change_module(module, _metric, _selector), do: module
+  defp maybe_change_module(module, metric, selector, opts)
+       when metric in ["price_usd", "price_btc"] do
+    case Keyword.get(opts, :source) || Map.get(selector, :source) do
+      "cryptocompare" -> Sanbase.PricePair.MetricAdapter
+      _ -> module
+    end
+  end
+
+  defp maybe_change_module(module, _metric, _selector, _opts), do: module
 
   defp filter_metrics_by_min_interval(metrics, interval, compare_fun) do
     interval_to_sec = Sanbase.DateTimeUtils.str_to_sec(interval)

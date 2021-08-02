@@ -19,6 +19,8 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
     unique: [period: 60 * 86_400]
 
   import Sanbase.Cryptocompare.HTTPHeaderUtils, only: [parse_value_list: 1]
+
+  require Logger
   require Sanbase.Utils.Config, as: Config
 
   @url "https://min-api.cryptocompare.com/data/histo/minute/daily"
@@ -118,9 +120,16 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   defp handle_rate_limit(resp, biggest_rate_limited_window) do
     Sanbase.Cryptocompare.HistoricalScheduler.pause()
 
-    reset_after_seconds =
+    header_value =
       get_header(resp, "X-RateLimit-Reset-All")
       |> elem(1)
+
+    Logger.info(
+      "[Cryptocompare Historical] Rate limited. X-RateLimit-Reset-All header: #{header_value}"
+    )
+
+    reset_after_seconds =
+      header_value
       |> parse_value_list()
       |> Enum.find(&(&1.time_period == biggest_rate_limited_window))
       |> Map.get(:value)

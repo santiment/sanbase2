@@ -64,6 +64,7 @@ defmodule Sanbase.Mixfile do
       {:crc32cer, github: "zmstone/crc32cer", override: true},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:csv, "~> 2.1"},
+      {:csvlixir, "~> 2.0", override: true},
       {:dataloader, "~> 1.0.0"},
       {:db_connection, "~> 2.2", override: true},
       {:decimal, "~> 1.0"},

@@ -39,7 +39,9 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   def perform(%Oban.Job{args: args}) do
     %{"base_asset" => base_asset, "quote_asset" => quote_asset, "date" => date} = args
 
+    t1 = System.monotonic_time(:millisecond)
     should_snooze? = base_asset not in available_base_assets()
+    t2 = System.monotonic_time(:millisecond)
 
     case should_snooze? do
       true ->
@@ -48,7 +50,16 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
       false ->
         case get_data(base_asset, quote_asset, date) do
           {:ok, data} ->
-            export_data(data)
+            t3 = System.monotonic_time(:millisecond)
+            result = export_data(data)
+            t4 = System.monotonic_time(:millisecond)
+
+            Logger.info(
+              "[Cryptocompare Historical] Time took to perform a job. " <>
+                inspect({t2 - t1, t3 - t2, t4 - t3})
+            )
+
+            result
 
           {:error, error} ->
             {:error, error}
@@ -92,11 +103,28 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
 
     url = @url <> "?" <> URI.encode_query(query_params)
 
+    t1 = System.monotonic_time(:millisecond)
+
     case HTTPoison.get(url, headers, recv_timeout: 15_000) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body} = resp} ->
+        t2 = System.monotonic_time(:millisecond)
+
         case rate_limited?(resp) do
-          false -> csv_to_ohlcv_list(body)
-          biggest_rate_limited_window -> handle_rate_limit(resp, biggest_rate_limited_window)
+          false ->
+            t3 = System.monotonic_time(:millisecond)
+
+            result = csv_to_ohlcv_list(body)
+            t4 = System.monotonic_time(:millisecond)
+
+            Logger.info(
+              "[Cryptocompare Historical] Time took to get data. " <>
+                inspect({t2 - t1, t3 - t2, t4 - t3})
+            )
+
+            result
+
+          biggest_rate_limited_window ->
+            handle_rate_limit(resp, biggest_rate_limited_window)
         end
 
       {:error, error} ->

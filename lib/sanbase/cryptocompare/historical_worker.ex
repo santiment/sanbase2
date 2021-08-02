@@ -26,6 +26,14 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   def queue(), do: :cryptocompare_historical_jobs_queue
 
   @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"quote_asset" => quote_asset}})
+      when quote_asset not in ["USD", "BTC"] do
+    # TODO: Remove once all the USD and BTC pairs are done
+    # In order to priroritize the jobs that are more important, snooze
+    # the jobs that are not having USD or BTC quote asset.
+    {:snooze, 86_400}
+  end
+
   def perform(%Oban.Job{args: args}) do
     %{"base_asset" => base_asset, "quote_asset" => quote_asset, "date" => date} = args
 

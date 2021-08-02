@@ -146,9 +146,11 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   end
 
   defp csv_to_ohlcv_list(data) do
-    [_headers | rest] = data |> String.trim() |> NimbleCSV.RFC4180.parse_string()
-
-    result = Enum.map(rest, &csv_line_to_point/1)
+    result =
+      data
+      |> String.trim()
+      |> NimbleCSV.RFC4180.parse_string()
+      |> Enum.map(&csv_line_to_point/1)
 
     case Enum.find_index(result, &(&1 == :error)) do
       nil -> {:ok, result}

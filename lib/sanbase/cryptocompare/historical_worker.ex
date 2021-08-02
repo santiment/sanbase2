@@ -37,12 +37,20 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   def perform(%Oban.Job{args: args}) do
     %{"base_asset" => base_asset, "quote_asset" => quote_asset, "date" => date} = args
 
-    case get_data(base_asset, quote_asset, date) do
-      {:ok, data} ->
-        export_data(data)
+    should_snooze? = base_asset not in available_base_assets()
 
-      {:error, error} ->
-        {:error, error}
+    case should_snooze? do
+      true ->
+        {:snooze, 86_400}
+
+      false ->
+        case get_data(base_asset, quote_asset, date) do
+          {:ok, data} ->
+            export_data(data)
+
+          {:error, error} ->
+            {:error, error}
+        end
     end
   end
 
@@ -50,6 +58,24 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   def timeout(_job), do: :timer.minutes(5)
 
   # Private functions
+
+  defp available_base_assets() do
+    # TODO: Remove once all the used assets are scrapped
+    # In order to priroritize the jobs that are more important, snooze
+    # the jobs that are not having a base asset that is stored in our DBs.
+    cache_key = {__MODULE__, :available_base_assets}
+
+    {:ok, assets} =
+      Sanbase.Cache.get_or_store(cache_key, fn ->
+        data =
+          Sanbase.Model.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+          |> Enum.map(&elem(&1, 0))
+
+        {:ok, data}
+      end)
+
+    assets
+  end
 
   @spec get_data(any, any, any) :: {:error, HTTPoison.Error.t()} | {:ok, any}
   def get_data(base_asset, quote_asset, date) do

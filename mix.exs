@@ -116,6 +116,7 @@ defmodule Sanbase.Mixfile do
       {:mogrify, "~> 0.8"},
       {:mutex, "~> 1.1"},
       {:neuron, "~> 5.0", only: :dev},
+      {:nimble_csv, "~> 1.1"},
       {:norm, "~> 0.12"},
       {:number, "~> 1.0"},
       # TODO: Go back to original once https://github.com/lexmag/oauther/pull/22 is merged

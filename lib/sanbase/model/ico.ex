@@ -5,7 +5,6 @@ defmodule Sanbase.Model.Ico do
   import Ecto.Changeset
 
   alias Sanbase.Repo
-  alias Sanbase.Model.ModelUtils
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Project
   alias Sanbase.Model.Currency
@@ -55,13 +54,13 @@ defmodule Sanbase.Model.Ico do
   def changeset_ex_admin(%Ico{} = ico, attrs \\ %{}) do
     attrs =
       attrs
-      |> ModelUtils.remove_thousands_separator(:token_usd_ico_price)
-      |> ModelUtils.remove_thousands_separator(:token_eth_ico_price)
-      |> ModelUtils.remove_thousands_separator(:token_btc_ico_price)
-      |> ModelUtils.remove_thousands_separator(:tokens_issued_at_ico)
-      |> ModelUtils.remove_thousands_separator(:tokens_sold_at_ico)
-      |> ModelUtils.remove_thousands_separator(:minimal_cap_amount)
-      |> ModelUtils.remove_thousands_separator(:maximal_cap_amount)
+      |> Sanbase.Utils.Transform.remove_separator(:token_usd_ico_price, ",")
+      |> Sanbase.Utils.Transform.remove_separator(:token_eth_ico_price, ",")
+      |> Sanbase.Utils.Transform.remove_separator(:token_btc_ico_price, ",")
+      |> Sanbase.Utils.Transform.remove_separator(:tokens_issued_at_ico, ",")
+      |> Sanbase.Utils.Transform.remove_separator(:tokens_sold_at_ico, ",")
+      |> Sanbase.Utils.Transform.remove_separator(:minimal_cap_amount, ",")
+      |> Sanbase.Utils.Transform.remove_separator(:maximal_cap_amount, ",")
 
     ico
     |> changeset(attrs)

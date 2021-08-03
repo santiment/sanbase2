@@ -130,4 +130,25 @@ defmodule Sanbase.Utils.Transform do
   def maybe_transform_from_address(address), do: address
   def maybe_transform_to_address("0x0000000000000000000000000000000000000000"), do: "burn"
   def maybe_transform_to_address(address), do: address
+
+  @doc ~s"""
+  Remove the `separator` inside the value of the key `key` in the map `map`
+
+  ## Examples:
+      iex> Sanbase.Utils.Transform.remove_separator(%{a: "100,000"}, :a, ",")
+      %{a: "100000"}
+
+      iex> Sanbase.Utils.Transform.remove_separator(%{a: "100,000", b: "5,000"}, :a, ",")
+      %{a: "100000", b: "5,000"}
+
+
+      iex> Sanbase.Utils.Transform.remove_separator(%{a: "100,000"}, :c, ",")
+      %{a: "100,000"}
+  """
+  def remove_separator(map, key, separator) do
+    case Map.fetch(map, key) do
+      :error -> map
+      {:ok, value} -> Map.put(map, key, String.replace(value, separator, ""))
+    end
+  end
 end

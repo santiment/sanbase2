@@ -19,7 +19,7 @@ defmodule Sanbase.Model.Project.List do
     - `:preload` (list) - A list of preloads if `:preload?` is true.
        Defaults to `#{inspect(@preloads)}
     - `:min_volume` (number) - Filter out all projects with smaller trading volume
-    - `:include_hidden_projects?` (boolean) - Include the projects that are explictly
+    - `:include_hidden` (boolean) - Include the projects that are explictly
     hidden from lists. There are cases where a project needs to be removed
     from the public lists. But still those projects need to be included
     when fetched in a scraper so we do not lose data for them.
@@ -603,7 +603,7 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp maybe_include_hidden_projects(query, opts) do
-    case Keyword.get(opts, :include_hidden_projects?, false) do
+    case Keyword.get(opts, :include_hidden, false) do
       false ->
         query
         |> where([p], p.is_hidden == false)

@@ -176,11 +176,13 @@ defmodule Sanbase.Factory do
 
   def random_erc20_project_factory(attrs) do
     slug = Map.get(attrs, :slug, rand_str())
+    coinmarketcap_id = Map.get(attrs, :coinmarketcap_id, slug)
 
     %Project{
       name: rand_str(),
       ticker: rand_str(4),
       slug: slug,
+      coinmarketcap_id: coinmarketcap_id,
       is_hidden: false,
       source_slug_mappings: [
         build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
@@ -201,11 +203,13 @@ defmodule Sanbase.Factory do
 
   def project_factory(attrs) do
     slug = Map.get(attrs, :slug, "santiment")
+    coinmarketcap_id = Map.get(attrs, :coinmarketcap_id, slug)
 
     %Project{
       name: "Santiment",
       ticker: "SAN",
       slug: slug,
+      coinmarketcap_id: coinmarketcap_id,
       is_hidden: false,
       source_slug_mappings: [
         build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
@@ -226,11 +230,13 @@ defmodule Sanbase.Factory do
   def random_project_factory(attrs) do
     slug = Map.get(attrs, :slug, rand_str())
     ticker = Map.get(attrs, :ticker, rand_str(4) |> String.upcase())
+    coinmarketcap_id = Map.get(attrs, :coinmarketcap_id, slug)
 
     %Project{
       name: rand_str(),
       ticker: ticker,
       slug: slug,
+      coinmarketcap_id: coinmarketcap_id,
       is_hidden: false,
       source_slug_mappings: [
         build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})

@@ -13,8 +13,7 @@ defmodule Sanbase.Repo.Migrations.AddCryptocompareSourceSlugMapping do
       |> File.read!()
       |> Jason.decode!()
 
-    projects_map =
-      Project.List.projects(include_hidden_projects?: true) |> Map.new(&{&1.slug, &1})
+    projects_map = Project.List.projects(include_hidden: true) |> Map.new(&{&1.slug, &1})
 
     data =
       mapping

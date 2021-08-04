@@ -41,7 +41,7 @@ defmodule Sanbase.Email.Template do
 
   defp template_by_product(origin_url, template) do
     cond do
-      String.contains?(origin_url, "neuro") -> @neuro_login_templates[template]
+      String.contains?(origin_url, ["neuro", "api"]) -> @neuro_login_templates[template]
       String.contains?(origin_url, "sheets") -> @sheets_login_templates[template]
       true -> @sanbase_login_templates[template]
     end

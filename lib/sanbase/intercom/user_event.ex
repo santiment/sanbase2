@@ -112,11 +112,14 @@ defmodule Sanbase.Intercom.UserEvent do
     events
     |> Enum.chunk_every(100)
     |> Enum.each(fn events ->
-      SanExporterEx.Producer.send_data(@topic, format_for_kafka(events))
+      Sanbase.KafkaExporter.send_data_to_topic_from_current_process(
+        to_json_kv_tuple(events),
+        @topic
+      )
     end)
   end
 
-  defp format_for_kafka(events) do
+  defp to_json_kv_tuple(events) do
     events
     |> Enum.map(fn %{
                      user_id: user_id,

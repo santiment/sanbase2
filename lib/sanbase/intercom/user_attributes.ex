@@ -41,13 +41,16 @@ defmodule Sanbase.Intercom.UserAttributes do
   # helpers
 
   defp persist_sync({:ok, user_attributes} = result) do
-    SanExporterEx.Producer.send_data(@topic, format_for_kafka([user_attributes]))
+    [user_attributes]
+    |> to_json_kv_tuple()
+    |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(@topic)
+
     result
   end
 
   defp persist_sync(result), do: result
 
-  defp format_for_kafka(user_attributes) do
+  defp to_json_kv_tuple(user_attributes) do
     user_attributes
     |> Enum.map(fn %{user_id: user_id, properties: attributes, inserted_at: timestamp} ->
       timestamp = DateTime.to_unix(timestamp)

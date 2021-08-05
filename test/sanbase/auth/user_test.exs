@@ -16,7 +16,8 @@ defmodule Sanbase.Accounts.UserTest do
 
   test "Delete user and associations" do
     with_mocks([
-      {SanExporterEx.Producer, [:passthrough], [send_data: fn _, _ -> :ok end]},
+      {Sanbase.KafkaExporter, [:passthrough],
+       [send_data_to_topic_from_current_process: fn _, _ -> :ok end]},
       {StripeApi, [:passthrough],
        [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
       {StripeApi, [:passthrough],

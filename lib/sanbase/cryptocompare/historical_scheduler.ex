@@ -20,6 +20,7 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
+  @unique_peroid 60 * 86_400
   @oban_queue :cryptocompare_historical_jobs_queue
 
   def start_link(opts \\ []) do
@@ -34,7 +35,6 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
     # the queue is defined as paused and should be resumed from code.
     if enabled?() do
       Logger.info("[Cryptocompare Historical] Start exporting OHLCV historical data.")
-
       resume()
     end
 
@@ -44,34 +44,49 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   def enabled?(), do: Config.get(:enabled?) |> String.to_existing_atom()
 
   def add_jobs(base_asset, quote_asset, from, to) do
-    # The jobs are added via Ecto.Multi instead of using Oban.insert_all as
-    # the latter is not able to handle the uniqueness check and it's ignored.
-    result =
-      Ecto.Multi.new()
-      |> add_jobs_to_multi(base_asset, quote_asset, from, to)
-      |> Sanbase.Repo.transaction()
+    start_time = DateTime.utc_now()
+    recorded_dates = get_pair_dates(base_asset, quote_asset, from, to) |> MapSet.new()
+    dates = generate_dates_inclusive(from, to)
+    dates_to_insert = Enum.reject(dates, &(&1 in recorded_dates))
 
-    case result do
-      {:ok, map} ->
-        total_jobs_count = map_size(map)
-        unique_jobs_count = Enum.count(map, fn {_k, job} -> job.conflict? == false end)
+    result = do_add_jobs_no_uniqueness_check(base_asset, quote_asset, dates_to_insert)
 
-        {:ok,
-         inserted_unique_jobs_count: unique_jobs_count,
-         ignored_non_unique_jobs_count: total_jobs_count - unique_jobs_count}
-
-      error ->
-        error
-    end
+    {:ok,
+     %{
+       jobs_count_total: length(dates),
+       jobs_already_present_count: MapSet.size(recorded_dates),
+       jobs_inserted: length(result),
+       time_elapsed: DateTime.diff(DateTime.utc_now(), start_time, :second)
+     }}
   end
 
-  defp add_jobs_to_multi(multi, base_asset, quote_asset, from, to) do
-    generate_dates_inclusive(from, to)
-    |> Enum.reduce(multi, fn date, multi ->
-      key = {base_asset, quote_asset, date}
-      job = HistoricalWorker.new(%{base_asset: base_asset, quote_asset: quote_asset, date: date})
+  defp get_pair_dates(base_asset, quote_asset, from, to) do
+    query = """
+    SELECT args->>'date', inserted_at FROM oban_jobs
+    WHERE args->>'base_asset' = $1 AND args->>'quote_asset' = $2
+    """
 
-      multi |> Oban.insert(key, job)
+    {:ok, %{rows: rows}} = Ecto.Adapters.SQL.query(Sanbase.Repo, query, [base_asset, quote_asset])
+
+    now = NaiveDateTime.utc_now()
+
+    rows
+    |> Enum.filter(fn [_, inserted_at] ->
+      NaiveDateTime.diff(now, inserted_at, :second) <= @unique_peroid
     end)
+    |> Enum.map(fn [date, _] -> Date.from_iso8601!(date) end)
+    |> Enum.filter(fn date -> Timex.between?(date, from, to, inclusive: true) end)
+  end
+
+  defp do_add_jobs_no_uniqueness_check(base_asset, quote_asset, dates) do
+    dates
+    |> Enum.map(fn date ->
+      HistoricalWorker.new(%{
+        base_asset: base_asset,
+        quote_asset: quote_asset,
+        date: date
+      })
+    end)
+    |> Oban.insert_all()
   end
 end

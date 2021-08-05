@@ -54,7 +54,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     # Create a map where the coinmarketcap_id is key and the values is the list of
     # santiment slugs that have that coinmarketcap_id
     cmc_id_to_slugs_mapping =
-      Project.List.projects_with_source("coinmarketcap", include_hidden_projects?: true)
+      Project.List.projects_with_source("coinmarketcap", include_hidden: true)
       |> Enum.reduce(%{}, fn %Project{slug: slug} = project, acc ->
         Map.update(acc, Project.coinmarketcap_id(project), [slug], fn slugs -> [slug | slugs] end)
       end)

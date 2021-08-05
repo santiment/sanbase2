@@ -69,6 +69,7 @@ config :sanbase, Sanbase.Repo,
   max_overflow: 5,
   queue_target: 5000,
   queue_interval: 1000,
+  timeout: 30_000,
   # because of pgbouncer
   prepare: :unnamed,
   migration_timestamps: [type: :naive_datetime_usec]

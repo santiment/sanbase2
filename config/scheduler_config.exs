@@ -155,5 +155,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     scrape_cryptocompare_market_pairs: [
       schedule: "@daily",
       task: {Sanbase.Cryptocompare.Markets.Scraper, :run, []}
+    ],
+    fill_project_coinmarketcap_id_field: [
+      schedule: "@hourly",
+      task: {Sanbase.Model.Project.Jobs, :fill_coinmarketcap_id, []}
     ]
   ]

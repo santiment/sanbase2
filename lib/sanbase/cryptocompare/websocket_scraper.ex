@@ -14,7 +14,7 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
 
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint, as: AssetPricesPoint
   alias Sanbase.Cryptocompare.PricePoint, as: CryptocompareAssetPricesPoint
-  alias Sanbase.Cryptocompare.PriceOnlPyoint, as: CryptocompareAssetPricesOnlyPoint
+  alias Sanbase.Cryptocompare.PriceOnlyPoint, as: CryptocompareAssetPricesOnlyPoint
 
   require Logger
   require Sanbase.Utils.Config, as: Config
@@ -183,6 +183,9 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
     export_asset_prices_topic(point, last_points)
     export_asset_price_pairs_topic(point)
     export_asset_price_pairs_only_topic(point)
+  rescue
+    e ->
+      Logger.error("[CryptocompareWS] Failed to export data point: #{Exception.message(e)}")
   end
 
   defp export_asset_prices_topic(%{quote_asset: quote_asset} = point, last_points)

@@ -63,21 +63,6 @@ defmodule Sanbase.Cryptocompare.Supervisor do
         start_if(
           fn -> HistoricalScheduler end,
           fn -> HistoricalScheduler.enabled?() end
-        ),
-
-        # Kafka exporter for the historical OHLCV exporter
-        start_if(
-          fn ->
-            Sanbase.KafkaExporter.child_spec(
-              id: :asset_ohlcv_price_pairs_exporter,
-              name: :asset_ohlcv_price_pairs_exporter,
-              topic: Config.module_get!(Sanbase.KafkaExporter, :asset_ohlcv_price_pairs_topic),
-              buffering_max_messages: 1000,
-              can_send_after_interval: 250,
-              kafka_flush_timeout: 2000
-            )
-          end,
-          fn -> HistoricalScheduler.enabled?() end
         )
       ]
       |> normalize_children()

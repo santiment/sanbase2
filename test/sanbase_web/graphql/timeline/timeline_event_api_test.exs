@@ -54,40 +54,16 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       insert(:timeline_event,
         post: post,
         user: user_to_follow,
-        event_type: TimelineEvent.publish_insight_type()
+        event_type: TimelineEvent.publish_insight_type(),
+        inserted_at: Timex.shift(Timex.now(), minutes: -5)
       )
 
-    insert(:timeline_event,
-      post: post2,
-      user: san_author,
-      event_type: TimelineEvent.publish_insight_type()
-    )
-
-    {:ok, user_list} =
-      UserList.create_user_list(user_to_follow, %{name: "My Test List", is_public: true})
-
-    insert(:timeline_event,
-      user_list: user_list,
-      user: user_to_follow,
-      event_type: TimelineEvent.update_watchlist_type()
-    )
-
-    user_trigger =
-      insert(:user_trigger,
-        user: user_to_follow,
-        trigger: %{
-          is_public: true,
-          settings: default_trigger_settings_string_keys(),
-          title: "my trigger",
-          description: "DAA going up 300%"
-        }
-      )
-
-    event3 =
+    event2 =
       insert(:timeline_event,
-        user_trigger: user_trigger,
-        user: user_to_follow,
-        event_type: TimelineEvent.create_public_trigger_type()
+        post: post2,
+        user: san_author,
+        event_type: TimelineEvent.publish_insight_type(),
+        inserted_at: Timex.shift(Timex.now(), minutes: -4)
       )
 
     result = get_timeline_events(conn, "limit: 5")
@@ -99,7 +75,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
     assert result |> hd() |> Map.get("cursor") == %{
              "after" =>
-               DateTime.to_iso8601(event3.inserted_at |> DateTime.from_naive!("Etc/UTC")),
+               DateTime.to_iso8601(event2.inserted_at |> DateTime.from_naive!("Etc/UTC")),
              "before" =>
                DateTime.to_iso8601(event1.inserted_at |> DateTime.from_naive!("Etc/UTC"))
            }

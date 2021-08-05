@@ -19,6 +19,8 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
     unique: [period: 60 * 86_400]
 
   import Sanbase.Cryptocompare.HTTPHeaderUtils, only: [parse_value_list: 1]
+
+  require Logger
   require Sanbase.Utils.Config, as: Config
 
   @url "https://min-api.cryptocompare.com/data/histo/minute/daily"
@@ -26,15 +28,35 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   def queue(), do: :cryptocompare_historical_jobs_queue
 
   @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"quote_asset" => quote_asset}})
+      when quote_asset not in ["USD", "BTC"] do
+    # TODO: Remove once all the USD and BTC pairs are done
+    # In order to priroritize the jobs that are more important, snooze
+    # the jobs that are not having USD or BTC quote asset.
+    {:snooze, 86_400}
+  end
+
   def perform(%Oban.Job{args: args}) do
     %{"base_asset" => base_asset, "quote_asset" => quote_asset, "date" => date} = args
+    t1 = System.monotonic_time(:millisecond)
+    should_snooze? = base_asset not in available_base_assets()
 
-    case get_data(base_asset, quote_asset, date) do
-      {:ok, data} ->
-        export_data(data)
+    case should_snooze? do
+      true ->
+        {:snooze, 86_400}
 
-      {:error, error} ->
-        {:error, error}
+      false ->
+        case get_data(base_asset, quote_asset, date) do
+          {:ok, data} ->
+            t2 = System.monotonic_time(:millisecond)
+            result = export_data(data)
+            t3 = System.monotonic_time(:millisecond)
+            log_time_spent(t1, t2, t3)
+            result
+
+          {:error, error} ->
+            {:error, error}
+        end
     end
   end
 
@@ -42,6 +64,33 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   def timeout(_job), do: :timer.minutes(5)
 
   # Private functions
+
+  defp log_time_spent(t1, t2, t3) do
+    get_data_time = ((t2 - t1) / 1000) |> Float.round(2)
+    export_data_time = ((t3 - t2) / 1000) |> Float.round(2)
+
+    Logger.info(
+      "[Cryptocompare Historical] Get data: #{get_data_time}s, Export data: #{export_data_time}s"
+    )
+  end
+
+  defp available_base_assets() do
+    # TODO: Remove once all the used assets are scrapped
+    # In order to priroritize the jobs that are more important, snooze
+    # the jobs that are not having a base asset that is stored in our DBs.
+    cache_key = {__MODULE__, :available_base_assets}
+
+    {:ok, assets} =
+      Sanbase.Cache.get_or_store(cache_key, fn ->
+        data =
+          Sanbase.Model.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+          |> Enum.map(&elem(&1, 0))
+
+        {:ok, data}
+      end)
+
+    assets
+  end
 
   @spec get_data(any, any, any) :: {:error, HTTPoison.Error.t()} | {:ok, any}
   def get_data(base_asset, quote_asset, date) do
@@ -77,18 +126,25 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
 
     case zero_remainings do
       [] -> false
-      list -> Enum.max_by(list, & &1.time_window).time_window
+      list -> Enum.max_by(list, & &1.time_period).time_period
     end
   end
 
   defp handle_rate_limit(resp, biggest_rate_limited_window) do
     Sanbase.Cryptocompare.HistoricalScheduler.pause()
 
-    reset_after_seconds =
+    header_value =
       get_header(resp, "X-RateLimit-Reset-All")
       |> elem(1)
+
+    Logger.info(
+      "[Cryptocompare Historical] Rate limited. X-RateLimit-Reset-All header: #{header_value}"
+    )
+
+    reset_after_seconds =
+      header_value
       |> parse_value_list()
-      |> Enum.find(&(&1.time_window == biggest_rate_limited_window))
+      |> Enum.find(&(&1.time_period == biggest_rate_limited_window))
       |> Map.get(:value)
 
     %{"type" => "resume"}
@@ -103,9 +159,11 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   end
 
   defp csv_to_ohlcv_list(data) do
-    [_headers | rest] = data |> String.trim() |> CSVLixir.read()
-
-    result = Enum.map(rest, &csv_line_to_point/1)
+    result =
+      data
+      |> String.trim()
+      |> NimbleCSV.RFC4180.parse_string()
+      |> Enum.map(&csv_line_to_point/1)
 
     case Enum.find_index(result, &(&1 == :error)) do
       nil -> {:ok, result}
@@ -113,33 +171,34 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
     end
   end
 
-  defp csv_line_to_point([_, _, _, "NaN", "NaN", "NaN", "NaN", _, _]), do: :error
+  defp csv_line_to_point([time, fsym, tsym, o, h, l, c, vol_from, vol_to] = list) do
+    case Enum.any?(list, &(&1 == "NaN")) do
+      true ->
+        :error
 
-  defp csv_line_to_point([time, fsym, tsym, o, h, l, c, vol_from, vol_to]) do
-    [o, h, l, c, vol_from, vol_to] =
-      [o, h, l, c, vol_from, vol_to] |> Enum.map(&Sanbase.Math.to_float/1)
+      false ->
+        [o, h, l, c, vol_from, vol_to] =
+          [o, h, l, c, vol_from, vol_to] |> Enum.map(&Sanbase.Math.to_float/1)
 
-    %{
-      source: "cryptocompare",
-      interval_seconds: 60,
-      datetime: time |> String.to_integer() |> DateTime.from_unix!(),
-      base_asset: fsym,
-      quote_asset: tsym,
-      open: o,
-      high: h,
-      low: l,
-      close: c,
-      volume_from: vol_from,
-      volume_to: vol_to
-    }
+        %{
+          source: "cryptocompare",
+          interval_seconds: 60,
+          datetime: time |> String.to_integer() |> DateTime.from_unix!(),
+          base_asset: fsym,
+          quote_asset: tsym,
+          open: o,
+          high: h,
+          low: l,
+          close: c,
+          volume_from: vol_from,
+          volume_to: vol_to
+        }
+    end
   end
 
   defp csv_line_to_point([time, "CCCAGG", fsym, tsym, c, h, l, o, vol_from, vol_to]) do
     csv_line_to_point([time, fsym, tsym, o, h, l, c, vol_from, vol_to])
   end
-
-  @asset_ohlcv_price_pairs_topic_exporter :asset_ohlcv_price_pairs_exporter
-  @asset_price_pairs_only_exporter :asset_price_pairs_only_exporter
 
   defp export_data(data) do
     export_asset_ohlcv_price_pairs_topic(data)
@@ -147,15 +206,15 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   end
 
   defp export_asset_ohlcv_price_pairs_topic(data) do
-    data
-    |> Enum.map(&to_ohlcv_price_point/1)
-    |> Sanbase.KafkaExporter.persist_sync(@asset_ohlcv_price_pairs_topic_exporter)
+    data = Enum.map(data, &to_ohlcv_price_point/1)
+    topic = Config.module_get!(Sanbase.KafkaExporter, :asset_ohlcv_price_pairs_topic)
+    Sanbase.KafkaExporter.send_data_to_topic_from_current_process(data, topic)
   end
 
   defp export_asset_price_pairs_only_topic(data) do
-    data
-    |> Enum.map(&to_price_only_point/1)
-    |> Sanbase.KafkaExporter.persist_sync(@asset_price_pairs_only_exporter)
+    data = Enum.map(data, &to_price_only_point/1)
+    topic = Config.module_get!(Sanbase.KafkaExporter, :asset_price_pairs_only_topic)
+    Sanbase.KafkaExporter.send_data_to_topic_from_current_process(data, topic)
   end
 
   defp to_ohlcv_price_point(point) do

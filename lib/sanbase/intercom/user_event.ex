@@ -9,6 +9,8 @@ defmodule Sanbase.Intercom.UserEvent do
 
   require Logger
 
+  @topic "sanbase_user_events"
+
   schema "user_events" do
     field(:created_at, :utc_datetime)
     field(:event_name, :string)
@@ -29,6 +31,7 @@ defmodule Sanbase.Intercom.UserEvent do
   def create([]), do: :ok
 
   def create(events) when is_list(events) do
+    persist_in_kafka_async(events)
     Repo.insert_all(__MODULE__, events, on_conflict: :nothing)
   end
 
@@ -97,5 +100,44 @@ defmodule Sanbase.Intercom.UserEvent do
       }
     end)
     |> create()
+  end
+
+  defp persist_in_kafka_async(events) do
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      do_persist_sync(events)
+    end)
+  end
+
+  defp do_persist_sync(events) do
+    events
+    |> Enum.chunk_every(100)
+    |> Enum.each(fn events ->
+      Sanbase.KafkaExporter.send_data_to_topic_from_current_process(
+        to_json_kv_tuple(events),
+        @topic
+      )
+    end)
+  end
+
+  defp to_json_kv_tuple(events) do
+    events
+    |> Enum.map(fn %{
+                     user_id: user_id,
+                     event_name: event_name,
+                     metadata: metadata,
+                     created_at: timestamp
+                   } ->
+      timestamp = DateTime.to_unix(timestamp)
+      key = "#{user_id}_#{timestamp}"
+
+      data = %{
+        user_id: user_id,
+        event_name: event_name,
+        metadata: Jason.encode!(metadata),
+        timestamp: timestamp
+      }
+
+      {key, Jason.encode!(data)}
+    end)
   end
 end

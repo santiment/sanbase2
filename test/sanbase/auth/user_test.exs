@@ -16,6 +16,8 @@ defmodule Sanbase.Accounts.UserTest do
 
   test "Delete user and associations" do
     with_mocks([
+      {Sanbase.KafkaExporter, [:passthrough],
+       [send_data_to_topic_from_current_process: fn _, _ -> :ok end]},
       {StripeApi, [:passthrough],
        [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
       {StripeApi, [:passthrough],
@@ -103,13 +105,14 @@ defmodule Sanbase.Accounts.UserTest do
       :ok = Sanbase.FeaturedItem.update_item(chart_config, true)
 
       # Intercom attributes
-      {:ok, _} = Sanbase.Intercom.UserAttributes.save(%{user_id: user.id, properties: %{}})
+      Sanbase.Intercom.UserAttributes.save(%{user_id: user.id, properties: %{}})
 
       # User intercom or other events
       Sanbase.Intercom.UserEvent.create([
         %{
           user_id: user.id,
           event_name: "test",
+          metadata: %{},
           created_at: Timex.now() |> DateTime.truncate(:second),
           inserted_at: Timex.now() |> DateTime.truncate(:second),
           updated_at: Timex.now() |> DateTime.truncate(:second)

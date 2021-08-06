@@ -62,7 +62,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def available_since(_root, args, %{source: %{metric: metric}}) do
     with {:ok, selector} <- args_to_selector(args),
-         {:ok, first_datetime} <- Metric.first_datetime(metric, selector) do
+         {:ok, opts} <- selector_args_to_opts(args),
+         {:ok, first_datetime} <- Metric.first_datetime(metric, selector, opts) do
       {:ok, first_datetime}
     end
     |> maybe_handle_graphql_error(fn error ->
@@ -76,8 +77,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def last_datetime_computed_at(_root, args, %{source: %{metric: metric}}) do
     with {:ok, selector} <- args_to_selector(args),
+         {:ok, opts} <- selector_args_to_opts(args),
          true <- valid_metric_selector_pair?(metric, selector) do
-      Metric.last_datetime_computed_at(metric, selector)
+      Metric.last_datetime_computed_at(metric, selector, opts)
     end
     |> maybe_handle_graphql_error(fn error ->
       handle_graphql_error(
@@ -108,7 +110,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     with {:ok, selector} <- args_to_selector(args),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
-         {:ok, opts} = selector_args_to_opts(args),
+         {:ok, opts} <- selector_args_to_opts(args),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
          {:ok, result} <- Metric.aggregated_timeseries_data(metric, selector, from, to, opts) do

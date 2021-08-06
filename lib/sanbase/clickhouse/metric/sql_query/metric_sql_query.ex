@@ -115,34 +115,46 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     {query, args}
   end
 
-  def aggregated_timeseries_data_query(metric, slug_or_slugs, from, to, aggregation, filters) do
+  def aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters) do
     query = """
-    SELECT
-      name AS slug,
-      #{aggregation(aggregation, "value", "dt")}
-    FROM(
+    SELECT slug, SUM(value), toUInt32(SUM(has_changed))
+    FROM (
       SELECT
-        dt,
-        asset_id,
-        value
-      FROM #{Map.get(@table_map, metric)} FINAL
-      PREWHERE
-        #{additional_filters(filters, trailing_and: true)}
-        #{asset_id_filter(slug_or_slugs, argument_position: 1)} AND
-        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 ) AND
-        isNotNull(value) AND NOT isNaN(value) AND
-        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
-        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")}
+        arrayJoin([?1]) AS slug,
+        toFloat64(0) AS value,
+        toUInt32(0) AS has_changed
+
+      UNION ALL
+
+      SELECT
+        name AS slug,
+        #{aggregation(aggregation, "value", "dt")} AS value,
+        toUInt32(1) AS has_changed
+      FROM(
+        SELECT
+          dt,
+          asset_id,
+          value
+        FROM #{Map.get(@table_map, metric)} FINAL
+        PREWHERE
+          #{additional_filters(filters, trailing_and: true)}
+          #{asset_id_filter(slugs, argument_position: 1)} AND
+          metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 ) AND
+          isNotNull(value) AND NOT isNaN(value) AND
+          #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
+          #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")}
+      )
+      INNER JOIN (
+        SELECT asset_id, name
+        FROM asset_metadata FINAL
+      ) USING (asset_id)
+      GROUP BY slug
     )
-    INNER JOIN (
-      SELECT asset_id, name
-      FROM asset_metadata FINAL
-    ) USING (asset_id)
     GROUP BY slug
     """
 
     args = [
-      slug_or_slugs,
+      slugs,
       # Fetch internal metric name used. Fallback to the same name if missing.
       Map.get(@name_to_metric_map, metric),
       dt_to_unix(:from, from),

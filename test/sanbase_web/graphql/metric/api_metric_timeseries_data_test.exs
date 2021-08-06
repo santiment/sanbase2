@@ -22,6 +22,50 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     ]
   end
 
+  test "price_usd when the source is cryptocompare", context do
+    # Test that when the source is cryptocompare the prices are served from the
+    # PricePair module instead of the Price module
+    %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.PricePair.timeseries_data/6,
+      {:ok,
+       [
+         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
+         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
+       ]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        get_timeseries_metric(
+          conn,
+          "price_usd",
+          %{slug: slug, source: "cryptocompare"},
+          from,
+          to,
+          interval,
+          :last
+        )
+        |> extract_timeseries_data()
+
+      assert result == [
+               %{"value" => 100.0, "datetime" => "2019-01-01T00:00:00Z"},
+               %{"value" => 200.0, "datetime" => "2019-01-02T00:00:00Z"}
+             ]
+
+      assert_called(
+        Sanbase.PricePair.timeseries_data(
+          slug,
+          "USD",
+          from,
+          to,
+          interval,
+          :_
+        )
+      )
+    end)
+  end
+
   test "market segments selector", context do
     %{conn: conn, from: from, to: to, interval: interval} = context
 

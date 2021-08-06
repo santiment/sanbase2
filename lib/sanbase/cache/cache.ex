@@ -19,7 +19,7 @@ defmodule Sanbase.Cache do
   end
 
   def hash(data) do
-    :crypto.hash(:sha256, data |> :erlang.term_to_binary())
+    :crypto.hash(:sha256, :erlang.term_to_binary(data))
     |> Base.encode64()
   end
 

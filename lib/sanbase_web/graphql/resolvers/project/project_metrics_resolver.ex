@@ -45,9 +45,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     maybe_register_and_get(cache_key, fun, slug, query)
   end
 
-  def aggregated_timeseries_data(%Project{slug: slug}, %{metric: metric} = args, %{
-        context: %{loader: loader}
-      }) do
+  def aggregated_timeseries_data(
+        %Project{slug: slug},
+        %{metric: metric} = args,
+        %{context: %{loader: loader}}
+      ) do
     case Metric.has_metric?(metric) do
       true ->
         %{from: from, to: to} = args
@@ -56,13 +58,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         {:ok, from, to} =
           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to)
 
-        from = from |> DateTime.truncate(:second)
-        to = to |> DateTime.truncate(:second)
+        from = DateTime.truncate(from, :second)
+        to = DateTime.truncate(to, :second)
         {:ok, opts} = selector_args_to_opts(args)
 
         data = %{
           slug: slug,
           metric: metric,
+          opts: opts,
           selector: {metric, from, to, opts}
         }
 
@@ -84,26 +87,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     |> Dataloader.get(SanbaseDataloader, :aggregated_metric, selector)
     |> case do
       map when is_map(map) ->
-        aggregated_metric_from_loader_map(map, slug, metric)
+        aggregated_metric_from_loader_map(map, slug, metric, data[:opts])
 
       _ ->
         {:nocache, {:ok, nil}}
     end
   end
 
-  defp aggregated_metric_from_loader_map(map, slug, metric) do
+  defp aggregated_metric_from_loader_map(map, slug, metric, opts) do
     case Map.fetch(map, slug) do
       {:ok, value} ->
         {:ok, value}
 
       :error ->
         cache_key =
-          {__MODULE__, :available_slugs_for_metric, metric}
+          {__MODULE__, :available_slugs_for_metric, metric, opts}
           |> Sanbase.Cache.hash()
 
         {:ok, slugs_for_metric} =
-          Sanbase.Cache.get_or_store({cache_key, 1800}, fn ->
-            Metric.available_slugs(metric)
+          Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
+            Metric.available_slugs(metric, opts)
           end)
 
         # Determine whether the value is missing because it failed to compute or
@@ -135,8 +138,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
       {:error, :not_registered} ->
         refresh_time_delta = @refresh_time_delta + :rand.uniform(@refresh_time_max_offset)
+
         description = "#{query} for #{slug} from project metrics resolver"
-        RehydratingCache.register_function(fun, cache_key, @ttl, refresh_time_delta, description)
+
+        RehydratingCache.register_function(
+          fun,
+          cache_key,
+          @ttl,
+          refresh_time_delta,
+          description
+        )
 
         maybe_register_and_get(cache_key, fun, slug, query, attempts - 1)
 

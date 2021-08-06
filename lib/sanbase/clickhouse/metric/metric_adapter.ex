@@ -269,7 +269,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     {query, args} =
       aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, value], acc ->
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, value, has_changed], acc ->
+      value = if has_changed == 1, do: value, else: nil
       Map.put(acc, slug, value)
     end)
   end

@@ -151,4 +151,24 @@ defmodule Sanbase.Utils.Transform do
       {:ok, value} -> Map.put(map, key, String.replace(value, separator, ""))
     end
   end
+
+  def maybe_fill_gaps_last_seen({:ok, values}, key) do
+    result =
+      values
+      |> Enum.reduce({[], 0}, fn
+        %{has_changed: 0} = elem, {acc, last_seen} ->
+          elem = Map.put(elem, key, last_seen) |> Map.delete(:has_changed)
+          {[elem | acc], last_seen}
+
+        %{has_changed: 1} = elem, {acc, _last_seen} ->
+          elem = Map.delete(elem, :has_changed)
+          {[elem | acc], elem[key]}
+      end)
+      |> elem(0)
+      |> Enum.reverse()
+
+    {:ok, result}
+  end
+
+  def maybe_fill_gaps_last_seen({:error, error}, _key), do: {:error, error}
 end

@@ -262,7 +262,16 @@ defmodule Sanbase.Price.PricePairSql do
   defp slug_filter_map(slugs, opts) when is_list(slugs) do
     pos = Keyword.fetch!(opts, :argument_position)
 
-    "base_asset IN (SELECT base_asset FROM cryptocompare_asset_mapping WHERE slug IN (?#{pos}))"
+    # Just using `IN arrayMap(s -> ...)` won't work as the right side of the IN
+    # operator is not a constant and Clickhouse throws an error.
+    """
+    base_asset IN (
+      SELECT dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(slug)) AS base_asset
+      FROM system.one
+      ARRAY JOIN [?#{pos}] AS slug
+      HAVING base_asset != ''
+    )
+    """
   end
 
   defp timerange_parameters(from, to, interval \\ nil)

@@ -139,4 +139,5 @@ defmodule SanbaseWeb.Router do
   end
 
   get("/", SanbaseWeb.RootController, :healthcheck)
+  get("/healthcheck", SanbaseWeb.RootController, :healthcheck)
 end

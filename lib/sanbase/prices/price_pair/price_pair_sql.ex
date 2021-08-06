@@ -14,7 +14,7 @@ defmodule Sanbase.Price.PricePairSql do
     PREWHERE
       #{slug_filter_map(slug_or_slugs, argument_position: 2)} AND
       quote_asset = ?3 AND
-      source = cast(?4, 'LowCardinality(String)') AND
+      source = ?4 AND
       dt >= toDateTime(?5) AND
       dt < toDateTime(?6)
     GROUP BY time
@@ -38,7 +38,7 @@ defmodule Sanbase.Price.PricePairSql do
     PREWHERE
       #{slug_filter_map(slugs, argument_position: 2)} AND
       quote_asset = ?2 AND
-      source = cast(?3, 'LowCardinality(String)') AND
+      source = ?3 AND
       dt >= toDateTime(?4) AND
       dt < toDateTime(?5)
     GROUP BY time, slug
@@ -151,7 +151,7 @@ defmodule Sanbase.Price.PricePairSql do
     PREWHERE
       base_asset = dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(?1)) AND
       quote_asset = ?2 AND
-      source = cast(?3, 'LowCardinality(String)') AND
+      source = ?3 AND
       dt >= toDateTime(?4) AND
       dt <= toDateTime(?5)
     ORDER BY dt DESC
@@ -256,7 +256,7 @@ defmodule Sanbase.Price.PricePairSql do
   defp slug_filter_map(slug, opts) when is_binary(slug) do
     pos = Keyword.fetch!(opts, :argument_position)
 
-    "base_asset = cast(dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(?#{pos})), 'LowCardinality(String)')"
+    "base_asset = dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(?#{pos}))"
   end
 
   defp slug_filter_map(slugs, opts) when is_list(slugs) do

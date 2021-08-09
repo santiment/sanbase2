@@ -159,5 +159,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     fill_project_coinmarketcap_id_field: [
       schedule: "@hourly",
       task: {Sanbase.Model.Project.Jobs, :fill_coinmarketcap_id, []}
+    ],
+    previous_day_cryptocomapre_historical_data: [
+      schedule: "0 3 * * *",
+      task: {Sanbase.Cryptocompare.CCCAGGPairData, :schedule_previous_day_oban_jobs, []}
     ]
   ]

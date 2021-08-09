@@ -92,7 +92,11 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
     {:ok, state}
   end
 
-  def handle_frame(%{"MESSAGE" => "HEARTBEAT"}, _frame, state), do: {:ok, state}
+  def handle_frame(%{"MESSAGE" => "HEARTBEAT"}, _frame, state) do
+    Logger.info("[CryptocompareWS] Received heartbeat on websocket #{state[:socket_id]}")
+    {:ok, state}
+  end
+
   def handle_frame(%{"MESSAGE" => "LOADCOMPLETE"}, _frame, state), do: {:ok, state}
 
   # Aggregate Index (CCCAGG)
@@ -130,11 +134,8 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
   end
 
   def handle_frame(%{"MESSAGE" => "SUBSCRIBECOMPLETE"} = msg, _frame, state) do
-    {:ok,
-     %{
-       state
-       | subscriptions: MapSet.put(state.subscriptions, msg["SUB"])
-     }}
+    subscriptions = MapSet.put(state.subscriptions, msg["SUB"])
+    {:ok, %{state | subscriptions: subscriptions}}
   end
 
   # For some reason from time to time there are empty frames
@@ -142,7 +143,6 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
 
   def handle_frame(_msg, frame, state) do
     Logger.info("[CryptocompareWS] Unhandled frame: #{inspect(frame)}")
-
     {:ok, state}
   end
 

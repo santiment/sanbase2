@@ -23,7 +23,7 @@ defmodule Sanbase.Alert.OperationText.KV do
     special_symbol = Keyword.get(opts, :special_symbol, "")
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
-    template = "now: #{special_symbol}{{value}}"
+    template = "Now: #{special_symbol}{{value}}"
     kv = %{value: transform_fun.(value), human_readable: [:value]}
     {template, kv}
   end

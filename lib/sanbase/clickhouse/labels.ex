@@ -8,36 +8,6 @@ defmodule Sanbase.Clickhouse.Label do
           metadata: String.t()
         }
 
-  @type input_transaction :: %{
-          from_address: %{
-            address: String.t(),
-            is_exhange: boolean
-          },
-          to_address: %{
-            address: String.t(),
-            is_exhange: boolean
-          },
-          trx_value: float,
-          trx_hash: String,
-          datetime: Datetime.t()
-        }
-
-  @type output_transaction :: %{
-          from_address: %{
-            address: String.t(),
-            is_exhange: boolean,
-            labels: list(label)
-          },
-          to_address: %{
-            address: String.t(),
-            is_exhange: boolean,
-            labels: list(label)
-          },
-          trx_value: float,
-          trx_hash: String,
-          datetime: Datetime.t()
-        }
-
   def list_all(:all = _blockchain) do
     query = """
     SELECT DISTINCT(label) FROM blockchain_address_labels
@@ -54,20 +24,20 @@ defmodule Sanbase.Clickhouse.Label do
     Sanbase.ClickhouseRepo.query_transform(query, [blockchain], fn [label] -> label end)
   end
 
-  @spec add_labels(String.t() | nil, list(input_transaction)) :: {:ok, list(output_transaction)}
   def add_labels(_, []), do: {:ok, []}
 
-  def add_labels(slug, transactions) when is_list(transactions) do
-    addresses = get_list_of_addresses(transactions)
-    {query, args} = addresses_labels_query(slug, addresses)
+  def add_labels(slug, maps) when is_list(maps) do
+    addresses = get_list_of_addresses(maps)
+    blockchain = slug_to_blockchain(slug)
+    {query, args} = addresses_labels_query(slug, blockchain, addresses)
 
     Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
       label = %{name: label, metadata: metadata, origin: "santiment"}
       Map.update(acc, address, [label], &[label | &1])
     end)
     |> case do
-      {:ok, address_labels_map} ->
-        {:ok, do_add_labels(slug, transactions, address_labels_map)}
+      {:ok, labels_map} ->
+        {:ok, do_add_labels(maps, labels_map)}
 
       {:error, reason} ->
         {:error, reason}
@@ -77,7 +47,8 @@ defmodule Sanbase.Clickhouse.Label do
   def get_address_labels(_slug, []), do: {:ok, %{}}
 
   def get_address_labels(slug, addresses) when is_list(addresses) do
-    {query, args} = addresses_labels_query(slug, addresses)
+    blockchain = slug_to_blockchain(slug)
+    {query, args} = addresses_labels_query(slug, blockchain, addresses)
 
     Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
       label = %{name: label, metadata: metadata, origin: "santiment"}
@@ -85,27 +56,62 @@ defmodule Sanbase.Clickhouse.Label do
     end)
   end
 
-  # helpers
+  # Private functions
 
-  def addresses_labels_query("bitcoin", addresses) do
+  # For backwards compatibility, if the slug is nil treat it as ethereum blockchain
+  def slug_to_blockchain(nil), do: "ethereum"
+  def slug_to_blockchain(slug), do: Sanbase.Model.Project.slug_to_blockchain(slug)
+
+  defp addresses_labels_query(slug, "ethereum", addresses) do
+    query = create_addresses_labels_query(slug)
+
+    args =
+      case slug do
+        nil -> [addresses]
+        _ -> [addresses, slug]
+      end
+
+    {query, args}
+  end
+
+  defp addresses_labels_query(_slug, blockchain, addresses) do
     query = """
     SELECT address, label, metadata
     FROM blockchain_address_labels FINAL
-    PREWHERE blockchain = 'bitcoin' AND address IN (?1)
+    PREWHERE blockchain = ?1 AND address IN (?2)
     HAVING sign = 1
     """
 
-    {query, [addresses]}
+    {query, [blockchain, addresses]}
   end
 
-  def addresses_labels_query(nil, addresses) do
-    query = create_addresses_labels_query(nil)
-    {query, [addresses]}
+  defp get_list_of_addresses(maps) do
+    maps
+    |> Enum.flat_map(fn map ->
+      [
+        Map.get(map, :address) && map.address.address,
+        Map.get(map, :from_address) && map.from_address.address,
+        Map.get(map, :to_address) && map.to_address.address
+      ]
+    end)
+    |> Enum.uniq()
+    |> Enum.reject(&is_nil/1)
   end
 
-  def addresses_labels_query(slug, addresses) do
-    query = create_addresses_labels_query(slug)
-    {query, [addresses, slug]}
+  defp do_add_labels(maps, labels_map) do
+    add_labels = fn
+      # In this case the address type does not exist, so the result is not used
+      nil -> nil
+      map -> Map.put(map, :labels, Map.get(labels_map, map.address, []))
+    end
+
+    maps
+    |> Enum.map(fn %{} = map ->
+      map
+      |> Map.replace(:address, add_labels.(Map.get(map, :address)))
+      |> Map.replace(:from_address, add_labels.(Map.get(map, :from_address)))
+      |> Map.replace(:to_address, add_labels.(Map.get(map, :to_address)))
+    end)
   end
 
   defp create_addresses_labels_query(slug) do
@@ -201,57 +207,5 @@ defmodule Sanbase.Clickhouse.Label do
     label_raw='whale' AND asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{position}), 'Whale',
     label_raw='whale' AND asset_id != (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{position}), 'whale_wrong',
     """
-  end
-
-  defp get_list_of_addresses(transactions) do
-    transactions
-    |> Enum.flat_map(fn transaction ->
-      [
-        transaction.from_address && transaction.from_address.address,
-        transaction.to_address && transaction.to_address.address
-      ]
-    end)
-    |> Enum.uniq()
-    |> Enum.reject(&is_nil/1)
-  end
-
-  defp do_add_labels("bitcoin", transactions, address_labels_map) do
-    transactions
-    |> Enum.map(fn %{to_address: to_address, from_address: from_address} = transaction ->
-      from_address =
-        case from_address do
-          nil ->
-            nil
-
-          %{address: address} ->
-            labels = Map.get(address_labels_map, address, [])
-            Map.put(from_address, :labels, labels)
-        end
-
-      to_address =
-        case to_address do
-          nil ->
-            nil
-
-          %{address: address} ->
-            labels = Map.get(address_labels_map, address, [])
-            Map.put(to_address, :labels, labels)
-        end
-
-      %{transaction | to_address: to_address, from_address: from_address}
-    end)
-  end
-
-  defp do_add_labels(_slug, transactions, address_labels_map) do
-    transactions
-    |> Enum.map(fn %{from_address: from, to_address: to} = transaction ->
-      from_labels = Map.get(address_labels_map, String.downcase(from.address), [])
-      from = Map.put(from, :labels, from_labels)
-
-      to_labels = Map.get(address_labels_map, String.downcase(to.address), [])
-      to = Map.put(to, :labels, to_labels)
-
-      %{transaction | from_address: from, to_address: to}
-    end)
   end
 end

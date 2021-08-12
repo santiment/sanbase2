@@ -33,6 +33,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :blockchain_address_user_pair,
           :blockchain_address,
           :blockchain_address_labels,
+          :blockchain_address_label_changes,
           :chart_configuration,
           :chart_configurations,
           :comments,

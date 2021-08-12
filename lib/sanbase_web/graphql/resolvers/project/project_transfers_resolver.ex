@@ -22,17 +22,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
   defp calculate_token_top_transfers(%Project{slug: slug}, args) do
     %{from: from, to: to, limit: limit} = args
     limit = Enum.min([limit, 100])
-    excluded_addresses = Map.get(args, :excluded_addresses, [])
+    opts = [excluded_addresses: Map.get(args, :excluded_addresses, [])]
 
-    with {:ok, transfers} <-
-           Transfers.top_transfers(
-             slug,
-             from,
-             to,
-             _page = 1,
-             _page_size = limit,
-             excluded_addresses: excluded_addresses
-           ),
+    with {:ok, transfers} <- Transfers.top_transfers(slug, from, to, 1, limit, opts),
          {:ok, transfers} <- MarkExchanges.mark_exchange_wallets(transfers),
          {:ok, transfers} <- Label.add_labels(slug, transfers) do
       {:ok, transfers}

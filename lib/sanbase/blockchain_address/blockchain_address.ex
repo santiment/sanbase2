@@ -1,6 +1,7 @@
 defmodule Sanbase.BlockchainAddress do
   use Ecto.Schema
 
+  import Ecto.Query
   import Ecto.Changeset
 
   alias Sanbase.Model.Infrastructure
@@ -20,7 +21,9 @@ defmodule Sanbase.BlockchainAddress do
   end
 
   def by_id(id) do
-    case Sanbase.Repo.get(__MODULE__, id) do
+    query = from(ba in __MODULE__, where: ba.id == ^id, preload: [:infrastructure])
+
+    case Sanbase.Repo.one(query) do
       nil -> {:error, "Blockchain address with #{id} does not exist."}
       %__MODULE__{} = addr -> {:ok, addr}
     end

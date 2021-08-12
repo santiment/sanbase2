@@ -88,11 +88,11 @@ defmodule Sanbase.Application do
       "web" ->
         Logger.info("Starting Web Sanbase.")
 
-      "scraper" ->
-        Logger.info("Starting Alerts Sanbase.")
-
-      type when type in ["alerts", "signal"] ->
+      "scrapers" ->
         Logger.info("Starting Scrapers Sanbase.")
+
+      type when type in ["alerts", "signals"] ->
+        Logger.info("Starting Alerts Sanbase.")
 
       unknown ->
         Logger.warn("Unkwnown type #{inspect(unknown)}. Starting a default web container.")

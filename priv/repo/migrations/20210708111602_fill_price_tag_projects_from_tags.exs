@@ -10,7 +10,6 @@ defmodule Sanbase.Repo.Migrations.FillPriceTagProjectsFromTags do
       from(p in Sanbase.Insight.Post, preload: [:tags])
       |> Sanbase.Repo.all()
       |> Enum.reject(&(&1.tags == [] or not is_nil(&1.price_chart_project_id)))
-      |> length()
 
     first_tags = posts |> Enum.map(fn %{tags: [first_tag | _]} -> first_tag.name end)
 

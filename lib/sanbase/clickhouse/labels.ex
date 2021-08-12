@@ -74,6 +74,8 @@ defmodule Sanbase.Clickhouse.Label do
     end
   end
 
+  def get_address_labels(_slug, []), do: {:ok, %{}}
+
   def get_address_labels(slug, addresses) when is_list(addresses) do
     {query, args} = addresses_labels_query(slug, addresses)
 

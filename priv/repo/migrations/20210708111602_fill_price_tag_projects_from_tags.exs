@@ -39,7 +39,7 @@ defmodule Sanbase.Repo.Migrations.FillPriceTagProjectsFromTags do
     )
     |> Sanbase.Repo.transaction()
     |> case do
-      {:ok, result} -> :ok
+      {:ok, _result} -> :ok
       {:error, _name, error, _changes_so_far} -> {:error, error}
     end
   end

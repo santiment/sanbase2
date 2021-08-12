@@ -17,17 +17,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def top_holders(
         _root,
-        %{
-          slug: slug,
-          from: from,
-          to: to,
-          page: page,
-          page_size: page_size
-        } = args,
+        %{slug: slug, from: from, to: to, page: page, page_size: page_size} = args,
         _resolution
       ) do
     page_size = Enum.min([args[:number_of_holders] || page_size, 100])
-    opts = [page: page, page_size: page_size]
+    labels = Map.get(args, :labels, :all)
+    owners = Map.get(args, :owners, :all)
+    opts = [page: page, page_size: page_size, labels: labels, owners: owners]
 
     with {:ok, contract, token_decimals} <-
            Project.contract_info_by_slug(slug, contract_type: :latest_onchain_contract),

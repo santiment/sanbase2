@@ -132,10 +132,13 @@ defmodule Sanbase.Twitter.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs() do
-    Sanbase.Cache.get_or_store({:slugs_with_prices, 1800}, fn ->
+    cache_key = {__MODULE__, :slugs_with_twitter_handle} |> Sanbase.Cache.hash()
+
+    Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
       result =
         Project.List.projects()
         |> Enum.filter(fn project -> match?({:ok, _}, Project.twitter_handle(project)) end)
+        |> Enum.map(& &1.slug)
 
       {:ok, result}
     end)

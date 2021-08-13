@@ -1,5 +1,5 @@
 defmodule Sanbase.Twitter.FollowersWorker do
-  alias Sanbase.Twitter.MetricAdapter, as: TwitterFollowers
+  alias Sanbase.Twitter
 
   import Sanbase.DateTimeUtils,
     only: [generate_dates_inclusive: 2, date_to_datetime: 1, date_to_datetime: 2]
@@ -38,7 +38,7 @@ defmodule Sanbase.Twitter.FollowersWorker do
       |> Enum.chunk_every(30)
       |> Enum.map(fn list -> {List.first(list), List.last(list)} end)
       |> Enum.flat_map_reduce(:ok, fn {interval_from, interval_to}, acc ->
-        case TwitterFollowers.timeseries_data(
+        case Twitter.MetricAdapter.timeseries_data(
                "twitter_followers",
                %{slug: slug},
                date_to_datetime(interval_from),

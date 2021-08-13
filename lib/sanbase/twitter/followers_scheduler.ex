@@ -1,7 +1,7 @@
 defmodule Sanbase.Twitter.FollowersScheduler do
   use GenServer
 
-  alias Sanbase.Twitter.MetricAdapter, as: TwitterFollowers
+  alias Sanbase.Twitter
   alias Sanbase.Twitter.FollowersWorker
 
   require Logger
@@ -33,8 +33,7 @@ defmodule Sanbase.Twitter.FollowersScheduler do
   def enabled?(), do: Config.get(:enabled?) |> String.to_existing_atom()
 
   def add_jobs() do
-    {:ok, projects_with_twitter_link} = TwitterFollowers.available_slugs()
-    slugs = Enum.map(projects_with_twitter_link, & &1.slug)
+    {:ok, slugs} = Twitter.MetricAdapter.available_slugs()
 
     (slugs -- get_recorded_slugs())
     |> Enum.map(&create_oban_job(&1))
@@ -49,15 +48,16 @@ defmodule Sanbase.Twitter.FollowersScheduler do
     {:ok, %{rows: recorded_slugs}} = Ecto.Adapters.SQL.query(Sanbase.Repo, query)
 
     recorded_slugs
-    |> Enum.reject(&(&1 == [nil]))
-    |> Enum.concat()
+    |> List.flatten()
+    |> Enum.reject(&is_nil/1)
   end
 
   def create_oban_job(slug) do
-    {:ok, first_datetime} = TwitterFollowers.first_datetime("twitter_followers", %{slug: slug})
+    {:ok, first_datetime} =
+      Twitter.MetricAdapter.first_datetime("twitter_followers", %{slug: slug})
 
     {:ok, last_datetime} =
-      TwitterFollowers.last_datetime_computed_at("twitter_followers", %{slug: slug})
+      Twitter.MetricAdapter.last_datetime_computed_at("twitter_followers", %{slug: slug})
 
     FollowersWorker.new(%{slug: slug, from: first_datetime, to: last_datetime})
   end

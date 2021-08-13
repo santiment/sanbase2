@@ -20,6 +20,49 @@ defmodule Sanbase.Intercom do
   @user_events_url "https://api.intercom.io/events?type=user"
   @users_page_size 100
 
+  def sync_intercom_to_kafka do
+    if intercom_api_key() do
+      Logger.info("Start sync_intercom_to_kafka")
+
+      from(u in User, order_by: [asc: u.id], select: u.id)
+      |> Repo.all()
+      |> Enum.each(fn user_id ->
+        attributes = get_user(user_id)
+
+        if attributes do
+          %{user_id: user_id, properties: attributes, inserted_at: Timex.now()}
+          |> UserAttributes.persist_kafka_sync()
+        end
+      end)
+
+      Logger.info("Finish sync_intercom_to_kafka")
+    else
+      :ok
+    end
+  end
+
+  def get_user(user_id) do
+    body =
+      %{
+        query: %{
+          field: "external_id",
+          operator: "=",
+          value: user_id |> to_string()
+        }
+      }
+      |> Jason.encode!()
+
+    HTTPoison.post!(
+      "https://api.intercom.io/contacts/search",
+      body,
+      intercom_headers() ++ [{"Intercom-Version", "2.0"}]
+    )
+    |> Map.get(:body)
+    |> Jason.decode!()
+    |> Map.get("data")
+    |> List.first()
+  end
+
   def all_users_stats do
     %{
       customer_payment_type_map: customer_payment_type_map(),

@@ -91,6 +91,11 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "00 15 * * *",
       task: {Sanbase.Intercom, :sync_users, []}
     ],
+    # It should be scheduled after sync_users_to_intercom job so it gets up to date data
+    sync_intercom_to_kafka: [
+      schedule: "00 20 * * *",
+      task: {Sanbase.Intercom, :sync_intercom_to_kafka, []}
+    ],
     sync_events_from_intercom: [
       schedule: "00 10 * * *",
       task: {Sanbase.Intercom.UserEvent, :sync_events_from_intercom, []}

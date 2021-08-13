@@ -136,9 +136,8 @@ defmodule Sanbase.PricePair.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs() do
-    Sanbase.Cache.get_or_store({__MODULE__, :slugs_with_prices, 600}, fn ->
-      PricePair.available_slugs()
-    end)
+    cache_key = {__MODULE__, :slugs_with_prices} |> Sanbase.Cache.hash()
+    Sanbase.Cache.get_or_store({cache_key, 600}, fn -> PricePair.available_slugs() end)
   end
 
   @impl Sanbase.Metric.Behaviour

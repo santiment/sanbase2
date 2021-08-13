@@ -42,7 +42,8 @@ defmodule Sanbase.Twitter.FollowersScheduler do
 
   def get_recorded_slugs() do
     query = """
-    SELECT args->>'slug' FROM oban_jobs
+    SELECT DISTINCT args->>'slug' FROM oban_jobs
+    WHERE queue = 'twitter_followers_migration_queue'
     """
 
     {:ok, %{rows: recorded_slugs}} = Ecto.Adapters.SQL.query(Sanbase.Repo, query)

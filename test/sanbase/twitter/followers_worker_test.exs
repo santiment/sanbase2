@@ -26,7 +26,7 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
     Sanbase.Mock.prepare_mock2(&Twitter.MetricAdapter.available_slugs/0, {:ok, slugs})
     |> Sanbase.Mock.prepare_mock2(&Twitter.MetricAdapter.first_datetime/2, {:ok, from})
     |> Sanbase.Mock.prepare_mock2(&Twitter.MetricAdapter.timeseries_data/6, {:ok, data})
-    |> Sanbase.Mock.prepare_mock2(&Timex.now/1, now)
+    |> Sanbase.Mock.prepare_mock2(&Timex.now/0, now)
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Twitter.FollowersScheduler.add_jobs()
       Sanbase.Twitter.FollowersScheduler.resume()

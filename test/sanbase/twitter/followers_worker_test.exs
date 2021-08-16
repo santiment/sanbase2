@@ -19,14 +19,14 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
     %{slugs: slugs} = context
 
     from = ~D[2021-01-01]
-    to = ~D[2021-01-10]
+    now = ~U[2021-01-10 01:00:00.0Z]
 
-    data = data(from, to)
+    data = data(from, DateTime.to_date(now))
 
     Sanbase.Mock.prepare_mock2(&Twitter.MetricAdapter.available_slugs/0, {:ok, slugs})
     |> Sanbase.Mock.prepare_mock2(&Twitter.MetricAdapter.first_datetime/2, {:ok, from})
-    |> Sanbase.Mock.prepare_mock2(&Twitter.MetricAdapter.last_datetime_computed_at/2, {:ok, to})
     |> Sanbase.Mock.prepare_mock2(&Twitter.MetricAdapter.timeseries_data/6, {:ok, data})
+    |> Sanbase.Mock.prepare_mock2(&Timex.now/1, now)
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Twitter.FollowersScheduler.add_jobs()
       Sanbase.Twitter.FollowersScheduler.resume()
@@ -37,8 +37,7 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
           worker: Sanbase.Twitter.FollowersWorker,
           args: %{
             slug: slug,
-            from: from,
-            to: to
+            from: from
           }
         )
       end
@@ -56,8 +55,7 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
           worker: Sanbase.Twitter.FollowersWorker,
           args: %{
             slug: slug,
-            from: from,
-            to: to
+            from: from
           }
         )
       end

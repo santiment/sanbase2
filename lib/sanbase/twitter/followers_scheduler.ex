@@ -57,9 +57,6 @@ defmodule Sanbase.Twitter.FollowersScheduler do
     {:ok, first_datetime} =
       Twitter.MetricAdapter.first_datetime("twitter_followers", %{slug: slug})
 
-    {:ok, last_datetime} =
-      Twitter.MetricAdapter.last_datetime_computed_at("twitter_followers", %{slug: slug})
-
-    FollowersWorker.new(%{slug: slug, from: first_datetime, to: last_datetime})
+    FollowersWorker.new(%{slug: slug, from: first_datetime})
   end
 end

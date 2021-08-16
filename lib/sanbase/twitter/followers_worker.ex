@@ -13,10 +13,10 @@ defmodule Sanbase.Twitter.FollowersWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
-    %{"slug" => slug, "from" => from, "to" => to} = args
+    %{"slug" => slug, "from" => from} = args
 
     from = Date.from_iso8601!(from)
-    to = Date.from_iso8601!(to)
+    to = Timex.now() |> DateTime.to_date()
 
     case get_data(slug, from, to) do
       {:ok, data} ->

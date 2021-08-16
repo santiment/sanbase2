@@ -34,7 +34,7 @@ config :sanbase, Oban.Scrapers,
   ],
   plugins: [
     # The default values of interval: 1000, limit: 5000 cause the stager to timeout
-    {Oban.Plugins.Stager, interval: 2000, limit: 200}
+    {Oban.Plugins.Stager, interval: 5000, limit: 200}
   ]
 
 config :sanbase, Sanbase.Cryptocompare.WebsocketScraper,

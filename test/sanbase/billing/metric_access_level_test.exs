@@ -764,7 +764,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "whale_transaction_count_100k_usd_to_inf_change_30d",
         "whale_transaction_count_1m_usd_to_inf_change_1d",
         "whale_transaction_count_1m_usd_to_inf_change_7d",
-        "whale_transaction_count_1m_usd_to_inf_change_30d"
+        "whale_transaction_count_1m_usd_to_inf_change_30d",
+        # bnb funding rates metrics
+        "usdt_bnb_funding_rates",
+        "busd_bnb_funding_rates"
       ]
       |> Enum.sort()
 

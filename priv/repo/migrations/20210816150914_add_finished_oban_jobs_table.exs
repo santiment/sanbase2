@@ -10,7 +10,6 @@ defmodule Sanbase.Repo.Migrations.AddFinishedObanJobsTable do
       add(:completed_at, :naive_datetime)
     end
 
-    prefix = get_prefix()
     create_if_not_exists(index(:finished_oban_jobs, [:queue]))
     create_if_not_exists(index(:finished_oban_jobs, [:inserted_at]))
     create_if_not_exists(index(:finished_oban_jobs, [:args], using: :gin))

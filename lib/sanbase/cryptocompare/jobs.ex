@@ -32,8 +32,10 @@ defmodule Sanbase.Cryptocompare.Jobs do
 
     unsupported_base_assets = oban_jobs_base_assets -- supported_base_assets
 
-    Enum.map(unsupported_base_assets, fn base_asset ->
-      {:ok, _} = delete_not_completed_base_asset_jobs(@queue, base_asset)
+    unsupported_base_assets
+    |> Enum.chunk_every(50)
+    |> Enum.map(fn base_assets ->
+      {:ok, _} = delete_not_completed_base_asset_jobs(@queue, base_assets)
     end)
   end
 
@@ -66,15 +68,15 @@ defmodule Sanbase.Cryptocompare.Jobs do
     {:ok, affected_rows_count}
   end
 
-  defp delete_not_completed_base_asset_jobs(queue, base_asset) do
+  defp delete_not_completed_base_asset_jobs(queue, base_assets) do
     query = """
     DELETE FROM oban_jobs
-    WHERE queue = $1 AND args->>'base_asset' = $2 AND completed_at IS NULL;
+    WHERE queue = $1 AND args->>'base_asset' IN ($2) AND completed_at IS NULL;
     """
 
     {:ok, %{num_rows: num_rows}} =
-      Ecto.Adapters.SQL.query(Sanbase.Repo, query, [queue, base_asset], timeout: 150_000)
+      Ecto.Adapters.SQL.query(Sanbase.Repo, query, [queue, base_assets], timeout: 150_000)
 
-    {:ok, %{num_rows: num_rows, base_asset: base_asset}}
+    {:ok, num_rows}
   end
 end

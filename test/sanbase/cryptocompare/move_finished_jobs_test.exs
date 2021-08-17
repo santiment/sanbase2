@@ -40,7 +40,7 @@ defmodule Sanbase.Cryptocompare.MoveFinishedJobsTest do
       assert %{success: 10, failure: 0} =
                Oban.drain_queue(queue: Sanbase.Cryptocompare.HistoricalWorker.queue())
 
-      # Move 5 of the finished jobs to the finished queue
+      # Move 6 of the finished jobs to the finished queue
       assert {:ok, 6} = Sanbase.Cryptocompare.Jobs.move_finished_jobs(iterations: 2, limit: 3)
 
       # Check that 4 of the jobs are still not moved
@@ -58,7 +58,6 @@ defmodule Sanbase.Cryptocompare.MoveFinishedJobsTest do
                )
 
       # Check that the get_pair_dates properly checks both tables
-
       dates =
         Sanbase.Cryptocompare.HistoricalScheduler.get_pair_dates(
           base_asset,

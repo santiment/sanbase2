@@ -60,7 +60,8 @@ defmodule Sanbase.Cryptocompare.Jobs do
 
     # The affected rows count is returned as a result of the function and should not
     # be taken from the `num_rows` field as it is always 1.
-    {:ok, %{rows: [[affected_rows_count]]}} = Sanbase.Repo.query(query, [queue, limit])
+    {:ok, %{rows: [[affected_rows_count]]}} =
+      Ecto.Adapters.SQL.query(Sanbase.Repo, query, [queue, limit], timeuot: 150_000)
 
     {:ok, affected_rows_count}
   end

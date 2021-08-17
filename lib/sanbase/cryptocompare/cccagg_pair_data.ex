@@ -84,22 +84,4 @@ defmodule Sanbase.Cryptocompare.CCCAGGPairData do
 
     body |> Jason.decode!() |> get_in(["Data", "pairs"])
   end
-
-  defp available_base_assets() do
-    # TODO: Remove once all the used assets are scrapped
-    # In order to priroritize the jobs that are more important, snooze
-    # the jobs that are not having a base asset that is stored in our DBs.
-    cache_key = {__MODULE__, :available_base_assets}
-
-    {:ok, assets} =
-      Sanbase.Cache.get_or_store(cache_key, fn ->
-        data =
-          Sanbase.Model.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
-          |> Enum.map(&elem(&1, 0))
-
-        {:ok, data}
-      end)
-
-    assets
-  end
 end

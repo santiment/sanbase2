@@ -60,13 +60,23 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
      }}
   end
 
-  defp get_pair_dates(base_asset, quote_asset, from, to) do
+  def get_pair_dates(base_asset, quote_asset, from, to) do
     query = """
     SELECT args->>'date', inserted_at FROM oban_jobs
-    WHERE args->>'base_asset' = $1 AND args->>'quote_asset' = $2
+    WHERE args->>'base_asset' = $1 AND args->>'quote_asset' = $2 AND queue = $3
+
+    UNION ALL
+
+    SELECT args->>'date', inserted_at FROM finished_oban_jobs
+    WHERE args->>'base_asset' = $1 AND args->>'quote_asset' = $2 AND queue = $3
     """
 
-    {:ok, %{rows: rows}} = Ecto.Adapters.SQL.query(Sanbase.Repo, query, [base_asset, quote_asset])
+    {:ok, %{rows: rows}} =
+      Ecto.Adapters.SQL.query(Sanbase.Repo, query, [
+        base_asset,
+        quote_asset,
+        to_string(@oban_queue)
+      ])
 
     now = NaiveDateTime.utc_now()
 

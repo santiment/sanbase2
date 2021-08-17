@@ -16,7 +16,6 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
-
 --
 -- Name: citext; Type: EXTENSION; Schema: -; Owner: -
 --
@@ -151,6 +150,35 @@ BEGIN
   RETURN result;
 END;
 $$;
+
+
+--
+-- Name: movefinishedobanjobs(character varying, bigint); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.movefinishedobanjobs(queue_arg character varying, limit_arg bigint) RETURNS bigint
+    LANGUAGE plpgsql
+    AS $_$
+ DECLARE
+   rows_count numeric;
+ BEGIN
+   WITH finished_job_ids_cte AS (
+     SELECT id from oban_jobs
+     WHERE queue = $1 AND completed_at IS NOT NULL
+     LIMIT $2
+   ),
+   moved_rows AS (
+     DELETE FROM oban_jobs a
+     WHERE a.id IN (SELECT id FROM finished_job_ids_cte)
+     RETURNING a.queue, a.worker, a.args, a.inserted_at, a.completed_at
+   )
+   INSERT INTO finished_oban_jobs(queue, worker, args, inserted_at, completed_at)
+   SELECT * FROM moved_rows;
+
+   GET DIAGNOSTICS rows_count = ROW_COUNT;
+   RETURN rows_count;
+ END;
+ $_$;
 
 
 --
@@ -809,6 +837,39 @@ CREATE SEQUENCE public.featured_items_id_seq
 --
 
 ALTER SEQUENCE public.featured_items_id_seq OWNED BY public.featured_items.id;
+
+
+--
+-- Name: finished_oban_jobs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.finished_oban_jobs (
+    id bigint NOT NULL,
+    queue character varying(255),
+    worker character varying(255),
+    args jsonb,
+    inserted_at timestamp(0) without time zone,
+    completed_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: finished_oban_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.finished_oban_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: finished_oban_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.finished_oban_jobs_id_seq OWNED BY public.finished_oban_jobs.id;
 
 
 --
@@ -3346,6 +3407,13 @@ ALTER TABLE ONLY public.featured_items ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: finished_oban_jobs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.finished_oban_jobs ALTER COLUMN id SET DEFAULT nextval('public.finished_oban_jobs_id_seq'::regclass);
+
+
+--
 -- Name: github_organizations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3957,6 +4025,14 @@ ALTER TABLE ONLY public.exchange_market_pair_mappings
 
 ALTER TABLE ONLY public.featured_items
     ADD CONSTRAINT featured_items_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: finished_oban_jobs finished_oban_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.finished_oban_jobs
+    ADD CONSTRAINT finished_oban_jobs_pkey PRIMARY KEY (id);
 
 
 --
@@ -4730,6 +4806,27 @@ CREATE UNIQUE INDEX featured_items_user_list_id_index ON public.featured_items U
 --
 
 CREATE UNIQUE INDEX featured_items_user_trigger_id_index ON public.featured_items USING btree (user_trigger_id);
+
+
+--
+-- Name: finished_oban_jobs_args_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX finished_oban_jobs_args_index ON public.finished_oban_jobs USING gin (args);
+
+
+--
+-- Name: finished_oban_jobs_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX finished_oban_jobs_inserted_at_index ON public.finished_oban_jobs USING btree (inserted_at);
+
+
+--
+-- Name: finished_oban_jobs_queue_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX finished_oban_jobs_queue_index ON public.finished_oban_jobs USING btree (queue);
 
 
 --
@@ -6567,6 +6664,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210616123403);
 INSERT INTO public."schema_migrations" (version) VALUES (20210701130227);
 INSERT INTO public."schema_migrations" (version) VALUES (20210705104243);
 INSERT INTO public."schema_migrations" (version) VALUES (20210707135227);
+INSERT INTO public."schema_migrations" (version) VALUES (20210708111602);
 INSERT INTO public."schema_migrations" (version) VALUES (20210712125345);
 INSERT INTO public."schema_migrations" (version) VALUES (20210716075649);
 INSERT INTO public."schema_migrations" (version) VALUES (20210721140912);
@@ -6574,3 +6672,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210722141655);
 INSERT INTO public."schema_migrations" (version) VALUES (20210727124520);
 INSERT INTO public."schema_migrations" (version) VALUES (20210727124524);
 INSERT INTO public."schema_migrations" (version) VALUES (20210728101938);
+INSERT INTO public."schema_migrations" (version) VALUES (20210803092012);
+INSERT INTO public."schema_migrations" (version) VALUES (20210816150914);

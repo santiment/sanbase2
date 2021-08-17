@@ -153,6 +153,35 @@ $$;
 
 
 --
+-- Name: movefinishedobanjobs(character varying, bigint); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.movefinishedobanjobs(queue_arg character varying, limit_arg bigint) RETURNS bigint
+    LANGUAGE plpgsql
+    AS $_$
+ DECLARE
+   rows_count numeric;
+ BEGIN
+   WITH finished_job_ids_cte AS (
+     SELECT id from oban_jobs
+     WHERE queue = $1 AND completed_at IS NOT NULL
+     LIMIT $2
+   ),
+   moved_rows AS (
+     DELETE FROM oban_jobs a
+     WHERE a.id IN (SELECT id FROM finished_job_ids_cte)
+     RETURNING a.queue, a.worker, a.args, a.inserted_at, a.completed_at
+   )
+   INSERT INTO finished_oban_jobs(queue, worker, args, inserted_at, completed_at)
+   SELECT * FROM moved_rows;
+
+   GET DIAGNOSTICS rows_count = ROW_COUNT;
+   RETURN rows_count;
+ END;
+ $_$;
+
+
+--
 -- Name: oban_jobs_notify(); Type: FUNCTION; Schema: public; Owner: -
 --
 

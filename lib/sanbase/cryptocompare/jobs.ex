@@ -26,26 +26,12 @@ defmodule Sanbase.Cryptocompare.Jobs do
     # In a second CTE delete those records from the oban_jobs and return them,
     # so they can be used to be inserted into the `finished_oban_jobs` table.
     # Return the number of affected rows so when they become 0 we can
-    query = """
-    WITH finished_job_ids_cte AS (
-      SELECT id from oban_jobs
-      WHERE queue = '#{queue}' AND completed_at IS NOT NULL
-      LIMIT #{limit}
-    ),
-    moved_rows AS (
-      DELETE FROM oban_jobs a
-      WHERE a.id IN (SELECT id FROM finished_job_ids_cte)
-      RETURNING a.queue, a.worker, a.args, a.inserted_at, a.completed_at
-    )
-    INSERT INTO finished_oban_jobs(queue, worker, args, inserted_at, completed_at)
-    SELECT * FROM moved_rows;
-    """
+    query = "SELECT moveFinishedObanJobs($1, $2);"
 
-    # Interpolate the query parameters instead of using a prepared statement.
-    # Providing the params will result in the error:
-    # `cannot insert multiple commands into a prepared statement`
-    {:ok, %{num_rows: num_rows}} = Sanbase.Repo.query(query)
+    # The affected rows count is returned as a result of the function and should not
+    # be taken from the `num_rows` field as it is always 1.
+    {:ok, %{rows: [[affected_rows_count]]}} = Sanbase.Repo.query(query, [queue, limit])
 
-    {:ok, num_rows}
+    {:ok, affected_rows_count}
   end
 end

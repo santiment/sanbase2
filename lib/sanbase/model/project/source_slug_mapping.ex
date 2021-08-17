@@ -26,6 +26,14 @@ defmodule Sanbase.Model.Project.SourceSlugMapping do
     changeset(%__MODULE__{}, attrs) |> Repo.insert()
   end
 
+  def remove(project_id, source) do
+    from(
+      ssm in __MODULE__,
+      where: ssm.project_id == ^project_id and ssm.source == ^source
+    )
+    |> Repo.delete_all()
+  end
+
   def get_source_slug_mappings(source) do
     from(
       ssm in __MODULE__,

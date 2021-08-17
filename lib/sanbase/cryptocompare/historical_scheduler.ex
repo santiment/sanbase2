@@ -27,6 +27,7 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
+  def queue(), do: @oban_queue
   def resume(), do: Oban.resume_queue(queue: @oban_queue)
   def pause(), do: Oban.pause_queue(queue: @oban_queue)
 

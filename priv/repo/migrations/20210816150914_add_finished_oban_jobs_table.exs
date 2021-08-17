@@ -1,6 +1,5 @@
 defmodule Sanbase.Repo.Migrations.AddFinishedObanJobsTable do
   use Ecto.Migration
-  require Sanbase.Utils.Config, as: Config
 
   def change do
     create table(:finished_oban_jobs) do
@@ -14,7 +13,7 @@ defmodule Sanbase.Repo.Migrations.AddFinishedObanJobsTable do
     prefix = get_prefix()
     create_if_not_exists(index(:finished_oban_jobs, [:queue]))
     create_if_not_exists(index(:finished_oban_jobs, [:inserted_at]))
-    create_if_not_exists(index(:finished_oban_jobs, [:args], using: :gin, prefix: prefix))
+    create_if_not_exists(index(:finished_oban_jobs, [:args], using: :gin))
 
     execute("""
     CREATE OR REPLACE FUNCTION moveFinishedObanJobs(queue_arg character varying, limit_arg bigint) RETURNS bigint AS
@@ -49,12 +48,5 @@ defmodule Sanbase.Repo.Migrations.AddFinishedObanJobsTable do
     execute("""
     DROP FUNCTION IF EXISTS moveFinishedObanJobs;
     """)
-  end
-
-  defp get_prefix() do
-    case Config.module_get(Sanbase, :deployment_env) do
-      env when env in ["stage", "prod"] -> "sanbase2"
-      _ -> "public"
-    end
   end
 end

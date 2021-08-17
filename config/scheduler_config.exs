@@ -168,5 +168,11 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     previous_day_cryptocomapre_historical_data: [
       schedule: "0 3 * * *",
       task: {Sanbase.Cryptocompare.CCCAGGPairData, :schedule_previous_day_oban_jobs, []}
+    ],
+    move_finished_oban_jobs: [
+      timeout: :infinity,
+      # run once every 6 hours
+      schedule: "0 */6 * * *",
+      task: {Sanbase.Cryptocompare.Jobs, :move_finished_jobs, []}
     ]
   ]

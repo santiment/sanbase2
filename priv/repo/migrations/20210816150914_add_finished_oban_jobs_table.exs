@@ -6,15 +6,20 @@ defmodule Sanbase.Repo.Migrations.AddFinishedObanJobsTable do
       add(:queue, :string)
       add(:worker, :string)
       add(:args, :map)
-      add(:original_id, :integer)
-      add(:original_inserted_at, :naive_datetime)
-      add(:original_completed_at, :naive_datetime)
-
-      timestamps()
+      add(:inserted_at, :naive_datetime)
+      add(:completed_at, :naive_datetime)
     end
 
+    prefix = get_prefix()
     create_if_not_exists(index(:finished_oban_jobs, [:queue]))
-    create_if_not_exists(index(:finished_oban_jobs, [:original_inserted_at]))
+    create_if_not_exists(index(:finished_oban_jobs, [:inserted_at]))
     create_if_not_exists(index(:finished_oban_jobs, [:args], using: :gin, prefix: prefix))
+  end
+
+  defp get_prefix() do
+    case Config.module_get(Sanbase, :deployment_env) do
+      env when env in ["stage", "prod"] -> "sanbase2"
+      _ -> "public"
+    end
   end
 end

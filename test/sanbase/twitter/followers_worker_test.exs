@@ -72,10 +72,8 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
       # 5 slugs with 10 records each
       assert length(twitter_followers_topic) == 50
 
-      assert Enum.uniq(twitter_followers_topic) ==
-               data
-               |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.new/1)
-               |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.json_kv_tuple/1)
+      assert Enum.sort(twitter_followers_topic) ==
+               transform_to_export_data(slugs, data) |> Enum.sort()
     end)
   end
 
@@ -89,5 +87,17 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
         value: :rand.uniform(10_000)
       }
     end)
+  end
+
+  defp transform_to_export_data(slugs, data) do
+    slugs
+    |> Enum.flat_map(&transform_to_export_data_for_slug(&1, data))
+  end
+
+  defp transform_to_export_data_for_slug(slug, data) do
+    data
+    |> Stream.map(&Map.put(&1, :slug, slug))
+    |> Stream.map(&Sanbase.Twitter.TimeseriesPoint.new/1)
+    |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.json_kv_tuple/1)
   end
 end

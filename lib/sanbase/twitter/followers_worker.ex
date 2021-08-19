@@ -20,7 +20,7 @@ defmodule Sanbase.Twitter.FollowersWorker do
 
     case get_data(slug, from, to) do
       {:ok, data} ->
-        export_data(data)
+        export_data(slug, data)
 
       {:error, error} ->
         {:error, error}
@@ -58,11 +58,12 @@ defmodule Sanbase.Twitter.FollowersWorker do
     end
   end
 
-  defp export_data(data) do
+  defp export_data(slug, data) do
     topic = Config.module_get!(Sanbase.KafkaExporter, :twitter_followers_topic)
 
     data
-    |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.new/1)
+    |> Stream.map(&Map.put(&1, :slug, slug))
+    |> Stream.map(&Sanbase.Twitter.TimeseriesPoint.new/1)
     |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.json_kv_tuple/1)
     |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(topic)
   end

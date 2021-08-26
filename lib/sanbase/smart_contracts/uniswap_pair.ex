@@ -53,8 +53,12 @@ defmodule Sanbase.SmartContracts.UniswapPair do
   @spec balance_of(address, address) :: float()
   def balance_of(address, contract) do
     address = format_address(address)
-    [balance] = call_contract(contract, "balanceOf(address)", [address], [{:uint, 256}])
-    format_number(balance, @decimals)
+
+    call_contract(contract, "balanceOf(address)", [address], [{:uint, 256}])
+    |> case do
+      [balance] -> format_number(balance, @decimals)
+      {:error, _} -> 0.0
+    end
   end
 
   def balances_of(addresses, contract) do

@@ -13,6 +13,15 @@ defmodule Sanbase.Billing.Subscription.Query do
     from(q in query, where: q.plan_id == ^plan_id)
   end
 
+  def all_active_subscriptions_for_product(query, product_id) do
+    query = all_active_subscriptions(query)
+
+    from(q in query,
+      join: p in assoc(q, :plan),
+      where: p.product_id == ^product_id
+    )
+  end
+
   # with status `active`, `past_due`, `trialing`
   def all_active_and_trialing_subscriptions(query) do
     from(q in query, where: q.status in ["active", "past_due", "trialing"])

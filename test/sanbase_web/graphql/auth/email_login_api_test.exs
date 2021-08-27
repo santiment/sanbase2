@@ -194,7 +194,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       end)
     end
 
-    test "with user that staked >= 2000 SAN in Uniswap that have sanbase subscription, create trial subscription",
+    test "with user that staked >= 2000 SAN in Uniswap that have sanbase subscription",
          context do
       {:ok, user} =
         insert(:user, email: "example@santiment.net", is_registered: false)
@@ -210,11 +210,11 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
         assert result["user"]["email"] == user.email
         assert Sanbase.Billing.list_liquidity_subscriptions() == []
         assert Repo.get(User, user.id).is_registered
-        assert_called(SignUpTrial.create_trial_subscription(user.id))
+        refute called(SignUpTrial.create_trial_subscription(user.id))
       end)
     end
 
-    test "with user that staked < 2000 SAN in Uniswap, create trial subscription", context do
+    test "with user that staked < 2000 SAN in Uniswap", context do
       {:ok, user} =
         insert(:user, email: "example@santiment.net", is_registered: false)
         |> User.update_email_token()
@@ -227,7 +227,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
         assert result["user"]["email"] == user.email
         assert Sanbase.Billing.list_liquidity_subscriptions() == []
         assert Repo.get(User, user.id).is_registered
-        assert_called(SignUpTrial.create_trial_subscription(user.id))
+        refute called(SignUpTrial.create_trial_subscription(user.id))
       end)
     end
   end

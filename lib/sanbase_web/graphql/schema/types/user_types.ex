@@ -168,6 +168,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&BillingResolver.subscriptions/3)
     end
 
+    field :eligible_for_sanbase_trial, :boolean do
+      resolve(&BillingResolver.eligible_for_sanbase_trial?/3)
+    end
+
     @desc ~s"""
     Timeseries data of api calls count per interval in a given time range.
     """

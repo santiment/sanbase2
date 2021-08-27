@@ -44,6 +44,16 @@ defmodule Sanbase.Billing do
     |> Repo.all()
   end
 
+  def eligible_for_sanbase_trial?(user_id) do
+    Subscription
+    |> Subscription.Query.user_has_any_subscriptions_for_product?(
+      user_id,
+      Product.product_sanbase()
+    )
+    |> Repo.all()
+    |> Enum.any?()
+  end
+
   @doc ~s"""
   Sync the locally defined Products and Plans with stripe.
 
@@ -67,13 +77,10 @@ defmodule Sanbase.Billing do
   If user has enough SAN staked and has no active Sanbase subscription - create one
   Or if user is not yet registered - create a 14 day trial
   """
-  @spec maybe_create_liquidity_or_trial_subscription(non_neg_integer()) ::
-          {:ok, %Subscription{}} | {:ok, %SignUpTrial{}} | {:error, any()}
-  def maybe_create_liquidity_or_trial_subscription(user_id) do
-    case eligible_for_liquidity_subscription?(user_id) do
-      true -> create_liquidity_subscription(user_id)
-      false -> create_trial_subscription(user_id)
-    end
+  @spec maybe_create_liquidity_subscription(non_neg_integer()) ::
+          {:ok, %Subscription{}} | false
+  def maybe_create_liquidity_subscription(user_id) do
+    eligible_for_liquidity_subscription?(user_id) && create_liquidity_subscription(user_id)
   end
 
   # Private functions

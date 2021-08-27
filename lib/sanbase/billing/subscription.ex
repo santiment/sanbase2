@@ -124,7 +124,7 @@ defmodule Sanbase.Billing.Subscription do
   @spec subscribe(%User{}, %Plan{}, string_or_nil, string_or_nil) ::
           {:ok, %__MODULE__{}} | {:error, %Stripe.Error{} | String.t()}
   def subscribe(user, plan, card_token \\ nil, coupon \\ nil) do
-    with :ok <- active_subscriptions_for_this_plan(user, plan),
+    with :ok <- has_active_subscriptions_for_this_plan(user, plan),
          {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
@@ -291,7 +291,7 @@ defmodule Sanbase.Billing.Subscription do
 
   # Private functions
 
-  defp active_subscriptions_for_this_plan(user, plan) do
+  defp has_active_subscriptions_for_this_plan(user, plan) do
     __MODULE__
     |> Query.all_active_subscriptions_for_plan(plan.id)
     |> Query.filter_user(user.id)
@@ -356,20 +356,28 @@ defmodule Sanbase.Billing.Subscription do
     }
 
     # Transfer left trial to new subscription
-    case SignUpTrial.trial_end_dt(user) do
-      trial_end_dt = %NaiveDateTime{} ->
-        case NaiveDateTime.compare(NaiveDateTime.utc_now(), trial_end_dt) do
-          :lt ->
-            trial_end_dt = trial_end_dt |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
-            Map.put(defaults, :trial_end, trial_end_dt)
+    # FIXME Remove after last trials on registration expire
+    defaults =
+      case SignUpTrial.trial_end_dt(user) do
+        trial_end_dt = %NaiveDateTime{} ->
+          case NaiveDateTime.compare(NaiveDateTime.utc_now(), trial_end_dt) do
+            :lt ->
+              trial_end_dt = trial_end_dt |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+              Map.put(defaults, :trial_end, trial_end_dt)
 
-          _ ->
-            defaults
-        end
+            _ ->
+              defaults
+          end
 
-      _ ->
-        defaults
+        _ ->
+          defaults
+      end
+
+    if Billing.eligible_for_sanbase_trial?(user.id) do
+      Map.put(defaults, :trial_end, DateTime.utc_now() |> DateTime.to_unix())
     end
+
+    defaults
   end
 
   defp subscription_defaults(user, plan) do

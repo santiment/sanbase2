@@ -51,9 +51,10 @@ defmodule Sanbase.MandrillApi do
   end
 
   defp build_global_merge_vars(variables) do
-    variables
-    |> Enum.map(fn {key, value} ->
-      %{name: key, content: value}
-    end)
+    variables =
+      variables
+      |> Enum.map(fn {key, value} -> %{name: key, content: value} end)
+
+    variables ++ [%{name: "year", content: DateTime.utc_now().year}]
   end
 end

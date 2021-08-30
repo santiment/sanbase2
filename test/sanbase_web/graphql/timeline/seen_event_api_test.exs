@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.SeenEventApiTest do
 
   test "Update last seen event mutation", context do
     mutation = update_last_seen_mutation(context.event1.id)
-    result = execute_mutation(context.conn, mutation, "updateLastSeenEvent")
+    _result = execute_mutation(context.conn, mutation, "updateLastSeenEvent")
     last_seen_event_id = SeenEvent.last_seen_for_user(context.user.id)
 
     assert last_seen_event_id == context.event1.id

@@ -188,6 +188,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
         mutation = email_login_verify_mutation(user)
         result = execute_mutation(context.conn, mutation, "emailLoginVerify")
 
+        assert_receive({_, {:ok, %Sanbase.Billing.Subscription{}}})
         assert result["user"]["email"] == user.email
         assert Sanbase.Billing.user_has_active_sanbase_subscriptions?(user.id)
         assert Repo.get(User, user.id).is_registered

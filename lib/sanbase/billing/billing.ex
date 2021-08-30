@@ -45,13 +45,15 @@ defmodule Sanbase.Billing do
   end
 
   def eligible_for_sanbase_trial?(user_id) do
-    Subscription
-    |> Subscription.Query.user_has_any_subscriptions_for_product?(
-      user_id,
-      Product.product_sanbase()
-    )
-    |> Repo.all()
-    |> Enum.any?()
+    sanbase_subscriptions =
+      Subscription
+      |> Subscription.Query.user_has_any_subscriptions_for_product?(
+        user_id,
+        Product.product_sanbase()
+      )
+      |> Repo.all()
+
+    sanbase_subscriptions == []
   end
 
   @doc ~s"""
@@ -75,12 +77,12 @@ defmodule Sanbase.Billing do
 
   @doc """
   If user has enough SAN staked and has no active Sanbase subscription - create one
-  Or if user is not yet registered - create a 14 day trial
   """
-  @spec maybe_create_liquidity_subscription(non_neg_integer()) ::
-          {:ok, %Subscription{}} | false
-  def maybe_create_liquidity_subscription(user_id) do
-    eligible_for_liquidity_subscription?(user_id) && create_liquidity_subscription(user_id)
+  @spec maybe_create_liquidity_subscription_async(non_neg_integer()) :: Task.t()
+  def maybe_create_liquidity_subscription_async(user_id) do
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      eligible_for_liquidity_subscription?(user_id) && create_liquidity_subscription(user_id)
+    end)
   end
 
   # Private functions

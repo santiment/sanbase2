@@ -259,6 +259,7 @@ defmodule Sanbase.Accounts.UserTest do
         {:ok, user} =
           User.find_or_insert_by(:email, "example@gmail.com", %{login_origin: :google})
 
+        assert_receive({_, {:ok, %Sanbase.Billing.Subscription{}}})
         assert user.email == "example@gmail.com"
         assert user.first_login
         assert Sanbase.Billing.list_liquidity_subscriptions() |> length() == 1

@@ -25,6 +25,9 @@ defmodule Sanbase.EventBus.EventValidation do
     valid_integer_id?(user_id) and valid_integer_id?(follower_id)
   end
 
+  def valid?(%{event_type: :login_user, user_id: id, login_origin: login_origin}),
+    do: valid_integer_id?(id) and is_atom(login_origin)
+
   #############################################################################
   ## Alert Events
   #############################################################################

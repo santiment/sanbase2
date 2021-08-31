@@ -261,11 +261,15 @@ defmodule Sanbase.Accounts.User do
           )
 
         create(user_create_attrs)
-        |> maybe_create_liquidity_subscription_async(attrs)
 
       user ->
-        maybe_create_liquidity_subscription_async({:ok, user}, attrs)
+        {:ok, user}
     end
+  end
+
+  def on_login(user, args) do
+    {:ok, user}
+    |> emit_event(:login_user, args)
   end
 
   def ascii_username?(nil), do: true
@@ -434,15 +438,4 @@ defmodule Sanbase.Accounts.User do
 
     count_other_accounts > 0 or not is_nil(email)
   end
-
-  defp maybe_create_liquidity_subscription_async({:ok, %User{id: user_id}} = result, %{
-         login_origin: origin
-       })
-       when origin in [:google, :twitter] do
-    Billing.maybe_create_liquidity_subscription_async(user_id)
-
-    result
-  end
-
-  defp maybe_create_liquidity_subscription_async(result, _), do: result
 end

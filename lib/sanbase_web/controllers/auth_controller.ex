@@ -33,6 +33,8 @@ defmodule SanbaseWeb.AccountsController do
              client: device_data.client
            ),
          {:ok, _} <- User.mark_as_registered(user, %{login_origin: :google}) do
+      User.on_login(user, %{login_origin: :google})
+
       conn
       |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
       |> redirect(external: redirect_urls.success)
@@ -57,6 +59,8 @@ defmodule SanbaseWeb.AccountsController do
              client: device_data.client
            ),
          {:ok, _} <- User.mark_as_registered(user, %{login_origin: :twitter}) do
+      User.on_login(user, %{login_origin: :google})
+
       conn
       |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
       |> redirect(external: redirect_urls.success)

@@ -1,5 +1,6 @@
 defmodule Sanbase.Accounts.EventEmitter do
   use Sanbase.EventBus.EventEmitter
+  alias Sanbase.Billing
 
   @topic :user_events
   def topic(), do: @topic
@@ -8,6 +9,13 @@ defmodule Sanbase.Accounts.EventEmitter do
 
   def handle_event({:ok, user}, :register_user, %{login_origin: _} = args) do
     Map.merge(%{event_type: :register_user, user_id: user.id}, args)
+    |> notify()
+  end
+
+  def handle_event({:ok, user}, :login_user, %{login_origin: _} = args) do
+    Billing.maybe_create_liquidity_subscription_async(user.id)
+
+    Map.merge(%{event_type: :login_user, user_id: user.id}, args)
     |> notify()
   end
 

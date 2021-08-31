@@ -124,23 +124,12 @@ defmodule Sanbase.Billing.Subscription do
   @spec subscribe(%User{}, %Plan{}, string_or_nil, string_or_nil) ::
           {:ok, %__MODULE__{}} | {:error, %Stripe.Error{} | String.t()}
   def subscribe(user, plan, card_token \\ nil, coupon \\ nil) do
-    with :ok <- has_active_subscriptions_for_this_plan(user, plan),
+    with :ok <- has_active_subscriptions(user, plan),
          {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
          eligible_for_sanbase_trial? <- Billing.eligible_for_sanbase_trial?(user.id),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
-         {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
-      # Remove sign up trial if exists.
-
-      if plan.product_id == @product_sanbase do
-        SignUpTrial.maybe_remove_sign_up_trial(user)
-
-        eligible_for_sanbase_trial? &&
-          TrialEmail.create_and_send_welcome_email(%{
-            user_id: user.id,
-            subscription_id: db_subscription.id
-          })
-      end
-
+         {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan),
+         _ <- handle_trial(user, db_subscription, plan, eligible_for_sanbase_trial?) do
       {:ok, default_preload(db_subscription, force: true)}
     end
   end
@@ -285,6 +274,12 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.all()
   end
 
+  def all_user_subscriptions_for_product(user_id, product_id) do
+    __MODULE__
+    |> __MODULE__.Query.user_has_any_subscriptions_for_product?(user_id, product_id)
+    |> Repo.all()
+  end
+
   @doc """
   Current subscription is the last active subscription for a product.
   """
@@ -301,7 +296,7 @@ defmodule Sanbase.Billing.Subscription do
 
   # Private functions
 
-  defp has_active_subscriptions_for_this_plan(user, plan) do
+  defp has_active_subscriptions(user, plan) do
     __MODULE__
     |> Query.all_active_subscriptions_for_plan(plan.id)
     |> Query.filter_user(user.id)
@@ -414,6 +409,18 @@ defmodule Sanbase.Billing.Subscription do
 
   defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
   defp percent_discount(_), do: nil
+
+  defp handle_trial(user, db_subscription, plan, eligible_for_sanbase_trial?) do
+    if plan.product_id == @product_sanbase do
+      SignUpTrial.maybe_remove_sign_up_trial(user)
+
+      eligible_for_sanbase_trial? &&
+        TrialEmail.create_and_send_welcome_email(%{
+          user_id: user.id,
+          subscription_id: db_subscription.id
+        })
+    end
+  end
 
   defp fetch_current_subscription(user_id, product_id) do
     __MODULE__

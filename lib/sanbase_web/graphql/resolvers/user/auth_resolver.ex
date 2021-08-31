@@ -53,8 +53,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
              platform: device_data.platform,
              client: device_data.client
            ),
-         _ <- Billing.maybe_create_liquidity_subscription_async(user.id),
          {:ok, user} <- User.mark_as_registered(user, %{login_origin: :eth_login}) do
+      User.on_login(user, %{login_origin: :eth_login})
+
       {:ok,
        %{
          user: user,
@@ -106,8 +107,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
              client: device_data.client
            ),
          {:ok, user} <- User.mark_email_token_as_validated(user),
-         _ <- Billing.maybe_create_liquidity_subscription_async(user.id),
          {:ok, user} <- User.mark_as_registered(user, %{login_origin: :email}) do
+      User.on_login(user, %{login_origin: :email})
+
       {:ok,
        %{
          user: user,

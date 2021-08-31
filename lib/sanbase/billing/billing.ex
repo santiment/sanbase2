@@ -45,15 +45,8 @@ defmodule Sanbase.Billing do
   end
 
   def eligible_for_sanbase_trial?(user_id) do
-    sanbase_subscriptions =
-      Subscription
-      |> Subscription.Query.user_has_any_subscriptions_for_product?(
-        user_id,
-        Product.product_sanbase()
-      )
-      |> Repo.all()
-
-    sanbase_subscriptions == []
+    Subscription.all_user_subscriptions_for_product(user_id, Product.product_sanbase())
+    |> Enum.empty?()
   end
 
   @doc ~s"""

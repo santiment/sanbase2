@@ -17,12 +17,22 @@ defmodule Sanbase.Email.Template do
     sent_trial_finished_without_cc: "trial_finished_without_card"
   }
 
+  @trial_email_templates %{
+    # immediately after sign up
+    sent_welcome_email: "sanbase_post_registration",
+    # on the 4th day
+    sent_first_education_email: "first_edu_email",
+    # on the 7th day
+    sent_second_education_email: "second_edu_email"
+  }
+
   @comment_notification_template "notification"
   @verify_email_weekly_digest_template "verify_email_weekly_digest"
   @monitoring_watchlist_template "monitoring_watchlist"
 
   def alerts_template, do: @alerts_template
   def sign_up_trial_templates, do: @sign_up_trial_templates
+  def trial_email_templates, do: @trial_email_templates
   def comment_notification_template, do: @comment_notification_template
   def verify_email_weekly_digest_template, do: @verify_email_weekly_digest_template
   def monitoring_watchlist_template, do: @monitoring_watchlist_template

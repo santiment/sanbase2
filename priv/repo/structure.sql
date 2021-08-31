@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13.1
--- Dumped by pg_dump version 13.1
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2635,6 +2635,42 @@ ALTER SEQUENCE public.timeline_events_id_seq OWNED BY public.timeline_events.id;
 
 
 --
+-- Name: trial_emails; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.trial_emails (
+    id bigint NOT NULL,
+    user_id bigint,
+    subscription_id bigint,
+    sent_welcome_email boolean,
+    sent_first_education_email boolean,
+    sent_second_education_email boolean,
+    is_finished boolean DEFAULT false,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: trial_emails_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.trial_emails_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: trial_emails_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.trial_emails_id_seq OWNED BY public.trial_emails.id;
+
+
+--
 -- Name: user_api_key_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3757,6 +3793,13 @@ ALTER TABLE ONLY public.timeline_events ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: trial_emails id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trial_emails ALTER COLUMN id SET DEFAULT nextval('public.trial_emails_id_seq'::regclass);
+
+
+--
 -- Name: user_api_key_tokens id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4457,6 +4500,14 @@ ALTER TABLE ONLY public.timeline_event_comments_mapping
 
 ALTER TABLE ONLY public.timeline_events
     ADD CONSTRAINT timeline_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: trial_emails trial_emails_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trial_emails
+    ADD CONSTRAINT trial_emails_pkey PRIMARY KEY (id);
 
 
 --
@@ -5261,6 +5312,20 @@ CREATE INDEX timeline_events_user_list_id_index ON public.timeline_events USING 
 --
 
 CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USING btree (user_trigger_id);
+
+
+--
+-- Name: trial_emails_subscription_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX trial_emails_subscription_id_index ON public.trial_emails USING btree (subscription_id);
+
+
+--
+-- Name: trial_emails_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX trial_emails_user_id_index ON public.trial_emails USING btree (user_id);
 
 
 --
@@ -6113,6 +6178,22 @@ ALTER TABLE ONLY public.timeline_events
 
 
 --
+-- Name: trial_emails trial_emails_subscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trial_emails
+    ADD CONSTRAINT trial_emails_subscription_id_fkey FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: trial_emails trial_emails_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trial_emails
+    ADD CONSTRAINT trial_emails_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_api_key_tokens user_api_key_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6674,3 +6755,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210727124524);
 INSERT INTO public."schema_migrations" (version) VALUES (20210728101938);
 INSERT INTO public."schema_migrations" (version) VALUES (20210803092012);
 INSERT INTO public."schema_migrations" (version) VALUES (20210816150914);
+INSERT INTO public."schema_migrations" (version) VALUES (20210831081514);

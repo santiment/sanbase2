@@ -11,7 +11,7 @@ defmodule Sanbase.Billing.Subscription do
 
   alias Sanbase.Billing
   alias Sanbase.Billing.{Plan, Product}
-  alias Sanbase.Billing.Subscription.{SignUpTrial, Query}
+  alias Sanbase.Billing.Subscription.{SignUpTrial, Query, TrialEmail}
 
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
@@ -126,10 +126,20 @@ defmodule Sanbase.Billing.Subscription do
   def subscribe(user, plan, card_token \\ nil, coupon \\ nil) do
     with :ok <- has_active_subscriptions_for_this_plan(user, plan),
          {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
+         eligible_for_sanbase_trial? <- Billing.eligible_for_sanbase_trial?(user.id),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       # Remove sign up trial if exists.
-      plan.product_id == @product_sanbase && SignUpTrial.remove_sign_up_trial(user)
+
+      if plan.product_id == @product_sanbase do
+        SignUpTrial.maybe_remove_sign_up_trial(user)
+
+        eligible_for_sanbase_trial? &&
+          TrialEmail.create_and_send_welcome_email(%{
+            user_id: user.id,
+            subscription_id: db_subscription.id
+          })
+      end
 
       {:ok, default_preload(db_subscription, force: true)}
     end

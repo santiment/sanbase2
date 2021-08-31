@@ -232,6 +232,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         {_, {:ok, %Sanbase.Billing.Subscription.TrialEmail{sent_welcome_email: true}}}
       )
 
+      assert_called(StripeApi.create_subscription(%{trial_end: :_}))
       assert response["plan"]["name"] == context.plans.plan_pro_sanbase.name
     end
 

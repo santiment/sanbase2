@@ -383,9 +383,11 @@ defmodule Sanbase.Billing.Subscription do
           defaults
       end
 
-    if Billing.eligible_for_sanbase_trial?(user.id) do
-      Map.put(defaults, :trial_end, DateTime.utc_now() |> DateTime.to_unix())
-    end
+    defaults =
+      case Billing.eligible_for_sanbase_trial?(user.id) do
+        true -> Map.put(defaults, :trial_end, DateTime.utc_now() |> DateTime.to_unix())
+        false -> defaults
+      end
 
     defaults
   end

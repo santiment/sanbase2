@@ -23,6 +23,7 @@ defmodule SanbaseWeb.Graphql.Schema.ChartConfigurationQueries do
 
       arg(:user_id, :integer)
       arg(:project_id, :integer)
+      arg(:project_slug, :string)
 
       resolve(&ChartConfigurationResolver.chart_configurations/3)
     end

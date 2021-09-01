@@ -489,7 +489,8 @@ defmodule Sanbase.Metric do
 
     parallel_fun = fn module ->
       cache_key =
-        {__MODULE__, :available_metrics_for_slug, module, selector} |> Sanbase.Cache.hash()
+        {__MODULE__, :available_metrics_for_slug_in_module, module, selector}
+        |> Sanbase.Cache.hash()
 
       Sanbase.Cache.get_or_store(cache_key, fn -> module.available_metrics(selector) end)
     end
@@ -587,10 +588,9 @@ defmodule Sanbase.Metric do
   def available_slugs() do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key
-    Sanbase.Cache.get_or_store(
-      {:metric_available_slugs_all_metrics, 1800},
-      &get_available_slugs/0
-    )
+    cache_key = {__MODULE__, :available_slugs_all_metrics} |> Sanbase.Cache.hash()
+
+    Sanbase.Cache.get_or_store({cache_key, 1800}, &get_available_slugs/0)
   end
 
   @doc ~s"""

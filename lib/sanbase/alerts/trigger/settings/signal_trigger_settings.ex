@@ -76,7 +76,7 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
     %{signal: signal, time_window: time_window} = settings
 
     cache_key =
-      {:signal_alert, signal, selector, time_window, round_datetime(Timex.now())}
+      {__MODULE__, :fetch_signal_data, signal, selector, time_window, round_datetime(Timex.now())}
       |> Sanbase.Cache.hash()
 
     %{

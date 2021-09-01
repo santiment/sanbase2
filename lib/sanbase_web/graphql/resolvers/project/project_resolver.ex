@@ -138,7 +138,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       ) do
     project_ethereum =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :project, "ethereum"} |> Sanbase.Cache.hash(),
+        {__MODULE__, :project_by_slug, "ethereum"} |> Sanbase.Cache.hash(),
         fn -> Project.by_slug("ethereum") end
       )
 

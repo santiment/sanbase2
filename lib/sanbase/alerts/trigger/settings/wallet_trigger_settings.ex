@@ -144,7 +144,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
 
   defp balance_change(selector, address, from, to) do
     cache_key =
-      {:wallet_signal, selector, address, round_datetime(from), round_datetime(to)}
+      {__MODULE__, :wallet_signal, selector, address, round_datetime(from), round_datetime(to)}
       |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->

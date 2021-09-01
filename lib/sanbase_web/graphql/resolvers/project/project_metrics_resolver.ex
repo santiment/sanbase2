@@ -100,14 +100,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         {:ok, value}
 
       :error ->
-        cache_key =
-          {__MODULE__, :available_slugs_for_metric, metric, opts}
-          |> Sanbase.Cache.hash()
-
-        {:ok, slugs_for_metric} =
-          Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
-            Metric.available_slugs(metric, opts)
-          end)
+        {:ok, slugs_for_metric} = available_slugs_for_metric(metric, opts)
 
         # Determine whether the value is missing because it failed to compute or
         # because the metric is not available for the given slug. In the first case
@@ -117,6 +110,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
           false -> {:ok, nil}
         end
     end
+  end
+
+  defp available_slugs_for_metric(metric, opts) do
+    cache_key =
+      {__MODULE__, :available_slugs_for_metric, metric, opts}
+      |> Sanbase.Cache.hash()
+
+    Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
+      Metric.available_slugs(metric, opts)
+    end)
   end
 
   # Get the available metrics from the rehydrating cache. If the function for computing it

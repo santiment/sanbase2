@@ -125,7 +125,7 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
 
   defp balance_change(addresses, slug, from, to) do
     cache_key =
-      {:balance_change, addresses, slug, round_datetime(from, second: 60),
+      {__MODULE__, :balance_change, addresses, slug, round_datetime(from, second: 60),
        round_datetime(to, second: 60)}
       |> Sanbase.Cache.hash()
 

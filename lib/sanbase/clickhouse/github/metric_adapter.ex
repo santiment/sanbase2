@@ -202,7 +202,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def available_slugs() do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key
-    Sanbase.Cache.get_or_store({:slugs_with_github_org, 1800}, fn ->
+    cache_key = {__MODULE__, :slugs_with_github_org}
+
+    Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
       {:ok, Project.List.slugs_with_github_organization()}
     end)
   end

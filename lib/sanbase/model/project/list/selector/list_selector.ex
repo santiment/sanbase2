@@ -200,7 +200,7 @@ defmodule Sanbase.Model.Project.ListSelector do
       filters
       |> Sanbase.Parallel.map(
         fn filter ->
-          cache_key = {:included_slugs_by_filter, filter}
+          cache_key = {__MODULE__, :included_slugs_by_filter, filter} |> Sanbase.Cache.hash()
           {:ok, slugs} = Sanbase.Cache.get_or_store(cache_key, fn -> slugs_by_filter(filter) end)
 
           slugs |> MapSet.new()

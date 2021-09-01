@@ -53,7 +53,9 @@ defmodule Sanbase.PricePair do
   of datetime and price in `quote_asset`
   """
 
-  def timeseries_data(slug, quote_asset, from, to, interval, opts \\ [])
+  def timeseries_data(slug_or_slugs, quote_asset, from, to, interval, opts \\ [])
+
+  def timeseries_data([], _quote_asset, _from, _to, _interval, _opts), do: {:ok, []}
 
   def timeseries_data(slug_or_slugs, quote_asset, from, to, interval, opts) do
     source = Keyword.get(opts, :source) || @default_source
@@ -73,6 +75,8 @@ defmodule Sanbase.PricePair do
     # Handle both cases where the aggregation is OHLC or it's not
     exec_timeseries_data_query(query, args)
   end
+
+  def timeseries_data_per_slug([], _quote_asset, _from, _to, _interval, _opts), do: {:ok, []}
 
   def timeseries_data_per_slug(slug_or_slugs, quote_asset, from, to, interval, opts) do
     source = Keyword.get(opts, :source) || @default_source
@@ -100,6 +104,7 @@ defmodule Sanbase.PricePair do
   """
 
   def aggregated_timeseries_data(slug_or_slugs, quote_asset, from, to, opts \\ [])
+
   def aggregated_timeseries_data([], _, _, _, _), do: {:ok, []}
 
   def aggregated_timeseries_data(slugs, quote_asset, from, to, opts)

@@ -37,15 +37,15 @@ defmodule Sanbase.Price.PricePairSql do
     FROM #{@table}
     PREWHERE
       #{slug_filter_map(slugs, argument_position: 2)} AND
-      quote_asset = ?2 AND
-      source = ?3 AND
-      dt >= toDateTime(?4) AND
-      dt < toDateTime(?5)
+      quote_asset = ?3 AND
+      source = ?4 AND
+      dt >= toDateTime(?5) AND
+      dt < toDateTime(?6)
     GROUP BY time, slug
     ORDER BY time
     """
 
-    args = [interval, quote_asset, source, from, to]
+    args = [interval, slugs, quote_asset, source, from, to]
 
     {query, args}
   end

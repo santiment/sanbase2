@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
              client: device_data.client
            ),
          {:ok, user} <- User.mark_as_registered(user, %{login_origin: :eth_login}) do
-      User.on_login(user, %{login_origin: :eth_login})
+      User.emit_event_on_login(user, %{login_origin: :eth_login})
 
       {:ok,
        %{
@@ -108,7 +108,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
            ),
          {:ok, user} <- User.mark_email_token_as_validated(user),
          {:ok, user} <- User.mark_as_registered(user, %{login_origin: :email}) do
-      User.on_login(user, %{login_origin: :email})
+      User.emit_event_on_login(user, %{login_origin: :email})
 
       {:ok,
        %{

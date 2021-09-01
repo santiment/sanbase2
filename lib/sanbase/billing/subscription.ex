@@ -11,8 +11,7 @@ defmodule Sanbase.Billing.Subscription do
 
   alias Sanbase.Billing
   alias Sanbase.Billing.{Plan, Product}
-  alias Sanbase.Billing.Subscription.{SignUpTrial, Query, TrialEmail}
-
+  alias Sanbase.Billing.Subscription.{SignUpTrial, Query}
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
   alias Sanbase.StripeApi
@@ -128,8 +127,11 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
          eligible_for_sanbase_trial? <- Billing.eligible_for_sanbase_trial?(user.id),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
-         {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan),
-         _ <- handle_trial(user, db_subscription, plan, eligible_for_sanbase_trial?) do
+         {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
+      if plan.product_id == @product_sanbase do
+        SignUpTrial.maybe_remove_sign_up_trial(user)
+      end
+
       {:ok, default_preload(db_subscription, force: true)}
     end
   end
@@ -409,18 +411,6 @@ defmodule Sanbase.Billing.Subscription do
 
   defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
   defp percent_discount(_), do: nil
-
-  defp handle_trial(user, db_subscription, plan, eligible_for_sanbase_trial?) do
-    if plan.product_id == @product_sanbase do
-      SignUpTrial.maybe_remove_sign_up_trial(user)
-
-      eligible_for_sanbase_trial? &&
-        TrialEmail.create_and_send_welcome_email(%{
-          user_id: user.id,
-          subscription_id: db_subscription.id
-        })
-    end
-  end
 
   defp fetch_current_subscription(user_id, product_id) do
     __MODULE__

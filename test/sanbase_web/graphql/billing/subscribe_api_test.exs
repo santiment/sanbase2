@@ -228,10 +228,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
-      assert_receive(
-        {_, {:ok, %Sanbase.Billing.Subscription.TrialEmail{sent_welcome_email: true}}}
-      )
-
       assert_called(StripeApi.create_subscription(%{trial_end: :_}))
       assert response["plan"]["name"] == context.plans.plan_pro_sanbase.name
     end
@@ -239,10 +235,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     test "subscribe to SanAPI PRO plan doesn't give free trial", context do
       query = subscribe_mutation(context.plans.plan_pro.id)
       response = execute_mutation(context.conn, query, "subscribe")
-
-      refute_receive(
-        {_, {:ok, %Sanbase.Billing.Subscription.TrialEmail{sent_welcome_email: true}}}
-      )
 
       assert response["plan"]["name"] == context.plans.plan_pro.name
     end

@@ -267,7 +267,7 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
-  def on_login(user, args) do
+  def emit_event_on_login(user, args) do
     {:ok, user}
     |> emit_event(:login_user, args)
   end

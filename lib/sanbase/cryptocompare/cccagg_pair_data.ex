@@ -32,11 +32,14 @@ defmodule Sanbase.Cryptocompare.CCCAGGPairData do
     # that too. This is to handle some cases where some CSV becoomes available
     # later than we run this code. The uniqueness checkk will handle the overlapping
     # jobs.
-    days_ago = Date.utc_today() |> Date.add(-3)
+    supported_base_assets = supported_base_assets()
+    days_ago = Date.utc_today() |> Date.add(-30)
     previous_day = Date.utc_today() |> Date.add(-1)
 
     get()
-    |> Enum.filter(fn elem -> elem.end_date == previous_day end)
+    |> Enum.filter(fn elem ->
+      elem.base_asset in supported_base_assets and elem.end_date == previous_day
+    end)
     |> Enum.map(fn elem ->
       elem = %{
         start_date: days_ago,
@@ -50,6 +53,11 @@ defmodule Sanbase.Cryptocompare.CCCAGGPairData do
   end
 
   # Private functions
+
+  defp supported_base_assets() do
+    Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+    |> Enum.map(&elem(&1, 0))
+  end
 
   defp add_jobs(elem) when is_map(elem) do
     Sanbase.Cryptocompare.HistoricalScheduler.add_jobs(

@@ -59,12 +59,12 @@ defmodule Sanbase.Webinar do
     |> show_only_preview_fields?(opts)
   end
 
-  defp show_only_preview_fields?(webinars, %{is_logged_in: false}) do
-    Enum.map(webinars, fn webinar -> %{webinar | url: nil} end)
+  defp show_only_preview_fields?(webinars, %{plan_atom_name: plan})
+       when plan in [:pro, :pro_plus] do
+    webinars
   end
 
-  defp show_only_preview_fields?(webinars, %{is_logged_in: true, plan_atom_name: plan})
-       when plan != :pro do
+  defp show_only_preview_fields?(webinars, _) do
     webinars
     |> Enum.map(fn
       %__MODULE__{is_pro: true} = webinar ->
@@ -73,9 +73,5 @@ defmodule Sanbase.Webinar do
       %__MODULE__{is_pro: false} = webinar ->
         webinar
     end)
-  end
-
-  defp show_only_preview_fields?(webinars, %{is_logged_in: true, plan_atom_name: :pro}) do
-    webinars
   end
 end

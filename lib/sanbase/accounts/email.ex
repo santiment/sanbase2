@@ -22,30 +22,36 @@ defmodule Sanbase.Accounts.Email do
     )
     |> Oban.insert(
       :first_education_email_job,
-      Sanbase.Mailer.new(%{
-        user_id: user.id,
-        template: sign_up_templates[:first_education_email],
-        vars: vars,
+      Sanbase.Mailer.new(
+        %{
+          user_id: user.id,
+          template: sign_up_templates[:first_education_email],
+          vars: vars
+        },
         scheduled_at: after_days.(now, 4)
-      })
+      )
     )
     |> Oban.insert(
       :trial_suggestion_job,
-      Sanbase.Mailer.new(%{
-        user_id: user.id,
-        template: sign_up_templates[:trial_suggestion],
-        vars: vars,
+      Sanbase.Mailer.new(
+        %{
+          user_id: user.id,
+          template: sign_up_templates[:trial_suggestion],
+          vars: vars
+        },
         scheduled_at: after_days.(now, 6)
-      })
+      )
     )
     |> Oban.insert(
       :second_education_email_job,
-      Sanbase.Mailer.new(%{
-        user_id: user.id,
-        template: sign_up_templates[:second_education_email],
-        vars: vars,
+      Sanbase.Mailer.new(
+        %{
+          user_id: user.id,
+          template: sign_up_templates[:second_education_email],
+          vars: vars
+        },
         scheduled_at: after_days.(now, 7)
-      })
+      )
     )
     |> Sanbase.Repo.transaction()
   end

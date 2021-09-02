@@ -221,7 +221,8 @@ config :sanbase, Sanbase.WalletHunters.Contract, rinkeby_url: {:system, "RINKEBY
 
 config :sanbase, Oban.Web,
   repo: Sanbase.Repo,
-  queues: [email_queue: 5]
+  queues: [email_queue: 5],
+  name: :oban_web
 
 # Import configs
 import_config "ueberauth_config.exs"

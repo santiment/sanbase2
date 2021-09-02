@@ -184,6 +184,7 @@ defmodule Sanbase.Accounts.User do
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()
+    |> emit_event(:create_user, %{})
   end
 
   def by_id!(user_id) do

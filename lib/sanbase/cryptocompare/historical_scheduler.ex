@@ -20,6 +20,7 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
+  @oban_conf_name :oban_scrapers
   @unique_peroid 60 * 86_400
   @oban_queue :cryptocompare_historical_jobs_queue
 
@@ -28,8 +29,8 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   end
 
   def queue(), do: @oban_queue
-  def resume(), do: Oban.resume_queue(queue: @oban_queue)
-  def pause(), do: Oban.pause_queue(queue: @oban_queue)
+  def resume(), do: Oban.resume_queue(@oban_conf_name, queue: @oban_queue)
+  def pause(), do: Oban.pause_queue(@oban_conf_name, queue: @oban_queue)
 
   def init(_opts) do
     # In order to be able to stop the historical scraper via env variables
@@ -90,14 +91,16 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   end
 
   defp do_add_jobs_no_uniqueness_check(base_asset, quote_asset, dates) do
-    dates
-    |> Enum.map(fn date ->
-      HistoricalWorker.new(%{
-        base_asset: base_asset,
-        quote_asset: quote_asset,
-        date: date
-      })
-    end)
-    |> Oban.insert_all()
+    data =
+      dates
+      |> Enum.map(fn date ->
+        HistoricalWorker.new(%{
+          base_asset: base_asset,
+          quote_asset: quote_asset,
+          date: date
+        })
+      end)
+
+    Oban.insert_all(@oban_conf_name, data)
   end
 end

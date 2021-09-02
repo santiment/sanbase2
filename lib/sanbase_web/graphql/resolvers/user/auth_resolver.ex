@@ -1,4 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
+  import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
+
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts.{User, EthAccount, EmailLoginAttempt}
   alias Sanbase.Billing
@@ -45,6 +47,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
         %{signature: signature, address: address, message_hash: message_hash} = args,
         %{context: %{device_data: device_data}}
       ) do
+    args = %{login_origin: :eth_login}
+
     with true <- address_message_hash(address) == message_hash,
          true <- Ethauth.verify_signature(signature, address, message_hash),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
@@ -53,8 +57,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
              platform: device_data.platform,
              client: device_data.client
            ),
-         {:ok, user} <- User.mark_as_registered(user, %{login_origin: :eth_login}) do
-      User.emit_event_on_login(user, %{login_origin: :eth_login})
+         {:ok, user} <- User.mark_as_registered(user, args) do
+      emit_event({:ok, user}, :login_user, args)
 
       {:ok,
        %{
@@ -99,6 +103,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   end
 
   def email_login_verify(%{token: token, email: email}, %{context: %{device_data: device_data}}) do
+    args = %{login_origin: :email}
+
     with {:ok, user} <- User.find_or_insert_by(:email, email),
          true <- User.email_token_valid?(user, token),
          {:ok, %{} = jwt_tokens_map} <-
@@ -107,8 +113,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
              client: device_data.client
            ),
          {:ok, user} <- User.mark_email_token_as_validated(user),
-         {:ok, user} <- User.mark_as_registered(user, %{login_origin: :email}) do
-      User.emit_event_on_login(user, %{login_origin: :email})
+         {:ok, user} <- User.mark_as_registered(user, args) do
+      emit_event({:ok, user}, :login_user, args)
 
       {:ok,
        %{

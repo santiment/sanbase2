@@ -71,11 +71,10 @@ defmodule Sanbase.Billing do
   @doc """
   If user has enough SAN staked and has no active Sanbase subscription - create one
   """
-  @spec maybe_create_liquidity_subscription_async(non_neg_integer()) :: Task.t()
-  def maybe_create_liquidity_subscription_async(user_id) do
-    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-      eligible_for_liquidity_subscription?(user_id) && create_liquidity_subscription(user_id)
-    end)
+  @spec maybe_create_liquidity_subscription(non_neg_integer()) ::
+          {:ok, %Subscription{}} | {:error, any()} | false
+  def maybe_create_liquidity_subscription(user_id) do
+    eligible_for_liquidity_subscription?(user_id) && create_liquidity_subscription(user_id)
   end
 
   # Private functions

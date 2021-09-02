@@ -277,7 +277,7 @@ defmodule Sanbase.Billing.Subscription do
 
   def all_user_subscriptions_for_product(user_id, product_id) do
     __MODULE__
-    |> __MODULE__.Query.user_has_any_subscriptions_for_product?(user_id, product_id)
+    |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, product_id)
     |> Repo.all()
   end
 

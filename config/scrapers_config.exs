@@ -28,6 +28,7 @@ config :sanbase, Sanbase.Twitter.Worker,
 
 config :sanbase, Oban.Scrapers,
   repo: Sanbase.Repo,
+  name: :oban_scrapers,
   queues: [
     cryptocompare_historical_jobs_queue: [limit: 25, paused: true],
     cryptocompare_historical_jobs_pause_resume_queue: 1

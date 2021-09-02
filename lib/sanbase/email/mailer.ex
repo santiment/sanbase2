@@ -10,7 +10,5 @@ defmodule Sanbase.Mailer do
     opts = args["opts"] || %{}
 
     Sanbase.MandrillApi.send(template, user.email, vars, opts)
-
-    :ok
   end
 end

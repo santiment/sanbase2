@@ -20,7 +20,6 @@ defmodule Sanbase.Accounts.User do
   alias Sanbase.Repo
   alias Sanbase.Telegram
   alias Sanbase.Alert.HistoricalActivity
-  alias Sanbase.Billing
   alias Sanbase.Billing.Subscription
 
   @salt_length 64
@@ -265,11 +264,6 @@ defmodule Sanbase.Accounts.User do
       user ->
         {:ok, user}
     end
-  end
-
-  def emit_event_on_login(user, args) do
-    {:ok, user}
-    |> emit_event(:login_user, args)
   end
 
   def ascii_username?(nil), do: true

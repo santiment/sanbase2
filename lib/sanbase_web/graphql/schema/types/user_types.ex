@@ -168,7 +168,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&BillingResolver.subscriptions/3)
     end
 
-    field :eligible_for_sanbase_trial, :boolean do
+    field :is_eligible_for_sanbase_trial, :boolean do
       resolve(&BillingResolver.eligible_for_sanbase_trial?/3)
     end
 

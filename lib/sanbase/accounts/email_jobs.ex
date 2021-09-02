@@ -1,0 +1,47 @@
+defmodule Sanbase.Accounts.EmailJobs do
+  import Sanbase.DateTimeUtils, only: [days_after: 1]
+
+  def schedule_emails_after_sign_up(user_id) do
+    user = Sanbase.Accounts.User.by_id!(user_id)
+    templates = Sanbase.Email.Template.sign_up_templates()
+    user_unique_str = Sanbase.Accounts.User.get_unique_str(user)
+
+    vars = %{name: user_unique_str}
+
+    Ecto.Multi.new()
+    |> Oban.insert(:welcome_email_job, scheduled_email(:welcome_email, templates, user, vars))
+    |> Oban.insert(
+      :first_education_email_job,
+      scheduled_email(:first_education_email, templates, user, vars)
+    )
+    |> Oban.insert(
+      :trial_suggestion_job,
+      scheduled_email(:trial_suggestion, templates, user, vars)
+    )
+    |> Oban.insert(
+      :second_education_email_job,
+      scheduled_email(:second_education_email, templates, user, vars)
+    )
+    |> Sanbase.Repo.transaction()
+  end
+
+  defp scheduled_email(email_type, templates, user, vars) do
+    scheduled_at =
+      case email_type do
+        :welcome_email -> nil
+        :first_education_email -> days_after(4)
+        :trial_suggestion -> days_after(6)
+        :second_education_email -> days_after(7)
+        _ -> nil
+      end
+
+    Sanbase.Mailer.new(
+      %{
+        user_id: user.id,
+        template: templates[email_type],
+        vars: vars
+      },
+      scheduled_at: scheduled_at
+    )
+  end
+end

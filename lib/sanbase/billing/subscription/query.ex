@@ -19,7 +19,7 @@ defmodule Sanbase.Billing.Subscription.Query do
     |> filter_product_id(product_id)
   end
 
-  def user_has_any_subscriptions_for_product?(query, user_id, product_id) do
+  def user_has_any_subscriptions_for_product(query, user_id, product_id) do
     query
     |> filter_user(user_id)
     |> filter_product_id(product_id)

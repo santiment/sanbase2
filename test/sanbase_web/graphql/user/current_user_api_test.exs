@@ -55,13 +55,13 @@ defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
   describe "eligible_for_sanbase_trial" do
     test "eligible when user doesn't have sanbase subscription", context do
       result = get_user(context.conn) |> get_in(["data", "currentUser"])
-      assert result["eligibleForSanbaseTrial"]
+      assert result["isEligibleForSanbaseTrial"]
     end
 
     test "not eligible when user already has sanbase subscription", context do
       insert(:subscription_pro_sanbase, user: context.user)
       result = get_user(context.conn) |> get_in(["data", "currentUser"])
-      refute result["eligibleForSanbaseTrial"]
+      refute result["isEligibleForSanbaseTrial"]
     end
   end
 
@@ -78,7 +78,7 @@ defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
         chartConfigurations{ id }
         followers{ count users { id } }
         following{ count users { id } }
-        eligibleForSanbaseTrial
+        isEligibleForSanbaseTrial
       }
     }
     """

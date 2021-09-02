@@ -125,7 +125,6 @@ defmodule Sanbase.Billing.Subscription do
   def subscribe(user, plan, card_token \\ nil, coupon \\ nil) do
     with :ok <- has_active_subscriptions(user, plan),
          {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
-         eligible_for_sanbase_trial? <- Billing.eligible_for_sanbase_trial?(user.id),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       if plan.product_id == @product_sanbase do

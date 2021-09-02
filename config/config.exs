@@ -219,6 +219,10 @@ config :sanbase, Sanbase.Promoters.FirstPromoterApi,
 
 config :sanbase, Sanbase.WalletHunters.Contract, rinkeby_url: {:system, "RINKEBY_URL"}
 
+config :sanbase, Oban.Web,
+  repo: Sanbase.Repo,
+  queues: [email_queue: 5]
+
 # Import configs
 import_config "ueberauth_config.exs"
 import_config "ex_admin_config.exs"

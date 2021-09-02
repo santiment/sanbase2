@@ -7,7 +7,7 @@ defmodule Sanbase.Mailer do
   def perform(%Oban.Job{args: %{"user_id" => user_id, "template" => template} = args}) do
     user = User.by_id!(user_id)
     vars = args["vars"] || %{}
-    opts = args["opts"] || []
+    opts = args["opts"] || %{}
 
     Sanbase.MandrillApi.send(template, user.email, vars, opts)
 

@@ -20,7 +20,6 @@ defmodule Sanbase.Accounts.User do
   alias Sanbase.Repo
   alias Sanbase.Telegram
   alias Sanbase.Alert.HistoricalActivity
-  alias Sanbase.Billing
   alias Sanbase.Billing.Subscription
 
   @salt_length 64
@@ -181,6 +180,13 @@ defmodule Sanbase.Accounts.User do
   defdelegate update_all_uniswap_san_staked_users(), to: __MODULE__.UniswapStaking
   defdelegate fetch_uniswap_san_staked_user(user), to: __MODULE__.UniswapStaking
 
+  def create(attrs) do
+    %__MODULE__{}
+    |> changeset(attrs)
+    |> Repo.insert()
+    |> emit_event(:create_user, %{})
+  end
+
   def by_id!(user_id) do
     case by_id(user_id) do
       {:ok, data} -> data
@@ -254,13 +260,9 @@ defmodule Sanbase.Accounts.User do
             %{field => value, salt: User.generate_salt(), first_login: true}
           )
 
-        %User{}
-        |> User.changeset(user_create_attrs)
-        |> Repo.insert()
-        |> maybe_create_liquidity_or_trial_subscription(attrs)
+        create(user_create_attrs)
 
       user ->
-        maybe_create_free_subscription(user, attrs)
         {:ok, user}
     end
   end
@@ -431,23 +433,4 @@ defmodule Sanbase.Accounts.User do
 
     count_other_accounts > 0 or not is_nil(email)
   end
-
-  defp maybe_create_free_subscription(user, %{login_origin: origin})
-       when origin in [:google, :twitter] do
-    Billing.eligible_for_liquidity_subscription?(user.id) &&
-      Billing.create_liquidity_subscription(user.id)
-  end
-
-  defp maybe_create_free_subscription(_, _), do: :ok
-
-  defp maybe_create_liquidity_or_trial_subscription({:ok, %User{id: user_id}} = result, %{
-         login_origin: origin
-       })
-       when origin in [:google, :twitter] do
-    Billing.maybe_create_liquidity_or_trial_subscription(user_id)
-
-    result
-  end
-
-  defp maybe_create_liquidity_or_trial_subscription(result, _), do: result
 end

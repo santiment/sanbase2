@@ -95,7 +95,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     |> Repo.insert()
   end
 
-  def remove_sign_up_trial(user) do
+  def maybe_remove_sign_up_trial(user) do
     case by_user_id(user.id) do
       %__MODULE__{} = sign_up_trial ->
         cancel_trial_when_user_subscribed(sign_up_trial)

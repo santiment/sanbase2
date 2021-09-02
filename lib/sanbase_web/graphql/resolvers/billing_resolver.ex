@@ -149,6 +149,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     {:ok, Subscription.user_subscriptions(user)}
   end
 
+  def eligible_for_sanbase_trial?(%User{} = user, _args, _resolution) do
+    {:ok, Billing.eligible_for_sanbase_trial?(user.id)}
+  end
+
   # private functions
   defp transform_payments(%Stripe.List{data: payments}) do
     payments

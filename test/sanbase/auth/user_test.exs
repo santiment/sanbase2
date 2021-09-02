@@ -253,31 +253,6 @@ defmodule Sanbase.Accounts.UserTest do
       assert user.first_login
     end
 
-    test "with not registered user that has staked >= 2000 SAN and login origin is google" do
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        {:ok, user} =
-          User.find_or_insert_by(:email, "example@gmail.com", %{login_origin: :google})
-
-        assert user.email == "example@gmail.com"
-        assert user.first_login
-        assert Sanbase.Billing.list_liquidity_subscriptions() |> length() == 1
-      end)
-    end
-
-    test "with not registered user that has staked < 2000 SAN and login origin is google" do
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 1999)
-      |> Sanbase.Mock.prepare_mock2(&SignUpTrial.create_trial_subscription/1, {:ok, %{}})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        {:ok, user} =
-          User.find_or_insert_by(:email, "example@gmail.com", %{login_origin: :google})
-
-        assert user.email == "example@gmail.com"
-        assert user.first_login
-        assert Sanbase.Billing.list_liquidity_subscriptions() == []
-      end)
-    end
-
     test "with registered user" do
       existing_user =
         insert(:user,

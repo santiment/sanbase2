@@ -24,8 +24,10 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   require Sanbase.Utils.Config, as: Config
 
   @url "https://min-api.cryptocompare.com/data/histo/minute/daily"
+  @oban_conf_name :oban_scrapers
 
   def queue(), do: :cryptocompare_historical_jobs_queue
+  def conf_name(), do: @oban_conf_name
 
   @impl Oban.Worker
 
@@ -140,9 +142,11 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
       |> Enum.find(&(&1.time_period == biggest_rate_limited_window))
       |> Map.get(:value)
 
-    %{"type" => "resume"}
-    |> Sanbase.Cryptocompare.PauseResumeWorker.new(schedule_in: reset_after_seconds)
-    |> Oban.insert()
+    data =
+      %{"type" => "resume"}
+      |> Sanbase.Cryptocompare.PauseResumeWorker.new(schedule_in: reset_after_seconds)
+
+    Oban.insert(@oban_conf_name, data)
 
     {:error, :rate_limit}
   end

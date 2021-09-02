@@ -1,4 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
+  import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
+
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts.{User, EthAccount, EmailLoginAttempt}
   alias Sanbase.Billing
@@ -45,6 +47,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
         %{signature: signature, address: address, message_hash: message_hash} = args,
         %{context: %{device_data: device_data}}
       ) do
+    event_args = %{login_origin: :eth_login}
+
     with true <- address_message_hash(address) == message_hash,
          true <- Ethauth.verify_signature(signature, address, message_hash),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
@@ -53,8 +57,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
              platform: device_data.platform,
              client: device_data.client
            ),
-         _ <- Billing.maybe_create_liquidity_or_trial_subscription(user.id),
-         {:ok, user} <- User.mark_as_registered(user, %{login_origin: :eth_login}) do
+         {:ok, user} <- User.mark_as_registered(user, event_args) do
+      emit_event({:ok, user}, :login_user, event_args)
+
       {:ok,
        %{
          user: user,
@@ -98,6 +103,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   end
 
   def email_login_verify(%{token: token, email: email}, %{context: %{device_data: device_data}}) do
+    event_args = %{login_origin: :email}
+
     with {:ok, user} <- User.find_or_insert_by(:email, email),
          true <- User.email_token_valid?(user, token),
          {:ok, %{} = jwt_tokens_map} <-
@@ -106,8 +113,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
              client: device_data.client
            ),
          {:ok, user} <- User.mark_email_token_as_validated(user),
-         _ <- Billing.maybe_create_liquidity_or_trial_subscription(user.id),
-         {:ok, user} <- User.mark_as_registered(user, %{login_origin: :email}) do
+         {:ok, user} <- User.mark_as_registered(user, event_args) do
+      emit_event({:ok, user}, :login_user, event_args)
+
       {:ok,
        %{
          user: user,

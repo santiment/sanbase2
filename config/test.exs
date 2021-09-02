@@ -82,7 +82,17 @@ config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook, webhook_secret: "stripe_we
 
 config :sanbase, Sanbase.Alert, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "true"}
 
-config :sanbase, Oban.Scrapers, queues: false, plugins: false, crontab: false
+config :sanbase, Oban.Scrapers,
+  name: :oban_scrapers,
+  queues: false,
+  plugins: false,
+  crontab: false
+
+config :sanbase, Oban.Web,
+  name: :oban_web,
+  queues: false,
+  plugins: false,
+  crontab: false
 
 config :sanbase, Sanbase.Cryptocompare.HistoricalScheduler,
   enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OHLCV_PRICES_SCHEDULER_ENABLED", "true"}

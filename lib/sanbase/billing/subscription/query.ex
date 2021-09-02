@@ -14,12 +14,15 @@ defmodule Sanbase.Billing.Subscription.Query do
   end
 
   def all_active_subscriptions_for_product(query, product_id) do
-    query = all_active_subscriptions(query)
+    query
+    |> all_active_subscriptions()
+    |> filter_product_id(product_id)
+  end
 
-    from(q in query,
-      join: p in assoc(q, :plan),
-      where: p.product_id == ^product_id
-    )
+  def user_has_any_subscriptions_for_product(query, user_id, product_id) do
+    query
+    |> filter_user(user_id)
+    |> filter_product_id(product_id)
   end
 
   # with status `active`, `past_due`, `trialing`
@@ -38,6 +41,10 @@ defmodule Sanbase.Billing.Subscription.Query do
 
   def filter_user(query, user_id) do
     from(q in query, where: q.user_id == ^user_id)
+  end
+
+  def filter_product_id(query, product_id) do
+    from(s in query, join: p in assoc(s, :plan), where: p.product_id == ^product_id)
   end
 
   def select_product_id(query) do

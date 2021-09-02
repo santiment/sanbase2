@@ -31,6 +31,7 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   def queue(), do: @oban_queue
   def resume(), do: Oban.resume_queue(@oban_conf_name, queue: @oban_queue)
   def pause(), do: Oban.pause_queue(@oban_conf_name, queue: @oban_queue)
+  def conf_name(), do: @oban_conf_name
 
   def init(_opts) do
     # In order to be able to stop the historical scraper via env variables

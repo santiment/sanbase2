@@ -47,7 +47,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
         %{signature: signature, address: address, message_hash: message_hash} = args,
         %{context: %{device_data: device_data}}
       ) do
-    args = %{login_origin: :eth_login}
+    event_args = %{login_origin: :eth_login}
 
     with true <- address_message_hash(address) == message_hash,
          true <- Ethauth.verify_signature(signature, address, message_hash),
@@ -57,8 +57,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
              platform: device_data.platform,
              client: device_data.client
            ),
-         {:ok, user} <- User.mark_as_registered(user, args) do
-      emit_event({:ok, user}, :login_user, args)
+         {:ok, user} <- User.mark_as_registered(user, event_args) do
+      emit_event({:ok, user}, :login_user, event_args)
 
       {:ok,
        %{
@@ -103,7 +103,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   end
 
   def email_login_verify(%{token: token, email: email}, %{context: %{device_data: device_data}}) do
-    args = %{login_origin: :email}
+    event_args = %{login_origin: :email}
 
     with {:ok, user} <- User.find_or_insert_by(:email, email),
          true <- User.email_token_valid?(user, token),
@@ -113,8 +113,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
              client: device_data.client
            ),
          {:ok, user} <- User.mark_email_token_as_validated(user),
-         {:ok, user} <- User.mark_as_registered(user, args) do
-      emit_event({:ok, user}, :login_user, args)
+         {:ok, user} <- User.mark_as_registered(user, event_args) do
+      emit_event({:ok, user}, :login_user, event_args)
 
       {:ok,
        %{

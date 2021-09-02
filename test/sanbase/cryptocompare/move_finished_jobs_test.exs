@@ -38,7 +38,9 @@ defmodule Sanbase.Cryptocompare.MoveFinishedJobsTest do
 
       # Drain the queue, synchronously executing all the jobs in the current process
       assert %{success: 10, failure: 0} =
-               Oban.drain_queue(queue: Sanbase.Cryptocompare.HistoricalWorker.queue())
+               Oban.drain_queue(Sanbase.Cryptocompare.HistoricalWorker.conf_name(),
+                 queue: Sanbase.Cryptocompare.HistoricalWorker.queue()
+               )
 
       # Move 6 of the finished jobs to the finished queue
       assert {:ok, 6} = Sanbase.Cryptocompare.Jobs.move_finished_jobs(iterations: 2, limit: 3)

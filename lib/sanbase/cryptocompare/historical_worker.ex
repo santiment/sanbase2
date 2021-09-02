@@ -27,6 +27,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   @oban_conf_name :oban_scrapers
 
   def queue(), do: :cryptocompare_historical_jobs_queue
+  def conf_name(), do: @oban_conf_name
 
   @impl Oban.Worker
 

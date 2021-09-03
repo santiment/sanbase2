@@ -32,8 +32,6 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
 
     {additional_filters_str, args} = additional_filters(filters, args, trailing_and: false)
 
-    IO.inspect({filters, additional_filters_str}, label: "SK:DJLASHDKJSLKDHAFS")
-
     query = """
     SELECT
       owner,

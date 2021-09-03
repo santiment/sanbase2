@@ -1,6 +1,5 @@
 defmodule Sanbase.BlockchainAddress.BlockchainAddressLabelChange do
   import __MODULE__.SqlQuery
-  alias Repo
   alias Sanbase.ClickhouseRepo
 
   def labels_list() do

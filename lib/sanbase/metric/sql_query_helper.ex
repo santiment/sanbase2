@@ -72,7 +72,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
 
   # Add additional `=`/`in` filters to the query. This is mostly used with labeled
   # metrics where additional column filters must be applied.
-  def additional_filters([], args, _opts), do: {[], args}
+  def additional_filters([], args, _opts), do: {"", args}
 
   def additional_filters(filters, args, opts) do
     {filters_str_list, args} =
@@ -82,7 +82,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
         {[filter_str | list_acc], updated_args}
       end)
 
-    filters_string = Enum.join(filters_str_list, " AND\n")
+    filters_string = filters_str_list |> Enum.reverse() |> Enum.join(" AND\n")
 
     filters_string =
       case Keyword.get(opts, :trailing_and, false) do

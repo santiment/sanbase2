@@ -18,6 +18,7 @@ defmodule Sanbase.Metric do
 
   # Use only the types from the behaviour module
   alias Sanbase.Metric.Behaviour, as: Type
+  alias Sanbase.Metric.Helper
 
   @compile inline: [
              execute_if_aggregation_valid: 3,
@@ -44,25 +45,26 @@ defmodule Sanbase.Metric do
   @type available_metrics_with_nocache_result ::
           {:ok, list(metric)} | {:nocache, {:ok, list(metric)}}
 
-  @access_map Sanbase.Metric.Helper.access_map()
-  @aggregations Sanbase.Metric.Helper.aggregations()
-  @aggregations_per_metric Sanbase.Metric.Helper.aggregations_per_metric()
-  @free_metrics Sanbase.Metric.Helper.free_metrics()
-  @histogram_metric_to_module_map Sanbase.Metric.Helper.histogram_metric_to_module_map()
-  @histogram_metrics Sanbase.Metric.Helper.histogram_metrics()
-  @histogram_metrics_mapset Sanbase.Metric.Helper.histogram_metrics_mapset()
-  @metric_modules Sanbase.Metric.Helper.metric_modules()
-  @metric_to_module_map Sanbase.Metric.Helper.metric_to_module_map()
-  @metrics Sanbase.Metric.Helper.metrics()
-  @metrics_mapset Sanbase.Metric.Helper.metrics_mapset()
-  @min_plan_map Sanbase.Metric.Helper.min_plan_map()
-  @restricted_metrics Sanbase.Metric.Helper.restricted_metrics()
-  @timeseries_metric_to_module_map Sanbase.Metric.Helper.timeseries_metric_to_module_map()
-  @timeseries_metrics Sanbase.Metric.Helper.timeseries_metrics()
-  @timeseries_metrics_mapset Sanbase.Metric.Helper.timeseries_metrics_mapset()
-  @table_metrics Sanbase.Metric.Helper.table_metrics()
-  @table_metrics_mapset Sanbase.Metric.Helper.table_metrics_mapset()
-  @table_metric_to_module_map Sanbase.Metric.Helper.table_metric_to_module_map()
+  @access_map Helper.access_map()
+  @aggregations Helper.aggregations()
+  @aggregations_per_metric Helper.aggregations_per_metric()
+  @free_metrics Helper.free_metrics()
+  @histogram_metric_to_module_map Helper.histogram_metric_to_module_map()
+  @histogram_metrics Helper.histogram_metrics()
+  @histogram_metrics_mapset Helper.histogram_metrics_mapset()
+  @metric_modules Helper.metric_modules()
+  @metric_to_module_map Helper.metric_to_module_map()
+  @metrics Helper.metrics()
+  @metrics_mapset Helper.metrics_mapset()
+  @min_plan_map Helper.min_plan_map()
+  @restricted_metrics Helper.restricted_metrics()
+  @timeseries_metric_to_module_map Helper.timeseries_metric_to_module_map()
+  @timeseries_metrics Helper.timeseries_metrics()
+  @timeseries_metrics_mapset Helper.timeseries_metrics_mapset()
+  @table_metrics Helper.table_metrics()
+  @table_metrics_mapset Helper.table_metrics_mapset()
+  @table_metric_to_module_map Helper.table_metric_to_module_map()
+  @required_selectors_map Helper.required_selectors_map()
 
   @doc ~s"""
   Check if `metric` is a valid metric name.
@@ -75,7 +77,12 @@ defmodule Sanbase.Metric do
     end
   end
 
-  def foo(), do: 5
+  def required_selectors(metric) do
+    case metric in @metrics_mapset do
+      true -> {:ok, Map.get(@required_selectors_map, metric, [])}
+      false -> metric_not_available_error(metric)
+    end
+  end
 
   @doc ~s"""
   Check if a metric has incomplete data.

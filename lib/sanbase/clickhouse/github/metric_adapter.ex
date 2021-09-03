@@ -31,6 +31,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @free_metrics @metrics
   @restricted_metrics []
 
+  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
   @default_complexity_weight 0.3
 
   @impl Sanbase.Metric.Behaviour
@@ -38,6 +39,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def complexity_weight(_), do: @default_complexity_weight
+
+  @impl Sanbase.Metric.Behaviour
+  def required_selectors(), do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, %{slug: slug_or_slugs}, from, to, interval, _opts) do

@@ -108,6 +108,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
 
     with {:ok, selector} <- args_to_selector(args),
+         true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
          {:ok, opts} <- selector_args_to_opts(args),
@@ -172,10 +173,41 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   # Private functions
 
-  # timeseries_data and timeseries_data_per_slug are processed and fetched in
-  # exactly the same way. The only difference is the function that is called
-  # from the Metric module.
+  # required_selectors is a list of lists like [["slug"], ["label_fqn", "label_fqns"]]
+  # At least one of the elements in every list must be present. A list of length
+  # greater than 1 is used mostly with singlure/plural versions of the same thing.
+  defp all_required_selectors_present?(metric, selector) do
+    selector_names = Map.keys(selector)
 
+    with {:ok, required_selectors} <- Metric.required_selectors(metric),
+         true <- do_check_required_selectors(metric, selector_names, required_selectors) do
+      true
+    end
+  end
+
+  defp do_check_required_selectors(metric, selector_names, required_selectors) do
+    required_selectors
+    |> Enum.reduce_while(true, fn list, acc ->
+      case Enum.any?(list, &(&1 in selector_names)) do
+        true ->
+          {:cont, acc}
+
+        false ->
+          selectors_str =
+            list
+            |> Enum.map(&Atom.to_string/1)
+            |> Enum.map(&Inflex.camelize(&1, :lower))
+            |> Enum.join(", ")
+
+          {:halt,
+           {:error,
+            "The metric '#{metric}' must have at least one of the following fields in the selector: #{selectors_str}"}}
+      end
+    end)
+  end
+
+  # This is used when a list of slugs and a list of metrics is provided
+  # Every metric is fetched for every slug and the result length can get too big
   defp check_metrics_slugs_cartesian_limit(metrics, %{slug: slug_or_slugs}, limit) do
     slugs = List.wrap(slug_or_slugs)
     cartesian_product_length = length(metrics) * length(slugs)
@@ -187,12 +219,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  defp fetch_timeseries_data(metric, args, requested_fields, function) do
+  # timeseries_data and timeseries_data_per_slug are processed and fetched in
+  # exactly the same way. The only difference is the function that is called
+  # from the Metric module.
+  defp fetch_timeseries_data(metric, args, requested_fields, function)
+       when function in [:timeseries_data, :timeseries_data_per_slug] do
     transform =
       Map.get(args, :transform, %{type: "none"})
       |> Map.update!(:type, &Inflex.underscore/1)
 
     with {:ok, selector} <- args_to_selector(args),
+         true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
          true <- valid_timeseries_selection?(requested_fields, args),
@@ -242,8 +279,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp maybe_enrich_with_labels(_metric, data), do: {:ok, data}
 
-  defp calibrate_transform_params(%{type: "none"}, from, _to, _interval),
-    do: {:ok, from}
+  defp calibrate_transform_params(%{type: type}, from, _to, _interval)
+       when type in ["none", "cumulative_sum"] do
+    {:ok, from}
+  end
 
   defp calibrate_transform_params(
          %{type: "moving_average", moving_average_base: base},
@@ -287,6 +326,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, result}
   end
 
+  defp apply_transform(%{type: type}, data) when type in ["cumulative_sum"] do
+    result =
+      data
+      |> Enum.scan(fn %{value: current} = elem, %{value: previous} ->
+        %{elem | value: current + previous}
+      end)
+
+    {:ok, result}
+  end
+
   defp apply_transform(%{type: type}, data) when type in ["percent_change"] do
     result =
       Stream.chunk_every(data, 2, 1, :discard)
@@ -301,12 +350,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   defp apply_transform(%{type: type}, data) when type in ["cumulative_percent_change"] do
-    cumsum =
-      data
-      |> Enum.scan(fn %{value: current} = elem, %{value: previous} ->
-        %{elem | value: current + previous}
-      end)
-
+    {:ok, cumsum} = apply_transform(%{type: "cumulative_sum"}, data)
     apply_transform(%{type: "percent_change"}, cumsum)
   end
 

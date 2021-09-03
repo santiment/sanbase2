@@ -56,6 +56,7 @@ defmodule Sanbase.Utils.ErrorHandling do
 
     error_msg_with_reason = error_msg <> ", Reason: #{inspect(message)}"
 
+    # TODO: Maybe remove this warning
     Logger.warn(error_msg_with_reason)
 
     case Keyword.get(opts, :propagate_reason, true) do

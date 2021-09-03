@@ -20,6 +20,8 @@ defmodule Sanbase.Twitter.MetricAdapter do
   @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
                       |> Enum.map(&elem(&1, 0))
 
+  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
+
   @default_complexity_weight 1
 
   @impl Sanbase.Metric.Behaviour
@@ -27,6 +29,9 @@ defmodule Sanbase.Twitter.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def complexity_weight(_), do: @default_complexity_weight
+
+  @impl Sanbase.Metric.Behaviour
+  def required_selectors(), do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_data("twitter_followers", %{slug: slug}, from, to, interval, _opts) do

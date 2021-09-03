@@ -233,7 +233,11 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregation = :avg
 
-    metrics = Metric.available_timeseries_metrics() |> Enum.shuffle() |> Enum.take(100)
+    metrics =
+      Metric.available_timeseries_metrics()
+      |> Enum.shuffle()
+
+    # |> Enum.take(100)
 
     Sanbase.Mock.prepare_mock2(
       &Metric.timeseries_data/6,
@@ -249,7 +253,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
           get_timeseries_metric(
             conn,
             metric,
-            %{slug: slug, source: "twitter"},
+            %{slug: slug},
             from,
             to,
             interval,
@@ -365,7 +369,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     assert capture_log(fn ->
              # Do not mock the `timeseries_data` function because it's the one that rejects
              %{"errors" => [%{"message" => error_message}]} =
-               get_timeseries_metric_without_slug(
+               get_timeseries_metric_without_selector(
                  conn,
                  metric,
                  from,
@@ -447,7 +451,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     |> json_response(200)
   end
 
-  defp get_timeseries_metric_without_slug(
+  defp get_timeseries_metric_without_selector(
          conn,
          metric,
          from,
@@ -455,7 +459,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
          interval,
          aggregation
        ) do
-    query = get_timeseries_query_without_slug(metric, from, to, interval, aggregation)
+    query = get_timeseries_query_without_selector(metric, from, to, interval, aggregation)
 
     conn
     |> post("/graphql", query_skeleton(query, "getMetric"))
@@ -469,6 +473,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
   end
 
   defp get_timeseries_query(metric, selector, from, to, interval, aggregation) do
+    selector = extend_selector_with_required_fields(metric, selector)
+
     """
       {
         getMetric(metric: "#{metric}"){
@@ -486,7 +492,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     """
   end
 
-  defp get_timeseries_query_without_slug(
+  defp get_timeseries_query_without_selector(
          metric,
          from,
          to,

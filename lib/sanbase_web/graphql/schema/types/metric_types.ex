@@ -25,6 +25,9 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:text)
     value(:owner)
     value(:label)
+    value(:label_fqn)
+    value(:label_fqns)
+    value(:blockchain)
     value(:source)
     value(:holders_count)
     value(:market_segments)
@@ -41,12 +44,15 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   end
 
   input_object :metric_target_selector_input_object do
+    field(:blockchain, :string)
     field(:slug, :string)
     field(:slugs, list_of(:string))
     field(:text, :string)
     field(:owner, :string)
     field(:owners, list_of(:string))
     field(:label, :string)
+    field(:label_fqn, :string)
+    field(:label_fqns, list_of(:string))
     field(:labels, list_of(:string))
     field(:source, :string)
     field(:holders_count, :integer)

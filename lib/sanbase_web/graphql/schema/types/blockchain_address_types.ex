@@ -37,6 +37,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
 
   object :blockchain_address_label do
     field(:name, :string)
+    field(:human_readable_name, :string)
     field(:notes, :string)
     field(:origin, :string, default_value: "user")
     field(:metadata, :json, default_value: %{})

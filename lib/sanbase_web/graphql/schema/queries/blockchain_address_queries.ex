@@ -22,7 +22,13 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
 
       arg(:blockchain, :string)
 
-      cache_resolve(&BlockchainAddressResolver.list_all_labels/3)
+      cache_resolve(&BlockchainAddressResolver.blockchain_address_labels/3)
+    end
+
+    field :get_blockchain_address_labels, list_of(:blockchain_address_label) do
+      meta(access: :free)
+
+      cache_resolve(&BlockchainAddressResolver.get_blockchain_address_labels/3)
     end
 
     @desc """

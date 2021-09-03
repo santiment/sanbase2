@@ -89,6 +89,8 @@ defmodule Sanbase.Metric.Behaviour do
 
   @type complexity_weight_result :: number()
 
+  @type required_selectors_result :: map()
+
   # Callbacks
 
   @callback timeseries_data(
@@ -153,6 +155,8 @@ defmodule Sanbase.Metric.Behaviour do
               opts :: opts
             ) :: slugs_order_result
 
+  @callback required_selectors() :: required_selectors_result
+
   @callback has_incomplete_data?(metric :: metric) :: has_incomplete_data_result
 
   @callback complexity_weight(metric :: metric) :: complexity_weight_result
@@ -189,5 +193,9 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback min_plan_map() :: map()
 
-  @optional_callbacks [histogram_data: 6, table_data: 5, timeseries_data_per_slug: 6]
+  @optional_callbacks [
+    histogram_data: 6,
+    table_data: 5,
+    timeseries_data_per_slug: 6
+  ]
 end

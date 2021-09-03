@@ -47,6 +47,24 @@ defmodule Sanbase.Accounts.EmailJobs do
     Sanbase.Repo.transaction(multi)
   end
 
+  def send_post_cancellation_email(subscription) do
+    template = Sanbase.Email.Template.post_cancellation_template()
+
+    vars = %{
+      subscription_type: "Sanbase #{String.capitalize(subscription.plan.name)}",
+      end_subscription_date: Timex.format!(subscription.current_period_end, "{Mfull} {D}, {YYYY}")
+    }
+
+    data =
+      Sanbase.Mailer.new(%{
+        user_id: subscription.user_id,
+        template: template,
+        vars: vars
+      })
+
+    Oban.insert(@oban_conf_name, data)
+  end
+
   defp scheduled_email(email_type, templates, user, vars) do
     scheduled_at =
       case email_type do

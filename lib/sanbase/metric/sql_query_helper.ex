@@ -111,25 +111,33 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     {str, args}
   end
 
-  defp do_additional_filters(column, [value | _] = list, args) when is_binary(value) do
-    coma_separated = list |> Enum.map(&"'#{&1}'") |> Enum.join(",")
-    str = ~s/lower(#{column}) IN (#{coma_separated})/
+  defp do_additional_filters(column, [value | _] = list, args)
+       when is_binary(value) do
+    pos = length(args) + 1
+    str = "lower(#{column}) IN (?#{pos})"
+    list = Enum.map(list, &String.downcase/1)
+    args = args ++ [list]
     {str, args}
   end
 
   defp do_additional_filters(column, [value | _] = list, args) when is_number(value) do
-    coma_separated = Enum.join(list, ",")
-    str = ~s/#{column} IN (#{coma_separated})/
+    pos = length(args) + 1
+    str = "#{column} IN (?#{pos})"
+    args = args ++ [list]
     {str, args}
   end
 
   defp do_additional_filters(column, value, args) when is_binary(value) do
-    str = ~s/lower(#{column}) = '#{String.downcase(value)}'/
+    pos = length(args) + 1
+    str = "lower(#{column}) = ?#{pos}"
+    args = args ++ [String.downcase(value)]
     {str, args}
   end
 
   defp do_additional_filters(column, value, args) when is_number(value) do
-    str = ~s/#{column} = #{value}/
+    pos = length(args) + 1
+    str = "#{column} = ?#{pos}"
+    args = args ++ [value]
     {str, args}
   end
 

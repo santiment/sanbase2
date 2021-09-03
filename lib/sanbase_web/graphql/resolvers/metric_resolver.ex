@@ -279,8 +279,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp maybe_enrich_with_labels(_metric, data), do: {:ok, data}
 
-  defp calibrate_transform_params(%{type: "none"}, from, _to, _interval),
-    do: {:ok, from}
+  defp calibrate_transform_params(%{type: type}, from, _to, _interval)
+       when type in ["none", "cumulative_sum"] do
+    {:ok, from}
+  end
 
   defp calibrate_transform_params(
          %{type: "moving_average", moving_average_base: base},
@@ -324,6 +326,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, result}
   end
 
+  defp apply_transform(%{type: type}, data) when type in ["cumulative_sum"] do
+    result =
+      data
+      |> Enum.scan(fn %{value: current} = elem, %{value: previous} ->
+        %{elem | value: current + previous}
+      end)
+
+    {:ok, result}
+  end
+
   defp apply_transform(%{type: type}, data) when type in ["percent_change"] do
     result =
       Stream.chunk_every(data, 2, 1, :discard)
@@ -338,12 +350,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   defp apply_transform(%{type: type}, data) when type in ["cumulative_percent_change"] do
-    cumsum =
-      data
-      |> Enum.scan(fn %{value: current} = elem, %{value: previous} ->
-        %{elem | value: current + previous}
-      end)
-
+    {:ok, cumsum} = apply_transform(%{type: "cumulative_sum"}, data)
     apply_transform(%{type: "percent_change"}, cumsum)
   end
 

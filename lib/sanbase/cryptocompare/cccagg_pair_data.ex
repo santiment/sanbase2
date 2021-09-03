@@ -1,6 +1,8 @@
 defmodule Sanbase.Cryptocompare.CCCAGGPairData do
   alias Sanbase.Model.Project
 
+  require Logger
+
   def get() do
     cache_key = {__MODULE__, :get_cccagg_pairs_data} |> Sanbase.Cache.hash()
 
@@ -28,28 +30,38 @@ defmodule Sanbase.Cryptocompare.CCCAGGPairData do
   end
 
   def schedule_previous_day_oban_jobs() do
+    Logger.info("[CCCAGG Pair Data] Start scheduling cryptocompare previous day oban jobs")
     # Make the scrape not just for the previous day, but for a few days before
     # that too. This is to handle some cases where some CSV becoomes available
     # later than we run this code. The uniqueness checkk will handle the overlapping
     # jobs.
     supported_base_assets = supported_base_assets()
-    days_ago = Date.utc_today() |> Date.add(-30)
-    previous_day = Date.utc_today() |> Date.add(-1)
+    days_ago_7 = Date.utc_today() |> Date.add(-7)
+    days_ago_60 = Date.utc_today() |> Date.add(-60)
+    today = Date.utc_today()
 
-    get()
-    |> Enum.filter(fn elem ->
-      elem.base_asset in supported_base_assets and elem.end_date == previous_day
-    end)
+    list =
+      get()
+      |> Enum.filter(fn elem ->
+        elem.base_asset in supported_base_assets and
+          Timex.between?(elem.end_date, days_ago_7, today)
+      end)
+
+    Logger.info("[CCCAGG Pair Data] Scheduling oban jobs for #{length(list)} pairs")
+
+    list
     |> Enum.map(fn elem ->
       elem = %{
-        start_date: days_ago,
-        end_date: previous_day,
+        start_date: days_ago_60,
+        end_date: elem.end_date,
         base_asset: elem.base_asset,
         quote_asset: elem.quote_asset
       }
 
       add_jobs(elem)
     end)
+
+    Logger.info("[CCCAGG Pair Data] Finished scheduling cryptocompare previous day oban jobs")
   end
 
   # Private functions

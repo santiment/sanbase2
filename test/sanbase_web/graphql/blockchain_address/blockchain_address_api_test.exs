@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     }
   end
 
-  test "fetch all blockchain address labels", context do
+  test "fetch all blockchain address labels with blockchainAddressLabelsApi", context do
     rows = [["miner"], ["centralized_exchange"], ["decentralized_exchange"]]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
@@ -31,52 +31,83 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     end)
   end
 
-  test "fetch blockchain address labels for a blockchain", context do
-    rows = [["miner"], ["centralized_exchange"]]
+  test "fetch blockchain address labels for a given blockchain with blockchainAddressLabelsApi",
+       context do
+    rows = [["centralized_exchange"], ["decentralized_exchange"]]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        blockchain_address_labels(context.conn, blockchain: "bitcoin")
+        blockchain_address_labels(context.conn, blockchain: "ethereum")
         |> get_in(["data", "blockchainAddressLabels"])
 
-      assert result == ["miner", "centralized_exchange"]
+      assert result == ["centralized_exchange", "decentralized_exchange"]
+    end)
+  end
+
+  test "fetch blockchain address labels with getBlockchainAddressLabels API", context do
+    rows = [["santiment/miner:v1", "Miner"], ["santiment/owner->Coinbase:v1", "owner->Coinbase"]]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        get_blockchain_address_labels(context.conn)
+        |> get_in(["data", "getBlockchainAddressLabels"])
+
+      assert result == [
+               %{
+                 "humanReadableName" => "Miner",
+                 "name" => "santiment/miner:v1",
+                 "origin" => "santiment"
+               },
+               %{
+                 "humanReadableName" => "owner->Coinbase",
+                 "name" => "santiment/owner->Coinbase:v1",
+                 "origin" => "santiment"
+               }
+             ]
     end)
   end
 
   test "fetch (create) a non-existing blockchain address", context do
-    result =
-      blockchain_address(context.conn, %{
-        address: "0x123",
-        infrastructure: "ETH"
-      })
-      |> get_in(["data", "blockchainAddress"])
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Label.get_address_labels/2, {:ok, %{}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        blockchain_address(context.conn, %{
+          address: "0x123",
+          infrastructure: "ETH"
+        })
+        |> get_in(["data", "blockchainAddress"])
 
-    assert result["address"] == "0x123"
-    assert result["infrastructure"] == "ETH"
-    assert result["labels"] == []
-    assert result["notes"] == nil
+      assert result["address"] == "0x123"
+      assert result["infrastructure"] == "ETH"
+      assert result["labels"] == []
+      assert result["notes"] == nil
+    end)
   end
 
   test "fetch an existing blockchain address by id", context do
-    address_id =
-      blockchain_address(context.conn, %{
-        address: "0x123",
-        infrastructure: "ETH"
-      })
-      |> get_in(["data", "blockchainAddress", "id"])
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Label.get_address_labels/2, {:ok, %{}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      address_id =
+        blockchain_address(context.conn, %{
+          address: "0x123",
+          infrastructure: "ETH"
+        })
+        |> get_in(["data", "blockchainAddress", "id"])
 
-    result =
-      blockchain_address(context.conn, %{id: address_id})
-      |> get_in(["data", "blockchainAddress"])
+      result =
+        blockchain_address(context.conn, %{id: address_id})
+        |> get_in(["data", "blockchainAddress"])
 
-    # The same address if fetched and a new one is not created
-    assert result["id"] == address_id
+      # The same address if fetched and a new one is not created
+      assert result["id"] == address_id
 
-    assert result["address"] == "0x123"
-    assert result["infrastructure"] == "ETH"
-    assert result["labels"] == []
-    assert result["notes"] == nil
+      assert result["address"] == "0x123"
+      assert result["infrastructure"] == "ETH"
+      assert result["labels"] == []
+      assert result["notes"] == nil
+    end)
   end
 
   test "fetch an existing blockchain address by address and infrastructure",
@@ -87,19 +118,22 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
         infrastructure: context.eth_infrastructure
       )
 
-    result =
-      blockchain_address(context.conn, %{
-        address: "0x123",
-        infrastructure: context.eth_infrastructure.code
-      })
-      |> get_in(["data", "blockchainAddress"])
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Label.get_address_labels/2, {:ok, %{}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        blockchain_address(context.conn, %{
+          address: "0x123",
+          infrastructure: context.eth_infrastructure.code
+        })
+        |> get_in(["data", "blockchainAddress"])
 
-    # The same address if fetched and a new one is not created
-    assert result["id"] == blockchain_address.id
-    assert result["address"] == "0x123"
-    assert result["infrastructure"] == "ETH"
-    assert result["labels"] == []
-    assert result["notes"] == nil
+      # The same address if fetched and a new one is not created
+      assert result["id"] == blockchain_address.id
+      assert result["address"] == "0x123"
+      assert result["infrastructure"] == "ETH"
+      assert result["labels"] == []
+      assert result["notes"] == nil
+    end)
   end
 
   test "update a blockchain address user pair", context do
@@ -137,6 +171,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     assert result["user"]["id"] |> Sanbase.Math.to_integer() == context.user.id
   end
 
+  @tag capture_log: true
   test "error updating a non-existining blockchain address user pair", context do
     result = update_blockchain_address_user_pair(context.conn, %{id: 15_123_123}, "notes", [])
 
@@ -186,6 +221,22 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
 
     conn
     |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+  end
+
+  defp get_blockchain_address_labels(conn) do
+    query = """
+    {
+      getBlockchainAddressLabels{
+        name
+        origin
+        humanReadableName
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
     |> json_response(200)
   end
 

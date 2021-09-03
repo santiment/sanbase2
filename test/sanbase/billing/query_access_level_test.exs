@@ -66,6 +66,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_available_blockchains,
           :get_available_metrics,
           :get_available_signals,
+          :get_blockchain_address_labels,
           :get_coupon,
           :get_events_for_users,
           :get_full_url,

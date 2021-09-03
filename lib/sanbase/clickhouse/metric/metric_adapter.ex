@@ -35,6 +35,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @metrics_mapset @metrics_name_list |> MapSet.new()
   @incomplete_data_map FileHandler.incomplete_data_map()
   @selectors_map FileHandler.selectors_map()
+  @required_selectors_map FileHandler.required_selectors_map()
   @metric_to_name_map FileHandler.metric_to_name_map()
   @default_complexity_weight 0.3
 
@@ -143,6 +144,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def required_selectors(), do: FileHandler.required_selectors_map()
+
+  @impl Sanbase.Metric.Behaviour
   def metadata(metric) do
     min_interval = min_interval(metric)
     default_aggregation = Map.get(@aggregation_map, metric)
@@ -154,6 +158,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
        default_aggregation: default_aggregation,
        available_aggregations: @plain_aggregations,
        available_selectors: Map.get(@selectors_map, metric),
+       required_selectors: Map.get(@required_selectors_map, metric, []),
        data_type: Map.get(@metrics_data_type_map, metric),
        complexity_weight: @default_complexity_weight
      }}

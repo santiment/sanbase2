@@ -72,34 +72,65 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
 
   # Add additional `=`/`in` filters to the query. This is mostly used with labeled
   # metrics where additional column filters must be applied.
-  def additional_filters([], _opts), do: []
+  def additional_filters([], args, _opts), do: {[], args}
 
-  def additional_filters(filters, opts) do
-    filters_string =
-      filters
-      |> Enum.map(fn
-        {column, [value | _] = list} when is_list(list) and is_binary(value) ->
-          coma_separated = list |> Enum.map(&"'#{&1}'") |> Enum.join(",")
-          ~s/lower(#{column}) IN (#{coma_separated})/
+  def additional_filters(filters, args, opts) do
+    {filters_str_list, args} =
+      Enum.reduce(filters, {[], args}, fn {column, value}, {list_acc, args_acc} ->
+        {filter_str, updated_args} = do_additional_filters(column, value, args_acc)
 
-        {column, [value | _] = list} when is_list(list) and is_number(value) ->
-          coma_separated = Enum.join(list, ",")
-          ~s/#{column} IN (#{coma_separated})/
-
-        {column, value} when is_binary(value) ->
-          ~s/lower(#{column}) = '#{value |> String.downcase()}'/
-
-        {column, value} when is_number(value) ->
-          ~s/#{column} = #{value}/
+        {[filter_str | list_acc], updated_args}
       end)
-      |> Enum.join(" AND\n")
 
-    filters_string <> " AND"
+    filters_string = Enum.join(filters_str_list, " AND\n")
 
-    case Keyword.get(opts, :trailing_and, false) do
-      false -> filters_string
-      true -> filters_string <> " AND"
-    end
+    filters_string =
+      case Keyword.get(opts, :trailing_and, false) do
+        false -> filters_string
+        true -> filters_string <> " AND"
+      end
+
+    {filters_string, args}
+  end
+
+  defp do_additional_filters(:label_fqn, value, args) when is_binary(value) do
+    pos = length(args) + 1
+    str = "label_id IN (
+      SELECT dictGetUInt64('default.label_ids_dict', 'label_id', tuple(fqn)) AS label_id
+      FROM system.one
+      ARRAY JOIN [?#{pos}] AS fqn
+    )"
+    args = args ++ [value]
+    {str, args}
+  end
+
+  defp do_additional_filters(:label_fqn, [value | _] = list, args) when is_binary(value) do
+    pos = length(args) + 1
+    str = "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple(?#{pos}))"
+    args = args ++ [list]
+    {str, args}
+  end
+
+  defp do_additional_filters(column, [value | _] = list, args) when is_binary(value) do
+    coma_separated = list |> Enum.map(&"'#{&1}'") |> Enum.join(",")
+    str = ~s/lower(#{column}) IN (#{coma_separated})/
+    {str, args}
+  end
+
+  defp do_additional_filters(column, [value | _] = list, args) when is_number(value) do
+    coma_separated = Enum.join(list, ",")
+    str = ~s/#{column} IN (#{coma_separated})/
+    {str, args}
+  end
+
+  defp do_additional_filters(column, value, args) when is_binary(value) do
+    str = ~s/lower(#{column}) = '#{String.downcase(value)}'/
+    {str, args}
+  end
+
+  defp do_additional_filters(column, value, args) when is_number(value) do
+    str = ~s/#{column} = #{value}/
+    {str, args}
   end
 
   def dt_to_unix(:from, dt) do

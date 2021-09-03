@@ -72,7 +72,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
               |> Map.merge(@social_volume_metrics_access_map)
 
   @min_plan_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, :free) end)
-
+  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
+                      |> Map.put("social_active_users", [[:source]])
   @default_complexity_weight 1
 
   @impl Sanbase.Metric.Behaviour
@@ -82,7 +83,9 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
+  def required_selectors(), do: @required_selectors
 
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, selector, from, to, interval, _opts)
       when metric in @social_volume_timeseries_metrics do
     "social_volume_" <> source = metric

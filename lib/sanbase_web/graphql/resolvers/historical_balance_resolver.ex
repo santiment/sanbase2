@@ -81,6 +81,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     end)
   end
 
+  defp get_labelled_balance_slug_from_args(%{selector: %{slug: slug}})
+       when is_binary(slug) do
+    if slug in ["bitcoin", "ethereum"] do
+      {:ok, slug}
+    else
+      {:error,
+       "Only 'ethereum' and 'bitcoin' slugs are supported in the label historical balance changes."}
+    end
+  end
+
+  defp get_labelled_balance_slug_from_args(_) do
+    {:error,
+     "The label historical balance changes field requires a 'slug' argument in the selector."}
+  end
+
   def transaction_volume_per_address(
         _root,
         %{
@@ -91,7 +106,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
         },
         _resolution
       ) do
-    with {:ok, contract, decimals} <- Sanbase.Model.Project.contract_info_by_slug(slug) do
+    with {:ok, contract, decimals} <-
+           Sanbase.Model.Project.contract_info_by_slug(slug) do
       Sanbase.Transfers.Erc20Transfers.transaction_volume_per_address(
         addresses,
         contract,
@@ -125,10 +141,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
       args,
       %{source: %{metric: "miners_balance"}}
     )
-    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :balance)
+    |> Sanbase.Utils.Transform.rename_map_keys(
+      old_key: :value,
+      new_key: :balance
+    )
   end
 
-  def balance_usd(%{slug: slug, balance: balance}, _args, %{context: %{loader: loader}}) do
+  def balance_usd(%{slug: slug, balance: balance}, _args, %{
+        context: %{loader: loader}
+      }) do
     loader
     |> Dataloader.load(SanbaseDataloader, :last_price_usd, slug)
     |> on_load(fn loader ->

@@ -86,8 +86,9 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   def requested_fields(_), do: MapSet.new([])
 
   # Private functions
+  @fields [:owner, :label, :label_fqn, :label_fqns, :blockchain, :owners, :labels]
   defp maybe_add_field(opts, :additional_filters, selector) do
-    case Map.split(selector, [:owner, :label, :owners, :labels]) do
+    case Map.split(selector, @fields) do
       {map, _rest} when map_size(map) > 0 ->
         # Rename the plurals to singulars. This is done to simplify the
         # SQL generation
@@ -95,6 +96,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
           map
           |> maybe_rename_field(:owners, :owner)
           |> maybe_rename_field(:labels, :label)
+          |> maybe_rename_field(:label_fqns, :label_fqn)
 
         [additional_filters: Keyword.new(map)] ++ opts
 

@@ -27,19 +27,29 @@ defmodule Sanbase.Comment do
   alias Sanbase.ShortUrl
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.BlockchainAddress
+  alias Sanbase.UserList
+  alias Sanbase.Chart.Configuration, as: ChartConfiguration
+  alias Sanbase.WalletHunters.Proposal, as: WHProposal
 
   @max_comment_length 15_000
+
+  @insights_table "post_comments_mapping"
+  @short_urls_table "short_url_comments_mapping"
+  @timeline_events_table "timeline_events_comments_mapping"
+  @blockchain_addrs_table "blockchain_addresses_comments_mapping"
+  @watchlists_table "watchlist_comments_mapping"
+  @chart_configs_table "chart_configurations_comments_mapping"
+  @wh_proposals_table "wallet_hunters_proposals_comments_mapping"
 
   schema "comments" do
     field(:content, :string)
     field(:edited_at, :naive_datetime, default: nil)
+    field(:parent_id, :integer)
+    field(:root_parent_id, :integer)
+    field(:subcomments_count, :integer, default: 0)
 
     belongs_to(:user, User)
-
-    field(:parent_id, :integer)
     belongs_to(:parent, __MODULE__, foreign_key: :parent_id, references: :id, define_field: false)
-
-    field(:root_parent_id, :integer)
 
     belongs_to(:root_parent, __MODULE__,
       foreign_key: :id,
@@ -48,15 +58,19 @@ defmodule Sanbase.Comment do
     )
 
     has_many(:sub_comments, __MODULE__, foreign_key: :parent_id, references: :id)
-    field(:subcomments_count, :integer, default: 0)
 
-    many_to_many(:insights, Post, join_through: "post_comments_mapping")
-    many_to_many(:short_urls, ShortUrl, join_through: "short_url_comments_mapping")
-    many_to_many(:timeline_events, TimelineEvent, join_through: "timeline_event_comments_mapping")
-
-    many_to_many(:blockchain_addresses, BlockchainAddress,
-      join_through: "blockchain_address_comments_mapping"
-    )
+    # The comment table holds only the conent and the relation of the comment to its
+    # parent/root (the hierarchy). The actual entity to which this comment is
+    # attached to (an insight, an event, etc) is done via the mapping tables.
+    # This way we can easily add new types of comments without having to change
+    # the existing code, manipulate the DB schema, etc.
+    many_to_many(:insights, Post, join_through: @insights_table)
+    many_to_many(:watchlists, UserList, join_through: @watchlists_table)
+    many_to_many(:short_urls, ShortUrl, join_through: @short_urls_table)
+    many_to_many(:timeline_events, TimelineEvent, join_through: @timeline_events_table)
+    many_to_many(:blockchain_addresses, BlockchainAddress, join_through: @blockchain_addrs_table)
+    many_to_many(:chart_configurations, ChartConfiguration, join_through: @chart_configs_table)
+    many_to_many(:wallet_hunters_propsals, WHProposal, join_through: @wh_proposals_table)
 
     timestamps()
   end

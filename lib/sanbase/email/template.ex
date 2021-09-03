@@ -27,6 +27,7 @@ defmodule Sanbase.Email.Template do
     # on the 7th day
     second_education_email: "second_edu_email_v2"
   }
+  @post_cancellation_template "cancelled_subscription"
 
   @comment_notification_template "notification"
   @verify_email_weekly_digest_template "verify_email_weekly_digest"
@@ -35,6 +36,7 @@ defmodule Sanbase.Email.Template do
   def alerts_template, do: @alerts_template
   def sign_up_trial_templates, do: @sign_up_trial_templates
   def sign_up_templates, do: @sign_up_templates
+  def post_cancellation_template, do: @post_cancellation_template
   def comment_notification_template, do: @comment_notification_template
   def verify_email_weekly_digest_template, do: @verify_email_weekly_digest_template
   def monitoring_watchlist_template, do: @monitoring_watchlist_template

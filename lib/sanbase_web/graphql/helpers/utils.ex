@@ -1,4 +1,6 @@
 defmodule SanbaseWeb.Graphql.Helpers.Utils do
+  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_sec: 1]
+
   def selector_args_to_opts(args) when is_map(args) do
     opts = [aggregation: Map.get(args, :aggregation, nil)]
     selector = args[:selector]
@@ -22,10 +24,13 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   This is used when a query to influxdb is made. Influxdb can return a timestamp
   that's outside `from` - `to` interval due to its inner working with buckets
   """
-  def fit_from_datetime([%{datetime: _} | _] = data, %{from: from}) do
+  def fit_from_datetime([%{datetime: _} | _] = data, %{from: from, interval: interval}) do
+    interval_sec = str_to_sec(interval)
+    from = round_datetime(from, second: interval_sec)
+
     result =
-      data
-      |> Enum.drop_while(fn %{datetime: datetime} ->
+      Enum.drop_while(data, fn %{datetime: datetime} ->
+        datetime = round_datetime(datetime, second: interval_sec)
         DateTime.compare(datetime, from) == :lt
       end)
 

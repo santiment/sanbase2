@@ -7,11 +7,11 @@ defmodule Sanbase.Comments.EntityComment do
 
   alias Sanbase.Repo
   alias Sanbase.Comment
-  alias Sanbase.Timeline.TimelineEventComment
-  alias Sanbase.Insight.PostComment
-  alias Sanbase.ShortUrl.ShortUrlComment
-  alias Sanbase.BlockchainAddress.BlockchainAddressComment
-  alias Sanbase.WalletHunters.WalletHuntersProposalComment
+  alias Sanbase.Comment.TimelineEventComment
+  alias Sanbase.Comment.PostComment
+  alias Sanbase.Comment.ShortUrlComment
+  alias Sanbase.Comment.BlockchainAddressComment
+  alias Sanbase.Comment.WalletHuntersProposalComment
 
   @type entity ::
           :insight | :timeline_event | :short_url | :blockchain_address | :wallet_hunters_proposal

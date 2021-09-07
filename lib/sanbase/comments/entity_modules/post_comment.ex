@@ -1,4 +1,4 @@
-defmodule Sanbase.Insight.PostComment do
+defmodule Sanbase.Comment.PostComment do
   @moduledoc ~s"""
   A mapping table connecting comments and posts.
 

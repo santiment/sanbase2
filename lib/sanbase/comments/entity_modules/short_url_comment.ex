@@ -1,4 +1,4 @@
-defmodule Sanbase.ShortUrl.ShortUrlComment do
+defmodule Sanbase.Comment.ShortUrlComment do
   @moduledoc ~s"""
   A mapping table connecting comments and short urls.
 

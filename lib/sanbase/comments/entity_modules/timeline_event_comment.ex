@@ -1,4 +1,4 @@
-defmodule Sanbase.Timeline.TimelineEventComment do
+defmodule Sanbase.Comment.TimelineEventComment do
   @moduledoc ~s"""
   A mapping table connecting comments and timeline events.
 

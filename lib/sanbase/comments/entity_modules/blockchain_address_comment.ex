@@ -1,4 +1,4 @@
-defmodule Sanbase.BlockchainAddress.BlockchainAddressComment do
+defmodule Sanbase.Comment.BlockchainAddressComment do
   @moduledoc ~s"""
   A mapping table connecting comments and blockchain comments.
 

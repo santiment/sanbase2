@@ -42,7 +42,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:comment_insight_id, comment_ids) do
     ids = Enum.to_list(comment_ids)
 
-    from(mapping in Sanbase.Insight.PostComment,
+    from(mapping in Sanbase.Comment.PostComment,
       where: mapping.comment_id in ^ids,
       select: {mapping.comment_id, mapping.post_id}
     )
@@ -53,7 +53,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:comment_timeline_event_id, comment_ids) do
     ids = Enum.to_list(comment_ids)
 
-    from(mapping in Sanbase.Timeline.TimelineEventComment,
+    from(mapping in Sanbase.Comment.TimelineEventComment,
       where: mapping.comment_id in ^ids,
       select: {mapping.comment_id, mapping.timeline_event_id}
     )
@@ -64,7 +64,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:comment_blockchain_address_id, comment_ids) do
     ids = Enum.to_list(comment_ids)
 
-    from(mapping in Sanbase.BlockchainAddress.BlockchainAddressComment,
+    from(mapping in Sanbase.Comment.BlockchainAddressComment,
       where: mapping.comment_id in ^ids,
       select: {mapping.comment_id, mapping.blockchain_address_id}
     )
@@ -75,7 +75,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:comment_proposal_id, comment_ids) do
     ids = Enum.to_list(comment_ids)
 
-    from(mapping in Sanbase.WalletHunters.WalletHuntersProposalComment,
+    from(mapping in Sanbase.Comment.WalletHuntersProposalComment,
       where: mapping.comment_id in ^ids,
       select: {mapping.comment_id, mapping.proposal_id}
     )
@@ -86,7 +86,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:comment_short_url_id, comment_ids) do
     ids = Enum.to_list(comment_ids)
 
-    from(mapping in Sanbase.ShortUrl.ShortUrlComment,
+    from(mapping in Sanbase.Comment.ShortUrlComment,
       where: mapping.comment_id in ^ids,
       select: {mapping.comment_id, mapping.short_url_id}
     )
@@ -97,7 +97,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:insights_comments_count, post_ids) do
     ids = Enum.to_list(post_ids)
 
-    from(mapping in Sanbase.Insight.PostComment,
+    from(mapping in Sanbase.Comment.PostComment,
       where: mapping.post_id in ^ids,
       group_by: mapping.post_id,
       select: {mapping.post_id, fragment("COUNT(*)")}
@@ -114,7 +114,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:timeline_events_comments_count, timeline_events_ids) do
     ids = Enum.to_list(timeline_events_ids)
 
-    from(mapping in Sanbase.Timeline.TimelineEventComment,
+    from(mapping in Sanbase.Comment.TimelineEventComment,
       where: mapping.timeline_event_id in ^ids,
       group_by: mapping.timeline_event_id,
       select: {mapping.timeline_event_id, fragment("COUNT(*)")}
@@ -126,7 +126,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:blockchain_addresses_comments_count, blockchain_address_ids) do
     ids = Enum.to_list(blockchain_address_ids)
 
-    from(mapping in Sanbase.BlockchainAddress.BlockchainAddressComment,
+    from(mapping in Sanbase.Comment.BlockchainAddressComment,
       where: mapping.blockchain_address_id in ^ids,
       group_by: mapping.blockchain_address_id,
       select: {mapping.blockchain_address_id, fragment("COUNT(*)")}
@@ -138,7 +138,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:short_urls_comments_count, short_url_ids) do
     ids = Enum.to_list(short_url_ids)
 
-    from(mapping in Sanbase.ShortUrl.ShortUrlComment,
+    from(mapping in Sanbase.Comment.ShortUrlComment,
       where: mapping.short_url_id in ^ids,
       group_by: mapping.short_url_id,
       select: {mapping.short_url_id, fragment("COUNT(*)")}
@@ -150,7 +150,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:wallet_hunters_proposals_comments_count, proposal_ids) do
     ids = Enum.to_list(proposal_ids)
 
-    from(mapping in Sanbase.WalletHunters.WalletHuntersProposalComment,
+    from(mapping in Sanbase.Comment.WalletHuntersProposalComment,
       where: mapping.proposal_id in ^ids,
       group_by: mapping.proposal_id,
       select: {mapping.proposal_id, fragment("COUNT(*)")}

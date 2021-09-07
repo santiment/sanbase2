@@ -50,6 +50,28 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Map.new()
   end
 
+  def query(:comment_watchlist_id, watchlist_ids) do
+    ids = Enum.to_list(watchlist_ids)
+
+    from(mapping in Sanbase.Comment.WatchlistComment,
+      where: mapping.comment_id in ^ids,
+      select: {mapping.comment_id, mapping.watchlist_id}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  def query(:comment_chart_configuration_id, chart_configuration_ids) do
+    ids = Enum.to_list(chart_configuration_ids)
+
+    from(mapping in Sanbase.Comment.ChartConfigurationComment,
+      where: mapping.comment_id in ^ids,
+      select: {mapping.comment_id, mapping.chart_configuration_id}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
   def query(:comment_timeline_event_id, comment_ids) do
     ids = Enum.to_list(comment_ids)
 
@@ -72,7 +94,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Map.new()
   end
 
-  def query(:comment_proposal_id, comment_ids) do
+  def query(:comment_wallet_hunter_proposal_id, comment_ids) do
     ids = Enum.to_list(comment_ids)
 
     from(mapping in Sanbase.Comment.WalletHuntersProposalComment,

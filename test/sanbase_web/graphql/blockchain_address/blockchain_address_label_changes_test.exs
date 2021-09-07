@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressLabelChangesApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
-
   setup do
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)

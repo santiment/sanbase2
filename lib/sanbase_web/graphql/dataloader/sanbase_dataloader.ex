@@ -36,13 +36,17 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
 
   @parity_dataloader [:eth_balance]
 
-  @postgres_dataloader [
-    :blockchain_addresses_comments_count,
+  @postgres_comment_entity_id_dataloader [
     :comment_blockchain_address_id,
+    :comment_chart_configuration_id,
     :comment_insight_id,
-    :comment_proposal_id,
+    :comment_wallet_hunter_proposal_id,
     :comment_short_url_id,
     :comment_timeline_event_id,
+    :comment_watchlist_id
+  ]
+  @postgres_dataloader [
+    :blockchain_addresses_comments_count,
     :current_user_address_details,
     :infrastructure,
     :insights_comments_count,
@@ -56,25 +60,30 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :wallet_hunters_proposals_comments_count
   ]
 
+  @postgres_dataloader @postgres_dataloader ++ @postgres_comment_entity_id_dataloader
+
   def query(queryable, args) do
-    case queryable do
-      x when x in @labels_dataloader ->
+    cond do
+      queryable in @labels_dataloader ->
         LabelsDataloader.query(queryable, args)
 
-      x when x in @clickhouse_dataloader ->
+      queryable in @clickhouse_dataloader ->
         ClickhouseDataloader.query(queryable, args)
 
-      x when x in @balance_dataloader ->
+      queryable in @balance_dataloader ->
         BalanceDataloader.query(queryable, args)
 
-      x when x in @price_dataloader ->
+      queryable in @price_dataloader ->
         PriceDataloader.query(queryable, args)
 
-      x when x in @parity_dataloader ->
+      queryable in @parity_dataloader ->
         ParityDataloader.query(queryable, args)
 
-      x when x in @postgres_dataloader ->
+      queryable in @postgres_dataloader ->
         PostgresDataloader.query(queryable, args)
+
+      true ->
+        raise(RuntimeError, "Unknown queryable provided to the dataloder: #{inspect(queryable)}")
     end
   end
 end

@@ -9,12 +9,9 @@ defmodule Sanbase.Comment.BlockchainAddressComment do
 
   import Ecto.Changeset
 
-  alias Sanbase.Comment
-  alias Sanbase.BlockchainAddress
-
   schema "blockchain_address_comments_mapping" do
-    belongs_to(:comment, Comment)
-    belongs_to(:blockchain_address, BlockchainAddress)
+    belongs_to(:comment, Sanbase.Comment)
+    belongs_to(:blockchain_address, Sanbase.BlockchainAddress)
 
     timestamps()
   end

@@ -8,12 +8,9 @@ defmodule Sanbase.Comment.PostComment do
 
   import Ecto.Changeset
 
-  alias Sanbase.Comment
-  alias Sanbase.Insight.Post
-
   schema "post_comments_mapping" do
-    belongs_to(:comment, Comment)
-    belongs_to(:post, Post)
+    belongs_to(:comment, Sanbase.Comment)
+    belongs_to(:post, Sanbase.Insight.Post)
 
     timestamps()
   end

@@ -35,10 +35,10 @@ defmodule Sanbase.Comment do
 
   @insights_table "post_comments_mapping"
   @short_urls_table "short_url_comments_mapping"
-  @timeline_events_table "timeline_events_comments_mapping"
-  @blockchain_addrs_table "blockchain_addresses_comments_mapping"
+  @timeline_events_table "timeline_event_comments_mapping"
+  @blockchain_addrs_table "blockchain_address_comments_mapping"
   @watchlists_table "watchlist_comments_mapping"
-  @chart_configs_table "chart_configurations_comments_mapping"
+  @chart_configs_table "chart_configuration_comments_mapping"
   @wh_proposals_table "wallet_hunters_proposals_comments_mapping"
 
   schema "comments" do

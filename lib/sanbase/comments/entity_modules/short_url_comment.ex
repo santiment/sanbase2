@@ -1,4 +1,4 @@
-defmodule Sanbase.ShortUrl.ShortUrlComment do
+defmodule Sanbase.Comment.ShortUrlComment do
   @moduledoc ~s"""
   A mapping table connecting comments and short urls.
 
@@ -8,12 +8,9 @@ defmodule Sanbase.ShortUrl.ShortUrlComment do
 
   import Ecto.Changeset
 
-  alias Sanbase.Comment
-  alias Sanbase.ShortUrl
-
   schema "short_url_comments_mapping" do
-    belongs_to(:comment, Comment)
-    belongs_to(:short_url, ShortUrl)
+    belongs_to(:comment, Sanbase.Comment)
+    belongs_to(:short_url, Sanbase.ShortUrl)
 
     timestamps()
   end

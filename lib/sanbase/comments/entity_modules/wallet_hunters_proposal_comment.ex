@@ -1,4 +1,4 @@
-defmodule Sanbase.WalletHunters.WalletHuntersProposalComment do
+defmodule Sanbase.Comment.WalletHuntersProposalComment do
   @moduledoc ~s"""
   A mapping table connecting comments and wallet hunters proposals.
   """
@@ -6,12 +6,9 @@ defmodule Sanbase.WalletHunters.WalletHuntersProposalComment do
 
   import Ecto.{Query, Changeset}
 
-  alias Sanbase.Comment
-  alias Sanbase.WalletHunters.Proposal
-
   schema "wallet_hunters_proposals_comments_mapping" do
-    belongs_to(:comment, Comment)
-    belongs_to(:proposal, Proposal)
+    belongs_to(:comment, Sanbase.Comment)
+    belongs_to(:proposal, Sanbase.WalletHunters.Proposal)
 
     timestamps()
   end

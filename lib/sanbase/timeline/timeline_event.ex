@@ -47,7 +47,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
     has_many(:votes, Vote, on_delete: :delete_all)
 
-    has_many(:event_comment_mapping, Sanbase.Timeline.TimelineEventComment, on_delete: :delete_all)
+    has_many(:event_comment_mapping, Sanbase.Comment.TimelineEventComment, on_delete: :delete_all)
 
     has_many(:comments, through: [:event_comment_mapping, :comment])
 

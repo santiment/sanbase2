@@ -464,6 +464,38 @@ ALTER SEQUENCE public.blockchain_addresses_id_seq OWNED BY public.blockchain_add
 
 
 --
+-- Name: chart_configuration_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.chart_configuration_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    chart_configuration_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: chart_configuration_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.chart_configuration_comments_mapping_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: chart_configuration_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.chart_configuration_comments_mapping_id_seq OWNED BY public.chart_configuration_comments_mapping.id;
+
+
+--
 -- Name: chart_configurations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3201,6 +3233,38 @@ ALTER SEQUENCE public.wallet_hunters_votes_id_seq OWNED BY public.wallet_hunters
 
 
 --
+-- Name: watchlist_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.watchlist_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    watchlist_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: watchlist_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.watchlist_comments_mapping_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: watchlist_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.watchlist_comments_mapping_id_seq OWNED BY public.watchlist_comments_mapping.id;
+
+
+--
 -- Name: watchlist_settings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3334,6 +3398,13 @@ ALTER TABLE ONLY public.blockchain_address_user_pairs_labels ALTER COLUMN id SET
 --
 
 ALTER TABLE ONLY public.blockchain_addresses ALTER COLUMN id SET DEFAULT nextval('public.blockchain_addresses_id_seq'::regclass);
+
+
+--
+-- Name: chart_configuration_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chart_configuration_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.chart_configuration_comments_mapping_id_seq'::regclass);
 
 
 --
@@ -3862,6 +3933,13 @@ ALTER TABLE ONLY public.wallet_hunters_votes ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: watchlist_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.watchlist_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.watchlist_comments_mapping_id_seq'::regclass);
+
+
+--
 -- Name: webinar_registrations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3937,6 +4015,14 @@ ALTER TABLE ONLY public.blockchain_address_user_pairs
 
 ALTER TABLE ONLY public.blockchain_addresses
     ADD CONSTRAINT blockchain_addresses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: chart_configuration_comments_mapping chart_configuration_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chart_configuration_comments_mapping
+    ADD CONSTRAINT chart_configuration_comments_mapping_pkey PRIMARY KEY (id);
 
 
 --
@@ -4596,6 +4682,14 @@ ALTER TABLE ONLY public.wallet_hunters_votes
 
 
 --
+-- Name: watchlist_comments_mapping watchlist_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.watchlist_comments_mapping
+    ADD CONSTRAINT watchlist_comments_mapping_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: watchlist_settings watchlist_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4694,6 +4788,20 @@ CREATE UNIQUE INDEX blockchain_address_user_pairs_user_id_blockchain_address_id_
 --
 
 CREATE UNIQUE INDEX blockchain_addresses_address_infrastructure_id_index ON public.blockchain_addresses USING btree (address, infrastructure_id);
+
+
+--
+-- Name: chart_configuration_comments_mapping_chart_configuration_id_ind; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX chart_configuration_comments_mapping_chart_configuration_id_ind ON public.chart_configuration_comments_mapping USING btree (chart_configuration_id);
+
+
+--
+-- Name: chart_configuration_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX chart_configuration_comments_mapping_comment_id_index ON public.chart_configuration_comments_mapping USING btree (comment_id);
 
 
 --
@@ -5446,6 +5554,20 @@ CREATE INDEX wallet_hunters_votes_user_id_index ON public.wallet_hunters_votes U
 
 
 --
+-- Name: watchlist_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX watchlist_comments_mapping_comment_id_index ON public.watchlist_comments_mapping USING btree (comment_id);
+
+
+--
+-- Name: watchlist_comments_mapping_watchlist_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX watchlist_comments_mapping_watchlist_id_index ON public.watchlist_comments_mapping USING btree (watchlist_id);
+
+
+--
 -- Name: watchlist_settings_watchlist_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5542,6 +5664,22 @@ ALTER TABLE ONLY public.blockchain_address_user_pairs
 
 ALTER TABLE ONLY public.blockchain_addresses
     ADD CONSTRAINT blockchain_addresses_infrastructure_id_fkey FOREIGN KEY (infrastructure_id) REFERENCES public.infrastructures(id);
+
+
+--
+-- Name: chart_configuration_comments_mapping chart_configuration_comments_mapping_chart_configuration_id_fke; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chart_configuration_comments_mapping
+    ADD CONSTRAINT chart_configuration_comments_mapping_chart_configuration_id_fke FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: chart_configuration_comments_mapping chart_configuration_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chart_configuration_comments_mapping
+    ADD CONSTRAINT chart_configuration_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE;
 
 
 --
@@ -6305,6 +6443,22 @@ ALTER TABLE ONLY public.wallet_hunters_votes
 
 
 --
+-- Name: watchlist_comments_mapping watchlist_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.watchlist_comments_mapping
+    ADD CONSTRAINT watchlist_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE;
+
+
+--
+-- Name: watchlist_comments_mapping watchlist_comments_mapping_watchlist_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.watchlist_comments_mapping
+    ADD CONSTRAINT watchlist_comments_mapping_watchlist_id_fkey FOREIGN KEY (watchlist_id) REFERENCES public.user_lists(id) ON DELETE CASCADE;
+
+
+--
 -- Name: watchlist_settings watchlist_settings_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6674,3 +6828,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210727124524);
 INSERT INTO public."schema_migrations" (version) VALUES (20210728101938);
 INSERT INTO public."schema_migrations" (version) VALUES (20210803092012);
 INSERT INTO public."schema_migrations" (version) VALUES (20210816150914);
+INSERT INTO public."schema_migrations" (version) VALUES (20210907104846);
+INSERT INTO public."schema_migrations" (version) VALUES (20210907104919);

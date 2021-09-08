@@ -1,4 +1,4 @@
-defmodule Sanbase.Timeline.TimelineEventComment do
+defmodule Sanbase.Comment.ChartConfigurationComment do
   @moduledoc ~s"""
   A mapping table connecting comments and timeline events.
 
@@ -8,20 +8,17 @@ defmodule Sanbase.Timeline.TimelineEventComment do
 
   import Ecto.Changeset
 
-  alias Sanbase.Comment
-  alias Sanbase.Timeline.TimelineEvent
-
-  schema "timeline_event_comments_mapping" do
-    belongs_to(:comment, Comment)
-    belongs_to(:timeline_event, TimelineEvent)
+  schema "chart_configuration_comments_mapping" do
+    belongs_to(:comment, Sanbase.Comment)
+    belongs_to(:chart_configuration, Sanbase.Chart.Configuration)
 
     timestamps()
   end
 
   def changeset(%__MODULE__{} = mapping, attrs \\ %{}) do
     mapping
-    |> cast(attrs, [:timeline_event_id, :comment_id])
-    |> validate_required([:timeline_event_id, :comment_id])
+    |> cast(attrs, [:chart_configuration_id, :comment_id])
+    |> validate_required([:chart_configuration_id, :comment_id])
     |> unique_constraint(:comment_id)
   end
 end

@@ -97,5 +97,9 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:settings, :watchlist_settings) do
       cache_resolve(&UserListResolver.settings/3, honor_do_not_cache_flag: true)
     end
+
+    field :comments_count, :integer do
+      resolve(&UserListResolver.comments_count/3)
+    end
   end
 end

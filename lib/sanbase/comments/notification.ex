@@ -6,8 +6,8 @@ defmodule Sanbase.Comments.Notification do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Insight.PostComment
-  alias Sanbase.Timeline.TimelineEventComment
+  alias Sanbase.Comment.PostComment
+  alias Sanbase.Comment.TimelineEventComment
   alias Sanbase.Repo
 
   @default_avatar "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png"

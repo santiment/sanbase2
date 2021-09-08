@@ -2,7 +2,7 @@ defmodule Sanbase.Insight.Post.Stats do
   import Ecto.Query
 
   alias Sanbase.Repo
-  alias Sanbase.Insight.PostComment
+  alias Sanbase.Comment.PostComment
   alias Sanbase.Insight.Post
 
   def post_id_to_comments_count() do

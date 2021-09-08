@@ -7,12 +7,25 @@ defmodule Sanbase.Comments.EntityComment do
 
   alias Sanbase.Repo
   alias Sanbase.Comment
-  alias Sanbase.Timeline.TimelineEventComment
-  alias Sanbase.Insight.PostComment
-  alias Sanbase.ShortUrl.ShortUrlComment
-  alias Sanbase.BlockchainAddress.BlockchainAddressComment
-  alias Sanbase.WalletHunters.WalletHuntersProposalComment
 
+  alias Sanbase.Comment.{
+    BlockchainAddressComment,
+    ChartConfigurationComment,
+    PostComment,
+    ShortUrlComment,
+    TimelineEventComment,
+    WalletHuntersProposalComment,
+    WatchlistComment
+  }
+
+  @type comment_struct ::
+          %BlockchainAddressComment{}
+          | %ChartConfigurationComment{}
+          | %PostComment{}
+          | %ShortUrlComment{}
+          | %TimelineEventComment{}
+          | %WalletHuntersProposalComment{}
+          | %WatchlistComment{}
   @type entity ::
           :insight | :timeline_event | :short_url | :blockchain_address | :wallet_hunters_proposal
 
@@ -42,16 +55,16 @@ defmodule Sanbase.Comments.EntityComment do
     |> emit_event(:create_comment, %{entity: entity})
   end
 
-  @spec link(:insight, non_neg_integer(), non_neg_integer()) ::
-          {:ok, %PostComment{}} | {:error, Ecto.Changeset.t()}
+  @spec link(entity, non_neg_integer(), non_neg_integer()) ::
+          {:ok, comment_struct} | {:error, Ecto.Changeset.t()}
+  def link(entity_type, entity_id, comment_id)
+
   def link(:insight, entity_id, comment_id) do
     %PostComment{}
     |> PostComment.changeset(%{comment_id: comment_id, post_id: entity_id})
     |> Repo.insert()
   end
 
-  @spec link(:timeline_event, non_neg_integer(), non_neg_integer()) ::
-          {:ok, %TimelineEventComment{}} | {:error, Ecto.Changeset.t()}
   def link(:timeline_event, entity_id, comment_id) do
     %TimelineEventComment{}
     |> TimelineEventComment.changeset(%{
@@ -61,8 +74,6 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.insert()
   end
 
-  @spec link(:blockchain_address, non_neg_integer(), non_neg_integer()) ::
-          {:ok, %BlockchainAddressComment{}} | {:error, Ecto.Changeset.t()}
   def link(:blockchain_address, entity_id, comment_id) do
     %BlockchainAddressComment{}
     |> BlockchainAddressComment.changeset(%{
@@ -72,8 +83,6 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.insert()
   end
 
-  @spec link(:wallet_hunters_proposal, non_neg_integer(), non_neg_integer()) ::
-          {:ok, %WalletHuntersProposalComment{}} | {:error, Ecto.Changeset.t()}
   def link(:wallet_hunters_proposal, entity_id, comment_id) do
     %WalletHuntersProposalComment{}
     |> WalletHuntersProposalComment.changeset(%{
@@ -83,11 +92,24 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.insert()
   end
 
-  @spec link(:short_url, non_neg_integer(), non_neg_integer()) ::
-          {:ok, %ShortUrlComment{}} | {:error, Ecto.Changeset.t()}
   def link(:short_url, entity_id, comment_id) do
     %ShortUrlComment{}
     |> ShortUrlComment.changeset(%{comment_id: comment_id, short_url_id: entity_id})
+    |> Repo.insert()
+  end
+
+  def link(:watchlist, entity_id, comment_id) do
+    %WatchlistComment{}
+    |> WatchlistComment.changeset(%{comment_id: comment_id, watchlist_id: entity_id})
+    |> Repo.insert()
+  end
+
+  def link(:chart_configuration, entity_id, comment_id) do
+    %ChartConfigurationComment{}
+    |> ChartConfigurationComment.changeset(%{
+      comment_id: comment_id,
+      chart_configuration_id: entity_id
+    })
     |> Repo.insert()
   end
 
@@ -151,6 +173,22 @@ defmodule Sanbase.Comments.EntityComment do
         |> Map.put(singular_entity, value)
       end)
     end)
+  end
+
+  defp entity_comments_query(:watchlist, entity_id) do
+    from(
+      comment in WatchlistComment,
+      preload: [:comment, comment: :user]
+    )
+    |> maybe_add_entity_id_clause(:watchlist_id, entity_id)
+  end
+
+  defp entity_comments_query(:chart_configuration, entity_id) do
+    from(
+      comment in ChartConfigurationComment,
+      preload: [:comment, comment: :user]
+    )
+    |> maybe_add_entity_id_clause(:chart_configuration_id, entity_id)
   end
 
   defp entity_comments_query(:timeline_event, entity_id) do

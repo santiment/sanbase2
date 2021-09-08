@@ -18,8 +18,55 @@ defmodule Sanbase.CommentTest do
       EntityComment.get_comments(@insight_entity_type, post.id, %{cursor: nil, limit: 100})
 
     assert length(post_comments) == 1
-    [%{comment: %{id: post_comment_id}}] = post_comments
+    assert [%{comment: %{id: post_comment_id}}] = post_comments
     assert comment.id == post_comment_id
+  end
+
+  test "add a comment to a watchlist" do
+    user = insert(:user)
+
+    watchlist = insert(:watchlist, user: user)
+
+    {:ok, comment} =
+      EntityComment.create_and_link(
+        :watchlist,
+        watchlist.id,
+        user.id,
+        nil,
+        "some comment"
+      )
+
+    watchlist_comments =
+      EntityComment.get_comments(:watchlist, watchlist.id, %{cursor: nil, limit: 100})
+
+    assert length(watchlist_comments) == 1
+    assert [%{comment: %{id: watchlist_id}}] = watchlist_comments
+    assert comment.id == watchlist_id
+  end
+
+  test "add a comment to a chart configuration" do
+    user = insert(:user)
+
+    chart_configuration = insert(:chart_configuration, user: user)
+
+    {:ok, comment} =
+      EntityComment.create_and_link(
+        :chart_configuration,
+        chart_configuration.id,
+        user.id,
+        nil,
+        "some comment"
+      )
+
+    chart_configuration_comments =
+      EntityComment.get_comments(:chart_configuration, chart_configuration.id, %{
+        cursor: nil,
+        limit: 100
+      })
+
+    assert length(chart_configuration_comments) == 1
+    assert [%{comment: %{id: chart_configuration_id}}] = chart_configuration_comments
+    assert comment.id == chart_configuration_id
   end
 
   test "add a comment to a wallet hunters proposal" do

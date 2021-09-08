@@ -1,6 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
+  import Absinthe.Resolution.Helpers, except: [async: 1]
+
   alias Sanbase.Chart.Configuration
   alias Sanbase.Accounts.User
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
 
@@ -63,6 +66,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
         %{context: %{auth: %{current_user: user}}}
       ) do
     Configuration.delete(id, user.id)
+  end
+
+  def comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :chart_configuration_comments_count, id)
+    |> on_load(fn loader ->
+      count = Dataloader.get(loader, SanbaseDataloader, :chart_configuration_comments_count, id)
+      {:ok, count || 0}
+    end)
   end
 
   # Private functions

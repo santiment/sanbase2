@@ -84,14 +84,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
     Sanbase.WalletHunters.Proposal.fetch_by_proposal_id(id)
   end
 
-  def proposal_id(%{id: id}, _args, %{context: %{loader: loader}}) do
-    loader
-    |> Dataloader.load(SanbaseDataloader, :comment_proposal_id, id)
-    |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :comment_proposal_id, id)}
-    end)
-  end
-
   def comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :wallet_hunters_proposals_comments_count, id)

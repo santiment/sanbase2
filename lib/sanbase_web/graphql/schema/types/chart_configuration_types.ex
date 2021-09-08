@@ -1,8 +1,9 @@
-defmodule SanbaseWeb.Graphql.ProjectChartTypes do
+defmodule SanbaseWeb.Graphql.ChartConfigurationTypes do
   use Absinthe.Schema.Notation
   import Absinthe.Resolution.Helpers, only: [dataloader: 1]
 
   alias SanbaseWeb.Graphql.SanbaseRepo
+  alias SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver
 
   input_object :project_chart_input_object do
     field(:title, :string)
@@ -34,5 +35,9 @@ defmodule SanbaseWeb.Graphql.ProjectChartTypes do
 
     field(:inserted_at, :datetime)
     field(:updated_at, :datetime)
+
+    field :comments_count, :integer do
+      resolve(&ChartConfigurationResolver.comments_count/3)
+    end
   end
 end

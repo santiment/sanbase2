@@ -1,9 +1,13 @@
-defmodule SanbaseWeb.Graphql.WalletHuntersProposalCommentApiTest do
+defmodule SanbaseWeb.Graphql.WalletHuntersProposalCommentsApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.CommentsApiHelper
+
+  alias Sanbase.WalletHunters.Proposal
+  @opts [entity_type: :wallet_hunters_proposal, extra_fields: ["proposalId"]]
 
   setup do
     clean_task_supervisor_children()
@@ -23,15 +27,34 @@ defmodule SanbaseWeb.Graphql.WalletHuntersProposalCommentApiTest do
     %{conn: conn, user: user, proposal: proposal}
   end
 
+  test "commentsCount on a wallet hunters proposal", context do
+    %{conn: conn, proposal: proposal} = context
+
+    # Mock to avoid a parity call
+    Sanbase.Mock.prepare_mock2(&Proposal.fetch_by_proposal_id/1, {:ok, proposal})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      assert comments_count(conn, proposal.id) == 0
+
+      create_comment(conn, proposal.id, "some content", @opts)
+      assert comments_count(conn, proposal.id) == 1
+
+      create_comment(conn, proposal.id, "some content", @opts)
+      create_comment(conn, proposal.id, "some content", @opts)
+      create_comment(conn, proposal.id, "some content", @opts)
+      assert comments_count(conn, proposal.id) == 4
+
+      create_comment(conn, proposal.id, "some content", @opts)
+      assert comments_count(conn, proposal.id) == 5
+    end)
+  end
+
   test "comment a wallet hunters proposal", context do
     %{proposal: proposal, conn: conn, user: user} = context
     other_user_conn = setup_jwt_auth(build_conn(), insert(:user))
 
     content = "nice proposal"
-
-    comment = create_comment(conn, proposal.id, nil, content)
-
-    comments = proposal_comments(other_user_conn, proposal.id)
+    comment = create_comment(conn, proposal.id, content, @opts)
+    comments = get_comments(other_user_conn, proposal.id, @opts)
 
     assert comment["proposalId"] |> Sanbase.Math.to_integer() == proposal.id
     assert comment["content"] == content
@@ -49,20 +72,14 @@ defmodule SanbaseWeb.Graphql.WalletHuntersProposalCommentApiTest do
     content = "nice proposal"
     new_content = "updated content"
 
-    comment = create_comment(conn, proposal.id, nil, content)
-    updated_comment = update_comment(conn, comment["id"], new_content)
-    comments = proposal_comments(conn, proposal.id)
+    comment = create_comment(conn, proposal.id, content, @opts)
+    updated_comment = update_comment(conn, comment["id"], new_content, @opts)
+    comments = get_comments(conn, proposal.id, @opts)
 
     assert comment["editedAt"] == nil
     assert updated_comment["editedAt"] != nil
-
-    assert Sanbase.TestUtils.datetime_close_to(
-             updated_comment["editedAt"]
-             |> NaiveDateTime.from_iso8601!(),
-             Timex.now(),
-             1,
-             :seconds
-           ) == true
+    edited_at = NaiveDateTime.from_iso8601!(updated_comment["editedAt"])
+    assert Sanbase.TestUtils.datetime_close_to(edited_at, Timex.now(), 1, :seconds) == true
 
     assert comment["content"] == content
     assert updated_comment["content"] == new_content
@@ -75,10 +92,10 @@ defmodule SanbaseWeb.Graphql.WalletHuntersProposalCommentApiTest do
     fallback_user = insert(:insights_fallback_user)
 
     content = "nice proposal"
-    comment = create_comment(conn, proposal.id, nil, content)
-    delete_comment(conn, comment["id"])
+    comment = create_comment(conn, proposal.id, content, @opts)
+    delete_comment(conn, comment["id"], @opts)
 
-    comments = proposal_comments(conn, proposal.id)
+    comments = get_comments(conn, proposal.id, @opts)
     proposal_comment = comments |> List.first()
 
     assert proposal_comment["user"]["id"] != comment["user"]["id"]
@@ -90,12 +107,16 @@ defmodule SanbaseWeb.Graphql.WalletHuntersProposalCommentApiTest do
 
   test "create a subcomment", context do
     %{conn: conn, proposal: proposal} = context
-    c1 = create_comment(conn, proposal.id, nil, "some content")
-    c2 = create_comment(conn, proposal.id, c1["id"], "other content")
-    create_comment(conn, proposal.id, c2["id"], "other content2")
+    c1 = create_comment(conn, proposal.id, "some content", @opts)
+
+    opts = Keyword.put(@opts, :parent_id, c1["id"])
+    c2 = create_comment(conn, proposal.id, "other content", opts)
+
+    opts = Keyword.put(@opts, :parent_id, c2["id"])
+    create_comment(conn, proposal.id, "other content2", opts)
 
     [comment, subcomment1, subcomment2] =
-      proposal_comments(conn, proposal.id)
+      get_comments(conn, proposal.id, @opts)
       |> Enum.sort_by(&(&1["id"] |> String.to_integer()))
 
     assert comment["parentId"] == nil
@@ -108,84 +129,18 @@ defmodule SanbaseWeb.Graphql.WalletHuntersProposalCommentApiTest do
     assert subcomment2["rootParentId"] == comment["id"]
   end
 
-  defp create_comment(conn, proposal_id, parent_id, content) do
-    mutation = """
-    mutation {
-      createComment(
-        entityType: WALLET_HUNTERS_PROPOSAL
-        id: #{proposal_id}
-        parentId: #{parent_id || "null"}
-        content: "#{content}") {
-          id
-          content
-          proposalId
-          user{ id username email }
-          subcommentsCount
-          insertedAt
-          editedAt
-      }
-    }
-    """
-
-    execute_mutation(conn, mutation, "createComment")
-  end
-
-  defp update_comment(conn, comment_id, content) do
-    mutation = """
-    mutation {
-      updateComment(
-        commentId: #{comment_id}
-        content: "#{content}") {
-          id
-          content
-          proposalId
-          user{ id username email }
-          subcommentsCount
-          insertedAt
-          editedAt
-      }
-    }
-    """
-
-    execute_mutation(conn, mutation, "updateComment")
-  end
-
-  defp delete_comment(conn, comment_id) do
-    mutation = """
-    mutation {
-      deleteComment(commentId: #{comment_id}) {
-        id
-        content
-        proposalId
-        user{ id username email }
-        subcommentsCount
-        insertedAt
-        editedAt
-      }
-    }
-    """
-
-    execute_mutation(conn, mutation, "deleteComment")
-  end
-
-  defp proposal_comments(conn, proposal_id) do
+  defp comments_count(conn, post_id) do
     query = """
     {
-      comments(
-        entityType: WALLET_HUNTERS_PROPOSAL
-        id: #{proposal_id}
-        cursor: {type: BEFORE, datetime: "#{Timex.now()}"}) {
-          id
-          content
-          proposalId
-          parentId
-          rootParentId
-          user{ id username email }
-          subcommentsCount
+      walletHuntersProposal(id: #{post_id}) {
+        commentsCount
       }
     }
     """
 
-    execute_query(conn, query, "comments")
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", "walletHuntersProposal", "commentsCount"])
   end
 end

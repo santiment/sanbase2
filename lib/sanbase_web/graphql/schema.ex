@@ -52,7 +52,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.MetricTypes)
   import_types(Graphql.PaginationTypes)
   import_types(Graphql.PriceTypes)
-  import_types(Graphql.ProjectChartTypes)
+  import_types(Graphql.ChartConfigurationTypes)
   import_types(Graphql.ProjectTypes)
   import_types(Graphql.ReportTypes)
   import_types(Graphql.ResearchTypes)

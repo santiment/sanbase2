@@ -1,15 +1,18 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   require Logger
 
+  import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Async, only: [async: 1]
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   alias Sanbase.Accounts.User
   alias Sanbase.UserList
   alias Sanbase.Model.Project
+  alias Sanbase.SocialData.TrendingWords
+
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias SanbaseWeb.Graphql.Cache
-  alias Sanbase.SocialData.TrendingWords
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   @trending_words_size 10
   @trending_fields [:trending_slugs, :trending_tickers, :trending_names, :trending_projects]
@@ -111,6 +114,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
            UserList.get_blockchain_addresses(user_list) do
       {:ok, %{blockchain_addresses_count: count}}
     end
+  end
+
+  def comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :watchlist_comments_count, id)
+    |> on_load(fn loader ->
+      count = Dataloader.get(loader, SanbaseDataloader, :watchlist_comments_count, id)
+      {:ok, count || 0}
+    end)
   end
 
   # Private functions

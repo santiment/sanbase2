@@ -17,6 +17,22 @@ defmodule SanbaseWeb.Graphql.WatchlistCommentsApiTest do
     %{conn: conn, user: user, watchlist: watchlist}
   end
 
+  test "commentsCount on watchlist", context do
+    %{conn: conn, watchlist: watchlist} = context
+    assert comments_count(conn, watchlist.id) == 0
+
+    create_comment(conn, watchlist.id, "some content", @opts)
+    assert comments_count(conn, watchlist.id) == 1
+
+    create_comment(conn, watchlist.id, "some content", @opts)
+    create_comment(conn, watchlist.id, "some content", @opts)
+    create_comment(conn, watchlist.id, "some content", @opts)
+    assert comments_count(conn, watchlist.id) == 4
+
+    create_comment(conn, watchlist.id, "some content", @opts)
+    assert comments_count(conn, watchlist.id) == 5
+  end
+
   test "comment a watchlist", context do
     %{watchlist: watchlist, conn: conn, user: user} = context
     other_user_conn = setup_jwt_auth(build_conn(), insert(:user))
@@ -98,5 +114,20 @@ defmodule SanbaseWeb.Graphql.WatchlistCommentsApiTest do
 
     assert subcomment2["parentId"] == subcomment1["id"]
     assert subcomment2["rootParentId"] == comment["id"]
+  end
+
+  defp comments_count(conn, watchlist_id) do
+    query = """
+    {
+      watchlist(id: #{watchlist_id}) {
+        commentsCount
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", "watchlist", "commentsCount"])
   end
 end

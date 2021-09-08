@@ -18,6 +18,22 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationCommentsApiTest do
     %{conn: conn, user: user, chart_configuration: chart_configuration}
   end
 
+  test "commentsCount on chart configuration", context do
+    %{conn: conn, chart_configuration: chart_configuration} = context
+    assert comments_count(conn, chart_configuration.id) == 0
+
+    create_comment(conn, chart_configuration.id, "some content", @opts)
+    assert comments_count(conn, chart_configuration.id) == 1
+
+    create_comment(conn, chart_configuration.id, "some content", @opts)
+    create_comment(conn, chart_configuration.id, "some content", @opts)
+    create_comment(conn, chart_configuration.id, "some content", @opts)
+    assert comments_count(conn, chart_configuration.id) == 4
+
+    create_comment(conn, chart_configuration.id, "some content", @opts)
+    assert comments_count(conn, chart_configuration.id) == 5
+  end
+
   test "comment a chart_configuration", context do
     %{chart_configuration: chart_configuration, conn: conn, user: user} = context
     other_user_conn = setup_jwt_auth(build_conn(), insert(:user))
@@ -105,5 +121,20 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationCommentsApiTest do
 
     assert subcomment2["parentId"] == subcomment1["id"]
     assert subcomment2["rootParentId"] == comment["id"]
+  end
+
+  defp comments_count(conn, chart_configuration_id) do
+    query = """
+    {
+      chartConfiguration(id: #{chart_configuration_id}) {
+        commentsCount
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", "chartConfiguration", "commentsCount"])
   end
 end

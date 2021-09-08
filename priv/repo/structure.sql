@@ -206,8 +206,6 @@ $$;
 
 SET default_tablespace = '';
 
-SET default_table_access_method = heap;
-
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
 --
@@ -5601,7 +5599,7 @@ CREATE INDEX webinar_registrations_webinar_id_index ON public.webinar_registrati
 -- Name: oban_jobs oban_notify; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE FUNCTION public.oban_jobs_notify();
+CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE PROCEDURE public.oban_jobs_notify();
 
 
 --

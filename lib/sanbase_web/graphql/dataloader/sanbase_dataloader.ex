@@ -36,31 +36,35 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
 
   @parity_dataloader [:eth_balance]
 
-  @postgres_comment_entity_id_dataloader [
+  @postgres_comments_dataloader [
+    # comment entity id
     :comment_blockchain_address_id,
     :comment_chart_configuration_id,
     :comment_insight_id,
-    :comment_wallet_hunter_proposal_id,
     :comment_short_url_id,
     :comment_timeline_event_id,
-    :comment_watchlist_id
+    :comment_wallet_hunter_proposal_id,
+    :comment_watchlist_id,
+    # Comments count
+    :blockchain_addresses_comments_count,
+    :chart_configuration_comments_count,
+    :insights_comments_count,
+    :short_urls_comments_count,
+    :timeline_events_comments_count,
+    :wallet_hunters_proposals_comments_count,
+    :watchlist_comments_count
   ]
   @postgres_dataloader [
-    :blockchain_addresses_comments_count,
     :current_user_address_details,
     :infrastructure,
-    :insights_comments_count,
     :insights_count_per_user,
     :market_segment,
     :project_by_slug,
-    :short_urls_comments_count,
-    :timeline_events_comments_count,
     :traded_on_exchanges_count,
-    :traded_on_exchanges,
-    :wallet_hunters_proposals_comments_count
+    :traded_on_exchanges
   ]
 
-  @postgres_dataloader @postgres_dataloader ++ @postgres_comment_entity_id_dataloader
+  @postgres_dataloader @postgres_dataloader ++ @postgres_comments_dataloader
 
   def query(queryable, args) do
     cond do

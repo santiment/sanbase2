@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts.{User, EthAccount, EmailLoginAttempt}
-  alias Sanbase.Billing
 
   require Logger
 

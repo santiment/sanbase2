@@ -257,15 +257,15 @@
     "human_readable_name": "MCD Art Liquidations",
     "name": "mcd_art_liquidations",
     "signal": "mcd_art_liquidations",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "pro"
+      "SANAPI": "free",
+      "SANBASE": "free"
     }
   },
   {

@@ -219,17 +219,17 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED signals for all time", context do
-      {from, to} = from_to(4000, 10)
-      slug = context.project.slug
-      signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
-      query = signal_query(signal, slug, from, to)
+    # test "can access RESTRICTED signals for all time", context do
+    #   {from, to} = from_to(4000, 10)
+    #   slug = context.project.slug
+    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
+    #   query = signal_query(signal, slug, from, to)
 
-      result = execute_query(context.conn, query, "getSignal")
+    #   result = execute_query(context.conn, query, "getSignal")
 
-      assert_called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
-      assert result != nil
-    end
+    #   assert_called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
+    #   assert result != nil
+    # end
 
     test "can access RESTRICTED queries for all time", context do
       {from, to} = from_to(4000, 10)

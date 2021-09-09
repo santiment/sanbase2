@@ -124,6 +124,7 @@ defmodule Sanbase.Price do
     field(:volume_usd, :float)
   end
 
+  def table(), do: @table
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _), do: raise("Cannot change the asset_prices table")
 

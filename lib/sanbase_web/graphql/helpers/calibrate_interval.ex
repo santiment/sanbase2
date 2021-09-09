@@ -97,9 +97,9 @@ defmodule SanbaseWeb.Graphql.Helpers.CalibrateInterval do
   end
 
   defp rewrite_params_incomplete_data(from, to) do
-    start_of_day = Timex.beginning_of_day(Timex.now())
+    end_of_previous_day = Timex.now() |> Timex.beginning_of_day() |> Timex.shift(microseconds: -1)
 
-    case DateTime.compare(from, start_of_day) != :lt do
+    case DateTime.compare(from, end_of_previous_day) != :lt do
       true ->
         {:error,
          """
@@ -111,7 +111,9 @@ defmodule SanbaseWeb.Graphql.Helpers.CalibrateInterval do
          """}
 
       false ->
-        to = if DateTime.compare(to, start_of_day) == :gt, do: start_of_day, else: to
+        to =
+          if DateTime.compare(to, end_of_previous_day) == :gt, do: end_of_previous_day, else: to
+
         {:ok, from, to}
     end
   end

@@ -4,6 +4,7 @@
 /deps
 /*.ez
 .env*
+/.history/
 !.env.example
 !app/.env
 

@@ -40,8 +40,7 @@ config :sanbase, Oban.Scrapers,
     {Oban.Plugins.Cron,
      crontab: [
        {"0 3 * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,
-        args: %{type: "schedule_historical_jobs"}},
-       max_attempts: 10
+        args: %{type: "schedule_historical_jobs"}, max_attempts: 10}
      ]}
   ]
 

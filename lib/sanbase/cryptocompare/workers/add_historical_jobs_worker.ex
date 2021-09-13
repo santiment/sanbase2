@@ -4,7 +4,7 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
   require Logger
 
   @impl Oban.Worker
-  def perform(%{"type" => "schedule_historical_jobs"}) do
+  def perform(%Oban.Job{args: %{"type" => "schedule_historical_jobs"}}) do
     Logger.info("[Cryptocompare AddHistoricalJobsWorker] Start adding historical jobs.")
 
     Sanbase.Cryptocompare.CCCAGGPairData.schedule_previous_day_oban_jobs()

@@ -127,6 +127,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
 
     {labels_owners_filter, args} = maybe_add_labels_owners_filter(opts, args)
 
+    # Select the raw data and combine it with the partOfTotal by a UNION
     inner_query = """
     SELECT
       dt, contract, address, rank, value / pow(10, ?3) AS value,
@@ -155,22 +156,25 @@ defmodule Sanbase.Clickhouse.TopHolders do
     ) USING (dt)
     """
 
+    # Order the data by value in descending order and select one row per address
     top_addresses_query = """
     SELECT
-      max(dt) AS dt, address, anyLast(value) AS val, any(partOfTotal) AS partOfTotal
+      max(dt) AS dtMax, address, argMax(value, dt) AS val, argMax(partOfTotal, dt) AS partOfTotal
     FROM ( #{inner_query} )
     GROUP BY address
     ORDER BY val DESC
     """
 
+    # Apply (maybe) the filtering by labels and add the pagination - limit and offset
     filter_labels_query = """
     SELECT
-      dt, address, val, partOfTotal
+      dtMax AS dt, address, val, partOfTotal
     FROM ( #{top_addresses_query} )
     #{labels_owners_filter}
     LIMIT ?6 OFFSET ?7
     """
 
+    # Join with the intraday_metrics table to fetch the price_usd and add the value_usd
     query = """
     SELECT
       toUnixTimestamp(dt), address, val as value, val * price as value_usd, partOfTotal

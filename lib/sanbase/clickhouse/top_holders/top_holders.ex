@@ -127,48 +127,54 @@ defmodule Sanbase.Clickhouse.TopHolders do
 
     {labels_owners_filter, args} = maybe_add_labels_owners_filter(opts, args)
 
+    inner_query = """
+    SELECT
+      dt, contract, address, rank, value / pow(10, ?3) AS value,
+      multiIf(valueTotal > 0, value / (valueTotal / pow(10, ?3)), 0) AS partOfTotal
+    FROM (
+      SELECT *
+      FROM #{@table} FINAL
+      WHERE
+        contract = ?2
+        AND rank > 0
+        AND address NOT IN ('TOTAL', 'freeze')
+        AND dt >= toStartOfDay(toDateTime(?4))
+        AND dt <= toStartOfDay(toDateTime(?5))
+    )
+    GLOBAL ANY LEFT JOIN (
+      SELECT
+        dt,
+        sum(value) AS valueTotal
+      FROM #{@table} FINAL
+      WHERE
+        contract = ?2
+        AND address IN ('TOTAL','freeze') AND rank < 0
+        AND dt >= toStartOfDay(toDateTime(?4))
+        AND dt <= toStartOfDay(toDateTime(?5))
+      GROUP BY dt
+    ) USING (dt)
+    """
+
+    top_addresses_query = """
+    SELECT
+      max(dt) AS dt, address, anyLast(value) AS val, any(partOfTotal) AS partOfTotal
+    FROM ( #{inner_query} )
+    GROUP BY address
+    ORDER BY val DESC
+    """
+
+    filter_labels_query = """
+    SELECT
+      dt, address, val, partOfTotal
+    FROM ( #{top_addresses_query} )
+    #{labels_owners_filter}
+    LIMIT ?6 OFFSET ?7
+    """
+
     query = """
     SELECT
       toUnixTimestamp(dt), address, val as value, val * price as value_usd, partOfTotal
-    FROM (
-      SELECT
-        dt, address, val, partOfTotal
-      FROM(
-        SELECT
-          max(dt) as dt, address, anyLast(value) as val, any(partOfTotal) as partOfTotal
-        FROM (
-          SELECT
-            dt, contract, address, rank, value / pow(10, ?3) AS value,
-            multiIf(valueTotal > 0, value / (valueTotal / pow(10, ?3)), 0) AS partOfTotal
-          FROM (
-            SELECT *
-            FROM #{@table} FINAL
-            WHERE
-              contract = ?2
-              AND rank > 0
-              AND address NOT IN ('TOTAL', 'freeze')
-              AND dt >= toStartOfDay(toDateTime(?4))
-              AND dt <= toStartOfDay(toDateTime(?5))
-          )
-          GLOBAL ANY LEFT JOIN (
-            SELECT
-              dt,
-              sum(value) AS valueTotal
-            FROM #{@table} FINAL
-            WHERE
-              contract = ?2
-              AND address IN ('TOTAL','freeze') AND rank < 0
-              AND dt >= toStartOfDay(toDateTime(?4))
-              AND dt <= toStartOfDay(toDateTime(?5))
-            GROUP BY dt
-          ) USING (dt)
-        )
-        GROUP BY address
-        ORDER BY val DESC
-      )
-      #{labels_owners_filter}
-      LIMIT ?6 OFFSET ?7
-    )
+    FROM ( #{filter_labels_query} )
     GLOBAL ANY JOIN (
       SELECT
         toStartOfDay(dt) as dt,

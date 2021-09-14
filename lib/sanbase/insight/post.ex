@@ -17,6 +17,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Chart.Configuration
 
   require Logger
+  require Sanbase.Utils.Config, as: Config
 
   @preloads [:user, :images, :tags, :chart_configuration_for_event]
   # state
@@ -92,6 +93,50 @@ defmodule Sanbase.Insight.Post do
       end)
 
     {:ok, map}
+  end
+
+  def can_create?(user_id) do
+    now = NaiveDateTime.utc_now()
+
+    map =
+      from(p in __MODULE__,
+        where: p.user_id == ^user_id,
+        select: %{
+          day:
+            fragment(
+              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
+              ^NaiveDateTime.add(now, -86_400, :second)
+            ),
+          hour:
+            fragment(
+              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
+              ^NaiveDateTime.add(now, -3600, :second)
+            ),
+          minute:
+            fragment(
+              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
+              ^NaiveDateTime.add(now, -60, :second)
+            )
+        }
+      )
+      |> Repo.one()
+
+    limit_day = Config.get(:creation_limit_day, 20)
+    limit_hour = Config.get(:creation_limit_hour, 10)
+    limit_minute = Config.get(:creation_limit_minute, 1)
+
+    error_msg = fn
+      1, period -> {:error, "Cannot create more than 1 insight per #{period}"}
+      limit, period -> {:error, "Cannot create more than #{limit} insights per #{period}"}
+    end
+
+    cond do
+      map.minute >= limit_minute -> error_msg.(limit_minute, "minute")
+      map.hour >= limit_hour -> error_msg.(limit_hour, "hour")
+      map.day >= limit_day -> error_msg.(limit_day, "day")
+      # return an :ok tuple so it can be used inside Ecto.Multi
+      true -> {:ok, true}
+    end
   end
 
   # Needed by ex_admin

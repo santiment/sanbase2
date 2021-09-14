@@ -105,6 +105,20 @@ config :sanbase, Sanbase.Telegram,
   telegram_endpoint: "random_string",
   token: "token"
 
-if File.exists?("config/test.secret.exs") do
+# Increase the limits in test env so they are not hit unless
+# the limit is intentionally lowered by using Application.put_env
+config :sanbase, Sanbase.Comment,
+  creation_limit_hour: 1000,
+  creation_limit_day: 1000,
+  creation_limit_minute: 1000
+
+# Increase the limits in test env so they are not hit unless
+# the limit is intentionally lowered by using Application.put_env
+config :sanbase, Sanbase.Insight.Post,
+  creation_limit_hour: 1000,
+  creation_limit_day: 1000,
+  creation_limit_minute: 1000
+
+if(File.exists?("config/test.secret.exs")) do
   import_config "test.secret.exs"
 end

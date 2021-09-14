@@ -40,6 +40,10 @@ defmodule Sanbase.Comments.EntityComment do
   def create_and_link(entity, entity_id, user_id, parent_id, content) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(
+      :check_can_create_comment,
+      fn _repo, _changes -> Comment.can_create?(user_id) end
+    )
+    |> Ecto.Multi.run(
       :create_comment,
       fn _repo, _changes -> Comment.create(user_id, content, parent_id) end
     )

@@ -137,7 +137,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   end
 
   def create_post(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    Post.create(user, args)
+    case Post.can_create?(user.id) do
+      {:ok, _} -> Post.create(user, args)
+      {:error, error} -> {:error, error}
+    end
   end
 
   def update_post(_root, %{id: post_id} = args, %{

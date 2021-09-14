@@ -18,6 +18,57 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     %{conn: conn, user: user, post: post}
   end
 
+  describe "Insight creation rate limit" do
+    setup do
+      # on exit revert to the original test env that is higher than
+      # on prod so we avoid hitting rate limits
+      env = Application.get_env(:sanbase, Sanbase.Comment)
+      on_exit(fn -> Application.put_env(:sanbase, Sanbase.Comment, env) end)
+
+      []
+    end
+
+    test "creation rate limit per minute is enforced", context do
+      %{conn: conn, post: post} = context
+
+      env = Application.get_env(:sanbase, Sanbase.Comment)
+      env = Keyword.put(env, :creation_limit_minute, 2)
+      Application.put_env(:sanbase, Sanbase.Comment, env)
+
+      assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
+      assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
+
+      create_comment_with_error(conn, post.id, "some content", @opts) =~
+        "Cannot create more than 2 comment per minute"
+    end
+
+    test "creation rate limit per hour is enforced", context do
+      %{conn: conn, post: post} = context
+
+      env = Application.get_env(:sanbase, Sanbase.Comment)
+      env = Keyword.put(env, :creation_limit_hour, 1)
+      Application.put_env(:sanbase, Sanbase.Comment, env)
+
+      assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
+
+      create_comment_with_error(conn, post.id, "some content", @opts) =~
+        "Cannot create more than 1 comment per hour"
+    end
+
+    test "creation rate limit per day is enforced", context do
+      %{conn: conn, post: post} = context
+
+      env = Application.get_env(:sanbase, Sanbase.Comment)
+      env = Keyword.put(env, :creation_limit_day, 1)
+      Application.put_env(:sanbase, Sanbase.Comment, env)
+
+      assert %{"id" => _} = create_comment(conn, post.id, "some content", @opts)
+
+      create_comment_with_error(conn, post.id, "some content", @opts) =~
+        "Cannot create more than 1 comment per day"
+    end
+  end
+
   test "commentsCount on insights", context do
     %{conn: conn, post: post} = context
     assert comments_count(conn, post.id) == 0

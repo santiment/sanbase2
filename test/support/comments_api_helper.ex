@@ -94,7 +94,7 @@ defmodule Sanbase.CommentsApiHelper do
       Keyword.get(opts, :extra_fields, [])
       |> Enum.join("\n")
 
-    mutation = """
+    """
     mutation {
       createComment(
         entityType: #{entity_type}

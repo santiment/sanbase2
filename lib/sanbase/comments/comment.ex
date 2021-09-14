@@ -93,47 +93,17 @@ defmodule Sanbase.Comment do
   end
 
   def can_create?(user_id) do
-    now = NaiveDateTime.utc_now()
+    limits = %{
+      day: Config.get(:creation_limit_day, 50),
+      hour: Config.get(:creation_limit_hour, 20),
+      minute: Config.get(:creation_limit_minute, 2)
+    }
 
-    map =
-      from(p in __MODULE__,
-        where: p.user_id == ^user_id,
-        select: %{
-          day:
-            fragment(
-              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
-              ^NaiveDateTime.add(now, -86_400, :second)
-            ),
-          hour:
-            fragment(
-              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
-              ^NaiveDateTime.add(now, -3600, :second)
-            ),
-          minute:
-            fragment(
-              "COUNT(*) FILTER (WHERE inserted_at >= ?)",
-              ^NaiveDateTime.add(now, -60, :second)
-            )
-        }
-      )
-      |> Repo.one()
-
-    limit_day = Config.get(:creation_limit_day, 50)
-    limit_hour = Config.get(:creation_limit_hour, 20)
-    limit_minute = Config.get(:creation_limit_minute, 2)
-
-    error_msg = fn
-      1, period -> {:error, "Cannot create more than 1 comment per #{period}"}
-      limit, period -> {:error, "Cannot create more than #{limit} comments per #{period}"}
-    end
-
-    cond do
-      map.day >= limit_day -> error_msg.(limit_day, "day")
-      map.hour >= limit_hour -> error_msg.(limit_hour, "hour")
-      map.minute >= limit_minute -> error_msg.(limit_minute, "minute")
-      # return an :ok tuple so it can be used inside Ecto.Multi
-      true -> {:ok, true}
-    end
+    Sanbase.Ecto.Common.can_create?(__MODULE__, user_id,
+      limits: limits,
+      entity_singular: "comment",
+      entity_plural: "comments"
+    )
   end
 
   def get_subcomments(comment_id, limit) do

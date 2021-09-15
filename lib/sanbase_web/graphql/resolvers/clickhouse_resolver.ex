@@ -15,6 +15,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   require Logger
 
+  def realtime_top_holders(_root, %{slug: slug, page: page, page_size: page_size}, _resolution) do
+    opts = [page: page, page_size: page_size]
+
+    case TopHolders.realtime_top_holders(slug, opts) do
+      {:ok, top_holders} -> {:ok, top_holders}
+      {:error, error} -> {:error, handle_graphql_error("Realtime Top Holders", slug, error)}
+    end
+  end
+
   def top_holders(
         _root,
         %{slug: slug, from: from, to: to, page: page, page_size: page_size} = args,

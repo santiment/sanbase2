@@ -25,21 +25,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     owners = Map.get(args, :owners, :all)
     opts = [page: page, page_size: page_size, labels: labels, owners: owners]
 
-    with {:ok, contract, token_decimals} <-
-           Project.contract_info_by_slug(slug, contract_type: :latest_onchain_contract),
-         {:ok, top_holders} <-
-           TopHolders.top_holders(
-             slug,
-             contract,
-             token_decimals,
-             from,
-             to,
-             opts
-           ) do
-      {:ok, top_holders}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error("Top Holders", slug, error)}
+    case TopHolders.top_holders(slug, from, to, opts) do
+      {:ok, top_holders} -> {:ok, top_holders}
+      {:error, error} -> {:error, handle_graphql_error("Top Holders", slug, error)}
     end
   end
 
@@ -54,19 +42,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         },
         _resolution
       ) do
-    with {:ok, contract, token_decimals} <-
-           Project.contract_info_by_slug(slug, contract_type: :latest_onchain_contract),
-         {:ok, percent_of_total_supply} <-
-           TopHolders.percent_of_total_supply(
-             contract,
-             token_decimals,
-             number_of_holders,
-             from,
-             to,
-             interval
-           ) do
-      {:ok, percent_of_total_supply}
-    else
+    case TopHolders.percent_of_total_supply(slug, number_of_holders, from, to, interval) do
+      {:ok, percent_of_total_supply} ->
+        {:ok, percent_of_total_supply}
+
       {:error, error} ->
         {:error, handle_graphql_error("Top Holders - percent of total supply", slug, error)}
     end

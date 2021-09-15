@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
 
   test "returns data from TopHolders calculation", context do
     with_mock TopHolders,
-      percent_of_total_supply: fn _, _, _, _, _, _ ->
+      percent_of_total_supply: fn _, _, _, _, _ ->
         {:ok,
          [
            %{
@@ -53,8 +53,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
 
       assert_called(
         TopHolders.percent_of_total_supply(
-          context.contract,
-          context.token_decimals,
+          context.slug,
           context.number_of_holders,
           context.from,
           context.to,
@@ -80,14 +79,13 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
   end
 
   test "returns empty array when there is no data", context do
-    with_mock TopHolders, percent_of_total_supply: fn _, _, _, _, _, _ -> {:ok, []} end do
+    with_mock TopHolders, percent_of_total_supply: fn _, _, _, _, _ -> {:ok, []} end do
       response = execute_query(context)
       holders = parse_response(response)
 
       assert_called(
         TopHolders.percent_of_total_supply(
-          context.contract,
-          context.token_decimals,
+          context.slug,
           context.number_of_holders,
           context.from,
           context.to,
@@ -103,7 +101,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
     error = "Some error description here"
 
     with_mock TopHolders,
-      percent_of_total_supply: fn _, _, _, _, _, _ -> {:error, error} end do
+      percent_of_total_supply: fn _, _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
                response = execute_query(context)
                holders = parse_response(response)
@@ -118,7 +116,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
 
     with_mock TopHolders,
               [:passthrough],
-              percent_of_total_supply: fn _, _, _, _, _, _ ->
+              percent_of_total_supply: fn _, _, _, _, _ ->
                 {:error, error}
               end do
       response = execute_query(context)

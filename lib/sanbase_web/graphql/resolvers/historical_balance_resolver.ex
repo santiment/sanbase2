@@ -81,21 +81,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     end)
   end
 
-  defp get_labelled_balance_slug_from_args(%{selector: %{slug: slug}})
-       when is_binary(slug) do
-    if slug in ["bitcoin", "ethereum"] do
-      {:ok, slug}
-    else
-      {:error,
-       "Only 'ethereum' and 'bitcoin' slugs are supported in the label historical balance changes."}
-    end
-  end
-
-  defp get_labelled_balance_slug_from_args(_) do
-    {:error,
-     "The label historical balance changes field requires a 'slug' argument in the selector."}
-  end
-
   def transaction_volume_per_address(
         _root,
         %{

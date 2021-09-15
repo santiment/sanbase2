@@ -144,13 +144,16 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
        when is_binary(contract_address) do
     label = if not Project.has_main_contract_addresses?(project), do: "main"
 
-    project
-    |> Project.ContractAddress.add_contract(
-      project_info_map
-      |> Map.put(:label, label)
-      |> Map.put(:address, contract_address)
-      |> Map.put(:decimals, project_info_map.token_decimals)
-    )
+    contract_attrs = %{
+      label: label,
+      address: contract_address,
+      decimals: project_info_map[:token_decimals]
+    }
+
+    # This returns a contract address, not a project. Do not use
+    # the result of this but instead force the preload of the contracts
+    # in the next call
+    {:ok, _} = Project.ContractAddress.add_contract(project, contract_attrs)
 
     # The `project` won't have an up-to date list of contracts otherwise
     Repo.preload(project, [:contract_addresses], force: true)

@@ -28,7 +28,7 @@ defmodule Sanbase.Metric do
 
   @type datetime :: DateTime.t()
   @type metric :: Type.metric()
-  @type selector :: Type.metric()
+  @type selector :: Type.selector()
   @type interval :: Type.interval()
   @type operation :: Type.operation()
   @type threshold :: Type.threshold()

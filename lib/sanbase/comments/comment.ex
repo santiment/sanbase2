@@ -96,7 +96,7 @@ defmodule Sanbase.Comment do
     limits = %{
       day: Config.get(:creation_limit_day, 50),
       hour: Config.get(:creation_limit_hour, 20),
-      minute: Config.get(:creation_limit_minute, 2)
+      minute: Config.get(:creation_limit_minute, 3)
     }
 
     Sanbase.Ecto.Common.can_create?(__MODULE__, user_id,

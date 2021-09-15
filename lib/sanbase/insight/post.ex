@@ -99,7 +99,7 @@ defmodule Sanbase.Insight.Post do
     limits = %{
       day: Config.get(:creation_limit_day, 20),
       hour: Config.get(:creation_limit_hour, 10),
-      minute: Config.get(:creation_limit_minute, 1)
+      minute: Config.get(:creation_limit_minute, 3)
     }
 
     Sanbase.Ecto.Common.can_create?(__MODULE__, user_id,

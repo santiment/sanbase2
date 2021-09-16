@@ -222,7 +222,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can't access metric with min plan PRO", context do
       {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
-      metric = "mvrv_long_short_diff_usd"
+      metric = "withdrawal_balance"
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       error_message = execute_query_with_error(context.conn, query, "getMetric")

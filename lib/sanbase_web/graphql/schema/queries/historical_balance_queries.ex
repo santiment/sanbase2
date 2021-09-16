@@ -3,8 +3,7 @@ defmodule SanbaseWeb.Graphql.Schema.HistoricalBalanceQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver
-
+  alias SanbaseWeb.Graphql.Resolvers.{HistoricalBalanceResolver, BlockchainAddressResolver}
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
@@ -106,7 +105,22 @@ defmodule SanbaseWeb.Graphql.Schema.HistoricalBalanceQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
-      cache_resolve(&HistoricalBalanceResolver.transaction_volume_per_address/3)
+      cache_resolve(&BlockchainAddressResolver.transaction_volume_per_address/3)
+    end
+
+    field :blockchain_address_transaction_volume_over_time,
+          list_of(:combined_address_transaction_volume_over_time) do
+      meta(access: :free)
+
+      arg(:selector, :historical_balance_selector)
+      arg(:addresses, list_of(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:interval))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+      cache_resolve(&BlockchainAddressResolver.blockchain_address_transaction_volume_over_time/3)
     end
 
     @desc """

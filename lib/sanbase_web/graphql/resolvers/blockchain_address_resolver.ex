@@ -17,6 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Clickhouse.{Label, MarkExchanges}
+  alias Sanbase.Model.Project
   alias Sanbase.Transfers
 
   @recent_transactions_type_map %{
@@ -44,7 +45,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
 
     with {:ok, transfers} <-
            Transfers.top_wallet_transfers(slug, address, from, to, page, page_size, type),
-         {:ok, _, _, infr} <- Sanbase.Model.Project.contract_info_infrastructure_by_slug(slug),
+         {:ok, _, _, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          {:ok, transfers} <- transform_address_to_map(transfers, infr),
          {:ok, transfers} <- Label.add_labels(slug, transfers) do
       {:ok, transfers}
@@ -58,8 +59,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
       ) do
     %{page: page, page_size: page_size} = args_to_page_args(args)
 
-    with {:ok, transfers} <- Sanbase.Transfers.top_transfers(slug, from, to, page, page_size),
-         {:ok, _, _, infr} <- Sanbase.Model.Project.contract_info_infrastructure_by_slug(slug),
+    with {:ok, transfers} <- Transfers.top_transfers(slug, from, to, page, page_size),
+         {:ok, _, _, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          {:ok, transfers} <- transform_address_to_map(transfers, infr),
          {:ok, transfers} <- Label.add_labels(slug, transfers) do
       {:ok, transfers}
@@ -98,6 +99,35 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
          {:ok, changes} <- Label.add_labels(infrastructure_to_blockchain(infr), changes) do
       {:ok, changes}
     end
+  end
+
+  def blockchain_address_transaction_volume_over_time(
+        _root,
+        %{selector: %{slug: slug}, from: from, to: to, interval: interval, addresses: addresses},
+        _resolution
+      ) do
+    Transfers.blockchain_address_transaction_volume_over_time(slug, addresses, from, to, intrval)
+  end
+
+  def transaction_volume_per_address(
+        _root,
+        %{selector: %{slug: slug} = selector, from: from, to: to, addresses: addresses},
+        _resolution
+      ) do
+    Transfers.blockchain_address_transaction_volume(slug, addresses, from, to)
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Historical Balance Change per Address",
+        inspect(selector),
+        error,
+        description: "selector"
+      )
+    end)
+  end
+
+  def transaction_volume_per_address(_root, _args, _resolution) do
+    {:error,
+     "Transaction volume per address is currently supported only for selectors with infrastructure ETH and a slug"}
   end
 
   def recent_transactions(

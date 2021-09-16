@@ -115,6 +115,9 @@ defmodule Sanbase.Transfers.EthTransfers do
     end)
   end
 
+  def blockchain_address_transaction_volume_over_time(addresses, from, to, interval) do
+  end
+
   # Private functions
 
   defp top_wallet_transfers_query(wallets, from, to, page, page_size, type) do

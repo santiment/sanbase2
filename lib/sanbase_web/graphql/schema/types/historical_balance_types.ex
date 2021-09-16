@@ -32,6 +32,13 @@ defmodule SanbaseWeb.Graphql.HistoricalBalanceTypes do
     field(:transaction_volume_total, non_null(:float))
   end
 
+  object :combined_address_transaction_volume_over_time do
+    field(:datetime, non_null(:datetime))
+    field(:transaction_volume_inflow, non_null(:float))
+    field(:transaction_volume_outflow, non_null(:float))
+    field(:transaction_volume_total, non_null(:float))
+  end
+
   input_object :address_selector_input_object do
     field(:infrastructure, non_null(:string))
     field(:address, non_null(:string))

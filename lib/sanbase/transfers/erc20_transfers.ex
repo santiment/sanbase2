@@ -122,51 +122,17 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     )
   end
 
-  def transaction_volume_per_address(addresses, contract, from, to, decimals \\ 0) do
-    query = """
-    SELECT
-      address,
-      SUM(incoming) AS incoming,
-      SUM(outgoing) AS outgoing
-    FROM (
-      SELECT
-        from AS address,
-        0 AS incoming,
-        value AS outgoing
-      FROM erc20_transfers FINAL
-      PREWHERE
-        from IN (?1) AND
-        assetRefId = cityHash64('ETH_' || ?2) AND
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4)
+  def blockchain_address_transaction_volume_over_time(addresses, contract, from, to, interval) do
+  end
 
-      UNION ALL
-
-      SELECT
-        to AS address,
-        value AS incoming,
-        0 AS outgoing
-      FROM erc20_transfers_to FINAL
-      PREWHERE
-        to in (?1) AND
-        assetRefId = cityHash64('ETH_' || ?2) AND
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4)
-    )
-    GROUP BY address
-    """
-
-    decimals = Sanbase.Math.ipow(10, decimals)
-    addresses = Enum.map(addresses, &String.downcase/1)
-    args = [addresses, contract, DateTime.to_unix(from), DateTime.to_unix(to)]
+  def blockchain_address_transaction_volume(addresses, contract, decimals, from, to) do
+    {query, args} =
+      blockchain_address_transaction_volume_query(addresses, contract, decimals, from, to)
 
     ClickhouseRepo.query_transform(
       query,
       args,
       fn [address, incoming, outgoing] ->
-        incoming = incoming / decimals
-        outgoing = outgoing / decimals
-
         %{
           address: address,
           transaction_volume_inflow: incoming,
@@ -366,4 +332,44 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   end
 
   defp maybe_transform({:error, _} = result), do: result
+
+  defp blockchain_address_transaction_volume_query(addresses, contract, decimals, from, to) do
+    query = """
+    WITH ( pow(10, ?3) ) AS expanded_decimals
+    SELECT
+      address,
+      SUM(incoming) / expanded_decimals AS incoming,
+      SUM(outgoing) / expanded_decimals AS outgoing
+    FROM (
+      SELECT
+        from AS address,
+        0 AS incoming,
+        value AS outgoing
+      FROM erc20_transfers FINAL
+      PREWHERE
+        from IN (?1) AND
+        assetRefId = cityHash64('ETH_' || ?2) AND
+        dt >= toDateTime(?4) AND
+        dt < toDateTime(?5)
+
+      UNION ALL
+
+      SELECT
+        to AS address,
+        value AS incoming,
+        0 AS outgoing
+      FROM erc20_transfers_to FINAL
+      PREWHERE
+        to in (?1) AND
+        assetRefId = cityHash64('ETH_' || ?2) AND
+        dt >= toDateTime(?4) AND
+        dt < toDateTime(?5)
+    )
+    GROUP BY address
+    """
+
+    args = [addresses, contract, decimals, DateTime.to_unix(from), DateTime.to_unix(to)]
+
+    {query, args}
+  end
 end

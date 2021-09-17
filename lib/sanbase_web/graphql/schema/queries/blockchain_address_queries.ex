@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
     end
 
     @desc """
-    Top transactions for the given slug and timerange arguments.
+    Top transfers for the given slug and timerange arguments.
     """
     field :top_transfers, list_of(:account_based_transfer) do
       meta(access: :free)
@@ -49,8 +49,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       cache_resolve(&BlockchainAddressResolver.top_transfers/3)
     end
 
-    @desc "Recent transactions for this address"
-    field :recent_transactions, list_of(:transaction) do
+    @desc "Recent transfers for this address"
+    field :recent_transfers, list_of(:transaction) do
       meta(access: :free)
 
       arg(:address, non_null(:string))
@@ -60,6 +60,68 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       arg(:only_sender, non_null(:boolean), default_value: true)
 
       cache_resolve(&BlockchainAddressResolver.recent_transactions/3)
+    end
+
+    @desc "Recent transfers for this address"
+    field :recent_transactions, list_of(:transaction) do
+      deprecate("Use recentTransfers instead.")
+      meta(access: :free)
+
+      arg(:address, non_null(:string))
+      arg(:type, non_null(:recent_transactions_type))
+      arg(:page, :integer)
+      arg(:page_size, :integer)
+      arg(:only_sender, non_null(:boolean), default_value: true)
+
+      cache_resolve(&BlockchainAddressResolver.recent_transactions/3)
+    end
+
+    @desc "Recent transfers for this address"
+    field :recent_transfers, list_of(:transaction) do
+      deprecate("Use recentTransfers instead.")
+      meta(access: :free)
+
+      arg(:address, non_null(:string))
+      arg(:type, non_null(:recent_transactions_type))
+      arg(:page, :integer)
+      arg(:page_size, :integer)
+      arg(:only_sender, non_null(:boolean), default_value: true)
+
+      cache_resolve(&BlockchainAddressResolver.recent_transactions/3)
+    end
+
+    @desc ~s"""
+    Ret
+    """
+    field :incoming_transfers_summary, list_of(:transfers_summary) do
+      meta(access: :free)
+
+      arg(:slug, non_null(:string))
+      arg(:address, non_null(:string))
+      arg(:page, non_null(:integer))
+      arg(:page_size, non_null(:integer))
+      arg(:order_by, non_null(:transfers_summary_order_by))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&BlockchainAddressResolver.incoming_transfers_summary/3)
+    end
+
+    @desc ~s"""
+
+    """
+    field :outgoing_transfers_summary, list_of(:transfers_summary) do
+      meta(access: :free)
+
+      arg(:slug, non_null(:string))
+      arg(:address, non_null(:string))
+      arg(:page, non_null(:integer))
+      arg(:page_size, non_null(:integer))
+      arg(:order_by, non_null(:transfers_summary_order_by))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&BlockchainAddressResolver.outgoing_transfers_summary/3)
     end
 
     field :blockchain_address, :blockchain_address_db_stored do

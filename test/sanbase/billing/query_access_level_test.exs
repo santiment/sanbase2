@@ -105,6 +105,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :projects_list_stats,
           :public_triggers_for_user,
           :recent_transactions,
+          :recent_transfers,
           :show_promoter,
           :signals_historical_activity,
           :social_volume_projects,

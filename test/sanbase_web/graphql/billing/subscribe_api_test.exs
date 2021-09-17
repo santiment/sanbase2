@@ -10,7 +10,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
   alias Sanbase.Billing.{Subscription, Product}
-  alias Sanbase.Billing.Subscription.SignUpTrial
 
   @coupon_code "test_coupon"
 
@@ -274,9 +273,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
         query = subscribe_mutation(context.plans.plan_pro_sanbase_yearly.id)
         response = execute_mutation(context.conn, query, "subscribe")
-
-        # SignUpTrial is marked as `is_finished`
-        assert SignUpTrial.by_subscription_id(subscription.id) == nil
 
         assert_called(StripeApi.delete_subscription("test_stripe_id"))
 

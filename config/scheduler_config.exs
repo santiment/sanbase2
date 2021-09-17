@@ -55,18 +55,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "@hourly",
       task: {Sanbase.Comments.Notification, :notify_users, []}
     ],
-    send_email_on_trial_day: [
-      schedule: "00 07 * * *",
-      task: {Sanbase.Billing, :send_email_on_trial_day, []}
-    ],
-    update_finished_trials: [
-      schedule: "*/10 * * * *",
-      task: {Sanbase.Billing, :update_finished_trials, []}
-    ],
-    cancel_about_to_expire_trials: [
-      schedule: "3-59/30 * * * *",
-      task: {Sanbase.Billing, :cancel_about_to_expire_trials, []}
-    ],
     sync_products_with_stripe: [
       schedule: "@reboot",
       task: {Sanbase.Billing, :sync_products_with_stripe, []}

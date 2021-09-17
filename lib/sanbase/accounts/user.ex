@@ -71,7 +71,6 @@ defmodule Sanbase.Accounts.User do
     field(:marketing_accepted, :boolean, default: false)
 
     has_one(:telegram_user_tokens, Telegram.UserToken, on_delete: :delete_all)
-    has_one(:sign_up_trial, Subscription.SignUpTrial, on_delete: :delete_all)
     has_one(:uniswap_staking, User.UniswapStaking, on_delete: :delete_all)
     has_many(:timeline_events, Sanbase.Timeline.TimelineEvent, on_delete: :delete_all)
     has_many(:eth_accounts, EthAccount, on_delete: :delete_all)

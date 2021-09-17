@@ -119,6 +119,9 @@ defmodule Sanbase.Accounts.UserTest do
         }
       ])
 
+      insert(:email_login_attempt, user: user)
+      insert(:short_url, user: user)
+
       {:ok, deleted} = Repo.delete(user)
       assert deleted.id == user.id
     end

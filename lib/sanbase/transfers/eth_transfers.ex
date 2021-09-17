@@ -84,14 +84,33 @@ defmodule Sanbase.Transfers.EthTransfers do
     end)
   end
 
+  def incoming_transfers_summary(address, from, to, limit, opts \\ []) do
+    {query, args} = incoming_transfers_summary_query(address, from, to, limit, opts)
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn [address, total, transfers_count] ->
+        %{address: address, total: total, transfers_count: transfers_count}
+      end
+    )
+  end
+
+  def outgoing_transfers_summary(address, from, to, limit, opts \\ []) do
+    {query, args} = outgoing_transfers_summary_query(address, from, to, limit, opts)
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn [address, total, transfers_count] ->
+        %{address: address, total: total, transfers_count: transfers_count}
+      end
+    )
+  end
+
   def blockchain_address_transaction_volume_over_time(addresses, from, to, interval) do
     {query, args} =
-      blockchain_address_transaction_volume_over_time_query(
-        addresses,
-        from,
-        to,
-        interval
-      )
+      blockchain_address_transaction_volume_over_time_query(addresses, from, to, interval)
 
     ClickhouseRepo.query_transform(
       query,
@@ -261,6 +280,54 @@ defmodule Sanbase.Transfers.EthTransfers do
     to = DateTime.to_unix(to)
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     args = [interval_sec, addresses, from, to]
+
+    {query, args}
+  end
+
+  defp incoming_transfers_summary_query(address, from, to, limit, opts) do
+    order_by_str =
+      case Keyword.get(opts, :order_by, :transaction_volume) do
+        :transaction_volume -> "transaction_volume"
+        :transfers_count -> "transfers_count"
+      end
+
+    query = """
+    SELECT
+      "from" AS address,
+      SUM(value) / pow(10,?1) AS transaction_volume,
+      COUNT(*) AS transfers_count
+    FROM eth_transfers_to
+    PREWHERE to = ?2 AND type != 'fee' AND dt >= toDateTime(?3) AND dt < toDateTime(?4)
+    GROUP BY "from"
+    ORDER BY #{order_by_str} DESC
+    LIMIT ?5
+    """
+
+    args = [_decimals = 18, address, from, to, limit]
+
+    {query, args}
+  end
+
+  defp outgoing_transfers_summary_query(address, from, to, limit, opts) do
+    order_by_str =
+      case Keyword.get(opts, :order_by, :transaction_volume) do
+        :transaction_volume -> "transaction_volume"
+        :transfers_count -> "transfers_count"
+      end
+
+    query = """
+    SELECT
+      "to" AS address,
+      SUM(value) / pow(10,?1) AS transaction_volume,
+      COUNT(*) AS transfers_count
+    FROM eth_transfers
+    PREWHERE from = ?2 AND type != 'fee' AND dt >= toDateTime(?3) AND dt < toDateTime(?4)
+    GROUP BY "to"
+    ORDER BY #{order_by_str} DESC
+    LIMIT ?5
+    """
+
+    args = [_decimals = 18, address, from, to, limit]
 
     {query, args}
   end

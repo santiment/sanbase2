@@ -103,10 +103,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
 
   def blockchain_address_transaction_volume_over_time(
         _root,
-        %{selector: %{slug: slug}, from: from, to: to, interval: interval, addresses: addresses},
+        %{selector: selector, from: from, to: to, interval: interval, addresses: addresses},
         _resolution
       ) do
-    Transfers.blockchain_address_transaction_volume_over_time(slug, addresses, from, to, intrval)
+    %{slug: slug} = selector
+
+    Transfers.blockchain_address_transaction_volume_over_time(slug, addresses, from, to, interval)
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Blockchain address transaction volume over time",
+        inspect(selector),
+        error,
+        description: "selector"
+      )
+    end)
   end
 
   def transaction_volume_per_address(
@@ -117,7 +127,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     Transfers.blockchain_address_transaction_volume(slug, addresses, from, to)
     |> maybe_handle_graphql_error(fn error ->
       handle_graphql_error(
-        "Historical Balance Change per Address",
+        "Transaction volume per address",
         inspect(selector),
         error,
         description: "selector"

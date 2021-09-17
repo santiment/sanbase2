@@ -297,7 +297,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
   defp eth_transfers_in() do
     [
-      %Sanbase.Transfers.EthTransfers{
+      %{
         block_number: 5_527_472,
         datetime: @datetime4,
         from_address: "0x2",
@@ -306,7 +306,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         trx_hash: "0xd4341953103d0d850d3284910213482dae5f7677c929f768d72f121e5a556fb3",
         trx_value: 20_000.0
       },
-      %Sanbase.Transfers.EthTransfers{
+      %{
         block_number: 5_569_715,
         datetime: @datetime5,
         from_address: "0x2",
@@ -320,7 +320,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
   defp eth_transfers_out() do
     [
-      %Sanbase.Transfers.EthTransfers{
+      %{
         block_number: 5_619_729,
         datetime: @datetime1,
         from_address: "0x1",
@@ -329,7 +329,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         trx_hash: "0x9a561c88bb59a1f6dfe63ed4fe036466b3a328d1d86d039377481ab7c4defe4e",
         trx_value: 500.0
       },
-      %Sanbase.Transfers.EthTransfers{
+      %{
         block_number: 5_769_021,
         datetime: @datetime2,
         from_address: "0x1",
@@ -338,7 +338,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         trx_hash: "0xccbb803caabebd3665eec49673e23ef5cd08bd0be50a2b1f1506d77a523827ce",
         trx_value: 1500.0
       },
-      %Sanbase.Transfers.EthTransfers{
+      %{
         block_number: 5_770_231,
         datetime: @datetime3,
         from_address: "0x1",
@@ -347,7 +347,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         trx_hash: "0x923f8054bf571ecd56db56f8aaf7b71b97f03ac7cf63e5cac929869cdbdd3863",
         trx_value: 2500.0
       },
-      %Sanbase.Transfers.EthTransfers{
+      %{
         block_number: 5_527_438,
         datetime: @datetime4,
         from_address: "0x1",
@@ -356,7 +356,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         trx_hash: "0xa891e1bbe292e546f40d23772b53a396ae2d37697665157bc6e019c647e9531a",
         trx_value: 3500.0
       },
-      %Sanbase.Transfers.EthTransfers{
+      %{
         block_number: 5_569_693,
         datetime: @datetime5,
         from_address: "0x1",
@@ -365,7 +365,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         trx_hash: "0x398772430a2e39f5f1addfbba56b7db1e30e5417de52c15001e157e350c18e52",
         trx_value: 5500.0
       },
-      %Sanbase.Transfers.EthTransfers{
+      %{
         block_number: 5_527_047,
         datetime: @datetime6,
         from_address: "0x1",

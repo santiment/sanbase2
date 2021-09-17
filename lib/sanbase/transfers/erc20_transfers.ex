@@ -3,21 +3,6 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   Uses ClickHouse to work with ERC20 transfers.
   """
 
-  use Ecto.Schema
-
-  @type t :: %__MODULE__{
-          datetime: %DateTime{},
-          contract: String.t(),
-          from_address: String.t(),
-          to_address: String.t(),
-          trx_hash: String.t(),
-          trx_value: float,
-          block_number: non_neg_integer,
-          trx_position: non_neg_integer,
-          log_index: non_neg_integer,
-          project: map()
-        }
-
   import Sanbase.Utils.Transform
 
   alias Sanbase.ClickhouseRepo
@@ -26,28 +11,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   require Sanbase.Utils.Config, as: Config
   defp dt_ordered_table(), do: Config.get(:dt_ordered_table)
 
-  @eth_decimals 1_000_000_000_000_000_000
-
-  # Note: The schema name is not important as it is not used.
-  @primary_key false
-  @timestamps_opts [updated_at: false]
-  schema "erc20_transfers" do
-    field(:datetime, :utc_datetime, source: :dt)
-    field(:contract, :string, primary_key: true)
-    field(:from_address, :string, primary_key: true, source: :from)
-    field(:to_address, :string, primary_key: true, source: :to)
-    field(:trx_hash, :string, source: :transactionHash)
-    field(:trx_value, :float, source: :value)
-    field(:block_number, :integer, source: :blockNumber)
-    field(:trx_position, :integer, source: :transactionPosition)
-    field(:log_index, :integer, source: :logIndex)
-    field(:project, :map)
-  end
-
-  @spec changeset(any(), any()) :: no_return()
-  def changeset(_, _) do
-    raise "Should not try to change eth daily active addresses"
-  end
+  defguard is_non_neg_integer(int) when is_integer(int) and int > 0
 
   @spec top_wallet_transfers(
           String.t(),
@@ -55,16 +19,36 @@ defmodule Sanbase.Transfers.Erc20Transfers do
           DateTime.t(),
           DateTime.t(),
           non_neg_integer(),
-          non_neg_integer(),
-          non_neg_integer(),
+          pos_integer(),
+          pos_integer(),
           String.t()
         ) ::
           {:ok, list(map())} | {:error, String.t()}
-  def top_wallet_transfers(_contract, [], _from, _to, _page, _page_size, _type), do: {:ok, []}
+  def top_wallet_transfers(_contract, [], _from, _to, _page, _page_size, _type),
+    do: {:ok, []}
 
-  def top_wallet_transfers(contract, wallets, from, to, decimals, page, page_size, type) do
+  def top_wallet_transfers(
+        contract,
+        wallets,
+        from,
+        to,
+        decimals,
+        page,
+        page_size,
+        type
+      )
+      when is_non_neg_integer(page) and is_non_neg_integer(page_size) do
     {query, args} =
-      top_wallet_transfers_query(contract, wallets, from, to, decimals, page, page_size, type)
+      top_wallet_transfers_query(
+        contract,
+        wallets,
+        from,
+        to,
+        decimals,
+        page,
+        page_size,
+        type
+      )
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
@@ -88,24 +72,25 @@ defmodule Sanbase.Transfers.Erc20Transfers do
           %DateTime{},
           %DateTime{},
           non_neg_integer(),
-          non_neg_integer(),
-          non_neg_integer(),
+          pos_integer(),
+          pos_integer(),
           list(String.t())
         ) ::
-          {:ok, list(t)} | {:error, String.t()}
-  def top_transfers(contract, from, to, decimals, page, page_size, excluded_addresses \\ []) do
-    decimals = Sanbase.Math.ipow(10, decimals)
-
-    {query, args} =
-      top_transfers_query(
+          {:ok, list(map())} | {:error, String.t()}
+  def top_transfers(
         contract,
         from,
         to,
+        decimals,
         page,
         page_size,
-        decimals,
-        excluded_addresses
+        excluded_addresses \\ []
       )
+      when is_non_neg_integer(page) and is_non_neg_integer(page_size) do
+    decimals = Sanbase.Math.ipow(10, decimals)
+
+    {query, args} =
+      top_transfers_query(contract, from, to, page, page_size, decimals, excluded_addresses)
 
     ClickhouseRepo.query_transform(
       query,
@@ -122,10 +107,45 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     )
   end
 
-  def blockchain_address_transaction_volume_over_time(addresses, contract, from, to, interval) do
+  def blockchain_address_transaction_volume_over_time(
+        addresses,
+        contract,
+        decimals,
+        from,
+        to,
+        interval
+      ) do
+    {query, args} =
+      blockchain_address_transaction_volume_over_time_query(
+        addresses,
+        contract,
+        decimals,
+        from,
+        to,
+        interval
+      )
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn [unix, incoming, outgoing] ->
+        %{
+          datetime: DateTime.from_unix!(unix),
+          transaction_volume_inflow: incoming,
+          transaction_volume_outflow: outgoing,
+          transaction_volume_total: incoming + outgoing
+        }
+      end
+    )
   end
 
-  def blockchain_address_transaction_volume(addresses, contract, decimals, from, to) do
+  def blockchain_address_transaction_volume(
+        addresses,
+        contract,
+        decimals,
+        from,
+        to
+      ) do
     {query, args} =
       blockchain_address_transaction_volume_query(addresses, contract, decimals, from, to)
 
@@ -151,7 +171,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
           page_size: non_neg_integer(),
           only_sender: boolean()
         ) ::
-          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
+          {:ok, list(map())} | {:error, String.t()}
   def recent_transactions(address, opts) do
     {query, args} = recent_transactions_query(address, opts)
 
@@ -253,6 +273,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     """
 
     offset = (page - 1) * page_size
+
     maybe_extra_params = if excluded_addresses == [], do: [], else: [excluded_addresses]
 
     args =
@@ -310,11 +331,9 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     "AND (from NOT IN (?#{arg_position}) AND to NOT IN (?#{arg_position}))"
   end
 
-  defp decimals(decimals) when is_integer(decimals) and decimals > 0 do
+  defp decimals(decimals) when is_integer(decimals) and decimals >= 0 do
     Sanbase.Math.ipow(10, decimals)
   end
-
-  defp decimals(_), do: @eth_decimals
 
   defp maybe_transform({:ok, data}) do
     slugs = data |> Enum.map(& &1.project)
@@ -333,7 +352,13 @@ defmodule Sanbase.Transfers.Erc20Transfers do
 
   defp maybe_transform({:error, _} = result), do: result
 
-  defp blockchain_address_transaction_volume_query(addresses, contract, decimals, from, to) do
+  defp blockchain_address_transaction_volume_query(
+         addresses,
+         contract,
+         decimals,
+         from,
+         to
+       ) do
     query = """
     WITH ( pow(10, ?3) ) AS expanded_decimals
     SELECT
@@ -368,7 +393,63 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     GROUP BY address
     """
 
-    args = [addresses, contract, decimals, DateTime.to_unix(from), DateTime.to_unix(to)]
+    args = [
+      addresses,
+      contract,
+      decimals,
+      DateTime.to_unix(from),
+      DateTime.to_unix(to)
+    ]
+
+    {query, args}
+  end
+
+  defp blockchain_address_transaction_volume_over_time_query(
+         addresses,
+         contract,
+         decimals,
+         from,
+         to,
+         interval
+       ) do
+    query = """
+    WITH ( pow(10, ?4) ) AS expanded_decimals
+    SELECT
+      toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
+      SUM(incoming) / expanded_decimals AS incoming,
+      SUM(outgoing) / expanded_decimals AS outgoing
+    FROM (
+      SELECT
+        dt,
+        0 AS incoming,
+        value AS outgoing
+      FROM erc20_transfers FINAL
+      PREWHERE
+        from IN (?2) AND
+        assetRefId = cityHash64('ETH_' || ?3) AND
+        dt >= toDateTime(?5) AND
+        dt < toDateTime(?6)
+
+      UNION ALL
+
+      SELECT
+        dt,
+        value AS incoming,
+        0 AS outgoing
+      FROM erc20_transfers_to FINAL
+      PREWHERE
+        to in (?2) AND
+        assetRefId = cityHash64('ETH_' || ?3) AND
+        dt >= toDateTime(?5) AND
+        dt < toDateTime(?6)
+    )
+    GROUP BY time
+    """
+
+    from = DateTime.to_unix(from)
+    to = DateTime.to_unix(to)
+    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    args = [interval_sec, addresses, contract, decimals, from, to]
 
     {query, args}
   end

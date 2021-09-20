@@ -222,7 +222,8 @@ defmodule Sanbase.Transfers.EthTransfers do
   end
 
   defp recent_transactions_query(address, opts) do
-    {limit, offset} = only_sender = Keyword.get(opts, :only_sender, false)
+    {limit, offset} = opts_to_limit_offset(opts)
+    only_sender = Keyword.get(opts, :only_sender, false)
 
     query = """
     SELECT

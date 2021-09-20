@@ -15,6 +15,11 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
     value(:transfers_count)
   end
 
+  enum :in_page_order_by_type do
+    value(:trx_value)
+    value(:datetime)
+  end
+
   input_object :address_selector do
     field(:address, non_null(:string))
     field(:transaction_type, :transaction_type)

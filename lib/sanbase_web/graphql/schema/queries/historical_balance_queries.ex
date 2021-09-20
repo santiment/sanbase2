@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.Schema.HistoricalBalanceQueries do
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver
-
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
@@ -94,19 +93,6 @@ defmodule SanbaseWeb.Graphql.Schema.HistoricalBalanceQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
       cache_resolve(&HistoricalBalanceResolver.address_historical_balance_change/3)
-    end
-
-    field :transaction_volume_per_address, list_of(:address_transaction_volume) do
-      meta(access: :free)
-
-      arg(:selector, :historical_balance_selector)
-      arg(:addresses, list_of(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-      cache_resolve(&HistoricalBalanceResolver.transaction_volume_per_address/3)
     end
 
     @desc """

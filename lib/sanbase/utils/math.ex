@@ -89,20 +89,8 @@ defmodule Sanbase.Math do
       1_000_000_000_000_000_000
   """
   def ipow(base, exp) when is_integer(base) and is_integer(exp) and exp >= 0 do
-    do_ipow(base, exp)
-  end
-
-  defp do_ipow(_, 0), do: 1
-
-  defp do_ipow(x, 1), do: x
-
-  defp do_ipow(x, n) when Integer.is_odd(n) do
-    x * ipow(x, n - 1)
-  end
-
-  defp do_ipow(x, n) do
-    result = do_ipow(x, div(n, 2))
-    result * result
+    # Since Elixir 1.12.0 Integer.pow/2 is available
+    Integer.pow(base, exp)
   end
 
   @doc ~S"""

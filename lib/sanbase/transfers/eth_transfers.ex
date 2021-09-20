@@ -3,47 +3,16 @@ defmodule Sanbase.Transfers.EthTransfers do
   Uses ClickHouse to work with ETH transfers.
   """
 
-  use Ecto.Schema
-
   import Sanbase.Utils.Transform
 
   alias Sanbase.ClickhouseRepo
 
   require Logger
 
-  @type t :: %__MODULE__{
-          datetime: %DateTime{},
-          from_address: String.t(),
-          to_address: String.t(),
-          trx_hash: String.t(),
-          trx_value: float,
-          block_number: non_neg_integer,
-          trx_position: non_neg_integer,
-          type: String.t()
-        }
-
   @type wallets :: list(String.t())
 
   @table "eth_transfers"
   @eth_decimals 1_000_000_000_000_000_000
-
-  @primary_key false
-  @timestamps_opts [updated_at: false]
-  schema @table do
-    field(:datetime, :utc_datetime, source: :dt)
-    field(:from_address, :string, primary_key: true, source: :from)
-    field(:to_address, :string, primary_key: true, source: :to)
-    field(:trx_hash, :string, source: :transactionHash)
-    field(:trx_value, :float, source: :value)
-    field(:block_number, :integer, source: :blockNumber)
-    field(:trx_position, :integer, source: :transactionPosition)
-    field(:type, :string)
-  end
-
-  @spec changeset(any(), any()) :: no_return()
-  def changeset(_, _) do
-    raise "Should not try to change eth transfers"
-  end
 
   @doc ~s"""
   Return the biggest transfers for a list of wallets and time period.
@@ -78,7 +47,7 @@ defmodule Sanbase.Transfers.EthTransfers do
   end
 
   @spec top_transfers(%DateTime{}, %DateTime{}, non_neg_integer(), non_neg_integer()) ::
-          {:ok, list(t)} | {:error, String.t()}
+          {:ok, list(map())} | {:error, String.t()}
   def top_transfers(from, to, page, page_size) do
     {query, args} = top_transfers_query(from, to, page, page_size)
 
@@ -99,7 +68,7 @@ defmodule Sanbase.Transfers.EthTransfers do
           page_size: non_neg_integer(),
           only_sender: boolean()
         ) ::
-          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
+          {:ok, nil} | {:ok, list(map)} | {:error, String.t()}
   def recent_transactions(address, opts) do
     {query, args} = recent_transactions_query(address, opts)
 
@@ -113,6 +82,29 @@ defmodule Sanbase.Transfers.EthTransfers do
           trx_value: trx_value / @eth_decimals
         }
     end)
+  end
+
+  def blockchain_address_transaction_volume_over_time(addresses, from, to, interval) do
+    {query, args} =
+      blockchain_address_transaction_volume_over_time_query(
+        addresses,
+        from,
+        to,
+        interval
+      )
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn [unix, incoming, outgoing] ->
+        %{
+          datetime: DateTime.from_unix!(unix),
+          transaction_volume_inflow: incoming,
+          transaction_volume_outflow: outgoing,
+          transaction_volume_total: incoming + outgoing
+        }
+      end
+    )
   end
 
   # Private functions
@@ -228,6 +220,47 @@ defmodule Sanbase.Transfers.EthTransfers do
     """
 
     args = [String.downcase(address), page_size, offset]
+
+    {query, args}
+  end
+
+  defp blockchain_address_transaction_volume_over_time_query(addresses, from, to, interval) do
+    query = """
+    WITH pow(10, 18) AS expanded_decimals
+    SELECT
+      toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
+      SUM(incoming) / expanded_decimals AS incoming,
+      SUM(outgoing) / expanded_decimals AS outgoing
+    FROM (
+      SELECT
+        dt,
+        0 AS incoming,
+        value AS outgoing
+      FROM eth_transfers FINAL
+      PREWHERE
+        from IN (?2) AND
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4)
+
+      UNION ALL
+
+      SELECT
+        dt,
+        value AS incoming,
+        0 AS outgoing
+      FROM eth_transfers_to FINAL
+      PREWHERE
+        to in (?2) AND
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4)
+    )
+    GROUP BY time
+    """
+
+    from = DateTime.to_unix(from)
+    to = DateTime.to_unix(to)
+    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    args = [interval_sec, addresses, from, to]
 
     {query, args}
   end

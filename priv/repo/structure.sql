@@ -512,7 +512,8 @@ CREATE TABLE public.chart_configurations (
     updated_at timestamp without time zone NOT NULL,
     drawings jsonb,
     options jsonb,
-    post_id bigint
+    post_id bigint,
+    queries jsonb
 );
 
 
@@ -6830,3 +6831,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210803092012);
 INSERT INTO public."schema_migrations" (version) VALUES (20210816150914);
 INSERT INTO public."schema_migrations" (version) VALUES (20210907104846);
 INSERT INTO public."schema_migrations" (version) VALUES (20210907104919);
+INSERT INTO public."schema_migrations" (version) VALUES (20210921100450);

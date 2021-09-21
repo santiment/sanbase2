@@ -12,6 +12,7 @@ defmodule Sanbase.Chart.Configuration do
 
     field(:metrics, {:array, :string}, default: [])
     field(:anomalies, {:array, :string}, default: [])
+    field(:queries, :map, default: %{})
     field(:drawings, :map, default: %{})
     field(:options, :map, default: %{})
 
@@ -40,6 +41,7 @@ defmodule Sanbase.Chart.Configuration do
       :is_public,
       :metrics,
       :anomalies,
+      :queries,
       :drawings,
       :options,
       :user_id,

@@ -67,6 +67,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
   """
   object :blockchain_address_ephemeral do
     # santiment origin labels
+    field(:is_exchange, :boolean)
     field(:labels, non_null(list_of(:label)))
     field(:address, non_null(:binary_blockchain_address))
     field(:infrastructure, non_null(:string))

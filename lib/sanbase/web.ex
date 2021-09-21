@@ -32,9 +32,7 @@ defmodule Sanbase.Application.Web do
       # Rehydrating cache
       Sanbase.Cache.RehydratingCache.Supervisor,
 
-      # Transform a list of transactions into a list of transactions
-      # where addresses are marked whether or not they are an exchange address
-      Sanbase.Clickhouse.MarkExchanges,
+      # Oban instance responsible for sending emails
       {Oban, oban_web_config()},
 
       # Start libcluster

@@ -37,6 +37,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @selectors_map FileHandler.selectors_map()
   @required_selectors_map FileHandler.required_selectors_map()
   @metric_to_name_map FileHandler.metric_to_name_map()
+  @deprecated_metrics_map FileHandler.deprecated_metrics_map()
   @default_complexity_weight 0.3
 
   @type slug :: String.t()
@@ -48,6 +49,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def restricted_metrics(), do: @restricted_metrics
+
+  @impl Sanbase.Metric.Behaviour
+  def deprecated_metrics_map(), do: @deprecated_metrics_map
 
   @impl Sanbase.Metric.Behaviour
   def access_map(), do: @access_map

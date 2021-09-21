@@ -27,6 +27,13 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         "daily_active_addresses",
         "ethereum-CC-ETH-CC-daily_active_addresses"
       ],
+      queries: %{
+        "top_holders" => %{
+          "query" => "top_holders",
+          "args" => %{"from" => "utc_now-1d", "to" => "utc_now"},
+          "selected_fields" => ["datetime", "trx_value"]
+        }
+      },
       drawings: %{
         "lines" => [
           %{"x0" => 0, "y0" => 0, "x1" => 15, "y1" => 15},
@@ -67,6 +74,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["anomalies"] == settings.anomalies
       assert config["metrics"] == settings.metrics
       assert config["drawings"] == settings.drawings
+      assert config["queries"] == settings.queries
       assert config["options"] == settings.options
       assert config["project"]["id"] |> String.to_integer() == project.id
       assert config["project"]["slug"] == project.slug
@@ -97,6 +105,13 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
             %{"cx" => 50, "cy" => 50, "r" => 20}
           ]
         },
+        queries: %{
+          "top_holders" => %{
+            "query" => "top_holders",
+            "args" => %{"slug" => "bitcoin", "from" => "utc_now-3d", "to" => "utc_now"},
+            "selected_fields" => ["datetime", "trx_value", "trx_hash"]
+          }
+        },
         options: %{
           "multi_chart" => false,
           "log_scale" => true,
@@ -114,6 +129,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["anomalies"] == new_settings.anomalies
       assert config["metrics"] == new_settings.metrics
       assert config["drawings"] == new_settings.drawings
+      assert config["queries"] == new_settings.queries
       assert config["options"] == new_settings.options
       assert config["post"]["id"] |> String.to_integer() == new_settings.post_id
       assert config["post"]["title"] == new_post.title
@@ -200,6 +216,8 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["isPublic"] == settings.is_public
       assert config["anomalies"] == settings.anomalies
       assert config["metrics"] == settings.metrics
+      assert config["drawings"] == settings.drawings
+      assert config["queries"] == settings.queries
       assert config["project"]["id"] |> String.to_integer() == project.id
       assert config["project"]["slug"] == project.slug
       assert config["user"]["id"] |> String.to_integer() == user.id
@@ -513,6 +531,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         post{ id title }
         metrics
         anomalies
+        queries
         drawings
         options
       }
@@ -537,6 +556,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         post{ id title }
         metrics
         anomalies
+        queries
         drawings
         options
       }
@@ -561,6 +581,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         post{ id title }
         metrics
         anomalies
+        queries
         drawings
         options
       }
@@ -585,6 +606,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         post{ id title }
         metrics
         anomalies
+        queries
         drawings
         chartEvents {
           id
@@ -615,6 +637,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        queries
         anomalies
         drawings
       }
@@ -647,7 +670,9 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         post{ id title }
         metrics
         anomalies
+        queries
         drawings
+        options
       }
     }
     """

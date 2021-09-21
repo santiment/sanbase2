@@ -20,20 +20,30 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   end
 
   enum :selector_name do
+    # common
+    value(:blockchain)
+    # blockchain address related
+    value(:blockchain_address)
+    # project related
     value(:slug)
     value(:slugs)
+    value(:ignored_slugs)
+    value(:market_segments)
+    # watchlist related
+    value(:watchlist_slug)
+    value(:watchlist_id)
+    # social related
     value(:text)
+    value(:source)
+    # label related
     value(:owner)
+    value(:owners)
     value(:label)
+    value(:labels)
     value(:label_fqn)
     value(:label_fqns)
-    value(:blockchain)
-    value(:source)
     value(:holders_count)
-    value(:market_segments)
-    value(:ignored_slugs)
-    value(:watchlist_id)
-    value(:watchlist_slug)
+    # cache-controling
     value(:base_ttl)
     value(:max_ttl_offset)
   end
@@ -44,22 +54,29 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   end
 
   input_object :metric_target_selector_input_object do
+    # common
     field(:blockchain, :string)
+    # blockchain address related
+    field(:blockchain_address, :blockchain_address_selector_input_object)
+    # project related
     field(:slug, :string)
     field(:slugs, list_of(:string))
+    field(:market_segments, list_of(:string))
+    field(:ignored_slugs, list_of(:string))
+    # watchlist related
+    field(:watchlist_id, :integer)
+    field(:watchlist_slug, :string)
+    # social related
     field(:text, :string)
+    field(:source, :string)
+    # label relaated
     field(:owner, :string)
     field(:owners, list_of(:string))
     field(:label, :string)
+    field(:labels, list_of(:string))
     field(:label_fqn, :string)
     field(:label_fqns, list_of(:string))
-    field(:labels, list_of(:string))
-    field(:source, :string)
     field(:holders_count, :integer)
-    field(:market_segments, list_of(:string))
-    field(:ignored_slugs, list_of(:string))
-    field(:watchlist_id, :integer)
-    field(:watchlist_slug, :string)
   end
 
   input_object :timeseries_metric_transform_input_object do

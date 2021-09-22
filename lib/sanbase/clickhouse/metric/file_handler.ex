@@ -148,7 +148,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                                        end
                                      )
 
-  @metrics_json Helper.expand_timebound_metrics(@metrics_json_pre_timebound_expand)
+  @metrics_json_including_deprecated Helper.expand_timebound_metrics(
+                                       @metrics_json_pre_timebound_expand
+                                     )
+  @metrics_json Enum.reject(
+                  @metrics_json_including_deprecated,
+                  &(not is_nil(&1["deprecated_since"]))
+                )
+
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
   @metrics_data_type_map Helper.name_to_field_map(@metrics_json, "data_type",
                            transform_fn: &String.to_atom/1
@@ -200,6 +207,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                           |> Enum.reject(fn {_k, v} -> v == nil end)
                           |> Map.new()
 
+  @deprecated_metrics_map Helper.name_to_field_map(@metrics_json, "deprecated_since",
+                            required?: false,
+                            transform_fn: &Sanbase.DateTimeUtils.from_iso8601!/1
+                          )
+
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)
 
@@ -243,8 +255,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   def incomplete_data_map(), do: @incomplete_data_map
   def selectors_map(), do: @selectors_map
   def required_selectors_map(), do: @required_selectors_map
-
   def metrics_label_map(), do: @metrics_label_map
+  def deprecated_metrics_map(), do: @deprecated_metrics_map
 
   def metrics_with_access(level) when level in [:free, :restricted] do
     @access_map

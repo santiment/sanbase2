@@ -3,8 +3,10 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver
+  alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
+  alias SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver
 
   object :blockchain_address_queries do
     field :blockchain_address_label_changes, list_of(:blockchain_address_label_change) do
@@ -73,6 +75,34 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
 
       middleware(JWTAuth)
       resolve(&BlockchainAddressResolver.blockchain_address_user_pair/3)
+    end
+
+    field :transaction_volume_per_address, list_of(:address_transaction_volume) do
+      meta(access: :free)
+
+      arg(:selector, :historical_balance_selector)
+      arg(:addresses, list_of(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+      cache_resolve(&BlockchainAddressResolver.transaction_volume_per_address/3)
+    end
+
+    field :blockchain_address_transaction_volume_over_time,
+          list_of(:combined_address_transaction_volume_over_time) do
+      meta(access: :free)
+
+      arg(:selector, :historical_balance_selector)
+      arg(:addresses, list_of(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:interval))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+      cache_resolve(&BlockchainAddressResolver.blockchain_address_transaction_volume_over_time/3)
     end
   end
 

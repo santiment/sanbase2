@@ -9,11 +9,8 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
-  alias Sanbase.Billing.Subscription.SignUpTrial
 
-  setup_with_mocks([
-    {SignUpTrial, [], [create_trial_subscription: fn _ -> {:ok, %{}} end]}
-  ]) do
+  setup do
     user = insert(:user)
 
     conn = setup_jwt_auth(build_conn(), user)

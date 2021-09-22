@@ -11,7 +11,6 @@ defmodule Sanbase.Accounts.UserTest do
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
-  alias Sanbase.Billing.Subscription.SignUpTrial
   alias Sanbase.Accounts.User.UniswapStaking
 
   test "Delete user and associations" do
@@ -266,7 +265,6 @@ defmodule Sanbase.Accounts.UserTest do
         )
 
       Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
-      |> Sanbase.Mock.prepare_mock2(&SignUpTrial.create_trial_subscription/1, {:ok, %{}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, user} =
           User.find_or_insert_by(:email, existing_user.email, %{username: "john_snow"})
@@ -276,7 +274,6 @@ defmodule Sanbase.Accounts.UserTest do
         assert user.username == existing_user.username
 
         assert Sanbase.Billing.list_liquidity_subscriptions() == []
-        refute called(SignUpTrial.create_trial_subscription(user.id))
       end)
     end
   end

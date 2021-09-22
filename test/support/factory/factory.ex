@@ -21,7 +21,6 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
   alias Sanbase.Billing.{Product, Plan, Subscription}
-  alias Sanbase.Billing.Subscription.SignUpTrial
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Chart
   alias Sanbase.TableConfiguration
@@ -652,17 +651,6 @@ defmodule Sanbase.Factory do
 
   def user_role_factory() do
     %UserRole{}
-  end
-
-  def sign_up_trial_factory do
-    %SignUpTrial{
-      sent_welcome_email: false,
-      sent_first_education_email: false,
-      sent_second_education_email: false,
-      sent_trial_will_end_email: false,
-      sent_cc_will_be_charged: false,
-      sent_trial_finished_without_cc: false
-    }
   end
 
   def exchange_market_pair_mappings_factory do

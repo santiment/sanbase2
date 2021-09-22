@@ -127,8 +127,17 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
+      maybe_delete_trialing_subscriptions(user.id)
       {:ok, default_preload(db_subscription, force: true)}
     end
+  end
+
+  def maybe_delete_trialing_subscriptions(user_id) do
+    __MODULE__
+    |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, Product.product_sanbase())
+    |> Repo.all()
+    |> Enum.filter(fn subscription -> subscription.status == :trialing end)
+    |> Enum.each(fn subscription -> StripeApi.delete_subscription(subscription.stripe_id) end)
   end
 
   @doc """

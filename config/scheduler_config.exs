@@ -63,10 +63,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "*/10 * * * *",
       task: {Sanbase.Billing, :update_finished_trials, []}
     ],
-    cancel_about_to_expire_trials: [
-      schedule: "3-59/30 * * * *",
-      task: {Sanbase.Billing, :cancel_about_to_expire_trials, []}
-    ],
     sync_products_with_stripe: [
       schedule: "@reboot",
       task: {Sanbase.Billing, :sync_products_with_stripe, []}

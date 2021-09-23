@@ -45,6 +45,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       arg(:to, non_null(:datetime))
       arg(:page, :integer)
       arg(:page_size, :integer)
+      arg(:in_page_order_by, :in_page_order_by_type, default_value: :trx_value)
+      arg(:in_page_order_by_direction, :direction_type, default_value: :desc)
 
       cache_resolve(&BlockchainAddressResolver.top_transfers/3)
     end

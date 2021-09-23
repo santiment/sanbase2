@@ -46,6 +46,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
 
     with {:ok, transfers} <-
            Transfers.top_wallet_transfers(slug, address, from, to, page, page_size, type),
+         {:ok, transfers} <- apply_in_page_order_by(transfers, args),
          {:ok, _, _, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          {:ok, transfers} <- BlockchainAddressUtils.transform_address_to_map(transfers, infr),
          {:ok, transfers} <- Label.add_labels(slug, transfers),
@@ -62,6 +63,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     %{page: page, page_size: page_size} = args_to_page_args(args)
 
     with {:ok, transfers} <- Transfers.top_transfers(slug, from, to, page, page_size),
+         {:ok, transfers} <- apply_in_page_order_by(transfers, args),
          {:ok, _, _, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          {:ok, transfers} <- BlockchainAddressUtils.transform_address_to_map(transfers, infr),
          {:ok, transfers} <- Label.add_labels(slug, transfers),
@@ -371,6 +373,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   end
 
   # Private functions
+
+  defp apply_in_page_order_by(transfers, args) do
+    order_by = Map.fetch!(args, :in_page_order_by)
+    direction = Map.fetch!(args, :in_page_order_by_direction)
+
+    {:ok, Enum.sort_by(transfers, & &1[order_by], direction)}
+  end
 
   defp args_to_page_args(args) do
     page = Map.get(args, :page, 1)

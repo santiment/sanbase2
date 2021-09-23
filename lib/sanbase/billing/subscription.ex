@@ -127,7 +127,10 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
-      maybe_delete_trialing_subscriptions(user.id)
+      if db_subscription.status == :active do
+        maybe_delete_trialing_subscriptions(user.id)
+      end
+
       {:ok, default_preload(db_subscription, force: true)}
     end
   end

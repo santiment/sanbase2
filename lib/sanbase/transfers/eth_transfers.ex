@@ -32,7 +32,8 @@ defmodule Sanbase.Transfers.EthTransfers do
   def top_wallet_transfers([], _from, _to, _page, _page_size, _type), do: {:ok, []}
 
   def top_wallet_transfers(wallets, from, to, page, page_size, type) do
-    {query, args} = top_wallet_transfers_query(wallets, from, to, page, page_size, type)
+    opts = [page: page, page_size: page_size]
+    {query, args} = top_wallet_transfers_query(wallets, from, to, type, opts)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
@@ -49,7 +50,8 @@ defmodule Sanbase.Transfers.EthTransfers do
   @spec top_transfers(%DateTime{}, %DateTime{}, non_neg_integer(), non_neg_integer()) ::
           {:ok, list(map())} | {:error, String.t()}
   def top_transfers(from, to, page, page_size) do
-    {query, args} = top_transfers_query(from, to, page, page_size)
+    opts = [page: page, page_size: page_size]
+    {query, args} = top_transfers_query(from, to, opts)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
@@ -84,14 +86,17 @@ defmodule Sanbase.Transfers.EthTransfers do
     end)
   end
 
+  def incoming_transfers_summary(address, from, to, opts \\ []) do
+    execute_transfers_summary_query(:incoming, address, from, to, opts)
+  end
+
+  def outgoing_transfers_summary(address, from, to, opts \\ []) do
+    execute_transfers_summary_query(:outgoing, address, from, to, opts)
+  end
+
   def blockchain_address_transaction_volume_over_time(addresses, from, to, interval) do
     {query, args} =
-      blockchain_address_transaction_volume_over_time_query(
-        addresses,
-        from,
-        to,
-        interval
-      )
+      blockchain_address_transaction_volume_over_time_query(addresses, from, to, interval)
 
     ClickhouseRepo.query_transform(
       query,
@@ -109,7 +114,24 @@ defmodule Sanbase.Transfers.EthTransfers do
 
   # Private functions
 
-  defp top_wallet_transfers_query(wallets, from, to, page, page_size, type) do
+  defp execute_transfers_summary_query(type, address, from, to, opts) do
+    {query, args} = transfers_summary_query(type, address, from, to, opts)
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn [last_transfer_datetime, address, transaction_volumes, transfers_count] ->
+        %{
+          last_transfer_datetime: DateTime.from_unix!(last_transfer_datetime),
+          address: address,
+          transaction_volume: transaction_volumes,
+          transfers_count: transfers_count
+        }
+      end
+    )
+  end
+
+  defp top_wallet_transfers_query(wallets, from, to, type, opts) do
     query = """
     SELECT
       toUnixTimestamp(dt),
@@ -127,13 +149,13 @@ defmodule Sanbase.Transfers.EthTransfers do
     LIMIT ?4 OFFSET ?5
     """
 
-    offset = (page - 1) * page_size
+    {limit, offset} = opts_to_limit_offset(opts)
 
     args = [
       wallets,
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
-      page_size,
+      DateTime.to_unix(from),
+      DateTime.to_unix(to),
+      limit,
       offset
     ]
 
@@ -170,14 +192,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     if trailing_and, do: str <> " AND", else: str
   end
 
-  defp top_transfers_query(from, to, page, page_size) do
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-
-    # only > 10K ETH transfers if range is > 1 week, otherwise only bigger than 1K
-    value_filter = if Timex.diff(to, from, :days) > 7, do: 10_000, else: 1_000
-    offset = (page - 1) * page_size
-
+  defp top_transfers_query(from, to, opts) do
     query = """
     SELECT
       toUnixTimestamp(dt), from, to, transactionHash, value
@@ -191,11 +206,15 @@ defmodule Sanbase.Transfers.EthTransfers do
     LIMIT ?4 OFFSET ?5
     """
 
+    # only > 10K ETH transfers if range is > 1 week, otherwise only bigger than 1K
+    value_filter = if Timex.diff(to, from, :days) > 7, do: 10_000, else: 1_000
+    {limit, offset} = opts_to_limit_offset(opts)
+
     args = [
       value_filter,
-      from_unix,
-      to_unix,
-      page_size,
+      DateTime.to_unix(from),
+      DateTime.to_unix(to),
+      limit,
       offset
     ]
 
@@ -203,10 +222,8 @@ defmodule Sanbase.Transfers.EthTransfers do
   end
 
   defp recent_transactions_query(address, opts) do
-    page = Keyword.get(opts, :page, 1)
-    page_size = Keyword.get(opts, :page_size, 10)
+    {limit, offset} = opts_to_limit_offset(opts)
     only_sender = Keyword.get(opts, :only_sender, false)
-    offset = (page - 1) * page_size
 
     query = """
     SELECT
@@ -219,7 +236,8 @@ defmodule Sanbase.Transfers.EthTransfers do
     LIMIT ?2 OFFSET ?3
     """
 
-    args = [String.downcase(address), page_size, offset]
+    address = Sanbase.BlockchainAddress.to_internal_format(address)
+    args = [address, limit, offset]
 
     {query, args}
   end
@@ -261,6 +279,39 @@ defmodule Sanbase.Transfers.EthTransfers do
     to = DateTime.to_unix(to)
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     args = [interval_sec, addresses, from, to]
+
+    {query, args}
+  end
+
+  defp transfers_summary_query(type, address, from, to, opts) do
+    order_by_str =
+      case Keyword.get(opts, :order_by, :transaction_volume) do
+        :transaction_volume -> "transaction_volume"
+        :transfers_count -> "transfers_count"
+      end
+
+    {limit, offset} = opts_to_limit_offset(opts)
+
+    {select_column, filter_column, table} =
+      case type do
+        :incoming -> {"from", "to", "eth_transfers_to"}
+        :outgoing -> {"to", "from", "eth_transfers"}
+      end
+
+    query = """
+    SELECT
+      toUnixTimestamp(max(dt)) AS last_transfer_datetime,
+      "#{select_column}" AS address,
+      SUM(value) / pow(10,18) AS transaction_volume,
+      COUNT(*) AS transfers_count
+    FROM #{table}
+    PREWHERE #{filter_column} = ?1 AND type != 'fee' AND dt >= toDateTime(?2) AND dt < toDateTime(?3)
+    GROUP BY "#{select_column}"
+    ORDER BY #{order_by_str} DESC
+    LIMIT ?4 OFFSET ?5
+    """
+
+    args = [address, from, to, limit, offset]
 
     {query, args}
   end

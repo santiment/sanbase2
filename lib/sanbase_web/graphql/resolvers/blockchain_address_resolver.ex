@@ -140,6 +140,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
      "Transaction volume per address is currently supported only for selectors with infrastructure ETH and a slug"}
   end
 
+  def incoming_transfers_summary(
+        _root,
+        %{slug: slug, address: address, page: page, page_size: page_size, from: from, to: to},
+        _resolution
+      ) do
+    opts = [page: page, page_size: page_size]
+    Sanbase.Transfers.incoming_transfers_summary(slug, address, from, to, opts)
+  end
+
+  def outgoing_transfers_summary(
+        _root,
+        %{slug: slug, address: address, page: page, page_size: page_size, from: from, to: to},
+        _resolution
+      ) do
+    opts = [page: page, page_size: page_size]
+    Sanbase.Transfers.outgoing_transfers_summary(slug, address, from, to, opts)
+  end
+
   def recent_transactions(
         _root,
         %{address: address, type: type, only_sender: only_sender} = args,

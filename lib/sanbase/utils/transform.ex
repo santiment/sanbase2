@@ -171,4 +171,14 @@ defmodule Sanbase.Utils.Transform do
   end
 
   def maybe_fill_gaps_last_seen({:error, error}, _key), do: {:error, error}
+
+  @spec opts_to_limit_offset(page: non_neg_integer(), page_size: pos_integer()) ::
+          {pos_integer(), non_neg_integer()}
+  def opts_to_limit_offset(opts) do
+    page = Keyword.get(opts, :page, 1)
+    page_size = Keyword.get(opts, :page_size, 10)
+    offset = (page - 1) * page_size
+
+    {page_size, offset}
+  end
 end

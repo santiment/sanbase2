@@ -3,6 +3,32 @@ defmodule Sanbase.Transfers do
 
   alias Sanbase.Transfers.{EthTransfers, Erc20Transfers, BtcTransfers}
 
+  def incoming_transfers_summary(slug, address, from, to, opts) do
+    case Project.contract_info_infrastructure_by_slug(slug) do
+      {:ok, "ETH", _, _} ->
+        EthTransfers.incoming_transfers_summary(address, from, to, opts)
+
+      {:ok, contract, decimals, "ETH"} ->
+        Erc20Transfers.incoming_transfers_summary(address, contract, decimals, from, to, opts)
+
+      _ ->
+        {:error, "incoming_transfers_summary/5 is not supported for slug #{slug}"}
+    end
+  end
+
+  def outgoing_transfers_summary(slug, address, from, to, opts) do
+    case Project.contract_info_infrastructure_by_slug(slug) do
+      {:ok, "ETH", _, _} ->
+        EthTransfers.outgoing_transfers_summary(address, from, to, opts)
+
+      {:ok, contract, decimals, "ETH"} ->
+        Erc20Transfers.outgoing_transfers_summary(address, contract, decimals, from, to, opts)
+
+      _ ->
+        {:error, "outgoing_transfers_summary/5 is not supported for slug #{slug}"}
+    end
+  end
+
   def blockchain_address_transaction_volume(slug, address_or_addresses, from, to) do
     case Project.contract_info_infrastructure_by_slug(slug) do
       {:ok, contract, decimals, "ETH"} ->

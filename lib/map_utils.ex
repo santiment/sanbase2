@@ -1,4 +1,11 @@
 defmodule Sanbase.MapUtils do
+  def replace_lazy(map, key, value_fun) do
+    case Map.has_key?(map, key) do
+      true -> Map.put(map, key, value_fun.())
+      false -> map
+    end
+  end
+
   @doc ~s"""
   Return a subset of `left` map that has only the keys that are also present in `right`.
 

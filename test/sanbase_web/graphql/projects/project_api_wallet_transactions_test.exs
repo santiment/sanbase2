@@ -18,18 +18,18 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   @exchange_wallet "0xe1e1e1e1e1e1e1"
 
   setup_all_with_mocks([
-    {Sanbase.ClickhouseRepo, [:passthrough], [query: fn _, _ -> {:ok, %{rows: []}} end]}
+    {Sanbase.ClickhouseRepo, [:passthrough],
+     [
+       query: fn _, _ ->
+         {:ok, %{rows: [[@exchange_wallet, "CEX", "{\"owner\": \"binance\"}"]]}}
+       end
+     ]}
   ]) do
     []
   end
 
   setup do
     project = insert(:random_project)
-
-    # MarkExchanges GenServer is started by the top-level supervisor and not this process.
-    # Due to the SQL Sandbox the added exchange address is not seen from the genserver.
-    # Adding it manually
-    Sanbase.Clickhouse.MarkExchanges.add_exchange_wallets([@exchange_wallet])
 
     [
       slug: project.slug,
@@ -47,13 +47,13 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
       {
         projectBySlug(slug: "#{context.slug}") {
           ethTopTransactions(
-            from: "#{context.datetime_from}",
-            to: "#{context.datetime_to}",
+            from: "#{context.datetime_from}"
+            to: "#{context.datetime_to}"
             transaction_type: IN){
-              datetime,
-              trxValue,
-              fromAddress{ address, isExchange, labels { name, metadata } },
-              toAddress{ address, isExchange, labels { name, metadata } }
+              datetime
+              trxValue
+              fromAddress{ address isExchange labels { name metadata } }
+              toAddress{ address isExchange labels { name metadata } }
           }
         }
       }
@@ -107,10 +107,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
             from: "#{context.datetime_from}",
             to: "#{context.datetime_to}",
             transaction_type: OUT){
-              datetime,
-              trxValue,
-              fromAddress{ address, isExchange, labels { name, metadata } },
-              toAddress{ address, isExchange, labels { name, metadata } }
+              datetime
+              trxValue
+              fromAddress{ address isExchange labels { name metadata } }
+              toAddress{ address isExchange labels { name metadata } }
           }
         }
       }
@@ -149,7 +149,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
                "toAddress" => %{
                  "address" => @exchange_wallet,
                  "isExchange" => true,
-                 "labels" => []
+                 "labels" => [%{"metadata" => "{\"owner\": \"binance\"}", "name" => "CEX"}]
                },
                "trxValue" => 5500.0
              } in trx_out
@@ -160,7 +160,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
                "toAddress" => %{
                  "address" => @exchange_wallet,
                  "isExchange" => true,
-                 "labels" => []
+                 "labels" => [%{"metadata" => "{\"owner\": \"binance\"}", "name" => "CEX"}]
                },
                "trxValue" => 6500.0
              } in trx_out
@@ -228,7 +228,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
                "toAddress" => %{
                  "address" => @exchange_wallet,
                  "isExchange" => true,
-                 "labels" => []
+                 "labels" => [%{"metadata" => "{\"owner\": \"binance\"}", "name" => "CEX"}]
                },
                "trxValue" => 5500.0
              } in trx_all
@@ -239,7 +239,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
                "toAddress" => %{
                  "address" => @exchange_wallet,
                  "isExchange" => true,
-                 "labels" => []
+                 "labels" => [%{"metadata" => "{\"owner\": \"binance\"}", "name" => "CEX"}]
                },
                "trxValue" => 6500.0
              } in trx_all

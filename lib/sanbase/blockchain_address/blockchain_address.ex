@@ -52,9 +52,12 @@ defmodule Sanbase.BlockchainAddress do
   All other chains are sensitive, so they are not changed by this function.
   """
   def to_internal_format(address) do
-    case Regex.match?(~r/^0x([A-Fa-f0-9]{40})$/, address) do
-      true -> String.downcase(address)
-      _ -> address
+    cond do
+      # ETH and ETH forks
+      Regex.match?(~r/^0x([A-Fa-f0-9]{40})$/, address) -> String.downcase(address)
+      # BTC and BTC forks
+      Regex.match?(~r/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/, address) -> address
+      true -> address
     end
   end
 

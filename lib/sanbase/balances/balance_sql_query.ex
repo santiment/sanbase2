@@ -268,6 +268,23 @@ defmodule Sanbase.Balance.SqlQuery do
     {query, args}
   end
 
+  def first_datetime_query(address, slug, blockchain) when is_binary(address) do
+    query = """
+    SELECT toUnixTimestamp(min(dt))
+    FROM (
+      SELECT arrayJoin(groupArrayMerge(values)) AS values_merged, values_merged.1 AS dt
+      FROM balances_aggregated
+      WHERE
+        #{address_clause(address, argument_position: 1)} AND
+        blockchain = ?2 AND
+        asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?3 LIMIT 1 )
+    )
+    """
+
+    args = [address, blockchain, slug]
+    {query, args}
+  end
+
   def assets_held_by_address_query(address) do
     query = """
     SELECT

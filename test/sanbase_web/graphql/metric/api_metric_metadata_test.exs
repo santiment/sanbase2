@@ -43,7 +43,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
                    "SOURCE",
                    "LABEL_FQN",
                    "LABEL_FQNS",
-                   "BLOCKCHAIN"
+                   "BLOCKCHAIN",
+                   "BLOCKCHAIN_ADDRESS"
                  ],
                  &1
                )

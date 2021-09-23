@@ -203,6 +203,18 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  def slugs_by_infrastructure(infrastructures, opts \\ []) when is_list(infrastructures) do
+    # explicitly remove preloads as they are not going to be used
+    opts = Keyword.put(opts, :preload?, false)
+
+    from(
+      p in projects_query(opts),
+      left_join: infr in assoc(p, :infrastructure),
+      where: infr.code in ^infrastructures
+    )
+    |> Repo.all()
+  end
+
   @doc ~s"""
   Returns all slugs of the projects that have one or more github organizations
   Filtering out projects based on some conditions can be controled by the options.

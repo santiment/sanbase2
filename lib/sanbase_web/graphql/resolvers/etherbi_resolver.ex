@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       args,
       %{source: %{metric: "age_destroyed"}}
     )
-    |> Sanbase.Utils.Transform.duplicate_map_keys(:value, :burn_rate)
+    |> Sanbase.Utils.Transform.duplicate_map_keys(old_key: :value, new_key: :burn_rate)
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :token_age_consumed)
   end
 

@@ -72,7 +72,7 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs(%{metric: metric}) when metric in @metrics do
+  def available_slugs(metric) when metric in @metrics do
     available_slugs()
   end
 

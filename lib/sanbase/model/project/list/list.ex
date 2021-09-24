@@ -207,10 +207,13 @@ defmodule Sanbase.Model.Project.List do
     # explicitly remove preloads as they are not going to be used
     opts = Keyword.put(opts, :preload?, false)
 
+    # If the infrastructure is `own` then use the ticker as infrastructure
     from(
       p in projects_query(opts),
       left_join: infr in assoc(p, :infrastructure),
-      where: infr.code in ^infrastructures,
+      where:
+        infr.code in ^infrastructures or
+          (fragment("lower(?)", infr.code) == "own" and p.ticker in ^infrastructures),
       select: p.slug
     )
     |> Repo.all()

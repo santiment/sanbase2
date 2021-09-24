@@ -3,6 +3,7 @@ defmodule Sanbase.MetricTest do
 
   import Sanbase.Factory
   import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Metric
 
@@ -26,6 +27,8 @@ defmodule Sanbase.MetricTest do
     {Sanbase.Price.MetricAdapter, [:passthrough],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
     {Sanbase.Clickhouse.TopHolders.MetricAdapter, [:passthrough],
+     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.BlockchainAddress.MetricAdapter, [:passthrough],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end}
   ]) do
     []
@@ -41,7 +44,8 @@ defmodule Sanbase.MetricTest do
 
       results =
         for metric <- metrics do
-          Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d")
+          selector = extend_selector_with_required_fields(metric, %{slug: project.slug})
+          Metric.timeseries_data(metric, selector, @from, @to, "1d")
         end
 
       assert Enum.all?(results, &match?({:ok, _}, &1))
@@ -65,13 +69,12 @@ defmodule Sanbase.MetricTest do
 
       for _ <- 1..10 do
         metric = metrics |> Enum.random()
+        selector = extend_selector_with_required_fields(metric, %{slug: project.slug})
         {:ok, %{available_aggregations: aggregations}} = Metric.metadata(metric)
 
         results =
           for aggregation <- aggregations do
-            Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d",
-              aggregation: aggregation
-            )
+            Metric.timeseries_data(metric, selector, @from, @to, "1d", aggregation: aggregation)
           end
 
         assert Enum.all?(results, &match?({:ok, _}, &1))
@@ -80,25 +83,25 @@ defmodule Sanbase.MetricTest do
 
     test "cannot use aggregation that is not available", %{project: project} do
       # Fetch some available metric
-      [metric | _] = Metric.available_timeseries_metrics()
+      metric = Metric.available_timeseries_metrics() |> Enum.random()
+      selector = extend_selector_with_required_fields(metric, %{slug: project.slug})
+
       aggregations = Metric.available_aggregations()
       rand_aggregations = Enum.map(1..10, fn _ -> rand_str() |> String.to_atom() end)
       rand_aggregations = rand_aggregations -- aggregations
 
       results =
         for aggregation <- rand_aggregations do
-          Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d",
-            aggregation: aggregation
-          )
+          Metric.timeseries_data(metric, selector, @from, @to, "1d", aggregation: aggregation)
         end
 
       assert Enum.all?(results, &match?({:error, _}, &1))
     end
 
     test "fetch a single metric", %{project: project} do
-      [metric | _] = Metric.available_timeseries_metrics()
-
-      result = Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d")
+      metric = Metric.available_timeseries_metrics() |> Enum.random()
+      selector = extend_selector_with_required_fields(metric, %{slug: project.slug})
+      result = Metric.timeseries_data(metric, selector, @from, @to, "1d")
 
       assert result == {:ok, @resp}
     end

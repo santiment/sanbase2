@@ -23,7 +23,8 @@ defmodule Sanbase.Metric.Helper do
     Sanbase.Price.MetricAdapter,
     Sanbase.Twitter.MetricAdapter,
     Sanbase.Clickhouse.TopHolders.MetricAdapter,
-    Sanbase.Clickhouse.Uniswap.MetricAdapter
+    Sanbase.Clickhouse.Uniswap.MetricAdapter,
+    Sanbase.BlockchainAddress.MetricAdapter
   ]
 
   Module.register_attribute(__MODULE__, :aggregations_acc, accumulate: true)

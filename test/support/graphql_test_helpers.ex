@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.TestHelpers do
   import Plug.Conn
   import Phoenix.ConnTest
+  import Sanbase.Factory
 
   alias Sanbase.{Metric, Signal}
   alias Sanbase.Billing.Plan.AccessChecker
@@ -150,6 +151,8 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   def map_to_args(%{} = map, opts \\ []) do
     map_as_input_object? = Keyword.get(opts, :map_as_input_object, false)
 
+    map = Map.delete(map, :map_as_input_object)
+
     Enum.map(map, fn
       {k, [%{} | _] = l} ->
         ~s/#{k}: [#{Enum.map(l, &map_to_input_object_str/1) |> Enum.join(",")}]/
@@ -158,7 +161,8 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
         ~s/#{k}: "#{dt |> DateTime.truncate(:second) |> DateTime.to_iso8601()}"/
 
       {k, m} when is_map(m) ->
-        if map_as_input_object? do
+        if map_as_input_object? || Map.get(m, :map_as_input_object) do
+          m = Map.delete(m, :map_as_input_object)
           ~s/#{k}: #{map_to_input_object_str(m)}/
         else
           ~s/#{k}: '#{Jason.encode!(m)}'/
@@ -235,5 +239,12 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   defp add_missing_selector(:source, selector) do
     source = Enum.random(["twitter", "reddit", "bitcointalk"])
     Map.put(selector, :source, source)
+  end
+
+  defp add_missing_selector(:blockchain_address, selector) do
+    # Add `map_as_input_object` flag as an implementation detail for the
+    # map_to_input_object_str/{1,2} function so this is not encoded as json
+    blockchain_address = %{map_as_input_object: true, address: "0x" <> rand_hex_str(38)}
+    Map.put(selector, :blockchain_address, blockchain_address)
   end
 end

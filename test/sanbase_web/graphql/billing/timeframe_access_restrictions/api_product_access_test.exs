@@ -34,7 +34,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -63,7 +64,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(91, 10)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -93,7 +95,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(89, 2)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -120,7 +123,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -151,7 +155,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
 
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -180,7 +185,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2 * 365 + 1, 2 * 365 - 1)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -193,7 +199,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2 * 365 - 10, 2 * 365 - 2)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query_with_error(context.conn, query, "getMetric")
 
       refute called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -204,7 +211,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(10, 0)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -224,7 +232,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
       metric = "withdrawal_balance"
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       error_message = execute_query_with_error(context.conn, query, "getMetric")
 
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -264,7 +273,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(89, 2)
       metric = "active_deposits"
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -282,7 +292,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -311,7 +322,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -342,7 +354,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -373,7 +386,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(10, 0)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -404,7 +418,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
       metric = "mvrv_long_short_diff_usd"
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -422,7 +437,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -451,7 +467,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :custom)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -470,7 +487,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       metric = "holders_distribution_0.01_to_0.1"
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -479,12 +497,14 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
   # Private functions
 
-  defp metric_query(metric, slug, from, to) do
+  defp metric_query(metric, selector, from, to) do
+    selector = extend_selector_with_required_fields(metric, selector)
+
     """
       {
         getMetric(metric: "#{metric}") {
           timeseriesData(
-            slug: "#{slug}"
+            selector: #{map_to_input_object_str(selector)}
             from: "#{from}"
             to: "#{to}"
             interval: "30d"

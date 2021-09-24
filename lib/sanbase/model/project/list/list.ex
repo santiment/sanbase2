@@ -210,7 +210,8 @@ defmodule Sanbase.Model.Project.List do
     from(
       p in projects_query(opts),
       left_join: infr in assoc(p, :infrastructure),
-      where: infr.code in ^infrastructures
+      where: infr.code in ^infrastructures,
+      select: p.slug
     )
     |> Repo.all()
   end

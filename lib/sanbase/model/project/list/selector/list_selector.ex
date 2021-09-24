@@ -11,12 +11,12 @@ defmodule Sanbase.Model.Project.ListSelector do
   lead to issues if more than 1 watchlist is resolved.
   """
   alias Sanbase.Model.Project
-  alias __MODULE__.{Transform, Validator}
+  alias __MODULE__.Transform
 
   @cycle_detection_key :__get_base_projects__
   def clear_detect_cycles(), do: Process.delete(@cycle_detection_key)
 
-  defdelegate valid_selector?(args), to: Validator
+  defdelegate valid_selector?(args), to: __MODULE__.Validator
 
   @doc ~s"""
   Return a list of projects described by the selector object.

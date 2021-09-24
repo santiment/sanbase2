@@ -18,33 +18,45 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   def aggregation(:sum, value_column, _dt_column), do: "sumKahan(#{value_column})"
   def aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
 
-  def generate_comparison_string(column, :inside_channel, threshold),
-    do: generate_comparison_string(column, :inside_channel_inclusive, threshold)
+  def generate_comparison_string(column, :inside_channel, threshold)
+      when is_number(threshold),
+      do: generate_comparison_string(column, :inside_channel_inclusive, threshold)
 
-  def generate_comparison_string(column, :outside_channel, threshold),
-    do: generate_comparison_string(column, :outside_channel_inclusive, threshold)
+  def generate_comparison_string(column, :outside_channel, threshold)
+      when is_number(threshold),
+      do: generate_comparison_string(column, :outside_channel_inclusive, threshold)
 
-  def generate_comparison_string(column, :less_than, threshold), do: "#{column} < #{threshold}"
+  def generate_comparison_string(column, :less_than, threshold)
+      when is_number(threshold),
+      do: "#{column} < #{threshold}"
 
-  def generate_comparison_string(column, :less_than_or_equal_to, threshold),
-    do: "#{column} <= #{threshold}"
+  def generate_comparison_string(column, :less_than_or_equal_to, threshold)
+      when is_number(threshold),
+      do: "#{column} <= #{threshold}"
 
-  def generate_comparison_string(column, :greater_than, threshold), do: "#{column} > #{threshold}"
+  def generate_comparison_string(column, :greater_than, threshold)
+      when is_number(threshold),
+      do: "#{column} > #{threshold}"
 
-  def generate_comparison_string(column, :greater_than_or_equal_to, threshold),
-    do: "#{column} >= #{threshold}"
+  def generate_comparison_string(column, :greater_than_or_equal_to, threshold)
+      when is_number(threshold),
+      do: "#{column} >= #{threshold}"
 
-  def generate_comparison_string(column, :inside_channel_inclusive, [low, high]),
-    do: "#{column} >= #{low} AND #{column} <= #{high}"
+  def generate_comparison_string(column, :inside_channel_inclusive, [low, high])
+      when is_number(low) and is_number(high),
+      do: "#{column} >= #{low} AND #{column} <= #{high}"
 
-  def generate_comparison_string(column, :inside_channel_exclusive, [low, high]),
-    do: "#{column} > #{low} AND #{column} < #{high}"
+  def generate_comparison_string(column, :inside_channel_exclusive, [low, high])
+      when is_number(low) and is_number(high),
+      do: "#{column} > #{low} AND #{column} < #{high}"
 
-  def generate_comparison_string(column, :outside_channel_inclusive, [low, high]),
-    do: "#{column} <= #{low} OR #{column} >= #{high}"
+  def generate_comparison_string(column, :outside_channel_inclusive, [low, high])
+      when is_number(low) and is_number(high),
+      do: "#{column} <= #{low} OR #{column} >= #{high}"
 
-  def generate_comparison_string(column, :outside_channel_exclusive, [low, high]),
-    do: "#{column} < #{low} OR #{column} > #{high}"
+  def generate_comparison_string(column, :outside_channel_exclusive, [low, high])
+      when is_number(low) and is_number(high),
+      do: "#{column} < #{low} OR #{column} > #{high}"
 
   def asset_id_filter(slug, opts) when is_binary(slug) do
     arg_position = Keyword.fetch!(opts, :argument_position)

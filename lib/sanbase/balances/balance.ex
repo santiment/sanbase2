@@ -12,16 +12,15 @@ defmodule Sanbase.Balance do
   def historical_balance_ohlc([], _slug, _from, _to, _interval), do: {:ok, []}
 
   def historical_balance_ohlc(address, slug, from, to, interval) do
-    with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
+    with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
       address = transform_address(address, blockchain)
 
       do_historical_balance_ohlc(address, slug, decimals, blockchain, from, to, interval)
     end
   end
 
-  def historical_balance(address, slug, from, to, interval)
-      when is_binary(address) do
-    with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
+  def historical_balance(address, slug, from, to, interval) when is_binary(address) do
+    with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
       address = transform_address(address, blockchain)
 
       do_historical_balance(address, slug, decimals, blockchain, from, to, interval)
@@ -31,7 +30,7 @@ defmodule Sanbase.Balance do
   def balance_change([], _slug, _from, _to), do: {:ok, []}
 
   def balance_change(address_or_addresses, slug, from, to) do
-    with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
+    with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
       addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
 
       do_balance_change(addresses, slug, decimals, blockchain, from, to)
@@ -42,7 +41,7 @@ defmodule Sanbase.Balance do
     do: {:ok, []}
 
   def historical_balance_changes(address_or_addresses, slug, from, to, interval) do
-    with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
+    with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
       addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
 
       do_historical_balance_changes(addresses, slug, decimals, blockchain, from, to, interval)
@@ -50,7 +49,7 @@ defmodule Sanbase.Balance do
   end
 
   def last_balance_before(address_or_addresses, slug, datetime) do
-    with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
+    with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
       addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
 
       do_last_balance_before(addresses, slug, decimals, blockchain, datetime)
@@ -69,30 +68,69 @@ defmodule Sanbase.Balance do
     end)
   end
 
-  def current_balance(address_or_addresses, slug) do
-    with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
-      addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
+  def addresses_by_filter(slug, operator, threshold, opts) do
+    with {:ok, {decimals, infr, _blockchain}} <- info_by_slug(slug),
+         {:ok, table} <- realtime_balances_table(slug, infr) do
+      {query, args} = addresses_by_filter_query(slug, decimals, operator, threshold, table, opts)
 
-      do_current_balance(addresses, slug, decimals, blockchain)
+      ClickhouseRepo.query_transform(query, args, fn [address, balance] ->
+        %{
+          address: address,
+          balance: balance
+        }
+      end)
     end
   end
 
   def first_datetime(address, slug) do
-    with {:ok, {_, blockchain}} <- info_by_slug(slug) do
+    with {:ok, {_decimals, _infr, blockchain}} <- info_by_slug(slug) do
       address = transform_address(address, blockchain)
 
       {query, args} = first_datetime_query(address, slug, blockchain)
 
-      ClickhouseRepo.query_transform(query, args, fn [unix] ->
-        DateTime.from_unix!(unix)
-      end)
+      ClickhouseRepo.query_transform(query, args, fn [unix] -> DateTime.from_unix!(unix) end)
       |> maybe_unwrap_ok_value()
     end
   end
 
-  def supported_infrastructures() do
-    ["ETH", "BTC", "BCH", "LTC", "BNB", "BEP2", "XRP"]
+  def current_balance(address_or_addresses, slug) do
+    with {:ok, {decimals, infr, blockchain}} <- info_by_slug(slug),
+         {:ok, table} <- realtime_balances_table_or_nil(slug, infr) do
+      addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
+
+      do_current_balance(addresses, slug, decimals, blockchain, table)
+    end
   end
+
+  def current_balance_top_addresses(slug, page, page_size, direction) do
+    with {:ok, {decimals, infr, _blockchain}} <- info_by_slug(slug),
+         {:ok, table} <- realtime_balances_table(slug, infr) do
+      opts = [page: page, page_size: page_size, direction: direction]
+      {query, args} = top_addresses_query(slug, decimals, table, opts)
+
+      ClickhouseRepo.query_transform(query, args, fn [address, balance] ->
+        %{
+          address: address,
+          balance: balance
+        }
+      end)
+    end
+  end
+
+  def realtime_balances_table_or_nil(slug, infr) do
+    case realtime_balances_table(slug, infr) do
+      {:ok, table} -> {:ok, table}
+      _ -> {:ok, nil}
+    end
+  end
+
+  def realtime_balances_table("ethereum", "ETH"), do: {:ok, "eth_balances_realtime"}
+  def realtime_balances_table(_, "ETH"), do: {:ok, "erc20_balances_realtime"}
+
+  def realtime_balances_table(slug, _infrastructure),
+    do: {:error, "The slug #{slug} does not have support for realtime balances"}
+
+  def supported_infrastructures(), do: ["ETH", "BTC", "BCH", "LTC", "BNB", "BEP2", "XRP"]
 
   def blockchain_from_infrastructure("ETH"), do: "ethereum"
   def blockchain_from_infrastructure("BTC"), do: "bitcoin"
@@ -105,8 +143,8 @@ defmodule Sanbase.Balance do
 
   # Private functions
 
-  defp do_current_balance(addresses, slug, decimals, blockchain) do
-    {query, args} = current_balance_query(addresses, slug, decimals, blockchain)
+  defp do_current_balance(addresses, slug, decimals, blockchain, table) do
+    {query, args} = current_balance_query(addresses, slug, decimals, blockchain, table)
 
     ClickhouseRepo.query_transform(query, args, fn [address, balance] ->
       %{
@@ -298,7 +336,7 @@ defmodule Sanbase.Balance do
 
           blockchain ->
             decimals = maybe_override_decimals(blockchain, decimals)
-            {:ok, {decimals, blockchain}}
+            {:ok, {decimals, infr, blockchain}}
         end
 
       {:error, {:missing_contract, error}} ->

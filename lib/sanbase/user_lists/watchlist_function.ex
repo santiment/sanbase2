@@ -4,32 +4,63 @@ defmodule Sanbase.WatchlistFunction do
   defstruct name: "empty", args: []
 
   @type result :: %{
-          required(:projects) => list(),
-          required(:total_projects_count) => non_neg_integer(),
+          optional(:projects) => list(),
+          optional(:blockchain_addresses) => list(),
+          optional(:total_projects_count) => non_neg_integer(),
+          optional(:total_blockchain_addresses_count) => non_neg_integer(),
           optional(:has_pagination?) => boolean(),
           optional(:all_included_slugs) => list(String.t())
         }
 
   alias Sanbase.Model.Project
+  alias Sanbase.BlockchainAddress
 
   @impl Ecto.Type
   def type, do: :map
 
+  # Sanbase.WatchlistFunction.valid_function?(%Sanbase.WatchlistFunction{
+  #   name: "address_selector",
+  #   args: %{filters: [%{name: "top_addresses", args: %{slug: "santiment", limit: 10}}]}
+  # })
+
+  @address_selector_fields ["filters", "pagination", "filters_combinator"]
+  def valid_function?(%__MODULE__{name: "address_selector", args: args} = fun) do
+    args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
+
+    with {selector, empty_map} when map_size(empty_map) == 0 <-
+           Map.split(args, @address_selector_fields),
+         true <- BlockchainAddress.ListSelector.valid_selector?(%{selector: selector}) do
+      # returns `true` or `false` whether the function can be evaluated. This catches all
+      # errors that can lead to the function being invalid.
+      evaluates?(fun)
+    else
+      {%{}, %{} = unsupported_keys_map} when map_size(unsupported_keys_map) > 0 ->
+        {:error,
+         "Dynamic watchlist 'address_selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys_map))}"}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @project_selector_fields [
+    "filters",
+    "order_by",
+    "pagination",
+    "filters_combinator",
+    "base_projects"
+  ]
   def valid_function?(%__MODULE__{name: "selector", args: args} = fun) do
     args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
 
     with {selector, empty_map} when map_size(empty_map) == 0 <-
-           Map.split(args, [
-             "filters",
-             "order_by",
-             "pagination",
-             "filters_combinator",
-             "base_projects"
-           ]),
+           Map.split(args, @project_selector_fields),
          true <- Project.ListSelector.valid_selector?(%{selector: selector}) do
+      # returns `true` or `false` whether the function can be evaluated. This catches all
+      # errors that can lead to the function being invalid.
       evaluates?(fun)
     else
-      {%{}, %{} = unsupported_keys_map} ->
+      {%{}, %{} = unsupported_keys_map} when map_size(unsupported_keys_map) > 0 ->
         {:error,
          "Dynamic watchlist 'selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys_map))}"}
 
@@ -119,11 +150,17 @@ defmodule Sanbase.WatchlistFunction do
   def evaluates?(%__MODULE__{} = fun) do
     try do
       case evaluate(fun) do
-        {:ok, _} -> true
-        {:error, _} -> false
+        {:ok, _} ->
+          true
+
+        {:error, error} ->
+          {:error,
+           "Watchlist function is not valid because it returns error when evaluating. Reason: #{inspect(error)}"}
       end
     rescue
-      _ -> false
+      e ->
+        {:error,
+         "Watchlist function is not valid because it raises when evaluating. Reason: #{Exception.message(e)}"}
     end
   end
 
@@ -133,19 +170,26 @@ defmodule Sanbase.WatchlistFunction do
   def evaluate(%__MODULE__{name: "selector", args: args}) do
     args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
 
-    case Map.split(args, [
-           "filters",
-           "order_by",
-           "pagination",
-           "filters_combinator",
-           "base_projects"
-         ]) do
+    case Map.split(args, @project_selector_fields) do
       {selector, empty_map} when map_size(empty_map) == 0 ->
         Project.ListSelector.projects(%{selector: selector})
 
       {_selector, unsupported_keys_map} ->
         {:error,
          "Dynamic watchlist 'selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys_map))}"}
+    end
+  end
+
+  def evaluate(%__MODULE__{name: "address_selector", args: args}) do
+    args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
+
+    case Map.split(args, @address_selector_fields) do
+      {selector, empty_map} when map_size(empty_map) == 0 ->
+        BlockchainAddress.ListSelector.addresses(%{selector: selector})
+
+      {_selector, unsupported_keys_map} ->
+        {:error,
+         "Dynamic watchlist 'address_selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys_map))}"}
     end
   end
 

@@ -57,7 +57,8 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) do
-    infrastructure = Project.infrastructure(slug)
+    {:ok, _contract, _decimals, infrastructure} =
+      Project.contract_info_infrastructure_by_slug(slug)
 
     case Balance.blockchain_from_infrastructure(infrastructure) do
       :unsupported_blockchain -> {:ok, []}

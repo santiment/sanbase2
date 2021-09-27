@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mockery
-  import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
   import Sanbase.Factory

@@ -140,6 +140,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                                    (File.read!(file) |> Jason.decode!()) ++ acc
                                  end)
 
+  # Allow the same metric to be defined more than once if it differs in the `data_type`
+  Enum.group_by(
+    @metrics_json_pre_alias_expand,
+    fn metric -> {metric["metric"], metric["data_type"]} end
+  )
+  |> Map.values()
+  |> Enum.filter(fn grouped_metrics -> Enum.count(grouped_metrics) > 1 end)
+  |> Enum.each(fn duplicate_metrics ->
+    Break.break("""
+      Duplicate metrics found, consider using the aliases field:
+      `aliases: ["name1", "name2", ...]`
+      These metrics are: #{inspect(duplicate_metrics)}
+    """)
+  end)
+
   @metrics_json_pre_timebound_expand Enum.flat_map(
                                        @metrics_json_pre_alias_expand,
                                        fn metric ->
@@ -207,27 +222,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                           |> Enum.reject(fn {_k, v} -> v == nil end)
                           |> Map.new()
 
-  @deprecated_metrics_map Helper.name_to_field_map(@metrics_json, "deprecated_since",
+  @deprecated_metrics_map Helper.name_to_field_map(
+                            @metrics_json_including_deprecated,
+                            "deprecated_since",
                             required?: false,
                             transform_fn: &Sanbase.DateTimeUtils.from_iso8601!/1
                           )
+                          |> Enum.reject(fn {_k, v} -> v == nil end)
+                          |> Map.new()
 
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)
-
-  Enum.group_by(
-    @metrics_json_pre_alias_expand,
-    fn metric -> {metric["metric"], metric["data_type"]} end
-  )
-  |> Map.values()
-  |> Enum.filter(fn grouped_metrics -> Enum.count(grouped_metrics) > 1 end)
-  |> Enum.each(fn duplicate_metrics ->
-    Break.break("""
-      Duplicate metrics found, consider using the aliases field:
-      `aliases: ["name1", "name2", ...]`
-      These metrics are: #{inspect(duplicate_metrics)}
-    """)
-  end)
 
   case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
     [] ->

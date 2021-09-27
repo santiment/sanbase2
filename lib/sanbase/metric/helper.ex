@@ -41,7 +41,6 @@ defmodule Sanbase.Metric.Helper do
 
   for module <- @metric_modules do
     @required_selectors_map_acc module.required_selectors
-
     @aggregations_acc module.available_aggregations()
     @free_metrics_acc module.free_metrics()
     @restricted_metrics_acc module.restricted_metrics()

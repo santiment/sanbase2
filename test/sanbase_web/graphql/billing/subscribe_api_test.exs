@@ -9,7 +9,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   alias Sanbase.Accounts.User
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
-  alias Sanbase.Billing.{Subscription, Product}
 
   @coupon_code "test_coupon"
 

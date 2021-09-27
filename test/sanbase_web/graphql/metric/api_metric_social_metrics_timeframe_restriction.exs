@@ -23,8 +23,6 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
     # These metrics have restricted historical data and free realtime data
     metrics = [
       "social_volume_bitcointalk",
-      "social_volume_discord",
-      "social_volume_professional_traders_chat",
       "social_volume_reddit",
       "social_volume_telegram",
       "social_volume_total",

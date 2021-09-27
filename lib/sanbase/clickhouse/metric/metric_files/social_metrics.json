@@ -390,7 +390,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "deprecated_since": "2021-09-21T00:00:00Z"
+    "deprecated_since": "2021-09-27T00:00:00Z"
   },
   {
     "human_readable_name": "Social Dominance Discord",
@@ -411,7 +411,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "deprecated_since": "2021-09-21T00:00:00Z"
+    "deprecated_since": "2021-09-27T00:00:00Z"
   },
   {
     "human_readable_name": "Sentiment Volume Consumed Discord",
@@ -432,7 +432,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "deprecated_since": "2021-09-21T00:00:00Z"
+    "deprecated_since": "2021-09-27T00:00:00Z"
   },
   {
     "human_readable_name": "Sentiment Positive Discord",
@@ -453,7 +453,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "deprecated_since": "2021-09-21T00:00:00Z"
+    "deprecated_since": "2021-09-27T00:00:00Z"
   },
   {
     "human_readable_name": "Sentiment Negative Discord",
@@ -474,7 +474,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "deprecated_since": "2021-09-21T00:00:00Z"
+    "deprecated_since": "2021-09-27T00:00:00Z"
   },
   {
     "human_readable_name": "Sentiment Balance Discord",
@@ -495,7 +495,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "deprecated_since": "2021-09-21T00:00:00Z"
+    "deprecated_since": "2021-09-27T00:00:00Z"
   },
   {
     "human_readable_name": "Social Volume Professional Traders Chat",
@@ -519,7 +519,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "deprecated_since": "2021-09-21T00:00:00Z"
+    "deprecated_since": "2021-09-27T00:00:00Z"
   },
   {
     "human_readable_name": "Social Dominance Professional Traders Chat",
@@ -540,7 +540,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "deprecated_since": "2021-09-21T00:00:00Z"
+    "deprecated_since": "2021-09-27T00:00:00Z"
   },
   {
     "human_readable_name": "Sentiment Volume Consumed Professional Traders Chat",
@@ -561,7 +561,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "deprecated_since": "2021-09-21T00:00:00Z"
+    "deprecated_since": "2021-09-27T00:00:00Z"
   },
   {
     "human_readable_name": "Sentiment Positive Professional Traders Chat",
@@ -582,7 +582,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "deprecated_since": "2021-09-21T00:00:00Z"
+    "deprecated_since": "2021-09-27T00:00:00Z"
   },
   {
     "human_readable_name": "Sentiment Negative Professional Traders Chat",
@@ -603,7 +603,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "deprecated_since": "2021-09-21T00:00:00Z"
+    "deprecated_since": "2021-09-27T00:00:00Z"
   },
   {
     "human_readable_name": "Sentiment Balance Professional Traders Chat",
@@ -624,7 +624,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "deprecated_since": "2021-09-21T00:00:00Z"
+    "deprecated_since": "2021-09-27T00:00:00Z"
   },
   {
     "human_readable_name": "Social Volume Twitter",

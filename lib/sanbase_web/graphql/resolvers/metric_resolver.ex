@@ -19,8 +19,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   @datapoints 300
 
   def get_metric(_root, %{metric: metric}, _resolution) do
-    with true <- Metric.has_metric?(metric),
-         true <- Metric.is_not_deprecated?(metric) do
+    with true <- Metric.is_not_deprecated?(metric),
+         true <- Metric.has_metric?(metric) do
       {:ok, %{metric: metric}}
     end
   end

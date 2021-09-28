@@ -22,6 +22,7 @@ defmodule Sanbase.Price do
   alias Sanbase.ClickhouseRepo
 
   @default_source "coinmarketcap"
+  @supported_sources ["coinmarketcap", "cryptocompare"]
   @metrics [:price_usd, :price_btc, :marketcap_usd, :volume_usd]
   @metrics @metrics ++ Enum.map(@metrics, &Atom.to_string/1)
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
@@ -142,7 +143,7 @@ defmodule Sanbase.Price do
   end
 
   def timeseries_data(slug_or_slugs, from, to, interval, opts) do
-    source = Keyword.get(opts, :source) || @default_source
+    source = opts_to_source(opts)
     aggregation = Keyword.get(opts, :aggregation) || :last
     {query, args} = timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation)
 
@@ -202,7 +203,7 @@ defmodule Sanbase.Price do
   end
 
   def timeseries_metric_data(slug_or_slugs, metric, from, to, interval, opts) do
-    source = Keyword.get(opts, :source) || @default_source
+    source = opts_to_source(opts)
     aggregation = Keyword.get(opts, :aggregation) || :last
 
     {query, args} =
@@ -212,7 +213,7 @@ defmodule Sanbase.Price do
   end
 
   def timeseries_metric_data_per_slug(slug_or_slugs, metric, from, to, interval, opts) do
-    source = Keyword.get(opts, :source) || @default_source
+    source = opts_to_source(opts)
     aggregation = Keyword.get(opts, :aggregation) || :last
 
     {query, args} =
@@ -261,7 +262,7 @@ defmodule Sanbase.Price do
 
   def aggregated_timeseries_data(slug_or_slugs, from, to, opts)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
-    source = Keyword.get(opts, :source, @default_source)
+    source = opts_to_source(opts)
     slugs = List.wrap(slug_or_slugs)
 
     {query, args} = aggregated_timeseries_data_query(slugs, from, to, source)
@@ -317,7 +318,7 @@ defmodule Sanbase.Price do
 
   def aggregated_metric_timeseries_data(slug_or_slugs, metric, from, to, opts)
       when metric in @metrics and (is_binary(slug_or_slugs) or is_list(slug_or_slugs)) do
-    source = Keyword.get(opts, :source) || @default_source
+    source = opts_to_source(opts)
     aggregation = Keyword.get(opts, :aggregation) || :avg
     slugs = List.wrap(slug_or_slugs)
 
@@ -347,7 +348,7 @@ defmodule Sanbase.Price do
 
   def aggregated_marketcap_and_volume(slug_or_slugs, from, to, opts)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
-    source = Keyword.get(opts, :source, @default_source)
+    source = opts_to_source(opts)
     slugs = List.wrap(slug_or_slugs)
 
     {query, args} = aggregated_marketcap_and_volume_query(slugs, from, to, source, opts)
@@ -385,7 +386,7 @@ defmodule Sanbase.Price do
   def last_record_before(slug, datetime, opts \\ [])
 
   def last_record_before(slug, datetime, opts) do
-    source = Keyword.get(opts, :source, @default_source)
+    source = opts_to_source(opts)
     {query, args} = last_record_before_query(slug, datetime, source)
 
     ClickhouseRepo.query_transform(
@@ -411,7 +412,7 @@ defmodule Sanbase.Price do
   """
   @spec ohlc(slug, DateTime.t(), DateTime.t(), opts) :: ohlc_result()
   def ohlc(slug, from, to, opts \\ []) do
-    source = Keyword.get(opts, :source, @default_source)
+    source = opts_to_source(opts)
     {query, args} = ohlc_query(slug, from, to, source)
 
     ClickhouseRepo.query_transform(
@@ -439,7 +440,7 @@ defmodule Sanbase.Price do
   @spec timeseries_ohlc_data(slug, DateTime.t(), DateTime.t(), interval, opts) ::
           timeseries_ohlc_data_result()
   def timeseries_ohlc_data(slug, from, to, interval, opts \\ []) do
-    source = Keyword.get(opts, :source, @default_source)
+    source = opts_to_source(opts)
     {query, args} = timeseries_ohlc_data_query(slug, from, to, interval, source)
 
     ClickhouseRepo.query_transform(
@@ -487,7 +488,7 @@ defmodule Sanbase.Price do
 
   def combined_marketcap_and_volume(slug_or_slugs, from, to, interval, opts) do
     slugs = List.wrap(slug_or_slugs)
-    source = Keyword.get(opts, :source, @default_source)
+    source = opts_to_source(opts)
 
     {query, args} = combined_marketcap_and_volume_query(slugs, from, to, interval, source)
 
@@ -530,7 +531,7 @@ defmodule Sanbase.Price do
   def slugs_with_volume_over(volume, opts \\ [])
 
   def slugs_with_volume_over(volume, opts) when is_number(volume) do
-    source = Keyword.get(opts, :source, @default_source)
+    source = opts_to_source(opts)
     {query, args} = slugs_with_volume_over_query(volume, source)
 
     ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
@@ -556,7 +557,7 @@ defmodule Sanbase.Price do
   def first_datetime("TOTAL_ERC20", _), do: ~U[2015-07-30 00:00:00Z]
 
   def first_datetime(slug, opts) do
-    source = Keyword.get(opts, :source, @default_source)
+    source = opts_to_source(opts)
     {query, args} = first_datetime_query(slug, source)
 
     ClickhouseRepo.query_transform(query, args, fn
@@ -629,4 +630,11 @@ defmodule Sanbase.Price do
   end
 
   defp maybe_add_percent_of_total_marketcap({:error, error}), do: {:error, error}
+
+  defp opts_to_source(opts) do
+    case Keyword.get(opts, :source) do
+      source when source in @supported_sources -> source
+      _ -> @default_source
+    end
+  end
 end

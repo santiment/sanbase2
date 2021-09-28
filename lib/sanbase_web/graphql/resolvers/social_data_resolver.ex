@@ -175,20 +175,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
   end
 
   def social_dominance(
-        _root,
-        %{slug: _slug, from: _from, to: _to, interval: _interval, source: source} = args,
-        _resolution
+        root,
+        %{slug: _, from: _, to: _, interval: _, source: source} = args,
+        resolution
       ) do
     source = if source == :all, do: :total, else: source
 
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{
-        source: %{
-          metric: "social_dominance_#{source}"
-        }
-      }
+      Map.put(resolution, :source, %{metric: "social_dominance_#{source}"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :dominance)
   end

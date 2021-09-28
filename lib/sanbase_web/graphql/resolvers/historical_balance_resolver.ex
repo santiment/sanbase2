@@ -81,15 +81,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     end)
   end
 
-  def miners_balance(
-        _root,
-        %{} = args,
-        _resolution
-      ) do
+  def miners_balance(root, %{} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "miners_balance"}}
+      Map.put(resolution, :source, %{metric: "miners_balance"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(
       old_key: :value,

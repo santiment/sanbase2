@@ -173,17 +173,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     end
   end
 
-  defp calculate_eth_top_transfers(%Project{slug: slug} = project, args) do
+  defp calculate_eth_top_transfers(%Project{slug: _slug} = project, args) do
     %{from: from, to: to, transaction_type: type, limit: limit} = args
     limit = Enum.min([limit, 100])
-    slug = "ethereum"
     infr = "ETH"
 
     with {:ok, addresses} <- Project.eth_addresses(project),
          {:ok, transfers} <-
-           Transfers.top_wallet_transfers(slug, addresses, from, to, 1, limit, type),
+           Transfers.top_wallet_transfers("ethereum", addresses, from, to, 1, limit, type),
          {:ok, transfers} <- BlockchainAddressUtils.transform_address_to_map(transfers, infr),
-         {:ok, transfers} <- Label.add_labels(slug, transfers),
+         {:ok, transfers} <- Label.add_labels("ethereum", transfers),
          {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
       {:ok, transfers}
     else

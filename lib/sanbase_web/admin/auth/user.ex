@@ -62,7 +62,7 @@ defmodule SanbaseWeb.ExAdmin.Accounts.User do
           column("San balance", fn eth_account ->
             case EthAccount.san_balance(eth_account) do
               :error -> ""
-              san_balance -> san_balance || ""
+              san_balance -> san_balance
             end
           end)
         end

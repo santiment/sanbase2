@@ -72,7 +72,6 @@ defmodule Sanbase.Accounts.EmailJobs do
         :first_education_email -> days_after(4)
         :trial_suggestion -> days_after(6)
         :second_education_email -> days_after(7)
-        _ -> nil
       end
 
     Sanbase.Mailer.new(

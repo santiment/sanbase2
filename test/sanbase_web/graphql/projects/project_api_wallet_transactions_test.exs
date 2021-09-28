@@ -29,7 +29,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   end
 
   setup do
-    project = insert(:random_project)
+    project =
+      insert(:random_project,
+        infrastructure:
+          Sanbase.Repo.get_by(Sanbase.Model.Infrastructure, code: "ETH") ||
+            build(:infrastructure, %{code: "ETH"})
+      )
 
     [
       slug: project.slug,
@@ -62,8 +67,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
       result =
         context.conn
         |> post("/graphql", query_skeleton(query, "projectBySlug"))
+        |> json_response(200)
 
-      trx_in = json_response(result, 200)["data"]["projectBySlug"]["ethTopTransactions"]
+      trx_in = result["data"]["projectBySlug"]["ethTopTransactions"]
 
       assert %{
                "datetime" => "2017-05-16T18:00:00Z",

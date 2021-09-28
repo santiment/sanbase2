@@ -12,8 +12,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
           min_interval: String.t(),
           is_accessible: boolean(),
           is_restricted: boolean(),
-          restricted_from: DateTime.t(),
-          restricted_to: DateTime.t()
+          restricted_from: DateTime.t() | nil,
+          restricted_to: DateTime.t() | nil
         }
 
   @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}

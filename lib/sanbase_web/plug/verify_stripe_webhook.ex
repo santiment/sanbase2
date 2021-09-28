@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Plug.VerifyStripeWebhook do
   import Plug.Conn
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   alias SanbaseWeb.Router.Helpers, as: Routes
 
@@ -56,5 +56,5 @@ defmodule SanbaseWeb.Plug.VerifyStripeWebhook do
     |> halt()
   end
 
-  defp webhook_secret(), do: Config.get(:webhook_secret)
+  defp webhook_secret(), do: Config.module_get(__MODULE__, :webhook_secret)
 end

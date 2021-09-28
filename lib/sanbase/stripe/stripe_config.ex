@@ -1,7 +1,7 @@
 defmodule Sanbase.StripeConfig do
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   def api_key do
-    Config.get(:api_key)
+    Config.module_get(__MODULE__, :api_key)
   end
 end

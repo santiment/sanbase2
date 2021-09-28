@@ -1,6 +1,6 @@
 defmodule Sanbase.ApplicationUtils do
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   @doc ~s"""
   Get the container type of the currently running pod. It can be one of web,

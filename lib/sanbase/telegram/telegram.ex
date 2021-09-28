@@ -7,7 +7,7 @@ defmodule Sanbase.Telegram do
   """
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
@@ -21,7 +21,12 @@ defmodule Sanbase.Telegram do
   alias Sanbase.ExternalServices.{RateLimiting, ErrorCatcher}
   plug(ErrorCatcher.Middleware)
   plug(RateLimiting.Middleware, name: @rate_limiting_server)
-  plug(Tesla.Middleware.BaseUrl, "https://api.telegram.org/bot#{Config.get(:token)}/")
+
+  plug(
+    Tesla.Middleware.BaseUrl,
+    "https://api.telegram.org/bot#{Config.module_get(__MODULE__, :token)}/"
+  )
+
   plug(Tesla.Middleware.Headers, [{"Content-Type", "application/json"}])
 
   def channel_id_valid?(chat_id) do
@@ -162,6 +167,6 @@ defmodule Sanbase.Telegram do
   # Private functions
 
   defp generate_link(user_token) do
-    "https://telegram.me/#{Config.get(:bot_username)}?start=#{user_token}"
+    "https://telegram.me/#{Config.module_get(__MODULE__, :bot_username)}?start=#{user_token}"
   end
 end

@@ -2,7 +2,7 @@ defmodule Sanbase.InternalServices.EthNode do
   use Tesla
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   @eth_decimals 1_000_000_000_000_000_000
 
@@ -95,7 +95,7 @@ defmodule Sanbase.InternalServices.EthNode do
   # Private functions
 
   defp client() do
-    parity_url = Config.get(:url)
+    parity_url = Config.module_get(__MODULE__, :url)
 
     Tesla.client([
       Sanbase.ExternalServices.ErrorCatcher.Middleware,

@@ -7,7 +7,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
   """
   use Tesla
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   alias Sanbase.ExternalServices.{RateLimiting, ErrorCatcher}
 
@@ -19,7 +19,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
   plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.JSON)
-  plug(Tesla.Middleware.Query, apikey: Config.get(:api_key))
+  plug(Tesla.Middleware.Query, apikey: Config.module_get(__MODULE__, :api_key))
   plug(Tesla.Middleware.Logger)
 
   def get_abi(address) do

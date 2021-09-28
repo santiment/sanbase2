@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Endpoint do
   use SanbaseWeb.Endpoint.ErrorHandler
   use Absinthe.Phoenix.Endpoint
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   @session_options [
     store: :cookie,
@@ -89,7 +89,7 @@ defmodule SanbaseWeb.Endpoint do
   end
 
   def website_url() do
-    Config.get(:website_url)
+    Config.module_get(__MODULE__, :website_url)
   end
 
   def sonar_url() do
@@ -127,21 +127,21 @@ defmodule SanbaseWeb.Endpoint do
   end
 
   def feed_url() do
-    Config.get(:website_url)
+    Config.module_get(__MODULE__, :website_url)
     |> Path.join("feed")
   end
 
   def user_account_url() do
-    Config.get(:website_url)
+    Config.module_get(__MODULE__, :website_url)
     |> Path.join("account")
   end
 
   def frontend_url() do
-    Config.get(:frontend_url)
+    Config.module_get(__MODULE__, :frontend_url)
   end
 
   def backend_url() do
-    Config.get(:backend_url)
+    Config.module_get(__MODULE__, :backend_url)
   end
 
   def api_url() do

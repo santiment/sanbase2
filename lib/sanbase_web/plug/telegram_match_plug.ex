@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Plug.TelegramMatchPlug do
 
   import Plug.Conn
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   def init(opts), do: opts
 

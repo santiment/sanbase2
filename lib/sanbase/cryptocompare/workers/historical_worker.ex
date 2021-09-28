@@ -21,7 +21,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   import Sanbase.Cryptocompare.HTTPHeaderUtils, only: [parse_value_list: 1]
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   @url "https://min-api.cryptocompare.com/data/histo/minute/daily"
   @oban_conf_name :oban_scrapers

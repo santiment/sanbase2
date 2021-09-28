@@ -25,8 +25,6 @@ defmodule Sanbase.SocialData.TrendingWords do
 
   alias Sanbase.ClickhouseRepo
 
-  require Sanbase.Utils.Config, as: Config
-
   @type word :: String.t()
   @type slug :: String.t()
   @type interval :: String.t()
@@ -60,7 +58,8 @@ defmodule Sanbase.SocialData.TrendingWords do
   # of computing the latest data
   @hours_back_ensure_has_data 3
 
-  schema "trending_words_v4_top_500" do
+  @table "trending_words_v4_top_500"
+  schema @table do
     field(:dt, :utc_datetime)
     field(:word, :string)
     field(:volume, :float)
@@ -225,7 +224,7 @@ defmodule Sanbase.SocialData.TrendingWords do
           word,
           any(project) AS project,
           argMax(score, dt) as score
-        FROM #{Config.get(:trending_words_table)}
+        FROM #{@table}
         PREWHERE
           dt >= toDateTime(?2) AND
           dt < toDateTime(?3) AND

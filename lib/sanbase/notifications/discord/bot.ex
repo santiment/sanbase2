@@ -1,5 +1,5 @@
 defmodule Sanbase.Notifications.Discord.Bot do
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
   require Logger
 
   @discord_api_url "https://discord.com/api"
@@ -73,6 +73,6 @@ defmodule Sanbase.Notifications.Discord.Bot do
   end
 
   defp discord_bot_secret do
-    Config.get(:bot_secret)
+    Config.module_get(__MODULE__, :bot_secret)
   end
 end

@@ -4,7 +4,7 @@ defmodule Sanbase.Application do
   import Sanbase.ApplicationUtils
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   alias Sanbase.EventBus.KafkaExporterSubscriber
 

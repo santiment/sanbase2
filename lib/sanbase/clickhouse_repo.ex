@@ -7,7 +7,7 @@ defmodule Sanbase.ClickhouseRepo do
 
   use Ecto.Repo, otp_app: :sanbase, adapter: @adapter
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
   require Logger
 
   def enabled?() do
@@ -23,7 +23,7 @@ defmodule Sanbase.ClickhouseRepo do
   CLICKHOUSE_DATABASE_URL environment variable.
   """
   def init(_, opts) do
-    pool_size = Config.get(:pool_size) |> Sanbase.Math.to_integer()
+    pool_size = Config.module_get(__MODULE__, :pool_size) |> Sanbase.Math.to_integer()
 
     opts =
       opts

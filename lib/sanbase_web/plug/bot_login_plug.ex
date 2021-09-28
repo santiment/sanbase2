@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Plug.BotLoginPlug do
 
   import Plug.Conn
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   def init(opts), do: opts
 
@@ -30,5 +30,5 @@ defmodule SanbaseWeb.Plug.BotLoginPlug do
     |> halt()
   end
 
-  defp bot_login_endpoint(), do: Config.get(:bot_login_endpoint)
+  defp bot_login_endpoint(), do: Config.module_get(__MODULE__, :bot_login_endpoint)
 end

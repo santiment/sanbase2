@@ -1,0 +1,13 @@
+name: require pull request
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  job:
+    name: require pull request
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello

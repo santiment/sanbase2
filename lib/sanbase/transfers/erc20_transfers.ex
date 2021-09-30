@@ -29,7 +29,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   def top_wallet_transfers(wallets, contract, from, to, decimals, page, page_size, type)
       when is_non_neg_integer(page) and is_non_neg_integer(page_size) do
     opts = [page: page, page_size: page_size]
-    {query, args} = top_wallet_transfers_query(contract, wallets, from, to, decimals, type, opts)
+    {query, args} = top_wallet_transfers_query(wallets, contract, from, to, decimals, type, opts)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->

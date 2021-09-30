@@ -44,8 +44,8 @@ defmodule Sanbase.Signal.AvailableSignalsTest do
         "mvrv_usd_60d_upper_zone",
         "mvrv_usd_180d_upper_zone",
         "mvrv_usd_365d_upper_zone",
-        "mvrv_usd_30d_lower_zone,
-        "mvrv_usd_60d_lower_zone,
+        "mvrv_usd_30d_lower_zone",
+        "mvrv_usd_60d_lower_zone",
         "mvrv_usd_180d_lower_zone",
         "mvrv_usd_365d_lower_zone"
       ]

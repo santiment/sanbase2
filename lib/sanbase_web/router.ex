@@ -30,6 +30,7 @@ defmodule SanbaseWeb.Router do
   end
 
   use ExAdmin.Router
+  use Kaffy.Routes, scope: "/admin3", pipe_through: [:basic_auth]
 
   scope "/auth", SanbaseWeb do
     pipe_through(:browser)

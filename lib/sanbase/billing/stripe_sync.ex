@@ -1,65 +1,73 @@
 defmodule Sanbase.Billing.StripeSync do
   import Ecto.Query
 
-  @topic "stripe_transactions"
+  @topic "sanbase_stripe_transactions"
 
-  def fetch_all_transactions() do
+  def sync_all_transactions() do
     cust_map = stripe_customer_user_id_map()
-    to = Timex.now()
-    from = Timex.shift(to, days: -1)
+    plan_map = plan_map()
+    product_map = product_map()
 
-    transactions(from, to)
-    |> Enum.map(fn transaction ->
-      %{
-        user_id: cust_map[transaction.customer],
-        timestamp: transaction.created_at,
-        data: %{
+    Sanbase.DateTimeUtils.generate_datetimes_list(~U[2019-07-19 00:00:00Z], "1d", 804)
+    |> Enum.each(fn dt ->
+      from = Timex.beginning_of_day(dt) |> DateTime.to_unix()
+      to = Timex.end_of_day(dt) |> DateTime.to_unix()
+      params = %{created: %{gte: from, lt: to}}
+
+      transactions(params)
+      |> Enum.map(fn transaction ->
+        data = %{
           id: transaction.id,
           status: transaction.status,
           amount: transaction.amount,
           plan: plan_map[transaction.plan],
           product: product_map[transaction.product]
         }
-      }
+
+        %{
+          user_id: cust_map[transaction.customer],
+          timestamp: transaction.created_at,
+          data: Jason.encode!(data),
+          id: transaction.id
+        }
+      end)
+      |> do_persist_sync()
     end)
   end
 
-  def transactions(from, to, starting_after \\ nil) do
-    from_ux = from |> DateTime.to_unix()
-    to_ux = to |> DateTime.to_unix()
+  def transactions(params \\ %{}) do
+    # %{created: %{gte: from_ux, lt: to_ux}}
+    params = %{limit: 100} |> Map.merge(params)
 
-    params = %{
-      created: %{gte: from_ux, lt: to_ux},
-      limit: 100
-    }
+    IO.inspect(params, label: "params")
 
-    params =
-      if starting_after do
-        Map.put(params, :starting_after, starting_after)
-      else
-        params
-      end
+    {:ok, res} =
+      Stripe.Charge.list(params, expand: ["invoice.subscription.plan"], timeout: 30_000)
 
-    {:ok, res} = Stripe.Charge.list(params, expand: ["invoice.subscription.plan"])
+    IO.inspect("#{length(res.data)}", label: "fetch charges: ")
 
     transactions =
       res.data
-      # |> Enum.filter(fn charge -> charge.status == "succeeded" end)
       |> Enum.map(fn charge ->
+        subscription = if charge.invoice, do: charge.invoice.subscription, else: nil
+
+        {plan, product} =
+          if subscription, do: {subscription.plan.id, subscription.plan.product}, else: {nil, nil}
+
         %{
           id: charge.id,
           status: charge.status,
           created_at: charge.created,
           amount: charge.amount / 100,
           customer: charge.customer,
-          plan: charge.invoice.subscription.plan.id,
-          product: charge.invoice.subscription.plan.product
+          plan: plan,
+          product: product
         }
       end)
 
     if res.has_more do
-      starting_after = List.last(res.data) |> Map.get(:id)
-      transactions ++ transactions(from, to, starting_after)
+      id = List.last(res.data) |> Map.get(:id)
+      transactions ++ transactions(Map.merge(params, %{starting_after: id}))
     else
       transactions
     end
@@ -86,6 +94,8 @@ defmodule Sanbase.Billing.StripeSync do
     |> Enum.reduce(%{}, fn x, acc -> Map.merge(acc, x) end)
   end
 
+  defp persist_in_kafka_async([]), do: :ok
+
   defp persist_in_kafka_async(transactions) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       do_persist_sync(transactions)
@@ -100,15 +110,15 @@ defmodule Sanbase.Billing.StripeSync do
         to_json_kv_tuple(transactions),
         @topic
       )
+      |> IO.inspect(label: "save to kafka")
     end)
   end
 
   defp to_json_kv_tuple(transactions) do
     transactions
     |> Enum.map(fn transaction ->
-      timestamp = DateTime.to_unix(transaction.timestamp)
-      key = "#{transaction.user_id}_#{timestamp}"
-
+      key = transaction.id
+      transaction = Map.delete(transaction, :id)
       {key, Jason.encode!(transaction)}
     end)
   end

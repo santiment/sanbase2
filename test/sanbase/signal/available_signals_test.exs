@@ -39,7 +39,15 @@ defmodule Sanbase.Signal.AvailableSignalsTest do
         "mcd_art_liquidations",
         "old_coins_moved",
         "price_usd_all_time_high",
-        "project_in_trending_words"
+        "project_in_trending_words",
+        "mvrv_usd_30d_upper_zone",
+        "mvrv_usd_60d_upper_zone",
+        "mvrv_usd_180d_upper_zone",
+        "mvrv_usd_365d_upper_zone",
+        "mvrv_usd_30d_lower_zone",
+        "mvrv_usd_60d_lower_zone",
+        "mvrv_usd_180d_lower_zone",
+        "mvrv_usd_365d_lower_zone"
       ]
       |> Enum.sort()
 

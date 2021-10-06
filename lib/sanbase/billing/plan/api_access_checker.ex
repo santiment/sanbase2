@@ -11,8 +11,8 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
 
   @free_plan_stats %{
     api_calls_month: 1000,
-    historical_data_in_days: 3 * 30,
-    realtime_data_cut_off_in_days: 2
+    historical_data_in_days: 2 * 365,
+    realtime_data_cut_off_in_days: 30
   }
 
   @basic_plan_stats %{

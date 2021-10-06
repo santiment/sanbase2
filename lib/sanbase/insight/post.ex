@@ -357,7 +357,6 @@ defmodule Sanbase.Insight.Post do
     public_insights_query(opts)
     |> order_by_published_at()
     |> page(page, page_size)
-    |> preload(^@preloads)
     |> Repo.all()
     |> Tag.Preloader.order_tags()
   end
@@ -367,6 +366,7 @@ defmodule Sanbase.Insight.Post do
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
+    |> preload(^@preloads)
   end
 
   @doc """

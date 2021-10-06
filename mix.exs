@@ -154,7 +154,7 @@ defmodule Sanbase.Mixfile do
       {:vex, "~> 0.8.0", override: true},
       {:waffle, "~> 1.1"},
       {:websockex, "~> 0.4.3"},
-      {:kaffy, "~> 0.9.0"}
+      {:kaffy, path: "../kaffy"}
     ]
   end
 

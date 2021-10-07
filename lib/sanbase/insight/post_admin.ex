@@ -8,7 +8,7 @@ defmodule Sanbase.Insight.PostAdmin do
   end
 
   def custom_show_query(_conn, _schema, query) do
-    from(r in query, preload: [:user, :featured_item, :price_chart_project])
+    from(r in query, preload: [:user, :featured_item, :price_chart_project, :tags])
   end
 
   def index(_) do
@@ -61,7 +61,13 @@ defmodule Sanbase.Insight.PostAdmin do
         help_text: insight.user.email || insight.user.username
       },
       price_chart_project_id: %{update: :readonly, create: :readonly},
-      text: %{update: :readonly, create: :readonly, type: :textarea, rows: 5}
+      text: %{update: :readonly, create: :readonly, type: :textarea, rows: 5},
+      tags: %{
+        update: :readonly,
+        create: :readonly,
+        type: :string,
+        opts: [value: Enum.map(insight.tags, & &1.name) |> Enum.join(",")]
+      }
     ]
   end
 

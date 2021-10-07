@@ -153,7 +153,8 @@ defmodule Sanbase.Mixfile do
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.8.0", override: true},
       {:waffle, "~> 1.1"},
-      {:websockex, "~> 0.4.3"}
+      {:websockex, "~> 0.4.3"},
+      {:kaffy, github: "santiment/kaffy"}
     ]
   end
 

@@ -224,6 +224,11 @@ config :sanbase, Oban.Web,
   queues: [email_queue: 5],
   name: :oban_web
 
+config :kaffy,
+  otp_app: :sanbase,
+  ecto_repo: Sanbase.Repo,
+  router: SanbaseWeb.Router
+
 # Import configs
 import_config "ueberauth_config.exs"
 import_config "ex_admin_config.exs"

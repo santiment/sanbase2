@@ -7,6 +7,51 @@ defmodule Sanbase.Insight.Search do
   """
 
   def run(query, search_term) do
+    case is_incomplete_word?(search_term) do
+      true ->
+        # Add `:*` to the end of the word so we can search for prefixes
+        to_tsquery_incomplete_search(query, search_term)
+
+      false ->
+        plainto_tsquery_complete_search(query, search_term)
+    end
+  end
+
+  defp is_incomplete_word?(search_term) do
+    String.match?(search_term, ~r/^[[:alnum:]]+$/)
+  end
+
+  defp to_tsquery_incomplete_search(query, search_term) do
+    # The following heuristic is used here: If the search term is
+    # a single alphanumeric word, we treat it as an incomplete word.
+    # When the query is run on every keystroke we can show results
+    # for every new character. For example if the search term is `mvrv`,
+    # then we can show some results when only `mvr` is typed.
+    # The function call appends `:*` to the search term and executes it
+    # via the `to_tsquery` function instead of `plainto_tsquery` which
+    # accepts a wider range of inputs and formats them.
+    search_term = modify_search_term(search_term)
+
+    from(
+      post in query,
+      join:
+        id_and_rank in fragment(
+          """
+          SELECT posts.id AS id,
+          ts_rank(posts.document_tokens, to_tsquery(?)) AS rank
+          FROM posts
+          WHERE posts.document_tokens @@ to_tsquery(?)
+          """,
+          ^search_term,
+          ^search_term
+        ),
+      on: post.id == id_and_rank.id,
+      order_by: [desc: id_and_rank.rank]
+    )
+    |> Sanbase.Repo.all()
+  end
+
+  defp plainto_tsquery_complete_search(query, search_term) do
     from(
       post in query,
       join:
@@ -80,5 +125,13 @@ defmodule Sanbase.Insight.Search do
       """)
 
     :ok
+  end
+
+  # Extend the term so it is searching for prefixes
+  defp modify_search_term(search_term) do
+    case String.ends_with?(search_term, ":*") do
+      true -> search_term
+      false -> search_term <> ":*"
+    end
   end
 end

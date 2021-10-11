@@ -126,7 +126,7 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
     assert insight_ids == [post1.id, post3.id, post2.id]
   end
 
-  test "partial match of titles", context do
+  test "partial match", context do
     %{conn: conn, user: user} = context
 
     {:ok, post1} = Post.create(user, %{title: "Uniswap in title", text: "Something here"})
@@ -139,8 +139,11 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
 
     insights = search_insights(conn, "unisw")
     # Partial matching is done only in the title
-    assert length(insights) == 1
-    assert get_in(insights, [Access.at(0), "id"]) |> String.to_integer() == post1.id
+    assert length(insights) == 3
+    ids = Enum.map(insights, &String.to_integer(&1["id"]))
+
+    # The posts are returned in order of rank
+    assert ids == [post1.id, post3.id, post2.id]
   end
 
   defp search_insights(conn, search_term) do

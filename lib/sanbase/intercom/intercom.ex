@@ -27,11 +27,18 @@ defmodule Sanbase.Intercom do
       from(u in User, order_by: [asc: u.id], select: u.id)
       |> Repo.all()
       |> Enum.each(fn user_id ->
-        attributes = get_user(user_id)
+        try do
+          attributes = get_user(user_id)
 
-        if attributes do
-          %{user_id: user_id, properties: attributes, inserted_at: Timex.now()}
-          |> UserAttributes.persist_kafka_sync()
+          if attributes do
+            %{user_id: user_id, properties: attributes, inserted_at: Timex.now()}
+            |> UserAttributes.persist_kafka_sync()
+          end
+        rescue
+          e ->
+            Logger.error(
+              "Error sync_intercom_to_kafka for user: #{user_id}, error: #{inspect(e)}"
+            )
         end
       end)
 
@@ -266,9 +273,27 @@ defmodule Sanbase.Intercom do
   defp fetch_and_send_stats(users, all_users_stats) do
     users
     |> Stream.map(fn user ->
-      fetch_stats_for_user(user, all_users_stats)
+      try do
+        fetch_stats_for_user(user, all_users_stats)
+      rescue
+        e ->
+          Logger.error(
+            "Error sync_users to Intercom (fetch_stats_for_user) for user: #{user.id}, error: #{inspect(e)}"
+          )
+
+          reraise e, __STACKTRACE__
+      end
     end)
-    |> Enum.each(&send_user_stats_to_intercom/1)
+    |> Enum.each(fn user ->
+      try do
+        send_user_stats_to_intercom(user)
+      rescue
+        e ->
+          Logger.error(
+            "Error sync_users to Intercom (send_user_stats_to_intercom) for user: #{user.id}, error: #{inspect(e)}"
+          )
+      end
+    end)
   end
 
   defp merge_intercom_attributes(stats, intercom_resp) do

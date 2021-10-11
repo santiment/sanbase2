@@ -32,6 +32,7 @@ defmodule SanbaseWeb.Endpoint do
   # You should set gzip to true if you are running phoenix.digest
   # when deploying your static files in production.
   plug(Plug.Static, at: "/", from: :sanbase, gzip: false)
+  plug(Plug.Static, at: "/kaffy", from: :kaffy, gzip: false, only: ~w(assets))
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.

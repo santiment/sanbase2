@@ -131,7 +131,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
   defp transfers() do
     {:ok,
      [
-       %Sanbase.Transfers.Erc20Transfers{
+       %{
          block_number: 5_619_729,
          contract: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
          datetime: DateTime.from_naive!(~N[2018-06-10 10:33:47], "Etc/UTC"),
@@ -142,7 +142,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
          trx_value: 4.5,
          trx_position: 2
        },
-       %Sanbase.Transfers.Erc20Transfers{
+       %{
          block_number: 5_769_021,
          contract: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
          datetime: DateTime.from_naive!(~N[2018-06-10 12:33:47], "Etc/UTC"),
@@ -153,7 +153,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
          trx_value: 9.2,
          trx_position: 2
        },
-       %Sanbase.Transfers.Erc20Transfers{
+       %{
          block_number: 5_770_231,
          contract: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
          datetime: DateTime.from_naive!(~N[2018-06-11 12:33:47], "Etc/UTC"),
@@ -164,7 +164,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
          trx_value: 9.2,
          trx_position: 2
        },
-       %Sanbase.Transfers.Erc20Transfers{
+       %{
          block_number: 5_527_438,
          contract: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
          datetime: DateTime.from_naive!(~N[2018-06-12 12:33:47], "Etc/UTC"),
@@ -175,7 +175,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
          trx_value: 2.5,
          trx_position: 2
        },
-       %Sanbase.Transfers.Erc20Transfers{
+       %{
          block_number: 5_527_472,
          contract: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
          datetime: DateTime.from_naive!(~N[2018-06-13 12:33:47], "Etc/UTC"),
@@ -186,7 +186,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
          trx_value: 2.5,
          trx_position: 2
        },
-       %Sanbase.Transfers.Erc20Transfers{
+       %{
          block_number: 5_569_693,
          contract: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
          datetime: DateTime.from_naive!(~N[2018-06-14 12:33:47], "Etc/UTC"),
@@ -197,7 +197,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
          trx_value: 1.67,
          trx_position: 2
        },
-       %Sanbase.Transfers.Erc20Transfers{
+       %{
          block_number: 5_569_715,
          contract: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
          datetime: DateTime.from_naive!(~N[2018-06-15 12:33:47], "Etc/UTC"),
@@ -208,7 +208,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
          trx_value: 1.67,
          trx_position: 2
        },
-       %Sanbase.Transfers.Erc20Transfers{
+       %{
          block_number: 5_527_047,
          contract: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
          datetime: DateTime.from_naive!(~N[2018-06-16 12:33:47], "Etc/UTC"),
@@ -219,7 +219,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
          trx_value: 1.0,
          trx_position: 2
        },
-       %Sanbase.Transfers.Erc20Transfers{
+       %{
          block_number: 5_528_483,
          contract: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
          datetime: DateTime.from_naive!(~N[2018-06-17 12:33:47], "Etc/UTC"),
@@ -230,7 +230,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
          trx_value: 1.0,
          trx_position: 2
        },
-       %Sanbase.Transfers.Erc20Transfers{
+       %{
          block_number: 5_812_594,
          contract: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
          datetime: DateTime.from_naive!(~N[2018-06-18 12:33:47], "Etc/UTC"),

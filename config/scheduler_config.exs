@@ -55,18 +55,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "@hourly",
       task: {Sanbase.Comments.Notification, :notify_users, []}
     ],
-    send_email_on_trial_day: [
-      schedule: "00 07 * * *",
-      task: {Sanbase.Billing, :send_email_on_trial_day, []}
-    ],
-    update_finished_trials: [
-      schedule: "*/10 * * * *",
-      task: {Sanbase.Billing, :update_finished_trials, []}
-    ],
-    cancel_about_to_expire_trials: [
-      schedule: "3-59/30 * * * *",
-      task: {Sanbase.Billing, :cancel_about_to_expire_trials, []}
-    ],
     sync_products_with_stripe: [
       schedule: "@reboot",
       task: {Sanbase.Billing, :sync_products_with_stripe, []}
@@ -88,12 +76,12 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       task: {Sanbase.UserList.Monitor, :run, []}
     ],
     sync_users_to_intercom: [
-      schedule: "00 15 * * *",
+      schedule: "00 01 * * *",
       task: {Sanbase.Intercom, :sync_users, []}
     ],
     # It should be scheduled after sync_users_to_intercom job so it gets up to date data
     sync_intercom_to_kafka: [
-      schedule: "00 20 * * *",
+      schedule: "00 16 * * *",
       task: {Sanbase.Intercom, :sync_intercom_to_kafka, []}
     ],
     sync_events_from_intercom: [
@@ -119,11 +107,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_liquidity_subscriptions_staked_users: [
       schedule: "7-59/30 * * * *",
       task: {Sanbase.Billing, :sync_liquidity_subscriptions_staked_users, []}
-    ],
-    get_kaiko_realtime_prices: [
-      # Start scraping at every round minute
-      schedule: "* * * * *",
-      task: {Sanbase.Kaiko, :run, []}
     ],
     sync_coinmarketcap_projects: [
       # When a new project gets a coinmarketcap string slug associated with it,
@@ -164,11 +147,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     fill_project_coinmarketcap_id_field: [
       schedule: "@hourly",
       task: {Sanbase.Model.Project.Jobs, :fill_coinmarketcap_id, []}
-    ],
-    previous_day_cryptocomapre_historical_data: [
-      timeout: :infinity,
-      schedule: "0 4 * * *",
-      task: {Sanbase.Cryptocompare.CCCAGGPairData, :schedule_previous_day_oban_jobs, []}
     ],
     move_finished_oban_jobs: [
       timeout: :infinity,

@@ -41,7 +41,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
           DateTime.t(),
           non_neg_integer,
           non_neg_integer,
-          String.t()
+          :in | :out | :all
         ) ::
           {:ok, nil} | {:ok, list(map())} | {:error, String.t()}
   def top_wallet_transfers([], _from, _to, _page, _page_size, _type), do: {:ok, []}

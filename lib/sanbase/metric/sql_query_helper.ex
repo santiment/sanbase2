@@ -93,6 +93,16 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     {filters_string, args}
   end
 
+  def dt_to_unix(:from, dt) do
+    Enum.max([dt, ~U[2009-01-01 00:00:00Z]], DateTime) |> DateTime.to_unix()
+  end
+
+  def dt_to_unix(:to, dt) do
+    Enum.min([dt, DateTime.utc_now()], DateTime) |> DateTime.to_unix()
+  end
+
+  # Private functions
+
   defp do_additional_filters(:label_fqn, value, args) when is_binary(value) do
     pos = length(args) + 1
     str = "label_id IN (
@@ -139,13 +149,5 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     str = "#{column} = ?#{pos}"
     args = args ++ [value]
     {str, args}
-  end
-
-  def dt_to_unix(:from, dt) do
-    Enum.max([dt, ~U[2009-01-01 00:00:00Z]], DateTime) |> DateTime.to_unix()
-  end
-
-  def dt_to_unix(:to, dt) do
-    Enum.min([dt, DateTime.utc_now()], DateTime) |> DateTime.to_unix()
   end
 end

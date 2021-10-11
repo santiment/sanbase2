@@ -28,7 +28,7 @@ defmodule Sanbase.Metric do
 
   @type datetime :: DateTime.t()
   @type metric :: Type.metric()
-  @type selector :: Type.metric()
+  @type selector :: Type.selector()
   @type interval :: Type.interval()
   @type operation :: Type.operation()
   @type threshold :: Type.threshold()
@@ -65,6 +65,7 @@ defmodule Sanbase.Metric do
   @table_metrics_mapset Helper.table_metrics_mapset()
   @table_metric_to_module_map Helper.table_metric_to_module_map()
   @required_selectors_map Helper.required_selectors_map()
+  @deprecated_metrics_map Helper.deprecated_metrics_map()
 
   @doc ~s"""
   Check if `metric` is a valid metric name.
@@ -81,6 +82,16 @@ defmodule Sanbase.Metric do
     case metric in @metrics_mapset do
       true -> {:ok, Map.get(@required_selectors_map, metric, [])}
       false -> metric_not_available_error(metric)
+    end
+  end
+
+  def is_not_deprecated?(metric) do
+    case Map.get(@deprecated_metrics_map, metric) do
+      nil ->
+        true
+
+      %DateTime{} = deprecated_since ->
+        {:error, "The metric #{metric} is deprecated since #{deprecated_since}"}
     end
   end
 
@@ -623,7 +634,7 @@ defmodule Sanbase.Metric do
   """
   @spec is_historical_data_allowed?(metric) :: boolean
   def is_historical_data_allowed?(metric) do
-    get_in(@access_map, [metric, "historical"]) === :free
+    get_in(@access_map, [metric, "historical"]) == :free
   end
 
   @doc ~s"""
@@ -631,7 +642,7 @@ defmodule Sanbase.Metric do
   """
   @spec is_realtime_data_allowed?(metric) :: boolean
   def is_realtime_data_allowed?(metric) do
-    get_in(@access_map, [metric, "realtime"]) === :free
+    get_in(@access_map, [metric, "realtime"]) == :free
   end
 
   @doc ~s"""

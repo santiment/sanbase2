@@ -45,36 +45,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     maybe_register_and_get(cache_key, fun, slug, query)
   end
 
-  def aggregated_timeseries_data(
-        %Project{slug: slug},
-        %{metric: metric} = args,
-        %{context: %{loader: loader}}
-      ) do
-    case Metric.has_metric?(metric) do
-      true ->
-        %{from: from, to: to} = args
-        include_incomplete_data = Map.get(args, :include_incomplete_data, false)
+  def aggregated_timeseries_data(%Project{slug: slug}, %{metric: metric} = args, %{
+        context: %{loader: loader}
+      }) do
+    with true <- Metric.has_metric?(metric),
+         true <- Metric.is_not_deprecated?(metric) do
+      %{from: from, to: to} = args
+      include_incomplete_data = Map.get(args, :include_incomplete_data, false)
 
-        {:ok, from, to} =
-          calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to)
+      {:ok, from, to} =
+        calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to)
 
-        from = DateTime.truncate(from, :second)
-        to = DateTime.truncate(to, :second)
-        {:ok, opts} = selector_args_to_opts(args)
+      from = from |> DateTime.truncate(:second)
+      to = to |> DateTime.truncate(:second)
+      {:ok, opts} = selector_args_to_opts(args)
 
-        data = %{
-          slug: slug,
-          metric: metric,
-          opts: opts,
-          selector: {metric, from, to, opts}
-        }
+      data = %{
+        slug: slug,
+        metric: metric,
+        opts: opts,
+        selector: {metric, from, to, opts}
+      }
 
-        loader
-        |> Dataloader.load(SanbaseDataloader, :aggregated_metric, data)
-        |> on_load(&aggregated_metric_from_loader(&1, data))
-
-      {:error, error} ->
-        {:error, error}
+      loader
+      |> Dataloader.load(SanbaseDataloader, :aggregated_metric, data)
+      |> on_load(&aggregated_metric_from_loader(&1, data))
     end
   end
 

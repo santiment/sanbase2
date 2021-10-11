@@ -251,6 +251,25 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
     end
 
     @desc """
+    Returns the first `number_of_holders` current top holders for ETH or ERC20 token.
+
+    Arguments description:
+    * slug - a string uniquely identifying a project
+    * page and page_size - choose what top holders to return, sorted in descending order by value
+    """
+    field :realtime_top_holders, list_of(:top_holders) do
+      meta(access: :restricted)
+
+      arg(:slug, non_null(:string))
+
+      arg(:page, non_null(:integer), default_value: 1)
+      arg(:page_size, non_null(:integer), default_value: 20)
+
+      middleware(AccessControl)
+      cache_resolve(&ClickhouseResolver.realtime_top_holders/3)
+    end
+
+    @desc """
     Returns the top holders' percent of total supply - in exchanges, outside exchanges and combined.
 
     Arguments description:

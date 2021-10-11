@@ -30,7 +30,6 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   def conf_name(), do: @oban_conf_name
 
   @impl Oban.Worker
-
   def perform(%Oban.Job{args: args}) do
     %{"base_asset" => base_asset, "quote_asset" => quote_asset, "date" => date} = args
     t1 = System.monotonic_time(:millisecond)

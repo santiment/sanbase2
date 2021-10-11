@@ -5,7 +5,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   import Sanbase.Utils.ErrorHandling,
     only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]
 
-  import Sanbase.Model.Project.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
+  import Sanbase.Model.Project.Selector,
+    only: [args_to_selector: 1, args_to_raw_selector: 1]
+
   import SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.Metric
@@ -17,22 +19,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   @datapoints 300
 
   def get_metric(_root, %{metric: metric}, _resolution) do
-    case Metric.has_metric?(metric) do
-      true -> {:ok, %{metric: metric}}
-      {:error, error} -> {:error, error}
+    with true <- Metric.is_not_deprecated?(metric),
+         true <- Metric.has_metric?(metric) do
+      {:ok, %{metric: metric}}
     end
   end
 
-  def get_available_metrics(
-        _root,
-        %{product: product, plan: plan},
-        _resolution
-      ) do
+  def get_available_metrics(_root, %{product: product, plan: plan}, _resolution) do
     product = product |> Atom.to_string() |> String.upcase()
     {:ok, AccessChecker.get_available_metrics_for_plan(product, plan)}
   end
 
-  def get_available_metrics(_root, _args, _resolution), do: {:ok, Metric.available_metrics()}
+  def get_available_metrics(_root, _args, _resolution),
+    do: {:ok, Metric.available_metrics()}
 
   def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
     do: Metric.available_slugs(metric)
@@ -46,6 +45,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     case Metric.metadata(metric) do
       {:ok, metadata} ->
         access_restrictions = Restrictions.get({:metric, metric}, plan, product_id)
+
         {:ok, Map.merge(access_restrictions, metadata)}
 
       {:error, error} ->
@@ -54,10 +54,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   def timeseries_data_complexity(_root, args, resolution) do
-    complexity =
-      SanbaseWeb.Graphql.Complexity.from_to_interval(args, _child_complexity = 2, resolution)
+    # Explicitly set `child_complexity` to 2 as this would be the
+    # value if both `datetime` and `value` fields are queried.
+    child_complexity = 2
 
-    {:ok, complexity |> Sanbase.Math.to_integer()}
+    complexity =
+      SanbaseWeb.Graphql.Complexity.from_to_interval(args, child_complexity, resolution)
+      |> Sanbase.Math.to_integer()
+
+    {:ok, complexity}
   end
 
   def available_since(_root, args, %{source: %{metric: metric}}) do
@@ -95,9 +100,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     fetch_timeseries_data(metric, args, requested_fields, :timeseries_data)
   end
 
-  def timeseries_data_per_slug(_root, args, %{source: %{metric: metric}} = resolution) do
+  def timeseries_data_per_slug(
+        _root,
+        args,
+        %{source: %{metric: metric}} = resolution
+      ) do
     requested_fields = requested_fields(resolution)
-    fetch_timeseries_data(metric, args, requested_fields, :timeseries_data_per_slug)
+
+    fetch_timeseries_data(
+      metric,
+      args,
+      requested_fields,
+      :timeseries_data_per_slug
+    )
   end
 
   def aggregated_timeseries_data(
@@ -113,8 +128,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          true <- valid_owners_labels_selection?(args),
          {:ok, opts} <- selector_args_to_opts(args),
          {:ok, from, to} <-
-           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
-         {:ok, result} <- Metric.aggregated_timeseries_data(metric, selector, from, to, opts) do
+           calibrate_incomplete_data_params(
+             include_incomplete_data,
+             Metric,
+             metric,
+             from,
+             to
+           ),
+         {:ok, result} <-
+           Metric.aggregated_timeseries_data(metric, selector, from, to, opts) do
       {:ok, Map.values(result) |> List.first()}
     end
     |> maybe_handle_graphql_error(fn error ->
@@ -128,6 +150,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     %{to: to, interval: interval, limit: limit} = args
+
     # from datetime arg is not required for `all_spent_coins_cost` metric which calculates
     # the histogram for all time.
     from = Map.get(args, :from, nil)
@@ -166,7 +189,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def latest_metrics_data(_root, %{metrics: metrics} = args, _resolution) do
     with {:ok, selector} <- args_to_selector(args),
          :ok <- check_metrics_slugs_cartesian_limit(metrics, selector, 20_000),
-         {:ok, data} <- Metric.LatestMetric.latest_metrics_data(metrics, selector) do
+         {:ok, data} <-
+           Metric.LatestMetric.latest_metrics_data(metrics, selector) do
       {:ok, data}
     end
   end
@@ -180,7 +204,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     selector_names = Map.keys(selector)
 
     with {:ok, required_selectors} <- Metric.required_selectors(metric),
-         true <- do_check_required_selectors(metric, selector_names, required_selectors) do
+         true <-
+           do_check_required_selectors(
+             metric,
+             selector_names,
+             required_selectors
+           ) do
       true
     end
   end
@@ -208,7 +237,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   # This is used when a list of slugs and a list of metrics is provided
   # Every metric is fetched for every slug and the result length can get too big
-  defp check_metrics_slugs_cartesian_limit(metrics, %{slug: slug_or_slugs}, limit) do
+  defp check_metrics_slugs_cartesian_limit(
+         metrics,
+         %{slug: slug_or_slugs},
+         limit
+       ) do
     slugs = List.wrap(slug_or_slugs)
     cartesian_product_length = length(metrics) * length(slugs)
 
@@ -236,7 +269,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          {:ok, opts} <- selector_args_to_opts(args),
          {:ok, from, to, interval} <-
            transform_datetime_params(selector, metric, transform, args),
-         {:ok, result} <- apply(Metric, function, [metric, selector, from, to, interval, opts]),
+         {:ok, result} <-
+           apply(Metric, function, [metric, selector, from, to, interval, opts]),
          {:ok, result} <- apply_transform(transform, result),
          {:ok, result} <- fit_from_datetime(result, args) do
       {:ok, result |> Enum.reject(&is_nil/1)}
@@ -252,9 +286,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
 
     with {:ok, from, to, interval} <-
-           calibrate(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
+           calibrate(
+             Metric,
+             metric,
+             selector,
+             from,
+             to,
+             interval,
+             86_400,
+             @datapoints
+           ),
          {:ok, from, to} <-
-           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
+           calibrate_incomplete_data_params(
+             include_incomplete_data,
+             Metric,
+             metric,
+             from,
+             to
+           ),
          {:ok, from} <-
            calibrate_transform_params(transform, from, to, interval) do
       {:ok, from, to, interval}
@@ -266,6 +315,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp maybe_enrich_with_labels(_metric, [%{address: address} | _] = data)
        when is_binary(address) do
     addresses = Enum.map(data, & &1.address) |> Enum.uniq()
+
     {:ok, labels} = Sanbase.Clickhouse.Label.get_address_labels("ethereum", addresses)
 
     labeled_data =
@@ -309,11 +359,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp apply_transform(%{type: "none"}, data), do: {:ok, data}
 
-  defp apply_transform(%{type: "moving_average", moving_average_base: base}, data) do
+  defp apply_transform(
+         %{type: "moving_average", moving_average_base: base},
+         data
+       ) do
     Sanbase.Math.simple_moving_average(data, base, value_key: :value)
   end
 
-  defp apply_transform(%{type: type}, data) when type in ["changes", "consecutive_differences"] do
+  defp apply_transform(%{type: type}, data)
+       when type in ["changes", "consecutive_differences"] do
     result =
       Stream.chunk_every(data, 2, 1, :discard)
       |> Enum.map(fn [%{value: previous}, %{value: current, datetime: datetime}] ->
@@ -349,7 +403,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, result}
   end
 
-  defp apply_transform(%{type: type}, data) when type in ["cumulative_percent_change"] do
+  defp apply_transform(%{type: type}, data)
+       when type in ["cumulative_percent_change"] do
     {:ok, cumsum} = apply_transform(%{type: "cumulative_sum"}, data)
     apply_transform(%{type: "percent_change"}, cumsum)
   end
@@ -362,7 +417,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp transform_interval(_, interval), do: interval
 
-  @metrics_allowed_missing_from ["all_spent_coins_cost", "eth2_staked_amount_per_label"]
+  @metrics_allowed_missing_from [
+    "all_spent_coins_cost",
+    "eth2_staked_amount_per_label"
+  ]
   # All histogram metrics except "all_spent_coins_cost" require `from` argument
   defp valid_histogram_args?(metric, args) do
     if metric in @metrics_allowed_missing_from or Map.get(args, :from) do
@@ -414,7 +472,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   defguard has_binary_key?(selector, key)
-           when is_map_key(selector, key) and is_binary(:erlang.map_get(key, selector))
+           when is_map_key(selector, key) and
+                  is_binary(:erlang.map_get(key, selector))
 
   defp valid_metric_selector_pair?("social_active_users", selector)
        when not has_binary_key?(selector, :source) do

@@ -30,8 +30,7 @@ defmodule Sanbase.Clickhouse.TopHoldersTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         TopHolders.percent_of_total_supply(
-          context.contract,
-          context.token_decimals,
+          context.slug,
           context.number_of_holders,
           context.from,
           context.to,
@@ -62,8 +61,7 @@ defmodule Sanbase.Clickhouse.TopHoldersTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         TopHolders.percent_of_total_supply(
-          context.contract,
-          context.token_decimals,
+          context.slug,
           context.number_of_holders,
           context.from,
           context.to,

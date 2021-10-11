@@ -241,7 +241,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "avg",
@@ -258,7 +258,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -305,7 +305,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -332,7 +332,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "MVRV for coins that moved in the past {{timebound_human_readable}}",
+    "human_readable_name": "MVRV Intraday for coins that moved in the past {{timebound_human_readable}}",
     "name": "mvrv_usd_intraday_{{timebound}}",
     "metric": "mvrv_usd_intraday_{{timebound}}",
     "timebound": [
@@ -352,7 +352,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -399,7 +399,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -417,7 +417,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -434,7 +434,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -451,7 +451,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -468,7 +468,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -485,7 +485,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -502,7 +502,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -519,7 +519,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -603,7 +603,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "avg",
@@ -775,7 +775,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "avg",
@@ -792,7 +792,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -1252,7 +1252,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -1269,7 +1269,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -1338,7 +1338,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -1372,7 +1372,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -1389,7 +1389,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",

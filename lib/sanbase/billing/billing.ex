@@ -8,7 +8,7 @@ defmodule Sanbase.Billing do
 
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Plan, Subscription}
-  alias Sanbase.Billing.Subscription.{LiquiditySubscription, SignUpTrial}
+  alias Sanbase.Billing.Subscription.LiquiditySubscription
   alias Sanbase.Accounts.User
   alias Sanbase.StripeApi
 
@@ -20,12 +20,6 @@ defmodule Sanbase.Billing do
 
   defdelegate sync_stripe_subscriptions, to: Subscription
   defdelegate remove_duplicate_subscriptions, to: Subscription
-
-  # SignUpTrial
-  defdelegate create_trial_subscription(user_id), to: SignUpTrial
-  defdelegate cancel_about_to_expire_trials, to: SignUpTrial
-  defdelegate update_finished_trials, to: SignUpTrial
-  defdelegate send_email_on_trial_day, to: SignUpTrial
 
   # LiquiditySubscription
   defdelegate create_liquidity_subscription(user_id), to: LiquiditySubscription

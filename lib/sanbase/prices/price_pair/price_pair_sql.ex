@@ -9,7 +9,7 @@ defmodule Sanbase.Price.PricePairSql do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
-      #{aggregation(aggregation, "price", "dt")} AS value
+      #{aggregation(aggregation, "price", "dt")}
     FROM #{@table}
     PREWHERE
       #{slug_filter_map(slug_or_slugs, argument_position: 2)} AND

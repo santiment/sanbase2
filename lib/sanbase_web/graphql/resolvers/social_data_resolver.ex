@@ -46,19 +46,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     # The `*_discussion_overview` are counting the total number of messages in a given medium
     # Deprecated. To be replaced with `getMetric(metric: "community_messages_count_*")` and
     # `getMetric(metric: "social_volume_*")`
-    source =
-      case type do
-        :professional_traders_chat_overview -> "professional_traders_chat"
-        _ -> type |> Atom.to_string() |> String.split("_") |> hd
-      end
+    source = type |> Atom.to_string() |> String.split("_") |> hd
 
-    case type in [:telegram_discussion_overview, :discord_discussion_overview] do
-      true ->
-        SocialData.community_messages_count(%{slug: slug}, from, to, interval, source)
-
-      false ->
-        SocialData.social_volume(%{slug: slug}, from, to, interval, source)
-    end
+    SocialData.social_volume(%{slug: slug}, from, to, interval, source)
   end
 
   def social_volume_projects(_root, %{}, _resolution) do
@@ -185,20 +175,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
   end
 
   def social_dominance(
-        _root,
-        %{slug: _slug, from: _from, to: _to, interval: _interval, source: source} = args,
-        _resolution
+        root,
+        %{slug: _, from: _, to: _, interval: _, source: source} = args,
+        resolution
       ) do
     source = if source == :all, do: :total, else: source
 
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{
-        source: %{
-          metric: "social_dominance_#{source}"
-        }
-      }
+      Map.put(resolution, :source, %{metric: "social_dominance_#{source}"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :dominance)
   end

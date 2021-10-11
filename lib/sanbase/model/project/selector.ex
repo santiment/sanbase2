@@ -4,6 +4,8 @@ defmodule Sanbase.Model.Project.Selector do
   internal format.
   """
 
+  require Application
+
   # This module exposes a single valid_slug?/1 function that returns true/false
   @available_slugs_module Application.compile_env(:sanbase, :available_slugs_module)
 

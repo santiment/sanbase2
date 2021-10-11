@@ -31,6 +31,8 @@ defmodule Sanbase.Comment do
   alias Sanbase.Chart.Configuration, as: ChartConfiguration
   alias Sanbase.WalletHunters.Proposal, as: WHProposal
 
+  require Sanbase.Utils.Config, as: Config
+
   @max_comment_length 15_000
 
   @insights_table "post_comments_mapping"
@@ -88,6 +90,20 @@ defmodule Sanbase.Comment do
     |> validate_length(:content, min: 2, max: @max_comment_length)
     |> foreign_key_constraint(:parent_id)
     |> foreign_key_constraint(:root_parent_id)
+  end
+
+  def can_create?(user_id) do
+    limits = %{
+      day: Config.get(:creation_limit_day, 50),
+      hour: Config.get(:creation_limit_hour, 20),
+      minute: Config.get(:creation_limit_minute, 3)
+    }
+
+    Sanbase.Ecto.Common.can_create?(__MODULE__, user_id,
+      limits: limits,
+      entity_singular: "comment",
+      entity_plural: "comments"
+    )
   end
 
   def get_subcomments(comment_id, limit) do

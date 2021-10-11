@@ -24,7 +24,65 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     {:ok, conn: conn, user: user, staked_user: staked_user}
   end
 
-  describe "Insights for currentUser or getUser |" do
+  describe "Insight creation rate limit" do
+    setup do
+      # on exit revert to the original test env that is higher than
+      # on prod so we avoid hitting rate limits
+      env = Application.get_env(:sanbase, Sanbase.Insight.Post)
+
+      on_exit(fn -> Application.put_env(:sanbase, Sanbase.Insight.Post, env) end)
+
+      []
+    end
+
+    test "creation rate limit per minute is enforced", context do
+      query = """
+      mutation { createInsight( title: "title" text: "text") { id } }
+      """
+
+      env = Application.get_env(:sanbase, Sanbase.Insight.Post)
+      env = Keyword.put(env, :creation_limit_minute, 2)
+      Application.put_env(:sanbase, Sanbase.Insight.Post, env)
+
+      _ = execute_mutation_with_success(query, "createInsight", context.conn)
+      _ = execute_mutation_with_success(query, "createInsight", context.conn)
+
+      error = execute_mutation_with_errors(query, context.conn)
+      assert error["message"] =~ "Cannot create more than 2 insights per minute"
+    end
+
+    test "creation rate limit per hour is enforced", context do
+      query = """
+      mutation { createInsight( title: "title" text: "text") { id } }
+      """
+
+      env = Application.get_env(:sanbase, Sanbase.Insight.Post)
+      env = Keyword.put(env, :creation_limit_hour, 1)
+      Application.put_env(:sanbase, Sanbase.Insight.Post, env)
+
+      _ = execute_mutation_with_success(query, "createInsight", context.conn)
+
+      error = execute_mutation_with_errors(query, context.conn)
+      assert error["message"] =~ "Cannot create more than 1 insight per hour"
+    end
+
+    test "creation rate limit per day is enforced", context do
+      query = """
+      mutation { createInsight( title: "title" text: "text") { id } }
+      """
+
+      env = Application.get_env(:sanbase, Sanbase.Insight.Post)
+      env = Keyword.put(env, :creation_limit_day, 1)
+      Application.put_env(:sanbase, Sanbase.Insight.Post, env)
+
+      _ = execute_mutation_with_success(query, "createInsight", context.conn)
+
+      error = execute_mutation_with_errors(query, context.conn)
+      assert error["message"] =~ "Cannot create more than 1 insight per day"
+    end
+  end
+
+  describe "Insights for currentUser or getUser" do
     setup context do
       published =
         insert(:post,

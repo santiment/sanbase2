@@ -189,6 +189,8 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback restricted_metrics() :: list(metric)
 
+  @callback deprecated_metrics_map() :: %{required(String.t()) => String.t()}
+
   @callback access_map() :: map()
 
   @callback min_plan_map() :: map()
@@ -196,6 +198,7 @@ defmodule Sanbase.Metric.Behaviour do
   @optional_callbacks [
     histogram_data: 6,
     table_data: 5,
-    timeseries_data_per_slug: 6
+    timeseries_data_per_slug: 6,
+    deprecated_metrics_map: 0
   ]
 end

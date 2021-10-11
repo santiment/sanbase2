@@ -133,13 +133,9 @@ defmodule Sanbase.Price.SqlQuery do
     GROUP BY slugString
     """
 
-    {query,
-     [
-       slugs,
-       from |> DateTime.to_unix(),
-       to |> DateTime.to_unix(),
-       source
-     ]}
+    args = [slugs, DateTime.to_unix(from), DateTime.to_unix(to), source]
+
+    {query, args}
   end
 
   def aggregated_marketcap_and_volume_query(slugs, from, to, source, opts) do

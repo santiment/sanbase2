@@ -342,5 +342,47 @@
       "SANAPI": "free",
       "SANBASE": "free"
     }
+  },
+  {
+    "human_readable_name": "MVRV {{timebound_human_readable}} Danger Zone",
+    "name": "mvrv_usd_{{timebound}}_upper_zone",
+    "signal": "mvrv_usd_{{timebound}}_upper_zone",
+    "timebound": [
+      "30d",
+      "60d",
+      "180d",
+      "365d"
+    ],
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "1m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
+  },
+  {
+    "human_readable_name": "MVRV {{timebound_human_readable}} Opportunity Zone",
+    "name": "mvrv_usd_{{timebound}}_lower_zone",
+    "signal": "mvrv_usd_{{timebound}}_lower_zone",
+    "timebound": [
+      "30d",
+      "60d",
+      "180d",
+      "365d"
+    ],
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "1m",
+    "table": "signals",
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   }
 ]

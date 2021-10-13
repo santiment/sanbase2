@@ -60,8 +60,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED metrics for over 3 months", context do
-      {from, to} = from_to(91, 10)
+    test "cannot access RESTRICTED metrics for over 2 years", context do
+      {from, to} = from_to(2 * 365 + 1, 31)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       slug = context.project.slug
       selector = %{slug: slug}
@@ -73,8 +73,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED queries for over 3 months", context do
-      {from, to} = from_to(91, 10)
+    test "cannot access RESTRICTED queries for over 2 years", context do
+      {from, to} = from_to(2 * 365 + 1, 31)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -82,8 +82,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED queries realtime", context do
-      {from, to} = from_to(10, 0)
+    test "cannot access RESTRICTED queries last 30 days", context do
+      {from, to} = from_to(31, 29)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -91,8 +91,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED metrics within 90 days and 2 day interval", context do
-      {from, to} = from_to(89, 2)
+    test "can access RESTRICTED metrics within 2 years and 30 days interval", context do
+      {from, to} = from_to(2 * 365, 31)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       slug = context.project.slug
       selector = %{slug: slug}
@@ -103,8 +103,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED queries within 90 days and 2 day interval", context do
-      {from, to} = from_to(89, 2)
+    test "can access RESTRICTED queries within 2 years and 30 days interval", context do
+      {from, to} = from_to(2 * 365, 31)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 

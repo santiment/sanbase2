@@ -168,6 +168,22 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
   end
 
   describe "search with highlights" do
+    test "complete search with incomplete words does not match", context do
+      %{conn: conn} = context
+      # If the search term is an alphanumeric word it is considered incomplete.
+      # if it has an interval, exact matches are returned
+      list = search_insights_highlighted(conn, "mvr ")
+      assert list == []
+    end
+
+    test "incomplete search with incomplete word matches", context do
+      %{conn: conn} = context
+      # If the search term is an alphanumeric word it is considered incomplete.
+      # if it has an interval, exact matches are returned
+      list = search_insights_highlighted(conn, "mvr")
+      assert length(list) == 2
+    end
+
     test "search with data in title - word `undergoes`", context do
       %{conn: conn, post2: post2} = context
 

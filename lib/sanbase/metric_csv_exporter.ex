@@ -1,6 +1,7 @@
 defmodule Sanbase.MetricCSVExporter do
   alias Sanbase.Metric
 
+  @history_in_days 1
   # top 100 fixed at 24/08/2021
   @slugs [
     "bitcoin",
@@ -9,100 +10,100 @@ defmodule Sanbase.MetricCSVExporter do
     "binance-coin",
     "tether",
     "ripple",
-    "dogecoin",
+    "solana",
     "polkadot-new",
     "usd-coin",
-    "solana",
-    "uniswap",
-    "bitcoin-cash",
-    "chainlink",
-    "litecoin",
-    "binance-usd",
+    "p-usd-coin",
+    "dogecoin",
     "luna",
-    "matic-network",
-    "internet-computer",
-    "wrapped-bitcoin",
-    "stellar",
-    "ethereum-classic",
-    "vechain",
+    "uniswap",
+    "p-uniswap",
+    "binance-usd",
     "avalanche",
-    "file-coin",
-    "theta",
-    "tron",
-    "multi-collateral-dai",
-    "monero",
-    "pancakeswap",
-    "eos",
-    "aave",
-    "cosmos",
-    "ftx-token",
-    "the-graph",
-    "axie-infinity",
-    "klaytn",
-    "neo",
-    "crypto-com-coin",
-    "maker",
-    "bitcoin-bep2",
-    "algorand",
-    "tezos",
-    "iota",
+    "litecoin",
+    "p-chainlink",
+    "chainlink",
+    "wrapped-bitcoin",
     "shiba-inu",
-    "bitcoin-sv",
-    "amp",
-    "bittorrent",
+    "bitcoin-cash",
+    "algorand",
+    "p-matic-network",
+    "matic-network",
+    "stellar",
+    "file-coin",
+    "internet-computer",
+    "cosmos",
+    "vechain",
+    "axie-infinity",
+    "tron",
+    "ethereum-classic",
+    "ftx-token",
+    "multi-collateral-dai",
+    "theta",
+    "tezos",
+    "bitcoin-bep2",
+    "fantom",
+    "hedera-hashgraph",
+    "hedera",
+    "monero",
+    "crypto-com-coin",
     "elrond-egld",
-    "unus-sed-leo",
-    "dash",
+    "eos",
+    "pancakeswap",
+    "klaytn",
+    "iota",
+    "ecash",
+    "p-aave",
+    "aave",
+    "near-protocol",
+    "quant",
+    "bitcoin-sv",
+    "the-graph",
+    "neo",
     "kusama",
     "waves",
+    "terrausd",
+    "unus-sed-leo",
+    "bittorrent",
+    "harmony",
+    "maker",
+    "blockstack",
+    "arweave",
+    "omisego",
+    "amp",
+    "dash",
+    "helium",
+    "chiliz",
+    "celo",
+    "decred",
     "thorchain",
     "compound",
-    "huobi-token",
-    "near-protocol",
-    "hedera-hashgraph",
-    "helium",
-    "decred",
-    "chiliz",
-    "terrausd",
-    "quant",
-    "xinfin-network",
-    "zcash",
     "holo",
     "nem",
     "theta-fuel",
-    "blockstack",
-    "sushi",
-    "decentraland",
-    "enjin-coin",
-    "synthetix-network-token",
-    "telcoin",
-    "yearn-finance",
-    "fantom",
-    "ravencoin",
-    "qtum",
-    "celsius",
-    "zilliqa",
-    "flow",
-    "trueusd",
-    "basic-attention-token",
-    "okb",
-    "bitcoin-gold",
-    "harmony",
-    "audius",
-    "kucoin-shares",
-    "nexo",
-    "digibyte",
-    "swissborg",
-    "bancor",
-    "ontology",
+    "zcash",
     "icon",
-    "siacoin",
-    "arweave",
-    "0x",
-    "omisego",
+    "xinfin-network",
+    "decentraland",
+    "revain",
+    "celsius",
+    "dydx",
+    "sushi",
+    "enjin-coin",
+    "qtum",
+    "trueusd",
+    "huobi-token",
+    "yearn-finance",
+    "bitcoin-gold",
+    "flow",
     "curve",
-    "paxos-standard",
-    "nano"
+    "mdex",
+    "zilliqa",
+    "mina",
+    "synthetix-network-token",
+    "ravencoin",
+    "basic-attention-token",
+    "ren"
   ]
 
   @metrics_map %{
@@ -137,8 +138,6 @@ defmodule Sanbase.MetricCSVExporter do
     },
     "Network activity - 1d": %{
       metrics: [
-        "daily_active_addresses",
-        "network_growth",
         "circulation",
         "circulation_1d",
         "circulation_7d",
@@ -153,13 +152,16 @@ defmodule Sanbase.MetricCSVExporter do
       ],
       interval: "1d"
     },
-    "Network activity - 1h": %{metrics: ["transaction_volume"], interval: "1h"},
+    "Network activity - 1h": %{
+      metrics: ["transaction_volume", "active_addresses_24h"],
+      interval: "1h"
+    },
     "Exchange Metrics - 1h": %{
-      metrics: ["exchange_inflow", "exchange_outflow", "exchange_balance"],
+      metrics: ["exchange_inflow", "exchange_outflow", "exchange_balance", "active_deposits_5m"],
       interval: "1h"
     },
     "Exchange Metrics - 1d": %{
-      metrics: ["active_deposits", "percent_of_total_supply_on_exchanges"],
+      metrics: ["percent_of_total_supply_on_exchanges"],
       interval: "1d"
     },
     "Long-term holders - 1h": %{metrics: ["age_consumed"], interval: "1h"},
@@ -206,12 +208,13 @@ defmodule Sanbase.MetricCSVExporter do
 
   # Export all metrics in @metrics_map and place in proper csv file
   def export() do
-    to = Timex.now()
-    from = Timex.shift(to, days: -(365 * 2))
+    to = Timex.shift(Timex.now(), hours: -2)
+    from = Timex.shift(to, days: -@history_in_days)
 
     @metrics_map
     |> Enum.each(fn {filename, file_metrics} ->
       header = ["slug", "datetime"] ++ file_metrics.metrics
+      filename = "#{filename}" <> "_#{format(to)}.csv"
       write_to_file(filename, [header])
 
       @slugs
@@ -229,17 +232,12 @@ defmodule Sanbase.MetricCSVExporter do
 
   # Export trending words
   def export_tw() do
-    filename = "Trending words - 1h"
+    to = Timex.shift(Timex.now(), hours: -2)
+    from = Timex.shift(to, days: -@history_in_days)
+
+    filename = "Trending words - 1h_#{format(to)}.csv"
     write_to_file(filename, [["datetime"] ++ Enum.to_list(1..10)])
 
-    now = Timex.now()
-
-    from = Timex.shift(now, days: -(365 * 2))
-    to = Timex.shift(now, days: -365)
-    do_export_tw(filename, from, to)
-
-    from = Timex.shift(now, days: -364)
-    to = now
     do_export_tw(filename, from, to)
   end
 
@@ -316,11 +314,17 @@ defmodule Sanbase.MetricCSVExporter do
     |> Enum.map(fn dt -> %{datetime: dt, value: ""} end)
   end
 
-  defp write_to_file(key, data) do
-    filename = "#{key}.csv"
+  defp write_to_file(filename, data) do
     {:ok, file} = File.open(filename, [:append])
     iodata = NimbleCSV.RFC4180.dump_to_iodata(data)
-    File.write!("#{key}.csv", iodata, [:append])
+    File.write!(filename, iodata, [:append])
     File.close(file)
+  end
+
+  def format(dt) do
+    dt
+    |> DateTime.to_iso8601()
+    |> String.replace(~r/[-:]/, "")
+    |> String.replace(~r/\.\d+/, "")
   end
 end

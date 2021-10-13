@@ -39,7 +39,7 @@ defmodule Sanbase.Model.ProjectListTest do
   describe "no projects" do
     test "currently trending projects" do
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.SocialData.TrendingWords.get_currently_trending_words/0,
+        &Sanbase.SocialData.TrendingWords.get_currently_trending_words/1,
         {:ok, [%{word: "btc"}]}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -211,7 +211,7 @@ defmodule Sanbase.Model.ProjectListTest do
         context
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.SocialData.TrendingWords.get_currently_trending_words/0,
+        &Sanbase.SocialData.TrendingWords.get_currently_trending_words/1,
         {:ok,
          [
            %{word: hidden_project.slug},

@@ -63,6 +63,10 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:interval, :interval, default_value: "1d")
       arg(:size, non_null(:integer))
 
+      arg(:sources, list_of(:trending_words_sources),
+        default_value: [:twitter, :reddit, :telegram]
+      )
+
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.get_trending_words/3, ttl: 600, max_ttl_offset: 240)

@@ -260,7 +260,9 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
              }
     end
 
-    test "search works with data in metrics", context do
+    # when there is an interval, then the query is considered completed and it wont
+    # do any prefix matches
+    test "search with data in metrics, search with complete query", context do
       %{conn: conn, post1: post1} = context
 
       # The metric is `price_usd`, but we search for the more commonly

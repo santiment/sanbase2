@@ -68,6 +68,14 @@ defmodule Sanbase.Model.Project.Selector do
     {:ok, Map.put(selector, :slug, slugs)}
   end
 
+  defp transform_selector(%{contract_address: contract_address} = selector) do
+    slugs =
+      Sanbase.Model.Project.List.by_contracts(List.wrap(contract_address))
+      |> Enum.map(& &1.slug)
+
+    {:ok, Map.put(selector, :slug, slugs)}
+  end
+
   defp transform_selector(%{watchlist_id: watchlist_id} = selector)
        when is_integer(watchlist_id) do
     case Sanbase.UserList.by_id(watchlist_id) do

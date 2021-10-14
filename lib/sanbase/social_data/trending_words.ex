@@ -52,10 +52,10 @@ defmodule Sanbase.SocialData.TrendingWords do
         }
 
   @default_sources [:telegram, :reddit]
-
   # When calculating the trending now words fetch the data for the last
   # N hours to ensure that there is some data and we're not in the middle
   # of computing the latest data
+
   @hours_back_ensure_has_data 3
 
   @table "trending_words_v4_top_500"

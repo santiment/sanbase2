@@ -303,8 +303,14 @@ defmodule Sanbase.Insight.Post do
     end
   end
 
-  def search_published_insights(search_term, opts \\ []) do
-    public_insights_query(opts) |> Sanbase.Insight.Search.run(search_term)
+  def search_published_insights(search_term, opts) do
+    public_insights_query(opts)
+    |> Sanbase.Insight.Search.run(search_term, opts)
+    |> Enum.map(& &1.post)
+  end
+
+  def search_published_insights_highglight(search_term, opts) do
+    public_insights_query(opts) |> Sanbase.Insight.Search.run(search_term, opts)
   end
 
   def related_projects(%Post{} = post) do

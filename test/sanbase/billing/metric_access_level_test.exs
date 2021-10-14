@@ -762,7 +762,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "usdt_bnb_funding_rates",
         "usdt_binance_funding_rate",
         "busd_bnb_funding_rates",
-        "busd_binance_funding_rate"
+        "busd_binance_funding_rate",
+        # ftx funding rates metric
+        "ftx_perpetual_funding_rate"
       ]
       |> Enum.sort()
 

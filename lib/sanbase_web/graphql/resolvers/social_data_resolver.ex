@@ -68,10 +68,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   def get_trending_words(
         _root,
-        %{from: from, to: to, interval: interval, size: size},
+        %{from: from, to: to, interval: interval, size: size, sources: sources},
         _resolution
       ) do
-    case SocialData.TrendingWords.get_trending_words(from, to, interval, size) do
+    case SocialData.TrendingWords.get_trending_words(from, to, interval, size, sources) do
       {:ok, result} ->
         result =
           result

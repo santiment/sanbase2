@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
+defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
@@ -63,12 +63,12 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
 
   test "wrongly configured function fails on create", %{conn: conn} do
     function = %{
-      "name" => "selector",
+      "name" => "address_selector",
       "args" => %{
         # mistyped
         "filterss" => [
           %{
-            "metric" => "daily_active_addresses",
+            "top" => "daily_active_addresses",
             "from" => "#{Timex.shift(Timex.now(), days: -7)}",
             "to" => "#{Timex.now()}",
             "aggregation" => "#{:last}",

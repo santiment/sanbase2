@@ -82,8 +82,28 @@ defmodule Sanbase.Utils.Transform do
     |> Enum.into(%{})
   end
 
+  @doc ~s"""
+  Transform an :ok tuple containing a list of a single value to an :ok tuple
+  that unwraps the value in the list. Handles the cases of errors
+  or empty list.
+
+  ## Examples:
+    iex> Sanbase.Utils.Transform.maybe_unwrap_ok_value({:ok, [5]})
+    {:ok, 5}
+
+    iex> Sanbase.Utils.Transform.maybe_unwrap_ok_value({:error, "error"})
+    {:error, "error"}
+
+
+    iex> Sanbase.Utils.Transform.maybe_unwrap_ok_value({:ok, 5})
+    ** (RuntimeError) Unsupported format given to maybe_unwrap_ok_value/1: 5
+  """
   def maybe_unwrap_ok_value({:ok, [value]}), do: {:ok, value}
   def maybe_unwrap_ok_value({:ok, []}), do: {:ok, nil}
+
+  def maybe_unwrap_ok_value({:ok, value}),
+    do: raise("Unsupported format given to maybe_unwrap_ok_value/1: #{inspect(value)}")
+
   def maybe_unwrap_ok_value({:error, error}), do: {:error, error}
 
   def maybe_apply_function({:ok, list}, fun) when is_function(fun, 1),
@@ -117,19 +137,31 @@ defmodule Sanbase.Utils.Transform do
     |> Enum.sort_by(&DateTime.to_unix(&1[:datetime]))
   end
 
-  def merge_by_datetime(list1, list2, func, field) do
-    map = list2 |> Enum.into(%{}, fn %{datetime: dt} = item2 -> {dt, item2[field]} end)
+  @doc ~s"""
+  Combine the values of `key` in list1 and list2 by using `func`. The result with
+  the same `datetime` values are chosen to be merged.
+
+  ## Example
+    iex> Sanbase.Utils.Transform.merge_by_datetime([%{a: 3.5, datetime: ~U[2020-01-01 00:00:00Z]}, %{a: 2, datetime: ~U[2020-01-02 00:00:00Z]}], [%{a: 10, datetime: ~U[2020-01-01 00:00:00Z]}, %{a: 6, datetime: ~U[2020-01-02 00:00:00Z]}], &Kernel.*/2, :a)
+    [%{a: 35.0, datetime: ~U[2020-01-01 00:00:00Z]}, %{a: 12, datetime: ~U[2020-01-02 00:00:00Z]}]
+  """
+  @spec merge_by_datetime(list(), list(), fun(), any()) :: list()
+  def merge_by_datetime(list1, list2, func, key) do
+    map = list2 |> Enum.into(%{}, fn %{datetime: dt} = item2 -> {dt, item2[key]} end)
 
     list1
     |> Enum.map(fn %{datetime: datetime} = item1 ->
       value2 = Map.get(map, datetime, 0)
-      new_value = func.(item1[field], value2)
+      new_value = func.(item1[key], value2)
 
-      %{datetime: datetime, value: new_value}
+      %{key => new_value, datetime: datetime}
     end)
-    |> Enum.reject(&(&1.value == 0))
+    |> Enum.reject(&(&1[key] == 0))
   end
 
+  @doc ~s"""
+  Transform some addresses to a name representation
+  """
   def maybe_transform_from_address("0x0000000000000000000000000000000000000000"), do: "mint"
   def maybe_transform_from_address(address), do: address
   def maybe_transform_to_address("0x0000000000000000000000000000000000000000"), do: "burn"
@@ -139,15 +171,15 @@ defmodule Sanbase.Utils.Transform do
   Remove the `separator` inside the value of the key `key` in the map `map`
 
   ## Examples:
-      iex> Sanbase.Utils.Transform.remove_separator(%{a: "100,000"}, :a, ",")
-      %{a: "100000"}
+    iex> Sanbase.Utils.Transform.remove_separator(%{a: "100,000"}, :a, ",")
+    %{a: "100000"}
 
-      iex> Sanbase.Utils.Transform.remove_separator(%{a: "100,000", b: "5,000"}, :a, ",")
-      %{a: "100000", b: "5,000"}
+    iex> Sanbase.Utils.Transform.remove_separator(%{a: "100,000", b: "5,000"}, :a, ",")
+    %{a: "100000", b: "5,000"}
 
 
-      iex> Sanbase.Utils.Transform.remove_separator(%{a: "100,000"}, :c, ",")
-      %{a: "100,000"}
+    iex> Sanbase.Utils.Transform.remove_separator(%{a: "100,000"}, :c, ",")
+    %{a: "100,000"}
   """
   def remove_separator(map, key, separator) do
     case Map.fetch(map, key) do
@@ -156,10 +188,32 @@ defmodule Sanbase.Utils.Transform do
     end
   end
 
-  def maybe_fill_gaps_last_seen({:ok, values}, key) do
+  @doc ~s"""
+  Get a list of maps that must have a key named `key` that may be not
+  computed. These values are recognized by the `has_changed` key that can
+  be either 0 or 1.
+  In case the value of a key is missing it is filled with the last known
+  value by its order in the list
+
+  ## Example
+    iex> Sanbase.Utils.Transform.maybe_fill_gaps_last_seen({:ok, [%{a: 1, has_changed: 1}, %{a: nil, has_changed: 0}, %{a: 5, has_changed: 1}]}, :a)
+    {:ok, [%{a: 1}, %{a: 1}, %{a: 5}]}
+
+    iex> Sanbase.Utils.Transform.maybe_fill_gaps_last_seen({:ok, [%{a: nil, has_changed: 0}, %{a: nil, has_changed: 0}, %{a: 5, has_changed: 1}]}, :a)
+    {:ok, [%{a: 0}, %{a: 0}, %{a: 5}]}
+
+    iex> Sanbase.Utils.Transform.maybe_fill_gaps_last_seen({:ok, [%{a: 1, has_changed: 1}, %{a: 2, has_changed: 1}, %{a: 5, has_changed: 1}]}, :a)
+    {:ok, [%{a: 1}, %{a: 2}, %{a: 5}]}
+
+    iex> Sanbase.Utils.Transform.maybe_fill_gaps_last_seen({:ok, [%{a: 1, has_changed: 1}, %{a: nil, has_changed: 0}, %{a: nil, has_changed: 0}]}, :a)
+    {:ok, [%{a: 1}, %{a: 1}, %{a: 1}]}
+  """
+  def maybe_fill_gaps_last_seen(result_tuple, key, unknown_previous_value \\ 0)
+
+  def maybe_fill_gaps_last_seen({:ok, values}, key, unknown_previous_value) do
     result =
       values
-      |> Enum.reduce({[], 0}, fn
+      |> Enum.reduce({[], unknown_previous_value}, fn
         %{has_changed: 0} = elem, {acc, last_seen} ->
           elem = Map.put(elem, key, last_seen) |> Map.delete(:has_changed)
           {[elem | acc], last_seen}
@@ -174,7 +228,8 @@ defmodule Sanbase.Utils.Transform do
     {:ok, result}
   end
 
-  def maybe_fill_gaps_last_seen({:error, error}, _key), do: {:error, error}
+  def maybe_fill_gaps_last_seen({:error, error}, _key, _unknown_previous_value),
+    do: {:error, error}
 
   @spec opts_to_limit_offset(page: non_neg_integer(), page_size: pos_integer()) ::
           {pos_integer(), non_neg_integer()}

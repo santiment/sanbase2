@@ -2,17 +2,18 @@ defmodule Sanbase.Model.Project.ListSelector do
   @moduledoc ~s"""
   Module that resolved a selector object to a list of projects.
 
-  Important note:
-  #TODO: Rework this
-  Currently, the caller must make sure that every different watchlist is resolved
-  in a different process or call clear_detect_cycles/0 function.
-  This is because in order to detect cycles, some storage must be used to keep
-  data between calls. For this purposes the process dictionary is used. This can
-  lead to issues if more than 1 watchlist is resolved.
+
   """
   alias Sanbase.Model.Project
-  alias __MODULE__.Transform
+  alias Sanbase.Utils.ListSelector.Transform
 
+  # Important note:
+  # #TODO: Rework this
+  # Currently, the caller must make sure that every different watchlist is resolved
+  # in a different process or call clear_detect_cycles/0 function.
+  # This is because in order to detect cycles, some storage must be used to keep
+  # data between calls. For this purposes the process dictionary is used. This can
+  # lead to issues if more than 1 watchlist is resolved.
   @cycle_detection_key :__get_base_projects__
   def clear_detect_cycles(), do: Process.delete(@cycle_detection_key)
 
@@ -29,7 +30,7 @@ defmodule Sanbase.Model.Project.ListSelector do
 
     {:ok,
      %{
-       projects: Project.List.projects(opts),
+       projects: projects,
        total_projects_count: total_projects_count(projects, opts),
        has_pagination?: Keyword.get(opts, :has_pagination?),
        all_included_slugs: Keyword.get(opts, :included_slugs)

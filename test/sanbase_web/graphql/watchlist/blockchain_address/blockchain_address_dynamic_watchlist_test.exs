@@ -87,7 +87,7 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
     assert %{
              "details" => %{
                "function" => [
-                 "Provided watchlist function is not valid. Reason: Dynamic watchlist 'selector' has unsupported fields: [\"filterss\"]"
+                 "Provided watchlist function is not valid. Reason: Dynamic watchlist 'address_selector' has unsupported fields: [\"filterss\"]"
                ]
              },
              "message" => "Cannot create user list"
@@ -181,20 +181,26 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
         "filters_combinator" => :or,
         "filters" => [
           %{
-            "metric" => "daily_active_addresses",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:greater_than_or_equal_to}",
-            "threshold" => 100
+            "name" => "metric",
+            "args" => %{
+              "metric" => "daily_active_addresses",
+              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+              "to" => "#{Timex.now()}",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:greater_than_or_equal_to}",
+              "threshold" => 100
+            }
           },
           %{
-            "metric" => "nvt",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:less_than}",
-            "threshold" => 10
+            "name" => "metric",
+            "args" => %{
+              "metric" => "nvt",
+              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+              "to" => "#{Timex.now()}",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:less_than}",
+              "threshold" => 10
+            }
           }
         ]
       }

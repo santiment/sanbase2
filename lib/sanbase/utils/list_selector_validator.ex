@@ -154,12 +154,14 @@ defmodule Sanbase.Utils.ListSelector.Validator do
 
   def valid_filter?(
         :blockchain_address,
-        %{name: "top_addresses", args: %{slug: _, limit: _} = filter}
+        %{name: "top_addresses", args: %{slug: _, page: _, page_size: _} = filter}
       ) do
     filter_schema =
       schema(%{
         slug: spec(is_binary()),
-        limit: spec(is_integer() and (&(&1 > 0)))
+        page: spec(is_integer() and (&(&1 > 0))),
+        page_size: spec(is_integer() and (&(&1 > 0))),
+        labels: spec(is_list() and (&(length(&1) > 0)))
       })
 
     with {:ok, _} <- conform(filter, filter_schema) do

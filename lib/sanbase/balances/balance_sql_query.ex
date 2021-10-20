@@ -322,8 +322,14 @@ defmodule Sanbase.Balance.SqlQuery do
     {query, args}
   end
 
-  def top_addresses_query(slug, decimals, table, opts) do
+  def top_addresses_query(slug, decimals, blockchain, table, opts) do
     direction = if Keyword.get(opts, :direction) == :asc, do: "ASC", else: "DESC"
+    labels = Keyword.get(opts, :labels, :all)
+
+    {limit, offset} = opts_to_limit_offset(opts)
+    args = [slug, decimals, limit, offset]
+
+    {labels_join_str, args} = maybe_join_labels(labels, blockchain, args)
 
     query = """
     SELECT address, balance
@@ -335,13 +341,31 @@ defmodule Sanbase.Balance.SqlQuery do
         addressType = 'normal'
       GROUP BY address
     )
+    #{labels_join_str}
+    WHERE balance > 1e-10
     ORDER BY balance #{direction}
     LIMIT ?3 OFFSET ?4
     """
 
-    {limit, offset} = opts_to_limit_offset(opts)
-    args = [slug, decimals, limit, offset]
     {query, args}
+  end
+
+  defp maybe_join_labels(:all, _blockchain, args), do: {"", args}
+
+  defp maybe_join_labels([_ | _] = labels, blockchain, args) do
+    args_length = length(args)
+
+    str = """
+    GLOBAL ANY INNER JOIN
+    (
+      SELECT address
+      FROM blockchain_address_labels
+      PREWHERE blockchain = ?#{args_length + 1} AND label IN (?#{args_length + 2})
+    ) USING (address)
+    """
+
+    labels = Enum.map(labels, &String.downcase/1)
+    {str, args ++ [blockchain, labels]}
   end
 
   def assets_held_by_address_query(address) do

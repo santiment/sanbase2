@@ -68,12 +68,15 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         # mistyped
         "filterss" => [
           %{
-            "metric" => "daily_active_addresses",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:greater_than_or_equal_to}",
-            "threshold" => 10
+            "name" => "metric",
+            "args" => %{
+              "metric" => "daily_active_addresses",
+              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+              "to" => "#{Timex.now()}",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:greater_than_or_equal_to}",
+              "threshold" => 10
+            }
           }
         ]
       }
@@ -103,12 +106,15 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         # mistyped
         "filterss" => [
           %{
-            "metric" => "daily_active_addresses",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:greater_than_or_equal_to}",
-            "threshold" => 10
+            "name" => "metric",
+            "args" => %{
+              "metric" => "daily_active_addresses",
+              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+              "to" => "#{Timex.now()}",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:greater_than_or_equal_to}",
+              "threshold" => 10
+            }
           }
         ]
       }
@@ -138,12 +144,15 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
       "args" => %{
         "filters" => [
           %{
-            "metric" => "daily_active_addresses",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:greater_than_or_equal_to}",
-            "threshold" => 10
+            "name" => "metric",
+            "args" => %{
+              "metric" => "daily_active_addresses",
+              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+              "to" => "#{Timex.now()}",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:greater_than_or_equal_to}",
+              "threshold" => 10
+            }
           }
         ]
       }
@@ -181,20 +190,26 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         "filters_combinator" => :or,
         "filters" => [
           %{
-            "metric" => "daily_active_addresses",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:greater_than_or_equal_to}",
-            "threshold" => 100
+            "name" => "metric",
+            "args" => %{
+              "metric" => "daily_active_addresses",
+              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+              "to" => "#{Timex.now()}",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:greater_than_or_equal_to}",
+              "threshold" => 100
+            }
           },
           %{
-            "metric" => "nvt",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:less_than}",
-            "threshold" => 10
+            "name" => "metric",
+            "args" => %{
+              "metric" => "nvt",
+              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+              "to" => "#{Timex.now()}",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:less_than}",
+              "threshold" => 10
+            }
           }
         ]
       }
@@ -227,12 +242,15 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
       "args" => %{
         "filters" => [
           %{
-            "metric" => "daily_active_addresses",
-            "dynamicFrom" => "7d",
-            "dynamicTo" => "now",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:greater_than_or_equal_to}",
-            "threshold" => 10
+            "name" => "metric",
+            "args" => %{
+              "metric" => "daily_active_addresses",
+              "dynamicFrom" => "7d",
+              "dynamicTo" => "now",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:greater_than_or_equal_to}",
+              "threshold" => 10
+            }
           }
         ]
       }

@@ -102,15 +102,15 @@ defmodule Sanbase.Balance do
     end
   end
 
-  def current_balance_top_addresses(slug, page, page_size, direction) do
-    with {:ok, {decimals, infr, _blockchain}} <- info_by_slug(slug),
-         {:ok, table} <- realtime_balances_table(slug, infr) do
-      opts = [page: page, page_size: page_size, direction: direction]
-      {query, args} = top_addresses_query(slug, decimals, table, opts)
+  def current_balance_top_addresses(slug, opts) do
+    with {:ok, {decimals, infrastructure, blockchain}} <- info_by_slug(slug),
+         {:ok, table} <- realtime_balances_table(slug, infrastructure) do
+      {query, args} = top_addresses_query(slug, decimals, blockchain, table, opts)
 
       ClickhouseRepo.query_transform(query, args, fn [address, balance] ->
         %{
           address: address,
+          infrastructure: infrastructure,
           balance: balance
         }
       end)

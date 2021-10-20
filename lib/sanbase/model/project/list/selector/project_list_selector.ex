@@ -197,31 +197,20 @@ defmodule Sanbase.Model.Project.ListSelector do
   defp included_slugs_by_filters([%{name: "erc20"}], _filters_combinator), do: :erc20
 
   defp included_slugs_by_filters(filters, filters_combinator) when is_list(filters) do
-    slug_mapsets =
-      filters
-      |> Sanbase.Parallel.map(
-        fn filter ->
-          cache_key = {__MODULE__, :included_slugs_by_filter, filter} |> Sanbase.Cache.hash()
-          {:ok, slugs} = Sanbase.Cache.get_or_store(cache_key, fn -> slugs_by_filter(filter) end)
+    filters
+    |> Sanbase.Parallel.map(
+      fn filter ->
+        cache_key = {__MODULE__, :included_slugs_by_filter, filter} |> Sanbase.Cache.hash()
+        {:ok, slugs} = Sanbase.Cache.get_or_store(cache_key, fn -> slugs_by_filter(filter) end)
 
-          slugs |> MapSet.new()
-        end,
-        timeout: 40_000,
-        ordered: false,
-        max_concurrency: 4
-      )
-
-    case filters_combinator do
-      "and" ->
-        slug_mapsets
-        |> Enum.reduce(&MapSet.intersection(&1, &2))
-        |> Enum.to_list()
-
-      "or" ->
-        slug_mapsets
-        |> Enum.reduce(&MapSet.union(&1, &2))
-        |> Enum.to_list()
-    end
+        slugs |> MapSet.new()
+      end,
+      timeout: 40_000,
+      ordered: false,
+      max_concurrency: 4
+    )
+    |> Sanbase.Utils.Transform.combine_mapsets(combinator: filters_combinator)
+    |> Enum.to_list()
   end
 
   defp slugs_by_filter(%{name: "market_segments", args: args}) do

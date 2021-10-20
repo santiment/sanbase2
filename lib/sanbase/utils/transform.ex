@@ -1,4 +1,33 @@
 defmodule Sanbase.Utils.Transform do
+  @doc ~s"""
+  Combine all the MapSets from the mapsets_list either by
+  taking their intersection or their union. The decision is
+  made based on the `:combinator` field in the opts
+
+  ## Examples:
+      iex> Sanbase.Utils.Transform.combine_mapsets([MapSet.new([1,2,3]), MapSet.new([2,3,4,5])], combinator: "or")
+      MapSet.new([1,2,3,4,5])
+
+      iex> Sanbase.Utils.Transform.combine_mapsets([MapSet.new([1,2,3]), MapSet.new([2,3,4,5])], combinator: "and")
+      MapSet.new([2,3])
+
+  """
+  def combine_mapsets(mapsets_list, opts) do
+    case Keyword.fetch!(opts, :combinator) do
+      c when c in ["or", :or] ->
+        mapsets_list
+        |> Enum.reduce(&MapSet.union(&1, &2))
+
+      c when c in ["and", :and] ->
+        mapsets_list
+        |> Enum.reduce(&MapSet.intersection(&1, &2))
+    end
+  end
+
+  @doc ~s"""
+  Simply wrap anything in an :ok tuple
+  """
+  @spec wrap_ok(any()) :: {:ok, any()}
   def wrap_ok(data), do: {:ok, data}
 
   @doc ~s"""
@@ -98,6 +127,8 @@ defmodule Sanbase.Utils.Transform do
     iex> Sanbase.Utils.Transform.maybe_unwrap_ok_value({:ok, 5})
     ** (RuntimeError) Unsupported format given to maybe_unwrap_ok_value/1: 5
   """
+  @spec maybe_unwrap_ok_value({:ok, any}) :: {:ok, any()} | {:error, String.t()}
+  @spec maybe_unwrap_ok_value({:error, any()}) :: {:error, any()}
   def maybe_unwrap_ok_value({:ok, [value]}), do: {:ok, value}
   def maybe_unwrap_ok_value({:ok, []}), do: {:ok, nil}
 
@@ -162,6 +193,7 @@ defmodule Sanbase.Utils.Transform do
   @doc ~s"""
   Transform some addresses to a name representation
   """
+  @spec maybe_transform_from_address(String.t()) :: String.t()
   def maybe_transform_from_address("0x0000000000000000000000000000000000000000"), do: "mint"
   def maybe_transform_from_address(address), do: address
   def maybe_transform_to_address("0x0000000000000000000000000000000000000000"), do: "burn"

@@ -3,9 +3,9 @@ defmodule Sanbase.BlockchainAddress.ListSelector do
 
   defdelegate valid_selector?(args), to: __MODULE__.Validator
 
-  def addresses(%{selector: selector} = args) do
+  def addresses(%{selector: _selector} = args) do
     opts = args_to_opts(args)
-    blockchain_addresses = evaluate_selector(opts)
+    blockchain_addresses = get_blockchain_addresses(opts)
 
     {:ok,
      %{
@@ -15,74 +15,73 @@ defmodule Sanbase.BlockchainAddress.ListSelector do
      }}
   end
 
-  defp evaluate_selector(%{name: "top_addresses", args: %{slug: slug, limit: limit}}) do
-    Sanbase.Balance.current_balance_top_addresses(slug, 1, limit, :desc)
-  end
+  defp get_blockchain_addresses(opts) do
+    blockchain_addresses =
+      opts[:included_blockchain_addresses]
+      |> Sanbase.Utils.Transform.combine_mapsets(combinator: opts[:filters_combinator])
 
-  defp evaluate_selector(selector) do
-    {:error, "Invalid selector: #{inspect(selector)}"}
+    {:ok, blockchain_addresses}
   end
 
   def args_to_opts(args) do
     args = Sanbase.MapUtils.atomize_keys(args)
 
     filters = Transform.args_to_filters(args)
-    order_by = Transform.args_to_order_by(args)
-    pagination = Transform.args_to_pagination(args)
     filters_combinator = Transform.args_to_filters_combinator(args)
 
     included_blockchain_addresses =
       filters
-      |> included_blockchain_addresses_by_filters(filters_combinator)
-
-    # ordered_blockchain_address =
-    #   order_by |> ordered_blockchain_address_by_order_by(included_blockchain_addresses)
+      |> included_blockchain_addresses_by_filters()
 
     [
-      has_selector?: not is_nil(args[:selector]),
-      has_order?: not is_nil(order_by),
-      has_pagination?: not is_nil(pagination),
-      pagination: pagination,
-      included_blockchain_addresses: included_blockchain_addresses
-      # ordered_blockchain_addresss: ordered_blockchain_addresss
+      included_blockchain_addresses: included_blockchain_addresses,
+      filters_combinator: filters_combinator
     ]
   end
 
-  defp included_blockchain_addresses_by_filters([], _), do: []
+  defp included_blockchain_addresses_by_filters([]), do: []
 
-  defp included_blockchain_addresses_by_filters([_ | _] = filters, filters_combinator)
+  defp included_blockchain_addresses_by_filters([_ | _] = filters)
        when is_list(filters) do
-    slug_mapsets =
-      filters
-      |> Sanbase.Parallel.map(
-        fn filter ->
-          cache_key =
-            {__MODULE__, :included_blockchain_addresses_by_filter, filter} |> Sanbase.Cache.hash()
+    filters
+    |> Sanbase.Parallel.map(
+      fn filter ->
+        cache_key =
+          {__MODULE__, :included_blockchain_addresses_by_filter, filter} |> Sanbase.Cache.hash()
 
-          {:ok, blockchain_addresses} =
-            Sanbase.Cache.get_or_store(cache_key, fn -> blockchain_addresses_by_filter(filter) end)
+        {:ok, blockchain_addresses} =
+          Sanbase.Cache.get_or_store(cache_key, fn -> blockchain_addresses_by_filter(filter) end)
 
-          blockchain_addresses |> MapSet.new()
-        end,
-        timeout: 40_000,
-        ordered: false,
-        max_concurrency: 4
-      )
-
-    case filters_combinator do
-      "and" ->
-        slug_mapsets
-        |> Enum.reduce(&MapSet.intersection(&1, &2))
-        |> Enum.to_list()
-
-      "or" ->
-        slug_mapsets
-        |> Enum.reduce(&MapSet.union(&1, &2))
-        |> Enum.to_list()
-    end
+        blockchain_addresses |> MapSet.new()
+      end,
+      timeout: 40_000,
+      ordered: false,
+      max_concurrency: 4
+    )
   end
 
-  defp blockchain_addresses_by_filter(%{name: "top_addresses", args: %{}}) do
-    {:ok, []}
+  # Fetch the top addresses ordered by their balance in descendig order. If the
+  # `labels` key is present in the args, only the addresses that have one of these labels
+  # are returned.
+  defp blockchain_addresses_by_filter(%{name: "top_addresses", args: args}) do
+    opts = [
+      page: args.page,
+      page_size: args.page_size,
+      direction: :desc,
+      labels: args[:labels] || :all
+    ]
+
+    case Sanbase.Balance.current_balance_top_addresses(args.slug, opts) do
+      {:ok, result} ->
+        blockchain_addresses =
+          Enum.map(result, fn %{address: _, infrastructure: _} = map ->
+            Map.take(map, [:infrastructure, :address])
+          end)
+
+        {:ok, blockchain_addresses}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 end

@@ -213,8 +213,8 @@ defmodule Sanbase.MetricCSVExporter do
 
     @metrics_map
     |> Enum.each(fn {filename, file_metrics} ->
-      header = ["slug", "datetime"] ++ file_metrics.metrics
-      filename = "#{filename}" <> "_#{format(to)}.csv"
+      header = ["slug", "datetime"] ++ camelize(file_metrics.metrics)
+      filename = "#{filename}" <> "_#{format_dt(to)}.csv"
       write_to_file(filename, [header])
 
       @slugs
@@ -235,8 +235,8 @@ defmodule Sanbase.MetricCSVExporter do
     to = Timex.shift(Timex.now(), hours: -2)
     from = Timex.shift(to, days: -@history_in_days)
 
-    filename = "Trending words - 1h_#{format(to)}.csv"
-    write_to_file(filename, [["datetime"] ++ Enum.to_list(1..10)])
+    filename = "Trending words - 1h_#{format_dt(to)}.csv"
+    write_to_file(filename, [["datetime"] ++ rename_column(Enum.to_list(1..10))])
 
     do_export_tw(filename, from, to)
   end
@@ -286,6 +286,7 @@ defmodule Sanbase.MetricCSVExporter do
     |> Enum.map(fn list2 ->
       list2
       |> Enum.reduce(%{}, fn %{datetime: dt, value: v}, acc ->
+        v = format_value(v)
         Map.put(acc, dt, List.wrap(v))
       end)
     end)
@@ -321,10 +322,47 @@ defmodule Sanbase.MetricCSVExporter do
     File.close(file)
   end
 
-  def format(dt) do
+  def format_dt(dt) do
     dt
     |> DateTime.to_iso8601()
     |> String.replace(~r/[-:]/, "")
     |> String.replace(~r/\.\d+/, "")
+  end
+
+  def format_value(value, decimals \\ 6) do
+    if is_float(value) do
+      :erlang.float_to_binary(value, decimals: decimals)
+    else
+      value
+    end
+  end
+
+  def camelize(names) when is_list(names) do
+    Enum.map(names, &camelize/1)
+  end
+
+  def camelize(name) do
+    Inflex.camelize(name, :lower)
+  end
+
+  def rename_column(numbers) when is_list(numbers) do
+    Enum.map(numbers, &rename_column/1)
+  end
+
+  def rename_column(number) do
+    columns_map = %{
+      1 => "one",
+      2 => "two",
+      3 => "three",
+      4 => "four",
+      5 => "five",
+      6 => "six",
+      7 => "seven",
+      8 => "eight",
+      9 => "nine",
+      10 => "ten"
+    }
+
+    "top" <> String.capitalize(columns_map[number])
   end
 end

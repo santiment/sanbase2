@@ -37,6 +37,14 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       resolve(&UserResolver.get_user/3)
     end
 
+    field :is_telegram_chat_id_valid, :boolean do
+      meta(access: :free)
+      arg(:chat_id, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&TelegramResolver.is_telegram_chat_id_valid/3)
+    end
+
     @desc """
     Get a URL for deep-linking sanbase and telegram accounts. It carries a unique
     random token that is associated with the user. The link leads to a telegram chat

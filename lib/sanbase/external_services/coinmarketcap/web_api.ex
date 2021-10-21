@@ -37,13 +37,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     end
   end
 
-  def first_datetime("TOTAL_MARKET"),
-    do: {:ok, ~U[2013-04-28T18:47:21.000Z]}
+  def first_datetime("TOTAL_MARKET"), do: {:ok, ~U[2013-04-28T18:47:21.000Z]}
 
   defp get_first_datetime(nil), do: {:error, "Project does not have coinmarketcap integer id"}
 
   defp get_first_datetime(id) do
-    "/v1.1/cryptocurrency/quotes/historical?format=chart_crypto_details&id=#{id}&time_start=2009-01-01"
+    "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=#{id}&range=ALL"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
@@ -53,23 +52,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body
         |> Jason.decode!()
-        |> get_in(["status", "timestamp"])
-        |> case do
-          bin_ts when is_binary(bin_ts) -> {:ok, Sanbase.DateTimeUtils.from_iso8601!(bin_ts)}
-          _ -> {:error, "[CMC] Error fetching first datetime for #{id}."}
-        end
-
-      {:ok, %Tesla.Env{status: 400, body: body}} ->
-        body
-        |> Jason.decode!()
-        |> get_in(["status", "error_message"])
-        |> String.split(" ")
-        |> Enum.map(&DateTime.from_iso8601/1)
-        |> Enum.find(&match?({:ok, _, _}, &1))
-        |> case do
-          {:ok, %DateTime{} = first_datetime, _} -> {:ok, first_datetime}
-          _ -> {:error, "[CMC] Error fetching first datetime for #{id}."}
-        end
+        |> get_in(["data", "points"])
+        |> Map.keys()
+        |> Enum.map(&String.to_integer/1)
+        |> Enum.min()
+        |> DateTime.from_unix()
 
       error ->
         Logger.warn("[CMC] Error fetching first datetime for #{id}. Reason: #{inspect(error)}")

@@ -58,16 +58,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     end
   end
 
-  object :twitter_mention_count do
-    field(:datetime, non_null(:datetime))
-    field(:mention_count, :integer)
-  end
-
-  object :emojis_sentiment do
-    field(:datetime, non_null(:datetime))
-    field(:sentiment, :float)
-  end
-
   object :topic_search do
     field(:chart_data, list_of(:chart_data))
   end

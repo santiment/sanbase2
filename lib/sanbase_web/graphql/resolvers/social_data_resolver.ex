@@ -22,22 +22,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     end)
   end
 
-  def twitter_mention_count(
-        _root,
-        %{ticker: ticker, from: from, to: to, interval: interval, result_size_tail: size},
-        _resolution
-      ) do
-    TechIndicators.twitter_mention_count(ticker, from, to, interval, size)
-  end
-
-  def emojis_sentiment(
-        _root,
-        %{from: from, to: to, interval: interval, result_size_tail: size},
-        _resolution
-      ) do
-    TechIndicators.emojis_sentiment(from, to, interval, size)
-  end
-
   def social_volume(
         _root,
         %{slug: slug, from: from, to: to, interval: interval, social_volume_type: type},

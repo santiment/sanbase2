@@ -204,38 +204,6 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       cache_resolve(&SocialDataResolver.words_social_volume/3, ttl: 600, max_ttl_offset: 240)
     end
 
-    @desc "Fetch the Twitter mention count for a given ticker and time period."
-    field :twitter_mention_count, list_of(:twitter_mention_count) do
-      meta(access: :free)
-
-      arg(:ticker, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :interval, default_value: "1d")
-      arg(:result_size_tail, :integer, default_value: 0)
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-      cache_resolve(&SocialDataResolver.twitter_mention_count/3)
-    end
-
-    @desc ~s"""
-    Fetch the emoji sentiment for a given ticker and time period.
-    This metric is a basic sentiment analysis, based on emojis used in social media.
-    """
-    field :emojis_sentiment, list_of(:emojis_sentiment) do
-      meta(access: :restricted)
-
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :interval, default_value: "1d")
-      arg(:result_size_tail, :integer, default_value: 0)
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-      cache_resolve(&SocialDataResolver.emojis_sentiment/3)
-    end
-
     @desc ~s"""
     Returns a list of mentions count for a given project and time interval.
 

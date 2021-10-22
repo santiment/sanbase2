@@ -12,7 +12,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias Sanbase.Insight.Post
   alias SanbaseWeb.Graphql.Cache
-  alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def available_queries(%Project{} = project, _args, _resolution) do
@@ -398,20 +397,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, Project.ico_price(project)}
   end
 
-  def price_to_book_ratio(%Project{} = project, _args, %{context: %{loader: loader}}) do
-    loader
-    |> ProjectBalanceResolver.usd_balance_loader(project)
-    |> on_load(fn loader ->
-      with {:ok, usd_balance} when not is_nil(usd_balance) <-
-             ProjectBalanceResolver.usd_balance_from_loader(loader, project),
-           false <- usd_balance <= 0.001,
-           {:ok, market_cap} when not is_nil(market_cap) <- marketcap_usd(project, nil, nil) do
-        {:ok, market_cap / usd_balance}
-      else
-        _ ->
-          {:ok, nil}
-      end
-    end)
+  def price_to_book_ratio(_root, _args, _resolution) do
+    # Note: Deprecated
+    {:ok, nil}
   end
 
   @doc ~s"""

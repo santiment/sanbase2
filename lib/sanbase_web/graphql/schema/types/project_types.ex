@@ -448,6 +448,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :btc_balance, :float do
+      deprecate("The field btc_balance is deprecated")
       cache_resolve(&ProjectBalanceResolver.btc_balance/3)
     end
 
@@ -583,6 +584,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :price_to_book_ratio, :float do
+      deprecate("The field price_to_book_ratio is deprecated")
       cache_resolve(&ProjectResolver.price_to_book_ratio/3)
     end
 

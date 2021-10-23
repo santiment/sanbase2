@@ -92,7 +92,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :insight_comments,
           :insight,
           :is_telegram_chat_id_valid,
-          :news,
           :ohlc,
           :payments,
           :popular_insight_authors,

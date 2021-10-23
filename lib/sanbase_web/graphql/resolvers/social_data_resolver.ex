@@ -172,8 +172,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :dominance)
   end
-
-  def news(_root, %{tag: tag, from: from, to: to, size: size}, _resolution) do
-    SocialData.google_news(tag, from, to, size)
-  end
 end

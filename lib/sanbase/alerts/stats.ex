@@ -58,7 +58,7 @@ defmodule Sanbase.Alerts.Stats do
     alerts_text =
       Enum.reduce(fired_alerts, "", fn [ticker, count, percent_change_text, metrics], acc_text ->
         acc_text <>
-          "|#{String.pad_trailing(ticker, 10)}|#{String.pad_leading(Integer.to_string(count), 10)}|#{String.pad_leading(percent_change_text, 30)}|#{Enum.join(metrics, ", ")}\n"
+          "|#{String.pad_trailing(ticker, 5)}|#{String.pad_leading(Integer.to_string(count), 5)}|#{String.pad_leading(percent_change_text, 8)}\nMetrics: #{Enum.join(metrics, ", ")}\n\n"
       end)
 
     """
@@ -67,8 +67,8 @@ defmodule Sanbase.Alerts.Stats do
     *Total alerts:* #{total_fired} _(#{total_fired_text})_
 
     ```
-    |#{String.pad_trailing("Asset", 10)}|#{String.pad_leading("Count", 10)}|#{String.pad_leading("% change vs weekly avg", 30)}|Metrics
-    |#{String.pad_trailing("", 10, "_")}|#{String.pad_trailing("", 10, "_")}|#{String.pad_trailing("", 30, "_")}|
+    |#{String.pad_trailing("Asset", 5)}|#{String.pad_leading("Count", 5)}|#{String.pad_leading("% change", 8)}|
+    |#{String.pad_trailing("", 5, "_")}|#{String.pad_trailing("", 5, "_")}|#{String.pad_trailing("", 8, "_")}|
     #{alerts_text}
     ```
     """

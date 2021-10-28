@@ -188,6 +188,12 @@ defmodule Sanbase.Metric do
         |> Sanbase.Utils.Transform.maybe_apply_function(fn list ->
           Enum.sort_by(list, & &1.datetime, {:asc, DateTime})
         end)
+        |> Sanbase.Utils.Transform.maybe_apply_function(fn list ->
+          Enum.map(list, fn %{data: data} = elem ->
+            data_sorted_by_slug = Enum.sort_by(data, & &1.slug, :asc)
+            %{elem | data: data_sorted_by_slug}
+          end)
+        end)
     end
   end
 

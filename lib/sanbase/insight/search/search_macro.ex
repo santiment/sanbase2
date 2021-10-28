@@ -26,8 +26,8 @@ defmodule Sanbase.Insight.Search.Macro do
         SELECT
           posts.id AS id,
           ts_rank(posts.document_tokens, plainto_tsquery(?)) AS rank,
-          coalesce((string_agg(tags.name, ' ')), '') AS tags_str,
-          coalesce((string_agg(metrics.name, ' ')), '') AS metrics_str
+          coalesce((string_agg(tags.name, ' ' ORDER BY tags.name)), '') AS tags_str,
+          coalesce((string_agg(metrics.name, ' ' ORDER BY metrics.name)), '') AS metrics_str
         FROM posts
         LEFT OUTER JOIN posts_tags ON posts.id = posts_tags.post_id
         LEFT OUTER JOIN tags ON tags.id = posts_tags.tag_id
@@ -53,8 +53,8 @@ defmodule Sanbase.Insight.Search.Macro do
         SELECT
           posts.id AS id,
           ts_rank(posts.document_tokens, to_tsquery(?)) AS rank,
-          coalesce((string_agg(tags.name, ' ')), '') AS tags_str,
-          coalesce((string_agg(metrics.name, ' ')), '') AS metrics_str
+          coalesce((string_agg(tags.name, ' ' ORDER BY tags.name)), '') AS tags_str,
+          coalesce((string_agg(metrics.name, ' ' ORDER BY metrics.name)), '') AS metrics_str
         FROM posts
         LEFT OUTER JOIN posts_tags ON posts.id = posts_tags.post_id
         LEFT OUTER JOIN tags ON tags.id = posts_tags.tag_id

@@ -192,9 +192,11 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
 
       assert [%{"post" => post, "highlights" => highlights}] = list
 
+      # Currently the tags string and the metrics string are ordered alphabetically
+      # and not in order of creation
       assert highlights == %{
                "metrics" => [],
-               "tags" => [%{"highlight" => false, "text" => "MVRV MVRV_USD BTC SAN"}],
+               "tags" => [%{"highlight" => false, "text" => "BTC MVRV MVRV_USD SAN"}],
                "text" => [
                  %{"highlight" => false, "text" => "Article with mvrv metric and explanation"}
                ],
@@ -229,10 +231,11 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
       assert result_highlights1 == %{
                "metrics" => [],
                "tags" => [
+                 %{"highlight" => false, "text" => "BTC "},
                  %{"highlight" => true, "text" => "MVRV"},
                  %{"highlight" => false, "text" => " "},
                  %{"highlight" => true, "text" => "MVRV"},
-                 %{"highlight" => false, "text" => "_USD BTC SAN"}
+                 %{"highlight" => false, "text" => "_USD SAN"}
                ],
                "text" => [
                  %{"highlight" => false, "text" => "Article with "},
@@ -318,7 +321,7 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
 
       assert result_highlights1 == %{
                "metrics" => [],
-               "tags" => [%{"highlight" => false, "text" => "MVRV MVRV_USD BTC SAN"}],
+               "tags" => [%{"highlight" => false, "text" => "BTC MVRV MVRV_USD SAN"}],
                "text" => [
                  %{"highlight" => false, "text" => "Article with mvrv metric and "},
                  %{"highlight" => true, "text" => "explanation"}

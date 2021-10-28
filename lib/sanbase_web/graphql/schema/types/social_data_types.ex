@@ -6,7 +6,8 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
 
   enum :trending_words_sources do
     value(:telegram)
-    value(:professional_traders_chat)
+    value(:twitter)
+    value(:bitcointalk)
     value(:reddit)
     value(:all)
   end
@@ -57,16 +58,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     end
   end
 
-  object :twitter_mention_count do
-    field(:datetime, non_null(:datetime))
-    field(:mention_count, :integer)
-  end
-
-  object :emojis_sentiment do
-    field(:datetime, non_null(:datetime))
-    field(:sentiment, :float)
-  end
-
   object :topic_search do
     field(:chart_data, list_of(:chart_data))
   end
@@ -89,15 +80,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   object :social_dominance do
     field(:datetime, non_null(:datetime))
     field(:dominance, :float)
-  end
-
-  object :news do
-    field(:datetime, non_null(:datetime))
-    field(:title, non_null(:string))
-    field(:description, :string)
-    field(:source_name, :string)
-    field(:url, :string)
-    field(:media_url, :string)
   end
 
   object :trending_words do

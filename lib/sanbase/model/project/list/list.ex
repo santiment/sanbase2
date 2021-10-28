@@ -484,7 +484,7 @@ defmodule Sanbase.Model.Project.List do
   def currently_trending_projects(opts \\ [])
 
   def currently_trending_projects(opts) do
-    {:ok, trending_words} = Sanbase.SocialData.TrendingWords.get_currently_trending_words()
+    {:ok, trending_words} = Sanbase.SocialData.TrendingWords.get_currently_trending_words(10)
 
     trending_words
     |> Enum.map(&String.downcase(&1.word))

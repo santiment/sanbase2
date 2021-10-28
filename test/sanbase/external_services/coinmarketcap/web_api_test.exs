@@ -23,16 +23,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
     [project: project]
   end
 
-  test "fetching the first price datetime of a token", context do
-    Tesla.Mock.mock(fn %{method: :get} ->
-      %Tesla.Env{status: 400, body: File.read!(Path.join(__DIR__, "data/btc_web_api_error.json"))}
-    end)
-
-    {:ok, first_datetime} = WebApi.first_datetime(context.project)
-
-    assert DateTime.compare(~U[2013-04-28T18:47:21.000Z], first_datetime) == :eq
-  end
-
   test "filter out huge volumes", context do
     Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{
@@ -78,7 +68,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
     assert record in prices
   end
 
-  test "fetching the first total market capitalization datetime" do
+  test "fetching the first datetime with error msg" do
     Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{
         status: 200,
@@ -88,6 +78,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
 
     {:ok, first_datetime} = WebApi.first_datetime("TOTAL_MARKET")
     assert first_datetime == ~U[2013-04-28 18:47:21.000Z]
+  end
+
+  test "fetching the first datetime with success msg", context do
+    Tesla.Mock.mock(fn %{method: :get} ->
+      %Tesla.Env{
+        status: 200,
+        body: File.read!(Path.join(__DIR__, "data/first_datetime_api_success.json"))
+      }
+    end)
+
+    {:ok, first_datetime} = WebApi.first_datetime(context.project)
+    assert first_datetime == ~U[2019-04-29 00:00:00Z]
   end
 
   test "fetching total market capitalization" do

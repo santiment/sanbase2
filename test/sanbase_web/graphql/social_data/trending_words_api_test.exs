@@ -41,7 +41,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
       }
 
       with_mock SocialData.TrendingWords,
-        get_trending_words: fn _, _, _, _ -> {:ok, success_response} end do
+        get_trending_words: fn _, _, _, _, _ -> {:ok, success_response} end do
         args = %{from: dt1_str, to: dt3_str, interval: "1d", size: 2}
 
         query = trending_words_query(args)
@@ -81,7 +81,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
       %{dt1_str: dt1_str, dt2_str: dt2_str} = context
 
       with_mock SocialData.TrendingWords,
-        get_trending_words: fn _, _, _, _ -> {:error, "Something broke"} end do
+        get_trending_words: fn _, _, _, _, _ -> {:error, "Something broke"} end do
         args = %{from: dt1_str, to: dt2_str, interval: "1h", size: 10}
 
         query = trending_words_query(args)

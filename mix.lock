@@ -75,7 +75,7 @@
   "jason": {:hex, :jason, "1.2.2", "ba43e3f2709fd1aa1dce90aaabfd039d000469c05c56f0b8e31978e03fa39052", [:mix], [{:decimal, "~> 1.0 or ~> 2.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm", "18a228f5f0058ee183f29f9eae0805c6e59d61c3b006760668d8d18ff0d12179"},
   "jose": {:git, "https://github.com/potatosalad/erlang-jose.git", "44af587b10c3e3cb76097f81ee0618ab265f4a80", []},
   "kaffe": {:git, "https://github.com/santiment/kaffe.git", "ffe4a70657865950aca6cd7642d22f3b55a3ca49", []},
-  "kaffy": {:git, "https://github.com/santiment/kaffy.git", "66a4ba404cd6892e688f7a9514ef5db2330dd5e3", []},
+  "kaffy": {:git, "https://github.com/santiment/kaffy.git", "e790a98aa03aca8422097446b4cea1966b358047", []},
   "kafka_protocol": {:git, "https://github.com/santiment/kafka_protocol.git", "0e498daca1f380ccd4e4d70c5d475a57299a41d2", [branch: "working-version"]},
   "libcluster": {:hex, :libcluster, "3.3.0", "f7d45ff56d88e9fb4c30aee662480cbab69ebc0e7f7da4ad8d01b1e4f7492da8", [:mix], [{:jason, "~> 1.1", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm", "ecdcdc88334ec8eb18b10a13a1d5f22a3319a970b5b1e66cfe71c7719a4ab6cc"},
   "lz4b": {:git, "https://github.com/santiment/lz4b.git", "c789872d244a4ec156e9e1c9d59e8085e90ac023", []},

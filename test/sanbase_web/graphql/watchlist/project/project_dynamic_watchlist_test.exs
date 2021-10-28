@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
+defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock

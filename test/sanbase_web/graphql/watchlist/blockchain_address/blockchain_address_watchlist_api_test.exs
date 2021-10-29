@@ -193,7 +193,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
                "blockchainAddress" => %{
                  "address" => "0x123a",
                  "notes" => "note2",
-                 "labels" => [%{"name" => "Trader"}, %{"name" => "DEX"}]
+                 "labels" => [%{"name" => "DEX"}, %{"name" => "Trader"}]
                }
              }
            ]

@@ -16,11 +16,8 @@ defmodule Sanbase.BlockchainAddress.ListSelector do
   end
 
   defp get_blockchain_addresses(opts) do
-    blockchain_addresses =
-      opts[:included_blockchain_addresses]
-      |> Sanbase.Utils.Transform.combine_mapsets(combinator: opts[:filters_combinator])
-
-    {:ok, blockchain_addresses}
+    opts[:included_blockchain_addresses]
+    |> Sanbase.Utils.Transform.combine_mapsets(combinator: opts[:filters_combinator])
   end
 
   def args_to_opts(args) do

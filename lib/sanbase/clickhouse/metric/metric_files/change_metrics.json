@@ -3677,5 +3677,58 @@
     "has_incomplete_data": false,
     "data_type": "timeseries"
   }
-
+,
+  {
+    "human_readable_name": "Sentiment Volume Consumed Total Change (1d)",
+    "name": "sentiment_volume_consumed_total_change_1d",
+    "metric": "sentiment_volume_consumed_1d_change_1d",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Sentiment Volume Consumed Total Change (7d)",
+    "name": "sentiment_volume_consumed_total_change_7d",
+    "metric": "sentiment_volume_consumed_1d_change_7d",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Sentiment Volume Consumed Total Change (30d)",
+    "name": "sentiment_volume_consumed_total_change_30d",
+    "metric": "sentiment_volume_consumed_1d_change_30d",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
 ]

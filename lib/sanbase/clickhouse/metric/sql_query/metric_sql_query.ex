@@ -331,17 +331,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   # Private functions
 
-  defp maybe_convert_to_date(:after, metric, dt_column, code) do
+  defp maybe_convert_to_date(:after, metric, dt_column, sql_dt_description) do
     case Map.get(@table_map, metric) do
-      "daily_" <> _rest_of_table -> "#{dt_column} >= toDate(#{code})"
-      _ -> "#{dt_column} >= #{code}"
+      "daily_" <> _rest_of_table -> "#{dt_column} >= toDate(#{sql_dt_description})"
+      _ -> "#{dt_column} >= #{sql_dt_description}"
     end
   end
 
-  defp maybe_convert_to_date(:before, metric, dt_column, code) do
+  defp maybe_convert_to_date(:before, metric, dt_column, sql_dt_description) do
     case Map.get(@table_map, metric) do
-      "daily_" <> _rest_of_table -> "#{dt_column} <= toDate(#{code})"
-      _ -> "#{dt_column} <= #{code}"
+      "daily_" <> _rest_of_table -> "#{dt_column} <= toDate(#{sql_dt_description})"
+      _ -> "#{dt_column} < #{sql_dt_description}"
     end
   end
 end

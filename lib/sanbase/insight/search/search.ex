@@ -15,7 +15,7 @@ defmodule Sanbase.Insight.Search do
         to_tsquery_incomplete_search(query, search_term, opts)
 
       false ->
-        plainto_tsquery_complete_search(query, search_term, opts)
+        websearch_to_tsquery_complete_search(query, search_term, opts)
     end
   end
 
@@ -29,7 +29,7 @@ defmodule Sanbase.Insight.Search do
     # for every new character. For example if the search term is `mvrv`,
     # then we can show some results when only `mvr` is typed.
     # The function call appends `:*` to the search term and executes it
-    # via the `to_tsquery` function instead of `plainto_tsquery` which
+    # via the `to_tsquery` function instead of `websearch_to_tsquery` which
     # accepts a wider range of inputs and formats them.
     search_term = modify_search_term(search_term)
     {limit, offset} = opts_to_limit_offset(opts)
@@ -55,21 +55,21 @@ defmodule Sanbase.Insight.Search do
     |> transform_highlights()
   end
 
-  defp plainto_tsquery_complete_search(query, search_term, opts) do
+  defp websearch_to_tsquery_complete_search(query, search_term, opts) do
     {limit, offset} = opts_to_limit_offset(opts)
 
     from(
       post in query,
-      join: map in plainto_tsquery_search_insights_fragment(^search_term, ^limit, ^offset),
+      join: map in websearch_to_tsquery_search_insights_fragment(^search_term, ^limit, ^offset),
       on: post.id == map.id,
       select: %{
         post: post,
         rank: map.rank,
         highlights: %{
-          title: plainto_tsquery_highlight_fragment(post.title, ^search_term),
-          text: plainto_tsquery_highlight_fragment(post.text, ^search_term),
-          tags: plainto_tsquery_highlight_fragment(map.tags_str, ^search_term),
-          metrics: plainto_tsquery_highlight_fragment(map.metrics_str, ^search_term)
+          title: websearch_to_tsquery_highlight_fragment(post.title, ^search_term),
+          text: websearch_to_tsquery_highlight_fragment(post.text, ^search_term),
+          tags: websearch_to_tsquery_highlight_fragment(map.tags_str, ^search_term),
+          metrics: websearch_to_tsquery_highlight_fragment(map.metrics_str, ^search_term)
         }
       },
       order_by: [desc: map.rank]

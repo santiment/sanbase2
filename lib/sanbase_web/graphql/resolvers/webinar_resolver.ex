@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.WebinarResolver do
 
   def get_webinars(_root, _args, %{context: %{auth: %{current_user: user}}}) do
     plan =
-      Subscription.current_subscription(user, @product_sanbase)
+      Subscription.current_subscription(user.id, @product_sanbase)
       |> Subscription.plan_name()
 
     {:ok, Webinar.get_all(%{is_logged_in: true, plan_atom_name: plan})}

@@ -262,7 +262,7 @@ defmodule Sanbase.Billing.Subscription do
   @doc """
   List all active user subscriptions with plans and products.
   """
-  def user_subscriptions(%User{id: user_id}) do
+  def user_subscriptions(user_id) do
     __MODULE__
     |> Query.filter_user(user_id)
     |> Query.all_active_and_trialing_subscriptions()
@@ -274,7 +274,7 @@ defmodule Sanbase.Billing.Subscription do
   @doc """
   List active subcriptions' product ids
   """
-  def user_subscriptions_product_ids(%User{id: user_id}) do
+  def user_subscriptions_product_ids(user_id) do
     __MODULE__
     |> Query.filter_user(user_id)
     |> Query.all_active_and_trialing_subscriptions()
@@ -292,12 +292,16 @@ defmodule Sanbase.Billing.Subscription do
   @doc """
   Current subscription is the last active subscription for a product.
   """
-  def current_subscription(%User{id: user_id}, product_id) do
-    fetch_current_subscription(user_id, product_id)
-  end
 
   def current_subscription(user_id, product_id) when is_integer(user_id) do
     fetch_current_subscription(user_id, product_id)
+  end
+
+  def current_subscriptions(user_id) do
+    user_subscriptions(user_id)
+    |> Enum.group_by(fn s -> s.plan.product.id end)
+    |> Enum.map(fn {product_id, list} -> {product_id, Enum.max_by(list, & &1.id)} end)
+    |> Enum.map(fn {_product_id, subscription} -> subscription end)
   end
 
   def plan_name(nil), do: :free

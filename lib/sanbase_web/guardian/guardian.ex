@@ -45,21 +45,36 @@ defmodule SanbaseWeb.Guardian do
     platform = Keyword.get(opts, :platform, :unknown)
     client = Keyword.get(opts, :client, :unknown)
 
-    with {:ok, access_token, _claims} <-
+    jwt_data = %{platform: platform, client: client, user_id: user.id}
+
+    with subscriptions <- Sanbase.Billing.Subscription.current_subscriptions(user.id),
+         subscriptions <- transform_subscriptions(subscriptions),
+         jwt_data <- Map.put(jwt_data, :subscriptions, subscriptions),
+         {:ok, access_token, _claims} <-
            SanbaseWeb.Guardian.encode_and_sign(
              user,
-             %{client: client, platform: platform},
+             jwt_data,
              ttl: @access_token_ttl
            ),
          {:ok, refresh_token, _claims} <-
            SanbaseWeb.Guardian.encode_and_sign(
              user,
-             %{client: client, platform: platform},
+             jwt_data,
              token_type: "refresh",
              ttl: @refresh_token_ttl
            ) do
       {:ok, %{access_token: access_token, refresh_token: refresh_token}}
     end
+  end
+
+  def transform_subscriptions(list) do
+    Enum.map(list, fn sub ->
+      %{
+        product_id: sub.plan.product_id,
+        product_code: Sanbase.Billing.Product.code_by_id(sub.plan.product_id),
+        plan: sub.plan.name
+      }
+    end)
   end
 
   def device_data(conn) do

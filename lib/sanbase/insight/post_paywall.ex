@@ -20,7 +20,7 @@ defmodule Sanbase.Insight.PostPaywall do
   def maybe_filter_paywalled(insights, nil), do: maybe_filter(insights, nil)
 
   def maybe_filter_paywalled(insights, %User{} = user) do
-    subscription = Subscription.current_subscription(user, @product_sanbase)
+    subscription = Subscription.current_subscription(user.id, @product_sanbase)
 
     if SanbaseAccessChecker.can_access_paywalled_insights?(subscription) do
       insights

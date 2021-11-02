@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SheetsTemplateResolver do
 
   def get_sheets_templates(_root, _args, %{context: %{auth: %{current_user: user}}}) do
     plan =
-      Subscription.current_subscription(user, @product_sanbase)
+      Subscription.current_subscription(user.id, @product_sanbase)
       |> Subscription.plan_name()
 
     {:ok, SheetsTemplate.get_all(%{is_logged_in: true, plan_atom_name: plan})}

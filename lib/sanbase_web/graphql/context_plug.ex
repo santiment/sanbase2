@@ -308,7 +308,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     case access_token && bearer_authorize(conn, access_token) do
       {:ok, %{current_user: current_user} = map} ->
         subscription =
-          Subscription.current_subscription(current_user, @product_id_sanbase) ||
+          Subscription.current_subscription(current_user.id, @product_id_sanbase) ||
             @free_subscription
 
         %{
@@ -333,12 +333,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   def jwt_auth_header_authorization(%Plug.Conn{} = conn) do
-    with {_, ["Bearer " <> token]} <-
-           {:has_header?, get_req_header(conn, "authorization")},
-         {:ok, %{current_user: current_user} = map} <-
-           bearer_authorize(conn, token) do
+    with {_, ["Bearer " <> token]} <- {:has_header?, get_req_header(conn, "authorization")},
+         {:ok, %{current_user: current_user} = map} <- bearer_authorize(conn, token) do
       subscription =
-        Subscription.current_subscription(current_user, @product_id_sanbase) ||
+        Subscription.current_subscription(current_user.id, @product_id_sanbase) ||
           @free_subscription
 
       %{
@@ -398,7 +396,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         |> get_apikey_product_id()
 
       subscription =
-        Subscription.current_subscription(current_user, product_id) ||
+        Subscription.current_subscription(current_user.id, product_id) ||
           @free_subscription
 
       %{

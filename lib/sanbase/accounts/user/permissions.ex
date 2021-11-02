@@ -3,7 +3,7 @@ defmodule Sanbase.Accounts.User.Permissions do
   alias Sanbase.Billing.{Subscription, Product}
 
   def permissions(%User{} = user) do
-    user_subscriptions_product_ids = Subscription.user_subscriptions_product_ids(user)
+    user_subscriptions_product_ids = Subscription.user_subscriptions_product_ids(user.id)
 
     %{
       api: Product.product_api() in user_subscriptions_product_ids,

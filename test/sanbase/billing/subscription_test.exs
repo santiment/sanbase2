@@ -93,12 +93,12 @@ defmodule Sanbase.Billing.SubscriptionTest do
     test "when there are subscriptions - currentUser return list of subscriptions", context do
       insert(:subscription_essential, user: context.user)
 
-      subscription = Subscription.user_subscriptions(context.user) |> hd()
+      subscription = Subscription.user_subscriptions(context.user.id) |> hd()
       assert subscription.plan.name == "ESSENTIAL"
     end
 
     test "when there are no subscriptions - return []", context do
-      assert Subscription.user_subscriptions(context.user) == []
+      assert Subscription.user_subscriptions(context.user.id) == []
     end
 
     test "only active subscriptions", context do
@@ -108,7 +108,7 @@ defmodule Sanbase.Billing.SubscriptionTest do
         status: "canceled"
       )
 
-      assert Subscription.user_subscriptions(context.user) == []
+      assert Subscription.user_subscriptions(context.user.id) == []
     end
   end
 
@@ -116,12 +116,16 @@ defmodule Sanbase.Billing.SubscriptionTest do
     test "when there is subscription - return it", context do
       insert(:subscription_essential, user: context.user)
 
-      current_subscription = Subscription.current_subscription(context.user, context.product.id)
+      current_subscription =
+        Subscription.current_subscription(context.user.id, context.product.id)
+
       assert current_subscription.plan.id == context.plans.plan_essential.id
     end
 
     test "when there isn't - return nil", context do
-      current_subscription = Subscription.current_subscription(context.user, context.product.id)
+      current_subscription =
+        Subscription.current_subscription(context.user.id, context.product.id)
+
       assert current_subscription == nil
     end
 
@@ -132,7 +136,9 @@ defmodule Sanbase.Billing.SubscriptionTest do
         status: "canceled"
       )
 
-      current_subscription = Subscription.current_subscription(context.user, context.product.id)
+      current_subscription =
+        Subscription.current_subscription(context.user.id, context.product.id)
+
       assert current_subscription == nil
     end
   end

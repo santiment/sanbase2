@@ -146,7 +146,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   end
 
   def subscriptions(%User{} = user, _args, _resolution) do
-    {:ok, Subscription.user_subscriptions(user)}
+    {:ok, Subscription.user_subscriptions(user.id)}
   end
 
   def eligible_for_sanbase_trial?(%User{} = user, _args, _resolution) do

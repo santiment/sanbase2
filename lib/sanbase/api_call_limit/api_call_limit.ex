@@ -162,8 +162,8 @@ defmodule Sanbase.ApiCallLimit do
 
   defp user_to_plan(%User{} = user) do
     subscription =
-      Subscription.current_subscription(user, @product_api_id) ||
-        Subscription.current_subscription(user, @product_sanbase_id)
+      Subscription.current_subscription(user.id, @product_api_id) ||
+        Subscription.current_subscription(user.id, @product_sanbase_id)
 
     case subscription do
       %Subscription{plan: %{product: %{id: @product_api_id}}} ->

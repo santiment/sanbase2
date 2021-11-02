@@ -139,7 +139,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
        when query in @extension_metrics do
     case resolution.context[:auth][:current_user] do
       %Sanbase.Accounts.User{} = user ->
-        product_ids = Subscription.user_subscriptions_product_ids(user)
+        product_ids = Subscription.user_subscriptions_product_ids(user.id)
 
         if Map.get(@extension_metric_product_map, query) in product_ids do
           resolution

@@ -153,7 +153,7 @@ defmodule Sanbase.Price.PricePairSql do
       quote_asset = ?2 AND
       source = ?3 AND
       dt >= toDateTime(?4) AND
-      dt <= toDateTime(?5)
+      dt < toDateTime(?5)
     ORDER BY dt DESC
     LIMIT 1
     """

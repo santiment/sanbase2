@@ -206,7 +206,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         PREWHERE
           owner IN (?1) AND
           dt >= toDateTime(?2) AND
-          dt <= toDateTime(?3)
+          dt < toDateTime(?3)
         GROUP BY owner, repo, dt, event
       )
       GROUP BY owner

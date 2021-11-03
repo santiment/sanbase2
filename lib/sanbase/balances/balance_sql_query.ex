@@ -315,6 +315,7 @@ defmodule Sanbase.Balance.SqlQuery do
       GROUP BY address
     )
     WHERE #{generate_comparison_string("balance", operator, threshold)}
+    LIMIT 10000
     """
 
     args = [slug, decimals]
@@ -327,6 +328,7 @@ defmodule Sanbase.Balance.SqlQuery do
     labels = Keyword.get(opts, :labels, :all)
 
     {limit, offset} = opts_to_limit_offset(opts)
+    limit = Enum.min([limit, 10_000])
     args = [slug, decimals, limit, offset]
 
     {labels_join_str, args} = maybe_join_labels(labels, blockchain, args)

@@ -1,6 +1,18 @@
 defmodule Sanbase.Metric.SqlQuery.Helper do
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :count, :ohlc]
 
+  @type operator ::
+          :inside_channel
+          | :outside_channel
+          | :less_than
+          | :less_than_or_equal_to
+          | :greater_than
+          | :greater_than_or_equal_to
+          | :inside_channel_inclusive
+          | :inside_channel_exclusive
+          | :outside_channel_inclusive
+          | :outside_channel_exclusive
+
   def aggregations(), do: @aggregations
 
   def aggregation(:ohlc, value_column, dt_column) do

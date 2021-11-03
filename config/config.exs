@@ -136,7 +136,9 @@ config :sanbase, Sanbase.InternalServices.Parity,
   basic_auth_password: {:system, "PARITY_BASIC_AUTH_PASSWORD"}
 
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
-  rate_limiting_enabled: {:system, "SANBASE_API_CALL_RATE_LIMITING_ENABLED", true},
+  rate_limiting_enabled: {:system, "SANBASE_API_CALL_RATE_LIMITING_ENABLED", true}
+
+config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: {:system, "GRAPHQL_BASIC_AUTH_USERNAME"},
   basic_auth_password: {:system, "GRAPHQL_BASIC_AUTH_PASSWORD"}
 

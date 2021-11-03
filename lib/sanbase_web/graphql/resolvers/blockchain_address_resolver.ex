@@ -281,7 +281,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
               label |> Map.from_struct() |> Map.put(:origin, "user")
             end)
 
-          {:ok, user_labels ++ santiment_labels}
+          labels =
+            (user_labels ++ santiment_labels)
+            |> Enum.sort_by(& &1.name)
+
+          {:ok, labels}
         end)
     end
   end

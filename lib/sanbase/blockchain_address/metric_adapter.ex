@@ -165,13 +165,18 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(metric, _from, _to, _operator, _threshold, _opts) do
-    not_implemented_error("slugs_by_filter", metric)
+  def addresses_by_filter("historical_balance", %{slug: slug}, operator, threshold, opts) do
+    Sanbase.Balance.addresses_by_filter(slug, operator, threshold, opts)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(metric, _from, _to, _direction, _opts) do
-    not_implemented_error("slugs order", metric)
+  def addresses_by_filter(metric, _selector, _operator, _threshold, _opts) do
+    not_implemented_error("addresses_by_filter", metric)
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def addresses_order(metric, _selector, _direction, _opts) do
+    not_implemented_error("addresses_order", metric)
   end
 
   # Private functions

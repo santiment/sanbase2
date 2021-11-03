@@ -151,7 +151,7 @@ defmodule Sanbase.Mixfile do
       {:ueberauth_google, "~> 0.10"},
       {:ueberauth_twitter, github: "santiment/ueberauth_twitter"},
       {:uuid, "~> 1.1"},
-      {:vex, "~> 0.8.0", override: true},
+      {:vex, "~> 0.9.0", override: true},
       {:waffle, "~> 1.1"},
       {:websockex, "~> 0.4.3"},
       {:kaffy, github: "santiment/kaffy"}

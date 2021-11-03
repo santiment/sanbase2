@@ -43,6 +43,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     UserList.fetch_all_public_lists(type)
   end
 
+  # def dynamic_watchlist(_root, %{} = args, _resolution) do
+  #   projects_selector = Map.get(args, :projects_selector)
+  #   blockchain_addresses_selector = Map.get(args, :blockchain_addresses_selector)
+
+  #   with %{} = fun <- Sanbase.WatchlistFunction.new(selector),
+  #        {:ok, result} <- Sanbase.WatchlistFunction.evaluate(fun) do
+  #     {:ok, result}
+  #   end
+  # end
+
   def watchlist(_root, %{id: id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do

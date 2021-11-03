@@ -268,13 +268,13 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
             "address" => "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
             "labels" => [
               %{
-                "name" => "whale",
-                "metadata" => ~s|{"rank": 58, "value": 1.1438690681177702e+24}|
-              },
-              %{
                 "name" => "centralized_exchange",
                 "metadata" =>
                   ~s|{"comment":"Poloniex GNT","is_dex":false,"owner":"Poloniex","source":""}|
+              },
+              %{
+                "name" => "whale",
+                "metadata" => ~s|{"rank": 58, "value": 1.1438690681177702e+24}|
               }
             ]
           },

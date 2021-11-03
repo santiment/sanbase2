@@ -31,11 +31,13 @@ defmodule Sanbase.Clickhouse.Label do
     blockchain = slug_to_blockchain(slug)
     {query, args} = addresses_labels_query(slug, blockchain, addresses)
 
-    Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
-      label = %{name: label, metadata: metadata, origin: "santiment"}
-      Map.update(acc, address, [label], &[label | &1])
-    end)
-    |> case do
+    result =
+      Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
+        label = %{name: label, metadata: metadata, origin: "santiment"}
+        Map.update(acc, address, [label], &[label | &1])
+      end)
+
+    case result do
       {:ok, labels_map} ->
         {:ok, do_add_labels(maps, labels_map)}
 
@@ -101,8 +103,12 @@ defmodule Sanbase.Clickhouse.Label do
   defp do_add_labels(maps, labels_map) do
     add_labels = fn
       # In this case the address type does not exist, so the result is not used
-      nil -> nil
-      map -> Map.put(map, :labels, Map.get(labels_map, map.address, []))
+      nil ->
+        nil
+
+      map ->
+        labels = Map.get(labels_map, map.address, []) |> Enum.sort_by(& &1.name)
+        Map.put(map, :labels, labels)
     end
 
     maps

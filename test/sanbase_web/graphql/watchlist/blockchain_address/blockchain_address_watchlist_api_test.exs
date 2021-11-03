@@ -83,8 +83,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
                  "labels" => [
                    %{"name" => "DEX", "origin" => "user"},
                    %{"name" => "Trader", "origin" => "user"},
-                   %{"name" => "whale", "origin" => "santiment"},
-                   %{"name" => "centralized_exchange", "origin" => "santiment"}
+                   %{"name" => "centralized_exchange", "origin" => "santiment"},
+                   %{"name" => "whale", "origin" => "santiment"}
                  ]
                }
              } in watchlist["listItems"]
@@ -93,8 +93,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
                "blockchainAddress" => %{
                  "address" => "0x123b",
                  "labels" => [
-                   %{"name" => "Trader", "origin" => "user"},
-                   %{"name" => "CEX", "origin" => "user"}
+                   %{"name" => "CEX", "origin" => "user"},
+                   %{"name" => "Trader", "origin" => "user"}
                  ]
                }
              } in watchlist["listItems"]
@@ -148,7 +148,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
                "blockchainAddress" => %{
                  "address" => "0x123a",
                  "notes" => "note",
-                 "labels" => [%{"name" => "Trader"}, %{"name" => "DEX"}]
+                 "labels" => [%{"name" => "DEX"}, %{"name" => "Trader"}]
                }
              }
            ]
@@ -193,7 +193,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
                "blockchainAddress" => %{
                  "address" => "0x123a",
                  "notes" => "note2",
-                 "labels" => [%{"name" => "Trader"}, %{"name" => "DEX"}]
+                 "labels" => [%{"name" => "DEX"}, %{"name" => "Trader"}]
                }
              }
            ]

@@ -76,7 +76,7 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   limit: 5,
   time_between_requests: 250
 
-config :sanbase, SanbaseWeb.Graphql.ContextPlug,
+config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
 

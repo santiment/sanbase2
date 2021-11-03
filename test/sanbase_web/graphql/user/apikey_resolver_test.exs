@@ -142,7 +142,7 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     {:ok, msg} = result.resp_body |> Jason.decode()
 
     assert result.status == 400
-    assert msg["errors"]["details"] == "Bad authorization header: Invalid JSON Web Token (JWT)"
+    assert msg["errors"]["details"] == "Invalid JSON Web Token (JWT)"
   end
 
   test "on delete user delete all user's tokens", %{conn: conn, user: user} do

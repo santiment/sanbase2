@@ -66,7 +66,7 @@ config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
 
 config :sanbase, Sanbase.Twitter.Store, database: "twitter_followers_data_test"
 
-config :sanbase, SanbaseWeb.Graphql.ContextPlug,
+config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
 

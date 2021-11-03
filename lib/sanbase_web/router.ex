@@ -17,7 +17,9 @@ defmodule SanbaseWeb.Router do
     plug(:accepts, ["json"])
     plug(RemoteIp)
     plug(:fetch_session)
+    plug(SanbaseWeb.Graphql.AuthPlug)
     plug(SanbaseWeb.Graphql.ContextPlug)
+    plug(SanbaseWeb.Graphql.RequestHaltPlug)
   end
 
   pipeline :telegram do

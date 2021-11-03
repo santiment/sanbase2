@@ -219,6 +219,8 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     do: project_info
 
   defp fetch_block_number(%ProjectInfo{creation_transaction: creation_transaction} = project_info) do
+    Logger.info(["[ProjectInfo] Making a parity call to fetch transaction by hash."])
+
     %{"blockNumber" => "0x" <> block_number_hex} =
       EthNode.get_transaction_by_hash!(creation_transaction)
 

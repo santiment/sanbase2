@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
 
   def chart_configuration(_root, %{id: id}, resolution) do
     user = get_in(resolution.context, [:auth, :current_user]) || %User{}
-    Configuration.by_id(id, user.id)
+    Configuration.by_id(id, querying_user_id: user.id)
   end
 
   def chart_configurations(_root, args, resolution) do
@@ -43,6 +43,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
   end
 
   # Mutations
+
+  def generate_shared_access_token(
+        _root,
+        %{chart_configuration_id: id, from: _, to: _} = args,
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    with {:ok, %Configuration{} = config} <- Configuration.by_id(id, querying_user_id: user.id),
+         true <- can_generate_shared_access_token?(config, user.id),
+         {:ok, shared_access_token} <- Configuration.SharedAccessToken.generate(config, args) do
+      {:ok, shared_access_token}
+    end
+  end
+
+  defp can_generate_shared_access_token?(config, user_id) do
+    case config do
+      %Configuration{user_id: ^user_id, is_public: true} ->
+        true
+
+      %Configuration{user_id: ^user_id, is_public: false} ->
+        {:error, "Shared Access Token can be created only for a public chart configuration."}
+    end
+  end
 
   def create_chart_configuration(
         _root,

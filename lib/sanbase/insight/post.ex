@@ -465,7 +465,7 @@ defmodule Sanbase.Insight.Post do
         user_id,
         %{chart_configuration_id: chart_configuration_id} = args
       ) do
-    case Configuration.by_id(chart_configuration_id, user_id) do
+    case Configuration.by_id(chart_configuration_id, querying_user_id: user_id) do
       {:ok, conf} ->
         args =
           Map.merge(args, %{

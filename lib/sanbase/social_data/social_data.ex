@@ -3,7 +3,6 @@ defmodule Sanbase.SocialData do
   import Sanbase.Utils.Transform, only: [wrap_ok: 1]
   alias Sanbase.DateTimeUtils
   alias Sanbase.SocialData.{SocialVolume, SocialDominance, Community, Sentiment, ActiveUsers}
-  alias Sanbase.SocialData.News
 
   require Logger
   require Sanbase.Utils.Config, as: Config

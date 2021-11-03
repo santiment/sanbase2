@@ -1,7 +1,8 @@
 defmodule Sanbase.MetricCSVExporter do
   alias Sanbase.Metric
 
-  @history_in_days 1
+  @history_in_days 365 * 2
+  @decimals 8
   # top 100 fixed at 24/08/2021
   @slugs [
     "bitcoin",
@@ -106,6 +107,44 @@ defmodule Sanbase.MetricCSVExporter do
     "ren"
   ]
 
+  @number_word_map %{
+    1 => "one",
+    2 => "two",
+    3 => "three",
+    4 => "four",
+    5 => "five",
+    6 => "six",
+    7 => "seven",
+    8 => "eight",
+    9 => "nine",
+    10 => "ten",
+    11 => "eleven",
+    12 => "twelve"
+  }
+
+  @buckets [
+    "0_to_0.001",
+    "0.001_to_0.01",
+    "0.01_to_0.1",
+    "0.1_to_1",
+    "1_to_10",
+    "10_to_100",
+    "100_to_1k",
+    "1k_to_10k",
+    "10k_to_100k",
+    "100k_to_1M",
+    "1M_to_10M",
+    "10M_to_inf"
+  ]
+
+  @buckets_map Enum.with_index(@buckets)
+               |> Enum.into(%{}, fn {range, index} ->
+                 {range, "range_" <> @number_word_map[index + 1]}
+               end)
+  @buckets_map_reverse @buckets_map |> Enum.into(%{}, fn {a, b} -> {b, a} end)
+  def buckets_map, do: @buckets_map
+  def buckets_map_reverse, do: @buckets_map_reverse
+
   @metrics_map %{
     "Supply distribution - 1d": %{
       metrics: [
@@ -206,9 +245,14 @@ defmodule Sanbase.MetricCSVExporter do
     "Development activity - 1d": %{metrics: ["dev_activity"], interval: "1d"}
   }
 
+  def metrics do
+    @metrics |> Enum.map(fn {k, v} -> v.metrics end) |> List.flatten()
+  end
+
   # Export all metrics in @metrics_map and place in proper csv file
   def export() do
-    to = Timex.shift(Timex.now(), hours: -2)
+    now = Timex.now()
+    to = Timex.shift(now, hours: -2)
     from = Timex.shift(to, days: -@history_in_days)
 
     @metrics_map
@@ -232,7 +276,8 @@ defmodule Sanbase.MetricCSVExporter do
 
   # Export trending words
   def export_tw() do
-    to = Timex.shift(Timex.now(), hours: -2)
+    now = Timex.now()
+    to = Timex.shift(now, hours: -2)
     from = Timex.shift(to, days: -@history_in_days)
 
     filename = "Trending words - 1h_#{format_dt(to)}.csv"
@@ -329,7 +374,7 @@ defmodule Sanbase.MetricCSVExporter do
     |> String.replace(~r/\.\d+/, "")
   end
 
-  def format_value(value, decimals \\ 6) do
+  def format_value(value, decimals \\ @decimals) do
     if is_float(value) do
       :erlang.float_to_binary(value, decimals: decimals)
     else
@@ -338,7 +383,7 @@ defmodule Sanbase.MetricCSVExporter do
   end
 
   def camelize(names) when is_list(names) do
-    Enum.map(names, &camelize/1)
+    names |> Enum.map(&range_metric_to_alias/1) |> Enum.map(&camelize/1)
   end
 
   def camelize(name) do
@@ -350,19 +395,25 @@ defmodule Sanbase.MetricCSVExporter do
   end
 
   def rename_column(number) do
-    columns_map = %{
-      1 => "one",
-      2 => "two",
-      3 => "three",
-      4 => "four",
-      5 => "five",
-      6 => "six",
-      7 => "seven",
-      8 => "eight",
-      9 => "nine",
-      10 => "ten"
-    }
+    "top" <> String.capitalize(@number_word_map[number])
+  end
 
-    "top" <> String.capitalize(columns_map[number])
+  def range_metric_to_alias(metric) do
+    case Enum.find(@buckets, fn range -> String.ends_with?(metric, range) end) do
+      nil -> metric
+      range when is_binary(range) -> String.replace_trailing(metric, range, @buckets_map[range])
+    end
+  end
+
+  def alias_to_range_metric(metric) do
+    case Enum.find(@buckets_map_reverse |> Map.keys(), fn range ->
+           String.ends_with?(metric, range)
+         end) do
+      nil ->
+        metric
+
+      range when is_binary(range) ->
+        String.replace_trailing(metric, range, @buckets_map_reverse[range])
+    end
   end
 end

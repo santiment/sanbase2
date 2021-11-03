@@ -30,13 +30,11 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   def aggregation(:sum, value_column, _dt_column), do: "sumKahan(#{value_column})"
   def aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
 
-  def generate_comparison_string(column, :inside_channel, threshold)
-      when is_number(threshold),
-      do: generate_comparison_string(column, :inside_channel_inclusive, threshold)
+  def generate_comparison_string(column, :inside_channel, value),
+    do: generate_comparison_string(column, :inside_channel_inclusive, value)
 
-  def generate_comparison_string(column, :outside_channel, threshold)
-      when is_number(threshold),
-      do: generate_comparison_string(column, :outside_channel_inclusive, threshold)
+  def generate_comparison_string(column, :outside_channel, value),
+    do: generate_comparison_string(column, :outside_channel_inclusive, value)
 
   def generate_comparison_string(column, :less_than, threshold)
       when is_number(threshold),

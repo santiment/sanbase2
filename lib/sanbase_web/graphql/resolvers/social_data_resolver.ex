@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  alias Sanbase.SocialData
+  alias Sanbase.{SocialData, TechIndicators}
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 

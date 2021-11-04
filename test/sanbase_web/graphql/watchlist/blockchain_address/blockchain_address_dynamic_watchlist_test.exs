@@ -338,6 +338,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
     |
     |> String.replace(~r|\"|, ~S|\\"|)
     |> String.replace(~r|'|, ~S|"|)
+    |> IO.inspect(label: "343", limit: :infinity)
   end
 
   defp update_watchlist_query(opts) do

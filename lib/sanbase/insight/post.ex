@@ -29,15 +29,6 @@ defmodule Sanbase.Insight.Post do
   @draft "draft"
   @published "published"
 
-  @type opts :: [
-          is_pulse: boolean(),
-          is_paywall_required: boolean(),
-          from: DateTime.t(),
-          to: DateTime.t(),
-          page: non_neg_integer(),
-          page_size: non_neg_integer()
-        ]
-
   schema "posts" do
     belongs_to(:user, User)
 
@@ -312,14 +303,12 @@ defmodule Sanbase.Insight.Post do
     end
   end
 
-  @spec search_published_insights(String.t(), opts) :: [%__MODULE__{}]
   def search_published_insights(search_term, opts) do
     public_insights_query(opts)
     |> Sanbase.Insight.Search.run(search_term, opts)
     |> Enum.map(& &1.post)
   end
 
-  @spec search_published_insights_highglight(String.t(), opts) :: [%{}]
   def search_published_insights_highglight(search_term, opts) do
     public_insights_query(opts) |> Sanbase.Insight.Search.run(search_term, opts)
   end

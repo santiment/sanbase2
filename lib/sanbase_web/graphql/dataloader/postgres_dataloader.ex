@@ -9,6 +9,13 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     Dataloader.KV.new(&query/2)
   end
 
+  def query(:users_no_preload, user_ids) do
+    user_ids = Enum.to_list(user_ids)
+
+    {:ok, users} = Sanbase.Accounts.User.by_id(user_ids)
+    Map.new(users, &{&1.id, &1})
+  end
+
   def query(:market_segment, market_segment_ids) do
     market_segment_ids = Enum.to_list(market_segment_ids)
 

@@ -2,9 +2,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   require Logger
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
+  import Absinthe.Resolution.Helpers, except: [async: 1]
 
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts.{User, UserFollower}
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def email(%User{email: nil}, _args, _resolution), do: {:ok, nil}
 
@@ -231,5 +233,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
           details: changeset_errors(changeset)
         }
     end
+  end
+
+  def user_no_preloads(%{user_id: user_id}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :users_no_preload, user_id)
+    |> on_load(fn loader ->
+      {:ok, Dataloader.get(loader, SanbaseDataloader, :users_no_preload, user_id)}
+    end)
   end
 end

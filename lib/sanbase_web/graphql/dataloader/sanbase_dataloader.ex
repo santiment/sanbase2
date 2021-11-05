@@ -50,7 +50,9 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :short_urls_comments_count,
     :timeline_events_comments_count,
     :wallet_hunters_proposals_comments_count,
-    :watchlist_comments_count
+    :watchlist_comments_count,
+    # Users
+    :users_no_preload
   ]
   @postgres_dataloader [
     :current_user_address_details,

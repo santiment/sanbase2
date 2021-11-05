@@ -1,5 +1,6 @@
 defmodule Sanbase.EventBusTest do
   use ExUnit.Case, async: false
+  import Sanbase.TestHelpers, only: [wait_event_bus_subscriber: 1]
 
   defmodule EventBusTestSubscriber do
     @receiver_name :__internal_event_test_process_name_given__
@@ -28,7 +29,7 @@ defmodule Sanbase.EventBusTest do
     # register_topic is done via GenServer.call/2, but EventBus.subscribe is
     # done via GenServer.cast/2. Adding a small wait loop to make sure the test
     # starts only after the subscriber is properly established.
-    wait_subscriber(test_events_topic)
+    wait_event_bus_subscriber(test_events_topic)
 
     :ok
   end
@@ -48,17 +49,6 @@ defmodule Sanbase.EventBusTest do
     for i <- 1..50 do
       msg = "ping#{i}"
       assert_receive(^msg, 1000)
-    end
-  end
-
-  defp wait_subscriber(topic) do
-    case Sanbase.EventBusTest.EventBusTestSubscriber in EventBus.subscribers(topic) do
-      true ->
-        :ok
-
-      false ->
-        Process.sleep(50)
-        wait_subscriber(topic)
     end
   end
 end

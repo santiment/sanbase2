@@ -65,6 +65,18 @@ defmodule Sanbase.Insight.Post do
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
     has_many(:votes, Vote, on_delete: :delete_all)
 
+    # has_many(:post_comments, Sanbase.Comment.PostComment, on_delete: :delete_all)
+
+    # has_many(:comments,
+    #   through: [:post_comments, :comments],
+    #   on_delete: :delete_all
+    # )
+
+    # many_to_many(:comments, Sanbase.Comment,
+    #   join_through: "post_comments_mapping",
+    #   on_delete: :delete_all
+    # )
+
     many_to_many(:tags, Tag,
       join_through: "posts_tags",
       on_replace: :delete,

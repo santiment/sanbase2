@@ -237,9 +237,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
 
   def user_no_preloads(%{user_id: user_id}, _args, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(SanbaseDataloader, :users_no_preload, user_id)
+    |> Dataloader.load(SanbaseDataloader, :users_by_id, user_id)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :users_no_preload, user_id)}
+      {:ok, Dataloader.get(loader, SanbaseDataloader, :users_by_id, user_id)}
     end)
   end
 end

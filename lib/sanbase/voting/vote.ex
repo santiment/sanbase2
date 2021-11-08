@@ -117,8 +117,16 @@ defmodule Sanbase.Vote do
   end
 
   def vote_stats(entity_type, entity_ids, user_id \\ nil) do
-    total_votes_query(entity_type, entity_ids, user_id)
-    |> Repo.all()
+    result =
+      total_votes_query(entity_type, entity_ids, user_id)
+      |> Repo.all()
+
+    # Override `:current_user_votes` with nil if the user_id is nil
+    # The SQL query returns 0 in these cases
+    case user_id do
+      nil -> result |> Enum.map(&Map.put(&1, :current_user_votes, nil))
+      _ -> result
+    end
   end
 
   @spec post_id_to_votes() :: map()

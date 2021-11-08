@@ -193,8 +193,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   """
   def votes(%Post{} = post, _args, %{context: %{loader: loader} = context}) do
     # Get the user_id or nil
-    user_id = get_in(context, [:auth, :current_user, Access.key(:id)])
-    selector = %{post_id: post.id, user_id: user_id}
+    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
+    selector = %{post_id: post.id, user_id: user.id}
 
     loader
     |> Dataloader.load(SanbaseDataloader, :insight_vote_stats, selector)

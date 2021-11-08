@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Enum.reduce(&Map.merge(&1, &2))
   end
 
-  def query(:users_no_preload, user_ids) do
+  def query(:users_by_id, user_ids) do
     user_ids = Enum.to_list(user_ids)
 
     {:ok, users} = Sanbase.Accounts.User.by_id(user_ids)

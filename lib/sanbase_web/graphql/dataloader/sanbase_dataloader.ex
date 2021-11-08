@@ -52,7 +52,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :wallet_hunters_proposals_comments_count,
     :watchlist_comments_count,
     # Users
-    :users_no_preload,
+    :users_by_id,
     # Votes
     :insight_vote_stats,
     :insight_voted_at

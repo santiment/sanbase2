@@ -1,11 +1,9 @@
 defmodule SanbaseWeb.Graphql.CommentTypes do
   use Absinthe.Schema.Notation
 
-  import Absinthe.Resolution.Helpers
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.{CommentEntityIdResolver, UserResolver}
-  alias SanbaseWeb.Graphql.SanbaseRepo
 
   enum :comment_entity_type_enum do
     value(:blockchain_address)
@@ -69,7 +67,11 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
     end
 
     field(:content, non_null(:string))
-    field(:user, non_null(:public_user), resolve: dataloader(SanbaseRepo))
+
+    field :user, non_null(:public_user) do
+      resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
+    end
+
     field(:parent_id, :id)
     field(:root_parent_id, :id)
     field(:subcomments_count, :integer)

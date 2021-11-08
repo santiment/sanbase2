@@ -111,39 +111,14 @@ defmodule Sanbase.Vote do
     end
   end
 
-  def voted_at(entity, %User{id: user_id}) do
-    entity_query(entity)
-    |> by_user_query(user_id)
-    |> select([v], v.inserted_at)
-    |> Repo.one()
+  def voted_at(entity_type, entity_ids, user_id) when is_integer(user_id) do
+    voted_at_query(entity_type, entity_ids, user_id)
+    |> Repo.all()
   end
 
-  def vote_stats(entity, user \\ nil)
-
-  def vote_stats(entity, nil) do
-    {total_votes, total_voters} =
-      total_votes_query(entity)
-      |> Repo.one()
-
-    %{
-      total_votes: total_votes,
-      total_voters: total_voters,
-      current_user_votes: nil
-    }
-  end
-
-  def vote_stats(entity, %User{id: user_id}) do
-    {total_votes, total_voters} =
-      total_votes_query(entity)
-      |> Repo.one()
-
-    current_user_votes = total_votes_of_user_query(entity, user_id) |> Repo.one()
-
-    %{
-      total_votes: total_votes,
-      total_voters: total_voters,
-      current_user_votes: current_user_votes
-    }
+  def vote_stats(entity_type, entity_ids, user_id \\ nil) do
+    total_votes_query(entity_type, entity_ids, user_id)
+    |> Repo.all()
   end
 
   @spec post_id_to_votes() :: map()
@@ -164,26 +139,47 @@ defmodule Sanbase.Vote do
 
   # Private functions
 
-  defp total_votes_query(entity) do
-    entity_query(entity)
-    |> select([v], {coalesce(sum(v.count), 0), count(fragment("DISTINCT ?", v.user_id))})
-  end
+  defp total_votes_query(entity_type, entity_ids, user_id) do
+    # Override nil with -1 so the checks for current user
+    # votes will return 0
+    user_id = user_id || -1
+    entity_field = deduce_entity_field(entity_type)
 
-  defp total_votes_of_user_query(entity, user_id) do
-    entity_query(entity)
-    |> by_user_query(user_id)
-    |> select([v], coalesce(sum(v.count), 0))
-  end
-
-  defp by_user_query(query, user_id) do
     from(
-      v in query,
-      where: v.user_id == ^user_id
+      vote in entities_query(entity_type, entity_ids),
+      group_by: field(vote, ^entity_field),
+      select: %{
+        entity_id: field(vote, ^entity_field),
+        total_votes: coalesce(sum(vote.count), 0),
+        total_voters: count(fragment("DISTINCT ?", vote.user_id)),
+        current_user_votes:
+          fragment("SUM(CASE when user_id = ? then ? else 0 end)", ^user_id, vote.count)
+      }
     )
   end
 
-  defp entity_query(%Post{id: post_id}), do: from(v in __MODULE__, where: v.post_id == ^post_id)
+  defp voted_at_query(entity_type, entity_ids, user_id) do
+    entity_field = deduce_entity_field(entity_type)
 
-  defp entity_query(%TimelineEvent{id: timeline_event_id}),
-    do: from(v in __MODULE__, where: v.timeline_event_id == ^timeline_event_id)
+    from(
+      vote in entities_query(entity_type, entity_ids),
+      where: vote.user_id == ^user_id,
+      select: %{
+        entity_id: field(vote, ^entity_field),
+        voted_at: vote.inserted_at
+      }
+    )
+  end
+
+  defp entities_query(entity_type, entity_ids) do
+    entity_field = deduce_entity_field(entity_type)
+
+    from(
+      vote in __MODULE__,
+      where: field(vote, ^entity_field) in ^entity_ids
+    )
+  end
+
+  defp deduce_entity_field(:post), do: :post_id
+  defp deduce_entity_field(:timeline_event), do: :timeline_event_id
 end

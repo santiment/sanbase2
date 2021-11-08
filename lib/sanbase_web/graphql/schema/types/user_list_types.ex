@@ -63,7 +63,11 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   object :user_list do
     field(:id, non_null(:id))
     field(:type, :watchlist_type_enum)
-    field(:user, non_null(:post_author), resolve: dataloader(SanbaseRepo))
+
+    field :user, non_null(:public_user) do
+      resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
+    end
+
     field(:name, non_null(:string))
     field(:slug, :string)
     field(:description, :string)

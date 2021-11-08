@@ -134,8 +134,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          %Resolution{context: %{__query_argument_atom_name__: query}} = resolution
        )
        when query in @extension_metrics do
-    with %Sanbase.Accounts.User{} = user <-
-           resolution.context[:auth][:current_user] |> IO.inspect(label: "124", limit: :infinity),
+    with %Sanbase.Accounts.User{} = user <- resolution.context[:auth][:current_user],
          [_ | _] = product_ids <- Subscription.user_subscriptions_product_ids(user),
          true <- Map.get(@extension_metric_product_map, query) in product_ids do
       # if query is in the extension metrics, the call only succeeds if it's an

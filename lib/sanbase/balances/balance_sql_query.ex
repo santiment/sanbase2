@@ -244,7 +244,28 @@ defmodule Sanbase.Balance.SqlQuery do
     {query, args}
   end
 
-  def current_balance_query(addresses, slug, decimals, "ethereum", table) do
+  def current_balance_query(
+        addresses,
+        _slug = "ethereum",
+        decimals,
+        _blockchain,
+        table
+      ) do
+    query = """
+    SELECT address, argMax(balance, dt) / pow(10, ?2) AS balance
+    FROM #{table}
+    WHERE
+      #{address_clause(addresses, argument_position: 1)} AND
+      addressType = 'normal'
+    GROUP BY address
+    """
+
+    args = [addresses, decimals]
+
+    {query, args}
+  end
+
+  def current_balance_query(addresses, slug, decimals, _blockchain = "ethereum", table) do
     query = """
     SELECT address, argMax(balance, dt) / pow(10, ?3) AS balance
     FROM #{table}

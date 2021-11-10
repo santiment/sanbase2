@@ -9,6 +9,33 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     Dataloader.KV.new(&query/2)
   end
 
+  def query(:insight_vote_stats, data) do
+    user_group = Enum.group_by(data, & &1.user_id, & &1.post_id)
+
+    Enum.map(user_group, fn {user_id, post_ids} ->
+      Sanbase.Vote.vote_stats(:post, post_ids, user_id)
+      |> Map.new(fn %{entity_id: id} = map -> {%{post_id: id, user_id: user_id}, map} end)
+    end)
+    |> Enum.reduce(&Map.merge(&1, &2))
+  end
+
+  def query(:insight_voted_at, data) do
+    user_group = Enum.group_by(data, & &1.user_id, & &1.post_id)
+
+    Enum.map(user_group, fn {user_id, post_ids} ->
+      Sanbase.Vote.voted_at(:post, post_ids, user_id)
+      |> Map.new(fn %{entity_id: id} = map -> {%{post_id: id, user_id: user_id}, map} end)
+    end)
+    |> Enum.reduce(&Map.merge(&1, &2))
+  end
+
+  def query(:users_by_id, user_ids) do
+    user_ids = Enum.to_list(user_ids)
+
+    {:ok, users} = Sanbase.Accounts.User.by_id(user_ids)
+    Map.new(users, &{&1.id, &1})
+  end
+
   def query(:market_segment, market_segment_ids) do
     market_segment_ids = Enum.to_list(market_segment_ids)
 

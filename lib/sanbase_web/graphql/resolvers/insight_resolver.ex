@@ -191,16 +191,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     - `total_san_votes` represents the number of votes where each vote's weight is
     equal to the san balance of the voter
   """
-  def votes(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do
-    {:ok, Vote.vote_stats(post, user)}
+  def votes(%Post{} = post, _args, %{context: %{loader: loader} = context}) do
+    # Get the user_id or nil
+    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
+    selector = %{post_id: post.id, user_id: user.id}
+
+    loader
+    |> Dataloader.load(SanbaseDataloader, :insight_vote_stats, selector)
+    |> on_load(fn loader ->
+      result = Dataloader.get(loader, SanbaseDataloader, :insight_vote_stats, selector)
+      result = result || %{total_votes: 0, total_voters: 0, current_user_votes: 0}
+
+      {:ok, result}
+    end)
   end
 
-  def votes(%Post{} = post, _args, _context) do
-    {:ok, Vote.vote_stats(post)}
-  end
+  def voted_at(%Post{} = post, _args, %{context: %{loader: loader, auth: %{current_user: user}}}) do
+    selector = %{post_id: post.id, user_id: user.id}
 
-  def voted_at(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do
-    {:ok, Vote.voted_at(post, user)}
+    loader
+    |> Dataloader.load(SanbaseDataloader, :insight_voted_at, selector)
+    |> on_load(fn loader ->
+      result = Dataloader.get(loader, SanbaseDataloader, :insight_voted_at, selector)
+      result = (result && result[:voted_at]) || nil
+
+      {:ok, result}
+    end)
   end
 
   def voted_at(%Post{}, _args, _context), do: {:ok, nil}

@@ -3,22 +3,23 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   Middleware that is used to restrict the API access in a certain timeframe.
 
   Currently the implemented scheme is like this:
-  * For users accessing data for slug `santiment` - there is no restriction.
-  * If the logged in user is subscribed to a plan - the allowed historical days is the value of `historical_data_in_days`
-  for this plan.
+  * For users accessing data for slug `santiment` there are no restrictions
+  * If the logged user is subscribed to a plan the allowed historical days is
+    the value of `historical_data_in_days` and the allowed realtime days is
+    is the `realtime_data_cut_off_in_days` for this plan.
   """
   @behaviour Absinthe.Middleware
 
   @compile {:inline,
             transform_resolution: 1,
-            check_plan: 1,
-            check_from_to_params: 1,
-            do_call: 2,
+            check_has_access: 2,
+            apply_if_not_resolved: 2,
+            check_plan_has_access: 1,
+            check_from_to_params_sanity: 1,
+            maybe_apply_restrictions: 2,
             restrict_from: 3,
             restrict_to: 3,
             check_from_to_both_outside: 1}
-
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Absinthe.Resolution
 
@@ -30,19 +31,51 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     Product
   }
 
-  @freely_available_slugs ["santiment"]
-  @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
+  @minimal_datetime_param ~U[2009-01-01 00:00:00Z]
   @extension_metrics AccessChecker.extension_metrics()
   @extension_metric_product_map GraphqlSchema.extension_metric_product_map()
 
+  # Apply restrictions based on the subscription plan and query made. The check
+  # is split into two main categories:
+  # - When the auth method is `basic` - no restrictions are applied and only
+  #   some sanity checks are done
+  # - When the auth method is not `basic` - all the required checks are done
   def call(resolution, opts) do
-    # First call `check_from_to_params` and then pass the execution to do_call/2
     resolution
     |> transform_resolution()
-    |> check_plan()
-    |> check_from_to_params()
-    |> do_call(opts)
-    |> check_from_to_both_outside()
+    |> check_has_access(opts)
+  end
+
+  # Basic auth should have no restrictions. Check only the sanity of the `from`
+  # and `to` params. This includes checks that `to` is after `from` and that
+  # both are after 2009-01-01T00:00:00Z.
+  defp check_has_access(%Resolution{context: %{auth: %{auth_method: :basic}}} = resolution, _opts) do
+    resolution
+    |> check_from_to_params_sanity()
+  end
+
+  # When the auth method is not `basic` all of the required checks are done
+  defp check_has_access(resolution, opts) do
+    resolution
+    |> apply_if_not_resolved(&check_plan_has_access/1)
+    |> apply_if_not_resolved(&check_extension_needed/1)
+    |> apply_if_not_resolved(&check_from_to_params_sanity/1)
+    |> apply_if_not_resolved(&maybe_apply_restrictions(&1, opts))
+    |> apply_if_not_resolved(&check_from_to_both_outside/1)
+  end
+
+  # If a step has rejected the access, the resolution goes into a resolved
+  # state so no further checks are needed. This way it can also
+  # return the "most specific" error message. For example if a user does
+  # not have any access to a metric it makes no sense to check the from-to
+  # params and return errors for them instead of the more specific error -
+  # no access for this metric because of the plan.
+  defp apply_if_not_resolved(%Resolution{state: :resolved} = resolution, _) do
+    resolution
+  end
+
+  defp apply_if_not_resolved(resolution, fun) do
+    fun.(resolution)
   end
 
   # The name of the query/mutation can be passed in snake case or camel case.
@@ -62,17 +95,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     %Resolution{resolution | context: context}
   end
 
-  # Basic auth should have no restrictions
-  defp check_plan(%Resolution{context: %{auth: %{auth_method: :basic}}} = resolution) do
-    resolution
-  end
-
-  defp check_plan(%Resolution{arguments: %{slug: slug}} = resolution)
-       when is_binary(slug) and slug in @freely_available_slugs do
-    resolution
-  end
-
-  defp check_plan(
+  defp check_plan_has_access(
          %Resolution{context: %{__query_argument_atom_name__: query_or_argument} = context} =
            resolution
        ) do
@@ -105,56 +128,38 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     end
   end
 
-  # If the query is resolved there's nothing to do here
-  # A query can get resolved if it's rejected by the AccessControl middleware
-  defp do_call(%Resolution{state: :resolved} = resolution, _) do
-    resolution
-  end
-
-  # If the query is marked as having free realtime and historical data
-  # do not restrict anything
-  defp do_call(resolution, %{allow_realtime_data: true, allow_historical_data: true}) do
-    resolution
-  end
-
-  # Basic auth should have no restrictions
-  defp do_call(
-         %Resolution{context: %{auth: %{auth_method: :basic}}} = resolution,
-         _middleware_args
-       ) do
-    resolution
-  end
-
-  # Allow access to historical data and real-time data for the Santiment project.
-  # This will serve the purpose of showing to anonymous and users with lesser plans
-  # how the data looks like.
-  defp do_call(%Resolution{arguments: %{slug: slug}} = resolution, _)
-       when slug in @freely_available_slugs do
-    resolution
-  end
-
   # Some specific queries/metrics are available only when a special extension is
   # present.
-  defp do_call(%Resolution{context: %{__query_argument_atom_name__: query}} = resolution, _)
+  defp check_extension_needed(
+         %Resolution{context: %{__query_argument_atom_name__: query}} = resolution
+       )
        when query in @extension_metrics do
-    case resolution.context[:auth][:current_user] do
-      %Sanbase.Accounts.User{} = user ->
-        product_ids = Subscription.user_subscriptions_product_ids(user)
-
-        if Map.get(@extension_metric_product_map, query) in product_ids do
-          resolution
-        else
-          Resolution.put_result(resolution, {:error, :unauthorized})
-        end
-
+    with %Sanbase.Accounts.User{} = user <- resolution.context[:auth][:current_user],
+         [_ | _] = product_ids <- Subscription.user_subscriptions_product_ids(user),
+         true <- Map.get(@extension_metric_product_map, query) in product_ids do
+      # if query is in the extension metrics, the call only succeeds if it's an
+      # authenticated call made by a user that has the extension subscription
+      resolution
+    else
       _ ->
         Resolution.put_result(resolution, {:error, :unauthorized})
     end
   end
 
+  defp check_extension_needed(resolution), do: resolution
+
+  # If the query is marked as having free realtime and historical data
+  # do not restrict anything
+  defp maybe_apply_restrictions(resolution, %{
+         allow_realtime_data: true,
+         allow_historical_data: true
+       }) do
+    resolution
+  end
+
   # Dispatch the resolution of restricted and not-restricted queries to
   # different functions if there are `from` and `to` parameters
-  defp do_call(
+  defp maybe_apply_restrictions(
          %Resolution{
            context: %{__query_argument_atom_name__: query},
            arguments: %{from: _from, to: _to}
@@ -168,7 +173,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     end
   end
 
-  defp do_call(resolution, _) do
+  defp maybe_apply_restrictions(resolution, _) do
     resolution
   end
 
@@ -265,13 +270,15 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   defp to_param_is_after_from(from, to) do
-    if DateTime.compare(to, from) == :gt do
-      true
-    else
-      {:error,
-       """
-       The `to` datetime parameter must be after the `from` datetime parameter.
-       """}
+    case DateTime.compare(to, from) do
+      :gt ->
+        true
+
+      _ ->
+        {:error,
+         """
+         The `to` datetime parameter must be after the `from` datetime parameter.
+         """}
     end
   end
 
@@ -288,7 +295,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     end
   end
 
-  defp check_from_to_params(%Resolution{arguments: %{from: from, to: to}} = resolution) do
+  defp check_from_to_params_sanity(%Resolution{arguments: %{from: from, to: to}} = resolution) do
     with true <- to_param_is_after_from(from, to),
          true <- from_or_to_params_are_after_minimal_datetime(from, to) do
       resolution
@@ -299,8 +306,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     end
   end
 
-  defp check_from_to_params(%Resolution{} = resolution), do: resolution
-  defp check_from_to_both_outside(%Resolution{state: :resolved} = resolution), do: resolution
+  defp check_from_to_params_sanity(%Resolution{} = resolution), do: resolution
 
   defp check_from_to_both_outside(
          %Resolution{arguments: %{from: from, to: to}, context: context} = resolution

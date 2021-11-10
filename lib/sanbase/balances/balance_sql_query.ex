@@ -244,7 +244,28 @@ defmodule Sanbase.Balance.SqlQuery do
     {query, args}
   end
 
-  def current_balance_query(addresses, slug, decimals, "ethereum", table) do
+  def current_balance_query(
+        addresses,
+        _slug = "ethereum",
+        decimals,
+        _blockchain,
+        table
+      ) do
+    query = """
+    SELECT address, argMax(balance, dt) / pow(10, ?2) AS balance
+    FROM #{table}
+    WHERE
+      #{address_clause(addresses, argument_position: 1)} AND
+      addressType = 'normal'
+    GROUP BY address
+    """
+
+    args = [addresses, decimals]
+
+    {query, args}
+  end
+
+  def current_balance_query(addresses, slug, decimals, _blockchain = "ethereum", table) do
     query = """
     SELECT address, argMax(balance, dt) / pow(10, ?3) AS balance
     FROM #{table}
@@ -303,6 +324,32 @@ defmodule Sanbase.Balance.SqlQuery do
     {query, args}
   end
 
+  def addresses_by_filter_query(
+        _slug,
+        decimals,
+        operator,
+        threshold,
+        table = "eth_balances_realtime",
+        _opts
+      ) do
+    query = """
+    SELECT address, balance
+    FROM (
+      SELECT address, argMax(balance, dt) / pow(10, ?1) AS balance
+      FROM #{table}
+      PREWHERE
+        addressType = 'normal'
+      GROUP BY address
+    )
+    WHERE #{generate_comparison_string("balance", operator, threshold)}
+    LIMIT 10000
+    """
+
+    args = [decimals]
+
+    {query, args}
+  end
+
   def addresses_by_filter_query(slug, decimals, operator, threshold, table, _opts) do
     query = """
     SELECT address, balance
@@ -319,6 +366,34 @@ defmodule Sanbase.Balance.SqlQuery do
     """
 
     args = [slug, decimals]
+
+    {query, args}
+  end
+
+  def top_addresses_query(_slug, decimals, blockchain, table = "eth_balances_realtime", opts) do
+    direction = if Keyword.get(opts, :direction) == :asc, do: "ASC", else: "DESC"
+    labels = Keyword.get(opts, :labels, :all)
+
+    {limit, offset} = opts_to_limit_offset(opts)
+    limit = Enum.min([limit, 10_000])
+    args = [decimals, limit, offset]
+
+    {labels_join_str, args} = maybe_join_labels(labels, blockchain, args)
+
+    query = """
+    SELECT address, balance
+    FROM (
+      SELECT address, argMax(balance, dt) / pow(10, ?2) AS balance
+      FROM #{table}
+      PREWHERE
+        addressType = 'normal'
+      GROUP BY address
+    )
+    #{labels_join_str}
+    WHERE balance > 1e-10
+    ORDER BY balance #{direction}
+    LIMIT ?3 OFFSET ?4
+    """
 
     {query, args}
   end

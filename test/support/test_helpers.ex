@@ -1,4 +1,15 @@
 defmodule Sanbase.TestHelpers do
+  def wait_event_bus_subscriber(topic) do
+    case Sanbase.EventBusTest.EventBusTestSubscriber in EventBus.subscribers(topic) do
+      true ->
+        :ok
+
+      false ->
+        Process.sleep(50)
+        wait_event_bus_subscriber(topic)
+    end
+  end
+
   @moduledoc false
   defmacro setup_all_with_mocks(mocks, do: setup_block) do
     quote do

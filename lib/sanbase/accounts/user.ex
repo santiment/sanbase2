@@ -207,7 +207,8 @@ defmodule Sanbase.Accounts.User do
       from(
         u in __MODULE__,
         where: u.id in ^user_ids,
-        order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id)
+        order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id),
+        preload: [:eth_accounts, :user_settings]
       )
       |> Repo.all()
 

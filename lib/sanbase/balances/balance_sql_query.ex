@@ -244,42 +244,42 @@ defmodule Sanbase.Balance.SqlQuery do
     {query, args}
   end
 
-  def current_balance_query(
-        addresses,
-        _slug = "ethereum",
-        decimals,
-        _blockchain,
-        table
-      ) do
-    query = """
-    SELECT address, argMax(balance, dt) / pow(10, ?2) AS balance
-    FROM #{table}
-    WHERE
-      #{address_clause(addresses, argument_position: 1)} AND
-      addressType = 'normal'
-    GROUP BY address
-    """
+  # def current_balance_query(
+  #       addresses,
+  #       _slug = "ethereum",
+  #       decimals,
+  #       _blockchain,
+  #       table
+  #     ) do
+  #   query = """
+  #   SELECT address, argMax(balance, dt) / pow(10, ?2) AS balance
+  #   FROM #{table}
+  #   WHERE
+  #     #{address_clause(addresses, argument_position: 1)} AND
+  #     addressType = 'normal'
+  #   GROUP BY address
+  #   """
 
-    args = [addresses, decimals]
+  #   args = [addresses, decimals]
 
-    {query, args}
-  end
+  #   {query, args}
+  # end
 
-  def current_balance_query(addresses, slug, decimals, _blockchain = "ethereum", table) do
-    query = """
-    SELECT address, argMax(balance, dt) / pow(10, ?3) AS balance
-    FROM #{table}
-    WHERE
-      #{address_clause(addresses, argument_position: 1)} AND
-      assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?2 LIMIT 1) AND
-      addressType = 'normal'
-    GROUP BY address
-    """
+  # def current_balance_query(addresses, slug, decimals, _blockchain = "ethereum", table) do
+  #   query = """
+  #   SELECT address, argMax(balance, dt) / pow(10, ?3) AS balance
+  #   FROM #{table}
+  #   WHERE
+  #     #{address_clause(addresses, argument_position: 1)} AND
+  #     assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?2 LIMIT 1) AND
+  #     addressType = 'normal'
+  #   GROUP BY address
+  #   """
 
-    args = [addresses, slug, decimals]
+  #   args = [addresses, slug, decimals]
 
-    {query, args}
-  end
+  #   {query, args}
+  # end
 
   def current_balance_query(addresses, slug, decimals, blockchain, _table) do
     query = """

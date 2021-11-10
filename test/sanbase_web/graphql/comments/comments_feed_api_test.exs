@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
-  use SanbaseWeb.ConnCase, async: true
+  use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
@@ -11,7 +11,9 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
     watchlist = insert(:watchlist)
 
     blockchain_address = insert(:blockchain_address)
-    insight = insert(:post)
+    unpublished_insight = insert(:post, user: user)
+    insight = insert(:published_post, user: user)
+    insight2 = insert(:published_post, user: user)
     short_url = insert(:short_url)
 
     timeline_event =
@@ -27,6 +29,8 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
       conn: conn,
       user: user,
       insight: insight,
+      insight2: insight2,
+      unpublished_insight: unpublished_insight,
       blockchain_address: blockchain_address,
       short_url: short_url,
       timeline_event: timeline_event
@@ -34,13 +38,35 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
   end
 
   test "comments feed", context do
+    # create a comment for an insight that
+    # will be deleted before fetching the comments
+    {:ok, _} =
+      EntityComment.create_and_link(
+        :insight,
+        context.insight2.id,
+        context.user.id,
+        nil,
+        "some comment on insight that will be deleted"
+      )
+
+    # should not appear in the result because the post is
+    # not published
+    {:ok, _} =
+      EntityComment.create_and_link(
+        :insight,
+        context.unpublished_insight.id,
+        context.user.id,
+        nil,
+        "some comment on unpublished insight"
+      )
+
     {:ok, insight_comment} =
       EntityComment.create_and_link(
         :insight,
         context.insight.id,
         context.user.id,
         nil,
-        "some comment"
+        "some comment1"
       )
 
     {:ok, ba_comment} =
@@ -70,7 +96,11 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
         "some comment4"
       )
 
+    assert {:ok, _} = Sanbase.Insight.Post.delete(context.insight2.id, context.user)
+    assert {:error, _} = Sanbase.Insight.Post.by_id(context.insight2.id)
+
     query = comments_feed_query()
+
     comments = execute_query(context.conn, query, "commentsFeed")
 
     assert comments == [
@@ -135,19 +165,10 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
         id
         content
         insertedAt
-        insight {
-          id
-        }
-        timelineEvent {
-          id
-        }
-        shortUrl {
-          shortUrl
-        }
-        blockchainAddress {
-          id
-          address
-        }
+        insight { id }
+        timelineEvent { id }
+        shortUrl { shortUrl }
+        blockchainAddress { id address }
       }
     }
     """

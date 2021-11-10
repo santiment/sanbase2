@@ -33,7 +33,7 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
     %{conn: conn, project: project} = context
     to = Timex.now()
     from = Timex.shift(to, days: -30)
-    beginning_of_day = Timex.beginning_of_day(to)
+    end_of_previous_day = Timex.beginning_of_day(to) |> Timex.shift(microseconds: -1)
     metric = "nvt"
     interval = "1d"
 
@@ -47,7 +47,7 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
                metric,
                %{slug: project.slug},
                from,
-               beginning_of_day,
+               end_of_previous_day,
                interval,
                :_
              )
@@ -58,7 +58,7 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
     %{conn: conn, project: project} = context
     to = Timex.now()
     from = Timex.shift(to, days: -30)
-    beginning_of_day = Timex.beginning_of_day(to)
+    end_of_previous_day = Timex.beginning_of_day(to) |> Timex.shift(microseconds: -1)
     metric = "nvt"
     interval = "1d"
 
@@ -72,7 +72,7 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
                metric,
                %{slug: project.slug},
                from,
-               beginning_of_day,
+               end_of_previous_day,
                interval,
                :_
              )

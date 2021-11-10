@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     ClickhouseDataloader,
     LabelsDataloader,
     PostgresDataloader,
-    ParityDataloader,
     PriceDataloader
   }
 
@@ -26,15 +25,14 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
 
   @balance_dataloader [
     :address_selector_current_balance,
-    :address_selector_balance_change
+    :address_selector_balance_change,
+    :eth_balance
   ]
 
   @price_dataloader [
     :volume_change_24h,
     :last_price_usd
   ]
-
-  @parity_dataloader [:eth_balance]
 
   @postgres_comments_dataloader [
     # comment entity id
@@ -52,7 +50,12 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :short_urls_comments_count,
     :timeline_events_comments_count,
     :wallet_hunters_proposals_comments_count,
-    :watchlist_comments_count
+    :watchlist_comments_count,
+    # Users
+    :users_by_id,
+    # Votes
+    :insight_vote_stats,
+    :insight_voted_at
   ]
   @postgres_dataloader [
     :current_user_address_details,
@@ -79,9 +82,6 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
 
       queryable in @price_dataloader ->
         PriceDataloader.query(queryable, args)
-
-      queryable in @parity_dataloader ->
-        ParityDataloader.query(queryable, args)
 
       queryable in @postgres_dataloader ->
         PostgresDataloader.query(queryable, args)

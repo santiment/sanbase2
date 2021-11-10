@@ -265,7 +265,9 @@ defmodule Sanbase.Model.Project do
 
     addresses =
       project.eth_addresses
-      |> Enum.map(fn %{address: address} -> address end)
+      |> Enum.map(fn %{address: address} ->
+        Sanbase.BlockchainAddress.to_internal_format(address)
+      end)
 
     {:ok, addresses}
   end
@@ -282,7 +284,9 @@ defmodule Sanbase.Model.Project do
       |> Repo.all()
       |> Enum.map(fn %Project{eth_addresses: project_eth_addresses} ->
         project_eth_addresses
-        |> Enum.map(fn %ProjectEthAddress{address: address} -> address end)
+        |> Enum.map(fn %ProjectEthAddress{address: address} ->
+          Sanbase.BlockchainAddress.to_internal_format(address)
+        end)
       end)
       |> Enum.reject(fn x -> x == [] end)
 

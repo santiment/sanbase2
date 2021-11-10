@@ -16,9 +16,30 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:name, non_null(:string))
   end
 
+  object :highlighted_text do
+    field(:highlight, non_null(:boolean))
+    field(:text, non_null(:string))
+  end
+
+  object :post_highlights do
+    field(:title, list_of(:highlighted_text))
+    field(:text, list_of(:highlighted_text))
+    field(:tags, list_of(:highlighted_text))
+    field(:metrics, list_of(:highlighted_text))
+  end
+
+  object :post_search do
+    field(:post, non_null(:post))
+    field(:highlights, :post_highlights)
+  end
+
   object :post do
     field(:id, non_null(:id))
-    field(:user, non_null(:post_author), resolve: dataloader(SanbaseRepo))
+
+    field :user, non_null(:public_user) do
+      resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
+    end
+
     field(:title, non_null(:string))
     field(:short_desc, :string)
     field(:text, :string)

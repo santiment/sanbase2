@@ -45,21 +45,20 @@
   {
     "human_readable_name": "Sentiment Volume Consumed Total",
     "name": "sentiment_volume_consumed_total",
-    "metric": "sentiment_volume_consumed",
+    "metric": "sentiment_volume_consumed_1d",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "avg",
-    "min_interval": "5m",
+    "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {

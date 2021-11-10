@@ -1,4 +1,34 @@
 defmodule Sanbase.DateTimeUtils do
+  def utc_now_string_to_datetime!("utc_now" <> _ = value) do
+    case utc_now_string_to_datetime(value) do
+      {:ok, value} -> value
+      {:error, error} -> raise(error)
+    end
+  end
+
+  def utc_now_string_to_datetime("utc_now" <> _ = value) do
+    case String.split(value, ~r/\s*-\s*/) do
+      ["utc_now"] ->
+        {:ok, DateTime.utc_now()}
+
+      ["utc_now", interval] ->
+        case Sanbase.DateTimeUtils.valid_compound_duration?(interval) do
+          true ->
+            dt =
+              DateTime.utc_now()
+              |> Timex.shift(seconds: -Sanbase.DateTimeUtils.str_to_sec(interval))
+
+            {:ok, dt}
+
+          false ->
+            {:error, "The interval part of #{value} is not a valid interval"}
+        end
+
+      _ ->
+        {:error, "The #{value} datetime string representation is malformed."}
+    end
+  end
+
   @doc ~s"""
   Return a human readable representation of a datetime
   """

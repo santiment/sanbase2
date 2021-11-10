@@ -254,12 +254,6 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
   end
 
-  object :post_author do
-    field(:id, non_null(:id))
-    field(:avatar_url, :string)
-    field(:username, :string)
-  end
-
   object :access_level do
     field(:api, non_null(:boolean))
     field(:sanbase, non_null(:boolean))

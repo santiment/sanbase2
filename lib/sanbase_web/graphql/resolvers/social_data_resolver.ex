@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  alias Sanbase.{SocialData, TechIndicators}
+  alias Sanbase.SocialData
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
@@ -20,22 +20,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     |> on_load(fn loader ->
       {:ok, Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)}
     end)
-  end
-
-  def twitter_mention_count(
-        _root,
-        %{ticker: ticker, from: from, to: to, interval: interval, result_size_tail: size},
-        _resolution
-      ) do
-    TechIndicators.twitter_mention_count(ticker, from, to, interval, size)
-  end
-
-  def emojis_sentiment(
-        _root,
-        %{from: from, to: to, interval: interval, result_size_tail: size},
-        _resolution
-      ) do
-    TechIndicators.emojis_sentiment(from, to, interval, size)
   end
 
   def social_volume(
@@ -68,10 +52,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   def get_trending_words(
         _root,
-        %{from: from, to: to, interval: interval, size: size},
+        %{from: from, to: to, interval: interval, size: size, sources: sources},
         _resolution
       ) do
-    case SocialData.TrendingWords.get_trending_words(from, to, interval, size) do
+    case SocialData.TrendingWords.get_trending_words(from, to, interval, size, sources) do
       {:ok, result} ->
         result =
           result
@@ -187,9 +171,5 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
       Map.put(resolution, :source, %{metric: "social_dominance_#{source}"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :dominance)
-  end
-
-  def news(_root, %{tag: tag, from: from, to: to, size: size}, _resolution) do
-    SocialData.google_news(tag, from, to, size)
   end
 end

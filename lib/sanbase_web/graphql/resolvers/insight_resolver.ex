@@ -136,6 +136,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, search_result_insights}
   end
 
+  def all_insights_by_search_term_highlighted(
+        _root,
+        %{search_term: search_term, page: page, page_size: page_size} = args,
+        _context
+      ) do
+    opts = [
+      is_pulse: Map.get(args, :is_pulse),
+      is_paywall_required: Map.get(args, :is_paywall_required),
+      from: Map.get(args, :from),
+      to: Map.get(args, :to),
+      page: page,
+      page_size: page_size
+    ]
+
+    # Search is done only on the publicly visible (published) insights.
+    search_result_insights = Post.search_published_insights_highglight(search_term, opts)
+
+    {:ok, search_result_insights}
+  end
+
   def create_post(_root, args, %{context: %{auth: %{current_user: user}}}) do
     case Post.can_create?(user.id) do
       {:ok, _} -> Post.create(user, args)
@@ -171,16 +191,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     - `total_san_votes` represents the number of votes where each vote's weight is
     equal to the san balance of the voter
   """
-  def votes(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do
-    {:ok, Vote.vote_stats(post, user)}
+  def votes(%Post{} = post, _args, %{context: %{loader: loader} = context}) do
+    # Get the user_id or nil
+    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
+    selector = %{post_id: post.id, user_id: user.id}
+
+    loader
+    |> Dataloader.load(SanbaseDataloader, :insight_vote_stats, selector)
+    |> on_load(fn loader ->
+      result = Dataloader.get(loader, SanbaseDataloader, :insight_vote_stats, selector)
+      result = result || %{total_votes: 0, total_voters: 0, current_user_votes: 0}
+
+      {:ok, result}
+    end)
   end
 
-  def votes(%Post{} = post, _args, _context) do
-    {:ok, Vote.vote_stats(post)}
-  end
+  def voted_at(%Post{} = post, _args, %{context: %{loader: loader, auth: %{current_user: user}}}) do
+    selector = %{post_id: post.id, user_id: user.id}
 
-  def voted_at(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do
-    {:ok, Vote.voted_at(post, user)}
+    loader
+    |> Dataloader.load(SanbaseDataloader, :insight_voted_at, selector)
+    |> on_load(fn loader ->
+      result = Dataloader.get(loader, SanbaseDataloader, :insight_voted_at, selector)
+      result = (result && result[:voted_at]) || nil
+
+      {:ok, result}
+    end)
   end
 
   def voted_at(%Post{}, _args, _context), do: {:ok, nil}

@@ -10,6 +10,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
   alias Sanbase.Model.Project
 
   import Sanbase.Metric.SqlQuery.Helper
+  import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
 
   @table "eth_top_holders_daily_union"
 
@@ -128,21 +129,12 @@ defmodule Sanbase.Clickhouse.TopHolders do
     }
   end
 
-  defp realtime_top_holders_query(slug, opts) do
-    page = Keyword.get(opts, :page)
-    page_size = Keyword.get(opts, :page_size)
-    offset = (page - 1) * page_size
-
-    table = if slug == "ethereum", do: "eth_balances_realtime", else: "erc20_balances_realtime"
-
-    asset_data = fn column, opts ->
-      argument_position = Keyword.fetch!(opts, :argument_position)
-      "( SELECT #{column} FROM asset_metadata FINAL WHERE name = ?#{argument_position} LIMIT 1 )"
-    end
+  defp realtime_top_holders_query("ethereum" = slug, opts) do
+    {limit, offset} = opts_to_limit_offset(opts)
 
     query = """
     WITH
-      ( SELECT argMax(balance, dt) FROM #{table} PREWHERE assetRefId = #{asset_data.("asset_ref_id", argument_position: 1)} AND addressType = 'total' ) AS total_balance,
+      ( SELECT argMax(balance, dt) FROM eth_balances_realtime total_balance,
       ( SELECT pow(10, decimals) FROM asset_metadata FINAL where name = ?1 LIMIT 1 ) AS decimals,
       ( SELECT argMax(value, dt) FROM intraday_metrics PREWHERE #{asset_id_filter(slug, argument_position: 1)} AND #{metric_id_filter("price_usd", argument_position: 2)} ) AS price_usd
 
@@ -152,7 +144,40 @@ defmodule Sanbase.Clickhouse.TopHolders do
       (argMax(balance, dt) / decimals) AS balance2,
       balance2 * price_usd AS balance_usd,
       (balance2 / (total_balance / decimals)) AS partOfTotal
-    FROM #{table}
+    FROM eth_balances_realtime
+    PREWHERE
+      addressType = 'normal'
+    GROUP BY address
+    ORDER BY balance2 DESC
+    LIMIT ?3 OFFSET ?4
+    """
+
+    args = [slug, "price_usd", limit, offset]
+
+    {query, args}
+  end
+
+  defp realtime_top_holders_query(slug, opts) do
+    {limit, offset} = opts_to_limit_offset(opts)
+
+    asset_data = fn column, opts ->
+      argument_position = Keyword.fetch!(opts, :argument_position)
+      "( SELECT #{column} FROM asset_metadata FINAL WHERE name = ?#{argument_position} LIMIT 1 )"
+    end
+
+    query = """
+    WITH
+      ( SELECT argMax(balance, dt) FROM erc20_balances_realtime PREWHERE assetRefId = #{asset_data.("asset_ref_id", argument_position: 1)} AND addressType = 'total' ) AS total_balance,
+      ( SELECT pow(10, decimals) FROM asset_metadata FINAL where name = ?1 LIMIT 1 ) AS decimals,
+      ( SELECT argMax(value, dt) FROM intraday_metrics PREWHERE #{asset_id_filter(slug, argument_position: 1)} AND #{metric_id_filter("price_usd", argument_position: 2)} ) AS price_usd
+
+    SELECT
+      toUnixTimestamp(max(dt)),
+      address,
+      (argMax(balance, dt) / decimals) AS balance2,
+      balance2 * price_usd AS balance_usd,
+      (balance2 / (total_balance / decimals)) AS partOfTotal
+    FROM erc20_balances_realtime
     PREWHERE
       assetRefId = #{asset_data.("asset_ref_id", argument_position: 1)} AND
       addressType = 'normal'
@@ -161,15 +186,13 @@ defmodule Sanbase.Clickhouse.TopHolders do
     LIMIT ?3 OFFSET ?4
     """
 
-    args = [slug, "price_usd", page_size, offset]
+    args = [slug, "price_usd", limit, offset]
 
     {query, args}
   end
 
   defp top_holders_query(slug, contract, decimals, from, to, opts) do
-    page = Keyword.get(opts, :page)
-    page_size = Keyword.get(opts, :page_size)
-    offset = (page - 1) * page_size
+    {limit, offset} = opts_to_limit_offset(opts)
 
     args = [
       slug,
@@ -177,7 +200,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
       decimals,
       DateTime.to_unix(from),
       DateTime.to_unix(to),
-      page_size,
+      limit,
       offset
     ]
 

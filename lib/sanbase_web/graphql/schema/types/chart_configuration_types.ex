@@ -29,7 +29,10 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationTypes do
     field(:drawings, :json)
     field(:options, :json)
 
-    field(:user, :user, resolve: dataloader(SanbaseRepo))
+    field :user, non_null(:user) do
+      resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
+    end
+
     field(:project, :project, resolve: dataloader(SanbaseRepo))
     field(:post, :post, resolve: dataloader(SanbaseRepo))
 

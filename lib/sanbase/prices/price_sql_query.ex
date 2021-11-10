@@ -390,7 +390,7 @@ defmodule Sanbase.Price.SqlQuery do
       slug = cast(?1, 'LowCardinality(String)') AND
       source = cast(?2, 'LowCardinality(String)') AND
       dt >= toDateTime(?3) AND
-      dt <= toDateTime(?4)
+      dt < toDateTime(?4)
     ORDER BY dt DESC
     LIMIT 1
     """

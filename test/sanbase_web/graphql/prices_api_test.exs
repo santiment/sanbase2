@@ -5,6 +5,8 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
+  require Sanbase.Utils.Config, as: Config
+
   setup do
     project1 = insert(:random_erc20_project)
     project2 = insert(:random_erc20_project)
@@ -274,14 +276,8 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   defp basic_auth() do
-    username =
-      Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)
-      |> Keyword.get(:basic_auth_username)
-
-    password =
-      Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)
-      |> Keyword.get(:basic_auth_password)
-
+    username = Config.module_get(SanbaseWeb.Graphql.AuthPlug, :basic_auth_username)
+    password = Config.module_get(SanbaseWeb.Graphql.AuthPlug, :basic_auth_password)
     Base.encode64(username <> ":" <> password)
   end
 end

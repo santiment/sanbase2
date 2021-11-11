@@ -75,4 +75,8 @@ defmodule Sanbase.Billing.Subscription.Query do
   def order_by(query) do
     from(q in query, order_by: [desc: q.id])
   end
+
+  def select_field(query, field) do
+    from(q in query, select: field(q, ^field))
+  end
 end

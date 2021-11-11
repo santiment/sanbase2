@@ -17,26 +17,23 @@ defmodule Sanbase.Billing.Subscription.ProPlus do
   end
 
   def delete_free_basic_api do
+    all_pro_plus_users = all_pro_plus_users()
+
     all_free_basic_api_subs()
     |> Enum.each(fn sub ->
-      if not user_has_pro_plus?(sub.user_id) do
+      if not user_has_pro_plus?(all_pro_plus_users, sub.user_id) do
         StripeApi.delete_subscription(sub.stripe_id)
       end
     end)
   end
 
   def users_eligible_for_free_basic_plan do
-    all_pro_plus_subs()
-    |> Enum.reject(fn sub ->
-      user_has_api_subscription?(sub.user_id)
-    end)
-    |> Enum.map(& &1.user_id)
-  end
+    all_api_users = all_api_users()
 
-  def all_pro_plus_subs do
-    Subscription
-    |> Subscription.Query.all_active_and_trialing_subscriptions_for_plans(@pro_plus_plans)
-    |> Repo.all()
+    all_pro_plus_users()
+    |> Enum.reject(fn user_id ->
+      user_has_api_subscription?(all_api_users, user_id)
+    end)
   end
 
   def all_free_basic_api_subs do
@@ -49,21 +46,29 @@ defmodule Sanbase.Billing.Subscription.ProPlus do
     end)
   end
 
-  def user_has_pro_plus?(user_id) do
-    Subscription
-    |> Subscription.Query.all_active_and_trialing_subscriptions_for_plans(@pro_plus_plans)
-    |> Subscription.Query.filter_user(user_id)
-    |> Repo.all()
-    |> Enum.any?()
+  def user_has_pro_plus?(all_pro_plus_users, user_id) do
+    user_id in all_pro_plus_users
   end
 
-  def user_has_api_subscription?(user_id) do
+  def all_pro_plus_users() do
+    Subscription
+    |> Subscription.Query.all_active_and_trialing_subscriptions_for_plans(@pro_plus_plans)
+    |> Subscription.Query.select_field(:user_id)
+    |> Repo.all()
+    |> Enum.dedup()
+  end
+
+  def all_api_users() do
     Subscription
     |> Subscription.Query.all_active_and_trialing_subscriptions()
-    |> Subscription.Query.filter_user(user_id)
-    |> Subscription.Query.product_id(Product.product_api())
+    |> Subscription.Query.filter_product_id(Product.product_api())
+    |> Subscription.Query.select_field(:user_id)
     |> Repo.all()
-    |> Enum.any?()
+    |> Enum.dedup()
+  end
+
+  def user_has_api_subscription?(all_api_users, user_id) do
+    user_id in all_api_users
   end
 
   defp free_basic_api_subscription_data(user_id) do

@@ -1321,7 +1321,7 @@
     "access": "free",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",

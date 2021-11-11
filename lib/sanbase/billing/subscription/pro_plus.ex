@@ -1,5 +1,5 @@
 defmodule Sanbase.Billing.Subscription.ProPlus do
-  alias Sanbase.Billing.{Subscription, Plan}
+  alias Sanbase.Billing.{Subscription, Plan, Product}
   alias Sanbase.StripeApi
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
@@ -28,7 +28,7 @@ defmodule Sanbase.Billing.Subscription.ProPlus do
   def users_eligible_for_free_basic_plan do
     all_pro_plus_subs()
     |> Enum.reject(fn sub ->
-      user_has_free_basic_api?(sub.user_id)
+      user_has_api_subscription?(sub.user_id)
     end)
     |> Enum.map(& &1.user_id)
   end
@@ -57,10 +57,11 @@ defmodule Sanbase.Billing.Subscription.ProPlus do
     |> Enum.any?()
   end
 
-  def user_has_free_basic_api?(user_id) do
+  def user_has_api_subscription?(user_id) do
     Subscription
-    |> Subscription.Query.all_active_and_trialing_subscriptions_for_plans(@basic_api_plans)
+    |> Subscription.Query.all_active_and_trialing_subscriptions()
     |> Subscription.Query.filter_user(user_id)
+    |> Subscription.Query.product_id(Product.product_api())
     |> Repo.all()
     |> Enum.any?()
   end

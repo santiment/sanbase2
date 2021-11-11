@@ -253,7 +253,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     result = remove_watchlist(conn, watchlist.id)
 
     [error] = result["errors"]
-    assert String.contains?(error["message"], "Watchlist does not exist")
+    assert String.contains?(error["message"], "Watchlist with #{watchlist.id} does not exist.")
   end
 
   test "fetch watchlists", %{user: user, conn: conn} do

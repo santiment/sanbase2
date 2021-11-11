@@ -272,8 +272,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   end
 
   def update_watchlist(_root, %{id: id} = args, %{context: %{auth: %{current_user: current_user}}}) do
-    with %UserList{} = watchlist <- fetch_watchlist_by_id(id),
-         true <- has_permissions?(watchlist, current_user, "update") do
+    with {:ok, watchlist} <- UserList.by_id(id),
+         true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.update_user_list(current_user, args) do
         {:ok, user_list} ->
           {:ok, user_list}
@@ -292,8 +292,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{id: id, list_items: _} = args,
         %{context: %{auth: %{current_user: current_user}}}
       ) do
-    with %UserList{} = watchlist <- fetch_watchlist_by_id(id),
-         true <- has_permissions?(watchlist, current_user, "update") do
+    with {:ok, watchlist} <- UserList.by_id(id),
+         true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.add_user_list_items(current_user, args) do
         {:ok, user_list} ->
           {:ok, user_list}
@@ -312,8 +312,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{id: id, list_items: _} = args,
         %{context: %{auth: %{current_user: current_user}}}
       ) do
-    with %UserList{} = watchlist <- fetch_watchlist_by_id(id),
-         true <- has_permissions?(watchlist, current_user, "update") do
+    with {:ok, watchlist} <- UserList.by_id(id),
+         true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.remove_user_list_items(current_user, args) do
         {:ok, user_list} ->
           {:ok, user_list}
@@ -344,7 +344,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   def remove_user_list(_root, %{id: watchlist_id} = args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    with %UserList{} = watchlist <- fetch_watchlist_by_id(watchlist_id),
+    with {:ok, watchlist} <- UserList.by_id(watchlist_id),
          true <- has_permissions?(watchlist, current_user, "delete"),
          {:ok, watchlist} <- remove_watchlist(current_user, args) do
       {:ok, watchlist}
@@ -354,16 +354,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   # Private functions
 
   defp has_permissions?(watchlist, %User{id: user_id}, action) do
-    case watchlist.user_id == user_id do
-      true -> true
-      false -> {:error, "Cannot #{action} watchlist belonging to another user"}
-    end
-  end
-
-  defp fetch_watchlist_by_id(watchlist_id) do
-    case UserList.by_id(watchlist_id) do
-      nil -> {:error, "Watchlist does not exist"}
-      watchlist -> watchlist
+    case watchlist do
+      %UserList{user_id: ^user_id} -> true
+      %UserList{is_public: true} when action in [:read] -> true
+      _ -> {:error, "Cannot #{action} watchlist belonging to another user"}
     end
   end
 

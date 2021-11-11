@@ -35,7 +35,11 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
 
   object :post do
     field(:id, non_null(:id))
-    field(:user, non_null(:post_author), resolve: dataloader(SanbaseRepo))
+
+    field :user, non_null(:public_user) do
+      resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
+    end
+
     field(:title, non_null(:string))
     field(:short_desc, :string)
     field(:text, :string)

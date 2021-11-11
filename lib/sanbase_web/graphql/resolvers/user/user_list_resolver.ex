@@ -272,7 +272,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   end
 
   def update_watchlist(_root, %{id: id} = args, %{context: %{auth: %{current_user: current_user}}}) do
-    if has_permissions?(id, current_user) do
+    with {:ok, watchlist} <- UserList.by_id(id),
+         true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.update_user_list(current_user, args) do
         {:ok, user_list} ->
           {:ok, user_list}
@@ -283,8 +284,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
             message: "Cannot update user list", details: changeset_errors(changeset)
           }
       end
-    else
-      {:error, "Cannot update watchlist of another user"}
     end
   end
 
@@ -293,7 +292,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{id: id, list_items: _} = args,
         %{context: %{auth: %{current_user: current_user}}}
       ) do
-    if has_permissions?(id, current_user) do
+    with {:ok, watchlist} <- UserList.by_id(id),
+         true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.add_user_list_items(current_user, args) do
         {:ok, user_list} ->
           {:ok, user_list}
@@ -304,8 +304,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
             message: "Cannot add items to a watchlist", details: changeset_errors(changeset)
           }
       end
-    else
-      {:error, "Cannot update watchlist of another user"}
     end
   end
 
@@ -314,7 +312,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{id: id, list_items: _} = args,
         %{context: %{auth: %{current_user: current_user}}}
       ) do
-    if has_permissions?(id, current_user) do
+    with {:ok, watchlist} <- UserList.by_id(id),
+         true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.remove_user_list_items(current_user, args) do
         {:ok, user_list} ->
           {:ok, user_list}
@@ -342,26 +341,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def remove_user_list(_root, %{id: id} = args, %{context: %{auth: %{current_user: current_user}}}) do
-    if has_permissions?(id, current_user) do
-      case UserList.remove_user_list(current_user, args) do
-        {:ok, user_list} ->
-          {:ok, user_list}
-
-        {:error, changeset} ->
-          {
-            :error,
-            message: "Cannot remove user list", details: changeset_errors(changeset)
-          }
-      end
-    else
-      {:error, "Cannot remove user list belonging to another user"}
+  def remove_user_list(_root, %{id: watchlist_id} = args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    with {:ok, watchlist} <- UserList.by_id(watchlist_id),
+         true <- has_permissions?(watchlist, current_user, "delete"),
+         {:ok, watchlist} <- remove_watchlist(current_user, args) do
+      {:ok, watchlist}
     end
   end
 
   # Private functions
 
-  defp has_permissions?(id, %User{id: user_id}) do
-    UserList.by_id(id).user_id == user_id
+  defp has_permissions?(watchlist, %User{id: user_id}, action) do
+    case watchlist do
+      %UserList{user_id: ^user_id} -> true
+      %UserList{is_public: true} when action in [:read] -> true
+      _ -> {:error, "Cannot #{action} watchlist belonging to another user"}
+    end
+  end
+
+  defp remove_watchlist(current_user, args) do
+    case UserList.remove_user_list(current_user, args) do
+      {:ok, watchlist} ->
+        {:ok, watchlist}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot remove watchlist", details: changeset_errors(changeset)
+        }
+    end
   end
 end

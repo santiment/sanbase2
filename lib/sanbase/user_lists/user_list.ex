@@ -90,6 +90,18 @@ defmodule Sanbase.UserList do
   def by_id(id) do
     from(ul in __MODULE__, where: ul.id == ^id)
     |> Repo.one()
+    |> case do
+      nil -> {:error, "Watchlist with #{id} does not exist."}
+      watchlist -> {:ok, watchlist}
+    end
+  end
+
+  def by_id!(id) do
+    by_id(id)
+    |> case do
+      {:ok, watchlist} -> watchlist
+      {:error, error} -> raise(error)
+    end
   end
 
   def by_slug(slug) when is_binary(slug) do
@@ -212,7 +224,7 @@ defmodule Sanbase.UserList do
 
     changeset =
       user_list_id
-      |> by_id()
+      |> by_id!()
       |> Repo.preload(:list_items)
       |> update_changeset(params)
 
@@ -224,7 +236,7 @@ defmodule Sanbase.UserList do
     %{list_items: list_items} = update_list_items_params(params, user)
 
     case ListItem.create(list_items) do
-      {:ok, _} -> {:ok, by_id(id)}
+      {:ok, _} -> by_id(id)
       {:error, error} -> {:error, error}
     end
   end
@@ -233,14 +245,14 @@ defmodule Sanbase.UserList do
     %{list_items: list_items} = update_list_items_params(params, user)
 
     case ListItem.delete(list_items) do
-      {nil, _} -> {:ok, by_id(id)}
-      {num, _} when is_integer(num) -> {:ok, by_id(id)}
+      {nil, _} -> by_id(id)
+      {num, _} when is_integer(num) -> by_id(id)
       {:error, error} -> {:error, error}
     end
   end
 
   def remove_user_list(_user, %{id: id}) do
-    by_id(id)
+    by_id!(id)
     |> Repo.delete()
     |> emit_event(:delete_watchlist, %{})
   end

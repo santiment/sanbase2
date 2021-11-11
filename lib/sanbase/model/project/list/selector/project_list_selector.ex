@@ -181,7 +181,8 @@ defmodule Sanbase.Model.Project.ListSelector do
 
   defp get_base_slugs(%{watchlist_id: id} = map) do
     detect_cycles!(map)
-    id |> Sanbase.UserList.by_id() |> Sanbase.UserList.get_slugs()
+
+    id |> Sanbase.UserList.by_id!() |> Sanbase.UserList.get_slugs()
   end
 
   defp get_base_slugs(%{watchlist_slug: slug} = map) do

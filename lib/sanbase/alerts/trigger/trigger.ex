@@ -165,11 +165,11 @@ defmodule Sanbase.Alert.Trigger do
 
   defp remove_targets_on_cooldown(%{watchlist_id: watchlist_id}, trigger) do
     case Sanbase.UserList.by_id(watchlist_id) do
-      nil ->
+      {:error, _} ->
         %{list: [], type: :slug}
 
-      %Sanbase.UserList{} = user_list ->
-        case Sanbase.UserList.get_projects(user_list) do
+      {:ok, watchlist} ->
+        case Sanbase.UserList.get_projects(watchlist) do
           {:ok, %{projects: projects}} ->
             projects
             |> Enum.map(& &1.slug)

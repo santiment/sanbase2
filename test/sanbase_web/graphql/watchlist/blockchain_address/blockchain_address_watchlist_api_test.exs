@@ -320,7 +320,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       |> json_response(200)
 
     [error] = result["errors"]
-    assert String.contains?(error["message"], "Cannot update watchlist of another user")
+    assert String.contains?(error["message"], "Cannot update watchlist belonging to another user")
   end
 
   test "remove watchlist", %{user: user, conn: conn} do

@@ -30,9 +30,9 @@ defmodule Sanbase.Billing.Subscription.Query do
     from(q in query, where: q.status in ["active", "past_due", "trialing"])
   end
 
-  def all_active_and_trialing_subscriptions_for_plan(query, plan_id) do
+  def all_active_and_trialing_subscriptions_for_plans(query, plans) when is_list(plans) do
     query = all_active_and_trialing_subscriptions(query)
-    from(q in query, where: q.plan_id == ^plan_id)
+    from(q in query, where: q.plan_id in ^plans)
   end
 
   def liquidity_subscriptions(query) do
@@ -74,5 +74,9 @@ defmodule Sanbase.Billing.Subscription.Query do
 
   def order_by(query) do
     from(q in query, order_by: [desc: q.id])
+  end
+
+  def select_field(query, field) do
+    from(q in query, select: field(q, ^field))
   end
 end

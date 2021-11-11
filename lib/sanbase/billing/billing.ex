@@ -9,6 +9,7 @@ defmodule Sanbase.Billing do
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Plan, Subscription}
   alias Sanbase.Billing.Subscription.LiquiditySubscription
+  alias Sanbase.Billing.Subscription.ProPlus
   alias Sanbase.Accounts.User
   alias Sanbase.StripeApi
 
@@ -30,6 +31,10 @@ defmodule Sanbase.Billing do
   defdelegate sync_liquidity_subscriptions_staked_users, to: LiquiditySubscription
   defdelegate maybe_create_liquidity_subscriptions_staked_users, to: LiquiditySubscription
   defdelegate maybe_remove_liquidity_subscriptions_staked_users, to: LiquiditySubscription
+
+  # ProPlus
+  defdelegate create_free_basic_api, to: ProPlus
+  defdelegate delete_free_basic_api, to: ProPlus
 
   def list_products(), do: Repo.all(Product)
 

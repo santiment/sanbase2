@@ -67,6 +67,14 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "*/20 * * * *",
       task: {Sanbase.Billing, :remove_duplicate_subscriptions, []}
     ],
+    create_free_basic_api: [
+      schedule: "*/5 * * * *",
+      task: {Sanbase.Billing, :create_free_basic_api, []}
+    ],
+    delete_free_basic_api: [
+      schedule: "00 22 * * *",
+      task: {Sanbase.Billing, :delete_free_basic_api, []}
+    ],
     logo_fetcher: [
       schedule: "@daily",
       task: {Sanbase.ExternalServices.Coinmarketcap.LogoFetcher, :run, []}

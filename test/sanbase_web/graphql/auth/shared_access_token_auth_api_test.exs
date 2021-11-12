@@ -108,16 +108,6 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
       # The metric is not in the chart layout
       assert %{"errors" => [_]} =
                get_metric(conn, "dex_to_cexes_flow_change_30d", slug, from, to, "1d")
-
-      # `to` is after the allowed `to` range
-      after_from = Timex.shift(~U[2021-10-01T00:00:00Z], days: 5)
-      after_to = Timex.shift(~U[2021-10-01T00:00:00Z], days: 10)
-      assert %{"errors" => [_]} = get_metric(conn, "nvt", slug, after_from, after_to, "1d")
-
-      # `from` and `to` are before the allowed `from`
-      before_from = Timex.shift(~U[2010-01-01 00:00:00Z], days: -10)
-      before_to = Timex.shift(~U[2010-01-01 00:00:00Z], days: -5)
-      assert %{"errors" => [_]} = get_metric(conn, "nvt", slug, before_from, before_to, "1d")
     end)
   end
 
@@ -163,9 +153,7 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
     mutation = """
     mutation{
       generateSharedAccessToken(
-        chartConfigurationId: #{chart_configuration_id}
-        from: "#{~U[2010-01-01 00:00:00Z]}"
-        to: "#{~U[2021-10-01 00:00:00Z]}"){
+        chartConfigurationId: #{chart_configuration_id}){
           uuid
       }
     }

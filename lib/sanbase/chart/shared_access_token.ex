@@ -10,8 +10,6 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
   alias Sanbase.Chart.Configuration
 
   schema "shared_access_tokens" do
-    field(:from, :utc_datetime)
-    field(:to, :utc_datetime)
     field(:uuid, :string)
 
     belongs_to(:user, Sanbase.Accounts.User)
@@ -20,7 +18,7 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
     timestamps()
   end
 
-  @fields [:uuid, :user_id, :chart_configuration_id, :from, :to]
+  @fields [:uuid, :user_id, :chart_configuration_id]
   def changeset(%__MODULE__{} = sat, args) do
     sat
     |> cast(args, @fields)
@@ -45,20 +43,16 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
   @doc ~s"""
   Generate a Shared Access Token linked to a chart configuration
   """
-  @spec generate(%Configuration{}, map()) :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
-  def generate(%Configuration{} = config, %{from: _, to: _} = args) do
-    with true <- valid_params?(args) do
-      args = %{
-        uuid: generate_uuid(),
-        from: args.from,
-        to: args.to,
-        user_id: config.user_id,
-        chart_configuration_id: config.id
-      }
+  @spec generate(%Configuration{}) :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  def generate(%Configuration{} = config) do
+    args = %{
+      uuid: generate_uuid(),
+      user_id: config.user_id,
+      chart_configuration_id: config.id
+    }
 
-      changeset(%__MODULE__{}, args)
-      |> Sanbase.Repo.insert()
-    end
+    changeset(%__MODULE__{}, args)
+    |> Sanbase.Repo.insert()
   end
 
   @doc ~s"""
@@ -136,26 +130,5 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
       end
     end)
     |> Enum.uniq()
-  end
-
-  defp valid_params?(%{from: from, to: to}) do
-    valid_datetime?(from) and valid_datetime?(to) and valid_datetime_range?(from, to)
-  end
-
-  defp valid_datetime?(%DateTime{} = dt) do
-    case Timex.between?(dt, ~U[2009-01-01T00:00:00Z], Timex.now()) do
-      true ->
-        true
-
-      false ->
-        {:error, "The from-to parameters must be in the range between 2009-01-01 and UTC now."}
-    end
-  end
-
-  defp valid_datetime_range?(from, to) do
-    case DateTime.compare(from, to) do
-      :lt -> true
-      _ -> {:error, "The `to` parameter must be a later date than `from`."}
-    end
   end
 end

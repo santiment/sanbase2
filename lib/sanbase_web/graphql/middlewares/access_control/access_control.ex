@@ -249,27 +249,22 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
            arguments: %{from: from, to: to},
            context: %{
              __query_argument_atom_name__: query_or_argument,
-             resolved_shared_access_token: token
+             resolved_shared_access_token: _token
            }
          },
          _middleware_args,
          query_or_argument
        ) do
-    now = DateTime.utc_now()
-
-    historical_data_in_days = Timex.diff(now, token.shared_access_token.from, :days) |> abs()
-    realtime_data_cut_off_in_days = Timex.diff(now, token.shared_access_token.to, :days) |> abs()
-
     # The shared access token always has an access to a closed range, so
     # full historical/realtime data is not allowed
-    middleware_args = %{allow_historical_data: false, allow_realtime_data: false}
+    middleware_args = %{allow_historical_data: true, allow_realtime_data: true}
 
     %{
       from: from,
       to: to,
       middleware_args: middleware_args,
-      historical_data_in_days: historical_data_in_days,
-      realtime_data_cut_off_in_days: realtime_data_cut_off_in_days
+      historical_data_in_days: nil,
+      realtime_data_cut_off_in_days: nil
     }
   end
 
@@ -299,7 +294,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
           realtime_data_cut_off_in_days: realtime_data_cut_off_in_days
         }
 
-      _metric_or_signal ->
+      # metric or signal
+      {_, _} ->
         middleware_args = %{
           allow_historical_data: AccessChecker.is_historical_data_allowed?(query_or_argument),
           allow_realtime_data: AccessChecker.is_realtime_data_allowed?(query_or_argument)

@@ -46,12 +46,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
 
   def generate_shared_access_token(
         _root,
-        %{chart_configuration_id: id, from: _, to: _} = args,
+        %{chart_configuration_id: id},
         %{context: %{auth: %{current_user: user}}}
       ) do
     with {:ok, %Configuration{} = config} <- Configuration.by_id(id, querying_user_id: user.id),
          true <- can_generate_shared_access_token?(config, user.id),
-         {:ok, shared_access_token} <- Configuration.SharedAccessToken.generate(config, args) do
+         {:ok, shared_access_token} <- Configuration.SharedAccessToken.generate(config) do
       {:ok, shared_access_token}
     end
   end

@@ -91,7 +91,7 @@ defmodule Sanbase.UserList do
     from(ul in __MODULE__, where: ul.id == ^id)
     |> Repo.one()
     |> case do
-      nil -> {:error, "Watchlist with #{id} does not exist."}
+      nil -> {:error, "Watchlist with id: #{id} does not exist."}
       watchlist -> {:ok, watchlist}
     end
   end

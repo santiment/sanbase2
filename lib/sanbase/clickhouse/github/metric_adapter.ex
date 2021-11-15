@@ -44,6 +44,19 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def required_selectors(), do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
+  def timeseries_data(metric, %{organization: organization}, from, to, interval, opts) do
+    timeseries_data(metric, %{organizations: [organization]}, from, to, interval, opts)
+  end
+
+  def timeseries_data(metric, %{organizations: organizations}, from, to, interval, _opts) do
+    apply(
+      Github,
+      Map.get(@timeseries_metrics_function_mapping, metric),
+      [organizations, from, to, interval, "None", nil]
+    )
+    |> transform_to_value_pairs()
+  end
+
   def timeseries_data(metric, %{slug: slug_or_slugs}, from, to, interval, _opts) do
     case Project.List.github_organizations_by_slug(slug_or_slugs) do
       %{} = empty_map when map_size(empty_map) == 0 ->
@@ -65,6 +78,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def aggregated_timeseries_data(metric, %{organization: organization}, from, to, opts) do
+    aggregated_timeseries_data(metric, %{organizations: [organization]}, from, to, opts)
+  end
+
   def aggregated_timeseries_data(metric, %{organizations: organizations}, from, to, _opts)
       when is_binary(organizations) or is_list(organizations) do
     apply(
@@ -121,6 +138,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def first_datetime(_metric, %{organization: organization}) when is_binary(organization) do
+    first_datetime_for_organizations([organization])
+  end
+
   def first_datetime(_metric, %{slug: slug}) when is_binary(slug) do
     case Project.github_organizations(slug) do
       {:ok, organizations} when is_list(organizations) ->
@@ -132,6 +153,11 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def last_datetime_computed_at(_metric, %{organization: organization})
+      when is_binary(organization) do
+    last_datetime_computed_at_for_organizations([organization])
+  end
+
   def last_datetime_computed_at(_metric, %{slug: slug}) when is_binary(slug) do
     case Project.github_organizations(slug) do
       {:ok, organizations} when is_list(organizations) ->

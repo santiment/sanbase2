@@ -47,8 +47,11 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
 
   test "check access to metrics", context do
     token_uuid =
-      generate_shared_access_token(context.pro_conn, context.chart_configuration.id)
-      |> get_in(["data", "generateSharedAccessToken", "uuid"])
+      generate_chart_configuration_shared_access_token(
+        context.pro_conn,
+        context.chart_configuration.id
+      )
+      |> get_in(["data", "generateChartConfigurationSharedAccessToken", "uuid"])
 
     from = ~U[2015-01-01 00:00:00Z]
     to = ~U[2016-10-01 00:00:00Z]
@@ -115,7 +118,7 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
     chart_config = insert(:chart_configuration, user: context.pro_user, is_public: false)
 
     error =
-      generate_shared_access_token(context.pro_conn, chart_config.id)
+      generate_chart_configuration_shared_access_token(context.pro_conn, chart_config.id)
       |> get_in(["errors", Access.at(0), "message"])
 
     assert error == "Shared Access Token can be created only for a public chart configuration."
@@ -125,7 +128,7 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
     chart_config = insert(:chart_configuration, user: context.user, is_public: false)
 
     error =
-      generate_shared_access_token(context.pro_conn, chart_config.id)
+      generate_chart_configuration_shared_access_token(context.pro_conn, chart_config.id)
       |> get_in(["errors", Access.at(0), "message"])
 
     assert error == "Chart configuration with id #{chart_config.id} is private."
@@ -149,10 +152,10 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
     |> json_response(200)
   end
 
-  defp generate_shared_access_token(conn, chart_configuration_id) do
+  defp generate_chart_configuration_shared_access_token(conn, chart_configuration_id) do
     mutation = """
     mutation{
-      generateSharedAccessToken(
+      generateChartConfigurationSharedAccessToken(
         chartConfigurationId: #{chart_configuration_id}){
           uuid
       }

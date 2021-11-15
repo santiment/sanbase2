@@ -33,10 +33,13 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
   Return the Shared Access Token associated with the given UUID.
   """
   @spec by_uuid(String.t()) :: {:ok, %__MODULE__{}} | {:error, String.t()}
-  def by_uuid(uuid) do
+  def by_uuid(uuid) when is_binary(uuid) and byte_size(uuid) > 0 do
     case Sanbase.Repo.get_by(__MODULE__, uuid: uuid) do
-      %__MODULE__{} = token -> {:ok, token}
-      nil -> {:error, "Shared Token with the given uuid does not exist"}
+      %__MODULE__{} = token ->
+        {:ok, token}
+
+      nil ->
+        {:error, "Shared Token with the given uuid does not exist"}
     end
   end
 

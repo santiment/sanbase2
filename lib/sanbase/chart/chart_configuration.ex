@@ -23,6 +23,11 @@ defmodule Sanbase.Chart.Configuration do
 
     has_many(:votes, Sanbase.Vote, on_delete: :delete_all, foreign_key: :chart_configuration_id)
 
+    has_one(:shared_access_token, __MODULE__.SharedAccessToken,
+      foreign_key: :chart_configuration_id,
+      on_delete: :delete_all
+    )
+
     belongs_to(:post, Sanbase.Insight.Post)
     belongs_to(:user, Sanbase.Accounts.User)
     belongs_to(:project, Sanbase.Model.Project)

@@ -10,7 +10,8 @@ defmodule Sanbase.Alert.List do
       Trigger.ScreenerTriggerSettings,
       Trigger.TrendingWordsTriggerSettings,
       Trigger.WalletTriggerSettings,
-      Trigger.SignalTriggerSettings
+      Trigger.SignalTriggerSettings,
+      Trigger.RawSignalTriggerSettings
     ]
   end
 end

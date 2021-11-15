@@ -120,9 +120,17 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
 
   @uuid_length 12
   defp generate_uuid() do
-    :crypto.strong_rand_bytes(@uuid_length)
-    |> Base.url_encode64(padding: false)
-    |> binary_part(0, @uuid_length)
+    token =
+      :crypto.strong_rand_bytes(@uuid_length)
+      |> Base.url_encode64(padding: false)
+      |> binary_part(0, @uuid_length)
+
+    prefix() <> token
+  end
+
+  defp prefix() do
+    # shared chart configuration prefi
+    "shchcfg_"
   end
 
   defp extract_metrics(%Configuration{} = config) do

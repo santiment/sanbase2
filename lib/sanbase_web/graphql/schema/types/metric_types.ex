@@ -44,6 +44,9 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:label_fqn)
     value(:label_fqns)
     value(:holders_count)
+    # dev activity related
+    value(:organization)
+    value(:organizations)
     # cache-controling
     value(:base_ttl)
     value(:max_ttl_offset)
@@ -71,7 +74,10 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     # social related
     field(:text, :string)
     field(:source, :string)
-    # label relaated
+    # dev activity related
+    field(:organization, :string)
+    field(:organizations, list_of(:string))
+    # label related
     field(:owner, :string)
     field(:owners, list_of(:string))
     field(:label, :string)

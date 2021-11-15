@@ -45,13 +45,28 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
     }
   end
 
+  test "multiple get of token are idempotent", context do
+    [uuid1, uuid2, uuid3] =
+      for _ <- 1..3 do
+        get_chart_configuration_shared_access_token(
+          context.pro_conn,
+          context.chart_configuration.id
+        )
+        |> get_in(["data", "getChartConfigurationSharedAccessToken", "uuid"])
+      end
+
+    assert is_binary(uuid1) and byte_size(uuid1) > 0
+    assert uuid1 == uuid2
+    assert uuid1 == uuid3
+  end
+
   test "check access to metrics", context do
     token_uuid =
-      generate_chart_configuration_shared_access_token(
+      get_chart_configuration_shared_access_token(
         context.pro_conn,
         context.chart_configuration.id
       )
-      |> get_in(["data", "generateChartConfigurationSharedAccessToken", "uuid"])
+      |> get_in(["data", "getChartConfigurationSharedAccessToken", "uuid"])
 
     from = ~U[2015-01-01 00:00:00Z]
     to = ~U[2016-10-01 00:00:00Z]
@@ -118,7 +133,7 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
     chart_config = insert(:chart_configuration, user: context.pro_user, is_public: false)
 
     error =
-      generate_chart_configuration_shared_access_token(context.pro_conn, chart_config.id)
+      get_chart_configuration_shared_access_token(context.pro_conn, chart_config.id)
       |> get_in(["errors", Access.at(0), "message"])
 
     assert error == "Shared Access Token can be created only for a public chart configuration."
@@ -128,7 +143,7 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
     chart_config = insert(:chart_configuration, user: context.user, is_public: false)
 
     error =
-      generate_chart_configuration_shared_access_token(context.pro_conn, chart_config.id)
+      get_chart_configuration_shared_access_token(context.pro_conn, chart_config.id)
       |> get_in(["errors", Access.at(0), "message"])
 
     assert error == "Chart configuration with id #{chart_config.id} is private."
@@ -152,10 +167,10 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
     |> json_response(200)
   end
 
-  defp generate_chart_configuration_shared_access_token(conn, chart_configuration_id) do
-    mutation = """
-    mutation{
-      generateChartConfigurationSharedAccessToken(
+  defp get_chart_configuration_shared_access_token(conn, chart_configuration_id) do
+    query = """
+    {
+      getChartConfigurationSharedAccessToken(
         chartConfigurationId: #{chart_configuration_id}){
           uuid
       }
@@ -163,7 +178,7 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
     """
 
     conn
-    |> post("/graphql", mutation_skeleton(mutation))
+    |> post("/graphql", query_skeleton(query))
     |> json_response(200)
   end
 end

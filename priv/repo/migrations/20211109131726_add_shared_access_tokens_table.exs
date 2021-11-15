@@ -12,5 +12,6 @@ defmodule Sanbase.Repo.Migrations.AddSharedAccessTokensTable do
     end
 
     create(unique_index(:shared_access_tokens, [:uuid]))
+    create(unique_index(:shared_access_tokens, [:chart_configuration_id]))
   end
 end

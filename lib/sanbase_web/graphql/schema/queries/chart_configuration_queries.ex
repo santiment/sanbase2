@@ -27,16 +27,17 @@ defmodule SanbaseWeb.Graphql.Schema.ChartConfigurationQueries do
 
       resolve(&ChartConfigurationResolver.chart_configurations/3)
     end
-  end
 
-  object :project_chart_mutations do
-    field :generate_chart_configuration_shared_access_token, :shared_access_token do
+    field :get_chart_configuration_shared_access_token, :shared_access_token do
+      meta(access: :free)
       arg(:chart_configuration_id, non_null(:integer))
 
       middleware(JWTAuth)
-      resolve(&ChartConfigurationResolver.generate_chart_configuration_shared_access_token/3)
+      resolve(&ChartConfigurationResolver.get_chart_configuration_shared_access_token/3)
     end
+  end
 
+  object :project_chart_mutations do
     field :create_chart_configuration, :chart_configuration do
       arg(:settings, non_null(:project_chart_input_object))
 

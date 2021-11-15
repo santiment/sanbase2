@@ -30,6 +30,22 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
   end
 
   @doc ~s"""
+  Return the Shared Access Token associated with the given chart configuration id.
+  """
+  @spec by_chart_configuration_id(non_neg_integer()) ::
+          {:ok, %__MODULE__{}} | {:error, String.t()}
+  def by_chart_configuration_id(chart_configuration_id) when is_integer(chart_configuration_id) do
+    case Sanbase.Repo.get_by(__MODULE__, chart_configuration_id: chart_configuration_id) do
+      %__MODULE__{} = token ->
+        {:ok, token}
+
+      nil ->
+        {:error,
+         "Shared Token with the given chart_configuration_id #{chart_configuration_id} does not exist"}
+    end
+  end
+
+  @doc ~s"""
   Return the Shared Access Token associated with the given UUID.
   """
   @spec by_uuid(String.t()) :: {:ok, %__MODULE__{}} | {:error, String.t()}
@@ -39,7 +55,7 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
         {:ok, token}
 
       nil ->
-        {:error, "Shared Token with the given uuid does not exist"}
+        {:error, "Shared Token with the given uuid '#{uuid}' does not exist"}
     end
   end
 

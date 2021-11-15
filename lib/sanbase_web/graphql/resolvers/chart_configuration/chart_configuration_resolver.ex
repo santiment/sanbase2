@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
 
   # Mutations
 
-  def generate_chart_configuration_shared_access_token(
+  def get_chart_configuration_shared_access_token(
         _root,
         %{chart_configuration_id: id},
         %{context: %{auth: %{current_user: user}}}
@@ -53,8 +53,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
     with {_, true} <-
            {:sanbase_pro?, Sanbase.Billing.Subscription.user_has_sanbase_pro?(user.id)},
          {:ok, %Configuration{} = config} <- Configuration.by_id(id, querying_user_id: user.id),
-         true <- can_generate_chart_configuration_shared_access_token?(config, user.id),
-         {:ok, shared_access_token} <- Configuration.SharedAccessToken.generate(config) do
+         true <- user_can_get_shared_access_token?(config, user.id),
+         {:ok, shared_access_token} <- get_or_generate_shared_access_token(config) do
       {:ok, shared_access_token}
     else
       {:sanbase_pro?, false} ->
@@ -66,7 +66,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
     end
   end
 
-  defp can_generate_chart_configuration_shared_access_token?(config, user_id) do
+  defp get_or_generate_shared_access_token(config) do
+    case Configuration.SharedAccessToken.by_chart_configuration_id(config.id) do
+      {:ok, token} ->
+        {:ok, token}
+
+      {:error, _} ->
+        case Configuration.SharedAccessToken.generate(config) do
+          {:ok, token} -> {:ok, token}
+          {:error, error} -> {:error, error}
+        end
+    end
+  end
+
+  defp user_can_get_shared_access_token?(config, user_id) do
     case config do
       %Configuration{user_id: ^user_id, is_public: true} ->
         true

@@ -3,11 +3,27 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
   An alert based on the ClickHouse signals.
 
   The signal we're following is configured via the 'signal' parameter
+
+  Example parameters:
+  ```
+  %{
+    type: "raw_signal_data",
+    signal: "mvrv_usd_30d_lower_zone"
+    channel: "telegram",
+    target: %{slug: ["ethereum", "bitcoin"]},
+    time_window: "10d"
+  }
+  ```
+  The above parameters mean: Fire an alert if there is a record in CH signals table for:
+  1. signal: `mvrv_usd_30d_lower_zone`
+  2. assets: "ethereum" or "bitcoin"
+  3. in the interval: [now()-10d, now()]
+  and send it to this telegram channel.
   """
 
   use Vex.Struct
 
-  import Sanbase.{Validation, Alert.Validation}
+  import Sanbase.Validation
   import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
 
   alias __MODULE__
@@ -19,13 +35,11 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
   @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @trigger_type "raw_signal_data"
 
-  @enforce_keys [:type, :channel, :operation]
+  @enforce_keys [:type, :channel, :signal, :target]
   defstruct type: @trigger_type,
             signal: nil,
             channel: nil,
-            selector: nil,
             target: nil,
-            operation: nil,
             time_window: "1d",
             # Private fields, not stored in DB.
             filtered_target: %{list: []},
@@ -37,9 +51,7 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
           signal: Type.signal(),
           type: Type.trigger_type(),
           channel: Type.channel(),
-          target: nil | Type.complex_target(),
-          selector: map(),
-          operation: Type.operation(),
+          target: Type.complex_target(),
           time_window: Type.time_window(),
           # Private fields, not stored in DB.
           filtered_target: Type.filtered_target(),
@@ -49,7 +61,6 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
         }
 
   validates(:signal, &valid_signal?/1)
-  validates(:operation, &valid_operation?/1)
   validates(:time_window, &valid_time_window?/1)
 
   @spec type() :: String.t()
@@ -66,12 +77,10 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
     %{filtered_target: %{list: target_list, type: _type}} = settings
 
     {:ok, data} = fetch_signal(target_list, settings)
+    fired_slugs = Enum.map(data, & &1.slug)
 
     target_list
-    |> Enum.map(fn identifier ->
-      {identifier, Enum.find(data, fn signal -> signal.slug == identifier end)}
-    end)
-    |> Enum.reject(fn {_, found} -> is_nil(found) end)
+    |> Enum.filter(fn slug -> slug in fired_slugs end)
   end
 
   defp fetch_signal(slug_or_slugs, settings) do
@@ -117,11 +126,11 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
     end
 
     defp build_result(
-           data,
+           fired_slugs,
            %RawSignalTriggerSettings{filtered_target: %{list: slugs}} = settings
          ) do
       template_kv =
-        Enum.reduce(data, %{}, fn {slug, _}, acc ->
+        Enum.reduce(fired_slugs, %{}, fn slug, acc ->
           if slug in slugs do
             Map.put(acc, slug, template_kv(settings, slug))
           else
@@ -146,9 +155,7 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
       construct_cache_key([
         settings.type,
         settings.target,
-        settings.selector,
-        settings.time_window,
-        settings.operation
+        settings.time_window
       ])
     end
 
@@ -166,12 +173,13 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
           project_name: project.name,
           project_slug: project.slug,
           project_ticker: project.ticker,
+          sanbase_project_link: "https://app.santiment.net/charts?slug=#{project.slug}",
           signal_human_readable_name: human_readable_name
         }
         |> Map.merge(details_kv)
 
       template = """
-      🔔 \#{{project_ticker}} | {{signal_human_readable_name}} signal fired for **{{project_name}}**.
+      🔔 [\#{{project_ticker}}]({{sanbase_project_link}}) | {{signal_human_readable_name}} signal fired for *{{project_name}}*.
 
       #{details_template}
       """

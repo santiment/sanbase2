@@ -119,6 +119,9 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
+
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data(
         "historical_balance",
         %{slug: slug, blockchain_address: %{address: address}},

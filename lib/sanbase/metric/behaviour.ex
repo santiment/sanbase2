@@ -54,6 +54,15 @@ defmodule Sanbase.Metric.Behaviour do
 
   @type slug_float_value_pair :: %{slug: slug, value: float}
 
+  @type broken_data_point :: %{
+          from: DateTime.t(),
+          to: DateTime.t(),
+          what: String.t(),
+          why: String.t(),
+          notes: String.t(),
+          actions_to_fix: String.t()
+        }
+
   @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
 
   @type timeseries_data_per_slug_point :: %{
@@ -62,6 +71,8 @@ defmodule Sanbase.Metric.Behaviour do
         }
 
   # Return types
+  @type broken_data_result :: {:ok, list(broken_data_point())} | {:error, String.t()}
+
   @type timeseries_data_result :: {:ok, list(timeseries_data_point)} | {:error, String.t()}
 
   @type aggregated_timeseries_data_result :: {:ok, map()} | {:error, String.t()}
@@ -100,6 +111,13 @@ defmodule Sanbase.Metric.Behaviour do
   @type required_selectors_result :: map()
 
   # Callbacks
+
+  @callback broken_data(
+              metric :: metric(),
+              selector :: selector,
+              from :: DatetTime.t(),
+              to :: DateTime.t()
+            ) :: broken_data_result
 
   @callback timeseries_data(
               metric :: metric(),

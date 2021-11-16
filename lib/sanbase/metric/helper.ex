@@ -38,6 +38,7 @@ defmodule Sanbase.Metric.Helper do
   Module.register_attribute(__MODULE__, :table_metric_module_mapping_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :required_selectors_map_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :deprecated_metrics_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :broken_data_acc, accumulate: true)
 
   for module <- @metric_modules do
     @required_selectors_map_acc module.required_selectors
@@ -71,6 +72,9 @@ defmodule Sanbase.Metric.Helper do
 
     if function_exported?(module, :deprecated_metrics_map, 0),
       do: @deprecated_metrics_acc(module.deprecated_metrics_map)
+
+    # if function_exported?(module, :broken_data, 4),
+    #   do: @broken_data_acc(module.broken_data)
   end
 
   flat_unique = fn list -> list |> List.flatten() |> Enum.uniq() end

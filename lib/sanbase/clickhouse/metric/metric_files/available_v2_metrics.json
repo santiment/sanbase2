@@ -1410,7 +1410,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "8h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1428,7 +1428,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "8h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1445,7 +1445,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1462,7 +1462,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1479,7 +1479,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,

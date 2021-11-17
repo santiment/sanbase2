@@ -1061,7 +1061,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     query = """
     mutation {
       vote(postId: #{sanbase_post.id}) {
-        id
         votes{
           totalVotes
         }
@@ -1076,7 +1075,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     result_post = result["data"]["vote"]
 
-    assert result_post["id"] == Integer.to_string(sanbase_post.id)
     assert result_post["votes"]["totalVotes"] == 1
   end
 
@@ -1095,10 +1093,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     query = """
     mutation {
       unvote(insightId: #{sanbase_post.id}) {
-        id
-        votes{
-          totalVotes
-        }
+        votes { totalVotes }
       }
     }
     """
@@ -1109,7 +1104,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     result_post = json_response(result, 200)["data"]["unvote"]
 
-    assert result_post["id"] == Integer.to_string(sanbase_post.id)
     assert result_post["votes"]["totalVotes"] == 0
   end
 

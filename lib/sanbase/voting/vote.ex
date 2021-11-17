@@ -8,6 +8,7 @@ defmodule Sanbase.Vote do
   import Ecto.Changeset
 
   alias Sanbase.Repo
+  alias Sanbase.Chart
   alias Sanbase.Insight.Post
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Accounts.User
@@ -29,22 +30,23 @@ defmodule Sanbase.Vote do
   schema "votes" do
     field(:count, :integer)
 
-    belongs_to(:post, Post)
-    belongs_to(:timeline_event, TimelineEvent)
     belongs_to(:user, User)
+
+    belongs_to(:post, Post)
+    belongs_to(:chart_configuration, Chart.Configuration, foreign_key: :chart_configuration_id)
+    belongs_to(:timeline_event, TimelineEvent)
 
     timestamps()
   end
 
   def changeset(%__MODULE__{} = vote, attrs \\ %{}) do
     vote
-    |> cast(attrs, [:post_id, :timeline_event_id, :user_id, :count])
+    |> cast(attrs, [:post_id, :timeline_event_id, :chart_configuration_id, :user_id, :count])
     |> validate_required([:user_id])
-    |> unique_constraint(:post_id,
-      name: :votes_post_id_user_id_index
-    )
-    |> unique_constraint(:timeline_event_id,
-      name: :votes_timeline_event_id_user_id_index
+    |> unique_constraint(:post_id, name: :votes_post_id_user_id_index)
+    |> unique_constraint(:timeline_event_id, name: :votes_timeline_event_id_user_id_index)
+    |> unique_constraint(:chart_configuration_id,
+      name: :votes_chart_configuration_id_user_id_index
     )
   end
 
@@ -97,7 +99,7 @@ defmodule Sanbase.Vote do
           {:ok, %__MODULE__{}}
 
         %__MODULE__{count: 1} ->
-          Repo.delete(vote)
+          with {:ok, _} <- Repo.delete(vote), do: {:ok, %__MODULE__{}}
 
         %__MODULE__{count: count} ->
           changeset(vote, %{count: count - 1})
@@ -190,4 +192,5 @@ defmodule Sanbase.Vote do
 
   defp deduce_entity_field(:post), do: :post_id
   defp deduce_entity_field(:timeline_event), do: :timeline_event_id
+  defp deduce_entity_field(:chart_configuration), do: :chart_configuration_id
 end

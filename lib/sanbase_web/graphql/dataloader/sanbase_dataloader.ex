@@ -55,7 +55,9 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :users_by_id,
     # Votes
     :insight_vote_stats,
-    :insight_voted_at
+    :insight_voted_at,
+    :chart_configuration_vote_stats,
+    :chart_configuration_voted_at
   ]
   @postgres_dataloader [
     :current_user_address_details,

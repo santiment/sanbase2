@@ -60,6 +60,54 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
     }
   end
 
+  describe "chart configuration voting" do
+    test "vote and downvote", context do
+      %{conn: conn, settings: settings} = context
+
+      config =
+        create_chart_configuration(conn, settings)
+        |> get_in(["data", "createChartConfiguration"])
+
+      %{"data" => %{"vote" => vote_result}} = vote(conn, config["id"])
+      voted_at = vote_result["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+
+      assert Sanbase.TestUtils.datetime_close_to(
+               voted_at,
+               Timex.now(),
+               seconds: 2
+             )
+
+      assert vote_result["votes"] == %{
+               "currentUserVotes" => 1,
+               "totalVoters" => 1,
+               "totalVotes" => 1
+             }
+
+      %{"data" => %{"vote" => vote_result}} = vote(conn, config["id"])
+
+      assert vote_result["votes"] == %{
+               "currentUserVotes" => 2,
+               "totalVoters" => 1,
+               "totalVotes" => 2
+             }
+    end
+
+    defp vote(conn, chart_configuration_id) do
+      mutation = """
+      mutation {
+        vote(chartConfigurationId: #{chart_configuration_id}){
+          votedAt
+          votes { currentUserVotes totalVotes totalVoters }
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
+    end
+  end
+
   describe "chart configuration mutations" do
     test "create", context do
       %{user: user, conn: conn, project: project, post: post, settings: settings} = context

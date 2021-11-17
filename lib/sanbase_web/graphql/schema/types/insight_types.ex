@@ -3,14 +3,8 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
 
   import Absinthe.Resolution.Helpers
 
-  alias SanbaseWeb.Graphql.Resolvers.InsightResolver
+  alias SanbaseWeb.Graphql.Resolvers.{InsightResolver, VoteResolver}
   alias SanbaseWeb.Graphql.SanbaseRepo
-
-  object :vote do
-    field(:total_votes, non_null(:integer))
-    field(:total_voters, non_null(:integer))
-    field(:current_user_votes, :integer)
-  end
 
   object :metric_short_description do
     field(:name, non_null(:string))
@@ -81,11 +75,11 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:updated_at, non_null(:datetime))
 
     field :voted_at, :datetime do
-      resolve(&InsightResolver.voted_at/3)
+      resolve(&VoteResolver.voted_at/3)
     end
 
     field :votes, :vote do
-      resolve(&InsightResolver.votes/3)
+      resolve(&VoteResolver.votes/3)
     end
   end
 end

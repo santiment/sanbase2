@@ -101,7 +101,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
          {:ok, result} <- Metric.broken_data(metric, selector, from, to) do
-      IO.inspect({metric, selector, from, to}, label: "AJLJASLKDAS")
       {:ok, result}
     end
     |> maybe_handle_graphql_error(fn error ->

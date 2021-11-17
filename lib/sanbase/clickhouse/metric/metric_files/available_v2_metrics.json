@@ -1467,5 +1467,22 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DyDx Exchange Funding Rates",
+    "name": "dydx_perpetual_funding_rate",
+    "metric": "dydx_funding_rates",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
   }
 ]

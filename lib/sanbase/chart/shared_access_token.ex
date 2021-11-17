@@ -145,12 +145,23 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
 
   defp list_to_individual_entries(nil, _project), do: []
 
+  # Returns a list of %{metric: _, slug: _} maps where every element shows
+  # which metric and asset is shown on the chart.
   defp list_to_individual_entries(list, %Sanbase.Model.Project{slug: project_slug}) do
+    # The strings we split by are how the frontend combines multiple metrics
+    # or metric of another asset (not the chart configuration's one) into a
+    # single string.
     list
     |> Enum.flat_map(fn entry ->
+      # Multiple metrics can be separated by __MM__. This is used for example
+      # for combining some holders distributions metrics into a single one
+      # on sanbase's frontend.
       String.split(entry, "__MM__")
     end)
     |> Enum.map(fn entry ->
+      # The frontend uses the format `slug-CC-ticker-CC-metric` or
+      # `slug_MC_ticker_MC_metric` to represent that a metric of another
+      # asset should be displayed on the chart configuration.
       case String.split(entry, ["-CC-", "_MC_"]) do
         [slug, _ticker, metric] -> %{metric: Inflex.underscore(metric), slug: slug}
         [metric] -> %{metric: Inflex.underscore(metric), slug: project_slug}

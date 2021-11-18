@@ -44,6 +44,11 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def required_selectors(), do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
+  def broken_data(metric, selector, from, to) do
+    __MODULE__.BrokenData.get(metric, selector, from, to)
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, %{organization: organization}, from, to, interval, opts) do
     timeseries_data(metric, %{organizations: [organization]}, from, to, interval, opts)
   end

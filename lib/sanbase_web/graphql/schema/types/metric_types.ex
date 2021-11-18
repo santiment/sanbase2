@@ -98,6 +98,15 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:table)
   end
 
+  object :broken_data do
+    field(:from, non_null(:datetime))
+    field(:to, non_null(:datetime))
+    field(:what, non_null(:string))
+    field(:why, non_null(:string))
+    field(:notes, non_null(:string))
+    field(:actions_to_fix, non_null(:string))
+  end
+
   object :metric_data do
     field(:datetime, non_null(:datetime))
     field(:value, :float)
@@ -326,6 +335,18 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   end
 
   object :metric do
+    @desc ~s"""
+    Return a list
+    """
+    field :broken_data, list_of(:broken_data) do
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      resolve(&MetricResolver.broken_data/3)
+    end
+
     @desc ~s"""
     Return a list of 'datetime' and 'value' for a given metric, slug
     and time period.

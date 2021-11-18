@@ -34,6 +34,9 @@ defmodule Sanbase.Twitter.MetricAdapter do
   def required_selectors(), do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
+  def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
+
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data("twitter_followers", %{slug: slug}, from, to, interval, _opts) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project),

@@ -110,6 +110,19 @@ defmodule Sanbase.Metric do
     module.has_incomplete_data?(metric)
   end
 
+  def broken_data(metric, selector, from, to) do
+    metric = maybe_replace_metric(metric, selector)
+
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric)
+
+      module when is_atom(module) ->
+        module = maybe_change_module(module, metric, selector, [])
+        module.broken_data(metric, selector, from, to)
+    end
+  end
+
   @doc ~s"""
   Returns timeseries data (pairs of datetime and float value) for a given set
   of arguments.

@@ -59,6 +59,9 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def required_selectors(), do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
+  def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
+
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data(
         metric,
         %{slug: slug} = selector,

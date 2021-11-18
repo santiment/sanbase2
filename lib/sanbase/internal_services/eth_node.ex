@@ -1,4 +1,4 @@
-defmodule Sanbase.InternalServices.Parity do
+defmodule Sanbase.InternalServices.EthNode do
   use Tesla
 
   require Logger
@@ -14,15 +14,10 @@ defmodule Sanbase.InternalServices.Parity do
   end
 
   def get_transaction_by_hash(transaction_hash) do
-    Logger.info("[Parity] Get transaction by hash.")
+    Logger.info("[EthNode] Get transaction by hash.")
 
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
-           post(
-             client(),
-             "/",
-             json_rpc_call("eth_getTransactionByHash", [transaction_hash]),
-             opts: [adapter: [recv_timeout: 15_000]]
-           ),
+           execute_json_rpc_call("eth_getTransactionByHash", [transaction_hash]),
          %{"result" => result} <- body do
       {:ok, result}
     else
@@ -48,13 +43,13 @@ defmodule Sanbase.InternalServices.Parity do
   end
 
   def get_eth_balance(addresses) when is_list(addresses) do
-    Logger.info("[Parity] Get eth balance for a list of #{length(addresses)} addresses.")
+    Logger.info("[EthNode] Get eth balance for a list of #{length(addresses)} addresses.")
 
     addresses = Enum.zip(Stream.iterate(1, &(&1 + 1)), addresses)
 
     batch =
       for {id, address} <- addresses do
-        json_rpc_call("eth_getBalance", [address], id)
+        json_rpc_call("eth_getBalance", [address, "latest"], id)
       end
 
     {:ok, %Tesla.Env{status: 200, body: body}} =
@@ -77,15 +72,10 @@ defmodule Sanbase.InternalServices.Parity do
   end
 
   def get_eth_balance(address) do
-    Logger.info("[Parity] Get eth balance for an address.")
+    Logger.info("[EthNode] Get eth balance for an address.")
 
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
-           post(
-             client(),
-             "/",
-             json_rpc_call("eth_getBalance", [address]),
-             opts: [adapter: [recv_timeout: 15_000]]
-           ),
+           execute_json_rpc_call("eth_getBalance", [address, "latest"]),
          "0x" <> number <- body["result"],
          {balance, ""} <- Integer.parse(number, 16) do
       {:ok, balance / @eth_decimals}
@@ -113,6 +103,15 @@ defmodule Sanbase.InternalServices.Parity do
       Tesla.Middleware.JSON,
       Tesla.Middleware.Logger
     ])
+  end
+
+  def execute_json_rpc_call(method, params) do
+    post(
+      client(),
+      "/",
+      json_rpc_call(method, params),
+      opts: [adapter: [recv_timeout: 15_000]]
+    )
   end
 
   defp json_rpc_call(method, params, id \\ 1) do

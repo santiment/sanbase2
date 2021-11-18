@@ -37,7 +37,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   alias Sanbase.ExternalServices.Coinmarketcap
   alias Sanbase.ExternalServices.Etherscan
   alias Sanbase.ExternalServices.ProjectInfo
-  alias Sanbase.InternalServices.{Parity, Ethauth}
+  alias Sanbase.InternalServices.{EthNode, Ethauth}
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Tag
@@ -220,7 +220,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   defp fetch_block_number(%ProjectInfo{creation_transaction: creation_transaction} = project_info) do
     %{"blockNumber" => "0x" <> block_number_hex} =
-      Parity.get_transaction_by_hash!(creation_transaction)
+      EthNode.get_transaction_by_hash!(creation_transaction)
 
     {block_number, ""} = Integer.parse(block_number_hex, 16)
 

@@ -10,7 +10,6 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Model.Project
-  alias Sanbase.Vote
   alias Sanbase.Insight.{Post, PostImage}
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Metric.MetricPostgresData
@@ -63,7 +62,7 @@ defmodule Sanbase.Insight.Post do
     has_many(:chart_configurations, Configuration)
     has_many(:images, PostImage, on_delete: :delete_all)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
-    has_many(:votes, Vote, on_delete: :delete_all)
+    has_many(:votes, Sanbase.Vote, on_delete: :delete_all)
 
     # has_many(:post_comments, Sanbase.Comment.PostComment, on_delete: :delete_all)
 

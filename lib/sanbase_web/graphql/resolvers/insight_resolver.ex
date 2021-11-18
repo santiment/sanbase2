@@ -224,8 +224,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def vote(_root, args, %{context: %{auth: %{current_user: user}}}) do
     insight_id = Map.get(args, :insight_id) || Map.fetch!(args, :post_id)
 
-    Vote.create(%{post_id: insight_id, user_id: user.id})
-    |> case do
+    case Vote.create(%{post_id: insight_id, user_id: user.id}) do
       {:ok, _vote} ->
         Post.by_id(insight_id)
 

@@ -9,25 +9,14 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     Dataloader.KV.new(&query/2)
   end
 
-  def query(:insight_vote_stats, data) do
-    user_group = Enum.group_by(data, & &1.user_id, & &1.post_id)
+  def query(:insight_vote_stats, data), do: get_votes_stats(:post, :post_id, data)
+  def query(:insight_voted_at, data), do: get_voted_at(:post, :post_id, data)
 
-    Enum.map(user_group, fn {user_id, post_ids} ->
-      Sanbase.Vote.vote_stats(:post, post_ids, user_id)
-      |> Map.new(fn %{entity_id: id} = map -> {%{post_id: id, user_id: user_id}, map} end)
-    end)
-    |> Enum.reduce(&Map.merge(&1, &2))
-  end
+  def query(:chart_configuration_vote_stats, data),
+    do: get_votes_stats(:chart_configuration, :chart_configuration_id, data)
 
-  def query(:insight_voted_at, data) do
-    user_group = Enum.group_by(data, & &1.user_id, & &1.post_id)
-
-    Enum.map(user_group, fn {user_id, post_ids} ->
-      Sanbase.Vote.voted_at(:post, post_ids, user_id)
-      |> Map.new(fn %{entity_id: id} = map -> {%{post_id: id, user_id: user_id}, map} end)
-    end)
-    |> Enum.reduce(&Map.merge(&1, &2))
-  end
+  def query(:chart_configuration_voted_at, data),
+    do: get_voted_at(:chart_configuration, :chart_configuration_id, data)
 
   def query(:users_by_id, user_ids) do
     user_ids = Enum.to_list(user_ids)
@@ -230,5 +219,25 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
       value = Map.update!(value, :watchlists, sort_fun)
       {key, value}
     end)
+  end
+
+  defp get_votes_stats(entity, entity_key, data) do
+    user_group = Enum.group_by(data, & &1[:user_id], & &1[entity_key])
+
+    Enum.map(user_group, fn {user_id, entity_ids} ->
+      Sanbase.Vote.vote_stats(entity, entity_ids, user_id)
+      |> Map.new(fn %{entity_id: id} = map -> {%{entity_key => id, user_id: user_id}, map} end)
+    end)
+    |> Enum.reduce(&Map.merge(&1, &2))
+  end
+
+  defp get_voted_at(entity, entity_key, data) do
+    user_group = Enum.group_by(data, & &1[:user_id], & &1[entity_key])
+
+    Enum.map(user_group, fn {user_id, entity_ids} ->
+      Sanbase.Vote.voted_at(entity, entity_ids, user_id)
+      |> Map.new(fn %{entity_id: id} = map -> {%{entity_key => id, user_id: user_id}, map} end)
+    end)
+    |> Enum.reduce(&Map.merge(&1, &2))
   end
 end

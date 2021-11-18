@@ -91,6 +91,7 @@ defmodule Sanbase.InsihgtVotingApiTest do
     vote(conn, insight)
 
     downvote(conn, insight)
+
     %{"votedAt" => voted_at, "votes" => %{"totalVotes" => total_votes}} = downvote(conn, insight)
 
     assert voted_at == nil

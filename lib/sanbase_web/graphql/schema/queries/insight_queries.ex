@@ -290,26 +290,6 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     end
 
     @desc """
-    Vote for an insight. The user must logged in.
-    """
-    field :vote, :post do
-      arg(:post_id, :integer, deprecate: "Use `insightId` instead")
-      arg(:insight_id, :integer)
-      middleware(JWTAuth)
-      resolve(&InsightResolver.vote/3)
-    end
-
-    @desc """
-    Remove your vote for an insight. The user must logged in.
-    """
-    field :unvote, :post do
-      arg(:post_id, :integer, deprecate: "Use `insightId` instead")
-      arg(:insight_id, :integer)
-      middleware(JWTAuth)
-      resolve(&InsightResolver.unvote/3)
-    end
-
-    @desc """
     Create an insight connected to particular chart configuration
     """
     field :create_chart_event, :post do

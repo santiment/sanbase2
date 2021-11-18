@@ -18,6 +18,10 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationTypes do
     field(:post_id, :integer)
   end
 
+  object :shared_access_token do
+    field(:uuid, non_null(:string))
+  end
+
   object :chart_configuration do
     field(:id, non_null(:integer))
     field(:title, :string)

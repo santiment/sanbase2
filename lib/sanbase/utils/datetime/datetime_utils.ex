@@ -12,11 +12,11 @@ defmodule Sanbase.DateTimeUtils do
         {:ok, DateTime.utc_now()}
 
       ["utc_now", interval] ->
-        case Sanbase.DateTimeUtils.valid_compound_duration?(interval) do
+        case valid_compound_duration?(interval) do
           true ->
             dt =
               DateTime.utc_now()
-              |> Timex.shift(seconds: -Sanbase.DateTimeUtils.str_to_sec(interval))
+              |> Timex.shift(seconds: -str_to_sec(interval))
 
             {:ok, dt}
 

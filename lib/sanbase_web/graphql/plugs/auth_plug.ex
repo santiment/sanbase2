@@ -29,10 +29,11 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
   import Plug.Conn
 
+  alias SanbaseWeb.Graphql.AuthPlug
   alias SanbaseWeb.Graphql.AuthPlug.AuthStruct
   alias Sanbase.Accounts.User
-  alias SanbaseWeb.Graphql.AuthPlug
   alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Chart.Configuration.SharedAccessToken
 
   require Logger
   require Sanbase.Utils.Config, as: Config
@@ -44,6 +45,10 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     &AuthPlug.jwt_auth_header_authentication/1,
     &AuthPlug.apikey_authentication/1,
     &AuthPlug.basic_authentication/1
+  ]
+
+  @augmenting_auth_methods [
+    &AuthPlug.augment_auth_with_shared_access_token/2
   ]
 
   @product_id_api Product.product_api()
@@ -65,6 +70,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
     case authenticate(conn, @authentication_methods) do
       {:ok, %AuthStruct{} = auth_struct} ->
+        auth_struct = augment_auth(auth_struct, conn)
+
         conn
         |> maybe_put_new_access_token(auth_struct)
         |> put_private(:san_authentication, Map.from_struct(auth_struct))
@@ -76,7 +83,35 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end
   end
 
-  defp maybe_put_new_access_token(conn, %AuthStruct{} = auth_struct) do
+  # Extend the auth struct with some extra information. This is
+  # not the core authentication logic, but rather some additional
+  # logic that only extends the core logic.
+  # For example, the auth struct can be extended with a `shared access token`
+  # which gives access to the metrics on a chart layout
+  defp augment_auth(%AuthStruct{} = auth_struct, %Plug.Conn{} = conn) do
+    @augmenting_auth_methods
+    |> Enum.reduce(auth_struct, fn augment_auth_method, auth_struct_acc ->
+      %AuthStruct{} = augment_auth_method.(auth_struct_acc, conn)
+    end)
+  end
+
+  # Authenticate the user using the X-SharedAccess-Authorization header. It
+  # contains a token that, when resolved, gives access to some metrics and
+  # queries that are used in a chart layout. This authentication only augments
+  # the existing auth_struct by adding new fields to it. This is not a main
+  # authentication method but should be used only on some pages.
+  def augment_auth_with_shared_access_token(%AuthStruct{} = auth_struct, %Plug.Conn{} = conn) do
+    with ["SharedAccessToken " <> uuid] <- get_req_header(conn, "x-sharedaccess-authorization"),
+         {:ok, sat} <- SharedAccessToken.by_uuid(uuid),
+         {:ok, resolved_sat} <- SharedAccessToken.get_resolved_token(sat) do
+      Map.put(auth_struct, :resolved_shared_access_token, resolved_sat)
+    else
+      _ ->
+        auth_struct
+    end
+  end
+
+  defp maybe_put_new_access_token(%Plug.Conn{} = conn, %AuthStruct{} = auth_struct) do
     case Map.get(auth_struct, :new_access_token) do
       nil ->
         conn

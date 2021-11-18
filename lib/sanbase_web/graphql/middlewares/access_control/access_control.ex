@@ -2,11 +2,18 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @moduledoc """
   Middleware that is used to restrict the API access in a certain timeframe.
 
-  Currently the implemented scheme is like this:
-  * For users accessing data for slug `santiment` there are no restrictions
-  * If the logged user is subscribed to a plan the allowed historical days is
-    the value of `historical_data_in_days` and the allowed realtime days is
-    is the `realtime_data_cut_off_in_days` for this plan.
+  Authentication is done in two major ways:
+  - If the authentication is `Basic` no checks except some sanity checks are
+    done
+  - In case of any other authentication or no authentication, apply restrictions
+    on the queried data as is described in the subscription plan or shared
+    token.
+
+  The case of authentication different than Basic is split into two main parts:
+  - User authentication - the user has authenticated using their own credentials
+    and the result is resolved to the user struct.
+  - Shared Acecss Token authentication - shared access token is found and used
+    to gain access only to some metrics/queries that are part of a chart layout.
   """
   @behaviour Absinthe.Middleware
 
@@ -95,10 +102,48 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     %Resolution{resolution | context: context}
   end
 
-  defp check_plan_has_access(
-         %Resolution{context: %{__query_argument_atom_name__: query_or_argument} = context} =
-           resolution
-       ) do
+  # The request will be granted further access in two cases:
+  # - The request contains a shared access token that has access to the
+  #   query/metric. This can also be an anonymous user who has this token.
+  # - The user has a subscription plan that has access to the query/metric.
+  #
+  # The shared access token is checked first and if it gives access to the
+  # request, the user plan access is bypassed
+  defp check_plan_has_access(resolution) do
+    case check_shared_access_token_has_access?(resolution) do
+      true -> resolution
+      false -> check_user_plan_has_access(resolution)
+    end
+  end
+
+  defp check_shared_access_token_has_access?(%Resolution{
+         arguments: arguments,
+         context: %{
+           __query_argument_atom_name__: query_or_argument,
+           resolved_shared_access_token: token
+         }
+       }) do
+    %{product: product, plan: plan} = token
+    token_has_access? = token_has_access?(token, query_or_argument, arguments[:slug])
+    plan_has_access? = AccessChecker.plan_has_access?(plan, product, query_or_argument)
+
+    plan_has_access? and token_has_access?
+  end
+
+  defp check_shared_access_token_has_access?(%Resolution{} = _resolution), do: false
+
+  defp token_has_access?(token, query_or_argument, slug) do
+    case query_or_argument do
+      {:metric, metric} -> %{metric: to_string(metric), slug: slug} in token.metrics
+      {:query, query} -> %{query: to_string(query), slug: slug} in token.queries
+      _ -> false
+    end
+  end
+
+  defp check_user_plan_has_access(%Resolution{} = resolution) do
+    %Resolution{context: %{__query_argument_atom_name__: query_or_argument} = context} =
+      resolution
+
     plan = context[:auth][:plan] || :free
     product = Product.code_by_id(context[:product_id]) || "SANAPI"
 
@@ -177,37 +222,56 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
-  # metrics
-  defp get_query_or_argument(:timeseries_data, %{metric: metric}, _args),
-    do: {:metric, metric}
+  defp restricted_query(resolution, middleware_args, query_or_argument) do
+    args =
+      case restricted_query_shared_access_token(resolution, middleware_args, query_or_argument) do
+        nil -> restricted_query_user_plan(resolution, middleware_args, query_or_argument)
+        args -> args
+      end
 
-  defp get_query_or_argument(:timeseries_data_per_slug, %{metric: metric}, _args),
-    do: {:metric, metric}
+    %{
+      from: from,
+      to: to,
+      middleware_args: middleware_args,
+      historical_data_in_days: historical_data_in_days,
+      realtime_data_cut_off_in_days: realtime_data_cut_off_in_days
+    } = args
 
-  defp get_query_or_argument(:aggregated_timeseries_data, %{metric: metric}, _args),
-    do: {:metric, metric}
+    resolution
+    |> update_resolution_from_to(
+      restrict_from(from, middleware_args, historical_data_in_days),
+      restrict_to(to, middleware_args, realtime_data_cut_off_in_days)
+    )
+  end
 
-  defp get_query_or_argument(:aggregated_timeseries_data, _source, %{metric: metric}),
-    do: {:metric, metric}
+  defp restricted_query_shared_access_token(
+         %Resolution{
+           arguments: %{from: from, to: to},
+           context: %{
+             __query_argument_atom_name__: query_or_argument,
+             resolved_shared_access_token: _token
+           }
+         },
+         _middleware_args,
+         query_or_argument
+       ) do
+    # The shared access token always has an access to a closed range, so
+    # full historical/realtime data is not allowed
+    middleware_args = %{allow_historical_data: true, allow_realtime_data: true}
 
-  defp get_query_or_argument(:histogram_data, %{metric: metric}, _args),
-    do: {:metric, metric}
+    %{
+      from: from,
+      to: to,
+      middleware_args: middleware_args,
+      historical_data_in_days: nil,
+      realtime_data_cut_off_in_days: nil
+    }
+  end
 
-  defp get_query_or_argument(:table_data, %{metric: metric}, _args),
-    do: {:metric, metric}
+  defp restricted_query_shared_access_token(_, _, _), do: nil
 
-  # signals
-  defp get_query_or_argument(:timeseries_data, %{signal: signal}, _args),
-    do: {:signal, signal}
-
-  defp get_query_or_argument(:aggregated_timeseries_data, %{signal: signal}, _args),
-    do: {:signal, signal}
-
-  # query
-  defp get_query_or_argument(query, _source, _args), do: {:query, query}
-
-  defp restricted_query(
-         %Resolution{arguments: %{from: from, to: to}, context: context} = resolution,
+  defp restricted_query_user_plan(
+         %Resolution{arguments: %{from: from, to: to}, context: context},
          middleware_args,
          query_or_argument
        ) do
@@ -222,28 +286,28 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
     case query_or_argument do
       {:query, _} ->
-        resolution
-        |> update_resolution_from_to(
-          restrict_from(from, middleware_args, historical_data_in_days),
-          restrict_to(to, middleware_args, realtime_data_cut_off_in_days)
-        )
+        %{
+          from: from,
+          to: to,
+          middleware_args: middleware_args,
+          historical_data_in_days: historical_data_in_days,
+          realtime_data_cut_off_in_days: realtime_data_cut_off_in_days
+        }
 
-      _metric_or_signal ->
-        resolution
-        |> update_resolution_from_to(
-          restrict_from(
-            from,
-            %{
-              allow_historical_data: AccessChecker.is_historical_data_allowed?(query_or_argument)
-            },
-            historical_data_in_days
-          ),
-          restrict_to(
-            to,
-            %{allow_realtime_data: AccessChecker.is_realtime_data_allowed?(query_or_argument)},
-            realtime_data_cut_off_in_days
-          )
-        )
+      # metric or signal
+      {_, _} ->
+        middleware_args = %{
+          allow_historical_data: AccessChecker.is_historical_data_allowed?(query_or_argument),
+          allow_realtime_data: AccessChecker.is_realtime_data_allowed?(query_or_argument)
+        }
+
+        %{
+          from: from,
+          to: to,
+          middleware_args: middleware_args,
+          historical_data_in_days: historical_data_in_days,
+          realtime_data_cut_off_in_days: realtime_data_cut_off_in_days
+        }
     end
   end
 
@@ -319,11 +383,17 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         # If we reach here the first time we checked to < from was not true
         # This means that the middleware rewrote the params in a way that this is
         # now true. If that happens - both from and to are outside the allowed interval
+        plan = context[:resolved_shared_access_token][:plan] || context[:auth][:plan] || :free
+
+        product_id =
+          context[:resolved_shared_access_token][:product_id] || context[:product_id] ||
+            Product.product_api()
+
         %{restricted_from: restricted_from, restricted_to: restricted_to} =
           Sanbase.Billing.Plan.Restrictions.get(
             context[:__query_argument_atom_name__],
-            context[:auth][:plan] || :free,
-            context[:product_id] || Product.product_api()
+            plan,
+            product_id
           )
 
         resolution
@@ -347,13 +417,35 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          from,
          to
        ) do
-    %Resolution{
-      resolution
-      | arguments: %{
-          args
-          | from: from,
-            to: to
-        }
-    }
+    %Resolution{resolution | arguments: %{args | from: from, to: to}}
   end
+
+  # metrics
+  defp get_query_or_argument(:timeseries_data, %{metric: metric}, _args),
+    do: {:metric, metric}
+
+  defp get_query_or_argument(:timeseries_data_per_slug, %{metric: metric}, _args),
+    do: {:metric, metric}
+
+  defp get_query_or_argument(:aggregated_timeseries_data, %{metric: metric}, _args),
+    do: {:metric, metric}
+
+  defp get_query_or_argument(:aggregated_timeseries_data, _source, %{metric: metric}),
+    do: {:metric, metric}
+
+  defp get_query_or_argument(:histogram_data, %{metric: metric}, _args),
+    do: {:metric, metric}
+
+  defp get_query_or_argument(:table_data, %{metric: metric}, _args),
+    do: {:metric, metric}
+
+  # signals
+  defp get_query_or_argument(:timeseries_data, %{signal: signal}, _args),
+    do: {:signal, signal}
+
+  defp get_query_or_argument(:aggregated_timeseries_data, %{signal: signal}, _args),
+    do: {:signal, signal}
+
+  # query
+  defp get_query_or_argument(query, _source, _args), do: {:query, query}
 end

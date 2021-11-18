@@ -1148,7 +1148,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         assert res["chartEventDatetime"] != nil
         assert res["chartConfigurationForEvent"]["id"] == conf.id
 
-        {:ok, new_conf} = Sanbase.Chart.Configuration.by_id(conf.id, context.user)
+        {:ok, new_conf} =
+          Sanbase.Chart.Configuration.by_id(conf.id, querying_user_id: context.user)
 
         assert length(new_conf.chart_events) == 1
       end)

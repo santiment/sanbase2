@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
   alias Sanbase.Chart.Configuration
   alias Sanbase.Accounts.User
   alias SanbaseWeb.Graphql.SanbaseDataloader
+  alias Sanbase.Billing.Subscription
 
   require Logger
 
@@ -11,7 +12,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
 
   def chart_configuration(_root, %{id: id}, resolution) do
     user = get_in(resolution.context, [:auth, :current_user]) || %User{}
-    Configuration.by_id(id, user.id)
+    Configuration.by_id(id, querying_user_id: user.id)
   end
 
   def chart_configurations(_root, args, resolution) do
@@ -43,6 +44,50 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
   end
 
   # Mutations
+
+  def get_chart_configuration_shared_access_token(
+        _root,
+        %{chart_configuration_id: id},
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    with {_, true} <-
+           {:sanbase_pro?, Sanbase.Billing.Subscription.user_has_sanbase_pro?(user.id)},
+         {:ok, %Configuration{} = config} <- Configuration.by_id(id, querying_user_id: user.id),
+         true <- user_can_get_shared_access_token?(config, user.id),
+         {:ok, shared_access_token} <- get_or_generate_shared_access_token(config) do
+      {:ok, shared_access_token}
+    else
+      {:sanbase_pro?, false} ->
+        {:error,
+         "Generating a Shared Access Token from a chart layout is allowed only for Sanbase Pro users."}
+
+      error ->
+        error
+    end
+  end
+
+  defp get_or_generate_shared_access_token(config) do
+    case Configuration.SharedAccessToken.by_chart_configuration_id(config.id) do
+      {:ok, token} ->
+        {:ok, token}
+
+      {:error, _} ->
+        case Configuration.SharedAccessToken.generate(config) do
+          {:ok, token} -> {:ok, token}
+          {:error, error} -> {:error, error}
+        end
+    end
+  end
+
+  defp user_can_get_shared_access_token?(config, user_id) do
+    case config do
+      %Configuration{user_id: ^user_id, is_public: true} ->
+        true
+
+      %Configuration{user_id: ^user_id, is_public: false} ->
+        {:error, "Shared Access Token can be created only for a public chart configuration."}
+    end
+  end
 
   def create_chart_configuration(
         _root,

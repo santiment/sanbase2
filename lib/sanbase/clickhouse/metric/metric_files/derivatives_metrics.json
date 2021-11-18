@@ -10,7 +10,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "8h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,

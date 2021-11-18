@@ -14,11 +14,11 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       )
 
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
-    insert(:project, slug: "santiment")
+    project = insert(:project, slug: "santiment")
 
     conn = setup_jwt_auth(build_conn(), user)
 
-    {:ok, conn: conn, user: user}
+    {:ok, conn: conn, user: user, project: project}
   end
 
   describe "Create trigger" do
@@ -31,6 +31,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         trigger_settings = default_trigger_settings_string_keys()
 
         result = create_trigger(conn, settings: trigger_settings, cooldown: "23h")
+
         created_trigger = result["data"]["createTrigger"]["trigger"]
 
         # Telegram notification is sent when creation sucessful
@@ -66,7 +67,11 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       refute_receive({:telegram_to_self, _msg})
 
       assert capture_log(fn ->
-               result = create_trigger(conn, title: "Some title", settings: trigger_settings)
+               result =
+                 create_trigger(conn,
+                   title: "Some title",
+                   settings: trigger_settings
+                 )
 
                error = result["errors"] |> List.first()
 
@@ -90,7 +95,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         %{"errors" => [%{"message" => error_message}]} =
           create_trigger(conn, title: "Some title", settings: trigger_settings)
 
-        assert error_message =~ "Trigger structure is invalid. Key `settings` is not valid."
+        assert error_message =~
+                 "Trigger structure is invalid. Key `settings` is not valid."
       end) =~
         "Trigger structure is invalid."
     end
@@ -109,13 +115,19 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = create_trigger(conn, title: "Some title", settings: trigger_settings)
+
       id = result["data"]["createTrigger"]["trigger"]["id"]
 
       # Manually update the field to bypass the validations
       ut = Sanbase.Repo.get(UserTrigger, id)
 
       Ecto.Changeset.change(ut, %{
-        trigger: %{settings: %{ut.trigger.settings | "operation" => %{"asdjasldjkasd" => 1209}}}
+        trigger: %{
+          settings: %{
+            ut.trigger.settings
+            | "operation" => %{"asdjasldjkasd" => 1209}
+          }
+        }
       })
       |> Sanbase.Repo.update()
 
@@ -139,13 +151,24 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
   test "update trigger", %{user: user, conn: conn} do
     trigger_settings =
-      default_trigger_settings_string_keys() |> Map.put("operation", %{"percent_up" => 400.0})
+      default_trigger_settings_string_keys()
+      |> Map.put("operation", %{"percent_up" => 400.0})
 
     user_trigger =
-      insert(:user_trigger, user: user, trigger: %{is_public: false, settings: trigger_settings})
+      insert(:user_trigger,
+        user: user,
+        trigger: %{is_public: false, settings: trigger_settings}
+      )
 
     trigger =
-      update_trigger(conn, user_trigger.id, trigger_settings, ["tag1", "tag2"], "123h", false)
+      update_trigger(
+        conn,
+        user_trigger.id,
+        trigger_settings,
+        ["tag1", "tag2"],
+        "123h",
+        false
+      )
       |> get_in(["data", "updateTrigger", "trigger"])
 
     assert trigger["settings"] == trigger_settings
@@ -158,7 +181,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   test "remove trigger", %{user: user, conn: conn} do
     trigger_settings = default_trigger_settings_string_keys()
 
-    insert(:user_trigger, user: user, trigger: %{is_public: false, settings: trigger_settings})
+    insert(:user_trigger,
+      user: user,
+      trigger: %{is_public: false, settings: trigger_settings}
+    )
 
     user_trigger = UserTrigger.triggers_for(user) |> List.first()
     trigger_id = user_trigger.id
@@ -192,7 +218,11 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     ut =
       insert(:user_trigger,
         user: user,
-        trigger: %{is_public: false, settings: trigger_settings, title: "Some generic title"}
+        trigger: %{
+          is_public: false,
+          settings: trigger_settings,
+          title: "Some generic title"
+        }
       )
 
     trigger_id = ut.id
@@ -233,14 +263,83 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     %{"errors" => [%{"message" => error_message}]} = get_trigger_by_id(conn, ut.id)
 
-    assert error_message =~ "does not exist or it is a private trigger owned by another user"
+    assert error_message =~
+             "does not exist or it is a private trigger owned by another user"
+  end
+
+  @tag capture_log: true
+  test "deactivate trigger if telegram bot is blocked", context do
+    %{project: project, user: user} = context
+
+    trigger_settings = %{
+      type: "metric_signal",
+      metric: "active_addresses_24h",
+      target: %{slug: project.slug},
+      channel: "telegram",
+      operation: %{above: 300}
+    }
+
+    {:ok, trigger} =
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        cooldown: "12h",
+        settings: trigger_settings
+      })
+
+    {:ok, trigger2} =
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        cooldown: "12h",
+        settings: trigger_settings |> Map.put(:channel, ["telegram", "email"])
+      })
+
+    # Return a fun with arity 5 that will return different results
+    # for consecutive calls
+    mock_fun =
+      [
+        fn -> {:ok, %{project.slug => 100}} end,
+        fn -> {:ok, %{project.slug => 5000}} end
+      ]
+      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+
+    telegram_error =
+      {:error, "Telegram message not sent. Reason: user with id 1 has blocked the telegram bot."}
+
+    Sanbase.Mock.prepare_mock(
+      Sanbase.Metric,
+      :aggregated_timeseries_data,
+      mock_fun
+    )
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Telegram.send_message/2,
+      telegram_error
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      {:ok, ut1} = UserTrigger.get_trigger_by_id(user, trigger.id)
+      {:ok, ut2} = UserTrigger.get_trigger_by_id(user, trigger2.id)
+      assert ut1.trigger.is_active == true
+      assert ut2.trigger.is_active == true
+
+      Sanbase.Alert.Scheduler.run_alert(Sanbase.Alert.Trigger.MetricTriggerSettings)
+
+      # Deactivate only the alert whose only channel is telegram
+      {:ok, ut1} = UserTrigger.get_trigger_by_id(user, trigger.id)
+      {:ok, ut2} = UserTrigger.get_trigger_by_id(user, trigger2.id)
+      assert ut1.trigger.is_active == false
+      assert ut2.trigger.is_active == true
+    end)
   end
 
   test "fetches triggers for current user", %{user: user, conn: conn} do
     trigger_settings = default_trigger_settings_string_keys()
 
     %{id: id} =
-      insert(:user_trigger, user: user, trigger: %{is_public: false, settings: trigger_settings})
+      insert(:user_trigger,
+        user: user,
+        trigger: %{is_public: false, settings: trigger_settings}
+      )
 
     query = """
     {
@@ -274,8 +373,15 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     trigger_settings2 = Map.put(trigger_settings, "operation", %{"percent_up" => 400.0})
 
-    insert(:user_trigger, user: user, trigger: %{is_public: true, settings: trigger_settings})
-    insert(:user_trigger, user: user, trigger: %{is_public: false, settings: trigger_settings2})
+    insert(:user_trigger,
+      user: user,
+      trigger: %{is_public: true, settings: trigger_settings}
+    )
+
+    insert(:user_trigger,
+      user: user,
+      trigger: %{is_public: false, settings: trigger_settings2}
+    )
 
     query = """
     {
@@ -306,10 +412,18 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     user = insert(:user)
 
     trigger_settings = default_trigger_settings_string_keys()
+
     trigger_settings2 = Map.put(trigger_settings, "operation", %{"percent_up" => 400.0})
 
-    insert(:user_trigger, user: user, trigger: %{is_public: true, settings: trigger_settings})
-    insert(:user_trigger, user: user, trigger: %{is_public: false, settings: trigger_settings2})
+    insert(:user_trigger,
+      user: user,
+      trigger: %{is_public: true, settings: trigger_settings}
+    )
+
+    insert(:user_trigger,
+      user: user,
+      trigger: %{is_public: false, settings: trigger_settings2}
+    )
 
     query = """
     {
@@ -342,7 +456,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     trigger_settings = %{
       "type" => "trending_words",
       "channel" => "telegram",
-      "operation" => %{"send_at_predefined_time" => true, "trigger_time" => "12:00:00"}
+      "operation" => %{
+        "send_at_predefined_time" => true,
+        "trigger_time" => "12:00:00"
+      }
     }
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
@@ -358,7 +475,11 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
       assert created_trigger["settings"] == trigger_settings
       assert created_trigger["id"] != nil
-      assert created_trigger["tags"] == [%{"name" => "SAN"}, %{"name" => "santiment"}]
+
+      assert created_trigger["tags"] == [
+               %{"name" => "SAN"},
+               %{"name" => "santiment"}
+             ]
     end)
   end
 
@@ -368,7 +489,11 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> Sanbase.Mock.wrap_consecutives(arity: 4)
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
-    |> Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+    |> Sanbase.Mock.prepare_mock(
+      Sanbase.Metric,
+      :aggregated_timeseries_data,
+      mock_fun
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       trigger_id =
         create_trigger(context.conn,
@@ -402,7 +527,11 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> Sanbase.Mock.wrap_consecutives(arity: 4)
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
-    |> Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+    |> Sanbase.Mock.prepare_mock(
+      Sanbase.Metric,
+      :aggregated_timeseries_data,
+      mock_fun
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       create_trigger(context.conn,
         settings: default_trigger_settings_string_keys(),
@@ -440,7 +569,14 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     |> json_response(200)
   end
 
-  defp update_trigger(conn, trigger_id, trigger_settings, tags, cooldown, is_repeating) do
+  defp update_trigger(
+         conn,
+         trigger_id,
+         trigger_settings,
+         tags,
+         cooldown,
+         is_repeating
+       ) do
     tags_str = tags |> Enum.map(&"'#{&1}'") |> Enum.join(", ")
     trigger_settings_json = trigger_settings |> Jason.encode!()
 

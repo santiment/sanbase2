@@ -71,7 +71,7 @@ defmodule Sanbase.Alert.RawSignalTriggerSettingsTest do
 
       raw_data_result = {:ok, [%{slug: other_project.slug}]}
 
-      {:ok, trigger} = create_user_trigger(user, settings)
+      {:ok, _trigger} = create_user_trigger(user, settings)
 
       Sanbase.Mock.prepare_mock2(&Sanbase.Signal.raw_data/4, raw_data_result)
       |> Sanbase.Mock.run_with_mocks(fn ->

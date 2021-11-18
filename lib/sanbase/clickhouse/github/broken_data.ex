@@ -2,6 +2,8 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter.BrokenData do
   @json_file "broken_data.json"
   @external_resource json_file = Path.join(__DIR__, @json_file)
 
+  _force_atoms_existence = [:why, :what, :notes, :actions_to_fix, :from, :to]
+
   @broken_data File.read!(json_file)
                |> Jason.decode!()
                |> Sanbase.MapUtils.atomize_keys()

@@ -224,12 +224,9 @@ defmodule Sanbase.Alert.Scheduler do
   end
 
   defp deactivate_non_repeating(triggers) do
-    for %UserTrigger{id: id, user: user, trigger: %{is_repeating: false}} <-
+    for %UserTrigger{id: ut_id, user: user, trigger: %{is_repeating: false}} <-
           triggers do
-      UserTrigger.update_user_trigger(user, %{
-        id: id,
-        is_active: false
-      })
+      UserTrigger.update_is_active(ut_id, user, false)
     end
   end
 

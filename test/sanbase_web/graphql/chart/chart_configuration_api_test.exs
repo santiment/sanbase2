@@ -68,34 +68,67 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         create_chart_configuration(conn, settings)
         |> get_in(["data", "createChartConfiguration"])
 
-      %{"data" => %{"vote" => vote_result}} = vote(conn, config["id"])
-      voted_at = vote_result["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert config_res["votedAt"] == nil
 
-      assert Sanbase.TestUtils.datetime_close_to(
-               voted_at,
-               Timex.now(),
-               seconds: 2
-             )
-
-      assert vote_result["votes"] == %{
-               "currentUserVotes" => 1,
-               "totalVoters" => 1,
-               "totalVotes" => 1
+      assert config_res["votes"] == %{
+               "currentUserVotes" => 0,
+               "totalVoters" => 0,
+               "totalVotes" => 0
              }
 
-      %{"data" => %{"vote" => vote_result}} = vote(conn, config["id"])
+      %{"data" => %{"vote" => vote}} = vote(conn, config["id"], direction: :up)
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert config_res["votedAt"] == vote["votedAt"]
+      voted_at = vote["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      assert Sanbase.TestUtils.datetime_close_to(voted_at, Timex.now(), seconds: 2)
+      assert vote["votes"] == config_res["votes"]
+      assert vote["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
 
-      assert vote_result["votes"] == %{
-               "currentUserVotes" => 2,
-               "totalVoters" => 1,
-               "totalVotes" => 2
-             }
+      %{"data" => %{"vote" => vote}} = vote(conn, config["id"], direction: :up)
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert vote["votes"] == config_res["votes"]
+      assert vote["votes"] == %{"currentUserVotes" => 2, "totalVoters" => 1, "totalVotes" => 2}
+
+      %{"data" => %{"unvote" => vote}} = vote(conn, config["id"], direction: :down)
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert vote["votes"] == config_res["votes"]
+      assert vote["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
+
+      %{"data" => %{"unvote" => vote}} = vote(conn, config["id"], direction: :down)
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert vote["votes"] == config_res["votes"]
+      assert vote["votedAt"] == nil
+      assert vote["votes"] == %{"currentUserVotes" => 0, "totalVoters" => 0, "totalVotes" => 0}
     end
 
-    defp vote(conn, chart_configuration_id) do
+    defp get_chart_configuration_votes(conn, chart_configuration_id) do
+      query = """
+      {
+        chartConfiguration(id: #{chart_configuration_id}){
+          id
+          votedAt
+          votes { currentUserVotes totalVotes totalVoters }
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+      |> get_in(["data", "chartConfiguration"])
+    end
+
+    defp vote(conn, chart_configuration_id, opts) do
+      function =
+        case Keyword.get(opts, :direction, :up) do
+          :up -> "vote"
+          :down -> "unvote"
+        end
+
       mutation = """
       mutation {
-        vote(chartConfigurationId: #{chart_configuration_id}){
+        #{function}(chartConfigurationId: #{chart_configuration_id}){
           votedAt
           votes { currentUserVotes totalVotes totalVoters }
         }

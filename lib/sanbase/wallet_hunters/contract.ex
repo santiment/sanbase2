@@ -41,7 +41,7 @@ defmodule Sanbase.WalletHunters.Contract do
   def get_trx_by_id(trx_id) do
     maybe_replace_rinkeby(
       fn ->
-        Logger.info("[Parity] Get eth transaction by hash via Ethereumex client.")
+        Logger.info("[EthNode] Get eth transaction by hash via Ethereumex client.")
         Ethereumex.HttpClient.eth_get_transaction_by_hash(trx_id)
       end,
       :eth_get_transaction_by_hash
@@ -51,34 +51,10 @@ defmodule Sanbase.WalletHunters.Contract do
   def get_trx_receipt_by_id(trx_id) do
     maybe_replace_rinkeby(
       fn ->
-        Logger.info("[Parity] Get eth transaction receipt via Ethereumex client.")
+        Logger.info("[EthNode] Get eth transaction receipt via Ethereumex client.")
         Ethereumex.HttpClient.eth_get_transaction_receipt(trx_id)
       end,
       :eth_get_transaction_receipt
-    )
-  end
-
-  def get_event_filter_id(event_name, opts \\ []) do
-    default_from_block = if contract() == @mainnet_contract, do: @mainnet_start_block, else: "0x1"
-    address = Keyword.get(opts, :address, contract())
-    from_block = Keyword.get(opts, :from_block, default_from_block)
-    to_block = Keyword.get(opts, :to_block, "latest")
-
-    maybe_replace_rinkeby(
-      fn ->
-        Logger.info("[Parity] Get eth new filter via Ethereumex client.")
-
-        {:ok, filter_id} =
-          Ethereumex.HttpClient.eth_new_filter(%{
-            address: address,
-            fromBlock: from_block,
-            toBlock: to_block,
-            topics: [event_signature(event_name)]
-          })
-
-        filter_id
-      end,
-      :get_event_filter_id
     )
   end
 
@@ -104,13 +80,11 @@ defmodule Sanbase.WalletHunters.Contract do
     end)
   end
 
-  def fetch_all_events(event_name, opts \\ []) do
-    filter_id = get_event_filter_id(event_name, opts)
-
+  def fetch_all_events(event_name) do
     maybe_replace_rinkeby(
       fn ->
-        Logger.info("[Parity] Get eth filter logs via Ethereumex client.")
-        Ethereumex.HttpClient.eth_get_filter_logs(filter_id)
+        Logger.info("[EthNode] Call eth_get_logs via Ethereumex client.")
+        Ethereumex.HttpClient.eth_get_logs(%{topics: [event_signature(event_name)]})
       end,
       :fetch_all_events
     )

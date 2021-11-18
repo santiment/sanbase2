@@ -55,7 +55,7 @@ alias Sanbase.{
 
 alias Sanbase.InternalServices.{
   Ethauth,
-  Parity
+  EthNode
 }
 
 alias Sanbase.ExternalServices.Coinmarketcap.{

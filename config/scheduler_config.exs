@@ -135,6 +135,23 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "15 * * * *",
       task: {Sanbase.Model.Project.SocialVolumeQuery.CronJob, :run, []}
     ],
+    warm_up_wallet_hunters: [
+      # fetch proposals count to warm up infura cache
+      schedule: "@minutely",
+      task: {Sanbase.WalletHunters.Contract, :wallet_proposals_count, []}
+    ],
+    poll_pending_wallet_hunters_proposal_transactions: [
+      schedule: "5 * * * *",
+      task: {Sanbase.WalletHunters.Proposal, :poll_pending_transactions, []}
+    ],
+    update_earned_relays: [
+      schedule: "8 * * * *",
+      task: {Sanbase.WalletHunters.Proposal, :update_earned_relays, []}
+    ],
+    poll_pending_wallet_hunters_vote_transactions: [
+      schedule: "6 * * * *",
+      task: {Sanbase.WalletHunters.Vote, :poll_pending_transactions, []}
+    ],
     scrape_cryptocompare_market_pairs: [
       schedule: "@daily",
       task: {Sanbase.Cryptocompare.Markets.Scraper, :run, []}

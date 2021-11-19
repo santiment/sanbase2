@@ -38,6 +38,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     Product
   }
 
+  @freely_available_slugs ["santiment"]
   @minimal_datetime_param ~U[2009-01-01 00:00:00Z]
   @extension_metrics AccessChecker.extension_metrics()
   @extension_metric_product_map GraphqlSchema.extension_metric_product_map()
@@ -57,6 +58,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # and `to` params. This includes checks that `to` is after `from` and that
   # both are after 2009-01-01T00:00:00Z.
   defp check_has_access(%Resolution{context: %{auth: %{auth_method: :basic}}} = resolution, _opts) do
+    resolution
+    |> check_from_to_params_sanity()
+  end
+
+  defp check_has_access(%Resolution{arguments: %{slug: slug}} = resolution, _opts)
+       when is_binary(slug) and slug in @freely_available_slugs do
     resolution
     |> check_from_to_params_sanity()
   end

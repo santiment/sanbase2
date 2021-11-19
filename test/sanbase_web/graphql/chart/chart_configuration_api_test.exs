@@ -161,7 +161,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["project"]["slug"] == project.slug
       assert config["user"]["id"] |> String.to_integer() == user.id
       assert config["user"]["email"] == user.email
-      assert config["post"]["id"] |> String.to_integer() == post.id
+      assert config["post"]["id"] == post.id
       assert config["post"]["title"] == post.title
     end
 
@@ -212,7 +212,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["drawings"] == new_settings.drawings
       assert config["queries"] == new_settings.queries
       assert config["options"] == new_settings.options
-      assert config["post"]["id"] |> String.to_integer() == new_settings.post_id
+      assert config["post"]["id"] == new_settings.post_id
       assert config["post"]["title"] == new_post.title
     end
 
@@ -303,7 +303,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["project"]["slug"] == project.slug
       assert config["user"]["id"] |> String.to_integer() == user.id
       assert config["user"]["email"] == user.email
-      assert config["post"]["id"] |> String.to_integer() == post.id
+      assert config["post"]["id"] == post.id
       assert config["post"]["title"] == post.title
     end
 

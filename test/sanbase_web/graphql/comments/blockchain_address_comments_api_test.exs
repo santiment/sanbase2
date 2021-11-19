@@ -108,7 +108,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressCommentsApiTest do
 
     [comment, subcomment1, subcomment2] =
       get_comments(conn, blockchain_address.id, @opts)
-      |> Enum.sort_by(&(&1["id"] |> String.to_integer()))
+      |> Enum.sort_by(& &1["id"])
 
     assert comment["parentId"] == nil
     assert comment["rootParentId"] == nil

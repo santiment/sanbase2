@@ -14,9 +14,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
 
   enum :social_dominance_sources do
     value(:telegram)
-    value(:professional_traders_chat)
     value(:reddit)
-    value(:discord)
     value(:all)
   end
 
@@ -29,18 +27,13 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
 
   enum :social_volume_type do
     value(:reddit_comments_overview)
-    value(:professional_traders_chat_overview)
     value(:telegram_chats_overview)
     value(:telegram_discussion_overview)
-    value(:discord_discussion_overview)
-    value(:discord_chats_overview)
   end
 
   enum :topic_search_sources do
     value(:telegram)
-    value(:professional_traders_chat)
     value(:reddit)
-    value(:discord)
   end
 
   object :popular_search_term do

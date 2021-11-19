@@ -123,6 +123,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :twitter_data,
           :uniswap_value_distribution,
           :uniswap_who_claimed,
+          :upcoming_invoice,
           :user_list,
           :wallet_hunters_proposal,
           :wallet_hunters_proposals,

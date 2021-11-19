@@ -1,12 +1,12 @@
 defmodule Sanbase.Billing.Invoices.Download do
   def run() do
-    for year <- [2020, 2021] do
-      for month <- 1..12 do
-        if year == 2021 and month > 11 do
-          :ok
-        else
-          get({month, year})
-        end
+    now = DateTime.utc_now()
+
+    for year <- 2020..now.year, month <- 1..12 do
+      if year == now.year and month > now.month do
+        :ok
+      else
+        get({month, year})
       end
     end
   end

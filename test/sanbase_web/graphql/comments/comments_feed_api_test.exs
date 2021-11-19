@@ -107,19 +107,19 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
              %{
                "blockchainAddress" => nil,
                "content" => timeline_event_comment.content,
-               "id" => timeline_event_comment.id |> Integer.to_string(),
+               "id" => timeline_event_comment.id,
                "insertedAt" =>
                  timeline_event_comment.inserted_at
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
                "insight" => nil,
                "shortUrl" => nil,
-               "timelineEvent" => %{"id" => context.timeline_event.id |> Integer.to_string()}
+               "timelineEvent" => %{"id" => context.timeline_event.id}
              },
              %{
                "blockchainAddress" => nil,
                "content" => short_url_comment.content,
-               "id" => short_url_comment.id |> Integer.to_string(),
+               "id" => short_url_comment.id,
                "insertedAt" =>
                  short_url_comment.inserted_at
                  |> DateTime.from_naive!("Etc/UTC")
@@ -134,7 +134,7 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  "id" => context.blockchain_address.id
                },
                "content" => ba_comment.content,
-               "id" => ba_comment.id |> Integer.to_string(),
+               "id" => ba_comment.id,
                "insertedAt" =>
                  ba_comment.inserted_at
                  |> DateTime.from_naive!("Etc/UTC")
@@ -146,12 +146,12 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
              %{
                "blockchainAddress" => nil,
                "content" => insight_comment.content,
-               "id" => insight_comment.id |> Integer.to_string(),
+               "id" => insight_comment.id,
                "insertedAt" =>
                  insight_comment.inserted_at
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
-               "insight" => %{"id" => context.insight.id |> Integer.to_string()},
+               "insight" => %{"id" => context.insight.id},
                "shortUrl" => nil,
                "timelineEvent" => nil
              }

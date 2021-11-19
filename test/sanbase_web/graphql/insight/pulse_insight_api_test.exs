@@ -62,12 +62,12 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     expected_insights =
       [
         %{
-          "id" => "#{published.id}",
+          "id" => published.id,
           "readyState" => "#{published.ready_state}",
           "text" => "#{published.text}"
         },
         %{
-          "id" => "#{draft.id}",
+          "id" => draft.id,
           "readyState" => "#{draft.ready_state}",
           "text" => "#{draft.text}"
         }
@@ -324,7 +324,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     result = execute_query(build_conn(), query, "allInsights") |> Enum.sort_by(& &1["id"])
 
     assert result ==
-             [%{"id" => "#{post.id}"}, %{"id" => "#{post3.id}"}] |> Enum.sort_by(& &1["id"])
+             [%{"id" => post.id}, %{"id" => post3.id}] |> Enum.sort_by(& &1["id"])
   end
 
   describe "create pulse insight" do

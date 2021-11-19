@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
   end
 
   object :comments_feed_item do
-    field(:id, non_null(:id))
+    field(:id, non_null(:integer))
     field(:insight, :post)
     field(:short_url, :short_url)
     field(:timeline_event, :timeline_event)
@@ -28,41 +28,41 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
       resolve(&UserResolver.user_no_preloads/3)
     end
 
-    field(:parent_id, :id)
-    field(:root_parent_id, :id)
+    field(:parent_id, :integer)
+    field(:root_parent_id, :integer)
     field(:subcomments_count, :integer)
     field(:inserted_at, non_null(:datetime))
     field(:edited_at, :datetime)
   end
 
   object :comment do
-    field(:id, non_null(:id))
+    field(:id, non_null(:integer))
 
-    field :insight_id, non_null(:id) do
+    field :insight_id, non_null(:integer) do
       cache_resolve(&CommentEntityIdResolver.insight_id/3)
     end
 
-    field :timeline_event_id, non_null(:id) do
+    field :timeline_event_id, non_null(:integer) do
       cache_resolve(&CommentEntityIdResolver.timeline_event_id/3)
     end
 
-    field :blockchain_address_id, non_null(:id) do
+    field :blockchain_address_id, non_null(:integer) do
       cache_resolve(&CommentEntityIdResolver.blockchain_address_id/3)
     end
 
-    field :proposal_id, non_null(:id) do
+    field :proposal_id, non_null(:integer) do
       cache_resolve(&CommentEntityIdResolver.proposal_id/3)
     end
 
-    field :watchlist_id, non_null(:id) do
+    field :watchlist_id, non_null(:integer) do
       cache_resolve(&CommentEntityIdResolver.watchlist_id/3)
     end
 
-    field :chart_configuration_id, non_null(:id) do
+    field :chart_configuration_id, non_null(:integer) do
       cache_resolve(&CommentEntityIdResolver.chart_configuration_id/3)
     end
 
-    field :short_url_id, non_null(:id) do
+    field :short_url_id, non_null(:integer) do
       cache_resolve(&CommentEntityIdResolver.short_url_id/3)
     end
 
@@ -72,8 +72,8 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
       resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
     end
 
-    field(:parent_id, :id)
-    field(:root_parent_id, :id)
+    field(:parent_id, :integer)
+    field(:root_parent_id, :integer)
     field(:subcomments_count, :integer)
     field(:inserted_at, non_null(:datetime))
     field(:edited_at, :datetime)

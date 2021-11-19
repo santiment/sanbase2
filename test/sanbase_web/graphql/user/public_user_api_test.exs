@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "id" => "#{user.id}",
                  "insightsCount" => %{"totalCount" => 1, "pulseCount" => 1, "paywallCount" => 0},
                  "insights" => [
-                   %{"id" => "#{post.id}"}
+                   %{"id" => post.id}
                  ],
                  "triggers" => [],
                  "username" => "#{user.username}",

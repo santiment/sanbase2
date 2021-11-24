@@ -179,6 +179,12 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     assert error_msg =~ "Blockchain address pair with 15123123 does not exist"
   end
 
+  describe "add labels to blockchain address" do
+    test "when success", context do
+      assert add_blockchain_address_labels(context.conn, "0x1", ["whale", "dex trader"])
+    end
+  end
+
   defp blockchain_address(conn, selector) do
     query = """
     {
@@ -250,5 +256,18 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     conn
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)
+  end
+
+  defp add_blockchain_address_labels(conn, address, labels) do
+    mutation = """
+    mutation {
+      addBlockchainAddressLabels(
+        address: "#{address}"
+        labels: #{string_list_to_string(labels)}
+      )
+    }
+    """
+
+    execute_mutation(conn, mutation)
   end
 end

@@ -127,6 +127,15 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> Map.get("message")
   end
 
+  def execute_mutation(conn, mutation) do
+    [_, mutation_name] = Regex.run(~r/^\s*mutation\s*\{\s*([\w]+)\s*\(/, mutation)
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+    |> get_in(["data", mutation_name])
+  end
+
   def execute_mutation(conn, query, query_name) do
     conn
     |> post("/graphql", mutation_skeleton(query))

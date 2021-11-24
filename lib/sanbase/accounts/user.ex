@@ -272,9 +272,9 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
-  def ascii_string?(nil), do: true
+  def ascii_string_or_nil?(nil), do: true
 
-  def ascii_string?(username) do
+  def ascii_string_or_nil?(username) do
     username
     |> String.to_charlist()
     |> List.ascii_printable?()
@@ -297,21 +297,15 @@ defmodule Sanbase.Accounts.User do
     |> String.trim()
   end
 
-  defp validate_name_change(_, name) do
-    if ascii_string?(name) do
-      []
-    else
-      [name: "Name can contain only valid ASCII symbols."]
+  defp validate_ascii_or_nil_field(name, value) when is_atom(name) do
+    case ascii_string_or_nil?(value) do
+      true -> []
+      false -> [{name, "#{name} can contain only valid ASCII symbols."}]
     end
   end
 
-  defp validate_username_change(_, username) do
-    if ascii_string?(username) do
-      []
-    else
-      [username: "Username can contain only valid ASCII symbols."]
-    end
-  end
+  defp validate_name_change(_, name), do: validate_ascii_or_nil_field(:name, name)
+  defp validate_username_change(_, username), do: validate_ascii_or_nil_field(:username, username)
 
   defp validate_email_candidate_change(_, email_candidate) do
     if Repo.get_by(User, email: email_candidate) do

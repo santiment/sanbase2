@@ -9,13 +9,13 @@ defmodule Sanbase.EventBus.EventValidation do
   ## Accounts Events
   #############################################################################
   def valid?(%{event_type: :update_username, user_id: id, old_username: old, new_username: new}),
-    do: valid_integer_id?(id) and valid_string_field_change?(old, new)
+    do: valid_integer_id?(id) and valid_maybe_nil_string_field_change?(old, new)
 
   def valid?(%{event_type: :update_name, user_id: id, old_name: old, new_name: new}),
-    do: valid_integer_id?(id) and valid_string_field_change?(old, new)
+    do: valid_integer_id?(id) and valid_maybe_nil_string_field_change?(old, new)
 
   def valid?(%{event_type: :update_email, user_id: id, old_email: old, new_email: new}),
-    do: valid_integer_id?(id) and valid_string_field_change?(old, new)
+    do: valid_integer_id?(id) and valid_maybe_nil_string_field_change?(old, new)
 
   def valid?(%{event_type: :update_email_candidate, user_id: id, email_candidate: email}),
     do: valid_integer_id?(id) and is_binary(email)
@@ -200,8 +200,10 @@ defmodule Sanbase.EventBus.EventValidation do
 
   defp valid_integer_id?(id), do: is_integer(id) and id > 0
   defp valid_string_id?(id), do: is_binary(id) and id != ""
-  defp valid_string_field_change?(nil, new), do: is_binary(new)
   defp valid_string_field_change?(old, new), do: is_binary(old) and is_binary(new) and old != new
+
+  defp valid_maybe_nil_string_field_change?(old, new),
+    do: (is_nil(old) or is_binary(old)) and (is_nil(new) or is_binary(new)) and old != new
 
   defp valid_subscription_stripe_id?(%{type: :liquidity_subscription, stripe_subscription_id: id}),
     do: is_nil(id) or valid_string_id?(id)

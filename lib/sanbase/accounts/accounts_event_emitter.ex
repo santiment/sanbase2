@@ -21,6 +21,11 @@ defmodule Sanbase.Accounts.EventEmitter do
     |> notify()
   end
 
+  def handle_event({:ok, user}, :update_name, %{old_name: _, new_name: _} = args) do
+    Map.merge(%{event_type: :update_name, user_id: user.id}, args)
+    |> notify()
+  end
+
   def handle_event({:ok, user}, :update_username, %{old_username: _, new_username: _} = args) do
     Map.merge(%{event_type: :update_username, user_id: user.id}, args)
     |> notify()

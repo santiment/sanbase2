@@ -38,6 +38,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&UserResolver.email/3)
     end
 
+    field(:name, :string)
     field(:username, :string)
     field(:avatar_url, :string)
 
@@ -82,6 +83,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   object :user do
     field(:id, non_null(:id))
     field(:email, :string)
+    field(:name, :string)
     field(:username, :string)
     field(:consent_id, :string)
     field(:privacy_policy_accepted, :boolean)

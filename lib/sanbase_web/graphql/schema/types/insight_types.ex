@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
   end
 
   object :post do
-    field(:id, non_null(:id))
+    field(:id, non_null(:integer))
 
     field :user, non_null(:public_user) do
       resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)

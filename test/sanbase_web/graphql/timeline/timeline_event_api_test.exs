@@ -1003,6 +1003,6 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     result
     |> hd()
     |> Map.get("events", [])
-    |> Enum.map(&String.to_integer(&1["id"]))
+    |> Enum.map(& &1["id"])
   end
 end

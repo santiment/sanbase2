@@ -186,6 +186,30 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       assert {"x-ratelimit-remaining", "0"} in response.resp_headers
     end
 
+    test "concurrent update of the stored values", context do
+      insert(:subscription_pro, user: context.user)
+      Sanbase.ApiCallLimit.update_usage(:user, context.user, 0, :apikey)
+
+      iterations = 100
+      api_calls_per_iteration = 5
+
+      Sanbase.Parallel.map(
+        1..iterations,
+        fn _ ->
+          {:ok, updated} =
+            Sanbase.ApiCallLimit.update_usage_db(:user, context.user, api_calls_per_iteration)
+        end,
+        max_concurrency: 30
+      )
+
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
+      this_month_limit = Enum.max(Map.values(quota.api_calls_limits))
+
+      this_month_remaining = Enum.max(Map.values(quota.api_calls_remaining))
+
+      assert this_month_remaining == this_month_limit - iterations * api_calls_per_iteration
+    end
+
     test "make many concurrent api calls - all succeed", context do
       insert(:subscription_pro, user: context.user)
       Sanbase.ApiCallLimit.update_usage(:user, context.user, 0, :apikey)

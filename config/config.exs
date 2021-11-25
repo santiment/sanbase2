@@ -125,6 +125,10 @@ config :tesla,
   adapter: Tesla.Adapter.Hackney,
   recv_timeout: 30_000
 
+config :sanbase, Sanbase.ApiCallLimit,
+  quota_size: 100,
+  quota_size_max_offset: 100
+
 config :sanbase, Sanbase.InternalServices.Ethauth,
   url: {:system, "ETHAUTH_URL"},
   basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},

@@ -21,6 +21,10 @@ defmodule Sanbase.ApiCallLimit.ETS do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
   end
 
+  @doc ~s"""
+  Start the ETS table that holds the in-memory api call limit data.
+  Such a table is used on every sanbase-web pod
+  """
   @impl true
   def init(_opts) do
     ets_table =
@@ -69,60 +73,73 @@ defmodule Sanbase.ApiCallLimit.ETS do
   # Private functions
 
   defp do_get_quota(entity_type, entity, entity_key) do
-    case :ets.lookup(@ets_table, entity_key) do
-      [] ->
-        get_quota_db_and_update_ets(entity_type, entity, entity_key)
+    lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity, entity_key}, 5_000)
 
-      [{^entity_key, :rate_limited, error_map}] ->
-        # Try again after `retry_again_after` datetime in case something changed.
-        # This handles cases where the data changed without a plan upgrade, for
-        # example changing the `has_limits` in the admin panel manually.
-        # User plan upgrades are handled separately by clearing the ETS records
-        # for the user.
-        now = DateTime.utc_now()
+    result =
+      case :ets.lookup(@ets_table, entity_key) do
+        [] ->
+          # No data stored yet. Initialize by checking the postgres
+          get_quota_db_and_update_ets(entity_type, entity, entity_key)
 
-        case DateTime.compare(now, error_map.retry_again_after) do
-          :lt ->
-            # Update the `blocked_for_seconds` field in order to properly return
-            # the report the time left until unblocked
-            error_map =
-              error_map
-              |> Map.put(
-                :blocked_for_seconds,
-                abs(DateTime.diff(error_map.blocked_until, now))
-              )
+        [{^entity_key, :rate_limited, error_map}] ->
+          # Try again after `retry_again_after` datetime in case something changed.
+          # This handles cases where the data changed without a plan upgrade, for
+          # example changing the `has_limits` in the admin panel manually.
+          # User plan upgrades are handled separately by clearing the ETS records
+          # for the user.
+          now = DateTime.utc_now()
 
-            {:error, error_map}
+          case DateTime.compare(now, error_map.retry_again_after) do
+            :lt ->
+              # Update the `blocked_for_seconds` field in order to properly return
+              # the report the time left until unblocked
+              error_map =
+                error_map
+                |> Map.put(
+                  :blocked_for_seconds,
+                  abs(DateTime.diff(error_map.blocked_until, now))
+                )
 
-          _ ->
-            get_quota_db_and_update_ets(entity_type, entity, entity_key)
-        end
+              {:error, error_map}
 
-      [{^entity_key, :infinity, :infinity, metadata, _refresh_after}] ->
-        {:ok, %{metadata | quota: :infinity}}
+            _ ->
+              get_quota_db_and_update_ets(entity_type, entity, entity_key)
+          end
 
-      [{^entity_key, api_calls_remaining, quota, _metadata, _refresh_after}]
-      when api_calls_remaining <= 0 ->
-        # quota - api_calls_remaining works both with positive and negative api calls
-        # remaining.
-        {:ok, _} =
-          ApiCallLimit.update_usage_db(
-            entity_type,
-            entity,
-            quota - api_calls_remaining
-          )
+        [{^entity_key, :infinity, :infinity, metadata, _refresh_after}] ->
+          # The entity does not have rate limits applied
+          {:ok, %{metadata | quota: :infinity}}
 
-        get_quota_db_and_update_ets(entity_type, entity, entity_key)
+        [{^entity_key, api_calls_remaining, quota, _metadata, _refresh_after}]
+        when api_calls_remaining <= 0 ->
+          # The in-memory quota has been exhausted. The api calls made are
+          # recorded in postgres and a new quota is obtained. api_calls_remaining
+          # works both with positive and negative api calls remaining.
+          {:ok, _} =
+            ApiCallLimit.update_usage_db(
+              entity_type,
+              entity,
+              quota - api_calls_remaining
+            )
 
-      [{^entity_key, api_calls_remaining, _quota, metadata, refresh_after}] ->
-        case DateTime.compare(DateTime.utc_now(), refresh_after) do
-          :gt -> get_quota_db_and_update_ets(entity_type, entity, entity_key)
-          _ -> {:ok, %{metadata | quota: api_calls_remaining}}
-        end
-    end
+          get_quota_db_and_update_ets(entity_type, entity, entity_key)
+
+        [{^entity_key, api_calls_remaining, _quota, metadata, refresh_after}] ->
+          # The in-memory quota is not exhausted.
+          case DateTime.compare(DateTime.utc_now(), refresh_after) do
+            :gt -> get_quota_db_and_update_ets(entity_type, entity, entity_key)
+            _ -> {:ok, %{metadata | quota: api_calls_remaining}}
+          end
+      end
+
+    Mutex.release(Sanbase.ApiCallLimitMutex, lock)
+
+    result
   end
 
   defp do_update_usage(entity_type, entity, entity_key, count) do
+    lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity, entity_key}, 5_000)
+
     case :ets.lookup(@ets_table, entity_key) do
       [] ->
         {:ok, _} = ApiCallLimit.update_usage_db(entity_type, entity, count)
@@ -134,44 +151,22 @@ defmodule Sanbase.ApiCallLimit.ETS do
       [{^entity_key, :infinity, :infinity, _metadata, _refresh_after}] ->
         :ok
 
-      [{^entity_key, api_calls_remaining, _quota, _metadata, _refresh_after}]
-      when api_calls_remaining <= count ->
-        # If 2+ processes execute :ets.lookup/2 at the same time with the same key
-        # it could happen that both processes enter this path. This will lead to
-        # updating the DB more than once, thus leading to storing more api calls
-        # than the user actually made.
-        # This issue is not neatly solved by using a mutex so the read/writes
-        # happen sequentially. A better solution would be sought that uses
-        # techniques similar to CAS operation.
-
-        lock = Mutex.await(Sanbase.ApiCallLimitMutex, entity_key, 5_000)
-
-        # Do another lookup do re-fetch the data in case we waited for the
-        # mutex while some other process was doing work here.
-        [{^entity_key, api_calls_remaining, quota, metadata, _refresh_after}] =
-          :ets.lookup(@ets_table, entity_key)
-
-        if api_calls_remaining <= count do
-          # Update the value with the number of API calls made so far. This is the
-          # number of the difference between the quota gained and the api calls left
-          # plus the number of count that are being processed right now
-          api_calls_made = quota - api_calls_remaining + count
-
-          {:ok, _} = ApiCallLimit.update_usage_db(entity_type, entity, api_calls_made)
-
-          get_quota_db_and_update_ets(entity_type, entity, entity_key)
-        else
-          true = do_upate_ets_usage(entity_key, api_calls_remaining, count, metadata)
-        end
-
-        Mutex.release(Sanbase.ApiCallLimitMutex, lock)
+      [{^entity_key, :rate_limited, _error_map}] ->
         :ok
+
+      [{^entity_key, api_calls_remaining, quota, _metadata, _refresh_after}]
+      when api_calls_remaining <= count ->
+        api_calls_made = quota - api_calls_remaining + count
+        {:ok, _} = ApiCallLimit.update_usage_db(entity_type, entity, api_calls_made)
+        get_quota_db_and_update_ets(entity_type, entity, entity_key)
 
       [{^entity_key, api_calls_remaining, _quota, metadata, _refresh_after}] ->
         true = do_upate_ets_usage(entity_key, api_calls_remaining, count, metadata)
 
         :ok
     end
+
+    Mutex.release(Sanbase.ApiCallLimitMutex, lock)
   end
 
   defp do_upate_ets_usage(entity_key, api_calls_remaining, count, metadata) do
@@ -197,7 +192,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
   defp get_quota_db_and_update_ets(entity_type, entity, entity_key) do
     case ApiCallLimit.get_quota_db(entity_type, entity) do
       {:ok, %{quota: quota} = metadata} ->
-        now = Timex.now()
+        now = DateTime.utc_now()
         refresh_after = Timex.shift(now, seconds: 60 - now.second)
 
         true =

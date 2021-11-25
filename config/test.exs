@@ -18,6 +18,10 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   level: :warn
 
+config :sanbase, Sanbase.ApiCallLimit,
+  quota_size: 10,
+  quota_size_max_offset: 10
+
 # Test adapter that allows mocking
 config :tesla, adapter: Tesla.Mock
 

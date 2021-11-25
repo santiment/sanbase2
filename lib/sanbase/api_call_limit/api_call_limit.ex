@@ -9,6 +9,8 @@ defmodule Sanbase.ApiCallLimit do
 
   require Logger
 
+  @quota_size_base Application.compile_env(:sanbase, [__MODULE__, :quota_size])
+  @quota_size_max_offset Application.compile_env(:sanbase, [__MODULE__, :quota_size_max_offset])
   @compile inline: [by_user: 1, by_remote_ip: 1]
 
   @plans_without_limits ["sanapi_enterprise", "sanapi_premium", "sanapi_custom"]
@@ -85,23 +87,54 @@ defmodule Sanbase.ApiCallLimit do
   defdelegate update_usage(type, entity, count, auth_method), to: __MODULE__.ETS
 
   def get_quota_db(type, entity) do
-    case get_by(type, entity) do
-      nil ->
-        {:ok, %__MODULE__{} = acl} = create(type, entity)
-        do_get_quota(acl)
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_acl, fn _repo, _changes ->
+      # {:ok, nil} | {:ok, %__MODULE__{}}
+      {:ok, get_by(type, entity)}
+    end)
+    |> Ecto.Multi.run(:create_acl, fn _repo, %{get_acl: acl} ->
+      case acl do
+        nil ->
+          {:ok, %__MODULE__{} = acl} = create(type, entity)
+          {:ok, acl}
 
-      %__MODULE__{has_limits: false} ->
-        {:ok, %{quota: :infinity}}
-
-      %__MODULE__{} = acl ->
-        do_get_quota(acl)
+        %__MODULE__{} = acl ->
+          {:ok, acl}
+      end
+    end)
+    |> Ecto.Multi.run(:get_quota, fn _repo, %{create_acl: acl} ->
+      do_get_quota(acl)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{get_quota: quota}} -> {:ok, quota}
+      {:error, _name, error, _} -> {:error, error}
     end
   end
 
   def update_usage_db(type, entity, count) do
-    case get_by(type, entity) do
-      nil -> create(type, entity, count)
-      %__MODULE__{} = acl -> do_update_usage_db(acl, count)
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_acl, fn _repo, _changes ->
+      # {:ok, nil} | {:ok, %__MODULE__{}}
+      {:ok, get_by(type, entity)}
+    end)
+    |> Ecto.Multi.run(:create_acl, fn _repo, %{get_acl: acl} ->
+      case acl do
+        nil ->
+          {:ok, %__MODULE__{} = acl} = create(type, entity)
+          {:ok, acl}
+
+        %__MODULE__{} = acl ->
+          {:ok, acl}
+      end
+    end)
+    |> Ecto.Multi.run(:update_quota, fn _repo, %{create_acl: acl} ->
+      do_update_usage_db(acl, count)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_quota: quota}} -> {:ok, quota}
+      {:error, _name, error, _} -> {:error, error}
     end
   end
 
@@ -151,7 +184,7 @@ defmodule Sanbase.ApiCallLimit do
   defp by_remote_ip(remote_ip), do: Repo.get_by(__MODULE__, remote_ip: remote_ip)
 
   defp get_time_str_keys() do
-    now = Timex.now()
+    now = DateTime.utc_now()
 
     %{
       month_str: now |> Timex.beginning_of_month() |> to_string(),
@@ -205,11 +238,11 @@ defmodule Sanbase.ApiCallLimit do
     }
 
     min_remaining = api_calls_remaining |> Map.values() |> Enum.min()
-    quota_size = :rand.uniform(100) + 100
+    quota_size = @quota_size_base + :rand.uniform(@quota_size_max_offset)
 
     case Enum.min([quota_size, min_remaining]) do
       0 ->
-        now = Timex.now()
+        now = DateTime.utc_now()
 
         blocked_for_seconds =
           cond do

@@ -213,7 +213,8 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
   end
 
   test "Change name of current user", %{conn: conn} do
-    new_name = "new_name_changed"
+    # allow non-ascii symbols as well
+    new_name = "new име utf8 José"
 
     mutation = """
     mutation {

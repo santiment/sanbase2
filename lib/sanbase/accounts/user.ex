@@ -297,6 +297,9 @@ defmodule Sanbase.Accounts.User do
     |> String.trim()
   end
 
+  defp validate_name_change(_, name), do: validate_utf8_string_field(:name, name)
+  defp validate_username_change(_, username), do: validate_ascii_or_nil_field(:username, username)
+
   defp validate_ascii_or_nil_field(name, value) when is_atom(name) do
     case ascii_string_or_nil?(value) do
       true -> []
@@ -304,8 +307,12 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
-  defp validate_name_change(_, name), do: validate_ascii_or_nil_field(:name, name)
-  defp validate_username_change(_, username), do: validate_ascii_or_nil_field(:username, username)
+  defp validate_utf8_string_field(name, value) when is_atom(name) do
+    case String.valid?(value) do
+      true -> []
+      false -> [{name, "#{name} can contain is not a valid UTF-8 string."}]
+    end
+  end
 
   defp validate_email_candidate_change(_, email_candidate) do
     if Repo.get_by(User, email: email_candidate) do

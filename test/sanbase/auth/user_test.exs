@@ -465,7 +465,7 @@ defmodule Sanbase.Accounts.UserTest do
     refute changeset.valid?
 
     assert errors_on(changeset)[:username] |> Enum.at(0) ==
-             "Username can contain only valid ASCII symbols."
+             "username can contain only valid ASCII symbols."
   end
 
   test "trim whitespace on username" do

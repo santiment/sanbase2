@@ -142,6 +142,13 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       resolve(&UserResolver.change_username/3)
     end
 
+    field :change_name, :user do
+      arg(:name, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&UserResolver.change_name/3)
+    end
+
     @desc ~s"""
     Add the given `address` for the currently logged in user. The `signature` and
     `message_hash` are passed to the `web3.eth.accounts.recover` function to recover

@@ -3022,7 +3022,8 @@ CREATE TABLE public.users (
     avatar_url character varying(255),
     is_registered boolean DEFAULT false,
     is_superuser boolean DEFAULT false,
-    twitter_id character varying(255) DEFAULT NULL::character varying
+    twitter_id character varying(255) DEFAULT NULL::character varying,
+    name character varying(255)
 );
 
 
@@ -6934,3 +6935,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210907104919);
 INSERT INTO public."schema_migrations" (version) VALUES (20210921100450);
 INSERT INTO public."schema_migrations" (version) VALUES (20211109131726);
 INSERT INTO public."schema_migrations" (version) VALUES (20211117104935);
+INSERT INTO public."schema_migrations" (version) VALUES (20211124075928);

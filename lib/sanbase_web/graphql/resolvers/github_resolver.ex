@@ -68,7 +68,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   end
 
   def dev_activity(
-        _root,
+        root,
         %{
           selector: %{market_segments: market_segments},
           from: from,
@@ -77,7 +77,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
           transform: transform,
           moving_average_interval_base: moving_average_interval_base
         },
-        _resolution
+        resolution
       ) do
     args = %{
       transform: %{type: transform, moving_average_base: moving_average_interval_base},
@@ -90,7 +90,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
     with projects when is_list(projects) <-
            Project.List.by_market_segment_all_of(market_segments),
          slugs <- Enum.map(projects, & &1.slug),
-         {:ok, result} <- get_dev_activity_many_slugs(slugs, args) do
+         {:ok, result} <- get_dev_activity_many_slugs(slugs, args, root, resolution) do
       {:ok, result}
     else
       {:error, error} ->
@@ -173,15 +173,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   end
 
   # Private functions
-  defp get_dev_activity_many_slugs(slugs, args) do
+  defp get_dev_activity_many_slugs(slugs, args, root, resolution) do
     result =
       slugs
       |> Enum.chunk_every(500)
       |> Enum.map(fn slugs ->
         SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
-          %{},
+          root,
           %{args | selector: %{slug: slugs}},
-          %{source: %{metric: "dev_activity_1d"}}
+          Map.put(resolution, :source, %{metric: "dev_activity_1d"})
         )
       end)
 

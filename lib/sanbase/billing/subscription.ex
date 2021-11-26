@@ -11,7 +11,7 @@ defmodule Sanbase.Billing.Subscription do
 
   alias Sanbase.Billing
   alias Sanbase.Billing.{Plan, Product}
-  alias Sanbase.Billing.Subscription.{SignUpTrial, Query}
+  alias Sanbase.Billing.Subscription.Query
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
   alias Sanbase.StripeApi
@@ -127,12 +127,20 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
-      if plan.product_id == @product_sanbase do
-        SignUpTrial.maybe_remove_sign_up_trial(user)
+      if db_subscription.status == :active do
+        maybe_delete_trialing_subscriptions(user.id)
       end
 
       {:ok, default_preload(db_subscription, force: true)}
     end
+  end
+
+  def maybe_delete_trialing_subscriptions(user_id) do
+    __MODULE__
+    |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, Product.product_sanbase())
+    |> Repo.all()
+    |> Enum.filter(fn subscription -> subscription.status == :trialing end)
+    |> Enum.each(fn subscription -> StripeApi.delete_subscription(subscription.stripe_id) end)
   end
 
   @doc """
@@ -281,6 +289,13 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.all()
   end
 
+  def user_has_sanbase_pro?(user_id) do
+    case current_subscription(user_id, @product_sanbase) do
+      %__MODULE__{plan: %{name: name}} when name in ["PRO", "PRO_PLUS"] -> true
+      _ -> false
+    end
+  end
+
   @doc """
   Current subscription is the last active subscription for a product.
   """
@@ -360,24 +375,6 @@ defmodule Sanbase.Billing.Subscription do
       customer: user.stripe_customer_id,
       items: [%{plan: plan.stripe_id}]
     }
-
-    # Transfer left trial to new subscription
-    # FIXME Remove after last trials on registration expire
-    defaults =
-      case SignUpTrial.trial_end_dt(user) do
-        trial_end_dt = %NaiveDateTime{} ->
-          case NaiveDateTime.compare(NaiveDateTime.utc_now(), trial_end_dt) do
-            :lt ->
-              trial_end_dt = trial_end_dt |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
-              Map.put(defaults, :trial_end, trial_end_dt)
-
-            _ ->
-              defaults
-          end
-
-        _ ->
-          defaults
-      end
 
     defaults =
       case Billing.eligible_for_sanbase_trial?(user.id) do

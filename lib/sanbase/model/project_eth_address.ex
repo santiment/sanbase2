@@ -25,16 +25,9 @@ defmodule Sanbase.Model.ProjectEthAddress do
   end
 
   def balance(%ProjectEthAddress{address: address}) do
-    case Sanbase.InternalServices.Parity.get_eth_balance(address) do
-      {:ok, balance} ->
-        balance
-
-      {:error, error} ->
-        Logger.error(
-          "Cannot fetch the ETH balance for #{address} from Parity. Reason: #{inspect(error)}"
-        )
-
-        nil
+    case Sanbase.Balance.current_balance(address, "ethereum") do
+      {:ok, [%{balance: balance}]} -> {:ok, balance}
+      {:error, error} -> {:error, error}
     end
   end
 end

@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
-  alias SanbaseWeb.Graphql.ContextPlug
+  alias SanbaseWeb.Graphql.{AuthPlug, ContextPlug}
   alias Sanbase.Accounts.Apikey
   alias Sanbase.Billing.{Subscription, Product}
 
@@ -20,7 +20,12 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       }
       |> Repo.insert!()
 
-    conn = conn |> get("/get_routed_conn") |> setup_jwt_auth(user) |> ContextPlug.call(%{})
+    conn =
+      conn
+      |> get("/get_routed_conn")
+      |> setup_jwt_auth(user)
+      |> AuthPlug.call(%{})
+      |> ContextPlug.call(%{})
 
     conn_context = conn.private.absinthe.context
 
@@ -41,11 +46,11 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       |> get("/get_routed_conn")
       |> put_req_header("authorization", "Bearer some_random_not_correct_token")
 
-    conn = ContextPlug.call(conn, %{})
+    conn = conn |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
     {:ok, result} = conn.resp_body |> Jason.decode()
 
     assert conn.status == 400
-    assert result["errors"]["details"] == "Bad authorization header: Invalid JSON Web Token (JWT)"
+    assert result["errors"]["details"] == "Invalid JSON Web Token (JWT)"
   end
 
   test "invalid basic auth does not return error but uses anon user" do
@@ -54,7 +59,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       |> get("/get_routed_conn")
       |> put_req_header("authorization", "Basic gibberish")
 
-    conn = ContextPlug.call(conn, %{})
+    conn = conn |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
     conn_context = conn.private.absinthe.context
 
     assert Map.has_key?(conn_context, :auth)
@@ -72,14 +77,14 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       |> get("/get_routed_conn")
       |> put_req_header("authorization", "Apikey #{apikey}")
 
-    conn = ContextPlug.call(conn, %{})
+    conn = conn |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
 
     {:ok, result} = conn.resp_body |> Jason.decode()
 
     assert conn.status == 400
 
     assert result["errors"]["details"] ==
-             "Bad authorization header: Apikey '#{apikey}' is not valid"
+             "Apikey '#{apikey}' is not valid"
   end
 
   test "malformed apikey returns error" do
@@ -93,13 +98,13 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
         "Apikey #{apikey}"
       )
 
-    conn = ContextPlug.call(conn, %{})
+    conn = conn |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
     {:ok, result} = conn.resp_body |> Jason.decode()
 
     assert conn.status == 400
 
     assert result["errors"]["details"] =~
-             "Bad authorization header: Apikey '#{apikey}' is malformed"
+             "Apikey '#{apikey}' is malformed"
   end
 
   test "unsupported/mistyped authorization header returns error" do
@@ -111,7 +116,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
         "Aapikey api_key_must_contain_single_underscore"
       )
 
-    conn = ContextPlug.call(conn, %{})
+    conn = conn |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
 
     {:ok, result} = conn.resp_body |> Jason.decode()
 
@@ -135,7 +140,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
         "null"
       )
 
-    conn = ContextPlug.call(conn, %{})
+    conn = conn |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
 
     conn_context = conn.private.absinthe.context
 
@@ -155,7 +160,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
         ""
       )
 
-    conn = ContextPlug.call(conn, %{})
+    conn = conn |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
 
     conn_context = conn.private.absinthe.context
 
@@ -171,7 +176,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       build_conn()
       |> get("/get_routed_conn")
 
-    conn = ContextPlug.call(conn, %{})
+    conn = conn |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
 
     conn_context = conn.private.absinthe.context
 
@@ -192,7 +197,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
           "https://app.santiment.net"
         )
 
-      conn = ContextPlug.call(conn, %{})
+      conn = conn |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
 
       conn_context = conn.private.absinthe.context
 
@@ -201,9 +206,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     test "when no authorization and other Origin - product is SanAPI" do
       conn =
-        build_conn()
-        |> get("/get_routed_conn")
-        |> ContextPlug.call(%{})
+        build_conn() |> get("/get_routed_conn") |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
 
       conn_context = conn.private.absinthe.context
 
@@ -214,7 +217,11 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       user = insert(:user)
 
       conn =
-        build_conn() |> get("/get_routed_conn") |> setup_jwt_auth(user) |> ContextPlug.call(%{})
+        build_conn()
+        |> get("/get_routed_conn")
+        |> setup_jwt_auth(user)
+        |> AuthPlug.call(%{})
+        |> ContextPlug.call(%{})
 
       conn_context = conn.private.absinthe.context
 
@@ -234,7 +241,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
           "Mozilla/5.0 (compatible; Google-Apps-Script)"
         )
 
-      conn = setup_apikey_auth(conn, apikey) |> ContextPlug.call(%{})
+      conn = setup_apikey_auth(conn, apikey) |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
 
       conn_context = conn.private.absinthe.context
 
@@ -249,6 +256,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
         build_conn()
         |> get("/get_routed_conn")
         |> setup_apikey_auth(apikey)
+        |> AuthPlug.call(%{})
         |> ContextPlug.call(%{})
 
       conn_context = conn.private.absinthe.context

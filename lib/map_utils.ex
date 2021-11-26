@@ -1,4 +1,22 @@
 defmodule Sanbase.MapUtils do
+  def rename_key(map, old_key, new_key) do
+    case Map.has_key?(map, old_key) do
+      true ->
+        value = Map.get(map, old_key)
+        map |> Map.delete(old_key) |> Map.put(new_key, value)
+
+      false ->
+        {:error, "The key '#{old_key}' does not exist in the map"}
+    end
+  end
+
+  def replace_lazy(map, key, value_fun) do
+    case Map.has_key?(map, key) do
+      true -> Map.put(map, key, value_fun.())
+      false -> map
+    end
+  end
+
   @doc ~s"""
   Return a subset of `left` map that has only the keys that are also present in `right`.
 

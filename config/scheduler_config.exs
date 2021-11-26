@@ -16,6 +16,10 @@ config :sanbase, Sanbase.Alerts.Scheduler,
       schedule: "1-59/5 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.PriceVolumeDifferenceTriggerSettings]}
     ],
+    raw_signal_alert: [
+      schedule: "1-59/5 * * * *",
+      task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.RawSignalTriggerSettings]}
+    ],
     screener_sonar_alert: [
       schedule: "2-59/5 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.ScreenerTriggerSettings]}
@@ -55,18 +59,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "@hourly",
       task: {Sanbase.Comments.Notification, :notify_users, []}
     ],
-    send_email_on_trial_day: [
-      schedule: "00 07 * * *",
-      task: {Sanbase.Billing, :send_email_on_trial_day, []}
-    ],
-    update_finished_trials: [
-      schedule: "*/10 * * * *",
-      task: {Sanbase.Billing, :update_finished_trials, []}
-    ],
-    cancel_about_to_expire_trials: [
-      schedule: "3-59/30 * * * *",
-      task: {Sanbase.Billing, :cancel_about_to_expire_trials, []}
-    ],
     sync_products_with_stripe: [
       schedule: "@reboot",
       task: {Sanbase.Billing, :sync_products_with_stripe, []}
@@ -78,6 +70,14 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     remove_duplicate_subscriptions: [
       schedule: "*/20 * * * *",
       task: {Sanbase.Billing, :remove_duplicate_subscriptions, []}
+    ],
+    create_free_basic_api: [
+      schedule: "*/5 * * * *",
+      task: {Sanbase.Billing, :create_free_basic_api, []}
+    ],
+    delete_free_basic_api: [
+      schedule: "00 22 * * *",
+      task: {Sanbase.Billing, :delete_free_basic_api, []}
     ],
     logo_fetcher: [
       schedule: "@daily",
@@ -119,11 +119,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_liquidity_subscriptions_staked_users: [
       schedule: "7-59/30 * * * *",
       task: {Sanbase.Billing, :sync_liquidity_subscriptions_staked_users, []}
-    ],
-    get_kaiko_realtime_prices: [
-      # Start scraping at every round minute
-      schedule: "* * * * *",
-      task: {Sanbase.Kaiko, :run, []}
     ],
     sync_coinmarketcap_projects: [
       # When a new project gets a coinmarketcap string slug associated with it,

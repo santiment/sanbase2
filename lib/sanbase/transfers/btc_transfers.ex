@@ -41,7 +41,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
           DateTime.t(),
           non_neg_integer,
           non_neg_integer,
-          String.t()
+          :in | :out | :all
         ) ::
           {:ok, nil} | {:ok, list(map())} | {:error, String.t()}
   def top_wallet_transfers([], _from, _to, _page, _page_size, _type), do: {:ok, []}
@@ -83,7 +83,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
     PREWHERE
       #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
       dt >= toDateTime(?2) AND
-      dt <= toDateTime(?3)
+      dt < toDateTime(?3)
     ORDER BY absValue DESC
     LIMIT ?4 OFFSET ?5
     """

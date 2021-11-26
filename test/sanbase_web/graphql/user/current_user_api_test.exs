@@ -36,8 +36,8 @@ defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
     assert result["id"] == "#{user.id}"
 
     # Insights
-    assert %{"id" => "#{post.id}"} in result["insights"]
-    assert %{"id" => "#{post2.id}"} in result["insights"]
+    assert %{"id" => post.id} in result["insights"]
+    assert %{"id" => post2.id} in result["insights"]
 
     # Triggers
     assert %{"id" => user_trigger.id} in result["triggers"]

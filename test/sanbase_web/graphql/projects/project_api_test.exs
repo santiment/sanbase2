@@ -383,13 +383,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
   end
 
   defp get_authorization_header do
-    username = context_config(:basic_auth_username)
-    password = context_config(:basic_auth_password)
+    username = Config.module_get(SanbaseWeb.Graphql.AuthPlug, :basic_auth_username)
+    password = Config.module_get(SanbaseWeb.Graphql.AuthPlug, :basic_auth_password)
 
     "Basic " <> Base.encode64(username <> ":" <> password)
-  end
-
-  defp context_config(key) do
-    Config.module_get(SanbaseWeb.Graphql.ContextPlug, key)
   end
 end

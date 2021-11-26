@@ -23,7 +23,8 @@ defmodule Sanbase.Metric.Helper do
     Sanbase.Price.MetricAdapter,
     Sanbase.Twitter.MetricAdapter,
     Sanbase.Clickhouse.TopHolders.MetricAdapter,
-    Sanbase.Clickhouse.Uniswap.MetricAdapter
+    Sanbase.Clickhouse.Uniswap.MetricAdapter,
+    Sanbase.BlockchainAddress.MetricAdapter
   ]
 
   Module.register_attribute(__MODULE__, :aggregations_acc, accumulate: true)
@@ -36,10 +37,10 @@ defmodule Sanbase.Metric.Helper do
   Module.register_attribute(__MODULE__, :histogram_metric_module_mapping_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :table_metric_module_mapping_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :required_selectors_map_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :deprecated_metrics_acc, accumulate: true)
 
   for module <- @metric_modules do
     @required_selectors_map_acc module.required_selectors
-
     @aggregations_acc module.available_aggregations()
     @free_metrics_acc module.free_metrics()
     @restricted_metrics_acc module.restricted_metrics()
@@ -67,6 +68,9 @@ defmodule Sanbase.Metric.Helper do
                                        module.available_table_metrics(),
                                        fn metric -> %{metric: metric, module: module} end
                                      )
+
+    if function_exported?(module, :deprecated_metrics_map, 0),
+      do: @deprecated_metrics_acc(module.deprecated_metrics_map)
   end
 
   flat_unique = fn list -> list |> List.flatten() |> Enum.uniq() end
@@ -120,10 +124,15 @@ defmodule Sanbase.Metric.Helper do
   @table_metrics Enum.map(@table_metric_module_mapping, & &1.metric)
   @table_metrics_mapset MapSet.new(@table_metrics)
 
+  @deprecated_metrics_map Enum.reduce(@deprecated_metrics_acc, %{}, &Map.merge(&1, &2))
+                          |> Enum.reject(&match?({_, nil}, &1))
+                          |> Map.new()
+
   def access_map(), do: @access_map
   def aggregations_per_metric(), do: @aggregations_per_metric
   def aggregations(), do: @aggregations
   def free_metrics(), do: @free_metrics
+  def deprecated_metrics_map(), do: @deprecated_metrics_map
   def histogram_metric_module_mapping(), do: @histogram_metric_module_mapping
   def histogram_metric_to_module_map(), do: @histogram_metric_to_module_map
   def histogram_metrics_mapset(), do: @histogram_metrics_mapset

@@ -5,9 +5,29 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
 
   alias SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver
 
+  input_object :blockchain_address_filter_input_object do
+    field(:name, :string)
+    field(:args, :json)
+  end
+
+  input_object :blockchain_addresses_selector_input_object do
+    field(:filters, list_of(:blockchain_address_filter_input_object))
+    field(:filters_combinator, :filters_combinator, default_value: :and)
+  end
+
   enum :recent_transactions_type do
     value(:eth)
     value(:erc20)
+  end
+
+  enum :transfers_summary_order_by do
+    value(:transaction_volume)
+    value(:transfers_count)
+  end
+
+  enum :in_page_order_by_type do
+    value(:trx_value)
+    value(:datetime)
   end
 
   input_object :address_selector do
@@ -19,6 +39,13 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
     field(:id, :id)
     field(:address, :binary_blockchain_address)
     field(:infrastructure, :string)
+  end
+
+  object :transfers_summary do
+    field(:last_transfer_datetime, non_null(:datetime))
+    field(:address, non_null(:string))
+    field(:transaction_volume, non_null(:float))
+    field(:transfers_count, non_null(:integer))
   end
 
   object :current_user_blockchain_address_data do
@@ -67,9 +94,43 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
   """
   object :blockchain_address_ephemeral do
     # santiment origin labels
-    field(:labels, non_null(list_of(:label)))
+    field(:is_exchange, :boolean)
+    field(:notes, :string)
     field(:address, non_null(:binary_blockchain_address))
     field(:infrastructure, non_null(:string))
+
+    field :labels, list_of(:blockchain_address_label) do
+      cache_resolve(&BlockchainAddressResolver.labels/3)
+    end
+
+    @desc ~s"""
+    The current on-chain amount of the specified token/coin that the address has.
+    """
+    field :balance, :float do
+      arg(:selector, non_null(:historical_balance_selector))
+      cache_resolve(&BlockchainAddressResolver.balance/3)
+    end
+
+    @desc ~s"""
+    What percentage of the total balance of the whole watchlist of a specific
+    coin/token a given address holds. If there are no other addresses in the watchlist
+    or the field is not executed in the context of a watchlist, 1.0 is returned.
+    """
+    field :balance_dominance, :float do
+      arg(:selector, non_null(:historical_balance_selector))
+      cache_resolve(&BlockchainAddressResolver.balance_dominance/3)
+    end
+
+    @desc ~s"""
+    How the balance of the specified token/coin has changed in the from-to range.
+    """
+    field :balance_change, :address_balance_change do
+      arg(:selector, non_null(:historical_balance_selector))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&BlockchainAddressResolver.balance_change/3)
+    end
 
     field :current_user_address_details, :current_user_address_details do
       resolve(&BlockchainAddressResolver.current_user_address_details/3)

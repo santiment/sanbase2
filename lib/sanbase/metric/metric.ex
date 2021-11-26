@@ -28,7 +28,7 @@ defmodule Sanbase.Metric do
 
   @type datetime :: DateTime.t()
   @type metric :: Type.metric()
-  @type selector :: Type.metric()
+  @type selector :: Type.selector()
   @type interval :: Type.interval()
   @type operation :: Type.operation()
   @type threshold :: Type.threshold()
@@ -65,6 +65,7 @@ defmodule Sanbase.Metric do
   @table_metrics_mapset Helper.table_metrics_mapset()
   @table_metric_to_module_map Helper.table_metric_to_module_map()
   @required_selectors_map Helper.required_selectors_map()
+  @deprecated_metrics_map Helper.deprecated_metrics_map()
 
   @doc ~s"""
   Check if `metric` is a valid metric name.
@@ -84,6 +85,16 @@ defmodule Sanbase.Metric do
     end
   end
 
+  def is_not_deprecated?(metric) do
+    case Map.get(@deprecated_metrics_map, metric) do
+      nil ->
+        true
+
+      %DateTime{} = deprecated_since ->
+        {:error, "The metric #{metric} is deprecated since #{deprecated_since}"}
+    end
+  end
+
   @doc ~s"""
   Check if a metric has incomplete data.
 
@@ -97,6 +108,19 @@ defmodule Sanbase.Metric do
     module = Map.get(@metric_to_module_map, metric)
 
     module.has_incomplete_data?(metric)
+  end
+
+  def broken_data(metric, selector, from, to) do
+    metric = maybe_replace_metric(metric, selector)
+
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric)
+
+      module when is_atom(module) ->
+        module = maybe_change_module(module, metric, selector, [])
+        module.broken_data(metric, selector, from, to)
+    end
   end
 
   @doc ~s"""
@@ -176,6 +200,12 @@ defmodule Sanbase.Metric do
         execute_if_aggregation_valid(fun, metric, aggregation)
         |> Sanbase.Utils.Transform.maybe_apply_function(fn list ->
           Enum.sort_by(list, & &1.datetime, {:asc, DateTime})
+        end)
+        |> Sanbase.Utils.Transform.maybe_apply_function(fn list ->
+          Enum.map(list, fn %{data: data} = elem ->
+            data_sorted_by_slug = Enum.sort_by(data, & &1.slug, :asc)
+            %{elem | data: data_sorted_by_slug}
+          end)
         end)
     end
   end
@@ -623,7 +653,7 @@ defmodule Sanbase.Metric do
   """
   @spec is_historical_data_allowed?(metric) :: boolean
   def is_historical_data_allowed?(metric) do
-    get_in(@access_map, [metric, "historical"]) === :free
+    get_in(@access_map, [metric, "historical"]) == :free
   end
 
   @doc ~s"""
@@ -631,7 +661,7 @@ defmodule Sanbase.Metric do
   """
   @spec is_realtime_data_allowed?(metric) :: boolean
   def is_realtime_data_allowed?(metric) do
-    get_in(@access_map, [metric, "realtime"]) === :free
+    get_in(@access_map, [metric, "realtime"]) == :free
   end
 
   @doc ~s"""

@@ -232,28 +232,32 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
       |> json_response(200)
 
     [error] = result["errors"]
-    assert String.contains?(error["message"], "Cannot update watchlist of another user")
+    assert String.contains?(error["message"], "Cannot update watchlist belonging to another user")
   end
 
   test "remove watchlist", %{user: user, conn: conn} do
     {:ok, watchlist} = UserList.create_user_list(user, %{name: "My Test List"})
 
-    query = """
-    mutation {
-      removeWatchlist(
-        id: #{watchlist.id},
-      ) {
-        id
-      }
-    }
-    """
-
-    _result =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
-      |> json_response(200)
+    remove_watchlist(conn, watchlist.id)
 
     assert UserList.fetch_user_lists(user, :project) == {:ok, []}
+  end
+
+  test "remove watchlist twice in a row, returns proper error message", %{user: user, conn: conn} do
+    {:ok, watchlist} = UserList.create_user_list(user, %{name: "My Test List"})
+
+    remove_watchlist(conn, watchlist.id)
+
+    assert UserList.fetch_user_lists(user, :project) == {:ok, []}
+
+    result = remove_watchlist(conn, watchlist.id)
+
+    [error] = result["errors"]
+
+    assert String.contains?(
+             error["message"],
+             "Watchlist with id: #{watchlist.id} does not exist."
+           )
   end
 
   test "fetch watchlists", %{user: user, conn: conn} do
@@ -455,5 +459,21 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
       }
     }
     """
+  end
+
+  defp remove_watchlist(conn, id) do
+    query = """
+    mutation {
+      removeWatchlist(
+        id: #{id},
+      ) {
+        id
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(query))
+    |> json_response(200)
   end
 end

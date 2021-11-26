@@ -28,6 +28,8 @@ defmodule Sanbase.EventBus do
 
   use EventBus.EventSource
 
+  require Application
+
   defmodule InvalidEventError do
     defexception [:message]
   end

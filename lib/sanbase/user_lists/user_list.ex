@@ -58,21 +58,11 @@ defmodule Sanbase.UserList do
     update_changeset(user_list, attrs)
   end
 
+  @create_update_fields [:color, :description, :function, :is_monitored, :is_public, :is_screener] ++
+                          [:name, :slug, :table_configuration_id, :type, :user_id]
   def create_changeset(%__MODULE__{} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, [
-      :color,
-      :description,
-      :function,
-      :is_monitored,
-      :is_public,
-      :is_screener,
-      :name,
-      :slug,
-      :table_configuration_id,
-      :type,
-      :user_id
-    ])
+    |> cast(attrs, @create_update_fields)
     |> validate_required([:name, :user_id])
     |> validate_change(:function, &validate_function/2)
     |> unique_constraint(:slug)
@@ -80,18 +70,7 @@ defmodule Sanbase.UserList do
 
   def update_changeset(%__MODULE__{id: _id} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, [
-      :color,
-      :description,
-      :function,
-      :is_monitored,
-      :is_public,
-      :is_screener,
-      :name,
-      :slug,
-      :table_configuration_id,
-      :type
-    ])
+    |> cast(attrs, @create_update_fields)
     |> cast_assoc(:list_items)
     |> validate_change(:function, &validate_function/2)
     |> unique_constraint(:slug)
@@ -102,9 +81,8 @@ defmodule Sanbase.UserList do
   defp validate_function(_changeset, function) do
     {:ok, function} = function |> WatchlistFunction.cast()
 
-    case function |> WatchlistFunction.valid_function?() do
+    case WatchlistFunction.valid_function?(function) do
       true -> []
-      false -> [function: "Provided watchlist function is not valid."]
       {:error, error} -> [function: "Provided watchlist function is not valid. Reason: #{error}"]
     end
   end
@@ -112,6 +90,18 @@ defmodule Sanbase.UserList do
   def by_id(id) do
     from(ul in __MODULE__, where: ul.id == ^id)
     |> Repo.one()
+    |> case do
+      nil -> {:error, "Watchlist with id: #{id} does not exist."}
+      watchlist -> {:ok, watchlist}
+    end
+  end
+
+  def by_id!(id) do
+    by_id(id)
+    |> case do
+      {:ok, watchlist} -> watchlist
+      {:error, error} -> raise(error)
+    end
   end
 
   def by_slug(slug) when is_binary(slug) do
@@ -125,14 +115,40 @@ defmodule Sanbase.UserList do
   @doc ~s"""
   Return a list of all blockchain addresses in a watchlist.
   """
-  def get_blockchain_addresses(%__MODULE__{} = watchlist) do
-    blockchain_addresses = ListItem.get_blockchain_addresses(watchlist)
+  def get_blockchain_addresses(%__MODULE__{function: function} = watchlist) do
+    case WatchlistFunction.evaluate(function) do
+      {:error, error} ->
+        {:error, error}
 
-    {:ok,
-     %{
-       blockchain_addresses: blockchain_addresses,
-       total_blockchain_addresses_count: length(blockchain_addresses)
-     }}
+      {:ok, %{blockchain_addresses: blockchain_addresses}} ->
+        list_item_blockchain_addresses = ListItem.get_blockchain_addresses(watchlist)
+
+        blockchain_addresses =
+          blockchain_addresses
+          |> Enum.map(fn %{address: address, infrastructure: infrastructure} ->
+            %{
+              id: nil,
+              labels: [],
+              notes: "",
+              blockchain_address: %{
+                address: address,
+                infrastructure: %{code: infrastructure}
+              }
+            }
+          end)
+
+        # keep the list items in the first places so they will be taken with
+        # higher priority in order to keep the notes and labels
+        unique_blockchain_addresses =
+          (list_item_blockchain_addresses ++ blockchain_addresses)
+          |> Enum.uniq_by(&{&1.blockchain_address.address, &1.blockchain_address.infrastructure})
+
+        {:ok,
+         %{
+           blockchain_addresses: unique_blockchain_addresses,
+           total_blockchain_addresses_count: length(unique_blockchain_addresses)
+         }}
+    end
   end
 
   @doc ~s"""
@@ -208,7 +224,7 @@ defmodule Sanbase.UserList do
 
     changeset =
       user_list_id
-      |> by_id()
+      |> by_id!()
       |> Repo.preload(:list_items)
       |> update_changeset(params)
 
@@ -220,7 +236,7 @@ defmodule Sanbase.UserList do
     %{list_items: list_items} = update_list_items_params(params, user)
 
     case ListItem.create(list_items) do
-      {:ok, _} -> {:ok, by_id(id)}
+      {:ok, _} -> by_id(id)
       {:error, error} -> {:error, error}
     end
   end
@@ -229,14 +245,14 @@ defmodule Sanbase.UserList do
     %{list_items: list_items} = update_list_items_params(params, user)
 
     case ListItem.delete(list_items) do
-      {nil, _} -> {:ok, by_id(id)}
-      {num, _} when is_integer(num) -> {:ok, by_id(id)}
+      {nil, _} -> by_id(id)
+      {num, _} when is_integer(num) -> by_id(id)
       {:error, error} -> {:error, error}
     end
   end
 
   def remove_user_list(_user, %{id: id}) do
-    by_id(id)
+    by_id!(id)
     |> Repo.delete()
     |> emit_event(:delete_watchlist, %{})
   end

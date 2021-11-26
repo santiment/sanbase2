@@ -5,6 +5,7 @@ end
 defimpl Sanbase.Alert, for: Any do
   alias Sanbase.Accounts.{UserSettings, Settings, User}
 
+  require Logger
   require Sanbase.Utils.Config, as: Config
 
   @default_alerts_limit_per_day Settings.default_alerts_limit_per_day()
@@ -208,6 +209,11 @@ defimpl Sanbase.Alert, for: Any do
   defp maybe_transform_telegram_response({:error, error}, trigger) do
     case String.contains?(error, "blocked the telegram bot") do
       true ->
+        # In case the trigger does not have other channels but only telegram
+        # and the user has blocked our telegram bot, the alert is disabled
+        # so it does not spend resources running
+        deactivate_if_telegram_channel_only(trigger)
+
         %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = trigger
         {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}
 
@@ -217,6 +223,18 @@ defimpl Sanbase.Alert, for: Any do
   end
 
   defp maybe_transform_telegram_response(response, _trigger), do: response
+
+  defp deactivate_if_telegram_channel_only(trigger) do
+    case trigger do
+      %{trigger: %{settings: %{channel: channel}}} when channel in ["telegram", ["telegram"]] ->
+        Logger.info("Deactivating user trigger with id #{trigger.id} because the user \
+        with id #{trigger.user.id} has blocked the telegram bot.")
+        Sanbase.Alert.UserTrigger.update_is_active(trigger.id, trigger.user, false)
+
+      _ ->
+        :ok
+    end
+  end
 
   defp transform_payload(payload, user_trigger_id, channel) do
     payload

@@ -1,6 +1,18 @@
 defmodule Sanbase.Metric.SqlQuery.Helper do
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :count, :ohlc]
 
+  @type operator ::
+          :inside_channel
+          | :outside_channel
+          | :less_than
+          | :less_than_or_equal_to
+          | :greater_than
+          | :greater_than_or_equal_to
+          | :inside_channel_inclusive
+          | :inside_channel_exclusive
+          | :outside_channel_inclusive
+          | :outside_channel_exclusive
+
   def aggregations(), do: @aggregations
 
   def aggregation(:ohlc, value_column, dt_column) do
@@ -18,33 +30,43 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   def aggregation(:sum, value_column, _dt_column), do: "sumKahan(#{value_column})"
   def aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
 
-  def generate_comparison_string(column, :inside_channel, threshold),
-    do: generate_comparison_string(column, :inside_channel_inclusive, threshold)
+  def generate_comparison_string(column, :inside_channel, value),
+    do: generate_comparison_string(column, :inside_channel_inclusive, value)
 
-  def generate_comparison_string(column, :outside_channel, threshold),
-    do: generate_comparison_string(column, :outside_channel_inclusive, threshold)
+  def generate_comparison_string(column, :outside_channel, value),
+    do: generate_comparison_string(column, :outside_channel_inclusive, value)
 
-  def generate_comparison_string(column, :less_than, threshold), do: "#{column} < #{threshold}"
+  def generate_comparison_string(column, :less_than, threshold)
+      when is_number(threshold),
+      do: "#{column} < #{threshold}"
 
-  def generate_comparison_string(column, :less_than_or_equal_to, threshold),
-    do: "#{column} <= #{threshold}"
+  def generate_comparison_string(column, :less_than_or_equal_to, threshold)
+      when is_number(threshold),
+      do: "#{column} <= #{threshold}"
 
-  def generate_comparison_string(column, :greater_than, threshold), do: "#{column} > #{threshold}"
+  def generate_comparison_string(column, :greater_than, threshold)
+      when is_number(threshold),
+      do: "#{column} > #{threshold}"
 
-  def generate_comparison_string(column, :greater_than_or_equal_to, threshold),
-    do: "#{column} >= #{threshold}"
+  def generate_comparison_string(column, :greater_than_or_equal_to, threshold)
+      when is_number(threshold),
+      do: "#{column} >= #{threshold}"
 
-  def generate_comparison_string(column, :inside_channel_inclusive, [low, high]),
-    do: "#{column} >= #{low} AND #{column} <= #{high}"
+  def generate_comparison_string(column, :inside_channel_inclusive, [low, high])
+      when is_number(low) and is_number(high),
+      do: "#{column} >= #{low} AND #{column} <= #{high}"
 
-  def generate_comparison_string(column, :inside_channel_exclusive, [low, high]),
-    do: "#{column} > #{low} AND #{column} < #{high}"
+  def generate_comparison_string(column, :inside_channel_exclusive, [low, high])
+      when is_number(low) and is_number(high),
+      do: "#{column} > #{low} AND #{column} < #{high}"
 
-  def generate_comparison_string(column, :outside_channel_inclusive, [low, high]),
-    do: "#{column} <= #{low} OR #{column} >= #{high}"
+  def generate_comparison_string(column, :outside_channel_inclusive, [low, high])
+      when is_number(low) and is_number(high),
+      do: "#{column} <= #{low} OR #{column} >= #{high}"
 
-  def generate_comparison_string(column, :outside_channel_exclusive, [low, high]),
-    do: "#{column} < #{low} OR #{column} > #{high}"
+  def generate_comparison_string(column, :outside_channel_exclusive, [low, high])
+      when is_number(low) and is_number(high),
+      do: "#{column} < #{low} OR #{column} > #{high}"
 
   def asset_id_filter(slug, opts) when is_binary(slug) do
     arg_position = Keyword.fetch!(opts, :argument_position)
@@ -93,6 +115,16 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     {filters_string, args}
   end
 
+  def dt_to_unix(:from, dt) do
+    Enum.max([dt, ~U[2009-01-01 00:00:00Z]], DateTime) |> DateTime.to_unix()
+  end
+
+  def dt_to_unix(:to, dt) do
+    Enum.min([dt, DateTime.utc_now()], DateTime) |> DateTime.to_unix()
+  end
+
+  # Private functions
+
   defp do_additional_filters(:label_fqn, value, args) when is_binary(value) do
     pos = length(args) + 1
     str = "label_id IN (
@@ -139,13 +171,5 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     str = "#{column} = ?#{pos}"
     args = args ++ [value]
     {str, args}
-  end
-
-  def dt_to_unix(:from, dt) do
-    Enum.max([dt, ~U[2009-01-01 00:00:00Z]], DateTime) |> DateTime.to_unix()
-  end
-
-  def dt_to_unix(:to, dt) do
-    Enum.min([dt, DateTime.utc_now()], DateTime) |> DateTime.to_unix()
   end
 end

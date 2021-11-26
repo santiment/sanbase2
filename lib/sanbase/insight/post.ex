@@ -10,7 +10,6 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Model.Project
-  alias Sanbase.Vote
   alias Sanbase.Insight.{Post, PostImage}
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Metric.MetricPostgresData
@@ -28,6 +27,15 @@ defmodule Sanbase.Insight.Post do
   # ready_state
   @draft "draft"
   @published "published"
+
+  @type opts :: [
+          is_pulse: boolean(),
+          is_paywall_required: boolean(),
+          from: DateTime.t(),
+          to: DateTime.t(),
+          page: non_neg_integer(),
+          page_size: non_neg_integer()
+        ]
 
   schema "posts" do
     belongs_to(:user, User)
@@ -54,7 +62,19 @@ defmodule Sanbase.Insight.Post do
     has_many(:chart_configurations, Configuration)
     has_many(:images, PostImage, on_delete: :delete_all)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
-    has_many(:votes, Vote, on_delete: :delete_all)
+    has_many(:votes, Sanbase.Vote, on_delete: :delete_all)
+
+    # has_many(:post_comments, Sanbase.Comment.PostComment, on_delete: :delete_all)
+
+    # has_many(:comments,
+    #   through: [:post_comments, :comments],
+    #   on_delete: :delete_all
+    # )
+
+    # many_to_many(:comments, Sanbase.Comment,
+    #   join_through: "post_comments_mapping",
+    #   on_delete: :delete_all
+    # )
 
     many_to_many(:tags, Tag,
       join_through: "posts_tags",
@@ -303,8 +323,16 @@ defmodule Sanbase.Insight.Post do
     end
   end
 
-  def search_published_insights(search_term, opts \\ []) do
-    public_insights_query(opts) |> Sanbase.Insight.Search.run(search_term)
+  @spec search_published_insights(String.t(), opts) :: [%__MODULE__{}]
+  def search_published_insights(search_term, opts) do
+    public_insights_query(opts)
+    |> Sanbase.Insight.Search.run(search_term, opts)
+    |> Enum.map(& &1.post)
+  end
+
+  @spec search_published_insights_highglight(String.t(), opts) :: [%{}]
+  def search_published_insights_highglight(search_term, opts) do
+    public_insights_query(opts) |> Sanbase.Insight.Search.run(search_term, opts)
   end
 
   def related_projects(%Post{} = post) do
@@ -357,7 +385,6 @@ defmodule Sanbase.Insight.Post do
     public_insights_query(opts)
     |> order_by_published_at()
     |> page(page, page_size)
-    |> preload(^@preloads)
     |> Repo.all()
     |> Tag.Preloader.order_tags()
   end
@@ -367,6 +394,7 @@ defmodule Sanbase.Insight.Post do
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
+    |> preload(^@preloads)
   end
 
   @doc """
@@ -437,7 +465,7 @@ defmodule Sanbase.Insight.Post do
         user_id,
         %{chart_configuration_id: chart_configuration_id} = args
       ) do
-    case Configuration.by_id(chart_configuration_id, user_id) do
+    case Configuration.by_id(chart_configuration_id, querying_user_id: user_id) do
       {:ok, conf} ->
         args =
           Map.merge(args, %{

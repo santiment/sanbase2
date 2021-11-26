@@ -81,65 +81,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     end)
   end
 
-  defp get_labelled_balance_slug_from_args(%{selector: %{slug: slug}})
-       when is_binary(slug) do
-    if slug in ["bitcoin", "ethereum"] do
-      {:ok, slug}
-    else
-      {:error,
-       "Only 'ethereum' and 'bitcoin' slugs are supported in the label historical balance changes."}
-    end
-  end
-
-  defp get_labelled_balance_slug_from_args(_) do
-    {:error,
-     "The label historical balance changes field requires a 'slug' argument in the selector."}
-  end
-
-  def transaction_volume_per_address(
-        _root,
-        %{
-          selector: %{slug: slug} = selector,
-          from: from,
-          to: to,
-          addresses: addresses
-        },
-        _resolution
-      ) do
-    with {:ok, contract, decimals} <-
-           Sanbase.Model.Project.contract_info_by_slug(slug) do
-      Sanbase.Transfers.Erc20Transfers.transaction_volume_per_address(
-        addresses,
-        contract,
-        from,
-        to,
-        decimals
-      )
-      |> maybe_handle_graphql_error(fn error ->
-        handle_graphql_error(
-          "Historical Balance Change per Address",
-          inspect(selector),
-          error,
-          description: "selector"
-        )
-      end)
-    end
-  end
-
-  def transaction_volume_per_address(_root, _args, _resolution) do
-    {:error,
-     "Transaction volume per address is currently supported only for selectors with infrastructure ETH and a slug"}
-  end
-
-  def miners_balance(
-        _root,
-        %{} = args,
-        _resolution
-      ) do
+  def miners_balance(root, %{} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "miners_balance"}}
+      Map.put(resolution, :source, %{metric: "miners_balance"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(
       old_key: :value,

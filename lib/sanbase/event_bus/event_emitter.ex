@@ -30,6 +30,8 @@ defmodule Sanbase.EventBus.EventEmitter do
 
       @callback handle_event(first_arg :: term, event_type :: atom, args :: map) :: term
 
+      require Application
+
       defmodule ReturnResultError do
         defexception [:message]
       end

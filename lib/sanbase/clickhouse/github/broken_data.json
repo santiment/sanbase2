@@ -1,0 +1,10 @@
+[
+    {
+        "from": "2021-10-07T00:00:00Z",
+        "to": "2021-11-01T00:00:00Z",
+        "what": "Github events are partially or fully missing in the specified range.",
+        "why": "Third-party data provider outage.",
+        "notes": "Due to missing github data the development activity related metrics are lower than they should be.",
+        "actions_to_fix": "The github events are not possible to be refetched so the gap cannot be filled."
+    }
+]

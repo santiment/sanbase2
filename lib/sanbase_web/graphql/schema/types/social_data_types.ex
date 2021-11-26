@@ -6,16 +6,15 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
 
   enum :trending_words_sources do
     value(:telegram)
-    value(:professional_traders_chat)
+    value(:twitter)
+    value(:bitcointalk)
     value(:reddit)
     value(:all)
   end
 
   enum :social_dominance_sources do
     value(:telegram)
-    value(:professional_traders_chat)
     value(:reddit)
-    value(:discord)
     value(:all)
   end
 
@@ -28,18 +27,13 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
 
   enum :social_volume_type do
     value(:reddit_comments_overview)
-    value(:professional_traders_chat_overview)
     value(:telegram_chats_overview)
     value(:telegram_discussion_overview)
-    value(:discord_discussion_overview)
-    value(:discord_chats_overview)
   end
 
   enum :topic_search_sources do
     value(:telegram)
-    value(:professional_traders_chat)
     value(:reddit)
-    value(:discord)
   end
 
   object :popular_search_term do
@@ -55,16 +49,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
         {:ok, inserted_at}
       end)
     end
-  end
-
-  object :twitter_mention_count do
-    field(:datetime, non_null(:datetime))
-    field(:mention_count, :integer)
-  end
-
-  object :emojis_sentiment do
-    field(:datetime, non_null(:datetime))
-    field(:sentiment, :float)
   end
 
   object :topic_search do
@@ -89,15 +73,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   object :social_dominance do
     field(:datetime, non_null(:datetime))
     field(:dominance, :float)
-  end
-
-  object :news do
-    field(:datetime, non_null(:datetime))
-    field(:title, non_null(:string))
-    field(:description, :string)
-    field(:source_name, :string)
-    field(:url, :string)
-    field(:media_url, :string)
   end
 
   object :trending_words do

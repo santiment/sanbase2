@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
     Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.verify_signature/3, true)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.EthAccount.san_staked_address/2, 0.0)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         eth_login(context.conn, address, signature, message_hash)

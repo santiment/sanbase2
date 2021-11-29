@@ -17,6 +17,7 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
     field :vote, :vote_result do
       arg(:post_id, :integer, deprecate: "Use `insightId` instead")
       arg(:insight_id, :integer)
+      arg(:watchlist_id, :integer)
       arg(:chart_configuration_id, :integer)
 
       middleware(JWTAuth)
@@ -29,6 +30,7 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
     field :unvote, :vote_result do
       arg(:post_id, :integer, deprecate: "Use `insightId` instead")
       arg(:insight_id, :integer)
+      arg(:watchlist_id, :integer)
       arg(:chart_configuration_id, :integer)
 
       middleware(JWTAuth)

@@ -3059,7 +3059,8 @@ CREATE TABLE public.votes (
     timeline_event_id bigint,
     count integer DEFAULT 1,
     chart_configuration_id bigint,
-    CONSTRAINT only_one_fk CHECK ((((
+    watchlist_id bigint,
+    CONSTRAINT only_one_fk CHECK (((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
@@ -3070,6 +3071,10 @@ CASE
 END) +
 CASE
     WHEN (chart_configuration_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (watchlist_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -5583,6 +5588,13 @@ CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING 
 
 
 --
+-- Name: votes_watchlist_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_watchlist_id_user_id_index ON public.votes USING btree (watchlist_id, user_id);
+
+
+--
 -- Name: wallet_hunters_bounties_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6489,6 +6501,14 @@ ALTER TABLE ONLY public.votes
 
 
 --
+-- Name: votes votes_watchlist_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_watchlist_id_fkey FOREIGN KEY (watchlist_id) REFERENCES public.user_lists(id);
+
+
+--
 -- Name: wallet_hunters_bounties wallet_hunters_bounties_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6936,3 +6956,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210921100450);
 INSERT INTO public."schema_migrations" (version) VALUES (20211109131726);
 INSERT INTO public."schema_migrations" (version) VALUES (20211117104935);
 INSERT INTO public."schema_migrations" (version) VALUES (20211124075928);
+INSERT INTO public."schema_migrations" (version) VALUES (20211126144929);

@@ -24,6 +24,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     get_votes(loader, :insight_vote_stats, selector)
   end
 
+  def votes(%Sanbase.UserList{} = ul, _args, %{context: %{loader: loader} = context}) do
+    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
+    selector = %{watchlist_id: ul.id, user_id: user.id}
+    get_votes(loader, :watchlist_vote_stats, selector)
+  end
+
   def votes(%Chart.Configuration{} = config, _args, %{
         context: %{loader: loader} = context
       }) do
@@ -40,6 +46,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     votes(%Post{id: id}, args, resolution)
   end
 
+  def votes(_root, args, %{source: %{watchlist_id: id}} = resolution) do
+    # Handles the case where the `votes` is called on top of the result
+    # from `vote`/`unvote`. They return the entity id as a result which
+    # can be used from the `source` map in the resolution
+    votes(%Sanbase.UserList{id: id}, args, resolution)
+  end
+
   def votes(_root, args, %{source: %{chart_configuration_id: id}} = resolution) do
     # Handles the case where the `votes` is called on top of the result
     # from `vote`/`unvote`. They return the entity id as a result which
@@ -52,6 +65,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
       }) do
     selector = %{post_id: post.id, user_id: user.id}
     get_voted_at(loader, :insight_voted_at, selector)
+  end
+
+  def voted_at(%Sanbase.UserList{} = ul, _args, %{
+        context: %{loader: loader, auth: %{current_user: user}}
+      }) do
+    selector = %{watchlist_id: ul.id, user_id: user.id}
+    get_voted_at(loader, :watchlist_voted_at, selector)
   end
 
   def voted_at(%Chart.Configuration{} = config, _args, %{
@@ -92,6 +112,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
       Map.take(args, [
         :insight_id,
         :post_id,
+        :watchlist_id,
         :chart_configuration_id,
         :timeline_event_id
       ])
@@ -105,8 +126,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   defp entity_id_to_entity_name(entity_id) do
     case entity_id do
       x when x in [:post_id, :insight_id] -> :post
-      :chart_configuration_id -> :chart_configuration
+      :watchlist_id -> :watchlist
       :timeline_event_id -> :timeline_event
+      :chart_configuration_id -> :chart_configuration
     end
   end
 
@@ -117,6 +139,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
 
       %{insight_id: id} ->
         %{post_id: id, user_id: user.id}
+
+      %{watchlist_id: id} ->
+        %{watchlist_id: id, user_id: user.id}
 
       %{chart_configuration_id: id} ->
         %{chart_configuration_id: id, user_id: user.id}

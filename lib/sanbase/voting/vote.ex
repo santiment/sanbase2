@@ -12,6 +12,7 @@ defmodule Sanbase.Vote do
   alias Sanbase.Insight.Post
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Accounts.User
+  alias Sanbase.UserList
 
   @type vote_params :: %{
           :user_id => non_neg_integer(),
@@ -33,21 +34,30 @@ defmodule Sanbase.Vote do
     belongs_to(:user, User)
 
     belongs_to(:post, Post)
-    belongs_to(:chart_configuration, Chart.Configuration, foreign_key: :chart_configuration_id)
     belongs_to(:timeline_event, TimelineEvent)
+    belongs_to(:watchlist, UserList, foreign_key: :watchlist_id)
+    belongs_to(:chart_configuration, Chart.Configuration, foreign_key: :chart_configuration_id)
 
     timestamps()
   end
 
   def changeset(%__MODULE__{} = vote, attrs \\ %{}) do
     vote
-    |> cast(attrs, [:post_id, :timeline_event_id, :chart_configuration_id, :user_id, :count])
+    |> cast(attrs, [
+      :post_id,
+      :timeline_event_id,
+      :chart_configuration_id,
+      :watchlist_id,
+      :user_id,
+      :count
+    ])
     |> validate_required([:user_id])
     |> unique_constraint(:post_id, name: :votes_post_id_user_id_index)
     |> unique_constraint(:timeline_event_id, name: :votes_timeline_event_id_user_id_index)
     |> unique_constraint(:chart_configuration_id,
       name: :votes_chart_configuration_id_user_id_index
     )
+    |> unique_constraint(:watchlist, name: :votes_watchlist_user_id_index)
   end
 
   @doc ~s"""
@@ -193,4 +203,5 @@ defmodule Sanbase.Vote do
   defp deduce_entity_field(:post), do: :post_id
   defp deduce_entity_field(:timeline_event), do: :timeline_event_id
   defp deduce_entity_field(:chart_configuration), do: :chart_configuration_id
+  defp deduce_entity_field(:watchlist), do: :watchlist_id
 end

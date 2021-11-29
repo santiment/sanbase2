@@ -59,7 +59,9 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :chart_configuration_vote_stats,
     :chart_configuration_voted_at,
     :watchlist_vote_stats,
-    :watchlist_voted_at
+    :watchlist_voted_at,
+    :timeline_event_vote_stats,
+    :timeline_event_voted_at
   ]
   @postgres_dataloader [
     :current_user_address_details,

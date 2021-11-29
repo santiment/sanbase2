@@ -309,14 +309,22 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     end
   end
 
-  describe "upvoteTimelineEvent/downvoteTimelineEvent mutations" do
+  describe "vote/unvote mutations" do
     test "upvote succeeds", context do
       user = insert(:user)
       {timeline_event, _user_trigger} = create_timeline_event(user)
       mutation = upvote_timeline_event_mutation(timeline_event.id)
-      result = execute_mutation(context.conn, mutation, "upvoteTimelineEvent")
+      result = execute_mutation(context.conn, mutation, "vote")
 
-      assert result["votes"] == [%{"userId" => context.user.id}]
+      assert result["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
+      voted_at = result["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+
+      assert Sanbase.TestUtils.datetime_close_to(
+               Timex.now(),
+               Sanbase.DateTimeUtils.from_iso8601!(voted_at),
+               2,
+               :seconds
+             )
     end
 
     test "when user has upvoted, he can downvote", context do
@@ -325,19 +333,29 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       upvote_mutation = upvote_timeline_event_mutation(timeline_event.id)
       downvote_mutation = downvote_timeline_event_mutation(timeline_event.id)
 
-      result1 = execute_mutation(context.conn, upvote_mutation, "upvoteTimelineEvent")
-      assert result1["votes"] == [%{"userId" => context.user.id}]
+      result1 = execute_mutation(context.conn, upvote_mutation, "vote")
+      assert result1["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
+      voted_at = result1["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
 
-      result2 = execute_mutation(context.conn, downvote_mutation, "downvoteTimelineEvent")
-      assert result2["votes"] == []
+      assert Sanbase.TestUtils.datetime_close_to(
+               Timex.now(),
+               Sanbase.DateTimeUtils.from_iso8601!(voted_at),
+               2,
+               :seconds
+             )
+
+      result2 = execute_mutation(context.conn, downvote_mutation, "unvote")
+      assert result2["votes"] == %{"currentUserVotes" => 0, "totalVoters" => 0, "totalVotes" => 0}
+      assert result2["votedAt"] == nil
     end
 
     test "when user has not upvoted, downvoting does nothing", context do
       user = insert(:user)
       {timeline_event, _user_trigger} = create_timeline_event(user)
       mutation = downvote_timeline_event_mutation(timeline_event.id)
-      result = execute_mutation(context.conn, mutation, "downvoteTimelineEvent")
-      assert result["votes"] == []
+      result = execute_mutation(context.conn, mutation, "unvote")
+      assert result["votes"] == %{"currentUserVotes" => 0, "totalVoters" => 0, "totalVotes" => 0}
+      assert result["votedAt"] == nil
     end
   end
 
@@ -778,10 +796,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   defp upvote_timeline_event_mutation(timeline_event_id) do
     """
     mutation {
-      upvoteTimelineEvent(timelineEventId: #{timeline_event_id}) {
-        id
+      vote(timelineEventId: #{timeline_event_id}) {
+        votedAt
         votes {
-          userId
+          totalVotes totalVoters currentUserVotes
         }
       }
     }
@@ -791,10 +809,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   defp downvote_timeline_event_mutation(timeline_event_id) do
     """
     mutation {
-      downvoteTimelineEvent(timelineEventId: #{timeline_event_id}) {
-        id
+      unvote(timelineEventId: #{timeline_event_id}) {
+        votedAt
         votes {
-          userId
+          totalVotes totalVoters currentUserVotes
         }
       }
     }

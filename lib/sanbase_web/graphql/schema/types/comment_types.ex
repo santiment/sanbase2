@@ -21,6 +21,7 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
     field(:short_url, :short_url)
     field(:timeline_event, :timeline_event)
     field(:blockchain_address, :blockchain_address_db_stored)
+    field(:chart_configuration, :chart_configuration)
 
     field(:content, non_null(:string))
 

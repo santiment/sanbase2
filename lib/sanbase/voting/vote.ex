@@ -16,15 +16,19 @@ defmodule Sanbase.Vote do
 
   @type vote_params :: %{
           :user_id => non_neg_integer(),
+          optional(:post_id) => non_neg_integer(),
+          optional(:watchlist_id) => non_neg_integer(),
           optional(:timeline_event_id) => non_neg_integer(),
-          optional(:post_id) => non_neg_integer()
+          optional(:chart_configuration_id) => non_neg_integer()
         }
 
-  @type vote_kw_list_params :: [
-          user_id: non_neg_integer(),
-          timeline_event_id: non_neg_integer(),
-          post_id: non_neg_integer()
-        ]
+  @type vote_option ::
+          {:user_id, non_neg_integer()}
+          | {:post_id, non_neg_integer()}
+          | {:watchlist_id, non_neg_integer()}
+          | {:timeline_event_id, non_neg_integer()}
+          | {:chart_configuration_id, non_neg_integer()}
+  @type vote_kw_list_params :: [vote_option]
 
   @max_votes 20
 

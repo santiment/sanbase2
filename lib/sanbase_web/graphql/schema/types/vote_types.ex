@@ -19,6 +19,14 @@ defmodule SanbaseWeb.Graphql.VoteTypes do
     field(:chart_configuration, :chart_configuration)
   end
 
+  object :most_recent_result do
+    field(:insight, :post)
+    field(:watchlist, :user_list)
+    field(:screener, :user_list)
+    field(:timeline_event, :timeline_event)
+    field(:chart_configuration, :chart_configuration)
+  end
+
   object :vote_result do
     field(:voted_at, :datetime)
 

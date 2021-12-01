@@ -139,6 +139,10 @@ defmodule Sanbase.Vote do
     do_get_most_voted(entity, opts)
   end
 
+  def get_most_voted(entity, opts) do
+    do_get_most_recent(entity, opts)
+  end
+
   def voted_at(entity_type, entity_ids, user_id) when is_integer(user_id) do
     voted_at_query(entity_type, entity_ids, user_id)
     |> Repo.all()
@@ -220,6 +224,23 @@ defmodule Sanbase.Vote do
     )
   end
 
+  defp do_get_most_recent(entity, opts) do
+    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
+    entity_field = deduce_entity_field(entity)
+
+    public_enitiy_ids_query = public_entity_ids_query(entity)
+    entity_module = deduce_entity_module(entity)
+
+    entity_ids =
+      from(
+        entity in entity_module,
+        where: entity.id in subquery(public_enitiy_ids_query),
+        order_by: [desc: entity.id],
+        limit: ^limit,
+        offset: ^offset
+      )
+  end
+
   defp do_get_most_voted(entity, opts) do
     {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
     entity_field = deduce_entity_field(entity)
@@ -230,10 +251,6 @@ defmodule Sanbase.Vote do
     # result for everybody the owner of a private entity does not
     # get their private entities in the ranking
     public_enitiy_ids_query = public_entity_ids_query(entity)
-    # join = case entity do
-    #   :post -> dynamic([e], e in assoc(:post))
-    # end
-
     entity_module = deduce_entity_module(entity)
 
     entity_ids =

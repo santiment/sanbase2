@@ -18,6 +18,15 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
 
       cache_resolve(&VoteResolver.get_most_voted/3, ttl: 30, max_ttl_offset: 30)
     end
+
+    field :get_most_recent, list_of(:most_recent_result) do
+      meta(access: :free)
+      arg(:type, :vote_entity)
+      arg(:page, :integer)
+      arg(:page_size, :integer)
+
+      resolve(&VoteResolver.get_most_recent/3)
+    end
   end
 
   object :vote_mutations do

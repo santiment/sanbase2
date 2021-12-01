@@ -13,13 +13,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
 
   require Logger
 
+  def get_most_voted(_root, args, _resolution) do
+    type = Map.get(args, :type)
+    page = Map.get(args, :page, 1)
+    page_size = Map.get(args, :page_size, 10)
+    Vote.get_most_voted(type, page: page, page_size: page_size)
+  end
+
   @doc ~s"""
     Returns a tuple `{total_votes, total_san_votes}` where:
     - `total_votes` represents the number of votes where each vote's weight is 1
     - `total_san_votes` represents the number of votes where each vote's weight is
     equal to the san balance of the voter
   """
-
   def votes(%Post{} = post, _args, %{context: %{loader: loader} = context}) do
     user = get_in(context, [:auth, :current_user]) || %User{id: nil}
     selector = %{post_id: post.id, user_id: user.id}
@@ -108,6 +114,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
 
   def voted_at(_root, _args, _context), do: {:ok, nil}
 
+  # Private functions
   defp get_votes(loader, query, selector) do
     loader
     |> Dataloader.load(SanbaseDataloader, query, selector)

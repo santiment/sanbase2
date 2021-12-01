@@ -3,6 +3,22 @@ defmodule SanbaseWeb.Graphql.VoteTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
 
+  enum :vote_entity do
+    value(:insight)
+    value(:watchlist)
+    value(:screener)
+    value(:timeline_event)
+    value(:chart_configuration)
+  end
+
+  object :most_voted_result do
+    field(:insight, :post)
+    field(:watchlist, :user_list)
+    field(:screener, :user_list)
+    field(:timeline_event, :timeline_event)
+    field(:chart_configuration, :chart_configuration)
+  end
+
   object :vote_result do
     field(:voted_at, :datetime)
 

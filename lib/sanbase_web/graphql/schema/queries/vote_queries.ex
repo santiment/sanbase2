@@ -8,6 +8,14 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :vote_queries do
+    field :get_most_voted, list_of(:most_voted_result) do
+      meta(access: :free)
+      arg(:type, :vote_entity)
+      arg(:page, :integer)
+      arg(:page_size, :integer)
+
+      resolve(&VoteResolver.get_most_voted/3)
+    end
   end
 
   object :vote_mutations do

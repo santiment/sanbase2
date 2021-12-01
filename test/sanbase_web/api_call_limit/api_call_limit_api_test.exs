@@ -196,7 +196,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       Sanbase.Parallel.map(
         1..iterations,
         fn _ ->
-          {:ok, updated} =
+          {:ok, _updated} =
             Sanbase.ApiCallLimit.update_usage_db(:user, context.user, api_calls_per_iteration)
         end,
         max_concurrency: 30

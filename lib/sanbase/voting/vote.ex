@@ -8,11 +8,17 @@ defmodule Sanbase.Vote do
   import Ecto.Changeset
 
   alias Sanbase.Repo
+  alias Sanbase.Accounts.User
+
   alias Sanbase.Chart
   alias Sanbase.Insight.Post
-  alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Accounts.User
   alias Sanbase.UserList
+  alias Sanbase.Timeline.TimelineEvent
+
+  require Sanbase.Insight.Post.Ecto
+  # require Sanbase.Insight.Post.Ecto
+  # require Sanbase.Timeline.TimelineEvent.Ecto
+  # require Sanbase.UserList.Ecto
 
   @type vote_params :: %{
           :user_id => non_neg_integer(),
@@ -127,6 +133,10 @@ defmodule Sanbase.Vote do
     end
   end
 
+  def get_most_voted(entity, opts) do
+    do_get_most_voted(entity, opts)
+  end
+
   def voted_at(entity_type, entity_ids, user_id) when is_integer(user_id) do
     voted_at_query(entity_type, entity_ids, user_id)
     |> Repo.all()
@@ -204,8 +214,73 @@ defmodule Sanbase.Vote do
     )
   end
 
-  defp deduce_entity_field(:post), do: :post_id
+  defp do_get_most_voted(entity, opts) do
+    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
+    entity_field = deduce_entity_field(entity)
+
+    # We cannot just find the most voted entity as it could be
+    # made private at some point after getting votes. For this reason
+    # look only at entities that are public. In order to have the same
+    # result for everybody the owner of a private entity does not
+    # get their private entities in the ranking
+    public_enitiy_ids_query = public_entity_ids_query(entity)
+
+    entity_ids =
+      from(
+        vote in __MODULE__,
+        where:
+          not is_nil(field(vote, ^entity_field)) and
+            field(vote, ^entity_field) in subquery(public_enitiy_ids_query),
+        group_by: field(vote, ^entity_field),
+        select: field(vote, ^entity_field),
+        order_by: [desc: coalesce(sum(vote.count), 0)],
+        limit: ^limit,
+        offset: ^offset
+      )
+
+    entity_ids
+    |> Sanbase.Repo.all()
+    |> deduce_entity_module(entity).by_id()
+    |> case do
+      {:ok, result} -> {:ok, Enum.map(result, fn e -> %{entity => e} end)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp public_entity_ids_query(:insight) do
+    query = Post.public_insights_query(preload?: false)
+    from(post in query, select: post.id)
+  end
+
+  defp public_entity_ids_query(:watchlist) do
+    query = UserList.public_watchlists_query(is_screener: false)
+    from(ul in query, select: ul.id)
+  end
+
+  defp public_entity_ids_query(:screener) do
+    query = UserList.public_watchlists_query(is_screener: true)
+    from(ul in query, select: ul.id)
+  end
+
+  defp public_entity_ids_query(:chart_configuration) do
+    query = Chart.Configuration.public_chart_configurations_query()
+    from(conf in query, select: conf.id)
+  end
+
+  defp public_entity_ids_query(:timeline_event) do
+    query = TimelineEvent.public_timeline_events_query()
+    from(conf in query, select: conf.id)
+  end
+
+  defp deduce_entity_module(:insight), do: Post
+  defp deduce_entity_module(:watchlist), do: UserList
+  defp deduce_entity_module(:screener), do: UserList
+  defp deduce_entity_module(:timeline_event), do: TimelineEvent
+  defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
+
+  defp deduce_entity_field(:insight), do: :post_id
+  defp deduce_entity_field(:watchlist), do: :watchlist_id
+  defp deduce_entity_field(:screener), do: :watchlist_id
   defp deduce_entity_field(:timeline_event), do: :timeline_event_id
   defp deduce_entity_field(:chart_configuration), do: :chart_configuration_id
-  defp deduce_entity_field(:watchlist), do: :watchlist_id
 end

@@ -76,12 +76,40 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> validate_required([:event_type, :user_id])
   end
 
-  def by_id(id) do
+  @by_id_preloads [:user_trigger, [post: :tags], :user_list, :user, :votes]
+  def by_id!(id_or_ids) do
+    case by_id(id_or_ids) do
+      {:ok, result} -> result
+      {:error, error} -> raise error
+    end
+  end
+
+  def by_id(id) when is_integer(id) do
     from(te in TimelineEvent,
       where: te.id == ^id,
-      preload: [:user_trigger, [post: :tags], :user_list, :user, :votes]
+      preload: ^@by_id_preloads
     )
     |> Repo.one()
+    |> case do
+      %__MODULE__{} = result -> {:ok, result}
+      nil -> {:error, "Timeline event with id #{id} does not exist"}
+    end
+  end
+
+  def by_id(ids) when is_list(ids) do
+    query =
+      from(te in TimelineEvent,
+        where: te.id in ^ids,
+        preload: ^@by_id_preloads,
+        order_by: fragment("array_position(?, ?::int)", ^ids, te.id)
+      )
+
+    {:ok, Repo.all(query)}
+  end
+
+  def public_timeline_events_query() do
+    from(te in __MODULE__)
+    |> Query.events_with_public_entities_query()
   end
 
   @doc """
@@ -100,7 +128,10 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> Query.events_by_sanfamily_query()
     |> Query.events_with_public_entities_query()
     |> Query.events_with_event_type([@publish_insight_type, @trigger_fired])
-    |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
+    |> Order.events_order_limit_preload_query(
+      order_by,
+      min(limit, @max_events_returned)
+    )
     |> Repo.all()
     |> PostProcess.tag()
     |> Cursor.wrap_events_with_cursor()
@@ -113,7 +144,10 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> Query.events_by_sanfamily_query()
     |> Query.events_with_public_entities_query()
     |> Query.events_with_event_type([@publish_insight_type, @trigger_fired])
-    |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
+    |> Order.events_order_limit_preload_query(
+      order_by,
+      min(limit, @max_events_returned)
+    )
     |> Repo.all()
     |> PostProcess.tag()
     |> Cursor.wrap_events_with_cursor()
@@ -139,19 +173,29 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> Filter.filter_by_query(filter_by, user_id)
     |> Query.events_with_public_entities_query(user_id)
     |> Query.events_with_event_type([@publish_insight_type, @trigger_fired])
-    |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
+    |> Order.events_order_limit_preload_query(
+      order_by,
+      min(limit, @max_events_returned)
+    )
     |> Repo.all()
     |> PostProcess.tag(user_id)
     |> Cursor.wrap_events_with_cursor()
   end
 
-  def events(%User{id: user_id}, %{order_by: order_by, filter_by: filter_by, limit: limit}) do
+  def events(%User{id: user_id}, %{
+        order_by: order_by,
+        filter_by: filter_by,
+        limit: limit
+      }) do
     TimelineEvent
     |> Cursor.filter_by_min_dt()
     |> Filter.filter_by_query(filter_by, user_id)
     |> Query.events_with_public_entities_query(user_id)
     |> Query.events_with_event_type([@publish_insight_type, @trigger_fired])
-    |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
+    |> Order.events_order_limit_preload_query(
+      order_by,
+      min(limit, @max_events_returned)
+    )
     |> Repo.all()
     |> PostProcess.tag(user_id)
     |> Cursor.wrap_events_with_cursor()
@@ -254,6 +298,8 @@ defmodule Sanbase.Timeline.TimelineEvent do
   defp maybe_create_event(%UserTrigger{id: _id}, _, _), do: :ok
 
   defp create_event(type, id, params) do
-    %__MODULE__{} |> create_changeset(Map.put(params, type, id)) |> Repo.insert()
+    %__MODULE__{}
+    |> create_changeset(Map.put(params, type, id))
+    |> Repo.insert()
   end
 end

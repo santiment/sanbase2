@@ -207,13 +207,24 @@ defmodule Sanbase.Insight.Post do
 
   def is_published?(%Post{ready_state: ready_state}), do: ready_state == @published
 
-  def by_id(post_id) do
+  def by_id(post_id) when is_integer(post_id) do
     from(p in __MODULE__, preload: ^@preloads)
     |> Repo.get(post_id)
     |> case do
       nil -> {:error, "There is no insight with id #{post_id}"}
       post -> {:ok, post |> Tag.Preloader.order_tags()}
     end
+  end
+
+  def by_id(post_ids, opts \\ []) when is_list(post_ids) do
+    result =
+      public_insights_query(opts)
+      |> where([p], p.id in ^post_ids)
+      |> order_by([p], fragment("array_position(?, ?::int)", ^post_ids, p.id))
+      |> Repo.all()
+      |> Tag.Preloader.order_tags()
+
+    {:ok, result}
   end
 
   @spec create(%User{}, map()) :: {:ok, %__MODULE__{}} | {:error, Keyword.t()}
@@ -304,8 +315,9 @@ defmodule Sanbase.Insight.Post do
          {_, %Post{ready_state: @draft}} <- {:draft?, post},
          {:ok, post} <- publish_post(post) do
       emit_event({:ok, post}, :publish_insight, %{})
+      post = post |> Repo.preload(@preloads) |> Tag.Preloader.order_tags()
 
-      {:ok, post |> Repo.preload(@preloads) |> Tag.Preloader.order_tags()}
+      {:ok, post}
     else
       {:nil?, nil} ->
         {:error, "Cannot publish insight with id #{post_id}"}
@@ -394,7 +406,7 @@ defmodule Sanbase.Insight.Post do
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
-    |> preload(^@preloads)
+    |> maybe_preload(opts)
   end
 
   @doc """
@@ -418,7 +430,7 @@ defmodule Sanbase.Insight.Post do
     |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
     |> distinct(true)
     |> order_by_published_at()
-    |> preload(^@preloads)
+    |> maybe_preload(opts)
     |> Repo.all()
     |> Tag.Preloader.order_tags()
   end
@@ -432,7 +444,7 @@ defmodule Sanbase.Insight.Post do
     |> distinct(true)
     |> order_by_published_at()
     |> page(page, page_size)
-    |> preload(^@preloads)
+    |> maybe_preload(opts)
     |> Repo.all()
     |> Tag.Preloader.order_tags()
   end
@@ -446,7 +458,7 @@ defmodule Sanbase.Insight.Post do
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
-    |> preload(^@preloads)
+    |> maybe_preload(opts)
     |> Repo.all()
     |> Tag.Preloader.order_tags()
   end
@@ -621,6 +633,17 @@ defmodule Sanbase.Insight.Post do
       _ ->
         changeset
         |> change(%{updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)})
+    end
+  end
+
+  defp maybe_preload(query, opts) do
+    case Keyword.get(opts, :preload?, true) do
+      true ->
+        preloads = Keyword.get(opts, :preload, @preloads)
+        query |> preload(^preloads)
+
+      false ->
+        query
     end
   end
 

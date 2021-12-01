@@ -58,9 +58,20 @@ defmodule Sanbase.Chart.Configuration do
     |> validate_required([:user_id, :project_id])
   end
 
-  def by_id(config_id, opts \\ []) do
+  def by_id(id_or_ids, opts \\ [])
+
+  def by_id(config_id, opts) when is_integer(config_id) or is_binary(config_id) do
+    # allow both string and integer ids
     querying_user_id = Keyword.get(opts, :querying_user_id)
     get_chart_configuration(config_id, querying_user_id, opts)
+  end
+
+  def by_id(config_ids, opts) when is_list(config_ids) do
+    get_chart_configurations(config_ids, opts)
+  end
+
+  def public_chart_configurations_query() do
+    from(config in __MODULE__, where: config.is_public == true)
   end
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
@@ -145,6 +156,20 @@ defmodule Sanbase.Chart.Configuration do
       nil ->
         {:error, "Chart configuration with id #{config_id} does not exist."}
     end
+  end
+
+  defp get_chart_configurations(config_ids, opts) do
+    preload = Keyword.get(opts, :preload, [:chart_events])
+
+    query =
+      from(
+        conf in __MODULE__,
+        where: conf.id in ^config_ids and conf.is_public == true,
+        preload: ^preload,
+        order_by: fragment("array_position(?, ?::int)", ^config_ids, conf.id)
+      )
+
+    {:ok, Repo.all(query)}
   end
 
   defp user_chart_configurations_query(user_id, querying_user_id, nil) do

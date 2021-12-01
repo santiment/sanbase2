@@ -75,6 +75,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_full_url,
           :get_market_exchanges,
           :get_metric,
+          :get_most_voted,
           :get_raw_signals,
           :get_reports_by_tags,
           :get_reports,

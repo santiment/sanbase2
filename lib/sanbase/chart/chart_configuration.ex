@@ -21,6 +21,13 @@ defmodule Sanbase.Chart.Configuration do
       foreign_key: :chart_configuration_id
     )
 
+    has_many(:votes, Sanbase.Vote, on_delete: :delete_all, foreign_key: :chart_configuration_id)
+
+    has_one(:shared_access_token, __MODULE__.SharedAccessToken,
+      foreign_key: :chart_configuration_id,
+      on_delete: :delete_all
+    )
+
     belongs_to(:post, Sanbase.Insight.Post)
     belongs_to(:user, Sanbase.Accounts.User)
     belongs_to(:project, Sanbase.Model.Project)
@@ -51,8 +58,9 @@ defmodule Sanbase.Chart.Configuration do
     |> validate_required([:user_id, :project_id])
   end
 
-  def by_id(config_id, querying_user_id \\ nil) do
-    get_chart_configuration(config_id, querying_user_id)
+  def by_id(config_id, opts \\ []) do
+    querying_user_id = Keyword.get(opts, :querying_user_id)
+    get_chart_configuration(config_id, querying_user_id, opts)
   end
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
@@ -102,8 +110,17 @@ defmodule Sanbase.Chart.Configuration do
     end
   end
 
-  defp get_chart_configuration(config_id, querying_user_id) do
-    case Repo.one(from(conf in __MODULE__, where: conf.id == ^config_id, preload: :chart_events)) do
+  defp get_chart_configuration(config_id, querying_user_id, opts) do
+    preload = Keyword.get(opts, :preload, [:chart_events])
+
+    query =
+      from(
+        conf in __MODULE__,
+        where: conf.id == ^config_id,
+        preload: ^preload
+      )
+
+    case Repo.one(query) do
       %__MODULE__{user_id: user_id, is_public: is_public} = conf
       when user_id == querying_user_id or is_public == true ->
         {:ok, conf}

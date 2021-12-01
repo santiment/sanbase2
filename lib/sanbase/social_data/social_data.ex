@@ -3,7 +3,6 @@ defmodule Sanbase.SocialData do
   import Sanbase.Utils.Transform, only: [wrap_ok: 1]
   alias Sanbase.DateTimeUtils
   alias Sanbase.SocialData.{SocialVolume, SocialDominance, Community, Sentiment, ActiveUsers}
-  alias Sanbase.SocialData.News
 
   require Logger
   require Sanbase.Utils.Config, as: Config
@@ -29,9 +28,6 @@ defmodule Sanbase.SocialData do
 
   defdelegate community_messages_count(slug, from, to, interval, source),
     to: Community
-
-  defdelegate google_news(word, datetime_from, datetime_to, size),
-    to: News
 
   def trending_words(source, size, hour, from_datetime, to_datetime) do
     trending_words_request(source, size, hour, from_datetime, to_datetime)

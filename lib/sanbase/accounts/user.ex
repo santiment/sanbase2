@@ -47,6 +47,7 @@ defmodule Sanbase.Accounts.User do
   schema "users" do
     field(:email, :string)
     field(:email_candidate, :string)
+    field(:name, :string)
     field(:username, :string)
     field(:salt, :string)
     field(:san_balance, :decimal)
@@ -141,11 +142,13 @@ defmodule Sanbase.Accounts.User do
       :stripe_customer_id,
       :test_san_balance,
       :twitter_id,
-      :username
+      :username,
+      :name
     ])
     |> normalize_user_identificator(:username, attrs[:username])
     |> normalize_user_identificator(:email, attrs[:email])
     |> normalize_user_identificator(:email_candidate, attrs[:email_candidate])
+    |> validate_change(:name, &validate_name_change/2)
     |> validate_change(:username, &validate_username_change/2)
     |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> validate_change(:avatar_url, &validate_url_change/2)
@@ -207,7 +210,8 @@ defmodule Sanbase.Accounts.User do
       from(
         u in __MODULE__,
         where: u.id in ^user_ids,
-        order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id)
+        order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id),
+        preload: [:eth_accounts, :user_settings]
       )
       |> Repo.all()
 
@@ -268,9 +272,9 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
-  def ascii_username?(nil), do: true
+  def ascii_string_or_nil?(nil), do: true
 
-  def ascii_username?(username) do
+  def ascii_string_or_nil?(username) do
     username
     |> String.to_charlist()
     |> List.ascii_printable?()
@@ -293,11 +297,20 @@ defmodule Sanbase.Accounts.User do
     |> String.trim()
   end
 
-  defp validate_username_change(_, username) do
-    if ascii_username?(username) do
-      []
-    else
-      [username: "Username can contain only latin letters and numbers"]
+  defp validate_name_change(_, name), do: validate_utf8_string_field(:name, name)
+  defp validate_username_change(_, username), do: validate_ascii_or_nil_field(:username, username)
+
+  defp validate_ascii_or_nil_field(name, value) when is_atom(name) do
+    case ascii_string_or_nil?(value) do
+      true -> []
+      false -> [{name, "#{name} can contain only valid ASCII symbols."}]
+    end
+  end
+
+  defp validate_utf8_string_field(name, value) when is_atom(name) do
+    case String.valid?(value) do
+      true -> []
+      false -> [{name, "#{name} can contain is not a valid UTF-8 string."}]
     end
   end
 
@@ -314,6 +327,15 @@ defmodule Sanbase.Accounts.User do
       :ok -> []
       {:error, msg} -> [avatar_url: msg]
     end
+  end
+
+  def change_name(%__MODULE__{name: name} = user, name), do: {:ok, user}
+
+  def change_name(%__MODULE__{} = user, name) do
+    user
+    |> changeset(%{name: name})
+    |> Repo.update()
+    |> emit_event(:update_name, %{old_name: user.name, new_name: name})
   end
 
   def change_username(%__MODULE__{username: username} = user, username), do: {:ok, user}

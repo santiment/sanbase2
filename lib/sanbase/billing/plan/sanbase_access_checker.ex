@@ -35,12 +35,12 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
 
   @custom_plan_stats @pro_plan_stats
 
-  def historical_data_in_days(plan, _query) do
+  def historical_data_in_days(plan, _query \\ nil) do
     plan_stats(plan)
     |> Map.get(:historical_data_in_days)
   end
 
-  def realtime_data_cut_off_in_days(plan, _query) do
+  def realtime_data_cut_off_in_days(plan, _query \\ nil) do
     plan_stats(plan)
     |> Map.get(:realtime_data_cut_off_in_days)
   end

@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
-  use SanbaseWeb.ConnCase, async: true
+  use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
@@ -11,8 +11,11 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
     watchlist = insert(:watchlist)
 
     blockchain_address = insert(:blockchain_address)
-    insight = insert(:post)
+    unpublished_insight = insert(:post, user: user)
+    insight = insert(:published_post, user: user)
+    insight2 = insert(:published_post, user: user)
     short_url = insert(:short_url)
+    chart_configuration = insert(:chart_configuration, user: user)
 
     timeline_event =
       insert(:timeline_event,
@@ -27,20 +30,45 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
       conn: conn,
       user: user,
       insight: insight,
+      insight2: insight2,
+      unpublished_insight: unpublished_insight,
       blockchain_address: blockchain_address,
       short_url: short_url,
+      chart_configuration: chart_configuration,
       timeline_event: timeline_event
     }
   end
 
   test "comments feed", context do
+    # create a comment for an insight that
+    # will be deleted before fetching the comments
+    {:ok, _} =
+      EntityComment.create_and_link(
+        :insight,
+        context.insight2.id,
+        context.user.id,
+        nil,
+        "some comment on insight that will be deleted"
+      )
+
+    # should not appear in the result because the post is
+    # not published
+    {:ok, _} =
+      EntityComment.create_and_link(
+        :insight,
+        context.unpublished_insight.id,
+        context.user.id,
+        nil,
+        "some comment on unpublished insight"
+      )
+
     {:ok, insight_comment} =
       EntityComment.create_and_link(
         :insight,
         context.insight.id,
         context.user.id,
         nil,
-        "some comment"
+        "some comment1"
       )
 
     {:ok, ba_comment} =
@@ -70,33 +98,61 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
         "some comment4"
       )
 
+    {:ok, chart_configuration_comment} =
+      EntityComment.create_and_link(
+        :chart_configuration,
+        context.chart_configuration.id,
+        context.user.id,
+        nil,
+        "some comment5"
+      )
+
+    assert {:ok, _} = Sanbase.Insight.Post.delete(context.insight2.id, context.user)
+    assert {:error, _} = Sanbase.Insight.Post.by_id(context.insight2.id)
+
     query = comments_feed_query()
+
     comments = execute_query(context.conn, query, "commentsFeed")
 
     assert comments == [
              %{
                "blockchainAddress" => nil,
+               "content" => chart_configuration_comment.content,
+               "id" => chart_configuration_comment.id,
+               "insertedAt" =>
+                 chart_configuration_comment.inserted_at
+                 |> DateTime.from_naive!("Etc/UTC")
+                 |> DateTime.to_iso8601(),
+               "insight" => nil,
+               "shortUrl" => nil,
+               "timelineEvent" => nil,
+               "chartConfiguration" => %{"id" => context.chart_configuration.id}
+             },
+             %{
+               "blockchainAddress" => nil,
                "content" => timeline_event_comment.content,
-               "id" => timeline_event_comment.id |> Integer.to_string(),
+               "id" => timeline_event_comment.id,
                "insertedAt" =>
                  timeline_event_comment.inserted_at
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
                "insight" => nil,
                "shortUrl" => nil,
-               "timelineEvent" => %{"id" => context.timeline_event.id |> Integer.to_string()}
+               "timelineEvent" => %{"id" => context.timeline_event.id},
+               "chartConfiguration" => nil
              },
              %{
                "blockchainAddress" => nil,
                "content" => short_url_comment.content,
-               "id" => short_url_comment.id |> Integer.to_string(),
+               "id" => short_url_comment.id,
                "insertedAt" =>
                  short_url_comment.inserted_at
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
                "insight" => nil,
                "shortUrl" => %{"shortUrl" => context.short_url.short_url},
-               "timelineEvent" => nil
+               "timelineEvent" => nil,
+               "chartConfiguration" => nil
              },
              %{
                "blockchainAddress" => %{
@@ -104,26 +160,28 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  "id" => context.blockchain_address.id
                },
                "content" => ba_comment.content,
-               "id" => ba_comment.id |> Integer.to_string(),
+               "id" => ba_comment.id,
                "insertedAt" =>
                  ba_comment.inserted_at
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
                "insight" => nil,
                "shortUrl" => nil,
-               "timelineEvent" => nil
+               "timelineEvent" => nil,
+               "chartConfiguration" => nil
              },
              %{
                "blockchainAddress" => nil,
                "content" => insight_comment.content,
-               "id" => insight_comment.id |> Integer.to_string(),
+               "id" => insight_comment.id,
                "insertedAt" =>
                  insight_comment.inserted_at
                  |> DateTime.from_naive!("Etc/UTC")
                  |> DateTime.to_iso8601(),
-               "insight" => %{"id" => context.insight.id |> Integer.to_string()},
+               "insight" => %{"id" => context.insight.id},
                "shortUrl" => nil,
-               "timelineEvent" => nil
+               "timelineEvent" => nil,
+               "chartConfiguration" => nil
              }
            ]
   end
@@ -135,19 +193,11 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
         id
         content
         insertedAt
-        insight {
-          id
-        }
-        timelineEvent {
-          id
-        }
-        shortUrl {
-          shortUrl
-        }
-        blockchainAddress {
-          id
-          address
-        }
+        insight { id }
+        timelineEvent { id }
+        shortUrl { shortUrl }
+        blockchainAddress { id address }
+        chartConfiguration { id }
       }
     }
     """

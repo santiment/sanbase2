@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiIsTrendingTest do
     p5 = insert(:random_project, %{slug: "bitcoin"})
 
     with_mock Sanbase.SocialData.TrendingWords, [],
-      get_currently_trending_projects: fn -> {:ok, trending_projects()} end do
+      get_currently_trending_projects: fn _ -> {:ok, trending_projects()} end do
       result =
         context.conn
         |> execute_query(all_projects_trending_query(), "allProjects")

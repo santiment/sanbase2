@@ -78,11 +78,19 @@ defmodule SanbaseWeb.Graphql.Schema.UserListQueries do
       resolve(&UserListResolver.user_list/3)
     end
 
+    # field :dynamic_watchlist, :user_list do
+    #   meta(access: :free)
+
+    #   arg(:projects_selector, :projects_selector_input_object)
+    #   arg(:blockchain_addresses_selector, :blockchain_addresses_selector_input_object)
+
+    #   resolve(&UserListResolver.dynamic_watchlist/3)
+    # end
+
     field :watchlist, :user_list do
       meta(access: :free)
 
       arg(:id, non_null(:id))
-      arg(:selector, :projects_selector_input_object)
 
       resolve(&UserListResolver.watchlist/3)
     end

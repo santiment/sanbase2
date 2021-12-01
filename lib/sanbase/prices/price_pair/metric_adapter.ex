@@ -31,6 +31,9 @@ defmodule Sanbase.PricePair.MetricAdapter do
   def required_selectors(), do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
+  def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
+
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, %{slug: slug}, from, to, interval, opts) do
     quote_asset = metric_to_quote_asset(metric)
     opts = update_opts(opts)

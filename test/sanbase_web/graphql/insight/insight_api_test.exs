@@ -119,12 +119,12 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       expected_insights =
         [
           %{
-            "id" => "#{published.id}",
+            "id" => published.id,
             "readyState" => "#{published.ready_state}",
             "text" => "#{published.text}"
           },
           %{
-            "id" => "#{draft.id}",
+            "id" => draft.id,
             "readyState" => "#{draft.ready_state}",
             "text" => "#{draft.text}"
           }
@@ -186,7 +186,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       expected_insights =
         [
           %{
-            "id" => "#{published.id}",
+            "id" => published.id,
             "readyState" => "#{published.ready_state}",
             "text" => "#{published.text}"
           }
@@ -495,7 +495,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     Repo.all(Post)
 
     assert json_response(result, 200)["data"]["allInsights"] ==
-             [%{"id" => "#{post2.id}"}, %{"id" => "#{post.id}"}]
+             [%{"id" => post2.id}, %{"id" => post.id}]
   end
 
   test "Search insights by tag", %{user: user, conn: conn} do
@@ -512,7 +512,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     result = execute_query(conn, insights_by_tag_query(tag1), "allInsightsByTag")
 
-    assert result == [%{"id" => "#{post.id}"}]
+    assert result == [%{"id" => post.id}]
   end
 
   test "Search insights by tag for anonymous user", %{user: user} do
@@ -529,7 +529,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     result = execute_query(build_conn(), insights_by_tag_query(tag1), "allInsightsByTag")
 
-    assert result == [%{"id" => "#{post.id}"}]
+    assert result == [%{"id" => post.id}]
   end
 
   test "Get all insights by a list of tags", %{user: user} do
@@ -564,7 +564,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     result = execute_query(build_conn(), query, "allInsights") |> Enum.sort_by(& &1["id"])
 
     assert result ==
-             [%{"id" => "#{post.id}"}, %{"id" => "#{post3.id}"}] |> Enum.sort_by(& &1["id"])
+             [%{"id" => post.id}, %{"id" => post3.id}] |> Enum.sort_by(& &1["id"])
   end
 
   describe "Create insight" do
@@ -900,7 +900,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
       result_post = result["data"]["deleteInsight"]
 
-      assert result_post["id"] == Integer.to_string(sanbase_post.id)
+      assert result_post["id"] == sanbase_post.id
     end
 
     test "deleting an insight which does not belong to the user - returns error", %{
@@ -1061,7 +1061,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     query = """
     mutation {
       vote(postId: #{sanbase_post.id}) {
-        id
         votes{
           totalVotes
         }
@@ -1076,7 +1075,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     result_post = result["data"]["vote"]
 
-    assert result_post["id"] == Integer.to_string(sanbase_post.id)
     assert result_post["votes"]["totalVotes"] == 1
   end
 
@@ -1095,10 +1093,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     query = """
     mutation {
       unvote(insightId: #{sanbase_post.id}) {
-        id
-        votes{
-          totalVotes
-        }
+        votes { totalVotes }
       }
     }
     """
@@ -1109,7 +1104,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     result_post = json_response(result, 200)["data"]["unvote"]
 
-    assert result_post["id"] == Integer.to_string(sanbase_post.id)
     assert result_post["votes"]["totalVotes"] == 0
   end
 
@@ -1154,7 +1148,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         assert res["chartEventDatetime"] != nil
         assert res["chartConfigurationForEvent"]["id"] == conf.id
 
-        {:ok, new_conf} = Sanbase.Chart.Configuration.by_id(conf.id, context.user)
+        {:ok, new_conf} =
+          Sanbase.Chart.Configuration.by_id(conf.id, querying_user_id: context.user)
 
         assert length(new_conf.chart_events) == 1
       end)
@@ -1203,7 +1198,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     result = conn |> post("/graphql", query_skeleton(query, "allInsights"))
 
     assert json_response(result, 200)["data"]["allInsights"] ==
-             [%{"id" => "#{post1.id}"}, %{"id" => "#{post2.id}"}]
+             [%{"id" => post1.id}, %{"id" => post2.id}]
   end
 
   # Helper functions

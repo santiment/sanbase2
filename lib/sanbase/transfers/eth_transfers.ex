@@ -143,7 +143,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     PREWHERE
       #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
       dt >= toDateTime(?2) AND
-      dt <= toDateTime(?3) AND
+      dt < toDateTime(?3) AND
       type = 'call'
     ORDER BY value DESC
     LIMIT ?4 OFFSET ?5
@@ -201,7 +201,7 @@ defmodule Sanbase.Transfers.EthTransfers do
       value > ?1 AND
       type = 'call' AND
       dt >= toDateTime(?2) AND
-      dt <= toDateTime(?3)
+      dt < toDateTime(?3)
     ORDER BY value DESC
     LIMIT ?4 OFFSET ?5
     """

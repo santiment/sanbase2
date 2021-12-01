@@ -1,33 +1,14 @@
-defmodule Sanbase.Model.Project.ListSelector.Validator do
+defmodule Sanbase.Utils.ListSelector.Validator do
   import Norm
 
-  alias Sanbase.Model.Project.ListSelector.Transform
-
-  def valid_selector?(args) do
-    args = Sanbase.MapUtils.atomize_keys(args)
-    filters = Transform.args_to_filters(args)
-
-    order_by = Transform.args_to_order_by(args) || %{}
-    pagination = Transform.args_to_pagination(args) || %{}
-
-    with true <- valid_args?(args),
-         true <- valid_filters_combinator?(args),
-         true <- valid_base_projects?(args),
-         true <- valid_filters?(filters),
-         true <- valid_order_by?(order_by),
-         true <- valid_pagination?(pagination) do
-      true
-    end
-  end
-
-  defp valid_args?(args) do
+  def valid_args?(args) do
     case args do
       %{selector: %{}} -> true
       _ -> {:error, "Invalid selector - it must have a 'selector' top key."}
     end
   end
 
-  defp valid_filters_combinator?(args) do
+  def valid_filters_combinator?(args) do
     filters_combinator =
       (get_in(args, [:selector, :filters_combinator]) || "and")
       |> to_string()
@@ -46,7 +27,7 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
     end
   end
 
-  defp valid_base_projects?(args) do
+  def valid_base_projects?(args) do
     base_projects_list = get_in(args, [:selector, :base_projects]) || [:all]
 
     base_projects_list
@@ -76,7 +57,7 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
     |> Enum.find(true, &match?({:error, _}, &1))
   end
 
-  defp valid_order_by?(order_by) do
+  def valid_order_by?(order_by) do
     order_by_schema =
       schema(%{
         metric: spec(is_binary()),
@@ -90,7 +71,7 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
     end
   end
 
-  defp valid_pagination?(pagination) do
+  def valid_pagination?(pagination) do
     pagination_schema =
       schema(%{
         page: spec(&(is_integer(&1) and &1 > 0)),
@@ -102,11 +83,11 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
     end
   end
 
-  defp valid_filters?(filters) do
+  def valid_filters?(filters, type) do
     case Enum.all?(filters, &is_map/1) do
       true ->
         filters
-        |> Enum.map(&valid_filter?/1)
+        |> Enum.map(&valid_filter?(type, &1))
         |> Enum.find(&(&1 != true))
         |> case do
           nil -> true
@@ -118,7 +99,7 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
     end
   end
 
-  defp valid_filter?(%{name: "traded_on_exchanges", args: %{exchanges: list} = args}) do
+  def valid_filter?(:project, %{name: "traded_on_exchanges", args: %{exchanges: list} = args}) do
     combinator = Map.get(args, :exchanges_combinator, "and")
 
     case is_list(list) and list != [] do
@@ -140,7 +121,7 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
     end
   end
 
-  defp valid_filter?(%{name: "market_segments", args: %{market_segments: list} = args}) do
+  def valid_filter?(:project, %{name: "market_segments", args: %{market_segments: list} = args}) do
     combinator = Map.get(args, :market_segments_combinator, "and")
 
     case is_list(list) and list != [] do
@@ -163,17 +144,37 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
   end
 
   # Could be reworked to `name: "metric"` after the FE starts using this
-  defp valid_filter?(%{metric: metric} = filter) do
+  def valid_filter?(:project, %{metric: metric} = filter) do
     metric_filter(metric, filter)
   end
 
-  defp valid_filter?(%{name: "metric", args: %{metric: metric} = filter}) do
+  def valid_filter?(:project, %{name: "metric", args: %{metric: metric} = filter}) do
     metric_filter(metric, filter)
   end
 
-  defp valid_filter?(_), do: {:error, "Filter is not supported or has mistyped fields."}
+  def valid_filter?(
+        :blockchain_address,
+        %{name: "top_addresses", args: %{slug: _, page: _, page_size: _} = filter}
+      ) do
+    filter_schema =
+      schema(%{
+        slug: spec(is_binary()),
+        page: spec(is_integer() and (&(&1 > 0))),
+        page_size: spec(is_integer() and (&(&1 > 0))),
+        labels: spec(is_list() and (&(length(&1) > 0)))
+      })
 
-  defp metric_filter(metric, filter) do
+    with {:ok, _} <- conform(filter, filter_schema) do
+      true
+    end
+  end
+
+  def valid_filter?(type, filter),
+    do:
+      {:error,
+       "The #{inspect(type)} filter #{inspect(filter)} is not supported or has mistyped fields."}
+
+  def metric_filter(metric, filter) do
     filter_schema =
       schema(%{
         name: spec(is_binary()),

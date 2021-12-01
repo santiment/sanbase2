@@ -62,7 +62,7 @@ defmodule Sanbase.Mixfile do
       {:corsica, "~> 1.0"},
       {:cowboy, "~> 2.0"},
       {:crc32cer, github: "zmstone/crc32cer", override: true},
-      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.6.0-rc.1", only: [:dev, :test], runtime: false},
       {:csv, "~> 2.1"},
       {:csvlixir, "~> 2.0", override: true},
       {:dataloader, "~> 1.0.0"},
@@ -124,11 +124,12 @@ defmodule Sanbase.Mixfile do
       {:oban, "~> 2.7"},
       {:observer_cli, "~> 1.3"},
       {:phoenix_ecto, "~> 4.1"},
+      {:phoenix_html, "~> 3.0", override: true},
       {:phoenix_live_dashboard, "~> 0.3"},
       {:phoenix_live_reload, "~> 1.1", only: :dev},
       {:phoenix_live_view, "~> 0.14"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix, "~> 1.5.3"},
+      {:phoenix, "~> 1.6.0"},
       {:plug_cowboy, "~> 2.0"},
       {:postgrex, "~> 0.15.0", override: true},
       {:prometheus_ecto, "~> 1.3"},
@@ -153,7 +154,8 @@ defmodule Sanbase.Mixfile do
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.8.0", override: true},
       {:waffle, "~> 1.1"},
-      {:websockex, "~> 0.4.3"}
+      {:websockex, "~> 0.4.3"},
+      {:kaffy, github: "santiment/kaffy"}
     ]
   end
 

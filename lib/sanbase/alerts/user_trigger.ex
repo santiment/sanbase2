@@ -71,6 +71,13 @@ defmodule Sanbase.Alert.UserTrigger do
     |> validate_required([:user_id, :trigger])
   end
 
+  def update_is_active(user_trigger_id, user, is_active) do
+    update_user_trigger(user, %{
+      id: user_trigger_id,
+      is_active: is_active
+    })
+  end
+
   @doc ~s"""
   Get all triggers for the user with id `user_id`
   The result is transformed so all trigger settings are loaded in their

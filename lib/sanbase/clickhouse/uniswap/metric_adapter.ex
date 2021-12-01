@@ -38,6 +38,9 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   def required_selectors(), do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
+  def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
+
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data(_metric, _selector, _from, _to, _interval, _opts) do
     {:error, "Timeseries data is not implemented for uniswap metrics."}
   end

@@ -9,6 +9,10 @@ defmodule Sanbase.Metric.Behaviour do
   """
 
   @type slug :: String.t()
+  @type address :: String.t()
+  # This is used to identify an address and an assets that the balance
+  # is going to be checked against.
+  @type blockchain_address_slug_selector :: %{address: address, slug: slug}
   @type metric :: String.t()
   @type interval :: String.t()
   @type opts :: Keyword.t()
@@ -18,7 +22,7 @@ defmodule Sanbase.Metric.Behaviour do
   @type operator ::
           :greater_than | :less_than | :greater_than_or_equal_to | :less_than_or_equal_to
 
-  @type selector :: slug | map()
+  @type selector :: slug | blockchain_address_slug_selector | map()
 
   @type metadata :: %{
           metric: metric,
@@ -50,6 +54,15 @@ defmodule Sanbase.Metric.Behaviour do
 
   @type slug_float_value_pair :: %{slug: slug, value: float}
 
+  @type broken_data_point :: %{
+          from: DateTime.t(),
+          to: DateTime.t(),
+          what: String.t(),
+          why: String.t(),
+          notes: String.t(),
+          actions_to_fix: String.t()
+        }
+
   @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
 
   @type timeseries_data_per_slug_point :: %{
@@ -58,6 +71,8 @@ defmodule Sanbase.Metric.Behaviour do
         }
 
   # Return types
+  @type broken_data_result :: {:ok, list(broken_data_point())} | {:error, String.t()}
+
   @type timeseries_data_result :: {:ok, list(timeseries_data_point)} | {:error, String.t()}
 
   @type aggregated_timeseries_data_result :: {:ok, map()} | {:error, String.t()}
@@ -72,6 +87,10 @@ defmodule Sanbase.Metric.Behaviour do
   @type slugs_by_filter_result :: {:ok, list(slug())} | {:error, String.t()}
 
   @type slugs_order_result :: {:ok, list(slug())} | {:error, String.t()}
+
+  @type addresses_by_filter_result :: {:ok, list(address())} | {:error, String.t()}
+
+  @type addresses_order_result :: {:ok, list(address())} | {:error, String.t()}
 
   @type human_readable_name_result :: {:ok, String.t()} | {:error, String.t()}
 
@@ -92,6 +111,13 @@ defmodule Sanbase.Metric.Behaviour do
   @type required_selectors_result :: map()
 
   # Callbacks
+
+  @callback broken_data(
+              metric :: metric(),
+              selector :: selector,
+              from :: DatetTime.t(),
+              to :: DateTime.t()
+            ) :: broken_data_result
 
   @callback timeseries_data(
               metric :: metric(),
@@ -155,6 +181,21 @@ defmodule Sanbase.Metric.Behaviour do
               opts :: opts
             ) :: slugs_order_result
 
+  @callback addresses_by_filter(
+              metric :: metric,
+              selector :: selector,
+              operator :: operator,
+              threshold :: threshold,
+              opts :: opts
+            ) :: addresses_by_filter_result
+
+  @callback addresses_order(
+              metric :: metric,
+              selector :: selector,
+              direction :: direction,
+              opts :: opts
+            ) :: addresses_order_result
+
   @callback required_selectors() :: required_selectors_result
 
   @callback has_incomplete_data?(metric :: metric) :: has_incomplete_data_result
@@ -199,6 +240,12 @@ defmodule Sanbase.Metric.Behaviour do
     histogram_data: 6,
     table_data: 5,
     timeseries_data_per_slug: 6,
-    deprecated_metrics_map: 0
+    deprecated_metrics_map: 0,
+    # If the adapter is working with assets, the following 2 callbacks are implemented
+    slugs_by_filter: 6,
+    slugs_order: 5,
+    # If the adapter is working with addresses, the following 2 callbacks are implemented
+    addresses_by_filter: 5,
+    addresses_order: 4
   ]
 end

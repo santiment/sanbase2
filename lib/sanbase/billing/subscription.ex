@@ -289,6 +289,13 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.all()
   end
 
+  def user_has_sanbase_pro?(user_id) do
+    case current_subscription(user_id, @product_sanbase) do
+      %__MODULE__{plan: %{name: name}} when name in ["PRO", "PRO_PLUS"] -> true
+      _ -> false
+    end
+  end
+
   @doc """
   Current subscription is the last active subscription for a product.
   """

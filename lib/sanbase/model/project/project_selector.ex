@@ -12,7 +12,11 @@ defmodule Sanbase.Model.Project.Selector do
   def args_to_raw_selector(%{slug: slug}), do: %{slug: slug}
   def args_to_raw_selector(%{slugs: slugs}), do: %{slug: slugs}
   def args_to_raw_selector(%{word: word}), do: %{word: word}
-  def args_to_raw_selector(%{selector: %{slugs: slugs}}), do: %{slug: slugs}
+
+  # Only rename the key so the rest of the arguments are not los
+  def args_to_raw_selector(%{selector: %{slugs: _} = selector}),
+    do: Sanbase.MapUtils.rename_key(selector, :slugs, :slug)
+
   def args_to_raw_selector(%{selector: %{} = selector}), do: selector
   def args_to_raw_selector(_), do: %{}
 
@@ -68,20 +72,24 @@ defmodule Sanbase.Model.Project.Selector do
     {:ok, Map.put(selector, :slug, slugs)}
   end
 
+  defp transform_selector(%{contract_address: contract_address} = selector) do
+    slugs =
+      Sanbase.Model.Project.List.by_contracts(List.wrap(contract_address))
+      |> Enum.map(& &1.slug)
+
+    {:ok, Map.put(selector, :slug, slugs)}
+  end
+
   defp transform_selector(%{watchlist_id: watchlist_id} = selector)
        when is_integer(watchlist_id) do
-    case Sanbase.UserList.by_id(watchlist_id) do
-      nil ->
-        {:error, "Watchlist with id #{watchlist_id} does not exist."}
+    with {:ok, watchlist} <- Sanbase.UserList.by_id(watchlist_id) do
+      case Sanbase.UserList.get_slugs(watchlist) do
+        {:ok, slugs} ->
+          {:ok, Map.put(selector, :slug, slugs)}
 
-      watchlist ->
-        case watchlist |> Sanbase.UserList.get_slugs() do
-          {:ok, slugs} ->
-            {:ok, Map.put(selector, :slug, slugs)}
-
-          {:error, _error} ->
-            {:error, "Cannot fetch slugs for watchlist with id #{watchlist_id}"}
-        end
+        {:error, _error} ->
+          {:error, "Cannot fetch slugs for watchlist with id #{watchlist_id}"}
+      end
     end
   end
 

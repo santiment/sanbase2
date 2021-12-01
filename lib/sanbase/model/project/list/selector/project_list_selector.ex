@@ -2,21 +2,22 @@ defmodule Sanbase.Model.Project.ListSelector do
   @moduledoc ~s"""
   Module that resolved a selector object to a list of projects.
 
-  Important note:
-  #TODO: Rework this
-  Currently, the caller must make sure that every different watchlist is resolved
-  in a different process or call clear_detect_cycles/0 function.
-  This is because in order to detect cycles, some storage must be used to keep
-  data between calls. For this purposes the process dictionary is used. This can
-  lead to issues if more than 1 watchlist is resolved.
+
   """
   alias Sanbase.Model.Project
-  alias __MODULE__.{Transform, Validator}
+  alias Sanbase.Utils.ListSelector.Transform
 
+  # Important note:
+  # #TODO: Rework this
+  # Currently, the caller must make sure that every different watchlist is resolved
+  # in a different process or call clear_detect_cycles/0 function.
+  # This is because in order to detect cycles, some storage must be used to keep
+  # data between calls. For this purposes the process dictionary is used. This can
+  # lead to issues if more than 1 watchlist is resolved.
   @cycle_detection_key :__get_base_projects__
   def clear_detect_cycles(), do: Process.delete(@cycle_detection_key)
 
-  defdelegate valid_selector?(args), to: Validator
+  defdelegate valid_selector?(args), to: __MODULE__.Validator
 
   @doc ~s"""
   Return a list of projects described by the selector object.
@@ -29,7 +30,7 @@ defmodule Sanbase.Model.Project.ListSelector do
 
     {:ok,
      %{
-       projects: Project.List.projects(opts),
+       projects: projects,
        total_projects_count: total_projects_count(projects, opts),
        has_pagination?: Keyword.get(opts, :has_pagination?),
        all_included_slugs: Keyword.get(opts, :included_slugs)
@@ -180,7 +181,8 @@ defmodule Sanbase.Model.Project.ListSelector do
 
   defp get_base_slugs(%{watchlist_id: id} = map) do
     detect_cycles!(map)
-    id |> Sanbase.UserList.by_id() |> Sanbase.UserList.get_slugs()
+
+    id |> Sanbase.UserList.by_id!() |> Sanbase.UserList.get_slugs()
   end
 
   defp get_base_slugs(%{watchlist_slug: slug} = map) do
@@ -196,31 +198,20 @@ defmodule Sanbase.Model.Project.ListSelector do
   defp included_slugs_by_filters([%{name: "erc20"}], _filters_combinator), do: :erc20
 
   defp included_slugs_by_filters(filters, filters_combinator) when is_list(filters) do
-    slug_mapsets =
-      filters
-      |> Sanbase.Parallel.map(
-        fn filter ->
-          cache_key = {__MODULE__, :included_slugs_by_filter, filter} |> Sanbase.Cache.hash()
-          {:ok, slugs} = Sanbase.Cache.get_or_store(cache_key, fn -> slugs_by_filter(filter) end)
+    filters
+    |> Sanbase.Parallel.map(
+      fn filter ->
+        cache_key = {__MODULE__, :included_slugs_by_filter, filter} |> Sanbase.Cache.hash()
+        {:ok, slugs} = Sanbase.Cache.get_or_store(cache_key, fn -> slugs_by_filter(filter) end)
 
-          slugs |> MapSet.new()
-        end,
-        timeout: 40_000,
-        ordered: false,
-        max_concurrency: 4
-      )
-
-    case filters_combinator do
-      "and" ->
-        slug_mapsets
-        |> Enum.reduce(&MapSet.intersection(&1, &2))
-        |> Enum.to_list()
-
-      "or" ->
-        slug_mapsets
-        |> Enum.reduce(&MapSet.union(&1, &2))
-        |> Enum.to_list()
-    end
+        slugs |> MapSet.new()
+      end,
+      timeout: 40_000,
+      ordered: false,
+      max_concurrency: 4
+    )
+    |> Sanbase.Utils.Transform.combine_mapsets(combinator: filters_combinator)
+    |> Enum.to_list()
   end
 
   defp slugs_by_filter(%{name: "market_segments", args: args}) do

@@ -29,7 +29,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   def top_wallet_transfers(wallets, contract, from, to, decimals, page, page_size, type)
       when is_non_neg_integer(page) and is_non_neg_integer(page_size) do
     opts = [page: page, page_size: page_size]
-    {query, args} = top_wallet_transfers_query(contract, wallets, from, to, decimals, type, opts)
+    {query, args} = top_wallet_transfers_query(wallets, contract, from, to, decimals, type, opts)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
@@ -194,7 +194,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
       assetRefId = cityHash64('ETH_' || ?2) AND
       dt >= toDateTime(?3) AND
-      dt <= toDateTime(?4)
+      dt < toDateTime(?4)
     ORDER BY value DESC
     LIMIT ?5 OFFSET ?6
     """
@@ -256,7 +256,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     PREWHERE
       assetRefId = cityHash64('ETH_' || ?2) AND
       dt >= toDateTime(?3) AND
-      dt <= toDateTime(?4)
+      dt < toDateTime(?4)
       #{maybe_exclude_addresses(excluded_addresses, arg_position: 7)}
     ORDER BY value DESC
     LIMIT ?5 OFFSET ?6

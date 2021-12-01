@@ -34,6 +34,9 @@ defmodule Sanbase.Twitter.MetricAdapter do
   def required_selectors(), do: @required_selectors
 
   @impl Sanbase.Metric.Behaviour
+  def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
+
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data("twitter_followers", %{slug: slug}, from, to, interval, _opts) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project),
@@ -52,6 +55,13 @@ defmodule Sanbase.Twitter.MetricAdapter do
       nil -> {:error, "Project with slug #{slug} is not existing"}
       error -> error
     end
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def timeseries_data_per_slug(metric, selector, from, to, interval, opts \\ [])
+
+  def timeseries_data_per_slug("twitter_followers", _selector, _from, _to, _interval, _opts) do
+    {:error, "not_implemented"}
   end
 
   @impl Sanbase.Metric.Behaviour

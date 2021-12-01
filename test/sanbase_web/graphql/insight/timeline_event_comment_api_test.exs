@@ -120,7 +120,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventCommentApiTest do
 
     [comment, subcomment1, subcomment2] =
       timeline_event_comments(conn, timeline_event.id)
-      |> Enum.sort_by(&(&1["id"] |> String.to_integer()))
+      |> Enum.sort_by(& &1["id"])
 
     assert comment["parentId"] == nil
     assert comment["rootParentId"] == nil

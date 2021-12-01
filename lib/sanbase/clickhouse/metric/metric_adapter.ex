@@ -65,6 +65,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def complexity_weight(_), do: @default_complexity_weight
 
+  @impl Sanbase.Metric.Behaviour
+  def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
+
   @doc ~s"""
   Get a given metric for a slug and time range. The metric's aggregation
   function can be changed by the last optional parameter. The available

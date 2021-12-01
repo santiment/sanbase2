@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
+defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
@@ -68,12 +68,15 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
         # mistyped
         "filterss" => [
           %{
-            "metric" => "daily_active_addresses",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:greater_than_or_equal_to}",
-            "threshold" => 10
+            "name" => "metric",
+            "args" => %{
+              "metric" => "daily_active_addresses",
+              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+              "to" => "#{Timex.now()}",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:greater_than_or_equal_to}",
+              "threshold" => 10
+            }
           }
         ]
       }
@@ -103,12 +106,15 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
         # mistyped
         "filterss" => [
           %{
-            "metric" => "daily_active_addresses",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:greater_than_or_equal_to}",
-            "threshold" => 10
+            "name" => "metric",
+            "args" => %{
+              "metric" => "daily_active_addresses",
+              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+              "to" => "#{Timex.now()}",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:greater_than_or_equal_to}",
+              "threshold" => 10
+            }
           }
         ]
       }
@@ -138,12 +144,15 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       "args" => %{
         "filters" => [
           %{
-            "metric" => "daily_active_addresses",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:greater_than_or_equal_to}",
-            "threshold" => 10
+            "name" => "metric",
+            "args" => %{
+              "metric" => "daily_active_addresses",
+              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+              "to" => "#{Timex.now()}",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:greater_than_or_equal_to}",
+              "threshold" => 10
+            }
           }
         ]
       }
@@ -181,20 +190,26 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
         "filters_combinator" => :or,
         "filters" => [
           %{
-            "metric" => "daily_active_addresses",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:greater_than_or_equal_to}",
-            "threshold" => 100
+            "name" => "metric",
+            "args" => %{
+              "metric" => "daily_active_addresses",
+              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+              "to" => "#{Timex.now()}",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:greater_than_or_equal_to}",
+              "threshold" => 100
+            }
           },
           %{
-            "metric" => "nvt",
-            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
-            "to" => "#{Timex.now()}",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:less_than}",
-            "threshold" => 10
+            "name" => "metric",
+            "args" => %{
+              "metric" => "nvt",
+              "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+              "to" => "#{Timex.now()}",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:less_than}",
+              "threshold" => 10
+            }
           }
         ]
       }
@@ -227,12 +242,15 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       "args" => %{
         "filters" => [
           %{
-            "metric" => "daily_active_addresses",
-            "dynamicFrom" => "7d",
-            "dynamicTo" => "now",
-            "aggregation" => "#{:last}",
-            "operator" => "#{:greater_than_or_equal_to}",
-            "threshold" => 10
+            "name" => "metric",
+            "args" => %{
+              "metric" => "daily_active_addresses",
+              "dynamicFrom" => "7d",
+              "dynamicTo" => "now",
+              "aggregation" => "#{:last}",
+              "operator" => "#{:greater_than_or_equal_to}",
+              "threshold" => 10
+            }
           }
         ]
       }
@@ -340,7 +358,7 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
 
   test "dynamic watchlist for currently trending projects", %{conn: conn} do
     with_mock(Sanbase.SocialData.TrendingWords,
-      get_currently_trending_words: fn ->
+      get_currently_trending_words: fn _ ->
         {:ok,
          [
            %{word: "SAN", score: 5},

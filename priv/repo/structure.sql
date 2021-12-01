@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13.1
--- Dumped by pg_dump version 13.1
+-- Dumped from database version 14.0
+-- Dumped by pg_dump version 14.0
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -205,6 +205,8 @@ $$;
 
 
 SET default_tablespace = '';
+
+SET default_table_access_method = heap;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -2254,6 +2256,39 @@ ALTER SEQUENCE public.seen_timeline_events_id_seq OWNED BY public.seen_timeline_
 
 
 --
+-- Name: shared_access_tokens; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.shared_access_tokens (
+    id bigint NOT NULL,
+    uuid character varying(255) NOT NULL,
+    user_id bigint NOT NULL,
+    chart_configuration_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: shared_access_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.shared_access_tokens_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: shared_access_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.shared_access_tokens_id_seq OWNED BY public.shared_access_tokens.id;
+
+
+--
 -- Name: sheets_templates; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2987,7 +3022,8 @@ CREATE TABLE public.users (
     avatar_url character varying(255),
     is_registered boolean DEFAULT false,
     is_superuser boolean DEFAULT false,
-    twitter_id character varying(255) DEFAULT NULL::character varying
+    twitter_id character varying(255) DEFAULT NULL::character varying,
+    name character varying(255)
 );
 
 
@@ -3022,13 +3058,23 @@ CREATE TABLE public.votes (
     updated_at timestamp without time zone NOT NULL,
     timeline_event_id bigint,
     count integer DEFAULT 1,
-    CONSTRAINT only_one_fk CHECK (((
+    chart_configuration_id bigint,
+    watchlist_id bigint,
+    CONSTRAINT only_one_fk CHECK (((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
 END +
 CASE
     WHEN (timeline_event_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (chart_configuration_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (watchlist_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -3752,6 +3798,13 @@ ALTER TABLE ONLY public.seen_timeline_events ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: shared_access_tokens id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.shared_access_tokens ALTER COLUMN id SET DEFAULT nextval('public.shared_access_tokens_id_seq'::regclass);
+
+
+--
 -- Name: sheets_templates id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4440,6 +4493,14 @@ ALTER TABLE ONLY public.schema_migrations
 
 ALTER TABLE ONLY public.seen_timeline_events
     ADD CONSTRAINT seen_timeline_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: shared_access_tokens shared_access_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.shared_access_tokens
+    ADD CONSTRAINT shared_access_tokens_pkey PRIMARY KEY (id);
 
 
 --
@@ -5254,6 +5315,20 @@ CREATE UNIQUE INDEX seen_timeline_events_user_id_event_id_index ON public.seen_t
 
 
 --
+-- Name: shared_access_tokens_chart_configuration_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX shared_access_tokens_chart_configuration_id_index ON public.shared_access_tokens USING btree (chart_configuration_id);
+
+
+--
+-- Name: shared_access_tokens_uuid_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX shared_access_tokens_uuid_index ON public.shared_access_tokens USING btree (uuid);
+
+
+--
 -- Name: short_url_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5485,6 +5560,13 @@ CREATE UNIQUE INDEX users_username_index ON public.users USING btree (username);
 
 
 --
+-- Name: votes_chart_configuration_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_chart_configuration_id_user_id_index ON public.votes USING btree (chart_configuration_id, user_id);
+
+
+--
 -- Name: votes_post_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5503,6 +5585,13 @@ CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (pos
 --
 
 CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING btree (timeline_event_id, user_id);
+
+
+--
+-- Name: votes_watchlist_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_watchlist_id_user_id_index ON public.votes USING btree (watchlist_id, user_id);
 
 
 --
@@ -5600,7 +5689,7 @@ CREATE INDEX webinar_registrations_webinar_id_index ON public.webinar_registrati
 -- Name: oban_jobs oban_notify; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE PROCEDURE public.oban_jobs_notify();
+CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE FUNCTION public.oban_jobs_notify();
 
 
 --
@@ -6108,6 +6197,22 @@ ALTER TABLE ONLY public.seen_timeline_events
 
 
 --
+-- Name: shared_access_tokens shared_access_tokens_chart_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.shared_access_tokens
+    ADD CONSTRAINT shared_access_tokens_chart_configuration_id_fkey FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id);
+
+
+--
+-- Name: shared_access_tokens shared_access_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.shared_access_tokens
+    ADD CONSTRAINT shared_access_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: short_url_comments_mapping short_url_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6364,6 +6469,14 @@ ALTER TABLE ONLY public.user_uniswap_staking
 
 
 --
+-- Name: votes votes_chart_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_chart_configuration_id_fkey FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id);
+
+
+--
 -- Name: votes votes_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6385,6 +6498,14 @@ ALTER TABLE ONLY public.votes
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: votes votes_watchlist_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_watchlist_id_fkey FOREIGN KEY (watchlist_id) REFERENCES public.user_lists(id);
 
 
 --
@@ -6832,3 +6953,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210816150914);
 INSERT INTO public."schema_migrations" (version) VALUES (20210907104846);
 INSERT INTO public."schema_migrations" (version) VALUES (20210907104919);
 INSERT INTO public."schema_migrations" (version) VALUES (20210921100450);
+INSERT INTO public."schema_migrations" (version) VALUES (20211109131726);
+INSERT INTO public."schema_migrations" (version) VALUES (20211117104935);
+INSERT INTO public."schema_migrations" (version) VALUES (20211124075928);
+INSERT INTO public."schema_migrations" (version) VALUES (20211126144929);

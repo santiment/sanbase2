@@ -17,7 +17,9 @@ defmodule SanbaseWeb.Router do
     plug(:accepts, ["json"])
     plug(RemoteIp)
     plug(:fetch_session)
+    plug(SanbaseWeb.Graphql.AuthPlug)
     plug(SanbaseWeb.Graphql.ContextPlug)
+    plug(SanbaseWeb.Graphql.RequestHaltPlug)
   end
 
   pipeline :telegram do
@@ -30,6 +32,7 @@ defmodule SanbaseWeb.Router do
   end
 
   use ExAdmin.Router
+  use Kaffy.Routes, scope: "/admin3", pipe_through: [:basic_auth]
 
   scope "/auth", SanbaseWeb do
     pipe_through(:browser)

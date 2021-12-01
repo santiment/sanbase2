@@ -18,6 +18,10 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   level: :warn
 
+config :sanbase, Sanbase.ApiCallLimit,
+  quota_size: 10,
+  quota_size_max_offset: 10
+
 # Test adapter that allows mocking
 config :tesla, adapter: Tesla.Mock
 
@@ -66,7 +70,7 @@ config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
 
 config :sanbase, Sanbase.Twitter.Store, database: "twitter_followers_data_test"
 
-config :sanbase, SanbaseWeb.Graphql.ContextPlug,
+config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
 

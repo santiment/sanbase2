@@ -29,6 +29,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:slugs)
     value(:ignored_slugs)
     value(:market_segments)
+    value(:contract_address)
     # watchlist related
     value(:watchlist_slug)
     value(:watchlist_id)
@@ -43,6 +44,9 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:label_fqn)
     value(:label_fqns)
     value(:holders_count)
+    # dev activity related
+    value(:organization)
+    value(:organizations)
     # cache-controling
     value(:base_ttl)
     value(:max_ttl_offset)
@@ -62,6 +66,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:slug, :string)
     field(:slugs, list_of(:string))
     field(:market_segments, list_of(:string))
+    field(:contract_address, :string)
     field(:ignored_slugs, list_of(:string))
     # watchlist related
     field(:watchlist_id, :integer)
@@ -69,7 +74,10 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     # social related
     field(:text, :string)
     field(:source, :string)
-    # label relaated
+    # dev activity related
+    field(:organization, :string)
+    field(:organizations, list_of(:string))
+    # label related
     field(:owner, :string)
     field(:owners, list_of(:string))
     field(:label, :string)
@@ -88,6 +96,15 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:timeseries)
     value(:histogram)
     value(:table)
+  end
+
+  object :broken_data do
+    field(:from, non_null(:datetime))
+    field(:to, non_null(:datetime))
+    field(:what, non_null(:string))
+    field(:why, non_null(:string))
+    field(:notes, non_null(:string))
+    field(:actions_to_fix, non_null(:string))
   end
 
   object :metric_data do
@@ -318,6 +335,18 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   end
 
   object :metric do
+    @desc ~s"""
+    Return a list
+    """
+    field :broken_data, list_of(:broken_data) do
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      resolve(&MetricResolver.broken_data/3)
+    end
+
     @desc ~s"""
     Return a list of 'datetime' and 'value' for a given metric, slug
     and time period.

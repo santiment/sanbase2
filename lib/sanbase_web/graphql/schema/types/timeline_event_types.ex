@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
   end
 
   object :timeline_event do
-    field(:id, non_null(:id))
+    field(:id, non_null(:integer))
     field(:event_type, non_null(:string))
     field(:inserted_at, non_null(:datetime))
     field(:user, non_null(:user))
@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
   end
 
   object :seen_event do
-    field(:event_id, non_null(:id))
+    field(:event_id, non_null(:integer))
     field(:seen_at, non_null(:datetime))
   end
 end

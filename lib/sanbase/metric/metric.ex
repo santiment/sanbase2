@@ -110,6 +110,19 @@ defmodule Sanbase.Metric do
     module.has_incomplete_data?(metric)
   end
 
+  def broken_data(metric, selector, from, to) do
+    metric = maybe_replace_metric(metric, selector)
+
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric)
+
+      module when is_atom(module) ->
+        module = maybe_change_module(module, metric, selector, [])
+        module.broken_data(metric, selector, from, to)
+    end
+  end
+
   @doc ~s"""
   Returns timeseries data (pairs of datetime and float value) for a given set
   of arguments.
@@ -187,6 +200,12 @@ defmodule Sanbase.Metric do
         execute_if_aggregation_valid(fun, metric, aggregation)
         |> Sanbase.Utils.Transform.maybe_apply_function(fn list ->
           Enum.sort_by(list, & &1.datetime, {:asc, DateTime})
+        end)
+        |> Sanbase.Utils.Transform.maybe_apply_function(fn list ->
+          Enum.map(list, fn %{data: data} = elem ->
+            data_sorted_by_slug = Enum.sort_by(data, & &1.slug, :asc)
+            %{elem | data: data_sorted_by_slug}
+          end)
         end)
     end
   end

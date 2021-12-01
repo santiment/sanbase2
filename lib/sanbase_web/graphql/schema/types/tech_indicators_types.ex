@@ -7,18 +7,4 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
     field(:price_change, :float)
     field(:volume_change, :float)
   end
-
-  enum :anomalies_metrics_enum do
-    value(:daily_active_addresses)
-    value(:dev_activity)
-    value(:social_volume)
-  end
-
-  @desc ~s"""
-  Field `metricValue` is the value from original metric that is considered abnormal.
-  """
-  object :anomaly_value do
-    field(:metric_value, :float)
-    field(:datetime, non_null(:datetime))
-  end
 end

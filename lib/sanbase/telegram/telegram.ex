@@ -24,6 +24,17 @@ defmodule Sanbase.Telegram do
   plug(Tesla.Middleware.BaseUrl, "https://api.telegram.org/bot#{Config.get(:token)}/")
   plug(Tesla.Middleware.Headers, [{"Content-Type", "application/json"}])
 
+  def channel_id_valid?(chat_id) do
+    params = %{chat_id: chat_id} |> Jason.encode!()
+
+    with {:ok, %Tesla.Env{status: 200, body: body}} <- post("getChat", params),
+         {:ok, %{"ok" => true}} <- Jason.decode(body) do
+      true
+    else
+      _ -> false
+    end
+  end
+
   @doc ~s"""
   Get the already existing deeplink or creates a new one if there is none.
   A telegram bot and a user can have at most 1 chat channel, so we can have at most
@@ -79,7 +90,10 @@ defmodule Sanbase.Telegram do
   end
 
   @doc ~s"""
-  Send a telegram message to a given chat_id
+  Send a telegram message to a given chat_id.
+  The chat_id is just the chat_id of the telegram chat if it is sending messages to a user
+  The chat_id is the `@<alias name>` of a channel when the channel is pubic
+  The chat_id is `-100<chat id>` when the channel is private
   """
   @spec send_message_to_chat_id(non_neg_integer(), message, nil | %User{}) ::
           :ok | {:error, String.t()}

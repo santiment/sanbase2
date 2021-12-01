@@ -16,6 +16,10 @@ config :sanbase, Sanbase.Alerts.Scheduler,
       schedule: "1-59/5 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.PriceVolumeDifferenceTriggerSettings]}
     ],
+    raw_signal_alert: [
+      schedule: "1-59/5 * * * *",
+      task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.RawSignalTriggerSettings]}
+    ],
     screener_sonar_alert: [
       schedule: "2-59/5 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.ScreenerTriggerSettings]}
@@ -66,6 +70,14 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     remove_duplicate_subscriptions: [
       schedule: "*/20 * * * *",
       task: {Sanbase.Billing, :remove_duplicate_subscriptions, []}
+    ],
+    create_free_basic_api: [
+      schedule: "*/5 * * * *",
+      task: {Sanbase.Billing, :create_free_basic_api, []}
+    ],
+    delete_free_basic_api: [
+      schedule: "00 22 * * *",
+      task: {Sanbase.Billing, :delete_free_basic_api, []}
     ],
     logo_fetcher: [
       schedule: "@daily",

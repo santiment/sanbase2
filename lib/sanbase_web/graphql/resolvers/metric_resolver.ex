@@ -95,6 +95,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
+  def broken_data(_root, %{from: from, to: to} = args, %{source: %{metric: metric}}) do
+    with {:ok, selector} <- args_to_selector(args),
+         true <- all_required_selectors_present?(metric, selector),
+         true <- valid_metric_selector_pair?(metric, selector),
+         true <- valid_owners_labels_selection?(args),
+         {:ok, result} <- Metric.broken_data(metric, selector, from, to) do
+      {:ok, result}
+    end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(metric, args_to_raw_selector(args), error)
+    end)
+  end
+
   def timeseries_data(_root, args, %{source: %{metric: metric}} = resolution) do
     requested_fields = requested_fields(resolution)
     fetch_timeseries_data(metric, args, requested_fields, :timeseries_data)

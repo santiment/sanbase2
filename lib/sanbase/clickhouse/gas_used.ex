@@ -49,7 +49,7 @@ defmodule Sanbase.Clickhouse.GasUsed do
     FROM eth_blocks
     PREWHERE
       dt >= toDateTime(?2) AND
-      dt <= toDateTime(?3)
+      dt < toDateTime(?3)
     GROUP BY time
     ORDER BY time ASC
     """

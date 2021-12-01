@@ -2,26 +2,34 @@
 
 - [Table of contents](#table-of-contents)
   - [Trigger structure](#trigger-structure)
-  - [Settings fields](#settings-fields)
-  - [Examples](#examples)
-    - [Example settings structure for `trending_words`](#example-settings-structure-for-trending_words)
-    - [Example settings structure for `signal_data`](#example-settings-structure-for-signal_data)
-    - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-price_volume_difference)
-    - [Example settings structure for `wallet_movement`](#example-settings-structure-for-wallet_movement)
-    - [Example settings structure for `metric_signal`](#example-settings-structure-for-metric_signal)
-    - [Example settings structure for `daily_metric_signal`](#example-settings-structure-for-daily_metric_signal)
-    - [Example settings structure for `screener_signal`](#example-settings-structure-for-metric_signal)
-  - [Create trigger](#create-trigger)
-  - [Get all triggers for current user](#get-all-triggers-for-current-user)
-  - [Update trigger by id](#update-trigger-by-id)
-  - [Remove trigger by id](#remove-trigger-by-id)
-  - [Getting trigger by id](#getting-trigger-by-id)
-  - [Getting all public triggers](#getting-all-public-triggers)
-  - [Getting all public triggers for given user](#getting-all-public-triggers-for-given-user)
-  - [Featured user triggers](#featured-user-triggers)
-  - [API for alerts historical activity (user alerts timeline)](#api-for-alerts-historical-activity-user-alerts-timeline)
-    - [Historical activity request](#historical-activity-request)
-    - [Historical activity response](#historical-activity-response)
+    - [Settings fields](#settings-fields)
+    - [Examples](#examples)
+      - [Example settings structure for `trending_words`](#example-settings-structure-for-trending_words)
+      - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-price_volume_difference)
+      - [Example settings structure for `signal_data`](#example-settings-structure-for-signal_data)
+      - [Example settings structure for `wallet_movement`](#example-settings-structure-for-wallet_movement)
+      - [Example settings structure for `metric_signal`](#example-settings-structure-for-metric_signal)
+        - [Price data](#price-data)
+        - [Social data](#social-data)
+        - [On-chain data](#on-chain-data)
+        - [Github data](#github-data)
+        - [Intraday MVRV](#intraday-mvrv)
+      - [Example settings structure for `daily_metric_signal`](#example-settings-structure-for-daily_metric_signal)
+      - [Example settings structure for `screener_signal`](#example-settings-structure-for-screener_signal)
+    - [Create trigger](#create-trigger)
+    - [Get all triggers for current user](#get-all-triggers-for-current-user)
+    - [Update trigger by id](#update-trigger-by-id)
+    - [Remove trigger by id](#remove-trigger-by-id)
+    - [Getting trigger by id](#getting-trigger-by-id)
+    - [Getting all public triggers](#getting-all-public-triggers)
+    - [Getting all public triggers for given user](#getting-all-public-triggers-for-given-user)
+    - [Featured user triggers](#featured-user-triggers)
+    - [API for alerts historical activity (user alerts timeline)](#api-for-alerts-historical-activity-user-alerts-timeline)
+      - [Historical activity request](#historical-activity-request)
+      - [Historical activity response](#historical-activity-response)
+      - [Take activities newer than certain datetime](#take-activities-newer-than-certain-datetime)
+      - [Take activities before certain datetime](#take-activities-before-certain-datetime)
+    - [Historical trigger points](#historical-trigger-points)
 
 ## Trigger structure
 
@@ -292,16 +300,11 @@ All `social_volume_*` metrics also support the `text` target.
 
 ##### Social data
 
-- "community_messages_count_discord"
 - "community_messages_count_telegram"
 - "community_messages_count_total"
-- "social_dominance_discord"
-- "social_dominance_professional_traders_chat"
 - "social_dominance_reddit"
 - "social_dominance_telegram"
 - "social_dominance_total"
-- "social_volume_discord"
-- "social_volume_professional_traders_chat"
 - "social_volume_reddit"
 - "social_volume_twitter"
 - "social_volume_bitcointalk"

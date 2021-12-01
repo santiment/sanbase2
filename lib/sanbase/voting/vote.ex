@@ -16,9 +16,6 @@ defmodule Sanbase.Vote do
   alias Sanbase.Timeline.TimelineEvent
 
   require Sanbase.Insight.Post.Ecto
-  # require Sanbase.Insight.Post.Ecto
-  # require Sanbase.Timeline.TimelineEvent.Ecto
-  # require Sanbase.UserList.Ecto
 
   @type vote_params :: %{
           :user_id => non_neg_integer(),
@@ -46,6 +43,7 @@ defmodule Sanbase.Vote do
     belongs_to(:post, Post)
     belongs_to(:timeline_event, TimelineEvent)
     belongs_to(:watchlist, UserList, foreign_key: :watchlist_id)
+
     belongs_to(:chart_configuration, Chart.Configuration, foreign_key: :chart_configuration_id)
 
     timestamps()
@@ -63,7 +61,9 @@ defmodule Sanbase.Vote do
     ])
     |> validate_required([:user_id])
     |> unique_constraint(:post_id, name: :votes_post_id_user_id_index)
-    |> unique_constraint(:timeline_event_id, name: :votes_timeline_event_id_user_id_index)
+    |> unique_constraint(:timeline_event_id,
+      name: :votes_timeline_event_id_user_id_index
+    )
     |> unique_constraint(:chart_configuration_id,
       name: :votes_chart_configuration_id_user_id_index
     )
@@ -73,7 +73,8 @@ defmodule Sanbase.Vote do
   @doc ~s"""
   Create a new vote entity or increases the votes count up to #{@max_votes}.
   """
-  @spec create(vote_params) :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  @spec create(vote_params) ::
+          {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
   def create(attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:select_if_exists, fn _repo, _changes ->
@@ -107,7 +108,8 @@ defmodule Sanbase.Vote do
   Decreases the votes count for an entityt. If the votes count drops to 0, the vote
   entity is destroyed.
   """
-  @spec downvote(vote_params) :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  @spec downvote(vote_params) ::
+          {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
   def downvote(attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:select_if_exists, fn _repo, _changes ->
@@ -187,7 +189,11 @@ defmodule Sanbase.Vote do
         total_votes: coalesce(sum(vote.count), 0),
         total_voters: count(fragment("DISTINCT ?", vote.user_id)),
         current_user_votes:
-          fragment("SUM(CASE when user_id = ? then ? else 0 end)", ^user_id, vote.count)
+          fragment(
+            "SUM(CASE when user_id = ? then ? else 0 end)",
+            ^user_id,
+            vote.count
+          )
       }
     )
   end
@@ -224,23 +230,28 @@ defmodule Sanbase.Vote do
     # result for everybody the owner of a private entity does not
     # get their private entities in the ranking
     public_enitiy_ids_query = public_entity_ids_query(entity)
+    # join = case entity do
+    #   :post -> dynamic([e], e in assoc(:post))
+    # end
+
+    entity_module = deduce_entity_module(entity)
 
     entity_ids =
       from(
         vote in __MODULE__,
-        where:
-          not is_nil(field(vote, ^entity_field)) and
-            field(vote, ^entity_field) in subquery(public_enitiy_ids_query),
-        group_by: field(vote, ^entity_field),
-        select: field(vote, ^entity_field),
-        order_by: [desc: coalesce(sum(vote.count), 0)],
+        right_join: entity in ^entity_module,
+        on: field(vote, ^entity_field) == entity.id,
+        where: entity.id in subquery(public_enitiy_ids_query),
+        group_by: entity.id,
+        select: entity.id,
+        order_by: [desc: coalesce(sum(vote.count), 0), desc: entity.id],
         limit: ^limit,
         offset: ^offset
       )
 
     entity_ids
     |> Sanbase.Repo.all()
-    |> deduce_entity_module(entity).by_id()
+    |> entity_module.by_id()
     |> case do
       {:ok, result} -> {:ok, Enum.map(result, fn e -> %{entity => e} end)}
       {:error, error} -> {:error, error}

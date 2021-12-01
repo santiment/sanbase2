@@ -104,7 +104,13 @@ defmodule Sanbase.UserList do
   end
 
   def by_id(ids) when is_list(ids) do
-    query = from(ul in __MODULE__, where: ul.id in ^ids and ul.is_public == true)
+    query =
+      from(
+        ul in __MODULE__,
+        where: ul.id in ^ids and ul.is_public == true,
+        order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
+      )
+
     {:ok, Repo.all(query)}
   end
 

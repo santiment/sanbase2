@@ -139,7 +139,7 @@ defmodule Sanbase.Vote do
     do_get_most_voted(entity, opts)
   end
 
-  def get_most_voted(entity, opts) do
+  def get_most_recent(entity, opts) do
     do_get_most_recent(entity, opts)
   end
 
@@ -226,7 +226,6 @@ defmodule Sanbase.Vote do
 
   defp do_get_most_recent(entity, opts) do
     {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
-    entity_field = deduce_entity_field(entity)
 
     public_enitiy_ids_query = public_entity_ids_query(entity)
     entity_module = deduce_entity_module(entity)
@@ -234,11 +233,18 @@ defmodule Sanbase.Vote do
     entity_ids =
       from(
         entity in entity_module,
+        select: entity.id,
         where: entity.id in subquery(public_enitiy_ids_query),
         order_by: [desc: entity.id],
         limit: ^limit,
         offset: ^offset
       )
+      |> Repo.all()
+
+    case entity_module.by_ids(entity_ids, []) do
+      {:ok, result} -> {:ok, Enum.map(result, fn e -> %{entity => e} end)}
+      {:error, error} -> {:error, error}
+    end
   end
 
   defp do_get_most_voted(entity, opts) do
@@ -250,8 +256,8 @@ defmodule Sanbase.Vote do
     # look only at entities that are public. In order to have the same
     # result for everybody the owner of a private entity does not
     # get their private entities in the ranking
-    public_enitiy_ids_query = public_entity_ids_query(entity)
     entity_module = deduce_entity_module(entity)
+    public_enitiy_ids_query = public_entity_ids_query(entity)
 
     entity_ids =
       from(
@@ -268,37 +274,27 @@ defmodule Sanbase.Vote do
 
     entity_ids
     |> Sanbase.Repo.all()
-    |> entity_module.by_id()
+    |> entity_module.by_ids([])
     |> case do
       {:ok, result} -> {:ok, Enum.map(result, fn e -> %{entity => e} end)}
       {:error, error} -> {:error, error}
     end
   end
 
-  defp public_entity_ids_query(:insight) do
-    query = Post.public_insights_query(preload?: false)
-    from(post in query, select: post.id)
-  end
+  defp public_entity_ids_query(:insight),
+    do: Post.public_entity_ids_query(preload?: false)
 
-  defp public_entity_ids_query(:watchlist) do
-    query = UserList.public_watchlists_query(is_screener: false)
-    from(ul in query, select: ul.id)
-  end
+  defp public_entity_ids_query(:screener),
+    do: UserList.public_entity_ids_query(is_screener: true)
 
-  defp public_entity_ids_query(:screener) do
-    query = UserList.public_watchlists_query(is_screener: true)
-    from(ul in query, select: ul.id)
-  end
+  defp public_entity_ids_query(:watchlist),
+    do: UserList.public_entity_ids_query(is_screener: false)
 
-  defp public_entity_ids_query(:chart_configuration) do
-    query = Chart.Configuration.public_chart_configurations_query()
-    from(conf in query, select: conf.id)
-  end
+  defp public_entity_ids_query(:chart_configuration),
+    do: Chart.Configuration.public_entity_ids_query([])
 
-  defp public_entity_ids_query(:timeline_event) do
-    query = TimelineEvent.public_timeline_events_query()
-    from(conf in query, select: conf.id)
-  end
+  defp public_entity_ids_query(:timeline_event),
+    do: TimelineEvent.public_entity_ids_query([])
 
   defp deduce_entity_module(:insight), do: Post
   defp deduce_entity_module(:watchlist), do: UserList

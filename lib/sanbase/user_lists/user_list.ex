@@ -87,7 +87,14 @@ defmodule Sanbase.UserList do
     end
   end
 
-  def by_id(id) do
+  def by_id!(id) do
+    case by_id(id) do
+      {:ok, watchlist} -> watchlist
+      {:error, error} -> raise(error)
+    end
+  end
+
+  def by_id(id) when is_integer(id) or is_binary(id) do
     from(ul in __MODULE__, where: ul.id == ^id)
     |> Repo.one()
     |> case do
@@ -96,12 +103,15 @@ defmodule Sanbase.UserList do
     end
   end
 
-  def by_id!(id) do
-    by_id(id)
-    |> case do
-      {:ok, watchlist} -> watchlist
-      {:error, error} -> raise(error)
-    end
+  def by_id(ids) when is_list(ids) do
+    query =
+      from(
+        ul in __MODULE__,
+        where: ul.id in ^ids and ul.is_public == true,
+        order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
+      )
+
+    {:ok, Repo.all(query)}
   end
 
   def by_slug(slug) when is_binary(slug) do
@@ -111,6 +121,11 @@ defmodule Sanbase.UserList do
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
   def is_screener?(%__MODULE__{is_screener: is_screener}), do: is_screener
+
+  def public_watchlists_query(opts) do
+    from(ul in __MODULE__, where: ul.is_public == true)
+    |> maybe_filter_is_screener(opts)
+  end
 
   @doc ~s"""
   Return a list of all blockchain addresses in a watchlist.
@@ -369,6 +384,16 @@ defmodule Sanbase.UserList do
   defp filter_by_is_public_query(query, is_public) do
     query
     |> where([ul], ul.is_public == ^is_public)
+  end
+
+  defp maybe_filter_is_screener(query, opts) do
+    case Keyword.get(opts, :is_screener) do
+      nil ->
+        query
+
+      is_screener when is_screener in [true, false] ->
+        query |> where([ul], ul.is_screener == ^is_screener)
+    end
   end
 
   defp get_or_create_blockchain_address_user_pairs(input_blockchain_addresses, user) do

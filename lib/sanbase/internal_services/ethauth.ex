@@ -1,11 +1,15 @@
 defmodule Sanbase.InternalServices.Ethauth do
   use Tesla
+
+  require Logger
   require Sanbase.Utils.Config, as: Config
 
   @san_token_decimals 1_000_000_000_000_000_000
   @tesla_opts [adapter: [recv_timeout: 15_000]]
 
   def token_decimals(contract) when is_binary(contract) do
+    Logger.info("[Ethauth] Get token decimals for #{contract}")
+
     case get(client(), "decimals", query: [contract: contract], opts: @tesla_opts) do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         Jason.decode(body)
@@ -19,6 +23,8 @@ defmodule Sanbase.InternalServices.Ethauth do
   end
 
   def total_supply(contract) when is_binary(contract) do
+    Logger.info("[Ethauth] Get total supply for #{contract}")
+
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
            get(client(), "total_supply", query: [contract: contract], opts: @tesla_opts),
          {:ok, total_supply} <- Jason.decode(body),
@@ -38,6 +44,8 @@ defmodule Sanbase.InternalServices.Ethauth do
   """
   @spec verify_signature(any(), any(), any()) :: boolean() | {:error, String.t()}
   def verify_signature(signature, address, message_hash) do
+    Logger.info(["[Ethauth] Verify signature"])
+
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
            get(client(), "recover",
              query: [sign: signature, hash: message_hash],
@@ -58,6 +66,8 @@ defmodule Sanbase.InternalServices.Ethauth do
   Fetch the latest SAN balance of `address`
   """
   def san_balance(address) do
+    Logger.info("[Ethauth] Get san balance for #{address}")
+
     get(client(), "san_balance", query: [addr: address], opts: @tesla_opts)
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->

@@ -4,10 +4,20 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
   """
   use Absinthe.Schema.Notation
 
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
+
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :vote_queries do
+    field :get_most_voted, list_of(:most_voted_result) do
+      meta(access: :free)
+      arg(:type, :vote_entity)
+      arg(:page, :integer)
+      arg(:page_size, :integer)
+
+      cache_resolve(&VoteResolver.get_most_voted/3, ttl: 30, max_ttl_offset: 30)
+    end
   end
 
   object :vote_mutations do

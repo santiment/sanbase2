@@ -8,11 +8,14 @@ defmodule Sanbase.Vote do
   import Ecto.Changeset
 
   alias Sanbase.Repo
+  alias Sanbase.Accounts.User
+
   alias Sanbase.Chart
   alias Sanbase.Insight.Post
-  alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Accounts.User
   alias Sanbase.UserList
+  alias Sanbase.Timeline.TimelineEvent
+
+  require Sanbase.Insight.Post.Ecto
 
   @type vote_params :: %{
           :user_id => non_neg_integer(),
@@ -40,6 +43,7 @@ defmodule Sanbase.Vote do
     belongs_to(:post, Post)
     belongs_to(:timeline_event, TimelineEvent)
     belongs_to(:watchlist, UserList, foreign_key: :watchlist_id)
+
     belongs_to(:chart_configuration, Chart.Configuration, foreign_key: :chart_configuration_id)
 
     timestamps()
@@ -57,7 +61,9 @@ defmodule Sanbase.Vote do
     ])
     |> validate_required([:user_id])
     |> unique_constraint(:post_id, name: :votes_post_id_user_id_index)
-    |> unique_constraint(:timeline_event_id, name: :votes_timeline_event_id_user_id_index)
+    |> unique_constraint(:timeline_event_id,
+      name: :votes_timeline_event_id_user_id_index
+    )
     |> unique_constraint(:chart_configuration_id,
       name: :votes_chart_configuration_id_user_id_index
     )
@@ -67,7 +73,8 @@ defmodule Sanbase.Vote do
   @doc ~s"""
   Create a new vote entity or increases the votes count up to #{@max_votes}.
   """
-  @spec create(vote_params) :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  @spec create(vote_params) ::
+          {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
   def create(attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:select_if_exists, fn _repo, _changes ->
@@ -101,7 +108,8 @@ defmodule Sanbase.Vote do
   Decreases the votes count for an entityt. If the votes count drops to 0, the vote
   entity is destroyed.
   """
-  @spec downvote(vote_params) :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  @spec downvote(vote_params) ::
+          {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
   def downvote(attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:select_if_exists, fn _repo, _changes ->
@@ -125,6 +133,10 @@ defmodule Sanbase.Vote do
       {:ok, %{decrease_count_or_destroy: vote}} -> {:ok, vote}
       {:error, _name, error, _} -> {:error, error}
     end
+  end
+
+  def get_most_voted(entity, opts) do
+    do_get_most_voted(entity, opts)
   end
 
   def voted_at(entity_type, entity_ids, user_id) when is_integer(user_id) do
@@ -177,7 +189,11 @@ defmodule Sanbase.Vote do
         total_votes: coalesce(sum(vote.count), 0),
         total_voters: count(fragment("DISTINCT ?", vote.user_id)),
         current_user_votes:
-          fragment("SUM(CASE when user_id = ? then ? else 0 end)", ^user_id, vote.count)
+          fragment(
+            "SUM(CASE when user_id = ? then ? else 0 end)",
+            ^user_id,
+            vote.count
+          )
       }
     )
   end
@@ -204,8 +220,78 @@ defmodule Sanbase.Vote do
     )
   end
 
-  defp deduce_entity_field(:post), do: :post_id
+  defp do_get_most_voted(entity, opts) do
+    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
+    entity_field = deduce_entity_field(entity)
+
+    # We cannot just find the most voted entity as it could be
+    # made private at some point after getting votes. For this reason
+    # look only at entities that are public. In order to have the same
+    # result for everybody the owner of a private entity does not
+    # get their private entities in the ranking
+    public_enitiy_ids_query = public_entity_ids_query(entity)
+    # join = case entity do
+    #   :post -> dynamic([e], e in assoc(:post))
+    # end
+
+    entity_module = deduce_entity_module(entity)
+
+    entity_ids =
+      from(
+        vote in __MODULE__,
+        right_join: entity in ^entity_module,
+        on: field(vote, ^entity_field) == entity.id,
+        where: entity.id in subquery(public_enitiy_ids_query),
+        group_by: entity.id,
+        select: entity.id,
+        order_by: [desc: coalesce(sum(vote.count), 0), desc: entity.id],
+        limit: ^limit,
+        offset: ^offset
+      )
+
+    entity_ids
+    |> Sanbase.Repo.all()
+    |> entity_module.by_id()
+    |> case do
+      {:ok, result} -> {:ok, Enum.map(result, fn e -> %{entity => e} end)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp public_entity_ids_query(:insight) do
+    query = Post.public_insights_query(preload?: false)
+    from(post in query, select: post.id)
+  end
+
+  defp public_entity_ids_query(:watchlist) do
+    query = UserList.public_watchlists_query(is_screener: false)
+    from(ul in query, select: ul.id)
+  end
+
+  defp public_entity_ids_query(:screener) do
+    query = UserList.public_watchlists_query(is_screener: true)
+    from(ul in query, select: ul.id)
+  end
+
+  defp public_entity_ids_query(:chart_configuration) do
+    query = Chart.Configuration.public_chart_configurations_query()
+    from(conf in query, select: conf.id)
+  end
+
+  defp public_entity_ids_query(:timeline_event) do
+    query = TimelineEvent.public_timeline_events_query()
+    from(conf in query, select: conf.id)
+  end
+
+  defp deduce_entity_module(:insight), do: Post
+  defp deduce_entity_module(:watchlist), do: UserList
+  defp deduce_entity_module(:screener), do: UserList
+  defp deduce_entity_module(:timeline_event), do: TimelineEvent
+  defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
+
+  defp deduce_entity_field(:insight), do: :post_id
+  defp deduce_entity_field(:watchlist), do: :watchlist_id
+  defp deduce_entity_field(:screener), do: :watchlist_id
   defp deduce_entity_field(:timeline_event), do: :timeline_event_id
   defp deduce_entity_field(:chart_configuration), do: :chart_configuration_id
-  defp deduce_entity_field(:watchlist), do: :watchlist_id
 end

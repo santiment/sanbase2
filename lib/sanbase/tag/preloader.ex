@@ -9,7 +9,6 @@ defmodule Sanbase.Tag.Preloader do
 
   def order_tags([%Post{} | _] = structs) do
     structs = Repo.preload(structs, [:tags])
-
     post_id_to_ordered_tag_ids = post_id_to_ordered_tag_ids(structs)
 
     Enum.map(structs, fn

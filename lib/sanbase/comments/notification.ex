@@ -290,7 +290,7 @@ defmodule Sanbase.Comments.Notification do
   defp last_id(%TimelineEventComment{id: id}, _, _), do: id
 
   def feed_entity_title(timeline_event_id) do
-    Sanbase.Timeline.TimelineEvent.by_id(timeline_event_id)
+    Sanbase.Timeline.TimelineEvent.by_id!(timeline_event_id)
     |> case do
       %{post: %{title: title}} -> title
       %{user_list: %{name: name}} -> name

@@ -10,7 +10,7 @@ defmodule SanbaseWeb.ExAdmin.Model.Project.SourceSlugMapping do
           collection: from(p in Sanbase.Model.Project, order_by: p.name) |> Sanbase.Repo.all()
         )
 
-        input(source_slug_mapping, :source)
+        input(source_slug_mapping, :source, collection: ["cryptocompare", "coinmarketcap"])
         input(source_slug_mapping, :slug)
       end
     end

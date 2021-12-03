@@ -82,7 +82,7 @@ defmodule Sanbase.Model.Project.Selector do
 
   defp transform_selector(%{watchlist_id: watchlist_id} = selector)
        when is_integer(watchlist_id) do
-    with {:ok, watchlist} <- Sanbase.UserList.by_id(watchlist_id) do
+    with {:ok, watchlist} <- Sanbase.UserList.by_id(watchlist_id, []) do
       case Sanbase.UserList.get_slugs(watchlist) do
         {:ok, slugs} ->
           {:ok, Map.put(selector, :slug, slugs)}

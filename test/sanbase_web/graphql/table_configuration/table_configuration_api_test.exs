@@ -109,7 +109,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
         |> get_in(["data", "createTableConfiguration", "id"])
 
       _ = delete_table_configuration(conn, table_configuration_id)
-      {:error, error_msg} = Sanbase.TableConfiguration.by_id(table_configuration_id)
+      {:error, error_msg} = Sanbase.TableConfiguration.by_id(table_configuration_id, [])
       assert error_msg =~ "does not exist"
     end
   end

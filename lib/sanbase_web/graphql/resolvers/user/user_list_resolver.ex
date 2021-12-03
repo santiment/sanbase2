@@ -272,7 +272,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   end
 
   def update_watchlist(_root, %{id: id} = args, %{context: %{auth: %{current_user: current_user}}}) do
-    with {:ok, watchlist} <- UserList.by_id(id),
+    with {:ok, watchlist} <- UserList.by_id(id, []),
          true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.update_user_list(current_user, args) do
         {:ok, user_list} ->
@@ -292,7 +292,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{id: id, list_items: _} = args,
         %{context: %{auth: %{current_user: current_user}}}
       ) do
-    with {:ok, watchlist} <- UserList.by_id(id),
+    with {:ok, watchlist} <- UserList.by_id(id, []),
          true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.add_user_list_items(current_user, args) do
         {:ok, user_list} ->
@@ -312,7 +312,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{id: id, list_items: _} = args,
         %{context: %{auth: %{current_user: current_user}}}
       ) do
-    with {:ok, watchlist} <- UserList.by_id(id),
+    with {:ok, watchlist} <- UserList.by_id(id, []),
          true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.remove_user_list_items(current_user, args) do
         {:ok, user_list} ->
@@ -344,7 +344,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   def remove_user_list(_root, %{id: watchlist_id} = args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    with {:ok, watchlist} <- UserList.by_id(watchlist_id),
+    with {:ok, watchlist} <- UserList.by_id(watchlist_id, []),
          true <- has_permissions?(watchlist, current_user, "delete"),
          {:ok, watchlist} <- remove_watchlist(current_user, args) do
       {:ok, watchlist}

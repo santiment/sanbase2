@@ -161,6 +161,19 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end
   end
 
+  defp get_user_subscription(user, product_id) do
+    # If there is an account linked, get the subscription of the
+    # primary user. Otherwise, get the subscription of that user.
+
+    case Subscription.get_user_subscription(user, product_id) do
+      {:ok, subscription} ->
+        subscription
+
+      {:error, error_msg} ->
+        {:error, error_msg}
+    end
+  end
+
   # TODO: After these changes, the session will now also contain `access_token`
   # insted of only `auth_token`, which is better named and should be used. This
   # is a process of authentication, not authentication

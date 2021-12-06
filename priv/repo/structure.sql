@@ -1135,6 +1135,36 @@ ALTER SEQUENCE public.latest_coinmarketcap_data_id_seq OWNED BY public.latest_co
 
 
 --
+-- Name: linked_users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.linked_users (
+    id bigint NOT NULL,
+    user_id bigint,
+    primary_user_id bigint
+);
+
+
+--
+-- Name: linked_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.linked_users_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: linked_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.linked_users_id_seq OWNED BY public.linked_users.id;
+
+
+--
 -- Name: list_items; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3574,6 +3604,13 @@ ALTER TABLE ONLY public.latest_coinmarketcap_data ALTER COLUMN id SET DEFAULT ne
 
 
 --
+-- Name: linked_users id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users ALTER COLUMN id SET DEFAULT nextval('public.linked_users_id_seq'::regclass);
+
+
+--
 -- Name: list_items id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4229,6 +4266,14 @@ ALTER TABLE ONLY public.latest_btc_wallet_data
 
 ALTER TABLE ONLY public.latest_coinmarketcap_data
     ADD CONSTRAINT latest_coinmarketcap_data_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: linked_users linked_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users
+    ADD CONSTRAINT linked_users_pkey PRIMARY KEY (id);
 
 
 --
@@ -5933,6 +5978,22 @@ ALTER TABLE ONLY public.icos
 
 
 --
+-- Name: linked_users linked_users_primary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users
+    ADD CONSTRAINT linked_users_primary_user_id_fkey FOREIGN KEY (primary_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: linked_users linked_users_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users
+    ADD CONSTRAINT linked_users_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: list_items list_items_blockchain_address_user_pair_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6957,3 +7018,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20211109131726);
 INSERT INTO public."schema_migrations" (version) VALUES (20211117104935);
 INSERT INTO public."schema_migrations" (version) VALUES (20211124075928);
 INSERT INTO public."schema_migrations" (version) VALUES (20211126144929);
+INSERT INTO public."schema_migrations" (version) VALUES (20211206104913);

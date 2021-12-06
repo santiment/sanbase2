@@ -161,11 +161,11 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end
   end
 
-  defp get_user_subscription(user, product_id) do
+  defp get_user_subscription(user_id, product_id) do
     # If there is an account linked, get the subscription of the
     # primary user. Otherwise, get the subscription of that user.
 
-    case Subscription.get_user_subscription(user, product_id) do
+    case Subscription.get_user_subscription(user_id, product_id) do
       {:ok, subscription} ->
         subscription
 
@@ -182,8 +182,11 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
     case access_token && bearer_authenticate(conn, access_token) do
       {:ok, %{current_user: current_user} = map} ->
+        # This will fetch the subscription of the primary user, if any is linked.
+        # If there is no primary user linked it will return the subscription of the
+        # current user
         subscription =
-          Subscription.current_subscription(current_user, @product_id_sanbase) ||
+          get_user_subscription(current_user.id, @product_id_sanbase) ||
             @free_subscription
 
         %AuthStruct{

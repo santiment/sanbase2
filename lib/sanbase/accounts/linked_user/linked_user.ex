@@ -1,4 +1,14 @@
 defmodule Sanbase.Accounts.LinkedUser do
+  @moduledoc ~s"""
+  A module that exposes the linked_users database table.
+
+  A LinkedUser is a pair of primary and secondary users. When
+  authenticating, the secondary user will get the sanbase subscription
+  of the primary user. The primary use can have 2 secondary users sharing
+  their subscription. The idea is that companies can share seats on a
+  single account to cut costs.
+  """
+
   use Ecto.Schema
 
   import Ecto.Query
@@ -11,6 +21,8 @@ defmodule Sanbase.Accounts.LinkedUser do
   schema "linked_users" do
     belongs_to(:primary_user, User)
     belongs_to(:secondary_user, User)
+
+    timestamps()
   end
 
   def changeset(%__MODULE__{} = lu, attrs) do
@@ -39,30 +51,27 @@ defmodule Sanbase.Accounts.LinkedUser do
   end
 
   def delete(primary_user_id, secondary_user_id) do
-    case Sanbase.Repo.get_by(__MODULE__,
-           primary_user_id: primary_user_id,
-           secondary_user_id: secondary_user_id
-         ) do
-      nil ->
-        {:error, "Users are not linked"}
+    lu =
+      Sanbase.Repo.get_by(__MODULE__,
+        primary_user_id: primary_user_id,
+        secondary_user_id: secondary_user_id
+      )
 
-      %__MODULE__{} = luc ->
-        Sanbase.Repo.delete(luc)
+    case lu do
+      %__MODULE__{} = lu -> Sanbase.Repo.delete(lu)
+      nil -> {:error, "Users are not linked"}
     end
   end
 
   def get_primary_user(secondary_user_id) do
-    result =
+    lu =
       from(lu in __MODULE__,
         where: lu.secondary_user_id == ^secondary_user_id,
         preload: [:primary_user]
       )
       |> Sanbase.Repo.one()
 
-    case result do
-      nil -> {:error, "No linked user found for user_id: #{secondary_user_id}"}
-      %__MODULE__{primary_user: primary_user} -> {:ok, primary_user}
-    end
+    {:ok, lu && lu.primary_user}
   end
 
   def get_primary_user_id(secondary_user_id) do
@@ -74,9 +83,32 @@ defmodule Sanbase.Accounts.LinkedUser do
       |> Sanbase.Repo.one()
 
     case result do
+      primary_user_id when is_integer(primary_user_id) -> {:ok, primary_user_id}
       nil -> {:error, "No linked user found for user_id: #{secondary_user_id}"}
-      primary_user_id -> {:ok, primary_user_id}
     end
+  end
+
+  def get_secondary_users(primary_user_id) do
+    result =
+      from(lu in __MODULE__,
+        where: lu.primary_user_id == ^primary_user_id,
+        preload: [:secondary_user]
+      )
+      |> Sanbase.Repo.all()
+      |> Enum.map(& &1.secondary_user)
+
+    {:ok, result}
+  end
+
+  def remove_linked_user_pair(primary_user_id, secondary_user_id) do
+    {_num, nil} =
+      from(lu in __MODULE__,
+        where:
+          lu.primary_user_id == ^primary_user_id and lu.secondary_user_id == ^secondary_user_id
+      )
+      |> Sanbase.Repo.delete_all()
+
+    :ok
   end
 
   defp count_secondaries(primary_user_id) do
@@ -93,7 +125,6 @@ defmodule Sanbase.Accounts.LinkedUser do
            secondary_user_id: secondary_user_id
          ) do
       %__MODULE__{} = linked_user ->
-        # Creating is idempotent
         {:ok, linked_user}
 
       nil ->

@@ -19,6 +19,7 @@ defmodule Sanbase.Repo.Migrations.AddLinkedUsersTable do
       add(:primary_user_id, references(:users), null: false)
       add(:secondary_user_id, references(:users), null: false)
       add(:token, :string, null: false)
+      add(:is_confirmed, :boolean, default: false, null: false)
 
       timestamps()
     end

@@ -290,12 +290,13 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   def user_has_sanbase_pro?(user_id) do
-    case current_subscription(user_id, @product_sanbase) do
-      %__MODULE__{plan: %{name: name}} when name in ["PRO", "PRO_PLUS"] -> true
+    case get_user_subscription(user_id, @product_sanbase) do
+      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> true
       _ -> false
     end
   end
 
+  @spec get_user_subscription(any, any) :: {:error, any} | {:ok, any}
   def get_user_subscription(user_id, product_id) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_user_id, fn _repo, _changes ->

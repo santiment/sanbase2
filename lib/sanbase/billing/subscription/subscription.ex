@@ -289,6 +289,13 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.all()
   end
 
+  def user_sanbase_plan(user_id) do
+    case get_user_subscription(user_id, @product_sanbase) do
+      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> name
+      _ -> nil
+    end
+  end
+
   def user_has_sanbase_pro?(user_id) do
     case get_user_subscription(user_id, @product_sanbase) do
       {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> true

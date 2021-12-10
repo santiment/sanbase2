@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.LinkedUserApiTest do
 
     user = insert(:user)
     pro_user = insert(:user)
+
     insert(:subscription_pro_sanbase, user: pro_user)
 
     conn = setup_jwt_auth(build_conn(), user)
@@ -26,7 +27,7 @@ defmodule SanbaseWeb.Graphql.LinkedUserApiTest do
     # The logged in user with the conn is primary, the other is the secondary user
     assert <<_::binary>> = token = generate_linked_user_token(context.pro_conn, context.user)
 
-    assert true == confirm_linked_user_token(context.conn, token)
+    assert confirm_linked_user_token(context.conn, token) == true
 
     assert current_user(context.conn) |> get_in(["primaryUser", "id"]) ==
              "#{context.pro_user.id}"
@@ -36,6 +37,43 @@ defmodule SanbaseWeb.Graphql.LinkedUserApiTest do
     assert current_user(context.pro_conn)
            |> get_in(["secondaryUsers", Access.at(0), "id"]) ==
              "#{context.user.id}"
+  end
+
+  test "link two users - sanbase pro limit", context do
+    # The limit of linked users is 3
+    for _ <- 1..3 do
+      user = insert(:user)
+      conn = setup_jwt_auth(build_conn(), user)
+      token = generate_linked_user_token(context.pro_conn, user)
+
+      assert confirm_linked_user_token(conn, token) == true
+    end
+
+    token = generate_linked_user_token(context.pro_conn, context.user)
+
+    assert confirm_linked_user_token_error(context.conn, token) =~
+             "The maximum number of linked secondary users of 3 has been reached"
+  end
+
+  test "link two users - sanbase pro plus limit", context do
+    pro_plus_user = insert(:user)
+    pro_plus_conn = setup_jwt_auth(build_conn(), pro_plus_user)
+    insert(:subscription_pro_plus_sanbase, user: pro_plus_user)
+
+    # The limit of linked users is 5
+    for _ <- 1..5 do
+      user = insert(:user)
+      conn = setup_jwt_auth(build_conn(), user)
+
+      token = generate_linked_user_token(pro_plus_conn, user)
+
+      assert confirm_linked_user_token(conn, token) == true
+    end
+
+    token = generate_linked_user_token(pro_plus_conn, context.user)
+
+    assert confirm_linked_user_token_error(context.conn, token) =~
+             "The maximum number of linked secondary users of 5 has been reached"
   end
 
   test "unlink two users - primary removes secondary", context do
@@ -97,6 +135,19 @@ defmodule SanbaseWeb.Graphql.LinkedUserApiTest do
     |> post("/graphql", mutation_skeleton(mutation))
     |> json_response(200)
     |> get_in(["data", "confirmLinkedUserToken"])
+  end
+
+  defp confirm_linked_user_token_error(conn, token) do
+    mutation = """
+    mutation{
+      confirmLinkedUserToken(token: "#{token}")
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+    |> get_in(["errors", Access.at(0), "message"])
   end
 
   defp remove_secondary_user(conn, secondary_user_id) do

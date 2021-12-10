@@ -16,7 +16,8 @@ defmodule Sanbase.Accounts.LinkedUser do
 
   alias Sanbase.Accounts.User
 
-  @max_secondaries_count 2
+  @pro_max_secondary_users 3
+  @pro_plus_max_secondary_users 5
 
   schema "linked_users" do
     belongs_to(:primary_user, User)
@@ -34,13 +35,24 @@ defmodule Sanbase.Accounts.LinkedUser do
 
   def create(primary_user_id, user_id) do
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:count_secondary_users, fn _repo, _changes ->
+    |> Ecto.Multi.run(:secondary_users_count, fn _repo, _changes ->
       {:ok, count_secondaries(primary_user_id)}
     end)
-    |> Ecto.Multi.run(:add_linked_users, fn _repo, %{count_secondary_users: count} ->
-      case count < @max_secondaries_count do
-        true -> create_link(primary_user_id, user_id)
-        false -> {:error, "The maximum number of linked secondary users has been reached."}
+    |> Ecto.Multi.run(:max_secondary_users_count, fn _repo, _changes ->
+      case Sanbase.Billing.Subscription.user_sanbase_plan(primary_user_id) do
+        nil -> {:error, "The user does not have a Sanbase plan."}
+        "PRO" -> {:ok, @pro_max_secondary_users}
+        "PRO_PLUS" -> {:ok, @pro_plus_max_secondary_users}
+      end
+    end)
+    |> Ecto.Multi.run(:add_linked_users, fn _repo, changes ->
+      case changes.secondary_users_count < changes.max_secondary_users_count do
+        true ->
+          create_link(primary_user_id, user_id)
+
+        false ->
+          {:error,
+           "The maximum number of linked secondary users of #{changes.secondary_users_count} has been reached."}
       end
     end)
     |> Sanbase.Repo.transaction()

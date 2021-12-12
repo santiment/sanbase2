@@ -1,7 +1,10 @@
 defmodule Sanbase.Chart.Configuration do
+  @behaviour Sanbase.Entity.Behaviour
+
   use Ecto.Schema
 
   import Ecto.{Query, Changeset}
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
 
   alias Sanbase.Repo
 
@@ -58,9 +61,25 @@ defmodule Sanbase.Chart.Configuration do
     |> validate_required([:user_id, :project_id])
   end
 
-  def by_id(config_id, opts \\ []) do
+  @impl Sanbase.Entity.Behaviour
+  def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id(id, opts) do
     querying_user_id = Keyword.get(opts, :querying_user_id)
-    get_chart_configuration(config_id, querying_user_id, opts)
+    get_chart_configuration(id, querying_user_id, opts)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids!(ids, opts), do: by_ids(ids, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids(ids, opts), do: get_chart_configurations(ids, opts)
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(_opts) do
+    from(config in __MODULE__, where: config.is_public == true)
+    |> select([config], config.id)
   end
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
@@ -145,6 +164,20 @@ defmodule Sanbase.Chart.Configuration do
       nil ->
         {:error, "Chart configuration with id #{config_id} does not exist."}
     end
+  end
+
+  defp get_chart_configurations(config_ids, opts) do
+    preload = Keyword.get(opts, :preload, [:chart_events])
+
+    query =
+      from(
+        conf in __MODULE__,
+        where: conf.id in ^config_ids and conf.is_public == true,
+        preload: ^preload,
+        order_by: fragment("array_position(?, ?::int)", ^config_ids, conf.id)
+      )
+
+    {:ok, Repo.all(query)}
   end
 
   defp user_chart_configurations_query(user_id, querying_user_id, nil) do

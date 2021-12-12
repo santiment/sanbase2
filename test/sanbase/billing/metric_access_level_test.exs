@@ -769,6 +769,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "bitfinex_perpetual_funding_rate",
         # dydx funding rates metric
         "dydx_perpetual_funding_rate",
+        # deribit funding rates metric
+        "deribit_perpetual_funding_rate",
         "sentiment_volume_consumed_total_change_1d",
         "sentiment_volume_consumed_total_change_7d",
         "sentiment_volume_consumed_total_change_30d"

@@ -8,8 +8,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   alias Sanbase.Vote
   alias Sanbase.Insight.Post
   alias Sanbase.Chart
+  alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.UserList
 
   require Logger
+
+  def get_most_voted(_root, args, _resolution) do
+    type = Map.get(args, :type)
+    page = Map.get(args, :page, 1)
+    page_size = Map.get(args, :page_size, 10)
+    Sanbase.Entity.get_most_voted(type, page: page, page_size: page_size)
+  end
+
+  def get_most_recent(_root, args, _resolution) do
+    type = Map.get(args, :type)
+    page = Map.get(args, :page, 1)
+    page_size = Map.get(args, :page_size, 10)
+    Sanbase.Entity.get_most_recent(type, page: page, page_size: page_size)
+  end
 
   @doc ~s"""
     Returns a tuple `{total_votes, total_san_votes}` where:
@@ -17,11 +33,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     - `total_san_votes` represents the number of votes where each vote's weight is
     equal to the san balance of the voter
   """
-
   def votes(%Post{} = post, _args, %{context: %{loader: loader} = context}) do
     user = get_in(context, [:auth, :current_user]) || %User{id: nil}
     selector = %{post_id: post.id, user_id: user.id}
     get_votes(loader, :insight_vote_stats, selector)
+  end
+
+  def votes(%UserList{} = ul, _args, %{context: %{loader: loader} = context}) do
+    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
+    selector = %{watchlist_id: ul.id, user_id: user.id}
+    get_votes(loader, :watchlist_vote_stats, selector)
   end
 
   def votes(%Chart.Configuration{} = config, _args, %{
@@ -33,11 +54,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     get_votes(loader, :chart_configuration_vote_stats, selector)
   end
 
+  def votes(%TimelineEvent{} = event, _args, %{
+        context: %{loader: loader} = context
+      }) do
+    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
+    selector = %{timeline_event_id: event.id, user_id: user.id}
+
+    get_votes(loader, :timeline_event_vote_stats, selector)
+  end
+
   def votes(_root, args, %{source: %{post_id: id}} = resolution) do
     # Handles the case where the `votes` is called on top of the result
     # from `vote`/`unvote`. They return the entity id as a result which
     # can be used from the `source` map in the resolution
     votes(%Post{id: id}, args, resolution)
+  end
+
+  def votes(_root, args, %{source: %{watchlist_id: id}} = resolution) do
+    # Handles the case where the `votes` is called on top of the result
+    # from `vote`/`unvote`. They return the entity id as a result which
+    # can be used from the `source` map in the resolution
+    votes(%UserList{id: id}, args, resolution)
   end
 
   def votes(_root, args, %{source: %{chart_configuration_id: id}} = resolution) do
@@ -47,11 +84,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     votes(%Chart.Configuration{id: id}, args, resolution)
   end
 
+  def votes(_root, args, %{source: %{timeline_event_id: id}} = resolution) do
+    # Handles the case where the `votes` is called on top of the result
+    # from `vote`/`unvote`. They return the entity id as a result which
+    # can be used from the `source` map in the resolution
+    votes(%TimelineEvent{id: id}, args, resolution)
+  end
+
   def voted_at(%Post{} = post, _args, %{
         context: %{loader: loader, auth: %{current_user: user}}
       }) do
     selector = %{post_id: post.id, user_id: user.id}
     get_voted_at(loader, :insight_voted_at, selector)
+  end
+
+  def voted_at(%UserList{} = ul, _args, %{
+        context: %{loader: loader, auth: %{current_user: user}}
+      }) do
+    selector = %{watchlist_id: ul.id, user_id: user.id}
+    get_voted_at(loader, :watchlist_voted_at, selector)
+  end
+
+  def voted_at(%TimelineEvent{} = event, _args, %{
+        context: %{loader: loader, auth: %{current_user: user}}
+      }) do
+    selector = %{timeline_event_id: event.id, user_id: user.id}
+    get_voted_at(loader, :timeline_event_voted_at, selector)
   end
 
   def voted_at(%Chart.Configuration{} = config, _args, %{
@@ -63,6 +121,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
 
   def voted_at(_root, _args, _context), do: {:ok, nil}
 
+  # Private functions
   defp get_votes(loader, query, selector) do
     loader
     |> Dataloader.load(SanbaseDataloader, query, selector)
@@ -92,6 +151,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
       Map.take(args, [
         :insight_id,
         :post_id,
+        :watchlist_id,
         :chart_configuration_id,
         :timeline_event_id
       ])
@@ -105,8 +165,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   defp entity_id_to_entity_name(entity_id) do
     case entity_id do
       x when x in [:post_id, :insight_id] -> :post
-      :chart_configuration_id -> :chart_configuration
+      :watchlist_id -> :watchlist
       :timeline_event_id -> :timeline_event
+      :chart_configuration_id -> :chart_configuration
     end
   end
 
@@ -118,11 +179,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
       %{insight_id: id} ->
         %{post_id: id, user_id: user.id}
 
+      %{watchlist_id: id} ->
+        %{watchlist_id: id, user_id: user.id}
+
       %{chart_configuration_id: id} ->
         %{chart_configuration_id: id, user_id: user.id}
 
-      %{timeline_event: id} ->
-        %{timeline_event: id, user_id: user.id}
+      %{timeline_event_id: id} ->
+        %{timeline_event_id: id, user_id: user.id}
     end
   end
 

@@ -240,7 +240,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         |> get_in(["data", "createChartConfiguration", "id"])
 
       _ = delete_chart_configuration(conn, config_id)
-      {:error, error_msg} = Sanbase.Chart.Configuration.by_id(config_id)
+      {:error, error_msg} = Sanbase.Chart.Configuration.by_id(config_id, [])
       assert error_msg =~ "does not exist"
     end
   end

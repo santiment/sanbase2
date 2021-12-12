@@ -28,11 +28,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
   end
 
   def timeline_event(_root, %{id: timeline_event_id}, _resolution) do
-    TimelineEvent.by_id(timeline_event_id)
-    |> case do
-      nil -> {:error, "There is no event with id #{timeline_event_id}"}
-      timeline_event -> {:ok, timeline_event}
-    end
+    TimelineEvent.by_id(timeline_event_id, [])
   end
 
   def upvote_timeline_event(_root, %{timeline_event_id: timeline_event_id}, %{
@@ -40,7 +36,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
       }) do
     case Vote.create(%{user_id: current_user.id, timeline_event_id: timeline_event_id}) do
       {:ok, _} ->
-        {:ok, TimelineEvent.by_id(timeline_event_id)}
+        TimelineEvent.by_id(timeline_event_id, [])
 
       {:error, _error} ->
         {:error, "Can't vote for event with id #{timeline_event_id}"}
@@ -52,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
       }) do
     case Vote.downvote(%{timeline_event_id: timeline_event_id, user_id: current_user.id}) do
       {:ok, _} ->
-        {:ok, TimelineEvent.by_id(timeline_event_id)}
+        TimelineEvent.by_id(timeline_event_id, [])
 
       {:error, _} ->
         {:error, "Can't remove vote for event with id #{timeline_event_id}"}

@@ -164,7 +164,7 @@ defmodule Sanbase.Alert.Trigger do
   end
 
   defp remove_targets_on_cooldown(%{watchlist_id: watchlist_id}, trigger) do
-    case Sanbase.UserList.by_id(watchlist_id) do
+    case Sanbase.UserList.by_id(watchlist_id, []) do
       {:error, _} ->
         %{list: [], type: :slug}
 

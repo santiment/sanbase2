@@ -20,8 +20,10 @@ defmodule Sanbase.Timeline.Query do
       on: event.user_trigger_id == ut.id,
       left_join: ul in UserList,
       on: event.user_list_id == ul.id,
+      left_join: post in Sanbase.Insight.Post,
       where:
-        not is_nil(event.post_id) or
+        (not is_nil(event.post_id) and post.ready_state == "published" and
+           post.state == "approved") or
           ul.is_public == true or
           fragment("?.trigger->>'is_public' = 'true'", ut)
     )

@@ -40,7 +40,8 @@ defmodule Sanbase.Comments.EntityComment do
     :insights,
     :timeline_events,
     :short_urls,
-    :blockchain_addresses
+    :blockchain_addresses,
+    :chart_configurations
   ]
 
   @spec create_and_link(
@@ -190,6 +191,7 @@ defmodule Sanbase.Comments.EntityComment do
       |> union_all(^from(pc in TimelineEventComment, select: pc.comment_id))
       |> union_all(^from(pc in BlockchainAddressComment, select: pc.comment_id))
       |> union_all(^from(pc in ShortUrlComment, select: pc.comment_id))
+      |> union_all(^from(pc in ChartConfigurationComment, select: pc.comment_id))
 
     from(
       c in Comment,

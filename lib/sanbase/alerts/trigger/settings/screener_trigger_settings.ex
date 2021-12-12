@@ -59,9 +59,7 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
 
   def get_data(%__MODULE__{operation: %{selector: %{watchlist_id: watchlist_id}}}) do
     {:ok, slugs} =
-      watchlist_id
-      |> Sanbase.UserList.by_id()
-      |> case do
+      case Sanbase.UserList.by_id(watchlist_id, []) do
         {:error, _} -> {:ok, []}
         {:ok, watchlist} -> watchlist |> Sanbase.UserList.get_slugs()
       end

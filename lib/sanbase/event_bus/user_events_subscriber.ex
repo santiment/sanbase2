@@ -40,19 +40,6 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     state
   end
 
-  defp handle_event(%{data: %{event_type: :update_email}}, event_shadow, state) do
-    # msg = "The email of sanbae has been changed"
-    # Madril.send(user, msg)
-    EventBus.mark_as_completed({__MODULE__, event_shadow})
-    state
-  end
-
-  defp handle_event(%{data: %{event_type: :update_username}}, event_shadow, state) do
-    # Do something
-    EventBus.mark_as_completed({__MODULE__, event_shadow})
-    state
-  end
-
   defp handle_event(_event, event_shadow, state) do
     # The unhandled events are marked as completed
     EventBus.mark_as_completed({__MODULE__, event_shadow})

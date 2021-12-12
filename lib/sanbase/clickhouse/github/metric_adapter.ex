@@ -83,6 +83,13 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def timeseries_data_per_slug(metric, selector, from, to, interval, opts \\ [])
+
+  def timeseries_data_per_slug(_metric, _selector, _from, _to, _interval, _opts) do
+    {:error, "not_implemented"}
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, %{organization: organization}, from, to, opts) do
     aggregated_timeseries_data(metric, %{organizations: [organization]}, from, to, opts)
   end

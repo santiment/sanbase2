@@ -4,10 +4,29 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
   """
   use Absinthe.Schema.Notation
 
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
+
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :vote_queries do
+    field :get_most_voted, list_of(:entity_result) do
+      meta(access: :free)
+      arg(:type, :entity_type)
+      arg(:page, :integer)
+      arg(:page_size, :integer)
+
+      cache_resolve(&VoteResolver.get_most_voted/3, ttl: 30, max_ttl_offset: 30)
+    end
+
+    field :get_most_recent, list_of(:entity_result) do
+      meta(access: :free)
+      arg(:type, :entity_type)
+      arg(:page, :integer)
+      arg(:page_size, :integer)
+
+      resolve(&VoteResolver.get_most_recent/3)
+    end
   end
 
   object :vote_mutations do
@@ -17,6 +36,8 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
     field :vote, :vote_result do
       arg(:post_id, :integer, deprecate: "Use `insightId` instead")
       arg(:insight_id, :integer)
+      arg(:watchlist_id, :integer)
+      arg(:timeline_event_id, :integer)
       arg(:chart_configuration_id, :integer)
 
       middleware(JWTAuth)
@@ -29,6 +50,8 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
     field :unvote, :vote_result do
       arg(:post_id, :integer, deprecate: "Use `insightId` instead")
       arg(:insight_id, :integer)
+      arg(:watchlist_id, :integer)
+      arg(:timeline_event_id, :integer)
       arg(:chart_configuration_id, :integer)
 
       middleware(JWTAuth)

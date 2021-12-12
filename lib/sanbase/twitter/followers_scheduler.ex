@@ -7,14 +7,16 @@ defmodule Sanbase.Twitter.FollowersScheduler do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
+  @oban_conf_name :oban_scrapers
   @oban_queue :twitter_followers_migration_queue
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def resume(), do: Oban.resume_queue(queue: @oban_queue)
-  def pause(), do: Oban.pause_queue(queue: @oban_queue)
+  def conf_name(), do: @oban_conf_name
+  def resume(), do: Oban.resume_queue(@oban_conf_name, queue: @oban_queue)
+  def pause(), do: Oban.pause_queue(@oban_conf_name, queue: @oban_queue)
 
   def init(_opts) do
     # In order to be able to stop the historical scraper via env variables
@@ -35,9 +37,10 @@ defmodule Sanbase.Twitter.FollowersScheduler do
   def add_jobs() do
     {:ok, slugs} = Twitter.MetricAdapter.available_slugs()
 
-    (slugs -- get_recorded_slugs())
-    |> Enum.map(&create_oban_job(&1))
-    |> Oban.insert_all()
+    slugs_left = slugs -- get_recorded_slugs()
+    data = Enum.map(slugs_left, &create_oban_job(&1))
+
+    Oban.insert_all(@oban_conf_name, data)
   end
 
   def get_recorded_slugs() do

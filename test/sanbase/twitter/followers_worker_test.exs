@@ -43,7 +43,9 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
 
       # Drain the queue, synchronously executing all the jobs in the current process
       assert %{success: 5, failure: 0} =
-               Oban.drain_queue(queue: Sanbase.Twitter.FollowersWorker.queue())
+               Oban.drain_queue(Sanbase.Twitter.FollowersScheduler.conf_name(),
+                 queue: Sanbase.Twitter.FollowersWorker.queue()
+               )
 
       # Try to run the same jobs again
       Sanbase.Twitter.FollowersScheduler.add_jobs()

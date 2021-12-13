@@ -108,7 +108,6 @@ defmodule Sanbase.Twitter.Worker do
 
     twitter_data_user_data = fetch_twitter_user_data(twitter_name)
 
-    export_to_kafka(twitter_data_user_data, twitter_name)
     store_twitter_user_data(twitter_data_user_data, twitter_name)
   end
 

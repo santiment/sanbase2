@@ -135,8 +135,10 @@ defmodule Sanbase.DateTimeUtils do
     str_to_sec(interval) |> Integer.floor_div(3600)
   end
 
-  def date_to_datetime(date) do
-    {:ok, datetime, _} = (Date.to_iso8601(date) <> "T00:00:00Z") |> DateTime.from_iso8601()
+  def date_to_datetime(date, opts \\ []) do
+    time = Keyword.get(opts, :time, ~T[00:00:00Z]) |> Time.to_iso8601()
+
+    {:ok, datetime, _} = (Date.to_iso8601(date) <> "T" <> time <> "Z") |> DateTime.from_iso8601()
 
     datetime
   end

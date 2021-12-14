@@ -1,15 +1,15 @@
 defmodule Sanbase.Twitter.TimeseriesPoint do
   defstruct [
-    :slug,
     :datetime,
-    :value
+    :twitter_handle,
+    :followers_count
   ]
 
   def new(map) when is_map(map) do
     %__MODULE__{
-      slug: map.slug,
       datetime: map.datetime,
-      value: map.value
+      twitter_handle: map.twitter_handle,
+      followers_count: map[:value] || map[:followers_count]
     }
   end
 
@@ -21,7 +21,7 @@ defmodule Sanbase.Twitter.TimeseriesPoint do
       |> Map.from_struct()
 
     key =
-      [point.slug, point.value, point.timestamp]
+      [point.twitter_handle, point.timestamp]
       |> Enum.join("_")
 
     {key, Jason.encode!(point)}

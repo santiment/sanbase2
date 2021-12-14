@@ -2,11 +2,13 @@ defmodule Sanbase.Timeline.TimelineEvent do
   @moduledoc ~s"""
   Persisting events on create/update insights, watchlists and triggers
   """
+  @behaviour Sanbase.Entity.Behaviour
 
   use Ecto.Schema
 
-  import Ecto.Changeset
   import Ecto.Query
+  import Ecto.Changeset
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
@@ -77,14 +79,12 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   @by_id_preloads [:user_trigger, [post: :tags], :user_list, :user, :votes]
-  def by_id!(id_or_ids) do
-    case by_id(id_or_ids) do
-      {:ok, result} -> result
-      {:error, error} -> raise error
-    end
-  end
 
-  def by_id(id) when is_integer(id) do
+  @impl Sanbase.Entity.Behaviour
+  def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id(id, _opts) when is_integer(id) do
     from(te in TimelineEvent,
       where: te.id == ^id,
       preload: ^@by_id_preloads
@@ -96,20 +96,27 @@ defmodule Sanbase.Timeline.TimelineEvent do
     end
   end
 
-  def by_id(ids) when is_list(ids) do
-    query =
+  @impl Sanbase.Entity.Behaviour
+  def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids(ids, _opts) when is_list(ids) do
+    result =
       from(te in TimelineEvent,
         where: te.id in ^ids,
         preload: ^@by_id_preloads,
         order_by: fragment("array_position(?, ?::int)", ^ids, te.id)
       )
+      |> Repo.all()
 
-    {:ok, Repo.all(query)}
+    {:ok, result}
   end
 
-  def public_timeline_events_query() do
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(_opts) do
     from(te in __MODULE__)
     |> Query.events_with_public_entities_query()
+    |> select([te], te.id)
   end
 
   @doc """

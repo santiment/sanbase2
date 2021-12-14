@@ -106,13 +106,24 @@ defmodule Sanbase.Twitter.Worker do
     # Ignore trailing slash and everything after it
     twitter_name = String.split(twitter_name, "/") |> hd
 
-    twitter_name
-    |> fetch_twitter_user_data()
-    |> store_twitter_user_data(twitter_name)
+    twitter_data_user_data = fetch_twitter_user_data(twitter_name)
+
+    store_twitter_user_data(twitter_data_user_data, twitter_name)
   end
 
   defp fetch_and_store(args) do
     Logger.warn("Invalid parameters while fetching twitter data: " <> inspect(args))
+  end
+
+  defp export_to_kafka(data, slug) do
+    topic = Config.module_get!(Sanbase.KafkaExporter, :twitter_followers_topic)
+
+    data
+    |> Stream.map(&Map.put(&1, :slug, slug))
+    |> Stream.map(&Map.put(&1, :datetime, DateTime.utc_now()))
+    |> Stream.map(&Sanbase.Twitter.TimeseriesPoint.new/1)
+    |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.json_kv_tuple/1)
+    |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(topic)
   end
 
   defp store_twitter_user_data(nil, _twitter_name), do: :ok

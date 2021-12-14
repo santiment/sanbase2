@@ -1,10 +1,13 @@
 defmodule Sanbase.Insight.Post do
+  @behaviour Sanbase.Entity.Behaviour
+
   use Ecto.Schema
 
   import Ecto.Query
   import Ecto.Changeset
   import Sanbase.Insight.EventEmitter, only: [emit_event: 3]
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
 
   alias Sanbase.Tag
   alias Sanbase.Repo
@@ -28,14 +31,15 @@ defmodule Sanbase.Insight.Post do
   @draft "draft"
   @published "published"
 
-  @type opts :: [
-          is_pulse: boolean(),
-          is_paywall_required: boolean(),
-          from: DateTime.t(),
-          to: DateTime.t(),
-          page: non_neg_integer(),
-          page_size: non_neg_integer()
-        ]
+  @type option ::
+          {:is_pulse, boolean()}
+          | {:is_paywall_required, boolean()}
+          | {:from, DateTime.t()}
+          | {:to, DateTime.t()}
+          | {:page, non_neg_integer()}
+          | {:page_size, non_neg_integer()}
+
+  @type opts :: [option]
 
   schema "posts" do
     belongs_to(:user, User)
@@ -109,7 +113,12 @@ defmodule Sanbase.Insight.Post do
       |> Repo.all()
       |> Map.new(fn {user_id, total, draft, pulse, paywall} ->
         {user_id,
-         %{total_count: total, draft_count: draft, pulse_count: pulse, paywall_count: paywall}}
+         %{
+           total_count: total,
+           draft_count: draft,
+           pulse_count: pulse,
+           paywall_count: paywall
+         }}
       end)
 
     {:ok, map}
@@ -163,7 +172,8 @@ defmodule Sanbase.Insight.Post do
     attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
 
     preloads =
-      if(attrs[:tags], do: [:tags], else: []) ++ if attrs[:metrics], do: [:metrics], else: []
+      if(attrs[:tags], do: [:tags], else: []) ++
+        if attrs[:metrics], do: [:metrics], else: []
 
     post
     |> Repo.preload(preloads)
@@ -205,18 +215,30 @@ defmodule Sanbase.Insight.Post do
   def draft(), do: @draft
   def preloads(), do: @preloads
 
-  def is_published?(%Post{ready_state: ready_state}), do: ready_state == @published
+  def is_published?(%Post{ready_state: ready_state}),
+    do: ready_state == @published
 
-  def by_id(post_id) when is_integer(post_id) do
-    from(p in __MODULE__, preload: ^@preloads)
-    |> Repo.get(post_id)
-    |> case do
-      nil -> {:error, "There is no insight with id #{post_id}"}
-      post -> {:ok, post |> Tag.Preloader.order_tags()}
+  @impl Sanbase.Entity.Behaviour
+  def by_id!(id, opts) when is_integer(id), do: by_id(id, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id(id, opts) when is_integer(id) do
+    result =
+      from(p in __MODULE__)
+      |> maybe_preload(opts)
+      |> Repo.get(id)
+
+    case result do
+      nil -> {:error, "There is no insight with id #{id}"}
+      post -> {:ok, Tag.Preloader.order_tags(post)}
     end
   end
 
-  def by_id(post_ids, opts \\ []) when is_list(post_ids) do
+  @impl Sanbase.Entity.Behaviour
+  def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids(post_ids, opts) when is_list(post_ids) do
     result =
       public_insights_query(opts)
       |> where([p], p.id in ^post_ids)
@@ -225,6 +247,12 @@ defmodule Sanbase.Insight.Post do
       |> Tag.Preloader.order_tags()
 
     {:ok, result}
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    public_insights_query(opts)
+    |> select([p], p.id)
   end
 
   @spec create(%User{}, map()) :: {:ok, %__MODULE__{}} | {:error, Keyword.t()}
@@ -382,7 +410,10 @@ defmodule Sanbase.Insight.Post do
     |> by_user(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
-    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
+    |> by_from_to_datetime(
+      Keyword.get(opts, :from, nil),
+      Keyword.get(opts, :to, nil)
+    )
     |> order_by_published_at()
     |> page(opts)
     |> preload(^@preloads)
@@ -427,7 +458,10 @@ defmodule Sanbase.Insight.Post do
     |> by_tags(tags)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
-    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
+    |> by_from_to_datetime(
+      Keyword.get(opts, :from, nil),
+      Keyword.get(opts, :to, nil)
+    )
     |> distinct(true)
     |> order_by_published_at()
     |> maybe_preload(opts)
@@ -435,12 +469,16 @@ defmodule Sanbase.Insight.Post do
     |> Tag.Preloader.order_tags()
   end
 
-  def public_insights_by_tags(tags, page, page_size, opts \\ []) when is_list(tags) do
+  def public_insights_by_tags(tags, page, page_size, opts \\ [])
+      when is_list(tags) do
     published_and_approved_insights()
     |> by_tags(tags)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
-    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
+    |> by_from_to_datetime(
+      Keyword.get(opts, :from, nil),
+      Keyword.get(opts, :to, nil)
+    )
     |> distinct(true)
     |> order_by_published_at()
     |> page(page, page_size)
@@ -457,7 +495,10 @@ defmodule Sanbase.Insight.Post do
     |> user_has_voted_for(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
-    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
+    |> by_from_to_datetime(
+      Keyword.get(opts, :from, nil),
+      Keyword.get(opts, :to, nil)
+    )
     |> maybe_preload(opts)
     |> Repo.all()
     |> Tag.Preloader.order_tags()
@@ -559,7 +600,8 @@ defmodule Sanbase.Insight.Post do
     )
   end
 
-  defp by_from_to_datetime(query, from, to) when not is_nil(from) and not is_nil(to) do
+  defp by_from_to_datetime(query, from, to)
+       when not is_nil(from) and not is_nil(to) do
     from(
       p in query,
       where: p.published_at >= ^from and p.published_at <= ^to
@@ -632,7 +674,9 @@ defmodule Sanbase.Insight.Post do
 
       _ ->
         changeset
-        |> change(%{updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)})
+        |> change(%{
+          updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+        })
     end
   end
 
@@ -676,7 +720,9 @@ defmodule Sanbase.Insight.Post do
     |> Enum.map(&Sanbase.FileStore.delete/1)
   end
 
-  defp maybe_drop_post_tags(post, %{tags: tags}) when is_list(tags), do: Tag.drop_tags(post)
+  defp maybe_drop_post_tags(post, %{tags: tags}) when is_list(tags),
+    do: Tag.drop_tags(post)
+
   defp maybe_drop_post_tags(_, _), do: :ok
 
   @predictions [

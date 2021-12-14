@@ -1,7 +1,10 @@
 defmodule Sanbase.Chart.Configuration do
+  @behaviour Sanbase.Entity.Behaviour
+
   use Ecto.Schema
 
   import Ecto.{Query, Changeset}
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
 
   alias Sanbase.Repo
 
@@ -58,20 +61,25 @@ defmodule Sanbase.Chart.Configuration do
     |> validate_required([:user_id, :project_id])
   end
 
-  def by_id(id_or_ids, opts \\ [])
+  @impl Sanbase.Entity.Behaviour
+  def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
 
-  def by_id(config_id, opts) when is_integer(config_id) or is_binary(config_id) do
-    # allow both string and integer ids
+  @impl Sanbase.Entity.Behaviour
+  def by_id(id, opts) do
     querying_user_id = Keyword.get(opts, :querying_user_id)
-    get_chart_configuration(config_id, querying_user_id, opts)
+    get_chart_configuration(id, querying_user_id, opts)
   end
 
-  def by_id(config_ids, opts) when is_list(config_ids) do
-    get_chart_configurations(config_ids, opts)
-  end
+  @impl Sanbase.Entity.Behaviour
+  def by_ids!(ids, opts), do: by_ids(ids, opts) |> to_bang()
 
-  def public_chart_configurations_query() do
+  @impl Sanbase.Entity.Behaviour
+  def by_ids(ids, opts), do: get_chart_configurations(ids, opts)
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(_opts) do
     from(config in __MODULE__, where: config.is_public == true)
+    |> select([config], config.id)
   end
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public

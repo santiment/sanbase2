@@ -5,10 +5,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Accounts.User
-  alias Sanbase.Vote
   alias Sanbase.Insight.{Post, PopularAuthor}
   alias Sanbase.Comments.EntityComment
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   require Logger
 
@@ -47,7 +45,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   end
 
   def post(_root, %{id: post_id}, _resolution) do
-    Post.by_id(post_id)
+    Post.by_id(post_id, [])
   end
 
   def all_insights(_root, %{tags: tags, page: page, page_size: page_size} = args, _context)
@@ -183,67 +181,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   def all_tags(_root, _args, _context) do
     {:ok, Sanbase.Tag.all()}
-  end
-
-  @doc ~s"""
-    Returns a tuple `{total_votes, total_san_votes}` where:
-    - `total_votes` represents the number of votes where each vote's weight is 1
-    - `total_san_votes` represents the number of votes where each vote's weight is
-    equal to the san balance of the voter
-  """
-  def votes(%Post{} = post, _args, %{context: %{loader: loader} = context}) do
-    # Get the user_id or nil
-    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
-    selector = %{post_id: post.id, user_id: user.id}
-
-    loader
-    |> Dataloader.load(SanbaseDataloader, :insight_vote_stats, selector)
-    |> on_load(fn loader ->
-      result = Dataloader.get(loader, SanbaseDataloader, :insight_vote_stats, selector)
-      result = result || %{total_votes: 0, total_voters: 0, current_user_votes: 0}
-
-      {:ok, result}
-    end)
-  end
-
-  def voted_at(%Post{} = post, _args, %{context: %{loader: loader, auth: %{current_user: user}}}) do
-    selector = %{post_id: post.id, user_id: user.id}
-
-    loader
-    |> Dataloader.load(SanbaseDataloader, :insight_voted_at, selector)
-    |> on_load(fn loader ->
-      result = Dataloader.get(loader, SanbaseDataloader, :insight_voted_at, selector)
-      result = (result && result[:voted_at]) || nil
-
-      {:ok, result}
-    end)
-  end
-
-  def voted_at(%Post{}, _args, _context), do: {:ok, nil}
-
-  def vote(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    insight_id = Map.get(args, :insight_id) || Map.fetch!(args, :post_id)
-
-    case Vote.create(%{post_id: insight_id, user_id: user.id}) do
-      {:ok, _vote} ->
-        Post.by_id(insight_id)
-
-      {:error, changeset} ->
-        {
-          :error,
-          message: "Can't vote for post with id #{insight_id}",
-          details: changeset_errors(changeset)
-        }
-    end
-  end
-
-  def unvote(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    insight_id = Map.get(args, :insight_id) || Map.fetch!(args, :post_id)
-
-    case Vote.downvote(%{post_id: insight_id, user_id: user.id}) do
-      {:ok, _vote} -> Post.by_id(insight_id)
-      {:error, _error} -> {:error, "Can't remove vote for post with id #{insight_id}"}
-    end
   end
 
   def insights_count(%User{id: id}, _args, %{context: %{loader: loader}}) do

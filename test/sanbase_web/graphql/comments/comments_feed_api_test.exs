@@ -108,7 +108,7 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
       )
 
     assert {:ok, _} = Sanbase.Insight.Post.delete(context.insight2.id, context.user)
-    assert {:error, _} = Sanbase.Insight.Post.by_id(context.insight2.id)
+    assert {:error, _} = Sanbase.Insight.Post.by_id(context.insight2.id, [])
 
     query = comments_feed_query()
 

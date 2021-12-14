@@ -289,10 +289,36 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.all()
   end
 
+  def user_sanbase_plan(user_id) do
+    case get_user_subscription(user_id, @product_sanbase) do
+      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> name
+      _ -> nil
+    end
+  end
+
   def user_has_sanbase_pro?(user_id) do
-    case current_subscription(user_id, @product_sanbase) do
-      %__MODULE__{plan: %{name: name}} when name in ["PRO", "PRO_PLUS"] -> true
+    case get_user_subscription(user_id, @product_sanbase) do
+      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> true
       _ -> false
+    end
+  end
+
+  @spec get_user_subscription(any, any) :: {:error, any} | {:ok, any}
+  def get_user_subscription(user_id, product_id) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_user_id, fn _repo, _changes ->
+      case Sanbase.Accounts.LinkedUser.get_primary_user_id(user_id) do
+        {:ok, primary_user_id} -> {:ok, primary_user_id}
+        {:error, _} -> {:ok, user_id}
+      end
+    end)
+    |> Ecto.Multi.run(:get_current_subscription, fn _repo, %{get_user_id: user_id} ->
+      {:ok, current_subscription(user_id, product_id)}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{get_current_subscription: subscription}} -> {:ok, subscription}
+      {:error, _name, error, _} -> {:error, error}
     end
   end
 

@@ -37,10 +37,10 @@ defmodule Sanbase.Metric.Behaviour do
   @type histogram_value :: String.t() | float() | integer()
   @type histogram_label :: String.t()
 
-  @type histogram_data_map :: %{
-          range: list(float()) | list(DateTime.t()),
-          value: float()
-        }
+  @type histogram_data_map ::
+          %{range: list(float()) | list(DateTime.t()), value: float()}
+          | %{address: String.t(), label: String.t(), value: float}
+          | %{label: String.t(), value: float}
 
   @type histogram_data :: list(histogram_data_map())
 

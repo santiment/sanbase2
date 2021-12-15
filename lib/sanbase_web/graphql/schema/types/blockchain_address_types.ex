@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
     field(:notes, :string)
     field(:labels, list_of(:blockchain_address_label))
     field(:blockchain_address, :blockchain_address_db_stored)
-    field(:user, :user)
+    field(:user, :public_user)
   end
 
   object :blockchain_address_label do

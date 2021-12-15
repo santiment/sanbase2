@@ -10,7 +10,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
   alias Sanbase.Model.Project
-
+  alias Sanbase.BlockchainAddress
   alias Sanbase.Clickhouse.HistoricalBalance.XrpBalance
 
   @balances_aggregated_blockchains ["ethereum", "bitcoin", "bitcoin-cash", "litecoin", "binance"]
@@ -139,7 +139,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
       module: :none,
       asset: String.downcase(contract),
       contract: String.downcase(contract),
-      blockchain: Sanbase.Balance.blockchain_from_infrastructure("ETH"),
+      blockchain: BlockchainAddress.blockchain_from_infrastructure("ETH"),
       slug: Map.get(selector, :slug),
       decimals: decimals
     }
@@ -154,7 +154,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         module: :none,
         asset: contract,
         contract: contract,
-        blockchain: Sanbase.Balance.blockchain_from_infrastructure("ETH"),
+        blockchain: BlockchainAddress.blockchain_from_infrastructure("ETH"),
         slug: slug,
         decimals: decimals
       }
@@ -167,7 +167,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         module: :none,
         asset: contract,
         contract: contract,
-        blockchain: Sanbase.Balance.blockchain_from_infrastructure("ETH"),
+        blockchain: BlockchainAddress.blockchain_from_infrastructure("ETH"),
         slug: slug,
         decimals: decimals
       }
@@ -179,7 +179,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
       module: XrpBalance,
       asset: Map.get(selector, :currency, "XRP"),
       currency: Map.get(selector, :currency, "XRP"),
-      blockchain: Sanbase.Balance.blockchain_from_infrastructure("XRP"),
+      blockchain: BlockchainAddress.blockchain_from_infrastructure("XRP"),
       slug: "ripple",
       decimals: 0
     }
@@ -193,7 +193,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         module: :none,
         asset: contract,
         contract: contract,
-        blockchain: Sanbase.Balance.blockchain_from_infrastructure("BTC"),
+        blockchain: BlockchainAddress.blockchain_from_infrastructure("BTC"),
         slug: slug,
         decimals: decimals
       }
@@ -208,7 +208,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         module: :none,
         asset: contract,
         contract: contract,
-        blockchain: Sanbase.Balance.blockchain_from_infrastructure("BCH"),
+        blockchain: BlockchainAddress.blockchain_from_infrastructure("BCH"),
         slug: slug,
         decimals: decimals
       }
@@ -223,7 +223,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         module: :none,
         asset: contract,
         contract: contract,
-        blockchain: Sanbase.Balance.blockchain_from_infrastructure("LTC"),
+        blockchain: BlockchainAddress.blockchain_from_infrastructure("LTC"),
         slug: slug,
         decimals: decimals
       }
@@ -238,7 +238,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         module: :none,
         asset: contract,
         contract: contract,
-        blockchain: Sanbase.Balance.blockchain_from_infrastructure("BNB"),
+        blockchain: BlockchainAddress.blockchain_from_infrastructure("BNB"),
         slug: slug,
         decimals: decimals
       }

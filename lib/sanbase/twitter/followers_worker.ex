@@ -9,6 +9,8 @@ defmodule Sanbase.Twitter.FollowersWorker do
 
   require Sanbase.Utils.Config, as: Config
 
+  alias Sanbase.Model.Project
+
   def queue(), do: :twitter_followers_migration_queue
 
   @impl Oban.Worker
@@ -58,13 +60,21 @@ defmodule Sanbase.Twitter.FollowersWorker do
     end
   end
 
-  defp export_data(slug, data) do
+  def export_data(slug, data) do
     topic = Config.module_get!(Sanbase.KafkaExporter, :twitter_followers_topic)
 
-    data
-    |> Stream.map(&Map.put(&1, :slug, slug))
-    |> Stream.map(&Sanbase.Twitter.TimeseriesPoint.new/1)
-    |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.json_kv_tuple/1)
-    |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(topic)
+    project = Project.by_slug(slug)
+
+    case Project.twitter_handle(project) do
+      {:ok, twitter_handle} ->
+        data
+        |> Enum.map(&Map.put(&1, :twitter_handle, twitter_handle))
+        |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.new/1)
+        |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.json_kv_tuple/1)
+        |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(topic)
+
+      {:error, _} ->
+        :ok
+    end
   end
 end

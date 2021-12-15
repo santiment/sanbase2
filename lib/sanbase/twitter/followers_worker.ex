@@ -17,7 +17,8 @@ defmodule Sanbase.Twitter.FollowersWorker do
   def perform(%Oban.Job{args: args}) do
     %{"slug" => slug, "from" => from} = args
 
-    from = Date.from_iso8601!(from)
+    {:ok, from, _} = DateTime.from_iso8601(from)
+    from = from |> DateTime.to_date()
     to = Timex.now() |> DateTime.to_date()
 
     case get_data(slug, from, to) do

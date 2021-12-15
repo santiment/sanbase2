@@ -109,14 +109,14 @@ defmodule Sanbase.Twitter.Worker do
     twitter_data_user_data = fetch_twitter_user_data(twitter_name)
 
     store_twitter_user_data(twitter_data_user_data, twitter_name)
-    export_to_kafka(twitter_name, twitter_data_user_data.followers_count)
+    export_to_kafka(twitter_name, twitter_data_user_data)
   end
 
   defp fetch_and_store(args) do
     Logger.warn("Invalid parameters while fetching twitter data: " <> inspect(args))
   end
 
-  defp export_to_kafka(twitter_handle, followers_count) do
+  defp export_to_kafka(twitter_handle, %ExTwitter.Model.User{followers_count: followers_count}) do
     topic = Config.module_get!(Sanbase.KafkaExporter, :twitter_followers_topic)
 
     Sanbase.Twitter.TimeseriesPoint.new(%{
@@ -128,6 +128,8 @@ defmodule Sanbase.Twitter.Worker do
     |> List.wrap()
     |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(topic)
   end
+
+  defp export_to_kafka(_twitter_handle, _), do: :ok
 
   defp store_twitter_user_data(nil, _twitter_name), do: :ok
 

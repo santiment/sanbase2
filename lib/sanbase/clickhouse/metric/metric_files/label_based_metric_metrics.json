@@ -426,5 +426,5 @@
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
-  },
+  }
 ]

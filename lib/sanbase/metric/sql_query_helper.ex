@@ -92,12 +92,12 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     "metric_id IN ( SELECT DISTINCT(metric_id) FROM metric_metadata FINAL PREWHERE name IN (?#{arg_position}) )"
   end
 
-  def label_id_filter(label_fqn, opts) when is_binary(label_fqn) do
+  def label_id_by_label_fqn_filter(label_fqn, opts) when is_binary(label_fqn) do
     arg_position = Keyword.fetch!(opts, :argument_position)
     "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple(?#{arg_position}))"
   end
 
-  def label_id_filter(label_fqns, opts) when is_list(label_fqns) do
+  def label_id_by_label_fqn_filter(label_fqns, opts) when is_list(label_fqns) do
     arg_position = Keyword.fetch!(opts, :argument_position)
 
     "label_id IN (
@@ -107,10 +107,14 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     )"
   end
 
-  def label_id_filter(label_fqn, opts) when is_binary(label_fqn) do
+  def label_id_by_label_key_filter(label_key, opts) when is_binary(label_key) do
     arg_position = Keyword.fetch!(opts, :argument_position)
+    "label_id IN (SELECT label_id FROM label_metadata PREWHERE key = ?#{arg_position})"
+  end
 
-    "label_id = ( SELECT label_id FROM label_metadata FINAL PREWHERE name = ?#{arg_position} LIMIT 1 )"
+  def label_id_by_label_key_filter(label_keys, opts) when is_list(label_keys) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+    "label_id IN (SELECT label_id FROM label_metadata PREWHERE key IN (?#{arg_position}))"
   end
 
   # Add additional `=`/`in` filters to the query. This is mostly used with labeled

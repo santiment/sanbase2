@@ -69,6 +69,15 @@ defmodule Sanbase.BlockchainAddress.ListSelector do
     Sanbase.Clickhouse.Label.addresses_by_labels(label_fqns, opts)
   end
 
+  defp blockchain_addresses_by_filter(%{name: "addresses_by_label_keys", args: args}) do
+    label_keys = args[:label_keys]
+    blockchain = args[:blockchain]
+
+    opts = [blockchain: blockchain]
+
+    Sanbase.Clickhouse.Label.addresses_by_label_keys(label_keys, opts)
+  end
+
   # Fetch the top addresses ordered by their balance in descendig order. If the
   # `labels` key is present in the args, only the addresses that have one of these labels
   # are returned.

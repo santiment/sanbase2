@@ -4,7 +4,9 @@ defmodule Sanbase.Clickhouse.Label do
   """
 
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
-  import Sanbase.Metric.SqlQuery.Helper, only: [label_id_filter: 2]
+
+  import Sanbase.Metric.SqlQuery.Helper,
+    only: [label_id_by_label_fqn_filter: 2, label_id_by_label_key_filter: 2]
 
   @type label :: %{
           name: String.t(),
@@ -29,12 +31,14 @@ defmodule Sanbase.Clickhouse.Label do
     end)
   end
 
+  def addresses_by_labels(label_fqn_or_fqns, opts \\ [])
+
   def addresses_by_labels(label_fqn_or_fqns, opts) do
     blockchain = Keyword.get(opts, :blockchain)
 
     label_fqns = label_fqn_or_fqns |> List.wrap() |> Enum.map(&String.downcase/1)
 
-    {query, args} = addresses_by_labels_query(label_fqns, blockchain)
+    {query, args} = addresses_by_label_fqns_query(label_fqns, blockchain)
 
     Sanbase.ClickhouseRepo.query_reduce(
       query,
@@ -45,11 +49,29 @@ defmodule Sanbase.Clickhouse.Label do
       end
     )
     |> maybe_apply_function(fn address_blockchain_labels_map ->
-      apply_addresses_labels_combinator(
-        address_blockchain_labels_map,
-        label_fqns,
-        opts
-      )
+      apply_addresses_labels_combinator(address_blockchain_labels_map, label_fqns, opts)
+    end)
+  end
+
+  def addresses_by_label_keys(label_key_or_keys, opts \\ [])
+
+  def addresses_by_label_keys(label_key_or_keys, opts) do
+    blockchain = Keyword.get(opts, :blockchain)
+
+    label_keys = label_key_or_keys |> List.wrap() |> Enum.map(&String.downcase/1)
+
+    {query, args} = addresses_by_label_keys_query(label_keys, blockchain)
+
+    Sanbase.ClickhouseRepo.query_reduce(
+      query,
+      args,
+      %{},
+      fn [address, blockchain, label_fqn], acc ->
+        Map.update(acc, {address, blockchain}, [label_fqn], &[label_fqn | &1])
+      end
+    )
+    |> maybe_apply_function(fn address_blockchain_labels_map ->
+      apply_addresses_labels_combinator(address_blockchain_labels_map, label_keys, [])
     end)
   end
 
@@ -125,12 +147,12 @@ defmodule Sanbase.Clickhouse.Label do
   def slug_to_blockchain(slug),
     do: Sanbase.Model.Project.slug_to_blockchain(slug)
 
-  def addresses_by_labels_query(label_fqns, _blockchain = nil) do
+  def addresses_by_label_fqns_query(label_fqns, _blockchain = nil) do
     query = """
     SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
-      #{label_id_filter(label_fqns, argument_position: 1)}
+      #{label_id_by_label_fqn_filter(label_fqns, argument_position: 1)}
     GROUP BY address, blockchain, label_id
     LIMIT 20000
     """
@@ -139,18 +161,47 @@ defmodule Sanbase.Clickhouse.Label do
     {query, args}
   end
 
-  def addresses_by_labels_query(label_fqns, blockchain) do
+  def addresses_by_label_fqns_query(label_fqns, blockchain) do
     query = """
     SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
-      #{label_id_filter(label_fqns, argument_position: 1)} AND
+      #{label_id_by_label_fqn_filter(label_fqns, argument_position: 1)} AND
       blockchain = ?2
     GROUP BY address, blockchain, label_id
     LIMIT 20000
     """
 
     args = [label_fqns, blockchain]
+    {query, args}
+  end
+
+  def addresses_by_label_keys_query(label_keys, _blockchain = nil) do
+    query = """
+    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    FROM label_addresses
+    PREWHERE
+      #{label_id_by_label_key_filter(label_keys, argument_position: 1)}
+    GROUP BY address, blockchain, label_id
+    LIMIT 20000
+    """
+
+    args = [label_keys]
+    {query, args}
+  end
+
+  def addresses_by_label_keys_query(label_keys, blockchain) do
+    query = """
+    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    FROM label_addresses
+    PREWHERE
+      #{label_id_by_label_key_filter(label_keys, argument_position: 1)} AND
+      blockchain = ?2
+    GROUP BY address, blockchain, label_id
+    LIMIT 20000
+    """
+
+    args = [label_keys, blockchain]
     {query, args}
   end
 

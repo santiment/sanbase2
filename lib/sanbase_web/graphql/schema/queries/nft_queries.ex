@@ -6,29 +6,22 @@ defmodule SanbaseWeb.Graphql.Schema.NftQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
-  alias SanbaseWeb.Graphql.Resolvers.EntityResolver
+  alias SanbaseWeb.Graphql.Resolvers.NftResolver
 
-  object :entity_queries do
-    field :get_nft_traders, list_of(:nft_trader) do
+  object :nft_queries do
+    field :get_nft_trades, list_of(:nft_trade) do
       meta(access: :free)
-      arg(:label_fqns, list_of(:string))
-      arg(:type, :entity_type)
-      arg(:page, :integer)
-      arg(:page_size, :integer)
+      arg(:label_key, non_null(:nft_trade_label_key))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:page, non_null(:integer))
+      arg(:page_size, non_null(:integer))
+      arg(:order_by, non_null(:nft_trades_order_by))
 
-      cache_resolve(&EntityResolver.get_most_voted/3, ttl: 30, max_ttl_offset: 30)
-    end
-
-    field :get_most_recent, list_of(:entity_result) do
-      meta(access: :free)
-      arg(:type, :entity_type)
-      arg(:page, :integer)
-      arg(:page_size, :integer)
-
-      resolve(&EntityResolver.get_most_recent/3)
+      cache_resolve(&NftResolver.get_nft_trades/3, ttl: 30, max_ttl_offset: 30)
     end
   end
 
-  object :entity_mutations do
+  object :nft_mutations do
   end
 end

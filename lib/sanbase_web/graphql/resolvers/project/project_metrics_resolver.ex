@@ -45,17 +45,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     maybe_register_and_get(cache_key, fun, slug, query)
   end
 
-  def aggregated_timeseries_data(%Project{slug: slug}, %{metric: metric} = args, %{
-        context: %{loader: loader}
-      }) do
+  def aggregated_timeseries_data(
+        %Project{slug: slug},
+        %{from: from, to: to, metric: metric} = args,
+        %{
+          context: %{loader: loader}
+        }
+      ) do
     with true <- Metric.has_metric?(metric),
-         true <- Metric.is_not_deprecated?(metric) do
-      %{from: from, to: to} = args
-      include_incomplete_data = Map.get(args, :include_incomplete_data, false)
-
-      {:ok, from, to} =
-        calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to)
-
+         true <- Metric.is_not_deprecated?(metric),
+         include_incomplete_data = Map.get(args, :include_incomplete_data, false),
+         {:ok, from, to} <-
+           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to) do
       from = from |> DateTime.truncate(:second)
       to = to |> DateTime.truncate(:second)
       {:ok, opts} = selector_args_to_opts(args)

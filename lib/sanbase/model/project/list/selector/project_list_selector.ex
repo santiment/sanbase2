@@ -174,8 +174,10 @@ defmodule Sanbase.Model.Project.ListSelector do
 
   defp base_slugs(args_list) do
     Enum.flat_map(args_list, fn args ->
-      {:ok, slugs} = get_base_slugs(args)
-      slugs
+      case get_base_slugs(args) do
+        {:ok, slugs} -> slugs
+        {:error, error} -> raise(error)
+      end
     end)
   end
 
@@ -192,6 +194,10 @@ defmodule Sanbase.Model.Project.ListSelector do
 
   defp get_base_slugs(%{slugs: slugs}) when is_list(slugs) do
     {:ok, slugs}
+  end
+
+  defp get_base_slugs(data) do
+    {:error, "The base slugs argument is invalid: #{inspect(data)}."}
   end
 
   defp included_slugs_by_filters([], _filters_combinator), do: :all

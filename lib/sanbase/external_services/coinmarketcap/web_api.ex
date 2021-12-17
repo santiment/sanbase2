@@ -55,19 +55,19 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         json_decoded_body
         |> get_in(["data", "points"])
         |> case do
-          nil ->
-            Logger.info([
-              "[CMC] Cannot properly parse response from coinmarketcap: #{inspect(json_decoded_body)}"
-            ])
-
-            {:error, "Cannot parse the response from coinmarketcap for #{id}"}
-
           %{} = map ->
             map
             |> Map.keys()
             |> Enum.map(&String.to_integer/1)
             |> Enum.min()
             |> DateTime.from_unix()
+
+          _ ->
+            Logger.info([
+              "[CMC] Cannot properly parse response from coinmarketcap: #{inspect(json_decoded_body)}"
+            ])
+
+            {:error, "Cannot parse the response from coinmarketcap for #{id}"}
         end
 
       error ->

@@ -48,9 +48,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   def aggregated_timeseries_data(
         %Project{slug: slug},
         %{from: from, to: to, metric: metric} = args,
-        %{
-          context: %{loader: loader}
-        }
+        %{context: %{loader: loader}}
       ) do
     with true <- Metric.has_metric?(metric),
          true <- Metric.is_not_deprecated?(metric),

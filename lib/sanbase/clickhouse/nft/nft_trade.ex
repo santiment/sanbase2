@@ -53,9 +53,15 @@ defmodule Sanbase.Clickhouse.NftTrade do
 
   defp get_trades_query(label_key, from, to, opts) do
     order_key =
-      case Keyword.get(opts, :order_by, :datetime) do
+      case Keyword.fetch!(opts, :order_by) do
         :datetime -> "dt"
         :amount -> "amount"
+      end
+
+    direction =
+      case Keyword.fetch!(opts, :direction) do
+        :asc -> "ASC"
+        :desc -> "DESC"
       end
 
     query = """
@@ -70,7 +76,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
            groupArray(type) AS type
     FROM (#{label_key_dt_filtered_subquery(from_arg_position: 1, to_arg_position: 2, label_key_arg_position: 3)})
     GROUP BY tx_hash, dt, amount
-    ORDER BY #{order_key} DESC
+    ORDER BY #{order_key} #{direction}
     LIMIT ?4 OFFSET ?5
     """
 

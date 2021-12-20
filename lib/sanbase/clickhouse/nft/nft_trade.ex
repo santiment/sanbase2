@@ -15,7 +15,18 @@ defmodule Sanbase.Clickhouse.NftTrade do
     Sanbase.ClickhouseRepo.query_transform(
       query,
       args,
-      fn [ts, amount, slug, trx_hash, buyer, seller, nft_contract_address, platform, type] ->
+      fn [
+           ts,
+           amount,
+           slug,
+           trx_hash,
+           buyer,
+           seller,
+           nft_contract_address,
+           nft_contract_name,
+           platform,
+           type
+         ] ->
         %{
           datetime: DateTime.from_unix!(ts),
           slug: slug,
@@ -30,7 +41,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
           amount: amount,
           trx_hash: trx_hash,
           marketplace: platform,
-          nft: %{contract_address: nft_contract_address}
+          nft: %{contract_address: nft_contract_address, name: nft_contract_name}
         }
       end
     )
@@ -71,6 +82,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
            amount,
            any(platform) AS platform,
            any(nft_contract_address) AS nft_contract_address,
+           any(nft_contract_name) AS nft_contract_name,
            any(asset_ref_id) AS asset_ref_id,
            tx_hash,
            groupArray(type) AS type
@@ -81,7 +93,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     """
 
     query = """
-    SELECT dt, amount / pow(10, decimals) AS amount, name, tx_hash, buyer_address, seller_address, nft_contract_address, platform, type
+    SELECT dt, amount / pow(10, decimals) AS amount, name, tx_hash, buyer_address, seller_address, nft_contract_address, nft_contract_name, platform, type
 
     FROM (#{query})
 
@@ -90,27 +102,6 @@ defmodule Sanbase.Clickhouse.NftTrade do
       FROM asset_metadata FINAL
     ) USING (asset_ref_id)
     """
-
-    # query = """
-    # SELECT
-    # dt,
-    # amount / pow(10, decimals) AS amount,
-    # name,
-    # tx_hash,
-    # buyer_address,
-    # seller_address,
-    # nft_contract_address,
-    # nft_contract_name AS nft_contract_name
-    # platform,
-    # type
-
-    # FROM (#{query})
-
-    # INNER JOIN (
-    #   SELECT address AS nft_contract_address
-    #   FROM label
-    # )
-    # """
 
     {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
 
@@ -138,7 +129,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     )
     """
 
-    """
+    combined_buyer_seller = """
     SELECT toUnixTimestamp(dt) AS dt, toUInt64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'buy' AS type
       FROM nft_trades nft
       JOIN #{nft_influences_subquery} lbl
@@ -152,6 +143,33 @@ defmodule Sanbase.Clickhouse.NftTrade do
       JOIN #{nft_influences_subquery} lbl
       ON seller_address = lbl.address
       WHERE dt >= toDateTime(?#{from_arg_position}) and dt < toDateTime(?#{to_arg_position}) AND complete = 1
+    """
+
+    _joined_nft_contract_name = """
+    SELECT  dt, amount, tx_hash, buyer_address, seller_address, nft_contract_address, nft_contract_name, asset_ref_id, platform, type
+    FROM ( #{combined_buyer_seller} )
+    JOIN (
+      SELECT
+        address AS nft_contract_address,
+        name AS nft_contract_name
+      FROM
+      (
+        SELECT
+          address,
+          label_id
+        FROM current_label_addresses
+        WHERE
+          label_id in (SELECT label_id from label_metadata where key='name')
+          AND address IN (SELECT address FROM label_addresses WHERE label_id IN (SELECT label_id FROM label_metadata WHERE key = 'nft'))
+      )
+      LEFT JOIN
+      (
+        SELECT
+          label_id,
+          value as name
+        FROM label_metadata
+      ) USING (label_id)
+    ) USING (nft_contract_address)
     """
   end
 end

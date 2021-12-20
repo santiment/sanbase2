@@ -25,7 +25,11 @@ defmodule SanbaseWeb.Graphql.NftTypes do
     field(:trx_hash, :string)
     field(:marketplace, :string)
 
-    field :project, :project do
+    @desc ~s"""
+    The currency project refers to the currency that the NFT is paid for with.
+    This project is **not** describing the NFT being transferred
+    """
+    field :currency_project, :project do
       resolve(&ProjectResolver.project_by_slug/3)
     end
 

@@ -46,8 +46,8 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
 
       # Because of the mock both results will be equal. This tests that both
       # order by keys are accepted
-      result_order_by_amount = get_nft_influencer_trades(conn, from, to, 1, 10, :amount)
-      result_order_by_dt = get_nft_influencer_trades(conn, from, to, 1, 10, :datetime)
+      result_order_by_amount = get_nft_influencer_trades(conn, from, to, 1, 10, :amount, :asc)
+      result_order_by_dt = get_nft_influencer_trades(conn, from, to, 1, 10, :datetime, :desc)
 
       assert result_order_by_amount == result_order_by_dt
 
@@ -88,7 +88,7 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
     end)
   end
 
-  defp get_nft_influencer_trades(conn, from, to, page, page_size, order_by) do
+  defp get_nft_influencer_trades(conn, from, to, page, page_size, order_by, direction) do
     query = """
     {
     getNftTrades(
@@ -97,7 +97,8 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
       to: "#{to}"
       page: #{page}
       pageSize: #{page_size}
-      order_by: #{order_by |> Atom.to_string() |> String.upcase()}){
+      order_by: #{order_by |> Atom.to_string() |> String.upcase()}
+      direction: #{direction |> Atom.to_string() |> String.upcase()}){
         datetime
         fromAddress { address labelKey }
         toAddress { address labelKey }
@@ -105,7 +106,6 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
         trxHash
         marketplace
         currencyProject { slug }
-
         amount
       }
     }

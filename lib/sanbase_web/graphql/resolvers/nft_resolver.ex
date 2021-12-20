@@ -7,11 +7,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.NftResolver do
           label_key: label_key,
           page: page,
           page_size: page_size,
-          order_by: order_by
+          order_by: order_by,
+          direction: direction
         },
         _resolution
       ) do
-    opts = [page: page, page_size: page_size, order_by: order_by]
+    opts = [page: page, page_size: page_size, order_by: order_by, direction: direction]
     Sanbase.Clickhouse.NftTrade.get_trades(label_key, from, to, opts)
   end
 

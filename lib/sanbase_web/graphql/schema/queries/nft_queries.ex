@@ -16,7 +16,8 @@ defmodule SanbaseWeb.Graphql.Schema.NftQueries do
       arg(:to, non_null(:datetime))
       arg(:page, non_null(:integer))
       arg(:page_size, non_null(:integer))
-      arg(:order_by, non_null(:nft_trades_order_by))
+      arg(:order_by, :nft_trades_order_by, default_value: :datetime)
+      arg(:direction, :sort_direction, default_value: :desc)
 
       cache_resolve(&NftResolver.get_nft_trades/3, ttl: 30, max_ttl_offset: 30)
     end
@@ -27,7 +28,10 @@ defmodule SanbaseWeb.Graphql.Schema.NftQueries do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      cache_resolve(&NftResolver.get_nft_trades_count/3, ttl: 30, max_ttl_offset: 30)
+      cache_resolve(&NftResolver.get_nft_trades_count/3,
+        ttl: 30,
+        max_ttl_offset: 30
+      )
     end
   end
 

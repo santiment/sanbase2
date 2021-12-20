@@ -66,7 +66,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
       FROM nft_trades nft
       JOIN #{nft_influences_subquery} lbl
       ON buyer_address = lbl.address
-      WHERE dt >= toDateTime(?1) and dt < toDateTime(?2)
+      WHERE dt >= toDateTime(?1) and dt < toDateTime(?2) AND complete = 1
 
       UNION ALL
 
@@ -80,10 +80,10 @@ defmodule Sanbase.Clickhouse.NftTrade do
         asset_ref_id,
         platform,
         'sell' AS type
-      from nft_trades nft
+      FROM nft_trades nft
       JOIN #{nft_influences_subquery} lbl
       ON seller_address = lbl.address
-      WHERE dt >= toDateTime(?1) and dt < toDateTime(?2)
+      WHERE dt >= toDateTime(?1) and dt < toDateTime(?2) AND complete = 1
     )
     GROUP BY tx_hash, dt, amount
     ORDER BY #{order_key} DESC

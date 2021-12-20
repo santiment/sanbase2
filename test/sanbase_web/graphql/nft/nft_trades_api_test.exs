@@ -23,6 +23,7 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
         "0xd387a6e4e84a6c86bd90c158c6028a58cc8ac459",
         "0xa88ae2c098a3ad39184a4d64c6ddb39a237531b2",
         "0xa1d4657e0e6507d5a94d06da93e94dc7c8c44b51",
+        "nft contract name",
         "opensea",
         ["buy"]
       ],
@@ -34,6 +35,7 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
         "0x694cd849bc80f3f772ab9aef4be2df3af054dc6b",
         "0x721931508df2764fd4f70c53da646cb8aed16ace",
         "0xad9fd7cb4fc7a0fbce08d64068f60cbde22ed34c",
+        "nft contract name2",
         "opensea",
         ["sell"]
       ]
@@ -60,7 +62,10 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
                    "labelKey" => nil
                  },
                  "marketplace" => "opensea",
-                 "nft" => %{"contractAddress" => "0xa1d4657e0e6507d5a94d06da93e94dc7c8c44b51"},
+                 "nft" => %{
+                   "name" => "nft contract name",
+                   "contractAddress" => "0xa1d4657e0e6507d5a94d06da93e94dc7c8c44b51"
+                 },
                  "currencyProject" => %{"slug" => project.slug},
                  "toAddress" => %{
                    "address" => "0xd387a6e4e84a6c86bd90c158c6028a58cc8ac459",
@@ -76,7 +81,10 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
                    "labelKey" => "NFT_INFLUENCER"
                  },
                  "marketplace" => "opensea",
-                 "nft" => %{"contractAddress" => "0xad9fd7cb4fc7a0fbce08d64068f60cbde22ed34c"},
+                 "nft" => %{
+                   "name" => "nft contract name2",
+                   "contractAddress" => "0xad9fd7cb4fc7a0fbce08d64068f60cbde22ed34c"
+                 },
                  "currencyProject" => %{"slug" => project.slug},
                  "toAddress" => %{
                    "address" => "0x694cd849bc80f3f772ab9aef4be2df3af054dc6b",
@@ -102,7 +110,7 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
         datetime
         fromAddress { address labelKey }
         toAddress { address labelKey }
-        nft { contractAddress }
+        nft { name contractAddress }
         trxHash
         marketplace
         currencyProject { slug }

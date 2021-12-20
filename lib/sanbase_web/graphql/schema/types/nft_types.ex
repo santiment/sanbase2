@@ -19,6 +19,7 @@ defmodule SanbaseWeb.Graphql.NftTypes do
 
   object :nft do
     field(:contract_address, :string)
+    field(:name, :string)
   end
 
   object :nft_trade do

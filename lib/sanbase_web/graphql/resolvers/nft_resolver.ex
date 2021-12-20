@@ -14,4 +14,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.NftResolver do
     opts = [page: page, page_size: page_size, order_by: order_by]
     Sanbase.Clickhouse.NftTrade.get_trades(label_key, from, to, opts)
   end
+
+  def get_nft_trades_count(_root, %{from: from, to: to, label_key: label_key}, _resolution) do
+    Sanbase.Clickhouse.NftTrade.get_trades_count(label_key, from, to)
+  end
 end

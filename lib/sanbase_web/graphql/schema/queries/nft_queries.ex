@@ -20,6 +20,15 @@ defmodule SanbaseWeb.Graphql.Schema.NftQueries do
 
       cache_resolve(&NftResolver.get_nft_trades/3, ttl: 30, max_ttl_offset: 30)
     end
+
+    field :get_nft_trades_count, :integer do
+      meta(access: :free)
+      arg(:label_key, non_null(:nft_trade_label_key))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&NftResolver.get_nft_trades_count/3, ttl: 30, max_ttl_offset: 30)
+    end
   end
 
   object :nft_mutations do

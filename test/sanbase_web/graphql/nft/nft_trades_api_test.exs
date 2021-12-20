@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.GetNftTradesApiTest do
+defmodule SanbaseWeb.Graphql.NftTradesApiTest do
   use SanbaseWeb.ConnCase, async: true
 
   import SanbaseWeb.Graphql.TestHelpers
@@ -105,6 +105,7 @@ defmodule SanbaseWeb.Graphql.GetNftTradesApiTest do
         trxHash
         marketplace
         currencyProject { slug }
+
         amount
       }
     }

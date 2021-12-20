@@ -1,4 +1,13 @@
 defmodule Sanbase.Clickhouse.NftTrade do
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+
+  def get_trades_count(label_key, from, to) do
+    {query, args} = get_trades_count_query(label_key, from, to)
+
+    Sanbase.ClickhouseRepo.query_transform(query, args, fn [count] -> count end)
+    |> maybe_unwrap_ok_value()
+  end
+
   def get_trades(label_key, from, to, opts)
       when label_key in [:nft_influencer, :nft_whale] do
     {query, args} = get_trades_query(label_key, from, to, opts)
@@ -6,9 +15,9 @@ defmodule Sanbase.Clickhouse.NftTrade do
     Sanbase.ClickhouseRepo.query_transform(
       query,
       args,
-      fn [unix, amount, slug, trx_hash, buyer, seller, nft_contract_address, platform, type] ->
+      fn [ts, amount, slug, trx_hash, buyer, seller, nft_contract_address, platform, type] ->
         %{
-          datetime: DateTime.from_unix!(unix),
+          datetime: DateTime.from_unix!(ts),
           slug: slug,
           from_address: %{
             address: seller,
@@ -27,15 +36,22 @@ defmodule Sanbase.Clickhouse.NftTrade do
     )
   end
 
-  defp get_trades_query(label_key, from, to, opts) do
-    nft_influences_subquery = """
-    (
-      SELECT address
-      FROM label_addresses
-      WHERE label_id in (SELECT label_id from label_metadata where key = ?3)
+  defp get_trades_count_query(label_key, from, to) do
+    query = """
+    SELECT count(*)
+    FROM (
+      SELECT tx_hash
+      FROM (#{label_key_dt_filtered_subquery(from_arg_position: 1, to_arg_position: 2, label_key_arg_position: 3)})
+      GROUP BY tx_hash
     )
     """
 
+    args = [DateTime.to_unix(from), DateTime.to_unix(to), to_string(label_key)]
+
+    {query, args}
+  end
+
+  defp get_trades_query(label_key, from, to, opts) do
     order_key =
       case Keyword.get(opts, :order_by, :datetime) do
         :datetime -> "dt"
@@ -52,55 +68,14 @@ defmodule Sanbase.Clickhouse.NftTrade do
            any(asset_ref_id) AS asset_ref_id,
            tx_hash,
            groupArray(type) AS type
-    FROM (
-      SELECT
-        toUnixTimestamp(dt) AS dt,
-        toUInt64(amount) AS amount,
-        tx_hash,
-        buyer_address,
-        seller_address,
-        nft_contract_address,
-        asset_ref_id,
-        platform,
-        'buy' AS type
-      FROM nft_trades nft
-      JOIN #{nft_influences_subquery} lbl
-      ON buyer_address = lbl.address
-      WHERE dt >= toDateTime(?1) and dt < toDateTime(?2) AND complete = 1
-
-      UNION ALL
-
-      SELECT
-        toUnixTimestamp(dt) AS dt,
-        toUInt64(amount) AS amount,
-        tx_hash,
-        buyer_address,
-        seller_address,
-        nft_contract_address,
-        asset_ref_id,
-        platform,
-        'sell' AS type
-      FROM nft_trades nft
-      JOIN #{nft_influences_subquery} lbl
-      ON seller_address = lbl.address
-      WHERE dt >= toDateTime(?1) and dt < toDateTime(?2) AND complete = 1
-    )
+    FROM (#{label_key_dt_filtered_subquery(from_arg_position: 1, to_arg_position: 2, label_key_arg_position: 3)})
     GROUP BY tx_hash, dt, amount
     ORDER BY #{order_key} DESC
     LIMIT ?4 OFFSET ?5
     """
 
     query = """
-    SELECT
-      dt,
-      amount / pow(10, decimals) AS amount,
-      name,
-      tx_hash,
-      buyer_address,
-      seller_address,
-      nft_contract_address,
-      platform,
-      type
+    SELECT dt, amount / pow(10, decimals) AS amount, name, tx_hash, buyer_address, seller_address, nft_contract_address, platform, type
 
     FROM (#{query})
 
@@ -121,5 +96,35 @@ defmodule Sanbase.Clickhouse.NftTrade do
     ]
 
     {query, args}
+  end
+
+  defp label_key_dt_filtered_subquery(opts) do
+    label_key_arg_position = Keyword.fetch!(opts, :label_key_arg_position)
+    from_arg_position = Keyword.fetch!(opts, :from_arg_position)
+    to_arg_position = Keyword.fetch!(opts, :to_arg_position)
+
+    nft_influences_subquery = """
+    (
+      SELECT address
+      FROM label_addresses
+      WHERE label_id in (SELECT label_id from label_metadata where key = ?#{label_key_arg_position})
+    )
+    """
+
+    """
+    SELECT toUnixTimestamp(dt) AS dt, toUInt64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'buy' AS type
+      FROM nft_trades nft
+      JOIN #{nft_influences_subquery} lbl
+      ON buyer_address = lbl.address
+      WHERE dt >= toDateTime(?#{from_arg_position}) and dt < toDateTime(?#{to_arg_position}) AND complete = 1
+
+      UNION ALL
+
+      SELECT toUnixTimestamp(dt) AS dt, toUInt64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'sell' AS type
+      FROM nft_trades nft
+      JOIN #{nft_influences_subquery} lbl
+      ON seller_address = lbl.address
+      WHERE dt >= toDateTime(?#{from_arg_position}) and dt < toDateTime(?#{to_arg_position}) AND complete = 1
+    """
   end
 end

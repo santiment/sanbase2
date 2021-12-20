@@ -91,6 +91,27 @@ defmodule Sanbase.Clickhouse.NftTrade do
     ) USING (asset_ref_id)
     """
 
+    # query = """
+    # SELECT
+    # dt,
+    # amount / pow(10, decimals) AS amount,
+    # name,
+    # tx_hash,
+    # buyer_address,
+    # seller_address,
+    # nft_contract_address,
+    # nft_contract_name AS nft_contract_name
+    # platform,
+    # type
+
+    # FROM (#{query})
+
+    # INNER JOIN (
+    #   SELECT address AS nft_contract_address
+    #   FROM label
+    # )
+    # """
+
     {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
 
     args = [

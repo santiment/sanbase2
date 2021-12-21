@@ -1,7 +1,8 @@
 defmodule Sanbase.MetricCSVExporter do
   alias Sanbase.Metric
 
-  @history_in_days 365 * 2
+  @date "2021-12-16"
+  @history_in_days 1
   @decimals 8
   # top 100 fixed at 24/08/2021
   @slugs [
@@ -252,13 +253,13 @@ defmodule Sanbase.MetricCSVExporter do
   # Export all metrics in @metrics_map and place in proper csv file
   def export() do
     now = Timex.now()
-    to = Timex.shift(now, hours: -2)
-    from = Timex.shift(to, days: -@history_in_days)
+    from = Timex.shift(now, days: -1) |> Timex.beginning_of_day()
+    to = Timex.shift(now, days: -1) |> Timex.end_of_day()
 
     @metrics_map
     |> Enum.each(fn {filename, file_metrics} ->
       header = ["slug", "datetime"] ++ camelize(file_metrics.metrics)
-      filename = "#{filename}" <> "_#{format_dt(to)}.csv"
+      filename = "#{filename}" <> "_#{format_dt(now)}.csv"
       write_to_file(filename, [header])
 
       @slugs
@@ -277,10 +278,10 @@ defmodule Sanbase.MetricCSVExporter do
   # Export trending words
   def export_tw() do
     now = Timex.now()
-    to = Timex.shift(now, hours: -2)
-    from = Timex.shift(to, days: -@history_in_days)
+    from = Timex.shift(now, days: -1) |> Timex.beginning_of_day()
+    to = Timex.shift(now, days: -1) |> Timex.end_of_day()
 
-    filename = "Trending words - 1h_#{format_dt(to)}.csv"
+    filename = "Trending words - 1h_#{format_dt(now)}.csv"
     write_to_file(filename, [["datetime"] ++ rename_column(Enum.to_list(1..10))])
 
     do_export_tw(filename, from, to)
@@ -361,6 +362,7 @@ defmodule Sanbase.MetricCSVExporter do
   end
 
   defp write_to_file(filename, data) do
+    filename = Path.join([@date, filename])
     {:ok, file} = File.open(filename, [:append])
     iodata = NimbleCSV.RFC4180.dump_to_iodata(data)
     File.write!(filename, iodata, [:append])

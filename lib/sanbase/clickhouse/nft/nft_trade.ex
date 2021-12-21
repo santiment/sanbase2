@@ -91,8 +91,6 @@ defmodule Sanbase.Clickhouse.NftTrade do
            groupArray(type) AS type
     FROM (#{label_key_dt_filtered_subquery(from_arg_position: 1, to_arg_position: 2, label_key_arg_position: 3)})
     GROUP BY tx_hash, dt, amount
-    ORDER BY #{order_key} #{direction}
-    LIMIT ?4 OFFSET ?5
     """
 
     query = """
@@ -104,6 +102,9 @@ defmodule Sanbase.Clickhouse.NftTrade do
       SELECT asset_ref_id, name, decimals
       FROM asset_metadata FINAL
     ) USING (asset_ref_id)
+
+    ORDER BY #{order_key} #{direction}
+    LIMIT ?4 OFFSET ?5
     """
 
     {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)

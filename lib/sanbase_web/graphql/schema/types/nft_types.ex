@@ -38,6 +38,7 @@ defmodule SanbaseWeb.Graphql.NftTypes do
     field(:to_address, :nft_trader)
     field(:datetime, :datetime)
     field(:amount, :float)
+    field(:quantity, :float)
     field(:nft, :nft)
   end
 end

@@ -31,10 +31,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def project_by_slug(_parent, %{slug: slug}, _resolution), do: get_project_by_slug(slug)
   def project_by_slug(_parent, _args, %{source: %{slug: slug}}), do: get_project_by_slug(slug)
 
+  defp get_project_by_slug(nil), do: {:ok, nil}
+
   defp get_project_by_slug(slug) do
     case Project.by_slug(slug) do
       nil ->
-        {:error, "Project with slug '#{slug}' not found."}
+        {:ok, nil}
 
       project ->
         {:ok, project}

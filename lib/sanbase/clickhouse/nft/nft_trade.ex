@@ -133,7 +133,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
       FROM asset_prices_v3
       WHERE
         dt < toDateTime(?#{to})
-        dt => (
+        dt >= (
           SELECT dt
           FROM intraday_metrics
           WHERE

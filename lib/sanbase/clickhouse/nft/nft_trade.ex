@@ -109,7 +109,6 @@ defmodule Sanbase.Clickhouse.NftTrade do
           prices.price_usd * toFloat64(amount) / pow(10, decimals),
           current_prices.price_usd * toFloat64(amount) / pow(10, decimals)
       ) as price_usd
-    SELECT *
 
     FROM (#{query}) as trades
 

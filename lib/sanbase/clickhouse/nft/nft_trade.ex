@@ -72,7 +72,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     order_key =
       case Keyword.fetch!(opts, :order_by) do
         :datetime -> "dt"
-        :amount -> "amount"
+        :amount -> "price_usd"
       end
 
     direction =

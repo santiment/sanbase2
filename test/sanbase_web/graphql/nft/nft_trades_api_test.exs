@@ -74,7 +74,8 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
                    "address" => "0xd387a6e4e84a6c86bd90c158c6028a58cc8ac459",
                    "labelKey" => "NFT_INFLUENCER"
                  },
-                 "trxHash" => "0xa497bf3e9ea849361fc78fc405861abf97ed08addb5ca4e3da688331ffa38344"
+                 "trxHash" => "0xa497bf3e9ea849361fc78fc405861abf97ed08addb5ca4e3da688331ffa38344",
+                 "priceUsd" => 18.3
                },
                %{
                  "amount" => 16.4,
@@ -94,7 +95,8 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
                    "address" => "0x694cd849bc80f3f772ab9aef4be2df3af054dc6b",
                    "labelKey" => nil
                  },
-                 "trxHash" => "0xc98a6ed5c0a139d7437d96d67e120f0ba568915daeb46182bdb27ad37367c0c8"
+                 "trxHash" => "0xc98a6ed5c0a139d7437d96d67e120f0ba568915daeb46182bdb27ad37367c0c8",
+                 "priceUsd": 16.4
                }
              ]
     end)
@@ -120,6 +122,7 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
         currencyProject { slug }
         amount
         quantity
+        priceUsd
       }
     }
     """

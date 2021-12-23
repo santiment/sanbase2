@@ -27,7 +27,8 @@ defmodule Sanbase.Clickhouse.NftTrade do
           nft_contract_address,
           nft_contract_name,
           platform,
-          type
+          type,
+          price_usd
         ] = list
 
         %{
@@ -45,7 +46,8 @@ defmodule Sanbase.Clickhouse.NftTrade do
           quantity: amount_tokens |> List.first() |> Sanbase.Math.to_float(),
           trx_hash: trx_hash,
           marketplace: platform,
-          nft: %{contract_address: nft_contract_address, name: nft_contract_name}
+          nft: %{contract_address: nft_contract_address, name: nft_contract_name},
+          price_usd: price_usd
         }
       end
     )
@@ -101,14 +103,49 @@ defmodule Sanbase.Clickhouse.NftTrade do
     # Since 0 is a valid value for decimals the check `isNull(name)` is used to check whether
     # right record in assets table exists. If it doesn't exists - replace the decimals with `18`.
     query = """
-    SELECT dt, amount / pow(10, if(isNull(name), 18, decimals)) AS amount, amount_tokens, name, tx_hash, buyer_address, seller_address, nft_contract_address, nft_contract_name, platform, type
+    SELECT dt, amount / pow(10, if(isNull(name), 18, decimals)) AS amount, amount_tokens, name, tx_hash, buyer_address, seller_address, nft_contract_address, nft_contract_name, platform, type,
+      if(
+          prices.price_usd != 0,
+          prices.price_usd * toFloat64(amount) / pow(10, decimals),
+          current_prices.price_usd * toFloat64(amount) / pow(10, decimals)
+      ) as price_usd
+    SELECT *
 
-    FROM (#{query})
+    FROM (#{query}) as trades
 
     LEFT JOIN (
       SELECT asset_ref_id, name, decimals
       FROM asset_metadata FINAL
-    ) USING (asset_ref_id)
+    ) as assets
+    ON trades.asset_ref_id = assets.asset_ref_id
+
+    LEFT JOIN (
+      SELECT asset_id, value AS price_usd, dt
+      FROM intraday_metrics
+      WHERE
+        metric_id = (SELECT metric_id FROM metric_metadata WHERE name = 'price_usd')
+        AND dt >= toDateTime(?#{from}) and dt < toDateTime(?#{to})
+    ) as prices
+    ON toStartOfFiveMinute(trades.dt) = prices.dt AND assets.asset_id = prices.asset_id
+
+    LEFT JOIN (
+      SELECT slug, price_usd, dt
+      FROM asset_prices_v3
+      WHERE
+        dt < toDateTime(?#{to})
+        dt => (
+          SELECT dt
+          FROM intraday_metrics
+          WHERE
+            metric_id = (SELECT metric_id FROM metric_metadata WHERE name = 'price_usd')
+            AND dt >= toDateTime(?#{from}) and dt < toDateTime(?#{to})
+            ORDER BY dt desc
+            LIMIT 1
+        )
+        dt >= toDateTime('2021-12-31 00:00:00')
+      ORDER BY dt desc, source desc
+    ) AS current_prices
+    ON prices.price_usd = 0 AND toStartOfFiveMinute(trades.dt) = toStartOfFiveMinute(current_prices.dt) AND assets.name = current_prices.slug
 
     ORDER BY #{order_key} #{direction}
     LIMIT ?4 OFFSET ?5

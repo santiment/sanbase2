@@ -94,8 +94,12 @@ defmodule Sanbase.Clickhouse.NftTrade do
     GROUP BY dt, log_index
     """
 
+    # Note: In CH left join if the right hand record in assets table
+    # doesn't exists fills decimals with default value 0.
+    # Since 0 is a valid value for decimals the check `isNull(name)` is used to check whether
+    # right record in assets table exists. If it doesn't exists - replace the decimals with `18`.
     query = """
-    SELECT dt, amount / pow(10, if(decimals != 0, decimals, 18)) AS amount, amount_tokens, name, tx_hash, buyer_address, seller_address, nft_contract_address, nft_contract_name, platform, type
+    SELECT dt, amount / pow(10, if(isNull(name), 18, decimals)) AS amount, amount_tokens, name, tx_hash, buyer_address, seller_address, nft_contract_address, nft_contract_name, platform, type
 
     FROM (#{query})
 
@@ -135,7 +139,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     """
 
     combined_buyer_seller = """
-    SELECT toUnixTimestamp(dt) AS dt, log_index, toFloat64(amount_tokens[1]) AS amount_tokens, toInt64(amount) as amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'buy' AS type
+    SELECT toUnixTimestamp(dt) AS dt, log_index, toFloat64(amount_tokens[1]) AS amount_tokens, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'buy' AS type
     FROM nft_trades nft
     JOIN #{nft_influences_subquery} lbl
     ON buyer_address = lbl.address
@@ -143,7 +147,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
 
     UNION ALL
 
-    SELECT toUnixTimestamp(dt) AS dt, log_index, toFloat64(amount_tokens[1]) AS amount_tokens, toInt64(amount) as amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'sell' AS type
+    SELECT toUnixTimestamp(dt) AS dt, log_index, toFloat64(amount_tokens[1]) AS amount_tokens, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'sell' AS type
     FROM nft_trades nft
     JOIN #{nft_influences_subquery} lbl
     ON seller_address = lbl.address

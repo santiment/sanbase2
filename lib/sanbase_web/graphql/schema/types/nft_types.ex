@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.NftTypes do
     This project is **not** describing the NFT being transferred
     """
     field :currency_project, :project do
-      resolve(&ProjectResolver.project_by_slug/3)
+      resolve(&ProjectResolver.nft_project_by_slug/3)
     end
 
     field(:from_address, :nft_trader)

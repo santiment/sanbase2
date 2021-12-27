@@ -79,7 +79,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   def timeseries_data(metric, %{slug: slug}, from, to, interval, opts) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
-    filters = Keyword.get(opts, :additional_filters, [])
+
+    # FIXME: Some of the `nft` metrics need additional filter for `owner=opensea`
+    # to show correct values. Remove after fixed by bigdata.
+    filters =
+      if String.starts_with?(metric, "nft_") do
+        [owner: "opensea"]
+      else
+        Keyword.get(opts, :additional_filters, [])
+      end
 
     {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation, filters)
 

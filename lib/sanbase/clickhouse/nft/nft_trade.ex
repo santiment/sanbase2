@@ -15,32 +15,34 @@ defmodule Sanbase.Clickhouse.NftTrade do
     Sanbase.ClickhouseRepo.query_transform(
       query,
       args,
-      fn [
-           ts,
-           amount,
-           amount_tokens,
-           slug,
-           trx_hash,
-           buyer,
-           seller,
-           nft_contract_address,
-           nft_contract_name,
-           platform,
-           type
-         ] ->
+      fn list ->
+        [
+          ts,
+          amount,
+          amount_tokens,
+          slug,
+          trx_hash,
+          buyer_address,
+          seller_address,
+          nft_contract_address,
+          nft_contract_name,
+          platform,
+          type
+        ] = list
+
         %{
           datetime: DateTime.from_unix!(ts),
           slug: slug,
           from_address: %{
-            address: seller,
+            address: seller_address,
             label_key: if("sell" in type, do: label_key)
           },
           to_address: %{
-            address: buyer,
+            address: buyer_address,
             label_key: if("buy" in type, do: label_key)
           },
           amount: amount,
-          quantity: amount_tokens,
+          quantity: amount_tokens |> List.first() |> Sanbase.Math.to_float(),
           trx_hash: trx_hash,
           marketplace: platform,
           nft: %{contract_address: nft_contract_address, name: nft_contract_name}
@@ -80,15 +82,15 @@ defmodule Sanbase.Clickhouse.NftTrade do
     query = """
     SELECT dt,
            log_index,
-           any(buyer_address) AS buyer_address,
-           any(seller_address) AS seller_address,
-           any(amount) AS amount,
-           any(amount_tokens) AS amount_tokens,
-           any(platform) AS platform,
-           any(nft_contract_address) AS nft_contract_address,
-           any(nft_contract_name) AS nft_contract_name,
-           any(asset_ref_id) AS asset_ref_id,
-           any(tx_hash) as tx_hash,
+           argMax(buyer_address, computed_at) AS buyer_address,
+           argMax(seller_address, computed_at) AS seller_address,
+           argMax(amount, computed_at) AS amount,
+           argMax(amount_tokens, computed_at) AS amount_tokens,
+           argMax(platform, computed_at) AS platform,
+           argMax(nft_contract_address, computed_at) AS nft_contract_address,
+           argMax(nft_contract_name, computed_at) AS nft_contract_name,
+           argMax(asset_ref_id, computed_at) AS asset_ref_id,
+           argMax(tx_hash, computed_at) as tx_hash,
            groupArray(type) AS type
     FROM (#{label_key_dt_filtered_subquery(from_arg_position: 1, to_arg_position: 2, label_key_arg_position: 3)})
     GROUP BY dt, log_index
@@ -139,7 +141,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     """
 
     combined_buyer_seller = """
-    SELECT toUnixTimestamp(dt) AS dt, log_index, toFloat64(amount_tokens[1]) AS amount_tokens, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'buy' AS type
+    SELECT toUnixTimestamp(dt) AS dt, log_index, amount_tokens, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'buy' AS type, computed_at
     FROM nft_trades nft
     JOIN #{nft_influences_subquery} lbl
     ON buyer_address = lbl.address
@@ -147,7 +149,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
 
     UNION ALL
 
-    SELECT toUnixTimestamp(dt) AS dt, log_index, toFloat64(amount_tokens[1]) AS amount_tokens, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'sell' AS type
+    SELECT toUnixTimestamp(dt) AS dt, log_index, amount_tokens, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'sell' AS type, computed_at
     FROM nft_trades nft
     JOIN #{nft_influences_subquery} lbl
     ON seller_address = lbl.address
@@ -155,7 +157,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     """
 
     _joined_nft_contract_name = """
-    SELECT  dt, log_index, amount_tokens, amount, tx_hash, buyer_address, seller_address, nft_contract_address, nft_contract_name, asset_ref_id, platform, type
+    SELECT  dt, log_index, amount_tokens, amount, tx_hash, buyer_address, seller_address, nft_contract_address, nft_contract_name, asset_ref_id, platform, type, computed_at
     FROM ( #{combined_buyer_seller} )
     LEFT JOIN (
       SELECT

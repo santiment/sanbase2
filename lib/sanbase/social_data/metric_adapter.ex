@@ -146,7 +146,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     end
   end
 
-  def aggregated_timeseries_data(metric, %{slug: slug} = selector, from, to, opts)
+  def aggregated_timeseries_data(metric, selector, from, to, opts)
       when metric in @social_dominance_timeseries_metrics do
     slug = Map.get(selector, :slug)
 

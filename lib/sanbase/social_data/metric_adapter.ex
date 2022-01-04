@@ -128,28 +128,44 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def aggregated_timeseries_data(metric, selector, from, to, opts)
       when metric in @social_volume_timeseries_metrics or
              metric in @community_messages_count_timeseries_metrics do
-    case timeseries_data(metric, selector, from, to, "1h", opts) do
-      {:ok, result} ->
-        value = Enum.reduce(result, 0, &(&1.value + &2))
-        {:ok, %{value: value}}
+    slug = Map.get(selector, :slug)
 
-      {:error, error} ->
-        {:error, error}
+    case is_nil(slug) or is_binary(slug) do
+      true ->
+        case timeseries_data(metric, selector, from, to, "1h", opts) do
+          {:ok, result} ->
+            value = Enum.reduce(result, 0, &(&1.value + &2))
+            {:ok, %{value: value}}
+
+          {:error, error} ->
+            {:error, error}
+        end
+
+      false ->
+        {:error, "Aggregated timeseries data is not supported for lists of slugs."}
     end
   end
 
-  def aggregated_timeseries_data(metric, selector, from, to, opts)
+  def aggregated_timeseries_data(metric, %{slug: slug} = selector, from, to, opts)
       when metric in @social_dominance_timeseries_metrics do
-    case timeseries_data(metric, selector, from, to, "1h", opts) do
-      {:ok, result} ->
-        value =
-          Enum.map(result, & &1.value)
-          |> Sanbase.Math.average()
+    slug = Map.get(selector, :slug)
 
-        {:ok, %{value: value}}
+    case is_nil(slug) or is_binary(slug) do
+      true ->
+        case timeseries_data(metric, selector, from, to, "1h", opts) do
+          {:ok, result} ->
+            value =
+              Enum.map(result, & &1.value)
+              |> Sanbase.Math.average()
 
-      {:error, error} ->
-        {:error, error}
+            {:ok, %{value: value}}
+
+          {:error, error} ->
+            {:error, error}
+        end
+
+      false ->
+        {:error, "Aggregated timeseries data is not supported for lists of slugs."}
     end
   end
 

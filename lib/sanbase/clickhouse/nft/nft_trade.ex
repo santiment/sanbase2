@@ -131,17 +131,8 @@ defmodule Sanbase.Clickhouse.NftTrade do
       SELECT slug, price_usd, dt
       FROM asset_prices_v3
       WHERE
-        dt < toDateTime(?#{to})
-        dt >= (
-          SELECT dt
-          FROM intraday_metrics
-          WHERE
-            metric_id = (SELECT metric_id FROM metric_metadata WHERE name = 'price_usd')
-            AND dt >= toDateTime(?#{from}) and dt < toDateTime(?#{to})
-            ORDER BY dt desc
-            LIMIT 1
-        )
-        dt >= toDateTime('2021-12-31 00:00:00')
+        dt < toDateTime(#{to})
+        AND dt >= toDateTime(#{to}) - INTERVAL '4' HOUR
       ORDER BY dt desc, source desc
     ) AS current_prices
     ON prices.price_usd = 0 AND toStartOfFiveMinute(trades.dt) = toStartOfFiveMinute(current_prices.dt) AND assets.name = current_prices.slug

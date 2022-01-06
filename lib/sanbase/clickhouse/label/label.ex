@@ -84,22 +84,19 @@ defmodule Sanbase.Clickhouse.Label do
     {query, args} = addresses_labels_query(slug, blockchain, addresses)
 
     result =
-      Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [
-                                                                 address,
-                                                                 label,
-                                                                 metadata
-                                                               ],
-                                                               acc ->
-        label = %{name: label, metadata: metadata, origin: "santiment"}
-        Map.update(acc, address, [label], &[label | &1])
-      end)
+      Sanbase.ClickhouseRepo.query_reduce(
+        query,
+        args,
+        %{},
+        fn [address, label, metadata], acc ->
+          label = %{name: label, metadata: metadata, origin: "santiment"}
+          Map.update(acc, address, [label], &[label | &1])
+        end
+      )
 
     case result do
-      {:ok, labels_map} ->
-        {:ok, do_add_labels(maps, labels_map)}
-
-      {:error, reason} ->
-        {:error, reason}
+      {:ok, labels_map} -> {:ok, do_add_labels(maps, labels_map)}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -109,15 +106,15 @@ defmodule Sanbase.Clickhouse.Label do
     blockchain = slug_to_blockchain(slug)
     {query, args} = addresses_labels_query(slug, blockchain, addresses)
 
-    Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [
-                                                               address,
-                                                               label,
-                                                               metadata
-                                                             ],
-                                                             acc ->
-      label = %{name: label, metadata: metadata, origin: "santiment"}
-      Map.update(acc, address, [label], &[label | &1])
-    end)
+    Sanbase.ClickhouseRepo.query_reduce(
+      query,
+      args,
+      %{},
+      fn [address, label, metadata], acc ->
+        label = %{name: label, metadata: metadata, origin: "santiment"}
+        Map.update(acc, address, [label], &[label | &1])
+      end
+    )
   end
 
   # Private functions
@@ -172,9 +169,13 @@ defmodule Sanbase.Clickhouse.Label do
   defp addresses_labels_query(_slug, blockchain, addresses) do
     query = """
     SELECT address, label, metadata
-    FROM blockchain_address_labels FINAL
-    PREWHERE blockchain = ?1 AND address IN (?2)
-    HAVING sign = 1
+    FROM(
+      SELECT address, label, argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
+      FROM blockchain_address_labels
+      PREWHERE blockchain = ?1 AND address IN (?2)
+      GROUP BY blockchain, asset_id, label, address
+      HAVING sign = 1
+    )
     """
 
     {query, [blockchain, addresses]}

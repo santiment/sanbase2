@@ -59,13 +59,24 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   end
 
   defp exchange_names_query(blockchain, is_dex) do
+    exchange_type =
+      case is_dex do
+        nil -> :both
+        true -> :dex
+        false -> :cex
+      end
+
     query = """
-    SELECT DISTINCT lower(JSONExtractString(metadata, 'owner')) as exchange
-    FROM blockchain_address_labels FINAL
-    PREWHERE
-      blockchain = ?1 AND
-      #{maybe_is_dex(is_dex)}
-    HAVING sign = 1
+    SELECT DISTINCT lower(JSONExtractString(metadata, 'owner')) AS exchange
+    FROM (
+      SELECT argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
+      FROM blockchain_address_labels
+      PREWHERE
+        blockchain = ?1 AND
+        #{exchange_type_filter(exchange_type)}
+      GROUP BY blockchain, asset_id, label, address
+      HAVING sign = 1
+    )
     ORDER BY exchange
     """
 
@@ -76,10 +87,14 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
 
   defp exchange_addresses_query(blockchain, limit) do
     query = """
-    SELECT DISTINCT(address), label, lower(JSONExtractString(metadata, 'owner'))
-    FROM blockchain_address_labels FINAL
-    PREWHERE blockchain = 'ethereum' AND label in ('centralized_exchange', 'decentralized_exchange')
-    HAVING sign = 1
+    SELECT DISTINCT(address), label, lower(JSONExtractString(metadata, 'owner')) AS owner
+    FROM(
+      SELECT address, label, argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
+      FROM blockchain_address_labels
+      PREWHERE blockchain = ?1 AND #{exchange_type_filter(:both)}
+      GROUP BY blockchain, asset_id, label, address
+      HAVING sign = 1
+    )
     LIMIT ?2
     """
 
@@ -90,13 +105,17 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
 
   defp exchange_addresses_for_exchange_query(blockchain, owner, limit) do
     query = """
-    SELECT DISTINCT(address), label, lower(JSONExtractString(metadata, 'owner'))
-    FROM blockchain_address_labels FINAL
-    PREWHERE
-      blockchain = ?1 AND
-      lower(JSONExtractString(metadata, 'owner')) = ?2 AND
-      label in ('centralized_exchange', 'decentralized_exchange')
-    HAVING sign = 1
+    SELECT DISTINCT(address), label, lower(JSONExtractString(metadata, 'owner')) AS owner
+    FROM(
+      SELECT address, label, argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
+      FROM blockchain_address_labels
+      PREWHERE
+        blockchain = ?1 AND
+        lower(JSONExtractString(metadata, 'owner')) = ?2 AND
+        #{exchange_type_filter(:both)}
+      GROUP BY blockchain, asset_id, label, address
+      HAVING sign = 1
+    )
     LIMIT ?3
     """
 
@@ -105,7 +124,9 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
     {query, args}
   end
 
-  defp maybe_is_dex(nil), do: "label IN ('centralized_exchange', 'decentralized_exchange')"
-  defp maybe_is_dex(true), do: "label = 'decentralized_exchange'"
-  defp maybe_is_dex(false), do: "label = 'centralized_exchange'"
+  defp exchange_type_filter(:both),
+    do: "label IN ('centralized_exchange', 'decentralized_exchange')"
+
+  defp exchange_type_filter(:dex), do: "label = 'decentralized_exchange'"
+  defp exchange_type_filter(:cex), do: "label = 'centralized_exchange'"
 end

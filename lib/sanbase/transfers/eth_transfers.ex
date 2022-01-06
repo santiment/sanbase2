@@ -60,7 +60,7 @@ defmodule Sanbase.Transfers.EthTransfers do
           from_address: maybe_transform_from_address(from_address),
           to_address: maybe_transform_to_address(to_address),
           trx_hash: trx_hash,
-          trx_value: trx_value / @eth_decimals
+          trx_value: trx_value
         }
     end)
   end
@@ -81,7 +81,7 @@ defmodule Sanbase.Transfers.EthTransfers do
           from_address: from_address,
           to_address: to_address,
           trx_hash: trx_hash,
-          trx_value: trx_value / @eth_decimals
+          trx_value: trx_value
         }
     end)
   end
@@ -133,18 +133,14 @@ defmodule Sanbase.Transfers.EthTransfers do
 
   defp top_wallet_transfers_query(wallets, from, to, type, opts) do
     query = """
-    SELECT
-      toUnixTimestamp(dt),
-      from,
-      to,
-      transactionHash,
-      value / #{@eth_decimals}
-    FROM #{@table} FINAL
+    SELECT toUnixTimestamp(dt), from, to, transactionHash, (any(value) / #{@eth_decimals}) AS value
+    FROM #{@table}
     PREWHERE
       #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
       dt >= toDateTime(?2) AND
       dt < toDateTime(?3) AND
       type = 'call'
+    GROUP BY from, type, to, dt, transactionHash, primaryKey
     ORDER BY value DESC
     LIMIT ?4 OFFSET ?5
     """
@@ -194,14 +190,17 @@ defmodule Sanbase.Transfers.EthTransfers do
 
   defp top_transfers_query(from, to, opts) do
     query = """
-    SELECT
-      toUnixTimestamp(dt), from, to, transactionHash, value
-    FROM #{@table} FINAL
-    PREWHERE
-      value > ?1 AND
-      type = 'call' AND
-      dt >= toDateTime(?2) AND
-      dt < toDateTime(?3)
+    SELECT toUnixTimestamp(dt), from, to, transactionHash, any(value) / #{@eth_decimals}
+    FROM (
+      SELECT dt, from, to, transactionHash, primaryKey, value
+      FROM #{@table}
+      PREWHERE
+        type = 'call' AND
+        dt >= toDateTime(?2) AND
+        dt < toDateTime(?3)
+        WHERE value > ?1 * #{@eth_decimals}
+    )
+    GROUP BY from, type, to, dt, transactionHash, primaryKey
     ORDER BY value DESC
     LIMIT ?4 OFFSET ?5
     """
@@ -226,12 +225,15 @@ defmodule Sanbase.Transfers.EthTransfers do
     only_sender = Keyword.get(opts, :only_sender, false)
 
     query = """
-    SELECT
-      toUnixTimestamp(dt), from, to, transactionHash, value
-    FROM eth_transfers FINAL
-    PREWHERE
-      #{if only_sender, do: "from = ?1", else: "(from = ?1 OR to = ?1)"} AND
-      type = 'call'
+    SELECT toUnixTimestamp(dt), from, to, transactionHash, (value / #{@eth_decimals}) AS value
+    FROM (
+      SELECT dt, from, to, transactionHash, any(value) AS value
+      FROM eth_transfers
+      PREWHERE
+        #{if only_sender, do: "from = ?1", else: "(from = ?1 OR to = ?1)"} AND
+        type = 'call'
+      GROUP BY from, type, to, dt, transactionHash, primaryKey
+    )
     ORDER BY dt DESC
     LIMIT ?2 OFFSET ?3
     """
@@ -250,27 +252,23 @@ defmodule Sanbase.Transfers.EthTransfers do
       SUM(incoming) / expanded_decimals AS incoming,
       SUM(outgoing) / expanded_decimals AS outgoing
     FROM (
-      SELECT
-        dt,
-        0 AS incoming,
-        value AS outgoing
-      FROM eth_transfers FINAL
+      SELECT dt, 0 AS incoming, any(value) AS outgoing
+      FROM eth_transfers
       PREWHERE
         from IN (?2) AND
         dt >= toDateTime(?3) AND
         dt < toDateTime(?4)
+      GROUP BY dt, from, to, transactionHash, primaryKey
 
       UNION ALL
 
-      SELECT
-        dt,
-        value AS incoming,
-        0 AS outgoing
-      FROM eth_transfers_to FINAL
+      SELECT dt, any(value) AS incoming, 0 AS outgoing
+      FROM eth_transfers_to
       PREWHERE
         to in (?2) AND
         dt >= toDateTime(?3) AND
         dt < toDateTime(?4)
+      GROUP BY dt, from, to, transactionHash, primaryKey
     )
     GROUP BY time
     """
@@ -304,8 +302,12 @@ defmodule Sanbase.Transfers.EthTransfers do
       "#{select_column}" AS address,
       SUM(value) / pow(10,18) AS transaction_volume,
       COUNT(*) AS transfers_count
-    FROM #{table}
-    PREWHERE #{filter_column} = ?1 AND type != 'fee' AND dt >= toDateTime(?2) AND dt < toDateTime(?3)
+    FROM (
+      SELECT dt, type, from, to, anyLast(value) AS value
+      FROM #{table}
+      PREWHERE #{filter_column} = ?1 AND type != 'fee' AND dt >= toDateTime(?2) AND dt < toDateTime(?3)
+      GROUP BY from, type, to, dt, transactionHash, primaryKey
+    )
     GROUP BY "#{select_column}"
     ORDER BY #{order_by_str} DESC
     LIMIT ?4 OFFSET ?5

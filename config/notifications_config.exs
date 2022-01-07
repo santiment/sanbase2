@@ -11,7 +11,7 @@ config :sanbase, Sanbase.Notifications.Insight,
   insights_discord_publish_user: {:system, "INSIGHTS_DISCORD_PUBLISH_USER", "New Insight"}
 
 config :sanbase, Sanbase.Telegram,
-  bot_username: {:system, "TELEGRAM_NOTIFICATAIONS_BOT_USERNAME", "SanbaseAlertsStageBot"},
+  bot_username: {:system, "TELEGRAM_NOTIFICATAIONS_BOT_USERNAME", "SantimentSignalsStageBot"},
   telegram_endpoint: {:system, "TELEGRAM_ENDPOINT_RANDOM_STRING", "some_random_string"},
   token: {:system, "TELEGRAM_SIGNALS_BOT_TOKEN"}
 

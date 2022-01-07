@@ -219,6 +219,7 @@ defmodule Sanbase.Alert.Trigger do
        when is_binary(address) or is_list(address) do
     address
     |> List.wrap()
+    |> Enum.map(&Sanbase.BlockchainAddress.to_internal_format/1)
     |> remove_targets_on_cooldown(trigger, :eth_address)
   end
 
@@ -226,6 +227,7 @@ defmodule Sanbase.Alert.Trigger do
        when is_binary(address) or is_list(address) do
     address
     |> List.wrap()
+    |> Enum.map(&Sanbase.BlockchainAddress.to_internal_format/1)
     |> remove_targets_on_cooldown(trigger, :address)
   end
 

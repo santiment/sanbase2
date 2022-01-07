@@ -174,9 +174,21 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
     end
 
     def cache_key(%WalletTriggerSettings{} = settings) do
+      to_internal = fn target, field ->
+        case Map.get(target, field) do
+          nil -> nil
+          value -> Sanbase.BlockchainAddress.to_internal_format(value)
+        end
+      end
+
+      target =
+        settings.target
+        |> Map.replace(:address, to_internal.(settings.target, :address))
+        |> Map.replace(:eth_address, to_internal.(settings.target, :eth_address))
+
       construct_cache_key([
         settings.type,
-        settings.target,
+        target,
         settings.selector,
         settings.time_window,
         settings.operation

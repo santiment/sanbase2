@@ -177,7 +177,8 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
       to_internal = fn target, field ->
         case Map.get(target, field) do
           nil -> nil
-          value -> Sanbase.BlockchainAddress.to_internal_format(value)
+          [_ | _] = list -> Enum.map(list, &Sanbase.BlockchainAddress.to_internal_format/1)
+          <<_::binary>> = value -> Sanbase.BlockchainAddress.to_internal_format(value)
         end
       end
 

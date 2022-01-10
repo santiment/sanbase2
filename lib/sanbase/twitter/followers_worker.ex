@@ -2,7 +2,12 @@ defmodule Sanbase.Twitter.FollowersWorker do
   alias Sanbase.Twitter
 
   import Sanbase.DateTimeUtils,
-    only: [generate_dates_inclusive: 2, date_to_datetime: 1, date_to_datetime: 2]
+    only: [
+      generate_dates_inclusive: 2,
+      date_to_datetime: 1,
+      date_to_datetime: 2,
+      from_iso8601!: 1
+    ]
 
   use Oban.Worker,
     queue: :twitter_followers_migration_queue
@@ -17,7 +22,7 @@ defmodule Sanbase.Twitter.FollowersWorker do
   def perform(%Oban.Job{args: args}) do
     %{"slug" => slug, "from" => from} = args
 
-    from = Date.from_iso8601!(from)
+    from = from |> from_iso8601!() |> DateTime.to_date()
     to = Timex.now() |> DateTime.to_date()
 
     case get_data(slug, from, to) do

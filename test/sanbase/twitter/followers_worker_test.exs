@@ -20,9 +20,9 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
     %{slugs: slugs} = context
 
     now = Timex.now()
-    from = Timex.shift(now, days: -9) |> DateTime.to_date()
+    from = Timex.shift(now, days: -9)
 
-    data = data(from, DateTime.to_date(now))
+    data = data(DateTime.to_date(from), DateTime.to_date(now))
 
     Sanbase.Mock.prepare_mock2(&Twitter.MetricAdapter.available_slugs/0, {:ok, slugs})
     |> Sanbase.Mock.prepare_mock2(&Twitter.MetricAdapter.first_datetime/2, {:ok, from})

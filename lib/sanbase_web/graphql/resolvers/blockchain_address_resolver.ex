@@ -278,7 +278,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
           user_labels =
             Map.get(root, :labels, [])
             |> Enum.map(fn label ->
-              label |> Map.from_struct() |> Map.put(:origin, "user")
+              label |> Map.put(:origin, "user")
             end)
 
           labels =

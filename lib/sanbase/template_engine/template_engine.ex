@@ -31,6 +31,7 @@ defmodule Sanbase.TemplateEngine do
   @spec run(String.t(), map) :: String.t()
   def run(template, kv) do
     {human_readable_map, kv} = Map.split(kv, [:human_readable])
+
     human_readable_mapset = Map.get(human_readable_map, :human_readable, []) |> MapSet.new()
 
     Enum.reduce(kv, template, fn {key, value}, acc ->

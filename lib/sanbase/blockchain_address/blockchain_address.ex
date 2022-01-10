@@ -93,4 +93,20 @@ defmodule Sanbase.BlockchainAddress do
       {:error, error} -> {:error, error}
     end
   end
+
+  def blockchain_from_infrastructure("ETH"), do: "ethereum"
+  def blockchain_from_infrastructure("BTC"), do: "bitcoin"
+  def blockchain_from_infrastructure("BCH"), do: "bitcoin-cash"
+  def blockchain_from_infrastructure("LTC"), do: "litecoin"
+  def blockchain_from_infrastructure("BNB"), do: "binance"
+  def blockchain_from_infrastructure("BEP2"), do: "binance"
+  def blockchain_from_infrastructure("XRP"), do: "ripple"
+  def blockchain_from_infrastructure(_), do: :unsupported_blockchain
+
+  def infrastructure_from_blockchain("ethereum"), do: "ETH"
+  def infrastructure_from_blockchain("bitcoin"), do: "BTC"
+  def infrastructure_from_blockchain("bitcoin-cash"), do: "BCH"
+  def infrastructure_from_blockchain("litecoin"), do: "LTC"
+  def infrastructure_from_blockchain("binance"), do: "BEP2"
+  def infrastructure_from_blockchain("ripple"), do: "XRP"
 end

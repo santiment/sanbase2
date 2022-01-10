@@ -8,14 +8,15 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.{
     ApikeyResolver,
-    UserResolver,
-    UserChartConfigurationResolver,
+    BillingResolver,
     EthAccountResolver,
-    UserSettingsResolver,
-    UserTriggerResolver,
-    UserListResolver,
     InsightResolver,
-    BillingResolver
+    LinkedUserResolver,
+    UserChartConfigurationResolver,
+    UserListResolver,
+    UserResolver,
+    UserSettingsResolver,
+    UserTriggerResolver
   }
 
   enum :api_call_auth_method do
@@ -38,6 +39,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&UserResolver.email/3)
     end
 
+    field(:name, :string)
     field(:username, :string)
     field(:avatar_url, :string)
 
@@ -82,6 +84,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   object :user do
     field(:id, non_null(:id))
     field(:email, :string)
+    field(:name, :string)
     field(:username, :string)
     field(:consent_id, :string)
     field(:privacy_policy_accepted, :boolean)
@@ -96,6 +99,18 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
     field :san_balance, :float do
       cache_resolve(&UserResolver.san_balance/3)
+    end
+
+    field :primary_user_sanbase_subscription, :subscription_plan do
+      resolve(&LinkedUserResolver.primary_user_sanbase_subscription/3)
+    end
+
+    field :primary_user, :public_user do
+      resolve(&LinkedUserResolver.get_primary_user/3)
+    end
+
+    field :secondary_users, list_of(:public_user) do
+      resolve(&LinkedUserResolver.get_secondary_users/3)
     end
 
     @desc ~s"""

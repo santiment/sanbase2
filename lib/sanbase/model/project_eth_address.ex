@@ -20,7 +20,7 @@ defmodule Sanbase.Model.ProjectEthAddress do
     project_eth_address
     |> cast(attrs, [:address, :project_id, :source, :comments])
     |> validate_required([:address, :project_id])
-    |> update_change(:address, &String.downcase/1)
+    |> update_change(:address, &Sanbase.BlockchainAddress.to_internal_format/1)
     |> unique_constraint(:address)
   end
 

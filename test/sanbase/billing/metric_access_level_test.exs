@@ -394,6 +394,12 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "eth_trade_volume_by_token",
         "stablecoin_trade_volume_by_token",
         "token_eth_price_by_dex_5m",
+        "nft_trades_count",
+        "nft_trade_volume_usd",
+        "nft_whale_trades_count",
+        "nft_whale_trade_volume_usd",
+        "nft_retail_trades_count",
+        "nft_retail_trade_volume_usd",
         # label balances
         "labelled_historical_balance",
         "labelled_historical_balance_changes",
@@ -769,6 +775,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "bitfinex_perpetual_funding_rate",
         # dydx funding rates metric
         "dydx_perpetual_funding_rate",
+        # deribit funding rates metric
+        "deribit_perpetual_funding_rate",
         "sentiment_volume_consumed_total_change_1d",
         "sentiment_volume_consumed_total_change_7d",
         "sentiment_volume_consumed_total_change_30d"

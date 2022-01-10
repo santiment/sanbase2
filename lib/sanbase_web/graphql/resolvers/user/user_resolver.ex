@@ -144,11 +144,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     end
   end
 
-  def change_username(_root, %{username: new_username}, %{
-        context: %{auth: %{auth_method: :user_token, current_user: user}}
-      }) do
-    User.change_username(user, new_username)
-    |> case do
+  def change_name(_root, %{name: new_name}, %{context: %{auth: %{current_user: user}}}) do
+    case User.change_name(user, new_name) do
+      {:ok, user} ->
+        {:ok, user}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot update current user's name to #{new_name}",
+          details: changeset_errors(changeset)
+        }
+    end
+  end
+
+  def change_username(_root, %{username: new_username}, %{context: %{auth: %{current_user: user}}}) do
+    case User.change_username(user, new_username) do
       {:ok, user} ->
         {:ok, user}
 

@@ -1135,6 +1135,72 @@ ALTER SEQUENCE public.latest_coinmarketcap_data_id_seq OWNED BY public.latest_co
 
 
 --
+-- Name: linked_users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.linked_users (
+    id bigint NOT NULL,
+    primary_user_id bigint NOT NULL,
+    secondary_user_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: linked_users_candidates; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.linked_users_candidates (
+    id bigint NOT NULL,
+    primary_user_id bigint NOT NULL,
+    secondary_user_id bigint NOT NULL,
+    token character varying(255) NOT NULL,
+    is_confirmed boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: linked_users_candidates_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.linked_users_candidates_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: linked_users_candidates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.linked_users_candidates_id_seq OWNED BY public.linked_users_candidates.id;
+
+
+--
+-- Name: linked_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.linked_users_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: linked_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.linked_users_id_seq OWNED BY public.linked_users.id;
+
+
+--
 -- Name: list_items; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3022,7 +3088,8 @@ CREATE TABLE public.users (
     avatar_url character varying(255),
     is_registered boolean DEFAULT false,
     is_superuser boolean DEFAULT false,
-    twitter_id character varying(255) DEFAULT NULL::character varying
+    twitter_id character varying(255) DEFAULT NULL::character varying,
+    name character varying(255)
 );
 
 
@@ -3058,7 +3125,8 @@ CREATE TABLE public.votes (
     timeline_event_id bigint,
     count integer DEFAULT 1,
     chart_configuration_id bigint,
-    CONSTRAINT only_one_fk CHECK ((((
+    watchlist_id bigint,
+    CONSTRAINT only_one_fk CHECK (((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
@@ -3069,6 +3137,10 @@ CASE
 END) +
 CASE
     WHEN (chart_configuration_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (watchlist_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -3565,6 +3637,20 @@ ALTER TABLE ONLY public.latest_btc_wallet_data ALTER COLUMN id SET DEFAULT nextv
 --
 
 ALTER TABLE ONLY public.latest_coinmarketcap_data ALTER COLUMN id SET DEFAULT nextval('public.latest_coinmarketcap_data_id_seq'::regclass);
+
+
+--
+-- Name: linked_users id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users ALTER COLUMN id SET DEFAULT nextval('public.linked_users_id_seq'::regclass);
+
+
+--
+-- Name: linked_users_candidates id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users_candidates ALTER COLUMN id SET DEFAULT nextval('public.linked_users_candidates_id_seq'::regclass);
 
 
 --
@@ -4223,6 +4309,22 @@ ALTER TABLE ONLY public.latest_btc_wallet_data
 
 ALTER TABLE ONLY public.latest_coinmarketcap_data
     ADD CONSTRAINT latest_coinmarketcap_data_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: linked_users_candidates linked_users_candidates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users_candidates
+    ADD CONSTRAINT linked_users_candidates_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: linked_users linked_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users
+    ADD CONSTRAINT linked_users_pkey PRIMARY KEY (id);
 
 
 --
@@ -5043,6 +5145,20 @@ CREATE UNIQUE INDEX latest_coinmarketcap_data_coinmarketcap_id_index ON public.l
 
 
 --
+-- Name: linked_users_candidates_token_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX linked_users_candidates_token_index ON public.linked_users_candidates USING btree (token);
+
+
+--
+-- Name: linked_users_secondary_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX linked_users_secondary_user_id_index ON public.linked_users USING btree (secondary_user_id);
+
+
+--
 -- Name: list_items_user_list_id_blockchain_address_user_pair_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5582,6 +5698,13 @@ CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING 
 
 
 --
+-- Name: votes_watchlist_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_watchlist_id_user_id_index ON public.votes USING btree (watchlist_id, user_id);
+
+
+--
 -- Name: wallet_hunters_bounties_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5917,6 +6040,38 @@ ALTER TABLE ONLY public.icos
 
 ALTER TABLE ONLY public.icos
     ADD CONSTRAINT icos_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
+-- Name: linked_users_candidates linked_users_candidates_primary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users_candidates
+    ADD CONSTRAINT linked_users_candidates_primary_user_id_fkey FOREIGN KEY (primary_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: linked_users_candidates linked_users_candidates_secondary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users_candidates
+    ADD CONSTRAINT linked_users_candidates_secondary_user_id_fkey FOREIGN KEY (secondary_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: linked_users linked_users_primary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users
+    ADD CONSTRAINT linked_users_primary_user_id_fkey FOREIGN KEY (primary_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: linked_users linked_users_secondary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users
+    ADD CONSTRAINT linked_users_secondary_user_id_fkey FOREIGN KEY (secondary_user_id) REFERENCES public.users(id);
 
 
 --
@@ -6488,6 +6643,14 @@ ALTER TABLE ONLY public.votes
 
 
 --
+-- Name: votes votes_watchlist_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_watchlist_id_fkey FOREIGN KEY (watchlist_id) REFERENCES public.user_lists(id);
+
+
+--
 -- Name: wallet_hunters_bounties wallet_hunters_bounties_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6934,3 +7097,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210907104919);
 INSERT INTO public."schema_migrations" (version) VALUES (20210921100450);
 INSERT INTO public."schema_migrations" (version) VALUES (20211109131726);
 INSERT INTO public."schema_migrations" (version) VALUES (20211117104935);
+INSERT INTO public."schema_migrations" (version) VALUES (20211124075928);
+INSERT INTO public."schema_migrations" (version) VALUES (20211126144929);
+INSERT INTO public."schema_migrations" (version) VALUES (20211206104913);

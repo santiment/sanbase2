@@ -164,7 +164,7 @@ defmodule Sanbase.Alert.Trigger do
   end
 
   defp remove_targets_on_cooldown(%{watchlist_id: watchlist_id}, trigger) do
-    case Sanbase.UserList.by_id(watchlist_id) do
+    case Sanbase.UserList.by_id(watchlist_id, []) do
       {:error, _} ->
         %{list: [], type: :slug}
 
@@ -219,6 +219,7 @@ defmodule Sanbase.Alert.Trigger do
        when is_binary(address) or is_list(address) do
     address
     |> List.wrap()
+    |> Enum.map(&Sanbase.BlockchainAddress.to_internal_format/1)
     |> remove_targets_on_cooldown(trigger, :eth_address)
   end
 
@@ -226,6 +227,7 @@ defmodule Sanbase.Alert.Trigger do
        when is_binary(address) or is_list(address) do
     address
     |> List.wrap()
+    |> Enum.map(&Sanbase.BlockchainAddress.to_internal_format/1)
     |> remove_targets_on_cooldown(trigger, :address)
   end
 

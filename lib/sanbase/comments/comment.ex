@@ -71,7 +71,12 @@ defmodule Sanbase.Comment do
     many_to_many(:short_urls, ShortUrl, join_through: @short_urls_table)
     many_to_many(:timeline_events, TimelineEvent, join_through: @timeline_events_table)
     many_to_many(:blockchain_addresses, BlockchainAddress, join_through: @blockchain_addrs_table)
-    many_to_many(:chart_configurations, ChartConfiguration, join_through: @chart_configs_table)
+
+    many_to_many(:chart_configurations, ChartConfiguration,
+      join_through: @chart_configs_table,
+      join_keys: [comment_id: :id, chart_configuration_id: :id]
+    )
+
     many_to_many(:wallet_hunters_propsals, WHProposal, join_through: @wh_proposals_table)
 
     timestamps()

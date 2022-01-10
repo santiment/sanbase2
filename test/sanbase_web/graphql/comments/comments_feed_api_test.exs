@@ -15,6 +15,8 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
     insight = insert(:published_post, user: user)
     insight2 = insert(:published_post, user: user)
     short_url = insert(:short_url)
+    chart_configuration = insert(:chart_configuration, user: user, is_public: true)
+    chart_configuration2 = insert(:chart_configuration, user: user, is_public: false)
 
     timeline_event =
       insert(:timeline_event,
@@ -33,6 +35,8 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
       unpublished_insight: unpublished_insight,
       blockchain_address: blockchain_address,
       short_url: short_url,
+      chart_configuration: chart_configuration,
+      chart_configuration2: chart_configuration2,
       timeline_event: timeline_event
     }
   end
@@ -96,14 +100,45 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
         "some comment4"
       )
 
+    {:ok, chart_configuration_comment} =
+      EntityComment.create_and_link(
+        :chart_configuration,
+        context.chart_configuration.id,
+        context.user.id,
+        nil,
+        "some comment5"
+      )
+
+    {:ok, _} =
+      EntityComment.create_and_link(
+        :chart_configuration,
+        context.chart_configuration2.id,
+        context.user.id,
+        nil,
+        "some comment on private chart layout - must not be seen"
+      )
+
     assert {:ok, _} = Sanbase.Insight.Post.delete(context.insight2.id, context.user)
-    assert {:error, _} = Sanbase.Insight.Post.by_id(context.insight2.id)
+    assert {:error, _} = Sanbase.Insight.Post.by_id(context.insight2.id, [])
 
     query = comments_feed_query()
 
     comments = execute_query(context.conn, query, "commentsFeed")
 
     assert comments == [
+             %{
+               "blockchainAddress" => nil,
+               "content" => chart_configuration_comment.content,
+               "id" => chart_configuration_comment.id,
+               "insertedAt" =>
+                 chart_configuration_comment.inserted_at
+                 |> DateTime.from_naive!("Etc/UTC")
+                 |> DateTime.to_iso8601(),
+               "insight" => nil,
+               "shortUrl" => nil,
+               "timelineEvent" => nil,
+               "chartConfiguration" => %{"id" => context.chart_configuration.id}
+             },
              %{
                "blockchainAddress" => nil,
                "content" => timeline_event_comment.content,
@@ -114,7 +149,8 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  |> DateTime.to_iso8601(),
                "insight" => nil,
                "shortUrl" => nil,
-               "timelineEvent" => %{"id" => context.timeline_event.id}
+               "timelineEvent" => %{"id" => context.timeline_event.id},
+               "chartConfiguration" => nil
              },
              %{
                "blockchainAddress" => nil,
@@ -126,7 +162,8 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  |> DateTime.to_iso8601(),
                "insight" => nil,
                "shortUrl" => %{"shortUrl" => context.short_url.short_url},
-               "timelineEvent" => nil
+               "timelineEvent" => nil,
+               "chartConfiguration" => nil
              },
              %{
                "blockchainAddress" => %{
@@ -141,7 +178,8 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  |> DateTime.to_iso8601(),
                "insight" => nil,
                "shortUrl" => nil,
-               "timelineEvent" => nil
+               "timelineEvent" => nil,
+               "chartConfiguration" => nil
              },
              %{
                "blockchainAddress" => nil,
@@ -153,7 +191,8 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
                  |> DateTime.to_iso8601(),
                "insight" => %{"id" => context.insight.id},
                "shortUrl" => nil,
-               "timelineEvent" => nil
+               "timelineEvent" => nil,
+               "chartConfiguration" => nil
              }
            ]
   end
@@ -169,6 +208,7 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
         timelineEvent { id }
         shortUrl { shortUrl }
         blockchainAddress { id address }
+        chartConfiguration { id }
       }
     }
     """

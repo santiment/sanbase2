@@ -29,7 +29,7 @@ config :sanbase, SanbaseWeb.Plug.BasicAuth,
   password: {:system, "ADMIN_BASIC_AUTH_PASSWORD", "admin"}
 
 config :sanbase, Sanbase.Transfers.Erc20Transfers,
-  dt_ordered_table: {:system, "DT_ORDERED_ERC20_TRANFERS_TABLE", "erc20_transfers_new"},
+  dt_ordered_table: {:system, "DT_ORDERED_ERC20_TRANFERS_TABLE", "erc20_transfers_dt_order"},
   address_ordered_table: {:system, "ADDRESS_ORDERED_ERC20_TRANSFERS_TABLE", "erc20_transfers"}
 
 config :sanbase, Sanbase.Cryptocompare, api_key: {:system, "CRYPTOCOMPARE_API_KEY"}
@@ -45,7 +45,8 @@ config :sanbase, Sanbase.KafkaExporter,
     {:system, "KAFKA_CRYPTOCOMPARE_PRICES_ONLY_TOPIC", "asset_price_pairs_only"},
   asset_ohlcv_price_pairs_topic:
     {:system, "KAFKA_ASSET_OHLCV_PRICE_POINTS_TOPIC", "asset_ohlcv_price_pairs"},
-  api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"}
+  api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"},
+  twitter_followers_topic: {:system, "KAFKA_TWITTER_FOLLOWERS_TOPIC", "twitter_followers"}
 
 config :sanbase, Sanbase.EventBus.KafkaExporterSubscriber,
   event_bus_topic: {:system, "KAFKA_EVENT_BUS_TOPIC", "sanbase_event_bus"},
@@ -124,6 +125,10 @@ config :xain, :after_callback, {Phoenix.HTML, :raw}
 config :tesla,
   adapter: Tesla.Adapter.Hackney,
   recv_timeout: 30_000
+
+config :sanbase, Sanbase.ApiCallLimit,
+  quota_size: 100,
+  quota_size_max_offset: 100
 
 config :sanbase, Sanbase.InternalServices.Ethauth,
   url: {:system, "ETHAUTH_URL"},

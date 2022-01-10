@@ -235,19 +235,19 @@ defmodule Sanbase.Intercom do
     HTTPoison.post(@intercom_url, stats_json, intercom_headers())
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        Logger.info("Stats sent: #{inspect(stats_json |> Jason.decode!())}}")
+        Logger.info("Stats sent for user: #{stats.user_id}}")
         stats = merge_intercom_attributes(stats, body)
         UserAttributes.save(%{user_id: stats.user_id, properties: stats})
         :ok
 
       {:ok, %HTTPoison.Response{} = response} ->
         Logger.error(
-          "Error sending to intercom stats: #{inspect(stats_json |> Jason.decode!())}}. Response: #{inspect(response)}"
+          "Error sending to intercom stats: #{inspect(stats)}. Response: #{inspect(response)}"
         )
 
       {:error, reason} ->
         Logger.error(
-          "Error sending to intercom stats: #{inspect(stats_json |> Jason.decode!())}}. Reason: #{inspect(reason)}"
+          "Error sending to intercom stats: #{inspect(stats)}. Reason: #{inspect(reason)}"
         )
     end
   end
@@ -284,13 +284,13 @@ defmodule Sanbase.Intercom do
           reraise e, __STACKTRACE__
       end
     end)
-    |> Enum.each(fn user ->
+    |> Enum.each(fn user_stats ->
       try do
-        send_user_stats_to_intercom(user)
+        send_user_stats_to_intercom(user_stats)
       rescue
         e ->
           Logger.error(
-            "Error sync_users to Intercom (send_user_stats_to_intercom) for user: #{user.id}, error: #{inspect(e)}"
+            "Error sync_users to Intercom (send_user_stats_to_intercom) for user: #{user_stats.user_id}, error: #{inspect(e)}"
           )
       end
     end)

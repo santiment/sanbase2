@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationTypes do
     field(:page_size, :integer)
     field(:columns, :json)
 
-    field :user, non_null(:user) do
+    field :user, non_null(:public_user) do
       resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
     end
 

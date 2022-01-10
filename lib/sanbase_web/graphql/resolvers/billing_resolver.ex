@@ -145,6 +145,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
+  def upcoming_invoice(_root, %{subscription_id: subscription_id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    current_user_id = current_user.id
+
+    with %Subscription{user_id: ^current_user_id} = subscription <-
+           Subscription.by_id(subscription_id),
+         true <- subscription.status in [:active, :trialing, :past_due],
+         {:ok, %Stripe.Invoice{} = invoice} <- StripeApi.upcoming_invoice(subscription.stripe_id) do
+      {:ok,
+       %{
+         period_start: DateTime.from_unix!(invoice.period_start),
+         period_end: DateTime.from_unix!(invoice.period_end),
+         amount_due: invoice.total
+       }}
+    else
+      {:error, %Stripe.Error{message: message} = reason} ->
+        log_error("Error fetching upcoming invoice", reason)
+        {:error, message}
+
+      _ ->
+        {:error, "Can't fetch upcoming invoice for provided subscription"}
+    end
+  end
+
   def subscriptions(%User{} = user, _args, _resolution) do
     {:ok, Subscription.user_subscriptions(user)}
   end

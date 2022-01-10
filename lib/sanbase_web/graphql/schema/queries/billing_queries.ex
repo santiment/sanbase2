@@ -36,6 +36,19 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       resolve(&BillingResolver.get_coupon/3)
     end
+
+    @desc ~s"""
+    Get upcoming invoice for a subscription
+    """
+    field :upcoming_invoice, :upcoming_invoice do
+      meta(access: :free)
+
+      arg(:subscription_id, non_null(:id))
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.upcoming_invoice/3)
+    end
   end
 
   object :billing_mutations do

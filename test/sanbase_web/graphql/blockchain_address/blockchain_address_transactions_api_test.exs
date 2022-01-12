@@ -164,7 +164,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressTransactionsApiTest do
         "0x876eabf441b2ee5b5b0554fd502a8e0600950cfa",
         "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
         "0x21a56440bedb1a5c2f4adca4a6f9fbccf13bd741d63c0e3b2214a6ee418a5974",
-        5.5e18
+        5.5
       ]
     ]
   end

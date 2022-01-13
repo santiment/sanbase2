@@ -549,7 +549,7 @@ defmodule Sanbase.Accounts.UserTest do
 
     assert errors_on(changeset)[:avatar_url] ==
              [
-               "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+               "URL 'something invalid' is missing a scheme (e.g. https)"
              ]
   end
 

@@ -306,7 +306,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       assert details ==
                %{
                  "avatar_url" => [
-                   "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+                   "URL 'something invalid' is missing a scheme (e.g. https)"
                  ]
                }
     end

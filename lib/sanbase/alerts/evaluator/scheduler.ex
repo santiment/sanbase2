@@ -202,11 +202,17 @@ defmodule Sanbase.Alert.Scheduler do
 
         channels != [] and
           Enum.any?(channels, fn
-            "email" -> Sanbase.Accounts.User.can_receive_email_alert?(user)
-            "telegram" -> Sanbase.Accounts.User.can_receive_telegram_alert?(user)
-            # The other types - telegram channel and webhooks are always enabled
-            # and cannot be disabled by some settings.
-            _ -> true
+            "email" ->
+              Sanbase.Accounts.User.can_receive_email_alert?(user)
+
+            "telegram" ->
+              Sanbase.Accounts.User.can_receive_telegram_alert?(user)
+
+            %{"webhook" => webhook_url} ->
+              match?(:ok, Sanbase.Validation.valid_url?(webhook_url))
+
+            _ ->
+              true
           end)
       end)
 

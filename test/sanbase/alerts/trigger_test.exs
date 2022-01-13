@@ -95,10 +95,39 @@ defmodule Sanbase.Alert.TriggersTest do
     assert changeset_errors(changeset) == %{
              trigger: %{
                icon_url: [
-                 "`not_a_url` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+                 "URL 'not_a_url' is missing a scheme (e.g. https)"
                ]
              }
            }
+  end
+
+  test "try creating user trigger with invalid webhook_url" do
+    user = insert(:user)
+
+    trigger_settings = %{
+      type: "metric_signal",
+      metric: "active_addresses_24h",
+      target: %{slug: "santiment"},
+      channel: %{"webhook_url" => "not_a_url"},
+      time_window: "1d",
+      operation: %{percent_up: 300.0},
+      triggered?: false,
+      payload: nil
+    }
+
+    capture_log(fn ->
+      {:error, error_msg} =
+        UserTrigger.create_user_trigger(user, %{
+          title: "Generic title",
+          is_public: true,
+          settings: trigger_settings
+        })
+
+      assert error_msg =~ "Trigger structure is invalid. Key `settings` is not valid. "
+
+      assert error_msg =~
+               "Reason: [\"%{webhook_url: \\\"not_a_url\\\"} is not a valid notification channel. The available notification channels are [telegram_channel, telegram, email, web_push, webhook]\\n\"]"
+    end)
   end
 
   test "try creating user trigger with unknown channel" do

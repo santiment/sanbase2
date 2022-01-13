@@ -192,7 +192,7 @@ defmodule Sanbase.Transfers.EthTransfers do
     query = """
     SELECT toUnixTimestamp(dt), from, to, transactionHash, any(value) / #{@eth_decimals}
     FROM (
-      SELECT dt, from, to, transactionHash, primaryKey, value
+      SELECT dt, type, from, to, transactionHash, primaryKey, value
       FROM #{@table}
       PREWHERE
         type = 'call' AND

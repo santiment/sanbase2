@@ -23,11 +23,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         SELECT
             toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?3) * ?3) AS t,
             sum(measure) AS tokens_amount
-        FROM distribution_deltas_5min FINAL
-        PREWHERE
-          metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{metric}' ) AND
-          asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
-          dt < toDateTime(?2)
+        FROM (
+          SELECT dt, argMax(measure, computed_at) AS measure
+          FROM distribution_deltas_5min
+          PREWHERE
+            metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{metric}' ) AND
+            asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
+            dt < toDateTime(?2)
+          GROUP BY asset_id, metric_id, dt, value
+        )
         GROUP BY t
         ORDER BY t ASC
       )
@@ -36,10 +40,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         SELECT
           toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?3) * ?3) AS t,
           avg(value) AS price
-        FROM intraday_metrics FINAL
-        PREWHERE
-          asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1) AND
-          metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd' LIMIT 1)
+        FROM (
+          SELECT dt, argMax(value, computed_at) AS value
+          FROM intraday_metrics
+          PREWHERE
+            asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1) AND
+            metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd' LIMIT 1)
+          GROUP BY asset_id, metric_id, dt
+        )
         GROUP BY t
       ) USING (t)
     )
@@ -74,14 +82,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         SELECT
             toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?4) * ?4) AS t,
             -sum(measure) AS tokens_amount
-        FROM distribution_deltas_5min FINAL
-        PREWHERE
-          metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{metric}' ) AND
-          asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
-          dt >= toDateTime(?2) AND
-          dt < toDateTime(?3) AND
-          dt != value AND
-          value < toDateTime(?2)
+        FROM (
+          SELECT dt, value, argMax(measure, computed_at) AS measure
+          FROM distribution_deltas_5min
+          PREWHERE
+            metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{metric}' ) AND
+            asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
+            dt >= toDateTime(?2) AND
+            dt < toDateTime(?3) AND
+            dt != value AND
+            value < toDateTime(?2)
+          GROUP BY asset_id, metric_id, dt, value
+          )
         GROUP BY t
         ORDER BY t ASC
       )
@@ -90,10 +102,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         SELECT
           toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?4) * ?4) AS t,
           avg(value) AS price
-        FROM intraday_metrics FINAL
-        PREWHERE
-          asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1) AND
-          metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd' LIMIT 1)
+        FROM (
+          SELECT dt, argMax(value, computed_at) AS value
+          FROM intraday_metrics
+          PREWHERE
+            asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1) AND
+            metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd' LIMIT 1)
+          GROUP BY asset_id, metric_id, dt
+        )
         GROUP BY t
       ) USING (t)
     )
@@ -296,14 +312,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?5) * ?5) AS t,
       -sum(measure) AS sum_measure
-    FROM #{Map.get(@table_map, metric)} FINAL
-    PREWHERE
-      metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
-      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?2 ) AND
-      dt != value AND
-      dt >= toDateTime(?3) AND
-      dt < toDateTime(?4) AND
-      value < toDateTime(?3)
+    FROM (
+      SELECT value, argMax(measure, computed_at) AS measure
+      FROM #{Map.get(@table_map, metric)}
+      PREWHERE
+        metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
+        asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?2 ) AND
+        dt != value AND
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4) AND
+        value < toDateTime(?3)
+      GROUP BY asset_id, metric_id, dt, value
+    )
     GROUP BY t
     ORDER BY sum_measure DESC
     LIMIT ?6

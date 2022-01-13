@@ -94,12 +94,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
       name AS slug,
-      #{aggregation(aggregation, "value", "dt")} AS value
+      #{aggregation(aggregation, "value2", "dt")} AS value
     FROM(
       SELECT
         asset_id,
         dt,
-        argMax(value, computed_at) AS value
+        argMax(value, computed_at) AS value2
       FROM #{Map.get(@table_map, metric)}
       PREWHERE
         #{additional_filters}

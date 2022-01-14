@@ -32,10 +32,10 @@ defmodule Sanbase.Insight.Post do
   @published "published"
 
   @type option ::
-          {:is_pulse, boolean()}
-          | {:is_paywall_required, boolean()}
-          | {:from, DateTime.t()}
-          | {:to, DateTime.t()}
+          {:is_pulse, boolean() | nil}
+          | {:is_paywall_required, boolean() | nil}
+          | {:from, DateTime.t() | nil}
+          | {:to, DateTime.t() | nil}
           | {:page, non_neg_integer()}
           | {:page_size, non_neg_integer()}
 

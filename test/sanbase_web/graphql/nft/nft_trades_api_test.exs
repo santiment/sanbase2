@@ -18,7 +18,8 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
       [
         1_638_339_408,
         18.3,
-        [1.0],
+        [1.0, 2.0],
+        ["0x70", "0x90"],
         project.slug,
         "0xa497bf3e9ea849361fc78fc405861abf97ed08addb5ca4e3da688331ffa38344",
         "0xd387a6e4e84a6c86bd90c158c6028a58cc8ac459",
@@ -32,6 +33,7 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
         1_637_831_576,
         16.4,
         [2.0],
+        ["0x1bd2"],
         project.slug,
         "0xc98a6ed5c0a139d7437d96d67e120f0ba568915daeb46182bdb27ad37367c0c8",
         "0x694cd849bc80f3f772ab9aef4be2df3af054dc6b",
@@ -59,6 +61,10 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
                %{
                  "amount" => 18.3,
                  "quantity" => 1.0,
+                 "quantities" => [
+                   %{"quantity" => 1.0, "tokenId" => "0x70"},
+                   %{"quantity" => 2.0, "tokenId" => "0x90"}
+                 ],
                  "datetime" => "2021-12-01T06:16:48Z",
                  "fromAddress" => %{
                    "address" => "0xa88ae2c098a3ad39184a4d64c6ddb39a237531b2",
@@ -79,6 +85,7 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
                %{
                  "amount" => 16.4,
                  "quantity" => 2.0,
+                 "quantities" => [%{"quantity" => 2.0, "tokenId" => "0x1bd2"}],
                  "datetime" => "2021-11-25T09:12:56Z",
                  "fromAddress" => %{
                    "address" => "0x721931508df2764fd4f70c53da646cb8aed16ace",
@@ -120,6 +127,7 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
         currencyProject { slug }
         amount
         quantity
+        quantities{ tokenId quantity }
       }
     }
     """

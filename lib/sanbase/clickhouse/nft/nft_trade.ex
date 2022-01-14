@@ -20,6 +20,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
           ts,
           amount,
           amount_tokens,
+          token_ids,
           slug,
           trx_hash,
           buyer_address,
@@ -29,6 +30,15 @@ defmodule Sanbase.Clickhouse.NftTrade do
           platform,
           type
         ] = list
+
+        quantities =
+          Enum.zip(token_ids, amount_tokens)
+          |> Enum.map(fn {id, amount} ->
+            %{
+              token_id: id,
+              quantity: Sanbase.Math.to_float(amount)
+            }
+          end)
 
         %{
           datetime: DateTime.from_unix!(ts),
@@ -43,6 +53,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
           },
           amount: amount,
           quantity: amount_tokens |> List.first() |> Sanbase.Math.to_float(),
+          quantities: quantities,
           trx_hash: trx_hash,
           marketplace: platform,
           nft: %{contract_address: nft_contract_address, name: nft_contract_name}
@@ -86,6 +97,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
            argMax(seller_address, computed_at) AS seller_address,
            argMax(amount, computed_at) AS amount,
            argMax(amount_tokens, computed_at) AS amount_tokens,
+           argMax(token_ids, computed_at) AS token_ids,
            argMax(platform, computed_at) AS platform,
            argMax(nft_contract_address, computed_at) AS nft_contract_address,
            argMax(nft_contract_name, computed_at) AS nft_contract_name,
@@ -101,7 +113,19 @@ defmodule Sanbase.Clickhouse.NftTrade do
     # Since 0 is a valid value for decimals the check `isNull(name)` is used to check whether
     # right record in assets table exists. If it doesn't exists - replace the decimals with `18`.
     query = """
-    SELECT dt, amount / pow(10, if(isNull(name), 18, decimals)) AS amount, amount_tokens, name, tx_hash, buyer_address, seller_address, nft_contract_address, nft_contract_name, platform, type
+    SELECT
+      dt,
+      amount / pow(10, if(isNull(name), 18, decimals)) AS amount,
+      amount_tokens,
+      token_ids,
+      name,
+      tx_hash,
+      buyer_address,
+      seller_address,
+      nft_contract_address,
+      nft_contract_name,
+      platform,
+      type
 
     FROM (#{query})
 
@@ -141,7 +165,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     """
 
     combined_buyer_seller = """
-    SELECT toUnixTimestamp(dt) AS dt, log_index, amount_tokens, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'buy' AS type, computed_at
+    SELECT toUnixTimestamp(dt) AS dt, log_index, amount_tokens, token_ids, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'buy' AS type, computed_at
     FROM nft_trades nft
     JOIN #{nft_influences_subquery} lbl
     ON buyer_address = lbl.address
@@ -149,7 +173,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
 
     UNION ALL
 
-    SELECT toUnixTimestamp(dt) AS dt, log_index, amount_tokens, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'sell' AS type, computed_at
+    SELECT toUnixTimestamp(dt) AS dt, log_index, amount_tokens, token_ids, toFloat64(amount) AS amount, tx_hash, buyer_address, seller_address, nft_contract_address, asset_ref_id, platform, 'sell' AS type, computed_at
     FROM nft_trades nft
     JOIN #{nft_influences_subquery} lbl
     ON seller_address = lbl.address
@@ -157,7 +181,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     """
 
     _joined_nft_contract_name = """
-    SELECT  dt, log_index, amount_tokens, amount, tx_hash, buyer_address, seller_address, nft_contract_address, nft_contract_name, asset_ref_id, platform, type, computed_at
+    SELECT  dt, log_index, amount_tokens, token_ids, amount, tx_hash, buyer_address, seller_address, nft_contract_address, nft_contract_name, asset_ref_id, platform, type, computed_at
     FROM ( #{combined_buyer_seller} )
     LEFT JOIN (
       SELECT

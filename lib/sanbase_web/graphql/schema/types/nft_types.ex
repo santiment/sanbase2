@@ -22,6 +22,11 @@ defmodule SanbaseWeb.Graphql.NftTypes do
     field(:name, :string)
   end
 
+  object :nft_quantity do
+    field(:token_id, non_null(:string))
+    field(:quantity, non_null(:float))
+  end
+
   object :nft_trade do
     field(:trx_hash, :string)
     field(:marketplace, :string)
@@ -39,6 +44,7 @@ defmodule SanbaseWeb.Graphql.NftTypes do
     field(:datetime, :datetime)
     field(:amount, :float)
     field(:quantity, :float)
+    field(:quantities, list_of(:nft_quantity))
     field(:nft, :nft)
   end
 end

@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
     field :historical_trigger_points, list_of(:json) do
       meta(access: :free)
 
-      arg(:cooldown, :string)
+      arg(:cooldown, :interval)
       arg(:settings, non_null(:json))
 
       cache_resolve(&UserTriggerResolver.historical_trigger_points/3)
@@ -100,7 +100,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
       arg(:is_public, :boolean)
       arg(:is_active, :boolean)
       arg(:is_repeating, :boolean)
-      arg(:cooldown, :string)
+      arg(:cooldown, :interval)
       arg(:tags, list_of(:string))
       arg(:settings, non_null(:json))
 
@@ -118,7 +118,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
       arg(:description, :string)
       arg(:settings, :json)
       arg(:icon_url, :string)
-      arg(:cooldown, :string)
+      arg(:cooldown, :interval)
       arg(:is_active, :boolean)
       arg(:is_public, :boolean)
       arg(:is_repeating, :boolean)

@@ -144,7 +144,11 @@ defmodule Sanbase.DateTimeUtils do
   end
 
   def str_to_sec(interval) do
-    {int_interval, duration_index} = Integer.parse(interval)
+    {int_interval, duration_index} =
+      case Integer.parse(interval) do
+        {_, _} = result -> result
+        :error -> raise(ArgumentError, "The interval #{interval} is not a valid interval")
+      end
 
     case duration_index do
       "ns" -> div(int_interval, 1_000_000_000)

@@ -33,7 +33,7 @@ defmodule Sanbase.Price.SqlQuery do
         source = cast(?4, 'LowCardinality(String)') AND
         dt >= toDateTime(?5) AND
         dt < toDateTime(?6)
-      GROUP BY slug, dt
+      GROUP BY slug, time
     )
     GROUP BY time
     ORDER BY time

@@ -443,6 +443,77 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
     end
   end
 
+  describe "addresses_by_label_keys blockchain address selector" do
+    test "dynamic watchlist for selector with label keys", context do
+      %{conn: conn} = context
+      # Have at least 1 project that is not included in the result
+      insert(:random_erc20_project)
+
+      function = %{
+        "name" => "address_selector",
+        "args" => %{
+          "filters" => [
+            %{
+              "name" => "addresses_by_label_keys",
+              "args" => %{
+                "blockchain" => "ethereum",
+                "label_fqns" => ["nft_influencer"]
+              }
+            }
+          ]
+        }
+      }
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, %{rows: addresses_by_labels_result()}}
+      )
+      |> Sanbase.Mock.prepare_mock2(
+        &Sanbase.Clickhouse.Label.get_address_labels/2,
+        {:ok, labels_result()}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result = execute_mutation(conn, create_watchlist_query(function: function))
+
+        user_list = result["data"]["createWatchlist"]
+
+        assert length(user_list["listItems"]) == 4
+
+        assert %{
+                 "blockchainAddress" => %{
+                   "address" => "0x4269cba223b56458d72bdce36afbe48996d78f24",
+                   "infrastructure" => "ETH",
+                   "labels" => [%{"name" => "CEX Trader", "origin" => "santiment"}]
+                 }
+               } in user_list["listItems"]
+
+        assert %{
+                 "blockchainAddress" => %{
+                   "address" => "0x7125160a07a753b988839b004673c668012dd631",
+                   "infrastructure" => "ETH",
+                   "labels" => [%{"name" => "CEX Trader", "origin" => "santiment"}]
+                 }
+               } in user_list["listItems"]
+
+        assert %{
+                 "blockchainAddress" => %{
+                   "address" => "0xa5409ec958c83c3f309868babaca7c86dcb077c1",
+                   "infrastructure" => "ETH",
+                   "labels" => [%{"name" => "CEX Trader", "origin" => "santiment"}]
+                 }
+               } in user_list["listItems"]
+
+        assert %{
+                 "blockchainAddress" => %{
+                   "address" => "0xeb2629a2734e272bcc07bda959863f316f4bd4cf",
+                   "infrastructure" => "ETH",
+                   "labels" => [%{"name" => "CEX Trader", "origin" => "santiment"}]
+                 }
+               } in user_list["listItems"]
+      end)
+    end
+  end
+
   defp create_watchlist_query(opts) do
     name = Keyword.get(opts, :name, "My list")
     color = Keyword.get(opts, :color, "BLACK")

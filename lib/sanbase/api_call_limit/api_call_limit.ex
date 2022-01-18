@@ -63,12 +63,12 @@ defmodule Sanbase.ApiCallLimit do
       {:ok, _} = result ->
         # Clear the in-memory data for a user so the new restrictions
         # can be picked up faster. Do this only if the plan actually changes
+        __MODULE__.ETS.clear_data(:user, user)
+
         if new_plan = Ecto.Changeset.get_change(changeset, :api_calls_limit_plan) do
           Logger.info(
             "Updating ApiCallLimit record for user with id #{user.id}. Was: #{acl.api_calls_limit_plan}, now: #{new_plan}"
           )
-
-          __MODULE__.ETS.clear_data(:user, user)
         end
 
         result

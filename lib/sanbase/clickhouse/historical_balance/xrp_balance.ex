@@ -224,7 +224,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
     SELECT time, SUM(change)
       FROM (
         SELECT
-          toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
+          toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
           toFloat64(0) AS change
         FROM numbers(?2)
 
@@ -232,14 +232,17 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
       SELECT
         toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        balance - oldBalance AS change
-      FROM #{@table} FINAL
-      PREWHERE
-        address in (?3) AND
-        currency = ?4 AND
-        dt >= toDateTime(?5) AND
-        dt <= toDateTime(?6)
-      GROUP BY address
+        any(change) AS change
+      FROM (
+        SELECT dt, assetRefId, address, blockNumber, transactionIndex, (balance - oldBalance) AS change
+        FROM xrp_balances
+        PREWHERE
+          address in (?3) AND
+          currency = ?4 AND
+          dt >= toDateTime(?5) AND
+          dt <= toDateTime(?6)
+      )
+      GROUP BY assetRefId, address, dt, blockNumber, transactionIndex
     )
     GROUP BY time
     ORDER BY time

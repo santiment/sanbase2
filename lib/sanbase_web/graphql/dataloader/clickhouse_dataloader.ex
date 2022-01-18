@@ -12,6 +12,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> Enum.group_by(fn %{selector: selector} -> selector end)
     |> Sanbase.Parallel.map(fn {selector, group} ->
       {metric, from, to, opts} = selector
+      {:ok, from} = Sanbase.DateTimeUtils.to_datetime(from)
+      {:ok, to} = Sanbase.DateTimeUtils.to_datetime(to)
       slugs = Enum.map(group, & &1.slug)
 
       data =

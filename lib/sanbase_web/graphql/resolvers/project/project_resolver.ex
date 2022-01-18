@@ -96,101 +96,35 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def roi_usd(%Project{} = project, _args, _resolution) do
-    roi = Project.roi_usd(project)
-
-    {:ok, roi}
+    {:ok, Project.roi_usd(project)}
   end
 
-  def symbol(
-        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{symbol: symbol}},
-        _args,
-        _resolution
-      ) do
-    {:ok, symbol}
+  def symbol(%Project{ticker: ticker}, _args, _resolution) do
+    {:ok, ticker}
   end
 
-  def symbol(_parent, _args, _resolution), do: {:ok, nil}
-
-  def rank(
-        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{rank: rank}},
-        _args,
-        _resolution
-      ) do
-    {:ok, rank}
+  def rank(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    get_aggregated_metric_value(loader, "rank", slug, [], &Sanbase.Math.to_integer/1)
   end
 
-  def rank(_parent, _args, _resolution), do: {:ok, nil}
-
-  def price_usd(
-        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_usd}},
-        _args,
-        _resolution
-      ) do
-    {:ok, price_usd |> Sanbase.Math.to_float()}
+  def price_usd(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    get_aggregated_metric_value(loader, "price_usd", slug, [])
   end
 
-  def price_usd(_parent, _args, _resolution), do: {:ok, nil}
-
-  def price_btc(
-        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_btc: price_btc}},
-        _args,
-        _resolution
-      ) do
-    {:ok, price_btc |> Sanbase.Math.to_float()}
+  def price_btc(%Project{slug: slug}, _args, %{context: %{loader: loader}}) do
+    get_aggregated_metric_value(loader, "price_btc", slug, [])
   end
 
-  def price_btc(_parent, _args, _resolution), do: {:ok, nil}
-
-  def price_eth(
-        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_usd}},
-        _args,
-        _resolution
-      ) do
-    project_ethereum =
-      Sanbase.Cache.get_or_store(
-        {__MODULE__, :project_by_slug, "ethereum"} |> Sanbase.Cache.hash(),
-        fn -> Project.by_slug("ethereum") end
-      )
-
-    case project_ethereum do
-      %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_eth_in_usd}} ->
-        price_eth_in_usd = Sanbase.Math.to_float(price_eth_in_usd, nil)
-
-        if price_eth_in_usd != nil && price_eth_in_usd != 0 do
-          {:ok, Sanbase.Math.to_float(price_usd) / Sanbase.Math.to_float(price_eth_in_usd)}
-        else
-          {:ok, nil}
-        end
-
-      _ ->
-        {:ok, nil}
-    end
+  def price_eth(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    get_aggregated_metric_value(loader, "price_eth", slug, [])
   end
 
-  def price_eth(_parent, _args, _resolution), do: {:ok, nil}
-
-  def volume_usd(
-        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{volume_usd: volume_usd}},
-        _args,
-        _resolution
-      ) do
-    {:ok, volume_usd |> Sanbase.Math.to_float()}
+  def volume_usd(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    get_aggregated_metric_value(loader, "volume_usd", slug, [])
   end
 
-  def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
-
-  def volume_change_24h(%Project{} = project, _args, %{context: %{loader: loader}}) do
-    loader
-    |> Dataloader.load(SanbaseDataloader, :volume_change_24h, project)
-    |> on_load(&volume_change_24h_from_loader(&1, project))
-  end
-
-  defp volume_change_24h_from_loader(loader, project) do
-    volume_change_24h =
-      loader
-      |> Dataloader.get(SanbaseDataloader, :volume_change_24h, project.slug)
-
-    {:ok, volume_change_24h}
+  def volume_change_24h(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    get_aggregated_metric_value(loader, "volume_usd_change_1d", slug, [])
   end
 
   def github_links(%Project{} = project, _args, _resolution) do
@@ -300,17 +234,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end)
   end
 
-  def marketcap_usd(
-        %Project{
-          latest_coinmarketcap_data: %LatestCoinmarketcapData{market_cap_usd: market_cap_usd}
-        },
-        _args,
-        _resolution
-      ) do
-    {:ok, market_cap_usd |> Sanbase.Math.to_float()}
+  def marketcap_usd(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    get_aggregated_metric_value(loader, "rank", slug, [])
   end
-
-  def marketcap_usd(_parent, _args, _resolution), do: {:ok, nil}
 
   def available_supply(
         %Project{
@@ -337,47 +263,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def total_supply(_parent, _args, _resolution), do: {:ok, nil}
 
-  def percent_change_1h(
-        %Project{
-          latest_coinmarketcap_data: %LatestCoinmarketcapData{
-            percent_change_1h: percent_change_1h
-          }
-        },
-        _args,
-        _resolution
-      ) do
-    {:ok, percent_change_1h}
+  def percent_change_1h(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    get_aggregated_metric_value(loader, "price_usd_change_1h", slug, [])
   end
 
-  def percent_change_1h(_parent, _args, _resolution), do: {:ok, nil}
-
-  def percent_change_24h(
-        %Project{
-          latest_coinmarketcap_data: %LatestCoinmarketcapData{
-            percent_change_24h: percent_change_24h
-          }
-        },
-        _args,
-        _resolution
-      ) do
-    {:ok, percent_change_24h}
+  def percent_change_24h(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    get_aggregated_metric_value(loader, "price_usd_change_1d", slug, [])
   end
 
-  def percent_change_24h(_parent, _args, _resolution), do: {:ok, nil}
-
-  def percent_change_7d(
-        %Project{
-          latest_coinmarketcap_data: %LatestCoinmarketcapData{
-            percent_change_7d: percent_change_7d
-          }
-        },
-        _args,
-        _resolution
-      ) do
-    {:ok, percent_change_7d}
+  def percent_change_7d(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    get_aggregated_metric_value(loader, "price_usd_change_7d", slug, [])
   end
-
-  def percent_change_7d(_parent, _args, _resolution), do: {:ok, nil}
 
   def funds_raised_usd_ico_end_price(%Project{} = project, _args, _resolution) do
     result = Project.funds_raised_usd_ico_end_price(project)
@@ -447,5 +343,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   defp fetch_posts_by_ticker(ticker) do
     posts = Post.public_insights_by_tags([ticker])
     {:ok, posts}
+  end
+
+  defp get_aggregated_metric_value(loader, metric, slug, opts, transform \\ fn x -> x end) do
+    data = %{
+      slug: slug,
+      metric: metric,
+      selector: {metric, "utc_now-1d", "utc_now", opts}
+    }
+
+    loader
+    |> Dataloader.load(SanbaseDataloader, :aggregated_metric, data)
+    |> on_load(fn loader ->
+      value =
+        Dataloader.get(loader, SanbaseDataloader, :aggregated_metric, data.selector)
+        |> Map.get(slug)
+
+      {:ok, transform.(value)}
+    end)
   end
 end

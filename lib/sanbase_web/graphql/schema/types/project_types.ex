@@ -463,7 +463,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       )
     end
 
-    field :roi_usd, :decimal do
+    field :roi_usd, :float do
       cache_resolve(&ProjectResolver.roi_usd/3)
     end
 
@@ -532,23 +532,23 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.marketcap_usd/3)
     end
 
-    field :available_supply, :decimal do
+    field :available_supply, :float do
       resolve(&ProjectResolver.available_supply/3)
     end
 
-    field :total_supply, :decimal do
+    field :total_supply, :float do
       resolve(&ProjectResolver.total_supply/3)
     end
 
-    field :percent_change1h, :decimal do
+    field :percent_change1h, :float do
       resolve(&ProjectResolver.percent_change_1h/3)
     end
 
-    field :percent_change24h, :decimal do
+    field :percent_change24h, :float do
       resolve(&ProjectResolver.percent_change_24h/3)
     end
 
-    field :percent_change7d, :decimal do
+    field :percent_change7d, :float do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
 

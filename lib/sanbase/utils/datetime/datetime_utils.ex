@@ -1,12 +1,7 @@
 defmodule Sanbase.DateTimeUtils do
-  def utc_now_string_to_datetime!("utc_now" <> _ = value) do
-    case utc_now_string_to_datetime(value) do
-      {:ok, value} -> value
-      {:error, error} -> raise(error)
-    end
-  end
+  def to_datetime(%DateTime{} = dt), do: {:ok, dt}
 
-  def utc_now_string_to_datetime("utc_now" <> _ = value) do
+  def to_datetime("utc_now" <> _rest = value) do
     case String.split(value, ~r/\s*-\s*/) do
       ["utc_now"] ->
         {:ok, DateTime.utc_now()}

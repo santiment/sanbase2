@@ -54,10 +54,13 @@ defmodule Sanbase.Utils.ListSelector.Transform do
   def transform_from_to(%{from: %DateTime{}, to: %DateTime{}} = map), do: map
 
   def transform_from_to(%{from: "utc_now" <> _ = from, to: "utc_now" <> _ = to} = map) do
+    {:ok, from} = to_datetime(from)
+    {:ok, to} = to_datetime(to)
+
     %{
       map
-      | from: utc_now_string_to_datetime!(from) |> round_datetime(rounding: :up),
-        to: utc_now_string_to_datetime!(to) |> round_datetime(rounding: :up)
+      | from: round_datetime(from, rounding: :up),
+        to: round_datetime(to, rounding: :up)
     }
   end
 

@@ -124,10 +124,21 @@ defmodule Sanbase.Alert.UserTrigger do
     |> Repo.one()
     |> case do
       %UserTrigger{} = ut ->
-        {:ok, ut |> trigger_in_struct()}
+        {:ok, trigger_in_struct(ut)}
 
       nil ->
         {:ok, nil}
+    end
+  end
+
+  def get_trigger_by_if_owner(user_id, trigger_id) do
+    case get_trigger_by_id(%User{id: user_id}, trigger_id) do
+      {:ok, %UserTrigger{user_id: ^user_id} = user_trigger} ->
+        {:ok, user_trigger}
+
+      _ ->
+        {:error,
+         "The trigger with id #{trigger_id} does not exists or does not belong to the current user"}
     end
   end
 
@@ -205,8 +216,8 @@ defmodule Sanbase.Alert.UserTrigger do
     settings = Map.get(params, :settings)
 
     with {_, :ok} <- {:valid?, valid_or_nil?(settings)},
-         {_, {:ok, struct}} when not is_nil(struct) <-
-           {:get_trigger, get_trigger_by_id(user, trigger_id)} do
+         {_, {:ok, %__MODULE__{} = struct}} <-
+           {:get_trigger, get_trigger_by_if_owner(user.id, trigger_id)} do
       struct
       |> update_changeset(%{trigger: clean_params(params)})
       |> Repo.update()
@@ -238,13 +249,13 @@ defmodule Sanbase.Alert.UserTrigger do
   @spec remove_user_trigger(%User{}, trigger_id) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
   def remove_user_trigger(%User{} = user, trigger_id) do
-    case get_trigger_by_id(user, trigger_id) do
-      {:ok, nil} ->
-        {:error, "Can't remove trigger with id #{trigger_id}"}
-
-      {:ok, struct} ->
-        Repo.delete(struct)
+    case get_trigger_by_if_owner(user.id, trigger_id) do
+      {:ok, %__MODULE__{} = user_trigger} ->
+        Repo.delete(user_trigger)
         |> emit_event(:delete_alert, %{})
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

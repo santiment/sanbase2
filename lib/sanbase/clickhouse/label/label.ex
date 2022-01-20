@@ -157,6 +157,12 @@ defmodule Sanbase.Clickhouse.Label do
     LIMIT 20000
     """
 
+    label_fqns =
+      case label_fqns do
+        [_ | _] -> Enum.map(label_fqns, &String.downcase/1)
+        <<_::binary>> -> String.downcase(label_fqns)
+      end
+
     args = [label_fqns]
     {query, args}
   end
@@ -171,6 +177,12 @@ defmodule Sanbase.Clickhouse.Label do
     GROUP BY address, blockchain, label_id
     LIMIT 20000
     """
+
+    label_fqns =
+      case label_fqns do
+        [_ | _] -> Enum.map(label_fqns, &String.downcase/1)
+        <<_::binary>> -> String.downcase(label_fqns)
+      end
 
     args = [label_fqns, blockchain]
     {query, args}

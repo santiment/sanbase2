@@ -157,14 +157,14 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
       FROM system.one
       ARRAY JOIN [?#{pos}] AS fqn
     )"
-    args = args ++ [value]
+    args = args ++ [String.downcase(value)]
     {str, args}
   end
 
   defp do_additional_filters(:label_fqn, [value | _] = list, args) when is_binary(value) do
     pos = length(args) + 1
     str = "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple(?#{pos}))"
-    args = args ++ [list]
+    args = args ++ [Enum.map(list, &String.downcase/1)]
     {str, args}
   end
 

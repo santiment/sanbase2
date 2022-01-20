@@ -36,6 +36,7 @@ defmodule Sanbase.Alert.Trigger do
   """
   use Ecto.Schema
   use Vex.Struct
+
   import Ecto.Changeset
 
   alias __MODULE__
@@ -43,6 +44,7 @@ defmodule Sanbase.Alert.Trigger do
 
   embedded_schema do
     field(:settings, :map)
+    field(:is_frozen, :boolean, default: false)
     field(:title, :string)
     field(:description, :string)
     field(:is_public, :boolean, default: false)
@@ -69,6 +71,7 @@ defmodule Sanbase.Alert.Trigger do
   @fields [
     :settings,
     :is_public,
+    :is_frozen,
     :cooldown,
     :last_triggered,
     :title,

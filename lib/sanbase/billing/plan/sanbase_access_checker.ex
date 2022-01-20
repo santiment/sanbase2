@@ -8,11 +8,6 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   alias Sanbase.Billing.Plan
   alias Sanbase.Alert.UserTrigger
 
-  @alerts_limits_upgrade_message """
-  You have reached the maximum number of allowed alerts for your current subscription plan.
-  Please upgrade to PRO subscription plan for unlimited alerts.
-  """
-
   @free_plan_stats %{
     historical_data_in_days: 2 * 365,
     realtime_data_cut_off_in_days: 30,
@@ -62,8 +57,6 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
       _ -> true
     end
   end
-
-  def alerts_limits_upgrade_message(), do: @alerts_limits_upgrade_message
 
   def can_access_paywalled_insights?(nil), do: false
 

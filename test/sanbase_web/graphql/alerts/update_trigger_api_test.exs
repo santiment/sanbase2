@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.UpdateTriggerApiTest do
     result = update_trigger(context.conn, trigger_id: user_trigger.id, is_active: true)
 
     assert result["errors"] |> List.first() |> Map.get("message") ==
-             "Trigger with id #{user_trigger.id} does not exist or is not owned by the current user"
+             "The trigger with id #{user_trigger.id} does not exists or does not belong to the current user"
   end
 
   defp update_trigger(conn, opts) do

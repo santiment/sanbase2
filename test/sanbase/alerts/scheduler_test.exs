@@ -53,7 +53,7 @@ defmodule Sanbase.Alert.SchedulerTest do
   test "active is_repeating: false triggers again", context do
     %{user: user, trigger: trigger, project: project} = context
 
-    UserTrigger.update_user_trigger(user, %{
+    UserTrigger.update_user_trigger(user.id, %{
       id: trigger.id,
       cooldown: "0s",
       is_repeating: false
@@ -79,7 +79,7 @@ defmodule Sanbase.Alert.SchedulerTest do
 
       # Once triggered because of is_repeating: false, is_active
       # has been changed to false
-      UserTrigger.update_user_trigger(user, %{
+      UserTrigger.update_user_trigger(user.id, %{
         id: trigger.id,
         is_active: true
       })

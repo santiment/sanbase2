@@ -24,7 +24,7 @@ defmodule Sanbase.Repo.Migrations.MigrateDaaToMetricAlert do
       %{trigger: %{settings: settings}} = user_trigger
 
       {:ok, _} =
-        UserTrigger.update_user_trigger(user_trigger.user, %{
+        UserTrigger.update_user_trigger(user_trigger.user.id, %{
           id: user_trigger.id,
           settings: %{
             type: MetricTriggerSettings.type(),

@@ -41,7 +41,7 @@ defmodule Sanbase.Alert.TriggersTest do
 
     trigger_id = created_trigger.id
 
-    {:ok, %UserTrigger{trigger: trigger}} = UserTrigger.get_trigger_by_id(user, trigger_id)
+    {:ok, %UserTrigger{trigger: trigger}} = UserTrigger.get_trigger_by_id(user.id, trigger_id)
 
     settings = trigger.settings |> Map.from_struct()
     assert drop_diff_keys(settings, trigger_settings) == trigger_settings
@@ -267,7 +267,7 @@ defmodule Sanbase.Alert.TriggersTest do
       trigger: %{title: "Generic title", is_public: true, settings: trigger_settings1}
     )
 
-    assert length(UserTrigger.triggers_for(user)) == 1
+    assert length(UserTrigger.triggers_for(user.id)) == 1
 
     trigger_settings2 = %{
       type: "metric_signal",
@@ -285,7 +285,7 @@ defmodule Sanbase.Alert.TriggersTest do
         settings: trigger_settings2
       })
 
-    assert length(UserTrigger.triggers_for(user)) == 2
+    assert length(UserTrigger.triggers_for(user.id)) == 2
   end
 
   test "update trigger" do
@@ -319,7 +319,7 @@ defmodule Sanbase.Alert.TriggersTest do
       trigger: %{title: "Generic title2", is_public: true, settings: trigger_settings2}
     )
 
-    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
+    trigger_id = UserTrigger.triggers_for(user.id) |> hd |> Map.get(:id)
 
     updated_trigger = %{
       type: "metric_signal",
@@ -337,7 +337,7 @@ defmodule Sanbase.Alert.TriggersTest do
       "http://stage-sanbase-images.s3.amazonaws.com/uploads/_empowr-coinHY5QG72SCGKYWMN4AEJQ2BRDLXNWXECT.png"
 
     {:ok, _} =
-      UserTrigger.update_user_trigger(user, %{
+      UserTrigger.update_user_trigger(user.id, %{
         id: trigger_id,
         settings: updated_trigger,
         is_public: false,
@@ -346,7 +346,7 @@ defmodule Sanbase.Alert.TriggersTest do
         icon_url: new_icon_url
       })
 
-    triggers = UserTrigger.triggers_for(user)
+    triggers = UserTrigger.triggers_for(user.id)
 
     assert length(triggers) == 2
 
@@ -375,11 +375,11 @@ defmodule Sanbase.Alert.TriggersTest do
       trigger: %{title: "Generic title", is_public: false, settings: trigger_settings}
     )
 
-    ut = UserTrigger.triggers_for(user)
+    ut = UserTrigger.triggers_for(user.id)
     trigger_id = ut |> hd |> Map.get(:id)
 
-    UserTrigger.update_user_trigger(user, %{id: trigger_id, is_public: true, cooldown: "1h"})
-    user_triggers = UserTrigger.triggers_for(user)
+    UserTrigger.update_user_trigger(user.id, %{id: trigger_id, is_public: true, cooldown: "1h"})
+    user_triggers = UserTrigger.triggers_for(user.id)
     assert length(user_triggers) == 1
     trigger = user_triggers |> hd()
     assert trigger.trigger.is_public == true

@@ -50,6 +50,28 @@ defmodule Sanbase.Alert.SchedulerTest do
     ]
   end
 
+  test "frozen triggers do not get scheduled", context do
+    %{user: user, trigger: trigger} = context
+
+    UserTrigger.update_user_trigger(user.id, %{
+      id: trigger.id,
+      is_frozen: true
+    })
+
+    ut = Sanbase.Repo.get(UserTrigger, trigger.id)
+    assert ut.trigger.is_frozen == true
+
+    log =
+      capture_log(fn ->
+        Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
+      end)
+
+    assert log =~
+             "In total 1/1 active receivable alerts of type metric_signal are frozen and won't be processed."
+
+    assert log =~ "In total 0 alerts will be processed"
+  end
+
   test "active is_repeating: false triggers again", context do
     %{user: user, trigger: trigger, project: project} = context
 

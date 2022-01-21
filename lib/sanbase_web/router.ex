@@ -80,7 +80,8 @@ defmodule SanbaseWeb.Router do
 
     forward(
       "/graphiql",
-      Absinthe.Plug.GraphiQL,
+      # Use own version of the plug with fixed XSS vulnerability
+      SanbaseWeb.Graphql.GraphiqlPlug,
       json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
       socket: SanbaseWeb.UserSocket,

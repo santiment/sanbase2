@@ -69,7 +69,6 @@ defmodule Sanbase.Alert.UserTrigger do
     |> Tag.put_tags(Map.get(attrs, :trigger, %{}))
     |> cast_embed(:trigger, required: true, with: &Trigger.update_changeset/2)
     |> validate_required([:user_id, :trigger])
-    |> IO.inspect(label: "72", limit: :infinity)
   end
 
   def update_is_active(user_trigger_id, user, is_active) do
@@ -184,8 +183,6 @@ defmodule Sanbase.Alert.UserTrigger do
   """
   @spec trigger_not_frozen?(%__MODULE__{}) :: true | {:error, String.t()}
   def trigger_not_frozen?(%__MODULE__{} = user_trigger) do
-    IO.inspect(user_trigger.trigger, lablel: "trigger")
-
     case Map.get(user_trigger.trigger, :is_frozen, false) do
       false -> true
       true -> {:error, "The trigger with id #{user_trigger.id} is frozen."}
@@ -249,8 +246,6 @@ defmodule Sanbase.Alert.UserTrigger do
     with {_, :ok} <- {:valid?, valid_or_nil?(settings)},
          {_, {:ok, %__MODULE__{} = struct}} <-
            {:get_trigger, get_trigger_by_if_owner(user_id, trigger_id)} do
-      IO.inspect({params, clean_params(params)}, label: "PARAMS")
-
       update_result =
         struct
         |> update_changeset(%{trigger: clean_params(params)})

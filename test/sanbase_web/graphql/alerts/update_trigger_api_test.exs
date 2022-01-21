@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.UpdateTriggerApiTest do
 
     result = update_trigger(conn, trigger_id: user_trigger.id, is_active: false)
 
-    assert result["errors"] |> List.first() |> Map.get("message") ==
+    assert result["errors"] |> List.first() |> Map.get("message") =~
              "The trigger with id #{user_trigger.id} is frozen"
   end
 

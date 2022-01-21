@@ -14,23 +14,27 @@ defmodule Sanbase.Alert.Job do
       |> Sanbase.Repo.all()
 
     alerts
-    |> Enum.map(fn alert ->
-      UserTrigger.update_changeset(alert, %{trigger: %{is_frozen: true}})
-    end)
-    |> Enum.with_index()
-    |> Enum.reduce(
-      Ecto.Multi.new(),
-      fn {changeset, offset}, multi ->
-        Ecto.Multi.update(multi, offset, changeset)
-      end
-    )
-    |> Sanbase.Repo.transaction()
-    |> case do
-      {:ok, _} ->
-        :ok
+    |> Enum.chunk_every(300)
+    |> Enum.each(fn alerts_chunk ->
+      multi_update_result =
+        alerts_chunk
+        |> Enum.map(fn alert ->
+          UserTrigger.update_changeset(alert, %{trigger: %{is_frozen: true}})
+        end)
+        |> Enum.with_index()
+        |> Enum.reduce(
+          Ecto.Multi.new(),
+          fn {changeset, offset}, multi -> Ecto.Multi.update(multi, offset, changeset) end
+        )
+        |> Sanbase.Repo.transaction()
 
-      {:error, _, reason, _} ->
-        {:error, reason}
-    end
+      case multi_update_result do
+        {:ok, _} ->
+          :ok
+
+        {:error, _, reason, _} ->
+          {:error, reason}
+      end
+    end)
   end
 end

@@ -293,11 +293,20 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       iterations = 14
       api_calls_per_iteration = 300
 
+      # Set now to be the beginning of a month so when it is shifted 14 times by 1 day
+      # it won't go in the next month. We're shifting forward otherwise the KafkaExporter
+      # will timeout in the `can_send_after` check as it will be in the past if we shift
+      # backwards
+      now =
+        Timex.now()
+        |> Timex.end_of_month()
+        |> Timex.shift(days: 1)
+
       for i <- 0..(iterations - 1) do
         # This test might fail if executed 0-14 minutes before midnight
         # If we mock the dt to be a concrete date, then the KafkaExporter
         # send_after will fail
-        dt = DateTime.add(DateTime.utc_now(), 86400 * i, :second)
+        dt = DateTime.add(now, 86400 * i, :second)
 
         Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
         |> Sanbase.Mock.run_with_mocks(fn ->

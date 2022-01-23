@@ -19,7 +19,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "sum",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "labeled_intraday_metrics",
     "has_incomplete_data": false,

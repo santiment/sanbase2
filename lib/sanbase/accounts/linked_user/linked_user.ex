@@ -112,6 +112,14 @@ defmodule Sanbase.Accounts.LinkedUser do
     {:ok, result}
   end
 
+  def get_all_user_id_pairs() do
+    from(
+      lu in __MODULE__,
+      select: {lu.primary_user_id, lu.secondary_user_id}
+    )
+    |> Sanbase.Repo.all()
+  end
+
   def remove_linked_user_pair(primary_user_id, secondary_user_id) do
     {_num, nil} =
       from(lu in __MODULE__,

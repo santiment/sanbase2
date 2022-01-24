@@ -6,6 +6,7 @@ defmodule Sanbase.Billing.Subscription do
   """
   use Ecto.Schema
 
+  import Ecto.Query
   import Ecto.Changeset
   import Sanbase.Billing.EventEmitter, only: [emit_event: 3]
 
@@ -294,6 +295,14 @@ defmodule Sanbase.Billing.Subscription do
       {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> name
       _ -> nil
     end
+  end
+
+  def get_direct_sanbase_pro_user_ids() do
+    __MODULE__
+    |> Query.all_active_and_trialing_subscriptions()
+    |> Query.filter_product_id(@product_sanbase)
+    |> select([sub], sub.user_id)
+    |> Sanbase.Repo.all()
   end
 
   def user_has_sanbase_pro?(user_id) do

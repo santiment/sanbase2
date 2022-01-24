@@ -23,8 +23,6 @@ defmodule Sanbase.InMemoryKafka.Producer do
 
   @impl SanExporterEx.ProducerBehaviour
   def send_data(producer \\ @kafka_producer, topic, data) do
-    now = Timex.now()
-
     Agent.update(
       producer,
       fn state ->

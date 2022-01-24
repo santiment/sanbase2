@@ -113,4 +113,25 @@ defmodule Sanbase.Billing do
       {:ok, user}
     end
   end
+
+  def get_sanbase_pro_user_ids() do
+    sanbase_user_ids_mapset =
+      Subscription.get_direct_sanbase_pro_user_ids()
+      |> MapSet.new()
+
+    linked_user_id_pairs = Sanbase.Accounts.LinkedUser.get_all_user_id_pairs()
+
+    user_ids_inherited_sanbase_pro =
+      Enum.reduce(linked_user_id_pairs, MapSet.new(), fn pair, acc ->
+        {primary_user_id, secondary_user_id} = pair
+
+        case primary_user_id in sanbase_user_ids_mapset do
+          true -> MapSet.put(acc, secondary_user_id)
+          false -> acc
+        end
+      end)
+
+    result = MapSet.union(sanbase_user_ids_mapset, user_ids_inherited_sanbase_pro)
+    {:ok, result}
+  end
 end

@@ -199,7 +199,7 @@ defmodule Sanbase.Intercom do
   end
 
   defp triggers_type_count(user) do
-    user
+    user.id
     |> UserTrigger.triggers_for()
     |> Enum.group_by(fn ut -> ut.trigger.settings.type end)
     |> Enum.map(fn {type, list} -> {"trigger_" <> type, length(list)} end)

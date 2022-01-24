@@ -31,7 +31,7 @@ defmodule Sanbase.Repo.Migrations.MigrateDaaAlertOperationsField do
   defp update_triggers(triggers) do
     triggers
     |> Enum.map(fn {user, id, settings} ->
-      UserTrigger.update_user_trigger(user, %{id: id, settings: settings})
+      UserTrigger.update_user_trigger(user.id, %{id: id, settings: settings})
     end)
   end
 

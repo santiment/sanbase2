@@ -64,7 +64,7 @@ defmodule Sanbase.Price.Validator.Node do
         {:reply, true, Map.put(state, key, [price])}
 
       prices ->
-        with false <- price_outlier?(slug, quote_asset, price, prices, allowed_times_diff: 5) do
+        with false <- price_outlier?(slug, quote_asset, price, prices, allowed_times_diff: 30) do
           # Keep the in memory prices to a maximum of @max_prices
           prices = maybe_drop_oldest_price(prices) ++ [price]
           state = Map.put(state, key, prices)

@@ -472,6 +472,25 @@ defmodule Sanbase.Price.SqlQuery do
     {query, args}
   end
 
+  def latest_prices_per_slug_query(slugs, limit_per_slug) do
+    query = """
+    SELECT slug, arrayReverse(groupArray(price_usd)) AS last_prices_usd,  arrayReverse(groupArray(price_btc)) AS last_prices_btc
+    FROM (
+      SELECT slug, price_usd, price_btc
+      FROM asset_prices_v3
+      PREWHERE dt >= now() - interval 1 week AND slug IN (?1)
+      ORDER BY dt desc
+      LIMIT ?2 BY slug
+    )
+    GROUP BY slug
+
+    """
+
+    args = [slugs, limit_per_slug]
+
+    {query, args}
+  end
+
   # Private functions
 
   defp timerange_parameters(from, to, interval \\ nil)

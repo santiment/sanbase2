@@ -383,6 +383,16 @@ defmodule Sanbase.Price do
     end
   end
 
+  def latest_prices_per_slug(slugs, limit_per_slug) do
+    {query, args} = latest_prices_per_slug_query(slugs, limit_per_slug)
+
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, prices_usd, prices_btc], acc ->
+      acc
+      |> Map.put({slug, "USD"}, prices_usd)
+      |> Map.put({slug, "BTC"}, prices_btc)
+    end)
+  end
+
   # TODO: Implement `opts`, read and use `:source`
   def slugs_by_filter(metric, from, to, operator, threshold, aggregation) do
     {query, args} = slugs_by_filter_query(metric, from, to, operator, threshold, aggregation)

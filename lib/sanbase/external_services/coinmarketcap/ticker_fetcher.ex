@@ -89,16 +89,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     |> Enum.each(fn %{slug: cmc_slug, price_usd: price_usd, price_btc: price_btc} ->
       # This implementation does not remove/change anything. It will be deployed first
       # so we can observe the behaviour first.
-      slug = Map.get(cmc_id_to_slugs_mapping, cmc_slug)
+      case Map.get(cmc_id_to_slugs_mapping, cmc_slug) do
+        nil ->
+          :ok
 
-      case Sanbase.Price.Validator.valid_price?(slug, "USD", price_usd) do
-        {:error, error} -> Logger.info("[CMC] Price validation failed: #{error}")
-        _ -> :ok
-      end
+        slug ->
+          case Sanbase.Price.Validator.valid_price?(slug, "USD", price_usd) do
+            {:error, error} -> Logger.info("[CMC] Price validation failed: #{error}")
+            _ -> :ok
+          end
 
-      case Sanbase.Price.Validator.valid_price?(slug, "BTC", price_btc) do
-        {:error, error} -> Logger.info("[CMC] Price validation failed: #{error}")
-        _ -> :ok
+          case Sanbase.Price.Validator.valid_price?(slug, "BTC", price_btc) do
+            {:error, error} -> Logger.info("[CMC] Price validation failed: #{error}")
+            _ -> :ok
+          end
       end
     end)
 
@@ -110,19 +114,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   # defp remove_not_valid_prices(tickers, cmc_id_to_slugs_mapping) do
   #   tickers
   #   |> Enum.map(fn %{slug: cmc_slug, price_usd: price_usd, price_btc: price_btc} = ticker ->
-  #     slug = Map.get(cmc_id_to_slugs_mapping, cmc_slug)
+  #     case Map.get(cmc_id_to_slugs_mapping, cmc_slug) do
+  #       nil ->
+  #         ticker
 
-  #     ticker
-  #     |> then(fn t ->
-  #       if true == Sanbase.Price.Validator.valid_price?(slug, "USD", price_usd),
-  #         do: t,
-  #         else: Map.put(t, :price_usd, nil)
-  #     end)
-  #     |> then(fn t ->
-  #       if true == Sanbase.Price.Validator.valid_price?(slug, "BTC", price_btc),
-  #         do: t,
-  #         else: Map.put(t, :price_usd, nil)
-  #     end)
+  #       slug ->
+  #         ticker
+  #         |> then(fn t ->
+  #           if true == Sanbase.Price.Validator.valid_price?(slug, "USD", price_usd),
+  #             do: t,
+  #             else: Map.put(t, :price_usd, nil)
+  #         end)
+  #         |> then(fn t ->
+  #           if true == Sanbase.Price.Validator.valid_price?(slug, "BTC", price_btc),
+  #             do: t,
+  #             else: Map.put(t, :price_usd, nil)
+  #         end)
+  #     end
   #   end)
   # end
 

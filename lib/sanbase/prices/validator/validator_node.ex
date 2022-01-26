@@ -1,4 +1,8 @@
 defmodule Sanbase.Price.Validator.Node do
+  @moduledoc ~s"""
+  Check if a new realtime price is valid or is and outlier.any()
+
+  """
   use GenServer
   @max_prices 6
 
@@ -16,26 +20,42 @@ defmodule Sanbase.Price.Validator.Node do
 
   def start_link(opts) do
     name = Keyword.fetch!(opts, :name)
-
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
   def init(opts) do
     number = Keyword.fetch!(opts, :number)
 
-    slugs =
-      Sanbase.Cache.get_or_store(:all_project_slugs_include_hidden_no_preload, fn ->
-        Project.List.projects_slugs(include_hidden: true, preload?: false)
-      end)
-      |> Enum.filter(&(Price.Validator.slug_to_number(&1) == number))
+    case Sanbase.ClickhouseRepo.enabled?() do
+      false ->
+        # If the ClickhouseRepo is disabled do not initialize anything. This is the
+        # flow only in dev/test environment. In case of empty state, the price is
+        # considered valid.
+        {:ok, %{}}
 
-    {:ok, latest_prices} = Price.latest_prices_per_slug(slugs, @max_prices)
+      true ->
+        slugs =
+          Sanbase.Cache.get_or_store(:all_project_slugs_include_hidden_no_preload, fn ->
+            Project.List.projects_slugs(include_hidden: true, preload?: false)
+          end)
+          |> Enum.filter(&(Price.Validator.slug_to_number(&1) == number))
 
-    state = latest_prices |> Map.put(:number, number)
+        {:ok, latest_prices} = Price.latest_prices_per_slug(slugs, @max_prices)
 
-    {:ok, state}
+        state = latest_prices |> Map.put(:number, number)
+
+        {:ok, state}
+    end
   end
 
+  def handle_call(:clean_state, _from, _state) do
+    {:reply, :ok, %{}}
+  end
+
+  # Validate the price by comparing it to the latest @max_prices prices.
+  # A price is considered invalid if it does not match any of the checks
+  # in the with pipeline. Currently the only check is done for outliers.
+  # See the documentation of hte `price_outlier?/5` function for more info.
   def handle_call({:valid_price?, slug, quote_asset, price}, _from, state) do
     key = {slug, quote_asset}
 
@@ -45,8 +65,8 @@ defmodule Sanbase.Price.Validator.Node do
 
       prices ->
         with false <- price_outlier?(slug, quote_asset, price, prices, allowed_times_diff: 5) do
+          # Keep the in memory prices to a maximum of @max_prices
           prices = maybe_drop_oldest_price(prices) ++ [price]
-
           state = Map.put(state, key, prices)
 
           {:reply, true, state}
@@ -57,10 +77,6 @@ defmodule Sanbase.Price.Validator.Node do
     end
   end
 
-  def handle_call({:update_prices, slug, quote_asset, prices}, _from, state) do
-    {:reply, :ok, Map.put(state, {slug, quote_asset}, prices)}
-  end
-
   # If there are less than @max_prices prices, return as is
   # If there are @max_prices in the list, drop the oldest price as we'll add the
   # newest price to the list. This is executed only if the new price that is
@@ -68,6 +84,8 @@ defmodule Sanbase.Price.Validator.Node do
   defp maybe_drop_oldest_price(prices) when length(prices) < @max_prices, do: prices
   defp maybe_drop_oldest_price([_ | prices]), do: prices
 
+  # A price is an outlier if it is a given amount of times bigger or smaller
+  # than the average of the in memory stored prices.
   defp price_outlier?(_slug, _quote_asset, _price, [], _opts), do: false
 
   defp price_outlier?(slug, quote_asset, price, prices, opts) do

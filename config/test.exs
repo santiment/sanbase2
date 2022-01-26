@@ -51,6 +51,7 @@ config :sanbase, Sanbase.Repo,
   pool_size: 5
 
 config :sanbase, Sanbase.ClickhouseRepo,
+  clickhouse_repo_enabled?: false,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",
   pool_size: 5

@@ -782,7 +782,16 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_volume_consumed_total_change_30d",
         # contract metrics
         "contract_interacting_addresses_count",
-        "contract_transactions_count"
+        "contract_transactions_count",
+        # binance oi/ov metrics
+        "usdt_bnb_open_interest",
+        "usdt_binance_open_interest",
+        "usdt_bnb_open_value",
+        "usdt_binance_open_value",
+        "busd_bnb_open_interest",
+        "busd_binance_open_interest",
+        "busd_bnb_open_value",
+        "busd_binance_open_value"
       ]
       |> Enum.sort()
 

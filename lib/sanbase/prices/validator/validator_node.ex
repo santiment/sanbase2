@@ -9,6 +9,8 @@ defmodule Sanbase.Price.Validator.Node do
   alias Sanbase.Model.Project
   alias Sanbase.Price
 
+  require Sanbase.Utils.Config, as: Config
+
   def child_spec(opts) do
     name = Keyword.fetch!(opts, :name)
 
@@ -23,10 +25,19 @@ defmodule Sanbase.Price.Validator.Node do
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
+  def enabled?() do
+    with true <- Sanbase.ClickhouseRepo.enabled?(),
+         true <- Config.module_get_boolean(Sanbase.Price.Validator, :enabled) do
+      true
+    else
+      _ -> false
+    end
+  end
+
   def init(opts) do
     number = Keyword.fetch!(opts, :number)
 
-    case Sanbase.ClickhouseRepo.enabled?() do
+    case enabled?() do
       false ->
         # If the ClickhouseRepo is disabled do not initialize anything. This is the
         # flow only in dev/test environment. In case of empty state, the price is

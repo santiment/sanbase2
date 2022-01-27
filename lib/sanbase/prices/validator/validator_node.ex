@@ -96,17 +96,21 @@ defmodule Sanbase.Price.Validator.Node do
 
     cond do
       price > avg_price and price > avg_price * allowed_times_diff ->
+        ratio = Float.round(price / avg_price, 2)
+
         {:error,
          """
-         The #{slug} #{quote_asset} price #{price} is more than #{allowed_times_diff} times bigger than the \
-         average of the last #{count} prices - #{avg_price}
+         The #{slug} #{quote_asset} price #{price} is more than #{allowed_times_diff} \
+         times (#{ratio}) bigger than the average of the last #{count} prices - #{avg_price}
          """}
 
       price < avg_price and price * allowed_times_diff < avg_price ->
+        ratio = Float.round(avg_price / price, 2)
+
         {:error,
          """
-         The #{slug} #{quote_asset} price #{price} is more than #{allowed_times_diff} times bigger than the \
-         average of the last #{count} prices - #{avg_price}
+         The #{slug} #{quote_asset} price #{price} is more than #{allowed_times_diff} \
+         times (#{ratio}) smaller than the average of the last #{count} prices - #{avg_price}
          """}
 
       true ->

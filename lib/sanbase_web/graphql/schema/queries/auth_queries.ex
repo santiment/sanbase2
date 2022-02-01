@@ -118,7 +118,7 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
     Delete the current session without revoking the refresh token.
     """
     field :logout, :logout do
-      middleware(JWTAuth, allow_access: true)
+      middleware(JWTAuth, allow_access_without_terms_accepted: true)
       resolve(fn _, _ -> {:ok, %{success: true}} end)
       middleware(CreateOrDeleteSession)
     end

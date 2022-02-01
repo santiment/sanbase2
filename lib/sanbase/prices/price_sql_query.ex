@@ -214,8 +214,8 @@ defmodule Sanbase.Price.SqlQuery do
     {query, args}
   end
 
-  def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation) do
-    {query, args} = filter_order_base_query(metric, from, to, aggregation)
+  def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, source) do
+    {query, args} = filter_order_base_query(metric, from, to, aggregation, source)
 
     query =
       query <>
@@ -226,8 +226,8 @@ defmodule Sanbase.Price.SqlQuery do
     {query, args}
   end
 
-  def slugs_order_query(metric, from, to, direction, aggregation) do
-    {query, args} = filter_order_base_query(metric, from, to, aggregation)
+  def slugs_order_query(metric, from, to, direction, aggregation, source) do
+    {query, args} = filter_order_base_query(metric, from, to, aggregation, source)
 
     query =
       query <>
@@ -238,7 +238,7 @@ defmodule Sanbase.Price.SqlQuery do
     {query, args}
   end
 
-  defp filter_order_base_query(metric, from, to, aggregation) do
+  defp filter_order_base_query(metric, from, to, aggregation, source) do
     query = """
     SELECT slug, value
     FROM (
@@ -247,16 +247,18 @@ defmodule Sanbase.Price.SqlQuery do
         #{aggregation(aggregation, "#{metric}", "dt")} AS value
       FROM #{@table}
       PREWHERE
-        isNotNull(#{metric}) AND NOT isNaN(#{metric}) AND
+        isNotNull(#{metric}) AND NOT isNaN(#{metric}) AND #{metric} > 0 AND
         dt >= toDateTime(?1) AND
-        dt < toDateTime(?2)
+        dt < toDateTime(?2) AND
+        source = cast(?3, 'LowCardinality(String)')
       GROUP BY slug
     )
     """
 
     args = [
       from |> DateTime.to_unix(),
-      to |> DateTime.to_unix()
+      to |> DateTime.to_unix(),
+      source
     ]
 
     {query, args}

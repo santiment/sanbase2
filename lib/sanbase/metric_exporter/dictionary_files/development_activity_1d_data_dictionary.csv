@@ -1,0 +1,4 @@
+Field name,Date Type,Description,Primary key,Foreign key
+identifier,string,Cryptocurrency name,Y,N
+datetime,datetime,Datetime mark,Y,N
+devActivity,integer,"Development activity shows the project’s development activity over time based on a number of pure development- related 'events' in the project’s public Github repository. (not counted: comments on issues, forks, stars, etc.).",N,N

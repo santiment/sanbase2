@@ -1,0 +1,27 @@
+Field name,Date Type,Description,Primary key,Foreign key
+identifier,string,Cryptocurrency name,Y,N
+datetime,datetime,Datetime mark,Y,N
+percentOfHoldersDistributionRangeOne,decimal,Represents the number of addresses holding the amount of tokens that belong to a 0 to 0.001 interval,N,N
+percentOfHoldersDistributionRangeTwo,decimal,Represents the number of addresses holding the amount of tokens that belong to a 0.001 to 0.01 interval,N,N
+percentOfHoldersDistributionRangeThree,decimal,Represents the number of addresses holding the amount of tokens that belong to a 0.01 to 0.1 interval,N,N
+percentOfHoldersDistributionRangeFour,decimal,Represents the number of addresses holding the amount of tokens that belong to a 0.1 to 1 interval,N,N
+percentOfHoldersDistributionRangeFive,decimal,Represents the number of addresses holding the amount of tokens that belong to a 1 to 10 interval,N,N
+percentOfHoldersDistributionRangeSix,decimal,Represents the number of addresses holding the amount of tokens that belong to a 10 to 100 interval,N,N
+percentOfHoldersDistributionRangeSeven,decimal,Represents the number of addresses holding the amount of tokens that belong to a 100 to 1k interval,N,N
+percentOfHoldersDistributionRangeEight,decimal,Represents the number of addresses holding the amount of tokens that belong to a 1k to 10k interval,N,N
+percentOfHoldersDistributionRangeNine,decimal,Represents the number of addresses holding the amount of tokens that belong to a 10k to 100k interval,N,N
+percentOfHoldersDistributionRangeTen,decimal,Represents the number of addresses holding the amount of tokens that belong to a 100k to 1M interval,N,N
+percentOfHoldersDistributionRangeEleven,decimal,Represents the number of addresses holding the amount of tokens that belong to a 1M to 10M interval,N,N
+percentOfHoldersDistributionRangeTwelve,decimal,Represents the number of addresses holding the amount of tokens that belong to a 10M to inf interval,N,N
+percentOfHoldersDistributionCombinedBalanceRangeOne,decimal,The percent of tokens of total supply contained in 0 to 0.001 interval. It is computed as SupplyDistributionCombinedBalanceForInterval divided by TotalSupply,N,N
+percentOfHoldersDistributionCombinedBalanceRangeTwo,decimal,The percent of tokens of total supply contained in 0.001 to 0.01 interval. It is computed as SupplyDistributionCombinedBalanceForInterval divided by TotalSupply,N,N
+percentOfHoldersDistributionCombinedBalanceRangeThree,decimal,The percent of tokens of total supply contained in 0.01 to 0.1 interval. It is computed as SupplyDistributionCombinedBalanceForInterval divided by TotalSupply,N,N
+percentOfHoldersDistributionCombinedBalanceRangeFour,decimal,The percent of tokens of total supply contained in 0.1 to 1 interval. It is computed as SupplyDistributionCombinedBalanceForInterval divided by TotalSupply,N,N
+percentOfHoldersDistributionCombinedBalanceRangeFive,decimal,The percent of tokens of total supply contained in 1 to 10 interval. It is computed as SupplyDistributionCombinedBalanceForInterval divided by TotalSupply,N,N
+percentOfHoldersDistributionCombinedBalanceRangeSix,decimal,The percent of tokens of total supply contained in 10 to 100 interval. It is computed as SupplyDistributionCombinedBalanceForInterval divided by TotalSupply,N,N
+percentOfHoldersDistributionCombinedBalanceRangeSeven,decimal,The percent of tokens of total supply contained in 100 to 1k interval. It is computed as SupplyDistributionCombinedBalanceForInterval divided by TotalSupply,N,N
+percentOfHoldersDistributionCombinedBalanceRangeEight,decimal,The percent of tokens of total supply contained in 1k to 10k interval. It is computed as SupplyDistributionCombinedBalanceForInterval divided by TotalSupply,N,N
+percentOfHoldersDistributionCombinedBalanceRangeNine,decimal,The percent of tokens of total supply contained in 10k to 10k0 interval. It is computed as SupplyDistributionCombinedBalanceForInterval divided by TotalSupply,N,N
+percentOfHoldersDistributionCombinedBalanceRangeTen,decimal,The percent of tokens of total supply contained in 100k to 1M interval. It is computed as SupplyDistributionCombinedBalanceForInterval divided by TotalSupply,N,N
+percentOfHoldersDistributionCombinedBalanceRangeEleven,decimal,The percent of tokens of total supply contained in 1M to 10M interval. It is computed as SupplyDistributionCombinedBalanceForInterval divided by TotalSupply,N,N
+percentOfHoldersDistributionCombinedBalanceRangeTwelve,decimal,The percent of tokens of total supply contained in 10M to inf interval. It is computed as SupplyDistributionCombinedBalanceForInterval divided by TotalSupply,N,N

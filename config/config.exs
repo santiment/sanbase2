@@ -184,6 +184,8 @@ config :sanbase, SanbaseWeb.Graphql.Middlewares.AccessControl,
   restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},
   restrict_from_in_days: {:system, "RESTRICT_FROM_IN_MONTHS", "90"}
 
+config :sanbase, Sanbase.MetricCSVExporterS3, bucket: {:system, "METRICS_EXPORTER_S3_BUCKET"}
+
 config :libcluster,
   topologies: [
     k8s: [

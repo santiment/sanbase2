@@ -1,0 +1,6 @@
+Field name,Date Type,Description,Primary key,Foreign key
+identifier,string,Cryptocurrency name,Y,N
+datetime,datetime,Datetime mark,Y,N
+socialVolumeTotal,integer,"Social volume shows the amount of daily project-related mentions on 1000+ crypto social media channels, including Telegram groups, crypto subreddits, Twitter and more.",N,N
+socialDominanceTotal,decimal,Social dominance compares the social volume of an asset to the combined social volume of the 100 largest market cap assets. ,N,N
+sentimentVolumeConsumedTotal,decimal,"Total social sentiment shows the average crowd sentiment about a specific project from 1000+ crypto social media channels, adjusted for the amount of unique project mentions daily. Positive values indicate the crowd sentiment is bullish on average, and vice versa.",N,N

@@ -1,8 +1,7 @@
-defmodule Sanbase.MetricCSVExporter do
+defmodule Sanbase.MetricExporter.CSV do
   alias Sanbase.Metric
+  alias Sanbase.MetricExporter.S3
 
-  @date "2021-12-16"
-  @history_in_days 1
   @decimals 8
   # top 100 fixed at 24/08/2021
   @slugs [
@@ -147,7 +146,7 @@ defmodule Sanbase.MetricCSVExporter do
   def buckets_map_reverse, do: @buckets_map_reverse
 
   @metrics_map %{
-    "Supply distribution - 1d": %{
+    supply_distribution_1d: %{
       metrics: [
         "percent_of_holders_distribution_0_to_0.001",
         "percent_of_holders_distribution_0.001_to_0.01",
@@ -176,7 +175,7 @@ defmodule Sanbase.MetricCSVExporter do
       ],
       interval: "1d"
     },
-    "Network activity - 1d": %{
+    network_activity_1d: %{
       metrics: [
         "circulation",
         "circulation_1d",
@@ -192,20 +191,20 @@ defmodule Sanbase.MetricCSVExporter do
       ],
       interval: "1d"
     },
-    "Network activity - 1h": %{
+    network_activity_1h: %{
       metrics: ["transaction_volume", "active_addresses_24h"],
       interval: "1h"
     },
-    "Exchange Metrics - 1h": %{
+    exchange_metrics_1h: %{
       metrics: ["exchange_inflow", "exchange_outflow", "exchange_balance", "active_deposits_5m"],
       interval: "1h"
     },
-    "Exchange Metrics - 1d": %{
+    exchange_metrics_1d: %{
       metrics: ["percent_of_total_supply_on_exchanges"],
       interval: "1d"
     },
-    "Long-term holders - 1h": %{metrics: ["age_consumed"], interval: "1h"},
-    "Long-term holders - 1d": %{
+    long_term_holders_1h: %{metrics: ["age_consumed"], interval: "1h"},
+    long_term_holders_1d: %{
       metrics: [
         "dormant_circulation_90d",
         "dormant_circulation_180d",
@@ -217,7 +216,7 @@ defmodule Sanbase.MetricCSVExporter do
       ],
       interval: "1d"
     },
-    "Network value - 1h": %{
+    network_value_1h: %{
       metrics: [
         "network_profit_loss",
         "mvrv_usd_intraday",
@@ -235,7 +234,7 @@ defmodule Sanbase.MetricCSVExporter do
       ],
       interval: "1h"
     },
-    "Social - 1h": %{
+    social_1h: %{
       metrics: [
         "social_volume_total",
         "social_dominance_total",
@@ -243,53 +242,62 @@ defmodule Sanbase.MetricCSVExporter do
       ],
       interval: "1h"
     },
-    "Development activity - 1d": %{metrics: ["dev_activity"], interval: "1d"}
+    development_activity_1d: %{metrics: ["dev_activity"], interval: "1d"}
   }
 
   def metrics do
-    @metrics |> Enum.map(fn {k, v} -> v.metrics end) |> List.flatten()
+    @metrics_map |> Enum.map(fn {_, v} -> v.metrics end) |> List.flatten()
   end
 
-  # Export all metrics in @metrics_map and place in proper csv file
   def export() do
-    now = Timex.now()
-    from = Timex.shift(now, days: -1) |> Timex.beginning_of_day()
-    to = Timex.shift(now, days: -1) |> Timex.end_of_day()
+    # yesterday
+    utc_now = Timex.shift(Timex.now(), days: -1)
+    date = DateTime.to_date(utc_now) |> to_string
+    from = Timex.shift(utc_now, days: -1) |> Timex.beginning_of_day()
+    to = Timex.shift(utc_now, days: -1) |> Timex.end_of_day()
 
-    @metrics_map
-    |> Enum.each(fn {filename, file_metrics} ->
-      header = ["slug", "datetime"] ++ camelize(file_metrics.metrics)
-      filename = "#{filename}" <> "_#{format_dt(now)}.csv"
-      write_to_file(filename, [header])
-
-      @slugs
-      |> Enum.chunk_every(2)
-      |> Enum.each(fn slugs ->
-        data =
-          file_metrics
-          |> Map.merge(%{slugs: slugs})
-          |> run(from, to)
-
-        write_to_file(filename, data)
-      end)
-    end)
+    export_data(utc_now, from, to)
+    |> upload_files_s3(date)
   end
 
-  # Export trending words
-  def export_tw() do
-    now = Timex.now()
-    from = Timex.shift(now, days: -1) |> Timex.beginning_of_day()
-    to = Timex.shift(now, days: -1) |> Timex.end_of_day()
+  def export_data(utc_now, from, to) do
+    export_data =
+      @metrics_map
+      |> Enum.reduce(%{}, fn {filename, file_metrics}, export_acc ->
+        header = ["identifier", "datetime"] ++ camelize(file_metrics.metrics)
+        filename = "#{filename}" <> "_#{format_dt(utc_now)}.csv"
 
-    filename = "Trending words - 1h_#{format_dt(now)}.csv"
-    write_to_file(filename, [["datetime"] ++ rename_column(Enum.to_list(1..10))])
+        data =
+          Enum.reduce(["ethereum", "bitcoin"], [], fn slug, acc ->
+            acc ++ run(slug, file_metrics.metrics, from, to, file_metrics.interval)
+          end)
 
-    do_export_tw(filename, from, to)
+        Map.put(export_acc, filename, [header] ++ data)
+      end)
+
+    {filename, tw_data} = tw_data(utc_now, from, to)
+    Map.put(export_data, filename, tw_data)
+  end
+
+  def upload_files_s3(file_data_map, date_str) do
+    for {filename, data} <- file_data_map do
+      iodata = NimbleCSV.RFC4180.dump_to_iodata(data)
+      gzdata = :zlib.gzip(iodata)
+      do_upload_s3(filename, gzdata, date_str)
+    end
+  end
+
+  def do_upload_s3(filename, data, scope) do
+    S3.store({%{filename: filename, binary: data}, scope})
+    S3.url({filename, scope}, signed: true) |> IO.inspect()
   end
 
   # helpers
 
-  defp do_export_tw(filename, from, to) do
+  defp tw_data(now, from, to) do
+    filename = "trending_words_1h_#{format_dt(now)}.csv"
+    header = ["datetime"] ++ rename_column(Enum.to_list(1..10))
+
     {:ok, data} = Sanbase.SocialData.TrendingWords.get_trending_words(from, to, "1h", 10)
 
     data =
@@ -297,34 +305,23 @@ defmodule Sanbase.MetricCSVExporter do
       |> Enum.sort_by(fn {dt, _} -> dt end, {:asc, DateTime})
       |> Enum.map(fn {dt, words} -> [dt] ++ Enum.reverse(Enum.map(words, & &1.word)) end)
 
-    write_to_file(filename, data)
+    {filename, [header] ++ data}
   end
 
-  defp run(%{metrics: metrics, interval: interval} = args, from, to) do
-    for slug <- args[:slugs] do
-      lists =
-        for metric <- metrics do
-          {:ok, data} = Metric.timeseries_data(metric, %{slug: slug}, from, to, interval)
-          data
-        end
+  defp run(slug, metrics, from, to, interval) do
+    for metric <- metrics do
+      {:ok, data} = Metric.timeseries_data(metric, %{slug: slug}, from, to, interval)
 
-      if Enum.all?(lists, fn list -> list == [] end) do
-        []
-      else
-        lists
-        |> Enum.map(fn
-          list when list != [] -> list
-          _ -> generate_empty_data(from, to, interval)
-        end)
-        |> merge_by_dt()
-        |> Enum.sort_by(fn {dt, _} -> dt end, {:asc, DateTime})
-        |> Enum.map(fn {dt, values} ->
-          [slug, DateTime.to_iso8601(dt)] ++ values
-        end)
+      case data do
+        data when data != [] -> data
+        _ -> generate_empty_data(from, to, interval)
       end
     end
-    |> Enum.reject(fn list -> list == [] end)
-    |> Enum.reduce([], fn list, acc -> acc ++ list end)
+    |> merge_by_dt()
+    |> Enum.sort_by(fn {dt, _} -> dt end, {:asc, DateTime})
+    |> Enum.map(fn {dt, values} ->
+      [slug, DateTime.to_iso8601(dt)] ++ values
+    end)
   end
 
   defp merge_by_dt(list) do
@@ -359,14 +356,6 @@ defmodule Sanbase.MetricCSVExporter do
     0..(count - 1)
     |> Enum.map(fn offset -> Timex.shift(from, seconds: interval_sec * offset) end)
     |> Enum.map(fn dt -> %{datetime: dt, value: ""} end)
-  end
-
-  defp write_to_file(filename, data) do
-    filename = Path.join([@date, filename])
-    {:ok, file} = File.open(filename, [:append])
-    iodata = NimbleCSV.RFC4180.dump_to_iodata(data)
-    File.write!(filename, iodata, [:append])
-    File.close(file)
   end
 
   def format_dt(dt) do

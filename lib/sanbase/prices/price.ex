@@ -393,16 +393,25 @@ defmodule Sanbase.Price do
     end)
   end
 
-  # TODO: Implement `opts`, read and use `:source`
-  def slugs_by_filter(metric, from, to, operator, threshold, aggregation) do
-    {query, args} = slugs_by_filter_query(metric, from, to, operator, threshold, aggregation)
-    ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+  def slugs_by_filter(metric, from, to, operator, threshold, opts) do
+    with {:ok, source} <- opts_to_source(opts) do
+      aggregation = Keyword.get(opts, :aggregation) || :last
+
+      {query, args} =
+        slugs_by_filter_query(metric, from, to, operator, threshold, aggregation, source)
+
+      ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+    end
   end
 
-  # TODO: Implement `opts`, read and use `:source`
-  def slugs_order(metric, from, to, direction, aggregation) do
-    {query, args} = slugs_order_query(metric, from, to, direction, aggregation)
-    ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+  def slugs_order(metric, from, to, direction, opts) do
+    with {:ok, source} <- opts_to_source(opts) do
+      aggregation = Keyword.get(opts, :aggregation) || :last
+
+      {query, args} = slugs_order_query(metric, from, to, direction, aggregation, source)
+
+      ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+    end
   end
 
   @doc ~s"""

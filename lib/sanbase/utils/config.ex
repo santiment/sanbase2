@@ -68,4 +68,19 @@ defmodule Sanbase.Utils.Config do
   def module_get_integer!(module, key) do
     module_get!(module, key) |> Sanbase.Math.to_integer()
   end
+
+  def module_get_boolean(module, key) do
+    value = module_get(module, key)
+
+    cond do
+      value in [0, false] or (is_binary(value) and String.downcase(value) in ["false", "0"]) ->
+        false
+
+      value in [1, true] or (is_binary(value) and String.downcase(value) in ["true", "1"]) ->
+        true
+
+      true ->
+        nil
+    end
+  end
 end

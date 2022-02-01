@@ -101,7 +101,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
   end
 
   test "Non active alerts are filtered", context do
-    UserTrigger.update_user_trigger(context.user, %{
+    UserTrigger.update_user_trigger(context.user.id, %{
       id: context.trigger_trending_words.id,
       is_active: false
     })
@@ -117,7 +117,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
         %Tesla.Env{status: 200, body: "ok"}
     end)
 
-    UserTrigger.update_user_trigger(context.user, %{
+    UserTrigger.update_user_trigger(context.user.id, %{
       id: context.trigger_trending_words.id,
       is_repeating: false
     })
@@ -131,7 +131,9 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
              end) =~
                "In total 1/1 trending_words alerts were sent successfully"
 
-      {:ok, ut} = UserTrigger.get_trigger_by_id(context.user, context.trigger_trending_words.id)
+      {:ok, ut} =
+        UserTrigger.get_trigger_by_id(context.user.id, context.trigger_trending_words.id)
+
       refute ut.trigger.is_active
     end
   end

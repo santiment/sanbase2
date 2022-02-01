@@ -144,7 +144,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
 
   defp balance_change(selector, address, from, to) do
     cache_key =
-      {:wallet_signal, selector, address, round_datetime(from), round_datetime(to)}
+      {__MODULE__, :wallet_signal, selector, address, round_datetime(from), round_datetime(to)}
       |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->
@@ -174,9 +174,22 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
     end
 
     def cache_key(%WalletTriggerSettings{} = settings) do
+      to_internal = fn target, field ->
+        case Map.get(target, field) do
+          nil -> nil
+          [_ | _] = list -> Enum.map(list, &Sanbase.BlockchainAddress.to_internal_format/1)
+          <<_::binary>> = value -> Sanbase.BlockchainAddress.to_internal_format(value)
+        end
+      end
+
+      target =
+        settings.target
+        |> Map.replace(:address, to_internal.(settings.target, :address))
+        |> Map.replace(:eth_address, to_internal.(settings.target, :eth_address))
+
       construct_cache_key([
         settings.type,
-        settings.target,
+        target,
         settings.selector,
         settings.time_window,
         settings.operation

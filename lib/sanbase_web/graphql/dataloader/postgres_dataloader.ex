@@ -1,10 +1,37 @@
 defmodule SanbaseWeb.Graphql.PostgresDataloader do
   import Ecto.Query
-  alias Sanbase.Model.{MarketSegment, Infrastructure}
+
   alias Sanbase.Repo
+  alias Sanbase.Comment
+  alias Sanbase.Model.{MarketSegment, Infrastructure}
 
   def data() do
     Dataloader.KV.new(&query/2)
+  end
+
+  def query(:insight_vote_stats, data), do: get_votes_stats(:insight, :post_id, data)
+  def query(:insight_voted_at, data), do: get_voted_at(:insight, :post_id, data)
+
+  def query(:watchlist_vote_stats, data), do: get_votes_stats(:watchlist, :watchlist_id, data)
+  def query(:watchlist_voted_at, data), do: get_voted_at(:watchlist, :watchlist_id, data)
+
+  def query(:timeline_event_vote_stats, data),
+    do: get_votes_stats(:timeline_event, :timeline_event_id, data)
+
+  def query(:timeline_event_voted_at, data),
+    do: get_voted_at(:timeline_event, :timeline_event_id, data)
+
+  def query(:chart_configuration_vote_stats, data),
+    do: get_votes_stats(:chart_configuration, :chart_configuration_id, data)
+
+  def query(:chart_configuration_voted_at, data),
+    do: get_voted_at(:chart_configuration, :chart_configuration_id, data)
+
+  def query(:users_by_id, user_ids) do
+    user_ids = Enum.to_list(user_ids)
+
+    {:ok, users} = Sanbase.Accounts.User.by_id(user_ids)
+    Map.new(users, &{&1.id, &1})
   end
 
   def query(:market_segment, market_segment_ids) do
@@ -39,125 +66,72 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Map.new()
   end
 
-  def query(:comment_insight_id, comment_ids) do
-    ids = Enum.to_list(comment_ids)
-
-    from(mapping in Sanbase.Insight.PostComment,
-      where: mapping.comment_id in ^ids,
-      select: {mapping.comment_id, mapping.post_id}
-    )
-    |> Repo.all()
-    |> Map.new()
-  end
-
-  def query(:comment_timeline_event_id, comment_ids) do
-    ids = Enum.to_list(comment_ids)
-
-    from(mapping in Sanbase.Timeline.TimelineEventComment,
-      where: mapping.comment_id in ^ids,
-      select: {mapping.comment_id, mapping.timeline_event_id}
-    )
-    |> Repo.all()
-    |> Map.new()
-  end
-
-  def query(:comment_blockchain_address_id, comment_ids) do
-    ids = Enum.to_list(comment_ids)
-
-    from(mapping in Sanbase.BlockchainAddress.BlockchainAddressComment,
-      where: mapping.comment_id in ^ids,
-      select: {mapping.comment_id, mapping.blockchain_address_id}
-    )
-    |> Repo.all()
-    |> Map.new()
-  end
-
-  def query(:comment_proposal_id, comment_ids) do
-    ids = Enum.to_list(comment_ids)
-
-    from(mapping in Sanbase.WalletHunters.WalletHuntersProposalComment,
-      where: mapping.comment_id in ^ids,
-      select: {mapping.comment_id, mapping.proposal_id}
-    )
-    |> Repo.all()
-    |> Map.new()
-  end
-
-  def query(:comment_short_url_id, comment_ids) do
-    ids = Enum.to_list(comment_ids)
-
-    from(mapping in Sanbase.ShortUrl.ShortUrlComment,
-      where: mapping.comment_id in ^ids,
-      select: {mapping.comment_id, mapping.short_url_id}
-    )
-    |> Repo.all()
-    |> Map.new()
-  end
-
-  def query(:insights_comments_count, post_ids) do
-    ids = Enum.to_list(post_ids)
-
-    from(mapping in Sanbase.Insight.PostComment,
-      where: mapping.post_id in ^ids,
-      group_by: mapping.post_id,
-      select: {mapping.post_id, fragment("COUNT(*)")}
-    )
-    |> Repo.all()
-    |> Map.new()
-  end
-
   def query(:insights_count_per_user, _user_ids) do
     {:ok, map} = Sanbase.Insight.Post.insights_count_map()
     map
   end
 
-  def query(:timeline_events_comments_count, timeline_events_ids) do
-    ids = Enum.to_list(timeline_events_ids)
-
-    from(mapping in Sanbase.Timeline.TimelineEventComment,
-      where: mapping.timeline_event_id in ^ids,
-      group_by: mapping.timeline_event_id,
-      select: {mapping.timeline_event_id, fragment("COUNT(*)")}
-    )
-    |> Repo.all()
-    |> Map.new()
+  # Comment entity id functions
+  def query(:comment_insight_id, ids_mapset) do
+    get_comment_entity_id(ids_mapset, Comment.PostComment, :post_id)
   end
 
-  def query(:blockchain_addresses_comments_count, blockchain_address_ids) do
-    ids = Enum.to_list(blockchain_address_ids)
-
-    from(mapping in Sanbase.BlockchainAddress.BlockchainAddressComment,
-      where: mapping.blockchain_address_id in ^ids,
-      group_by: mapping.blockchain_address_id,
-      select: {mapping.blockchain_address_id, fragment("COUNT(*)")}
-    )
-    |> Repo.all()
-    |> Map.new()
+  def query(:comment_watchlist_id, ids_mapset) do
+    get_comment_entity_id(ids_mapset, Comment.WatchlistComment, :watchlist_id)
   end
 
-  def query(:short_urls_comments_count, short_url_ids) do
-    ids = Enum.to_list(short_url_ids)
-
-    from(mapping in Sanbase.ShortUrl.ShortUrlComment,
-      where: mapping.short_url_id in ^ids,
-      group_by: mapping.short_url_id,
-      select: {mapping.short_url_id, fragment("COUNT(*)")}
-    )
-    |> Repo.all()
-    |> Map.new()
+  def query(:comment_chart_configuration_id, ids_mapset) do
+    get_comment_entity_id(ids_mapset, Comment.ChartConfigurationComment, :chart_configuration_id)
   end
 
-  def query(:wallet_hunters_proposals_comments_count, proposal_ids) do
-    ids = Enum.to_list(proposal_ids)
-
-    from(mapping in Sanbase.WalletHunters.WalletHuntersProposalComment,
-      where: mapping.proposal_id in ^ids,
-      group_by: mapping.proposal_id,
-      select: {mapping.proposal_id, fragment("COUNT(*)")}
-    )
-    |> Repo.all()
-    |> Map.new()
+  def query(:comment_timeline_event_id, ids_mapset) do
+    get_comment_entity_id(ids_mapset, Comment.TimelineEventComment, :timeline_event_id)
   end
+
+  def query(:comment_blockchain_address_id, ids_mapset) do
+    get_comment_entity_id(ids_mapset, Comment.BlockchainAddressComment, :blockchain_address_id)
+  end
+
+  def query(:comment_wallet_hunter_proposal_id, ids_mapset) do
+    get_comment_entity_id(ids_mapset, Comment.WalletHuntersProposalComment, :proposal_id)
+  end
+
+  def query(:comment_short_url_id, ids_mapset) do
+    get_comment_entity_id(ids_mapset, Comment.ShortUrlComment, :short_url_id)
+  end
+
+  # End comments entity id
+
+  # Comments count functions
+  def query(:insights_comments_count, ids_mapset) do
+    get_comments_count(ids_mapset, Comment.PostComment, :post_id)
+  end
+
+  def query(:timeline_events_comments_count, ids_mapset) do
+    get_comments_count(ids_mapset, Comment.TimelineEventComment, :timeline_event_id)
+  end
+
+  def query(:blockchain_addresses_comments_count, ids_mapset) do
+    get_comments_count(ids_mapset, Comment.BlockchainAddressComment, :blockchain_address_id)
+  end
+
+  def query(:short_urls_comments_count, ids_mapset) do
+    get_comments_count(ids_mapset, Comment.ShortUrlComment, :short_url_id)
+  end
+
+  def query(:wallet_hunters_proposals_comments_count, ids_mapset) do
+    get_comments_count(ids_mapset, Comment.WalletHuntersProposalComment, :proposal_id)
+  end
+
+  def query(:watchlist_comments_count, ids_mapset) do
+    get_comments_count(ids_mapset, Comment.WatchlistComment, :watchlist_id)
+  end
+
+  def query(:chart_configuration_comments_count, ids_mapset) do
+    get_comments_count(ids_mapset, Comment.ChartConfigurationComment, :chart_configuration_id)
+  end
+
+  # End comments count
 
   def query(:current_user_address_details, data) do
     Enum.group_by(data, &{&1.user_id, &1.infrastructure}, & &1.address)
@@ -191,6 +165,31 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Enum.to_list()
     |> Sanbase.Model.Project.List.by_slugs()
     |> Enum.into(%{}, fn %{slug: slug} = project -> {slug, project} end)
+  end
+
+  # Private functions
+
+  def get_comments_count(ids_mapset, module, field) do
+    ids = Enum.to_list(ids_mapset)
+
+    from(mapping in module,
+      where: field(mapping, ^field) in ^ids,
+      group_by: field(mapping, ^field),
+      select: {field(mapping, ^field), fragment("COUNT(*)")}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  def get_comment_entity_id(ids_mapset, module, field) do
+    ids = Enum.to_list(ids_mapset)
+
+    from(mapping in module,
+      where: mapping.comment_id in ^ids,
+      select: {mapping.comment_id, field(mapping, ^field)}
+    )
+    |> Repo.all()
+    |> Map.new()
   end
 
   defp combine_current_user_address_details(list, user_id, infrastructure) do
@@ -229,5 +228,25 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
       value = Map.update!(value, :watchlists, sort_fun)
       {key, value}
     end)
+  end
+
+  defp get_votes_stats(entity, entity_key, data) do
+    user_group = Enum.group_by(data, & &1[:user_id], & &1[entity_key])
+
+    Enum.map(user_group, fn {user_id, entity_ids} ->
+      Sanbase.Vote.vote_stats(entity, entity_ids, user_id)
+      |> Map.new(fn %{entity_id: id} = map -> {%{entity_key => id, user_id: user_id}, map} end)
+    end)
+    |> Enum.reduce(&Map.merge(&1, &2))
+  end
+
+  defp get_voted_at(entity, entity_key, data) do
+    user_group = Enum.group_by(data, & &1[:user_id], & &1[entity_key])
+
+    Enum.map(user_group, fn {user_id, entity_ids} ->
+      Sanbase.Vote.voted_at(entity, entity_ids, user_id)
+      |> Map.new(fn %{entity_id: id} = map -> {%{entity_key => id, user_id: user_id}, map} end)
+    end)
+    |> Enum.reduce(&Map.merge(&1, &2))
   end
 end

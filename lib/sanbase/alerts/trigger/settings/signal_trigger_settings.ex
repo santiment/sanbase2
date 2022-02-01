@@ -76,7 +76,7 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
     %{signal: signal, time_window: time_window} = settings
 
     cache_key =
-      {:signal_alert, signal, selector, time_window, round_datetime(Timex.now())}
+      {__MODULE__, :fetch_signal_data, signal, selector, time_window, round_datetime(Timex.now())}
       |> Sanbase.Cache.hash()
 
     %{
@@ -90,9 +90,9 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
 
     Cache.get_or_store(cache_key, fn ->
       with {:ok, %{^slug => value1}} <-
-             Signal.aggregated_timeseries_data(signal, selector, first_start, first_end, nil),
+             Signal.aggregated_timeseries_data(signal, selector, first_start, first_end, []),
            {:ok, %{^slug => value2}} <-
-             Signal.aggregated_timeseries_data(signal, selector, second_start, second_end, nil) do
+             Signal.aggregated_timeseries_data(signal, selector, second_start, second_end, []) do
         [
           %{datetime: first_start, value: value1},
           %{datetime: second_start, value: value2}

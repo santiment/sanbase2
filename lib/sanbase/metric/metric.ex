@@ -18,6 +18,7 @@ defmodule Sanbase.Metric do
 
   # Use only the types from the behaviour module
   alias Sanbase.Metric.Behaviour, as: Type
+  alias Sanbase.Metric.Helper
 
   @compile inline: [
              execute_if_aggregation_valid: 3,
@@ -27,7 +28,7 @@ defmodule Sanbase.Metric do
 
   @type datetime :: DateTime.t()
   @type metric :: Type.metric()
-  @type selector :: Type.metric()
+  @type selector :: Type.selector()
   @type interval :: Type.interval()
   @type operation :: Type.operation()
   @type threshold :: Type.threshold()
@@ -44,25 +45,27 @@ defmodule Sanbase.Metric do
   @type available_metrics_with_nocache_result ::
           {:ok, list(metric)} | {:nocache, {:ok, list(metric)}}
 
-  @access_map Sanbase.Metric.Helper.access_map()
-  @aggregations Sanbase.Metric.Helper.aggregations()
-  @aggregations_per_metric Sanbase.Metric.Helper.aggregations_per_metric()
-  @free_metrics Sanbase.Metric.Helper.free_metrics()
-  @histogram_metric_to_module_map Sanbase.Metric.Helper.histogram_metric_to_module_map()
-  @histogram_metrics Sanbase.Metric.Helper.histogram_metrics()
-  @histogram_metrics_mapset Sanbase.Metric.Helper.histogram_metrics_mapset()
-  @metric_modules Sanbase.Metric.Helper.metric_modules()
-  @metric_to_module_map Sanbase.Metric.Helper.metric_to_module_map()
-  @metrics Sanbase.Metric.Helper.metrics()
-  @metrics_mapset Sanbase.Metric.Helper.metrics_mapset()
-  @min_plan_map Sanbase.Metric.Helper.min_plan_map()
-  @restricted_metrics Sanbase.Metric.Helper.restricted_metrics()
-  @timeseries_metric_to_module_map Sanbase.Metric.Helper.timeseries_metric_to_module_map()
-  @timeseries_metrics Sanbase.Metric.Helper.timeseries_metrics()
-  @timeseries_metrics_mapset Sanbase.Metric.Helper.timeseries_metrics_mapset()
-  @table_metrics Sanbase.Metric.Helper.table_metrics()
-  @table_metrics_mapset Sanbase.Metric.Helper.table_metrics_mapset()
-  @table_metric_to_module_map Sanbase.Metric.Helper.table_metric_to_module_map()
+  @access_map Helper.access_map()
+  @aggregations Helper.aggregations()
+  @aggregations_per_metric Helper.aggregations_per_metric()
+  @free_metrics Helper.free_metrics()
+  @histogram_metric_to_module_map Helper.histogram_metric_to_module_map()
+  @histogram_metrics Helper.histogram_metrics()
+  @histogram_metrics_mapset Helper.histogram_metrics_mapset()
+  @metric_modules Helper.metric_modules()
+  @metric_to_module_map Helper.metric_to_module_map()
+  @metrics Helper.metrics()
+  @metrics_mapset Helper.metrics_mapset()
+  @min_plan_map Helper.min_plan_map()
+  @restricted_metrics Helper.restricted_metrics()
+  @timeseries_metric_to_module_map Helper.timeseries_metric_to_module_map()
+  @timeseries_metrics Helper.timeseries_metrics()
+  @timeseries_metrics_mapset Helper.timeseries_metrics_mapset()
+  @table_metrics Helper.table_metrics()
+  @table_metrics_mapset Helper.table_metrics_mapset()
+  @table_metric_to_module_map Helper.table_metric_to_module_map()
+  @required_selectors_map Helper.required_selectors_map()
+  @deprecated_metrics_map Helper.deprecated_metrics_map()
 
   @doc ~s"""
   Check if `metric` is a valid metric name.
@@ -75,7 +78,22 @@ defmodule Sanbase.Metric do
     end
   end
 
-  def foo(), do: 5
+  def required_selectors(metric) do
+    case metric in @metrics_mapset do
+      true -> {:ok, Map.get(@required_selectors_map, metric, [])}
+      false -> metric_not_available_error(metric)
+    end
+  end
+
+  def is_not_deprecated?(metric) do
+    case Map.get(@deprecated_metrics_map, metric) do
+      nil ->
+        true
+
+      %DateTime{} = deprecated_since ->
+        {:error, "The metric #{metric} is deprecated since #{deprecated_since}"}
+    end
+  end
 
   @doc ~s"""
   Check if a metric has incomplete data.
@@ -90,6 +108,19 @@ defmodule Sanbase.Metric do
     module = Map.get(@metric_to_module_map, metric)
 
     module.has_incomplete_data?(metric)
+  end
+
+  def broken_data(metric, selector, from, to) do
+    metric = maybe_replace_metric(metric, selector)
+
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric)
+
+      module when is_atom(module) ->
+        module = maybe_change_module(module, metric, selector, [])
+        module.broken_data(metric, selector, from, to)
+    end
   end
 
   @doc ~s"""
@@ -169,6 +200,12 @@ defmodule Sanbase.Metric do
         execute_if_aggregation_valid(fun, metric, aggregation)
         |> Sanbase.Utils.Transform.maybe_apply_function(fn list ->
           Enum.sort_by(list, & &1.datetime, {:asc, DateTime})
+        end)
+        |> Sanbase.Utils.Transform.maybe_apply_function(fn list ->
+          Enum.map(list, fn %{data: data} = elem ->
+            data_sorted_by_slug = Enum.sort_by(data, & &1.slug, :asc)
+            %{elem | data: data_sorted_by_slug}
+          end)
         end)
     end
   end
@@ -489,7 +526,8 @@ defmodule Sanbase.Metric do
 
     parallel_fun = fn module ->
       cache_key =
-        {__MODULE__, :available_metrics_for_slug, module, selector} |> Sanbase.Cache.hash()
+        {__MODULE__, :available_metrics_for_slug_in_module, module, selector}
+        |> Sanbase.Cache.hash()
 
       Sanbase.Cache.get_or_store(cache_key, fn -> module.available_metrics(selector) end)
     end
@@ -587,10 +625,9 @@ defmodule Sanbase.Metric do
   def available_slugs() do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key
-    Sanbase.Cache.get_or_store(
-      {:metric_available_slugs_all_metrics, 1800},
-      &get_available_slugs/0
-    )
+    cache_key = {__MODULE__, :available_slugs_all_metrics} |> Sanbase.Cache.hash()
+
+    Sanbase.Cache.get_or_store({cache_key, 1800}, &get_available_slugs/0)
   end
 
   @doc ~s"""
@@ -616,7 +653,7 @@ defmodule Sanbase.Metric do
   """
   @spec is_historical_data_allowed?(metric) :: boolean
   def is_historical_data_allowed?(metric) do
-    get_in(@access_map, [metric, "historical"]) === :free
+    get_in(@access_map, [metric, "historical"]) == :free
   end
 
   @doc ~s"""
@@ -624,7 +661,7 @@ defmodule Sanbase.Metric do
   """
   @spec is_realtime_data_allowed?(metric) :: boolean
   def is_realtime_data_allowed?(metric) do
-    get_in(@access_map, [metric, "realtime"]) === :free
+    get_in(@access_map, [metric, "realtime"]) == :free
   end
 
   @doc ~s"""

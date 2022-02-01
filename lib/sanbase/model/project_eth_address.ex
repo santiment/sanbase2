@@ -20,21 +20,14 @@ defmodule Sanbase.Model.ProjectEthAddress do
     project_eth_address
     |> cast(attrs, [:address, :project_id, :source, :comments])
     |> validate_required([:address, :project_id])
-    |> update_change(:address, &String.downcase/1)
+    |> update_change(:address, &Sanbase.BlockchainAddress.to_internal_format/1)
     |> unique_constraint(:address)
   end
 
   def balance(%ProjectEthAddress{address: address}) do
-    case Sanbase.InternalServices.Parity.get_eth_balance(address) do
-      {:ok, balance} ->
-        balance
-
-      {:error, error} ->
-        Logger.error(
-          "Cannot fetch the ETH balance for #{address} from Parity. Reason: #{inspect(error)}"
-        )
-
-        nil
+    case Sanbase.Balance.current_balance(address, "ethereum") do
+      {:ok, [%{balance: balance}]} -> {:ok, balance}
+      {:error, error} -> {:error, error}
     end
   end
 end

@@ -27,6 +27,13 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         "daily_active_addresses",
         "ethereum-CC-ETH-CC-daily_active_addresses"
       ],
+      queries: %{
+        "top_holders" => %{
+          "query" => "top_holders",
+          "args" => %{"from" => "utc_now-1d", "to" => "utc_now"},
+          "selected_fields" => ["datetime", "trx_value"]
+        }
+      },
       drawings: %{
         "lines" => [
           %{"x0" => 0, "y0" => 0, "x1" => 15, "y1" => 15},
@@ -53,6 +60,87 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
     }
   end
 
+  describe "chart configuration voting" do
+    test "vote and downvote", context do
+      %{conn: conn, settings: settings} = context
+
+      config =
+        create_chart_configuration(conn, settings)
+        |> get_in(["data", "createChartConfiguration"])
+
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert config_res["votedAt"] == nil
+
+      assert config_res["votes"] == %{
+               "currentUserVotes" => 0,
+               "totalVoters" => 0,
+               "totalVotes" => 0
+             }
+
+      %{"data" => %{"vote" => vote}} = vote(conn, config["id"], direction: :up)
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert config_res["votedAt"] == vote["votedAt"]
+      voted_at = vote["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      assert Sanbase.TestUtils.datetime_close_to(voted_at, Timex.now(), seconds: 2)
+      assert vote["votes"] == config_res["votes"]
+      assert vote["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
+
+      %{"data" => %{"vote" => vote}} = vote(conn, config["id"], direction: :up)
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert vote["votes"] == config_res["votes"]
+      assert vote["votes"] == %{"currentUserVotes" => 2, "totalVoters" => 1, "totalVotes" => 2}
+
+      %{"data" => %{"unvote" => vote}} = vote(conn, config["id"], direction: :down)
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert vote["votes"] == config_res["votes"]
+      assert vote["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
+
+      %{"data" => %{"unvote" => vote}} = vote(conn, config["id"], direction: :down)
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert vote["votes"] == config_res["votes"]
+      assert vote["votedAt"] == nil
+      assert vote["votes"] == %{"currentUserVotes" => 0, "totalVoters" => 0, "totalVotes" => 0}
+    end
+
+    defp get_chart_configuration_votes(conn, chart_configuration_id) do
+      query = """
+      {
+        chartConfiguration(id: #{chart_configuration_id}){
+          id
+          votedAt
+          votes { currentUserVotes totalVotes totalVoters }
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+      |> get_in(["data", "chartConfiguration"])
+    end
+
+    defp vote(conn, chart_configuration_id, opts) do
+      function =
+        case Keyword.get(opts, :direction, :up) do
+          :up -> "vote"
+          :down -> "unvote"
+        end
+
+      mutation = """
+      mutation {
+        #{function}(chartConfigurationId: #{chart_configuration_id}){
+          votedAt
+          votes { currentUserVotes totalVotes totalVoters }
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
+    end
+  end
+
   describe "chart configuration mutations" do
     test "create", context do
       %{user: user, conn: conn, project: project, post: post, settings: settings} = context
@@ -67,12 +155,13 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["anomalies"] == settings.anomalies
       assert config["metrics"] == settings.metrics
       assert config["drawings"] == settings.drawings
+      assert config["queries"] == settings.queries
       assert config["options"] == settings.options
       assert config["project"]["id"] |> String.to_integer() == project.id
       assert config["project"]["slug"] == project.slug
       assert config["user"]["id"] |> String.to_integer() == user.id
       assert config["user"]["email"] == user.email
-      assert config["post"]["id"] |> String.to_integer() == post.id
+      assert config["post"]["id"] == post.id
       assert config["post"]["title"] == post.title
     end
 
@@ -97,6 +186,13 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
             %{"cx" => 50, "cy" => 50, "r" => 20}
           ]
         },
+        queries: %{
+          "top_holders" => %{
+            "query" => "top_holders",
+            "args" => %{"slug" => "bitcoin", "from" => "utc_now-3d", "to" => "utc_now"},
+            "selected_fields" => ["datetime", "trx_value", "trx_hash"]
+          }
+        },
         options: %{
           "multi_chart" => false,
           "log_scale" => true,
@@ -114,8 +210,9 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["anomalies"] == new_settings.anomalies
       assert config["metrics"] == new_settings.metrics
       assert config["drawings"] == new_settings.drawings
+      assert config["queries"] == new_settings.queries
       assert config["options"] == new_settings.options
-      assert config["post"]["id"] |> String.to_integer() == new_settings.post_id
+      assert config["post"]["id"] == new_settings.post_id
       assert config["post"]["title"] == new_post.title
     end
 
@@ -143,7 +240,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         |> get_in(["data", "createChartConfiguration", "id"])
 
       _ = delete_chart_configuration(conn, config_id)
-      {:error, error_msg} = Sanbase.Chart.Configuration.by_id(config_id)
+      {:error, error_msg} = Sanbase.Chart.Configuration.by_id(config_id, [])
       assert error_msg =~ "does not exist"
     end
   end
@@ -177,7 +274,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config2 == nil
 
       config_ids =
-        get_chart_configurations(conn_no_user, nil, nil)
+        get_chart_configurations(conn_no_user)
         |> get_in(["data", "chartConfigurations"])
         |> Enum.map(& &1["id"])
 
@@ -200,11 +297,13 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["isPublic"] == settings.is_public
       assert config["anomalies"] == settings.anomalies
       assert config["metrics"] == settings.metrics
+      assert config["drawings"] == settings.drawings
+      assert config["queries"] == settings.queries
       assert config["project"]["id"] |> String.to_integer() == project.id
       assert config["project"]["slug"] == project.slug
       assert config["user"]["id"] |> String.to_integer() == user.id
       assert config["user"]["email"] == user.email
-      assert config["post"]["id"] |> String.to_integer() == post.id
+      assert config["post"]["id"] == post.id
       assert config["post"]["title"] == post.title
     end
 
@@ -284,7 +383,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         |> Enum.map(&get_in(&1, ["data", "createChartConfiguration", "id"]))
 
       config_ids =
-        get_chart_configurations(conn, nil, nil)
+        get_chart_configurations(conn)
         |> get_in(["data", "chartConfigurations"])
         |> Enum.map(& &1["id"])
 
@@ -309,7 +408,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
 
       # User gets their own public and private configurations
       config_ids =
-        get_chart_configurations(conn2, user2.id, nil)
+        get_chart_configurations(conn2, user_id: user2.id)
         |> get_in(["data", "chartConfigurations"])
         |> Enum.map(& &1["id"])
 
@@ -320,7 +419,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
 
       # Get only public configurations of another user
       config_ids =
-        get_chart_configurations(conn, user2.id, nil)
+        get_chart_configurations(conn, user_id: user2.id)
         |> get_in(["data", "chartConfigurations"])
         |> Enum.map(& &1["id"])
 
@@ -328,7 +427,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config_id3 in config_ids
     end
 
-    test "get all chart configurations for a project", context do
+    test "get all chart configurations for a project by project_id", context do
       %{conn: conn, conn2: conn2, project: project, project2: project2, settings: settings} =
         context
 
@@ -350,7 +449,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       # Get all own and other users' public configurations for a project
       # Other users private configurations are hidden
       config_ids =
-        get_chart_configurations(conn, nil, project2.id)
+        get_chart_configurations(conn, project_id: project2.id)
         |> get_in(["data", "chartConfigurations"])
         |> Enum.map(& &1["id"])
 
@@ -361,7 +460,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       # Get all own and other users' public configurations for a project
       # Own private configurations are accessible
       config_ids =
-        get_chart_configurations(conn2, nil, project2.id)
+        get_chart_configurations(conn2, project_id: project2.id)
         |> get_in(["data", "chartConfigurations"])
         |> Enum.map(& &1["id"])
 
@@ -369,6 +468,60 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config_id2 in config_ids
       assert config_id3 in config_ids
       assert config_id4 in config_ids
+    end
+
+    test "get all chart configurations for a project by project_slug", context do
+      %{conn: conn, conn2: conn2, project: project, project2: project2, settings: settings} =
+        context
+
+      settings = Map.put(settings, :is_public, true)
+
+      [_, config_id2, config_id3, config_id4] =
+        [
+          create_chart_configuration(conn, %{settings | project_id: project.id}),
+          create_chart_configuration(conn, %{settings | project_id: project2.id}),
+          create_chart_configuration(conn2, %{settings | project_id: project2.id}),
+          create_chart_configuration(conn2, %{
+            settings
+            | project_id: project2.id,
+              is_public: false
+          })
+        ]
+        |> Enum.map(&get_in(&1, ["data", "createChartConfiguration", "id"]))
+
+      # Get all own and other users' public configurations for a project
+      # Other users private configurations are hidden
+      config_ids =
+        get_chart_configurations(conn, project_slug: project2.slug)
+        |> get_in(["data", "chartConfigurations"])
+        |> Enum.map(& &1["id"])
+
+      assert length(config_ids) == 2
+      assert config_id2 in config_ids
+      assert config_id3 in config_ids
+
+      # Get all own and other users' public configurations for a project
+      # Own private configurations are accessible
+      config_ids =
+        get_chart_configurations(conn2, project_slug: project2.slug)
+        |> get_in(["data", "chartConfigurations"])
+        |> Enum.map(& &1["id"])
+
+      assert length(config_ids) == 3
+      assert config_id2 in config_ids
+      assert config_id3 in config_ids
+      assert config_id4 in config_ids
+    end
+
+    test "returns error when both project_id and project_slug are provided", context do
+      %{conn: conn, project: project, project2: project2} = context
+
+      error_msg =
+        get_chart_configurations(conn, project_slug: project.slug, project_id: project2.id)
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg ==
+               "Both projectId and projectSlug arguments are provided. Please use only one of them or none."
     end
 
     test "get user's configurations for a given project", context do
@@ -400,7 +553,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
 
       # No charts for a user and project
       config_ids =
-        get_chart_configurations(conn, user.id, project2.id)
+        get_chart_configurations(conn, user_id: user.id, project_id: project2.id)
         |> get_in(["data", "chartConfigurations"])
         |> Enum.map(& &1["id"])
 
@@ -408,7 +561,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
 
       # Get all public configurations of a user for a given project
       config_ids =
-        get_chart_configurations(conn, user2.id, project2.id)
+        get_chart_configurations(conn, user_id: user2.id, project_id: project2.id)
         |> get_in(["data", "chartConfigurations"])
         |> Enum.map(& &1["id"])
 
@@ -417,7 +570,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
 
       # Get all own public and private configurations for a given project
       config_ids =
-        get_chart_configurations(conn2, user2.id, project2.id)
+        get_chart_configurations(conn2, user_id: user2.id, project_id: project2.id)
         |> get_in(["data", "chartConfigurations"])
         |> Enum.map(& &1["id"])
 
@@ -459,6 +612,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         post{ id title }
         metrics
         anomalies
+        queries
         drawings
         options
       }
@@ -483,6 +637,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         post{ id title }
         metrics
         anomalies
+        queries
         drawings
         options
       }
@@ -507,6 +662,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         post{ id title }
         metrics
         anomalies
+        queries
         drawings
         options
       }
@@ -531,6 +687,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         post{ id title }
         metrics
         anomalies
+        queries
         drawings
         chartEvents {
           id
@@ -547,7 +704,9 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
     |> json_response(200)
   end
 
-  defp get_chart_configurations(conn, nil, nil) do
+  defp get_chart_configurations(conn, opts \\ [])
+
+  defp get_chart_configurations(conn, []) do
     query = """
     {
       chartConfigurations {
@@ -559,6 +718,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        queries
         anomalies
         drawings
       }
@@ -570,12 +730,17 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
     |> json_response(200)
   end
 
-  defp get_chart_configurations(conn, user_id, project_id) do
+  defp get_chart_configurations(conn, opts) do
+    user_id = Keyword.get(opts, :user_id)
+    project_id = Keyword.get(opts, :project_id)
+    project_slug = Keyword.get(opts, :project_slug)
+
     query = """
     {
       chartConfigurations(
-        #{if user_id, do: "user_id: #{user_id}"}
-        #{if project_id, do: "project_id: #{project_id}"}
+        #{if user_id, do: "userId: #{user_id}"}
+        #{if project_id, do: "projectId: #{project_id}"}
+        #{if project_slug, do: "projectSlug: \"#{project_slug}\""}
       ) {
         id
         title
@@ -586,7 +751,9 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         post{ id title }
         metrics
         anomalies
+        queries
         drawings
+        options
       }
     }
     """

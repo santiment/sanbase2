@@ -23,6 +23,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   @restricted_metrics Enum.filter(@access_map, &match?({_, :restricted}, &1))
                       |> Enum.map(&elem(&1, 0))
 
+  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
   @default_complexity_weight 0.3
 
   defp address_ordered_table(), do: Config.module_get(Erc20Transfers, :address_ordered_table)
@@ -32,6 +33,12 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def complexity_weight(_), do: @default_complexity_weight
+
+  @impl Sanbase.Metric.Behaviour
+  def required_selectors(), do: @required_selectors
+
+  @impl Sanbase.Metric.Behaviour
+  def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(_metric, _selector, _from, _to, _interval, _opts) do

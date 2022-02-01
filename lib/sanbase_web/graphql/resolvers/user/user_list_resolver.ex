@@ -1,15 +1,18 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   require Logger
 
+  import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Async, only: [async: 1]
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   alias Sanbase.Accounts.User
   alias Sanbase.UserList
   alias Sanbase.Model.Project
+  alias Sanbase.SocialData.TrendingWords
+
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias SanbaseWeb.Graphql.Cache
-  alias Sanbase.SocialData.TrendingWords
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   @trending_words_size 10
   @trending_fields [:trending_slugs, :trending_tickers, :trending_names, :trending_projects]
@@ -39,6 +42,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     type = Map.get(args, :type) || :project
     UserList.fetch_all_public_lists(type)
   end
+
+  # def dynamic_watchlist(_root, %{} = args, _resolution) do
+  #   projects_selector = Map.get(args, :projects_selector)
+  #   blockchain_addresses_selector = Map.get(args, :blockchain_addresses_selector)
+
+  #   with %{} = fun <- Sanbase.WatchlistFunction.new(selector),
+  #        {:ok, result} <- Sanbase.WatchlistFunction.evaluate(fun) do
+  #     {:ok, result}
+  #   end
+  # end
 
   def watchlist(_root, %{id: id}, %{
         context: %{auth: %{current_user: current_user}}
@@ -111,6 +124,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
            UserList.get_blockchain_addresses(user_list) do
       {:ok, %{blockchain_addresses_count: count}}
     end
+  end
+
+  def comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :watchlist_comments_count, id)
+    |> on_load(fn loader ->
+      count = Dataloader.get(loader, SanbaseDataloader, :watchlist_comments_count, id)
+      {:ok, count || 0}
+    end)
   end
 
   # Private functions
@@ -250,7 +272,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   end
 
   def update_watchlist(_root, %{id: id} = args, %{context: %{auth: %{current_user: current_user}}}) do
-    if has_permissions?(id, current_user) do
+    with {:ok, watchlist} <- UserList.by_id(id, []),
+         true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.update_user_list(current_user, args) do
         {:ok, user_list} ->
           {:ok, user_list}
@@ -261,8 +284,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
             message: "Cannot update user list", details: changeset_errors(changeset)
           }
       end
-    else
-      {:error, "Cannot update watchlist of another user"}
     end
   end
 
@@ -271,7 +292,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{id: id, list_items: _} = args,
         %{context: %{auth: %{current_user: current_user}}}
       ) do
-    if has_permissions?(id, current_user) do
+    with {:ok, watchlist} <- UserList.by_id(id, []),
+         true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.add_user_list_items(current_user, args) do
         {:ok, user_list} ->
           {:ok, user_list}
@@ -282,8 +304,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
             message: "Cannot add items to a watchlist", details: changeset_errors(changeset)
           }
       end
-    else
-      {:error, "Cannot update watchlist of another user"}
     end
   end
 
@@ -292,7 +312,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{id: id, list_items: _} = args,
         %{context: %{auth: %{current_user: current_user}}}
       ) do
-    if has_permissions?(id, current_user) do
+    with {:ok, watchlist} <- UserList.by_id(id, []),
+         true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.remove_user_list_items(current_user, args) do
         {:ok, user_list} ->
           {:ok, user_list}
@@ -320,26 +341,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def remove_user_list(_root, %{id: id} = args, %{context: %{auth: %{current_user: current_user}}}) do
-    if has_permissions?(id, current_user) do
-      case UserList.remove_user_list(current_user, args) do
-        {:ok, user_list} ->
-          {:ok, user_list}
-
-        {:error, changeset} ->
-          {
-            :error,
-            message: "Cannot remove user list", details: changeset_errors(changeset)
-          }
-      end
-    else
-      {:error, "Cannot remove user list belonging to another user"}
+  def remove_user_list(_root, %{id: watchlist_id} = args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    with {:ok, watchlist} <- UserList.by_id(watchlist_id, []),
+         true <- has_permissions?(watchlist, current_user, "delete"),
+         {:ok, watchlist} <- remove_watchlist(current_user, args) do
+      {:ok, watchlist}
     end
   end
 
   # Private functions
 
-  defp has_permissions?(id, %User{id: user_id}) do
-    UserList.by_id(id).user_id == user_id
+  defp has_permissions?(watchlist, %User{id: user_id}, action) do
+    case watchlist do
+      %UserList{user_id: ^user_id} -> true
+      %UserList{is_public: true} when action in [:read] -> true
+      _ -> {:error, "Cannot #{action} watchlist belonging to another user"}
+    end
+  end
+
+  defp remove_watchlist(current_user, args) do
+    case UserList.remove_user_list(current_user, args) do
+      {:ok, watchlist} ->
+        {:ok, watchlist}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot remove watchlist", details: changeset_errors(changeset)
+        }
+    end
   end
 end

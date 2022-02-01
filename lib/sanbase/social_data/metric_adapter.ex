@@ -19,9 +19,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     # A project can be addressed by different words.
     # Example: `btc` and `bitcoin` refer to bitcoin
     "social_volume_telegram",
-    "social_volume_discord",
     "social_volume_reddit",
-    "social_volume_professional_traders_chat",
     "social_volume_twitter",
     "social_volume_bitcointalk",
     "social_volume_total"
@@ -36,9 +34,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @social_dominance_timeseries_metrics [
     "social_dominance_telegram",
-    "social_dominance_discord",
     "social_dominance_reddit",
-    "social_dominance_professional_traders_chat",
     "social_dominance_total"
   ]
 
@@ -72,6 +68,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
               |> Map.merge(@social_volume_metrics_access_map)
 
   @min_plan_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, :free) end)
+  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
+                      |> Map.put("social_active_users", [[:source]])
 
   @default_complexity_weight 1
 
@@ -82,7 +80,12 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
+  def required_selectors(), do: @required_selectors
 
+  @impl Sanbase.Metric.Behaviour
+  def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
+
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, selector, from, to, interval, _opts)
       when metric in @social_volume_timeseries_metrics do
     "social_volume_" <> source = metric
@@ -125,28 +128,44 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def aggregated_timeseries_data(metric, selector, from, to, opts)
       when metric in @social_volume_timeseries_metrics or
              metric in @community_messages_count_timeseries_metrics do
-    case timeseries_data(metric, selector, from, to, "1h", opts) do
-      {:ok, result} ->
-        value = Enum.reduce(result, 0, &(&1.value + &2))
-        {:ok, %{value: value}}
+    slug = Map.get(selector, :slug)
 
-      {:error, error} ->
-        {:error, error}
+    case is_nil(slug) or is_binary(slug) do
+      true ->
+        case timeseries_data(metric, selector, from, to, "1h", opts) do
+          {:ok, result} ->
+            value = Enum.reduce(result, 0, &(&1.value + &2))
+            {:ok, %{value: value}}
+
+          {:error, error} ->
+            {:error, error}
+        end
+
+      false ->
+        {:error, "Aggregated timeseries data is not supported for lists of slugs."}
     end
   end
 
   def aggregated_timeseries_data(metric, selector, from, to, opts)
       when metric in @social_dominance_timeseries_metrics do
-    case timeseries_data(metric, selector, from, to, "1h", opts) do
-      {:ok, result} ->
-        value =
-          Enum.map(result, & &1.value)
-          |> Sanbase.Math.average()
+    slug = Map.get(selector, :slug)
 
-        {:ok, %{value: value}}
+    case is_nil(slug) or is_binary(slug) do
+      true ->
+        case timeseries_data(metric, selector, from, to, "1h", opts) do
+          {:ok, result} ->
+            value =
+              Enum.map(result, & &1.value)
+              |> Sanbase.Math.average()
 
-      {:error, error} ->
-        {:error, error}
+            {:ok, %{value: value}}
+
+          {:error, error} ->
+            {:error, error}
+        end
+
+      false ->
+        {:error, "Aggregated timeseries data is not supported for lists of slugs."}
     end
   end
 
@@ -260,7 +279,5 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp source_first_datetime("telegram"), do: {:ok, ~U[2016-03-29 00:00:00Z]}
   defp source_first_datetime("twitter"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
   defp source_first_datetime("reddit"), do: {:ok, ~U[2016-01-01 00:00:00Z]}
-  defp source_first_datetime("discord"), do: {:ok, ~U[2016-05-21 00:00:00Z]}
   defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2011-06-01 00:00:00Z]}
-  defp source_first_datetime("professional_traders_chat"), do: {:ok, ~U[2018-02-09 00:00:00Z]}
 end

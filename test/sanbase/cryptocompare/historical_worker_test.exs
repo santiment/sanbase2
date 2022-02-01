@@ -55,7 +55,9 @@ defmodule Sanbase.Cryptocompare.HistoricalWorkerTest do
 
       # Drain the queue, synchronously executing all the jobs in the current process
       assert %{success: 10, failure: 0} =
-               Oban.drain_queue(queue: Sanbase.Cryptocompare.HistoricalWorker.queue())
+               Oban.drain_queue(Sanbase.Cryptocompare.HistoricalScheduler.conf_name(),
+                 queue: Sanbase.Cryptocompare.HistoricalWorker.queue()
+               )
 
       state = Sanbase.InMemoryKafka.Producer.get_state()
       ohlcv_topic = state["asset_ohlcv_price_pairs"]
@@ -88,7 +90,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorkerTest do
               "{\"base_asset\":\"#{base_asset}\",\"price\":6217.993237443811,\"quote_asset\":\"USD\",\"source\":\"cryptocompare\",\"timestamp\":1609977840}"} in price_pairs_only_topic
     end)
 
-    # Seems to fix some ereor
+    # Seems to fix some error
     Sanbase.Cryptocompare.HistoricalScheduler.pause()
   end
 end

@@ -9,8 +9,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   alias Sanbase.Accounts.User
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
-  alias Sanbase.Billing.{Subscription, Product}
-  alias Sanbase.Billing.Subscription.SignUpTrial
 
   @coupon_code "test_coupon"
 
@@ -50,7 +48,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     {Sanbase.Notifications.Discord, [:passthrough],
      [
        send_notification: fn _, _, _ -> :ok end
-     ]}
+     ]},
+    {Sanbase.MandrillApi, [:passthrough], send: fn _, _, _, _ -> {:ok, %{"status" => "sent"}} end}
   ]) do
     # Needs to be staked to apply the discount
     user = insert(:staked_user)
@@ -223,79 +222,19 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       assert response["plan"]["name"] == context.plans.plan_essential.name
     end
 
-    test "subscribe to sanbase PRO plan doesn't give 14 days free trial", context do
+    test "subscribe to Sanbase PRO plan gives 14 days free trial", context do
       query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
       response = execute_mutation(context.conn, query, "subscribe")
-      refute called(StripeApi.create_subscription(%{trial_period_days: 14}))
+
+      assert_called(StripeApi.create_subscription(%{trial_end: :_}))
       assert response["plan"]["name"] == context.plans.plan_pro_sanbase.name
     end
 
-    test "subscribe to neuro PRO plan doesn't give free trial", context do
+    test "subscribe to SanAPI PRO plan doesn't give free trial", context do
       query = subscribe_mutation(context.plans.plan_pro.id)
       response = execute_mutation(context.conn, query, "subscribe")
-      refute called(StripeApi.create_subscription(%{trial_period_days: 14}))
+
       assert response["plan"]["name"] == context.plans.plan_pro.name
-    end
-
-    test "subscribe without card to sanbase PRO plan doesn't give 14 days free trial", context do
-      query = subscribe_without_card_mutation(context.plans.plan_pro_sanbase.id)
-      response = execute_mutation(context.conn, query, "subscribe")
-      refute called(StripeApi.create_subscription(%{trial_period_days: 14}))
-      assert response["plan"]["name"] == context.plans.plan_pro_sanbase.name
-    end
-
-    test "when on trial, transfers the trial", context do
-      with_mocks([
-        {StripeApi, [:passthrough],
-         [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
-        {StripeApi, [:passthrough],
-         [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
-        {StripeApi, [:passthrough],
-         [
-           create_subscription: fn arg ->
-             StripeApiTestResponse.create_subscription_resp(
-               status: "trialing",
-               trial_end: arg.trial_end
-             )
-           end
-         ]},
-        {StripeApi, [:passthrough],
-         [delete_subscription: fn _ -> StripeApiTestResponse.delete_subscription_resp() end]}
-      ]) do
-        seven_days_ago = Timex.shift(Timex.now(), days: -7)
-
-        subscription =
-          insert(:subscription_pro_sanbase,
-            user: context.user,
-            status: "trialing",
-            stripe_id: "test_stripe_id"
-          )
-
-        insert(:sign_up_trial,
-          subscription: subscription,
-          user: context.user,
-          inserted_at: seven_days_ago
-        )
-
-        query = subscribe_mutation(context.plans.plan_pro_sanbase_yearly.id)
-        response = execute_mutation(context.conn, query, "subscribe")
-
-        # SignUpTrial is marked as `is_finished`
-        assert SignUpTrial.by_subscription_id(subscription.id) == nil
-
-        assert_called(StripeApi.delete_subscription("test_stripe_id"))
-
-        current_subscription =
-          Subscription.current_subscription(context.user, Product.product_sanbase())
-
-        # Assert 7 days trial transferred
-        assert Float.round(Timex.diff(current_subscription.trial_end, Timex.now(), :hours) / 24) ==
-                 7
-
-        refute response["id"] == subscription.id
-        assert response["status"] == "TRIALING"
-        assert response["plan"]["name"] == "PRO"
-      end
     end
 
     test "subscribe when already subscribed to this plan", context do
@@ -697,26 +636,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
     mutation {
       subscribe(card_token: "card_token", plan_id: #{plan_id}, coupon: "#{coupon}") {
-        id,
-        status
-        plan {
-          id
-          name
-          interval
-          amount
-          product {
-            name
-          }
-        }
-      }
-    }
-    """
-  end
-
-  defp subscribe_without_card_mutation(plan_id) do
-    """
-    mutation {
-      subscribe(plan_id: #{plan_id}) {
         id,
         status
         plan {

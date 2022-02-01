@@ -9,14 +9,15 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   @type restriction :: %{
           type: String.t(),
           name: String.t(),
+          min_interval: String.t(),
           is_accessible: boolean(),
           is_restricted: boolean(),
-          restricted_from: DateTime.t(),
-          restricted_to: DateTime.t()
+          restricted_from: DateTime.t() | nil,
+          restricted_to: DateTime.t() | nil
         }
 
+  @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
   @spec get(query_or_argument, atom(), non_neg_integer()) :: restriction()
-        when query_or_argument: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
   def get({type, name} = query_or_argument, plan, product_id)
       when type in [:metric, :signal, :query] do
     type_str = type |> to_string()

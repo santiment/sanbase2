@@ -56,7 +56,7 @@ defmodule Sanbase.SmartContracts.Utils do
     # https://docs.soliditylang.org/en/latest/abi-spec.html#function-selector-and-argument-encoding
 
     Logger.info(
-      "[Parity] Eth call contract with function #{get_function_name(contract_function)}."
+      "[EthNode] Eth call contract with function #{get_function_name(contract_function)}."
     )
 
     function_signature =
@@ -77,7 +77,7 @@ defmodule Sanbase.SmartContracts.Utils do
     transform_args = Keyword.get(opts, :transform_args_list_fun, fn x -> x end)
 
     Logger.info(
-      "[Parity] Eth call contract batch with function #{get_function_name(contract_function)}."
+      "[EthNode] Eth call contract batch with function #{get_function_name(contract_function)}."
     )
 
     requests =

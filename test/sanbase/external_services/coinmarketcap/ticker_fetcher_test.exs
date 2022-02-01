@@ -1,6 +1,8 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   use Sanbase.DataCase, async: false
 
+  import Sanbase.Factory
+
   alias Sanbase.ExternalServices.Coinmarketcap.TickerFetcher
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Model.Project
@@ -52,6 +54,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   end
 
   test "ticker fetcher stores prices in kafka" do
+    insert(:project, %{slug: "ethereum"})
+    insert(:project, %{slug: "bitcoin"})
+
     TickerFetcher.work()
     Process.sleep(200)
 

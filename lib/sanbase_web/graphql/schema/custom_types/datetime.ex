@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
   use Absinthe.Schema.Notation
 
+  alias Absinthe.Blueprint.Input
+
   scalar :datetime, name: "DateTime" do
     description("""
     The `DateTime` scalar type represents a date and time in the UTC
@@ -9,18 +11,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
     be converted to UTC and any UTC offset other than 0 will be rejected.
     """)
 
-    serialize(fn
-      %NaiveDateTime{} = ndt ->
-        DateTime.from_naive!(ndt, "Etc/UTC")
-        |> DateTime.truncate(:second)
-        |> DateTime.to_iso8601()
-
-      %DateTime{} = dt ->
-        dt
-        |> DateTime.truncate(:second)
-        |> DateTime.to_iso8601()
-    end)
-
+    serialize(&serialize_datetime/1)
     parse(&parse_datetime/1)
   end
 
@@ -45,32 +36,16 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
     parse(&parse_time/1)
   end
 
-  @spec parse_datetime(Absinthe.Blueprint.Input.String.t()) :: {:ok, DateTime.t()} | :error
-  @spec parse_datetime(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
-  defp parse_datetime(%Absinthe.Blueprint.Input.String{value: "utc_now" <> _rest = value}) do
-    case String.split(value, ~r/\s*-\s*/) do
-      ["utc_now"] ->
-        {:ok, DateTime.utc_now()}
-
-      ["utc_now", interval] ->
-        case Sanbase.DateTimeUtils.valid_compound_duration?(interval) do
-          true ->
-            dt =
-              DateTime.utc_now()
-              |> Timex.shift(seconds: -Sanbase.DateTimeUtils.str_to_sec(interval))
-
-            {:ok, dt}
-
-          false ->
-            :error
-        end
-
-      _ ->
-        :error
+  @spec parse_datetime(Input.String.t()) :: {:ok, DateTime.t()} | :error
+  @spec parse_datetime(Input.Null.t()) :: {:ok, nil}
+  defp parse_datetime(%Input.String{value: "utc_now" <> _rest = value}) do
+    case Sanbase.DateTimeUtils.utc_now_string_to_datetime(value) do
+      {:ok, value} -> {:ok, value}
+      {:error, _} -> :error
     end
   end
 
-  defp parse_datetime(%Absinthe.Blueprint.Input.String{value: value}) do
+  defp parse_datetime(%Input.String{value: value}) do
     case DateTime.from_iso8601(value) do
       {:ok, datetime, 0} -> {:ok, datetime}
       {:ok, _datetime, _offset} -> :error
@@ -78,7 +53,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
     end
   end
 
-  defp parse_datetime(%Absinthe.Blueprint.Input.Null{}) do
+  defp parse_datetime(%Input.Null{}) do
     {:ok, nil}
   end
 
@@ -86,17 +61,29 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
     :error
   end
 
-  @spec parse_naive_datetime(Absinthe.Blueprint.Input.String.t()) ::
+  defp serialize_datetime(%NaiveDateTime{} = ndt) do
+    DateTime.from_naive!(ndt, "Etc/UTC")
+    |> DateTime.truncate(:second)
+    |> DateTime.to_iso8601()
+  end
+
+  defp serialize_datetime(%DateTime{} = dt) do
+    dt
+    |> DateTime.truncate(:second)
+    |> DateTime.to_iso8601()
+  end
+
+  @spec parse_naive_datetime(Input.String.t()) ::
           {:ok, NaiveDateTime.t()} | :error
-  @spec parse_naive_datetime(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
-  defp parse_naive_datetime(%Absinthe.Blueprint.Input.String{value: value}) do
+  @spec parse_naive_datetime(Input.Null.t()) :: {:ok, nil}
+  defp parse_naive_datetime(%Input.String{value: value}) do
     case NaiveDateTime.from_iso8601(value) do
       {:ok, naive_datetime} -> {:ok, naive_datetime}
       _error -> :error
     end
   end
 
-  defp parse_naive_datetime(%Absinthe.Blueprint.Input.Null{}) do
+  defp parse_naive_datetime(%Input.Null{}) do
     {:ok, nil}
   end
 
@@ -104,16 +91,16 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
     :error
   end
 
-  @spec parse_time(Absinthe.Blueprint.Input.String.t()) :: {:ok, Time.t()} | :error
-  @spec parse_time(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
-  defp parse_time(%Absinthe.Blueprint.Input.String{value: value}) do
+  @spec parse_time(Input.String.t()) :: {:ok, Time.t()} | :error
+  @spec parse_time(Input.Null.t()) :: {:ok, nil}
+  defp parse_time(%Input.String{value: value}) do
     case Time.from_iso8601(value) do
       {:ok, time} -> {:ok, time}
       _error -> :error
     end
   end
 
-  defp parse_time(%Absinthe.Blueprint.Input.Null{}) do
+  defp parse_time(%Input.Null{}) do
     {:ok, nil}
   end
 

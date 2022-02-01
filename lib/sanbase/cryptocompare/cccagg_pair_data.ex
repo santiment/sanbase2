@@ -1,6 +1,8 @@
 defmodule Sanbase.Cryptocompare.CCCAGGPairData do
   alias Sanbase.Model.Project
 
+  require Logger
+
   def get() do
     cache_key = {__MODULE__, :get_cccagg_pairs_data} |> Sanbase.Cache.hash()
 
@@ -28,28 +30,46 @@ defmodule Sanbase.Cryptocompare.CCCAGGPairData do
   end
 
   def schedule_previous_day_oban_jobs() do
+    Logger.info("[CCCAGG Pair Data] Start scheduling cryptocompare previous day oban jobs")
     # Make the scrape not just for the previous day, but for a few days before
     # that too. This is to handle some cases where some CSV becoomes available
     # later than we run this code. The uniqueness checkk will handle the overlapping
     # jobs.
-    days_ago = Date.utc_today() |> Date.add(-3)
-    previous_day = Date.utc_today() |> Date.add(-1)
+    supported_base_assets = supported_base_assets()
+    days_ago_7 = Date.utc_today() |> Date.add(-7)
+    days_ago_60 = Date.utc_today() |> Date.add(-60)
+    today = Date.utc_today()
 
-    get()
-    |> Enum.filter(fn elem -> elem.end_date == previous_day end)
+    list =
+      get()
+      |> Enum.filter(fn elem ->
+        elem.base_asset in supported_base_assets and
+          Timex.between?(elem.end_date, days_ago_7, today)
+      end)
+
+    Logger.info("[CCCAGG Pair Data] Scheduling oban jobs for #{length(list)} pairs")
+
+    list
     |> Enum.map(fn elem ->
       elem = %{
-        start_date: days_ago,
-        end_date: previous_day,
+        start_date: days_ago_60,
+        end_date: elem.end_date,
         base_asset: elem.base_asset,
         quote_asset: elem.quote_asset
       }
 
       add_jobs(elem)
     end)
+
+    Logger.info("[CCCAGG Pair Data] Finished scheduling cryptocompare previous day oban jobs")
   end
 
   # Private functions
+
+  defp supported_base_assets() do
+    Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+    |> Enum.map(&elem(&1, 0))
+  end
 
   defp add_jobs(elem) when is_map(elem) do
     Sanbase.Cryptocompare.HistoricalScheduler.add_jobs(
@@ -63,18 +83,20 @@ defmodule Sanbase.Cryptocompare.CCCAGGPairData do
   defp pairs_to_maps(pairs) do
     pairs
     |> Enum.flat_map(fn {base_asset, map} ->
-      Enum.map(map["tsyms"], fn {quote_asset,
-                                 %{
-                                   "histo_minute_start" => start_date_iso8601,
-                                   "histo_minute_end" => end_date_iso8601
-                                 }} ->
-        %{
-          base_asset: base_asset,
-          quote_asset: quote_asset,
-          start_date: Date.from_iso8601!(start_date_iso8601),
-          end_date: Date.from_iso8601!(end_date_iso8601)
-        }
+      Enum.map(map["tsyms"], fn
+        {quote_asset,
+         %{"histo_minute_start" => start_date_iso8601, "histo_minute_end" => end_date_iso8601}} ->
+          %{
+            base_asset: base_asset,
+            quote_asset: quote_asset,
+            start_date: Date.from_iso8601!(start_date_iso8601),
+            end_date: Date.from_iso8601!(end_date_iso8601)
+          }
+
+        _ ->
+          nil
       end)
+      |> Enum.reject(&is_nil/1)
     end)
   end
 

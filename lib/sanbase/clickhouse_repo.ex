@@ -1,5 +1,6 @@
 defmodule Sanbase.ClickhouseRepo do
   # Clickhouse tests are done only through mocking the results.
+  require Application
   @env Application.compile_env(:sanbase, :env)
   @adapter if @env == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
 
@@ -9,7 +10,11 @@ defmodule Sanbase.ClickhouseRepo do
   require Logger
 
   def enabled?() do
-    System.get_env("CLICKHOUSE_REPO_ENABLED", "true") |> String.to_existing_atom()
+    case Config.module_get(__MODULE__, :clickhouse_repo_enabled?) do
+      true -> true
+      false -> false
+      nil -> System.get_env("CLICKHOUSE_REPO_ENABLED", "true") |> String.to_existing_atom()
+    end
   end
 
   @doc """

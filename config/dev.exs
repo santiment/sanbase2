@@ -76,7 +76,7 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   limit: 5,
   time_between_requests: 250
 
-config :sanbase, SanbaseWeb.Graphql.ContextPlug,
+config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
 
@@ -88,7 +88,7 @@ config :waffle,
   storage_dir_prefix: "/"
 
 config :ethereumex,
-  url: "http://parity.stage.san:30954",
+  url: "http://erigon-hz.stage.san:30250/",
   http_options: [timeout: 25_000, recv_timeout: 25_000]
 
 if File.exists?("config/dev.secret.exs") do

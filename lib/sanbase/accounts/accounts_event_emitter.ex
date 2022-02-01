@@ -6,8 +6,23 @@ defmodule Sanbase.Accounts.EventEmitter do
 
   def handle_event({:error, _}, _event, _args), do: :ok
 
+  def handle_event({:ok, user}, :create_user, %{} = args) do
+    Map.merge(%{event_type: :create_user, user_id: user.id}, args)
+    |> notify()
+  end
+
   def handle_event({:ok, user}, :register_user, %{login_origin: _} = args) do
     Map.merge(%{event_type: :register_user, user_id: user.id}, args)
+    |> notify()
+  end
+
+  def handle_event({:ok, user}, :login_user, %{login_origin: _} = args) do
+    Map.merge(%{event_type: :login_user, user_id: user.id}, args)
+    |> notify()
+  end
+
+  def handle_event({:ok, user}, :update_name, %{old_name: _, new_name: _} = args) do
+    Map.merge(%{event_type: :update_name, user_id: user.id}, args)
     |> notify()
   end
 

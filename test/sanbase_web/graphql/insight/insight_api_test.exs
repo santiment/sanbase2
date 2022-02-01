@@ -24,7 +24,65 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     {:ok, conn: conn, user: user, staked_user: staked_user}
   end
 
-  describe "Insights for currentUser or getUser |" do
+  describe "Insight creation rate limit" do
+    setup do
+      # on exit revert to the original test env that is higher than
+      # on prod so we avoid hitting rate limits
+      env = Application.get_env(:sanbase, Sanbase.Insight.Post)
+
+      on_exit(fn -> Application.put_env(:sanbase, Sanbase.Insight.Post, env) end)
+
+      []
+    end
+
+    test "creation rate limit per minute is enforced", context do
+      query = """
+      mutation { createInsight( title: "title" text: "text") { id } }
+      """
+
+      env = Application.get_env(:sanbase, Sanbase.Insight.Post)
+      env = Keyword.put(env, :creation_limit_minute, 2)
+      Application.put_env(:sanbase, Sanbase.Insight.Post, env)
+
+      _ = execute_mutation_with_success(query, "createInsight", context.conn)
+      _ = execute_mutation_with_success(query, "createInsight", context.conn)
+
+      error = execute_mutation_with_errors(query, context.conn)
+      assert error["message"] =~ "Cannot create more than 2 insights per minute"
+    end
+
+    test "creation rate limit per hour is enforced", context do
+      query = """
+      mutation { createInsight( title: "title" text: "text") { id } }
+      """
+
+      env = Application.get_env(:sanbase, Sanbase.Insight.Post)
+      env = Keyword.put(env, :creation_limit_hour, 1)
+      Application.put_env(:sanbase, Sanbase.Insight.Post, env)
+
+      _ = execute_mutation_with_success(query, "createInsight", context.conn)
+
+      error = execute_mutation_with_errors(query, context.conn)
+      assert error["message"] =~ "Cannot create more than 1 insight per hour"
+    end
+
+    test "creation rate limit per day is enforced", context do
+      query = """
+      mutation { createInsight( title: "title" text: "text") { id } }
+      """
+
+      env = Application.get_env(:sanbase, Sanbase.Insight.Post)
+      env = Keyword.put(env, :creation_limit_day, 1)
+      Application.put_env(:sanbase, Sanbase.Insight.Post, env)
+
+      _ = execute_mutation_with_success(query, "createInsight", context.conn)
+
+      error = execute_mutation_with_errors(query, context.conn)
+      assert error["message"] =~ "Cannot create more than 1 insight per day"
+    end
+  end
+
+  describe "Insights for currentUser or getUser" do
     setup context do
       published =
         insert(:post,
@@ -61,12 +119,12 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       expected_insights =
         [
           %{
-            "id" => "#{published.id}",
+            "id" => published.id,
             "readyState" => "#{published.ready_state}",
             "text" => "#{published.text}"
           },
           %{
-            "id" => "#{draft.id}",
+            "id" => draft.id,
             "readyState" => "#{draft.ready_state}",
             "text" => "#{draft.text}"
           }
@@ -128,7 +186,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       expected_insights =
         [
           %{
-            "id" => "#{published.id}",
+            "id" => published.id,
             "readyState" => "#{published.ready_state}",
             "text" => "#{published.text}"
           }
@@ -437,7 +495,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     Repo.all(Post)
 
     assert json_response(result, 200)["data"]["allInsights"] ==
-             [%{"id" => "#{post2.id}"}, %{"id" => "#{post.id}"}]
+             [%{"id" => post2.id}, %{"id" => post.id}]
   end
 
   test "Search insights by tag", %{user: user, conn: conn} do
@@ -454,7 +512,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     result = execute_query(conn, insights_by_tag_query(tag1), "allInsightsByTag")
 
-    assert result == [%{"id" => "#{post.id}"}]
+    assert result == [%{"id" => post.id}]
   end
 
   test "Search insights by tag for anonymous user", %{user: user} do
@@ -471,7 +529,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     result = execute_query(build_conn(), insights_by_tag_query(tag1), "allInsightsByTag")
 
-    assert result == [%{"id" => "#{post.id}"}]
+    assert result == [%{"id" => post.id}]
   end
 
   test "Get all insights by a list of tags", %{user: user} do
@@ -506,7 +564,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     result = execute_query(build_conn(), query, "allInsights") |> Enum.sort_by(& &1["id"])
 
     assert result ==
-             [%{"id" => "#{post.id}"}, %{"id" => "#{post3.id}"}] |> Enum.sort_by(& &1["id"])
+             [%{"id" => post.id}, %{"id" => post3.id}] |> Enum.sort_by(& &1["id"])
   end
 
   describe "Create insight" do
@@ -842,7 +900,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
       result_post = result["data"]["deleteInsight"]
 
-      assert result_post["id"] == Integer.to_string(sanbase_post.id)
+      assert result_post["id"] == sanbase_post.id
     end
 
     test "deleting an insight which does not belong to the user - returns error", %{
@@ -1003,7 +1061,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     query = """
     mutation {
       vote(postId: #{sanbase_post.id}) {
-        id
         votes{
           totalVotes
         }
@@ -1018,7 +1075,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     result_post = result["data"]["vote"]
 
-    assert result_post["id"] == Integer.to_string(sanbase_post.id)
     assert result_post["votes"]["totalVotes"] == 1
   end
 
@@ -1037,10 +1093,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     query = """
     mutation {
       unvote(insightId: #{sanbase_post.id}) {
-        id
-        votes{
-          totalVotes
-        }
+        votes { totalVotes }
       }
     }
     """
@@ -1051,7 +1104,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     result_post = json_response(result, 200)["data"]["unvote"]
 
-    assert result_post["id"] == Integer.to_string(sanbase_post.id)
     assert result_post["votes"]["totalVotes"] == 0
   end
 
@@ -1096,7 +1148,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         assert res["chartEventDatetime"] != nil
         assert res["chartConfigurationForEvent"]["id"] == conf.id
 
-        {:ok, new_conf} = Sanbase.Chart.Configuration.by_id(conf.id, context.user)
+        {:ok, new_conf} =
+          Sanbase.Chart.Configuration.by_id(conf.id, querying_user_id: context.user)
 
         assert length(new_conf.chart_events) == 1
       end)
@@ -1145,7 +1198,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     result = conn |> post("/graphql", query_skeleton(query, "allInsights"))
 
     assert json_response(result, 200)["data"]["allInsights"] ==
-             [%{"id" => "#{post1.id}"}, %{"id" => "#{post2.id}"}]
+             [%{"id" => post1.id}, %{"id" => post2.id}]
   end
 
   # Helper functions

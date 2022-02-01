@@ -31,6 +31,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @free_metrics @metrics
   @restricted_metrics []
 
+  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
   @default_complexity_weight 0.3
 
   @impl Sanbase.Metric.Behaviour
@@ -40,6 +41,27 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
+  def required_selectors(), do: @required_selectors
+
+  @impl Sanbase.Metric.Behaviour
+  def broken_data(metric, selector, from, to) do
+    __MODULE__.BrokenData.get(metric, selector, from, to)
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def timeseries_data(metric, %{organization: organization}, from, to, interval, opts) do
+    timeseries_data(metric, %{organizations: [organization]}, from, to, interval, opts)
+  end
+
+  def timeseries_data(metric, %{organizations: organizations}, from, to, interval, _opts) do
+    apply(
+      Github,
+      Map.get(@timeseries_metrics_function_mapping, metric),
+      [organizations, from, to, interval, "None", nil]
+    )
+    |> transform_to_value_pairs()
+  end
+
   def timeseries_data(metric, %{slug: slug_or_slugs}, from, to, interval, _opts) do
     case Project.List.github_organizations_by_slug(slug_or_slugs) do
       %{} = empty_map when map_size(empty_map) == 0 ->
@@ -61,6 +83,17 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def timeseries_data_per_slug(metric, selector, from, to, interval, opts \\ [])
+
+  def timeseries_data_per_slug(_metric, _selector, _from, _to, _interval, _opts) do
+    {:error, "not_implemented"}
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def aggregated_timeseries_data(metric, %{organization: organization}, from, to, opts) do
+    aggregated_timeseries_data(metric, %{organizations: [organization]}, from, to, opts)
+  end
+
   def aggregated_timeseries_data(metric, %{organizations: organizations}, from, to, _opts)
       when is_binary(organizations) or is_list(organizations) do
     apply(
@@ -117,6 +150,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def first_datetime(_metric, %{organization: organization}) when is_binary(organization) do
+    first_datetime_for_organizations([organization])
+  end
+
   def first_datetime(_metric, %{slug: slug}) when is_binary(slug) do
     case Project.github_organizations(slug) do
       {:ok, organizations} when is_list(organizations) ->
@@ -128,6 +165,11 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def last_datetime_computed_at(_metric, %{organization: organization})
+      when is_binary(organization) do
+    last_datetime_computed_at_for_organizations([organization])
+  end
+
   def last_datetime_computed_at(_metric, %{slug: slug}) when is_binary(slug) do
     case Project.github_organizations(slug) do
       {:ok, organizations} when is_list(organizations) ->
@@ -202,7 +244,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def available_slugs() do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key
-    Sanbase.Cache.get_or_store({:slugs_with_github_org, 1800}, fn ->
+    cache_key = {__MODULE__, :slugs_with_github_org}
+
+    Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
       {:ok, Project.List.slugs_with_github_organization()}
     end)
   end

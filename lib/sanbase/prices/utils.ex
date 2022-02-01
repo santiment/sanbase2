@@ -7,8 +7,11 @@ defmodule Sanbase.Price.Utils do
   @spec fetch_last_prices_before(String.t(), DateTime.t()) ::
           {number() | nil, number() | nil}
   def fetch_last_prices_before(slug, datetime) do
+    cache_key =
+      {__MODULE__, :last_record_before, slug, round_datetime(datetime)} |> Sanbase.Cache.hash()
+
     last_record =
-      Sanbase.Cache.get_or_store({:last_record_before, slug, round_datetime(datetime)}, fn ->
+      Sanbase.Cache.get_or_store(cache_key, fn ->
         Sanbase.Price.last_record_before(slug, datetime)
       end)
 

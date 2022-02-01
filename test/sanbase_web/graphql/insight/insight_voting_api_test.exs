@@ -61,6 +61,19 @@ defmodule Sanbase.InsihgtVotingApiTest do
     assert user_votes_2 == 2
   end
 
+  test "current user votes for an insight for anon user", context do
+    %{conn: conn, insight: insight} = context
+    for _ <- 1..5, do: vote(conn, insight)
+
+    new_conn = build_conn()
+
+    %{"votes" => %{"totalVotes" => total_votes, "currentUserVotes" => current_user_votes}} =
+      get_votes(new_conn, insight)
+
+    assert total_votes == 5
+    assert current_user_votes == nil
+  end
+
   test "total voters", context do
     %{conn: conn, conn2: conn2, insight: insight} = context
     for _ <- 1..2, do: vote(conn, insight)
@@ -78,10 +91,31 @@ defmodule Sanbase.InsihgtVotingApiTest do
     vote(conn, insight)
 
     downvote(conn, insight)
+
     %{"votedAt" => voted_at, "votes" => %{"totalVotes" => total_votes}} = downvote(conn, insight)
 
     assert voted_at == nil
     assert total_votes == 0
+  end
+
+  defp get_votes(conn, %{id: insight_id}) do
+    query = """
+    {
+      insight(id: #{insight_id}) {
+        votedAt
+        votes {
+          totalVotes
+          totalVoters
+          currentUserVotes
+        }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", "insight"])
   end
 
   defp vote(conn, %{id: insight_id}) do

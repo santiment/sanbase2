@@ -1,8 +1,5 @@
 defmodule SanbaseWeb.Graphql.TableConfigurationTypes do
   use Absinthe.Schema.Notation
-  import Absinthe.Resolution.Helpers, only: [dataloader: 1]
-
-  alias SanbaseWeb.Graphql.SanbaseRepo
 
   enum :table_configuration_type_enum do
     value(:project)
@@ -27,7 +24,9 @@ defmodule SanbaseWeb.Graphql.TableConfigurationTypes do
     field(:page_size, :integer)
     field(:columns, :json)
 
-    field(:user, :user, resolve: dataloader(SanbaseRepo))
+    field :user, non_null(:public_user) do
+      resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
+    end
 
     field(:inserted_at, :datetime)
     field(:updated_at, :datetime)

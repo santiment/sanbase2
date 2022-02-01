@@ -5,7 +5,8 @@ defmodule SanbaseWeb.ProjectDataController do
   require Logger
 
   def data(conn, _params) do
-    {:ok, data} = Sanbase.Cache.get_or_store({__MODULE__, __ENV__.function}, &get_data/0)
+    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+    {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_data/0)
 
     conn
     |> put_resp_header("content-type", "application/json; charset=utf-8")

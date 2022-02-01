@@ -34,7 +34,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -59,11 +60,12 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED metrics for over 3 months", context do
-      {from, to} = from_to(91, 10)
+    test "cannot access RESTRICTED metrics for over 2 years", context do
+      {from, to} = from_to(2 * 365 + 1, 31)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -71,8 +73,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED queries for over 3 months", context do
-      {from, to} = from_to(91, 10)
+    test "cannot access RESTRICTED queries for over 2 years", context do
+      {from, to} = from_to(2 * 365 + 1, 31)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -80,8 +82,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED queries realtime", context do
-      {from, to} = from_to(10, 0)
+    test "cannot access RESTRICTED queries last 30 days", context do
+      {from, to} = from_to(31, 29)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -89,19 +91,20 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED metrics within 90 days and 2 day interval", context do
-      {from, to} = from_to(89, 2)
+    test "can access RESTRICTED metrics within 2 years and 30 days interval", context do
+      {from, to} = from_to(2 * 365, 31)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
-    test "can access RESTRICTED queries within 90 days and 2 day interval", context do
-      {from, to} = from_to(89, 2)
+    test "can access RESTRICTED queries within 2 years and 30 days interval", context do
+      {from, to} = from_to(2 * 365, 31)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -120,7 +123,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -151,7 +155,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
 
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -180,7 +185,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2 * 365 + 1, 2 * 365 - 1)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -193,7 +199,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2 * 365 - 10, 2 * 365 - 2)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query_with_error(context.conn, query, "getMetric")
 
       refute called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -204,7 +211,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(10, 0)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -222,9 +230,10 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can't access metric with min plan PRO", context do
       {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
-      metric = "mvrv_long_short_diff_usd"
+      metric = "withdrawal_balance"
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       error_message = execute_query_with_error(context.conn, query, "getMetric")
 
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -240,31 +249,32 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
                """
     end
 
-    test "can't access signal with min plan PRO", context do
-      {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
-      signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
-      slug = context.project.slug
-      query = signal_query(signal, slug, from, to)
-      error_message = execute_query_with_error(context.conn, query, "getSignal")
+    # test "can't access signal with min plan PRO", context do
+    #   {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
+    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
+    #   slug = context.project.slug
+    #   query = signal_query(signal, slug, from, to)
+    #   error_message = execute_query_with_error(context.conn, query, "getSignal")
 
-      refute called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
+    #   refute called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
 
-      assert error_message ==
-               """
-               The signal #{signal} is not accessible with the currently used
-               Sanapi Basic subscription. Please upgrade to Sanapi Pro subscription.
+    #   assert error_message ==
+    #            """
+    #            The signal #{signal} is not accessible with the currently used
+    #            Sanapi Basic subscription. Please upgrade to Sanapi Pro subscription.
 
-               If you have a subscription for one product but attempt to fetch data using
-               another product, this error will still be shown. The data on Sanbase cannot
-               be fetched with a Sanapi subscription and vice versa.
-               """
-    end
+    #            If you have a subscription for one product but attempt to fetch data using
+    #            another product, this error will still be shown. The data on Sanbase cannot
+    #            be fetched with a Sanapi subscription and vice versa.
+    #            """
+    # end
 
     test "some metrics can be accessed only with free timeframe", context do
       {from, to} = from_to(89, 2)
       metric = "active_deposits"
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -282,7 +292,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -311,23 +322,24 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
-    test "can access RESTRICTED signals for less than 7 years", context do
-      {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
-      signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
-      slug = context.project.slug
-      query = signal_query(signal, slug, from, to)
-      result = execute_query(context.conn, query, "getSignal")
+    # test "can access RESTRICTED signals for less than 7 years", context do
+    #   {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
+    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
+    #   slug = context.project.slug
+    #   query = signal_query(signal, slug, from, to)
+    #   result = execute_query(context.conn, query, "getSignal")
 
-      assert called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
-      assert result != nil
-    end
+    #   assert called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
+    #   assert result != nil
+    # end
 
     test "can access RESTRICTED queries for less than 7 years", context do
       {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
@@ -342,23 +354,24 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
-    test "can access RESTRICTED signals for over 7 years", context do
-      {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
-      signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
-      slug = context.project.slug
-      query = signal_query(signal, slug, from, to)
-      result = execute_query(context.conn, query, "getSignal")
+    # test "can access RESTRICTED signals for over 7 years", context do
+    #   {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
+    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
+    #   slug = context.project.slug
+    #   query = signal_query(signal, slug, from, to)
+    #   result = execute_query(context.conn, query, "getSignal")
 
-      assert_called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
-      assert result != nil
-    end
+    #   assert_called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
+    #   assert result != nil
+    # end
 
     test "can access RESTRICTED queries for more than 7 years", context do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
@@ -373,7 +386,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(10, 0)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -389,22 +403,23 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED signals realtime", context do
-      {from, to} = from_to(10, 0)
-      signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
-      slug = context.project.slug
-      query = signal_query(signal, slug, from, to)
-      result = execute_query(context.conn, query, "getSignal")
+    # test "can access RESTRICTED signals realtime", context do
+    #   {from, to} = from_to(10, 0)
+    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
+    #   slug = context.project.slug
+    #   query = signal_query(signal, slug, from, to)
+    #   result = execute_query(context.conn, query, "getSignal")
 
-      assert called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
-      assert result != nil
-    end
+    #   assert called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
+    #   assert result != nil
+    # end
 
     test "can access metric with min plan PRO", context do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
       metric = "mvrv_long_short_diff_usd"
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -422,7 +437,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -451,7 +467,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :custom)
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -470,7 +487,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       metric = "holders_distribution_0.01_to_0.1"
       slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
@@ -479,12 +497,14 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
   # Private functions
 
-  defp metric_query(metric, slug, from, to) do
+  defp metric_query(metric, selector, from, to) do
+    selector = extend_selector_with_required_fields(metric, selector)
+
     """
       {
         getMetric(metric: "#{metric}") {
           timeseriesData(
-            slug: "#{slug}"
+            selector: #{map_to_input_object_str(selector)}
             from: "#{from}"
             to: "#{to}"
             interval: "30d"

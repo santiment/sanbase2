@@ -17,7 +17,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       aggregation: 3,
       generate_comparison_string: 3,
       asset_id_filter: 2,
-      additional_filters: 2,
+      additional_filters: 3,
       dt_to_unix: 2
     ]
 
@@ -35,6 +35,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   def timeseries_data_query(metric, slug_or_slugs, from, to, interval, aggregation, filters) do
+    args = [
+      str_to_sec(interval),
+      Map.get(@name_to_metric_map, metric),
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to),
+      slug_or_slugs
+    ]
+
+    {additional_filters, args} = additional_filters(filters, args, trailing_and: true)
+
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
@@ -43,27 +53,20 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       SELECT
         asset_id,
         dt,
-        value
-      FROM #{Map.get(@table_map, metric)} FINAL
+        argMax(value, computed_at) AS value
+      FROM #{Map.get(@table_map, metric)}
       PREWHERE
-        #{additional_filters(filters, trailing_and: true)}
+        #{additional_filters}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
-        isNotNull(value) AND NOT isNaN(value) AND
         #{asset_id_filter(slug_or_slugs, argument_position: 5)} AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
+        GROUP BY asset_id, metric_id, dt
     )
+    WHERE isNotNull(value) AND NOT isNaN(value)
     GROUP BY t
     ORDER BY t
     """
-
-    args = [
-      str_to_sec(interval),
-      Map.get(@name_to_metric_map, metric),
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to),
-      slug_or_slugs
-    ]
 
     {query, args}
   end
@@ -77,24 +80,35 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         aggregation,
         filters
       ) do
+    args = [
+      str_to_sec(interval),
+      Map.get(@name_to_metric_map, metric),
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to),
+      slug_or_slugs
+    ]
+
+    {additional_filters, args} = additional_filters(filters, args, trailing_and: true)
+
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
       name AS slug,
-      #{aggregation(aggregation, "value", "dt")} AS value
+      #{aggregation(aggregation, "value2", "dt")} AS value
     FROM(
       SELECT
         asset_id,
         dt,
-        value
-      FROM #{Map.get(@table_map, metric)} FINAL
+        argMax(value, computed_at) AS value2
+      FROM #{Map.get(@table_map, metric)}
       PREWHERE
-        #{additional_filters(filters, trailing_and: true)}
+        #{additional_filters}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         isNotNull(value) AND NOT isNaN(value) AND
         #{asset_id_filter(slug_or_slugs, argument_position: 5)} AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
+      GROUP BY asset_id, metric_id, dt
     )
     INNER JOIN (
       SELECT asset_id, name
@@ -104,18 +118,20 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     ORDER BY t
     """
 
-    args = [
-      str_to_sec(interval),
-      Map.get(@name_to_metric_map, metric),
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to),
-      slug_or_slugs
-    ]
-
     {query, args}
   end
 
   def aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters) do
+    args = [
+      slugs,
+      # Fetch internal metric name used. Fallback to the same name if missing.
+      Map.get(@name_to_metric_map, metric),
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to)
+    ]
+
+    {additional_filters, args} = additional_filters(filters, args, trailing_and: true)
+
     query = """
     SELECT slug, SUM(value), toUInt32(SUM(has_changed))
     FROM (
@@ -131,18 +147,19 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         #{aggregation(aggregation, "value", "dt")} AS value,
         toUInt32(1) AS has_changed
       FROM(
-        SELECT
-          dt,
-          asset_id,
-          value
-        FROM #{Map.get(@table_map, metric)} FINAL
-        PREWHERE
-          #{additional_filters(filters, trailing_and: true)}
-          #{asset_id_filter(slugs, argument_position: 1)} AND
-          metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 ) AND
-          isNotNull(value) AND NOT isNaN(value) AND
-          #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
-          #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")}
+        SELECT dt, asset_id, argMax(value, computed_at) AS value
+        FROM (
+          SELECT dt, asset_id, metric_id, value, computed_at
+          FROM #{Map.get(@table_map, metric)}
+          PREWHERE
+            #{additional_filters}
+            #{asset_id_filter(slugs, argument_position: 1)} AND
+            metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 ) AND
+            isNotNull(value) AND NOT isNaN(value) AND
+            #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
+            #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")}
+          )
+          GROUP BY asset_id, metric_id, dt
       )
       INNER JOIN (
         SELECT asset_id, name
@@ -152,14 +169,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     )
     GROUP BY slug
     """
-
-    args = [
-      slugs,
-      # Fetch internal metric name used. Fallback to the same name if missing.
-      Map.get(@name_to_metric_map, metric),
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to)
-    ]
 
     {query, args}
   end
@@ -190,6 +199,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   defp aggregated_slugs_base_query(metric, from, to, aggregation, filters) do
+    args = [
+      # Fetch internal metric name used. Fallback to the same name if missing.
+      Map.get(@name_to_metric_map, metric),
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to)
+    ]
+
+    {additional_filters, args} = additional_filters(filters, args, trailing_and: true)
+
     query = """
     SELECT name AS slug, value
     FROM (
@@ -197,16 +215,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         asset_id,
         #{aggregation(aggregation, "value", "dt")} AS value
       FROM(
-        SELECT
-          dt,
-          asset_id,
-          value
-        FROM #{Map.get(@table_map, metric)} FINAL
-        PREWHERE
-          #{additional_filters(filters, trailing_and: true)}
-          metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
-          #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
-          #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
+        SELECT dt, asset_id, argMax(value, computed_at) AS value
+        FROM (
+          SELECT dt, asset_id, metric_id, value, computed_at
+          FROM #{Map.get(@table_map, metric)}
+          PREWHERE
+            #{additional_filters}
+            metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
+            isNotNull(value) AND NOT isNaN(value) AND
+            #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
+            #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
+          )
+          GROUP BY asset_id, metric_id, dt
       )
       GROUP BY asset_id
     ) AS a
@@ -216,13 +236,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       FROM asset_metadata FINAL
     ) AS b USING (asset_id)
     """
-
-    args = [
-      # Fetch internal metric name used. Fallback to the same name if missing.
-      Map.get(@name_to_metric_map, metric),
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to)
-    ]
 
     {query, args}
   end
@@ -291,11 +304,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   def first_datetime_query(metric, slug) do
     query = """
     SELECT
-      toUnixTimestamp(start_dt)
-    FROM available_metrics FINAL
+      toUnixTimestamp(argMax(start_dt, computed_at))
+    FROM available_metrics
     PREWHERE
       asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
       metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
+    GROUP BY asset_id, metric_id
     """
 
     args = [slug, Map.get(@name_to_metric_map, metric)]
@@ -323,17 +337,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   # Private functions
 
-  defp maybe_convert_to_date(:after, metric, dt_column, code) do
+  defp maybe_convert_to_date(:after, metric, dt_column, sql_dt_description) do
     case Map.get(@table_map, metric) do
-      "daily_" <> _rest_of_table -> "#{dt_column} >= toDate(#{code})"
-      _ -> "#{dt_column} >= #{code}"
+      "daily_" <> _rest_of_table -> "#{dt_column} >= toDate(#{sql_dt_description})"
+      _ -> "#{dt_column} >= #{sql_dt_description}"
     end
   end
 
-  defp maybe_convert_to_date(:before, metric, dt_column, code) do
+  defp maybe_convert_to_date(:before, metric, dt_column, sql_dt_description) do
     case Map.get(@table_map, metric) do
-      "daily_" <> _rest_of_table -> "#{dt_column} <= toDate(#{code})"
-      _ -> "#{dt_column} <= #{code}"
+      "daily_" <> _rest_of_table -> "#{dt_column} <= toDate(#{sql_dt_description})"
+      _ -> "#{dt_column} < #{sql_dt_description}"
     end
   end
 end

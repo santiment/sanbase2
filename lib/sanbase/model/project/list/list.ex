@@ -203,6 +203,22 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  def slugs_by_infrastructure(infrastructures, opts \\ []) when is_list(infrastructures) do
+    # explicitly remove preloads as they are not going to be used
+    opts = Keyword.put(opts, :preload?, false)
+
+    # If the infrastructure is `own` then use the ticker as infrastructure
+    from(
+      p in projects_query(opts),
+      left_join: infr in assoc(p, :infrastructure),
+      where:
+        infr.code in ^infrastructures or
+          (fragment("lower(?)", infr.code) == "own" and p.ticker in ^infrastructures),
+      select: p.slug
+    )
+    |> Repo.all()
+  end
+
   @doc ~s"""
   Returns all slugs of the projects that have one or more github organizations
   Filtering out projects based on some conditions can be controled by the options.
@@ -468,7 +484,7 @@ defmodule Sanbase.Model.Project.List do
   def currently_trending_projects(opts \\ [])
 
   def currently_trending_projects(opts) do
-    {:ok, trending_words} = Sanbase.SocialData.TrendingWords.get_currently_trending_words()
+    {:ok, trending_words} = Sanbase.SocialData.TrendingWords.get_currently_trending_words(10)
 
     trending_words
     |> Enum.map(&String.downcase(&1.word))

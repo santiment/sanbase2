@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressLabelChangesApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
-
   setup do
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
@@ -21,9 +19,9 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressLabelChangesApiTest do
 
   test "get label changes", context do
     label_changes_rows = [
-      [1_499_172_741, "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098", "contract", "", 1],
-      [1_509_172_741, "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098", "whale", "", 1],
-      [1_559_172_741, "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098", "whale", "", -1]
+      [1_499_172_741, "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098", "santiment/contract:v1", 1],
+      [1_509_172_741, "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098", "santiment/whale:v1", 1],
+      [1_559_172_741, "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098", "santiment/whale:v1", -1]
     ]
 
     label_rows = [
@@ -63,7 +61,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressLabelChangesApiTest do
                    "infrastructure" => "ETH"
                  },
                  "datetime" => "2017-07-04T12:52:21Z",
-                 "label" => "contract",
+                 "label" => "santiment/contract:v1",
                  "sign" => 1
                },
                %{
@@ -73,7 +71,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressLabelChangesApiTest do
                    "infrastructure" => "ETH"
                  },
                  "datetime" => "2017-10-28T06:39:01Z",
-                 "label" => "whale",
+                 "label" => "santiment/whale:v1",
                  "sign" => 1
                },
                %{
@@ -83,7 +81,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressLabelChangesApiTest do
                    "infrastructure" => "ETH"
                  },
                  "datetime" => "2019-05-29T23:32:21Z",
-                 "label" => "whale",
+                 "label" => "santiment/whale:v1",
                  "sign" => -1
                }
              ]

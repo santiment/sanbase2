@@ -35,7 +35,11 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
 
   @payment_events [:payment_success, :payment_fail, :charge_fail]
 
-  @handler_types [:update_api_call_limit_table, :send_discord_notification]
+  @handler_types [
+    :update_api_call_limit_table,
+    :send_discord_notification,
+    :unfreeze_user_frozen_alerts
+  ]
 
   @doc false
   defp handle_event(event_type, event, event_shadow) do
@@ -67,6 +71,17 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
   defp do_handle(:send_discord_notification, event_type, event)
        when event_type in @subscription_events or event_type in @payment_events do
     Sanbase.Billing.DiscordNotification.handle_event(event_type, event)
+  end
+
+  defp do_handle(:unfreeze_user_frozen_alerts, event_type, event)
+       when event_type in [:create_subscription, :update_subscription, :renew_subscription] do
+    case Sanbase.Billing.Subscription.user_has_sanbase_pro?(event.data.user_id) do
+      true ->
+        :ok = Sanbase.Alert.UserTrigger.unfreeze_user_frozen_alerts(event.data.user_id)
+
+      false ->
+        :ok
+    end
   end
 
   defp do_handle(_type, _event_type, _event) do

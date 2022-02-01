@@ -58,6 +58,9 @@ defmodule Sanbase.Application.Scrapers do
         time_between_requests: 10
       ),
 
+      #
+      Sanbase.Price.Validator,
+
       # Historical coinmarketcap price fetcher
       Sanbase.ExternalServices.Coinmarketcap,
 
@@ -65,7 +68,7 @@ defmodule Sanbase.Application.Scrapers do
       Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
 
       # Oban for scraper jobs
-      {Oban, oban_config()},
+      {Oban, oban_scrapers_config()},
 
       # Scrape and export Cryptocompare realtime and historical prices.
       # Historical prices work is scheduled by Oban
@@ -91,7 +94,7 @@ defmodule Sanbase.Application.Scrapers do
     {children, opts}
   end
 
-  defp oban_config() do
+  defp oban_scrapers_config() do
     config = Application.fetch_env!(:sanbase, Oban.Scrapers)
 
     # In case the DB config or URL is pointing to production, put the proper

@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       for metric <- metrics do
         %{"data" => %{"getMetric" => %{"lastDatetimeComputedAt" => last_dt}}} =
-          get_last_datetime_computed_at(conn, metric, project.slug)
+          get_last_datetime_computed_at(conn, metric, %{slug: project.slug})
 
         last_dt = Sanbase.DateTimeUtils.from_iso8601!(last_dt)
         assert match?(%DateTime{}, last_dt)
@@ -46,17 +46,19 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
         "errors" => [
           %{"message" => error_message}
         ]
-      } = get_last_datetime_computed_at(conn, metric, project.slug)
+      } = get_last_datetime_computed_at(conn, metric, %{slug: project.slug})
 
       assert error_message == "The metric '#{metric}' is not supported or is mistyped."
     end
   end
 
-  defp get_last_datetime_computed_at(conn, metric, slug) do
+  defp get_last_datetime_computed_at(conn, metric, selector) do
+    selector = extend_selector_with_required_fields(metric, selector)
+
     query = """
     {
       getMetric(metric: "#{metric}"){
-        lastDatetimeComputedAt(selector: {slug: "#{slug}", source: "twitter"})
+        lastDatetimeComputedAt(selector: #{map_to_input_object_str(selector)})
       }
     }
     """

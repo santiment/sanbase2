@@ -99,7 +99,7 @@ defmodule Sanbase.Billing.EventEmitter do
 
   defp stripe_event_to_user_id(stripe_event) do
     with customer_id when not is_nil(customer_id) <- stripe_event["data"]["object"]["customer"],
-         %User{id: user_id} <- User.by_stripe_customer_id(customer_id) do
+         {:ok, %User{id: user_id}} <- User.by_stripe_customer_id(customer_id) do
       user_id
     else
       _ -> nil

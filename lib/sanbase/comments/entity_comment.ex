@@ -7,14 +7,42 @@ defmodule Sanbase.Comments.EntityComment do
 
   alias Sanbase.Repo
   alias Sanbase.Comment
-  alias Sanbase.Timeline.TimelineEventComment
-  alias Sanbase.Insight.PostComment
-  alias Sanbase.ShortUrl.ShortUrlComment
-  alias Sanbase.BlockchainAddress.BlockchainAddressComment
-  alias Sanbase.WalletHunters.WalletHuntersProposalComment
+
+  alias Sanbase.Comment.{
+    BlockchainAddressComment,
+    ChartConfigurationComment,
+    PostComment,
+    ShortUrlComment,
+    TimelineEventComment,
+    WalletHuntersProposalComment,
+    WatchlistComment
+  }
+
+  @type comment_struct ::
+          %BlockchainAddressComment{}
+          | %ChartConfigurationComment{}
+          | %PostComment{}
+          | %ShortUrlComment{}
+          | %TimelineEventComment{}
+          | %WalletHuntersProposalComment{}
+          | %WatchlistComment{}
 
   @type entity ::
-          :insight | :timeline_event | :short_url | :blockchain_address | :wallet_hunters_proposal
+          :blockchain_address
+          | :chart_configuration
+          | :insight
+          | :short_url
+          | :timeline_event
+          | :wallet_hunters_proposal
+          | :watchlist
+
+  @comments_feed_entities [
+    :insights,
+    :timeline_events,
+    :short_urls,
+    :blockchain_addresses,
+    :chart_configurations
+  ]
 
   @spec create_and_link(
           entity,
@@ -26,6 +54,10 @@ defmodule Sanbase.Comments.EntityComment do
           {:ok, %Comment{}} | {:error, any()}
   def create_and_link(entity, entity_id, user_id, parent_id, content) do
     Ecto.Multi.new()
+    |> Ecto.Multi.run(
+      :check_can_create_comment,
+      fn _repo, _changes -> Comment.can_create?(user_id) end
+    )
     |> Ecto.Multi.run(
       :create_comment,
       fn _repo, _changes -> Comment.create(user_id, content, parent_id) end
@@ -42,16 +74,16 @@ defmodule Sanbase.Comments.EntityComment do
     |> emit_event(:create_comment, %{entity: entity})
   end
 
-  @spec link(:insight, non_neg_integer(), non_neg_integer()) ::
-          {:ok, %PostComment{}} | {:error, Ecto.Changeset.t()}
+  @spec link(entity, non_neg_integer(), non_neg_integer()) ::
+          {:ok, comment_struct} | {:error, Ecto.Changeset.t()}
+  def link(entity_type, entity_id, comment_id)
+
   def link(:insight, entity_id, comment_id) do
     %PostComment{}
     |> PostComment.changeset(%{comment_id: comment_id, post_id: entity_id})
     |> Repo.insert()
   end
 
-  @spec link(:timeline_event, non_neg_integer(), non_neg_integer()) ::
-          {:ok, %TimelineEventComment{}} | {:error, Ecto.Changeset.t()}
   def link(:timeline_event, entity_id, comment_id) do
     %TimelineEventComment{}
     |> TimelineEventComment.changeset(%{
@@ -61,8 +93,6 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.insert()
   end
 
-  @spec link(:blockchain_address, non_neg_integer(), non_neg_integer()) ::
-          {:ok, %BlockchainAddressComment{}} | {:error, Ecto.Changeset.t()}
   def link(:blockchain_address, entity_id, comment_id) do
     %BlockchainAddressComment{}
     |> BlockchainAddressComment.changeset(%{
@@ -72,8 +102,6 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.insert()
   end
 
-  @spec link(:wallet_hunters_proposal, non_neg_integer(), non_neg_integer()) ::
-          {:ok, %WalletHuntersProposalComment{}} | {:error, Ecto.Changeset.t()}
   def link(:wallet_hunters_proposal, entity_id, comment_id) do
     %WalletHuntersProposalComment{}
     |> WalletHuntersProposalComment.changeset(%{
@@ -83,12 +111,36 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.insert()
   end
 
-  @spec link(:short_url, non_neg_integer(), non_neg_integer()) ::
-          {:ok, %ShortUrlComment{}} | {:error, Ecto.Changeset.t()}
   def link(:short_url, entity_id, comment_id) do
     %ShortUrlComment{}
-    |> ShortUrlComment.changeset(%{comment_id: comment_id, short_url_id: entity_id})
+    |> ShortUrlComment.changeset(%{
+      comment_id: comment_id,
+      short_url_id: entity_id
+    })
     |> Repo.insert()
+  end
+
+  def link(:watchlist, entity_id, comment_id) do
+    %WatchlistComment{}
+    |> WatchlistComment.changeset(%{
+      comment_id: comment_id,
+      watchlist_id: entity_id
+    })
+    |> Repo.insert()
+  end
+
+  def link(:chart_configuration, entity_id, comment_id) do
+    %ChartConfigurationComment{}
+    |> ChartConfigurationComment.changeset(%{
+      comment_id: comment_id,
+      chart_configuration_id: entity_id
+    })
+    |> Repo.insert()
+  end
+
+  def delete_all_by_entity_id(entity, entity_id) when is_number(entity_id) do
+    entity_comments_query(entity, entity_id)
+    |> Repo.delete_all()
   end
 
   @spec get_comments(entity, non_neg_integer() | nil, map()) :: [%Comment{}]
@@ -107,9 +159,12 @@ defmodule Sanbase.Comments.EntityComment do
     cursor = Map.get(args, :cursor) || %{}
     order = Map.get(cursor, :order, :desc)
 
-    all_comments_query()
+    all_feed_comments_query()
+    |> exclude_wallet_hunters_comments()
+    |> exclude_not_public_insights()
+    |> exclude_not_public_chart_configurations()
     |> apply_cursor(cursor)
-    |> order_by([c], [{^order, c.inserted_at}, {^order, c.id}])
+    |> order_by([c], [{^order, c.id}])
     |> limit(^limit)
     |> Repo.all()
     |> transform_entity_list_to_singular()
@@ -124,12 +179,66 @@ defmodule Sanbase.Comments.EntityComment do
     |> where([elem], field(elem, ^field) == ^entity_id)
   end
 
-  def all_comments_query() do
-    from(c in Comment,
-      left_join: pc in WalletHuntersProposalComment,
-      on: c.id == pc.comment_id,
-      where: is_nil(pc.proposal_id),
-      preload: [:user, :insights, :timeline_events, :short_urls, :blockchain_addresses]
+  # Returns the comments that are associated with some of the
+  # entities used in the feed
+  defp all_feed_comments_query() do
+    # Avoid cases where the mapping for a comment is deleted, thus
+    # removing the comment from the list of comments for an entity,
+    # but the comment is still in the comments table. This happens
+    # when an insight is deleted for some reasons - the cascade delete
+    # is not propagated to all levels.
+    comment_ids_query =
+      from(pc in PostComment, select: pc.comment_id)
+      |> union_all(^from(pc in TimelineEventComment, select: pc.comment_id))
+      |> union_all(^from(pc in BlockchainAddressComment, select: pc.comment_id))
+      |> union_all(^from(pc in ShortUrlComment, select: pc.comment_id))
+      |> union_all(^from(pc in ChartConfigurationComment, select: pc.comment_id))
+
+    from(
+      c in Comment,
+      where: c.id in subquery(comment_ids_query),
+      preload: ^@comments_feed_entities
+    )
+  end
+
+  defp exclude_wallet_hunters_comments(query) do
+    from(
+      c in query,
+      left_join: whp_comment in WalletHuntersProposalComment,
+      on: c.id == whp_comment.comment_id,
+      where: is_nil(whp_comment.proposal_id)
+    )
+  end
+
+  defp exclude_not_public_insights(query) do
+    subquery =
+      from(
+        post_comment in PostComment,
+        left_join: post in Sanbase.Insight.Post,
+        on: post_comment.post_id == post.id,
+        where: post.state != "approved" or post.ready_state != "published",
+        select: post_comment.comment_id
+      )
+
+    from(
+      c in query,
+      where: c.id not in subquery(subquery)
+    )
+  end
+
+  defp exclude_not_public_chart_configurations(query) do
+    subquery =
+      from(
+        chart_configuration_comment in ChartConfigurationComment,
+        left_join: config in Sanbase.Chart.Configuration,
+        on: chart_configuration_comment.chart_configuration_id == config.id,
+        where: config.is_public != true,
+        select: chart_configuration_comment.comment_id
+      )
+
+    from(
+      c in query,
+      where: c.id not in subquery(subquery)
     )
   end
 
@@ -137,13 +246,12 @@ defmodule Sanbase.Comments.EntityComment do
   # association is belongs_to, like `comment` belongs_to `insight` we need to
   # transform preloaded entities like so: insights: [%{}] -> insight: %{}
   defp transform_entity_list_to_singular(comments) do
-    entities = [:insights, :timeline_events, :short_urls, :blockchain_addresses]
-
     comments
     |> Enum.map(fn comment ->
-      entities
+      @comments_feed_entities
       |> Enum.reduce(comment, fn entity, acc ->
         value = Map.get(acc, entity) |> List.first()
+
         singular_entity = Inflex.singularize(entity) |> String.to_existing_atom()
 
         acc
@@ -151,6 +259,22 @@ defmodule Sanbase.Comments.EntityComment do
         |> Map.put(singular_entity, value)
       end)
     end)
+  end
+
+  defp entity_comments_query(:watchlist, entity_id) do
+    from(
+      comment in WatchlistComment,
+      preload: [:comment, comment: :user]
+    )
+    |> maybe_add_entity_id_clause(:watchlist_id, entity_id)
+  end
+
+  defp entity_comments_query(:chart_configuration, entity_id) do
+    from(
+      comment in ChartConfigurationComment,
+      preload: [:comment, comment: :user]
+    )
+    |> maybe_add_entity_id_clause(:chart_configuration_id, entity_id)
   end
 
   defp entity_comments_query(:timeline_event, entity_id) do

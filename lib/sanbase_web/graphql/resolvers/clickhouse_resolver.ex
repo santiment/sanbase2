@@ -15,6 +15,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   require Logger
 
+  def realtime_top_holders(_root, %{slug: slug, page: page, page_size: page_size}, _resolution) do
+    opts = [page: page, page_size: page_size]
+
+    case TopHolders.realtime_top_holders(slug, opts) do
+      {:ok, top_holders} -> {:ok, top_holders}
+      {:error, error} -> {:error, handle_graphql_error("Realtime Top Holders", slug, error)}
+    end
+  end
+
   def top_holders(
         _root,
         %{slug: slug, from: from, to: to, page: page, page_size: page_size} = args,
@@ -25,21 +34,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     owners = Map.get(args, :owners, :all)
     opts = [page: page, page_size: page_size, labels: labels, owners: owners]
 
-    with {:ok, contract, token_decimals} <-
-           Project.contract_info_by_slug(slug, contract_type: :latest_onchain_contract),
-         {:ok, top_holders} <-
-           TopHolders.top_holders(
-             slug,
-             contract,
-             token_decimals,
-             from,
-             to,
-             opts
-           ) do
-      {:ok, top_holders}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error("Top Holders", slug, error)}
+    case TopHolders.top_holders(slug, from, to, opts) do
+      {:ok, top_holders} -> {:ok, top_holders}
+      {:error, error} -> {:error, handle_graphql_error("Top Holders", slug, error)}
     end
   end
 
@@ -54,29 +51,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         },
         _resolution
       ) do
-    with {:ok, contract, token_decimals} <-
-           Project.contract_info_by_slug(slug, contract_type: :latest_onchain_contract),
-         {:ok, percent_of_total_supply} <-
-           TopHolders.percent_of_total_supply(
-             contract,
-             token_decimals,
-             number_of_holders,
-             from,
-             to,
-             interval
-           ) do
-      {:ok, percent_of_total_supply}
-    else
+    case TopHolders.percent_of_total_supply(slug, number_of_holders, from, to, interval) do
+      {:ok, percent_of_total_supply} ->
+        {:ok, percent_of_total_supply}
+
       {:error, error} ->
         {:error, handle_graphql_error("Top Holders - percent of total supply", slug, error)}
     end
   end
 
-  def gas_used(
-        _root,
-        %{slug: slug, from: from, to: to, interval: interval},
-        _resolution
-      ) do
+  def gas_used(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
     case GasUsed.gas_used(slug, from, to, interval) do
       {:ok, gas_used} ->
         {:ok, gas_used}
@@ -86,11 +70,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def network_growth(_root, %{slug: _, from: _, to: _, interval: _} = args, _resolution) do
+  def network_growth(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       Map.put(args, :include_incomplete_data, true),
-      %{source: %{metric: "network_growth"}}
+      Map.put(resolution, :source, %{metric: "network_growth"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :new_addresses)
   end
@@ -109,50 +93,38 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def mvrv_ratio(_root, %{slug: _, from: _, to: _, interval: _} = args, _resolution) do
+  def mvrv_ratio(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "mvrv_usd"}}
+      Map.put(resolution, :source, %{metric: "mvrv_usd"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :ratio)
   end
 
-  def token_circulation(
-        _root,
-        %{slug: _, from: _, to: _, interval: _} = args,
-        _resolution
-      ) do
+  def token_circulation(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "circulation_1d"}}
+      Map.put(resolution, :source, %{metric: "circulation_1d"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :token_circulation)
   end
 
-  def token_velocity(
-        _root,
-        %{slug: _, from: _, to: _, interval: _} = args,
-        _resolution
-      ) do
+  def token_velocity(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "velocity"}}
+      Map.put(resolution, :source, %{metric: "velocity"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :token_velocity)
   end
 
-  def daily_active_addresses(
-        _root,
-        %{slug: _, from: _, to: _, interval: _} = args,
-        _resolution
-      ) do
+  def daily_active_addresses(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "daily_active_addresses"}}
+      Map.put(resolution, :source, %{metric: "daily_active_addresses"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :active_addresses)
   end
@@ -207,48 +179,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def daily_active_deposits(
-        _root,
-        %{slug: _, from: _, to: _, interval: _} = args,
-        _resolution
-      ) do
+  def daily_active_deposits(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "active_deposits"}}
+      Map.put(resolution, :source, %{metric: "active_deposits"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :active_deposits)
   end
 
-  def realized_value(
-        _root,
-        %{slug: _, from: _, to: _, interval: _} = args,
-        _resolution
-      ) do
+  def realized_value(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       Map.put(args, :include_incomplete_data, true),
-      %{source: %{metric: "realized_value_usd"}}
+      Map.put(resolution, :source, %{metric: "realized_value_usd"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :realized_value)
   end
 
-  def nvt_ratio(
-        _root,
-        %{slug: _, from: _, to: _, interval: _} = args,
-        _resolution
-      ) do
+  def nvt_ratio(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
     with {:ok, nvt_circulation} <-
            MetricResolver.timeseries_data(
-             %{},
+             root,
              args,
-             %{source: %{metric: "nvt"}}
+             Map.put(resolution, :source, %{metric: "nvt"})
            ),
          {:ok, nvt_transaction_volume} <-
            MetricResolver.timeseries_data(
-             %{},
+             root,
              args,
-             %{source: %{metric: "nvt_transaction_volume"}}
+             Map.put(resolution, :source, %{metric: "nvt_transaction_volume"})
            ) do
       result =
         Enum.zip([nvt_circulation, nvt_transaction_volume])
@@ -266,14 +226,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   end
 
   def percent_of_token_supply_on_exchanges(
-        _root,
+        root,
         %{slug: _, from: _, to: _, interval: _} = args,
-        _resolution
+        resolution
       ) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "percent_of_total_supply_on_exchanges"}}
+      Map.put(resolution, :source, %{metric: "percent_of_total_supply_on_exchanges"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :percent_on_exchanges)
   end

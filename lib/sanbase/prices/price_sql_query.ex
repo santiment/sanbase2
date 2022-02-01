@@ -27,13 +27,13 @@ defmodule Sanbase.Price.SqlQuery do
         #{aggregation(aggregation, "marketcap_usd", "dt")} AS marketcap_usd,
         #{aggregation(aggregation, "volume_usd", "dt")} AS volume_usd,
         toUInt32(1) AS has_changed
-      FROM #{@table} FINAL
+      FROM #{@table}
       PREWHERE
         #{slug_filter(slug_or_slugs, argument_position: 3)} AND
         source = cast(?4, 'LowCardinality(String)') AND
         dt >= toDateTime(?5) AND
         dt < toDateTime(?6)
-      GROUP BY time
+      GROUP BY slug, time
     )
     GROUP BY time
     ORDER BY time
@@ -51,10 +51,10 @@ defmodule Sanbase.Price.SqlQuery do
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
       #{aggregation(aggregation, "#{metric}", "dt")}
-    FROM #{@table} FINAL
+    FROM #{@table}
     PREWHERE
       #{slug_filter(slug_or_slugs, argument_position: 3)} AND
-      NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND
+      NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND #{metric} > 0 AND
       source = cast(?4, 'LowCardinality(String)') AND
       dt >= toDateTime(?5) AND
       dt < toDateTime(?6)
@@ -123,7 +123,7 @@ defmodule Sanbase.Price.SqlQuery do
         #{aggregation(marketcap_aggr, "marketcap_usd", "dt")} AS marketcap_usd,
         #{aggregation(volume_aggr, "volume_usd", "dt")} AS volume_usd,
         toUInt32(1) AS has_changed
-      FROM #{@table} FINAL
+      FROM #{@table}
         PREWHERE slug IN (?1) AND
         dt >= toDateTime(?2) AND
         dt < toDateTime(?3) AND
@@ -133,13 +133,9 @@ defmodule Sanbase.Price.SqlQuery do
     GROUP BY slugString
     """
 
-    {query,
-     [
-       slugs,
-       from |> DateTime.to_unix(),
-       to |> DateTime.to_unix(),
-       source
-     ]}
+    args = [slugs, DateTime.to_unix(from), DateTime.to_unix(to), source]
+
+    {query, args}
   end
 
   def aggregated_marketcap_and_volume_query(slugs, from, to, source, opts) do
@@ -162,7 +158,7 @@ defmodule Sanbase.Price.SqlQuery do
         #{aggregation(marketcap_aggr, "marketcap_usd", "dt")} AS marketcap_usd,
         #{aggregation(volume_aggr, "volume_usd", "dt")} AS volume_usd,
         toUInt32(1) AS has_changed
-      FROM #{@table} FINAL
+      FROM #{@table}
       PREWHERE
         slug IN (?1) AND
         dt >= toDateTime(?2) AND
@@ -197,7 +193,7 @@ defmodule Sanbase.Price.SqlQuery do
         cast(slug, 'String') AS slugString,
         #{aggregation(aggregation, "#{metric}", "dt")} AS value,
         toUInt32(1) AS has_changed
-      FROM #{@table} FINAL
+      FROM #{@table}
       PREWHERE
         NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND
         slug IN (?1) AND
@@ -249,7 +245,7 @@ defmodule Sanbase.Price.SqlQuery do
       SELECT
         slug,
         #{aggregation(aggregation, "#{metric}", "dt")} AS value
-      FROM #{@table} FINAL
+      FROM #{@table}
       PREWHERE
         isNotNull(#{metric}) AND NOT isNaN(#{metric}) AND
         dt >= toDateTime(?1) AND
@@ -290,7 +286,7 @@ defmodule Sanbase.Price.SqlQuery do
         min(price_usd) AS low_price,
         argMax(price_usd, dt) AS close_price,
         toUInt32(1) AS has_changed
-      FROM #{@table} FINAL
+      FROM #{@table}
       PREWHERE
         slug = cast(?1, 'LowCardinality(String)') AND
         source = cast(?2, 'LowCardinality(String)') AND
@@ -331,7 +327,7 @@ defmodule Sanbase.Price.SqlQuery do
         min(price_usd) AS low_price,
         argMax(price_usd, dt) AS close_price,
         toUInt32(1) AS has_changed
-      FROM #{@table} FINAL
+      FROM #{@table}
       PREWHERE
         slug = cast(?3, 'LowCardinality(String)') AND
         source = cast(?4, 'LowCardinality(String)') AND
@@ -368,7 +364,7 @@ defmodule Sanbase.Price.SqlQuery do
         argMax(marketcap_usd, dt) AS marketcap_usd,
         argMax(volume_usd, dt) AS volume_usd,
         toUInt32(1) AS has_changed
-      FROM #{@table} FINAL
+      FROM #{@table}
       PREWHERE
         slug IN (?3) AND
         source = ?4 AND
@@ -389,12 +385,12 @@ defmodule Sanbase.Price.SqlQuery do
     query = """
     SELECT
       price_usd, price_btc, marketcap_usd, volume_usd
-    FROM #{@table} FINAL
+    FROM #{@table}
     PREWHERE
       slug = cast(?1, 'LowCardinality(String)') AND
       source = cast(?2, 'LowCardinality(String)') AND
       dt >= toDateTime(?3) AND
-      dt <= toDateTime(?4)
+      dt < toDateTime(?4)
     ORDER BY dt DESC
     LIMIT 1
     """
@@ -410,7 +406,7 @@ defmodule Sanbase.Price.SqlQuery do
   def last_datetime_computed_at_query(slug) do
     query = """
     SELECT toUnixTimestamp(max(dt))
-    FROM #{@table} FINAL
+    FROM #{@table}
     PREWHERE slug = cast(?1, 'LowCardinality(String)')
     """
 
@@ -421,7 +417,7 @@ defmodule Sanbase.Price.SqlQuery do
   def select_any_record_query(slug) do
     query = """
     SELECT any(dt)
-    FROM #{@table} FINAL
+    FROM #{@table}
     PREWHERE slug = cast(?1, 'LowCardinality(String)')
     """
 
@@ -433,7 +429,7 @@ defmodule Sanbase.Price.SqlQuery do
     query = """
     SELECT
       toUnixTimestamp(dt)
-    FROM #{@table} FINAL
+    FROM #{@table}
     PREWHERE
       slug = cast(?1, 'LowCardinality(String)') AND
       source = cast(?2, 'LowCardinality(String)')
@@ -449,7 +445,7 @@ defmodule Sanbase.Price.SqlQuery do
   def available_slugs_query(source) do
     query = """
     SELECT distinct(slug)
-    FROM #{@table} FINAL
+    FROM #{@table}
     PREWHERE source = cast(?1, 'LowCardinality(String)')
     """
 
@@ -464,7 +460,7 @@ defmodule Sanbase.Price.SqlQuery do
     query = """
     SELECT
       distinct(slug)
-    FROM #{@table} FINAL
+    FROM #{@table}
     PREWHERE
       dt >= toDateTime(?1) AND
       source = cast(?2, 'LowCardinality(String)') AND
@@ -472,6 +468,25 @@ defmodule Sanbase.Price.SqlQuery do
     """
 
     args = [datetime |> DateTime.to_unix(), source, volume]
+
+    {query, args}
+  end
+
+  def latest_prices_per_slug_query(slugs, limit_per_slug) do
+    query = """
+    SELECT slug, arrayReverse(groupArray(price_usd)) AS last_prices_usd,  arrayReverse(groupArray(price_btc)) AS last_prices_btc
+    FROM (
+      SELECT slug, price_usd, price_btc
+      FROM asset_prices_v3
+      PREWHERE dt >= now() - interval 1 week AND slug IN (?1)
+      ORDER BY dt desc
+      LIMIT ?2 BY slug
+    )
+    GROUP BY slug
+
+    """
+
+    args = [slugs, limit_per_slug]
 
     {query, args}
   end

@@ -164,7 +164,13 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     assert capture_log(fn ->
              # Do not mock the `timeseries_data` function because it's the one that rejects
              %{"errors" => [%{"message" => error_message}]} =
-               get_aggregated_timeseries_metric(conn, metric, from, to, aggregation)
+               get_aggregated_timeseries_metric_without_selector(
+                 conn,
+                 metric,
+                 from,
+                 to,
+                 aggregation
+               )
 
              assert error_message =~
                       "Can't fetch #{metric} for an empty selector {}, Reason: \"The selector must have at least one field provided." <>
@@ -182,7 +188,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     |> json_response(200)
   end
 
-  defp get_aggregated_timeseries_metric(conn, metric, from, to, aggregation) do
+  defp get_aggregated_timeseries_metric_without_selector(conn, metric, from, to, aggregation) do
     query = get_aggregated_timeseries_query_without_selector(metric, from, to, aggregation)
 
     conn
@@ -199,6 +205,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     # Put so some of the source metrics do not fail. If the source exists do not
     # replace it. In case the source is not needed it won't be used.
     selector = selector |> Map.put_new(:source, "twitter")
+    selector = extend_selector_with_required_fields(metric, selector)
 
     """
       {

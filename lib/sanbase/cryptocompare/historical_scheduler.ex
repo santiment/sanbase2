@@ -20,6 +20,7 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
+  @oban_conf_name :oban_scrapers
   @unique_peroid 60 * 86_400
   @oban_queue :cryptocompare_historical_jobs_queue
 
@@ -28,8 +29,9 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   end
 
   def queue(), do: @oban_queue
-  def resume(), do: Oban.resume_queue(queue: @oban_queue)
-  def pause(), do: Oban.pause_queue(queue: @oban_queue)
+  def resume(), do: Oban.resume_queue(@oban_conf_name, queue: @oban_queue)
+  def pause(), do: Oban.pause_queue(@oban_conf_name, queue: @oban_queue)
+  def conf_name(), do: @oban_conf_name
 
   def init(_opts) do
     # In order to be able to stop the historical scraper via env variables
@@ -52,13 +54,19 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
 
     result = do_add_jobs_no_uniqueness_check(base_asset, quote_asset, dates_to_insert)
 
-    {:ok,
-     %{
-       jobs_count_total: length(dates),
-       jobs_already_present_count: MapSet.size(recorded_dates),
-       jobs_inserted: length(result),
-       time_elapsed: DateTime.diff(DateTime.utc_now(), start_time, :second)
-     }}
+    result_map = %{
+      jobs_count_total: length(dates),
+      jobs_already_present_count: MapSet.size(recorded_dates),
+      jobs_inserted: length(result),
+      time_elapsed: DateTime.diff(DateTime.utc_now(), start_time, :second)
+    }
+
+    Logger.info("""
+    [Cryptocompare Historical] Scheduled #{result_map.jobs_inserted} new jobs \
+    for the #{base_asset}/#{quote_asset} pair. Took: #{result_map.time_elapsed}s.
+    """)
+
+    {:ok, result_map}
   end
 
   def get_pair_dates(base_asset, quote_asset, from, to) do
@@ -90,14 +98,16 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   end
 
   defp do_add_jobs_no_uniqueness_check(base_asset, quote_asset, dates) do
-    dates
-    |> Enum.map(fn date ->
-      HistoricalWorker.new(%{
-        base_asset: base_asset,
-        quote_asset: quote_asset,
-        date: date
-      })
-    end)
-    |> Oban.insert_all()
+    data =
+      dates
+      |> Enum.map(fn date ->
+        HistoricalWorker.new(%{
+          base_asset: base_asset,
+          quote_asset: quote_asset,
+          date: date
+        })
+      end)
+
+    Oban.insert_all(@oban_conf_name, data)
   end
 end

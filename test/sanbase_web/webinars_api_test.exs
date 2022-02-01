@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.WebinarsApiTest do
       }
     end
 
-    test "not logged in user - gets only preview fields", context do
+    test "not logged in user - gets url only for non pro webinar", context do
       res = get_webinars(build_conn())
 
       assert Enum.map(res, & &1["title"]) == [
@@ -47,7 +47,7 @@ defmodule SanbaseWeb.Graphql.WebinarsApiTest do
                context.pro_webinar.title
              ]
 
-      assert Enum.map(res, & &1["url"]) == [nil, nil]
+      assert Enum.map(res, & &1["url"]) == [context.free_webinar.url, nil]
     end
 
     test "logged in, free user - gets all fields for free webinars and preview fields for pro webinars",

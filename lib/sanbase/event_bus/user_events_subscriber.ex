@@ -26,15 +26,16 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     {:noreply, new_state}
   end
 
-  defp handle_event(%{data: %{event_type: :update_email}}, event_shadow, state) do
-    # msg = "The email of sanbae has been changed"
-    # Madril.send(user, msg)
+  defp handle_event(%{data: %{event_type: :register_user, user_id: user_id}}, event_shadow, state) do
+    {:ok, _} = Sanbase.Accounts.EmailJobs.schedule_emails_after_sign_up(user_id)
+
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
-  defp handle_event(%{data: %{event_type: :update_username}}, event_shadow, state) do
-    # Do something
+  defp handle_event(%{data: %{event_type: :login_user, user_id: user_id}}, event_shadow, state) do
+    Sanbase.Billing.maybe_create_liquidity_subscription(user_id)
+
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end

@@ -88,7 +88,7 @@ defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
 
     [comment, subcomment1, subcomment2] =
       short_url_comments(conn, short_url.id)
-      |> Enum.sort_by(&(&1["id"] |> String.to_integer()))
+      |> Enum.sort_by(& &1["id"])
 
     assert comment["parentId"] == nil
     assert comment["rootParentId"] == nil

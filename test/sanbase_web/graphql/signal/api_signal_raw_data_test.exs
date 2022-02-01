@@ -206,12 +206,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalRawDataTest do
 
       assert result == [
                %{
-                 "datetime" => nil,
-                 "metadata" => nil,
-                 "value" => nil,
+                 "datetime" => "2019-01-01T00:00:00Z",
+                 "isHidden" => false,
+                 "metadata" => %{
+                   "address" => "0x183c9077fb7b74f02d3badda6c85a19c92b1f648",
+                   "txHash" =>
+                     "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
+                 },
                  "signal" => "mcd_art_liquidations",
-                 "slug" => nil,
-                 "isHidden" => true
+                 "slug" => "multi-collateral-dai",
+                 "value" => 21029.0
                },
                %{
                  "datetime" => "2019-01-02T00:00:00Z",

@@ -6,8 +6,8 @@ defmodule Sanbase.Comments.Notification do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Insight.PostComment
-  alias Sanbase.Timeline.TimelineEventComment
+  alias Sanbase.Comment.PostComment
+  alias Sanbase.Comment.TimelineEventComment
   alias Sanbase.Repo
 
   @default_avatar "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png"
@@ -290,8 +290,7 @@ defmodule Sanbase.Comments.Notification do
   defp last_id(%TimelineEventComment{id: id}, _, _), do: id
 
   def feed_entity_title(timeline_event_id) do
-    Sanbase.Timeline.TimelineEvent.by_id(timeline_event_id)
-    |> case do
+    case Sanbase.Timeline.TimelineEvent.by_id!(timeline_event_id, []) do
       %{post: %{title: title}} -> title
       %{user_list: %{name: name}} -> name
       %{user_trigger: %{trigger: %{title: title}}} -> title

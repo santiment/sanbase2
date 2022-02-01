@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
   """
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.{
     InsightResolver,
@@ -118,12 +118,32 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     field :all_insights_by_search_term, list_of(:post) do
       meta(access: :free)
 
+      arg(:search_term, non_null(:string))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
+      arg(:from, :datetime)
+      arg(:to, :datetime)
+
+      cache_resolve(&InsightResolver.all_insights_by_search_term/3, ttl: 5, max_ttl_offset: 5)
+      middleware(PostPaywallFilter)
+    end
+
+    field :all_insights_by_search_term_highlighted, list_of(:post_search) do
+      meta(access: :free)
 
       arg(:search_term, non_null(:string))
+      arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
+      arg(:from, :datetime)
+      arg(:to, :datetime)
+      arg(:page, :integer, default_value: 1)
+      arg(:page_size, :integer, default_value: 10)
 
-      resolve(&InsightResolver.all_insights_by_search_term/3)
+      cache_resolve(&InsightResolver.all_insights_by_search_term_highlighted/3,
+        ttl: 5,
+        max_ttl_offset: 5
+      )
+
       middleware(PostPaywallFilter)
     end
 
@@ -267,26 +287,6 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
       middleware(JWTAuth)
       resolve(&InsightResolver.publish_insight/3)
-    end
-
-    @desc """
-    Vote for an insight. The user must logged in.
-    """
-    field :vote, :post do
-      arg(:post_id, :integer, deprecate: "Use `insightId` instead")
-      arg(:insight_id, :integer)
-      middleware(JWTAuth)
-      resolve(&InsightResolver.vote/3)
-    end
-
-    @desc """
-    Remove your vote for an insight. The user must logged in.
-    """
-    field :unvote, :post do
-      arg(:post_id, :integer, deprecate: "Use `insightId` instead")
-      arg(:insight_id, :integer)
-      middleware(JWTAuth)
-      resolve(&InsightResolver.unvote/3)
     end
 
     @desc """

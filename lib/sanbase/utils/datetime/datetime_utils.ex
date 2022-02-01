@@ -1,4 +1,34 @@
 defmodule Sanbase.DateTimeUtils do
+  def utc_now_string_to_datetime!("utc_now" <> _ = value) do
+    case utc_now_string_to_datetime(value) do
+      {:ok, value} -> value
+      {:error, error} -> raise(error)
+    end
+  end
+
+  def utc_now_string_to_datetime("utc_now" <> _ = value) do
+    case String.split(value, ~r/\s*-\s*/) do
+      ["utc_now"] ->
+        {:ok, DateTime.utc_now()}
+
+      ["utc_now", interval] ->
+        case valid_compound_duration?(interval) do
+          true ->
+            dt =
+              DateTime.utc_now()
+              |> Timex.shift(seconds: -str_to_sec(interval))
+
+            {:ok, dt}
+
+          false ->
+            {:error, "The interval part of #{value} is not a valid interval"}
+        end
+
+      _ ->
+        {:error, "The #{value} datetime string representation is malformed."}
+    end
+  end
+
   @doc ~s"""
   Return a human readable representation of a datetime
   """
@@ -105,14 +135,20 @@ defmodule Sanbase.DateTimeUtils do
     str_to_sec(interval) |> Integer.floor_div(3600)
   end
 
-  def date_to_datetime(date) do
-    {:ok, datetime, _} = (Date.to_iso8601(date) <> "T00:00:00Z") |> DateTime.from_iso8601()
+  def date_to_datetime(date, opts \\ []) do
+    time = Keyword.get(opts, :time, ~T[00:00:00Z]) |> Time.to_iso8601()
+
+    {:ok, datetime, _} = (Date.to_iso8601(date) <> "T" <> time <> "Z") |> DateTime.from_iso8601()
 
     datetime
   end
 
   def str_to_sec(interval) do
-    {int_interval, duration_index} = Integer.parse(interval)
+    {int_interval, duration_index} =
+      case Integer.parse(interval) do
+        {_, _} = result -> result
+        :error -> raise(ArgumentError, "The interval #{interval} is not a valid interval")
+      end
 
     case duration_index do
       "ns" -> div(int_interval, 1_000_000_000)

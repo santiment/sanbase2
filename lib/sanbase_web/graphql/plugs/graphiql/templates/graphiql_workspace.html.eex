@@ -1,0 +1,63 @@
+<!--
+The request to this GraphQL server provided the header "Accept: text/html"
+and as a result has been presented GraphiQL - an in-browser IDE for
+exploring GraphQL.
+If you wish to receive JSON, provide the header "Accept: application/json" or
+add "&raw" to the end of the URL within a browser.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>GraphiQL Workspace</title>
+
+  <link rel="stylesheet" media="screen" href="<%= assets["bootstrap/css/bootstrap.css"] %>">
+  <link rel="stylesheet" media="screen" href="<%= assets["graphiql/graphiql.css"] %>">
+  <link rel="stylesheet" media="screen" href="<%= assets["graphiql-workspace/graphiql-workspace.css"] %>">
+</head>
+<body>
+  <div id="root" class="graphiql-workspace"></div>
+  <script src="<%= assets["react/react.js"] %>"></script>
+  <script src="<%= assets["react-dom/react-dom.js"] %>"></script>
+  <script src="<%= assets["graphiql-workspace/graphiql-workspace.js"] %>"></script>
+  <script src="<%= assets["@absinthe/socket-graphiql/socket-graphiql.js"] %>"></script>
+  <script type="text/javascript">
+    function absintheSubscriptionsClientBuilder(url, connectionParams) {
+
+      const urlObject = new URL(url);
+
+      const urlParams = urlObject.search
+                          .slice(1)
+                          .split('&')
+                          .filter(s => s !== '')
+                          .map(p => p.split('='))
+                          .reduce((obj, [key, value]) => {
+                            obj[key] = value;
+                            return obj;
+                          }, {});
+
+      return new AbsintheSocketGraphiql.SubscriptionsClient(`${urlObject.origin}${urlObject.pathname}`,
+                                                            {params: Object.assign(urlParams, connectionParams)});
+    }
+
+    var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    var config = new graphiqlWorkspace.AppConfig("graphiql", {
+      defaultUrl: <%= default_url %>,
+      <%= if socket_url do %>
+        defaultWebsocketUrl: <%= socket_url %>,
+        subscriptionsClientBuilder: absintheSubscriptionsClientBuilder,
+      <% end %>
+      defaultQuery: '<%= query_string %>',
+      defaultVariables: '<%= variables_string %>',
+      defaultHeaders: <%= default_headers %>
+    });
+
+    ReactDOM.render(
+      React.createElement(graphiqlWorkspace.GraphiQLWorkspace, {config: config}),
+      document.getElementById("root")
+    );
+  </script>
+</body>
+</html>

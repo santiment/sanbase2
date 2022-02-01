@@ -115,27 +115,45 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   #  only the coins/tokens that moved in the past N days/years
 
   # @external_resource is registered with `accumulate: true`, so it holds all files
-  @external_resource Path.join(__DIR__, "metric_files/available_v2_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/change_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/defi_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/derivatives_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/eth2_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/exchange_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/histogram_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/holders_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/label_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/labeled_balance_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/labeled_between_labels_flow_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/labeled_exchange_flow_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/makerdao_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/social_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/table_structured_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/uniswap_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/labeled_holders_distribution_metrics.json")
+  path_to = fn file -> Path.join(__DIR__, "metric_files/" <> file) end
+
+  @external_resource path_to.("available_v2_metrics.json")
+  @external_resource path_to.("change_metrics.json")
+  @external_resource path_to.("defi_metrics.json")
+  @external_resource path_to.("derivatives_metrics.json")
+  @external_resource path_to.("eth2_metrics.json")
+  @external_resource path_to.("exchange_metrics.json")
+  @external_resource path_to.("histogram_metrics.json")
+  @external_resource path_to.("holders_metrics.json")
+  @external_resource path_to.("label_based_metric_metrics.json")
+  @external_resource path_to.("labeled_balance_metrics.json")
+  @external_resource path_to.("labeled_intraday_metrics.json")
+  @external_resource path_to.("labeled_between_labels_flow_metrics.json")
+  @external_resource path_to.("labeled_exchange_flow_metrics.json")
+  @external_resource path_to.("makerdao_metrics.json")
+  @external_resource path_to.("social_metrics.json")
+  @external_resource path_to.("table_structured_metrics.json")
+  @external_resource path_to.("uniswap_metrics.json")
+  @external_resource path_to.("labeled_holders_distribution_metrics.json")
 
   @metrics_json_pre_alias_expand Enum.reduce(@external_resource, [], fn file, acc ->
                                    (File.read!(file) |> Jason.decode!()) ++ acc
                                  end)
+
+  # Allow the same metric to be defined more than once if it differs in the `data_type`
+  Enum.group_by(
+    @metrics_json_pre_alias_expand,
+    fn metric -> {metric["metric"], metric["data_type"]} end
+  )
+  |> Map.values()
+  |> Enum.filter(fn grouped_metrics -> Enum.count(grouped_metrics) > 1 end)
+  |> Enum.each(fn duplicate_metrics ->
+    Break.break("""
+      Duplicate metrics found, consider using the aliases field:
+      `aliases: ["name1", "name2", ...]`
+      These metrics are: #{inspect(duplicate_metrics)}
+    """)
+  end)
 
   @metrics_json_pre_timebound_expand Enum.flat_map(
                                        @metrics_json_pre_alias_expand,
@@ -145,7 +163,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                                        end
                                      )
 
-  @metrics_json Helper.expand_timebound_metrics(@metrics_json_pre_timebound_expand)
+  @metrics_json_including_deprecated Helper.expand_timebound_metrics(
+                                       @metrics_json_pre_timebound_expand
+                                     )
+  @metrics_json Enum.reject(
+                  @metrics_json_including_deprecated,
+                  &(not is_nil(&1["deprecated_since"]))
+                )
+
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
   @metrics_data_type_map Helper.name_to_field_map(@metrics_json, "data_type",
                            transform_fn: &String.to_atom/1
@@ -176,27 +201,38 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @selectors_map Helper.name_to_field_map(
                    @metrics_json,
                    "selectors",
-                   transform_fn: fn list ->
-                     Enum.map(list, &String.to_atom/1)
-                   end
+                   transform_fn: &Enum.map(&1, fn s -> String.to_atom(s) end)
                  )
+
+  # The `required_selectors` field contains a list of strings that represent the
+  # required selectors for the metric. If one of a few selectors must be present,
+  # this is represented in the following way: "label_fqn|label_fqns"
+  required_selectors_transform_fn = fn list ->
+    Enum.map(list, fn selectors ->
+      selectors |> String.split("|") |> Enum.map(&String.to_existing_atom/1)
+    end)
+  end
+
+  @required_selectors_map Helper.name_to_field_map(
+                            @metrics_json,
+                            "required_selectors",
+                            required?: false,
+                            transform_fn: required_selectors_transform_fn
+                          )
+                          |> Enum.reject(fn {_k, v} -> v == nil end)
+                          |> Map.new()
+
+  @deprecated_metrics_map Helper.name_to_field_map(
+                            @metrics_json_including_deprecated,
+                            "deprecated_since",
+                            required?: false,
+                            transform_fn: &Sanbase.DateTimeUtils.from_iso8601!/1
+                          )
+                          |> Enum.reject(fn {_k, v} -> v == nil end)
+                          |> Map.new()
 
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)
-
-  Enum.group_by(
-    @metrics_json_pre_alias_expand,
-    fn metric -> {metric["metric"], metric["data_type"]} end
-  )
-  |> Map.values()
-  |> Enum.filter(fn grouped_metrics -> Enum.count(grouped_metrics) > 1 end)
-  |> Enum.each(fn duplicate_metrics ->
-    Break.break("""
-      Duplicate metrics found, consider using the aliases field:
-      `aliases: ["name1", "name2", ...]`
-      These metrics are: #{inspect(duplicate_metrics)}
-    """)
-  end)
 
   case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
     [] ->
@@ -223,8 +259,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   def metrics_data_type_map(), do: @metrics_data_type_map
   def incomplete_data_map(), do: @incomplete_data_map
   def selectors_map(), do: @selectors_map
-
+  def required_selectors_map(), do: @required_selectors_map
   def metrics_label_map(), do: @metrics_label_map
+  def deprecated_metrics_map(), do: @deprecated_metrics_map
 
   def metrics_with_access(level) when level in [:free, :restricted] do
     @access_map

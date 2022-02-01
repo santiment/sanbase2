@@ -32,6 +32,7 @@ defmodule SanbaseWeb.ConnCase do
 
     SanbaseWeb.Graphql.Cache.clear_all()
     Sanbase.Cache.clear_all()
+    Sanbase.Price.Validator.clean_state()
 
     Sanbase.CaseHelpers.checkout_shared(tags)
 

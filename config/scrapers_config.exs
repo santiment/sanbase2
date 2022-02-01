@@ -28,13 +28,21 @@ config :sanbase, Sanbase.Twitter.Worker,
 
 config :sanbase, Oban.Scrapers,
   repo: Sanbase.Repo,
+  name: :oban_scrapers,
   queues: [
     cryptocompare_historical_jobs_queue: [limit: 25, paused: true],
-    cryptocompare_historical_jobs_pause_resume_queue: 1
+    cryptocompare_historical_jobs_pause_resume_queue: 1,
+    cryptocompare_historical_add_jobs_queue: 1,
+    twitter_followers_migration_queue: [limit: 25, paused: true]
   ],
   plugins: [
     # The default values of interval: 1000, limit: 5000 cause the stager to timeout
-    {Oban.Plugins.Stager, interval: 5000, limit: 200}
+    {Oban.Plugins.Stager, interval: 5000, limit: 200},
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"0 3 * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,
+        args: %{type: "schedule_historical_jobs"}, max_attempts: 10}
+     ]}
   ]
 
 config :sanbase, Sanbase.Cryptocompare.WebsocketScraper,
@@ -42,3 +50,6 @@ config :sanbase, Sanbase.Cryptocompare.WebsocketScraper,
 
 config :sanbase, Sanbase.Cryptocompare.HistoricalScheduler,
   enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OHLCV_PRICES_SCHEDULER_ENABLED", "false"}
+
+config :sanbase, Sanbase.Twitter.FollowersScheduler,
+  enabled?: {:system, "TWITTER_FOLLOWERS_SCHEDULER_ENABLED", "false"}

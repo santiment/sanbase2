@@ -7,6 +7,7 @@ defmodule Sanbase.Alert.Trigger.PriceVolumeDifferenceTriggerSettings do
   import Sanbase.Alert.Utils
 
   alias __MODULE__
+  alias Sanbase.Alert.Type
   alias Sanbase.Model.Project
   alias Sanbase.TechIndicators.PriceVolumeDifference
 

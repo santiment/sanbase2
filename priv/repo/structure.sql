@@ -515,7 +515,8 @@ CREATE TABLE public.chart_configurations (
     drawings jsonb,
     options jsonb,
     post_id bigint,
-    queries jsonb
+    queries jsonb,
+    metrics_json jsonb
 );
 
 
@@ -7100,3 +7101,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20211117104935);
 INSERT INTO public."schema_migrations" (version) VALUES (20211124075928);
 INSERT INTO public."schema_migrations" (version) VALUES (20211126144929);
 INSERT INTO public."schema_migrations" (version) VALUES (20211206104913);
+INSERT INTO public."schema_migrations" (version) VALUES (20220201122953);

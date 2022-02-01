@@ -138,7 +138,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     field :change_username, :user do
       arg(:username, non_null(:string))
 
-      middleware(JWTAuth)
+      middleware(JWTAuth, allow_access: true)
       resolve(&UserResolver.change_username/3)
     end
 

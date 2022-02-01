@@ -51,14 +51,12 @@ defmodule Sanbase.Price.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def slugs_by_filter(metric, from, to, operator, threshold, opts) do
-    aggregation = Keyword.get(opts, :aggregation, nil) || @default_aggregation
-    Price.slugs_by_filter(metric, from, to, operator, threshold, aggregation)
+    Price.slugs_by_filter(metric, from, to, operator, threshold, opts)
   end
 
   @impl Sanbase.Metric.Behaviour
   def slugs_order(metric, from, to, direction, opts) do
-    aggregation = Keyword.get(opts, :aggregation, nil) || @default_aggregation
-    Price.slugs_order(metric, from, to, direction, aggregation)
+    Price.slugs_order(metric, from, to, direction, opts)
   end
 
   @impl Sanbase.Metric.Behaviour

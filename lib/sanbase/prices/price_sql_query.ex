@@ -54,7 +54,7 @@ defmodule Sanbase.Price.SqlQuery do
     FROM #{@table}
     PREWHERE
       #{slug_filter(slug_or_slugs, argument_position: 3)} AND
-      NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND
+      NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND #{metric} > 0 AND
       source = cast(?4, 'LowCardinality(String)') AND
       dt >= toDateTime(?5) AND
       dt < toDateTime(?6)

@@ -181,7 +181,6 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     )
   end
 
-  # assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
   defp top_wallet_transfers_query(wallets, contract, from, to, decimals, type, opts) do
     query = """
     SELECT
@@ -189,7 +188,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       from,
       to,
       transactionHash,
-      any(value) / ?7
+      (any(value) / ?7) AS value
     FROM erc20_transfers
     PREWHERE
       #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
@@ -253,7 +252,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       from,
       to,
       transactionHash,
-      any(value) / ?1
+      (any(value) / ?1) AS value
     FROM #{dt_ordered_table()}
     PREWHERE
       assetRefId = cityHash64('ETH_' || ?2) AND

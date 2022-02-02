@@ -152,6 +152,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     map_as_input_object? = Keyword.get(opts, :map_as_input_object, false)
 
     map = Map.delete(map, :map_as_input_object)
+    map = Map.new(map, fn {k, v} -> {Inflex.camelize(k, :lower), v} end)
 
     Enum.map(map, fn
       {k, [%{} | _] = l} ->

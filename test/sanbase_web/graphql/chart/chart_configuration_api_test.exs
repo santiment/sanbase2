@@ -27,6 +27,9 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         "daily_active_addresses",
         "ethereum-CC-ETH-CC-daily_active_addresses"
       ],
+      metrics_json: %{
+        "price_usd" => %{"slug" => "bitcoin"}
+      },
       queries: %{
         "top_holders" => %{
           "query" => "top_holders",
@@ -154,6 +157,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["isPublic"] == settings.is_public
       assert config["anomalies"] == settings.anomalies
       assert config["metrics"] == settings.metrics
+      assert config["metricsJson"] == settings.metrics_json
       assert config["drawings"] == settings.drawings
       assert config["queries"] == settings.queries
       assert config["options"] == settings.options
@@ -179,6 +183,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         description: "New description",
         is_public: true,
         metrics: ["getMetric|nvt"],
+        metrics_json: %{"price_btc" => %{"slug" => "bitcoin"}},
         anomalies: [],
         post_id: new_post.id,
         drawings: %{
@@ -209,6 +214,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["isPublic"] == new_settings.is_public
       assert config["anomalies"] == new_settings.anomalies
       assert config["metrics"] == new_settings.metrics
+      assert config["metricsJson"] == new_settings.metrics_json
       assert config["drawings"] == new_settings.drawings
       assert config["queries"] == new_settings.queries
       assert config["options"] == new_settings.options
@@ -297,6 +303,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["isPublic"] == settings.is_public
       assert config["anomalies"] == settings.anomalies
       assert config["metrics"] == settings.metrics
+      assert config["metricsJson"] == settings.metrics_json
       assert config["drawings"] == settings.drawings
       assert config["queries"] == settings.queries
       assert config["project"]["id"] |> String.to_integer() == project.id
@@ -611,6 +618,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        metricsJson
         anomalies
         queries
         drawings
@@ -636,6 +644,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        metricsJson
         anomalies
         queries
         drawings
@@ -661,6 +670,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        metricsJson
         anomalies
         queries
         drawings
@@ -686,6 +696,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        metricsJson
         anomalies
         queries
         drawings
@@ -718,6 +729,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        metricsJson
         queries
         anomalies
         drawings
@@ -750,6 +762,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        metricsJson
         anomalies
         queries
         drawings

@@ -516,7 +516,7 @@ CREATE TABLE public.chart_configurations (
     options jsonb,
     post_id bigint,
     queries jsonb,
-    metrics_json jsonb
+    metrics_json jsonb DEFAULT '{}'::jsonb
 );
 
 

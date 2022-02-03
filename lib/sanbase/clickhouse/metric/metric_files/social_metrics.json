@@ -23,6 +23,29 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Social Volume AI Total Beta",
+    "name": "social_metrics_volume_ai_total",
+    "metric": "social_metrics_volume_ai_total",
+    "version": "2022-02-01",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Social Dominance Total",
     "name": "social_dominance_total",
     "metric": "social_dominance_v2",

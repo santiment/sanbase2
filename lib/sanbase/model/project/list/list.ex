@@ -56,6 +56,14 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  def hidden_projects_slugs() do
+    from(p in Project,
+      where: p.is_hidden == true,
+      select: p.slug
+    )
+    |> Repo.all()
+  end
+
   @doc ~s"""
   Return all erc20 projects ordered by name.
   Filtering out projects based on some conditions can be controled by the options.

@@ -24,7 +24,7 @@
   },
   {
     "human_readable_name": "Social Volume AI Total Beta",
-    "name": "social_volume_ai",
+    "name": "social_metrics_volume_ai_total",
     "metric": "social_metrics_volume_ai_total",
     "version": "2022-02-01",
     "access": {

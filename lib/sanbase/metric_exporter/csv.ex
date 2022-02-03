@@ -249,15 +249,26 @@ defmodule Sanbase.MetricExporter.CSV do
     @metrics_map |> Enum.map(fn {_, v} -> v.metrics end) |> List.flatten()
   end
 
-  def export() do
-    # yesterday
-    utc_now = Timex.shift(Timex.now(), days: -1)
-    date = DateTime.to_date(utc_now) |> to_string
-    from = Timex.shift(utc_now, days: -1) |> Timex.beginning_of_day()
-    to = Timex.shift(utc_now, days: -1) |> Timex.end_of_day()
+  def export_history(from, to) do
+    Sanbase.DateTimeUtils.generate_dates_inclusive(from, to)
+    |> Enum.each(&export/1)
+  end
+
+  def export do
+    yesterday = Timex.shift(Timex.now(), days: -1) |> DateTime.to_date()
+    export(yesterday)
+  end
+
+  def export(date) do
+    utc_now = DateTime.utc_now()
+    date_str = date |> to_string
+    from = date |> DateTime.new!(~T[00:00:00])
+    to = date |> DateTime.new!(~T[23:59:59])
 
     export_data(utc_now, from, to)
-    |> upload_files_s3(date)
+    |> upload_files_s3(date_str)
+
+    upload_dictionaries_s3(date_str)
   end
 
   def export_data(utc_now, from, to) do
@@ -265,10 +276,10 @@ defmodule Sanbase.MetricExporter.CSV do
       @metrics_map
       |> Enum.reduce(%{}, fn {filename, file_metrics}, export_acc ->
         header = ["identifier", "datetime"] ++ camelize(file_metrics.metrics)
-        filename = "#{filename}" <> "_#{format_dt(utc_now)}.csv"
+        filename = "#{filename}" <> "_#{format_dt(utc_now)}.csv.gz"
 
         data =
-          Enum.reduce(["ethereum", "bitcoin"], [], fn slug, acc ->
+          Enum.reduce(@slugs, [], fn slug, acc ->
             acc ++ run(slug, file_metrics.metrics, from, to, file_metrics.interval)
           end)
 
@@ -287,15 +298,26 @@ defmodule Sanbase.MetricExporter.CSV do
     end
   end
 
+  def upload_dictionaries_s3(scope) do
+    dict_path = Path.join(__DIR__, "dictionary_files/")
+
+    for file <- Path.wildcard("#{dict_path}/*") do
+      do_upload_s3(file, scope)
+    end
+  end
+
+  def do_upload_s3(file, scope) do
+    S3.store({file, scope})
+  end
+
   def do_upload_s3(filename, data, scope) do
     S3.store({%{filename: filename, binary: data}, scope})
-    S3.url({filename, scope}, signed: true) |> IO.inspect()
   end
 
   # helpers
 
   defp tw_data(now, from, to) do
-    filename = "trending_words_1h_#{format_dt(now)}.csv"
+    filename = "trending_words_1h_#{format_dt(now)}.csv.gz"
     header = ["datetime"] ++ rename_column(Enum.to_list(1..10))
 
     {:ok, data} = Sanbase.SocialData.TrendingWords.get_trending_words(from, to, "1h", 10)

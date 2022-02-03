@@ -779,7 +779,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "deribit_perpetual_funding_rate",
         "sentiment_volume_consumed_total_change_1d",
         "sentiment_volume_consumed_total_change_7d",
-        "sentiment_volume_consumed_total_change_30d"
+        "sentiment_volume_consumed_total_change_30d",
+        # contract metrics
+        "contract_interacting_addresses_count",
+        "contract_transactions_count"
       ]
       |> Enum.sort()
 

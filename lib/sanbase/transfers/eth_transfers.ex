@@ -190,7 +190,7 @@ defmodule Sanbase.Transfers.EthTransfers do
 
   defp top_transfers_query(from, to, opts) do
     query = """
-    SELECT toUnixTimestamp(dt), from, to, transactionHash, any(value) / #{@eth_decimals}
+    SELECT toUnixTimestamp(dt), from, to, transactionHash, (any(value) / #{@eth_decimals}) AS value
     FROM (
       SELECT dt, type, from, to, transactionHash, primaryKey, value
       FROM #{@table}

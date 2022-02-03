@@ -96,6 +96,7 @@ defmodule Sanbase.Model.Project.ListSelector do
       filters
       |> included_slugs_by_filters(filters_combinator)
       |> intersect_with_base_slugs(base_slugs)
+      |> remove_hidden_slugs()
 
     ordered_slugs = order_by |> ordered_slugs_by_order_by(included_slugs)
 
@@ -119,6 +120,19 @@ defmodule Sanbase.Model.Project.ListSelector do
     MapSet.intersection(MapSet.new(slugs), MapSet.new(base_slugs))
     |> Enum.to_list()
   end
+
+  defp remove_hidden_slugs(slugs) when is_list(slugs) do
+    {:ok, hidden_slugs} =
+      Sanbase.Cache.get_or_store(:hidden_projects_slugs_list, fn ->
+        {:ok, Project.List.hidden_projects_slugs()}
+      end)
+
+    # The &Kernel.--/2 operator removes the first occurrence only. Apply
+    # Enum.uniq/1 to make sure there are no duplicates that will be left
+    Enum.uniq(slugs) -- hidden_slugs
+  end
+
+  defp remove_hidden_slugs(slugs), do: slugs
 
   defp total_projects_count(list, opts) do
     with true <- Keyword.get(opts, :has_pagination?),

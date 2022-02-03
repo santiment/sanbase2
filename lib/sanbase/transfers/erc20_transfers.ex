@@ -259,7 +259,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       dt >= toDateTime(?3) AND
       dt < toDateTime(?4)
       #{maybe_exclude_addresses(excluded_addresses, arg_position: 7)}
-    GROUP BY assetRefId, from, to, value, dt, transactionHash
+    GROUP BY assetRefId, from, to, dt, transactionHash
     ORDER BY value DESC
     LIMIT ?5 OFFSET ?6
     """

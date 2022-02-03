@@ -1,8 +1,8 @@
 defmodule Sanbase.Price.Validator.Node do
   @moduledoc ~s"""
-  Check if a new realtime price is valid or is and outlier.any()
-
+  Check if a new realtime price is valid or is and outlier.
   """
+
   use GenServer
   @max_prices 6
 

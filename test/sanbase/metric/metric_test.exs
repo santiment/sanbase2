@@ -29,6 +29,8 @@ defmodule Sanbase.MetricTest do
     {Sanbase.Clickhouse.TopHolders.MetricAdapter, [:passthrough],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
     {Sanbase.BlockchainAddress.MetricAdapter, [:passthrough],
+     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.Contract.MetricAdapter, [:passthrough],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end}
   ]) do
     []

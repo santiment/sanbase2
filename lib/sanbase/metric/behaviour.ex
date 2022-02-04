@@ -50,7 +50,7 @@ defmodule Sanbase.Metric.Behaviour do
           values: list(list(number()))
         }
 
-  @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
+  @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median | :count
 
   @type slug_float_value_pair :: %{slug: slug, value: float}
 

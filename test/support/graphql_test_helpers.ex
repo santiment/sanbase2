@@ -230,6 +230,9 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     end
   end
 
+  defp add_missing_selector(:contract_address, selector),
+    do: Map.put(selector, :contract_address, "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098")
+
   defp add_missing_selector(:label_fqn, selector),
     do: Map.put(selector, :label_fqn, "santiment/owner->Coinbase:v1")
 

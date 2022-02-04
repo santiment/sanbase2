@@ -16,7 +16,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   alias Sanbase.Model.{LatestCoinmarketcapData, Project}
   alias Sanbase.ExternalServices.Coinmarketcap.{Ticker, PricePoint}
   alias Sanbase.Prices.Store
-
+  alias Sanbase.Price.Validator
   @prices_exporter :prices_exporter
 
   def start_link(_state) do
@@ -80,59 +80,45 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   defp coinmarketcap_to_santiment_slug_map() do
     Project.List.projects_with_source("coinmarketcap", include_hidden: true)
     |> Enum.reduce(%{}, fn %Project{slug: slug} = project, acc ->
-      Map.update(acc, Project.coinmarketcap_id(project), [slug], fn slugs -> [slug | slugs] end)
+      Map.update(acc, Project.coinmarketcap_id(project), [slug], fn slugs ->
+        [slug | slugs]
+      end)
     end)
   end
 
   defp remove_not_valid_prices(tickers, cmc_id_to_slugs_mapping) do
     tickers
-    |> Enum.each(fn %{slug: cmc_slug, price_usd: price_usd, price_btc: price_btc} ->
-      # This implementation does not remove/change anything. It will be deployed first
-      # so we can observe the behaviour first.
+    |> Enum.map(fn %{slug: cmc_slug, price_usd: price_usd, price_btc: price_btc} = ticker ->
       case Map.get(cmc_id_to_slugs_mapping, cmc_slug) do
         nil ->
-          :ok
+          ticker
 
         slug ->
-          case Sanbase.Price.Validator.valid_price?(slug, "USD", price_usd) do
-            {:error, error} -> Logger.info("[CMC] Price validation failed: #{error}")
-            _ -> :ok
-          end
+          ticker
+          |> then(fn t ->
+            case Validator.valid_price?(slug, "USD", price_usd) do
+              true ->
+                t
 
-          case Sanbase.Price.Validator.valid_price?(slug, "BTC", price_btc) do
-            {:error, error} -> Logger.info("[CMC] Price validation failed: #{error}")
-            _ -> :ok
-          end
+              {:error, error} ->
+                Logger.info("[CMC] Price validation failed: #{error}")
+                Map.put(t, :price_usd, nil)
+            end
+          end)
+          |> then(fn t ->
+            case Validator.valid_price?(slug, "BTC", price_btc) do
+              true ->
+                t
+
+              {:error, error} ->
+                Logger.info("[CMC] Price validation failed: #{error}")
+                Map.put(t, :price_usd, nil)
+            end
+          end)
       end
     end)
-
-    tickers
+    |> Enum.filter(fn t -> t.price_usd != nil or t.price_btc != nil end)
   end
-
-  # TODO: Revert to this implementation after we the debug implementation is
-  # tested and all potential issues are fixed
-  # defp remove_not_valid_prices(tickers, cmc_id_to_slugs_mapping) do
-  #   tickers
-  #   |> Enum.map(fn %{slug: cmc_slug, price_usd: price_usd, price_btc: price_btc} = ticker ->
-  #     case Map.get(cmc_id_to_slugs_mapping, cmc_slug) do
-  #       nil ->
-  #         ticker
-
-  #       slug ->
-  #         ticker
-  #         |> then(fn t ->
-  #           if true == Sanbase.Price.Validator.valid_price?(slug, "USD", price_usd),
-  #             do: t,
-  #             else: Map.put(t, :price_usd, nil)
-  #         end)
-  #         |> then(fn t ->
-  #           if true == Sanbase.Price.Validator.valid_price?(slug, "BTC", price_btc),
-  #             do: t,
-  #             else: Map.put(t, :price_usd, nil)
-  #         end)
-  #     end
-  #   end)
-  # end
 
   defp export_to_kafka(tickers, cmc_id_to_slugs_mapping) do
     tickers
@@ -140,7 +126,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
       case Map.get(cmc_id_to_slugs_mapping, ticker.slug, []) |> List.wrap() do
         [_ | _] = slugs ->
           price_point = Ticker.to_price_point(ticker) |> PricePoint.sanity_filters()
-          Enum.map(slugs, fn slug -> PricePoint.json_kv_tuple(price_point, slug) end)
+
+          Enum.map(slugs, fn slug ->
+            PricePoint.json_kv_tuple(price_point, slug)
+          end)
 
         _ ->
           []

@@ -1501,5 +1501,77 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Binance USDT Exchange Open Interest",
+    "name": "usdt_bnb_open_interest",
+    "metric": "usdt_bnb_open_interest",
+    "aliases": ["usdt_binance_open_interest"],
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Binance USDT Exchange Open Value",
+    "name": "usdt_bnb_open_value",
+    "metric": "usdt_bnb_open_value",
+    "aliases": ["usdt_binance_open_value"],
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Binance BUSD Exchange Open Interest",
+    "name": "busd_bnb_open_interest",
+    "metric": "busd_bnb_open_interest",
+    "aliases": ["busd_binance_open_interest"],
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Binance BUSD Exchange Open Value",
+    "name": "busd_bnb_open_value",
+    "metric": "busd_bnb_open_value",
+    "aliases": ["busd_binance_open_value"],
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
   }
 ]

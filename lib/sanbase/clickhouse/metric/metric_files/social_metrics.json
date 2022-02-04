@@ -32,8 +32,7 @@
       "realtime": "free"
     },
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",

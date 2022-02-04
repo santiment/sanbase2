@@ -245,6 +245,10 @@ defmodule Sanbase.MetricExporter.CSV do
     development_activity_1d: %{metrics: ["dev_activity"], interval: "1d"}
   }
 
+  def slugs, do: @slugs
+
+  def metrics_map, do: @metrics_map
+
   def metrics do
     @metrics_map |> Enum.map(fn {_, v} -> v.metrics end) |> List.flatten()
   end
@@ -278,9 +282,11 @@ defmodule Sanbase.MetricExporter.CSV do
         header = ["identifier", "datetime"] ++ camelize(file_metrics.metrics)
         filename = "#{filename}" <> "_#{format_dt(utc_now)}.csv.gz"
 
+        fetched_data = fetch_data(file_metrics.metrics, from, to, file_metrics.interval)
+
         data =
           Enum.reduce(@slugs, [], fn slug, acc ->
-            acc ++ run(slug, file_metrics.metrics, from, to, file_metrics.interval)
+            acc ++ run(slug, file_metrics.metrics, fetched_data, from, to, file_metrics.interval)
           end)
 
         Map.put(export_acc, filename, [header] ++ data)
@@ -330,19 +336,57 @@ defmodule Sanbase.MetricExporter.CSV do
     {filename, [header] ++ data}
   end
 
-  defp run(slug, metrics, from, to, interval) do
+  defp fetch_data(metrics, from, to, interval) do
+    metrics
+    |> Enum.into(%{}, fn metric ->
+      {metric, fetch_timeseries(metric, from, to, interval)}
+    end)
+  end
+
+  defp run(slug, metrics, data, from, to, interval) do
     for metric <- metrics do
-      {:ok, data} = Metric.timeseries_data(metric, %{slug: slug}, from, to, interval)
+      data = data[metric][slug]
 
       case data do
-        data when data != [] -> data
-        _ -> generate_empty_data(from, to, interval)
+        nil -> generate_empty_data(from, to, interval)
+        [] -> generate_empty_data(from, to, interval)
+        data -> data
       end
     end
     |> merge_by_dt()
     |> Enum.sort_by(fn {dt, _} -> dt end, {:asc, DateTime})
     |> Enum.map(fn {dt, values} ->
       [slug, DateTime.to_iso8601(dt)] ++ values
+    end)
+  end
+
+  def fetch_timeseries("dev_activity", from, to, _interval) do
+    {:ok, data} = Metric.aggregated_timeseries_data("dev_activity", %{slug: @slugs}, from, to, [])
+
+    data
+    |> Enum.into(%{}, fn {slug, value} ->
+      {slug, [%{datetime: from, value: value}]}
+    end)
+  end
+
+  def fetch_timeseries(metric, from, to, interval) do
+    {:ok, data} =
+      Sanbase.Metric.timeseries_data_per_slug(metric, %{slug: @slugs}, from, to, interval)
+
+    Enum.reduce(@slugs, %{}, fn slug, acc ->
+      data =
+        data
+        |> Enum.map(fn map ->
+          x = Enum.find(map.data, fn y -> y.slug == slug end)
+          value = x[:value] || ""
+
+          %{
+            datetime: map.datetime,
+            value: value
+          }
+        end)
+
+      Map.put(acc, slug, data)
     end)
   end
 

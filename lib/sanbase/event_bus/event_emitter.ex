@@ -40,8 +40,18 @@ defmodule Sanbase.EventBus.EventEmitter do
       Emit an event built from the provided arguments.
       If no error, occured, the first argument is returned as-is, so the function
       can be used inside pipelines.
+      If changeset param is passed in the args it emits event only if there are actual
+      changes in the changeset.
       """
       @spec emit_event(arg :: term, event_type :: atom, args :: map) :: term | no_return
+      def emit_event(arg, event_type, %{changeset: changeset} = args) do
+        if changeset.changes != %{} do
+          emit_event(arg, event_type, Map.delete(args, :changeset))
+        else
+          arg
+        end
+      end
+
       def emit_event(arg, event_type, args) do
         case __MODULE__.handle_event(arg, event_type, args) do
           :ok ->

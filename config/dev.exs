@@ -82,10 +82,10 @@ config :sanbase, SanbaseWeb.Graphql.AuthPlug,
 
 config :waffle,
   storage: Waffle.Storage.Local,
-  storage_dir: "/tmp/sanbase/filestore/",
+  storage_dir: "sanbase/filestore/",
   # Note: without using storage_dir_prefix: "/", a local "tmp/..." dir
   # is used instead of "/tmp/..."
-  storage_dir_prefix: "/"
+  storage_dir_prefix: "/tmp/"
 
 config :ethereumex,
   url: "http://erigon-hz.stage.san:30250/",

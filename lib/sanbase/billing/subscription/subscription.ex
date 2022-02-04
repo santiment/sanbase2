@@ -107,10 +107,13 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   def update_subscription_db(subscription, params) do
-    subscription
-    |> changeset(params)
-    |> Repo.update()
-    |> emit_event(:update_subscription, %{})
+    changeset = subscription |> changeset(params)
+
+    if changeset.changes != %{} do
+      changeset
+      |> Repo.update()
+      |> emit_event(:update_subscription, %{})
+    end
   end
 
   @doc """

@@ -370,6 +370,23 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "bitmex_perpetual_basis_ratio",
         "bitmex_perpetual_price",
         "bitmex_composite_price_index",
+        "usdt_bnb_open_interest",
+        "usdt_binance_open_interest",
+        "usdt_bnb_open_value",
+        "usdt_binance_open_value",
+        "busd_bnb_open_interest",
+        "busd_binance_open_interest",
+        "busd_bnb_open_value",
+        "busd_binance_open_value",
+        "usdt_bnb_funding_rates",
+        "usdt_binance_funding_rate",
+        "busd_bnb_funding_rates",
+        "busd_binance_funding_rate",
+        "ftx_perpetual_funding_rate",
+        "bitfinex_perpetual_funding_rate",
+        "dydx_perpetual_funding_rate",
+        "deribit_perpetual_funding_rate",
+        "huobi_perpetual_funding_rate",
         # label metrics
         "active_deposits_per_exchange",
         "active_withdrawals_per_exchange",
@@ -765,33 +782,16 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "whale_transaction_count_1m_usd_to_inf_change_7d",
         "whale_transaction_count_1m_usd_to_inf_change_30d",
         # bnb funding rates metrics
-        "usdt_bnb_funding_rates",
-        "usdt_binance_funding_rate",
-        "busd_bnb_funding_rates",
-        "busd_binance_funding_rate",
         # ftx funding rates metric
-        "ftx_perpetual_funding_rate",
         # bitfinex funding rates metric
-        "bitfinex_perpetual_funding_rate",
         # dydx funding rates metric
-        "dydx_perpetual_funding_rate",
         # deribit funding rates metric
-        "deribit_perpetual_funding_rate",
         "sentiment_volume_consumed_total_change_1d",
         "sentiment_volume_consumed_total_change_7d",
         "sentiment_volume_consumed_total_change_30d",
         # contract metrics
         "contract_interacting_addresses_count",
-        "contract_transactions_count",
-        # binance oi/ov metrics
-        "usdt_bnb_open_interest",
-        "usdt_binance_open_interest",
-        "usdt_bnb_open_value",
-        "usdt_binance_open_value",
-        "busd_bnb_open_interest",
-        "busd_binance_open_interest",
-        "busd_bnb_open_value",
-        "busd_binance_open_value"
+        "contract_transactions_count"
       ]
       |> Enum.sort()
 

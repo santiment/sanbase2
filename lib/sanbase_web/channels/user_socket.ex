@@ -2,6 +2,10 @@ defmodule SanbaseWeb.UserSocket do
   use Phoenix.Socket
   use Absinthe.Phoenix.Socket, schema: SanbaseWeb.Graphql.Schema
 
+  alias Sanbase.Accounts.User
+
+  channel("users:*", SanbaseWeb.UserChannel)
+
   ## Channels
   # channel "room:*", SanbaseWeb.RoomChannel
 
@@ -16,19 +20,29 @@ defmodule SanbaseWeb.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(_params, socket) do
-    {:ok, socket}
+  def connect(params, socket) do
+    with {:ok, user} <- jwt_to_user(params["access_token"]) do
+      {:ok, assign(socket, user_id: user.id, user: user)}
+    end
   end
 
-  # Socket id's are topics that allow you to identify all sockets for a given user:
-  #
-  #     def id(socket), do: "user_socket:#{socket.assigns.user_id}"
-  #
-  # Would allow you to broadcast a "disconnect" event and terminate
-  # all active sockets and channels for a given user:
-  #
-  #     SanbaseWeb.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
-  #
-  # Returning `nil` makes this socket anonymous.
-  def id(_socket), do: nil
+  def id(socket), do: "users_socket:#{socket.assigns.user_id}"
+
+  # Private functions
+
+  defp jwt_to_user(jwt) do
+    case SanbaseWeb.Guardian.resource_from_token(jwt) do
+      {:ok, %User{} = user, _} ->
+        {:ok, user}
+
+      {:error, :token_expired} ->
+        {:error, %{reason: "Token Expired"}}
+
+      {:error, :invalid_token} ->
+        {:error, %{reason: "Invalid token"}}
+
+      _ ->
+        {:error, %{reason: "Invalid JSON Web Token (JWT)"}}
+    end
+  end
 end

@@ -170,5 +170,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       # run once every 6 hours
       schedule: "0 */6 * * *",
       task: {Sanbase.Cryptocompare.Jobs, :move_finished_jobs, []}
+    ],
+    export_metrics_csv: [
+      schedule: "0 5 * * *",
+      task: {Sanbase.MetricExporter.CSV, :export, []}
     ]
   ]

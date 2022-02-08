@@ -1,111 +1,11 @@
 defmodule Sanbase.MetricExporter.CSV do
+  require Logger
+
   alias Sanbase.Metric
   alias Sanbase.MetricExporter.S3
 
+  @send_hour ~T[17:00:00]
   @decimals 8
-  # top 100 fixed at 24/08/2021
-  @slugs [
-    "bitcoin",
-    "ethereum",
-    "cardano",
-    "binance-coin",
-    "tether",
-    "ripple",
-    "solana",
-    "polkadot-new",
-    "usd-coin",
-    "p-usd-coin",
-    "dogecoin",
-    "luna",
-    "uniswap",
-    "p-uniswap",
-    "binance-usd",
-    "avalanche",
-    "litecoin",
-    "p-chainlink",
-    "chainlink",
-    "wrapped-bitcoin",
-    "shiba-inu",
-    "bitcoin-cash",
-    "algorand",
-    "p-matic-network",
-    "matic-network",
-    "stellar",
-    "file-coin",
-    "internet-computer",
-    "cosmos",
-    "vechain",
-    "axie-infinity",
-    "tron",
-    "ethereum-classic",
-    "ftx-token",
-    "multi-collateral-dai",
-    "theta",
-    "tezos",
-    "bitcoin-bep2",
-    "fantom",
-    "hedera-hashgraph",
-    "hedera",
-    "monero",
-    "crypto-com-coin",
-    "elrond-egld",
-    "eos",
-    "pancakeswap",
-    "klaytn",
-    "iota",
-    "ecash",
-    "p-aave",
-    "aave",
-    "near-protocol",
-    "quant",
-    "bitcoin-sv",
-    "the-graph",
-    "neo",
-    "kusama",
-    "waves",
-    "terrausd",
-    "unus-sed-leo",
-    "bittorrent",
-    "harmony",
-    "maker",
-    "blockstack",
-    "arweave",
-    "omisego",
-    "amp",
-    "dash",
-    "helium",
-    "chiliz",
-    "celo",
-    "decred",
-    "thorchain",
-    "compound",
-    "holo",
-    "nem",
-    "theta-fuel",
-    "zcash",
-    "icon",
-    "xinfin-network",
-    "decentraland",
-    "revain",
-    "celsius",
-    "dydx",
-    "sushi",
-    "enjin-coin",
-    "qtum",
-    "trueusd",
-    "huobi-token",
-    "yearn-finance",
-    "bitcoin-gold",
-    "flow",
-    "curve",
-    "mdex",
-    "zilliqa",
-    "mina",
-    "synthetix-network-token",
-    "ravencoin",
-    "basic-attention-token",
-    "ren"
-  ]
 
   @number_word_map %{
     1 => "one",
@@ -245,7 +145,15 @@ defmodule Sanbase.MetricExporter.CSV do
     development_activity_1d: %{metrics: ["dev_activity"], interval: "1d"}
   }
 
-  def slugs, do: @slugs
+  def slugs() do
+    Sanbase.Model.Project.List.projects_slugs(
+      order_by_rank: true,
+      has_pagination?: true,
+      pagination: %{page: 1, page_size: 200}
+    )
+    |> Enum.reject(fn slug -> String.starts_with?(slug, "p-") end)
+    |> Enum.take(100)
+  end
 
   def metrics_map, do: @metrics_map
 
@@ -264,35 +172,43 @@ defmodule Sanbase.MetricExporter.CSV do
   end
 
   def export(date) do
-    utc_now = DateTime.utc_now()
+    Logger.info("Start metrics csv exporter #{date}")
+
+    slugs = slugs()
     date_str = date |> to_string
     from = date |> DateTime.new!(~T[00:00:00])
     to = date |> DateTime.new!(~T[23:59:59])
 
-    export_data(utc_now, from, to)
-    |> upload_files_s3(date_str)
-
     upload_dictionaries_s3(date_str)
+
+    uploaded_files =
+      export_data(slugs, date, from, to)
+      |> upload_files_s3(date_str)
+
+    Logger.info("""
+      Finish metrics csv exporter #{date}.
+      Uploaded files: #{inspect(uploaded_files)}
+    """)
   end
 
-  def export_data(utc_now, from, to) do
+  def export_data(slugs, date, from, to) do
     export_data =
       @metrics_map
       |> Enum.reduce(%{}, fn {filename, file_metrics}, export_acc ->
         header = ["identifier", "datetime"] ++ camelize(file_metrics.metrics)
-        filename = "#{filename}" <> "_#{format_dt(utc_now)}.csv.gz"
+        filename = "#{filename}" <> "_santiment_#{format_dt(date, @send_hour)}.csv.gz"
 
-        fetched_data = fetch_data(file_metrics.metrics, from, to, file_metrics.interval)
+        fetched_data = fetch_data(slugs, file_metrics.metrics, from, to, file_metrics.interval)
 
         data =
-          Enum.reduce(@slugs, [], fn slug, acc ->
+          Enum.reduce(slugs, [], fn slug, acc ->
             acc ++ run(slug, file_metrics.metrics, fetched_data, from, to, file_metrics.interval)
           end)
 
         Map.put(export_acc, filename, [header] ++ data)
       end)
 
-    {filename, tw_data} = tw_data(utc_now, from, to)
+    {filename, tw_data} = tw_data(date, from, to)
     Map.put(export_data, filename, tw_data)
   end
 
@@ -322,8 +238,8 @@ defmodule Sanbase.MetricExporter.CSV do
 
   # helpers
 
-  defp tw_data(now, from, to) do
-    filename = "trending_words_1h_#{format_dt(now)}.csv.gz"
+  defp tw_data(date, from, to) do
+    filename = "trending_words_1h_santiment_#{format_dt(date, @send_hour)}.csv.gz"
     header = ["datetime"] ++ rename_column(Enum.to_list(1..10))
 
     {:ok, data} = Sanbase.SocialData.TrendingWords.get_trending_words(from, to, "1h", 10)
@@ -336,10 +252,10 @@ defmodule Sanbase.MetricExporter.CSV do
     {filename, [header] ++ data}
   end
 
-  defp fetch_data(metrics, from, to, interval) do
+  defp fetch_data(slugs, metrics, from, to, interval) do
     metrics
     |> Enum.into(%{}, fn metric ->
-      {metric, fetch_timeseries(metric, from, to, interval)}
+      {metric, fetch_timeseries(slugs, metric, from, to, interval)}
     end)
   end
 
@@ -360,8 +276,18 @@ defmodule Sanbase.MetricExporter.CSV do
     end)
   end
 
-  def fetch_timeseries("dev_activity", from, to, _interval) do
-    {:ok, data} = Metric.aggregated_timeseries_data("dev_activity", %{slug: @slugs}, from, to, [])
+  def fetch_timeseries(slugs, "dev_activity", from, to, _interval) do
+    data =
+      case Metric.aggregated_timeseries_data("dev_activity", %{slug: slugs}, from, to, []) do
+        {:ok, data} ->
+          data
+
+        {:error, reason} ->
+          msg =
+            "Error metrics csv exporter fetching aggregated_timeseries_data for metric=dev_activity slug=#{inspect(slugs)},from=#{from},to=#{to}"
+
+          raise("#{msg}.Reason=#{inspect(reason)}")
+      end
 
     data
     |> Enum.into(%{}, fn {slug, value} ->
@@ -369,11 +295,20 @@ defmodule Sanbase.MetricExporter.CSV do
     end)
   end
 
-  def fetch_timeseries(metric, from, to, interval) do
-    {:ok, data} =
-      Sanbase.Metric.timeseries_data_per_slug(metric, %{slug: @slugs}, from, to, interval)
+  def fetch_timeseries(slugs, metric, from, to, interval) do
+    data =
+      case Sanbase.Metric.timeseries_data_per_slug(metric, %{slug: slugs}, from, to, interval) do
+        {:ok, data} ->
+          data
 
-    Enum.reduce(@slugs, %{}, fn slug, acc ->
+        {:error, reason} ->
+          msg =
+            "Error metrics csv exporter fetching timeseries_data_per_slug for metric=#{metric},slug=#{inspect(slugs)},from=#{from},to=#{to},interval=#{interval}"
+
+          raise("#{msg}.Reason=#{inspect(reason)}")
+      end
+
+    Enum.reduce(slugs, %{}, fn slug, acc ->
       data =
         data
         |> Enum.map(fn map ->
@@ -424,8 +359,9 @@ defmodule Sanbase.MetricExporter.CSV do
     |> Enum.map(fn dt -> %{datetime: dt, value: ""} end)
   end
 
-  def format_dt(dt) do
-    dt
+  def format_dt(date, send_hour) do
+    date
+    |> DateTime.new!(send_hour)
     |> DateTime.to_iso8601()
     |> String.replace(~r/[-:]/, "")
     |> String.replace(~r/\.\d+/, "")

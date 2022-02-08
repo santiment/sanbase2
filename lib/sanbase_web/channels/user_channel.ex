@@ -3,18 +3,30 @@ defmodule SanbaseWeb.UserChannel do
 
   alias SanbaseWeb.Presence
 
-  def join("users:online", _params, socket) do
-    case Presence.list(socket) do
-      %{} = empty_map when map_size(empty_map) == 0 ->
-        {:ok, _} = Presence.track(socket, socket.assigns.user_id, %{})
-        {:ok, socket}
+  def join("users:" <> _user_id, _params, socket) do
+    {:ok, _} = Presence.track(socket, socket.assigns.user_id, %{})
+    {:ok, socket}
+  end
 
-      _ ->
-        {:error, %{reason: "Only one websocket per user is allowed"}}
+  def handle_in("is_username_valid", %{"username" => username}, socket) do
+    case Sanbase.Accounts.User.Username.valid?(username) do
+      true ->
+        {:reply, {:ok, %{"is_username_valid" => true}}, socket}
+
+      {:error, reason} ->
+        {:reply, {:ok, %{"is_username_valid" => false, "reason" => reason}}, socket}
     end
   end
 
-  def join("users:" <> private_room_id, _params, _socket) do
-    {:error, %{reason: "unauthorized"}}
+  def handle_in("tabs_open", %{}, socket) do
+    user_id = "#{socket.assigns.user_id}"
+
+    case Presence.list(socket) do
+      %{^user_id => %{metas: list}} ->
+        {:reply, {:ok, %{"tabs_open" => length(list)}}, socket}
+
+      %{} = empty_map when map_size(empty_map) == 0 ->
+        {:reply, {:ok, %{"tabs_open" => 0}}, socket}
+    end
   end
 end

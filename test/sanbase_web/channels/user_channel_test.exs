@@ -5,13 +5,13 @@ defmodule SanbaseWeb.UserChannelTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
-    user = insert(:user)
+    user = insert(:user, username: "my_user")
     conn = setup_jwt_auth(Phoenix.ConnTest.build_conn(), user)
 
     %{user: user, conn: conn}
   end
 
-  test "test", context do
+  test "test can open multiple websockets and join room", context do
     assert {:ok, socket} =
              connect(
                SanbaseWeb.UserSocket,
@@ -22,22 +22,54 @@ defmodule SanbaseWeb.UserChannelTest do
                %{}
              )
 
-    assert {:ok, _, _socket} =
-             subscribe_and_join(socket, SanbaseWeb.UserChannel, "users:online", %{})
+    assert {:ok, %{}, %Phoenix.Socket{}} =
+             subscribe_and_join(socket, SanbaseWeb.UserChannel, "users:#{context.user.id}", %{})
+  end
 
-    for _ <- 1..10 do
-      assert {:ok, socket} =
-               connect(
-                 SanbaseWeb.UserSocket,
-                 %{
-                   "access_token" => context.conn.private.plug_session["access_token"],
-                   "user_id" => context.user.id
-                 },
-                 %{}
-               )
+  test "test tabs_open message", context do
+    for i <- 1..5 do
+      socket = get_socket(context)
 
-      assert {:error, _reason} =
-               subscribe_and_join(socket, SanbaseWeb.UserChannel, "users:online", %{})
+      ref = push(socket, "tabs_open", %{})
+      assert_reply(ref, :ok, %{"tabs_open" => ^i})
     end
+  end
+
+  test "test username validation", context do
+    socket = get_socket(context)
+
+    ref = push(socket, "is_username_valid", %{"username" => nil})
+
+    assert_reply(ref, :ok, %{
+      "is_username_valid" => false,
+      "reason" => "Username must be a string and not null"
+    })
+
+    ref = push(socket, "is_username_valid", %{"username" => "my"})
+
+    assert_reply(ref, :ok, %{
+      "is_username_valid" => false,
+      "reason" => "Username must be at least 4 characters long"
+    })
+
+    ref = push(socket, "is_username_valid", %{"username" => context.user.username})
+    assert_reply(ref, :ok, %{"is_username_valid" => false, "reason" => "Username is taken"})
+  end
+
+  defp get_socket(context) do
+    {:ok, socket} =
+      connect(
+        SanbaseWeb.UserSocket,
+        %{
+          "access_token" => context.conn.private.plug_session["access_token"],
+          "user_id" => context.user.id
+        },
+        %{}
+      )
+
+    {:ok, _, socket} =
+      subscribe_and_join(socket, SanbaseWeb.UserChannel, "users:#{context.user.id}", %{})
+
+    socket
   end
 end

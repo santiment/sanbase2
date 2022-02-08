@@ -21,7 +21,7 @@ defmodule SanbaseWeb.UserSocket do
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
   def connect(params, socket) do
-    with {:ok, user} <- jwt_to_user(params["access_token"]) do
+    with {:ok, user} <- params_to_user(params) do
       {:ok, assign(socket, user_id: user.id, user: user)}
     end
   end
@@ -29,6 +29,19 @@ defmodule SanbaseWeb.UserSocket do
   def id(socket), do: "users_socket:#{socket.assigns.user_id}"
 
   # Private functions
+
+  defp params_to_user(%{"access_token" => jwt}), do: jwt_to_user(jwt)
+  defp params_to_user(%{"jti" => jti}), do: jti_to_user(jti)
+
+  defp jti_to_user(jti) do
+    case SanbaseWeb.Guardian.Token.user_by_jti(jti) do
+      {:ok, %User{} = user} ->
+        {:ok, user}
+
+      _ ->
+        {:error, %{reason: "Invalid JTI of a JWT"}}
+    end
+  end
 
   defp jwt_to_user(jwt) do
     case SanbaseWeb.Guardian.resource_from_token(jwt) do

@@ -6,6 +6,8 @@ defmodule Sanbase.MetricExporter.CSV do
 
   @send_hour ~T[17:00:00]
   @decimals 8
+  @dictionaries_path Path.join(__DIR__, "dictionary_files/")
+  @dictionaries_files Path.wildcard("#{@dictionaries_path}/*")
 
   @number_word_map %{
     1 => "one",
@@ -157,6 +159,8 @@ defmodule Sanbase.MetricExporter.CSV do
 
   def metrics_map, do: @metrics_map
 
+  def dictionaries_files, do: @dictionaries_files
+
   def metrics do
     @metrics_map |> Enum.map(fn {_, v} -> v.metrics end) |> List.flatten()
   end
@@ -164,6 +168,11 @@ defmodule Sanbase.MetricExporter.CSV do
   def export_history(from, to) do
     Sanbase.DateTimeUtils.generate_dates_inclusive(from, to)
     |> Enum.each(&export/1)
+  end
+
+  def export_dicts_history(from, to) do
+    Sanbase.DateTimeUtils.generate_dates_inclusive(from, to)
+    |> Enum.each(fn date -> upload_dictionaries_s3(date |> to_string) end)
   end
 
   def export do
@@ -178,8 +187,6 @@ defmodule Sanbase.MetricExporter.CSV do
     date_str = date |> to_string
     from = date |> DateTime.new!(~T[00:00:00])
     to = date |> DateTime.new!(~T[23:59:59])
-
-    upload_dictionaries_s3(date_str)
 
     uploaded_files =
       export_data(slugs, date, from, to)
@@ -221,9 +228,7 @@ defmodule Sanbase.MetricExporter.CSV do
   end
 
   def upload_dictionaries_s3(scope) do
-    dict_path = Path.join(__DIR__, "dictionary_files/")
-
-    for file <- Path.wildcard("#{dict_path}/*") do
+    for file <- @dictionaries_files do
       do_upload_s3(file, scope)
     end
   end

@@ -16,8 +16,7 @@ defmodule SanbaseWeb.UserChannelTest do
              connect(
                SanbaseWeb.UserSocket,
                %{
-                 "access_token" => context.conn.private.plug_session["access_token"],
-                 "user_id" => context.user.id
+                 "access_token" => context.conn.private.plug_session["access_token"]
                },
                %{}
              )
@@ -26,12 +25,12 @@ defmodule SanbaseWeb.UserChannelTest do
              subscribe_and_join(socket, SanbaseWeb.UserChannel, "users:#{context.user.id}", %{})
   end
 
-  test "test tabs_open message", context do
+  test "test open_tabs message", context do
     for i <- 1..5 do
       socket = get_socket(context)
 
-      ref = push(socket, "tabs_open", %{})
-      assert_reply(ref, :ok, %{"tabs_open" => ^i})
+      ref = push(socket, "open_tabs", %{})
+      assert_reply(ref, :ok, %{"open_tabs" => ^i})
     end
   end
 
@@ -61,8 +60,7 @@ defmodule SanbaseWeb.UserChannelTest do
       connect(
         SanbaseWeb.UserSocket,
         %{
-          "access_token" => context.conn.private.plug_session["access_token"],
-          "user_id" => context.user.id
+          "access_token" => context.conn.private.plug_session["access_token"]
         },
         %{}
       )

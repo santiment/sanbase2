@@ -91,6 +91,8 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
             rate_limit_headers(rate_limit_map)
           )
 
+        Logger.info("[RequestHaltPlug] Rate limited user id #{user.id}")
+
         {true, conn, rate_limit_map_to_error_map(rate_limit_map)}
 
       {:ok, %{quota: :infinity}} ->
@@ -125,6 +127,8 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
             conn,
             rate_limit_headers(rate_limit_map)
           )
+
+        Logger.info("[RequestHaltPlug] Rate limit remote ip #{remote_ip}}")
 
         {true, conn, rate_limit_map_to_error_map(rate_limit_map)}
 

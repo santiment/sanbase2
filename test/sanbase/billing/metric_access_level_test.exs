@@ -388,6 +388,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "dydx_perpetual_funding_rate",
         "deribit_perpetual_funding_rate",
         "huobi_perpetual_funding_rate",
+        "ftx_perpetual_open_interest",
         # label metrics
         "active_deposits_per_exchange",
         "active_withdrawals_per_exchange",

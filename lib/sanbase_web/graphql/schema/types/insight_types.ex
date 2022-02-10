@@ -37,6 +37,11 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:title, non_null(:string))
     field(:short_desc, :string)
     field(:text, :string)
+
+    field :pulse_text, :string do
+      resolve(&InsightResolver.pulse_text/3)
+    end
+
     field(:state, :string)
     field(:moderation_comment, :string)
     field(:ready_state, :string)

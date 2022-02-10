@@ -548,6 +548,7 @@ defmodule Sanbase.Insight.Post do
     |> Repo.all()
   end
 
+  def is_pulse?(%__MODULE__{is_pulse: is_pulse}), do: is_pulse
   # Helper functions
 
   defp publish_post(post) do

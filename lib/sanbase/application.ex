@@ -195,14 +195,17 @@ defmodule Sanbase.Application do
   @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
   def common_children() do
     [
+      # Start the PubSub
+      {Phoenix.PubSub, name: Sanbase.PubSub},
+
+      # Start the Presence
+      SanbaseWeb.Presence,
+
       # Start the endpoint when the application starts
       SanbaseWeb.Endpoint,
 
       # Start the Postgres Ecto repository
       Sanbase.Repo,
-
-      # Start the PubSub
-      {Phoenix.PubSub, name: Sanbase.PubSub},
 
       # Telemetry metrics
       SanbaseWeb.Telemetry,

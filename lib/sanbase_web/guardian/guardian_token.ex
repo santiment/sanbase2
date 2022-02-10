@@ -39,6 +39,15 @@ defmodule SanbaseWeb.Guardian.Token do
     end
   end
 
+  def user_by_jti(jti) do
+    query = from(gt in __MODULE__, where: gt.jti == ^jti, select: gt.sub)
+
+    case Sanbase.Repo.one(query) do
+      nil -> {:error, "No user with such jti"}
+      user_id -> Sanbase.Accounts.get_user(String.to_integer(user_id))
+    end
+  end
+
   def refresh_tokens(user_id, current_refresh_token \\ nil) do
     result =
       refresh_tokens_by_user_id(user_id)

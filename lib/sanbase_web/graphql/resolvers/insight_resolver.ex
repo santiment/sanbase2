@@ -154,6 +154,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, search_result_insights}
   end
 
+  @doc ~s"""
+  When fetching all insights we need to directly show only the text of the pulse insights.
+  In order to transport less data over the network, this field can be used instead of
+  the `text` field as it will be filled only for those insights.
+  """
+  def pulse_text(%Post{} = post, _args, _resolution) do
+    case Post.is_pulse?(post) do
+      true -> {:ok, post.text}
+      false -> {:ok, nil}
+    end
+  end
+
   def create_post(_root, args, %{context: %{auth: %{current_user: user}}}) do
     case Post.can_create?(user.id) do
       {:ok, _} -> Post.create(user, args)

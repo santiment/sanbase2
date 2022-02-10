@@ -51,7 +51,7 @@ defmodule Sanbase.Billing do
   @doc ~s"""
   Sync the locally defined Products and Plans with stripe.
 
-  This acction assings a `stripe_id` to every product and plan without which
+  This acction assigns a `stripe_id` to every product and plan without which
   no subscription can succeed.
 
   In order to create the Products and Plans locally, the seed

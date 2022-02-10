@@ -16,6 +16,7 @@ defmodule Sanbase.Application.Web do
   def children() do
     # Define workers and child supervisors to be supervised
     children = [
+      # Start GraphQL subscriptions
       {Absinthe.Subscription, SanbaseWeb.Endpoint},
 
       # Start the graphQL in-memory cache

@@ -5,6 +5,7 @@ defmodule SanbaseWeb.UserSocket do
   import SanbaseWeb.ChannelUtils, only: [params_to_user: 1]
 
   channel("users:*", SanbaseWeb.UserChannel)
+  channel("open_restricted_tabs:*", SanbaseWeb.OpenRestrictedTabChannel)
 
   def connect(params, socket) do
     with {:ok, user} <- params_to_user(params) do

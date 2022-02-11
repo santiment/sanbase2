@@ -3,6 +3,7 @@ defmodule SanbaseWeb.ChannelUtils do
 
   def params_to_user(%{"access_token" => jwt}), do: jwt_to_user(jwt)
   def params_to_user(%{"jti" => jti}), do: jti_to_user(jti)
+  def params_to_user(_), do: {:error, "Params must contain jti or access_token keys"}
 
   # Private functions
 

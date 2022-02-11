@@ -25,15 +25,6 @@ defmodule SanbaseWeb.UserChannelTest do
              subscribe_and_join(socket, SanbaseWeb.UserChannel, "users:#{context.user.id}", %{})
   end
 
-  test "test open_tabs message", context do
-    for i <- 1..5 do
-      socket = get_socket(context)
-
-      ref = push(socket, "open_tabs", %{})
-      assert_reply(ref, :ok, %{"open_tabs" => ^i})
-    end
-  end
-
   test "test username validation", context do
     socket = get_socket(context)
 

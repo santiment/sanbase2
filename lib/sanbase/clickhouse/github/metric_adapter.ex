@@ -16,7 +16,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @aggregated_metrics_function_mapping %{
     "dev_activity" => :total_dev_activity,
-    "github_activity" => :total_github_activity
+    "github_activity" => :total_github_activity,
+    "dev_activity_contributors_count" => :total_dev_activity_contributors_count,
+    "github_activity_contributors_count" => :total_github_activity_contributors_count
   }
 
   @timeseries_metrics Map.keys(@timeseries_metrics_function_mapping)

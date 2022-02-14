@@ -154,7 +154,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
       end)
       |> Enum.filter(fn %__MODULE__{last_updated: last_updated} -> last_updated end)
 
-    require(IEx).pry
     data
   end
 

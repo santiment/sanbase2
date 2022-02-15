@@ -110,7 +110,13 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
     field :logout, :logout do
       middleware(JWTAuth, allow_access_without_terms_accepted: true)
-      resolve(fn _, _ -> {:ok, %{success: true}} end)
+
+      resolve(fn root, args, res ->
+        {:ok, true} = AuthResolver.revoke_current_refresh_token(root, args, res)
+
+        {:ok, %{success: true}}
+      end)
+
       middleware(CreateOrDeleteSession)
     end
 

@@ -12,14 +12,15 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 
 ENV PATH=/root/.cargo/bin:$PATH
 
-RUN apt-get install -y make \
+
+RUN apt-get install -y build-essential \
+	make \
 	g++ \
 	git \
 	nodejs \
-	nodejs-npm \
+	npm \
 	openssl \
 	wget
-
 
 RUN mix local.hex --force
 RUN mix local.rebar --force

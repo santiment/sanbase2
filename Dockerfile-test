@@ -1,6 +1,6 @@
-FROM santimentjenkins/elixir:1.12
+FROM elixir:1.13.3-slim
 
-RUN apk add --no-cache curl
+RUN apt-get update -y && apt-get install -y curl
 
 RUN curl https://sh.rustup.rs -sSf | \
   sh -s -- --default-toolchain stable -y
@@ -9,7 +9,7 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 
 ENV PATH=/root/.cargo/bin:$PATH
 
-RUN apk add --no-cache make \
+RUN apt-get install -y make \
   g++ \
   git \
   postgresql-client \

@@ -25,6 +25,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   @name_to_metric_map FileHandler.name_to_metric_map()
   @table_map FileHandler.table_map()
+  @min_interval_map FileHandler.min_interval_map()
 
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
@@ -338,16 +339,24 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   # Private functions
 
   defp maybe_convert_to_date(:after, metric, dt_column, sql_dt_description) do
-    case Map.get(@table_map, metric) do
-      "daily_" <> _rest_of_table -> "#{dt_column} >= toDate(#{sql_dt_description})"
-      _ -> "#{dt_column} >= #{sql_dt_description}"
+    table = Map.get(@table_map, metric)
+    min_interval = Map.get(@min_interval_map, metric)
+
+    cond do
+      String.starts_with?(table, "daily") -> "#{dt_column} >= toDate(#{sql_dt_description})"
+      min_interval == "1d" -> "toDate(#{dt_column}) >= toDate(#{sql_dt_description})"
+      true -> "#{dt_column} >= #{sql_dt_description}"
     end
   end
 
   defp maybe_convert_to_date(:before, metric, dt_column, sql_dt_description) do
-    case Map.get(@table_map, metric) do
-      "daily_" <> _rest_of_table -> "#{dt_column} <= toDate(#{sql_dt_description})"
-      _ -> "#{dt_column} < #{sql_dt_description}"
+    table = Map.get(@table_map, metric)
+    min_interval = Map.get(@min_interval_map, metric)
+
+    cond do
+      String.starts_with?(table, "daily") -> "#{dt_column} <= toDate(#{sql_dt_description})"
+      min_interval == "1d" -> "toDate(#{dt_column}) <= toDate(#{sql_dt_description})"
+      true -> "#{dt_column} < #{sql_dt_description}"
     end
   end
 end

@@ -93,7 +93,7 @@ defmodule Sanbase.Mixfile do
       {:expletive, "~> 0.1.0"},
       {:exprof, "~> 0.2.0"},
       {:extwitter, "~> 0.11"},
-      {:faker, "~> 0.12", only: [:dev, :test]},
+      {:faker, "~> 0.17", only: [:dev, :test]},
       {:floki, "~> 0.20"},
       {:gettext, "~> 0.11"},
       {:guardian_db, "~> 2.0"},

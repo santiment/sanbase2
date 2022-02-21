@@ -1,9 +1,9 @@
 # Elixir and phoenix assets build image
-FROM santimentjenkins/elixir:1.12 as code_builder
+FROM elixir:1.13.3-slim as code_builder
 
 ENV MIX_ENV prod
 
-RUN apk add --no-cache curl
+RUN apt-get update -y && apt-get install -y curl
 
 RUN curl https://sh.rustup.rs -sSf | \
 	sh -s -- --default-toolchain stable -y
@@ -12,7 +12,7 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 
 ENV PATH=/root/.cargo/bin:$PATH
 
-RUN apk add --no-cache make \
+RUN apt-get install -y make \
 	g++ \
 	git \
 	nodejs \
@@ -44,12 +44,11 @@ RUN mix phx.digest
 RUN mix distillery.release
 
 # Release image
-FROM santimentjenkins/elixir:1.12
+FROM elixir:1.13.3-slim
 
 ENV MIX_ENV prod
 
-RUN apk add --no-cache bash \
-	imagemagick
+RUN apt-get update -y && apt-get install -y bash imagemagick
 
 WORKDIR /app
 

@@ -28,6 +28,7 @@ defmodule Sanbase.Email.Template do
     second_education_email: "second_edu_email_v2"
   }
   @post_cancellation_template "cancelled_subscription"
+  @end_of_trial_template "end_of_trial"
 
   @comment_notification_template "notification"
   @verify_email_weekly_digest_template "verify_email_weekly_digest"
@@ -37,6 +38,8 @@ defmodule Sanbase.Email.Template do
   def sign_up_trial_templates, do: @sign_up_trial_templates
   def sign_up_templates, do: @sign_up_templates
   def post_cancellation_template, do: @post_cancellation_template
+  def end_of_trial_template, do: @end_of_trial_template
+
   def comment_notification_template, do: @comment_notification_template
   def verify_email_weekly_digest_template, do: @verify_email_weekly_digest_template
   def monitoring_watchlist_template, do: @monitoring_watchlist_template

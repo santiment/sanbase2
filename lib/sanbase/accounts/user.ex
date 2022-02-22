@@ -97,6 +97,10 @@ defmodule Sanbase.Accounts.User do
     timestamps()
   end
 
+  def get_name(%__MODULE__{} = user) do
+    user.name || user.username || user.email || "Anon"
+  end
+
   def get_unique_str(%__MODULE__{} = user) do
     user.email || user.username || user.twitter_id || "id_#{user.id}"
   end

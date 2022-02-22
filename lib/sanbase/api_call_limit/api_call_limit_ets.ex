@@ -73,7 +73,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
   # Private functions
 
   defp do_get_quota(entity_type, entity, entity_key) do
-    lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity, entity_key}, 5_000)
+    lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity_type, entity_key}, 5_000)
 
     result =
       case :ets.lookup(@ets_table, entity_key) do
@@ -143,7 +143,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
   end
 
   defp do_update_usage(entity_type, entity, entity_key, count) do
-    lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity, entity_key}, 5_000)
+    lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity_type, entity_key}, 5_000)
 
     case :ets.lookup(@ets_table, entity_key) do
       [] ->

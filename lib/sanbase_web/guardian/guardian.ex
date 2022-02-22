@@ -117,7 +117,7 @@ defmodule SanbaseWeb.Guardian do
       }) do
     case Configuration.SharedAccessToken.by_uuid(shared_access_token_uuid) do
       {:ok, token} -> {:ok, token}
-      {:errror, _} -> {:error, :no_existing_token}
+      {:error, _} -> {:error, :no_existing_token}
     end
   end
 

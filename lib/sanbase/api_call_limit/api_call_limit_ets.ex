@@ -222,7 +222,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
         {:ok, metadata}
 
-      {:error, %{} = error_map} ->
+      {:error, %{blocked_until: _} = error_map} ->
         retry_again_after =
           Enum.min(
             [error_map.blocked_until, DateTime.add(now, 60, :second)],

@@ -63,7 +63,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     export_api_call_data(queries, conn, blueprint)
     do_not_cache? = Process.get(:do_not_cache_query) == true
 
-    maybe_update_api_call_limit_usage(blueprint.execution.context, Enum.count(queries))
+    maybe_update_api_call_limit_usage(conn, blueprint.execution.context, Enum.count(queries))
 
     case do_not_cache? or has_graphql_errors?(blueprint) do
       true -> :ok
@@ -75,6 +75,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   defp maybe_update_api_call_limit_usage(
+         conn,
          %{
            rate_limiting_enabled: true,
            product_id: @product_id_api,
@@ -82,10 +83,12 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
          },
          count
        ) do
-    Sanbase.ApiCallLimit.update_usage(:user, user, count, auth_method)
+    if conn.private[:has_api_call_limit_quota_infinity] != true,
+      do: Sanbase.ApiCallLimit.update_usage(:user, user, count, auth_method)
   end
 
   defp maybe_update_api_call_limit_usage(
+         conn,
          %{
            rate_limiting_enabled: true,
            product_id: @product_id_api,
@@ -93,13 +96,15 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
          } = context,
          count
        ) do
-    auth_method = context[:auth][:auth_method] || :unauthorized
-    remote_ip = IP.ip_tuple_to_string(remote_ip)
+    if conn.private[:has_api_call_limit_quota_infinity] != true do
+      auth_method = context[:auth][:auth_method] || :unauthorized
+      remote_ip = IP.ip_tuple_to_string(remote_ip)
 
-    Sanbase.ApiCallLimit.update_usage(:remote_ip, remote_ip, count, auth_method)
+      Sanbase.ApiCallLimit.update_usage(:remote_ip, remote_ip, count, auth_method)
+    end
   end
 
-  defp maybe_update_api_call_limit_usage(_, _), do: :ok
+  defp maybe_update_api_call_limit_usage(_conn, _context, _count), do: :ok
 
   defp cache_result(queries, blueprint) do
     all_queries_cachable? = queries |> Enum.all?(&Enum.member?(@cached_queries, &1))

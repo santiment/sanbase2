@@ -6,9 +6,8 @@ defmodule Sanbase.Accounts.EmailJobs do
   def schedule_emails_after_sign_up(user_id) do
     user = Sanbase.Accounts.User.by_id!(user_id)
     templates = Sanbase.Email.Template.sign_up_templates()
-    user_unique_str = Sanbase.Accounts.User.get_unique_str(user)
 
-    vars = %{name: user_unique_str}
+    vars = %{name: Sanbase.Accounts.User.get_name(user)}
 
     multi = Ecto.Multi.new()
 
@@ -51,7 +50,7 @@ defmodule Sanbase.Accounts.EmailJobs do
     template = Sanbase.Email.Template.post_cancellation_template()
 
     vars = %{
-      subscription_type: "Sanbase #{String.capitalize(subscription.plan.name)}",
+      subscription_type: subscription_type(subscription),
       end_subscription_date: Timex.format!(subscription.current_period_end, "{Mfull} {D}, {YYYY}")
     }
 
@@ -59,6 +58,25 @@ defmodule Sanbase.Accounts.EmailJobs do
       Sanbase.Mailer.new(%{
         user_id: subscription.user_id,
         template: template,
+        vars: vars
+      })
+
+    Oban.insert(@oban_conf_name, data)
+  end
+
+  def send_trial_will_end_email(subscription) do
+    user = Sanbase.Accounts.User.by_id!(subscription.user_id)
+
+    vars = %{
+      name: Sanbase.Accounts.User.get_name(user),
+      subscription_type: subscription_type(subscription),
+      subscription_duration: subscription.plan.interval <> "ly"
+    }
+
+    data =
+      Sanbase.Mailer.new(%{
+        user_id: user.id,
+        template: Sanbase.Email.Template.end_of_trial_template(),
         vars: vars
       })
 
@@ -82,5 +100,16 @@ defmodule Sanbase.Accounts.EmailJobs do
       },
       scheduled_at: scheduled_at
     )
+  end
+
+  defp subscription_type(subscription) do
+    plan_name =
+      case subscription.plan.name do
+        "PRO" -> "PRO"
+        "PRO_PLUS" -> "PRO+"
+        plan -> plan
+      end
+
+    "Sanbase #{plan_name}"
   end
 end

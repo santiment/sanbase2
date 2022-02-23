@@ -9,7 +9,7 @@ defmodule Sanbase.Metric.LatestMetric do
   alias Sanbase.Clickhouse.MetricAdapter.FileHandler
 
   @name_to_metric_map FileHandler.name_to_metric_map()
-  @metric_to_name_map FileHandler.metric_to_name_map()
+  @metric_to_names_map FileHandler.metric_to_names_map()
   @table_map FileHandler.table_map()
   @asset_prices_table Sanbase.Price.table()
 
@@ -81,7 +81,8 @@ defmodule Sanbase.Metric.LatestMetric do
   end
 
   defp get_metric_name(table, metric) when table in ["intraday_metrics", "daily_metrics_v2"] do
-    Map.get(@metric_to_name_map, metric) || metric
+    name = Map.get(@metric_to_names_map, metric, []) |> List.first()
+    name || metric
   end
 
   defp get_metric_name(_table, metric), do: metric

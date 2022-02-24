@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.SanbaseRepo
-  alias SanbaseWeb.Graphql.Resolvers.UserListResolver
+  alias SanbaseWeb.Graphql.Resolvers.{UserListResolver, VoteResolver}
 
   enum :color_enum do
     value(:none)
@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
 
   object :list_item do
     field(:project, :project)
-    field(:blockchain_address, :blockchain_address)
+    field(:blockchain_address, :blockchain_address_ephemeral)
   end
 
   object :watchlist_stats do
@@ -63,7 +63,11 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   object :user_list do
     field(:id, non_null(:id))
     field(:type, :watchlist_type_enum)
-    field(:user, non_null(:post_author), resolve: dataloader(SanbaseRepo))
+
+    field :user, non_null(:public_user) do
+      resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
+    end
+
     field(:name, non_null(:string))
     field(:slug, :string)
     field(:description, :string)
@@ -96,6 +100,18 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
 
     field(:settings, :watchlist_settings) do
       cache_resolve(&UserListResolver.settings/3, honor_do_not_cache_flag: true)
+    end
+
+    field :comments_count, :integer do
+      resolve(&UserListResolver.comments_count/3)
+    end
+
+    field :voted_at, :datetime do
+      resolve(&VoteResolver.voted_at/3)
+    end
+
+    field :votes, :vote do
+      resolve(&VoteResolver.votes/3)
     end
   end
 end

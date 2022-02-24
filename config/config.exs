@@ -29,10 +29,11 @@ config :sanbase, SanbaseWeb.Plug.BasicAuth,
   password: {:system, "ADMIN_BASIC_AUTH_PASSWORD", "admin"}
 
 config :sanbase, Sanbase.Transfers.Erc20Transfers,
-  dt_ordered_table: {:system, "DT_ORDERED_ERC20_TRANFERS_TABLE", "erc20_transfers_new"},
+  dt_ordered_table: {:system, "DT_ORDERED_ERC20_TRANFERS_TABLE", "erc20_transfers_dt_order"},
   address_ordered_table: {:system, "ADDRESS_ORDERED_ERC20_TRANSFERS_TABLE", "erc20_transfers"}
 
-config :sanbase, Sanbase.Kaiko, apikey: {:system, "KAIKO_APIKEY"}
+config :sanbase, Sanbase.Price.Validator, enabled: {:system, "PRICE_VALIDATOR_ENABLED", true}
+
 config :sanbase, Sanbase.Cryptocompare, api_key: {:system, "CRYPTOCOMPARE_API_KEY"}
 
 config :sanbase, Sanbase.KafkaExporter,
@@ -42,7 +43,12 @@ config :sanbase, Sanbase.KafkaExporter,
   kafka_port: {:system, "KAFKA_PORT", "9092"},
   prices_topic: {:system, "KAFKA_PRICES_TOPIC", "asset_prices"},
   asset_price_pairs_topic: {:system, "KAFKA_CRYPTOCOMPARE_PRICES_TOPIC", "asset_price_pairs"},
-  api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"}
+  asset_price_pairs_only_topic:
+    {:system, "KAFKA_CRYPTOCOMPARE_PRICES_ONLY_TOPIC", "asset_price_pairs_only"},
+  asset_ohlcv_price_pairs_topic:
+    {:system, "KAFKA_ASSET_OHLCV_PRICE_POINTS_TOPIC", "asset_ohlcv_price_pairs"},
+  api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"},
+  twitter_followers_topic: {:system, "KAFKA_TWITTER_FOLLOWERS_TOPIC", "twitter_followers"}
 
 config :sanbase, Sanbase.EventBus.KafkaExporterSubscriber,
   event_bus_topic: {:system, "KAFKA_EVENT_BUS_TOPIC", "sanbase_event_bus"},
@@ -65,6 +71,7 @@ config :sanbase, Sanbase.Repo,
   max_overflow: 5,
   queue_target: 5000,
   queue_interval: 1000,
+  timeout: 30_000,
   # because of pgbouncer
   prepare: :unnamed,
   migration_timestamps: [type: :naive_datetime_usec]
@@ -121,6 +128,10 @@ config :tesla,
   adapter: Tesla.Adapter.Hackney,
   recv_timeout: 30_000
 
+config :sanbase, Sanbase.ApiCallLimit,
+  quota_size: 100,
+  quota_size_max_offset: 100
+
 config :sanbase, Sanbase.InternalServices.Ethauth,
   url: {:system, "ETHAUTH_URL"},
   basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},
@@ -132,7 +143,9 @@ config :sanbase, Sanbase.InternalServices.Parity,
   basic_auth_password: {:system, "PARITY_BASIC_AUTH_PASSWORD"}
 
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
-  rate_limiting_enabled: {:system, "SANBASE_API_CALL_RATE_LIMITING_ENABLED", true},
+  rate_limiting_enabled: {:system, "SANBASE_API_CALL_RATE_LIMITING_ENABLED", true}
+
+config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: {:system, "GRAPHQL_BASIC_AUTH_USERNAME"},
   basic_auth_password: {:system, "GRAPHQL_BASIC_AUTH_PASSWORD"}
 
@@ -179,6 +192,8 @@ config :sanbase, SanbaseWeb.Graphql.Middlewares.AccessControl,
   restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},
   restrict_from_in_days: {:system, "RESTRICT_FROM_IN_MONTHS", "90"}
 
+config :sanbase, Sanbase.MetricExporter.S3, bucket: {:system, "METRICS_EXPORTER_S3_BUCKET"}
+
 config :libcluster,
   topologies: [
     k8s: [
@@ -213,6 +228,16 @@ config :sanbase, Sanbase.Promoters.FirstPromoterApi,
   api_key: {:system, "FIRST_PROMOTER_API_KEY"}
 
 config :sanbase, Sanbase.WalletHunters.Contract, rinkeby_url: {:system, "RINKEBY_URL"}
+
+config :sanbase, Oban.Web,
+  repo: Sanbase.Repo,
+  queues: [email_queue: 5],
+  name: :oban_web
+
+config :kaffy,
+  otp_app: :sanbase,
+  ecto_repo: Sanbase.Repo,
+  router: SanbaseWeb.Router
 
 # Import configs
 import_config "ueberauth_config.exs"

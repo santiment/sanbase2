@@ -19,22 +19,22 @@ slaveTemplates.dockerTemplate { label ->
         def gitHead = scmVars.GIT_COMMIT.substring(0, 7)
 
         sh "docker build \
-          -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID} \
+          -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID} \
           -f Dockerfile-test . \
           --progress plain"
 
         sh "docker run \
-            --rm --name test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID} \
+            --rm --name test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID} \
             -e POSTGRES_PASSWORD=password \
-            -d postgres:10.10-alpine"
+            -d postgres:12.7-alpine"
 
         try {
           sh "docker run --rm \
-            --link test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}:test-db \
+            --link test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID}:test-db \
             --env DATABASE_URL=postgres://postgres:password@test-db:5432/postgres \
-            -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}"
+            -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID}"
         } finally {
-          sh "docker kill test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}"
+          sh "docker kill test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID}"
         }
 
         if (env.BRANCH_NAME == 'master') {

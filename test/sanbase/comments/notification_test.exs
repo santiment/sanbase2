@@ -65,7 +65,7 @@ defmodule Sanbase.Comments.NotificationTest do
   end
 
   defp entity_id(comment_id) do
-    (Sanbase.Repo.get_by(Sanbase.Insight.PostComment, comment_id: comment_id) ||
-       Sanbase.Repo.get_by(Sanbase.Timeline.TimelineEventComment, comment_id: comment_id)).id
+    (Sanbase.Repo.get_by(Sanbase.Comment.PostComment, comment_id: comment_id) ||
+       Sanbase.Repo.get_by(Sanbase.Comment.TimelineEventComment, comment_id: comment_id)).id
   end
 end

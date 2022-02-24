@@ -1,7 +1,7 @@
 defmodule Sanbase.Billing.DiscordNotification do
   alias Sanbase.Accounts.User
   alias Sanbase.Notifications.Discord
-  alias Sanbase.Billing.{Subscription, Plan}
+  alias Sanbase.Billing.{Subscription, Plan, Product}
 
   require Sanbase.Utils.Config, as: Config
 
@@ -59,6 +59,10 @@ defmodule Sanbase.Billing.DiscordNotification do
 
     if subscription.status == :active do
       do_send_to_discord(message, "Stripe Cancellation")
+
+      if subscription.plan.product_id == Product.product_sanbase() do
+        Sanbase.Accounts.EmailJobs.send_post_cancellation_email(subscription)
+      end
     end
   end
 

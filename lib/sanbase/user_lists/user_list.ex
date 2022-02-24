@@ -14,11 +14,14 @@ defmodule Sanbase.UserList do
   of the top 50 ERC20 projects or all projects with a market segment "stablecoin"
   """
 
+  @behaviour Sanbase.Entity.Behaviour
+
   use Ecto.Schema
 
   import Ecto.Changeset
   import Ecto.Query
   import Sanbase.UserList.EventEmitter, only: [emit_event: 3]
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
 
   alias Sanbase.Accounts.User
   alias Sanbase.UserList.ListItem
@@ -58,21 +61,11 @@ defmodule Sanbase.UserList do
     update_changeset(user_list, attrs)
   end
 
+  @create_update_fields [:color, :description, :function, :is_monitored, :is_public, :is_screener] ++
+                          [:name, :slug, :table_configuration_id, :type, :user_id]
   def create_changeset(%__MODULE__{} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, [
-      :color,
-      :description,
-      :function,
-      :is_monitored,
-      :is_public,
-      :is_screener,
-      :name,
-      :slug,
-      :table_configuration_id,
-      :type,
-      :user_id
-    ])
+    |> cast(attrs, @create_update_fields)
     |> validate_required([:name, :user_id])
     |> validate_change(:function, &validate_function/2)
     |> unique_constraint(:slug)
@@ -80,18 +73,7 @@ defmodule Sanbase.UserList do
 
   def update_changeset(%__MODULE__{id: _id} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, [
-      :color,
-      :description,
-      :function,
-      :is_monitored,
-      :is_public,
-      :is_screener,
-      :name,
-      :slug,
-      :table_configuration_id,
-      :type
-    ])
+    |> cast(attrs, @create_update_fields)
     |> cast_assoc(:list_items)
     |> validate_change(:function, &validate_function/2)
     |> unique_constraint(:slug)
@@ -102,16 +84,50 @@ defmodule Sanbase.UserList do
   defp validate_function(_changeset, function) do
     {:ok, function} = function |> WatchlistFunction.cast()
 
-    case function |> WatchlistFunction.valid_function?() do
-      true -> []
-      false -> [function: "Provided watchlist function is not valid."]
-      {:error, error} -> [function: "Provided watchlist function is not valid. Reason: #{error}"]
+    case WatchlistFunction.valid_function?(function) do
+      true ->
+        []
+
+      {:error, error} ->
+        [function: "Provided watchlist function is not valid. Reason: #{error}"]
     end
   end
 
-  def by_id(id) do
-    from(ul in __MODULE__, where: ul.id == ^id)
-    |> Repo.one()
+  @impl Sanbase.Entity.Behaviour
+  def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id(id, _opts) when is_integer(id) or is_binary(id) do
+    result =
+      from(ul in __MODULE__, where: ul.id == ^id)
+      |> Repo.one()
+
+    case result do
+      nil -> {:error, "Watchlist with id: #{id} does not exist."}
+      watchlist -> {:ok, watchlist}
+    end
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids(ids, _opts) when is_list(ids) do
+    result =
+      from(ul in __MODULE__,
+        where: ul.id in ^ids,
+        order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
+      )
+      |> Repo.all()
+
+    {:ok, result}
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    from(ul in __MODULE__, where: ul.is_public == true)
+    |> select([ul], ul.id)
+    |> maybe_filter_is_screener(opts)
   end
 
   def by_slug(slug) when is_binary(slug) do
@@ -125,14 +141,40 @@ defmodule Sanbase.UserList do
   @doc ~s"""
   Return a list of all blockchain addresses in a watchlist.
   """
-  def get_blockchain_addresses(%__MODULE__{} = watchlist) do
-    blockchain_addresses = ListItem.get_blockchain_addresses(watchlist)
+  def get_blockchain_addresses(%__MODULE__{function: function} = watchlist) do
+    case WatchlistFunction.evaluate(function) do
+      {:error, error} ->
+        {:error, error}
 
-    {:ok,
-     %{
-       blockchain_addresses: blockchain_addresses,
-       total_blockchain_addresses_count: length(blockchain_addresses)
-     }}
+      {:ok, %{blockchain_addresses: blockchain_addresses}} ->
+        list_item_blockchain_addresses = ListItem.get_blockchain_addresses(watchlist)
+
+        blockchain_addresses =
+          blockchain_addresses
+          |> Enum.map(fn %{address: address, infrastructure: infrastructure} ->
+            %{
+              id: nil,
+              labels: [],
+              notes: "",
+              blockchain_address: %{
+                address: address,
+                infrastructure: %{code: infrastructure}
+              }
+            }
+          end)
+
+        # keep the list items in the first places so they will be taken with
+        # higher priority in order to keep the notes and labels
+        unique_blockchain_addresses =
+          (list_item_blockchain_addresses ++ blockchain_addresses)
+          |> Enum.uniq_by(&{&1.blockchain_address.address, &1.blockchain_address.infrastructure})
+
+        {:ok,
+         %{
+           blockchain_addresses: unique_blockchain_addresses,
+           total_blockchain_addresses_count: length(unique_blockchain_addresses)
+         }}
+    end
   end
 
   @doc ~s"""
@@ -145,7 +187,12 @@ defmodule Sanbase.UserList do
 
       # If there is pagination, the total number of projects cannot be properly
       # defined without having all the slugs, including the ones from the other pages
-      {:ok, %{projects: projects, has_pagination?: true, all_included_slugs: all_included_slugs}} ->
+      {:ok,
+       %{
+         projects: projects,
+         has_pagination?: true,
+         all_included_slugs: all_included_slugs
+       }} ->
         list_item_projects = ListItem.get_projects(watchlist)
 
         unique_projects =
@@ -159,7 +206,11 @@ defmodule Sanbase.UserList do
           |> Enum.uniq_by(& &1.id)
           |> length()
 
-        {:ok, %{projects: unique_projects, total_projects_count: total_projects_count}}
+        {:ok,
+         %{
+           projects: unique_projects,
+           total_projects_count: total_projects_count
+         }}
 
       {:ok, %{projects: projects}} ->
         list_item_projects = ListItem.get_projects(watchlist)
@@ -169,7 +220,11 @@ defmodule Sanbase.UserList do
           |> Enum.reject(&is_nil(&1.slug))
           |> Enum.uniq_by(& &1.id)
 
-        {:ok, %{projects: unique_projects, total_projects_count: length(unique_projects)}}
+        {:ok,
+         %{
+           projects: unique_projects,
+           total_projects_count: length(unique_projects)
+         }}
     end
   end
 
@@ -193,8 +248,11 @@ defmodule Sanbase.UserList do
     |> case do
       {:ok, user_list} ->
         case list_items = Map.get(params, :list_items) do
-          nil -> {:ok, user_list}
-          _ -> update_user_list(user, %{id: user_list.id, list_items: list_items})
+          nil ->
+            {:ok, user_list}
+
+          _ ->
+            update_user_list(user, %{id: user_list.id, list_items: list_items})
         end
 
       {:error, error} ->
@@ -208,7 +266,7 @@ defmodule Sanbase.UserList do
 
     changeset =
       user_list_id
-      |> by_id()
+      |> by_id!([])
       |> Repo.preload(:list_items)
       |> update_changeset(params)
 
@@ -220,7 +278,7 @@ defmodule Sanbase.UserList do
     %{list_items: list_items} = update_list_items_params(params, user)
 
     case ListItem.create(list_items) do
-      {:ok, _} -> {:ok, by_id(id)}
+      {:ok, _} -> by_id(id, [])
       {:error, error} -> {:error, error}
     end
   end
@@ -229,14 +287,14 @@ defmodule Sanbase.UserList do
     %{list_items: list_items} = update_list_items_params(params, user)
 
     case ListItem.delete(list_items) do
-      {nil, _} -> {:ok, by_id(id)}
-      {num, _} when is_integer(num) -> {:ok, by_id(id)}
+      {nil, _} -> by_id(id, [])
+      {num, _} when is_integer(num) -> by_id(id, [])
       {:error, error} -> {:error, error}
     end
   end
 
   def remove_user_list(_user, %{id: id}) do
-    by_id(id)
+    by_id!(id, [])
     |> Repo.delete()
     |> emit_event(:delete_watchlist, %{})
   end
@@ -291,7 +349,8 @@ defmodule Sanbase.UserList do
 
   defp maybe_create_event(error_result, _, _), do: error_result
 
-  defp user_list_query_by_user_id(%User{id: user_id}) when is_integer(user_id) and user_id > 0 do
+  defp user_list_query_by_user_id(%User{id: user_id})
+       when is_integer(user_id) and user_id > 0 do
     from(ul in __MODULE__, where: ul.is_public == true or ul.user_id == ^user_id)
   end
 
@@ -299,12 +358,17 @@ defmodule Sanbase.UserList do
     from(ul in __MODULE__, where: ul.is_public == true)
   end
 
-  defp update_list_items_params(%{list_items: [%{project_id: _} | _]} = params, _user) do
+  defp update_list_items_params(
+         %{list_items: [%{project_id: _} | _]} = params,
+         _user
+       ) do
     %{id: user_list_id, list_items: input_objects} = params
 
     list_items =
       input_objects
-      |> Enum.map(fn item -> %{project_id: item.project_id, user_list_id: user_list_id} end)
+      |> Enum.map(fn item ->
+        %{project_id: item.project_id, user_list_id: user_list_id}
+      end)
       |> Enum.uniq_by(& &1.project_id)
 
     %{params | list_items: list_items}
@@ -324,7 +388,10 @@ defmodule Sanbase.UserList do
 
     # A list of Sanbase.BlockchainAddressUserPair structs
     {:ok, blockchain_address_user_pairs} =
-      get_or_create_blockchain_address_user_pairs(input_blockchain_addresses, user)
+      get_or_create_blockchain_address_user_pairs(
+        input_blockchain_addresses,
+        user
+      )
 
     list_items =
       blockchain_address_user_pairs
@@ -355,7 +422,20 @@ defmodule Sanbase.UserList do
     |> where([ul], ul.is_public == ^is_public)
   end
 
-  defp get_or_create_blockchain_address_user_pairs(input_blockchain_addresses, user) do
+  defp maybe_filter_is_screener(query, opts) do
+    case Keyword.get(opts, :is_screener) do
+      nil ->
+        query
+
+      is_screener when is_screener in [true, false] ->
+        query |> where([ul], ul.is_screener == ^is_screener)
+    end
+  end
+
+  defp get_or_create_blockchain_address_user_pairs(
+         input_blockchain_addresses,
+         user
+       ) do
     blockchain_address_to_id_map = blockchain_address_to_id_map(input_blockchain_addresses)
 
     input_blockchain_addresses

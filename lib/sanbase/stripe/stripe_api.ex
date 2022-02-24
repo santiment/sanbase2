@@ -118,6 +118,10 @@ defmodule Sanbase.StripeApi do
     {:ok, []}
   end
 
+  def upcoming_invoice(stripe_id) do
+    Stripe.Invoice.upcoming(%{subscription: stripe_id})
+  end
+
   # Helpers
 
   defp get_subscription_first_item_id(stripe_id) do

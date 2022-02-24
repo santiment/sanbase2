@@ -1,6 +1,7 @@
 defmodule Sanbase.BlockchainAddress do
   use Ecto.Schema
 
+  import Ecto.Query
   import Ecto.Changeset
 
   alias Sanbase.Model.Infrastructure
@@ -20,7 +21,9 @@ defmodule Sanbase.BlockchainAddress do
   end
 
   def by_id(id) do
-    case Sanbase.Repo.get(__MODULE__, id) do
+    query = from(ba in __MODULE__, where: ba.id == ^id, preload: [:infrastructure])
+
+    case Sanbase.Repo.one(query) do
       nil -> {:error, "Blockchain address with #{id} does not exist."}
       %__MODULE__{} = addr -> {:ok, addr}
     end
@@ -49,9 +52,12 @@ defmodule Sanbase.BlockchainAddress do
   All other chains are sensitive, so they are not changed by this function.
   """
   def to_internal_format(address) do
-    case Regex.match?(~r/^0x([A-Fa-f0-9]{40})$/, address) do
-      true -> String.downcase(address)
-      _ -> address
+    cond do
+      # ETH and ETH forks
+      Regex.match?(~r/^0x([A-Fa-f0-9]{40})$/, address) -> String.downcase(address)
+      # BTC and BTC forks
+      Regex.match?(~r/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/, address) -> address
+      true -> address
     end
   end
 
@@ -87,4 +93,20 @@ defmodule Sanbase.BlockchainAddress do
       {:error, error} -> {:error, error}
     end
   end
+
+  def blockchain_from_infrastructure("ETH"), do: "ethereum"
+  def blockchain_from_infrastructure("BTC"), do: "bitcoin"
+  def blockchain_from_infrastructure("BCH"), do: "bitcoin-cash"
+  def blockchain_from_infrastructure("LTC"), do: "litecoin"
+  def blockchain_from_infrastructure("BNB"), do: "binance"
+  def blockchain_from_infrastructure("BEP2"), do: "binance"
+  def blockchain_from_infrastructure("XRP"), do: "ripple"
+  def blockchain_from_infrastructure(_), do: :unsupported_blockchain
+
+  def infrastructure_from_blockchain("ethereum"), do: "ETH"
+  def infrastructure_from_blockchain("bitcoin"), do: "BTC"
+  def infrastructure_from_blockchain("bitcoin-cash"), do: "BCH"
+  def infrastructure_from_blockchain("litecoin"), do: "LTC"
+  def infrastructure_from_blockchain("binance"), do: "BEP2"
+  def infrastructure_from_blockchain("ripple"), do: "XRP"
 end

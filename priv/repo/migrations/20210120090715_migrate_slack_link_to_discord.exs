@@ -19,7 +19,7 @@ defmodule Sanbase.Repo.Migrations.MigrateSlackLinkToDiscord do
   defp migrate_discord_links() do
     Project.List.projects_by_non_null_field(
       :slack_link,
-      include_hidden_projects?: true
+      include_hidden: true
     )
     |> Enum.filter(fn %Project{slack_link: link} ->
       String.contains?(link, "discord")

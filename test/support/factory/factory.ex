@@ -21,7 +21,6 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
   alias Sanbase.Billing.{Product, Plan, Subscription}
-  alias Sanbase.Billing.Subscription.SignUpTrial
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Chart
   alias Sanbase.TableConfiguration
@@ -176,11 +175,13 @@ defmodule Sanbase.Factory do
 
   def random_erc20_project_factory(attrs) do
     slug = Map.get(attrs, :slug, rand_str())
+    coinmarketcap_id = Map.get(attrs, :coinmarketcap_id, slug)
 
     %Project{
       name: rand_str(),
       ticker: rand_str(4),
       slug: slug,
+      coinmarketcap_id: coinmarketcap_id,
       is_hidden: false,
       source_slug_mappings: [
         build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
@@ -201,11 +202,13 @@ defmodule Sanbase.Factory do
 
   def project_factory(attrs) do
     slug = Map.get(attrs, :slug, "santiment")
+    coinmarketcap_id = Map.get(attrs, :coinmarketcap_id, slug)
 
     %Project{
       name: "Santiment",
       ticker: "SAN",
       slug: slug,
+      coinmarketcap_id: coinmarketcap_id,
       is_hidden: false,
       source_slug_mappings: [
         build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
@@ -226,11 +229,13 @@ defmodule Sanbase.Factory do
   def random_project_factory(attrs) do
     slug = Map.get(attrs, :slug, rand_str())
     ticker = Map.get(attrs, :ticker, rand_str(4) |> String.upcase())
+    coinmarketcap_id = Map.get(attrs, :coinmarketcap_id, slug)
 
     %Project{
       name: rand_str(),
       ticker: ticker,
       slug: slug,
+      coinmarketcap_id: coinmarketcap_id,
       is_hidden: false,
       source_slug_mappings: [
         build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
@@ -646,17 +651,6 @@ defmodule Sanbase.Factory do
 
   def user_role_factory() do
     %UserRole{}
-  end
-
-  def sign_up_trial_factory do
-    %SignUpTrial{
-      sent_welcome_email: false,
-      sent_first_education_email: false,
-      sent_second_education_email: false,
-      sent_trial_will_end_email: false,
-      sent_cc_will_be_charged: false,
-      sent_trial_finished_without_cc: false
-    }
   end
 
   def exchange_market_pair_mappings_factory do

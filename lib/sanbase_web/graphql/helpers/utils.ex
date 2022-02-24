@@ -1,4 +1,6 @@
 defmodule SanbaseWeb.Graphql.Helpers.Utils do
+  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_sec: 1]
+
   def selector_args_to_opts(args) when is_map(args) do
     opts = [aggregation: Map.get(args, :aggregation, nil)]
     selector = args[:selector]
@@ -22,10 +24,13 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   This is used when a query to influxdb is made. Influxdb can return a timestamp
   that's outside `from` - `to` interval due to its inner working with buckets
   """
-  def fit_from_datetime([%{datetime: _} | _] = data, %{from: from}) do
+  def fit_from_datetime([%{datetime: _} | _] = data, %{from: from, interval: interval}) do
+    interval_sec = str_to_sec(interval)
+    from = round_datetime(from, second: interval_sec)
+
     result =
-      data
-      |> Enum.drop_while(fn %{datetime: datetime} ->
+      Enum.drop_while(data, fn %{datetime: datetime} ->
+        datetime = round_datetime(datetime, second: interval_sec)
         DateTime.compare(datetime, from) == :lt
       end)
 
@@ -86,8 +91,9 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   def requested_fields(_), do: MapSet.new([])
 
   # Private functions
+  @fields [:owner, :label, :label_fqn, :label_fqns, :blockchain, :owners, :labels]
   defp maybe_add_field(opts, :additional_filters, selector) do
-    case Map.split(selector, [:owner, :label, :owners, :labels]) do
+    case Map.split(selector, @fields) do
       {map, _rest} when map_size(map) > 0 ->
         # Rename the plurals to singulars. This is done to simplify the
         # SQL generation
@@ -95,6 +101,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
           map
           |> maybe_rename_field(:owners, :owner)
           |> maybe_rename_field(:labels, :label)
+          |> maybe_rename_field(:label_fqns, :label_fqn)
 
         [additional_filters: Keyword.new(map)] ++ opts
 

@@ -33,7 +33,7 @@ defmodule Sanbase.Repo.Migrations.MigrateWrongWalletMovementsAlerts do
     new_settings = %{settings | selector: %{slug: currency, infrastructure: infr}}
 
     {:ok, _} =
-      UserTrigger.update_user_trigger(user_trigger.user, %{
+      UserTrigger.update_user_trigger(user_trigger.user.id, %{
         id: user_trigger.id,
         settings: new_settings
       })
@@ -52,7 +52,7 @@ defmodule Sanbase.Repo.Migrations.MigrateWrongWalletMovementsAlerts do
     new_settings = %{settings | selector: %{infrastructure: ETH}}
 
     {:ok, _} =
-      UserTrigger.update_user_trigger(user_trigger.user, %{
+      UserTrigger.update_user_trigger(user_trigger.user.id, %{
         id: user_trigger.id,
         settings: new_settings
       })

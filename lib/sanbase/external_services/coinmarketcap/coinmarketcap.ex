@@ -62,7 +62,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
       Project.List.projects_with_source("coinmarketcap",
-        include_hidden_projects?: true,
+        include_hidden: true,
         order_by_rank: true
       ),
       &fetch_project_info/1,
@@ -110,7 +110,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     # Otherwise risking to start too many tasks to a service that's rate limited
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      Project.List.projects(include_hidden_projects?: true, order_by_rank: true),
+      Project.List.projects(include_hidden: true, order_by_rank: true),
       &fetch_prices/1,
       ordered: false,
       max_concurrency: 2,

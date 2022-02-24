@@ -109,6 +109,13 @@ defmodule SanbaseWeb.Graphql.Cache do
     CacheProvider.size(@cache_name, :megabytes)
   end
 
+  @doc ~s"""
+  The number of entries in the cache
+  """
+  def count() do
+    CacheProvider.count(@cache_name)
+  end
+
   def get(key) do
     CacheProvider.get(@cache_name, key)
   end
@@ -235,7 +242,7 @@ defmodule SanbaseWeb.Graphql.Cache do
     max_ttl_offset = Enum.max([max_ttl_offset, 1])
 
     # Used to randomize the TTL for lists of objects like list of projects
-    additional_args = Map.take(args, [:slug, :id])
+    additional_args = Map.take(args, [:slug, :id, :word])
 
     # Using phash2 as a random number between 0 and max_ttl_offset is needed.
     # collisions are allowed and do not lead to errors
@@ -247,7 +254,9 @@ defmodule SanbaseWeb.Graphql.Cache do
     end
 
     args = args |> convert_values(ttl)
-    cache_key = [name, args] |> Sanbase.Cache.hash()
+
+    cache_key =
+      {__MODULE__, :__internal_graphql_api_caching__, name, args} |> Sanbase.Cache.hash()
 
     {cache_key, ttl}
   end

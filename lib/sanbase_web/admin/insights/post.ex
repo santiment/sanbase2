@@ -17,6 +17,7 @@ defmodule SanbaseWeb.ExAdmin.Insight.Post do
       column(:ready_state)
       column(:moderation_comment)
       column(:user, link: true)
+      column(:price_chart_project, link: true)
     end
 
     show post do
@@ -32,6 +33,7 @@ defmodule SanbaseWeb.ExAdmin.Insight.Post do
         row(:ready_state)
         row(:moderation_comment)
         row(:user, link: true)
+        row(:price_chart_project, link: true)
 
         row(:text)
       end

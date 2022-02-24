@@ -8,50 +8,71 @@ defmodule Sanbase.Vote do
   import Ecto.Changeset
 
   alias Sanbase.Repo
-  alias Sanbase.Insight.Post
-  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Accounts.User
+
+  alias Sanbase.Chart
+  alias Sanbase.Insight.Post
+  alias Sanbase.UserList
+  alias Sanbase.Timeline.TimelineEvent
 
   @type vote_params :: %{
           :user_id => non_neg_integer(),
+          optional(:post_id) => non_neg_integer(),
+          optional(:watchlist_id) => non_neg_integer(),
           optional(:timeline_event_id) => non_neg_integer(),
-          optional(:post_id) => non_neg_integer()
+          optional(:chart_configuration_id) => non_neg_integer()
         }
 
-  @type vote_kw_list_params :: [
-          user_id: non_neg_integer(),
-          timeline_event_id: non_neg_integer(),
-          post_id: non_neg_integer()
-        ]
+  @type vote_option ::
+          {:user_id, non_neg_integer()}
+          | {:post_id, non_neg_integer()}
+          | {:watchlist_id, non_neg_integer()}
+          | {:timeline_event_id, non_neg_integer()}
+          | {:chart_configuration_id, non_neg_integer()}
+  @type vote_kw_list_params :: [vote_option]
 
   @max_votes 20
 
   schema "votes" do
     field(:count, :integer)
 
+    belongs_to(:user, User)
+
     belongs_to(:post, Post)
     belongs_to(:timeline_event, TimelineEvent)
-    belongs_to(:user, User)
+    belongs_to(:watchlist, UserList, foreign_key: :watchlist_id)
+
+    belongs_to(:chart_configuration, Chart.Configuration, foreign_key: :chart_configuration_id)
 
     timestamps()
   end
 
   def changeset(%__MODULE__{} = vote, attrs \\ %{}) do
     vote
-    |> cast(attrs, [:post_id, :timeline_event_id, :user_id, :count])
+    |> cast(attrs, [
+      :post_id,
+      :timeline_event_id,
+      :chart_configuration_id,
+      :watchlist_id,
+      :user_id,
+      :count
+    ])
     |> validate_required([:user_id])
-    |> unique_constraint(:post_id,
-      name: :votes_post_id_user_id_index
-    )
+    |> unique_constraint(:post_id, name: :votes_post_id_user_id_index)
     |> unique_constraint(:timeline_event_id,
       name: :votes_timeline_event_id_user_id_index
     )
+    |> unique_constraint(:chart_configuration_id,
+      name: :votes_chart_configuration_id_user_id_index
+    )
+    |> unique_constraint(:watchlist, name: :votes_watchlist_user_id_index)
   end
 
   @doc ~s"""
   Create a new vote entity or increases the votes count up to #{@max_votes}.
   """
-  @spec create(vote_params) :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  @spec create(vote_params) ::
+          {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
   def create(attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:select_if_exists, fn _repo, _changes ->
@@ -85,7 +106,8 @@ defmodule Sanbase.Vote do
   Decreases the votes count for an entityt. If the votes count drops to 0, the vote
   entity is destroyed.
   """
-  @spec downvote(vote_params) :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  @spec downvote(vote_params) ::
+          {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
   def downvote(attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:select_if_exists, fn _repo, _changes ->
@@ -97,7 +119,7 @@ defmodule Sanbase.Vote do
           {:ok, %__MODULE__{}}
 
         %__MODULE__{count: 1} ->
-          Repo.delete(vote)
+          with {:ok, _} <- Repo.delete(vote), do: {:ok, %__MODULE__{}}
 
         %__MODULE__{count: count} ->
           changeset(vote, %{count: count - 1})
@@ -111,39 +133,22 @@ defmodule Sanbase.Vote do
     end
   end
 
-  def voted_at(entity, %User{id: user_id}) do
-    entity_query(entity)
-    |> by_user_query(user_id)
-    |> select([v], v.inserted_at)
-    |> Repo.one()
+  def voted_at(entity_type, entity_ids, user_id) when is_integer(user_id) do
+    voted_at_query(entity_type, entity_ids, user_id)
+    |> Repo.all()
   end
 
-  def vote_stats(entity, user \\ nil)
+  def vote_stats(entity_type, entity_ids, user_id \\ nil) do
+    result =
+      total_votes_query(entity_type, entity_ids, user_id)
+      |> Repo.all()
 
-  def vote_stats(entity, nil) do
-    {total_votes, total_voters} =
-      total_votes_query(entity)
-      |> Repo.one()
-
-    %{
-      total_votes: total_votes,
-      total_voters: total_voters,
-      current_user_votes: nil
-    }
-  end
-
-  def vote_stats(entity, %User{id: user_id}) do
-    {total_votes, total_voters} =
-      total_votes_query(entity)
-      |> Repo.one()
-
-    current_user_votes = total_votes_of_user_query(entity, user_id) |> Repo.one()
-
-    %{
-      total_votes: total_votes,
-      total_voters: total_voters,
-      current_user_votes: current_user_votes
-    }
+    # Override `:current_user_votes` with nil if the user_id is nil
+    # The SQL query returns 0 in these cases
+    case user_id do
+      nil -> result |> Enum.map(&Map.put(&1, :current_user_votes, nil))
+      _ -> result
+    end
   end
 
   @spec post_id_to_votes() :: map()
@@ -164,26 +169,48 @@ defmodule Sanbase.Vote do
 
   # Private functions
 
-  defp total_votes_query(entity) do
-    entity_query(entity)
-    |> select([v], {coalesce(sum(v.count), 0), count(fragment("DISTINCT ?", v.user_id))})
-  end
+  defp total_votes_query(entity_type, entity_ids, user_id) do
+    # Override nil with -1 so the checks for current user
+    # votes will return 0
+    user_id = user_id || -1
+    entity_field = Sanbase.Entity.deduce_entity_field(entity_type)
 
-  defp total_votes_of_user_query(entity, user_id) do
-    entity_query(entity)
-    |> by_user_query(user_id)
-    |> select([v], coalesce(sum(v.count), 0))
-  end
-
-  defp by_user_query(query, user_id) do
     from(
-      v in query,
-      where: v.user_id == ^user_id
+      vote in entities_query(entity_type, entity_ids),
+      group_by: field(vote, ^entity_field),
+      select: %{
+        entity_id: field(vote, ^entity_field),
+        total_votes: coalesce(sum(vote.count), 0),
+        total_voters: count(fragment("DISTINCT ?", vote.user_id)),
+        current_user_votes:
+          fragment(
+            "SUM(CASE when user_id = ? then ? else 0 end)",
+            ^user_id,
+            vote.count
+          )
+      }
     )
   end
 
-  defp entity_query(%Post{id: post_id}), do: from(v in __MODULE__, where: v.post_id == ^post_id)
+  defp voted_at_query(entity_type, entity_ids, user_id) do
+    entity_field = Sanbase.Entity.deduce_entity_field(entity_type)
 
-  defp entity_query(%TimelineEvent{id: timeline_event_id}),
-    do: from(v in __MODULE__, where: v.timeline_event_id == ^timeline_event_id)
+    from(
+      vote in entities_query(entity_type, entity_ids),
+      where: vote.user_id == ^user_id,
+      select: %{
+        entity_id: field(vote, ^entity_field),
+        voted_at: vote.inserted_at
+      }
+    )
+  end
+
+  defp entities_query(entity_type, entity_ids) do
+    entity_field = Sanbase.Entity.deduce_entity_field(entity_type)
+
+    from(
+      vote in __MODULE__,
+      where: field(vote, ^entity_field) in ^entity_ids
+    )
+  end
 end

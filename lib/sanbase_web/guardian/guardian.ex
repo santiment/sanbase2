@@ -28,11 +28,27 @@ defmodule SanbaseWeb.Guardian do
   use Guardian, otp_app: :sanbase
 
   alias Sanbase.Accounts.User
+  alias Sanbase.Chart.Configuration
 
+  # The shared access token has basically infinite TTL.
+  # This is because the shared access tokens should not
+  # expire. Their validity is checked by checking their
+  # owner's subscription.
+  @shared_access_token_ttl {500, :weeks}
   @access_token_ttl {5, :minutes}
   @refresh_token_ttl {4, :weeks}
 
   def access_token_ttl(), do: @access_token_ttl
+
+  def get_shared_access_token(
+        %Configuration.SharedAccessToken{} = struct,
+        _opts \\ []
+      ) do
+    with {:ok, shared_access_token, _claims} <-
+           encode_and_sign(struct, %{type: "shared_access_token"}, ttl: @shared_access_token_ttl) do
+      {:ok, %{shared_access_token: shared_access_token}}
+    end
+  end
 
   def add_jwt_tokens_to_conn_session(conn, jwt_tokens_map) do
     conn
@@ -46,15 +62,15 @@ defmodule SanbaseWeb.Guardian do
     client = Keyword.get(opts, :client, :unknown)
 
     with {:ok, access_token, _claims} <-
-           SanbaseWeb.Guardian.encode_and_sign(
+           encode_and_sign(
              user,
-             %{client: client, platform: platform},
+             %{client: client, platform: platform, type: "user_access_token"},
              ttl: @access_token_ttl
            ),
          {:ok, refresh_token, _claims} <-
-           SanbaseWeb.Guardian.encode_and_sign(
+           encode_and_sign(
              user,
-             %{client: client, platform: platform},
+             %{client: client, platform: platform, type: "user_refresh_token"},
              token_type: "refresh",
              ttl: @refresh_token_ttl
            ) do
@@ -85,11 +101,29 @@ defmodule SanbaseWeb.Guardian do
     {:ok, to_string(id)}
   end
 
+  def subject_for_token(%Configuration.SharedAccessToken{uuid: uuid} = _resource, _claims) do
+    {:ok, uuid}
+  end
+
   @doc ~s"""
   Return the resource that is identified by the subject from the claims.
   In this case the subject is a user id.
   """
   @impl Guardian
+
+  def resource_from_claims(%{
+        "sub" => shared_access_token_uuid,
+        "type" => "shared_access_token"
+      }) do
+    case Configuration.SharedAccessToken.by_uuid(shared_access_token_uuid) do
+      {:ok, token} -> {:ok, token}
+      {:error, _} -> {:error, :no_existing_token}
+    end
+  end
+
+  # TODO: Some time after deploying, change this to also pattern match the type
+  # wait some time so all the issues access tokens would have the
+  # `type` in their claims.
   def resource_from_claims(%{"sub" => user_id} = _claims) do
     case Sanbase.Accounts.get_user(Sanbase.Math.to_integer(user_id)) do
       {:ok, user} -> {:ok, user}

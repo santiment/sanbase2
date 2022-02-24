@@ -10,7 +10,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
   setup do
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)
-    eth_project = insert(:project, %{name: "Ethereum", slug: "ethereum", ticker: "ETH"})
+
+    eth_project =
+      insert(:project, %{
+        name: "Ethereum",
+        slug: "ethereum",
+        coinmarketcap_id: "ethereum",
+        ticker: "ETH"
+      })
 
     insert(:latest_cmc_data, %{coinmarketcap_id: p1.slug, price_usd: 2})
     insert(:latest_cmc_data, %{coinmarketcap_id: p2.slug, price_usd: 2})

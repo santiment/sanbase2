@@ -3,8 +3,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
 
   import Mock
   import Sanbase.Factory
-
-  alias Sanbase.Model.Project
+  import ExUnit.CaptureLog
 
   alias Sanbase.Alert.{
     UserTrigger,
@@ -20,9 +19,16 @@ defmodule Sanbase.Alert.WalletTriggerTest do
     user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
-    project = Sanbase.Factory.insert(:random_erc20_project)
+    # Provide this mixed case (both lower and upper case letters) to the trigger settings
+    # to test the behavior of transform to some internal format.
+    address = "0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98"
 
-    {:ok, [address]} = Project.eth_addresses(project)
+    project =
+      Sanbase.Factory.insert(:random_erc20_project,
+        eth_addresses: [
+          build(:project_eth_address, address: "0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98")
+        ]
+      )
 
     trigger_settings1 = %{
       type: "wallet_movement",
@@ -36,7 +42,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
     trigger_settings2 = %{
       type: "wallet_movement",
       selector: %{infrastructure: "ETH", slug: "some-weird-token"},
-      target: %{address: address},
+      target: %{address: "0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98"},
       channel: "telegram",
       time_window: "1d",
       operation: %{amount_up: 200.0}
@@ -45,7 +51,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
     trigger_settings3 = %{
       type: "wallet_movement",
       selector: %{infrastructure: "XRP", currency: "BTC"},
-      target: %{address: address},
+      target: %{address: "0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98"},
       channel: "telegram",
       time_window: "1d",
       operation: %{amount_down: 50.0}
@@ -81,6 +87,33 @@ defmodule Sanbase.Alert.WalletTriggerTest do
     ]
   end
 
+  test "signal setting cooldown works for wallet movement", context do
+    with_mocks [
+      {Sanbase.Telegram, [:passthrough], send_message: fn _user, _text -> :ok end},
+      {HistoricalBalance, [:passthrough],
+       balance_change: fn _, _, _, _ ->
+         {:ok,
+          [
+            %{
+              address: Sanbase.BlockchainAddress.to_internal_format(context.address),
+              balance_start: 20,
+              balance_end: 300,
+              balance_change_amount: 280,
+              balance_change_percent: 1400.0
+            }
+          ]}
+       end}
+    ] do
+      assert capture_log(fn -> Scheduler.run_alert(WalletTriggerSettings) end) =~
+               "In total 2/2 wallet_movement alerts were sent successfully"
+
+      Sanbase.Cache.clear_all(:alerts_evaluator_cache)
+
+      assert capture_log(fn -> Scheduler.run_alert(WalletTriggerSettings) end) =~
+               "There were no wallet_movement alerts triggered"
+    end
+  end
+
   test "triggers eth wallet signal when balance increases", context do
     test_pid = self()
 
@@ -95,7 +128,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
          {:ok,
           [
             %{
-              address: context.address,
+              address: Sanbase.BlockchainAddress.to_internal_format(context.address),
               balance_start: 20,
               balance_end: 70,
               balance_change_amount: 50,
@@ -129,7 +162,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
          {:ok,
           [
             %{
-              address: context.address,
+              address: Sanbase.BlockchainAddress.to_internal_format(context.address),
               balance_start: 20,
               balance_end: 300,
               balance_change_amount: 280,
@@ -173,7 +206,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
          {:ok,
           [
             %{
-              address: context.address,
+              address: Sanbase.BlockchainAddress.to_internal_format(context.address),
               balance_start: 100,
               balance_end: 0,
               balance_change_amount: -100,

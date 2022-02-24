@@ -17,7 +17,9 @@ defmodule SanbaseWeb.Router do
     plug(:accepts, ["json"])
     plug(RemoteIp)
     plug(:fetch_session)
+    plug(SanbaseWeb.Graphql.AuthPlug)
     plug(SanbaseWeb.Graphql.ContextPlug)
+    plug(SanbaseWeb.Graphql.RequestHaltPlug)
   end
 
   pipeline :telegram do
@@ -30,6 +32,7 @@ defmodule SanbaseWeb.Router do
   end
 
   use ExAdmin.Router
+  use Kaffy.Routes, scope: "/admin3", pipe_through: [:basic_auth]
 
   scope "/auth", SanbaseWeb do
     pipe_through(:browser)
@@ -77,7 +80,8 @@ defmodule SanbaseWeb.Router do
 
     forward(
       "/graphiql",
-      Absinthe.Plug.GraphiQL,
+      # Use own version of the plug with fixed XSS vulnerability
+      SanbaseWeb.Graphql.GraphiqlPlug,
       json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
       socket: SanbaseWeb.UserSocket,
@@ -122,6 +126,7 @@ defmodule SanbaseWeb.Router do
   scope "/", SanbaseWeb do
     get("/api_metric_name_mapping", MetricNameController, :api_metric_name_mapping)
     get("/projects_data", ProjectDataController, :data)
+    get("/cryptocompare_asset_mapping", CryptocompareAssetMappingController, :data)
     post("/stripe_webhook", StripeController, :webhook)
   end
 
@@ -138,4 +143,5 @@ defmodule SanbaseWeb.Router do
   end
 
   get("/", SanbaseWeb.RootController, :healthcheck)
+  get("/healthcheck", SanbaseWeb.RootController, :healthcheck)
 end

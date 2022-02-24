@@ -39,7 +39,7 @@ defmodule Sanbase.Model.ProjectListTest do
   describe "no projects" do
     test "currently trending projects" do
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.SocialData.TrendingWords.get_currently_trending_words/0,
+        &Sanbase.SocialData.TrendingWords.get_currently_trending_words/1,
         {:ok, [%{word: "btc"}]}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -163,14 +163,14 @@ defmodule Sanbase.Model.ProjectListTest do
     end
 
     test "without hidden projects", context do
-      projects = Project.List.projects(include_hidden_projects?: false)
+      projects = Project.List.projects(include_hidden: false)
       assert length(projects) == context.total_count
       assert context.p7.id not in Enum.map(projects, & &1.id)
       assert context.p8.id not in Enum.map(projects, & &1.id)
     end
 
     test "with hidden projects", context do
-      projects = Project.List.projects(include_hidden_projects?: true)
+      projects = Project.List.projects(include_hidden: true)
 
       assert length(projects) == context.total_count + context.total_hidden_count
 
@@ -211,7 +211,7 @@ defmodule Sanbase.Model.ProjectListTest do
         context
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.SocialData.TrendingWords.get_currently_trending_words/0,
+        &Sanbase.SocialData.TrendingWords.get_currently_trending_words/1,
         {:ok,
          [
            %{word: hidden_project.slug},

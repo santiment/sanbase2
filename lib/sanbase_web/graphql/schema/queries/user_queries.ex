@@ -37,6 +37,14 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       resolve(&UserResolver.get_user/3)
     end
 
+    field :is_telegram_chat_id_valid, :boolean do
+      meta(access: :free)
+      arg(:chat_id, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&TelegramResolver.is_telegram_chat_id_valid/3)
+    end
+
     @desc """
     Get a URL for deep-linking sanbase and telegram accounts. It carries a unique
     random token that is associated with the user. The link leads to a telegram chat
@@ -101,8 +109,14 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     end
 
     field :logout, :logout do
-      middleware(JWTAuth, allow_access: true)
-      resolve(fn _, _ -> {:ok, %{success: true}} end)
+      middleware(JWTAuth, allow_access_without_terms_accepted: true)
+
+      resolve(fn root, args, res ->
+        {:ok, true} = AuthResolver.revoke_current_refresh_token(root, args, res)
+
+        {:ok, %{success: true}}
+      end)
+
       middleware(CreateOrDeleteSession)
     end
 
@@ -130,8 +144,15 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     field :change_username, :user do
       arg(:username, non_null(:string))
 
-      middleware(JWTAuth)
+      middleware(JWTAuth, allow_access_without_terms_accepted: true)
       resolve(&UserResolver.change_username/3)
+    end
+
+    field :change_name, :user do
+      arg(:name, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&UserResolver.change_name/3)
     end
 
     @desc ~s"""
@@ -171,7 +192,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:marketing_accepted, :boolean)
 
       # Allow this mutation to be executed when the user has not accepted the privacy policy.
-      middleware(JWTAuth, allow_access: true)
+      middleware(JWTAuth, allow_access_without_terms_accepted: true)
       resolve(&UserResolver.update_terms_and_conditions/3)
     end
 

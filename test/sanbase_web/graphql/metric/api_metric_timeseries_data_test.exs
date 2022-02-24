@@ -22,6 +22,50 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     ]
   end
 
+  test "price_usd when the source is cryptocompare", context do
+    # Test that when the source is cryptocompare the prices are served from the
+    # PricePair module instead of the Price module
+    %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.PricePair.timeseries_data/6,
+      {:ok,
+       [
+         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
+         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
+       ]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        get_timeseries_metric(
+          conn,
+          "price_usd",
+          %{slug: slug, source: "cryptocompare"},
+          from,
+          to,
+          interval,
+          :last
+        )
+        |> extract_timeseries_data()
+
+      assert result == [
+               %{"value" => 100.0, "datetime" => "2019-01-01T00:00:00Z"},
+               %{"value" => 200.0, "datetime" => "2019-01-02T00:00:00Z"}
+             ]
+
+      assert_called(
+        Sanbase.PricePair.timeseries_data(
+          slug,
+          "USD",
+          from,
+          to,
+          interval,
+          :_
+        )
+      )
+    end)
+  end
+
   test "market segments selector", context do
     %{conn: conn, from: from, to: to, interval: interval} = context
 
@@ -189,7 +233,11 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregation = :avg
 
-    metrics = Metric.available_timeseries_metrics() |> Enum.shuffle() |> Enum.take(100)
+    metrics =
+      Metric.available_timeseries_metrics()
+      |> Enum.shuffle()
+
+    # |> Enum.take(100)
 
     Sanbase.Mock.prepare_mock2(
       &Metric.timeseries_data/6,
@@ -205,7 +253,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
           get_timeseries_metric(
             conn,
             metric,
-            %{slug: slug, source: "twitter"},
+            %{slug: slug},
             from,
             to,
             interval,
@@ -321,7 +369,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     assert capture_log(fn ->
              # Do not mock the `timeseries_data` function because it's the one that rejects
              %{"errors" => [%{"message" => error_message}]} =
-               get_timeseries_metric_without_slug(
+               get_timeseries_metric_without_selector(
                  conn,
                  metric,
                  from,
@@ -403,7 +451,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     |> json_response(200)
   end
 
-  defp get_timeseries_metric_without_slug(
+  defp get_timeseries_metric_without_selector(
          conn,
          metric,
          from,
@@ -411,7 +459,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
          interval,
          aggregation
        ) do
-    query = get_timeseries_query_without_slug(metric, from, to, interval, aggregation)
+    query = get_timeseries_query_without_selector(metric, from, to, interval, aggregation)
 
     conn
     |> post("/graphql", query_skeleton(query, "getMetric"))
@@ -425,6 +473,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
   end
 
   defp get_timeseries_query(metric, selector, from, to, interval, aggregation) do
+    selector = extend_selector_with_required_fields(metric, selector)
+
     """
       {
         getMetric(metric: "#{metric}"){
@@ -442,7 +492,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     """
   end
 
-  defp get_timeseries_query_without_slug(
+  defp get_timeseries_query_without_selector(
          metric,
          from,
          to,

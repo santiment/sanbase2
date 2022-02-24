@@ -22,6 +22,10 @@ defmodule Sanbase.Price do
   alias Sanbase.ClickhouseRepo
 
   @default_source "coinmarketcap"
+  @supported_sources ["coinmarketcap", "cryptocompare"]
+  @supported_sources_str Enum.join(@supported_sources, ", ")
+  @deprecated_sources ["kaiko"]
+
   @metrics [:price_usd, :price_btc, :marketcap_usd, :volume_usd]
   @metrics @metrics ++ Enum.map(@metrics, &Atom.to_string/1)
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
@@ -124,6 +128,7 @@ defmodule Sanbase.Price do
     field(:volume_usd, :float)
   end
 
+  def table(), do: @table
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _), do: raise("Cannot change the asset_prices table")
 
@@ -136,20 +141,24 @@ defmodule Sanbase.Price do
   def timeseries_data(slug, from, to, interval, opts \\ [])
 
   def timeseries_data("TOTAL_ERC20", from, to, interval, opts) do
-    Project.List.erc20_projects_slugs()
-    |> combined_marketcap_and_volume(from, to, interval, opts)
+    # Break here otherwise the Enum.filter/2 will remove all errors and report a wrong result
+    with {:ok, _source} <- opts_to_source(opts) do
+      Project.List.erc20_projects_slugs()
+      |> combined_marketcap_and_volume(from, to, interval, opts)
+    end
   end
 
   def timeseries_data(slug_or_slugs, from, to, interval, opts) do
-    source = Keyword.get(opts, :source) || @default_source
-    aggregation = Keyword.get(opts, :aggregation) || :last
-    {query, args} = timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation)
+    with {:ok, source} <- opts_to_source(opts) do
+      aggregation = Keyword.get(opts, :aggregation) || :last
 
-    ClickhouseRepo.query_transform(
-      query,
-      args,
-      fn
-        [timestamp, price_usd, price_btc, marketcap_usd, volume_usd, has_changed] ->
+      {query, args} =
+        timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation)
+
+      ClickhouseRepo.query_transform(
+        query,
+        args,
+        fn [timestamp, price_usd, price_btc, marketcap_usd, volume_usd, has_changed] ->
           %{
             datetime: DateTime.from_unix!(timestamp),
             price_usd: price_usd,
@@ -160,9 +169,10 @@ defmodule Sanbase.Price do
             volume: volume_usd,
             has_changed: has_changed
           }
-      end
-    )
-    |> remove_missing_values()
+        end
+      )
+      |> remove_missing_values()
+    end
   end
 
   @doc ~s"""
@@ -180,65 +190,66 @@ defmodule Sanbase.Price do
           timeseries_metric_data_result
   def timeseries_metric_data(slug_or_slugs, metric, from, to, interval, opts \\ [])
 
+  # TODO: Use the source
   def timeseries_metric_data("TOTAL_ERC20", metric, from, to, interval, opts) do
-    Project.List.erc20_projects_slugs()
-    |> combined_marketcap_and_volume(from, to, interval, opts)
-    |> case do
-      {:ok, result} ->
+    with {:ok, _source} <- opts_to_source(opts) do
+      Project.List.erc20_projects_slugs()
+      |> combined_marketcap_and_volume(from, to, interval, opts)
+      |> maybe_apply_function(fn result ->
         metric = String.to_existing_atom(metric)
 
-        result =
-          result
-          |> Enum.map(fn %{^metric => value, datetime: datetime} ->
-            %{datetime: datetime, value: value}
-          end)
-
-        {:ok, result}
-
-      {:error, error} ->
-        {:error, error}
+        result
+        |> Enum.map(fn %{^metric => value, datetime: datetime} ->
+          %{datetime: datetime, value: value}
+        end)
+      end)
     end
   end
 
   def timeseries_metric_data(slug_or_slugs, metric, from, to, interval, opts) do
-    source = Keyword.get(opts, :source) || @default_source
-    aggregation = Keyword.get(opts, :aggregation) || :last
+    with {:ok, source} <- opts_to_source(opts) do
+      aggregation = Keyword.get(opts, :aggregation) || :last
 
-    {query, args} =
-      timeseries_metric_data_query(slug_or_slugs, metric, from, to, interval, source, aggregation)
+      {query, args} =
+        timeseries_metric_data_query(
+          slug_or_slugs,
+          metric,
+          from,
+          to,
+          interval,
+          source,
+          aggregation
+        )
 
-    exec_timeseries_data_query(query, args)
+      exec_timeseries_data_query(query, args)
+    end
   end
 
   def timeseries_metric_data_per_slug(slug_or_slugs, metric, from, to, interval, opts) do
-    source = Keyword.get(opts, :source) || @default_source
-    aggregation = Keyword.get(opts, :aggregation) || :last
+    with {:ok, source} <- opts_to_source(opts) do
+      aggregation = Keyword.get(opts, :aggregation) || :last
 
-    {query, args} =
-      timeseries_metric_data_per_slug_query(
-        slug_or_slugs,
-        metric,
-        from,
-        to,
-        interval,
-        source,
-        aggregation
-      )
+      {query, args} =
+        timeseries_metric_data_per_slug_query(
+          slug_or_slugs,
+          metric,
+          from,
+          to,
+          interval,
+          source,
+          aggregation
+        )
 
-    ClickhouseRepo.query_reduce(
-      query,
-      args,
-      %{},
-      fn [timestamp, slug, value], acc ->
+      ClickhouseRepo.query_reduce(query, args, %{}, fn [timestamp, slug, value], acc ->
         datetime = DateTime.from_unix!(timestamp)
         elem = %{slug: slug, value: value}
         Map.update(acc, datetime, [elem], &[elem | &1])
-      end
-    )
-    |> maybe_apply_function(fn list ->
-      list
-      |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
-    end)
+      end)
+      |> maybe_apply_function(fn list ->
+        list
+        |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
+      end)
+    end
   end
 
   @doc ~s"""
@@ -260,25 +271,26 @@ defmodule Sanbase.Price do
 
   def aggregated_timeseries_data(slug_or_slugs, from, to, opts)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
-    source = Keyword.get(opts, :source, @default_source)
-    slugs = List.wrap(slug_or_slugs)
+    with {:ok, source} <- opts_to_source(opts) do
+      slugs = List.wrap(slug_or_slugs)
 
-    {query, args} = aggregated_timeseries_data_query(slugs, from, to, source)
+      {query, args} = aggregated_timeseries_data_query(slugs, from, to, source)
 
-    ClickhouseRepo.query_transform(query, args, fn
-      [slug, price_usd, price_btc, marketcap_usd, volume_usd, has_changed] ->
-        %{
-          slug: slug,
-          price_usd: price_usd,
-          price_btc: price_btc,
-          marketcap_usd: marketcap_usd,
-          marketcap: marketcap_usd,
-          volume_usd: volume_usd,
-          volume: volume_usd,
-          has_changed: has_changed
-        }
-    end)
-    |> maybe_nullify_values()
+      ClickhouseRepo.query_transform(query, args, fn
+        [slug, price_usd, price_btc, marketcap_usd, volume_usd, has_changed] ->
+          %{
+            slug: slug,
+            price_usd: price_usd,
+            price_btc: price_btc,
+            marketcap_usd: marketcap_usd,
+            marketcap: marketcap_usd,
+            volume_usd: volume_usd,
+            volume: volume_usd,
+            has_changed: has_changed
+          }
+      end)
+      |> maybe_nullify_values()
+    end
   end
 
   @doc ~s"""
@@ -299,35 +311,39 @@ defmodule Sanbase.Price do
 
   def aggregated_metric_timeseries_data(slugs, metric, from, to, opts)
       when is_list(slugs) and length(slugs) > 50 do
-    result =
-      Enum.chunk_every(slugs, 50)
-      |> Sanbase.Parallel.map(
-        &aggregated_metric_timeseries_data(&1, metric, from, to, opts),
-        timeout: 25_000,
-        max_concurrency: 8,
-        ordered: false
-      )
-      |> Enum.filter(&match?({:ok, _}, &1))
-      |> Enum.map(&elem(&1, 1))
-      |> Enum.reduce(%{}, &Map.merge(&1, &2))
+    # Break here otherwise the Enum.filter/2 will remove all errors and report a wrong result
+    with {:ok, _source} <- opts_to_source(opts) do
+      result =
+        Enum.chunk_every(slugs, 50)
+        |> Sanbase.Parallel.map(
+          &aggregated_metric_timeseries_data(&1, metric, from, to, opts),
+          timeout: 25_000,
+          max_concurrency: 8,
+          ordered: false
+        )
+        |> Enum.filter(&match?({:ok, _}, &1))
+        |> Enum.map(&elem(&1, 1))
+        |> Enum.reduce(%{}, &Map.merge(&1, &2))
 
-    {:ok, result}
+      {:ok, result}
+    end
   end
 
   def aggregated_metric_timeseries_data(slug_or_slugs, metric, from, to, opts)
       when metric in @metrics and (is_binary(slug_or_slugs) or is_list(slug_or_slugs)) do
-    source = Keyword.get(opts, :source) || @default_source
-    aggregation = Keyword.get(opts, :aggregation) || :avg
-    slugs = List.wrap(slug_or_slugs)
+    with {:ok, source} <- opts_to_source(opts) do
+      aggregation = Keyword.get(opts, :aggregation) || :avg
+      slugs = List.wrap(slug_or_slugs)
 
-    {query, args} =
-      aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, aggregation)
+      {query, args} =
+        aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, aggregation)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn
-      [slug, value, has_changed], acc ->
-        value = if has_changed == 1, do: value
-        Map.put(acc, slug, value)
-    end)
+      ClickhouseRepo.query_reduce(query, args, %{}, fn
+        [slug, value, has_changed], acc ->
+          value = if has_changed == 1, do: value
+          Map.put(acc, slug, value)
+      end)
+    end
   end
 
   @doc ~s"""
@@ -346,34 +362,56 @@ defmodule Sanbase.Price do
 
   def aggregated_marketcap_and_volume(slug_or_slugs, from, to, opts)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
-    source = Keyword.get(opts, :source, @default_source)
-    slugs = List.wrap(slug_or_slugs)
+    with {:ok, source} <- opts_to_source(opts) do
+      slugs = List.wrap(slug_or_slugs)
 
-    {query, args} = aggregated_marketcap_and_volume_query(slugs, from, to, source, opts)
+      {query, args} = aggregated_marketcap_and_volume_query(slugs, from, to, source, opts)
 
-    ClickhouseRepo.query_transform(query, args, fn
-      [slug, marketcap_usd, volume_usd, has_changed] ->
-        %{
-          slug: slug,
-          marketcap_usd: marketcap_usd,
-          marketcap: marketcap_usd,
-          volume_usd: volume_usd,
-          volume: volume_usd,
-          has_changed: has_changed
-        }
+      ClickhouseRepo.query_transform(query, args, fn
+        [slug, marketcap_usd, volume_usd, has_changed] ->
+          %{
+            slug: slug,
+            marketcap_usd: marketcap_usd,
+            marketcap: marketcap_usd,
+            volume_usd: volume_usd,
+            volume: volume_usd,
+            has_changed: has_changed
+          }
+      end)
+      |> maybe_add_percent_of_total_marketcap()
+      |> maybe_nullify_values()
+    end
+  end
+
+  def latest_prices_per_slug(slugs, limit_per_slug) do
+    {query, args} = latest_prices_per_slug_query(slugs, limit_per_slug)
+
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, prices_usd, prices_btc], acc ->
+      acc
+      |> Map.put({slug, "USD"}, prices_usd)
+      |> Map.put({slug, "BTC"}, prices_btc)
     end)
-    |> maybe_add_percent_of_total_marketcap()
-    |> maybe_nullify_values()
   end
 
-  def slugs_by_filter(metric, from, to, operator, threshold, aggregation) do
-    {query, args} = slugs_by_filter_query(metric, from, to, operator, threshold, aggregation)
-    ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+  def slugs_by_filter(metric, from, to, operator, threshold, opts) do
+    with {:ok, source} <- opts_to_source(opts) do
+      aggregation = Keyword.get(opts, :aggregation) || :last
+
+      {query, args} =
+        slugs_by_filter_query(metric, from, to, operator, threshold, aggregation, source)
+
+      ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+    end
   end
 
-  def slugs_order(metric, from, to, direction, aggregation) do
-    {query, args} = slugs_order_query(metric, from, to, direction, aggregation)
-    ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+  def slugs_order(metric, from, to, direction, opts) do
+    with {:ok, source} <- opts_to_source(opts) do
+      aggregation = Keyword.get(opts, :aggregation) || :last
+
+      {query, args} = slugs_order_query(metric, from, to, direction, aggregation, source)
+
+      ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+    end
   end
 
   @doc ~s"""
@@ -384,24 +422,25 @@ defmodule Sanbase.Price do
   def last_record_before(slug, datetime, opts \\ [])
 
   def last_record_before(slug, datetime, opts) do
-    source = Keyword.get(opts, :source, @default_source)
-    {query, args} = last_record_before_query(slug, datetime, source)
+    with {:ok, source} <- opts_to_source(opts) do
+      {query, args} = last_record_before_query(slug, datetime, source)
 
-    ClickhouseRepo.query_transform(
-      query,
-      args,
-      fn [price_usd, price_btc, marketcap_usd, volume_usd] ->
-        %{
-          price_usd: price_usd,
-          price_btc: price_btc,
-          marketcap_usd: marketcap_usd,
-          marketcap: marketcap_usd,
-          volume_usd: volume_usd,
-          volume: volume_usd
-        }
-      end
-    )
-    |> maybe_unwrap_ok_value()
+      ClickhouseRepo.query_transform(
+        query,
+        args,
+        fn [price_usd, price_btc, marketcap_usd, volume_usd] ->
+          %{
+            price_usd: price_usd,
+            price_btc: price_btc,
+            marketcap_usd: marketcap_usd,
+            marketcap: marketcap_usd,
+            volume_usd: volume_usd,
+            volume: volume_usd
+          }
+        end
+      )
+      |> maybe_unwrap_ok_value()
+    end
   end
 
   @doc ~s"""
@@ -410,25 +449,21 @@ defmodule Sanbase.Price do
   """
   @spec ohlc(slug, DateTime.t(), DateTime.t(), opts) :: ohlc_result()
   def ohlc(slug, from, to, opts \\ []) do
-    source = Keyword.get(opts, :source, @default_source)
-    {query, args} = ohlc_query(slug, from, to, source)
+    with {:ok, source} <- opts_to_source(opts) do
+      {query, args} = ohlc_query(slug, from, to, source)
 
-    ClickhouseRepo.query_transform(
-      query,
-      args,
-      fn
-        [open, high, low, close, has_changed] ->
-          %{
-            open_price_usd: open,
-            high_price_usd: high,
-            close_price_usd: close,
-            low_price_usd: low,
-            has_changed: has_changed
-          }
-      end
-    )
-    |> maybe_nullify_values()
-    |> maybe_unwrap_ok_value()
+      ClickhouseRepo.query_transform(query, args, fn [open, high, low, close, has_changed] ->
+        %{
+          open_price_usd: open,
+          high_price_usd: high,
+          close_price_usd: close,
+          low_price_usd: low,
+          has_changed: has_changed
+        }
+      end)
+      |> maybe_nullify_values()
+      |> maybe_unwrap_ok_value()
+    end
   end
 
   @doc ~s"""
@@ -438,14 +473,13 @@ defmodule Sanbase.Price do
   @spec timeseries_ohlc_data(slug, DateTime.t(), DateTime.t(), interval, opts) ::
           timeseries_ohlc_data_result()
   def timeseries_ohlc_data(slug, from, to, interval, opts \\ []) do
-    source = Keyword.get(opts, :source, @default_source)
-    {query, args} = timeseries_ohlc_data_query(slug, from, to, interval, source)
+    with {:ok, source} <- opts_to_source(opts) do
+      {query, args} = timeseries_ohlc_data_query(slug, from, to, interval, source)
 
-    ClickhouseRepo.query_transform(
-      query,
-      args,
-      fn
-        [timestamp, open, high, low, close, has_changed] ->
+      ClickhouseRepo.query_transform(
+        query,
+        args,
+        fn [timestamp, open, high, low, close, has_changed] ->
           %{
             datetime: DateTime.from_unix!(timestamp),
             open_price_usd: open,
@@ -454,9 +488,10 @@ defmodule Sanbase.Price do
             low_price_usd: low,
             has_changed: has_changed
           }
-      end
-    )
-    |> remove_missing_values()
+        end
+      )
+      |> remove_missing_values()
+    end
   end
 
   @doc ~s"""
@@ -468,33 +503,35 @@ defmodule Sanbase.Price do
   def combined_marketcap_and_volume([], _, _, _, _), do: {:ok, []}
 
   def combined_marketcap_and_volume(slugs, from, to, interval, opts) when length(slugs) > 30 do
-    slugs
-    |> Enum.chunk_every(30)
-    |> Sanbase.Parallel.map(
-      fn slugs_chunk ->
-        cache_key = Enum.sort(slugs_chunk) |> Sanbase.Cache.hash()
+    # Break here otherwise the Enum.filter/2 will remove all errors and report a wrong result
+    with {:ok, _source} <- opts_to_source(opts) do
+      slugs
+      |> Enum.chunk_every(30)
+      |> Sanbase.Parallel.map(
+        fn slugs_chunk ->
+          cache_key = Enum.sort(slugs_chunk) |> Sanbase.Cache.hash()
 
-        Sanbase.Cache.get_or_store({__MODULE__, __ENV__.function, cache_key}, fn ->
-          combined_marketcap_and_volume(slugs_chunk, from, to, interval, opts)
-        end)
-      end,
-      max_concurrency: 8
-    )
-    |> Enum.filter(&match?({:ok, _}, &1))
-    |> combine_marketcap_and_volume_results()
+          Sanbase.Cache.get_or_store({__MODULE__, __ENV__.function, cache_key}, fn ->
+            combined_marketcap_and_volume(slugs_chunk, from, to, interval, opts)
+          end)
+        end,
+        max_concurrency: 8
+      )
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> combine_marketcap_and_volume_results()
+    end
   end
 
   def combined_marketcap_and_volume(slug_or_slugs, from, to, interval, opts) do
-    slugs = List.wrap(slug_or_slugs)
-    source = Keyword.get(opts, :source, @default_source)
+    with {:ok, source} <- opts_to_source(opts) do
+      slugs = List.wrap(slug_or_slugs)
 
-    {query, args} = combined_marketcap_and_volume_query(slugs, from, to, interval, source)
+      {query, args} = combined_marketcap_and_volume_query(slugs, from, to, interval, source)
 
-    ClickhouseRepo.query_transform(
-      query,
-      args,
-      fn
-        [timestamp, marketcap_usd, volume_usd, has_changed] ->
+      ClickhouseRepo.query_transform(
+        query,
+        args,
+        fn [timestamp, marketcap_usd, volume_usd, has_changed] ->
           %{
             datetime: DateTime.from_unix!(timestamp),
             marketcap_usd: marketcap_usd,
@@ -503,36 +540,33 @@ defmodule Sanbase.Price do
             volume: volume_usd,
             has_changed: has_changed
           }
-      end
-    )
-    |> remove_missing_values()
+        end
+      )
+      |> remove_missing_values()
+    end
     |> maybe_add_percent_of_total_marketcap()
   end
 
   def available_slugs(opts \\ [])
 
   def available_slugs(opts) do
-    case Keyword.get(opts, :source) || @default_source do
-      "coinmarketcap" ->
-        slugs =
-          Sanbase.Model.Project.List.projects_with_source("coinmarketcap")
-          |> Enum.map(& &1.slug)
+    with {:ok, source} <- opts_to_source(opts) do
+      slugs =
+        Sanbase.Model.Project.List.projects_with_source(source)
+        |> Enum.map(& &1.slug)
 
-        {:ok, slugs}
-
-      source ->
-        {query, args} = available_slugs_query(source)
-        ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+      {:ok, slugs}
     end
   end
 
   def slugs_with_volume_over(volume, opts \\ [])
 
   def slugs_with_volume_over(volume, opts) when is_number(volume) do
-    source = Keyword.get(opts, :source, @default_source)
-    {query, args} = slugs_with_volume_over_query(volume, source)
+    with {:ok, source} <- opts_to_source(opts) do
+      {query, args} = slugs_with_volume_over_query(volume, source)
 
-    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+      ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+    end
   end
 
   def has_data?(slug) do
@@ -555,13 +589,14 @@ defmodule Sanbase.Price do
   def first_datetime("TOTAL_ERC20", _), do: ~U[2015-07-30 00:00:00Z]
 
   def first_datetime(slug, opts) do
-    source = Keyword.get(opts, :source, @default_source)
-    {query, args} = first_datetime_query(slug, source)
+    with {:ok, source} <- opts_to_source(opts) do
+      {query, args} = first_datetime_query(slug, source)
 
-    ClickhouseRepo.query_transform(query, args, fn
-      [timestamp] -> DateTime.from_unix!(timestamp)
-    end)
-    |> maybe_unwrap_ok_value()
+      ClickhouseRepo.query_transform(query, args, fn
+        [timestamp] -> DateTime.from_unix!(timestamp)
+      end)
+      |> maybe_unwrap_ok_value()
+    end
   end
 
   def last_datetime_computed_at(slug) do
@@ -628,4 +663,19 @@ defmodule Sanbase.Price do
   end
 
   defp maybe_add_percent_of_total_marketcap({:error, error}), do: {:error, error}
+
+  defp opts_to_source(opts) do
+    case Keyword.get(opts, :source, @default_source) do
+      source when source in @supported_sources ->
+        {:ok, source}
+
+      source when source in @deprecated_sources ->
+        {:error,
+         "Price related data source #{inspect(source)} is deprecated. Supported price related sources are: #{@supported_sources_str}"}
+
+      source ->
+        {:error,
+         "Price related data source #{inspect(source)} is not supported. Supported price related sources are: #{@supported_sources_str}"}
+    end
+  end
 end

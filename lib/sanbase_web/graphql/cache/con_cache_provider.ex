@@ -21,6 +21,13 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     (bytes_size / (1024 * 1024)) |> Float.round(2)
   end
 
+  def count(cache) do
+    cache
+    |> ConCache.ets()
+    |> :ets.tab2list()
+    |> length
+  end
+
   @impl true
   def clear_all(cache) do
     cache

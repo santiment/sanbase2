@@ -7,12 +7,8 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
-  alias Sanbase.Billing.Subscription.SignUpTrial
-  alias Sanbase.Accounts.User.UniswapStaking
 
-  setup_with_mocks([
-    {SignUpTrial, [], [create_trial_subscription: fn _ -> {:ok, %{}} end]}
-  ]) do
+  setup do
     user = insert(:user)
 
     conn = setup_jwt_auth(build_conn(), user)
@@ -158,77 +154,6 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       error_msg = execute_mutation_with_error(conn, mutation)
 
       assert error_msg == "Login failed"
-    end
-
-    test "with not registered user that staked >= 2000 SAN in Uniswap, create free subscription",
-         context do
-      {:ok, user} =
-        insert(:user, email: "example@santiment.net", is_registered: false)
-        |> User.update_email_token()
-
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        mutation = email_login_verify_mutation(user)
-        result = execute_mutation(context.conn, mutation, "emailLoginVerify")
-
-        assert result["user"]["email"] == user.email
-        assert Sanbase.Billing.user_has_active_sanbase_subscriptions?(user.id)
-        assert Repo.get(User, user.id).is_registered
-      end)
-    end
-
-    test "with registered user that staked >= 2000 SAN in Uniswap, create free subscription",
-         context do
-      {:ok, user} =
-        insert(:user, email: "example@santiment.net", is_registered: true)
-        |> User.update_email_token()
-
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        mutation = email_login_verify_mutation(user)
-        result = execute_mutation(context.conn, mutation, "emailLoginVerify")
-
-        assert result["user"]["email"] == user.email
-        assert Sanbase.Billing.user_has_active_sanbase_subscriptions?(user.id)
-        assert Repo.get(User, user.id).is_registered
-      end)
-    end
-
-    test "with user that staked >= 2000 SAN in Uniswap that have sanbase subscription, create trial subscription",
-         context do
-      {:ok, user} =
-        insert(:user, email: "example@santiment.net", is_registered: false)
-        |> User.update_email_token()
-
-      insert(:subscription_pro_sanbase, user: user, stripe_id: "123")
-
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        mutation = email_login_verify_mutation(user)
-        result = execute_mutation(context.conn, mutation, "emailLoginVerify")
-
-        assert result["user"]["email"] == user.email
-        assert Sanbase.Billing.list_liquidity_subscriptions() == []
-        assert Repo.get(User, user.id).is_registered
-        assert_called(SignUpTrial.create_trial_subscription(user.id))
-      end)
-    end
-
-    test "with user that staked < 2000 SAN in Uniswap, create trial subscription", context do
-      {:ok, user} =
-        insert(:user, email: "example@santiment.net", is_registered: false)
-        |> User.update_email_token()
-
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 1999)
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        mutation = email_login_verify_mutation(user)
-        result = execute_mutation(context.conn, mutation, "emailLoginVerify")
-
-        assert result["user"]["email"] == user.email
-        assert Sanbase.Billing.list_liquidity_subscriptions() == []
-        assert Repo.get(User, user.id).is_registered
-        assert_called(SignUpTrial.create_trial_subscription(user.id))
-      end)
     end
   end
 

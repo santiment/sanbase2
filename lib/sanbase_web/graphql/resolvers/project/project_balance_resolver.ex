@@ -8,81 +8,77 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     ProjectEthAddress
   }
 
-  alias SanbaseWeb.Graphql.{SanbaseRepo, SanbaseDataloader}
+  alias SanbaseWeb.Graphql.SanbaseDataloader
+
+  defp current_balance_loader(loader, address_or_addresses, selector) do
+    address_or_addresses
+    |> List.wrap()
+    |> Enum.reduce(loader, fn address, loader ->
+      loader
+      |> Dataloader.load(
+        SanbaseDataloader,
+        :address_selector_current_balance,
+        {address, selector}
+      )
+    end)
+  end
+
+  defp current_combined_balance_from_loader(loader, address_or_addresses, selector) do
+    balances =
+      address_or_addresses
+      |> List.wrap()
+      |> Enum.map(fn address ->
+        balance =
+          loader
+          |> Dataloader.get(
+            SanbaseDataloader,
+            :address_selector_current_balance,
+            {address, selector}
+          )
+
+        balance || 0.0
+      end)
+
+    {:ok, Enum.sum(balances)}
+  end
 
   def eth_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
+    {:ok, eth_addresses} =
+      project
+      |> Project.eth_addresses()
+
+    selector = %{slug: "ethereum"}
+
     loader
-    |> eth_balance_loader(project)
-    |> on_load(&eth_balance_from_loader(&1, project))
+    |> current_balance_loader(eth_addresses, selector)
+    |> on_load(&current_combined_balance_from_loader(&1, eth_addresses, selector))
   end
 
-  def eth_balance_loader(loader, project) do
-    loader
-    |> Dataloader.load(SanbaseDataloader, :eth_balance, project)
-  end
-
-  def eth_balance_from_loader(loader, project) do
-    addresses = Enum.map(project.eth_addresses, fn %{address: address} -> address end)
-
-    balance =
-      addresses
-      |> Enum.map(fn address ->
-        loader
-        |> Dataloader.get(SanbaseDataloader, :eth_balance, address)
-      end)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.reduce(0, &+/2)
-
-    {:ok, balance}
-  end
-
-  def btc_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
-    loader
-    |> btc_balance_loader(project)
-    |> on_load(&btc_balance_from_loader(&1, project))
-  end
-
-  def btc_balance_loader(loader, project) do
-    loader
-    |> Dataloader.load(SanbaseRepo, :btc_addresses, project)
-  end
-
-  def btc_balance_from_loader(loader, project) do
-    balance =
-      loader
-      |> Dataloader.get(SanbaseRepo, :btc_addresses, project)
-      |> Enum.map(& &1.latest_btc_wallet_data)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.map(&(Decimal.to_float(&1.satoshi_balance) / 100_000_000))
-      |> Enum.reduce(0, &+/2)
-
-    {:ok, balance}
+  def btc_balance(_root, _args, _resolution) do
+    # Note: Deprecated
+    {:ok, nil}
   end
 
   def usd_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
+    {:ok, eth_addresses} = Project.eth_addresses(project)
+
     loader
-    |> usd_balance_loader(project)
-    |> on_load(&usd_balance_from_loader(&1, project))
+    |> usd_balance_loader(eth_addresses)
+    |> on_load(&usd_balance_from_loader(&1, eth_addresses, project))
   end
 
-  def usd_balance_loader(loader, project) do
+  def usd_balance_loader(loader, eth_addresses) do
     loader
-    |> eth_balance_loader(project)
-    |> btc_balance_loader(project)
+    |> current_balance_loader(eth_addresses, %{slug: "ethereum"})
     |> Dataloader.load(SanbaseDataloader, :last_price_usd, "ethereum")
-    |> Dataloader.load(SanbaseDataloader, :last_price_usd, "bitcoin")
   end
 
-  def usd_balance_from_loader(loader, %Project{} = project) do
-    with {:ok, eth_balance} <- eth_balance_from_loader(loader, project),
-         {:ok, btc_balance} <- btc_balance_from_loader(loader, project),
+  def usd_balance_from_loader(loader, eth_addresses, project) do
+    with {:ok, eth_balance} <-
+           current_combined_balance_from_loader(loader, eth_addresses, %{slug: "ethereum"}),
          eth_price_usd when not is_nil(eth_price_usd) <-
-           Dataloader.get(loader, SanbaseDataloader, :last_price_usd, "ethereum"),
-         btc_price_usd when not is_nil(btc_price_usd) <-
-           Dataloader.get(loader, SanbaseDataloader, :last_price_usd, "bitcoin") do
-      usd_balance_float = eth_balance * eth_price_usd + btc_balance * btc_price_usd
-
-      {:ok, usd_balance_float}
+           Dataloader.get(loader, SanbaseDataloader, :last_price_usd, "ethereum") do
+      {:ok, eth_balance * eth_price_usd}
     else
       error ->
         Logger.warn(
@@ -93,7 +89,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     end
   end
 
-  def eth_address_balance(%ProjectEthAddress{} = eth_address, _args, _resolution) do
-    {:ok, ProjectEthAddress.balance(eth_address)}
+  def eth_address_balance(%ProjectEthAddress{address: address}, _args, %{
+        context: %{loader: loader}
+      }) do
+    address = Sanbase.BlockchainAddress.to_internal_format(address)
+    selector = %{slug: "ethereum"}
+
+    loader
+    |> current_balance_loader(address, selector)
+    |> on_load(&current_combined_balance_from_loader(&1, address, selector))
   end
 end

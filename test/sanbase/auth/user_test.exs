@@ -11,11 +11,12 @@ defmodule Sanbase.Accounts.UserTest do
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
-  alias Sanbase.Billing.Subscription.SignUpTrial
   alias Sanbase.Accounts.User.UniswapStaking
 
   test "Delete user and associations" do
     with_mocks([
+      {Sanbase.KafkaExporter, [:passthrough],
+       [send_data_to_topic_from_current_process: fn _, _ -> :ok end]},
       {StripeApi, [:passthrough],
        [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
       {StripeApi, [:passthrough],
@@ -103,18 +104,22 @@ defmodule Sanbase.Accounts.UserTest do
       :ok = Sanbase.FeaturedItem.update_item(chart_config, true)
 
       # Intercom attributes
-      {:ok, _} = Sanbase.Intercom.UserAttributes.save(%{user_id: user.id, properties: %{}})
+      Sanbase.Intercom.UserAttributes.save(%{user_id: user.id, properties: %{}})
 
       # User intercom or other events
       Sanbase.Intercom.UserEvent.create([
         %{
           user_id: user.id,
           event_name: "test",
+          metadata: %{},
           created_at: Timex.now() |> DateTime.truncate(:second),
           inserted_at: Timex.now() |> DateTime.truncate(:second),
           updated_at: Timex.now() |> DateTime.truncate(:second)
         }
       ])
+
+      insert(:email_login_attempt, user: user)
+      insert(:short_url, user: user)
 
       {:ok, deleted} = Repo.delete(user)
       assert deleted.id == user.id
@@ -250,31 +255,6 @@ defmodule Sanbase.Accounts.UserTest do
       assert user.first_login
     end
 
-    test "with not registered user that has staked >= 2000 SAN and login origin is google" do
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        {:ok, user} =
-          User.find_or_insert_by(:email, "example@gmail.com", %{login_origin: :google})
-
-        assert user.email == "example@gmail.com"
-        assert user.first_login
-        assert Sanbase.Billing.list_liquidity_subscriptions() |> length() == 1
-      end)
-    end
-
-    test "with not registered user that has staked < 2000 SAN and login origin is google" do
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 1999)
-      |> Sanbase.Mock.prepare_mock2(&SignUpTrial.create_trial_subscription/1, {:ok, %{}})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        {:ok, user} =
-          User.find_or_insert_by(:email, "example@gmail.com", %{login_origin: :google})
-
-        assert user.email == "example@gmail.com"
-        assert user.first_login
-        assert Sanbase.Billing.list_liquidity_subscriptions() == []
-      end)
-    end
-
     test "with registered user" do
       existing_user =
         insert(:user,
@@ -285,7 +265,6 @@ defmodule Sanbase.Accounts.UserTest do
         )
 
       Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
-      |> Sanbase.Mock.prepare_mock2(&SignUpTrial.create_trial_subscription/1, {:ok, %{}})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, user} =
           User.find_or_insert_by(:email, existing_user.email, %{username: "john_snow"})
@@ -295,7 +274,6 @@ defmodule Sanbase.Accounts.UserTest do
         assert user.username == existing_user.username
 
         assert Sanbase.Billing.list_liquidity_subscriptions() == []
-        refute called(SignUpTrial.create_trial_subscription(user.id))
       end)
     end
   end
@@ -486,8 +464,8 @@ defmodule Sanbase.Accounts.UserTest do
 
     refute changeset.valid?
 
-    assert errors_on(changeset)[:username] |> Enum.at(0) ==
-             "Username can contain only latin letters and numbers"
+    assert errors_on(changeset)[:username] |> Enum.at(0) =~
+             "Username must contain only valid ASCII symbols"
   end
 
   test "trim whitespace on username" do
@@ -571,7 +549,7 @@ defmodule Sanbase.Accounts.UserTest do
 
     assert errors_on(changeset)[:avatar_url] ==
              [
-               "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+               "URL 'something invalid' is missing a scheme (e.g. https)"
              ]
   end
 

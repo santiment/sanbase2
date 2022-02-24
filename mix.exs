@@ -8,7 +8,7 @@ defmodule Sanbase.Mixfile do
       version: "0.0.1",
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers(),
+      compilers: Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
@@ -20,8 +20,9 @@ defmodule Sanbase.Mixfile do
         "coveralls.html": :test
       ],
       source_url: "https://github.com/santiment/sanbase2/",
-      homepage_url: "https://app.santiment.net/projects"
+      homepage_url: "https://app.santiment.net/projects",
       # Supress errors that should not be shown
+      xref: [exclude: [Oban]]
     ]
   end
 
@@ -61,8 +62,9 @@ defmodule Sanbase.Mixfile do
       {:corsica, "~> 1.0"},
       {:cowboy, "~> 2.0"},
       {:crc32cer, github: "zmstone/crc32cer", override: true},
-      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.6.0-rc.1", only: [:dev, :test], runtime: false},
       {:csv, "~> 2.1"},
+      {:csvlixir, "~> 2.0", override: true},
       {:dataloader, "~> 1.0.0"},
       {:db_connection, "~> 2.2", override: true},
       {:decimal, "~> 1.0"},
@@ -88,9 +90,10 @@ defmodule Sanbase.Mixfile do
       {:ex_machina, "~> 2.2", only: [:dev, :test]},
       {:ex_unit_notifier, "~> 1.0", only: :test},
       {:excoveralls, "~> 0.8", optional: true, only: [:test]},
+      {:expletive, "~> 0.1.0"},
       {:exprof, "~> 0.2.0"},
       {:extwitter, "~> 0.11"},
-      {:faker, "~> 0.12", only: [:dev, :test]},
+      {:faker, "~> 0.17", only: [:dev, :test]},
       {:floki, "~> 0.20"},
       {:gettext, "~> 0.11"},
       {:guardian_db, "~> 2.0"},
@@ -114,6 +117,7 @@ defmodule Sanbase.Mixfile do
       {:mogrify, "~> 0.8"},
       {:mutex, "~> 1.1"},
       {:neuron, "~> 5.0", only: :dev},
+      {:nimble_csv, "~> 1.1"},
       {:norm, "~> 0.12"},
       {:number, "~> 1.0"},
       # TODO: Go back to original once https://github.com/lexmag/oauther/pull/22 is merged
@@ -121,11 +125,12 @@ defmodule Sanbase.Mixfile do
       {:oban, "~> 2.7"},
       {:observer_cli, "~> 1.3"},
       {:phoenix_ecto, "~> 4.1"},
+      {:phoenix_html, "~> 3.0", override: true},
       {:phoenix_live_dashboard, "~> 0.3"},
       {:phoenix_live_reload, "~> 1.1", only: :dev},
       {:phoenix_live_view, "~> 0.14"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix, "~> 1.5.3"},
+      {:phoenix, "~> 1.6.0"},
       {:plug_cowboy, "~> 2.0"},
       {:postgrex, "~> 0.15.0", override: true},
       {:prometheus_ecto, "~> 1.3"},
@@ -150,7 +155,8 @@ defmodule Sanbase.Mixfile do
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.8.0", override: true},
       {:waffle, "~> 1.1"},
-      {:websockex, "~> 0.4.3"}
+      {:websockex, "~> 0.4.3"},
+      {:kaffy, github: "santiment/kaffy"}
     ]
   end
 

@@ -81,54 +81,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     end)
   end
 
-  def transaction_volume_per_address(
-        _root,
-        %{
-          selector: %{slug: slug} = selector,
-          from: from,
-          to: to,
-          addresses: addresses
-        },
-        _resolution
-      ) do
-    with {:ok, contract, decimals} <- Sanbase.Model.Project.contract_info_by_slug(slug) do
-      Sanbase.Transfers.Erc20Transfers.transaction_volume_per_address(
-        addresses,
-        contract,
-        from,
-        to,
-        decimals
-      )
-      |> maybe_handle_graphql_error(fn error ->
-        handle_graphql_error(
-          "Historical Balance Change per Address",
-          inspect(selector),
-          error,
-          description: "selector"
-        )
-      end)
-    end
-  end
-
-  def transaction_volume_per_address(_root, _args, _resolution) do
-    {:error,
-     "Transaction volume per address is currently supported only for selectors with infrastructure ETH and a slug"}
-  end
-
-  def miners_balance(
-        _root,
-        %{} = args,
-        _resolution
-      ) do
+  def miners_balance(root, %{} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "miners_balance"}}
+      Map.put(resolution, :source, %{metric: "miners_balance"})
     )
-    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :balance)
+    |> Sanbase.Utils.Transform.rename_map_keys(
+      old_key: :value,
+      new_key: :balance
+    )
   end
 
-  def balance_usd(%{slug: slug, balance: balance}, _args, %{context: %{loader: loader}}) do
+  def balance_usd(%{slug: slug, balance: balance}, _args, %{
+        context: %{loader: loader}
+      }) do
     loader
     |> Dataloader.load(SanbaseDataloader, :last_price_usd, slug)
     |> on_load(fn loader ->

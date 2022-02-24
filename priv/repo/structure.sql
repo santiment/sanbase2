@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13.1
--- Dumped by pg_dump version 13.1
+-- Dumped from database version 14.0
+-- Dumped by pg_dump version 14.0
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -153,6 +153,35 @@ $$;
 
 
 --
+-- Name: movefinishedobanjobs(character varying, bigint); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.movefinishedobanjobs(queue_arg character varying, limit_arg bigint) RETURNS bigint
+    LANGUAGE plpgsql
+    AS $_$
+ DECLARE
+   rows_count numeric;
+ BEGIN
+   WITH finished_job_ids_cte AS (
+     SELECT id from oban_jobs
+     WHERE queue = $1 AND completed_at IS NOT NULL
+     LIMIT $2
+   ),
+   moved_rows AS (
+     DELETE FROM oban_jobs a
+     WHERE a.id IN (SELECT id FROM finished_job_ids_cte)
+     RETURNING a.queue, a.worker, a.args, a.inserted_at, a.completed_at
+   )
+   INSERT INTO finished_oban_jobs(queue, worker, args, inserted_at, completed_at)
+   SELECT * FROM moved_rows;
+
+   GET DIAGNOSTICS rows_count = ROW_COUNT;
+   RETURN rows_count;
+ END;
+ $_$;
+
+
+--
 -- Name: oban_jobs_notify(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -176,6 +205,8 @@ $$;
 
 
 SET default_tablespace = '';
+
+SET default_table_access_method = heap;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -435,6 +466,38 @@ ALTER SEQUENCE public.blockchain_addresses_id_seq OWNED BY public.blockchain_add
 
 
 --
+-- Name: chart_configuration_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.chart_configuration_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    chart_configuration_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: chart_configuration_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.chart_configuration_comments_mapping_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: chart_configuration_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.chart_configuration_comments_mapping_id_seq OWNED BY public.chart_configuration_comments_mapping.id;
+
+
+--
 -- Name: chart_configurations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -451,7 +514,9 @@ CREATE TABLE public.chart_configurations (
     updated_at timestamp without time zone NOT NULL,
     drawings jsonb,
     options jsonb,
-    post_id bigint
+    post_id bigint,
+    queries jsonb,
+    metrics_json jsonb DEFAULT '{}'::jsonb
 );
 
 
@@ -614,7 +679,7 @@ ALTER SEQUENCE public.currencies_id_seq OWNED BY public.currencies.id;
 CREATE TABLE public.email_login_attempts (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    ip_address character varying(15),
+    ip_address character varying(39),
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
@@ -808,6 +873,39 @@ CREATE SEQUENCE public.featured_items_id_seq
 --
 
 ALTER SEQUENCE public.featured_items_id_seq OWNED BY public.featured_items.id;
+
+
+--
+-- Name: finished_oban_jobs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.finished_oban_jobs (
+    id bigint NOT NULL,
+    queue character varying(255),
+    worker character varying(255),
+    args jsonb,
+    inserted_at timestamp(0) without time zone,
+    completed_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: finished_oban_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.finished_oban_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: finished_oban_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.finished_oban_jobs_id_seq OWNED BY public.finished_oban_jobs.id;
 
 
 --
@@ -1035,6 +1133,72 @@ CREATE SEQUENCE public.latest_coinmarketcap_data_id_seq
 --
 
 ALTER SEQUENCE public.latest_coinmarketcap_data_id_seq OWNED BY public.latest_coinmarketcap_data.id;
+
+
+--
+-- Name: linked_users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.linked_users (
+    id bigint NOT NULL,
+    primary_user_id bigint NOT NULL,
+    secondary_user_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: linked_users_candidates; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.linked_users_candidates (
+    id bigint NOT NULL,
+    primary_user_id bigint NOT NULL,
+    secondary_user_id bigint NOT NULL,
+    token character varying(255) NOT NULL,
+    is_confirmed boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: linked_users_candidates_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.linked_users_candidates_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: linked_users_candidates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.linked_users_candidates_id_seq OWNED BY public.linked_users_candidates.id;
+
+
+--
+-- Name: linked_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.linked_users_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: linked_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.linked_users_id_seq OWNED BY public.linked_users.id;
 
 
 --
@@ -2159,6 +2323,39 @@ ALTER SEQUENCE public.seen_timeline_events_id_seq OWNED BY public.seen_timeline_
 
 
 --
+-- Name: shared_access_tokens; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.shared_access_tokens (
+    id bigint NOT NULL,
+    uuid character varying(255) NOT NULL,
+    user_id bigint NOT NULL,
+    chart_configuration_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: shared_access_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.shared_access_tokens_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: shared_access_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.shared_access_tokens_id_seq OWNED BY public.shared_access_tokens.id;
+
+
+--
 -- Name: sheets_templates; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2892,7 +3089,8 @@ CREATE TABLE public.users (
     avatar_url character varying(255),
     is_registered boolean DEFAULT false,
     is_superuser boolean DEFAULT false,
-    twitter_id character varying(255) DEFAULT NULL::character varying
+    twitter_id character varying(255) DEFAULT NULL::character varying,
+    name character varying(255)
 );
 
 
@@ -2927,13 +3125,23 @@ CREATE TABLE public.votes (
     updated_at timestamp without time zone NOT NULL,
     timeline_event_id bigint,
     count integer DEFAULT 1,
-    CONSTRAINT only_one_fk CHECK (((
+    chart_configuration_id bigint,
+    watchlist_id bigint,
+    CONSTRAINT only_one_fk CHECK (((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
 END +
 CASE
     WHEN (timeline_event_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (chart_configuration_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (watchlist_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -3139,6 +3347,38 @@ ALTER SEQUENCE public.wallet_hunters_votes_id_seq OWNED BY public.wallet_hunters
 
 
 --
+-- Name: watchlist_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.watchlist_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    watchlist_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: watchlist_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.watchlist_comments_mapping_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: watchlist_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.watchlist_comments_mapping_id_seq OWNED BY public.watchlist_comments_mapping.id;
+
+
+--
 -- Name: watchlist_settings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3275,6 +3515,13 @@ ALTER TABLE ONLY public.blockchain_addresses ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: chart_configuration_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chart_configuration_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.chart_configuration_comments_mapping_id_seq'::regclass);
+
+
+--
 -- Name: chart_configurations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3345,6 +3592,13 @@ ALTER TABLE ONLY public.featured_items ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: finished_oban_jobs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.finished_oban_jobs ALTER COLUMN id SET DEFAULT nextval('public.finished_oban_jobs_id_seq'::regclass);
+
+
+--
 -- Name: github_organizations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3384,6 +3638,20 @@ ALTER TABLE ONLY public.latest_btc_wallet_data ALTER COLUMN id SET DEFAULT nextv
 --
 
 ALTER TABLE ONLY public.latest_coinmarketcap_data ALTER COLUMN id SET DEFAULT nextval('public.latest_coinmarketcap_data_id_seq'::regclass);
+
+
+--
+-- Name: linked_users id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users ALTER COLUMN id SET DEFAULT nextval('public.linked_users_id_seq'::regclass);
+
+
+--
+-- Name: linked_users_candidates id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users_candidates ALTER COLUMN id SET DEFAULT nextval('public.linked_users_candidates_id_seq'::regclass);
 
 
 --
@@ -3611,6 +3879,13 @@ ALTER TABLE ONLY public.seen_timeline_events ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: shared_access_tokens id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.shared_access_tokens ALTER COLUMN id SET DEFAULT nextval('public.shared_access_tokens_id_seq'::regclass);
+
+
+--
 -- Name: sheets_templates id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3793,6 +4068,13 @@ ALTER TABLE ONLY public.wallet_hunters_votes ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: watchlist_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.watchlist_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.watchlist_comments_mapping_id_seq'::regclass);
+
+
+--
 -- Name: webinar_registrations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3868,6 +4150,14 @@ ALTER TABLE ONLY public.blockchain_address_user_pairs
 
 ALTER TABLE ONLY public.blockchain_addresses
     ADD CONSTRAINT blockchain_addresses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: chart_configuration_comments_mapping chart_configuration_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chart_configuration_comments_mapping
+    ADD CONSTRAINT chart_configuration_comments_mapping_pkey PRIMARY KEY (id);
 
 
 --
@@ -3959,6 +4249,14 @@ ALTER TABLE ONLY public.featured_items
 
 
 --
+-- Name: finished_oban_jobs finished_oban_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.finished_oban_jobs
+    ADD CONSTRAINT finished_oban_jobs_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: github_organizations github_organizations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4012,6 +4310,22 @@ ALTER TABLE ONLY public.latest_btc_wallet_data
 
 ALTER TABLE ONLY public.latest_coinmarketcap_data
     ADD CONSTRAINT latest_coinmarketcap_data_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: linked_users_candidates linked_users_candidates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users_candidates
+    ADD CONSTRAINT linked_users_candidates_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: linked_users linked_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users
+    ADD CONSTRAINT linked_users_pkey PRIMARY KEY (id);
 
 
 --
@@ -4279,6 +4593,14 @@ ALTER TABLE ONLY public.seen_timeline_events
 
 
 --
+-- Name: shared_access_tokens shared_access_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.shared_access_tokens
+    ADD CONSTRAINT shared_access_tokens_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: sheets_templates sheets_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4519,6 +4841,14 @@ ALTER TABLE ONLY public.wallet_hunters_votes
 
 
 --
+-- Name: watchlist_comments_mapping watchlist_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.watchlist_comments_mapping
+    ADD CONSTRAINT watchlist_comments_mapping_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: watchlist_settings watchlist_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4617,6 +4947,20 @@ CREATE UNIQUE INDEX blockchain_address_user_pairs_user_id_blockchain_address_id_
 --
 
 CREATE UNIQUE INDEX blockchain_addresses_address_infrastructure_id_index ON public.blockchain_addresses USING btree (address, infrastructure_id);
+
+
+--
+-- Name: chart_configuration_comments_mapping_chart_configuration_id_ind; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX chart_configuration_comments_mapping_chart_configuration_id_ind ON public.chart_configuration_comments_mapping USING btree (chart_configuration_id);
+
+
+--
+-- Name: chart_configuration_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX chart_configuration_comments_mapping_comment_id_index ON public.chart_configuration_comments_mapping USING btree (comment_id);
 
 
 --
@@ -4732,6 +5076,27 @@ CREATE UNIQUE INDEX featured_items_user_trigger_id_index ON public.featured_item
 
 
 --
+-- Name: finished_oban_jobs_args_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX finished_oban_jobs_args_index ON public.finished_oban_jobs USING gin (args);
+
+
+--
+-- Name: finished_oban_jobs_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX finished_oban_jobs_inserted_at_index ON public.finished_oban_jobs USING btree (inserted_at);
+
+
+--
+-- Name: finished_oban_jobs_queue_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX finished_oban_jobs_queue_index ON public.finished_oban_jobs USING btree (queue);
+
+
+--
 -- Name: github_organizations_project_id_organization_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4778,6 +5143,20 @@ CREATE UNIQUE INDEX latest_btc_wallet_data_address_index ON public.latest_btc_wa
 --
 
 CREATE UNIQUE INDEX latest_coinmarketcap_data_coinmarketcap_id_index ON public.latest_coinmarketcap_data USING btree (coinmarketcap_id);
+
+
+--
+-- Name: linked_users_candidates_token_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX linked_users_candidates_token_index ON public.linked_users_candidates USING btree (token);
+
+
+--
+-- Name: linked_users_secondary_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX linked_users_secondary_user_id_index ON public.linked_users USING btree (secondary_user_id);
 
 
 --
@@ -5047,6 +5426,20 @@ CREATE UNIQUE INDEX seen_timeline_events_user_id_event_id_index ON public.seen_t
 
 
 --
+-- Name: shared_access_tokens_chart_configuration_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX shared_access_tokens_chart_configuration_id_index ON public.shared_access_tokens USING btree (chart_configuration_id);
+
+
+--
+-- Name: shared_access_tokens_uuid_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX shared_access_tokens_uuid_index ON public.shared_access_tokens USING btree (uuid);
+
+
+--
 -- Name: short_url_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5278,6 +5671,13 @@ CREATE UNIQUE INDEX users_username_index ON public.users USING btree (username);
 
 
 --
+-- Name: votes_chart_configuration_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_chart_configuration_id_user_id_index ON public.votes USING btree (chart_configuration_id, user_id);
+
+
+--
 -- Name: votes_post_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5296,6 +5696,13 @@ CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (pos
 --
 
 CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING btree (timeline_event_id, user_id);
+
+
+--
+-- Name: votes_watchlist_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_watchlist_id_user_id_index ON public.votes USING btree (watchlist_id, user_id);
 
 
 --
@@ -5348,6 +5755,20 @@ CREATE INDEX wallet_hunters_votes_user_id_index ON public.wallet_hunters_votes U
 
 
 --
+-- Name: watchlist_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX watchlist_comments_mapping_comment_id_index ON public.watchlist_comments_mapping USING btree (comment_id);
+
+
+--
+-- Name: watchlist_comments_mapping_watchlist_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX watchlist_comments_mapping_watchlist_id_index ON public.watchlist_comments_mapping USING btree (watchlist_id);
+
+
+--
 -- Name: watchlist_settings_watchlist_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5379,7 +5800,7 @@ CREATE INDEX webinar_registrations_webinar_id_index ON public.webinar_registrati
 -- Name: oban_jobs oban_notify; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE PROCEDURE public.oban_jobs_notify();
+CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE FUNCTION public.oban_jobs_notify();
 
 
 --
@@ -5444,6 +5865,22 @@ ALTER TABLE ONLY public.blockchain_address_user_pairs
 
 ALTER TABLE ONLY public.blockchain_addresses
     ADD CONSTRAINT blockchain_addresses_infrastructure_id_fkey FOREIGN KEY (infrastructure_id) REFERENCES public.infrastructures(id);
+
+
+--
+-- Name: chart_configuration_comments_mapping chart_configuration_comments_mapping_chart_configuration_id_fke; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chart_configuration_comments_mapping
+    ADD CONSTRAINT chart_configuration_comments_mapping_chart_configuration_id_fke FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: chart_configuration_comments_mapping chart_configuration_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chart_configuration_comments_mapping
+    ADD CONSTRAINT chart_configuration_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE;
 
 
 --
@@ -5604,6 +6041,38 @@ ALTER TABLE ONLY public.icos
 
 ALTER TABLE ONLY public.icos
     ADD CONSTRAINT icos_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
+-- Name: linked_users_candidates linked_users_candidates_primary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users_candidates
+    ADD CONSTRAINT linked_users_candidates_primary_user_id_fkey FOREIGN KEY (primary_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: linked_users_candidates linked_users_candidates_secondary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users_candidates
+    ADD CONSTRAINT linked_users_candidates_secondary_user_id_fkey FOREIGN KEY (secondary_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: linked_users linked_users_primary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users
+    ADD CONSTRAINT linked_users_primary_user_id_fkey FOREIGN KEY (primary_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: linked_users linked_users_secondary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users
+    ADD CONSTRAINT linked_users_secondary_user_id_fkey FOREIGN KEY (secondary_user_id) REFERENCES public.users(id);
 
 
 --
@@ -5871,6 +6340,22 @@ ALTER TABLE ONLY public.seen_timeline_events
 
 
 --
+-- Name: shared_access_tokens shared_access_tokens_chart_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.shared_access_tokens
+    ADD CONSTRAINT shared_access_tokens_chart_configuration_id_fkey FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id);
+
+
+--
+-- Name: shared_access_tokens shared_access_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.shared_access_tokens
+    ADD CONSTRAINT shared_access_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: short_url_comments_mapping short_url_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6127,6 +6612,14 @@ ALTER TABLE ONLY public.user_uniswap_staking
 
 
 --
+-- Name: votes votes_chart_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_chart_configuration_id_fkey FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id);
+
+
+--
 -- Name: votes votes_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6148,6 +6641,14 @@ ALTER TABLE ONLY public.votes
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: votes votes_watchlist_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_watchlist_id_fkey FOREIGN KEY (watchlist_id) REFERENCES public.user_lists(id);
 
 
 --
@@ -6204,6 +6705,22 @@ ALTER TABLE ONLY public.wallet_hunters_relays_quota
 
 ALTER TABLE ONLY public.wallet_hunters_votes
     ADD CONSTRAINT wallet_hunters_votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: watchlist_comments_mapping watchlist_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.watchlist_comments_mapping
+    ADD CONSTRAINT watchlist_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE;
+
+
+--
+-- Name: watchlist_comments_mapping watchlist_comments_mapping_watchlist_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.watchlist_comments_mapping
+    ADD CONSTRAINT watchlist_comments_mapping_watchlist_id_fkey FOREIGN KEY (watchlist_id) REFERENCES public.user_lists(id) ON DELETE CASCADE;
 
 
 --
@@ -6507,6 +7024,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200826101751);
 INSERT INTO public."schema_migrations" (version) VALUES (20200826114101);
 INSERT INTO public."schema_migrations" (version) VALUES (20200908092849);
 INSERT INTO public."schema_migrations" (version) VALUES (20200923090710);
+INSERT INTO public."schema_migrations" (version) VALUES (20200930103424);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016091443);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016105225);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016124426);
@@ -6565,8 +7083,22 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210616123403);
 INSERT INTO public."schema_migrations" (version) VALUES (20210701130227);
 INSERT INTO public."schema_migrations" (version) VALUES (20210705104243);
 INSERT INTO public."schema_migrations" (version) VALUES (20210707135227);
+INSERT INTO public."schema_migrations" (version) VALUES (20210708111602);
 INSERT INTO public."schema_migrations" (version) VALUES (20210712125345);
 INSERT INTO public."schema_migrations" (version) VALUES (20210716075649);
 INSERT INTO public."schema_migrations" (version) VALUES (20210721140912);
 INSERT INTO public."schema_migrations" (version) VALUES (20210722141655);
-INSERT INTO public."schema_migrations" (version) VALUES (20210723151014);
+INSERT INTO public."schema_migrations" (version) VALUES (20210727124520);
+INSERT INTO public."schema_migrations" (version) VALUES (20210727124524);
+INSERT INTO public."schema_migrations" (version) VALUES (20210728101938);
+INSERT INTO public."schema_migrations" (version) VALUES (20210803092012);
+INSERT INTO public."schema_migrations" (version) VALUES (20210816150914);
+INSERT INTO public."schema_migrations" (version) VALUES (20210907104846);
+INSERT INTO public."schema_migrations" (version) VALUES (20210907104919);
+INSERT INTO public."schema_migrations" (version) VALUES (20210921100450);
+INSERT INTO public."schema_migrations" (version) VALUES (20211109131726);
+INSERT INTO public."schema_migrations" (version) VALUES (20211117104935);
+INSERT INTO public."schema_migrations" (version) VALUES (20211124075928);
+INSERT INTO public."schema_migrations" (version) VALUES (20211126144929);
+INSERT INTO public."schema_migrations" (version) VALUES (20211206104913);
+INSERT INTO public."schema_migrations" (version) VALUES (20220201122953);

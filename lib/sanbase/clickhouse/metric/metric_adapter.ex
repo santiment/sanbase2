@@ -35,7 +35,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @metrics_mapset @metrics_name_list |> MapSet.new()
   @incomplete_data_map FileHandler.incomplete_data_map()
   @selectors_map FileHandler.selectors_map()
-  @metric_to_name_map FileHandler.metric_to_name_map()
+  @required_selectors_map FileHandler.required_selectors_map()
+  @metric_to_names_map FileHandler.metric_to_names_map()
+  @deprecated_metrics_map FileHandler.deprecated_metrics_map()
   @default_complexity_weight 0.3
 
   @type slug :: String.t()
@@ -49,6 +51,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def restricted_metrics(), do: @restricted_metrics
 
   @impl Sanbase.Metric.Behaviour
+  def deprecated_metrics_map(), do: @deprecated_metrics_map
+
+  @impl Sanbase.Metric.Behaviour
   def access_map(), do: @access_map
 
   @impl Sanbase.Metric.Behaviour
@@ -59,6 +64,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def complexity_weight(_), do: @default_complexity_weight
+
+  @impl Sanbase.Metric.Behaviour
+  def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
 
   @doc ~s"""
   Get a given metric for a slug and time range. The metric's aggregation
@@ -71,7 +79,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   def timeseries_data(metric, %{slug: slug}, from, to, interval, opts) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
-    filters = Keyword.get(opts, :additional_filters, [])
+
+    # FIXME: Some of the `nft` metrics need additional filter for `owner=opensea`
+    # to show correct values. Remove after fixed by bigdata.
+    filters =
+      if String.starts_with?(metric, "nft_") do
+        [owner: "opensea"]
+      else
+        Keyword.get(opts, :additional_filters, [])
+      end
 
     {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation, filters)
 
@@ -143,6 +159,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def required_selectors(), do: FileHandler.required_selectors_map()
+
+  @impl Sanbase.Metric.Behaviour
   def metadata(metric) do
     min_interval = min_interval(metric)
     default_aggregation = Map.get(@aggregation_map, metric)
@@ -154,6 +173,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
        default_aggregation: default_aggregation,
        available_aggregations: @plain_aggregations,
        available_selectors: Map.get(@selectors_map, metric),
+       required_selectors: Map.get(@required_selectors_map, metric, []),
        data_type: Map.get(@metrics_data_type_map, metric),
        complexity_weight: @default_complexity_weight
      }}
@@ -185,10 +205,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     {query, args} = available_metrics_for_slug_query(slug)
 
     ClickhouseRepo.query_transform(query, args, fn [metric] ->
-      Map.get(@metric_to_name_map, metric)
+      Map.get(@metric_to_names_map, metric)
     end)
     |> maybe_apply_function(fn metrics ->
-      MapSet.intersection(@metrics_mapset, MapSet.new(metrics))
+      metrics
+      |> List.flatten()
+      |> MapSet.new()
+      |> MapSet.intersection(@metrics_mapset)
       |> Enum.to_list()
     end)
   end
@@ -269,7 +292,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     {query, args} =
       aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, value], acc ->
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, value, has_changed], acc ->
+      value = if has_changed == 1, do: value, else: nil
       Map.put(acc, slug, value)
     end)
   end

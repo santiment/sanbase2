@@ -106,12 +106,9 @@ defmodule SanbaseWeb.ExAdmin.UserList do
 
     params =
       if is_nil(params.user_list.is_featured) do
-        is_featured =
-          params.id
-          |> UserList.by_id()
-          |> is_featured
+        watchlist = UserList.by_id!(params.id, [])
 
-        put_in(params[:user_list][:is_featured], is_featured)
+        put_in(params[:user_list][:is_featured], is_featured(watchlist))
       else
         params
       end

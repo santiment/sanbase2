@@ -7,17 +7,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   @doc ~S"""
   Return the token age consumed for the given slug and time period.
   """
-  def token_age_consumed(
-        _root,
-        %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
-        _resolution
-      ) do
+  def token_age_consumed(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "age_destroyed"}}
+      Map.put(resolution, :source, %{metric: "age_destroyed"})
     )
-    |> Sanbase.Utils.Transform.duplicate_map_keys(:value, :burn_rate)
+    |> Sanbase.Utils.Transform.duplicate_map_keys(old_key: :value, new_key: :burn_rate)
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :token_age_consumed)
   end
 
@@ -45,15 +41,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
-  def transaction_volume(
-        _root,
-        %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
-        _resolution
-      ) do
+  def transaction_volume(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "transaction_volume"}}
+      Map.put(resolution, :source, %{metric: "transaction_volume"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :transaction_volume)
   end
@@ -62,28 +54,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   Return the amount of tokens that were transacted in or out of an exchange wallet for a given slug
   and time period
   """
-  def exchange_funds_flow(
-        _root,
-        %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
-        _resolution
-      ) do
+  def exchange_funds_flow(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "exchange_balance"}}
+      Map.put(resolution, :source, %{metric: "exchange_balance"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :in_out_difference)
   end
 
-  def token_velocity(
-        _root,
-        %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
-        _resolution
-      ) do
+  def token_velocity(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
     MetricResolver.timeseries_data(
-      %{},
+      root,
       args,
-      %{source: %{metric: "velocity"}}
+      Map.put(resolution, :source, %{metric: "velocity"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :token_velocity)
   end

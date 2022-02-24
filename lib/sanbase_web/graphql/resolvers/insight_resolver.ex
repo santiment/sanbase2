@@ -5,10 +5,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Accounts.User
-  alias Sanbase.Vote
   alias Sanbase.Insight.{Post, PopularAuthor}
   alias Sanbase.Comments.EntityComment
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   require Logger
 
@@ -47,7 +45,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   end
 
   def post(_root, %{id: post_id}, _resolution) do
-    Post.by_id(post_id)
+    Post.by_id(post_id, [])
   end
 
   def all_insights(_root, %{tags: tags, page: page, page_size: page_size} = args, _context)
@@ -136,8 +134,43 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, search_result_insights}
   end
 
+  def all_insights_by_search_term_highlighted(
+        _root,
+        %{search_term: search_term, page: page, page_size: page_size} = args,
+        _context
+      ) do
+    opts = [
+      is_pulse: Map.get(args, :is_pulse),
+      is_paywall_required: Map.get(args, :is_paywall_required),
+      from: Map.get(args, :from),
+      to: Map.get(args, :to),
+      page: page,
+      page_size: page_size
+    ]
+
+    # Search is done only on the publicly visible (published) insights.
+    search_result_insights = Post.search_published_insights_highglight(search_term, opts)
+
+    {:ok, search_result_insights}
+  end
+
+  @doc ~s"""
+  When fetching all insights we need to directly show only the text of the pulse insights.
+  In order to transport less data over the network, this field can be used instead of
+  the `text` field as it will be filled only for those insights.
+  """
+  def pulse_text(%Post{} = post, _args, _resolution) do
+    case Post.is_pulse?(post) do
+      true -> {:ok, post.text}
+      false -> {:ok, nil}
+    end
+  end
+
   def create_post(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    Post.create(user, args)
+    case Post.can_create?(user.id) do
+      {:ok, _} -> Post.create(user, args)
+      {:error, error} -> {:error, error}
+    end
   end
 
   def update_post(_root, %{id: post_id} = args, %{
@@ -162,52 +195,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, Sanbase.Tag.all()}
   end
 
-  @doc ~s"""
-    Returns a tuple `{total_votes, total_san_votes}` where:
-    - `total_votes` represents the number of votes where each vote's weight is 1
-    - `total_san_votes` represents the number of votes where each vote's weight is
-    equal to the san balance of the voter
-  """
-  def votes(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do
-    {:ok, Vote.vote_stats(post, user)}
-  end
-
-  def votes(%Post{} = post, _args, _context) do
-    {:ok, Vote.vote_stats(post)}
-  end
-
-  def voted_at(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do
-    {:ok, Vote.voted_at(post, user)}
-  end
-
-  def voted_at(%Post{}, _args, _context), do: {:ok, nil}
-
-  def vote(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    insight_id = Map.get(args, :insight_id) || Map.fetch!(args, :post_id)
-
-    Vote.create(%{post_id: insight_id, user_id: user.id})
-    |> case do
-      {:ok, _vote} ->
-        Post.by_id(insight_id)
-
-      {:error, changeset} ->
-        {
-          :error,
-          message: "Can't vote for post with id #{insight_id}",
-          details: changeset_errors(changeset)
-        }
-    end
-  end
-
-  def unvote(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    insight_id = Map.get(args, :insight_id) || Map.fetch!(args, :post_id)
-
-    case Vote.downvote(%{post_id: insight_id, user_id: user.id}) do
-      {:ok, _vote} -> Post.by_id(insight_id)
-      {:error, _error} -> {:error, "Can't remove vote for post with id #{insight_id}"}
-    end
-  end
-
   def insights_count(%User{id: id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :insights_count_per_user, id)
@@ -225,14 +212,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
       |> Enum.map(& &1.comment)
 
     {:ok, comments}
-  end
-
-  def insight_id(%Sanbase.Comment{id: id}, _args, %{context: %{loader: loader}}) do
-    loader
-    |> Dataloader.load(SanbaseDataloader, :comment_insight_id, id)
-    |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :comment_insight_id, id)}
-    end)
   end
 
   def comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do

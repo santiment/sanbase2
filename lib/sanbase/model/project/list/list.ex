@@ -19,7 +19,7 @@ defmodule Sanbase.Model.Project.List do
     - `:preload` (list) - A list of preloads if `:preload?` is true.
        Defaults to `#{inspect(@preloads)}
     - `:min_volume` (number) - Filter out all projects with smaller trading volume
-    - `:include_hidden_projects?` (boolean) - Include the projects that are explictly
+    - `:include_hidden` (boolean) - Include the projects that are explictly
     hidden from lists. There are cases where a project needs to be removed
     from the public lists. But still those projects need to be included
     when fetched in a scraper so we do not lose data for them.
@@ -53,6 +53,14 @@ defmodule Sanbase.Model.Project.List do
 
     projects_query(opts)
     |> select([p], p.slug)
+    |> Repo.all()
+  end
+
+  def hidden_projects_slugs() do
+    from(p in Project,
+      where: p.is_hidden == true,
+      select: p.slug
+    )
     |> Repo.all()
   end
 
@@ -200,6 +208,22 @@ defmodule Sanbase.Model.Project.List do
   def projects_by_ticker(ticker, opts \\ []) do
     projects_query(opts)
     |> where([p], p.ticker == ^ticker)
+    |> Repo.all()
+  end
+
+  def slugs_by_infrastructure(infrastructures, opts \\ []) when is_list(infrastructures) do
+    # explicitly remove preloads as they are not going to be used
+    opts = Keyword.put(opts, :preload?, false)
+
+    # If the infrastructure is `own` then use the ticker as infrastructure
+    from(
+      p in projects_query(opts),
+      left_join: infr in assoc(p, :infrastructure),
+      where:
+        infr.code in ^infrastructures or
+          (fragment("lower(?)", infr.code) == "own" and p.ticker in ^infrastructures),
+      select: p.slug
+    )
     |> Repo.all()
   end
 
@@ -468,7 +492,7 @@ defmodule Sanbase.Model.Project.List do
   def currently_trending_projects(opts \\ [])
 
   def currently_trending_projects(opts) do
-    {:ok, trending_words} = Sanbase.SocialData.TrendingWords.get_currently_trending_words()
+    {:ok, trending_words} = Sanbase.SocialData.TrendingWords.get_currently_trending_words(10)
 
     trending_words
     |> Enum.map(&String.downcase(&1.word))
@@ -603,7 +627,7 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp maybe_include_hidden_projects(query, opts) do
-    case Keyword.get(opts, :include_hidden_projects?, false) do
+    case Keyword.get(opts, :include_hidden, false) do
       false ->
         query
         |> where([p], p.is_hidden == false)

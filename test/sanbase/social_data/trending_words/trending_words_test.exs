@@ -75,7 +75,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result = TrendingWords.get_currently_trending_words()
+        result = TrendingWords.get_currently_trending_words(10)
 
         assert result == {:ok, [%{score: 2, word: "xrp"}, %{score: 1, word: "eth"}]}
       end)
@@ -84,7 +84,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     test "clickhouse returns error", _context do
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        {:error, error} = TrendingWords.get_currently_trending_words()
+        {:error, error} = TrendingWords.get_currently_trending_words(10)
 
         assert error =~ "Cannot execute database query."
       end)

@@ -20,6 +20,8 @@ defmodule Sanbase.Twitter.MetricAdapter do
   @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
                       |> Enum.map(&elem(&1, 0))
 
+  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
+
   @default_complexity_weight 1
 
   @impl Sanbase.Metric.Behaviour
@@ -27,6 +29,12 @@ defmodule Sanbase.Twitter.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def complexity_weight(_), do: @default_complexity_weight
+
+  @impl Sanbase.Metric.Behaviour
+  def required_selectors(), do: @required_selectors
+
+  @impl Sanbase.Metric.Behaviour
+  def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_data("twitter_followers", %{slug: slug}, from, to, interval, _opts) do
@@ -47,6 +55,13 @@ defmodule Sanbase.Twitter.MetricAdapter do
       nil -> {:error, "Project with slug #{slug} is not existing"}
       error -> error
     end
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def timeseries_data_per_slug(metric, selector, from, to, interval, opts \\ [])
+
+  def timeseries_data_per_slug("twitter_followers", _selector, _from, _to, _interval, _opts) do
+    {:error, "not_implemented"}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -132,10 +147,13 @@ defmodule Sanbase.Twitter.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs() do
-    Sanbase.Cache.get_or_store({:slugs_with_prices, 1800}, fn ->
+    cache_key = {__MODULE__, :slugs_with_twitter_handle} |> Sanbase.Cache.hash()
+
+    Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
       result =
         Project.List.projects()
         |> Enum.filter(fn project -> match?({:ok, _}, Project.twitter_handle(project)) end)
+        |> Enum.map(& &1.slug)
 
       {:ok, result}
     end)

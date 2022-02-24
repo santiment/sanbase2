@@ -6,8 +6,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
 
   alias Sanbase.Transfers
   alias Sanbase.Model.Project
+  alias Sanbase.Utils.BlockchainAddressUtils
   alias SanbaseWeb.Graphql.{Cache, SanbaseDataloader}
-  alias Sanbase.Clickhouse.{Label, MarkExchanges, HistoricalBalance.EthSpent}
+  alias Sanbase.Clickhouse.{Label, HistoricalBalance.EthSpent}
 
   @max_concurrency 100
 
@@ -22,19 +23,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
   defp calculate_token_top_transfers(%Project{slug: slug}, args) do
     %{from: from, to: to, limit: limit} = args
     limit = Enum.min([limit, 100])
-    excluded_addresses = Map.get(args, :excluded_addresses, [])
+    opts = [excluded_addresses: Map.get(args, :excluded_addresses, [])]
 
-    with {:ok, transfers} <-
-           Transfers.top_transfers(
-             slug,
-             from,
-             to,
-             _page = 1,
-             _page_size = limit,
-             excluded_addresses: excluded_addresses
-           ),
-         {:ok, transfers} <- MarkExchanges.mark_exchange_wallets(transfers),
-         {:ok, transfers} <- Label.add_labels(slug, transfers) do
+    with {:ok, transfers} <- Transfers.top_transfers(slug, from, to, 1, limit, opts),
+         {:ok, transfers} <- BlockchainAddressUtils.transform_address_to_map(transfers),
+         {:ok, transfers} <- Label.add_labels(slug, transfers),
+         {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
       {:ok, transfers}
     else
       {:error, {:missing_contract, _}} ->
@@ -164,11 +158,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     %{from: from, to: to, transaction_type: _trx_type, limit: limit} = args
     limit = Enum.min([limit, 100])
 
-    with {:ok, transfers} <-
-           Sanbase.Transfers.top_transfers("ethereum", from, to, _page = 1, _page_size = limit),
-         {:ok, transfers} <-
-           MarkExchanges.mark_exchange_wallets(transfers),
-         {:ok, transfers} <- Label.add_labels("ethereum", transfers) do
+    with {:ok, transfers} <- Transfers.top_transfers("ethereum", from, to, 1, limit),
+         {:ok, transfers} <- BlockchainAddressUtils.transform_address_to_map(transfers),
+         {:ok, transfers} <- Label.add_labels("ethereum", transfers),
+         {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
       {:ok, transfers}
     else
       error ->
@@ -180,22 +173,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
     end
   end
 
-  defp calculate_eth_top_transfers(%Project{slug: slug} = project, args) do
-    %{from: from, to: to, transaction_type: trx_type, limit: limit} = args
+  defp calculate_eth_top_transfers(%Project{slug: _slug} = project, args) do
+    %{from: from, to: to, transaction_type: type, limit: limit} = args
     limit = Enum.min([limit, 100])
+    infr = "ETH"
 
     with {:ok, addresses} <- Project.eth_addresses(project),
          {:ok, transfers} <-
-           Sanbase.Transfers.EthTransfers.top_wallet_transfers(
-             addresses,
-             from,
-             to,
-             _page = 1,
-             _page_size = limit,
-             trx_type
-           ),
-         {:ok, transfers} <- MarkExchanges.mark_exchange_wallets(transfers),
-         {:ok, transfers} <- Label.add_labels(slug, transfers) do
+           Transfers.top_wallet_transfers("ethereum", addresses, from, to, 1, limit, type),
+         {:ok, transfers} <- BlockchainAddressUtils.transform_address_to_map(transfers, infr),
+         {:ok, transfers} <- Label.add_labels("ethereum", transfers),
+         {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
       {:ok, transfers}
     else
       error ->

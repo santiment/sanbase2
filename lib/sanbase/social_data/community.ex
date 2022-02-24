@@ -50,7 +50,6 @@ defmodule Sanbase.SocialData.Community do
     {:error, "Invalid argument for community_messages_count #{inspect(argument)}"}
   end
 
-  defp source_to_indicator(<<"discord", _::binary>>), do: "discord_discussion_overview"
   defp source_to_indicator(<<"telegram", _::binary>>), do: "telegram_discussion_overview"
 
   defp community_messages_count_request(slug, from, to, interval, source) do

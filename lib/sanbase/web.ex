@@ -16,6 +16,7 @@ defmodule Sanbase.Application.Web do
   def children() do
     # Define workers and child supervisors to be supervised
     children = [
+      # Start GraphQL subscriptions
       {Absinthe.Subscription, SanbaseWeb.Endpoint},
 
       # Start the graphQL in-memory cache
@@ -32,9 +33,8 @@ defmodule Sanbase.Application.Web do
       # Rehydrating cache
       Sanbase.Cache.RehydratingCache.Supervisor,
 
-      # Transform a list of transactions into a list of transactions
-      # where addresses are marked whether or not they are an exchange address
-      Sanbase.Clickhouse.MarkExchanges,
+      # Oban instance responsible for sending emails
+      {Oban, oban_web_config()},
 
       # Start libcluster
       start_in(
@@ -55,5 +55,18 @@ defmodule Sanbase.Application.Web do
     ]
 
     {children, opts}
+  end
+
+  defp oban_web_config() do
+    config = Application.fetch_env!(:sanbase, Oban.Web)
+
+    # In case the DB config or URL is pointing to production, put the proper
+    # schema in the config. This will be used both on prod and locally when
+    # connecting to the stage DB. This is automated so when the stage DB is
+    # used, the config should not be changed manually to include the schema
+    case Sanbase.Utils.prod_db?() do
+      true -> Keyword.put(config, :prefix, "sanbase2")
+      false -> config
+    end
   end
 end

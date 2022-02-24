@@ -206,7 +206,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
         PREWHERE
           owner IN (?1) AND
           dt >= toDateTime(?2) AND
-          dt <= toDateTime(?3)
+          dt < toDateTime(?3)
         GROUP BY owner, repo, dt, event
       )
       GROUP BY owner
@@ -245,6 +245,52 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       DateTime.to_unix(from),
       DateTime.to_unix(to),
       @non_dev_events
+    ]
+
+    {query, args}
+  end
+
+  def total_dev_activity_contributors_count_query(organizations, from, to) do
+    query =
+      """
+      SELECT owner, uniqExact(actor) AS value
+      FROM #{@table}
+      PREWHERE
+        owner IN (?1) AND
+        dt >= toDateTime(?2) AND
+        dt <= toDateTime(?3) AND
+        event NOT IN (?4)
+      GROUP BY owner
+      """
+      |> wrap_aggregated_in_zero_filling_query(organizations_pos: 1)
+
+    args = [
+      organizations |> Enum.map(&String.downcase/1),
+      DateTime.to_unix(from),
+      DateTime.to_unix(to),
+      @non_dev_events
+    ]
+
+    {query, args}
+  end
+
+  def total_github_activity_contributors_count_query(organizations, from, to) do
+    query =
+      """
+      SELECT owner, uniqExact(actor) AS value
+      FROM #{@table}
+      PREWHERE
+        owner IN (?1) AND
+        dt >= toDateTime(?2) AND
+        dt <= toDateTime(?3)
+      GROUP BY owner
+      """
+      |> wrap_aggregated_in_zero_filling_query(organizations_pos: 1)
+
+    args = [
+      organizations |> Enum.map(&String.downcase/1),
+      DateTime.to_unix(from),
+      DateTime.to_unix(to)
     ]
 
     {query, args}

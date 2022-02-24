@@ -1,5 +1,6 @@
 defmodule Sanbase.MandrillApi do
   require Sanbase.Utils.Config, as: Config
+  require Application
 
   @send_email_url "https://mandrillapp.com/api/1.0/messages/send-template.json"
   @environment Application.compile_env(:sanbase, :env)
@@ -51,9 +52,10 @@ defmodule Sanbase.MandrillApi do
   end
 
   defp build_global_merge_vars(variables) do
-    variables
-    |> Enum.map(fn {key, value} ->
-      %{name: key, content: value}
-    end)
+    variables =
+      variables
+      |> Enum.map(fn {key, value} -> %{name: key, content: value} end)
+
+    variables ++ [%{name: "year", content: DateTime.utc_now().year}]
   end
 end

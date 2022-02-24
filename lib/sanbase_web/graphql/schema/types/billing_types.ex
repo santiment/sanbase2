@@ -74,6 +74,12 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:percent_off, :float)
   end
 
+  object :upcoming_invoice do
+    field(:period_start, non_null(:datetime))
+    field(:period_end, non_null(:datetime))
+    field(:amount_due, non_null(:integer))
+  end
+
   object :update_card_result do
     field(:success, :boolean)
   end

@@ -20,6 +20,56 @@ defmodule Sanbase.Intercom do
   @user_events_url "https://api.intercom.io/events?type=user"
   @users_page_size 100
 
+  def sync_intercom_to_kafka do
+    if intercom_api_key() do
+      Logger.info("Start sync_intercom_to_kafka")
+
+      from(u in User, order_by: [asc: u.id], select: u.id)
+      |> Repo.all()
+      |> Enum.each(fn user_id ->
+        try do
+          attributes = get_user(user_id)
+
+          if attributes do
+            %{user_id: user_id, properties: attributes, inserted_at: Timex.now()}
+            |> UserAttributes.persist_kafka_sync()
+          end
+        rescue
+          e ->
+            Logger.error(
+              "Error sync_intercom_to_kafka for user: #{user_id}, error: #{inspect(e)}"
+            )
+        end
+      end)
+
+      Logger.info("Finish sync_intercom_to_kafka")
+    else
+      :ok
+    end
+  end
+
+  def get_user(user_id) do
+    body =
+      %{
+        query: %{
+          field: "external_id",
+          operator: "=",
+          value: user_id |> to_string()
+        }
+      }
+      |> Jason.encode!()
+
+    HTTPoison.post!(
+      "https://api.intercom.io/contacts/search",
+      body,
+      intercom_headers() ++ [{"Intercom-Version", "2.0"}]
+    )
+    |> Map.get(:body)
+    |> Jason.decode!()
+    |> Map.get("data")
+    |> List.first()
+  end
+
   def all_users_stats do
     %{
       customer_payment_type_map: customer_payment_type_map(),
@@ -149,7 +199,7 @@ defmodule Sanbase.Intercom do
   end
 
   defp triggers_type_count(user) do
-    user
+    user.id
     |> UserTrigger.triggers_for()
     |> Enum.group_by(fn ut -> ut.trigger.settings.type end)
     |> Enum.map(fn {type, list} -> {"trigger_" <> type, length(list)} end)
@@ -185,19 +235,19 @@ defmodule Sanbase.Intercom do
     HTTPoison.post(@intercom_url, stats_json, intercom_headers())
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        Logger.info("Stats sent: #{inspect(stats_json |> Jason.decode!())}}")
+        Logger.info("Stats sent for user: #{stats.user_id}}")
         stats = merge_intercom_attributes(stats, body)
         UserAttributes.save(%{user_id: stats.user_id, properties: stats})
         :ok
 
       {:ok, %HTTPoison.Response{} = response} ->
         Logger.error(
-          "Error sending to intercom stats: #{inspect(stats_json |> Jason.decode!())}}. Response: #{inspect(response)}"
+          "Error sending to intercom stats: #{inspect(stats)}. Response: #{inspect(response)}"
         )
 
       {:error, reason} ->
         Logger.error(
-          "Error sending to intercom stats: #{inspect(stats_json |> Jason.decode!())}}. Reason: #{inspect(reason)}"
+          "Error sending to intercom stats: #{inspect(stats)}. Reason: #{inspect(reason)}"
         )
     end
   end
@@ -223,9 +273,27 @@ defmodule Sanbase.Intercom do
   defp fetch_and_send_stats(users, all_users_stats) do
     users
     |> Stream.map(fn user ->
-      fetch_stats_for_user(user, all_users_stats)
+      try do
+        fetch_stats_for_user(user, all_users_stats)
+      rescue
+        e ->
+          Logger.error(
+            "Error sync_users to Intercom (fetch_stats_for_user) for user: #{user.id}, error: #{inspect(e)}"
+          )
+
+          reraise e, __STACKTRACE__
+      end
     end)
-    |> Enum.each(&send_user_stats_to_intercom/1)
+    |> Enum.each(fn user_stats ->
+      try do
+        send_user_stats_to_intercom(user_stats)
+      rescue
+        e ->
+          Logger.error(
+            "Error sync_users to Intercom (send_user_stats_to_intercom) for user: #{user_stats.user_id}, error: #{inspect(e)}"
+          )
+      end
+    end)
   end
 
   defp merge_intercom_attributes(stats, intercom_resp) do

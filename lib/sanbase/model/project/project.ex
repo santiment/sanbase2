@@ -20,6 +20,7 @@ defmodule Sanbase.Model.Project do
   @preloads [:eth_addresses, :latest_coinmarketcap_data, :github_organizations]
 
   schema "project" do
+    field(:slug, :string)
     field(:blog_link, :string)
     field(:btt_link, :string)
     field(:coinmarketcap_id, :string)
@@ -65,8 +66,9 @@ defmodule Sanbase.Model.Project do
     belongs_to(
       :latest_coinmarketcap_data,
       LatestCoinmarketcapData,
-      foreign_key: :slug,
+      foreign_key: :coinmarketcap_id,
       references: :coinmarketcap_id,
+      define_field: false,
       type: :string,
       on_replace: :nilify
     )
@@ -263,7 +265,9 @@ defmodule Sanbase.Model.Project do
 
     addresses =
       project.eth_addresses
-      |> Enum.map(fn %{address: address} -> address end)
+      |> Enum.map(fn %{address: address} ->
+        Sanbase.BlockchainAddress.to_internal_format(address)
+      end)
 
     {:ok, addresses}
   end
@@ -280,7 +284,9 @@ defmodule Sanbase.Model.Project do
       |> Repo.all()
       |> Enum.map(fn %Project{eth_addresses: project_eth_addresses} ->
         project_eth_addresses
-        |> Enum.map(fn %ProjectEthAddress{address: address} -> address end)
+        |> Enum.map(fn %ProjectEthAddress{address: address} ->
+          Sanbase.BlockchainAddress.to_internal_format(address)
+        end)
       end)
       |> Enum.reject(fn x -> x == [] end)
 

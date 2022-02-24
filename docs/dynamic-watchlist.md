@@ -2,19 +2,69 @@
 
 - [Table of contents](#table-of-contents)
   - [Overview](#overview)
-  - [Example Usage](#example-usage)
-  - [Top ERC20 projects](#top-erc20-projects)
-  - [Top all projects](#top-all-projects)
-  - [Trending projects](#trending-projects)
-  - [Market Segment](#market-segment)
-  - [Min Volume](#min-volume)
-  - [Slugs](#slugs)
+    - [Implementation notes](#implementation-notes)
+    - [Example Usage](#example-usage)
+    - [Top ERC20 Projects](#top-erc20-projects)
+    - [Top all Projects](#top-all-projects)
+    - [Trending Projects](#trending-projects)
+    - [Market Segment](#market-segment)
+    - [Min Volume](#min-volume)
+    - [Slugs](#slugs)
 
 ## Overview
 
-There are some cases where a list of projects can nicely be expressed programatically.
-One such case is having the list of `Top 50 ERC20 Projects` and not having to update it manually hourly/daily.
-Another example is the list of projects that are currently trending - this list could change many times throughout the day.
+There are some cases where a list of projects can nicely be expressed
+programatically:
+- `Top 50 ERC20 Projects` and not having to update it manually hourly/daily.
+- List of projects that are currently trending - this list could change many
+  times throughout the day.
+- List of projects that match conditions like `trading volume over $1M and daily
+  active addresses over 10,000`
+
+On sanbase we call these watchlists screeners.
+
+### Implementation notes
+
+The screener and the watchlist are implemented with the same GraphQL type and
+use the same APIs. The difference is how they are used. The watchlist type
+(represents both screener and the normal watchlist) has two distinct ways to add
+projects to it:
+- via the `listItems` argument in the request. All projects added via the
+  listItems are "hardcoded" to the list and they will always be a part of it.
+- via the `function` argument in the request. All projects that match the
+  conditions of the function at the moment of the request will be included. The
+  projects that matched the request 1 hour ago but no longer do are not
+  included. This allows to have only projects that match a condition at a given
+  time without needing constant manual curation.
+
+Both arguments can be used at the same time. The effect is that the result of
+both of them is combined - the list of all hardcoded project is extended by the
+list of all function-defined projects. This can lead to some confusing (at first
+glance) behavior. If `top_all_projects` function is used with `size: 10000` then
+all projects will be returned no matter what the `listItems` are.
+
+The `listItems` in the request should not be confused with the `listItems` in
+the response. In the request the meaning of `listItems` is to change the list of
+hardcoded projects, while in the response the field is just holding **all**
+projects, both hardcoded and dynamically chosen via the function. When working
+with screeners the `listItems` argument can be omitted from the request.
+
+In some cases adding a hardcoded project to a screener could be the desired
+behavior. For example, a user can define a screener "Interesting projects" that
+includes projects with high trading volume and active addresses, but at the same
+time the user has a favourite project that needs to also be part of it - then it
+can be hardcoded.
+
+Note that `listItems` manipulates the full list of hardcoded projects. If you
+need to just add/remove a few list items at a time the following 2 APIs can be
+used instead: `addWatchlistItems` and `removeWatchlistItems`.
+
+By default the projects that match a given condition are chosen from the pool of
+all projetcts. If you want to get all the ERC20 projects with the condition
+`active addresses over 10,000` the `baseProjects` argument can be used. It
+controls the pool of projects the function can choose from. For example:
+`baseProjects: [{watchlistSlug: "stablecoins"}]` will change it so the function
+applies only to the stablecoins.
 
 ### Example Usage
 

@@ -3,6 +3,8 @@ import Config
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 
+config :phoenix, :stacktrace_depth, 60
+
 config :sanbase,
   influx_store_enabled: false,
   available_slugs_module: Sanbase.DirectAvailableSlugs
@@ -17,6 +19,10 @@ config :sanbase, SanbaseWeb.Endpoint,
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   level: :warn
+
+config :sanbase, Sanbase.ApiCallLimit,
+  quota_size: 10,
+  quota_size_max_offset: 10
 
 # Test adapter that allows mocking
 config :tesla, adapter: Tesla.Mock
@@ -45,6 +51,7 @@ config :sanbase, Sanbase.Repo,
   pool_size: 5
 
 config :sanbase, Sanbase.ClickhouseRepo,
+  clickhouse_repo_enabled?: false,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",
   pool_size: 5
@@ -66,7 +73,7 @@ config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
 
 config :sanbase, Sanbase.Twitter.Store, database: "twitter_followers_data_test"
 
-config :sanbase, SanbaseWeb.Graphql.ContextPlug,
+config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
 
@@ -82,6 +89,21 @@ config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook, webhook_secret: "stripe_we
 
 config :sanbase, Sanbase.Alert, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "true"}
 
+config :sanbase, Oban.Scrapers,
+  name: :oban_scrapers,
+  queues: false,
+  plugins: false,
+  crontab: false
+
+config :sanbase, Oban.Web,
+  name: :oban_web,
+  queues: false,
+  plugins: false,
+  crontab: false
+
+config :sanbase, Sanbase.Cryptocompare.HistoricalScheduler,
+  enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OHLCV_PRICES_SCHEDULER_ENABLED", "true"}
+
 # So the router can read it compile time
 System.put_env("TELEGRAM_ENDPOINT_RANDOM_STRING", "random_string")
 
@@ -90,6 +112,20 @@ config :sanbase, Sanbase.Telegram,
   telegram_endpoint: "random_string",
   token: "token"
 
-if File.exists?("config/test.secret.exs") do
+# Increase the limits in test env so they are not hit unless
+# the limit is intentionally lowered by using Application.put_env
+config :sanbase, Sanbase.Comment,
+  creation_limit_hour: 1000,
+  creation_limit_day: 1000,
+  creation_limit_minute: 1000
+
+# Increase the limits in test env so they are not hit unless
+# the limit is intentionally lowered by using Application.put_env
+config :sanbase, Sanbase.Insight.Post,
+  creation_limit_hour: 1000,
+  creation_limit_day: 1000,
+  creation_limit_minute: 1000
+
+if(File.exists?("config/test.secret.exs")) do
   import_config "test.secret.exs"
 end

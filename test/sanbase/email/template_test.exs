@@ -18,6 +18,11 @@ defmodule Sanbase.Email.TemplateTest do
       assert Template.choose_login_template("http://example.com", first_login?: true) ==
                "sanbase-sign-up"
     end
+
+    test "when user comes from api.santiment.net" do
+      assert Template.choose_login_template("https://api.santiment.net", first_login?: true) ==
+               "neuro-sign-up"
+    end
   end
 
   describe "#send_login_email when it is not user's first login" do

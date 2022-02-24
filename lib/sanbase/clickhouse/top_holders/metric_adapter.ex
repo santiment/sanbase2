@@ -52,7 +52,14 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
                       |> Enum.map(&elem(&1, 0))
 
+  @required_selectors Enum.into(@metrics, %{}, &{&1, []})
   @default_holders_count 10
+
+  @impl Sanbase.Metric.Behaviour
+  def required_selectors(), do: @required_selectors
+
+  @impl Sanbase.Metric.Behaviour
+  def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(

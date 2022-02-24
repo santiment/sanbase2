@@ -13,9 +13,8 @@ defmodule Sanbase.KafkaExporter do
   use GenServer
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
 
-  @producer Config.get(:producer)
+  @producer Application.compile_env(:sanbase, [Sanbase.KafkaExporter, :producer])
 
   @type data :: {String.t(), String.t()}
   @type result :: :ok | {:error, String.t()}
@@ -79,6 +78,10 @@ defmodule Sanbase.KafkaExporter do
   @spec persist_sync(data | [data], pid() | atom()) :: result
   def persist_sync(data, exporter, timeout \\ 60_000) do
     GenServer.call(exporter, {:persist, data}, timeout)
+  end
+
+  def send_data_to_topic_from_current_process(data, topic) do
+    send_data_immediately(data, %{topic: topic, size: length(data)})
   end
 
   def flush(exporter \\ __MODULE__) do

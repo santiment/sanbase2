@@ -5,7 +5,7 @@ defmodule Sanbase.Mix.Helper.ScheduleRescrapeHelpers do
   def run(from, to, opts \\ []) do
     projects =
       Keyword.get(opts, :projects) ||
-        Project.List.projects_with_source("coinmarketcap", include_hidden_projects?: true)
+        Project.List.projects_with_source("coinmarketcap", include_hidden: true)
 
     last_scraped_map = PriceScrapingProgress.last_scraped_all_source("coinmarketcap")
 

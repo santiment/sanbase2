@@ -20,17 +20,34 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   end
 
   enum :selector_name do
+    # common
+    value(:blockchain)
+    # blockchain address related
+    value(:blockchain_address)
+    # project related
     value(:slug)
     value(:slugs)
-    value(:text)
-    value(:owner)
-    value(:label)
-    value(:source)
-    value(:holders_count)
-    value(:market_segments)
     value(:ignored_slugs)
-    value(:watchlist_id)
+    value(:market_segments)
+    value(:contract_address)
+    # watchlist related
     value(:watchlist_slug)
+    value(:watchlist_id)
+    # social related
+    value(:text)
+    value(:source)
+    # label related
+    value(:owner)
+    value(:owners)
+    value(:label)
+    value(:labels)
+    value(:label_fqn)
+    value(:label_fqns)
+    value(:holders_count)
+    # dev activity related
+    value(:organization)
+    value(:organizations)
+    # cache-controling
     value(:base_ttl)
     value(:max_ttl_offset)
   end
@@ -41,19 +58,33 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   end
 
   input_object :metric_target_selector_input_object do
+    # common
+    field(:blockchain, :string)
+    # blockchain address related
+    field(:blockchain_address, :blockchain_address_selector_input_object)
+    # project related
     field(:slug, :string)
     field(:slugs, list_of(:string))
+    field(:market_segments, list_of(:string))
+    field(:contract_address, :string)
+    field(:ignored_slugs, list_of(:string))
+    # watchlist related
+    field(:watchlist_id, :integer)
+    field(:watchlist_slug, :string)
+    # social related
     field(:text, :string)
+    field(:source, :string)
+    # dev activity related
+    field(:organization, :string)
+    field(:organizations, list_of(:string))
+    # label related
     field(:owner, :string)
     field(:owners, list_of(:string))
     field(:label, :string)
     field(:labels, list_of(:string))
-    field(:source, :string)
+    field(:label_fqn, :string)
+    field(:label_fqns, list_of(:string))
     field(:holders_count, :integer)
-    field(:market_segments, list_of(:string))
-    field(:ignored_slugs, list_of(:string))
-    field(:watchlist_id, :integer)
-    field(:watchlist_slug, :string)
   end
 
   input_object :timeseries_metric_transform_input_object do
@@ -65,6 +96,15 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:timeseries)
     value(:histogram)
     value(:table)
+  end
+
+  object :broken_data do
+    field(:from, non_null(:datetime))
+    field(:to, non_null(:datetime))
+    field(:what, non_null(:string))
+    field(:why, non_null(:string))
+    field(:notes, non_null(:string))
+    field(:actions_to_fix, non_null(:string))
   end
 
   object :metric_data do
@@ -238,6 +278,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     the metric.
     """
     field :available_slugs, list_of(:string) do
+      arg(:selector, :aggregated_timeseries_data_selector_input_object)
       cache_resolve(&MetricResolver.get_available_slugs/3, ttl: 600)
     end
 
@@ -294,6 +335,18 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   end
 
   object :metric do
+    @desc ~s"""
+    Return a list
+    """
+    field :broken_data, list_of(:broken_data) do
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      resolve(&MetricResolver.broken_data/3)
+    end
+
     @desc ~s"""
     Return a list of 'datetime' and 'value' for a given metric, slug
     and time period.

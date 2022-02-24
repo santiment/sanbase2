@@ -26,7 +26,7 @@ defmodule Sanbase.Alert.History.SignalHistory do
     defguard has_binary_key?(map, key)
              when is_map(map) and is_map_key(map, key) and is_binary(:erlang.map_get(key, map))
 
-    @spec historical_trigger_points(%{}, String.t()) ::
+    @spec historical_trigger_points(map(), String.t()) ::
             {:ok, list(SignalHistory.historical_trigger_points_type())}
             | {:error, String.t()}
     def historical_trigger_points(%{target: target} = settings, cooldown)
@@ -57,7 +57,7 @@ defmodule Sanbase.Alert.History.SignalHistory do
         Timex.shift(to, days: -shift),
         to,
         @historical_days_interval,
-        nil
+        []
       )
     end
   end

@@ -5,6 +5,8 @@ defmodule SanbaseWeb.AccountsController do
 
   use SanbaseWeb, :controller
 
+  import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
+
   plug(Ueberauth)
 
   alias Sanbase.Accounts.User
@@ -24,15 +26,18 @@ defmodule SanbaseWeb.AccountsController do
     redirect_urls = get_redirect_urls(params)
     device_data = SanbaseWeb.Guardian.device_data(conn)
     email = auth.info.email
+    args = %{login_origin: :google}
 
     with true <- is_binary(email),
-         {:ok, user} <- User.find_or_insert_by(:email, email, %{login_origin: :google}),
+         {:ok, user} <- User.find_or_insert_by(:email, email, args),
          {:ok, %{} = jwt_tokens_map} <-
            SanbaseWeb.Guardian.get_jwt_tokens(user,
              platform: device_data.platform,
              client: device_data.client
            ),
-         {:ok, _} <- User.mark_as_registered(user, %{login_origin: :google}) do
+         {:ok, _} <- User.mark_as_registered(user, args) do
+      emit_event({:ok, user}, :login_user, args)
+
       conn
       |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
       |> redirect(external: redirect_urls.success)
@@ -49,6 +54,7 @@ defmodule SanbaseWeb.AccountsController do
 
     twitter_id = auth.uid
     email = auth.info.email
+    args = %{login_origin: :twitter}
 
     with {:ok, user} <- twitter_login(email, twitter_id),
          {:ok, %{} = jwt_tokens_map} <-
@@ -56,7 +62,9 @@ defmodule SanbaseWeb.AccountsController do
              platform: device_data.platform,
              client: device_data.client
            ),
-         {:ok, _} <- User.mark_as_registered(user, %{login_origin: :twitter}) do
+         {:ok, _} <- User.mark_as_registered(user, args) do
+      emit_event({:ok, user}, :login_user, args)
+
       conn
       |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
       |> redirect(external: redirect_urls.success)

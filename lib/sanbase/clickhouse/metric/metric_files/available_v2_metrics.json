@@ -241,7 +241,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "avg",
@@ -258,7 +258,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -305,7 +305,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -332,7 +332,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "MVRV for coins that moved in the past {{timebound_human_readable}}",
+    "human_readable_name": "MVRV Intraday for coins that moved in the past {{timebound_human_readable}}",
     "name": "mvrv_usd_intraday_{{timebound}}",
     "metric": "mvrv_usd_intraday_{{timebound}}",
     "timebound": [
@@ -352,7 +352,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -399,7 +399,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -417,7 +417,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -434,7 +434,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -451,7 +451,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -468,7 +468,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -485,7 +485,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -502,7 +502,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -519,7 +519,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -603,7 +603,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "avg",
@@ -775,7 +775,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "avg",
@@ -792,7 +792,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -1252,7 +1252,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -1269,7 +1269,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -1321,7 +1321,7 @@
     "access": "free",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -1338,7 +1338,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -1372,7 +1372,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -1389,12 +1389,222 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Binance Exchange Funding Rates (USDT)",
+    "name": "usdt_bnb_funding_rates",
+    "metric": "usdt_bnb_funding_rates",
+    "aliases": ["usdt_binance_funding_rate"],
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "8h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Binance Exchange Funding Rates (BUSD)",
+    "name": "busd_bnb_funding_rates",
+    "metric": "busd_bnb_funding_rates",
+    "aliases": ["busd_binance_funding_rate"],
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "8h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "FTX Exchange Funding Rates",
+    "name": "ftx_perpetual_funding_rate",
+    "metric": "ftx_funding_rates",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "BitFinex Exchange Funding Rates",
+    "name": "bitfinex_perpetual_funding_rate",
+    "metric": "bitfinex_funding_rates",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DyDx Exchange Funding Rates",
+    "name": "dydx_perpetual_funding_rate",
+    "metric": "dydx_funding_rates",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Deribit Exchange Funding Rates",
+    "name": "deribit_perpetual_funding_rate",
+    "metric": "deribit_funding_rates",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Binance USDT Exchange Open Interest",
+    "name": "usdt_bnb_open_interest",
+    "metric": "usdt_bnb_open_interest",
+    "aliases": ["usdt_binance_open_interest"],
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Binance USDT Exchange Open Value",
+    "name": "usdt_bnb_open_value",
+    "metric": "usdt_bnb_open_value",
+    "aliases": ["usdt_binance_open_value"],
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Binance BUSD Exchange Open Interest",
+    "name": "busd_bnb_open_interest",
+    "metric": "busd_bnb_open_interest",
+    "aliases": ["busd_binance_open_interest"],
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Binance BUSD Exchange Open Value",
+    "name": "busd_bnb_open_value",
+    "metric": "busd_bnb_open_value",
+    "aliases": ["busd_binance_open_value"],
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Huobi Exchange Funding Rates",
+    "name": "huobi_perpetual_funding_rate",
+    "metric": "huobi_funding_rates",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "8h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "FTX Exchange Open Interest",
+    "name": "ftx_perpetual_open_interest",
+    "metric": "ftx_open_interest",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
   }

@@ -158,9 +158,13 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
         labels_str = """
         GLOBAL ANY INNER JOIN (
           SELECT address
-          FROM blockchain_address_labels FINAL
-          PREWHERE blockchain = ?#{blockchain_arg_position} AND label IN (?#{args_length + 1})
-          HAVING sign = 1
+          FROM(
+            SELECT address, argMax(sign, version) AS sign
+            FROM blockchain_address_labels
+            PREWHERE blockchain = ?#{blockchain_arg_position} AND label IN (?#{args_length + 1})
+            GROUP BY blockchain, asset_id, label, address
+            HAVING sign = 1
+          )
         ) USING address
         """
 
@@ -181,9 +185,13 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
         labels_str = """
         address GLOBAL NOT IN (
           SELECT address
-          FROM blockchain_address_labels FINAL
-          PREWHERE blockchain = ?#{blockchain_arg_position} AND label IN(?#{args_length + 1})
-          HAVING sign = 1
+          FROM(
+            SELECT address, argMax(sign, version) AS sign
+            FROM blockchain_address_labels
+            PREWHERE blockchain = ?#{blockchain_arg_position} AND label IN(?#{args_length + 1})
+            GROUP BY blockchain, asset_id, label, address
+            HAVING sign = 1
+          )
         )
         """
 

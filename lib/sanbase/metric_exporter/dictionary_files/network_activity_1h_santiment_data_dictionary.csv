@@ -1,0 +1,5 @@
+Field name,Date Type,Description,Primary key,Foreign key
+identifier,string,Cryptocurrency name,Y,N
+datetime,datetime,Datetime mark,Y,N
+transactionVolume,decimal,Transaction volume shows the aggregate amount of tokens across all transactions that happened on the network daily.,N,N
+activeAddresses24h,integer,The number of distinct addresses that participated in a transfer for the given asset for last 24 hours. Each address is counted only once for the day. Both the senders and the receivers of the asset are counted.,N,N

@@ -1,0 +1,430 @@
+[
+  {
+    "human_readable_name": "Active Deposits per Exchange",
+    "name": "active_deposits_per_exchange",
+    "metric": "labelled_active_deposits",
+    "version": "2019-12-22",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Active Withdrawals per Exchange",
+    "name": "active_withdrawals_per_exchange",
+    "metric": "labelled_active_withdrawals",
+    "version": "2019-12-22",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Deposit Transactions per Exchange",
+    "name": "deposit_transactions_per_exchange",
+    "metric": "labelled_deposit_transactions",
+    "version": "2019-12-22",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Withdrawals Transactions per Exchange",
+    "name": "withdrawal_transactions_per_exchange",
+    "metric": "labelled_withdrawal_transactions",
+    "version": "2019-12-22",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Exchange Inflow per Exchange",
+    "name": "exchange_inflow_per_exchange",
+    "aliases": ["inflow_per_label_and_owner"],
+    "metric": "labelled_exchange_inflow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Exchange Outflow per Exchange",
+    "name": "exchange_outflow_per_exchange",
+    "aliases": ["outflow_per_label_and_owner"],
+    "metric": "labelled_exchange_outflow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Balance per Label and Owner (Inflow - Outflow) Delta",
+    "name": "balance_per_label_and_owner_delta",
+    "aliases": ["exchange_balance_per_exchange"],
+    "metric": "labelled_exchange_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Balance per Owner (Inflow - Outflow)",
+    "name": "balance_per_owner",
+    "metric": "labelled_exchange_balance_sum",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total Trade Volume by DEX",
+    "name": "total_trade_volume_by_dex",
+    "metric": "total_trade_volume_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "ETH-Based Tokens Trade Volume by DEX",
+    "name": "eth_based_trade_volume_by_dex",
+    "metric": "eth_based_trade_volume_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Stablecoin Trade Volume by DEX",
+    "name": "stablecoin_trade_volume_by_dex",
+    "metric": "stablecoin_trade_volume_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other Token Trade Volume by DEX",
+    "name": "other_trade_volume_by_dex",
+    "metric": "other_trade_volume_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total Trade Amount by DEX",
+    "name": "total_trade_amount_by_dex",
+    "metric": "total_trade_amount_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "ETH-Based Tokens Trade Amount by DEX",
+    "name": "eth_based_trade_amount_by_dex",
+    "metric": "eth_based_trade_amount_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Stablecoin Trade Amount by DEX",
+    "name": "stablecoin_trade_amount_by_dex",
+    "metric": "stablecoin_trade_amount_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other Token Trade Amount by DEX",
+    "name": "other_trade_amount_by_dex",
+    "metric": "other_trade_amount_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "ETH-Based Token Trade Volume by Token",
+    "name": "eth_trade_volume_by_token",
+    "metric": "eth_trade_volume_by_token",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Stablecoin Trade Volume by Token",
+    "name": "stablecoin_trade_volume_by_token",
+    "metric": "stablecoin_trade_volume_by_token",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Token ETH Price by DEX",
+    "name": "token_eth_price_by_dex_5m",
+    "metric": "token_eth_price_by_dex_5m",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total NFT Trades Count",
+    "name": "nft_trades_count",
+    "metric": "nft_trades_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total NFT Trades Volume In USD",
+    "name": "nft_trade_volume_usd",
+    "metric": "nft_trade_volume_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Amount of Uniq Addresses Bought More Than 100k USD of NFTs",
+    "name": "nft_whale_trades_count",
+    "metric": "nft_whale_trades_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total Volume For NFT Worth More Than 100k USD",
+    "name": "nft_whale_trade_volume_usd",
+    "metric": "nft_whale_trade_volume_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Amount of Uniq Addresses Bought Less Than 1k USD of NFTs",
+    "name": "nft_retail_trades_count",
+    "metric": "nft_retail_trades_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total Volume For NFT Worth Less Than 1k USD",
+    "name": "nft_retail_trade_volume_usd",
+    "metric": "nft_retail_trade_volume_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
+]

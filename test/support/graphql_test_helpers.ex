@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.TestHelpers do
   import Plug.Conn
   import Phoenix.ConnTest
+  import Sanbase.Factory
 
   alias Sanbase.{Metric, Signal}
   alias Sanbase.Billing.Plan.AccessChecker
@@ -150,6 +151,9 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   def map_to_args(%{} = map, opts \\ []) do
     map_as_input_object? = Keyword.get(opts, :map_as_input_object, false)
 
+    map = Map.delete(map, :map_as_input_object)
+    map = Map.new(map, fn {k, v} -> {Inflex.camelize(k, :lower), v} end)
+
     Enum.map(map, fn
       {k, [%{} | _] = l} ->
         ~s/#{k}: [#{Enum.map(l, &map_to_input_object_str/1) |> Enum.join(",")}]/
@@ -158,7 +162,8 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
         ~s/#{k}: "#{dt |> DateTime.truncate(:second) |> DateTime.to_iso8601()}"/
 
       {k, m} when is_map(m) ->
-        if map_as_input_object? do
+        if map_as_input_object? || Map.get(m, :map_as_input_object) do
+          m = Map.delete(m, :map_as_input_object)
           ~s/#{k}: #{map_to_input_object_str(m)}/
         else
           ~s/#{k}: '#{Jason.encode!(m)}'/
@@ -188,5 +193,62 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
 
   def graphql_error_msg(metric_name, slug, error) do
     "Can't fetch #{metric_name} for project with slug #{slug}, Reason: \"#{error}\""
+  end
+
+  # Add the missing required selector fields to the selector
+  # Some queries require some additional fields in order to work. If these
+  # fields are not provided, the query will fail before calling the DB. Such cases
+  # are some label metrics where the labels must be provided or some social metrics
+  # where the source must be provided.
+  # This function should be used only when we do some high-level testing that
+  # all the metrics can be executed and return data. In these cases we select
+  # random 100-200 metrics and mock the `Sanbase.Metric` module to return data.
+  # This ensures that we cover all the possible paths and checks in the resolver
+  def extend_selector_with_required_fields(metric, selector) do
+    case Sanbase.Metric.required_selectors(metric) do
+      {:ok, [_ | _] = required_selectors} ->
+        selector_fields = Map.keys(selector)
+
+        # The missing fields are a list of lists. If the list-element contains
+        # more than one element, only one of them is required. In this case
+        # select one of them at random and fill it.
+        missing_required_selector_fields =
+          Enum.reject(required_selectors, fn list ->
+            Enum.any?(list, &(&1 in selector_fields))
+          end)
+
+        Enum.reduce(missing_required_selector_fields, selector, fn list, selector_acc ->
+          list |> Enum.random() |> add_missing_selector(selector_acc)
+        end)
+
+      _ ->
+        # This case covers the case where the metric does not have any required
+        # selector fields. It also handles the case where the metric is not supported
+        # In case of not-supproted metrics we don't want to break here as we want
+        # to test the API behaviour in such cases
+        selector
+    end
+  end
+
+  defp add_missing_selector(:contract_address, selector),
+    do: Map.put(selector, :contract_address, "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098")
+
+  defp add_missing_selector(:label_fqn, selector),
+    do: Map.put(selector, :label_fqn, "santiment/owner->Coinbase:v1")
+
+  defp add_missing_selector(:label_fqns, selector) do
+    Map.put(selector, :label_fqns, ["santiment/owner->Coinbase:v1", "santiment/owner->Binance:v1"])
+  end
+
+  defp add_missing_selector(:source, selector) do
+    source = Enum.random(["twitter", "reddit", "bitcointalk"])
+    Map.put(selector, :source, source)
+  end
+
+  defp add_missing_selector(:blockchain_address, selector) do
+    # Add `map_as_input_object` flag as an implementation detail for the
+    # map_to_input_object_str/{1,2} function so this is not encoded as json
+    blockchain_address = %{map_as_input_object: true, address: "0x" <> rand_hex_str(38)}
+    Map.put(selector, :blockchain_address, blockchain_address)
   end
 end

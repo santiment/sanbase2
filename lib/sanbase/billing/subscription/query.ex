@@ -13,14 +13,26 @@ defmodule Sanbase.Billing.Subscription.Query do
     from(q in query, where: q.plan_id == ^plan_id)
   end
 
+  def all_active_subscriptions_for_product(query, product_id) do
+    query
+    |> all_active_subscriptions()
+    |> filter_product_id(product_id)
+  end
+
+  def user_has_any_subscriptions_for_product(query, user_id, product_id) do
+    query
+    |> filter_user(user_id)
+    |> filter_product_id(product_id)
+  end
+
   # with status `active`, `past_due`, `trialing`
   def all_active_and_trialing_subscriptions(query) do
     from(q in query, where: q.status in ["active", "past_due", "trialing"])
   end
 
-  def all_active_and_trialing_subscriptions_for_plan(query, plan_id) do
+  def all_active_and_trialing_subscriptions_for_plans(query, plans) when is_list(plans) do
     query = all_active_and_trialing_subscriptions(query)
-    from(q in query, where: q.plan_id == ^plan_id)
+    from(q in query, where: q.plan_id in ^plans)
   end
 
   def liquidity_subscriptions(query) do
@@ -29,6 +41,10 @@ defmodule Sanbase.Billing.Subscription.Query do
 
   def filter_user(query, user_id) do
     from(q in query, where: q.user_id == ^user_id)
+  end
+
+  def filter_product_id(query, product_id) do
+    from(s in query, join: p in assoc(s, :plan), where: p.product_id == ^product_id)
   end
 
   def select_product_id(query) do
@@ -58,5 +74,9 @@ defmodule Sanbase.Billing.Subscription.Query do
 
   def order_by(query) do
     from(q in query, order_by: [desc: q.id])
+  end
+
+  def select_field(query, field) do
+    from(q in query, select: field(q, ^field))
   end
 end

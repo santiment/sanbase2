@@ -77,7 +77,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersBountyApiTest do
   end
 
   describe "Fetch bounties" do
-    test "when fetching all", context do
+    test "when fetching all", _context do
       result =
         execute_query(build_conn(), wallet_hunters_bounties_query(), "walletHuntersBounties")
 
@@ -85,7 +85,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersBountyApiTest do
     end
   end
 
-  defp create_bounty_mutation(args) do
+  defp create_bounty_mutation(_args) do
     """
     mutation {
       createWhBounty(

@@ -3,6 +3,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.TelegramResolver do
 
   alias Sanbase.Telegram
 
+  def is_telegram_chat_id_valid(_root, %{chat_id: chat_id}, _resolution) do
+    {:ok, Sanbase.Telegram.channel_id_valid?(chat_id)}
+  end
+
   def get_telegram_deep_link(_root, _args, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do

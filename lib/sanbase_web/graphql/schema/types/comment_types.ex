@@ -1,70 +1,80 @@
 defmodule SanbaseWeb.Graphql.CommentTypes do
   use Absinthe.Schema.Notation
 
-  import Absinthe.Resolution.Helpers
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.{
-    InsightResolver,
-    TimelineEventResolver,
-    BlockchainAddressResolver,
-    ShortUrlResolver,
-    WalletHuntersResolver
-  }
-
-  alias SanbaseWeb.Graphql.SanbaseRepo
+  alias SanbaseWeb.Graphql.Resolvers.{CommentEntityIdResolver, UserResolver}
 
   enum :comment_entity_type_enum do
-    value(:insight)
-    value(:timeline_event)
-    value(:short_url)
     value(:blockchain_address)
+    value(:chart_configuration)
+    value(:insight)
+    value(:short_url)
+    value(:timeline_event)
     value(:wallet_hunters_proposal)
+    value(:watchlist)
   end
 
   object :comments_feed_item do
-    field(:id, non_null(:id))
+    field(:id, non_null(:integer))
     field(:insight, :post)
     field(:short_url, :short_url)
     field(:timeline_event, :timeline_event)
-    field(:blockchain_address, :blockchain_address)
+    field(:blockchain_address, :blockchain_address_db_stored)
+    field(:chart_configuration, :chart_configuration)
 
     field(:content, non_null(:string))
-    field(:user, non_null(:public_user), resolve: dataloader(SanbaseRepo))
-    field(:parent_id, :id)
-    field(:root_parent_id, :id)
+
+    field :user, non_null(:public_user) do
+      resolve(&UserResolver.user_no_preloads/3)
+    end
+
+    field(:parent_id, :integer)
+    field(:root_parent_id, :integer)
     field(:subcomments_count, :integer)
     field(:inserted_at, non_null(:datetime))
     field(:edited_at, :datetime)
   end
 
   object :comment do
-    field(:id, non_null(:id))
+    field(:id, non_null(:integer))
 
-    field :insight_id, non_null(:id) do
-      cache_resolve(&InsightResolver.insight_id/3)
+    field :insight_id, non_null(:integer) do
+      cache_resolve(&CommentEntityIdResolver.insight_id/3)
     end
 
-    field :timeline_event_id, non_null(:id) do
-      cache_resolve(&TimelineEventResolver.timeline_event_id/3)
+    field :timeline_event_id, non_null(:integer) do
+      cache_resolve(&CommentEntityIdResolver.timeline_event_id/3)
     end
 
-    field :blockchain_address_id, non_null(:id) do
-      cache_resolve(&BlockchainAddressResolver.blockchain_address_id/3)
+    field :blockchain_address_id, non_null(:integer) do
+      cache_resolve(&CommentEntityIdResolver.blockchain_address_id/3)
     end
 
-    field :proposal_id, non_null(:id) do
-      cache_resolve(&WalletHuntersResolver.proposal_id/3)
+    field :proposal_id, non_null(:integer) do
+      cache_resolve(&CommentEntityIdResolver.proposal_id/3)
     end
 
-    field :short_url_id, non_null(:id) do
-      cache_resolve(&ShortUrlResolver.short_url_id/3)
+    field :watchlist_id, non_null(:integer) do
+      cache_resolve(&CommentEntityIdResolver.watchlist_id/3)
+    end
+
+    field :chart_configuration_id, non_null(:integer) do
+      cache_resolve(&CommentEntityIdResolver.chart_configuration_id/3)
+    end
+
+    field :short_url_id, non_null(:integer) do
+      cache_resolve(&CommentEntityIdResolver.short_url_id/3)
     end
 
     field(:content, non_null(:string))
-    field(:user, non_null(:public_user), resolve: dataloader(SanbaseRepo))
-    field(:parent_id, :id)
-    field(:root_parent_id, :id)
+
+    field :user, non_null(:public_user) do
+      resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
+    end
+
+    field(:parent_id, :integer)
+    field(:root_parent_id, :integer)
     field(:subcomments_count, :integer)
     field(:inserted_at, non_null(:datetime))
     field(:edited_at, :datetime)

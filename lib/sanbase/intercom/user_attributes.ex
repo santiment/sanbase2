@@ -5,6 +5,8 @@ defmodule Sanbase.Intercom.UserAttributes do
 
   alias Sanbase.Repo
 
+  @topic "sanbase_user_intercom_attributes"
+
   schema "user_intercom_attributes" do
     field(:properties, :map)
 
@@ -33,5 +35,29 @@ defmodule Sanbase.Intercom.UserAttributes do
           ua.inserted_at <= ^to
     )
     |> Repo.all()
+  end
+
+  def persist_kafka_sync(user_attributes) do
+    [user_attributes]
+    |> to_json_kv_tuple()
+    |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(@topic)
+  end
+
+  # helpers
+
+  defp to_json_kv_tuple(user_attributes) do
+    user_attributes
+    |> Enum.map(fn %{user_id: user_id, properties: attributes, inserted_at: timestamp} ->
+      timestamp = DateTime.to_unix(timestamp)
+      key = "#{user_id}_#{timestamp}"
+
+      data = %{
+        user_id: user_id,
+        attributes: Map.drop(attributes, ["email", "name", "phone", "avatar"]) |> Jason.encode!(),
+        timestamp: timestamp
+      }
+
+      {key, Jason.encode!(data)}
+    end)
   end
 end

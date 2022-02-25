@@ -36,6 +36,10 @@ config :sanbase, Sanbase.Price.Validator, enabled: {:system, "PRICE_VALIDATOR_EN
 
 config :sanbase, Sanbase.Cryptocompare, api_key: {:system, "CRYPTOCOMPARE_API_KEY"}
 
+config :sanbase, Sanbase.Kafka,
+  kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
+  kafka_port: {:system, "KAFKA_PORT", "9092"}
+
 config :sanbase, Sanbase.KafkaExporter,
   supervisor: SanExporterEx.Producer.Supervisor,
   producer: SanExporterEx.Producer,
@@ -238,6 +242,18 @@ config :kaffy,
   otp_app: :sanbase,
   ecto_repo: Sanbase.Repo,
   router: SanbaseWeb.Router
+
+config :sanbase, Sanbase.Kafka.Consumer,
+  metrics_stream_topic: {:system, "KAFKA_METRIC_STREAM_TOPIC", "sanbase_combined_metrics_stream"},
+  consumer_group_basename: {:system, "KAFKA_CONSUMER_GROUP_BASENAME", "sanbase_kafka_consumer"}
+
+config :kaffe,
+  consumer: [
+    message_handler: Sanbase.Kafka.MessageProcessor,
+    async_message_ack: false,
+    start_with_earliest_message: false,
+    offset_reset_policy: :reset_to_latest
+  ]
 
 # Import configs
 import_config "ueberauth_config.exs"

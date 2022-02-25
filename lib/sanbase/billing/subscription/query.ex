@@ -55,7 +55,9 @@ defmodule Sanbase.Billing.Subscription.Query do
     from(
       q in query,
       join: p in assoc(q, :plan),
+      as: :plans,
       join: pr in assoc(p, :product),
+      as: :products,
       preload: [plan: {p, product: pr}]
     )
   end

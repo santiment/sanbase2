@@ -18,21 +18,24 @@ defmodule Sanbase.Kafka.MessageProcessor do
     |> handle_metric_message()
   end
 
+  # Which of the fields are to be sent to the websocket
+  @fields ["datetime", "slug", "metric", "value", "metadata"]
+
   defp handle_metric_message(
          %{"table" => "asset_prices_stream_to_kafka_mv", "metric" => metric} = map
        ) do
-    data = Map.get(map, ["datetime", "slug", "metric", "value"])
+    data = Map.get(map, @fields)
 
     for topic <- ["metrics:price", "metrics:all", "metrics:#{metric}"] do
-      SanbaseWeb.Endpoint.broadcast_from!(self(), topic, "metric_data", data)
+      SanbaseWeb.Endpoint.broadcast!(topic, "metric_data", data)
     end
   end
 
   defp handle_metric_message(%{"table" => _table, "metric" => metric} = map) do
-    data = Map.get(map, ["datetime", "slug", "metric", "value"])
+    data = Map.get(map, @fields)
 
     for topic <- ["metrics:all", "metrics:#{metric}"] do
-      SanbaseWeb.Endpoint.broadcast_from!(self(), topic, "metric_data", data)
+      SanbaseWeb.Endpoint.broadcast!(topic, "metric_data", data)
     end
   end
 

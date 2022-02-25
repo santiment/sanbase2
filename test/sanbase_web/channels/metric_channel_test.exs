@@ -22,8 +22,7 @@ defmodule SanbaseWeb.MetricChannelTest do
     @endpoint.subscribe("metrics:price")
 
     for data_map <- data_map_list() do
-      SanbaseWeb.Endpoint.broadcast_from!(
-        self(),
+      SanbaseWeb.Endpoint.broadcast!(
         "metrics:price",
         "metric_data",
         data_map
@@ -52,25 +51,29 @@ defmodule SanbaseWeb.MetricChannelTest do
         "metric" => "price_usd",
         "slug" => "bitcoin",
         "datetime" => "2022-02-22T00:00:00Z",
-        "value" => 54000.0
+        "value" => 54000.0,
+        "metadata" => %{"source" => "cryptocompare"}
       },
       %{
         "metric" => "price_usd",
         "slug" => "ethereum",
         "datetime" => "2022-02-22T00:00:00Z",
-        "value" => 2500.0
+        "value" => 2500.0,
+        "metadata" => %{"source" => "cryptocompare"}
       },
       %{
         "metric" => "price_usd",
         "slug" => "bitcoin",
         "datetime" => "2022-02-22T00:00:02Z",
-        "value" => 54040.0
+        "value" => 54040.0,
+        "metadata" => %{"source" => "cryptocompare"}
       },
       %{
         "metric" => "price_usd",
         "slug" => "ethereum",
         "datetime" => "2022-02-22T00:00:03Z",
-        "value" => 2505.0
+        "value" => 2505.0,
+        "metadata" => %{"source" => "cryptocompare"}
       }
     ]
   end

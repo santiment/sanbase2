@@ -140,11 +140,14 @@ defmodule Sanbase.Application do
   """
   def prepended_children(container_type) do
     [
-      %{
-        id: :sanbase_brod_sup_id,
-        start: {:brod_sup, :start_link, []},
-        type: :supervisor
-      },
+      start_in(
+        %{
+          id: :sanbase_brod_sup_id,
+          start: {:brod_sup, :start_link, []},
+          type: :supervisor
+        },
+        [:dev, :prod]
+      ),
 
       # SanExporterEx is the module that handles the data pushing to Kafka. As other
       # parts can be started that also require :brod_sup, :brod_sup will be started

@@ -50,11 +50,14 @@ defmodule Sanbase.Application.Web do
         [:prod]
       ),
       # Start the Kaffe Kafka Consumer group member supervisor
-      %{
-        id: Kaffe.GroupMemberSupervisor,
-        start: {Kaffe.GroupMemberSupervisor, :start_link, []},
-        type: :supervisor
-      }
+      start_in(
+        %{
+          id: Kaffe.GroupMemberSupervisor,
+          start: {Kaffe.GroupMemberSupervisor, :start_link, []},
+          type: :supervisor
+        },
+        [:dev, :prod]
+      )
     ]
 
     opts = [

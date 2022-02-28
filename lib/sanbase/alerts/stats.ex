@@ -25,53 +25,30 @@ defmodule Sanbase.Alerts.Stats do
       Enum.reduce(stats_week, 0, fn {_slug, alerts}, count -> count + length(alerts.alerts) end) /
         7
 
-    {total_fired_percent_change, direction_text} =
-      percent_change(total_fired_weekly_avg, total_fired)
-
-    total_fired_text =
-      "#{Float.round(total_fired_percent_change, 2)}% #{direction_text} than weekly average"
-
-    slugs = Enum.map(stats_day, fn {slug, _fired_data} -> slug end)
-    slug_ticker_map = slug_ticker_map(slugs)
+    total_fired_percent_change =
+      percent_change(total_fired_weekly_avg, total_fired) |> Float.round(2)
 
     fired_alerts =
       stats_day
       |> Enum.map(fn {slug, fired_data} ->
         avg_week = stats_week[slug].count / 7
-        {percent, direction_text} = percent_change(avg_week, fired_data.count)
-        percent_change = "#{Float.round(percent, 2)}%"
+        percent_change = percent_change(avg_week, fired_data.count) |> Float.round(2)
         alerts_types = fired_data.alerts |> Enum.map(&alert_type(&1))
 
-        [
-          slug_ticker_map[slug] || slug,
-          fired_data.count,
-          percent_change,
-          alerts_types
-        ]
+        %{
+          slug: slug,
+          count: fired_data.count,
+          percent_change: percent_change,
+          alert_types: alerts_types
+        }
       end)
 
     %{
       total_fired: total_fired,
+      total_fired_weekly_avg: total_fired_weekly_avg,
+      total_fired_percent_change: total_fired_percent_change,
       fired_alerts: fired_alerts
     }
-
-    alerts_text =
-      Enum.reduce(fired_alerts, "", fn [ticker, count, percent_change_text, metrics], acc_text ->
-        acc_text <>
-          "|#{String.pad_trailing(ticker, 5)}|#{String.pad_leading(Integer.to_string(count), 5)}|#{String.pad_leading(percent_change_text, 8)}\nMetrics: #{Enum.join(metrics, ", ")}\n\n"
-      end)
-
-    """
-    *Stats for last 24 hours:*
-
-    *Total alerts:* #{total_fired} _(#{total_fired_text})_
-
-    ```
-    |#{String.pad_trailing("Asset", 5)}|#{String.pad_leading("Count", 5)}|#{String.pad_leading("% change", 8)}|
-    |#{String.pad_trailing("", 5, "_")}|#{String.pad_trailing("", 5, "_")}|#{String.pad_trailing("", 8, "_")}|
-    #{alerts_text}
-    ```
-    """
   end
 
   defp alert_type(alert) do
@@ -85,25 +62,53 @@ defmodule Sanbase.Alerts.Stats do
     |> String.capitalize()
   end
 
-  defp slug_ticker_map(slugs) do
-    slugs
-    |> Sanbase.Model.Project.tickers_by_slug_list()
-    |> Enum.into(%{}, fn {t, s} -> {s, t} end)
-  end
+  defp compute_stats(query) do
+    all = Repo.all(query)
 
-  def compute_stats(query) do
-    Repo.all(query)
-    |> Enum.flat_map(fn data ->
-      data["user_trigger_data"]
-      |> Enum.reduce(%{}, fn {slug, utd}, acc ->
-        alert = %{
-          type: utd["type"],
-          metric: utd["metric"],
-          signal: utd["signal"]
-        }
-
-        Map.update(acc, slug, [alert], fn old -> old ++ [alert] end)
+    screener =
+      all
+      |> Enum.filter(fn data ->
+        not is_nil(data["user_trigger_data"]["default"]) and
+          data["user_trigger_data"]["default"]["type"] == "screener_signal"
       end)
+
+    metric_or_signal =
+      all
+      |> Enum.filter(fn data ->
+        Enum.all?(data["user_trigger_data"], fn {_, utd} ->
+          utd["type"] in ["metric_signal", "daily_metric_signal", "signal_data"]
+        end)
+      end)
+
+    screener =
+      Enum.flat_map(screener, fn data ->
+        data["user_trigger_data"]
+        |> Enum.flat_map(fn {_, utd} ->
+          alert = %{type: utd["type"]}
+          Enum.map(utd["added_slugs"], fn slug -> {slug, alert} end)
+        end)
+      end)
+
+    metric_or_signal =
+      metric_or_signal
+      |> Enum.flat_map(fn data ->
+        data["user_trigger_data"]
+        |> Enum.map(fn {slug, utd} ->
+          alert = %{
+            type: utd["type"],
+            metric: utd["metric"],
+            signal: utd["signal"]
+          }
+
+          {slug, alert}
+        end)
+      end)
+
+    all = screener ++ metric_or_signal
+
+    all
+    |> Enum.reduce(%{}, fn {slug, alert}, acc ->
+      Map.update(acc, slug, [alert], fn old -> old ++ [alert] end)
     end)
     |> Enum.reduce(%{}, fn {slug, alerts}, acc ->
       Map.update(acc, slug, alerts, fn old -> old ++ alerts end)
@@ -115,10 +120,6 @@ defmodule Sanbase.Alerts.Stats do
   end
 
   defp percent_change(old, new) do
-    if new - old > 0 do
-      {(new - old) / old * 100, "more"}
-    else
-      {(old - new) / old * 100, "less"}
-    end
+    (new - old) / old * 100
   end
 end

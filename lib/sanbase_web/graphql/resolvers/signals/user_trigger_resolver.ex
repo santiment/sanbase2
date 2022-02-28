@@ -106,6 +106,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     UserTrigger.historical_trigger_points(args)
   end
 
+  def alerts_stats_24h(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    {:ok, Sanbase.Alerts.Stats.fired_alerts_24h(current_user.id)}
+  end
+
   # Private functions
 
   defp do_create_trigger(current_user, args) do

@@ -3,10 +3,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
   import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
+  import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
   alias Sanbase.Accounts.User
   alias Sanbase.Alert.{Trigger, UserTrigger}
   alias Sanbase.Telegram
+  alias SanbaseWeb.Graphql.SanbaseDataloader
+
+  def project(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :project_by_slug, slug)
+    |> on_load(fn loader ->
+      {:ok, Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)}
+    end)
+  end
 
   def triggers(%User{} = user, _args, _resolution) do
     {:ok,
@@ -106,10 +116,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     UserTrigger.historical_trigger_points(args)
   end
 
-  def alerts_stats_24h(_root, _args, %{
+  def alerts_stats(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    {:ok, Sanbase.Alerts.Stats.fired_alerts_24h(current_user.id)}
+    stats = Sanbase.Alerts.Stats.fired_alerts_24h(current_user.id)
+
+    if stats == %{} do
+      {:error, "No stats available"}
+    else
+      {:ok, stats}
+    end
   end
 
   # Private functions

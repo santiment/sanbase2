@@ -13,17 +13,27 @@ defmodule Sanbase.Alerts.Stats do
     week_ago_query = from(ha in query, where: ha.triggered_at > ^week_ago)
 
     stats_day = compute_stats(day_ago_query)
+    stats_week = compute_stats(week_ago_query)
+    compute(stats_day, stats_week)
+  end
 
+  defp compute([], _), do: %{}
+  defp compute(_, []), do: %{}
+
+  defp compute(stats_day, stats_week) do
     stats_week =
-      compute_stats(week_ago_query)
+      stats_week
       |> Enum.reduce(%{}, fn {slug, alerts}, acc -> Map.merge(acc, %{slug => alerts}) end)
 
     total_fired =
-      Enum.reduce(stats_day, 0, fn {_slug, alerts}, count -> count + length(alerts.alerts) end)
+      stats_day
+      |> Enum.reduce(0, fn {_slug, alerts}, count -> count + length(alerts.alerts) end)
 
-    total_fired_weekly_avg =
-      Enum.reduce(stats_week, 0, fn {_slug, alerts}, count -> count + length(alerts.alerts) end) /
-        7
+    total_fired_weekly =
+      stats_week
+      |> Enum.reduce(0, fn {_slug, alerts}, count -> count + length(alerts.alerts) end)
+
+    total_fired_weekly_avg = total_fired_weekly / 7
 
     total_fired_percent_change =
       percent_change(total_fired_weekly_avg, total_fired) |> Float.round(2)
@@ -47,7 +57,7 @@ defmodule Sanbase.Alerts.Stats do
       total_fired: total_fired,
       total_fired_weekly_avg: total_fired_weekly_avg,
       total_fired_percent_change: total_fired_percent_change,
-      fired_alerts: fired_alerts
+      data: fired_alerts
     }
   end
 

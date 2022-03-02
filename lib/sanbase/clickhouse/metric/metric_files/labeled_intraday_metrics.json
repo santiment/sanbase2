@@ -20,7 +20,7 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
-    "min_interval": "1d",
+    "min_interval": "15m",
     "table": "labeled_intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
@@ -45,8 +45,8 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
-    "min_interval": "1d",
+    "aggregation": "sum",
+    "min_interval": "15m",
     "table": "labeled_intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"

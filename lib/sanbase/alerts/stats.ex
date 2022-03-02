@@ -35,14 +35,13 @@ defmodule Sanbase.Alerts.Stats do
 
     total_fired_weekly_avg = total_fired_weekly / 7
 
-    total_fired_percent_change =
-      percent_change(total_fired_weekly_avg, total_fired) |> Float.round(2)
+    total_fired_percent_change = Sanbase.Math.percent_change(total_fired_weekly_avg, total_fired)
 
     fired_alerts =
       stats_day
       |> Enum.map(fn {slug, fired_data} ->
         avg_week = stats_week[slug].count / 7
-        percent_change = percent_change(avg_week, fired_data.count) |> Float.round(2)
+        percent_change = Sanbase.Math.percent_change(avg_week, fired_data.count)
         alerts_types = fired_data.alerts |> Enum.map(&alert_type(&1))
 
         %{
@@ -127,9 +126,5 @@ defmodule Sanbase.Alerts.Stats do
       {slug, %{alerts: alerts, count: length(alerts)}}
     end)
     |> Enum.sort_by(fn {_slug, data} -> data.count end, :desc)
-  end
-
-  defp percent_change(old, new) do
-    (new - old) / old * 100
   end
 end

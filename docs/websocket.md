@@ -98,3 +98,24 @@ const channel = socket.channel(`metrics:price`, {}).join()
 channel.on('metric_data', ({metric, slug, datetime, value}) => {
     console.log(`Received new metric: ${datetime}, ${metric}, ${slug}, ${value}`)
 })
+```
+
+The channel has two optional arguments - `slugs` and `metrics`. This way you can control and receive
+only data only for some of the slugs and the metrics:
+```js
+const channel = socket.channel(`metrics:price`, {metrics: ['price_usd', 'price_btc'], slugs: ['bitcoin', 'ethereum']}).join()
+```
+
+By default, if no arguments are provided, all metrics, slugs and sources are streamed to the user.
+
+The slugs/metrics can be added/removed after the channel is joined with the messages:
+- `subscribe_slugs`/`unsubscribe_slugs`
+- `subscribe_metrics`/`unsubscribe_metrics`
+- `subscribe_sources`/`unsubscribe_sources`
+
+
+```js
+channel.push('subscribe_slugs', {slugs: ['bitcoin', 'ethereum']}, 10000)
+channel.push('subscribe_metrics', {metrics: ['price_usd', 'price_btc']}, 10000)
+channel.push('subscribe_metrics', {metrics: ['price_usd', 'price_btc']}, 10000)
+```

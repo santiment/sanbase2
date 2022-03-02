@@ -13,7 +13,7 @@ defmodule SanbaseWeb.MetricChannelTest do
     %{user: user, user2: user2, conn: conn, conn2: conn2}
   end
 
-  test "multiple users in a channel receive metrics", context do
+  test "receive broadcast metric data", context do
     socket = get_socket(context.conn, context.user)
 
     assert {:ok, %{}, %Phoenix.Socket{}} =
@@ -31,6 +31,121 @@ defmodule SanbaseWeb.MetricChannelTest do
 
     for data_map <- data_map_list() do
       assert_push("metric_data", ^data_map)
+    end
+  end
+
+  test "receive broadcast metric data for some slugs only - unsubscribe works", context do
+    socket = get_socket(context.conn, context.user)
+
+    assert {:ok, %{}, socket} =
+             subscribe_and_join(socket, SanbaseWeb.MetricChannel, "metrics:price", %{})
+
+    # Initiate the channel no arguments (get all slugs) and unsubscribe from some of them
+    unsubscribed_slugs = ["bitcoin", "ethereum"]
+    push(socket, "unsubscribe_slugs", %{"slugs" => unsubscribed_slugs})
+
+    @endpoint.subscribe("metrics:price")
+
+    for data_map <- data_map_list() do
+      SanbaseWeb.Endpoint.broadcast!(
+        "metrics:price",
+        "metric_data",
+        data_map
+      )
+    end
+
+    for data_map <- data_map_list() do
+      if data_map["slug"] not in unsubscribed_slugs do
+        assert_push("metric_data", ^data_map)
+      else
+        refute_push("metric_data", ^data_map)
+      end
+    end
+  end
+
+  test "receive broadcast metric data for some slugs only - subscribe works", context do
+    socket = get_socket(context.conn, context.user)
+
+    assert {:ok, %{}, socket} =
+             subscribe_and_join(socket, SanbaseWeb.MetricChannel, "metrics:price", %{slugs: []})
+
+    # Initiate the channel with no slugs (receive no data) and subscribe to some slugs
+    subscribed_slugs = ["bitcoin", "ethereum"]
+    push(socket, "subscribe_slugs", %{"slugs" => subscribed_slugs})
+
+    @endpoint.subscribe("metrics:price")
+
+    for data_map <- data_map_list() do
+      SanbaseWeb.Endpoint.broadcast!(
+        "metrics:price",
+        "metric_data",
+        data_map
+      )
+    end
+
+    for data_map <- data_map_list() do
+      if data_map["slug"] in subscribed_slugs do
+        assert_push("metric_data", ^data_map)
+      else
+        refute_push("metric_data", ^data_map)
+      end
+    end
+  end
+
+  test "receive broadcast metric data for some metrics only - subscribe works", context do
+    socket = get_socket(context.conn, context.user)
+
+    assert {:ok, %{}, socket} =
+             subscribe_and_join(socket, SanbaseWeb.MetricChannel, "metrics:price", %{metrics: []})
+
+    # Initiate the channel with no metrics (receive no data) and subscribe to some metrics
+    subscribed_metrics = ["price_btc"]
+    push(socket, "subscribe_metrics", %{"metrics" => subscribed_metrics})
+
+    @endpoint.subscribe("metrics:price")
+
+    for data_map <- data_map_list() do
+      SanbaseWeb.Endpoint.broadcast!(
+        "metrics:price",
+        "metric_data",
+        data_map
+      )
+    end
+
+    for data_map <- data_map_list() do
+      if data_map["metric"] in subscribed_metrics do
+        assert_push("metric_data", ^data_map)
+      else
+        refute_push("metric_data", ^data_map)
+      end
+    end
+  end
+
+  test "receive broadcast metric data for some metrics only - unsubscribe works", context do
+    socket = get_socket(context.conn, context.user)
+
+    assert {:ok, %{}, socket} =
+             subscribe_and_join(socket, SanbaseWeb.MetricChannel, "metrics:price", %{})
+
+    unsubscribed_metrics = ["price_btc"]
+    push(socket, "unsubscribe_metrics", %{"metrics" => unsubscribed_metrics})
+
+    @endpoint.subscribe("metrics:price")
+
+    for data_map <- data_map_list() do
+      SanbaseWeb.Endpoint.broadcast!(
+        "metrics:price",
+        "metric_data",
+        data_map
+      )
+    end
+
+    for data_map <- data_map_list() do
+      if data_map["metric"] not in unsubscribed_metrics do
+        assert_push("metric_data", ^data_map)
+      else
+        refute_push("metric_data", ^data_map)
+      end
     end
   end
 
@@ -55,7 +170,7 @@ defmodule SanbaseWeb.MetricChannelTest do
         "metadata" => %{"source" => "cryptocompare"}
       },
       %{
-        "metric" => "price_usd",
+        "metric" => "price_btc",
         "slug" => "ethereum",
         "datetime" => "2022-02-22T00:00:00Z",
         "value" => 2500.0,
@@ -69,10 +184,10 @@ defmodule SanbaseWeb.MetricChannelTest do
         "metadata" => %{"source" => "cryptocompare"}
       },
       %{
-        "metric" => "price_usd",
-        "slug" => "ethereum",
+        "metric" => "price_btc",
+        "slug" => "santiment",
         "datetime" => "2022-02-22T00:00:03Z",
-        "value" => 2505.0,
+        "value" => 16.18,
         "metadata" => %{"source" => "cryptocompare"}
       }
     ]

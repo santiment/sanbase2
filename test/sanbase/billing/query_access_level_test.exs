@@ -13,6 +13,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :active_widgets,
           :address_historical_balance_change,
           :alerts_historical_activity,
+          :alerts_stats,
           :all_currency_projects,
           :all_erc20_projects,
           :all_exchanges,

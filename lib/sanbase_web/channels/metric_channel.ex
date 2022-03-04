@@ -18,7 +18,7 @@ defmodule SanbaseWeb.MetricChannel do
         {:ok, socket}
 
       false ->
-        {:error, "The channel subtopic must be the authenticated user id"}
+        {:error, "The channel cannot be joined by anonimous users or users without subscription."}
     end
   end
 
@@ -123,6 +123,13 @@ defmodule SanbaseWeb.MetricChannel do
         socket
         |> assign(key, MapSet.difference(mapset, items))
         |> assign(ukey, MapSet.union(umapset, items))
+    end
+  end
+
+  defp user_has_access?(nil, metrics_group) do
+    cond do
+      metrics_group == "price" -> true
+      true -> false
     end
   end
 

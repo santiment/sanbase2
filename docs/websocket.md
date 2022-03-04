@@ -8,11 +8,13 @@ messages in that topic. Examples for topics are: `users:<current user id>`,
 
 ## Connecting a socket
 
-At the time of writing this, websocket connections can be established only by
-logged-in users. To establish a connection, the user must provide either their
-JWT Access Token (as obtained in the login mutation) or their Refresh Token's
-JTI (obtained at any time via the [getAuthSessions
-API](https://api.santiment.net/graphiql?query=%7B%0A%20%20getAuthSessions%20%7B%0A%20%20%20%20jti%0A%20%20%20%20isCurrent%0A%20%20%7D%0A%7D%0A))
+Websocket connections can be established both by anonymous and logged-in users.
+Anonymous users have access to fewer channels and capabilities. To establish an
+authenticated connection, the user must provide either their JWT Access Token
+(as obtained in the login mutation) or their Refresh Token's JTI (obtained at
+any time via the [getAuthSessions
+API](https://api.santiment.net/graphiql?query=%7B%0A%20%20getAuthSessions%20%7B%0A%20%20%20%20jti%0A%20%20%20%20isCurrent%0A%20%20%7D%0A%7D%0A)).
+Anonymous websockets are established by providing no arguments
 
 When used in production, it is easier to use the JTI. When used for writing
 backend tests, the access token is easier to access.
@@ -34,15 +36,23 @@ socket.onError( () => console.log("there was an error with the connection!") )
 socket.onClose( () => console.log("the connection dropped") )
 ```
 
+```js
+let anonSocket = new Socket("wss://api.santiment.net/socket", { params: {}})
+```
+
 For Elixir backend testing purposes you can look at the
 `./test/sanbase_web/channels` directory where multiple test files are located.
 
 ## Joining channels
 
+In all of the following examples, unless it's clearly stated otherwise, the
+channels are not accessible to anonymous users.
+
 When a user connects to a socket, an Elixir process is created on the backend
 that handles the connection and a special struct called `socket` is used to
-identify the connection. In that socket the user details are stored and are used
-when the user tries to join channels over the websocket connection.
+identify the connection. In that socket the user details (none, if anonymous)
+are stored and are used when the user tries to join channels over the websocket
+connection.
 
 The channel joining looks like this for a user with id 1:
 ```js
@@ -98,6 +108,8 @@ channel
 
 ### The `metrics:*` channels
 
+The `metrics:price` channel is accessible to anonymous users.
+
 The metrics channels are used to receive newly computed metrics without asking
 for them. Users can use subtopics like `price`, `all` or a specific metric like
 `active_addresses_24h`. When the channel is joined, the user will automatically
@@ -142,6 +154,8 @@ channel.push('subscribe_slugs', {slugs: ['bitcoin', 'ethereum']}, 10000)
 channel.push('subscribe_slugs', {slugs: ['bitcoin', 'ethereum']}, 10000)
 channel.push('subscribe_metrics', {metrics: ['price_usd', 'price_btc']}, 10000)
 channel.push('subscribe_metrics', {metrics: ['price_usd', 'price_btc']}, 10000)
+channel.push('subscribe_sources', {sources: ['cryptocompare']}, 10000)
+channel.push('unsubscribe_sources', {sources: ['cryptocompare']}, 10000)
 ```
 
 If no arguments are provided on channel creation, then all slugs/metrics/sources

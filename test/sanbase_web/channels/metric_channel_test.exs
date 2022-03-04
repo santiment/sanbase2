@@ -35,6 +35,42 @@ defmodule SanbaseWeb.MetricChannelTest do
         assert_push("metric_data", ^data_map)
       end
     end
+
+    test "broadcasting is fast" do
+      # This is a very basic test that does not test represent
+      # the real world scenario.
+      {:ok, socket} = connect(SanbaseWeb.UserSocket, %{}, %{})
+
+      assert {:ok, %{}, _socket} =
+               subscribe_and_join(socket, SanbaseWeb.MetricChannel, "metrics:price", %{})
+
+      @endpoint.subscribe("metrics:price")
+
+      list =
+        Stream.cycle(data_map_list())
+        |> Stream.map(fn data ->
+          Map.put(data, "value", :rand.uniform())
+        end)
+        |> Enum.take(1000)
+
+      {t_microseconds, _} =
+        :timer.tc(fn ->
+          for data_map <- list do
+            SanbaseWeb.Endpoint.broadcast!(
+              "metrics:price",
+              "metric_data",
+              data_map
+            )
+          end
+
+          for data_map <- list do
+            assert_push("metric_data", ^data_map)
+          end
+        end)
+
+      t_ms = t_microseconds / 1000
+      assert t_ms < 1000
+    end
   end
 
   describe "user authenticated socket" do

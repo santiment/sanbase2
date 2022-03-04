@@ -11,7 +11,8 @@ defmodule SanbaseWeb.UserSocket do
   # Metrics-related channels
   channel("metrics:*", SanbaseWeb.MetricChannel)
 
-  def connect(params, socket) do
+  def connect(params, socket)
+      when is_map_key(params, "jti") or is_map_key(params, "access_token") do
     with {:ok, user} <- params_to_user(params) do
       {:ok, assign(socket, user_id: user.id, user: user)}
     end

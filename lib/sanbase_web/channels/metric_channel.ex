@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.MetricChannel do
   use SanbaseWeb, :channel
 
+  @compile {:inline, is_subscribed?: 3}
   intercept(["metric_data"])
 
   # metrics group is a string identifying metrics:
@@ -46,18 +47,36 @@ defmodule SanbaseWeb.MetricChannel do
       slugs: slugs,
       unsubscribed_slugs: uslugs,
       metrics: metrics,
-      unsubscribed_metrics: umetrics
+      unsubscribed_metrics: umetrics,
+      sources: sources,
+      unsubscribed_sources: usources
     } = socket.assigns
 
-    %{"slug" => slug, "metric" => metric} = data
+    %{"slug" => slug, "metric" => metric, "metadata" => metadata} = data
 
-    with true <- (slugs != :all and slug in slugs) or (slugs == :all and slug not in uslugs),
-         true <-
-           (metrics != :all and metric in metrics) or (metrics == :all and metric not in umetrics) do
+    # The `metric_data` messages are intercepted in order to check if the
+    # channel should receive them. The channel can be subscribed not to the
+    # whole topic but only to some of the slugs/metrics/sources/etc. Only if
+    # all checks are passed, the message is sent to the channel.
+    with true <- is_subscribed?(slug, slugs, uslugs),
+         true <- is_subscribed?(metric, metrics, umetrics),
+         true <- is_subscribed?(metadata["source"] || :do_not_check, sources, usources) do
       push(socket, "metric_data", data)
     end
 
     {:noreply, socket}
+  end
+
+  defp is_subscribed?(:do_not_check, _, _), do: true
+
+  # The check if a `metric_data` should be sent is done based on multiple criteria.
+  # These include checking if the slug/metric/source/etc. are in the lists of
+  # subscribed or unsubscribed entities.
+  # The check is split into two main checks based on whether the channel was
+  # created with no restrictions or some restrictions.
+  defp is_subscribed?(item, subscribed_items, unsubscribed_items) do
+    (subscribed_items != :all and item in subscribed_items) or
+      (subscribed_items == :all and item not in unsubscribed_items)
   end
 
   # Private functions
@@ -65,12 +84,15 @@ defmodule SanbaseWeb.MetricChannel do
   defp initiate_socket(socket, params) do
     slugs = if slugs = params["slugs"], do: MapSet.new(slugs), else: :all
     metrics = if metrics = params["metrics"], do: MapSet.new(metrics), else: :all
+    sources = if sources = params["sources"], do: MapSet.new(sources), else: :all
 
     socket
     |> assign(:slugs, slugs)
     |> assign(:unsubscribed_slugs, MapSet.new([]))
     |> assign(:metrics, metrics)
     |> assign(:unsubscribed_metrics, MapSet.new([]))
+    |> assign(:sources, sources)
+    |> assign(:unsubscribed_sources, MapSet.new([]))
   end
 
   # ukey = unsubscribed_key

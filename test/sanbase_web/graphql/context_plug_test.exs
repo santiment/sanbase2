@@ -84,7 +84,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     assert conn.status == 400
 
     assert result["errors"]["details"] ==
-             "Apikey '#{apikey}' is not valid"
+             "Apikey '#{Apikey.mask_apikey(apikey)}' is not valid"
   end
 
   test "malformed apikey returns error" do

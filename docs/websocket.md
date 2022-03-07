@@ -30,7 +30,7 @@ function logger(kind, msg, data) {
     console.log(`${kind}: ${msg}`, data)
 }
 
-let socket = new Socket("wss://api.santiment.net/socket", { params: { jti: "your-jti-goes-here" }})
+let socket = new Socket("wss://api.santiment.net/socket", { params: { jti: "your-jti-goes-here" }, logger: logger})
 socket.connect()
 socket.onError( () => console.log("there was an error with the connection!") )
 socket.onClose( () => console.log("the connection dropped") )

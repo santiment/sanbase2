@@ -68,17 +68,22 @@ representing the topic.
 
 Users can send messages to a channel and receive messages from a channel.
 
-### The `users:*` channels
+### The `users:common` channel
 
-Users can join the channel `users:<current user id>`. The join is successful
-only if the user uses their id. If the JTI used when establishing the connection
-has id 1, then this websocket can be used only to join the channel `users:1` and
-not `users:2`, `users:3`, etc.
+Both authenticated and anonymous users can join this channel.
 
-In this channel there is one message that users can send that check is a
-username is valid and free.
+In this channel there are two messages that users can send:
+
+#### `is_username_valid` to check if a username is free and valid to use
+
+A username is valid if it's not taken and it fulfills a set of requirements,
+that include, but are not limited to:
+- The username is not too short
+- The username does not contain profanities
+- The username is not already taken
+  
 ```js
-const channel = socket.channel(`users:${user.id}`, {}).join()
+const channel = socket.channel(`users:common`, {}).join()
 
 channel
     .push('is_username_valid', {username: "ivan"}, PUSH_TIMEOUT)
@@ -90,6 +95,34 @@ channel
         }
     })
 ```
+
+#### `users_by_username_pattern` - search users by providing a username pattern
+
+Returns list of users (user, username, id, avatarUrl) that match the provided
+username pattern. By default, the search is done by returning all users that
+contain the provided pattern in their username. If only prefix/suffix matching
+is done, this can be controlled by changing the search pattern like this:
+`pattern%` (search prefix) or `%pattern` (search suffix).
+
+```js
+const channel = socket.channel(`users:common`, {}).join()
+channel
+    .push('search_by_username_pattern', {username_pattern: "ivan"}, PUSH_TIMEOUT)
+    .receive('ok', ({users}) => {
+       for (let {username, id, name, avatarUrl} of users){
+         console.log(`id: ${id}, username: ${username}, name: ${name}, avatarUrl: ${avatarUrl}`)
+       }  
+    })
+```
+
+### The `users:<user id>` channels
+
+Users can join the channel `users:<current user id>`. The join is successful
+only if the user uses their id. If the JTI used when establishing the connection
+has id 1, then this websocket can be used only to join the channel `users:1` and
+not `users:2`, `users:3`.
+No messages are supported in this channal yet.
+
 
 ### The `open_restricted_tabs:*` channels
 

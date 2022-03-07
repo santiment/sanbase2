@@ -67,7 +67,7 @@ defmodule Sanbase.Accounts.User.Name do
   defp is_not_taken?(value, field, fieldname) do
     query =
       from(u in Sanbase.Accounts.User,
-        where: field(u, ^field) == ^value,
+        where: fragment("lower(?)", field(u, ^field)) == ^value,
         select: fragment("count(*)")
       )
 

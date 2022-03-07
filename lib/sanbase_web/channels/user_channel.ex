@@ -11,13 +11,9 @@ defmodule SanbaseWeb.UserChannel do
     end
   end
 
-  def handle_in("is_username_valid", %{"username" => username}, socket) do
-    case Sanbase.Accounts.User.Name.valid_username?(username) do
-      true ->
-        {:reply, {:ok, %{"is_username_valid" => true}}, socket}
-
-      {:error, reason} ->
-        {:reply, {:ok, %{"is_username_valid" => false, "reason" => reason}}, socket}
-    end
+  def handle_in("my_username", _params, socket) do
+    # A dummy message that is used to test the proper dispatching of
+    # channels between users:common and users:<user_id>. Not used.
+    {:reply, {:ok, socket.assigns.user.username}, socket}
   end
 end

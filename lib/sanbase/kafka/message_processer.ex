@@ -4,7 +4,7 @@ defmodule Sanbase.Kafka.MessageProcessor do
     Enum.each(messages, &handle_message/1)
   end
 
-  def handle_message(%{value: value, topic: "sanbase_combined_metrics_stream"}) do
+  def handle_message(%{value: value, topic: "sanbase_combined_metrics"}) do
     value
     |> Jason.decode!()
     |> then(fn map ->
@@ -17,6 +17,8 @@ defmodule Sanbase.Kafka.MessageProcessor do
     end)
     |> handle_metric_message()
   end
+
+  def handle_message(_), do: :ok
 
   # Which of the fields are to be sent to the websocket
   @fields ["datetime", "slug", "metric", "value", "metadata"]

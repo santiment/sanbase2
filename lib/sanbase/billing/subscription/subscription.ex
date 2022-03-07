@@ -273,6 +273,13 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.all()
   end
 
+  def user_subscription_names(user) do
+    user_subscriptions(user)
+    |> Enum.map(fn %{plan: %{name: plan_name, product: %{name: product_name}}} ->
+      "#{product_name} / #{plan_name}"
+    end)
+  end
+
   @doc """
   List active subcriptions' product ids
   """

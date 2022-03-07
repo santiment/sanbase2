@@ -140,11 +140,24 @@ defmodule Sanbase.Application do
   """
   def prepended_children(container_type) do
     [
-      # SanExporterEx is the module that handles the data pushing to Kafka
+      start_in(
+        %{
+          id: :sanbase_brod_sup_id,
+          start: {:brod_sup, :start_link, []},
+          type: :supervisor
+        },
+        [:dev, :prod]
+      ),
+
+      # SanExporterEx is the module that handles the data pushing to Kafka. As other
+      # parts can be started that also require :brod_sup, :brod_sup will be started
+      # separately and `start_brod_supervisor: false` is provided to
+      # SanExporterEx
       {SanExporterEx,
        [
          kafka_producer_module: Config.module_get!(Sanbase.KafkaExporter, :supervisor),
-         kafka_endpoint: kafka_endpoint()
+         kafka_endpoint: kafka_endpoint(),
+         start_brod_supervisor: false
        ]},
 
       # API Calls exporter is started only in `web` and `all` pods.
@@ -269,8 +282,8 @@ defmodule Sanbase.Application do
   end
 
   defp kafka_endpoint() do
-    url = Config.module_get!(Sanbase.KafkaExporter, :kafka_url) |> to_charlist()
-    port = Config.module_get!(Sanbase.KafkaExporter, :kafka_port) |> Sanbase.Math.to_integer()
+    url = Config.module_get!(Sanbase.Kafka, :kafka_url) |> to_charlist()
+    port = Config.module_get_integer!(Sanbase.Kafka, :kafka_port)
 
     [{url, port}]
   end

@@ -146,8 +146,9 @@ defmodule Sanbase.Application do
           start: {:brod_sup, :start_link, []},
           type: :supervisor
         },
-        # TODO: Fix by implementing `start_brod_supervisor: false` in the san exporter
-        [:dev]
+        # Start manually in dev and prod. SanExporterEx won't start its
+        # brod supervisor because of the `start_brod_supervisor: false` option
+        [:dev, :prod]
       ),
 
       # SanExporterEx is the module that handles the data pushing to Kafka. As other

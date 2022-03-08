@@ -3,22 +3,38 @@ defmodule Sanbase.Kafka.Consumer do
   require Logger
 
   def init do
-    config =
-      Application.get_env(:kaffe, :consumer)
-      |> Keyword.merge(
-        endpoints: endpoints(),
-        topics: topics(),
-        # generate unique consumer group on boot
-        consumer_group:
-          consumer_group_basename() <>
-            "_" <> (:crypto.strong_rand_bytes(4) |> Base.encode64(case: :lower))
-      )
+    case enabled?() do
+      true ->
+        config =
+          Application.get_env(:kaffe, :consumer)
+          |> Keyword.merge(
+            endpoints: endpoints(),
+            topics: topics(),
+            # generate unique consumer group on boot
+            consumer_group:
+              consumer_group_basename() <>
+                "_" <> (:crypto.strong_rand_bytes(4) |> Base.encode64(case: :lower))
+          )
 
-    Application.put_env(:kaffe, :consumer, config)
+        Application.put_env(:kaffe, :consumer, config)
 
-    Logger.info("Kafka consumer configuration: #{inspect(Kaffe.Config.Consumer.configuration())}")
+        Logger.info(
+          "Kafka consumer configuration: #{inspect(Kaffe.Config.Consumer.configuration())}"
+        )
 
-    :ok
+        :ok
+
+      false ->
+        Logger.info("Sanbase.Kafka.Consumer is not enabled and won't be started")
+        {:error, :not_started}
+    end
+  end
+
+  def enabled? do
+    env = Config.module_get(Sanbase, :env)
+    kafka_conusmer_enabled? = Config.module_get_boolean(__MODULE__, :enabled?)
+
+    env in [:dev, :prod] and kafka_conusmer_enabled?
   end
 
   defp topics do

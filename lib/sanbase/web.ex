@@ -3,13 +3,13 @@ defmodule Sanbase.Application.Web do
   require Logger
 
   def init() do
+    # Overwrite kaffe consumer group with a new name
+    Sanbase.Kafka.Consumer.init()
+
     # API metrics
     SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.install(SanbaseWeb.Graphql.Schema)
 
     SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.install(SanbaseWeb.Graphql.Schema)
-
-    # Overwrite kaffe consumer group with a new name
-    Sanbase.Kafka.Consumer.init()
   end
 
   @doc ~s"""
@@ -50,13 +50,15 @@ defmodule Sanbase.Application.Web do
         [:prod]
       ),
       # Start the Kaffe Kafka Consumer group member supervisor
-      start_in(
-        %{
-          id: Kaffe.GroupMemberSupervisor,
-          start: {Kaffe.GroupMemberSupervisor, :start_link, []},
-          type: :supervisor
-        },
-        [:dev, :prod]
+      start_if(
+        fn ->
+          %{
+            id: Kaffe.GroupMemberSupervisor,
+            start: {Kaffe.GroupMemberSupervisor, :start_link, []},
+            type: :supervisor
+          }
+        end,
+        fn -> Sanbase.Kafka.Consumer.enabled?() end
       )
     ]
 

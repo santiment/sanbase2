@@ -26,7 +26,7 @@ defmodule Sanbase.Kafka.MessageProcessor do
   defp handle_metric_message(
          %{"table" => "asset_prices_stream_to_kafka_mv", "metric" => metric} = map
        ) do
-    data = Map.get(map, @fields)
+    data = Map.take(map, @fields)
 
     for topic <- ["metrics:price", "metrics:all", "metrics:#{metric}"] do
       SanbaseWeb.Endpoint.broadcast!(topic, "metric_data", data)

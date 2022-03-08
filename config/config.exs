@@ -244,7 +244,7 @@ config :kaffy,
   router: SanbaseWeb.Router
 
 config :sanbase, Sanbase.Kafka.Consumer,
-  enabled?: {:system, "KAFKA_CONSUMER_ENABLED", true},
+  enabled?: {:system, "KAFKA_CONSUMER_ENABLED", false},
   metrics_stream_topic: {:system, "KAFKA_METRIC_STREAM_TOPIC", "sanbase_combined_metrics"},
   consumer_group_basename: {:system, "KAFKA_CONSUMER_GROUP_BASENAME", "sanbase_kafka_consumer"}
 

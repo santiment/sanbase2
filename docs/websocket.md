@@ -83,7 +83,11 @@ that include, but are not limited to:
 - The username is not already taken
   
 ```js
-const channel = socket.channel(`users:common`, {}).join()
+const channel = socket.channel(`users:common`, {})
+channel.join()
+    .receive('ok', () => { console.log("Success") })
+    .receive('error', () => { console.log("Error") })
+    .receive('timeout', () => { console.log("Timeout") })
 
 channel
     .push('is_username_valid', {username: "ivan"}, PUSH_TIMEOUT)
@@ -105,7 +109,12 @@ is done, this can be controlled by changing the search pattern like this:
 `pattern%` (search prefix) or `%pattern` (search suffix).
 
 ```js
-const channel = socket.channel(`users:common`, {}).join()
+const channel = socket.channel(`users:common`, {})
+channel.join()
+    .receive('ok', () => { console.log("Success") })
+    .receive('error', () => { console.log("Error") })
+    .receive('timeout', () => { console.log("Timeout") })
+
 channel
     .push('search_by_username_pattern', {username_pattern: "ivan"}, PUSH_TIMEOUT)
     .receive('ok', ({users}) => {
@@ -130,7 +139,11 @@ This channel is joined from the frontend when the user opens part of sanbase
 that is part of the restricted sections. In this channel there is one message
 that users can send that check what is the number of open restricted tabs.
 ```js
-const channel = socket.channel(`open_restricted_tabs:${user.id}`, {}).join()
+const channel = socket.channel(`open_restricted_tabs:${user.id}`, {})
+channel.join()
+    .receive('ok', () => { console.log("Success") })
+    .receive('error', () => { console.log("Error") })
+    .receive('timeout', () => { console.log("Timeout") })
 
 channel
     .push('open_restricted_tabs', {}, PUSH_TIMEOUT)
@@ -150,25 +163,33 @@ start receiving all the new data points that appear in our databases withou
 making request for that.
 
 ```js
-const channel = socket.channel(`metrics:price`, {}).join()
-
+const channel = socket.channel(`metrics:price`, {})
+// The metrics:* channels differ from the previosuly shown channels in that
+// here the backend pushes new metric data without the user asking for it
+// with messages.
 channel.on('metric_data', ({metric, slug, datetime, value}) => {
     console.log(`Received new metric: ${datetime}, ${metric}, ${slug}, ${value}`)
 })
+
+channel.join()
+    .receive('ok', () => { console.log("Success") })
+    .receive('error', () => { console.log("Error") })
+    .receive('timeout', () => { console.log("Timeout") })
+
 ```
 
 The channel has two optional arguments - `slugs` and `metrics`. This way you can
 control and receive only data only for some of the slugs and the metrics:
 ```js
 // Subscribe to all price-related metrics, all slugs and all sources
-const channel = socket.channel(`metrics:price`, {}).join()
+const channel = socket.channel(`metrics:price`, {})
 // Subscribe to the given metrics and slugs and all sources
-const channel = socket.channel(`metrics:price`, {metrics: ['price_usd', 'price_btc'], slugs: ['bitcoin', 'ethereum']}).join()
+const channel = socket.channel(`metrics:price`, {metrics: ['price_usd', 'price_btc'], slugs: ['bitcoin', 'ethereum']})
 // Subscribe to all slugs and metrics and get only the data with source='cryptocompare'
-const channel = socket.channel(`metrics:price`, {sources: ['cryptocompare']}).join()
+const channel = socket.channel(`metrics:price`, {sources: ['cryptocompare']})
 // Create a channel without subscribing to anything. This requires further calls
 // to subscribe_slugs/metrics/sources.
-const channel = socket.channel(`metrics:price`, {slugs: [], metrics: [], sources: []}).join()
+const channel = socket.channel(`metrics:price`, {slugs: [], metrics: [], sources: []})
 ```
 
 By default, if no arguments are provided, all metrics, slugs and sources are

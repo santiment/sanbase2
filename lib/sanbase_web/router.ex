@@ -73,7 +73,7 @@ defmodule SanbaseWeb.Router do
         Absinthe.Plug.DocumentProvider.Default
       ],
       analyze_complexity: true,
-      max_complexity: 20_000,
+      max_complexity: 50_000,
       log_level: :info,
       before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
     )
@@ -90,7 +90,7 @@ defmodule SanbaseWeb.Router do
         Absinthe.Plug.DocumentProvider.Default
       ],
       analyze_complexity: true,
-      max_complexity: 20_000,
+      max_complexity: 50_000,
       interface: :simple,
       log_level: :info,
       before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}

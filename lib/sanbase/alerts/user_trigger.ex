@@ -89,9 +89,9 @@ defmodule Sanbase.Alert.UserTrigger do
     |> user_triggers_for()
   end
 
-  @spec triggers_count_for(%User{}) :: integer()
-  def triggers_count_for(user) do
-    from(ut in UserTrigger, where: ut.user_id == ^user.id, select: fragment("count(*)"))
+  @spec triggers_count_for(non_neg_integer()) :: integer()
+  def triggers_count_for(user_id) when is_integer(user_id) and user_id > 0 do
+    from(ut in UserTrigger, where: ut.user_id == ^user_id, select: fragment("count(*)"))
     |> Repo.one()
   end
 

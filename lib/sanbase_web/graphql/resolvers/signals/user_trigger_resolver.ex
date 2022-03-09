@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   alias Sanbase.Alert.{Trigger, UserTrigger}
   alias Sanbase.Telegram
   alias SanbaseWeb.Graphql.SanbaseDataloader
+  alias Sanbase.Billing.Plan.SanbaseAccessChecker
 
   def project(%{slug: slug}, _args, %{context: %{loader: loader}}) do
     loader
@@ -36,9 +37,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   end
 
   def create_trigger(_root, args, %{
-        context: %{auth: %{current_user: current_user}}
+        context: %{auth: %{current_user: current_user} = auth}
       }) do
-    do_create_trigger(current_user, args)
+    # Can be :free, :pro or :pro_plus. If we reach here then the
+    # authentication has been done via the JWT token, so the plan
+    # is actually a sanbase plan
+    sanbase_plan = auth[:plan]
+    triggers_count = UserTrigger.triggers_count_for(current_user.id)
+
+    can_create? =
+      cond do
+        sanbase_plan == :free and
+            triggers_count >= SanbaseAccessChecker.alerts_limit(:free) ->
+          {:error,
+           "Sanbase FREE plan has a limit of #{SanbaseAccessChecker.alerts_limit(:free)} alerts."}
+
+        sanbase_plan == :pro and
+            triggers_count >= SanbaseAccessChecker.alerts_limit(:pro) ->
+          {:error,
+           "Sanbase PRO plan has a limit of #{SanbaseAccessChecker.alerts_limit(:pro)} alerts."}
+
+        sanbase_plan == :pro_plus and
+            triggers_count >= SanbaseAccessChecker.alerts_limit(:pro_plus) ->
+          {:error,
+           "Sanbase PRO+ plan has a limit of #{triggers_count >= SanbaseAccessChecker.alerts_limit(:pro_plus)} alerts."}
+
+        true ->
+          true
+      end
+
+    case can_create? do
+      true -> do_create_trigger(current_user, args)
+      {:error, error} -> {:error, error}
+    end
   end
 
   def update_trigger(_root, args, %{
@@ -103,7 +134,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
   def public_triggers_for_user(_root, args, _resolution) do
     public_triggers =
-      args.user_id |> UserTrigger.public_triggers_for() |> Enum.map(&transform_user_trigger/1)
+      args.user_id
+      |> UserTrigger.public_triggers_for()
+      |> Enum.map(&transform_user_trigger/1)
 
     {:ok, public_triggers}
   end

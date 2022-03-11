@@ -1,7 +1,7 @@
 defmodule Sanbase.Balance do
   import __MODULE__.SqlQuery
 
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
   import Sanbase.Clickhouse.HistoricalBalance.Utils,
     only: [maybe_update_first_balance: 2, maybe_fill_gaps_last_seen_balance: 1]
@@ -19,7 +19,13 @@ defmodule Sanbase.Balance do
   return the first, max, min and last balances for an `interval` period
   of time starting with that datetime.
   """
-  @spec historical_balance_ohlc(list(address), slug, DateTime.t(), DateTime.t(), interval) ::
+  @spec historical_balance_ohlc(
+          list(address),
+          slug,
+          DateTime.t(),
+          DateTime.t(),
+          interval
+        ) ::
           {:ok,
            list(%{
              datetime: DateTime.t(),
@@ -33,7 +39,7 @@ defmodule Sanbase.Balance do
 
   def historical_balance_ohlc(address, slug, from, to, interval) do
     with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
-      address = transform_address(address, blockchain)
+      address = Sanbase.BlockchainAddress.to_internal_format(address)
 
       do_historical_balance_ohlc(
         address,
@@ -52,11 +58,12 @@ defmodule Sanbase.Balance do
   return the last balance that is associated with that datetime.s
   """
   @spec historical_balance(address, slug, DateTime.t(), DateTime.t(), interval) ::
-          {:ok, list(%{datetime: DateTime.t(), balance: number()})} | {:error, String.t()}
+          {:ok, list(%{datetime: DateTime.t(), balance: number()})}
+          | {:error, String.t()}
   def historical_balance(address, slug, from, to, interval)
       when is_binary(address) do
     with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
-      address = transform_address(address, blockchain)
+      address = Sanbase.BlockchainAddress.to_internal_format(address)
 
       do_historical_balance(
         address,
@@ -88,7 +95,10 @@ defmodule Sanbase.Balance do
 
   def balance_change(address_or_addresses, slug, from, to) do
     with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
-      addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
+      addresses =
+        address_or_addresses
+        |> List.wrap()
+        |> Sanbase.BlockchainAddress.to_internal_format()
 
       do_balance_change(addresses, slug, decimals, blockchain, from, to)
     end
@@ -102,7 +112,13 @@ defmodule Sanbase.Balance do
   transfers between those wallets can be ignored and only transfers going outside
   the set or coming in are counted.
   """
-  @spec historical_balance_changes(list(address), slug, DateTime.t(), DateTime.t(), interval) ::
+  @spec historical_balance_changes(
+          list(address),
+          slug,
+          DateTime.t(),
+          DateTime.t(),
+          interval
+        ) ::
           {:ok,
            list(%{
              datetime: DateTime.t(),
@@ -115,7 +131,10 @@ defmodule Sanbase.Balance do
 
   def historical_balance_changes(address_or_addresses, slug, from, to, interval) do
     with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
-      addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
+      addresses =
+        address_or_addresses
+        |> List.wrap()
+        |> Sanbase.BlockchainAddress.to_internal_format()
 
       do_historical_balance_changes(
         addresses,
@@ -137,7 +156,10 @@ defmodule Sanbase.Balance do
           {:ok, %{address => number()}} | {:error, String.t()}
   def last_balance_before(address_or_addresses, slug, datetime) do
     with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
-      addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
+      addresses =
+        address_or_addresses
+        |> List.wrap()
+        |> Sanbase.BlockchainAddress.to_internal_format()
 
       do_last_balance_before(addresses, slug, decimals, blockchain, datetime)
     end
@@ -151,8 +173,10 @@ defmodule Sanbase.Balance do
   @spec assets_held_by_address(address) ::
           {:ok, list(%{slug: slug, balance: number()})} | {:error, String.t()}
   def assets_held_by_address(address) do
-    address = transform_address(address, :unknown)
+    address = Sanbase.BlockchainAddress.to_internal_format(address)
     {query, args} = assets_held_by_address_query(address)
+
+    hidden_projects_slugs = hidden_projects_slugs()
 
     ClickhouseRepo.query_transform(query, args, fn [slug, balance] ->
       %{
@@ -160,6 +184,70 @@ defmodule Sanbase.Balance do
         balance: balance
       }
     end)
+    |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
+  end
+
+  def total_usd_value_held_by_address(address) do
+    case usd_value_held_by_address(address) do
+      {:ok, data} ->
+        total_usd_value = data |> Enum.map(&(&1.usd_value || 0.0)) |> Enum.sum()
+
+        {:ok, total_usd_value}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def usd_value_held_by_address(address) do
+    address = Sanbase.BlockchainAddress.to_internal_format(address)
+    {query, args} = usd_value_held_by_address_query(address)
+    hidden_projects_slugs = hidden_projects_slugs()
+
+    ClickhouseRepo.query_transform(query, args, fn [slug, balance, price_usd, usd_value] ->
+      %{
+        slug: slug,
+        balance: balance,
+        price_usd: price_usd,
+        usd_value: usd_value
+      }
+    end)
+    |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
+    |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.usd_value, :desc) end)
+  end
+
+  def usd_value_address_change(address, datetime) do
+    address = Sanbase.BlockchainAddress.to_internal_format(address)
+    {query, args} = usd_value_address_change_query(address, datetime)
+    hidden_projects_slugs = hidden_projects_slugs()
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn [
+           slug,
+           previous_balance,
+           current_balance,
+           previous_price_usd,
+           current_price_usd,
+           previous_usd_value,
+           current_usd_value
+         ] ->
+        %{
+          slug: slug,
+          previous_balance: previous_balance,
+          current_balance: current_balance,
+          balance_change: previous_balance - current_balance,
+          previous_price_usd: previous_price_usd,
+          current_price_usd: current_price_usd,
+          previous_usd_value: previous_usd_value,
+          current_usd_value: current_usd_value,
+          usd_value_change: previous_usd_value - current_usd_value
+        }
+      end
+    )
+    |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
+    |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.usd_value_change, :desc) end)
   end
 
   @doc ~s"""
@@ -198,10 +286,11 @@ defmodule Sanbase.Balance do
   Return the first datetime for which there is a balance record for a
   given address/slug pair.
   """
-  @spec first_datetime(address, slug) :: {:ok, DateTime.t()} | {:error, String.t()}
+  @spec first_datetime(address, slug) ::
+          {:ok, DateTime.t()} | {:error, String.t()}
   def first_datetime(address, slug) do
     with {:ok, {_decimals, _infr, blockchain}} <- info_by_slug(slug) do
-      address = transform_address(address, blockchain)
+      address = Sanbase.BlockchainAddress.to_internal_format(address)
 
       {query, args} = first_datetime_query(address, slug, blockchain)
 
@@ -220,7 +309,10 @@ defmodule Sanbase.Balance do
   def current_balance(address_or_addresses, slug) do
     with {:ok, {decimals, infr, blockchain}} <- info_by_slug(slug),
          {:ok, table} <- realtime_balances_table_or_nil(slug, infr) do
-      addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
+      addresses =
+        address_or_addresses
+        |> List.wrap()
+        |> Sanbase.BlockchainAddress.to_internal_format()
 
       do_current_balance(addresses, slug, decimals, blockchain, table)
     end
@@ -325,16 +417,16 @@ defmodule Sanbase.Balance do
   end
 
   defp do_last_balance_before(
-         address_or_addresse,
+         address_or_addresses,
          slug,
          decimals,
          blockchain,
          datetime
        ) do
     addresses =
-      address_or_addresse
+      address_or_addresses
       |> List.wrap()
-      |> Enum.map(&transform_address(&1, blockchain))
+      |> Sanbase.BlockchainAddress.to_internal_format()
 
     {query, args} = last_balance_before_query(addresses, slug, decimals, blockchain, datetime)
 
@@ -431,25 +523,6 @@ defmodule Sanbase.Balance do
     |> maybe_fill_gaps_last_seen_balance()
   end
 
-  defp transform_address("0x" <> _rest = address, :unknown),
-    do: String.downcase(address)
-
-  defp transform_address(address, :unknown) when is_binary(address), do: address
-
-  defp transform_address(addresses, :unknown) when is_list(addresses),
-    do: addresses |> List.flatten() |> Enum.map(&transform_address(&1, :unknown))
-
-  defp transform_address(address, "ethereum") when is_binary(address),
-    do: String.downcase(address)
-
-  defp transform_address(addresses, "ethereum") when is_list(addresses),
-    do: addresses |> List.flatten() |> Enum.map(&String.downcase/1)
-
-  defp transform_address(address, _) when is_binary(address), do: address
-
-  defp transform_address(addresses, _) when is_list(addresses),
-    do: List.flatten(addresses)
-
   defp info_by_slug(slug) do
     case Project.contract_info_infrastructure_by_slug(slug) do
       {:ok, _contract, decimals, infr} ->
@@ -476,4 +549,15 @@ defmodule Sanbase.Balance do
   # so the division of 10^0 will do nothing.
   defp maybe_override_decimals("ethereum", decimals), do: decimals
   defp maybe_override_decimals(_blockchain, _decimal), do: 0
+
+  defp hidden_projects_slugs() do
+    {:ok, hidden_projects_slugs} =
+      Sanbase.Cache.get_or_store(:hidden_projects_slugs, fn ->
+        mapset = Sanbase.Model.Project.List.hidden_projects_slugs() |> MapSet.new()
+
+        {:ok, mapset}
+      end)
+
+    hidden_projects_slugs
+  end
 end

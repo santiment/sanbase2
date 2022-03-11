@@ -21,7 +21,7 @@ defmodule Sanbase.Intercom do
   @users_page_size 100
 
   def sync_intercom_to_kafka do
-    if intercom_api_key() do
+    if has_intercom_api_key?() do
       Logger.info("Start sync_intercom_to_kafka")
 
       from(u in User, order_by: [asc: u.id], select: u.id)
@@ -94,7 +94,7 @@ defmodule Sanbase.Intercom do
     # Skip if api key not present in env. (Run only on production)
     all_users_stats = all_users_stats()
 
-    if intercom_api_key() do
+    if has_intercom_api_key?() do
       1..user_pages()
       |> Stream.flat_map(fn page ->
         users_by_page(page, @users_page_size)
@@ -120,6 +120,11 @@ defmodule Sanbase.Intercom do
 
   def intercom_api_key() do
     Config.get(:api_key)
+  end
+
+  def has_intercom_api_key?() do
+    apikey = intercom_api_key()
+    is_binary(apikey) and apikey != ""
   end
 
   # helpers

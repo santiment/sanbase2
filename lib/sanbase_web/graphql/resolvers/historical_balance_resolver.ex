@@ -38,6 +38,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     end
   end
 
+  def usd_value_address_change(_root, args, _resolution) do
+    selector = args_to_address_selector(args)
+
+    case HistoricalBalance.usd_value_address_change(selector, args.datetime) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, error} ->
+        {:error,
+         handle_graphql_error("Assets held by address", selector.address, error,
+           description: "address"
+         )}
+    end
+  end
+
   defp args_to_address_selector(args) do
     case Map.get(args, :selector) do
       nil ->

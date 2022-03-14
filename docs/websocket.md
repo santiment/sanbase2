@@ -108,6 +108,10 @@ contain the provided pattern in their username. If only prefix/suffix matching
 is done, this can be controlled by changing the search pattern like this:
 `pattern%` (search prefix) or `%pattern` (search suffix).
 
+The `size` argument controls how many results should be returned. The `size`
+number of closest usernames are returned. Closeness is measured with [Jaro
+distance](https://en.wikipedia.org/wiki/Jaro%E2%80%93Winkler_distance).
+
 ```js
 const channel = socket.channel(`users:common`, {})
 channel.join()
@@ -116,7 +120,7 @@ channel.join()
     .receive('timeout', () => { console.log("Timeout") })
 
 channel
-    .push('search_by_username_pattern', {username_pattern: "ivan"}, PUSH_TIMEOUT)
+    .push('users_by_username_pattern', {username_pattern: "ivan", size: 10}, PUSH_TIMEOUT)
     .receive('ok', ({users}) => {
        for (let {username, id, name, avatarUrl} of users){
          console.log(`id: ${id}, username: ${username}, name: ${name}, avatarUrl: ${avatarUrl}`)

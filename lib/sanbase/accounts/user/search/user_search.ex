@@ -3,7 +3,7 @@ defmodule Sanbase.Accounts.Search do
 
   alias Sanbase.Accounts.User
 
-  def by_username(username) do
+  def by_username(username, size) do
     username_pattern =
       case String.starts_with?(username, "%") or String.ends_with?(username, "%") do
         true -> username
@@ -21,5 +21,6 @@ defmodule Sanbase.Accounts.Search do
     )
     |> Sanbase.Repo.all()
     |> Enum.sort_by(fn u -> String.jaro_distance(u.username, username) end, :desc)
+    |> Enum.take(size)
   end
 end

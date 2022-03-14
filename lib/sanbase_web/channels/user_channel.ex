@@ -15,9 +15,16 @@ defmodule SanbaseWeb.UserChannel do
     end
   end
 
-  def handle_in("users_by_username_pattern", %{"username_pattern" => username_pattern}, socket) do
-    user_maps = Sanbase.Accounts.Search.by_username(username_pattern)
+  def handle_in(
+        "users_by_username_pattern",
+        %{"username_pattern" => username_pattern} = params,
+        socket
+      ) do
+    size = Map.get(params, "size", 20)
+    user_maps = Sanbase.Accounts.Search.by_username(username_pattern, size)
+
     response = %{"users" => user_maps}
+
     {:reply, {:ok, response}, socket}
   end
 

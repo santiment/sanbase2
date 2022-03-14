@@ -54,6 +54,7 @@ defmodule Sanbase.Alert.Scheduler do
       type
       |> UserTrigger.get_active_triggers_by_type()
       |> filter_receivable_triggers(info_map)
+      |> filter_not_frozen_triggers(info_map)
 
     # The batches are run sequentially for now. If they start running in parallel
     # the batches creation becomes more complicated - all the alerts of a user
@@ -193,6 +194,28 @@ defmodule Sanbase.Alert.Scheduler do
     """)
   end
 
+  # Do not execute alerts that are frozen. Frozen alerts are alerts
+  # that were created more than X days ago and their owner is a free user.
+  # This is the current restriction about alerts of free users.
+  defp filter_not_frozen_triggers(user_triggers, info_map) do
+    %{type: type, run_uuid: run_uuid} = info_map
+
+    filtered =
+      Enum.reject(user_triggers, fn %{trigger: trigger} ->
+        Map.get(trigger, :is_frozen, false)
+      end)
+
+    total_count = length(user_triggers)
+    frozen_count = total_count - length(filtered)
+
+    Logger.info("""
+    [#{run_uuid}] In total #{frozen_count}/#{total_count} active receivable alerts of type \
+    #{type} are frozen and won't be processed.
+    """)
+
+    filtered
+  end
+
   defp filter_receivable_triggers(user_triggers, info_map) do
     %{type: type, run_uuid: run_uuid} = info_map
 
@@ -202,11 +225,17 @@ defmodule Sanbase.Alert.Scheduler do
 
         channels != [] and
           Enum.any?(channels, fn
-            "email" -> Sanbase.Accounts.User.can_receive_email_alert?(user)
-            "telegram" -> Sanbase.Accounts.User.can_receive_telegram_alert?(user)
-            # The other types - telegram channel and webhooks are always enabled
-            # and cannot be disabled by some settings.
-            _ -> true
+            "email" ->
+              Sanbase.Accounts.User.can_receive_email_alert?(user)
+
+            "telegram" ->
+              Sanbase.Accounts.User.can_receive_telegram_alert?(user)
+
+            %{"webhook" => webhook_url} ->
+              match?(:ok, Sanbase.Validation.valid_url?(webhook_url))
+
+            _ ->
+              true
           end)
       end)
 
@@ -296,7 +325,7 @@ defmodule Sanbase.Alert.Scheduler do
 
   defp update_trigger_last_triggered(user_trigger, last_triggered) do
     {:ok, updated_user_trigger} =
-      UserTrigger.update_user_trigger(user_trigger.user, %{
+      UserTrigger.update_user_trigger(user_trigger.user.id, %{
         id: user_trigger.id,
         last_triggered: last_triggered,
         settings: user_trigger.trigger.settings

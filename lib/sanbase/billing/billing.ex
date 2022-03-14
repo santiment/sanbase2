@@ -51,7 +51,7 @@ defmodule Sanbase.Billing do
   @doc ~s"""
   Sync the locally defined Products and Plans with stripe.
 
-  This acction assings a `stripe_id` to every product and plan without which
+  This acction assigns a `stripe_id` to every product and plan without which
   no subscription can succeed.
 
   In order to create the Products and Plans locally, the seed
@@ -112,5 +112,26 @@ defmodule Sanbase.Billing do
 
       {:ok, user}
     end
+  end
+
+  def get_sanbase_pro_user_ids() do
+    sanbase_user_ids_mapset =
+      Subscription.get_direct_sanbase_pro_user_ids()
+      |> MapSet.new()
+
+    linked_user_id_pairs = Sanbase.Accounts.LinkedUser.get_all_user_id_pairs()
+
+    user_ids_inherited_sanbase_pro =
+      Enum.reduce(linked_user_id_pairs, MapSet.new(), fn pair, acc ->
+        {primary_user_id, secondary_user_id} = pair
+
+        case primary_user_id in sanbase_user_ids_mapset do
+          true -> MapSet.put(acc, secondary_user_id)
+          false -> acc
+        end
+      end)
+
+    result = MapSet.union(sanbase_user_ids_mapset, user_ids_inherited_sanbase_pro)
+    {:ok, result}
   end
 end

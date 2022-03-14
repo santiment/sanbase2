@@ -109,8 +109,14 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     end
 
     field :logout, :logout do
-      middleware(JWTAuth, allow_access: true)
-      resolve(fn _, _ -> {:ok, %{success: true}} end)
+      middleware(JWTAuth, allow_access_without_terms_accepted: true)
+
+      resolve(fn root, args, res ->
+        {:ok, true} = AuthResolver.revoke_current_refresh_token(root, args, res)
+
+        {:ok, %{success: true}}
+      end)
+
       middleware(CreateOrDeleteSession)
     end
 
@@ -138,7 +144,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     field :change_username, :user do
       arg(:username, non_null(:string))
 
-      middleware(JWTAuth)
+      middleware(JWTAuth, allow_access_without_terms_accepted: true)
       resolve(&UserResolver.change_username/3)
     end
 
@@ -186,7 +192,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:marketing_accepted, :boolean)
 
       # Allow this mutation to be executed when the user has not accepted the privacy policy.
-      middleware(JWTAuth, allow_access: true)
+      middleware(JWTAuth, allow_access_without_terms_accepted: true)
       resolve(&UserResolver.update_terms_and_conditions/3)
     end
 

@@ -12,6 +12,11 @@ config :sanbase, Sanbase.Alerts.Scheduler,
   timeout: 30_000,
   overlap: false,
   jobs: [
+    # Enable the freezing cron job only after the frontend handles the frozen alerts
+    # freeze_user_alerts: [
+    #   schedule: "0 5 * * *",
+    #   task: {Sanbase.Alert.Job, :freeze_alerts, []}
+    # ],
     price_volume_difference_sonar_alert: [
       schedule: "1-59/5 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.PriceVolumeDifferenceTriggerSettings]}
@@ -165,5 +170,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       # run once every 6 hours
       schedule: "0 */6 * * *",
       task: {Sanbase.Cryptocompare.Jobs, :move_finished_jobs, []}
+    ],
+    export_metrics_csv: [
+      schedule: "0 5 * * *",
+      task: {Sanbase.MetricExporter.CSV, :export, []}
     ]
   ]

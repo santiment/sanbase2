@@ -162,8 +162,9 @@ defmodule Sanbase.Comments.EntityComment do
     all_feed_comments_query()
     |> exclude_wallet_hunters_comments()
     |> exclude_not_public_insights()
+    |> exclude_not_public_chart_configurations()
     |> apply_cursor(cursor)
-    |> order_by([c], [{^order, c.inserted_at}, {^order, c.id}])
+    |> order_by([c], [{^order, c.id}])
     |> limit(^limit)
     |> Repo.all()
     |> transform_entity_list_to_singular()
@@ -217,6 +218,22 @@ defmodule Sanbase.Comments.EntityComment do
         on: post_comment.post_id == post.id,
         where: post.state != "approved" or post.ready_state != "published",
         select: post_comment.comment_id
+      )
+
+    from(
+      c in query,
+      where: c.id not in subquery(subquery)
+    )
+  end
+
+  defp exclude_not_public_chart_configurations(query) do
+    subquery =
+      from(
+        chart_configuration_comment in ChartConfigurationComment,
+        left_join: config in Sanbase.Chart.Configuration,
+        on: chart_configuration_comment.chart_configuration_id == config.id,
+        where: config.is_public != true,
+        select: chart_configuration_comment.comment_id
       )
 
     from(

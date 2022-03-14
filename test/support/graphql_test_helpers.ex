@@ -161,6 +161,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     map_as_input_object? = Keyword.get(opts, :map_as_input_object, false)
 
     map = Map.delete(map, :map_as_input_object)
+    map = Map.new(map, fn {k, v} -> {Inflex.camelize(k, :lower), v} end)
 
     Enum.map(map, fn
       {k, [%{} | _] = l} ->
@@ -237,6 +238,9 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
         selector
     end
   end
+
+  defp add_missing_selector(:contract_address, selector),
+    do: Map.put(selector, :contract_address, "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098")
 
   defp add_missing_selector(:label_fqn, selector),
     do: Map.put(selector, :label_fqn, "santiment/owner->Coinbase:v1")

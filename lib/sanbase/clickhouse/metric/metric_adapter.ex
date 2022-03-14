@@ -36,7 +36,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @incomplete_data_map FileHandler.incomplete_data_map()
   @selectors_map FileHandler.selectors_map()
   @required_selectors_map FileHandler.required_selectors_map()
-  @metric_to_name_map FileHandler.metric_to_name_map()
+  @metric_to_names_map FileHandler.metric_to_names_map()
   @deprecated_metrics_map FileHandler.deprecated_metrics_map()
   @default_complexity_weight 0.3
 
@@ -79,7 +79,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   def timeseries_data(metric, %{slug: slug}, from, to, interval, opts) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
-    filters = Keyword.get(opts, :additional_filters, [])
+
+    # FIXME: Some of the `nft` metrics need additional filter for `owner=opensea`
+    # to show correct values. Remove after fixed by bigdata.
+    filters =
+      if String.starts_with?(metric, "nft_") do
+        [owner: "opensea"]
+      else
+        Keyword.get(opts, :additional_filters, [])
+      end
 
     {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation, filters)
 
@@ -197,10 +205,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     {query, args} = available_metrics_for_slug_query(slug)
 
     ClickhouseRepo.query_transform(query, args, fn [metric] ->
-      Map.get(@metric_to_name_map, metric)
+      Map.get(@metric_to_names_map, metric)
     end)
     |> maybe_apply_function(fn metrics ->
-      MapSet.intersection(@metrics_mapset, MapSet.new(metrics))
+      metrics
+      |> List.flatten()
+      |> MapSet.new()
+      |> MapSet.intersection(@metrics_mapset)
       |> Enum.to_list()
     end)
   end

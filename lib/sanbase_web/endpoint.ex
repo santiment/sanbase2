@@ -14,10 +14,7 @@ defmodule SanbaseWeb.Endpoint do
     signing_salt: "grT-As16"
   ]
 
-  socket("/socket", SanbaseWeb.UserSocket,
-    # or list of options
-    websocket: true
-  )
+  socket("/socket", SanbaseWeb.UserSocket, websocket: true, check_origin: false)
 
   socket("/live", Phoenix.LiveView.Socket,
     websocket: [

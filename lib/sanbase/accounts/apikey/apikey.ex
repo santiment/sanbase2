@@ -35,14 +35,22 @@ defmodule Sanbase.Accounts.Apikey do
       {:ok, user}
     else
       {:valid?, _} ->
-        {:error, "Apikey '#{apikey}' is not valid"}
+        {:error, "Apikey '#{mask_apikey(apikey)}' is not valid"}
 
       {:user?, _} ->
-        {:error, "Apikey '#{apikey}' is not valid"}
+        {:error, "Apikey '#{mask_apikey(apikey)}' is not valid"}
 
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  def mask_apikey(apikey) do
+    apikey_length = String.length(apikey)
+    # All between the first 6 chars and the last 2 chars will be hidden
+    hide_what = String.slice(apikey, 6, apikey_length - (6 + 2))
+    hide_with = String.duplicate("*", String.length(hide_what))
+    String.replace(apikey, hide_what, hide_with)
   end
 
   @doc ~s"""

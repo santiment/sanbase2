@@ -48,6 +48,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
         insights(isPulse: true) {
           id
           text
+          pulseText
           readyState
         }
       }
@@ -64,12 +65,14 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
         %{
           "id" => published.id,
           "readyState" => "#{published.ready_state}",
-          "text" => "#{published.text}"
+          "text" => "#{published.text}",
+          "pulseText" => "#{published.text}"
         },
         %{
           "id" => draft.id,
           "readyState" => "#{draft.ready_state}",
-          "text" => "#{draft.text}"
+          "text" => "#{draft.text}",
+          "pulseText" => "#{draft.text}"
         }
       ]
       |> Enum.sort_by(& &1["id"])
@@ -87,13 +90,19 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     {
       insight(id: #{post.id}) {
         text
+        pulseText
       }
     }
     """
 
-    result = conn |> post("/graphql", query_skeleton(query, "post"))
+    insight =
+      conn
+      |> post("/graphql", query_skeleton(query, "post"))
+      |> json_response(200)
+      |> get_in(["data", "insight"])
 
-    assert json_response(result, 200)["data"]["insight"] |> Map.get("text") == post.text
+    assert insight |> Map.get("text") == post.text
+    assert insight |> Map.get("pulseText") == post.text
   end
 
   test "getting pulse insight by id for anon user", %{user: user} do
@@ -103,7 +112,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     query = """
     {
       insight(id: #{post.id}) {
-        state,
+        state
         createdAt
         updatedAt
       }
@@ -276,8 +285,9 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     query = """
     {
       allInsightsUserVoted(user_id: #{user.id}, isPulse: true) {
-        id,
+        id
         text
+        pulseText
       }
     }
     """
@@ -290,6 +300,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
 
     assert result |> Enum.count() == 1
     assert result |> hd() |> Map.get("text") == post.text
+    assert result |> hd() |> Map.get("pulseText") == post.text
   end
 
   test "get all insights by a list of tags", %{user: user} do
@@ -335,6 +346,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
           id
           title
           text
+          pulseText
           user { id }
           votes{ totalVotes }
           state
@@ -414,6 +426,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
               id
               title
               text
+              pulseText
               tags { name }
           }
         }
@@ -449,6 +462,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
               id
               title
               text
+              pulseText
               tags { name }
           }
         }

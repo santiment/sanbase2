@@ -6,6 +6,7 @@ defmodule Sanbase.Billing.Subscription do
   """
   use Ecto.Schema
 
+  import Ecto.Query
   import Ecto.Changeset
   import Sanbase.Billing.EventEmitter, only: [emit_event: 3]
 
@@ -106,10 +107,11 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   def update_subscription_db(subscription, params) do
-    subscription
-    |> changeset(params)
+    changeset = subscription |> changeset(params)
+
+    changeset
     |> Repo.update()
-    |> emit_event(:update_subscription, %{})
+    |> emit_event(:update_subscription, %{changeset: changeset})
   end
 
   @doc """
@@ -271,6 +273,13 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.all()
   end
 
+  def user_subscription_names(user) do
+    user_subscriptions(user)
+    |> Enum.map(fn %{plan: %{name: plan_name, product: %{name: product_name}}} ->
+      "#{product_name} / #{plan_name}"
+    end)
+  end
+
   @doc """
   List active subcriptions' product ids
   """
@@ -289,10 +298,44 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.all()
   end
 
+  def user_sanbase_plan(user_id) do
+    case get_user_subscription(user_id, @product_sanbase) do
+      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> name
+      _ -> nil
+    end
+  end
+
+  def get_direct_sanbase_pro_user_ids() do
+    __MODULE__
+    |> Query.all_active_and_trialing_subscriptions()
+    |> Query.filter_product_id(@product_sanbase)
+    |> select([sub], sub.user_id)
+    |> Sanbase.Repo.all()
+  end
+
   def user_has_sanbase_pro?(user_id) do
-    case current_subscription(user_id, @product_sanbase) do
-      %__MODULE__{plan: %{name: name}} when name in ["PRO", "PRO_PLUS"] -> true
+    case get_user_subscription(user_id, @product_sanbase) do
+      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> true
       _ -> false
+    end
+  end
+
+  @spec get_user_subscription(any, any) :: {:error, any} | {:ok, any}
+  def get_user_subscription(user_id, product_id) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_user_id, fn _repo, _changes ->
+      case Sanbase.Accounts.LinkedUser.get_primary_user_id(user_id) do
+        {:ok, primary_user_id} -> {:ok, primary_user_id}
+        {:error, _} -> {:ok, user_id}
+      end
+    end)
+    |> Ecto.Multi.run(:get_current_subscription, fn _repo, %{get_user_id: user_id} ->
+      {:ok, current_subscription(user_id, product_id)}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{get_current_subscription: subscription}} -> {:ok, subscription}
+      {:error, _name, error, _} -> {:error, error}
     end
   end
 

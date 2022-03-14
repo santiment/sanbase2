@@ -3,6 +3,8 @@ import Config
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 
+config :phoenix, :stacktrace_depth, 60
+
 config :sanbase,
   influx_store_enabled: false,
   available_slugs_module: Sanbase.DirectAvailableSlugs
@@ -49,6 +51,7 @@ config :sanbase, Sanbase.Repo,
   pool_size: 5
 
 config :sanbase, Sanbase.ClickhouseRepo,
+  clickhouse_repo_enabled?: false,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",
   pool_size: 5

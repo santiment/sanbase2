@@ -1,0 +1,4 @@
+Field name,Date Type,Description,Primary key,Foreign key
+identifier,string,Cryptocurrency name,Y,N
+datetime,datetime,Datetime mark,Y,N
+percentOfTotalSupplyOnExchanges,decimal,Supply on exchanges shows the percentage of the total circulating supply of the token located in known exchange wallets.,N,N

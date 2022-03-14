@@ -14,6 +14,12 @@ defmodule Sanbase.Accounts.ApiKeyTest do
     }
   end
 
+  test "masking apikey" do
+    apikey = String.duplicate("x", 16) <> "_" <> String.duplicate("y", 16)
+    masked_apikey = Apikey.mask_apikey(apikey)
+    assert masked_apikey == "xxxxxx*************************yy"
+  end
+
   test "get user by apikey", %{user: user} do
     {:ok, apikey} = Apikey.generate_apikey(user)
     {:ok, retrieved_user} = Apikey.apikey_to_user(apikey)
@@ -25,7 +31,7 @@ defmodule Sanbase.Accounts.ApiKeyTest do
     {:ok, apikey} = Apikey.generate_apikey(user)
     apikey = apikey <> "s"
     {:error, error} = Apikey.apikey_to_user(apikey)
-    assert error =~ "Apikey '#{apikey}' is not valid"
+    assert error =~ "Apikey '#{Apikey.mask_apikey(apikey)}' is not valid"
   end
 
   # Won't find the token in the db
@@ -33,14 +39,16 @@ defmodule Sanbase.Accounts.ApiKeyTest do
     {:ok, apikey} = Apikey.generate_apikey(user)
     apikey = "s" <> apikey
     {:error, error} = Apikey.apikey_to_user(apikey)
-    assert error =~ "Apikey '#{apikey}' is not valid"
+    assert error =~ "Apikey '#{Apikey.mask_apikey(apikey)}' is not valid"
   end
 
   # Splitting the apikey will fail
   test "fail when the apikey cannot be split properly" do
     apikey = "notproperlyformatedapikey"
     {:error, error} = Apikey.apikey_to_user("notproperlyformatedapikey")
-    assert error =~ "Apikey '#{apikey}' is malformed"
+
+    assert error =~
+             "Apikey '#{apikey}' is malformed - it must have two string parts separated by underscore"
   end
 
   test "revoke apikey", %{user: user} do
@@ -51,7 +59,9 @@ defmodule Sanbase.Accounts.ApiKeyTest do
 
     # Revoke the apikey and expect it to be non valid
     :ok = Apikey.revoke_apikey(user, apikey)
-    assert {:error, "Apikey '#{apikey}' is not valid"} == Apikey.apikey_to_user(apikey)
+
+    assert {:error, "Apikey '#{Apikey.mask_apikey(apikey)}' is not valid"} ==
+             Apikey.apikey_to_user(apikey)
   end
 
   test "get list of apikeys", %{user: user} do

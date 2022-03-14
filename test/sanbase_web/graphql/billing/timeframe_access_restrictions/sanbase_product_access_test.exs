@@ -293,11 +293,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   end
 
   describe "for SANbase when alerts limit reached" do
-    test "user with FREE plan cannot create new trigger", context do
-      assert create_trigger_mutation_with_error(context) ==
-               SanbaseAccessChecker.alerts_limits_upgrade_message()
-    end
-
     test "user with BASIC plan can create new trigger", context do
       insert(:subscription_pro_sanbase, user: context.user)
 

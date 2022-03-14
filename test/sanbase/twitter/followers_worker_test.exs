@@ -6,6 +6,7 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
   import Sanbase.DateTimeUtils, only: [generate_dates_inclusive: 2, date_to_datetime: 1]
 
   alias Sanbase.Twitter
+  alias Sanbase.Model.Project
 
   setup do
     Sanbase.InMemoryKafka.Producer.clear_state()
@@ -19,9 +20,9 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
     %{slugs: slugs} = context
 
     now = Timex.now()
-    from = Timex.shift(now, days: -9) |> DateTime.to_date()
+    from = Timex.shift(now, days: -9)
 
-    data = data(from, DateTime.to_date(now))
+    data = data(DateTime.to_date(from), DateTime.to_date(now))
 
     Sanbase.Mock.prepare_mock2(&Twitter.MetricAdapter.available_slugs/0, {:ok, slugs})
     |> Sanbase.Mock.prepare_mock2(&Twitter.MetricAdapter.first_datetime/2, {:ok, from})
@@ -50,7 +51,7 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
       # Try to run the same jobs again
       Sanbase.Twitter.FollowersScheduler.add_jobs()
 
-      # Assert that the jobs are not enqueued the secont time around
+      # Assert that the jobs are not enqueued the second time around
       for slug <- slugs do
         refute_enqueued(
           worker: Sanbase.Twitter.FollowersWorker,
@@ -97,8 +98,10 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
   end
 
   defp transform_to_export_data_for_slug(slug, data) do
+    {:ok, twitter_handle} = Project.by_slug(slug) |> Project.twitter_handle()
+
     data
-    |> Stream.map(&Map.put(&1, :slug, slug))
+    |> Enum.map(&Map.put(&1, :twitter_handle, twitter_handle))
     |> Stream.map(&Sanbase.Twitter.TimeseriesPoint.new/1)
     |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.json_kv_tuple/1)
   end

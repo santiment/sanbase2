@@ -2,12 +2,19 @@ defmodule Sanbase.Twitter.FollowersWorker do
   alias Sanbase.Twitter
 
   import Sanbase.DateTimeUtils,
-    only: [generate_dates_inclusive: 2, date_to_datetime: 1, date_to_datetime: 2]
+    only: [
+      generate_dates_inclusive: 2,
+      date_to_datetime: 1,
+      date_to_datetime: 2,
+      from_iso8601!: 1
+    ]
 
   use Oban.Worker,
     queue: :twitter_followers_migration_queue
 
   require Sanbase.Utils.Config, as: Config
+
+  alias Sanbase.Model.Project
 
   def queue(), do: :twitter_followers_migration_queue
 
@@ -15,7 +22,7 @@ defmodule Sanbase.Twitter.FollowersWorker do
   def perform(%Oban.Job{args: args}) do
     %{"slug" => slug, "from" => from} = args
 
-    from = Date.from_iso8601!(from)
+    from = from |> from_iso8601!() |> DateTime.to_date()
     to = Timex.now() |> DateTime.to_date()
 
     case get_data(slug, from, to) do
@@ -58,13 +65,21 @@ defmodule Sanbase.Twitter.FollowersWorker do
     end
   end
 
-  defp export_data(slug, data) do
+  def export_data(slug, data) do
     topic = Config.module_get!(Sanbase.KafkaExporter, :twitter_followers_topic)
 
-    data
-    |> Stream.map(&Map.put(&1, :slug, slug))
-    |> Stream.map(&Sanbase.Twitter.TimeseriesPoint.new/1)
-    |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.json_kv_tuple/1)
-    |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(topic)
+    project = Project.by_slug(slug)
+
+    case Project.twitter_handle(project) do
+      {:ok, twitter_handle} ->
+        data
+        |> Enum.map(&Map.put(&1, :twitter_handle, twitter_handle))
+        |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.new/1)
+        |> Enum.map(&Sanbase.Twitter.TimeseriesPoint.json_kv_tuple/1)
+        |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(topic)
+
+      {:error, _} ->
+        :ok
+    end
   end
 end

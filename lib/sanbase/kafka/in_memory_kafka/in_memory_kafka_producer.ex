@@ -23,11 +23,15 @@ defmodule Sanbase.InMemoryKafka.Producer do
 
   @impl SanExporterEx.ProducerBehaviour
   def send_data(producer \\ @kafka_producer, topic, data) do
-    Agent.update(producer, fn state ->
-      Map.update(state, topic, List.wrap(data), fn topic_data ->
-        List.wrap(data) ++ topic_data
-      end)
-    end)
+    Agent.update(
+      producer,
+      fn state ->
+        Map.update(state, topic, List.wrap(data), fn topic_data ->
+          List.wrap(data) ++ topic_data
+        end)
+      end,
+      30_000
+    )
   end
 
   @impl SanExporterEx.ProducerBehaviour

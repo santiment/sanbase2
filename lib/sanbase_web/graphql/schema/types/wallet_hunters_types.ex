@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
 
   object :wallet_hunters_vote do
     field(:proposal_id, :id)
-    field(:user, :user)
+    field(:user, :public_user)
     field(:transaction_id, :string)
     field(:transaction_status, :string)
   end

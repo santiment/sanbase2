@@ -73,14 +73,15 @@ defmodule SanbaseWeb.Router do
         Absinthe.Plug.DocumentProvider.Default
       ],
       analyze_complexity: true,
-      max_complexity: 20_000,
+      max_complexity: 50_000,
       log_level: :info,
       before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
     )
 
     forward(
       "/graphiql",
-      Absinthe.Plug.GraphiQL,
+      # Use own version of the plug with fixed XSS vulnerability
+      SanbaseWeb.Graphql.GraphiqlPlug,
       json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
       socket: SanbaseWeb.UserSocket,
@@ -89,7 +90,7 @@ defmodule SanbaseWeb.Router do
         Absinthe.Plug.DocumentProvider.Default
       ],
       analyze_complexity: true,
-      max_complexity: 20_000,
+      max_complexity: 50_000,
       interface: :simple,
       log_level: :info,
       before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}

@@ -29,10 +29,16 @@ config :sanbase, SanbaseWeb.Plug.BasicAuth,
   password: {:system, "ADMIN_BASIC_AUTH_PASSWORD", "admin"}
 
 config :sanbase, Sanbase.Transfers.Erc20Transfers,
-  dt_ordered_table: {:system, "DT_ORDERED_ERC20_TRANFERS_TABLE", "erc20_transfers_new"},
+  dt_ordered_table: {:system, "DT_ORDERED_ERC20_TRANFERS_TABLE", "erc20_transfers_dt_order"},
   address_ordered_table: {:system, "ADDRESS_ORDERED_ERC20_TRANSFERS_TABLE", "erc20_transfers"}
 
+config :sanbase, Sanbase.Price.Validator, enabled: {:system, "PRICE_VALIDATOR_ENABLED", true}
+
 config :sanbase, Sanbase.Cryptocompare, api_key: {:system, "CRYPTOCOMPARE_API_KEY"}
+
+config :sanbase, Sanbase.Kafka,
+  kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
+  kafka_port: {:system, "KAFKA_PORT", "9092"}
 
 config :sanbase, Sanbase.KafkaExporter,
   supervisor: SanExporterEx.Producer.Supervisor,
@@ -190,6 +196,8 @@ config :sanbase, SanbaseWeb.Graphql.Middlewares.AccessControl,
   restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},
   restrict_from_in_days: {:system, "RESTRICT_FROM_IN_MONTHS", "90"}
 
+config :sanbase, Sanbase.MetricExporter.S3, bucket: {:system, "METRICS_EXPORTER_S3_BUCKET"}
+
 config :libcluster,
   topologies: [
     k8s: [
@@ -234,6 +242,19 @@ config :kaffy,
   otp_app: :sanbase,
   ecto_repo: Sanbase.Repo,
   router: SanbaseWeb.Router
+
+config :sanbase, Sanbase.Kafka.Consumer,
+  enabled?: {:system, "KAFKA_CONSUMER_ENABLED", false},
+  metrics_stream_topic: {:system, "KAFKA_METRIC_STREAM_TOPIC", "sanbase_combined_metrics"},
+  consumer_group_basename: {:system, "KAFKA_CONSUMER_GROUP_BASENAME", "sanbase_kafka_consumer"}
+
+config :kaffe,
+  consumer: [
+    message_handler: Sanbase.Kafka.MessageProcessor,
+    async_message_ack: false,
+    start_with_earliest_message: false,
+    offset_reset_policy: :reset_to_latest
+  ]
 
 # Import configs
 import_config "ueberauth_config.exs"

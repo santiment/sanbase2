@@ -3,8 +3,12 @@ defmodule Sanbase.Application.Web do
   require Logger
 
   def init() do
+    # Overwrite kaffe consumer group with a new name
+    Sanbase.Kafka.Consumer.init()
+
     # API metrics
     SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.install(SanbaseWeb.Graphql.Schema)
+
     SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.install(SanbaseWeb.Graphql.Schema)
   end
 
@@ -16,6 +20,7 @@ defmodule Sanbase.Application.Web do
   def children() do
     # Define workers and child supervisors to be supervised
     children = [
+      # Start GraphQL subscriptions
       {Absinthe.Subscription, SanbaseWeb.Endpoint},
 
       # Start the graphQL in-memory cache
@@ -43,6 +48,17 @@ defmodule Sanbase.Application.Web do
            [name: Sanbase.ClusterSupervisor]
          ]},
         [:prod]
+      ),
+      # Start the Kaffe Kafka Consumer group member supervisor
+      start_if(
+        fn ->
+          %{
+            id: Kaffe.GroupMemberSupervisor,
+            start: {Kaffe.GroupMemberSupervisor, :start_link, []},
+            type: :supervisor
+          }
+        end,
+        fn -> Sanbase.Kafka.Consumer.enabled?() end
       )
     ]
 

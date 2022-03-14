@@ -64,8 +64,14 @@ defimpl Sanbase.Alert, for: Any do
     %{id: user_trigger_id} = trigger
 
     fun = fn identifier, payload ->
-      payload = transform_payload(payload, trigger.id, :webhook)
-      do_send_webhook(webhook_url, identifier, payload, user_trigger_id)
+      case Sanbase.Validation.valid_url?(webhook_url) do
+        :ok ->
+          payload = transform_payload(payload, trigger.id, :webhook)
+          do_send_webhook(webhook_url, identifier, payload, user_trigger_id)
+
+        {:error, reason} ->
+          {:error, %{reason: :webhook_url_not_valid, error: reason}}
+      end
     end
 
     send_or_limit("webhook", trigger, max_alerts_to_send, fun)

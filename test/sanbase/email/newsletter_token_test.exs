@@ -11,7 +11,7 @@ defmodule Sanbase.Email.NewsletterTokenTest do
       nt = insert(:newsletter_token)
 
       {:ok, nt2} = NewsletterToken.verify_token(nt.email, nt.token)
-      assert Timex.diff(Timex.now(), nt2.email_token_validated_at, :seconds) < 1
+      assert Timex.diff(Timex.now(), nt2.email_token_validated_at, :seconds) <= 1
     end
 
     test "expired token" do

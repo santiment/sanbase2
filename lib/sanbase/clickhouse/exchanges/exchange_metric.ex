@@ -73,14 +73,14 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
           metric_name,
           argMax( value, computed_at ) AS value2
 
-        FROM intraday_label_based_metrics FINAL
+        FROM intraday_label_based_metrics
 
-        ANY LEFT JOIN (
-          SELECT name AS metric_name, metric_id FROM metric_metadata FINAL
-          ) USING metric_id
+        ANY LEFT JOIN ( SELECT name AS metric_name, metric_id FROM metric_metadata FINAL ) USING metric_id
         PREWHERE
           #{asset_id_filter(slug_or_slugs, argument_position: 1)} AND
           label IN ('deposit', 'centralized_exchange', 'decentralized_exchange') AND
+          dt < now() AND
+          dt != toDateTime('1970-01-01 00:00:00') AND
           (
             (
               metric_id IN (
@@ -98,10 +98,8 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
                 PREWHERE name IN ('labelled_exchange_balance')
               )
             )
-          ) AND
-          dt < now() AND
-          dt != toDateTime('1970-01-01 00:00:00')
-        GROUP BY asset_id, label, owner, dt, metric_name
+          )
+        GROUP BY asset_id, metric_id, label, owner, dt, metric_name
       )
       #{if(additional_filters_str != "", do: "WHERE #{additional_filters_str}")}
       GROUP BY asset_id, label, owner

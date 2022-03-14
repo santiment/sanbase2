@@ -53,6 +53,30 @@ defmodule SanbaseWeb.Graphql.AuthApiTest do
     end)
   end
 
+  test "the refresh token is invalidated after logout", context do
+    assert %{"data" => %{"logout" => %{"success" => true}}} =
+             context.conn
+             |> post("/graphql", mutation_skeleton("mutation{ logout{ success } }"))
+             |> json_response(200)
+
+    new_now = DateTime.utc_now() |> DateTime.to_unix() |> Kernel.+(320)
+
+    # Guardian uses System.system_time(:second) in the expiry checks
+    Sanbase.Mock.prepare_mock2(&System.system_time/1, new_now)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      conn_same_tokens = Plug.Test.init_test_session(build_conn(), context.jwt_tokens)
+
+      result =
+        conn_same_tokens
+        |> post("/graphql", query_skeleton("{ currentUser{ id } }"))
+        |> json_response(200)
+
+      # The access token is expired and the JWT token cannot be used to generate
+      # a new one as it is also expired
+      assert result["data"]["currentUser"] == nil
+    end)
+  end
+
   test "the refresh token cannot issue new access tokens after 4 weeks",
        context do
     # The refresh token TTL is 4 weeks (28 days)

@@ -3,6 +3,11 @@ defmodule Sanbase.Clickhouse.Label do
   Labeling addresses
   """
 
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+
+  import Sanbase.Metric.SqlQuery.Helper,
+    only: [label_id_by_label_fqn_filter: 2, label_id_by_label_key_filter: 2]
+
   @type label :: %{
           name: String.t(),
           metadata: String.t()
@@ -21,7 +26,76 @@ defmodule Sanbase.Clickhouse.Label do
     SELECT DISTINCT(label) FROM blockchain_address_labels PREWHERE blockchain = ?1
     """
 
-    Sanbase.ClickhouseRepo.query_transform(query, [blockchain], fn [label] -> label end)
+    Sanbase.ClickhouseRepo.query_transform(query, [blockchain], fn [label] ->
+      label
+    end)
+  end
+
+  def addresses_by_labels(label_fqn_or_fqns, opts \\ [])
+
+  def addresses_by_labels(label_fqn_or_fqns, opts) do
+    blockchain = Keyword.get(opts, :blockchain)
+
+    label_fqns = label_fqn_or_fqns |> List.wrap() |> Enum.map(&String.downcase/1)
+
+    {query, args} = addresses_by_label_fqns_query(label_fqns, blockchain)
+
+    Sanbase.ClickhouseRepo.query_reduce(
+      query,
+      args,
+      %{},
+      fn [address, blockchain, label_fqn], acc ->
+        Map.update(acc, {address, blockchain}, [label_fqn], &[label_fqn | &1])
+      end
+    )
+    |> maybe_apply_function(fn address_blockchain_labels_map ->
+      apply_addresses_labels_combinator(address_blockchain_labels_map, label_fqns, opts)
+    end)
+  end
+
+  def addresses_by_label_keys(label_key_or_keys, opts \\ [])
+
+  def addresses_by_label_keys(label_key_or_keys, opts) do
+    blockchain = Keyword.get(opts, :blockchain)
+
+    label_keys = label_key_or_keys |> List.wrap() |> Enum.map(&String.downcase/1)
+
+    {query, args} = addresses_by_label_keys_query(label_keys, blockchain)
+
+    Sanbase.ClickhouseRepo.query_reduce(
+      query,
+      args,
+      %{},
+      fn [address, blockchain, label_fqn], acc ->
+        Map.update(acc, {address, blockchain}, [label_fqn], &[label_fqn | &1])
+      end
+    )
+    |> maybe_apply_function(fn address_blockchain_labels_map ->
+      apply_addresses_labels_combinator(address_blockchain_labels_map, label_keys, [])
+    end)
+  end
+
+  defp apply_addresses_labels_combinator(
+         address_blockchain_labels_map,
+         label_fqns,
+         opts
+       ) do
+    case Keyword.get(opts, :labels_combinator, :or) do
+      :or ->
+        address_blockchain_labels_map
+
+      :and ->
+        # Reject all addresses that don't have all the required label_fqns
+        Enum.reject(address_blockchain_labels_map, fn {_address_blockchain, address_label_fqns} ->
+          Enum.any?(label_fqns, &(&1 not in address_label_fqns))
+        end)
+    end
+    |> Enum.map(fn {{address, blockchain}, _labels} ->
+      %{
+        address: address,
+        infrastructure: Sanbase.BlockchainAddress.infrastructure_from_blockchain(blockchain)
+      }
+    end)
   end
 
   def add_labels(_, []), do: {:ok, []}
@@ -32,17 +106,19 @@ defmodule Sanbase.Clickhouse.Label do
     {query, args} = addresses_labels_query(slug, blockchain, addresses)
 
     result =
-      Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
-        label = %{name: label, metadata: metadata, origin: "santiment"}
-        Map.update(acc, address, [label], &[label | &1])
-      end)
+      Sanbase.ClickhouseRepo.query_reduce(
+        query,
+        args,
+        %{},
+        fn [address, label, metadata], acc ->
+          label = %{name: label, metadata: metadata, origin: "santiment"}
+          Map.update(acc, address, [label], &[label | &1])
+        end
+      )
 
     case result do
-      {:ok, labels_map} ->
-        {:ok, do_add_labels(maps, labels_map)}
-
-      {:error, reason} ->
-        {:error, reason}
+      {:ok, labels_map} -> {:ok, do_add_labels(maps, labels_map)}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -52,17 +128,82 @@ defmodule Sanbase.Clickhouse.Label do
     blockchain = slug_to_blockchain(slug)
     {query, args} = addresses_labels_query(slug, blockchain, addresses)
 
-    Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
-      label = %{name: label, metadata: metadata, origin: "santiment"}
-      Map.update(acc, address, [label], &[label | &1])
-    end)
+    Sanbase.ClickhouseRepo.query_reduce(
+      query,
+      args,
+      %{},
+      fn [address, label, metadata], acc ->
+        label = %{name: label, metadata: metadata, origin: "santiment"}
+        Map.update(acc, address, [label], &[label | &1])
+      end
+    )
   end
 
   # Private functions
 
   # For backwards compatibility, if the slug is nil treat it as ethereum blockchain
   def slug_to_blockchain(nil), do: "ethereum"
-  def slug_to_blockchain(slug), do: Sanbase.Model.Project.slug_to_blockchain(slug)
+
+  def slug_to_blockchain(slug),
+    do: Sanbase.Model.Project.slug_to_blockchain(slug)
+
+  def addresses_by_label_fqns_query(label_fqns, _blockchain = nil) do
+    query = """
+    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    FROM label_addresses
+    PREWHERE
+      #{label_id_by_label_fqn_filter(label_fqns, argument_position: 1)}
+    GROUP BY address, blockchain, label_id
+    LIMIT 20000
+    """
+
+    args = [label_fqns]
+    {query, args}
+  end
+
+  def addresses_by_label_fqns_query(label_fqns, blockchain) do
+    query = """
+    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    FROM label_addresses
+    PREWHERE
+      #{label_id_by_label_fqn_filter(label_fqns, argument_position: 1)} AND
+      blockchain = ?2
+    GROUP BY address, blockchain, label_id
+    LIMIT 20000
+    """
+
+    args = [label_fqns, blockchain]
+    {query, args}
+  end
+
+  def addresses_by_label_keys_query(label_keys, _blockchain = nil) do
+    query = """
+    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    FROM label_addresses
+    PREWHERE
+      #{label_id_by_label_key_filter(label_keys, argument_position: 1)}
+    GROUP BY address, blockchain, label_id
+    LIMIT 20000
+    """
+
+    args = [label_keys]
+    {query, args}
+  end
+
+  def addresses_by_label_keys_query(label_keys, blockchain) do
+    query = """
+    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    FROM label_addresses
+    PREWHERE
+      #{label_id_by_label_key_filter(label_keys, argument_position: 1)} AND
+      blockchain = ?2
+    GROUP BY address, blockchain, label_id
+    LIMIT 20000
+    """
+
+    args = [label_keys, blockchain]
+    {query, args}
+  end
 
   defp addresses_labels_query(slug, "ethereum", addresses) do
     query = create_addresses_labels_query(slug)
@@ -79,9 +220,13 @@ defmodule Sanbase.Clickhouse.Label do
   defp addresses_labels_query(_slug, blockchain, addresses) do
     query = """
     SELECT address, label, metadata
-    FROM blockchain_address_labels FINAL
-    PREWHERE blockchain = ?1 AND address IN (?2)
-    HAVING sign = 1
+    FROM(
+      SELECT address, label, argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
+      FROM blockchain_address_labels
+      PREWHERE blockchain = ?1 AND address IN (?2)
+      GROUP BY blockchain, asset_id, label, address
+      HAVING sign = 1
+    )
     """
 
     {query, [blockchain, addresses]}

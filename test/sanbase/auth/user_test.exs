@@ -464,8 +464,8 @@ defmodule Sanbase.Accounts.UserTest do
 
     refute changeset.valid?
 
-    assert errors_on(changeset)[:username] |> Enum.at(0) ==
-             "username can contain only valid ASCII symbols."
+    assert errors_on(changeset)[:username] |> Enum.at(0) =~
+             "Username must contain only valid ASCII symbols"
   end
 
   test "trim whitespace on username" do
@@ -549,7 +549,7 @@ defmodule Sanbase.Accounts.UserTest do
 
     assert errors_on(changeset)[:avatar_url] ==
              [
-               "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+               "URL 'something invalid' is missing a scheme (e.g. https)"
              ]
   end
 

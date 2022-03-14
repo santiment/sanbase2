@@ -8,16 +8,11 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   alias Sanbase.Billing.Plan
   alias Sanbase.Alert.UserTrigger
 
-  @alerts_limits_upgrade_message """
-  You have reached the maximum number of allowed alerts for your current subscription plan.
-  Please upgrade to PRO subscription plan for unlimited alerts.
-  """
-
   @free_plan_stats %{
     historical_data_in_days: 2 * 365,
     realtime_data_cut_off_in_days: 30,
     alerts: %{
-      limit: 10
+      limit: 3
     },
     sangraphs_access: false
   }
@@ -25,11 +20,13 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   @pro_plan_stats %{
     realtime_data_cut_off_in_days: 0,
     alerts: %{
-      limit: :no_limit
+      limit: 20
     },
     access_paywalled_insights: true,
     sangraphs_access: true
   }
+
+  @pro_plus_plan_stats @pro_plan_stats |> Map.put(:alerts, %{limit: 1000})
 
   @basic_plan_stats Map.merge(@free_plan_stats, %{access_paywalled_insights: true})
 
@@ -50,21 +47,6 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     |> get_in([:alerts, :limit])
   end
 
-  def alerts_limits_not_reached?(user, subscription) do
-    created_alerts_count = UserTrigger.triggers_count_for(user)
-
-    subscription.plan
-    |> Plan.plan_atom_name()
-    |> alerts_limit()
-    |> case do
-      :no_limit -> true
-      limit when is_integer(limit) and created_alerts_count >= limit -> false
-      _ -> true
-    end
-  end
-
-  def alerts_limits_upgrade_message(), do: @alerts_limits_upgrade_message
-
   def can_access_paywalled_insights?(nil), do: false
 
   def can_access_paywalled_insights?(subscription) do
@@ -79,7 +61,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
       :free -> @free_plan_stats
       :basic -> @basic_plan_stats
       :pro -> @pro_plan_stats
-      :pro_plus -> @pro_plan_stats
+      :pro_plus -> @pro_plus_plan_stats
       :premium -> @custom_plan_stats
       :custom -> @custom_plan_stats
     end

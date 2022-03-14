@@ -73,13 +73,13 @@ defmodule Sanbase.ApiCallLimit.ETS do
   # Private functions
 
   defp do_get_quota(entity_type, entity, entity_key) do
-    lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity, entity_key}, 5_000)
+    lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity_type, entity_key}, 5_000)
 
     result =
       case :ets.lookup(@ets_table, entity_key) do
         [] ->
           # No data stored yet. Initialize by checking the postgres
-          get_quota_db_and_update_ets(entity_type, entity, entity_key)
+          get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
 
         [{^entity_key, :rate_limited, error_map}] ->
           # Try again after `retry_again_after` datetime in case something changed.
@@ -93,28 +93,24 @@ defmodule Sanbase.ApiCallLimit.ETS do
             :lt ->
               # Update the `blocked_for_seconds` field in order to properly return
               # the report the time left until unblocked
-              error_map =
-                error_map
-                |> Map.put(
-                  :blocked_for_seconds,
-                  abs(DateTime.diff(error_map.blocked_until, now))
-                )
+              blocked_for_seconds = DateTime.diff(error_map.blocked_until, now) |> abs()
+              error_map = Map.put(error_map, :blocked_for_seconds, blocked_for_seconds)
 
               {:error, error_map}
 
             _ ->
-              get_quota_db_and_update_ets(entity_type, entity, entity_key)
+              get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
           end
 
-        [{^entity_key, :infinity, :infinity, metadata, _refresh_after}] ->
+        [{^entity_key, :infinity, :infinity, metadata, _refresh_after_datetime}] ->
           # The entity does not have rate limits applied
           {:ok, %{metadata | quota: :infinity}}
 
-        [{^entity_key, api_calls_remaining, quota, _metadata, _refresh_after}]
+        [{^entity_key, api_calls_remaining, quota, _metadata, _refresh_after_datetime}]
         when api_calls_remaining <= 0 ->
           # The in-memory quota has been exhausted. The api calls made are
-          # recorded in postgres and a new quota is obtained. api_calls_remaining
-          # works both with positive and negative api calls remaining.
+          # recorded in postgres and a new quota is obtained. api_calls_remaing
+          # is subtracted as it's negative and
           {:ok, _} =
             ApiCallLimit.update_usage_db(
               entity_type,
@@ -122,13 +118,22 @@ defmodule Sanbase.ApiCallLimit.ETS do
               quota - api_calls_remaining
             )
 
-          get_quota_db_and_update_ets(entity_type, entity, entity_key)
+          get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
 
-        [{^entity_key, api_calls_remaining, _quota, metadata, refresh_after}] ->
+        [{^entity_key, api_calls_remaining, quota, metadata, refresh_after_datetime}] ->
           # The in-memory quota is not exhausted.
-          case DateTime.compare(DateTime.utc_now(), refresh_after) do
-            :gt -> get_quota_db_and_update_ets(entity_type, entity, entity_key)
-            _ -> {:ok, %{metadata | quota: api_calls_remaining}}
+          case DateTime.compare(DateTime.utc_now(), refresh_after_datetime) do
+            :gt ->
+              {:ok, _} =
+                ApiCallLimit.update_usage_db(entity_type, entity, quota - api_calls_remaining)
+
+              # If some time has passed and the quota is not exhausted, update the
+              # quota in order to synchronize with the central DB. This synchronizes
+              # the API calls made by other pods
+              get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
+
+            _ ->
+              {:ok, %{metadata | quota: api_calls_remaining}}
           end
       end
 
@@ -138,29 +143,38 @@ defmodule Sanbase.ApiCallLimit.ETS do
   end
 
   defp do_update_usage(entity_type, entity, entity_key, count) do
-    lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity, entity_key}, 5_000)
+    lock = Mutex.await(Sanbase.ApiCallLimitMutex, {entity_type, entity_key}, 5_000)
 
     case :ets.lookup(@ets_table, entity_key) do
       [] ->
         {:ok, _} = ApiCallLimit.update_usage_db(entity_type, entity, count)
-
-        get_quota_db_and_update_ets(entity_type, entity, entity_key)
+        get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
 
         :ok
 
-      [{^entity_key, :infinity, :infinity, _metadata, _refresh_after}] ->
+      [{^entity_key, :infinity, :infinity, _metadata, _refresh_after_datetime}] ->
         :ok
 
       [{^entity_key, :rate_limited, _error_map}] ->
         :ok
 
-      [{^entity_key, api_calls_remaining, quota, _metadata, _refresh_after}]
+      [{^entity_key, api_calls_remaining, quota, _metadata, _refresh_after_datetime}]
       when api_calls_remaining <= count ->
-        api_calls_made = quota - api_calls_remaining + count
-        {:ok, _} = ApiCallLimit.update_usage_db(entity_type, entity, api_calls_made)
-        get_quota_db_and_update_ets(entity_type, entity, entity_key)
+        # The remaining calls in the quota are less than the number of calls made now.
+        # Update the central DB, get a new quota and put in ETS
 
-      [{^entity_key, api_calls_remaining, _quota, metadata, _refresh_after}] ->
+        # This is the total amount of calls by which the central DB counter will be
+        # updated. This value is equal or greater than the aquired quota.
+        api_calls_made = quota - api_calls_remaining + count
+
+        # If this API calls fails, then the effect is that the current `count` of
+        # API calls won't be counted. This is ok as this behavior does not negatively
+        # impact the users - they should always have equal or more than API calls per
+        # minute/hour/month than the specified limits.
+        {:ok, _} = ApiCallLimit.update_usage_db(entity_type, entity, api_calls_made)
+        get_quota_from_db_and_update_ets(entity_type, entity, entity_key)
+
+      [{^entity_key, api_calls_remaining, _quota, metadata, _refresh_after_datetime}] ->
         true = do_upate_ets_usage(entity_key, api_calls_remaining, count, metadata)
 
         :ok
@@ -172,6 +186,10 @@ defmodule Sanbase.ApiCallLimit.ETS do
   defp do_upate_ets_usage(entity_key, api_calls_remaining, count, metadata) do
     remaining = metadata.api_calls_remaining
 
+    # This metadata is used for the HTTP headers only. The values here
+    # represent how many API calls are left for the current minute/hour/month.
+    # If the value is negative, it is increased to 0, which is the correct
+    # way to show that the limit is exhausted.
     metadata =
       Map.put(metadata, :api_calls_remaining, %{
         month: Enum.max([remaining.month - count, 0]),
@@ -189,27 +207,25 @@ defmodule Sanbase.ApiCallLimit.ETS do
     true = :ets.update_element(@ets_table, entity_key, {4, metadata})
   end
 
-  defp get_quota_db_and_update_ets(entity_type, entity, entity_key) do
+  defp get_quota_from_db_and_update_ets(entity_type, entity, entity_key) do
+    now = DateTime.utc_now()
+
     case ApiCallLimit.get_quota_db(entity_type, entity) do
       {:ok, %{quota: quota} = metadata} ->
-        now = DateTime.utc_now()
-        refresh_after = Timex.shift(now, seconds: 60 - now.second)
+        refresh_after_datetime = Timex.shift(now, seconds: 60 - now.second)
 
         true =
           :ets.insert(
             @ets_table,
-            {entity_key, quota, quota, metadata, refresh_after}
+            {entity_key, _api_calls_remaining = quota, quota, metadata, refresh_after_datetime}
           )
 
         {:ok, metadata}
 
-      {:error, %{} = error_map} ->
+      {:error, %{blocked_until: _} = error_map} ->
         retry_again_after =
           Enum.min(
-            [
-              error_map.blocked_until,
-              DateTime.add(DateTime.utc_now(), 60, :second)
-            ],
+            [error_map.blocked_until, DateTime.add(now, 60, :second)],
             DateTime
           )
 

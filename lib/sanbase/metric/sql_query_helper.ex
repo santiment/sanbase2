@@ -92,6 +92,31 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     "metric_id IN ( SELECT DISTINCT(metric_id) FROM metric_metadata FINAL PREWHERE name IN (?#{arg_position}) )"
   end
 
+  def label_id_by_label_fqn_filter(label_fqn, opts) when is_binary(label_fqn) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+    "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple(?#{arg_position}))"
+  end
+
+  def label_id_by_label_fqn_filter(label_fqns, opts) when is_list(label_fqns) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+
+    "label_id IN (
+      SELECT dictGetUInt64('default.label_ids_dict', 'label_id', tuple(fqn)) AS label_id
+      FROM system.one
+      ARRAY JOIN [?#{arg_position}] AS fqn
+    )"
+  end
+
+  def label_id_by_label_key_filter(label_key, opts) when is_binary(label_key) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+    "label_id IN (SELECT label_id FROM label_metadata PREWHERE key = ?#{arg_position})"
+  end
+
+  def label_id_by_label_key_filter(label_keys, opts) when is_list(label_keys) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+    "label_id IN (SELECT label_id FROM label_metadata PREWHERE key IN (?#{arg_position}))"
+  end
+
   # Add additional `=`/`in` filters to the query. This is mostly used with labeled
   # metrics where additional column filters must be applied.
   def additional_filters([], args, _opts), do: {"", args}

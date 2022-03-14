@@ -37,6 +37,8 @@ config :sanbase, Sanbase.ClickhouseRepo,
 # Do not print debug messages in production
 config :logger, level: :info
 
+config :sanbase, Sanbase.Kafka.Consumer, enabled?: {:system, "KAFKA_CONSUMER_ENABLED", true}
+
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
   limit: 5,

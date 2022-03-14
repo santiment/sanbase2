@@ -5,7 +5,6 @@ defmodule SanbaseWeb.UserSocket do
   import SanbaseWeb.ChannelUtils, only: [params_to_user: 1]
 
   # User-related channels
-  channel("users:common", SanbaseWeb.UserCommonChannel)
   channel("users:*", SanbaseWeb.UserChannel)
   channel("open_restricted_tabs:*", SanbaseWeb.OpenRestrictedTabChannel)
 

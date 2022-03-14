@@ -92,7 +92,7 @@ channel.join()
 channel
     .push('is_username_valid', {username: "ivan"}, PUSH_TIMEOUT)
     .receive('ok', ({ is_username_valid, reason }) => {
-        if is_username_valid === true {
+        if(is_username_valid === true){
             console.log('Username is valid')
         } else {
             console.log(`Username not valid. Reason: ${reason}`)

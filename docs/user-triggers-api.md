@@ -8,6 +8,7 @@
       - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-price_volume_difference)
       - [Example settings structure for `signal_data`](#example-settings-structure-for-signal_data)
       - [Example settings structure for `wallet_movement`](#example-settings-structure-for-wallet_movement)
+      - [Example settings structure for `wallet_usd_valuation`](#example-settings-structure-for-wallet_usd_valuation)
       - [Example settings structure for `metric_signal`](#example-settings-structure-for-metric_signal)
         - [Price data](#price-data)
         - [Social data](#social-data)
@@ -170,7 +171,7 @@ These are the fields describing a trigger.
 This alert is the successor of `eth_wallet`. It allows for a wider variety
 of blockchains and operations.
 
-The following blockchains are supported, identifier by `infrastructure`:
+The following blockchains are supported, identified by `infrastructure`:
 
 - (ETH) Ethereum
 - (BTC) Bitcoin
@@ -281,6 +282,37 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
   "selector": { "infrastructure": "BNB", "slug": "binance-coin" },
   "time_window": "1d",
   "operation": { "all_of": [{ "amount_down": 100 }, { "below": 500 }] }
+}
+```
+
+#### Example settings structure for `wallet_usd_valuation`
+
+This alert allows you to monitor the full USD valuation of an address over
+time. The USD valuation of an address is defined as the combined USD value of
+all the coins/tokens held by that address. When change is monitored, the price
+of the tokens at different point in time is used.
+
+The following blockchains are supported, identified by `infrastructure`:
+
+- (ETH) Ethereum
+- (BTC) Bitcoin
+- (BCH) Bitcoin Cash
+- (LTC) Litecoin
+- (EOS) EOS
+- (XRP) Ripple
+- (BNB) Binance Chain
+
+When working with the alert, provide the `infrastructure` in the selector and the
+address in the `target`
+```json
+// The USD valuation of the null address increased by $1 million in the past 24 hours
+{
+  "type": "wallet_usd_valuation",
+  "channel": "telegram",
+  "target": { "address": "0x0000000000000000000000000000000000000000" },
+  "time_window": "1d",
+  "selector": { "infrastructure": "ETH"},
+  "operation": { "amount_down": 1000000 }
 }
 ```
 

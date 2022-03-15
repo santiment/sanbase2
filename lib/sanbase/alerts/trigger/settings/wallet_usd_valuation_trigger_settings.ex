@@ -123,7 +123,11 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
           {prev + map.previous_usd_value, curr + map.current_usd_value}
         end)
 
-      {:ok, %{previous_usd_value: previous_usd_value, current_usd_value: current_usd_value}}
+      {:ok,
+       %{
+         previous_usd_value: previous_usd_value,
+         current_usd_value: current_usd_value
+       }}
     end)
   end
 
@@ -132,7 +136,8 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
 
     alias Sanbase.Alert.{OperationText, ResultBuilder}
 
-    def triggered?(%WalletUsdValuationTriggerSettings{triggered?: triggered}), do: triggered
+    def triggered?(%WalletUsdValuationTriggerSettings{triggered?: triggered}),
+      do: triggered
 
     def evaluate(%WalletUsdValuationTriggerSettings{} = settings, _trigger) do
       case WalletUsdValuationTriggerSettings.get_data(settings) do

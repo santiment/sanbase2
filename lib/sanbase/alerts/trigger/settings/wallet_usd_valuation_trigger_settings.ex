@@ -52,7 +52,7 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
 
   validates(:channel, &valid_notification_channel?/1)
   validates(:target, &valid_crypto_address?/1)
-  validates(:selector, &valid_historical_balance_selector?/1)
+  validates(:selector, &valid_infrastructure_selector?/1)
   validates(:operation, &valid_operation?/1)
   validates(:time_window, &valid_time_window?/1)
 
@@ -77,23 +77,24 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
     |> Enum.map(fn address ->
       address = Sanbase.BlockchainAddress.to_internal_format(address)
 
-      with {:ok, [%{address: ^address} = result]} <- usd_value_change(selector, address, from, to) do
+      selector = %{
+        address: address,
+        infrastructure: selector.infrastructure
+      }
+
+      with {:ok, %{} = result} <- usd_value_change(selector, from, to) do
         {address,
          [
            %{datetime: from, usd_value: result.previous_usd_value},
            %{datetime: to, usd_value: result.current_usd_value}
          ]}
       else
-        {:ok, [%{address: returned_address}]} ->
+        result ->
           raise("""
-          The address returned from usd_value_change in WalletUsdValuationTriggerSettings has \
-          different format than the provided address or it returned a completely \
-          different address. \
-          Got: #{inspect(returned_address)}, Expected: #{inspect(address)}
+          The result returned from usd_value_change in WalletUsdValuationTriggerSettings has \
+          different format than the expected one.
+          Got: #{inspect(result)}
           """)
-
-        _ ->
-          {:ok, []}
       end
     end)
     |> Enum.reject(&match?({:error, _}, &1))
@@ -107,23 +108,27 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
     {from, to}
   end
 
-  defp usd_value_change(selector, address, from, to) do
+  defp usd_value_change(selector, from, to) do
     cache_key =
-      {__MODULE__, :usd_value_change, selector, address, round_datetime(from), round_datetime(to)}
+      {__MODULE__, :usd_value_change, selector, round_datetime(from), round_datetime(to)}
       |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->
       # `to` is defined as Timex.now(). The function accepts only `from`
       # and automatically uses now() as `to`.
 
-      {:ok, data} = HistoricalBalance.usd_value_address_change(selector, address, from)
+      {:ok, data} = HistoricalBalance.usd_value_address_change(selector, from)
 
       {previous_usd_value, current_usd_value} =
         Enum.reduce(data, {0, 0}, fn map, {prev, curr} ->
           {prev + map.previous_usd_value, curr + map.current_usd_value}
         end)
 
-      {:ok, %{previous_usd_value: previous_usd_value, current_usd_value: current_usd_value}}
+      {:ok,
+       %{
+         previous_usd_value: previous_usd_value,
+         current_usd_value: current_usd_value
+       }}
     end)
   end
 
@@ -132,7 +137,8 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
 
     alias Sanbase.Alert.{OperationText, ResultBuilder}
 
-    def triggered?(%WalletUsdValuationTriggerSettings{triggered?: triggered}), do: triggered
+    def triggered?(%WalletUsdValuationTriggerSettings{triggered?: triggered}),
+      do: triggered
 
     def evaluate(%WalletUsdValuationTriggerSettings{} = settings, _trigger) do
       case WalletUsdValuationTriggerSettings.get_data(settings) do
@@ -153,7 +159,7 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
         settings.target
         |> Map.replace(
           :address,
-          Sanbase.BlockchainAddress.to_internal_format(settings.target, :address)
+          Sanbase.BlockchainAddress.to_internal_format(settings.target.address)
         )
 
       construct_cache_key([
@@ -177,8 +183,8 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
           operation: settings.operation,
           address: settings.target.address
         }
-        |> Map.merge(operation_kv)
-        |> Map.merge(curr_value_kv)
+        |> OperationText.merge_kvs(operation_kv)
+        |> OperationText.merge_kvs(curr_value_kv)
 
       template = """
       The address {{address}}'s total USD valuation has #{operation_template}.

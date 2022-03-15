@@ -76,6 +76,11 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
     |> Enum.map(fn address ->
       address = Sanbase.BlockchainAddress.to_internal_format(address)
 
+      selector = %{
+        address: address,
+        infrastructure: selector.infrastructure
+      }
+
       with {:ok, [%{address: ^address} = result]} <- balance_change(selector, address, from, to) do
         {address,
          [
@@ -210,9 +215,9 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
           operation: settings.operation,
           address: settings.target.address
         }
-        |> Map.merge(operation_kv)
-        |> Map.merge(curr_value_kv)
-        |> Map.merge(asset_target_blockchain_kv)
+        |> OperationText.merge_kvs(operation_kv)
+        |> OperationText.merge_kvs(curr_value_kv)
+        |> OperationText.merge_kvs(asset_target_blockchain_kv)
 
       template = """
       The address {{address}}'s {{asset}} balance on the {{target_blockchain}} blockchain has #{operation_template}.
@@ -240,9 +245,9 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
           project_slug: project.slug,
           operation: settings.operation
         }
-        |> Map.merge(operation_kv)
-        |> Map.merge(curr_value_kv)
-        |> Map.merge(asset_target_blockchain_kv)
+        |> OperationText.merge_kvs(operation_kv)
+        |> OperationText.merge_kvs(curr_value_kv)
+        |> OperationText.merge_kvs(asset_target_blockchain_kv)
 
       template = """
       🔔 \#{{project_ticker}} | **{{project_name}}**'s {{asset}} balance on the {{target_blockchain}} blockchain has #{operation_template}.

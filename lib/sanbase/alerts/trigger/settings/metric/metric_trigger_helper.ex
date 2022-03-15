@@ -144,8 +144,8 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
         metric_human_readable_name: human_readable_name,
         extra_explanation: settings.extra_explanation
       }
-      |> merge_maps(operation_kv)
-      |> merge_maps(curr_value_kv)
+      |> OperationText.merge_kvs(operation_kv)
+      |> OperationText.merge_kvs(curr_value_kv)
 
     template = """
     🔔 The search term '#{text}''s {{metric_human_readable_name}} #{operation_template}.
@@ -176,9 +176,9 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
         metric_human_readable_name: human_readable_name,
         extra_explanation: settings.extra_explanation
       }
-      |> merge_maps(operation_kv)
-      |> merge_maps(curr_value_kv)
-      |> merge_maps(details_kv)
+      |> OperationText.merge_kvs(operation_kv)
+      |> OperationText.merge_kvs(curr_value_kv)
+      |> OperationText.merge_kvs(details_kv)
 
     template = """
     🔔 The total market's {{metric_human_readable_name}} #{operation_template}* 💥
@@ -223,9 +223,9 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
         metric_human_readable_name: human_readable_name,
         extra_explanation: settings.extra_explanation
       }
-      |> merge_maps(operation_kv)
-      |> merge_maps(curr_value_kv)
-      |> merge_maps(details_kv)
+      |> OperationText.merge_kvs(operation_kv)
+      |> OperationText.merge_kvs(curr_value_kv)
+      |> OperationText.merge_kvs(details_kv)
 
     template = """
     🔔 [\#{{project_ticker}}]({{sanbase_project_link}}) | *{{project_name}}'s {{metric_human_readable_name}} #{operation_template}* 💥
@@ -238,13 +238,6 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
     template = settings.template || template
 
     {template, kv}
-  end
-
-  defp merge_maps(map1, map2) do
-    Map.merge(map1, map2, fn
-      :human_readable, l1, l2 -> Enum.uniq(l1 ++ l2)
-      _, _, l2 -> l2
-    end)
   end
 
   defp maybe_add_extra_explanation(nil), do: ""

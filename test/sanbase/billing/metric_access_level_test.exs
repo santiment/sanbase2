@@ -223,6 +223,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "stock_to_flow",
         "miners_total_supply",
         "percent_of_whale_stablecoin_total_supply",
+        "transaction_volume_in_profit",
+        "transaction_volume_in_loss",
+        "transaction_volume_profit_loss_ratio",
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",

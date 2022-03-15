@@ -177,9 +177,8 @@ The following blockchains are supported, identified by `infrastructure`:
 - (BTC) Bitcoin
 - (BCH) Bitcoin Cash
 - (LTC) Litecoin
-- (EOS) EOS
 - (XRP) Ripple
-- (BNB) Binance Chain
+- (BNB or BEP2) Binance Chain
 
 When working with `infrastructure` BTC, BCH or LTC no additional parameter is needed
 as there are no tokens on these blockchains.
@@ -298,9 +297,8 @@ The following blockchains are supported, identified by `infrastructure`:
 - (BTC) Bitcoin
 - (BCH) Bitcoin Cash
 - (LTC) Litecoin
-- (EOS) EOS
 - (XRP) Ripple
-- (BNB) Binance Chain
+- (BNB or BEP2) Binance Chain
 
 When working with the alert, provide the `infrastructure` in the selector and the
 address in the `target`

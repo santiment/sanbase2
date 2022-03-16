@@ -256,17 +256,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
         context: %{auth: %{current_user: current_user}}
       }) do
     with :ok <-
-           Sanbase.Labels.Api.add_labels_to_address(current_user.id, args.address, args.labels) do
+           Label.add_user_labels_to_address(current_user, args.selector, args.labels) do
       {:ok, true}
     end
-    |> maybe_handle_graphql_error(fn error ->
-      handle_graphql_error(
-        "Add labels for blockchain address",
-        args.address,
-        error,
-        description: "address"
-      )
-    end)
   end
 
   def labels(root, _args, %{context: %{loader: loader}}) do

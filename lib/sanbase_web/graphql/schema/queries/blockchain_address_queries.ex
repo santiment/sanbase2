@@ -181,7 +181,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
     end
 
     field :add_blockchain_address_labels, :boolean do
-      arg(:address, non_null(:string))
+      arg(:selector, non_null(:blockchain_address_selector_input_object))
       arg(:labels, non_null(list_of(:string)))
 
       middleware(JWTAuth)

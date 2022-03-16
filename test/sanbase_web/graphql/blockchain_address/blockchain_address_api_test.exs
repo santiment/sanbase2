@@ -180,8 +180,28 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
   end
 
   describe "add labels to blockchain address" do
-    test "when success", context do
-      assert add_blockchain_address_labels(context.conn, "0x1", ["whale", "dex trader"])
+    test "when user does not have username it returns error" do
+      user = insert(:user, username: nil)
+      conn2 = setup_jwt_auth(build_conn(), user)
+
+      mutation =
+        add_blockchain_address_labels_mutation(%{address: "0x1", infrastructure: "ETH"}, [
+          "whale",
+          "dex trader"
+        ])
+
+      assert execute_mutation_with_error(conn2, mutation) =~
+               "Username is required for creating custom address labels"
+    end
+
+    test "when user does have username it returns success", context do
+      mutation =
+        add_blockchain_address_labels_mutation(%{address: "0x1", infrastructure: "ETH"}, [
+          "whale",
+          "dex trader"
+        ])
+
+      assert execute_mutation(context.conn, mutation)
     end
   end
 
@@ -258,16 +278,14 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     |> json_response(200)
   end
 
-  defp add_blockchain_address_labels(conn, address, labels) do
-    mutation = """
+  defp add_blockchain_address_labels_mutation(selector, labels) do
+    """
     mutation {
       addBlockchainAddressLabels(
-        address: "#{address}"
+        selector: #{map_to_input_object_str(selector)}
         labels: #{string_list_to_string(labels)}
       )
     }
     """
-
-    execute_mutation(conn, mutation)
   end
 end

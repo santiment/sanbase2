@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
     }
 
     error =
-      execute_mutation(conn, create_watchlist_query(function: function))
+      do_execute_mutation(conn, create_watchlist_query(function: function))
       |> Map.get("errors")
       |> hd()
 
@@ -69,7 +69,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
     }
 
     error =
-      execute_mutation(
+      do_execute_mutation(
         conn,
         update_watchlist_query(id: watchlist.id, function: function)
       )
@@ -119,7 +119,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         {:ok, labels_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result = execute_mutation(conn, create_watchlist_query(function: function))
+        result = do_execute_mutation(conn, create_watchlist_query(function: function))
 
         user_list = result["data"]["createWatchlist"]
 
@@ -200,7 +200,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         {:ok, labels_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result = execute_mutation(conn, create_watchlist_query(function: function))
+        result = do_execute_mutation(conn, create_watchlist_query(function: function))
 
         user_list = result["data"]["createWatchlist"]
 
@@ -295,7 +295,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         {:ok, labels_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result = execute_mutation(conn, create_watchlist_query(function: function))
+        result = do_execute_mutation(conn, create_watchlist_query(function: function))
 
         user_list = result["data"]["createWatchlist"]
 
@@ -345,7 +345,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         {:ok, labels_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result = execute_mutation(conn, create_watchlist_query(function: function))
+        result = do_execute_mutation(conn, create_watchlist_query(function: function))
 
         user_list = result["data"]["createWatchlist"]
 
@@ -418,7 +418,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         {:ok, labels_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result = execute_mutation(conn, create_watchlist_query(function: function))
+        result = do_execute_mutation(conn, create_watchlist_query(function: function))
 
         user_list = result["data"]["createWatchlist"]
 
@@ -473,7 +473,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
         {:ok, labels_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result = execute_mutation(conn, create_watchlist_query(function: function))
+        result = do_execute_mutation(conn, create_watchlist_query(function: function))
 
         user_list = result["data"]["createWatchlist"]
 
@@ -571,7 +571,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressDynamicWatchlistTest do
     |> String.replace(~r|'|, ~S|"|)
   end
 
-  defp execute_mutation(conn, query) do
+  defp do_execute_mutation(conn, query) do
     conn
     |> post("/graphql", mutation_skeleton(query))
     |> json_response(200)

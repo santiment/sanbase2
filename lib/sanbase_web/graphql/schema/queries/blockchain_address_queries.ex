@@ -179,5 +179,14 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       middleware(JWTAuth)
       resolve(&BlockchainAddressResolver.update_blockchain_address_user_pair/3)
     end
+
+    field :add_blockchain_address_labels, :boolean do
+      arg(:selector, non_null(:blockchain_address_selector_input_object))
+      arg(:labels, non_null(list_of(:string)))
+
+      middleware(JWTAuth)
+
+      resolve(&BlockchainAddressResolver.add_blockchain_address_labels/3)
+    end
   end
 end

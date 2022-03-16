@@ -1799,5 +1799,62 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily On-Chain Transaction Volume in Profit",
+    "name": "transaction_volume_in_profit",
+    "metric": "transaction_volume_profit",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily On-Chain Transaction Volume in Loss",
+    "name": "transaction_volume_in_loss",
+    "metric": "transaction_volume_loss",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Ratio of Daily On-Chain Transaction Volume in Profit to Loss",
+    "name": "transaction_volume_profit_loss_ratio",
+    "metric": "transaction_volume_profit_loss_ratio",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
   }
 ]

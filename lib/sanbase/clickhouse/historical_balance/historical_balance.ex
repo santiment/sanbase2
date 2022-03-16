@@ -106,6 +106,32 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   end
 
   @doc ~s"""
+  Return a list of the assets that a given address currently holds or
+  has held in the past.
+
+  This can be combined with the historical balance query to see the historical
+  balance of all currently owned assets
+  """
+  @spec usd_value_held_by_address(map()) ::
+          {:ok, list(map())} | {:error, String.t()}
+  def usd_value_held_by_address(%{infrastructure: infr, address: address}) do
+    case selector_to_args(%{infrastructure: infr}) do
+      %{blockchain: blockchain}
+      when balances_aggregated_blockchain?(blockchain) ->
+        Sanbase.Balance.usd_value_held_by_address(address)
+
+      %{module: module} ->
+        module.usd_value_held_by_address(address)
+
+      {:error, error} ->
+        {:error, error}
+    end
+    |> maybe_apply_function(fn data ->
+      Enum.sort_by(data, &Map.get(&1, :current_usd_value), :desc)
+    end)
+  end
+
+  @doc ~s"""
   For a given address or list of addresses returns the `slug` balance change for the
   from-to period. The returned lists indicates the address, before balance, after balance
   and the balance change

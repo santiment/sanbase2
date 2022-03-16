@@ -507,28 +507,6 @@ defmodule Sanbase.Balance.SqlQuery do
     {query, args}
   end
 
-  def usd_value_held_by_address_query(address) do
-    # It has `name` and `balance` as fields
-    {query, args} = assets_held_by_address_query(address)
-
-    query = """
-    SELECT name, balance, price_usd, balance * price_usd AS usd_value
-    FROM (
-      #{query}
-    )
-    INNER JOIN
-    (
-      SELECT slug AS name, argMax(price_usd, dt) AS price_usd
-      FROM asset_prices_v3
-      PREWHERE dt >= now() - interval 12 hour
-      GROUP BY name
-    ) USING (name)
-    HAVING usd_value > 0
-    """
-
-    {query, args}
-  end
-
   def usd_value_address_change_query(address, datetime) do
     # It has `name` and `balance` as fields
     {query, args} = assets_held_by_address_changes_query(address, datetime)
@@ -552,6 +530,32 @@ defmodule Sanbase.Balance.SqlQuery do
         argMaxIf(price_usd, dt, dt <= toDateTime(?2)) AS previous_price_usd
       FROM asset_prices_v3
       PREWHERE (dt >= now() - interval 24 hour) OR (dt >= toDateTime(?2) - interval 24 hour AND dt <= toDateTime(?2))
+      GROUP BY name
+    ) USING (name)
+    """
+
+    {query, args}
+  end
+
+  def usd_value_held_by_address_query(address) do
+    # It has `name` and `balance` as fields
+    {query, args} = assets_held_by_address_query(address)
+
+    query = """
+    SELECT
+      name,
+      current_balance,
+      current_price_usd,
+      current_balance * current_price_usd AS current_usd_value
+    FROM (
+      #{query}
+    )
+    INNER JOIN
+    (
+      SELECT slug AS name,
+        argMax(price_usd, dt) AS current_price_usd,
+      FROM asset_prices_v3
+      PREWHERE (dt >= now() - interval 24 hour)
       GROUP BY name
     ) USING (name)
     """

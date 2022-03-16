@@ -24,7 +24,12 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
             target: "default",
             channel: nil,
             operation: nil,
-            state: nil,
+            # State keeps the list of assets the screener has had
+            # during the last check. On every run the newly generated
+            # list of assets is compared against the one stored in the
+            # state. If there is a difference, the alert is triggered.
+            state: %{},
+            # Private fields, not stored
             filtered_target: %{list: []},
             triggered?: false,
             payload: %{},
@@ -56,7 +61,6 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
   Return a list of the `settings.metric` values for the necessary time range
   """
   @spec get_data(ScreenerTriggerSettings.t()) :: list(String.t())
-
   def get_data(%__MODULE__{operation: %{selector: %{watchlist_id: watchlist_id}}}) do
     {:ok, slugs} =
       case Sanbase.UserList.by_id(watchlist_id, []) do

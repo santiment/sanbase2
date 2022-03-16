@@ -187,35 +187,6 @@ defmodule Sanbase.Balance do
     |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
   end
 
-  def total_usd_value_held_by_address(address) do
-    case usd_value_held_by_address(address) do
-      {:ok, data} ->
-        total_usd_value = data |> Enum.map(&(&1.usd_value || 0.0)) |> Enum.sum()
-
-        {:ok, total_usd_value}
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
-
-  def usd_value_held_by_address(address) do
-    address = Sanbase.BlockchainAddress.to_internal_format(address)
-    {query, args} = usd_value_held_by_address_query(address)
-    hidden_projects_slugs = hidden_projects_slugs()
-
-    ClickhouseRepo.query_transform(query, args, fn [slug, balance, price_usd, usd_value] ->
-      %{
-        slug: slug,
-        balance: balance,
-        price_usd: price_usd,
-        usd_value: usd_value
-      }
-    end)
-    |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
-    |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.usd_value, :desc) end)
-  end
-
   def usd_value_address_change(address, datetime) do
     address = Sanbase.BlockchainAddress.to_internal_format(address)
     {query, args} = usd_value_address_change_query(address, datetime)
@@ -248,6 +219,27 @@ defmodule Sanbase.Balance do
     )
     |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
     |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.usd_value_change, :desc) end)
+  end
+
+  def usd_value_held_by_address(address) do
+    address = Sanbase.BlockchainAddress.to_internal_format(address)
+    {query, args} = usd_value_held_by_address_query(address)
+    hidden_projects_slugs = hidden_projects_slugs()
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn [slug, current_balance, current_price_usd, current_usd_value] ->
+        %{
+          slug: slug,
+          current_balance: current_balance,
+          current_price_usd: current_price_usd,
+          current_usd_value: current_usd_value
+        }
+      end
+    )
+    |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
+    |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.current_usd_value, :desc) end)
   end
 
   @doc ~s"""

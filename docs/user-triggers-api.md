@@ -310,7 +310,7 @@ address in the `target`
   "target": { "address": "0x0000000000000000000000000000000000000000" },
   "time_window": "1d",
   "selector": { "infrastructure": "ETH"},
-  "operation": { "amount_down": 1000000 }
+  "operation": { "amount_up": 1000000 }
 }
 ```
 

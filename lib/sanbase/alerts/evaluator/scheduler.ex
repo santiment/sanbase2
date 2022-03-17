@@ -363,20 +363,17 @@ defmodule Sanbase.Alert.Scheduler do
     {last_triggered, total_triggered, total_failed} =
       send_results_list
       |> Enum.reduce({last_triggered, _total = 0, _failed = 0}, fn
-        {list, result}, {acc, total, failed} when is_list(list) ->
-          # Example: {["elem1", "elem2"], :ok}.
+        {identifier_or_list, _result = :ok}, {acc, total, failed} ->
+          # Example: {["elem1", "elem2"], :ok} or {"0x123", :ok}
           # This case happens when multiple identifiers (for example emerging words)
           # are handled in one notification.
+          list = identifier_or_list |> List.wrap()
           acc = Enum.reduce(list, acc, &Map.put(&2, &1, now))
 
-          {acc, total + 1, failed_count.(failed, result)}
+          {acc, total + 1, failed}
 
-        {identifier, result}, {acc, total, failed} ->
-          # Example: {"santiment", :ok}.
-          # This is the most common case - one notification per identificator.
-
-          acc = Map.put(acc, identifier, now)
-          {acc, total + 1, failed_count.(failed, result)}
+        {_identifier_or_list, _error_result}, {acc, total, failed} ->
+          {acc, total + 1, failed + 1}
       end)
 
     {:ok,

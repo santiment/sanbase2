@@ -70,7 +70,7 @@ defmodule Sanbase.BlockchainAddress do
       Regex.match?(~r/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/, address) ->
         "BTC"
 
-      Regex.match?(~r/r[0-9a-zA-Z^[0OlI]]{23,33}$/, address) and
+      Regex.match?(~r/^r[0-9a-zA-Z]]{23,33}$/, address) and
           not Regex.match?(~r/[0OlI]/, address) ->
         "XRP"
 

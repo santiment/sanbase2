@@ -43,7 +43,7 @@ defmodule Sanbase.BlockchainAddress do
   end
 
   @doc ~s"""
-  Convert an address to the internal format used in our databases.
+  Convert an address or addresses to the internal format used in our databases.
 
   Ethereum addresses are case-insensitive - the upper and lower letters are used
   only for checks. Internally we store the addresses all downcased so they can be
@@ -51,13 +51,31 @@ defmodule Sanbase.BlockchainAddress do
 
   All other chains are sensitive, so they are not changed by this function.
   """
+  def to_internal_format(addresses) when is_list(addresses) do
+    addresses |> List.flatten() |> Enum.map(&to_internal_format/1)
+  end
+
   def to_internal_format(address) do
+    case to_infrastructure(address) do
+      "ETH" -> String.downcase(address)
+      _ -> address
+    end
+  end
+
+  def to_infrastructure(address) do
     cond do
-      # ETH and ETH forks
-      Regex.match?(~r/^0x([A-Fa-f0-9]{40})$/, address) -> String.downcase(address)
-      # BTC and BTC forks
-      Regex.match?(~r/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/, address) -> address
-      true -> address
+      Regex.match?(~r/^0x([A-Fa-f0-9]{40})$/, address) ->
+        "ETH"
+
+      Regex.match?(~r/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/, address) ->
+        "BTC"
+
+      Regex.match?(~r/^r[0-9a-zA-Z]]{23,33}$/, address) and
+          not Regex.match?(~r/[0OlI]/, address) ->
+        "XRP"
+
+      true ->
+        "other"
     end
   end
 

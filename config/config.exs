@@ -256,6 +256,8 @@ config :kaffe,
     offset_reset_policy: :reset_to_latest
   ]
 
+config :sanbase, Sanbase.NFT.Api, api_key: {:system, "MORALIS_API_KEY"}
+
 # Import configs
 import_config "ueberauth_config.exs"
 import_config "ex_admin_config.exs"

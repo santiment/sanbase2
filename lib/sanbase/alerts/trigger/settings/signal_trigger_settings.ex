@@ -169,9 +169,9 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
           project_ticker: project.ticker,
           signal_human_readable_name: human_readable_name
         }
-        |> Map.merge(operation_kv)
-        |> Map.merge(curr_value_kv)
-        |> Map.merge(details_kv)
+        |> OperationText.merge_kvs(operation_kv)
+        |> OperationText.merge_kvs(curr_value_kv)
+        |> OperationText.merge_kvs(details_kv)
 
       template = """
       🔔 \#{{project_ticker}} | **{{project_name}}**'s {{signal_human_readable_name}} #{operation_template}.

@@ -49,4 +49,58 @@ defmodule Sanbase.Alert.ResultBuilder do
         template_kv: template_kv
     }
   end
+
+  def build_state_difference(current_list, %trigger_module{} = settings, template_kv_fun, opts) do
+    state_list_key = Keyword.fetch!(opts, :state_list_key)
+    added_items_key = Keyword.fetch!(opts, :added_items_key)
+    removed_items_key = Keyword.fetch!(opts, :removed_items_key)
+
+    %{state: %{^state_list_key => previous_list}} = settings
+
+    added_items = (current_list -- previous_list) |> Enum.reject(&is_nil/1)
+    removed_items = (previous_list -- current_list) |> Enum.reject(&is_nil/1)
+
+    case added_items != [] or removed_items != [] do
+      true ->
+        template_kv =
+          template_kv_fun.(
+            %{added_items_key => added_items, removed_items_key => removed_items},
+            settings
+          )
+
+        %{
+          settings
+          | template_kv: %{"default" => template_kv},
+            state: %{state_list_key => current_list},
+            triggered?: true
+        }
+
+      false ->
+        %{settings | triggered?: false}
+    end
+  end
+
+  def build_enter_exit_projects_str(added_slugs, removed_slugs) do
+    projects_map =
+      Sanbase.Model.Project.List.by_slugs(added_slugs ++ removed_slugs, preload?: false)
+      |> Enum.into(%{}, fn %{slug: slug} = project -> {slug, project} end)
+
+    newcomers = slugs_to_projects_string_list(added_slugs, projects_map)
+    leavers = slugs_to_projects_string_list(removed_slugs, projects_map)
+
+    """
+    #{length(newcomers)} Newcomers:
+    #{newcomers |> Enum.join("\n")}
+    ---
+    #{length(leavers)} Leavers:
+    #{leavers |> Enum.join("\n")}
+    """
+  end
+
+  defp slugs_to_projects_string_list(slugs, projects_map) do
+    slugs
+    |> Enum.map(&Map.get(projects_map, &1))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&"[##{&1.ticker} | #{&1.name}](#{Sanbase.Model.Project.sanbase_link(&1)})")
+  end
 end

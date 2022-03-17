@@ -184,7 +184,7 @@ defmodule Sanbase.Alert.EthWalletTriggerTest do
       assert_receive({:telegram_to_self, message})
 
       assert message =~
-               "🔔The address #{context.eth_address}'s ethereum balance decreased by 100"
+               "🔔 The address #{context.eth_address}'s ethereum balance decreased by 100"
     end
   end
 

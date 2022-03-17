@@ -69,8 +69,8 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
 
   defp fill_current_state(trigger) do
     %{settings: settings} = trigger
-    address_key_to_assets_list = get_data(settings)
-    settings = %{settings | state: %{assets_held: address_key_to_assets_list}}
+    address_key_to_slugs_list = get_data(settings)
+    settings = %{settings | state: %{slugs_held_by_address: address_key_to_slugs_list}}
 
     %{trigger | settings: settings}
   end
@@ -87,14 +87,11 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
     target_list
     |> Enum.map(fn address ->
       address = Sanbase.BlockchainAddress.to_internal_format(address)
-
-      selector = %{
-        address: address,
-        infrastructure: selector.infrastructure
-      }
+      selector = %{address: address, infrastructure: selector.infrastructure}
 
       with {:ok, %{} = result} <- assets_held(selector) do
-        {address, []}
+        slugs_list = Enum.map(result, & &1.slug)
+        {address, slugs_list}
       else
         result ->
           raise("""
@@ -114,8 +111,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
       |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->
-      before = Timex.shift(Timex.now(), day: -1)
-      {:ok, data} = HistoricalBalance.usd_value_held_by_address(selector)
+      {:ok, data} = HistoricalBalance.assets_held_by_address(selector)
     end)
   end
 
@@ -137,8 +133,15 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
       end
     end
 
-    def build_result(data, %WalletAssetsHeldTriggerSettings{} = settings) do
-      ResultBuilder.build(data, settings, &template_kv/2, value_key: :usd_value)
+    def build_result(current_slugs, %WalletAssetsHeldTriggerSettings{} = settings) do
+      # The ResultBuilder expects a 2-arity function, so we bind the
+      # third `trigger` argument and make it a 2-arity function
+
+      ResultBuilder.build_state_difference(current_slugs, settings, &template_kv/2,
+        state_list_key: :slugs_held_by_address,
+        added_items_key: :added_slugs,
+        removed_items_key: :removed_slugs
+      )
     end
 
     def cache_key(%WalletAssetsHeldTriggerSettings{} = settings) do
@@ -158,24 +161,17 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
       ])
     end
 
-    defp template_kv(values, %{filtered_target: %{type: :address}} = settings) do
-      {operation_template, operation_kv} =
-        OperationText.to_template_kv(values, settings.operation)
+    defp template_kv(values, settings) do
+      %{added_slugs: added_slugs, removed_slugs: removed_slugs} = values
 
-      {curr_value_template, curr_value_kv} = OperationText.current_value(values)
-
-      kv =
-        %{
-          type: WalletAssetsHeldTriggerSettings.type(),
-          operation: settings.operation,
-          address: settings.target.address
-        }
-        |> OperationText.merge_kvs(operation_kv)
-        |> OperationText.merge_kvs(curr_value_kv)
+      kv = %{
+        type: WalletAssetsHeldTriggerSettings.type(),
+        address: settings.target.address
+      }
 
       template = """
-      The address {{address}}'s total USD valuation has #{operation_template}.
-      #{curr_value_template}
+      🔔 The address {{address}} assets held has changed.
+      #{ResultBuilder.build_enter_exit_projects_str(added_slugs, removed_slugs)}
       """
 
       {template, kv}

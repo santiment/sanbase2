@@ -82,8 +82,8 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
       {Sanbase.Telegram, [:passthrough], send_message: fn _user, _text -> :ok end},
       {HistoricalBalance, [:passthrough], usd_value_address_change: fn _, _ -> {:ok, data()} end}
     ] do
-      assert capture_log(fn -> Scheduler.run_alert(WalletUsdValuationTriggerSettings) end) =~
-               "In total 2/2 wallet_usd_valuation alerts were sent successfully"
+      log = capture_log(fn -> Scheduler.run_alert(WalletUsdValuationTriggerSettings) end)
+      assert log =~ "In total 2/2 wallet_usd_valuation alerts were sent successfully"
 
       Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 

@@ -80,6 +80,15 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:amount_due, non_null(:integer))
   end
 
+  object :payment_instrument do
+    field(:last4, non_null(:string))
+    field(:dynamic_last4, :string)
+    field(:brand, non_null(:string))
+    field(:funding, :string)
+    field(:exp_year, non_null(:integer))
+    field(:exp_month, non_null(:integer))
+  end
+
   object :update_card_result do
     field(:success, :boolean)
   end

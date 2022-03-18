@@ -9,17 +9,30 @@ defmodule Sanbase.Alert.ResultBuilder do
   @trigger_modules Sanbase.Alert.List.get()
 
   @doc ~s"""
-  Provided the raw data and the settings, and returns the trigger settings with
-  updated `triggered?` and `template_kv` fields. These fields are updated by
-  computing whether or not the alert should be triggered.
+  Determine by the provided data and alert settings if the alert should fire.
+
+  This function is called when the standard alert data configuration is used. This
+  means that we have float values for two points in time - now and a past value.
+  Based on those values we can compute percent change, absolute value change,
+  threshold checks, etc. Example for such operation is: Price increased by 10%
+  since 1 day ago. Provided the raw data and the settings, the function returns
+  the trigger settings with updated `triggered?` and `template_kv` fields. These
+  fields are updated by computing whether or not the alert should be triggered.
 
   The `data` argument is in the format expected by the
-  Sanbase.Alert.ResultBuilder.Transformer.transform/2 function.
-  By default, data is a list of 2-element tuples where the first elemenet is a string
-  identifier (slug) and the second element is a list of maps with the `value` key.
-  If the key is not `value`, but something else, this has to be specified as the
-  `value_key` key in the opts.
+  Sanbase.Alert.ResultBuilder.Transformer.transform/2 function. By default, data
+  is a list of 2-element tuples where the first elemenet is a string identifier
+  (slug) and the second element is a list of maps with the `value` key. If the key
+  is not `value`, but something else, this has to be specified as the `value_key`
+  key in the opts.
   """
+  @spec build(
+          data :: {any(), list()},
+          settings :: settings,
+          template_kv_fun :: (map(), settings -> {String.t(), map()}),
+          opts :: Keyword.t()
+        ) :: settings
+        when settings: map()
   def build(
         data,
         %trigger_module{operation: operation} = settings,
@@ -50,7 +63,34 @@ defmodule Sanbase.Alert.ResultBuilder do
     }
   end
 
-  def build_state_difference(current_list, %trigger_module{} = settings, template_kv_fun, opts) do
+  @doc ~s"""
+  Determine by the provided data and alert settings if the alert should fire.
+
+  This function is called when the alert is fired based on the additional/removal
+  of some items from a list that is computed. For example this is used when firing
+  alerts when a new asset is added to an address or when an asset is removed from it.
+
+  Provided the current list the settings that hold the previous known state, the
+  function returns the trigger settings with updated `triggered?` and
+  `template_kv` fields. These fields are updated by computing whether or not the
+  alert should be triggered.
+
+  The `data` argument is in the format expected by the
+  Sanbase.Alert.ResultBuilder.Transformer.transform/2 function. By default, data
+  is a list of 2-element tuples where the first elemenet is a string identifier
+  (slug) and the second element is a list of maps with the `value` key. If the key
+  is not `value`, but something else, this has to be specified as the `value_key`
+  key in the opts.
+  """
+  @spec build_state_difference(
+          data :: {any(), list()},
+          settings :: settings,
+          template_kv_fun :: (map(), settings -> {String.t(), map()}),
+          opts :: Keyword.t()
+        ) :: settings
+        when settings: map()
+  def build_state_difference(current_list, %trigger_module{} = settings, template_kv_fun, opts)
+      when trigger_module in @trigger_modules and is_function(template_kv_fun, 2) do
     state_list_key = Keyword.fetch!(opts, :state_list_key)
     added_items_key = Keyword.fetch!(opts, :added_items_key)
     removed_items_key = Keyword.fetch!(opts, :removed_items_key)
@@ -80,6 +120,11 @@ defmodule Sanbase.Alert.ResultBuilder do
     end
   end
 
+  @doc ~s"""
+  Return a string containing the formatted entering (newcommrs)
+  and exiting (leavers) projects
+  """
+  @spec build_enter_exit_projects_str(list(String.t()), list(String.t())) :: String.t()
   def build_enter_exit_projects_str(added_slugs, removed_slugs) do
     projects_map =
       Sanbase.Model.Project.List.by_slugs(added_slugs ++ removed_slugs, preload?: false)

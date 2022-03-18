@@ -782,6 +782,159 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MVRV for coins that moved in the past 7 days Change (1d)",
+    "name": "mvrv_usd_7d_change_1d",
+    "metric": "mvrv_usd_7d_change_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 7 days Change (7d)",
+    "name": "mvrv_usd_7d_change_7d",
+    "metric": "mvrv_usd_7d_change_7d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 7 days Change (30d)",
+    "name": "mvrv_usd_7d_change_30d",
+    "metric": "mvrv_usd_7d_change_30d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 60 days Change (1d)",
+    "name": "mvrv_usd_60d_change_1d",
+    "metric": "mvrv_usd_60d_change_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 60 days Change (7d)",
+    "name": "mvrv_usd_60d_change_7d",
+    "metric": "mvrv_usd_60d_change_7d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 60 days Change (30d)",
+    "name": "mvrv_usd_60d_change_30d",
+    "metric": "mvrv_usd_60d_change_30d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 90 days Change (1d)",
+    "name": "mvrv_usd_90d_change_1d",
+    "metric": "mvrv_usd_90d_change_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 90 days Change (7d)",
+    "name": "mvrv_usd_90d_change_7d",
+    "metric": "mvrv_usd_90d_change_7d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 90 days Change (30d)",
+    "name": "mvrv_usd_90d_change_30d",
+    "metric": "mvrv_usd_90d_change_30d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "MVRV for coins that moved in the past 30 days Change (1d)",
     "name": "mvrv_usd_30d_change_1d",
     "metric": "mvrv_usd_30d_change_1d",

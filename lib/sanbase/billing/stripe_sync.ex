@@ -3,12 +3,16 @@ defmodule Sanbase.Billing.StripeSync do
 
   @topic "sanbase_stripe_transactions"
 
-  def sync_all_transactions() do
+  def sync_all_transactions(start_dt) do
     cust_map = stripe_customer_user_id_map()
     plan_map = plan_map()
     product_map = product_map()
 
-    Sanbase.DateTimeUtils.generate_datetimes_list(~U[2019-07-19 00:00:00Z], "1d", 804)
+    Sanbase.DateTimeUtils.generate_datetimes_list(
+      start_dt,
+      "1d",
+      Timex.diff(Timex.now(), start_dt, :days)
+    )
     |> Enum.each(fn dt ->
       from = Timex.beginning_of_day(dt) |> DateTime.to_unix()
       to = Timex.end_of_day(dt) |> DateTime.to_unix()

@@ -122,6 +122,10 @@ defmodule Sanbase.StripeApi do
     Stripe.Invoice.upcoming(%{subscription: stripe_id})
   end
 
+  def fetch_default_card(%User{stripe_customer_id: stripe_customer_id}) do
+    Stripe.Customer.retrieve(stripe_customer_id, expand: ["default_source"])
+  end
+
   # Helpers
 
   defp get_subscription_first_item_id(stripe_id) do

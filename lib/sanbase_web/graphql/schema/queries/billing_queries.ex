@@ -49,6 +49,14 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       resolve(&BillingResolver.upcoming_invoice/3)
     end
+
+    field :fetch_default_payment_instrument, :payment_instrument do
+      meta(access: :free)
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.fetch_default_payment_instrument/3)
+    end
   end
 
   object :billing_mutations do

@@ -59,6 +59,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :featured_watchlists,
           :fetch_all_public_user_lists,
           :fetch_all_public_watchlists,
+          :fetch_default_payment_instrument,
           :fetch_public_user_lists,
           :fetch_public_watchlists,
           :fetch_user_lists,

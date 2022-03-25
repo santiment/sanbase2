@@ -166,7 +166,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
         {:error, message}
 
       _ ->
-        {:error, "Can't fetch upcoming invoice for provided subscription"}
+        {:error, "Can't fetch upcoming invoice for the provided subscription"}
+    end
+  end
+
+  def fetch_default_payment_instrument(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    current_user = Sanbase.Accounts.get_user!(31)
+
+    with {:ok, customer} <- StripeApi.fetch_default_card(current_user) do
+      {:ok,
+       %{
+         last4: customer.default_source.last4,
+         dynamic_last4: customer.default_source.dynamic_last4,
+         exp_year: customer.default_source.exp_year,
+         exp_month: customer.default_source.exp_month,
+         brand: customer.default_source.brand,
+         funding: customer.default_source.funding
+       }}
+    else
+      {:error, %Stripe.Error{message: message} = reason} ->
+        log_error("Error fetching default payment instrument", reason)
+        {:error, message}
+
+      _ ->
+        {:error, "Can't fetch default payment instrument for the provided subscription"}
     end
   end
 

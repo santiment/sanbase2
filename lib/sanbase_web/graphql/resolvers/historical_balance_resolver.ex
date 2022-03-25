@@ -4,29 +4,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   import Sanbase.Utils.ErrorHandling,
     only: [maybe_handle_graphql_error: 2, handle_graphql_error: 4]
 
-  alias Sanbase.Clickhouse.HistoricalBalance
+  alias Sanbase.Clickhouse.{HistoricalBalance, Balance}
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def assets_held_by_address(_root, args, _resolution) do
-    selector =
-      case Map.get(args, :selector) do
-        nil -> %{infrastructure: "ETH", address: Map.fetch!(args, :address)}
-        selector -> selector
-      end
+    selector = args_to_address_selector(args)
 
-    HistoricalBalance.assets_held_by_address(selector)
-    |> case do
+    case HistoricalBalance.assets_held_by_address(selector) do
       {:ok, result} ->
-        # We do this, because many contracts emit a transfer
-        # event when minting new tokens by setting 0x00...000
-        # as the from address, hence 0x00...000 is "sending"
-        # tokens it does not have which leads to "negative" balance
-
-        result =
-          result
-          |> Enum.reject(fn %{balance: balance} -> balance < 0 end)
-
         {:ok, result}
 
       {:error, error} ->
@@ -34,6 +20,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
          handle_graphql_error("Assets held by address", selector.address, error,
            description: "address"
          )}
+    end
+  end
+
+  def usd_value_address_change(_root, args, _resolution) do
+    selector = args_to_address_selector(args)
+
+    case HistoricalBalance.usd_value_address_change(selector, args.datetime) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, error} ->
+        {:error,
+         handle_graphql_error("Assets held by address", selector.address, error,
+           description: "address"
+         )}
+    end
+  end
+
+  defp args_to_address_selector(args) do
+    case Map.get(args, :selector) do
+      nil ->
+        address = args.address
+        infrastructure = Sanbase.BlockchainAddress.to_infrastructure(address)
+        %{infrastructure: infrastructure, address: address}
+
+      selector ->
+        selector
     end
   end
 

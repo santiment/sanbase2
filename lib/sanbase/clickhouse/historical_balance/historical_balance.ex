@@ -13,7 +13,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   alias Sanbase.BlockchainAddress
   alias Sanbase.Clickhouse.HistoricalBalance.XrpBalance
 
-  @balances_aggregated_blockchains ["ethereum", "bitcoin", "bitcoin-cash", "litecoin", "binance"]
+  @balances_aggregated_blockchains [
+    "ethereum",
+    "bitcoin",
+    "bitcoin-cash",
+    "litecoin",
+    "binance"
+  ]
 
   @supported_infrastructures ["BCH", "BNB", "BEP2", "BTC", "LTC", "XRP", "ETH"]
   def supported_infrastructures(), do: @supported_infrastructures
@@ -54,10 +60,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   This can be combined with the historical balance query to see the historical
   balance of all currently owned assets
   """
-  @spec assets_held_by_address(map()) :: {:ok, list(map())} | {:error, String.t()}
+  @spec assets_held_by_address(map()) ::
+          {:ok, list(map())} | {:error, String.t()}
   def assets_held_by_address(%{infrastructure: infr, address: address}) do
     case selector_to_args(%{infrastructure: infr}) do
-      %{blockchain: blockchain} when balances_aggregated_blockchain?(blockchain) ->
+      %{blockchain: blockchain}
+      when balances_aggregated_blockchain?(blockchain) ->
         Sanbase.Balance.assets_held_by_address(address)
 
       %{module: module} ->
@@ -66,7 +74,35 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
       {:error, error} ->
         {:error, error}
     end
-    |> maybe_apply_function(fn data -> Enum.sort_by(data, &Map.get(&1, :balance), :desc) end)
+    |> maybe_apply_function(fn data ->
+      Enum.sort_by(data, &Map.get(&1, :balance), :desc)
+    end)
+  end
+
+  @doc ~s"""
+  Return a list of the assets that a given address currently holds or
+  has held in the past.
+
+  This can be combined with the historical balance query to see the historical
+  balance of all currently owned assets
+  """
+  @spec usd_value_address_change(map(), DateTime.t()) ::
+          {:ok, list(map())} | {:error, String.t()}
+  def usd_value_address_change(%{infrastructure: infr, address: address}, datetime) do
+    case selector_to_args(%{infrastructure: infr}) do
+      %{blockchain: blockchain}
+      when balances_aggregated_blockchain?(blockchain) ->
+        Sanbase.Balance.usd_value_address_change(address, datetime)
+
+      %{module: module} ->
+        module.usd_value_address_change(address, datetime)
+
+      {:error, error} ->
+        {:error, error}
+    end
+    |> maybe_apply_function(fn data ->
+      Enum.sort_by(data, &Map.get(&1, :usd_value_change), :desc)
+    end)
   end
 
   @doc ~s"""
@@ -74,12 +110,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   from-to period. The returned lists indicates the address, before balance, after balance
   and the balance change
   """
-  @spec balance_change(selector, address, from :: DateTime.t(), to :: DateTime.t()) ::
+  @spec balance_change(
+          selector,
+          address,
+          from :: DateTime.t(),
+          to :: DateTime.t()
+        ) ::
           __MODULE__.Behaviour.balance_change_result()
 
   def balance_change(selector, address, from, to) do
     case selector_to_args(selector) do
-      %{blockchain: blockchain, slug: slug} when balances_aggregated_blockchain?(blockchain) ->
+      %{blockchain: blockchain, slug: slug}
+      when balances_aggregated_blockchain?(blockchain) ->
         Sanbase.Balance.balance_change(address, slug, from, to)
 
       %{module: module, asset: asset, decimals: decimals} ->
@@ -94,11 +136,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   For a given address or list of addresses returns the combined `slug` balance for each bucket
   of size `interval` in the from-to time period
   """
-  @spec historical_balance(selector, address, from :: DateTime.t(), to :: DateTime.t(), interval) ::
+  @spec historical_balance(
+          selector,
+          address,
+          from :: DateTime.t(),
+          to :: DateTime.t(),
+          interval
+        ) ::
           __MODULE__.Behaviour.historical_balance_result()
   def historical_balance(selector, address, from, to, interval) do
     case selector_to_args(selector) do
-      %{blockchain: blockchain, slug: slug} when balances_aggregated_blockchain?(blockchain) ->
+      %{blockchain: blockchain, slug: slug}
+      when balances_aggregated_blockchain?(blockchain) ->
         Sanbase.Balance.historical_balance(address, slug, from, to, interval)
 
       %{module: module, asset: asset, decimals: decimals} ->
@@ -113,7 +162,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           __MODULE__.Behaviour.current_balance_result()
   def current_balance(selector, address) do
     case selector_to_args(selector) do
-      %{blockchain: blockchain, slug: slug} when balances_aggregated_blockchain?(blockchain) ->
+      %{blockchain: blockchain, slug: slug}
+      when balances_aggregated_blockchain?(blockchain) ->
         Sanbase.Balance.current_balance(address, slug)
 
       %{module: module, asset: asset, decimals: decimals} ->
@@ -127,7 +177,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   defguard is_ethereum(map)
            when (is_map_key(map, :slug) and map.slug == "ethereum") or
                   (is_map_key(map, :contract) and map.contract == "ETH") or
-                  (is_map_key(map, :infrastructure) and not is_map_key(map, :slug) and
+                  (is_map_key(map, :infrastructure) and
+                     not is_map_key(map, :slug) and
                      map.infrastructure == "ETH")
 
   def selector_to_args(
@@ -148,7 +199,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def selector_to_args(%{} = selector) when is_ethereum(selector) do
     selector = Map.put_new(selector, :slug, "ethereum")
 
-    with %{slug: slug, contract: contract, decimals: decimals, infrastructure: "ETH"} <-
+    with %{
+           slug: slug,
+           contract: contract,
+           decimals: decimals,
+           infrastructure: "ETH"
+         } <-
            get_project_details(selector) do
       %{
         module: :none,
@@ -161,8 +217,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     end
   end
 
-  def selector_to_args(%{infrastructure: "ETH", slug: slug} = selector) when is_binary(slug) do
-    with %{contract: contract, decimals: decimals} <- get_project_details(selector) do
+  def selector_to_args(%{infrastructure: "ETH", slug: slug} = selector)
+      when is_binary(slug) do
+    with %{contract: contract, decimals: decimals} <-
+           get_project_details(selector) do
       %{
         module: :none,
         asset: contract,
@@ -188,7 +246,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def selector_to_args(%{infrastructure: "BTC"} = selector) do
     selector = Map.put_new(selector, :slug, "bitcoin")
 
-    with %{slug: slug, contract: contract, decimals: decimals} <- get_project_details(selector) do
+    with %{slug: slug, contract: contract, decimals: decimals} <-
+           get_project_details(selector) do
       %{
         module: :none,
         asset: contract,
@@ -203,7 +262,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def selector_to_args(%{infrastructure: "BCH"} = selector) do
     selector = Map.put_new(selector, :slug, "bitcoin-cash")
 
-    with %{slug: slug, contract: contract, decimals: decimals} <- get_project_details(selector) do
+    with %{slug: slug, contract: contract, decimals: decimals} <-
+           get_project_details(selector) do
       %{
         module: :none,
         asset: contract,
@@ -218,7 +278,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def selector_to_args(%{infrastructure: "LTC"} = selector) do
     selector = Map.put_new(selector, :slug, "litecoin")
 
-    with %{slug: slug, contract: contract, decimals: decimals} <- get_project_details(selector) do
+    with %{slug: slug, contract: contract, decimals: decimals} <-
+           get_project_details(selector) do
       %{
         module: :none,
         asset: contract,
@@ -233,7 +294,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def selector_to_args(%{infrastructure: "BNB"} = selector) do
     selector = Map.put_new(selector, :slug, "binance-coin")
 
-    with %{slug: slug, contract: contract, decimals: decimals} <- get_project_details(selector) do
+    with %{slug: slug, contract: contract, decimals: decimals} <-
+           get_project_details(selector) do
       %{
         module: :none,
         asset: contract,
@@ -265,6 +327,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   def selector_to_args(selector) do
     original_selector = Map.get(selector, :original_selector) || selector
+
     {:error, "Invalid historical balance selector: #{inspect(original_selector)}"}
   end
 
@@ -275,7 +338,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   defp get_project_details(%{slug: slug}) do
     with {:ok, contract, decimals, infrastructure} <-
            Project.contract_info_infrastructure_by_slug(slug) do
-      %{contract: contract, decimals: decimals, slug: slug, infrastructure: infrastructure}
+      %{
+        contract: contract,
+        decimals: decimals,
+        slug: slug,
+        infrastructure: infrastructure
+      }
     end
   end
 end

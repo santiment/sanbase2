@@ -18,7 +18,7 @@ defmodule SanbaseWeb.UserSocket do
     end
   end
 
-  def connect(params, socket) do
+  def connect(_params, socket) do
     {:ok, assign(socket, auth: :none, user_id: nil, user: nil)}
   end
 

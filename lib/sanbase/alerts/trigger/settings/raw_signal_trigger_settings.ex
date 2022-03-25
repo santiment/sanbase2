@@ -176,7 +176,7 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
           sanbase_project_link: "https://app.santiment.net/charts?slug=#{project.slug}",
           signal_human_readable_name: human_readable_name
         }
-        |> Map.merge(details_kv)
+        |> OperationText.merge_kvs(details_kv)
 
       template = """
       🔔 [\#{{project_ticker}}]({{sanbase_project_link}}) | {{signal_human_readable_name}} signal fired for *{{project_name}}*.

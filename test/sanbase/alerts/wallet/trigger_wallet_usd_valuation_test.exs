@@ -23,61 +23,30 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
     # to test the behavior of transform to some internal format.
     address = "0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98"
 
-    trigger_settings1 = %{
+    base_settings = %{
       type: "wallet_usd_valuation",
       selector: %{infrastructure: "ETH"},
-      target: %{address: "0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98"},
+      target: %{address: address},
       channel: "telegram",
-      time_window: "1d",
-      operation: %{amount_down: 100_000_000}
+      time_window: "1d"
     }
 
-    trigger_settings2 = %{
-      type: "wallet_usd_valuation",
-      selector: %{infrastructure: "ETH"},
-      target: %{address: "0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98"},
-      channel: "telegram",
-      time_window: "1d",
-      operation: %{percent_down: 5}
-    }
+    settings1 = Map.put(base_settings, :operation, %{amount_down: 100_000_000})
+    settings2 = Map.put(base_settings, :operation, %{percent_down: 5})
+    settings3 = Map.put(base_settings, :operation, %{percent_up: 10})
 
-    trigger_settings3 = %{
-      type: "wallet_usd_valuation",
-      selector: %{infrastructure: "ETH"},
-      target: %{address: "0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98"},
-      channel: "telegram",
-      time_window: "1d",
-      operation: %{percent_up: 10}
-    }
-
-    {:ok, _} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        cooldown: "12h",
-        settings: trigger_settings1
-      })
-
-    {:ok, _} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        cooldown: "1d",
-        settings: trigger_settings2
-      })
-
-    {:ok, _} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        cooldown: "1d",
-        settings: trigger_settings3
-      })
+    for settings <- [settings1, settings2, settings3] do
+      {:ok, _} =
+        UserTrigger.create_user_trigger(
+          user,
+          %{title: "title", is_public: true, cooldown: "1d", settings: settings}
+        )
+    end
 
     %{address: address}
   end
 
-  test "signal setting cooldown works for wallet movement", _context do
+  test "cooldown works for wallet_usd_valuation", _context do
     with_mocks [
       {Sanbase.Telegram, [:passthrough], send_message: fn _user, _text -> :ok end},
       {HistoricalBalance, [:passthrough], usd_value_address_change: fn _, _ -> {:ok, data()} end}

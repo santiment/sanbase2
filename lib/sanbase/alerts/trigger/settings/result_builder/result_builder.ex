@@ -27,12 +27,12 @@ defmodule Sanbase.Alert.ResultBuilder do
   key in the opts.
   """
   @spec build(
-          data :: {any(), list()},
+          data :: list({identifier, list()}),
           settings :: settings,
           template_kv_fun :: (map(), settings -> {String.t(), map()}),
           opts :: Keyword.t()
         ) :: settings
-        when settings: map()
+        when settings: map(), identifier: any()
   def build(
         data,
         %trigger_module{operation: operation} = settings,
@@ -83,14 +83,20 @@ defmodule Sanbase.Alert.ResultBuilder do
   key in the opts.
   """
   @spec build_state_difference(
-          data :: {any(), list()},
+          data :: list({identifier, list()}) | list(String.t()),
           settings :: settings,
           template_kv_fun :: (map(), settings -> {String.t(), map()}),
           opts :: Keyword.t()
         ) :: settings
-        when settings: map()
-  def build_state_difference(current_list, %trigger_module{} = settings, template_kv_fun, opts)
-      when trigger_module in @trigger_modules and is_function(template_kv_fun, 2) do
+        when settings: map(), identifier: any()
+  def build_state_difference(
+        [str | _] = current_list,
+        %trigger_module{} = settings,
+        template_kv_fun,
+        opts
+      )
+      when trigger_module in @trigger_modules and is_function(template_kv_fun, 2) and
+             is_binary(str) do
     state_list_key = Keyword.fetch!(opts, :state_list_key)
     added_items_key = Keyword.fetch!(opts, :added_items_key)
     removed_items_key = Keyword.fetch!(opts, :removed_items_key)
@@ -118,6 +124,49 @@ defmodule Sanbase.Alert.ResultBuilder do
       false ->
         %{settings | triggered?: false}
     end
+  end
+
+  def build_state_difference(
+        [tuple | _] = current_data,
+        %trigger_module{} = settings,
+        template_kv_fun,
+        opts
+      )
+      when trigger_module in @trigger_modules and is_function(template_kv_fun, 2) and
+             is_tuple(tuple) do
+    state_list_key = Keyword.fetch!(opts, :state_list_key)
+    added_items_key = Keyword.fetch!(opts, :added_items_key)
+    removed_items_key = Keyword.fetch!(opts, :removed_items_key)
+
+    %{state: %{^state_list_key => previous_map}} = settings
+
+    template_kv =
+      Enum.reduce(current_data, %{}, fn {identifier, current_list}, acc ->
+        previous_list = Map.get(previous_map, identifier, [])
+
+        added_items = (current_list -- previous_list) |> Enum.reject(&is_nil/1)
+        removed_items = (previous_list -- current_list) |> Enum.reject(&is_nil/1)
+
+        case added_items != [] or removed_items != [] do
+          true ->
+            template_kv =
+              template_kv_fun.(
+                %{added_items_key => added_items, removed_items_key => removed_items},
+                settings
+              )
+
+            Map.put(acc, identifier, template_kv)
+
+          false ->
+            acc
+        end
+      end)
+
+    %{
+      settings
+      | triggered?: template_kv != %{},
+        template_kv: template_kv
+    }
   end
 
   @doc ~s"""

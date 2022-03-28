@@ -4,7 +4,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   changes by a predefined amount for a specified asset (Ethereum, SAN tokens, Bitcoin, etc.)
 
   The alert can follow a single address, a list of addresses
-  or a project. When a list of addresses or a project is followed, all the addresses
+  or a . When a list of addresses or a project is followed, all the addresses
   are considered to be owned by a single entity and the transfers between them
   are excluded.
   """
@@ -12,11 +12,10 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.{Validation, Alert.Validation}
-  import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
+  import Sanbase.Alert.Validation
+  import Sanbase.DateTimeUtils, only: [round_datetime: 1]
 
   alias __MODULE__
-  alias Sanbase.Model.Project
   alias Sanbase.Alert.Type
   alias Sanbase.Clickhouse.HistoricalBalance
 
@@ -46,8 +45,6 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
           channel: Type.channel(),
           target: Type.complex_target(),
           selector: map(),
-          operation: Type.operation(),
-          time_window: Type.time_window(),
           # Private fields, not stored in DB.
           filtered_target: Type.filtered_target(),
           triggered?: boolean(),
@@ -58,8 +55,6 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   validates(:channel, &valid_notification_channel?/1)
   validates(:target, &valid_crypto_address?/1)
   validates(:selector, &valid_infrastructure_selector?/1)
-  validates(:operation, &valid_operation?/1)
-  validates(:time_window, &valid_time_window?/1)
 
   @spec type() :: String.t()
   def type(), do: @trigger_type
@@ -69,8 +64,13 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
 
   defp fill_current_state(trigger) do
     %{settings: settings} = trigger
-    address_key_to_slugs_list = get_data(settings)
-    settings = %{settings | state: %{slugs_held_by_address: address_key_to_slugs_list}}
+
+    temp_settings =
+      Map.put(settings, :filtered_target, Sanbase.Alert.Trigger.get_filtered_target(trigger))
+
+    address_key_to_slugs_map = get_data(temp_settings) |> Map.new()
+
+    settings = %{settings | state: %{slugs_held_by_address: address_key_to_slugs_map}}
 
     %{trigger | settings: settings}
   end
@@ -78,19 +78,19 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   @doc ~s"""
   Return a list of the `settings.metric` values for the necessary time range
   """
-  def get_data(
-        %__MODULE__{
-          filtered_target: %{list: target_list},
-          selector: selector
-        } = settings
-      ) do
+  def get_data(%__MODULE__{
+        filtered_target: %{list: target_list},
+        selector: selector
+      }) do
     target_list
     |> Enum.map(fn address ->
       address = Sanbase.BlockchainAddress.to_internal_format(address)
+
       selector = %{address: address, infrastructure: selector.infrastructure}
 
-      with {:ok, %{} = result} <- assets_held(selector) do
+      with {:ok, result} when is_list(result) <- assets_held(selector) do
         slugs_list = Enum.map(result, & &1.slug)
+
         {address, slugs_list}
       else
         result ->
@@ -111,14 +111,14 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
       |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->
-      {:ok, data} = HistoricalBalance.assets_held_by_address(selector)
+      {:ok, _} = HistoricalBalance.assets_held_by_address(selector)
     end)
   end
 
   defimpl Sanbase.Alert.Settings, for: WalletAssetsHeldTriggerSettings do
     import Sanbase.Alert.Utils
 
-    alias Sanbase.Alert.{OperationText, ResultBuilder}
+    alias Sanbase.Alert.ResultBuilder
 
     def triggered?(%WalletAssetsHeldTriggerSettings{triggered?: triggered}),
       do: triggered

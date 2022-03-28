@@ -1,12 +1,11 @@
 defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
   @moduledoc ~s"""
-  The wallet alert is triggered when the balance of a wallet or set of wallets
-  changes by a predefined amount for a specified asset (Ethereum, SAN tokens, Bitcoin, etc.)
+  The wallet alert is triggered when a new asset appears in the wallet or an existing
+  asset balance falls to 0.
 
   The alert can follow a single address, a list of addresses
-  or a . When a list of addresses or a project is followed, all the addresses
-  are considered to be owned by a single entity and the transfers between them
-  are excluded.
+  or a watchlist. When a watchlist is provided it is converted by the Trigger module
+  to a list of addresses and that is all the alert sees.
   """
   @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
 

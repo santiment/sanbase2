@@ -1,12 +1,11 @@
 defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
   @moduledoc ~s"""
-  The wallet alert is triggered when the balance of a wallet or set of wallets
-  changes by a predefined amount for a specified asset (Ethereum, SAN tokens, Bitcoin, etc.)
+  The wallet alert is triggered when the USD valuation of a wallet
+  changes by a predefined amount, percent, etc.
 
   The alert can follow a single address, a list of addresses
-  or a . When a list of addresses or a  is followed, all the addresses
-  are considered to be owned by a single entity and the transfers between them
-  are excluded.
+  or a watchlist. When a watchlist is provided it is converted by the Trigger module
+  to a list of addresses and that is all the alert sees.
   """
   @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
 

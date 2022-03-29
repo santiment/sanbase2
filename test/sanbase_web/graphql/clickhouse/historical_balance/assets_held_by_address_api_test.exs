@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 

@@ -7,9 +7,10 @@ defmodule Sanbase.TelegramTest do
   alias Sanbase.Repo
   alias Sanbase.Accounts.{User, Settings, UserSettings}
   alias Sanbase.Telegram
-  @bot_username Config.module_get(Sanbase.Telegram, :bot_username)
 
-  @telegram_endpoint Config.module_get(Sanbase.Telegram, :telegram_endpoint)
+  @bot_username Application.compile_env(:sanbase, [Sanbase.Telegram, :bot_username])
+  @telegram_endpoint Application.compile_env(:sanbase, [Sanbase.Telegram, :telegram_endpoint])
+
   @telegram_chat_id 12_315
 
   setup do

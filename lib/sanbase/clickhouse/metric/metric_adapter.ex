@@ -200,8 +200,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def available_metrics(), do: @metrics_name_list
 
-  # Disable the warning caused by storing an opaque type (MapSet) in a module attribute
-  @dialyzer {:nowarn_function, &Sanbase.Clickhouse.MetricAdapter.available_metrics/1}
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) when is_binary(slug) do
     {query, args} = available_metrics_for_slug_query(slug)

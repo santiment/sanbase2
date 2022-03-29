@@ -140,7 +140,7 @@ defmodule Sanbase.Mixfile do
       {:prometheus_ex, "~> 3.0", override: true},
       {:prometheus_plugs, "~> 1.0"},
       {:quantum, "~> 3.0"},
-      {:remote_ip, "~> 0.1"},
+      {:remote_ip, "~> 1.0"},
       {:rexbug, ">= 1.0.0"},
       {:san_exporter_ex, github: "santiment/san-exporter-ex"},
       {:sentry, "~> 7.0"},
@@ -156,7 +156,7 @@ defmodule Sanbase.Mixfile do
       {:ueberauth_google, "~> 0.10"},
       {:ueberauth_twitter, github: "santiment/ueberauth_twitter"},
       {:uuid, "~> 1.1"},
-      {:vex, "~> 0.8.0", override: true},
+      {:vex, "~> 0.9", override: true},
       {:waffle, "~> 1.1"},
       {:websockex, "~> 0.4.3"},
       {:kaffy, github: "santiment/kaffy"}

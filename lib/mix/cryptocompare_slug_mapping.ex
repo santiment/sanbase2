@@ -57,7 +57,7 @@ if Code.ensure_loaded?(Neuron) do
 
       Enum.group_by(san, & &1.ticker)
       |> Enum.flat_map(fn {ticker, list} -> tickers_list_to_map(list, cpc_map, ticker) end)
-      |> Enum.map(&replace_unknown_with_maybe/1)
+      |> Enum.map(&replace_unknown_with_maybe(&1, cpc))
     end
 
     defp tickers_list_to_map(list, cpc_map, ticker) do
@@ -74,7 +74,7 @@ if Code.ensure_loaded?(Neuron) do
     end
 
     # In case some names are too similar we can add them as :maybe and manually check
-    defp replace_unknown_with_maybe(elem) do
+    defp replace_unknown_with_maybe(elem, cpc) do
       case elem do
         %{cpc: :unknown, san: san} = elem ->
           maybe = Enum.max_by(cpc, &String.jaro_distance(&1.coin_name, san.name))

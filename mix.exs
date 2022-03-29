@@ -22,7 +22,10 @@ defmodule Sanbase.Mixfile do
       source_url: "https://github.com/santiment/sanbase2/",
       homepage_url: "https://app.santiment.net/projects",
       # Supress errors that should not be shown
-      xref: [exclude: [Oban]]
+      xref: [exclude: [Oban]],
+      dialyzer: [
+        plt_ignore_apps: [:ex_admin, :stripity_stripe]
+      ]
     ]
   end
 

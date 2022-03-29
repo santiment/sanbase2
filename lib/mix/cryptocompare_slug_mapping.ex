@@ -1,7 +1,7 @@
 if Code.ensure_loaded?(Neuron) do
   defmodule Sanbase.Mix.CryptocompareSlugMapping do
     def run() do
-      map = map()
+      map = cryptocompare_santiment_asset_mapping()
 
       {unknowns, knowns} = Enum.split_with(map, &(&1.cpc == :unknown))
 
@@ -49,26 +49,33 @@ if Code.ensure_loaded?(Neuron) do
       end)
     end
 
-    def map() do
+    def cryptocompare_santiment_asset_mapping() do
       san = get_san_assets()
       cpc = get_cryptocompare_assets()
 
       cpc_map = Enum.into(cpc, %{}, fn m -> {m.key, m} end)
 
       Enum.group_by(san, & &1.ticker)
-      |> Enum.flat_map(fn {ticker, list} ->
-        case Map.get(cpc_map, ticker) do
-          nil ->
-            Enum.map(list, &%{san: &1, cpc: :unknown})
+      |> Enum.flat_map(fn {ticker, list} -> tickers_list_to_map(list, cpc_map, ticker) end)
+      |> Enum.map(&replace_unknown_with_maybe/1)
+    end
 
-          cpc_asset ->
-            closest = Enum.max_by(list, &String.jaro_distance(&1.name, cpc_asset.coin_name))
+    defp tickers_list_to_map(list, cpc_map, ticker) do
+      case Map.get(cpc_map, ticker) do
+        nil ->
+          Enum.map(list, &%{san: &1, cpc: :unknown})
 
-            [%{san: closest, cpc: cpc_asset}] ++
-              Enum.map(list -- [closest], &%{san: &1, cpc: :unknown})
-        end
-      end)
-      |> Enum.map(fn
+        cpc_asset ->
+          closest = Enum.max_by(list, &String.jaro_distance(&1.name, cpc_asset.coin_name))
+
+          [%{san: closest, cpc: cpc_asset}] ++
+            Enum.map(list -- [closest], &%{san: &1, cpc: :unknown})
+      end
+    end
+
+    # In case some names are too similar we can add them as :maybe and manually check
+    defp replace_unknown_with_maybe(elem) do
+      case elem do
         %{cpc: :unknown, san: san} = elem ->
           maybe = Enum.max_by(cpc, &String.jaro_distance(&1.coin_name, san.name))
 
@@ -79,7 +86,7 @@ if Code.ensure_loaded?(Neuron) do
 
         elem ->
           elem
-      end)
+      end
     end
 
     def get_san_assets() do

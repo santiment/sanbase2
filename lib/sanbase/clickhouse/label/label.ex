@@ -178,7 +178,7 @@ defmodule Sanbase.Clickhouse.Label do
   def slug_to_blockchain(slug),
     do: Sanbase.Model.Project.slug_to_blockchain(slug)
 
-  def addresses_by_label_fqns_query(label_fqns, _blockchain = nil) do
+  def addresses_by_label_fqns_query(label_fqns, nil = _blockchain) do
     query = """
     SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
     FROM label_addresses

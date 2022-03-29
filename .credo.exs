@@ -149,6 +149,7 @@
         {Credo.Check.Warning.UnusedStringOperation, []},
         {Credo.Check.Warning.UnusedTupleOperation, []},
         {Credo.Check.Warning.UnsafeExec, []},
+        {Credo.Check.Warning.SpecWithStruct, false},
 
         #
         # Checks scheduled for next check update (opt-in for now, just replace `false` with `[]`)

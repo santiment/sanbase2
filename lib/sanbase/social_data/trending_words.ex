@@ -101,7 +101,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, map()} | {:error, String.t()}
   def get_trending_projects(from, to, interval, size, sources \\ @default_sources) do
-    {query, args} = get_trending_words_query(from, to, interval, sources, size)
+    {query, args} = get_trending_words_query(from, to, interval, size, sources)
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn
       [_dt, _word, nil, _score], acc ->

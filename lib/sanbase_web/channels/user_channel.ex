@@ -1,6 +1,11 @@
 defmodule SanbaseWeb.UserChannel do
   use SanbaseWeb, :channel
 
+  defguard is_own_channel(socket)
+           when is_map_key(socket, :assigns) and
+                  is_map_key(socket.assigns, :user_joined_own_channel) and
+                  socket.assigns.user_joined_own_channel == true
+
   def join("users:common", _params, socket) do
     {:ok, socket}
   end
@@ -37,11 +42,6 @@ defmodule SanbaseWeb.UserChannel do
         {:reply, {:ok, %{"is_username_valid" => false, "reason" => reason}}, socket}
     end
   end
-
-  defguard is_own_channel(socket)
-           when is_map_key(socket, :assigns) and
-                  is_map_key(socket.assigns, :user_joined_own_channel) and
-                  socket.assigns.user_joined_own_channel == true
 
   def handle_in("my_username", _params, socket) when is_own_channel(socket) do
     # A dummy message that is used to test the proper dispatching of

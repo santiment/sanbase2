@@ -77,7 +77,7 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
     %{address: address}
   end
 
-  test "signal setting cooldown works for wallet movement", context do
+  test "signal setting cooldown works for wallet movement", _context do
     with_mocks [
       {Sanbase.Telegram, [:passthrough], send_message: fn _user, _text -> :ok end},
       {HistoricalBalance, [:passthrough], usd_value_address_change: fn _, _ -> {:ok, data()} end}

@@ -318,9 +318,9 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
         bearer_authenticate_refresh_token(conn)
 
       {:error, :invalid_token} ->
-        %{permissions: User.Permissions.no_permissions()}
+        {:error, "Invalid JSON Web Token (JWT)"}
 
-      _ ->
+      error ->
         {:error, "Invalid JSON Web Token (JWT)"}
     end
   end

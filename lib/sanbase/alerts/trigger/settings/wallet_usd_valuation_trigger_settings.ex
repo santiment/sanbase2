@@ -4,7 +4,7 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
   changes by a predefined amount for a specified asset (Ethereum, SAN tokens, Bitcoin, etc.)
 
   The alert can follow a single address, a list of addresses
-  or a project. When a list of addresses or a project is followed, all the addresses
+  or a . When a list of addresses or a  is followed, all the addresses
   are considered to be owned by a single entity and the transfers between them
   are excluded.
   """
@@ -16,7 +16,6 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
   import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
 
   alias __MODULE__
-  alias Sanbase.Model.Project
   alias Sanbase.Alert.Type
   alias Sanbase.Clickhouse.HistoricalBalance
 

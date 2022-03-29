@@ -22,7 +22,10 @@ defmodule Sanbase.Mixfile do
       source_url: "https://github.com/santiment/sanbase2/",
       homepage_url: "https://app.santiment.net/projects",
       # Supress errors that should not be shown
-      xref: [exclude: [Oban]]
+      xref: [exclude: [Oban]],
+      dialyzer: [
+        plt_ignore_apps: [:ex_admin, :stripity_stripe]
+      ]
     ]
   end
 
@@ -132,12 +135,12 @@ defmodule Sanbase.Mixfile do
       {:phoenix_pubsub, "~> 2.0"},
       {:phoenix, "~> 1.6.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:postgrex, "~> 0.15.0", override: true},
+      {:postgrex, "~> 0.16", override: true},
       {:prometheus_ecto, "~> 1.3"},
       {:prometheus_ex, "~> 3.0", override: true},
       {:prometheus_plugs, "~> 1.0"},
       {:quantum, "~> 3.0"},
-      {:remote_ip, "~> 0.1"},
+      {:remote_ip, "~> 1.0"},
       {:rexbug, ">= 1.0.0"},
       {:san_exporter_ex, github: "santiment/san-exporter-ex"},
       {:sentry, "~> 7.0"},
@@ -153,7 +156,7 @@ defmodule Sanbase.Mixfile do
       {:ueberauth_google, "~> 0.10"},
       {:ueberauth_twitter, github: "santiment/ueberauth_twitter"},
       {:uuid, "~> 1.1"},
-      {:vex, "~> 0.8.0", override: true},
+      {:vex, "~> 0.9", override: true},
       {:waffle, "~> 1.1"},
       {:websockex, "~> 0.4.3"},
       {:kaffy, github: "santiment/kaffy"}

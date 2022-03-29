@@ -60,7 +60,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiAggregatedTimeseriesDataTest do
     """
 
     conn
-    |> post("graphql", query_skeleton(query))
+    |> post("/graphql", query_skeleton(query))
     |> json_response(200)
   end
 end

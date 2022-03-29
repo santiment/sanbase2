@@ -6,7 +6,6 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   @doc documentation_ref: "# DOCS access-plans/index.md"
 
   alias Sanbase.Billing.Plan
-  alias Sanbase.Alert.UserTrigger
 
   @free_plan_stats %{
     historical_data_in_days: 2 * 365,

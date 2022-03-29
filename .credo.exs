@@ -149,6 +149,10 @@
         {Credo.Check.Warning.UnusedStringOperation, []},
         {Credo.Check.Warning.UnusedTupleOperation, []},
         {Credo.Check.Warning.UnsafeExec, []},
+        {Credo.Check.Warning.SpecWithStruct, false},
+        {Credo.Check.Refactor.MapJoin, false},
+        {Credo.Check.Readability.WithSingleClause, false},
+        {Credo.Check.Refactor.RedundantWithClauseResult, false},
 
         #
         # Checks scheduled for next check update (opt-in for now, just replace `false` with `[]`)

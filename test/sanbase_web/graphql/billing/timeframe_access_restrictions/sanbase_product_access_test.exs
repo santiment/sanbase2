@@ -6,7 +6,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.TestHelpers
 
-  alias Sanbase.Billing.Plan.SanbaseAccessChecker
   alias Sanbase.Metric
   alias Sanbase.Signal
 
@@ -325,11 +324,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     query = create_trigger_mutation()
 
     execute_mutation(context.conn, query, "createTrigger")
-  end
-
-  defp create_trigger_mutation_with_error(context) do
-    query = create_trigger_mutation()
-    execute_mutation_with_error(context.conn, query)
   end
 
   defp metric_query(metric, selector, from, to) do

@@ -135,7 +135,7 @@ defmodule Sanbase.Mixfile do
       {:phoenix_pubsub, "~> 2.0"},
       {:phoenix, "~> 1.6.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:postgrex, "~> 0.15.0", override: true},
+      {:postgrex, "~> 0.16", override: true},
       {:prometheus_ecto, "~> 1.3"},
       {:prometheus_ex, "~> 3.0", override: true},
       {:prometheus_plugs, "~> 1.0"},

@@ -173,8 +173,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def fetch_default_payment_instrument(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    current_user = Sanbase.Accounts.get_user!(31)
-
     with {:ok, customer} <- StripeApi.fetch_default_card(current_user) do
       {:ok,
        %{

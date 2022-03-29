@@ -50,6 +50,9 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
       resolve(&BillingResolver.upcoming_invoice/3)
     end
 
+    @desc ~s"""
+    TODO: Add description
+    """
     field :fetch_default_payment_instrument, :payment_instrument do
       meta(access: :free)
 

@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   import Sanbase.Utils.ErrorHandling,
     only: [maybe_handle_graphql_error: 2, handle_graphql_error: 4]
 
-  alias Sanbase.Clickhouse.{HistoricalBalance, Balance}
+  alias Sanbase.Clickhouse.HistoricalBalance
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
   alias SanbaseWeb.Graphql.SanbaseDataloader
 

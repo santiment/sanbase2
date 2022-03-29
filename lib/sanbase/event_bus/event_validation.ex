@@ -200,7 +200,6 @@ defmodule Sanbase.EventBus.EventValidation do
 
   defp valid_integer_id?(id), do: is_integer(id) and id > 0
   defp valid_string_id?(id), do: is_binary(id) and id != ""
-  defp valid_string_field_change?(old, new), do: is_binary(old) and is_binary(new) and old != new
 
   defp valid_maybe_nil_string_field_change?(old, new),
     do: (is_nil(old) or is_binary(old)) and (is_nil(new) or is_binary(new)) and old != new

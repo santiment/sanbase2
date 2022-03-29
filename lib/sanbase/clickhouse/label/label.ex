@@ -207,7 +207,7 @@ defmodule Sanbase.Clickhouse.Label do
     {query, args}
   end
 
-  def addresses_by_label_keys_query(label_keys, _blockchain = nil) do
+  def addresses_by_label_keys_query(label_keys, nil = _blockchain) do
     query = """
     SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
     FROM label_addresses

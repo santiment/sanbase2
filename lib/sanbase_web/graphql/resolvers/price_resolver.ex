@@ -31,10 +31,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   def history_price(_root, %{slug: @total_erc20} = args, _resolution) do
     %{from: from, to: to, interval: interval} = args
 
-    with {:ok, from, to, interval} <-
-           calibrate(Price, @total_erc20, from, to, interval, 300),
-         {:ok, result} <- Price.timeseries_data(@total_erc20, from, to, interval) do
-      {:ok, result}
+    case calibrate(Price, @total_erc20, from, to, interval, 300) do
+      {:ok, from, to, interval} -> Price.timeseries_data(@total_erc20, from, to, interval)
+      error -> error
     end
   end
 

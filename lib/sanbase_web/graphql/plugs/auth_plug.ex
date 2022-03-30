@@ -320,7 +320,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
       {:error, :invalid_token} ->
         {:error, "Invalid JSON Web Token (JWT)"}
 
-      error ->
+      _error ->
         {:error, "Invalid JSON Web Token (JWT)"}
     end
   end

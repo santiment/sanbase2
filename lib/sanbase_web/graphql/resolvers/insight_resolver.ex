@@ -120,12 +120,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, posts}
   end
 
-  def all_insights_by_search_term(_root, %{search_term: search_term} = args, _context) do
+  def all_insights_by_search_term(
+        _root,
+        %{search_term: search_term, page: page, page_size: page_size} = args,
+        _context
+      ) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
       is_paywall_required: Map.get(args, :is_paywall_required),
       from: Map.get(args, :from),
-      to: Map.get(args, :to)
+      to: Map.get(args, :to),
+      page: page,
+      page_size: page_size
     ]
 
     # Search is done only on the publicly visible (published) insights.
@@ -162,7 +168,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def pulse_text(%Post{} = post, _args, _resolution) do
     case Post.is_pulse?(post) do
       true -> {:ok, post.text}
-      false -> {:ok, nil}
+      _ -> {:ok, nil}
     end
   end
 

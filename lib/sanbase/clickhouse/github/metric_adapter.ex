@@ -271,36 +271,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def min_plan_map(), do: @min_plan_map
 
   defp first_datetime_for_organizations([]), do: {:ok, nil}
-
-  defp first_datetime_for_organizations(organizations) do
-    datetime =
-      organizations
-      |> Enum.map(fn org ->
-        case Github.first_datetime(org) do
-          {:ok, datetime} -> datetime
-          _ -> nil
-        end
-      end)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.min_by(&DateTime.to_unix(&1))
-
-    {:ok, datetime}
-  end
+  defp first_datetime_for_organizations(organizations), do: Github.first_datetime(organizations)
 
   defp last_datetime_computed_at_for_organizations([]), do: {:ok, nil}
 
-  defp last_datetime_computed_at_for_organizations(organizations) do
-    datetime =
-      organizations
-      |> Enum.map(fn org ->
-        case Github.last_datetime_computed_at(org) do
-          {:ok, datetime} -> datetime
-          _ -> nil
-        end
-      end)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.max_by(&DateTime.to_unix(&1))
-
-    {:ok, datetime}
-  end
+  defp last_datetime_computed_at_for_organizations(organizations),
+    do: Github.last_datetime_computed_at(organizations)
 end

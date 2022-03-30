@@ -18,7 +18,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   load_from_system_env: true,
   secret_key_base: "${SECRET_KEY_BASE}",
   live_view: [signing_salt: "${PHOENIX_LIVE_VIEW_SIGNING_SALT}"],
-  check_origin: ["//*.santiment.net"]
+  check_origin: ["//*.santiment.net", "//*.sanr.app"]
 
 # Clickhousex does not support `:system` tuples. The configuration is done
 # by defining defining `:url` in the ClickhouseRepo `init` function.

@@ -162,7 +162,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def pulse_text(%Post{} = post, _args, _resolution) do
     case Post.is_pulse?(post) do
       true -> {:ok, post.text}
-      false -> {:ok, nil}
+      _ -> {:ok, nil}
     end
   end
 

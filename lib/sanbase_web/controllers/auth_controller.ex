@@ -93,7 +93,7 @@ defmodule SanbaseWeb.AccountsController do
     User.find_or_insert_by(:twitter_id, twitter_id, %{is_registered: true, login_origin: :twitter})
   end
 
-  defp get_redirect_urls(%{"state" => state}) do
+  defp get_redirect_urls(%{"san_redirects_state" => state}) do
     website_url = SanbaseWeb.Endpoint.website_url()
 
     map =

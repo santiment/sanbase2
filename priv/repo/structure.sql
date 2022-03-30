@@ -1469,7 +1469,7 @@ CREATE TABLE public.oban_jobs (
 -- Name: TABLE oban_jobs; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.oban_jobs IS '10';
+COMMENT ON TABLE public.oban_jobs IS '11';
 
 
 --
@@ -1489,6 +1489,18 @@ CREATE SEQUENCE public.oban_jobs_id_seq
 --
 
 ALTER SEQUENCE public.oban_jobs_id_seq OWNED BY public.oban_jobs.id;
+
+
+--
+-- Name: oban_peers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE UNLOGGED TABLE public.oban_peers (
+    name text NOT NULL,
+    node text NOT NULL,
+    started_at timestamp without time zone NOT NULL,
+    expires_at timestamp without time zone NOT NULL
+);
 
 
 --
@@ -4393,6 +4405,14 @@ ALTER TABLE ONLY public.oban_jobs
 
 
 --
+-- Name: oban_peers oban_peers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oban_peers
+    ADD CONSTRAINT oban_peers_pkey PRIMARY KEY (name);
+
+
+--
 -- Name: plans plans_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7102,3 +7122,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20211124075928);
 INSERT INTO public."schema_migrations" (version) VALUES (20211126144929);
 INSERT INTO public."schema_migrations" (version) VALUES (20211206104913);
 INSERT INTO public."schema_migrations" (version) VALUES (20220201122953);
+INSERT INTO public."schema_migrations" (version) VALUES (20220330100631);

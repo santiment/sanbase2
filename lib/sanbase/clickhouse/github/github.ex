@@ -244,8 +244,9 @@ defmodule Sanbase.Clickhouse.Github do
   def first_datetime(organization) when is_binary(organization) do
     {query, args} = first_datetime_query(organization)
 
-    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
-      datetime |> DateTime.from_unix!()
+    ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
+      IO.inspect(timestamp)
+      timestamp |> DateTime.from_unix!()
     end)
     |> maybe_unwrap_ok_value()
   end

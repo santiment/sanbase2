@@ -21,7 +21,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     query = """
     SELECT toUnixTimestamp(min(dt))
     FROM #{@table}
-    PREWHERE owner = ?1
+    owner = ?1 AND dt >= toDateTime('2005-01-01 00:00:00') AND dt <= now()
     """
 
     args = [organization]
@@ -32,7 +32,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     query = """
     SELECT toUnixTimestamp(max(dt))
     FROM #{@table}
-    PREWHERE owner = ?1
+    PREWHERE owner = ?1 AND dt >= toDateTime('2005-01-01 00:00:00') AND dt <= now()
     """
 
     args = [organization]

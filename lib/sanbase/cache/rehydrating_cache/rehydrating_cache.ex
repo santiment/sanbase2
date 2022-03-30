@@ -286,7 +286,7 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   defp run_function_get_updated_progress(state, key, fun_map) do
     %{progress: progress, task_supervisor: task_supervisor, now_unix: now_unix} = state
-    now_dt = DateTime.to_unix(now_unix)
+    now_dt = DateTime.from_unix!(now_unix)
 
     %{pid: pid} = run_function(self(), fun_map, task_supervisor)
     # Put both the datetime and unix timestamp in the progress map. The unix is used

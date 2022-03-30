@@ -241,17 +241,18 @@ defmodule Sanbase.Clickhouse.Github do
     end
   end
 
-  def first_datetime(organization) when is_binary(organization) do
-    {query, args} = first_datetime_query(organization)
+  def first_datetime(organization_or_organizations) do
+    {query, args} = first_datetime_query(organization_or_organizations)
 
-    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
-      datetime |> DateTime.from_unix!()
+    ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
+      IO.inspect(timestamp)
+      timestamp |> DateTime.from_unix!()
     end)
     |> maybe_unwrap_ok_value()
   end
 
-  def last_datetime_computed_at(organization) when is_binary(organization) do
-    {query, args} = last_datetime_computed_at_query(organization)
+  def last_datetime_computed_at(organization_or_organizations) do
+    {query, args} = last_datetime_computed_at_query(organization_or_organizations)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
       datetime |> DateTime.from_unix!()

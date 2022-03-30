@@ -17,25 +17,27 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
 
   def non_dev_events(), do: @non_dev_events
 
-  def first_datetime_query(organization) when is_binary(organization) do
+  def first_datetime_query(organization_or_organizations) do
     query = """
     SELECT toUnixTimestamp(min(dt))
     FROM #{@table}
-    PREWHERE owner = ?1
+    PREWHERE owner IN (?1) AND dt >= toDateTime('2005-01-01 00:00:00') AND dt <= now()
     """
 
-    args = [organization]
+    organizations = List.wrap(organization_or_organizations) |> Enum.map(&String.downcase/1)
+    args = [organizations]
     {query, args}
   end
 
-  def last_datetime_computed_at_query(organization) when is_binary(organization) do
+  def last_datetime_computed_at_query(organization_or_organizations) do
     query = """
     SELECT toUnixTimestamp(max(dt))
     FROM #{@table}
-    PREWHERE owner = ?1
+    PREWHERE owner IN (?1) AND dt >= toDateTime('2005-01-01 00:00:00') AND dt <= now()
     """
 
-    args = [organization]
+    organizations = List.wrap(organization_or_organizations) |> Enum.map(&String.downcase/1)
+    args = [organizations]
 
     {query, args}
   end

@@ -1,5 +1,15 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
-  @blockchains ["ethereum", "bitcoin", "bitcoin-cash", "litecoin", "ripple", "binance-coin", "dogecoin", "polygon", "cardano"]
+  @blockchains [
+    "ethereum",
+    "bitcoin",
+    "bitcoin-cash",
+    "litecoin",
+    "ripple",
+    "binance-coin",
+    "dogecoin",
+    "matic-network",
+    "cardano"
+  ]
 
   def available_blockchains_metadata(_root, _argsargs, _resolution) do
     {:ok, Enum.map(@blockchains, &blockchain_data/1)}
@@ -29,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       infrastructure: "BTC",
       created_on: ~U[2009-01-03 00:00:00Z],
       has_exchange_metrics: true,
-      has_miners_metrics: false,
+      has_miners_metrics: true,
       has_label_metrics: false,
       has_top_holders_metrics: true,
       has_onchain_financial_metrics: true,
@@ -124,11 +134,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
     |> add_complex_fields()
   end
 
-  defp blockchain_data("polygon") do
+  defp blockchain_data("matic-network") do
     %{
-      blockchain: "polygon",
-      slug: "polygon",
-      infrastructure: "POLYGON",
+      blockchain: "matic-network",
+      slug: "matic-network",
+      infrastructure: "MATIC",
       created_on: ~U[2017-07-12 00:00:00Z],
       has_exchange_metrics: false,
       has_miners_metrics: false,

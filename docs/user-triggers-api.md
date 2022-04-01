@@ -9,6 +9,7 @@
       - [Example settings structure for `signal_data`](#example-settings-structure-for-signal_data)
       - [Example settings structure for `wallet_movement`](#example-settings-structure-for-wallet_movement)
       - [Example settings structure for `wallet_usd_valuation`](#example-settings-structure-for-wallet_usd_valuation)
+      - [Example settings structure for `wallet_assets_held`](#example-settings-structure-for-wallet_assets_held)
       - [Example settings structure for `metric_signal`](#example-settings-structure-for-metric_signal)
         - [Price data](#price-data)
         - [Social data](#social-data)
@@ -301,7 +302,7 @@ The following blockchains are supported, identified by `infrastructure`:
 - (BNB or BEP2) Binance Chain
 
 When working with the alert, provide the `infrastructure` in the selector and the
-address in the `target`
+address in the `target`.
 ```json
 // The USD valuation of the null address increased by $1 million in the past 24 hours
 {
@@ -313,6 +314,38 @@ address in the `target`
   "operation": { "amount_up": 1000000 }
 }
 ```
+
+#### Example settings structure for `wallet_assets_held`
+
+This alert allows you to monitor the assets held by an address. The assets held are
+those assets that have non-zero balance for a given address. When a previously held
+assets does no longer have a non-zero balance or a new asset appears in the list, the
+alert is fired. Assets can re-appear and trigger the alert - if an asset was previously
+held by the address, then it was completely sold and now it again has non-zero balance,
+the alert is fired.
+
+The following blockchains are supported, identified by `infrastructure`:
+
+- (ETH) Ethereum
+- (BTC) Bitcoin
+- (BCH) Bitcoin Cash
+- (LTC) Litecoin
+- (XRP) Ripple
+- (BNB or BEP2) Binance Chain
+
+When working with the alert, provide the `infrastructure` in the selector and the
+address in the `target`.
+```json
+// The set of assets the NULL address holds has changed
+{
+  "type": "wallet_assets_held",
+  "channel": "telegram",
+  "target": { "address": "0x0000000000000000000000000000000000000000" },
+  "time_window": "1d",
+  "selector": { "infrastructure": "ETH"}
+}
+```
+
 
 #### Example settings structure for `metric_signal`
 

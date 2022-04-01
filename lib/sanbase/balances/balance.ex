@@ -221,6 +221,27 @@ defmodule Sanbase.Balance do
     |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.usd_value_change, :desc) end)
   end
 
+  def usd_value_held_by_address(address) do
+    address = Sanbase.BlockchainAddress.to_internal_format(address)
+    {query, args} = usd_value_held_by_address_query(address)
+    hidden_projects_slugs = hidden_projects_slugs()
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn [slug, current_balance, current_price_usd, current_usd_value] ->
+        %{
+          slug: slug,
+          current_balance: current_balance,
+          current_price_usd: current_price_usd,
+          current_usd_value: current_usd_value
+        }
+      end
+    )
+    |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
+    |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.current_usd_value, :desc) end)
+  end
+
   @doc ~s"""
   Return all addresses that have balance that matches a set of filters.
   The operator shows how the comparison must be done (:greater_than, :less_than, etc.any)

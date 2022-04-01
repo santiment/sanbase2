@@ -33,15 +33,21 @@ config :sanbase, Sanbase.Alerts.Scheduler,
       schedule: "3-59/5 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.EthWalletTriggerSettings]}
     ],
-    wallet_movement: [
+    wallet_movement_alert: [
       schedule: "3-59/5 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.WalletTriggerSettings]}
     ],
-    wallet_usd_valuation: [
+    wallet_usd_valuation_alert: [
       # Run the alert every 15 minutes as it's heavier to compute. Also, address
       # USD valuations do not change drastically that often.
       schedule: "4-59/15 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.WalletUsdValuationTriggerSettings]}
+    ],
+    wallet_assets_held_alert: [
+      # Run the alert every 15 minutes as it's heavier to compute. Also, address
+      # assets held do not change drastically that often.
+      schedule: "5-59/15 * * * *",
+      task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.WalletAssetsHeldTriggerSettings]}
     ],
     trending_words_sonar_alert: [
       schedule: "4-59/5 * * * *",

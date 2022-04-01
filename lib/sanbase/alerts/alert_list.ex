@@ -7,12 +7,13 @@ defmodule Sanbase.Alert.List do
       Trigger.EthWalletTriggerSettings,
       Trigger.MetricTriggerSettings,
       Trigger.PriceVolumeDifferenceTriggerSettings,
+      Trigger.RawSignalTriggerSettings,
       Trigger.ScreenerTriggerSettings,
-      Trigger.TrendingWordsTriggerSettings,
-      Trigger.WalletTriggerSettings,
-      Trigger.WalletUsdValuationTriggerSettings,
       Trigger.SignalTriggerSettings,
-      Trigger.RawSignalTriggerSettings
+      Trigger.TrendingWordsTriggerSettings,
+      Trigger.WalletAssetsHeldTriggerSettings,
+      Trigger.WalletTriggerSettings,
+      Trigger.WalletUsdValuationTriggerSettings
     ]
   end
 end

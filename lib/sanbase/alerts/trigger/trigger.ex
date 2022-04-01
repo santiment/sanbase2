@@ -109,6 +109,10 @@ defmodule Sanbase.Alert.Trigger do
     Sanbase.TemplateEngine.run(template, kv)
   end
 
+  def get_filtered_target(%Trigger{settings: %{target: target}} = trigger) do
+    remove_targets_on_cooldown(target, trigger)
+  end
+
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
     filtered_target = remove_targets_on_cooldown(target, trigger)
 

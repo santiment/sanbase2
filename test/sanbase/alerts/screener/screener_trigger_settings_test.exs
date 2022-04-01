@@ -91,8 +91,7 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
       # First run
       assert capture_log(fn ->
                Sanbase.Alert.Scheduler.run_alert(ScreenerTriggerSettings)
-             end) =~
-               "In total 1/1 screener_signal alerts were sent successfully"
+             end) =~ "In total 1/1 screener_signal alerts were sent successfully"
 
       # Clear the result of the filter
       Sanbase.Cache.clear_all()

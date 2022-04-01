@@ -1,4 +1,19 @@
 defmodule Sanbase.Entity do
+  @moduledoc ~s"""
+  Provide unified access to all sanbase defined entities.
+
+  Entities include:
+  - Insight
+  - Watchlist
+  - Screener
+  - Timeline Event
+  - Chart Configuration
+
+  This module provides functions for fetching lists of entities of a given type,
+  ordered in a specific way. There are two orderings:
+  - most recent first
+  - most voted first
+  """
   import Ecto.Query
 
   alias Sanbase.Chart

@@ -108,7 +108,8 @@ defmodule Sanbase.Factory do
       metrics: [
         Sanbase.Repo.get_by(Sanbase.Metric.MetricPostgresData, name: metric) ||
           build(:metric_postgres, %{name: metric})
-      ]
+      ],
+      published_at: DateTime.utc_now()
     }
   end
 

@@ -34,20 +34,22 @@ defmodule Sanbase.Entity do
   # Private functions
 
   defp do_get_most_recent(entity, opts) do
-    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
-
     public_enitiy_ids_query = public_entity_ids_query(entity)
     entity_module = deduce_entity_module(entity)
 
+    # Add named binding as it is used in the subquery to avoid issues
+    # where one query needs to access the right joined table and the
+    # other does not have joins.
     entity_ids =
       from(
         entity in entity_module,
+        as: :entity,
         select: entity.id,
         where: entity.id in subquery(public_enitiy_ids_query),
-        order_by: [desc: entity.id],
-        limit: ^limit,
-        offset: ^offset
+        order_by: [desc: entity.id]
       )
+      |> paginate(opts)
+      |> maybe_filter_by_cursor(entity, opts)
       |> Sanbase.Repo.all()
 
     case entity_module.by_ids(entity_ids, []) do
@@ -57,7 +59,6 @@ defmodule Sanbase.Entity do
   end
 
   defp do_get_most_voted(entity, opts) do
-    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
     entity_field = deduce_entity_field(entity)
 
     # We cannot just find the most voted entity as it could be
@@ -68,18 +69,22 @@ defmodule Sanbase.Entity do
     entity_module = deduce_entity_module(entity)
     public_enitiy_ids_query = public_entity_ids_query(entity)
 
+    # Add named binding as it is used in the subquery to avoid issues
+    # where one query needs to access the right joined table and the
+    # other does not have joins.
     entity_ids =
       from(
         vote in Sanbase.Vote,
         right_join: entity in ^entity_module,
+        as: :entity,
         on: field(vote, ^entity_field) == entity.id,
         where: entity.id in subquery(public_enitiy_ids_query),
         group_by: entity.id,
         select: entity.id,
-        order_by: [desc: coalesce(sum(vote.count), 0), desc: entity.id],
-        limit: ^limit,
-        offset: ^offset
+        order_by: [desc: coalesce(sum(vote.count), 0), desc: entity.id]
       )
+      |> paginate(opts)
+      |> maybe_filter_by_cursor(entity, opts)
       |> Sanbase.Repo.all()
 
     case entity_module.by_ids(entity_ids, []) do
@@ -108,4 +113,45 @@ defmodule Sanbase.Entity do
   defp deduce_entity_module(:screener), do: UserList
   defp deduce_entity_module(:timeline_event), do: TimelineEvent
   defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
+
+  defp paginate(query, opts) do
+    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
+
+    query
+    |> limit(^limit)
+    |> offset(^offset)
+  end
+
+  defp maybe_filter_by_cursor(query, entity_type, opts) do
+    case Keyword.get(opts, :cursor) do
+      nil -> query
+      %{type: type, datetime: datetime} -> filter_by_cursor(type, query, entity_type, datetime)
+    end
+  end
+
+  # In the case of most voted API the Vote table is joined with the
+  # entity table, so we need to access the entity from that joined table.
+  # In the other case there are no joins. Solve this difference by
+  # using named bindings in both cases.
+  defp filter_by_cursor(:before, query, entity_type, datetime) do
+    field = entity_datetime_field(entity_type)
+
+    from(
+      [entity: entity] in query,
+      where: field(entity, ^field) <= ^datetime
+    )
+  end
+
+  defp filter_by_cursor(:after, query, entity_type, datetime) do
+    field = entity_datetime_field(entity_type)
+
+    from(
+      [entity: entity] in query,
+      where: field(entity, ^field) >= ^datetime
+    )
+  end
+
+  # Insights are considered created once they are published
+  defp entity_datetime_field(:insight), do: :published_at
+  defp entity_datetime_field(_), do: :inserted_at
 end

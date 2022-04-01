@@ -245,7 +245,6 @@ defmodule Sanbase.Clickhouse.Github do
     {query, args} = first_datetime_query(organization_or_organizations)
 
     ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
-      IO.inspect(timestamp)
       timestamp |> DateTime.from_unix!()
     end)
     |> maybe_unwrap_ok_value()

@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
   end
 
   test "get most voted insight", %{conn: conn} do
+    _ = insert(:published_post, published_at: days_ago())
     insight1 = insert(:published_post)
     insight2 = insert(:published_post)
     insight_without_votes1 = insert(:published_post)
@@ -32,13 +33,16 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
 
   test "get most voted screener", %{conn: conn} do
     # The non-screener should not be in the result
-    watchlist0 = insert(:watchlist, is_public: true, is_screener: false)
+    watchlist0_1 = insert(:watchlist, is_public: true, is_screener: false)
+    watchlist0_2 = insert(:watchlist, is_public: true, is_screener: true, inserted_at: days_ago())
+
     watchlist1 = insert(:watchlist, is_public: true, is_screener: true)
     watchlist2 = insert(:watchlist, is_public: true, is_screener: true)
     watchlist_without_votes1 = insert(:watchlist, is_public: true, is_screener: true)
     watchlist_without_votes2 = insert(:watchlist, is_public: true, is_screener: true)
 
-    for _ <- 1..20, do: vote(conn, "watchlistId", watchlist0.id)
+    for _ <- 1..20, do: vote(conn, "watchlistId", watchlist0_1.id)
+    for _ <- 1..20, do: vote(conn, "watchlistId", watchlist0_2.id)
     for _ <- 1..10, do: vote(conn, "watchlistId", watchlist1.id)
     for _ <- 1..5, do: vote(conn, "watchlistId", watchlist2.id)
 
@@ -57,13 +61,18 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
 
   test "get most voted watchlist", %{conn: conn} do
     # The screener should not be in the result
-    watchlist0 = insert(:watchlist, is_public: true, is_screener: true)
+    watchlist0_1 = insert(:watchlist, is_public: true, is_screener: true)
+
+    watchlist0_2 =
+      insert(:watchlist, is_public: true, is_screener: false, inserted_at: days_ago())
+
     watchlist1 = insert(:watchlist, is_public: true, is_screener: false)
     watchlist2 = insert(:watchlist, is_public: true, is_screener: false)
     watchlist_without_votes1 = insert(:watchlist, is_public: true, is_screener: false)
     watchlist_without_votes2 = insert(:watchlist, is_public: true, is_screener: false)
 
-    for _ <- 1..20, do: vote(conn, "watchlistId", watchlist0.id)
+    for _ <- 1..20, do: vote(conn, "watchlistId", watchlist0_1.id)
+    for _ <- 1..20, do: vote(conn, "watchlistId", watchlist0_2.id)
     for _ <- 1..10, do: vote(conn, "watchlistId", watchlist1.id)
     for _ <- 1..5, do: vote(conn, "watchlistId", watchlist2.id)
 
@@ -87,11 +96,13 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
       event_type: TimelineEvent.update_watchlist_type()
     ]
 
+    timeline_event0 = insert(:timeline_event, Keyword.put(te_opts, :inserted_at, days_ago()))
     timeline_event1 = insert(:timeline_event, te_opts)
     timeline_event2 = insert(:timeline_event, te_opts)
     timeline_event_without_votes1 = insert(:timeline_event, te_opts)
     timeline_event_without_votes2 = insert(:timeline_event, te_opts)
 
+    for _ <- 1..10, do: vote(conn, "timelineEventId", timeline_event0.id)
     for _ <- 1..10, do: vote(conn, "timelineEventId", timeline_event1.id)
     for _ <- 1..5, do: vote(conn, "timelineEventId", timeline_event2.id)
 
@@ -105,11 +116,13 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
   end
 
   test "get most voted chart configuration", %{conn: conn} do
+    chart_configuration0 = insert(:chart_configuration, is_public: true, inserted_at: days_ago())
     chart_configuration1 = insert(:chart_configuration, is_public: true)
     chart_configuration2 = insert(:chart_configuration, is_public: true)
     chart_configuration_without_votes1 = insert(:chart_configuration, is_public: true)
     chart_configuration_without_votes2 = insert(:chart_configuration, is_public: true)
 
+    for _ <- 1..10, do: vote(conn, "chartConfigurationId", chart_configuration0.id)
     for _ <- 1..10, do: vote(conn, "chartConfigurationId", chart_configuration1.id)
     for _ <- 1..5, do: vote(conn, "chartConfigurationId", chart_configuration2.id)
 
@@ -151,16 +164,18 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
   defp get_most_voted(conn, entity) do
     query = """
     {
-    getMostVoted(
-    type: #{entity |> Atom.to_string() |> String.upcase()}
-    page: 1
-    pageSize: 10){
-      insight{ id }
-      watchlist{ id }
-      screener{ id }
-      timelineEvent{ id }
-      chartConfiguration{ id }
-    }
+      getMostVoted(
+        type: #{entity |> Atom.to_string() |> String.upcase()}
+        page: 1
+        pageSize: 10
+        cursor: { type: AFTER, datetime: "utc_now-7d" }
+      ){
+          insight{ id }
+          watchlist{ id }
+          screener{ id }
+          timelineEvent{ id }
+          chartConfiguration{ id }
+      }
     }
     """
 
@@ -168,5 +183,9 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)
     |> get_in(["data", "getMostVoted"])
+  end
+
+  defp days_ago() do
+    Timex.shift(Timex.now(), days: -10)
   end
 end

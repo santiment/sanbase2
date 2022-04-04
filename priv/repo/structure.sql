@@ -5243,10 +5243,10 @@ CREATE INDEX oban_jobs_meta_index ON public.oban_jobs USING gin (meta);
 
 
 --
--- Name: oban_jobs_queue_state_priority_scheduled_at_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: oban_jobs_state_queue_priority_scheduled_at_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX oban_jobs_queue_state_priority_scheduled_at_id_index ON public.oban_jobs USING btree (queue, state, priority, scheduled_at, id);
+CREATE INDEX oban_jobs_state_queue_priority_scheduled_at_id_index ON public.oban_jobs USING btree (state, queue, priority, scheduled_at, id);
 
 
 --
@@ -7123,3 +7123,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20211126144929);
 INSERT INTO public."schema_migrations" (version) VALUES (20211206104913);
 INSERT INTO public."schema_migrations" (version) VALUES (20220201122953);
 INSERT INTO public."schema_migrations" (version) VALUES (20220330100631);
+INSERT INTO public."schema_migrations" (version) VALUES (20220404132445);

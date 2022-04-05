@@ -125,7 +125,16 @@ defmodule Sanbase.UserList do
 
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
-    from(ul in __MODULE__, where: ul.is_public == true)
+    from(ul in __MODULE__)
+    |> where([ul], ul.is_public == true)
+    |> select([ul], ul.id)
+    |> maybe_filter_is_screener(opts)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def user_entity_ids_query(user_id, opts) do
+    from(ul in __MODULE__)
+    |> where([ul], ul.user_id == ^user_id)
     |> select([ul], ul.id)
     |> maybe_filter_is_screener(opts)
   end

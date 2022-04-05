@@ -80,7 +80,15 @@ defmodule Sanbase.Chart.Configuration do
 
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(_opts) do
-    from(config in __MODULE__, where: config.is_public == true)
+    from(config in __MODULE__)
+    |> where([config], config.is_public == true)
+    |> select([config], config.id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def user_entity_ids_query(user_id, _opts) do
+    from(config in __MODULE__)
+    |> where([config], config.user_id == ^user_id)
     |> select([config], config.id)
   end
 

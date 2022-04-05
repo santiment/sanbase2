@@ -103,6 +103,13 @@ defmodule Sanbase.Insight.Post do
     |> select([p], p.id)
   end
 
+  @impl Sanbase.Entity.Behaviour
+  def user_entity_ids_query(user_id, opts) do
+    base_insights_query(opts)
+    |> by_user(user_id)
+    |> select([p], p.id)
+  end
+
   def insights_count_map() do
     map =
       from(
@@ -250,7 +257,6 @@ defmodule Sanbase.Insight.Post do
       |> where([p], p.id in ^post_ids)
       |> order_by([p], fragment("array_position(?, ?::int)", ^post_ids, p.id))
       |> Repo.all()
-      |> Tag.Preloader.order_tags()
 
     {:ok, result}
   end
@@ -388,8 +394,6 @@ defmodule Sanbase.Insight.Post do
   end
 
   def base_insights_query(opts) do
-    IO.inspect("BASE INSIGHTS")
-
     Post
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
@@ -502,11 +506,8 @@ defmodule Sanbase.Insight.Post do
   # Helper functions
 
   defp public_insights_query(opts) do
-    published_and_approved_insights()
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
-    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
-    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
-    |> maybe_preload(opts)
+    base_insights_query(opts)
+    |> filter_published_and_approved()
   end
 
   defp publish_post(post) do
@@ -650,9 +651,7 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp maybe_distinct(query, opts) do
-    IO.inspect(Keyword.get(opts, :distinct?, true), label: "DISTINCT?")
-
-    case Keyword.get(opts, :distinct?, true) do
+    case Keyword.get(opts, :distinct?, false) do
       true -> from(p in query, distinct: true)
       false -> query
     end

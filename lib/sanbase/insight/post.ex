@@ -97,6 +97,12 @@ defmodule Sanbase.Insight.Post do
     timestamps()
   end
 
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    public_insights_query(opts)
+    |> select([p], p.id)
+  end
+
   def insights_count_map() do
     map =
       from(
@@ -247,12 +253,6 @@ defmodule Sanbase.Insight.Post do
       |> Tag.Preloader.order_tags()
 
     {:ok, result}
-  end
-
-  @impl Sanbase.Entity.Behaviour
-  def public_entity_ids_query(opts) do
-    public_insights_query(opts)
-    |> select([p], p.id)
   end
 
   @spec create(%User{}, map()) :: {:ok, %__MODULE__{}} | {:error, Keyword.t()}
@@ -432,14 +432,6 @@ defmodule Sanbase.Insight.Post do
     |> Tag.Preloader.order_tags()
   end
 
-  def public_insights_query(opts \\ []) do
-    published_and_approved_insights()
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
-    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
-    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
-    |> maybe_preload(opts)
-  end
-
   @doc """
   All public insights published after datetime
   """
@@ -549,7 +541,16 @@ defmodule Sanbase.Insight.Post do
   end
 
   def is_pulse?(%__MODULE__{is_pulse: is_pulse}), do: is_pulse
+
   # Helper functions
+
+  defp public_insights_query(opts) do
+    published_and_approved_insights()
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
+    |> maybe_preload(opts)
+  end
 
   defp publish_post(post) do
     publish_changeset = publish_changeset(post, %{ready_state: Post.published()})

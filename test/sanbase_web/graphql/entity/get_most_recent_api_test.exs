@@ -109,15 +109,16 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
   defp get_most_recent(conn, entity) do
     query = """
     {
-    getMostRecent(
-      type: #{entity |> Atom.to_string() |> String.upcase()}
-      page: 1
-      pageSize: 10){
-        insight{ id }
-        watchlist{ id }
-        screener{ id }
-        timelineEvent{ id }
-        chartConfiguration{ id }
+      getMostRecent(
+        type: #{entity |> Atom.to_string() |> String.upcase()}
+        page: 1
+        pageSize: 10
+      ){
+          insight{ id }
+          watchlist{ id }
+          screener{ id }
+          timelineEvent{ id }
+          chartConfiguration{ id }
       }
     }
     """

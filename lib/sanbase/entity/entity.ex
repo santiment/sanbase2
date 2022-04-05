@@ -79,7 +79,11 @@ defmodule Sanbase.Entity do
 
     entity_field = deduce_entity_field(entity)
     entity_module = deduce_entity_module(entity)
+<<<<<<< HEAD
     entity_ids = entity_ids_query(entity, opts)
+=======
+    entity_ids = entity_ids_query(entity)
+>>>>>>> a0a21c8cd (Improve/simplify Post sql queries)
 
     # Add named binding as it is used in the subquery to avoid issues where one
     # query needs to access the right joined table and the other does not have
@@ -141,6 +145,7 @@ defmodule Sanbase.Entity do
       user_id -> TimelineEvent.user_entity_ids_query(user_id, [])
     end
   end
+
 
   defp deduce_entity_module(:insight), do: Post
   defp deduce_entity_module(:watchlist), do: UserList

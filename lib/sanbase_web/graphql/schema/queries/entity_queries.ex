@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
     field :get_most_voted, list_of(:entity_result) do
       meta(access: :free)
       arg(:type, :entity_type)
+      arg(:types, list(:entity_type))
       arg(:page, :integer)
       arg(:page_size, :integer)
       arg(:cursor, :cursor_input_no_order, default_value: nil)
@@ -22,6 +23,7 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
     field :get_most_recent, list_of(:entity_result) do
       meta(access: :free)
       arg(:type, :entity_type)
+      arg(:types, list(:entity_type))
       arg(:page, :integer)
       arg(:page_size, :integer)
       arg(:cursor, :cursor_input_no_order, default_value: nil)

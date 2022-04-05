@@ -236,7 +236,7 @@ defmodule Sanbase.Insight.Post do
 
     case result do
       nil -> {:error, "There is no insight with id #{id}"}
-      post -> {:ok, Tag.Preloader.order_tags(post)}
+      post -> {:ok, post}
     end
   end
 
@@ -387,113 +387,70 @@ defmodule Sanbase.Insight.Post do
     {:ok, projects}
   end
 
+  def base_insights_query(opts) do
+    IO.inspect("BASE INSIGHTS")
+
+    Post
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> by_from_to_datetime(opts)
+    |> maybe_distinct(opts)
+    |> order_by_published_at()
+    |> page(opts)
+    |> maybe_preload(opts)
+  end
+
   @doc """
-  All insights for given user_id
+  All insights for given user_id, including drafts. This is used when the current
+  user fetches their own insights list.
   """
   def user_insights(user_id, opts \\ []) do
-    Post
+    base_insights_query(opts)
     |> by_user(user_id)
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
-    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
-    |> order_by_published_at()
-    |> page(opts)
-    |> preload(^@preloads)
     |> Repo.all()
-    |> Tag.Preloader.order_tags()
   end
 
   @doc """
-  All published insights for given user_id
+  All published insights for given user_id. This is used when the current user
+  is fetching data for another user.
   """
   def user_public_insights(user_id, opts \\ []) do
-    published_and_approved_insights()
+    base_insights_query(opts)
     |> by_user(user_id)
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
-    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
-    |> by_from_to_datetime(
-      Keyword.get(opts, :from, nil),
-      Keyword.get(opts, :to, nil)
-    )
-    |> order_by_published_at()
-    |> page(opts)
-    |> preload(^@preloads)
+    |> filter_published_and_approved()
     |> Repo.all()
-    |> Tag.Preloader.order_tags()
   end
 
   @doc """
-  All public (published and approved) insights paginated
+  Fetch public (published and approved) insights.
   """
-  def public_insights(page, page_size, opts \\ []) do
+  def public_insights(opts \\ []) do
     public_insights_query(opts)
-    |> order_by_published_at()
-    |> page(page, page_size)
     |> Repo.all()
-    |> Tag.Preloader.order_tags()
   end
 
   @doc """
   All public insights published after datetime
   """
   def public_insights_after(datetime, opts \\ []) do
-    published_and_approved_insights()
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
-    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    public_insights_query(opts)
     |> after_datetime(datetime)
-    |> order_by_published_at()
     |> Repo.all()
-    |> Tag.Preloader.order_tags()
   end
 
   def public_insights_by_tags(tags, opts \\ []) when is_list(tags) do
-    published_and_approved_insights()
+    public_insights_query(opts)
     |> by_tags(tags)
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
-    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
-    |> by_from_to_datetime(
-      Keyword.get(opts, :from, nil),
-      Keyword.get(opts, :to, nil)
-    )
-    |> distinct(true)
-    |> order_by_published_at()
-    |> maybe_preload(opts)
     |> Repo.all()
-    |> Tag.Preloader.order_tags()
-  end
-
-  def public_insights_by_tags(tags, page, page_size, opts \\ [])
-      when is_list(tags) do
-    published_and_approved_insights()
-    |> by_tags(tags)
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
-    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
-    |> by_from_to_datetime(
-      Keyword.get(opts, :from, nil),
-      Keyword.get(opts, :to, nil)
-    )
-    |> distinct(true)
-    |> order_by_published_at()
-    |> page(page, page_size)
-    |> maybe_preload(opts)
-    |> Repo.all()
-    |> Tag.Preloader.order_tags()
   end
 
   @doc """
   All published and approved insights that given user has voted for
   """
   def all_insights_user_voted_for(user_id, opts \\ []) do
-    published_and_approved_insights()
+    public_insights_query(opts)
     |> user_has_voted_for(user_id)
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
-    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
-    |> by_from_to_datetime(
-      Keyword.get(opts, :from, nil),
-      Keyword.get(opts, :to, nil)
-    )
-    |> maybe_preload(opts)
     |> Repo.all()
-    |> Tag.Preloader.order_tags()
   end
 
   @doc """
@@ -602,15 +559,18 @@ defmodule Sanbase.Insight.Post do
     )
   end
 
-  defp by_from_to_datetime(query, from, to)
-       when not is_nil(from) and not is_nil(to) do
-    from(
-      p in query,
-      where: p.published_at >= ^from and p.published_at <= ^to
-    )
-  end
+  defp by_from_to_datetime(query, opts) do
+    case {Keyword.get(opts, :from), Keyword.get(opts, :to)} do
+      {from, to} when not is_nil(from) and not is_nil(to) ->
+        from(
+          p in query,
+          where: p.published_at >= ^from and p.published_at <= ^to
+        )
 
-  defp by_from_to_datetime(query, _, _), do: query
+      _ ->
+        query
+    end
+  end
 
   defp by_tags(query, tags) do
     query
@@ -618,13 +578,9 @@ defmodule Sanbase.Insight.Post do
     |> where([_p, t], t.name in ^tags)
   end
 
-  defp published_and_approved_insights() do
-    from(
-      p in Post,
-      where:
-        p.ready_state == ^@published and
-          p.state == ^@approved
-    )
+  defp filter_published_and_approved(query) do
+    query
+    |> where([p], p.ready_state == ^@published and p.state == ^@approved)
   end
 
   defp user_has_voted_for(query, user_id) do
@@ -690,6 +646,15 @@ defmodule Sanbase.Insight.Post do
 
       false ->
         query
+    end
+  end
+
+  defp maybe_distinct(query, opts) do
+    IO.inspect(Keyword.get(opts, :distinct?, true), label: "DISTINCT?")
+
+    case Keyword.get(opts, :distinct?, true) do
+      true -> from(p in query, distinct: true)
+      false -> query
     end
   end
 

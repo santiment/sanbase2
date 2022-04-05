@@ -54,10 +54,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
       is_pulse: Map.get(args, :is_pulse),
       is_paywall_required: Map.get(args, :is_paywall_required),
       from: Map.get(args, :from),
-      to: Map.get(args, :to)
+      to: Map.get(args, :to),
+      page: page,
+      page_size: page_size
     ]
 
-    posts = Post.public_insights_by_tags(tags, page, page_size, opts)
+    posts = Post.public_insights_by_tags(tags, opts)
 
     {:ok, posts}
   end
@@ -67,10 +69,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
       is_pulse: Map.get(args, :is_pulse),
       is_paywall_required: Map.get(args, :is_paywall_required),
       from: Map.get(args, :from),
-      to: Map.get(args, :to)
+      to: Map.get(args, :to),
+      page: page,
+      page_size: page_size
     ]
 
-    posts = Post.public_insights(page, page_size, opts)
+    posts = Post.public_insights(opts)
 
     {:ok, posts}
   end

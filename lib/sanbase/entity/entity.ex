@@ -34,7 +34,7 @@ defmodule Sanbase.Entity do
   # Private functions
 
   defp do_get_most_recent(entity, opts) do
-    public_enitiy_ids_query = public_entity_ids_query(entity)
+    entity_ids = entity_ids_query(entity)
     entity_module = deduce_entity_module(entity)
 
     # Add named binding as it is used in the subquery to avoid issues
@@ -45,7 +45,7 @@ defmodule Sanbase.Entity do
         entity in entity_module,
         as: :entity,
         select: entity.id,
-        where: entity.id in subquery(public_enitiy_ids_query),
+        where: entity.id in subquery(entity_ids),
         order_by: [desc: entity.id]
       )
       |> paginate(opts)
@@ -67,7 +67,7 @@ defmodule Sanbase.Entity do
     # result for everybody the owner of a private entity does not
     # get their private entities in the ranking
     entity_module = deduce_entity_module(entity)
-    public_enitiy_ids_query = public_entity_ids_query(entity)
+    entity_ids = entity_ids_query(entity)
 
     # Add named binding as it is used in the subquery to avoid issues
     # where one query needs to access the right joined table and the
@@ -78,7 +78,7 @@ defmodule Sanbase.Entity do
         right_join: entity in ^entity_module,
         as: :entity,
         on: field(vote, ^entity_field) == entity.id,
-        where: entity.id in subquery(public_enitiy_ids_query),
+        where: entity.id in subquery(entity_ids),
         group_by: entity.id,
         select: entity.id,
         order_by: [desc: coalesce(sum(vote.count), 0), desc: entity.id]
@@ -93,19 +93,28 @@ defmodule Sanbase.Entity do
     end
   end
 
-  defp public_entity_ids_query(:insight),
-    do: Post.public_entity_ids_query(preload?: false)
+  defp entity_ids_query(:insight) do
+    opts = [preload?: false, distinct?: false]
 
-  defp public_entity_ids_query(:screener),
+    case Keyword.get(opts, :get_user_entities) do
+      nil ->
+        Post.public_entity_ids_query(opts)
+
+      user_id ->
+        Post.user_insights_query(user_id, opts)
+    end
+  end
+
+  defp entity_ids_query(:screener),
     do: UserList.public_entity_ids_query(is_screener: true)
 
-  defp public_entity_ids_query(:watchlist),
+  defp entity_ids_query(:watchlist),
     do: UserList.public_entity_ids_query(is_screener: false)
 
-  defp public_entity_ids_query(:chart_configuration),
+  defp entity_ids_query(:chart_configuration),
     do: Chart.Configuration.public_entity_ids_query([])
 
-  defp public_entity_ids_query(:timeline_event),
+  defp entity_ids_query(:timeline_event),
     do: TimelineEvent.public_entity_ids_query([])
 
   defp deduce_entity_module(:insight), do: Post

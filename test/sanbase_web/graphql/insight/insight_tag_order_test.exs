@@ -69,12 +69,12 @@ defmodule SanbaseWeb.Graphql.InsightTagOrderTest do
     tags2 = ["third", "first", "BTC", "second"]
     mutation2 = update_insight_tags_mutation(id, tags2)
     execute_mutation(conn, mutation2)
-    assert get_insight_tags(conn, id) == tags2
+    assert get_insight_tags(conn, id) == ["first", "second", "third", "BTC"]
 
     tags3 = ["SAN", "PESH" | tags2 |> Enum.reverse()] ++ ["ASD"]
     mutation3 = update_insight_tags_mutation(id, tags3)
     execute_mutation(conn, mutation3)
-    assert get_insight_tags(conn, id) == tags3
+    assert get_insight_tags(conn, id) == ["first", "second", "third", "BTC", "SAN", "PESH", "ASD"]
   end
 
   defp create_insight_mutation(title, text, tags) do

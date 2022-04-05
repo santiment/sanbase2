@@ -356,10 +356,6 @@ defmodule Sanbase.Alert.Scheduler do
     # - missing email/telegram linked when such channel is chosen;
     # - webhook failed to be sent;
     # - daily alerts limit is reached;
-    failed_count = fn failed, result ->
-      failed + if result == :ok, do: 0, else: 1
-    end
-
     {last_triggered, total_triggered, total_failed} =
       send_results_list
       |> Enum.reduce({last_triggered, _total = 0, _failed = 0}, fn

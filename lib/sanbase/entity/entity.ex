@@ -42,23 +42,18 @@ defmodule Sanbase.Entity do
   # Private functions
 
   defp do_get_most_recent(entity, opts) do
-    # The most recent entity could be a private one. For this reasonlook only at
-    # entities that are public. In the case where the user is fetching their own
-    # entities that are with most votes the filter is changed to return only the
-    # creations of that users
-
-    entity_ids = entity_ids_query(entity, opts)
+    public_enitiy_ids_query = public_entity_ids_query(entity)
     entity_module = deduce_entity_module(entity)
 
-    # Add named binding as it is used in the subquery to avoid issues where one
-    # query needs to access the right joined table and the other does not have
-    # joins.
+    # Add named binding as it is used in the subquery to avoid issues
+    # where one query needs to access the right joined table and the
+    # other does not have joins.
     entity_ids =
       from(
         entity in entity_module,
         as: :entity,
         select: entity.id,
-        where: entity.id in subquery(entity_ids),
+        where: entity.id in subquery(public_enitiy_ids_query),
         order_by: [desc: entity.id]
       )
       |> paginate(opts)
@@ -72,29 +67,26 @@ defmodule Sanbase.Entity do
   end
 
   defp do_get_most_voted(entity, opts) do
-    # The most voted entity could have been  made private at some point after
-    # getting votes. For this reasonlook only at entities that are public. In
-    # the case where the user is fetching their own entities that are with most
-    # votes the filter is changed to return only the creations of that users
-
     entity_field = deduce_entity_field(entity)
-    entity_module = deduce_entity_module(entity)
-<<<<<<< HEAD
-    entity_ids = entity_ids_query(entity, opts)
-=======
-    entity_ids = entity_ids_query(entity)
->>>>>>> a0a21c8cd (Improve/simplify Post sql queries)
 
-    # Add named binding as it is used in the subquery to avoid issues where one
-    # query needs to access the right joined table and the other does not have
-    # joins.
+    # We cannot just find the most voted entity as it could be
+    # made private at some point after getting votes. For this reason
+    # look only at entities that are public. In order to have the same
+    # result for everybody the owner of a private entity does not
+    # get their private entities in the ranking
+    entity_module = deduce_entity_module(entity)
+    public_enitiy_ids_query = public_entity_ids_query(entity)
+
+    # Add named binding as it is used in the subquery to avoid issues
+    # where one query needs to access the right joined table and the
+    # other does not have joins.
     entity_ids =
       from(
         vote in Sanbase.Vote,
         right_join: entity in ^entity_module,
         as: :entity,
         on: field(vote, ^entity_field) == entity.id,
-        where: entity.id in subquery(entity_ids),
+        where: entity.id in subquery(public_enitiy_ids_query),
         group_by: entity.id,
         select: entity.id,
         order_by: [desc: coalesce(sum(vote.count), 0), desc: entity.id]
@@ -109,43 +101,70 @@ defmodule Sanbase.Entity do
     end
   end
 
-  defp entity_ids_query(:insight, opts) do
-    post_opts = [preload?: false, distinct?: false]
+  def do_get_most_voted2(entities, opts) do
+    query = from(vote in Sanbase.Vote)
 
-    case Keyword.get(opts, :current_user_data_only) do
-      nil -> Post.public_entity_ids_query(post_opts)
-      user_id -> Post.user_entity_ids_query(user_id, post_opts)
-    end
+    # Filter only rows that are related to the given entities
+    # These are the rows where one of the wanted entities id is
+    # not null. Ther is one such non-null value per row.
+    query =
+      Enum.reduce(entities, query, fn entity, query_acc ->
+        field = deduce_entity_field(entity)
+
+        query_acc
+        |> or_where([v], not is_nil(field(v, ^field)))
+      end)
+
+    # For simplicity include all the entities in the query here. The ones that are
+    # not wanted have their rows excluded in the above build where clause.
+    query =
+      from(
+        v in query,
+        group_by: [v.post_id, v.watchlist_id, v.timeline_event_id, v.chart_configuration_id],
+        order_by: [
+          desc: coalesce(sum(v.count), 0)
+        ],
+        select: %{
+          votes: coalesce(sum(v.count), 0),
+          entity_id:
+            fragment("""
+            CASE
+              WHEN post_id IS NOT NULL THEN post_id
+              WHEN watchlist_id IS NOT NULL THEN watchlist_id
+              WHEN timeline_event_id IS NOT NULL THEN timeline_event_id
+              WHEN chart_configuration_id IS NOT NULL THEN chart_configuration_id
+            END
+            """),
+          entity_type:
+            fragment("""
+            CASE
+              WHEN post_id IS NOT NULL THEN 'insight'
+              WHEN watchlist_id IS NOT NULL THEN 'watchlist'
+              WHEN timeline_event_id IS NOT NULL THEN 'timeline_event'
+              WHEN chart_configuration_id IS NOT NULL THEN 'chart_configuration'
+            END
+            """)
+        }
+      )
+      |> paginate(opts)
+
+    query = Sanbase.Repo.all(query)
   end
 
-  defp entity_ids_query(:screener, opts) do
-    case Keyword.get(opts, :current_user_data_only) do
-      nil -> UserList.public_entity_ids_query(is_screener: true)
-      user_id -> UserList.user_entity_ids_query(user_id, is_screener: true)
-    end
-  end
+  defp public_entity_ids_query(:insight),
+    do: Post.public_entity_ids_query(preload?: false)
 
-  defp entity_ids_query(:watchlist, opts) do
-    case Keyword.get(opts, :current_user_data_only) do
-      nil -> UserList.public_entity_ids_query(is_screener: false)
-      user_id -> UserList.user_entity_ids_query(user_id, is_screener: false)
-    end
-  end
+  defp public_entity_ids_query(:screener),
+    do: UserList.public_entity_ids_query(is_screener: true)
 
-  defp entity_ids_query(:chart_configuration, opts) do
-    case Keyword.get(opts, :current_user_data_only) do
-      nil -> Chart.Configuration.public_entity_ids_query([])
-      user_id -> Chart.Configuration.user_entity_ids_query(user_id, [])
-    end
-  end
+  defp public_entity_ids_query(:watchlist),
+    do: UserList.public_entity_ids_query(is_screener: false)
 
-  defp entity_ids_query(:timeline_event, opts) do
-    case Keyword.get(opts, :current_user_data_only) do
-      nil -> TimelineEvent.public_entity_ids_query([])
-      user_id -> TimelineEvent.user_entity_ids_query(user_id, [])
-    end
-  end
+  defp public_entity_ids_query(:chart_configuration),
+    do: Chart.Configuration.public_entity_ids_query([])
 
+  defp public_entity_ids_query(:timeline_event),
+    do: TimelineEvent.public_entity_ids_query([])
 
   defp deduce_entity_module(:insight), do: Post
   defp deduce_entity_module(:watchlist), do: UserList
@@ -155,18 +174,15 @@ defmodule Sanbase.Entity do
 
   defp maybe_filter_by_cursor(query, entity_type, opts) do
     case Keyword.get(opts, :cursor) do
-      nil ->
-        query
-
-      %{type: type, datetime: datetime} ->
-        filter_by_cursor(type, query, entity_type, datetime)
+      nil -> query
+      %{type: type, datetime: datetime} -> filter_by_cursor(type, query, entity_type, datetime)
     end
   end
 
-  # In the case of most voted API the Vote table is joined with the entity
-  # table, so we need to access the entity from that joined table. In the other
-  # case there are no joins. Solve this difference by using named bindings in
-  # both cases.
+  # In the case of most voted API the Vote table is joined with the
+  # entity table, so we need to access the entity from that joined table.
+  # In the other case there are no joins. Solve this difference by
+  # using named bindings in both cases.
   defp filter_by_cursor(:before, query, entity_type, datetime) do
     field = entity_datetime_field(entity_type)
 

@@ -12,7 +12,7 @@ defmodule Sanbase.Repo.Migrations.SwapPrimaryObanIndexes do
         :oban_jobs,
         [:state, :queue, :priority, :scheduled_at, :id],
         concurrently: true,
-        prefix: "public"
+        prefix: get_prefix()
       )
     )
 
@@ -20,7 +20,7 @@ defmodule Sanbase.Repo.Migrations.SwapPrimaryObanIndexes do
       index(
         :oban_jobs,
         [:queue, :state, :priority, :scheduled_at, :id],
-        prefix: "public"
+        prefix: get_prefix()
       )
     )
   end

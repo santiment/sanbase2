@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
       arg(:type, :entity_type)
       arg(:page, :integer)
       arg(:page_size, :integer)
+      arg(:current_user_data_only, :boolean, default_value: false)
       arg(:cursor, :cursor_input_no_order, default_value: nil)
 
       cache_resolve(&EntityResolver.get_most_voted/3, ttl: 30, max_ttl_offset: 30)
@@ -24,6 +25,7 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
       arg(:type, :entity_type)
       arg(:page, :integer)
       arg(:page_size, :integer)
+      arg(:current_user_data_only, :boolean, default_value: false)
       arg(:cursor, :cursor_input_no_order, default_value: nil)
 
       resolve(&EntityResolver.get_most_recent/3)

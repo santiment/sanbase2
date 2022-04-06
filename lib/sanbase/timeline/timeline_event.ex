@@ -119,6 +119,13 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> select([te], te.id)
   end
 
+  @impl Sanbase.Entity.Behaviour
+  def user_entity_ids_query(user_id, _opts) do
+    from(te in __MODULE__)
+    |> where([te], te.user_id == ^user_id)
+    |> select([te], te.id)
+  end
+
   @doc """
   Public events by sanfamily members.
   The events can be paginated with time-based cursor pagination.

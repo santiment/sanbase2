@@ -252,11 +252,13 @@ defmodule Sanbase.Insight.Post do
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(post_ids, opts) when is_list(post_ids) do
+    ordering = Enum.with_index(post_ids) |> Map.new()
+
     result =
       public_insights_query(opts)
       |> where([p], p.id in ^post_ids)
-      |> order_by([p], fragment("array_position(?, ?::int)", ^post_ids, p.id))
       |> Repo.all()
+      |> Enum.sort_by(&Map.get(ordering, &1.id))
 
     {:ok, result}
   end
@@ -651,7 +653,7 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp maybe_distinct(query, opts) do
-    case Keyword.get(opts, :distinct?, false) do
+    case Keyword.get(opts, :distinct?, true) do
       true -> from(p in query, distinct: true)
       false -> query
     end

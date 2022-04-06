@@ -27,7 +27,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   as we have different restrictions.
   """
 
-  alias Sanbase.Billing.{Product, Subscription, GraphqlSchema}
+  alias Sanbase.Billing.{Product, GraphqlSchema}
   alias Sanbase.Billing.Plan.{CustomAccess, ApiAccessChecker, SanbaseAccessChecker}
 
   @doc documentation_ref: "# DOCS access-plans/index.md"
@@ -65,8 +65,6 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @custom_access_queries_stats CustomAccess.get()
   @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
   @custom_access_queries_mapset MapSet.new(@custom_access_queries)
-
-  @free_subscription Subscription.free_subscription()
 
   @min_plan_map GraphqlSchema.min_plan_map()
 

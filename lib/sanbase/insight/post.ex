@@ -100,6 +100,7 @@ defmodule Sanbase.Insight.Post do
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
     public_insights_query(opts)
+    |> Sanbase.Entity.maybe_filter_by_cursor(:published_at, opts)
     |> select([p], p.id)
   end
 
@@ -107,6 +108,7 @@ defmodule Sanbase.Insight.Post do
   def user_entity_ids_query(user_id, opts) do
     base_insights_query(opts)
     |> by_user(user_id)
+    |> Sanbase.Entity.maybe_filter_by_cursor(:published_at, opts)
     |> select([p], p.id)
   end
 
@@ -252,13 +254,12 @@ defmodule Sanbase.Insight.Post do
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(post_ids, opts) when is_list(post_ids) do
-    ordering = Enum.with_index(post_ids) |> Map.new()
-
     result =
-      public_insights_query(opts)
-      |> where([p], p.id in ^post_ids)
+      from(p in __MODULE__,
+        where: p.id in ^post_ids,
+        order_by: fragment("array_position(?, ?::int)", ^post_ids, p.id)
+      )
       |> Repo.all()
-      |> Enum.sort_by(&Map.get(ordering, &1.id))
 
     {:ok, result}
   end

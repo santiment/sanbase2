@@ -76,19 +76,34 @@ defmodule Sanbase.Chart.Configuration do
   def by_ids!(ids, opts), do: by_ids(ids, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
-  def by_ids(ids, opts), do: get_chart_configurations(ids, opts)
+  def by_ids(config_ids, opts) do
+    preload = Keyword.get(opts, :preload, [:chart_events])
+
+    result =
+      from(
+        conf in __MODULE__,
+        where: conf.id in ^config_ids,
+        preload: ^preload,
+        order_by: fragment("array_position(?, ?::int)", ^config_ids, conf.id)
+      )
+      |> Repo.all()
+
+    {:ok, result}
+  end
 
   @impl Sanbase.Entity.Behaviour
-  def public_entity_ids_query(_opts) do
+  def public_entity_ids_query(opts) do
     from(config in __MODULE__)
     |> where([config], config.is_public == true)
+    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([config], config.id)
   end
 
   @impl Sanbase.Entity.Behaviour
-  def user_entity_ids_query(user_id, _opts) do
+  def user_entity_ids_query(user_id, opts) do
     from(config in __MODULE__)
     |> where([config], config.user_id == ^user_id)
+    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([config], config.id)
   end
 
@@ -174,20 +189,6 @@ defmodule Sanbase.Chart.Configuration do
       nil ->
         {:error, "Chart configuration with id #{config_id} does not exist."}
     end
-  end
-
-  defp get_chart_configurations(config_ids, opts) do
-    preload = Keyword.get(opts, :preload, [:chart_events])
-
-    query =
-      from(
-        conf in __MODULE__,
-        where: conf.id in ^config_ids and conf.is_public == true,
-        preload: ^preload,
-        order_by: fragment("array_position(?, ?::int)", ^config_ids, conf.id)
-      )
-
-    {:ok, Repo.all(query)}
   end
 
   defp user_chart_configurations_query(user_id, querying_user_id, nil) do

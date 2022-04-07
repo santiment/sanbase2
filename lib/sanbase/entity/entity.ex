@@ -21,6 +21,14 @@ defmodule Sanbase.Entity do
   alias Sanbase.UserList
   alias Sanbase.Timeline.TimelineEvent
 
+  def paginate(query, opts) do
+    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
+
+    query
+    |> limit(^limit)
+    |> offset(^offset)
+  end
+
   def get_most_voted(entity, opts), do: do_get_most_voted(entity, opts)
 
   def get_most_recent(entity, opts), do: do_get_most_recent(entity, opts)
@@ -139,14 +147,6 @@ defmodule Sanbase.Entity do
   defp deduce_entity_module(:screener), do: UserList
   defp deduce_entity_module(:timeline_event), do: TimelineEvent
   defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
-
-  defp paginate(query, opts) do
-    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
-
-    query
-    |> limit(^limit)
-    |> offset(^offset)
-  end
 
   defp maybe_filter_by_cursor(query, entity_type, opts) do
     case Keyword.get(opts, :cursor) do

@@ -5,8 +5,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.FeaturedItemResolver do
 
   alias Sanbase.FeaturedItem
 
-  def insights(_root, _args, _context) do
-    {:ok, FeaturedItem.insights()}
+  def insights(_root, %{} = args, _context) do
+    {:ok, FeaturedItem.insights(page: args.page, page_size: args.page_size)}
   end
 
   def watchlists(_root, %{} = args, _context) do

@@ -6,8 +6,10 @@ defmodule Sanbase.Entity do
   - Insight
   - Watchlist
   - Screener
-  - Timeline Event
   - Chart Configuration
+  Entities to be included:
+  - Alerts
+  - Address Watchlist
 
   This module provides functions for fetching lists of entities of a given type,
   ordered in a specific way. There are two orderings:
@@ -19,7 +21,6 @@ defmodule Sanbase.Entity do
   alias Sanbase.Chart
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
-  alias Sanbase.Timeline.TimelineEvent
 
   def paginate(query, opts) do
     {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
@@ -35,7 +36,6 @@ defmodule Sanbase.Entity do
   def deduce_entity_field(:insight), do: :post_id
   def deduce_entity_field(:watchlist), do: :watchlist_id
   def deduce_entity_field(:screener), do: :watchlist_id
-  def deduce_entity_field(:timeline_event), do: :timeline_event_id
   def deduce_entity_field(:chart_configuration), do: :chart_configuration_id
 
   def maybe_filter_by_cursor(query, field, opts) do
@@ -138,7 +138,7 @@ defmodule Sanbase.Entity do
     query =
       from(
         v in query,
-        group_by: [v.post_id, v.watchlist_id, v.timeline_event_id, v.chart_configuration_id],
+        group_by: [v.post_id, v.watchlist_id, v.chart_configuration_id],
         order_by: [desc: coalesce(sum(v.count), 0)]
       )
       |> paginate(opts)
@@ -154,7 +154,6 @@ defmodule Sanbase.Entity do
             CASE
               WHEN post_id IS NOT NULL THEN post_id
               WHEN watchlist_id IS NOT NULL THEN watchlist_id
-              WHEN timeline_event_id IS NOT NULL THEN timeline_event_id
               WHEN chart_configuration_id IS NOT NULL THEN chart_configuration_id
             END
             """),
@@ -163,7 +162,6 @@ defmodule Sanbase.Entity do
             CASE
               WHEN post_id IS NOT NULL THEN 'insight'
               WHEN watchlist_id IS NOT NULL THEN 'watchlist'
-              WHEN timeline_event_id IS NOT NULL THEN 'timeline_event'
               WHEN chart_configuration_id IS NOT NULL THEN 'chart_configuration'
             END
             """)
@@ -248,19 +246,9 @@ defmodule Sanbase.Entity do
     end
   end
 
-  defp entity_ids_query(:timeline_event, opts) do
-    entity_opts = [cursor: opts[:cursor]]
-
-    case Keyword.get(opts, :current_user_data_only) do
-      nil -> TimelineEvent.public_entity_ids_query(entity_opts)
-      user_id -> TimelineEvent.user_entity_ids_query(user_id, entity_opts)
-    end
-  end
-
   defp deduce_entity_module(:insight), do: Post
   defp deduce_entity_module(:watchlist), do: UserList
   defp deduce_entity_module(:screener), do: UserList
-  defp deduce_entity_module(:timeline_event), do: TimelineEvent
   defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
 
   # Insights are considered created once they are published

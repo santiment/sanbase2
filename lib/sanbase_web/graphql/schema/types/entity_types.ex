@@ -5,7 +5,6 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
     value(:insight)
     value(:watchlist)
     value(:screener)
-    value(:timeline_event)
     value(:chart_configuration)
   end
 
@@ -13,7 +12,6 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
     field(:insight, :post)
     field(:watchlist, :user_list)
     field(:screener, :user_list)
-    field(:timeline_event, :timeline_event)
     field(:chart_configuration, :chart_configuration)
   end
 end

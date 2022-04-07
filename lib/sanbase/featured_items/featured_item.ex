@@ -49,14 +49,16 @@ defmodule Sanbase.FeaturedItem do
     |> check_constraint(:one_featured_item_per_row, name: :only_one_fk)
   end
 
-  def insights() do
+  def insights(opts \\ []) do
     insights_query()
     |> join(:inner, [fi], fi in assoc(fi, :post))
     |> where(
       [_fi, post],
       post.ready_state == ^Post.published() and post.state == ^Post.approved_state()
     )
-    |> select([_fi, post], post)
+    |> order_by([fi, _post], desc: fi.inserted_at, desc: fi.id)
+    |> Sanbase.Entity.paginate(opts)
+    |> select([fi, post], post)
     |> Repo.all()
     |> Repo.preload([:user, :tags])
   end

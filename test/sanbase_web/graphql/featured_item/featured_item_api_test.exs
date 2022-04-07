@@ -106,6 +106,17 @@ defmodule Sanbase.FeaturedItemApiTest do
              }
     end
 
+    test "ordering and pagination of featured insights works", context do
+      insight1 = insert(:post, state: Post.approved_state(), ready_state: Post.published())
+      insight2 = insert(:post, state: Post.approved_state(), ready_state: Post.published())
+
+      :ok = FeaturedItem.update_item(insight2, true)
+      :ok = FeaturedItem.update_item(insight1, true)
+
+      query = "{featuredInsights(page: 1, page_size: 1){ id }}"
+      assert execute_query(context.conn, query, "featuredInsights") == [%{"id" => insight1.id}]
+    end
+
     test "Not published insight cannot be featured", context do
       insight = insert(:post)
       {:error, _} = FeaturedItem.update_item(insight, true)

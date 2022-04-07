@@ -250,6 +250,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_volume_telegram",
         "social_volume_total",
         "social_volume_ai_total",
+        "nft_collections_social_volume_total",
         "unique_social_volume_total_5m",
         "unique_social_volume_total_1h",
         "sentiment_positive_telegram",
@@ -865,7 +866,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_volume_telegram",
         "social_volume_total",
         "social_volume_twitter",
-        "social_volume_ai_total"
+        "social_volume_ai_total",
+        "nft_collections_social_volume_total"
       ]
       |> Enum.sort()
 

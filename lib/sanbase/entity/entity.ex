@@ -123,9 +123,9 @@ defmodule Sanbase.Entity do
       Enum.sort_by(
         result,
         fn elem ->
-          [entity] = Map.values(elem)
+          [{key, entity}] = Map.to_list(elem)
 
-          Map.get(entity, deduce_entity_creation_time_field(entity))
+          Map.get(entity, deduce_entity_creation_time_field(key))
         end,
         {:desc, NaiveDateTime}
       )
@@ -230,7 +230,7 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:insight, opts) do
-    entity_opts = [preload?: false, distinct?: false, cursor: opts[:cursor]]
+    entity_opts = [preload?: false, distinct?: true, ordered?: false, cursor: opts[:cursor]]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> Post.public_entity_ids_query(entity_opts)

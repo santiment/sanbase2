@@ -402,7 +402,7 @@ defmodule Sanbase.Insight.Post do
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> by_from_to_datetime(opts)
     |> maybe_distinct(opts)
-    |> order_by_published_at()
+    |> maybe_order_by_published_at(opts)
     |> page(opts)
     |> maybe_preload(opts)
   end
@@ -593,11 +593,17 @@ defmodule Sanbase.Insight.Post do
     |> where([_p, v], v.user_id == ^user_id)
   end
 
-  defp order_by_published_at(query) do
-    from(
-      p in query,
-      order_by: [desc: p.published_at]
-    )
+  defp maybe_order_by_published_at(query, opts) do
+    case Keyword.get(opts, :ordered?, true) do
+      true ->
+        from(
+          p in query,
+          order_by: [desc: p.published_at]
+        )
+
+      false ->
+        query
+    end
   end
 
   defp after_datetime(query, datetime) do

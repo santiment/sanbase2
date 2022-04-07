@@ -84,6 +84,49 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     assert Enum.at(result, 3)["chartConfiguration"]["id"] == chart_configuration1.id
   end
 
+  test "get most recent combined", %{conn: conn} do
+    insight1 = insert(:published_post, published_at: seconds_ago(50))
+    conf1 = insert(:chart_configuration, is_public: true, inserted_at: seconds_ago(45))
+    insight2 = insert(:published_post, published_at: seconds_ago(40))
+    conf2 = insert(:chart_configuration, is_public: true, inserted_at: seconds_ago(35))
+    screener1 = insert(:screener, is_public: true, inserted_at: seconds_ago(30))
+    watchlist1 = insert(:watchlist, is_public: true, inserted_at: seconds_ago(20))
+
+    result = get_most_recent(conn, [:insight, :watchlist, :screener, :chart_configuration])
+
+    assert length(result) == 6
+    assert Enum.at(result, 0)["watchlist"]["id"] |> String.to_integer() == watchlist1.id
+    assert Enum.at(result, 1)["screener"]["id"] |> String.to_integer() == screener1.id
+    assert Enum.at(result, 2)["chartConfiguration"]["id"] == conf2.id
+    assert Enum.at(result, 3)["insight"]["id"] == insight2.id
+    assert Enum.at(result, 4)["chartConfiguration"]["id"] == conf1.id
+    assert Enum.at(result, 5)["insight"]["id"] == insight1.id
+  end
+
+  defp get_most_recent(conn, entities) when is_list(entities) do
+    types = Enum.map(entities, &(&1 |> Atom.to_string() |> String.upcase())) |> Enum.join(", ")
+
+    query = """
+    {
+      getMostRecent(
+        types: [#{types}]
+        page: 1
+        pageSize: 10
+      ){
+        insight{ id publishedAt createdAt }
+        watchlist{ id insertedAt }
+        screener{ id insertedAt }
+        chartConfiguration{ id insertedAt }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", "getMostRecent"])
+  end
+
   defp get_most_recent(conn, entity) do
     query = """
     {
@@ -92,10 +135,10 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
         page: 1
         pageSize: 10
       ){
-          insight{ id }
-          watchlist{ id }
-          screener{ id }
-          chartConfiguration{ id }
+        insight{ id }
+        watchlist{ id }
+        screener{ id }
+        chartConfiguration{ id }
       }
     }
     """

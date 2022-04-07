@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   def get_most_voted(_root, args, resolution) do
-    type = Map.get(args, :type)
+    types = Map.get(args, :types) || [Map.get(args, :type)]
 
     opts =
       [
@@ -10,11 +10,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
       ]
       |> maybe_add_current_user_data_only(args, resolution)
 
-    Sanbase.Entity.get_most_voted(type, opts)
+    Sanbase.Entity.get_most_voted(types, opts)
   end
 
   def get_most_recent(_root, args, resolution) do
-    type = Map.get(args, :type)
+    types = Map.get(args, :types) || [Map.get(args, :type)]
 
     opts =
       [
@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
       ]
       |> maybe_add_current_user_data_only(args, resolution)
 
-    Sanbase.Entity.get_most_recent(type, opts)
+    Sanbase.Entity.get_most_recent(types, opts)
   end
 
   defp maybe_add_current_user_data_only(opts, args, resolution) do

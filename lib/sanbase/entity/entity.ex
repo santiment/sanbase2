@@ -29,9 +29,8 @@ defmodule Sanbase.Entity do
     |> offset(^offset)
   end
 
-  def get_most_voted(entity, opts), do: do_get_most_voted(entity, opts)
-
-  def get_most_recent(entity, opts), do: do_get_most_recent(entity, opts)
+  def get_most_voted(entity_or_entities, opts), do: do_get_most_voted(entity_or_entities, opts)
+  def get_most_recent(entity_or_entities, opts), do: do_get_most_recent(entity_or_entities, opts)
 
   def deduce_entity_field(:insight), do: :post_id
   def deduce_entity_field(:watchlist), do: :watchlist_id
@@ -122,7 +121,7 @@ defmodule Sanbase.Entity do
     end
   end
 
-  def do_get_most_voted2(entities, opts) when is_list(entities) do
+  defp do_get_most_voted(entities, opts) when is_list(entities) do
     # base query
     query = from(vote in Sanbase.Vote)
 
@@ -173,12 +172,24 @@ defmodule Sanbase.Entity do
 
     db_result = Sanbase.Repo.all(query)
 
+    entity_to_atom = fn entity ->
+      case entity.entity_type do
+        "watchlist" ->
+          case UserList.is_screener(entity) do
+            true -> :screener
+            false -> :watchlist
+          end
+
+        type ->
+          String.to_existing_atom(type)
+      end
+    end
+
     ordering =
       db_result
       |> Enum.with_index()
-      |> IO.inspect(label: "171", limit: :infinity)
       |> Map.new(fn {elem, pos} ->
-        {{String.to_existing_atom(elem.entity_type), elem.entity_id}, pos}
+        {{entity_to_atom.(elem.entity_type), elem.entity_id}, pos}
       end)
 
     result =
@@ -190,7 +201,6 @@ defmodule Sanbase.Entity do
         {:ok, data} = entity_module.by_ids(ids, [])
         Enum.map(data, fn e -> %{entity => e} end)
       end)
-      |> IO.inspect(label: "184", limit: :infinity)
 
     result =
       result
@@ -200,54 +210,6 @@ defmodule Sanbase.Entity do
       end)
 
     {:ok, result}
-  end
-
-  def do_get_most_voted3(entities, opts) do
-    query = from(vote in Sanbase.Vote)
-
-    # Filter only rows that are related to the given entities
-    # These are the rows where one of the wanted entities id is
-    # not null. Ther is one such non-null value per row.
-    query =
-      Enum.reduce(entities, query, fn entity, query_acc ->
-        field = deduce_entity_field(entity)
-
-        query_acc
-        |> or_where([v], not is_nil(field(v, ^field)))
-      end)
-
-    # For simplicity include all the entities in the query here. The ones that are
-    # not wanted have their rows excluded in the above build where clause.
-    query =
-      from(
-        v in query,
-        group_by: [v.post_id, v.watchlist_id, v.timeline_event_id, v.chart_configuration_id],
-        order_by: [desc: coalesce(sum(v.count), 0)],
-        select: %{
-          votes: coalesce(sum(v.count), 0),
-          entity_id:
-            fragment("""
-            CASE
-              WHEN post_id IS NOT NULL THEN post_id
-              WHEN watchlist_id IS NOT NULL THEN watchlist_id
-              WHEN timeline_event_id IS NOT NULL THEN timeline_event_id
-              WHEN chart_configuration_id IS NOT NULL THEN chart_configuration_id
-            END
-            """),
-          entity_type:
-            fragment("""
-            CASE
-              WHEN post_id IS NOT NULL THEN 'insight'
-              WHEN watchlist_id IS NOT NULL THEN 'watchlist'
-              WHEN timeline_event_id IS NOT NULL THEN 'timeline_event'
-              WHEN chart_configuration_id IS NOT NULL THEN 'chart_configuration'
-            END
-            """)
-        }
-      )
-      |> paginate(opts)
-
-    Sanbase.Repo.all(query)
   end
 
   defp entity_ids_query(:insight, opts) do
@@ -300,35 +262,6 @@ defmodule Sanbase.Entity do
   defp deduce_entity_module(:screener), do: UserList
   defp deduce_entity_module(:timeline_event), do: TimelineEvent
   defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
-
-  defp maybe_filter_by_cursor(query, entity_type, opts) do
-    case Keyword.get(opts, :cursor) do
-      nil -> query
-      %{type: type, datetime: datetime} -> filter_by_cursor(type, query, entity_type, datetime)
-    end
-  end
-
-  # In the case of most voted API the Vote table is joined with the
-  # entity table, so we need to access the entity from that joined table.
-  # In the other case there are no joins. Solve this difference by
-  # using named bindings in both cases.
-  defp filter_by_cursor(:before, query, entity_type, datetime) do
-    field = entity_datetime_field(entity_type)
-
-    from(
-      [entity: entity] in query,
-      where: field(entity, ^field) <= ^datetime
-    )
-  end
-
-  defp filter_by_cursor(:after, query, entity_type, datetime) do
-    field = entity_datetime_field(entity_type)
-
-    from(
-      [entity: entity] in query,
-      where: field(entity, ^field) >= ^datetime
-    )
-  end
 
   # Insights are considered created once they are published
   defp entity_datetime_field(:insight), do: :published_at

@@ -253,7 +253,7 @@ defmodule Sanbase.Insight.Post do
   def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
-  def by_ids(post_ids, opts) when is_list(post_ids) do
+  def by_ids(post_ids, _opts) when is_list(post_ids) do
     result =
       from(p in __MODULE__,
         where: p.id in ^post_ids,

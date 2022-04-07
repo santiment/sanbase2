@@ -370,7 +370,11 @@ defmodule Sanbase.Factory do
   end
 
   def watchlist_factory() do
-    %UserList{name: "Generic User List name", color: :red, user: build(:user)}
+    %UserList{name: "Generic User List name", color: :red, user: build(:user), is_screener: false}
+  end
+
+  def screener_factory() do
+    %UserList{name: "Generic User List name", color: :red, user: build(:user), is_screener: true}
   end
 
   def product_api_factory() do

@@ -22,6 +22,17 @@ defmodule Sanbase.Entity do
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
 
+  def get_most_voted(entity_or_entities, opts),
+    do: do_get_most_voted(List.wrap(entity_or_entities), opts)
+
+  def get_most_recent(entity_or_entities, opts),
+    do: do_get_most_recent(List.wrap(entity_or_entities), opts)
+
+  def deduce_entity_field(:insight), do: :post_id
+  def deduce_entity_field(:watchlist), do: :watchlist_id
+  def deduce_entity_field(:screener), do: :watchlist_id
+  def deduce_entity_field(:chart_configuration), do: :chart_configuration_id
+
   def paginate(query, opts) do
     {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
 
@@ -30,14 +41,12 @@ defmodule Sanbase.Entity do
     |> offset(^offset)
   end
 
-  def get_most_voted(entity_or_entities, opts), do: do_get_most_voted(entity_or_entities, opts)
-  def get_most_recent(entity_or_entities, opts), do: do_get_most_recent(entity_or_entities, opts)
+  @doc ~s"""
+  Apply a datetime filter, if defined in the opts, to a query.
 
-  def deduce_entity_field(:insight), do: :post_id
-  def deduce_entity_field(:watchlist), do: :watchlist_id
-  def deduce_entity_field(:screener), do: :watchlist_id
-  def deduce_entity_field(:chart_configuration), do: :chart_configuration_id
-
+  This query extension function is defined here and is called with the
+  proper arguments from the entity modules' functions.
+  """
   def maybe_filter_by_cursor(query, field, opts) do
     case Keyword.get(opts, :cursor) do
       nil ->
@@ -59,69 +68,77 @@ defmodule Sanbase.Entity do
 
   # Private functions
 
-  defp do_get_most_recent(entity, opts) do
+  defp do_get_most_recent(entities, opts) when is_list(entities) and entities != [] do
     # The most recent entity could be a private one. For this reasonlook only at
     # entities that are public. In the case where the user is fetching their own
     # entities that are with most votes the filter is changed to return only the
     # creations of that users
 
-    entity_ids = entity_ids_query(entity, opts)
-    entity_module = deduce_entity_module(entity)
+    # Filter only rows that are related to the given entities
+    query =
+      Enum.reduce(entities, nil, fn entity, query_acc ->
+        entity_ids_query = entity_ids_query(entity, opts)
+        creation_time_field = deduce_entity_creation_time_field(entity)
 
-    # Add named binding as it is used in the subquery to avoid issues where one
-    # query needs to access the right joined table and the other does not have
-    # joins.
-    entity_ids =
+        entity_query =
+          from(entity in entity_ids_query)
+          # Remove the existing `entity.id` select and replace it with another one
+          |> exclude(:select)
+          |> select([e], %{
+            entity_id: e.id,
+            entity_type: ^"#{entity}",
+            creation_time: field(e, ^creation_time_field)
+          })
+
+        case query_acc do
+          nil ->
+            entity_query
+
+          query_acc ->
+            query_acc
+            |> union(^entity_query)
+        end
+      end)
+
+    query =
       from(
-        entity in entity_module,
-        as: :entity,
-        select: entity.id,
-        where: entity.id in subquery(entity_ids),
-        order_by: [desc: entity.id]
+        entity in subquery(query),
+        order_by: [desc: entity.creation_time, desc: entity.entity_id]
       )
       |> paginate(opts)
-      |> Sanbase.Repo.all()
 
-    case entity_module.by_ids(entity_ids, []) do
-      {:ok, result} -> {:ok, Enum.map(result, fn e -> %{entity => e} end)}
-      {:error, error} -> {:error, error}
-    end
+    db_result = Sanbase.Repo.all(query)
+
+    result =
+      db_result
+      |> Enum.group_by(&String.to_existing_atom(&1.entity_type), & &1.entity_id)
+      |> Enum.flat_map(fn {entity, ids} ->
+        entity_module = deduce_entity_module(entity)
+
+        {:ok, data} = entity_module.by_ids(ids, [])
+        Enum.map(data, fn e -> %{entity => e} end)
+      end)
+
+    sorted_result =
+      Enum.sort_by(
+        result,
+        fn elem ->
+          [entity] = Map.values(elem)
+
+          Map.get(entity, deduce_entity_creation_time_field(entity))
+        end,
+        {:desc, NaiveDateTime}
+      )
+
+    {:ok, sorted_result}
   end
 
-  defp do_get_most_voted(entity, opts) when is_atom(entity) do
+  defp do_get_most_voted(entities, opts) when is_list(entities) do
     # The most voted entity could have been  made private at some point after
     # getting votes. For this reasonlook only at entities that are public. In
     # the case where the user is fetching their own entities that are with most
     # votes the filter is changed to return only the creations of that users
 
-    entity_field = deduce_entity_field(entity)
-    entity_module = deduce_entity_module(entity)
-    entity_ids = entity_ids_query(entity, opts)
-
-    # Add named binding as it is used in the subquery to avoid issues where one
-    # query needs to access the right joined table and the other does not have
-    # joins.
-    entity_ids =
-      from(
-        vote in Sanbase.Vote,
-        right_join: entity in ^entity_module,
-        as: :entity,
-        on: field(vote, ^entity_field) == entity.id,
-        where: entity.id in subquery(entity_ids),
-        group_by: entity.id,
-        select: entity.id,
-        order_by: [desc: coalesce(sum(vote.count), 0), desc: entity.id]
-      )
-      |> paginate(opts)
-      |> Sanbase.Repo.all()
-
-    case entity_module.by_ids(entity_ids, []) do
-      {:ok, result} -> {:ok, Enum.map(result, fn e -> %{entity => e} end)}
-      {:error, error} -> {:error, error}
-    end
-  end
-
-  defp do_get_most_voted(entities, opts) when is_list(entities) do
     # base query
     query = from(vote in Sanbase.Vote)
 
@@ -170,24 +187,11 @@ defmodule Sanbase.Entity do
 
     db_result = Sanbase.Repo.all(query)
 
-    entity_to_atom = fn entity ->
-      case entity.entity_type do
-        "watchlist" ->
-          case UserList.is_screener(entity) do
-            true -> :screener
-            false -> :watchlist
-          end
-
-        type ->
-          String.to_existing_atom(type)
-      end
-    end
-
     ordering =
       db_result
       |> Enum.with_index()
       |> Map.new(fn {elem, pos} ->
-        {{entity_to_atom.(elem.entity_type), elem.entity_id}, pos}
+        {{String.to_existing_atom(elem.entity_type), elem.entity_id}, pos}
       end)
 
     result =
@@ -207,7 +211,22 @@ defmodule Sanbase.Entity do
         Map.get(ordering, {key, value.id})
       end)
 
+    result = rewrite_keys(result)
+
     {:ok, result}
+  end
+
+  defp rewrite_keys(list) do
+    Enum.map(list, fn
+      %{watchlist: watchlist} ->
+        case UserList.is_screener?(watchlist) do
+          true -> %{screener: watchlist}
+          false -> %{watchlist: watchlist}
+        end
+
+      elem ->
+        elem
+    end)
   end
 
   defp entity_ids_query(:insight, opts) do
@@ -251,7 +270,6 @@ defmodule Sanbase.Entity do
   defp deduce_entity_module(:screener), do: UserList
   defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
 
-  # Insights are considered created once they are published
-  defp entity_datetime_field(:insight), do: :published_at
-  defp entity_datetime_field(_), do: :inserted_at
+  defp deduce_entity_creation_time_field(:insight), do: :published_at
+  defp deduce_entity_creation_time_field(_), do: :inserted_at
 end

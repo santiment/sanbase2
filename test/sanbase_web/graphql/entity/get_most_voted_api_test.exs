@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
-  alias Sanbase.Timeline.TimelineEvent
-
   setup do
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
@@ -17,18 +15,15 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     _ = insert(:published_post, published_at: days_ago())
     insight1 = insert(:published_post)
     insight2 = insert(:published_post)
-    insight_without_votes1 = insert(:published_post)
-    insight_without_votes2 = insert(:published_post)
+    _insight_without_votes = insert(:published_post)
 
     for _ <- 1..10, do: vote(conn, "insightId", insight1.id)
     for _ <- 1..5, do: vote(conn, "insightId", insight2.id)
 
     result = get_most_voted(conn, :insight)
-    assert length(result) == 4
+    assert length(result) == 2
     assert Enum.at(result, 0)["insight"]["id"] == insight1.id
     assert Enum.at(result, 1)["insight"]["id"] == insight2.id
-    assert Enum.at(result, 2)["insight"]["id"] == insight_without_votes2.id
-    assert Enum.at(result, 3)["insight"]["id"] == insight_without_votes1.id
   end
 
   test "get most voted screener", %{conn: conn} do
@@ -36,10 +31,9 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     watchlist0_1 = insert(:watchlist, is_public: true, is_screener: false)
     watchlist0_2 = insert(:watchlist, is_public: true, is_screener: true, inserted_at: days_ago())
 
-    watchlist1 = insert(:watchlist, is_public: true, is_screener: true)
-    watchlist2 = insert(:watchlist, is_public: true, is_screener: true)
-    watchlist_without_votes1 = insert(:watchlist, is_public: true, is_screener: true)
-    watchlist_without_votes2 = insert(:watchlist, is_public: true, is_screener: true)
+    watchlist1 = insert(:screener, is_public: true)
+    watchlist2 = insert(:screener, is_public: true)
+    _watchlist_without_votes = insert(:screener, is_public: true)
 
     for _ <- 1..20, do: vote(conn, "watchlistId", watchlist0_1.id)
     for _ <- 1..20, do: vote(conn, "watchlistId", watchlist0_2.id)
@@ -47,100 +41,52 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     for _ <- 1..5, do: vote(conn, "watchlistId", watchlist2.id)
 
     result = get_most_voted(conn, :screener)
-    assert length(result) == 4
+    assert length(result) == 2
     assert Enum.at(result, 0)["screener"]["id"] |> String.to_integer() == watchlist1.id
     assert Enum.at(result, 1)["screener"]["id"] |> String.to_integer() == watchlist2.id
-
-    # The entities without votes are ordered from newest to oldest
-    assert Enum.at(result, 2)["screener"]["id"] |> String.to_integer() ==
-             watchlist_without_votes2.id
-
-    assert Enum.at(result, 3)["screener"]["id"] |> String.to_integer() ==
-             watchlist_without_votes1.id
   end
 
   test "get most voted watchlist", %{conn: conn} do
     # The screener should not be in the result
-    watchlist0_1 = insert(:watchlist, is_public: true, is_screener: true)
+    screener0 = insert(:screener, is_public: true)
+    watchlist0 = insert(:watchlist, is_public: true, inserted_at: days_ago())
 
-    watchlist0_2 =
-      insert(:watchlist, is_public: true, is_screener: false, inserted_at: days_ago())
+    watchlist1 = insert(:watchlist, is_public: true)
+    watchlist2 = insert(:watchlist, is_public: true)
+    _watchlsit_without_votes = insert(:watchlist, is_public: true)
 
-    watchlist1 = insert(:watchlist, is_public: true, is_screener: false)
-    watchlist2 = insert(:watchlist, is_public: true, is_screener: false)
-    watchlist_without_votes1 = insert(:watchlist, is_public: true, is_screener: false)
-    watchlist_without_votes2 = insert(:watchlist, is_public: true, is_screener: false)
-
-    for _ <- 1..20, do: vote(conn, "watchlistId", watchlist0_1.id)
-    for _ <- 1..20, do: vote(conn, "watchlistId", watchlist0_2.id)
+    for _ <- 1..20, do: vote(conn, "watchlistId", screener0.id)
+    for _ <- 1..20, do: vote(conn, "watchlistId", watchlist0.id)
     for _ <- 1..10, do: vote(conn, "watchlistId", watchlist1.id)
     for _ <- 1..5, do: vote(conn, "watchlistId", watchlist2.id)
 
     result = get_most_voted(conn, :watchlist)
-    assert length(result) == 4
+    assert length(result) == 2
     assert Enum.at(result, 0)["watchlist"]["id"] |> String.to_integer() == watchlist1.id
     assert Enum.at(result, 1)["watchlist"]["id"] |> String.to_integer() == watchlist2.id
-
-    # The entities without votes are ordered from newest to oldest
-    assert Enum.at(result, 2)["watchlist"]["id"] |> String.to_integer() ==
-             watchlist_without_votes2.id
-
-    assert Enum.at(result, 3)["watchlist"]["id"] |> String.to_integer() ==
-             watchlist_without_votes1.id
-  end
-
-  test "get most voted timeline event", %{conn: conn, user: user} do
-    te_opts = [
-      user_list: insert(:watchlist, is_public: true),
-      user: user,
-      event_type: TimelineEvent.update_watchlist_type()
-    ]
-
-    timeline_event0 = insert(:timeline_event, Keyword.put(te_opts, :inserted_at, days_ago()))
-    timeline_event1 = insert(:timeline_event, te_opts)
-    timeline_event2 = insert(:timeline_event, te_opts)
-    timeline_event_without_votes1 = insert(:timeline_event, te_opts)
-    timeline_event_without_votes2 = insert(:timeline_event, te_opts)
-
-    for _ <- 1..10, do: vote(conn, "timelineEventId", timeline_event0.id)
-    for _ <- 1..10, do: vote(conn, "timelineEventId", timeline_event1.id)
-    for _ <- 1..5, do: vote(conn, "timelineEventId", timeline_event2.id)
-
-    result = get_most_voted(conn, :timeline_event)
-    assert length(result) == 4
-    assert Enum.at(result, 0)["timelineEvent"]["id"] == timeline_event1.id
-    assert Enum.at(result, 1)["timelineEvent"]["id"] == timeline_event2.id
-    # The entities without votes are ordered from newest to oldest
-    assert Enum.at(result, 2)["timelineEvent"]["id"] == timeline_event_without_votes2.id
-    assert Enum.at(result, 3)["timelineEvent"]["id"] == timeline_event_without_votes1.id
   end
 
   test "get most voted chart configuration", %{conn: conn} do
     chart_configuration0 = insert(:chart_configuration, is_public: true, inserted_at: days_ago())
+
     chart_configuration1 = insert(:chart_configuration, is_public: true)
+
     chart_configuration2 = insert(:chart_configuration, is_public: true)
-    chart_configuration_without_votes1 = insert(:chart_configuration, is_public: true)
-    chart_configuration_without_votes2 = insert(:chart_configuration, is_public: true)
+
+    _chart_configuration_without_vote = insert(:chart_configuration, is_public: true)
 
     for _ <- 1..10, do: vote(conn, "chartConfigurationId", chart_configuration0.id)
     for _ <- 1..10, do: vote(conn, "chartConfigurationId", chart_configuration1.id)
     for _ <- 1..5, do: vote(conn, "chartConfigurationId", chart_configuration2.id)
 
     result = get_most_voted(conn, :chart_configuration)
-    assert length(result) == 4
+    assert length(result) == 2
 
     assert Enum.at(result, 0)["chartConfiguration"]["id"] ==
              chart_configuration1.id
 
     assert Enum.at(result, 1)["chartConfiguration"]["id"] ==
              chart_configuration2.id
-
-    # The entities without votes are ordered from newest to oldest
-    assert Enum.at(result, 2)["chartConfiguration"]["id"] ==
-             chart_configuration_without_votes2.id
-
-    assert Enum.at(result, 3)["chartConfiguration"]["id"] ==
-             chart_configuration_without_votes1.id
   end
 
   defp vote(conn, entity_key, entity_id) do
@@ -173,7 +119,6 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
           insight{ id }
           watchlist{ id }
           screener{ id }
-          timelineEvent{ id }
           chartConfiguration{ id }
       }
     }

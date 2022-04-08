@@ -22,16 +22,34 @@ defmodule Sanbase.Entity do
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
 
+  # The list of supported entitiy types. In order to add a new entity type, the
+  # following steps must be taken:
+  # 1. Implement the Sanbase.Entity behaviour in the entity module. It forces
+  # implementation of functions that generate the SQL query and fetch entities
+  # by ids in a given order.`
+  # 2. Implement the public function deduce_entity_type/1 in this module
+  # 3. Implement the private functions entity_ids_query/2 and
+  #    deduce_entity_module/1 in this module
+  # 4. Extend the CASE blocks and the group_by clause in the do_get_most_voted/2
+  # 5. Check if extending the deduce_entity_creation_time_field/1 is necessary.
+  #    It is necessary if the new entity needs to use a different than
+  #    inserted_at field to check its creation time. For example, insights have
+  #    their published_at time taken, not inserted_at
+  @supported_entity_type [:insight, :watchlist, :screener, :chart_configuration]
+
   def get_most_voted(entity_or_entities, opts),
     do: do_get_most_voted(List.wrap(entity_or_entities), opts)
 
   def get_most_recent(entity_or_entities, opts),
     do: do_get_most_recent(List.wrap(entity_or_entities), opts)
 
-  def deduce_entity_field(:insight), do: :post_id
-  def deduce_entity_field(:watchlist), do: :watchlist_id
-  def deduce_entity_field(:screener), do: :watchlist_id
-  def deduce_entity_field(:chart_configuration), do: :chart_configuration_id
+  @doc ~s"""
+  Map the entity type to the corresponding field in the votes table
+  """
+  def deduce_entity_vote_field(:insight), do: :post_id
+  def deduce_entity_vote_field(:watchlist), do: :watchlist_id
+  def deduce_entity_vote_field(:screener), do: :watchlist_id
+  def deduce_entity_vote_field(:chart_configuration), do: :chart_configuration_id
 
   def paginate(query, opts) do
     {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
@@ -74,7 +92,12 @@ defmodule Sanbase.Entity do
     # entities that are with most votes the filter is changed to return only the
     # creations of that users
 
-    # Filter only rows that are related to the given entities
+    # Filter only rows that are related to the given entities. For every type in
+    # the entities list build a query that returns the entity id, entity type
+    # and the creation time as a map. These queries have the same field names
+    # (inserted_at/published_at are renamed) so they can be combined with a
+    # UNION. This is required as the result must pull data from multiple tables
+    # with different schemas.
     query =
       Enum.reduce(entities, nil, fn entity, query_acc ->
         entity_ids_query = entity_ids_query(entity, opts)
@@ -100,6 +123,10 @@ defmodule Sanbase.Entity do
         end
       end)
 
+    # Add pagination to the query. This uses the new map of arguments built
+    # by the base query above. This allows to have a creation time field
+    # with the same name, so we can properly sort the results before applying
+    # limit and offset.
     query =
       from(
         entity in subquery(query),
@@ -109,16 +136,11 @@ defmodule Sanbase.Entity do
 
     db_result = Sanbase.Repo.all(query)
 
-    result =
-      db_result
-      |> Enum.group_by(&String.to_existing_atom(&1.entity_type), & &1.entity_id)
-      |> Enum.flat_map(fn {entity, ids} ->
-        entity_module = deduce_entity_module(entity)
+    result = fetch_entities_by_ids(db_result)
 
-        {:ok, data} = entity_module.by_ids(ids, [])
-        Enum.map(data, fn e -> %{entity => e} end)
-      end)
-
+    # Order the full list of entities by the creation time in descending order.
+    # The end result is a list like:
+    # [%{watchlist: w}, %{insight: i}, %{chart_configuration: c}, %{screener: s}]
     sorted_result =
       Enum.sort_by(
         result,
@@ -139,19 +161,29 @@ defmodule Sanbase.Entity do
     # the case where the user is fetching their own entities that are with most
     # votes the filter is changed to return only the creations of that users
 
-    # base query
+    # Base query. The required ids are fetched from the votes table, where voting
+    # for every entity type is stored. Every type uses its own column that bears the
+    # enitity type name + _id suffix.
     query = from(vote in Sanbase.Vote)
 
-    # Filter only rows that are related to the given entities
+    # Filter only rows that are related to the given entities. This is done by
+    # building a list of where clauses join with OR. For every type in the
+    # entities, add a where clause that filters the rows that have the id that
+    # is included in the subquery. Watchlists and screener are both represented
+    # by the watchlist_id column but their subqueries are disjoint - they never
+    # share ids.
     query =
       Enum.reduce(entities, query, fn entity, query_acc ->
         entity_ids_query = entity_ids_query(entity, opts)
-        field = deduce_entity_field(entity)
+        field = deduce_entity_vote_field(entity)
 
         query_acc
         |> or_where([v], field(v, ^field) in subquery(entity_ids_query))
       end)
 
+    # Add ordering and pagination. The group by is required so we can count
+    # all the votes for each entity. There is exactly one non-null entity id per
+    # row, so the chosen group by expression is working as expected.
     query =
       from(
         v in query,
@@ -160,8 +192,9 @@ defmodule Sanbase.Entity do
       )
       |> paginate(opts)
 
-    # For simplicity include all the entities in the query here. The ones that are
-    # not wanted have their rows excluded in the above build where clause.
+    # For simplicity include all the known in the query here. The ones that are
+    # not wanted have their rows excluded in the above build where clause and
+    # will never match in the case statement.
     query =
       from(v in query,
         select: %{
@@ -178,6 +211,7 @@ defmodule Sanbase.Entity do
             fragment("""
             CASE
               WHEN post_id IS NOT NULL THEN 'insight'
+              -- the watchlist_id can point to either screener or watchlist. This is handled later.
               WHEN watchlist_id IS NOT NULL THEN 'watchlist'
               WHEN chart_configuration_id IS NOT NULL THEN 'chart_configuration'
             END
@@ -187,6 +221,16 @@ defmodule Sanbase.Entity do
 
     db_result = Sanbase.Repo.all(query)
 
+    # The result is returned in descending order based on votes. This order will
+    # be lost once we split the result into different entity type groups is
+    # order to fetch them. In order to preserve the order, we need to record it
+    # beforehand. This is done by making a map where the keys are {entity_type,
+    # entity_id} and the value is the position in the original result.
+    # NOTE 1: As we are recording the position in the original result, we need
+    # to sort the result in ASCENDING order at the end. NOTE 2: The db_result
+    # from here includes only the entity id and entity type. This is not enough
+    # to distinguish between screener and watchlist. This will be done once the
+    # full objects are returned.
     ordering =
       db_result
       |> Enum.with_index()
@@ -194,16 +238,9 @@ defmodule Sanbase.Entity do
         {{String.to_existing_atom(elem.entity_type), elem.entity_id}, pos}
       end)
 
-    result =
-      db_result
-      |> Enum.group_by(&String.to_existing_atom(&1.entity_type), & &1.entity_id)
-      |> Enum.flat_map(fn {entity, ids} ->
-        entity_module = deduce_entity_module(entity)
+    result = fetch_entities_by_ids(db_result)
 
-        {:ok, data} = entity_module.by_ids(ids, [])
-        Enum.map(data, fn e -> %{entity => e} end)
-      end)
-
+    # Sort in ascending order according to the ordering map
     result =
       result
       |> Enum.sort_by(fn map ->
@@ -216,20 +253,46 @@ defmodule Sanbase.Entity do
     {:ok, result}
   end
 
-  defp rewrite_keys(list) do
-    Enum.map(list, fn
-      %{watchlist: watchlist} ->
-        case UserList.is_screener?(watchlist) do
-          true -> %{screener: watchlist}
-          false -> %{watchlist: watchlist}
-        end
+  defp fetch_entities_by_ids(list) do
+    # Group the results by entity type and fetch the full entities from the
+    # database. Every entity is then represented as a map with the entity as
+    # value and its type as a key. This is required as the GraphQL API needs to
+    # match every different type to a GraphQL type. The end result is a list like
+    # [%{watchlist: w}, %{insight: i}, %{chart_configuration: c}, %{screener: s}]
+    list
+    |> Enum.group_by(&String.to_existing_atom(&1.entity_type), & &1.entity_id)
+    |> Enum.flat_map(fn {entity, ids} ->
+      entity_module = deduce_entity_module(entity)
 
-      elem ->
-        elem
+      {:ok, data} = entity_module.by_ids(ids, [])
+      Enum.map(data, fn e -> %{entity => e} end)
+    end)
+  end
+
+  defp rewrite_keys(list) do
+    Enum.map(list, fn elem ->
+      case Map.to_list(elem) do
+        # Check if the watchlist is a screener so we can rewrite its name.
+        # Screeners are watchlists so in the votes table their votes are stored
+        # in the watchlist_id column
+        [{:watchlist, watchlist}] ->
+          case UserList.is_screener?(watchlist) do
+            true -> %{screener: watchlist}
+            false -> %{watchlist: watchlist}
+          end
+
+        # Check if the argument is in the right format. If this was a catch-all
+        # case then wrong arugment types would still be passed through here without
+        # any changes.
+        [{type, entity}] when type in @supported_entity_type ->
+          %{type => entity}
+      end
     end)
   end
 
   defp entity_ids_query(:insight, opts) do
+    # `ordered?: false` is important otherwise the default order will be
+    # applied and this will conflict with the distinct(true) check
     entity_opts = [preload?: false, distinct?: true, ordered?: false, cursor: opts[:cursor]]
 
     case Keyword.get(opts, :current_user_data_only) do

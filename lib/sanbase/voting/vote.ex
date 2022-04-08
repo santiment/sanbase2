@@ -173,7 +173,7 @@ defmodule Sanbase.Vote do
     # Override nil with -1 so the checks for current user
     # votes will return 0
     user_id = user_id || -1
-    entity_field = Sanbase.Entity.deduce_entity_field(entity_type)
+    entity_field = Sanbase.Entity.deduce_entity_vote_field(entity_type)
 
     from(
       vote in entities_query(entity_type, entity_ids),
@@ -193,7 +193,7 @@ defmodule Sanbase.Vote do
   end
 
   defp voted_at_query(entity_type, entity_ids, user_id) do
-    entity_field = Sanbase.Entity.deduce_entity_field(entity_type)
+    entity_field = Sanbase.Entity.deduce_entity_vote_field(entity_type)
 
     from(
       vote in entities_query(entity_type, entity_ids),
@@ -206,7 +206,7 @@ defmodule Sanbase.Vote do
   end
 
   defp entities_query(entity_type, entity_ids) do
-    entity_field = Sanbase.Entity.deduce_entity_field(entity_type)
+    entity_field = Sanbase.Entity.deduce_entity_vote_field(entity_type)
 
     from(
       vote in __MODULE__,

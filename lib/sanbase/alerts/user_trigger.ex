@@ -181,10 +181,10 @@ defmodule Sanbase.Alert.UserTrigger do
   the user does not have a Sanbase PRO subscription. This alert restriction
   is deprecatng the restriction of having 10 free alerts with free accounts.
   """
-  @spec trigger_not_frozen?(%__MODULE__{}) :: true | {:error, String.t()}
-  def trigger_not_frozen?(%__MODULE__{} = user_trigger) do
+  @spec is_frozen?(%__MODULE__{}) :: false | {:error, String.t()}
+  def is_frozen?(%__MODULE__{} = user_trigger) do
     case Map.get(user_trigger.trigger, :is_frozen, false) do
-      false -> true
+      false -> false
       true -> {:error, "The trigger with id #{user_trigger.id} is frozen."}
     end
   end
@@ -192,8 +192,8 @@ defmodule Sanbase.Alert.UserTrigger do
   def unfreeze_user_frozen_alerts(user_id) do
     triggers_for(user_id)
     |> Enum.each(fn %__MODULE__{} = user_trigger ->
-      case trigger_not_frozen?(user_trigger) do
-        true -> :ok
+      case is_frozen?(user_trigger) do
+        false -> :ok
         _ -> update_user_trigger(user_id, %{id: user_trigger.id, is_frozen: false})
       end
     end)

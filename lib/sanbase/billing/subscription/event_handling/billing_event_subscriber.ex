@@ -77,6 +77,10 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
        when event_type in [:create_subscription, :update_subscription, :renew_subscription] do
     case Sanbase.Billing.Subscription.user_has_sanbase_pro?(event.data.user_id) do
       true ->
+        Logger.info(
+          "[BillingEventSubscriber] Unfreezing alerts for user with id #{event.data.user_id}"
+        )
+
         :ok = Sanbase.Alert.UserTrigger.unfreeze_user_frozen_alerts(event.data.user_id)
 
       false ->

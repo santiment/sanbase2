@@ -391,18 +391,6 @@ defmodule Sanbase.Clickhouse.Label do
     """
   end
 
-  defp create_owner_name(user) do
-    if user.username do
-      if String.starts_with?(user.username, "0x") do
-        "0x" <> String.slice(user.username, -4, 4)
-      else
-        user.username
-      end
-    else
-      generate_username(user.id)
-    end
-  end
-
   def generate_username(user_id) do
     :crypto.hash(:sha256, to_string(user_id))
     |> Base.encode16()

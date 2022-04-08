@@ -129,6 +129,7 @@ defmodule Sanbase.UserList do
     |> where([ul], ul.is_public == true)
     |> select([ul], ul.id)
     |> maybe_filter_is_screener(opts)
+    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
   end
 
   @impl Sanbase.Entity.Behaviour
@@ -137,6 +138,7 @@ defmodule Sanbase.UserList do
     |> where([ul], ul.user_id == ^user_id)
     |> select([ul], ul.id)
     |> maybe_filter_is_screener(opts)
+    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
   end
 
   def by_slug(slug) when is_binary(slug) do

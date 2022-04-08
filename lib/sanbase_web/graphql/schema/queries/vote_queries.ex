@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
   """
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
-
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 

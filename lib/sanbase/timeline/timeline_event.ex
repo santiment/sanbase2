@@ -113,16 +113,18 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   @impl Sanbase.Entity.Behaviour
-  def public_entity_ids_query(_opts) do
+  def public_entity_ids_query(opts) do
     from(te in __MODULE__)
     |> Query.events_with_public_entities_query()
+    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([te], te.id)
   end
 
   @impl Sanbase.Entity.Behaviour
-  def user_entity_ids_query(user_id, _opts) do
+  def user_entity_ids_query(user_id, opts) do
     from(te in __MODULE__)
     |> where([te], te.user_id == ^user_id)
+    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([te], te.id)
   end
 

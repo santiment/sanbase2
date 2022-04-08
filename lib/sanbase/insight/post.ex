@@ -100,6 +100,7 @@ defmodule Sanbase.Insight.Post do
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
     public_insights_query(opts)
+    |> Sanbase.Entity.maybe_filter_by_cursor(:published_at, opts)
     |> select([p], p.id)
   end
 
@@ -107,6 +108,7 @@ defmodule Sanbase.Insight.Post do
   def user_entity_ids_query(user_id, opts) do
     base_insights_query(opts)
     |> by_user(user_id)
+    |> Sanbase.Entity.maybe_filter_by_cursor(:published_at, opts)
     |> select([p], p.id)
   end
 
@@ -251,14 +253,13 @@ defmodule Sanbase.Insight.Post do
   def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
-  def by_ids(post_ids, opts) when is_list(post_ids) do
-    ordering = Enum.with_index(post_ids) |> Map.new()
-
+  def by_ids(post_ids, _opts) when is_list(post_ids) do
     result =
-      public_insights_query(opts)
-      |> where([p], p.id in ^post_ids)
+      from(p in __MODULE__,
+        where: p.id in ^post_ids,
+        order_by: fragment("array_position(?, ?::int)", ^post_ids, p.id)
+      )
       |> Repo.all()
-      |> Enum.sort_by(&Map.get(ordering, &1.id))
 
     {:ok, result}
   end
@@ -401,7 +402,7 @@ defmodule Sanbase.Insight.Post do
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> by_from_to_datetime(opts)
     |> maybe_distinct(opts)
-    |> order_by_published_at()
+    |> maybe_order_by_published_at(opts)
     |> page(opts)
     |> maybe_preload(opts)
   end
@@ -592,11 +593,17 @@ defmodule Sanbase.Insight.Post do
     |> where([_p, v], v.user_id == ^user_id)
   end
 
-  defp order_by_published_at(query) do
-    from(
-      p in query,
-      order_by: [desc: p.published_at]
-    )
+  defp maybe_order_by_published_at(query, opts) do
+    case Keyword.get(opts, :ordered?, true) do
+      true ->
+        from(
+          p in query,
+          order_by: [desc: p.published_at]
+        )
+
+      false ->
+        query
+    end
   end
 
   defp after_datetime(query, datetime) do

@@ -132,6 +132,6 @@ defmodule Sanbase.Billing do
       end)
 
     result = MapSet.union(sanbase_user_ids_mapset, user_ids_inherited_sanbase_pro)
-    {:ok, result}
+    {:ok, MapSet.to_list(result)}
   end
 end

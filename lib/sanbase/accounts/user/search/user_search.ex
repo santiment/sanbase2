@@ -23,4 +23,15 @@ defmodule Sanbase.Accounts.Search do
     |> Enum.sort_by(fn u -> String.jaro_distance(u.username, username) end, :desc)
     |> Enum.take(size)
   end
+
+  def user_ids_with_santiment_email() do
+    result =
+      from(u in User,
+        where: not is_nil(u.email) and ilike(u.email, "%@santiment.net"),
+        select: u.id
+      )
+      |> Sanbase.Repo.all()
+
+    {:ok, result}
+  end
 end

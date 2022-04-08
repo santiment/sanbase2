@@ -15,9 +15,10 @@ defmodule Sanbase.Alert.Job do
   end
 
   defp get_alerts() do
-    {:ok, user_ids_mapset} = Sanbase.Billing.get_sanbase_pro_user_ids()
+    {:ok, user_ids1} = Sanbase.Billing.get_sanbase_pro_user_ids()
+    {:ok, user_ids2} = Sanbase.Accounts.Search.user_ids_with_santiment_email()
 
-    user_ids = Enum.to_list(user_ids_mapset)
+    user_ids = Enum.uniq(user_ids1 ++ user_ids2)
 
     from(ut in UserTrigger,
       where:

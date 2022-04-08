@@ -50,6 +50,8 @@ defmodule Sanbase.Entity do
   def deduce_entity_vote_field(:watchlist), do: :watchlist_id
   def deduce_entity_vote_field(:screener), do: :watchlist_id
   def deduce_entity_vote_field(:chart_configuration), do: :chart_configuration_id
+  # keep the timeline_event here so it can have its id obtained by the Vote module
+  def deduce_entity_vote_field(:timeline_event), do: :timeline_event_id
 
   @doc ~s"""
   Apply the pagination options from `opts` to `query`.

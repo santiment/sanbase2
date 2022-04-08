@@ -51,6 +51,16 @@ defmodule Sanbase.Entity do
   def deduce_entity_vote_field(:screener), do: :watchlist_id
   def deduce_entity_vote_field(:chart_configuration), do: :chart_configuration_id
 
+  @doc ~s"""
+  Apply the pagination options from `opts` to `query`.
+
+  The `opts` are expected to contain the `page` and `page_size` keys with
+  interes bigger or equal to 1 as values.
+  The query is expected to have an ordering applied to it (before or after calling paginate)
+  so the pagination has meaning.
+  """
+  @spec paginate(Ecto.Query.t(), pagination_opts) :: Ecto.Query.t()
+        when pagination_opts: [page: non_neg_integer(), page_size: non_neg_integer()]
   def paginate(query, opts) do
     {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
 

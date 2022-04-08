@@ -7,6 +7,14 @@ defmodule Sanbase.Alert.TriggerQuery do
     end
   end
 
+  defmacro trigger_is_frozen() do
+    quote do
+      fragment("""
+      trigger->'is_frozen' = 'true'
+      """)
+    end
+  end
+
   defmacro trigger_type_is(type) do
     quote do
       fragment(

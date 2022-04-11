@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
     end
 
     @desc ~s"""
-    TODO: Add description
+    Fetch the default customer's card
     """
     field :fetch_default_payment_instrument, :payment_instrument do
       meta(access: :free)
@@ -116,14 +116,25 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
     end
 
     @desc ~s"""
-    Request to add payment source when customer is trialing without a card.
+    Update the default customer's card
     """
-    field :update_customer_card, :update_card_result do
+    field :update_default_payment_instrument, :boolean do
       arg(:card_token, non_null(:string))
 
       middleware(JWTAuth)
 
       resolve(&BillingResolver.update_customer_card/3)
+    end
+
+    @desc ~s"""
+    Delete the default customer's card
+    """
+    field :delete_default_payment_instrument, :boolean do
+      meta(access: :free)
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.delete_default_payment_instrument/3)
     end
   end
 end

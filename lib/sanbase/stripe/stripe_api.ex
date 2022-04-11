@@ -126,6 +126,14 @@ defmodule Sanbase.StripeApi do
     Stripe.Customer.retrieve(stripe_customer_id, expand: ["default_source"])
   end
 
+  def delete_default_card(%User{stripe_customer_id: stripe_customer_id} = user) do
+    with {:ok, customer} <- Stripe.Customer.retrieve(stripe_customer_id),
+         {:ok, %Stripe.Card{}} <-
+           Stripe.Card.delete(customer.default_source, %{customer: stripe_customer_id}) do
+      :ok
+    end
+  end
+
   # Helpers
 
   defp get_subscription_first_item_id(stripe_id) do

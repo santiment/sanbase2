@@ -11,20 +11,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     Plan.product_with_plans()
   end
 
-  def update_customer_card(_root, %{card_token: card_token}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    Billing.create_or_update_stripe_customer(current_user, card_token)
-    |> case do
-      {:ok, _} ->
-        {:ok, %{success: true}}
-
-      {:error, %Stripe.Error{message: message} = reason} ->
-        log_error("Update customer card: user=#{inspect(current_user)}", reason)
-        {:error, message}
-    end
-  end
-
   def subscribe(_root, %{plan_id: plan_id} = args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
@@ -189,7 +175,40 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
         {:error, message}
 
       _ ->
-        {:error, "Can't fetch default payment instrument for the provided subscription"}
+        {:error, "Can't fetch the default payment instrument"}
+    end
+  end
+
+  def update_default_payment_instrument(_root, %{card_token: card_token}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    Billing.create_or_update_stripe_customer(current_user, card_token)
+    |> case do
+      {:ok, _} ->
+        {:ok, true}
+
+      {:error, %Stripe.Error{message: message} = reason} ->
+        log_error("Update customer card: user=#{inspect(current_user)}", reason)
+        {:error, message}
+
+      _ ->
+        {:error, "Can't update the default payment instrument"}
+    end
+  end
+
+  def delete_default_payment_instrument(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    case StripeApi.delete_default_card(current_user) do
+      :ok ->
+        {:ok, true}
+
+      {:error, %Stripe.Error{message: message} = reason} ->
+        log_error("Delete customer card: user=#{inspect(current_user)}", reason)
+        {:error, message}
+
+      _ ->
+        {:error, "Can't delete the default payment instrument"}
     end
   end
 

@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
   use Absinthe.Schema.Notation
 
   enum :entity_type do
+    value(:alert)
     value(:insight)
     value(:project_watchlist)
     value(:address_watchlist)
@@ -10,6 +11,7 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
   end
 
   object :entity_result do
+    field(:alert, :user_trigger)
     field(:insight, :post)
     field(:project_watchlist, :user_list)
     field(:address_watchlist, :user_list)

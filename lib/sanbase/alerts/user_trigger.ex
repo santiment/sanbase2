@@ -7,9 +7,12 @@ defmodule Sanbase.Alert.UserTrigger do
   """
   use Ecto.Schema
 
+  @behaviour Sanbase.Entity.Behaviour
+
   import Ecto.Changeset
   import Ecto.Query
   import Sanbase.Alert.EventEmitter, only: [emit_event: 3]
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
   import Sanbase.Alert.TriggerQuery
   import Sanbase.Alert.StructMapTransformation
 
@@ -76,6 +79,37 @@ defmodule Sanbase.Alert.UserTrigger do
       id: user_trigger_id,
       is_active: is_active
     })
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids(ids, _opts) when is_list(ids) do
+    result =
+      from(ul in __MODULE__,
+        where: ul.id in ^ids,
+        order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
+      )
+      |> Repo.all()
+
+    {:ok, result}
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    from(ul in __MODULE__)
+    |> where([ul], trigger_is_public())
+    |> select([ul], ul.id)
+    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def user_entity_ids_query(user_id, opts) do
+    from(ul in __MODULE__)
+    |> where([ul], ul.user_id == ^user_id)
+    |> select([ul], ul.id)
+    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
   end
 
   @doc ~s"""

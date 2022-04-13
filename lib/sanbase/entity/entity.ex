@@ -21,6 +21,7 @@ defmodule Sanbase.Entity do
   alias Sanbase.Chart
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
+  alias Sanbase.Alert.UserTrigger
 
   # The list of supported entitiy types. In order to add a new entity type, the
   # following steps must be taken:
@@ -46,6 +47,7 @@ defmodule Sanbase.Entity do
   @doc ~s"""
   Map the entity type to the corresponding field in the votes table
   """
+  def deduce_entity_vote_field(:alert), do: :user_trigger_id
   def deduce_entity_vote_field(:insight), do: :post_id
   def deduce_entity_vote_field(:watchlist), do: :watchlist_id
   def deduce_entity_vote_field(:project_watchlist), do: :watchlist_id
@@ -338,6 +340,17 @@ defmodule Sanbase.Entity do
     end
   end
 
+  defp entity_ids_query(:alert, opts) do
+    # `ordered?: false` is important otherwise the default order will be
+    # applied and this will conflict with the distinct(true) check
+    entity_opts = [preload?: false, distinct?: true, ordered?: false, cursor: opts[:cursor]]
+
+    case Keyword.get(opts, :current_user_data_only) do
+      nil -> UserTrigger.public_entity_ids_query(entity_opts)
+      user_id -> UserTrigger.user_entity_ids_query(user_id, entity_opts)
+    end
+  end
+
   defp entity_ids_query(:screener, opts) do
     entity_opts = [is_screener: true, cursor: opts[:cursor]]
 
@@ -383,6 +396,7 @@ defmodule Sanbase.Entity do
   defp deduce_entity_module(:project_watchlist), do: UserList
   defp deduce_entity_module(:address_watchlist), do: UserList
   defp deduce_entity_module(:screener), do: UserList
+  defp deduce_entity_module(:alert), do: UserTrigger
   defp deduce_entity_module(:insight), do: Post
   defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
 

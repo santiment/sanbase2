@@ -92,6 +92,7 @@ defmodule Sanbase.Alert.UserTrigger do
         order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
       )
       |> Repo.all()
+      |> Enum.map(&trigger_in_struct/1)
 
     {:ok, result}
   end

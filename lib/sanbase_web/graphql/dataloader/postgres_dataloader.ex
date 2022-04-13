@@ -27,6 +27,12 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:chart_configuration_voted_at, data),
     do: get_voted_at(:chart_configuration, :chart_configuration_id, data)
 
+  def query(:user_trigger_vote_stats, data),
+    do: get_votes_stats(:user_trigger, :user_trigger_id, data)
+
+  def query(:user_trigger_voted_at, data),
+    do: get_voted_at(:user_trigger, :user_trigger_id, data)
+
   def query(:users_by_id, user_ids) do
     user_ids = Enum.to_list(user_ids)
 

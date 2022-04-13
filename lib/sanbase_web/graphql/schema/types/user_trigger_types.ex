@@ -4,10 +4,19 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.UserTriggerResolver
+  alias SanbaseWeb.Graphql.Resolvers.VoteResolver
 
   object :user_trigger do
     field(:user_id, :integer)
     field(:trigger, :trigger)
+
+    field :voted_at, :datetime do
+      resolve(&VoteResolver.voted_at/3)
+    end
+
+    field :votes, :vote do
+      resolve(&VoteResolver.votes/3)
+    end
   end
 
   object :trigger do

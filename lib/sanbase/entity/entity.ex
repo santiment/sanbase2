@@ -47,7 +47,7 @@ defmodule Sanbase.Entity do
   @doc ~s"""
   Map the entity type to the corresponding field in the votes table
   """
-  def deduce_entity_vote_field(:alert), do: :user_trigger_id
+  def deduce_entity_vote_field(:user_trigger), do: :user_trigger_id
   def deduce_entity_vote_field(:insight), do: :post_id
   def deduce_entity_vote_field(:watchlist), do: :watchlist_id
   def deduce_entity_vote_field(:project_watchlist), do: :watchlist_id
@@ -340,7 +340,7 @@ defmodule Sanbase.Entity do
     end
   end
 
-  defp entity_ids_query(:alert, opts) do
+  defp entity_ids_query(:user_trigger, opts) do
     # `ordered?: false` is important otherwise the default order will be
     # applied and this will conflict with the distinct(true) check
     entity_opts = [preload?: false, distinct?: true, ordered?: false, cursor: opts[:cursor]]

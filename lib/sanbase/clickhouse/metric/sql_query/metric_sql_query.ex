@@ -35,13 +35,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     field(:computed_at, :utc_datetime)
   end
 
-  def timeseries_data_query(metric, slug_or_slugs, from, to, interval, aggregation, filters) do
+  def timeseries_data_query(metric, selector, from, to, interval, aggregation, filters) do
+    asset_filter =
+      selector[:slug] ||
+        Sanbase.BlockchainAddress.to_internal_format(selector[:contract_address_raw])
+
     args = [
       str_to_sec(interval),
       Map.get(@name_to_metric_map, metric),
       dt_to_unix(:from, from),
       dt_to_unix(:to, to),
-      slug_or_slugs
+      asset_filter
     ]
 
     {additional_filters, args} = additional_filters(filters, args, trailing_and: true)
@@ -60,7 +64,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         #{additional_filters}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
-        #{asset_id_filter(slug_or_slugs, argument_position: 5)} AND
+        #{asset_id_filter(selector, argument_position: 5)} AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
         GROUP BY asset_id, metric_id, dt
     )
@@ -107,7 +111,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         isNotNull(value) AND NOT isNaN(value) AND
-        #{asset_id_filter(slug_or_slugs, argument_position: 5)} AND
+        #{asset_id_filter(%{slug: slug_or_slugs}, argument_position: 5)} AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
       GROUP BY asset_id, metric_id, dt
     )
@@ -154,7 +158,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
           FROM #{Map.get(@table_map, metric)}
           PREWHERE
             #{additional_filters}
-            #{asset_id_filter(slugs, argument_position: 1)} AND
+            #{asset_id_filter(%{slug: slugs}, argument_position: 1)} AND
             metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 ) AND
             isNotNull(value) AND NOT isNaN(value) AND
             #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND

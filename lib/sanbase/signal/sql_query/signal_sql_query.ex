@@ -129,7 +129,7 @@ defmodule Sanbase.Signal.SqlQuery do
       dt < toDateTime(?2) AND
       isNotNull(value) AND NOT isNaN(value) AND
       signal_id = ( SELECT argMax(signal_id, version) FROM #{@metadata_table} FINAL PREWHERE name = ?3 GROUP BY name LIMIT 1 ) AND
-      #{asset_id_filter(slug_or_slugs, argument_position: 4)}
+      #{asset_id_filter(%{slug: slug_or_slugs}, argument_position: 4)}
     ORDER BY dt
     """
 
@@ -160,7 +160,7 @@ defmodule Sanbase.Signal.SqlQuery do
         dt >= toDateTime(?2) AND
         dt < toDateTime(?3) AND
         isNotNull(value) AND NOT isNaN(value) AND
-        #{asset_id_filter(slug_or_slugs, argument_position: 5)} AND
+        #{asset_id_filter(%{slug: slug_or_slugs}, argument_position: 5)} AND
         signal_id = ( SELECT argMax(signal_id, version) FROM #{@metadata_table} FINAL PREWHERE name = ?4 GROUP BY name LIMIT 1 )
     )
     GROUP BY t
@@ -192,7 +192,7 @@ defmodule Sanbase.Signal.SqlQuery do
       PREWHERE
         dt >= toDateTime(?2) AND
         dt < toDateTime(?3) AND
-        #{asset_id_filter(slug_or_slugs, argument_position: 4)} AND
+        #{asset_id_filter(%{slug: slug_or_slugs}, argument_position: 4)} AND
         signal_id = ( SELECT argMax(signal_id, version) FROM #{@metadata_table} FINAL PREWHERE name = ?1 GROUP BY name LIMIT 1 )
     )
     INNER JOIN (

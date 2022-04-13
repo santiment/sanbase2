@@ -229,6 +229,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",
+        "nft_social_volume",
         "social_dominance_reddit",
         "social_dominance_telegram",
         "social_dominance_bitcointalk",
@@ -860,6 +861,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
 
     expected =
       [
+        "nft_social_volume",
         "social_volume_bitcointalk",
         "social_volume_reddit",
         "social_volume_telegram",

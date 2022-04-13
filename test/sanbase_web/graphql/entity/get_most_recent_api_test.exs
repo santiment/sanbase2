@@ -106,7 +106,25 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     assert Enum.at(result, 3)["chartConfiguration"]["id"] == chart_configuration1.id
   end
 
+  test "get most recent user trigger", %{conn: conn} do
+    user_trigger1 = insert(:user_trigger, is_public: true)
+    user_trigger2 = insert(:user_trigger, is_public: true)
+    _private = insert(:user_trigger, is_public: false)
+    _private = insert(:user_trigger, is_public: false)
+    user_trigger3 = insert(:user_trigger, is_public: true)
+    user_trigger4 = insert(:user_trigger, is_public: true)
+
+    result = get_most_recent(conn, :user_trigger)
+    assert length(result) == 4
+
+    assert Enum.at(result, 0)["userTrigger"]["trigger"]["id"] == user_trigger4.id
+    assert Enum.at(result, 1)["userTrigger"]["trigger"]["id"] == user_trigger3.id
+    assert Enum.at(result, 2)["userTrigger"]["trigger"]["id"] == user_trigger2.id
+    assert Enum.at(result, 3)["userTrigger"]["trigger"]["id"] == user_trigger1.id
+  end
+
   test "get most recent combined", %{conn: conn} do
+    user_trigger = insert(:user_trigger, is_public: true, inserted_at: seconds_ago(55))
     insight1 = insert(:published_post, published_at: seconds_ago(50))
     conf1 = insert(:chart_configuration, is_public: true, inserted_at: seconds_ago(45))
     insight2 = insert(:published_post, published_at: seconds_ago(40))
@@ -125,10 +143,11 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
         :project_watchlist,
         :address_watchlist,
         :screener,
-        :chart_configuration
+        :chart_configuration,
+        :user_trigger
       ])
 
-    assert length(result) == 7
+    assert length(result) == 8
 
     assert Enum.at(result, 0)["addressWatchlist"]["id"] |> String.to_integer() ==
              address_watchlist.id
@@ -141,6 +160,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     assert Enum.at(result, 4)["insight"]["id"] == insight2.id
     assert Enum.at(result, 5)["chartConfiguration"]["id"] == conf1.id
     assert Enum.at(result, 6)["insight"]["id"] == insight1.id
+    assert Enum.at(result, 7)["userTrigger"]["trigger"]["id"] == user_trigger.id
   end
 
   defp get_most_recent(conn, entities) when is_list(entities) do
@@ -158,6 +178,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
         addressWatchlist{ id insertedAt }
         screener{ id insertedAt }
         chartConfiguration{ id insertedAt }
+        userTrigger{ trigger{ id } }
       }
     }
     """
@@ -181,6 +202,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
         addressWatchlist{ id }
         screener{ id }
         chartConfiguration{ id }
+        userTrigger{ trigger{ id } }
       }
     }
     """

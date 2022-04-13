@@ -36,7 +36,7 @@ defmodule Sanbase.Entity do
   #    It is necessary if the new entity needs to use a different than
   #    inserted_at field to check its creation time. For example, insights have
   #    their published_at time taken, not inserted_at
-  @supported_entity_type [:insight, :watchlist, :screener, :chart_configuration]
+  @supported_entity_type [:insight, :watchlist, :screener, :chart_configuration, :user_trigger]
 
   def get_most_voted(entity_or_entities, opts),
     do: do_get_most_voted(List.wrap(entity_or_entities), opts)
@@ -220,7 +220,7 @@ defmodule Sanbase.Entity do
     query =
       from(
         v in query,
-        group_by: [v.post_id, v.watchlist_id, v.chart_configuration_id],
+        group_by: [v.post_id, v.watchlist_id, v.chart_configuration_id, v.user_trigger_id],
         order_by: [desc: coalesce(sum(v.count), 0)]
       )
       |> paginate(opts)
@@ -238,6 +238,7 @@ defmodule Sanbase.Entity do
               WHEN post_id IS NOT NULL THEN post_id
               WHEN watchlist_id IS NOT NULL THEN watchlist_id
               WHEN chart_configuration_id IS NOT NULL THEN chart_configuration_id
+              WHEN user_trigger_id IS NOT NULL THEN user_trigger_id
             END
             """),
           entity_type:
@@ -247,6 +248,7 @@ defmodule Sanbase.Entity do
               -- the watchlist_id can point to either screener or watchlist. This is handled later.
               WHEN watchlist_id IS NOT NULL THEN 'watchlist'
               WHEN chart_configuration_id IS NOT NULL THEN 'chart_configuration'
+              WHEN user_trigger_id IS NOT NULL THEN 'user_trigger'
             END
             """)
         }
@@ -396,7 +398,7 @@ defmodule Sanbase.Entity do
   defp deduce_entity_module(:project_watchlist), do: UserList
   defp deduce_entity_module(:address_watchlist), do: UserList
   defp deduce_entity_module(:screener), do: UserList
-  defp deduce_entity_module(:alert), do: UserTrigger
+  defp deduce_entity_module(:user_trigger), do: UserTrigger
   defp deduce_entity_module(:insight), do: Post
   defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
 

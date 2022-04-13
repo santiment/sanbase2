@@ -90,9 +90,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
 
   test "get most voted chart configuration", %{conn: conn} do
     chart_configuration0 = insert(:chart_configuration, is_public: true, inserted_at: days_ago())
-
     chart_configuration1 = insert(:chart_configuration, is_public: true)
-
     chart_configuration2 = insert(:chart_configuration, is_public: true)
 
     _chart_configuration_without_vote = insert(:chart_configuration, is_public: true)
@@ -111,6 +109,23 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
              chart_configuration2.id
   end
 
+  test "get most voted user trigger", %{conn: conn} do
+    trigger0 = insert(:user_trigger, is_public: true, inserted_at: days_ago())
+    trigger1 = insert(:user_trigger, is_public: true)
+    trigger2 = insert(:user_trigger, is_public: true)
+    _trigger_without_vote = insert(:user_trigger, is_public: true)
+
+    for _ <- 1..10, do: vote(conn, "userTriggerId", trigger0.id)
+    for _ <- 1..10, do: vote(conn, "userTriggerId", trigger1.id)
+    for _ <- 1..5, do: vote(conn, "userTriggerId", trigger2.id)
+
+    result = get_most_voted(conn, :user_trigger)
+    assert length(result) == 2
+
+    assert Enum.at(result, 0)["userTrigger"]["trigger"]["id"] == trigger1.id
+    assert Enum.at(result, 1)["userTrigger"]["trigger"]["id"] == trigger2.id
+  end
+
   test "get most voted combined", %{conn: conn} do
     insight1 = insert(:published_post)
     insight2 = insert(:published_post)
@@ -119,6 +134,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     screener = insert(:screener, is_public: true)
     project_watchlist = insert(:watchlist, type: :project, is_public: true)
     address_watchlist = insert(:watchlist, type: :blockchain_address, is_public: true)
+    user_trigger = insert(:user_trigger, is_public: true)
 
     for _ <- 1..10, do: vote(conn, "insightId", insight1.id)
     for _ <- 1..9, do: vote(conn, "insightId", insight2.id)
@@ -127,6 +143,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     for _ <- 1..6, do: vote(conn, "watchlistId", project_watchlist.id)
     for _ <- 1..5, do: vote(conn, "watchlistId", screener.id)
     for _ <- 1..4, do: vote(conn, "watchlistId", address_watchlist.id)
+    for _ <- 1..3, do: vote(conn, "userTriggerId", user_trigger.id)
 
     result =
       get_most_voted(conn, [
@@ -134,10 +151,11 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
         :project_watchlist,
         :address_watchlist,
         :screener,
-        :chart_configuration
+        :chart_configuration,
+        :user_trigger
       ])
 
-    assert length(result) == 7
+    assert length(result) == 8
     assert Enum.at(result, 0)["insight"]["id"] == insight1.id
     assert Enum.at(result, 1)["insight"]["id"] == insight2.id
     assert Enum.at(result, 2)["chartConfiguration"]["id"] == conf2.id
@@ -150,6 +168,8 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
 
     assert Enum.at(result, 6)["addressWatchlist"]["id"] |> String.to_integer() ==
              address_watchlist.id
+
+    assert Enum.at(result, 7)["userTrigger"]["trigger"]["id"] == user_trigger.id
   end
 
   defp vote(conn, entity_key, entity_id) do
@@ -186,6 +206,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
           addressWatchlist{ id }
           screener{ id }
           chartConfiguration{ id }
+          userTrigger{ trigger{ id } }
       }
     }
     """
@@ -210,6 +231,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
           addressWatchlist{ id }
           screener{ id }
           chartConfiguration{ id }
+          userTrigger{ trigger{ id } }
       }
     }
     """

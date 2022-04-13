@@ -133,17 +133,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     get_voted_at(loader, :chart_configuration_voted_at, selector)
   end
 
-  def voted_at(%{trigger: %{id: id}} = ut, _args, %{
+  def voted_at(%{trigger: %{id: id}}, _args, %{
         context: %{loader: loader, auth: %{current_user: user}}
       }) do
-    selector = %{user_trigger_id: ut.id, user_id: user.id}
+    selector = %{user_trigger_id: id, user_id: user.id}
     get_voted_at(loader, :user_trigger_voted_at, selector)
   end
 
-  def voted_at(%UserTrigger{id: id} = ut, _args, %{
+  def voted_at(%UserTrigger{id: id}, _args, %{
         context: %{loader: loader, auth: %{current_user: user}}
       }) do
-    selector = %{user_trigger_id: ut.id, user_id: user.id}
+    selector = %{user_trigger_id: id, user_id: user.id}
     get_voted_at(loader, :user_trigger_voted_at, selector)
   end
 

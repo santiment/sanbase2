@@ -28,6 +28,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   end
 
   defp maybe_add_current_user_data_only(opts, args, resolution) do
+    require(IEx).pry()
+
     with true <- Map.get(args, :current_user_data_only, false),
          user_id when is_integer(user_id) <-
            get_in(resolution.context.auth, [:current_user, Access.key(:id)]) do

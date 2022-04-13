@@ -44,6 +44,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @type metric :: String.t()
   @type interval :: String.t()
 
+  defguard is_supported_selector(s)
+           when is_map(s) and (is_map_key(s, :slug) or is_map_key(s, :contract_address_raw))
+
   @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics
 
@@ -77,7 +80,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   def timeseries_data(_metric, %{slug: []}, _from, _to, _interval, _opts), do: {:ok, []}
 
-  def timeseries_data(metric, selector, from, to, interval, opts) do
+  def timeseries_data(metric, selector, from, to, interval, opts)
+      when is_supported_selector(selector) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
 
     # FIXME: Some of the `nft` metrics need additional filter for `owner=opensea`
@@ -231,8 +235,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
       when metric in ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"],
       do: HistogramMetric.first_datetime(metric, selector)
 
-  def first_datetime(metric, %{slug: slug}) do
-    {query, args} = first_datetime_query(metric, slug)
+  def first_datetime(metric, selector) do
+    {query, args} = first_datetime_query(metric, selector)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
       DateTime.from_unix!(datetime)
@@ -245,8 +249,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
       when metric in ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"],
       do: HistogramMetric.last_datetime_computed_at(metric, selector)
 
-  def last_datetime_computed_at(metric, %{slug: slug}) do
-    {query, args} = last_datetime_computed_at_query(metric, slug)
+  def last_datetime_computed_at(metric, selector) do
+    {query, args} = last_datetime_computed_at_query(metric, selector)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
       DateTime.from_unix!(datetime)

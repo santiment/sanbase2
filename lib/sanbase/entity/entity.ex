@@ -48,6 +48,8 @@ defmodule Sanbase.Entity do
   """
   def deduce_entity_vote_field(:insight), do: :post_id
   def deduce_entity_vote_field(:watchlist), do: :watchlist_id
+  def deduce_entity_vote_field(:project_watchlist), do: :watchlist_id
+  def deduce_entity_vote_field(:address_watchlist), do: :watchlist_id
   def deduce_entity_vote_field(:screener), do: :watchlist_id
   def deduce_entity_vote_field(:chart_configuration), do: :chart_configuration_id
   # keep the timeline_event here so it can have its id obtained by the Vote module
@@ -156,9 +158,14 @@ defmodule Sanbase.Entity do
 
     result = fetch_entities_by_ids(db_result)
 
+    # Rewrite the keys of the result to match the expected format.
+    # The `watchlist` key must be rewritten to one of the different watchlist
+    # formats.
+    # result = rewrite_keys(result)
+
     # Order the full list of entities by the creation time in descending order.
     # The end result is a list like:
-    # [%{watchlist: w}, %{insight: i}, %{chart_configuration: c}, %{screener: s}]
+    # [%{project_watchlist: w}, %{insight: i}, %{chart_configuration: c}, %{screener: s}, %{address_watchlist: a}]
     sorted_result =
       Enum.sort_by(
         result,
@@ -282,14 +289,14 @@ defmodule Sanbase.Entity do
     # database. Every entity is then represented as a map with the entity as
     # value and its type as a key. This is required as the GraphQL API needs to
     # match every different type to a GraphQL type. The end result is a list like
-    # [%{watchlist: w}, %{insight: i}, %{chart_configuration: c}, %{screener: s}]
+    # [%{project_watchlist: w}, %{insight: i}, %{chart_configuration: c}, %{screener: s}, %{address_watchlist: a}]
     list
     |> Enum.group_by(&String.to_existing_atom(&1.entity_type), & &1.entity_id)
-    |> Enum.flat_map(fn {entity, ids} ->
-      entity_module = deduce_entity_module(entity)
+    |> Enum.flat_map(fn {type, ids} ->
+      entity_module = deduce_entity_module(type)
 
       {:ok, data} = entity_module.by_ids(ids, [])
-      Enum.map(data, fn e -> %{entity => e} end)
+      Enum.map(data, fn e -> %{type => e} end)
     end)
   end
 
@@ -300,9 +307,15 @@ defmodule Sanbase.Entity do
         # Screeners are watchlists so in the votes table their votes are stored
         # in the watchlist_id column
         [{:watchlist, watchlist}] ->
-          case UserList.is_screener?(watchlist) do
-            true -> %{screener: watchlist}
-            false -> %{watchlist: watchlist}
+          case {UserList.is_screener?(watchlist), UserList.type(watchlist)} do
+            {true, _type} ->
+              %{screener: watchlist}
+
+            {false, :project} ->
+              %{project_watchlist: watchlist}
+
+            {false, :blockchain_address} ->
+              %{address_watchlist: watchlist}
           end
 
         # Check if the argument is in the right format. If this was a catch-all
@@ -334,8 +347,17 @@ defmodule Sanbase.Entity do
     end
   end
 
-  defp entity_ids_query(:watchlist, opts) do
-    entity_opts = [is_screener: false, cursor: opts[:cursor]]
+  defp entity_ids_query(:project_watchlist, opts) do
+    entity_opts = [is_screener: false, type: :project, cursor: opts[:cursor]]
+
+    case Keyword.get(opts, :current_user_data_only) do
+      nil -> UserList.public_entity_ids_query(entity_opts)
+      user_id -> UserList.user_entity_ids_query(user_id, entity_opts)
+    end
+  end
+
+  defp entity_ids_query(:address_watchlist, opts) do
+    entity_opts = [is_screener: false, type: :blockchain_address, cursor: opts[:cursor]]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> UserList.public_entity_ids_query(entity_opts)
@@ -352,9 +374,16 @@ defmodule Sanbase.Entity do
     end
   end
 
-  defp deduce_entity_module(:insight), do: Post
+  # This needs to stay here even though it's not a supported entity type by the
+  # API. This is because internally all watchlist/screener types are stored as
+  # watchlists and we need to be able to know from which module to call by_ids/2
+  # so the objects can be fetched. Only when the full object is fetched we can
+  # call rewrite_keys/1 and put the proper key
   defp deduce_entity_module(:watchlist), do: UserList
+  defp deduce_entity_module(:project_watchlist), do: UserList
+  defp deduce_entity_module(:address_watchlist), do: UserList
   defp deduce_entity_module(:screener), do: UserList
+  defp deduce_entity_module(:insight), do: Post
   defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
 
   defp deduce_entity_creation_time_field(:insight), do: {:published_at, :inserted_at}

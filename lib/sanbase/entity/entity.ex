@@ -111,9 +111,11 @@ defmodule Sanbase.Entity do
     # UNION. This is required as the result must pull data from multiple tables
     # with different schemas.
     query =
-      Enum.reduce(entities, nil, fn entity, query_acc ->
-        entity_ids_query = entity_ids_query(entity, opts)
-        creation_time_field = deduce_entity_creation_time_field(entity)
+      Enum.reduce(entities, nil, fn type, query_acc ->
+        entity_ids_query = entity_ids_query(type, opts)
+
+        {creation_time_field, creation_time_field_backup} =
+          deduce_entity_creation_time_field(type)
 
         entity_query =
           from(entity in entity_ids_query)
@@ -121,8 +123,12 @@ defmodule Sanbase.Entity do
           |> exclude(:select)
           |> select([e], %{
             entity_id: e.id,
-            entity_type: ^"#{entity}",
-            creation_time: field(e, ^creation_time_field)
+            entity_type: ^"#{type}",
+            # In all cases the fields are the same except for insights.
+            # When fetching user own insights, some of them might be drafts so they
+            # won't have :published_at field and then :inserted_at shall be used.
+            creation_time:
+              coalesce(field(e, ^creation_time_field), field(e, ^creation_time_field_backup))
           })
 
         case query_acc do
@@ -157,9 +163,15 @@ defmodule Sanbase.Entity do
       Enum.sort_by(
         result,
         fn elem ->
-          [{key, entity}] = Map.to_list(elem)
+          [{type, entity}] = Map.to_list(elem)
 
-          Map.get(entity, deduce_entity_creation_time_field(key))
+          {creation_time_field, creation_time_field_backup} =
+            deduce_entity_creation_time_field(type)
+
+          # In all cases the fields are the same except for insights.
+          # When fetching user own insights, some of them might be drafts so they
+          # won't have :published_at field and then :inserted_at shall be used.
+          Map.get(entity, creation_time_field) || Map.get(entity, creation_time_field_backup)
         end,
         {:desc, NaiveDateTime}
       )
@@ -345,6 +357,6 @@ defmodule Sanbase.Entity do
   defp deduce_entity_module(:screener), do: UserList
   defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
 
-  defp deduce_entity_creation_time_field(:insight), do: :published_at
-  defp deduce_entity_creation_time_field(_), do: :inserted_at
+  defp deduce_entity_creation_time_field(:insight), do: {:published_at, :inserted_at}
+  defp deduce_entity_creation_time_field(_), do: {:inserted_at, :inserted_at}
 end

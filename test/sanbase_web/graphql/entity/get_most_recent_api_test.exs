@@ -49,22 +49,44 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     assert Enum.at(result, 3)["screener"]["id"] |> String.to_integer() == screener1.id
   end
 
-  test "get most recent watchlist", %{conn: conn} do
+  test "get most recent project watchlist", %{conn: conn} do
     # The screener should not be in the result
-    watchlist1 = insert(:watchlist, is_public: true, inserted_at: seconds_ago(30))
-    _private = insert(:watchlist, is_public: false, inserted_at: seconds_ago(25))
-    _private = insert(:watchlist, is_public: false, inserted_at: seconds_ago(20))
-    watchlist2 = insert(:watchlist, is_public: true, inserted_at: seconds_ago(15))
-    watchlist3 = insert(:watchlist, is_public: true, inserted_at: seconds_ago(10))
-    _screener = insert(:screener, is_public: true, inserted_at: seconds_ago(5))
-    watchlist4 = insert(:watchlist, is_public: true, inserted_at: seconds_ago(0))
+    watchlist1 = insert(:watchlist, type: :project, is_public: true, inserted_at: seconds_ago(30))
+    _private = insert(:watchlist, type: :project, is_public: false, inserted_at: seconds_ago(25))
+    _private = insert(:watchlist, type: :project, is_public: false, inserted_at: seconds_ago(20))
+    watchlist2 = insert(:watchlist, type: :project, is_public: true, inserted_at: seconds_ago(15))
+    watchlist3 = insert(:watchlist, type: :project, is_public: true, inserted_at: seconds_ago(10))
+    _screener = insert(:screener, type: :project, is_public: true, inserted_at: seconds_ago(5))
+    watchlist4 = insert(:watchlist, type: :project, is_public: true, inserted_at: seconds_ago(0))
 
-    result = get_most_recent(conn, :watchlist)
+    result = get_most_recent(conn, :project_watchlist)
     assert length(result) == 4
-    assert Enum.at(result, 0)["watchlist"]["id"] |> String.to_integer() == watchlist4.id
-    assert Enum.at(result, 1)["watchlist"]["id"] |> String.to_integer() == watchlist3.id
-    assert Enum.at(result, 2)["watchlist"]["id"] |> String.to_integer() == watchlist2.id
-    assert Enum.at(result, 3)["watchlist"]["id"] |> String.to_integer() == watchlist1.id
+    assert Enum.at(result, 0)["projectWatchlist"]["id"] |> String.to_integer() == watchlist4.id
+    assert Enum.at(result, 1)["projectWatchlist"]["id"] |> String.to_integer() == watchlist3.id
+    assert Enum.at(result, 2)["projectWatchlist"]["id"] |> String.to_integer() == watchlist2.id
+    assert Enum.at(result, 3)["projectWatchlist"]["id"] |> String.to_integer() == watchlist1.id
+  end
+
+  test "get most recent address watchlist", %{conn: conn} do
+    make_opts = fn is_public, seconds_ago ->
+      [type: :blockchain_address, is_public: is_public, inserted_at: seconds_ago(seconds_ago)]
+    end
+
+    # The screener should not be in the result
+    watchlist1 = insert(:watchlist, make_opts.(true, 30))
+    _private = insert(:watchlist, make_opts.(false, 25))
+    _private = insert(:watchlist, make_opts.(false, 20))
+    watchlist2 = insert(:watchlist, make_opts.(true, 15))
+    watchlist3 = insert(:watchlist, make_opts.(true, 10))
+    _screener = insert(:screener, make_opts.(true, 5))
+    watchlist4 = insert(:watchlist, make_opts.(true, 0))
+
+    result = get_most_recent(conn, :address_watchlist)
+    assert length(result) == 4
+    assert Enum.at(result, 0)["addressWatchlist"]["id"] |> String.to_integer() == watchlist4.id
+    assert Enum.at(result, 1)["addressWatchlist"]["id"] |> String.to_integer() == watchlist3.id
+    assert Enum.at(result, 2)["addressWatchlist"]["id"] |> String.to_integer() == watchlist2.id
+    assert Enum.at(result, 3)["addressWatchlist"]["id"] |> String.to_integer() == watchlist1.id
   end
 
   test "get most recent chart configuration", %{conn: conn} do
@@ -89,18 +111,36 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     conf1 = insert(:chart_configuration, is_public: true, inserted_at: seconds_ago(45))
     insight2 = insert(:published_post, published_at: seconds_ago(40))
     conf2 = insert(:chart_configuration, is_public: true, inserted_at: seconds_ago(35))
-    screener1 = insert(:screener, is_public: true, inserted_at: seconds_ago(30))
-    watchlist1 = insert(:watchlist, is_public: true, inserted_at: seconds_ago(20))
+    screener = insert(:screener, is_public: true, inserted_at: seconds_ago(30))
 
-    result = get_most_recent(conn, [:insight, :watchlist, :screener, :chart_configuration])
+    project_watchlist =
+      insert(:watchlist, type: :project, is_public: true, inserted_at: seconds_ago(20))
 
-    assert length(result) == 6
-    assert Enum.at(result, 0)["watchlist"]["id"] |> String.to_integer() == watchlist1.id
-    assert Enum.at(result, 1)["screener"]["id"] |> String.to_integer() == screener1.id
-    assert Enum.at(result, 2)["chartConfiguration"]["id"] == conf2.id
-    assert Enum.at(result, 3)["insight"]["id"] == insight2.id
-    assert Enum.at(result, 4)["chartConfiguration"]["id"] == conf1.id
-    assert Enum.at(result, 5)["insight"]["id"] == insight1.id
+    address_watchlist =
+      insert(:watchlist, type: :blockchain_address, is_public: true, inserted_at: seconds_ago(20))
+
+    result =
+      get_most_recent(conn, [
+        :insight,
+        :project_watchlist,
+        :address_watchlist,
+        :screener,
+        :chart_configuration
+      ])
+
+    assert length(result) == 7
+
+    assert Enum.at(result, 0)["addressWatchlist"]["id"] |> String.to_integer() ==
+             address_watchlist.id
+
+    assert Enum.at(result, 1)["projectWatchlist"]["id"] |> String.to_integer() ==
+             project_watchlist.id
+
+    assert Enum.at(result, 2)["screener"]["id"] |> String.to_integer() == screener.id
+    assert Enum.at(result, 3)["chartConfiguration"]["id"] == conf2.id
+    assert Enum.at(result, 4)["insight"]["id"] == insight2.id
+    assert Enum.at(result, 5)["chartConfiguration"]["id"] == conf1.id
+    assert Enum.at(result, 6)["insight"]["id"] == insight1.id
   end
 
   defp get_most_recent(conn, entities) when is_list(entities) do
@@ -114,7 +154,8 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
         pageSize: 10
       ){
         insight{ id publishedAt createdAt }
-        watchlist{ id insertedAt }
+        projectWatchlist{ id insertedAt }
+        addressWatchlist{ id insertedAt }
         screener{ id insertedAt }
         chartConfiguration{ id insertedAt }
       }
@@ -136,7 +177,8 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
         pageSize: 10
       ){
         insight{ id }
-        watchlist{ id }
+        projectWatchlist{ id }
+        addressWatchlist{ id }
         screener{ id }
         chartConfiguration{ id }
       }

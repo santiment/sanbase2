@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   alias Sanbase.Vote
   alias Sanbase.Insight.Post
   alias Sanbase.Chart
+  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.UserList
 
@@ -40,6 +41,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     get_votes(loader, :chart_configuration_vote_stats, selector)
   end
 
+  def votes(%{trigger: %{id: user_trigger_id}}, _args, %{
+        context: %{loader: loader} = context
+      })
+      when is_integer(user_trigger_id) do
+    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
+    selector = %{user_trigger_id: user_trigger_id, user_id: user.id}
+
+    get_votes(loader, :user_trigger_vote_stats, selector)
+  end
+
+  def votes(%UserTrigger{id: user_trigger_id}, _args, %{
+        context: %{loader: loader} = context
+      })
+      when is_integer(user_trigger_id) do
+    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
+    selector = %{user_trigger_id: user_trigger_id, user_id: user.id}
+
+    get_votes(loader, :user_trigger_vote_stats, selector)
+  end
+
   def votes(%TimelineEvent{} = event, _args, %{
         context: %{loader: loader} = context
       }) do
@@ -68,6 +89,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     # from `vote`/`unvote`. They return the entity id as a result which
     # can be used from the `source` map in the resolution
     votes(%Chart.Configuration{id: id}, args, resolution)
+  end
+
+  def votes(_root, args, %{source: %{user_trigger_id: id}} = resolution) do
+    # Handles the case where the `votes` is called on top of the result
+    # from `vote`/`unvote`. They return the entity id as a result which
+    # can be used from the `source` map in the resolution
+    votes(%UserTrigger{id: id}, args, resolution)
   end
 
   def votes(_root, args, %{source: %{timeline_event_id: id}} = resolution) do
@@ -105,6 +133,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     get_voted_at(loader, :chart_configuration_voted_at, selector)
   end
 
+  def voted_at(%{trigger: %{id: id}}, _args, %{
+        context: %{loader: loader, auth: %{current_user: user}}
+      }) do
+    selector = %{user_trigger_id: id, user_id: user.id}
+    get_voted_at(loader, :user_trigger_voted_at, selector)
+  end
+
+  def voted_at(%UserTrigger{id: id}, _args, %{
+        context: %{loader: loader, auth: %{current_user: user}}
+      }) do
+    selector = %{user_trigger_id: id, user_id: user.id}
+    get_voted_at(loader, :user_trigger_voted_at, selector)
+  end
+
   def voted_at(_root, _args, _context), do: {:ok, nil}
 
   # Private functions
@@ -139,6 +181,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
         :post_id,
         :watchlist_id,
         :chart_configuration_id,
+        :user_trigger_id,
         :timeline_event_id
       ])
 
@@ -154,6 +197,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
       :watchlist_id -> :watchlist
       :timeline_event_id -> :timeline_event
       :chart_configuration_id -> :chart_configuration
+      :user_trigger_id -> :user_trigger
     end
   end
 
@@ -170,6 +214,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
 
       %{chart_configuration_id: id} ->
         %{chart_configuration_id: id, user_id: user.id}
+
+      %{user_trigger_id: id} ->
+        %{user_trigger_id: id, user_id: user.id}
 
       %{timeline_event_id: id} ->
         %{timeline_event_id: id, user_id: user.id}

@@ -21,6 +21,7 @@ defmodule Sanbase.Entity do
   alias Sanbase.Chart
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
+  alias Sanbase.Alert.UserTrigger
 
   # The list of supported entitiy types. In order to add a new entity type, the
   # following steps must be taken:
@@ -35,7 +36,7 @@ defmodule Sanbase.Entity do
   #    It is necessary if the new entity needs to use a different than
   #    inserted_at field to check its creation time. For example, insights have
   #    their published_at time taken, not inserted_at
-  @supported_entity_type [:insight, :watchlist, :screener, :chart_configuration]
+  @supported_entity_type [:insight, :watchlist, :screener, :chart_configuration, :user_trigger]
 
   def get_most_voted(entity_or_entities, opts),
     do: do_get_most_voted(List.wrap(entity_or_entities), opts)
@@ -46,6 +47,7 @@ defmodule Sanbase.Entity do
   @doc ~s"""
   Map the entity type to the corresponding field in the votes table
   """
+  def deduce_entity_vote_field(:user_trigger), do: :user_trigger_id
   def deduce_entity_vote_field(:insight), do: :post_id
   def deduce_entity_vote_field(:watchlist), do: :watchlist_id
   def deduce_entity_vote_field(:project_watchlist), do: :watchlist_id
@@ -218,7 +220,7 @@ defmodule Sanbase.Entity do
     query =
       from(
         v in query,
-        group_by: [v.post_id, v.watchlist_id, v.chart_configuration_id],
+        group_by: [v.post_id, v.watchlist_id, v.chart_configuration_id, v.user_trigger_id],
         order_by: [desc: coalesce(sum(v.count), 0)]
       )
       |> paginate(opts)
@@ -236,6 +238,7 @@ defmodule Sanbase.Entity do
               WHEN post_id IS NOT NULL THEN post_id
               WHEN watchlist_id IS NOT NULL THEN watchlist_id
               WHEN chart_configuration_id IS NOT NULL THEN chart_configuration_id
+              WHEN user_trigger_id IS NOT NULL THEN user_trigger_id
             END
             """),
           entity_type:
@@ -245,6 +248,7 @@ defmodule Sanbase.Entity do
               -- the watchlist_id can point to either screener or watchlist. This is handled later.
               WHEN watchlist_id IS NOT NULL THEN 'watchlist'
               WHEN chart_configuration_id IS NOT NULL THEN 'chart_configuration'
+              WHEN user_trigger_id IS NOT NULL THEN 'user_trigger'
             END
             """)
         }
@@ -338,6 +342,17 @@ defmodule Sanbase.Entity do
     end
   end
 
+  defp entity_ids_query(:user_trigger, opts) do
+    # `ordered?: false` is important otherwise the default order will be
+    # applied and this will conflict with the distinct(true) check
+    entity_opts = [preload?: false, distinct?: true, ordered?: false, cursor: opts[:cursor]]
+
+    case Keyword.get(opts, :current_user_data_only) do
+      nil -> UserTrigger.public_entity_ids_query(entity_opts)
+      user_id -> UserTrigger.user_entity_ids_query(user_id, entity_opts)
+    end
+  end
+
   defp entity_ids_query(:screener, opts) do
     entity_opts = [is_screener: true, cursor: opts[:cursor]]
 
@@ -383,6 +398,7 @@ defmodule Sanbase.Entity do
   defp deduce_entity_module(:project_watchlist), do: UserList
   defp deduce_entity_module(:address_watchlist), do: UserList
   defp deduce_entity_module(:screener), do: UserList
+  defp deduce_entity_module(:user_trigger), do: UserTrigger
   defp deduce_entity_module(:insight), do: Post
   defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
 

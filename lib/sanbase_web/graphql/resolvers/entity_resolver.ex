@@ -23,12 +23,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     %{source: %{args: args}} = resolution
     types = get_types(args)
     opts = get_opts(args, resolution)
-    {:ok, total_count} = Sanbase.Entity.get_most_voted_total_count(types, opts)
+    {:ok, total_entities_count} = Sanbase.Entity.get_most_voted_total_count(types, opts)
 
     stats = %{
       current_page: opts[:page],
       current_page_size: opts[:page_size],
-      total_count: total_count
+      total_entities_count: total_entities_count
     }
 
     {:ok, stats}
@@ -47,12 +47,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     %{source: %{args: args}} = resolution
     types = get_types(args)
     opts = get_opts(args, resolution)
-    {:ok, total_count} = Sanbase.Entity.get_most_recent_total_count(types, opts)
+    {:ok, total_entities_count} = Sanbase.Entity.get_most_recent_total_count(types, opts)
 
     stats = %{
       current_page: opts[:page],
       current_page_size: opts[:page_size],
-      total_count: total_count
+      total_entities_count: total_entities_count
     }
 
     {:ok, stats}

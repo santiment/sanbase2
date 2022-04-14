@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
   end
 
   object :entity_stats do
-    field(:total_count, non_null(:integer))
+    field(:total_entities_count, non_null(:integer))
     field(:current_page, non_null(:integer))
     field(:current_page_size, non_null(:integer))
   end

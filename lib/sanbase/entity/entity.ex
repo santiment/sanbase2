@@ -7,14 +7,22 @@ defmodule Sanbase.Entity do
   - Watchlist
   - Screener
   - Chart Configuration
-  Entities to be included:
   - Alerts
   - Address Watchlist
 
-  This module provides functions for fetching lists of entities of a given type,
+  This module provides functions for fetching lists of entities or counts of entities of a given type,
   ordered in a specific way. There are two orderings:
-  - most recent first
-  - most voted first
+  - Most recent first
+  - Most voted first
+
+  ## Shared Options
+
+  Almost all of the repository functions outlined in this module accept the following
+  options:
+    * `:page` - The page as a positive integer when fetching lists of entities.
+    * `:page_size` - The page size as a positive integer when fetching lists of entities
+    * `:cursor` - A map that serves as a datetime filter. It contains two fields - :type,
+       that can be either :before or :after and a :datetime, which is a DateTime.t() struct.
   """
   import Ecto.Query
 
@@ -38,11 +46,73 @@ defmodule Sanbase.Entity do
   #    their published_at time taken, not inserted_at
   @supported_entity_type [:insight, :watchlist, :screener, :chart_configuration, :user_trigger]
 
-  def get_most_voted(entity_or_entities, opts),
-    do: do_get_most_voted(List.wrap(entity_or_entities), opts)
+  @type entity_type :: :insight | :watchlist | :screener | :chart_configuration | :user_trigger
+  @type option :: {:page, non_neg_integer()} | {:page_size, non_neg_integer()} | {:cursor, map()}
+  @type opts :: [option]
+  @type result_map :: %{
+          optional(:insight) => %Post{},
+          optional(:screener) => %UserTrigger{},
+          optional(:project_watchlist) => %UserTrigger{},
+          optional(:address_watchlist) => %UserTrigger{},
+          optional(:chart_configuration) => %Chart.Configuration{},
+          optional(:user_trigger) => %UserTrigger{}
+        }
 
-  def get_most_recent(entity_or_entities, opts),
-    do: do_get_most_recent(List.wrap(entity_or_entities), opts)
+  @doc ~s"""
+  Get a list of the most voted entities of a given type or types.
+  The ordering is done by taking into consideration all of the types and is not
+  done on a per-type basis.
+
+  ## Options
+
+  See the ["Shared options"](#module-shared-options) section at the module
+  documentation for more options.
+  """
+  @spec get_most_voted(entity_type | [entity_type], opts) :: {:ok, list(result_map)} | no_return()
+  def get_most_voted(type_or_types, opts),
+    do: do_get_most_voted(List.wrap(type_or_types), opts)
+
+  @doc ~s"""
+  Get a list of the most recent entities of a given type or types.
+  The ordering is done by taking into consideration all of the types and is not
+  done on a per-type basis.
+
+  ## Options
+
+  See the ["Shared options"](#module-shared-options) section at the module
+  documentation for more options.
+  """
+  @spec get_most_recent(entity_type | [entity_type], opts) ::
+          {:ok, list(result_map)} | no_return()
+  def get_most_recent(type_or_types, opts),
+    do: do_get_most_recent(List.wrap(type_or_types), opts)
+
+  @doc ~s"""
+  Get the total count of voted entities of a given type or types.
+  A cursor can be applied, but pagination cannot.
+  ## Options
+
+  See the ["Shared options"](#module-shared-options) section at the module
+  documentation for more options.
+  """
+  @spec get_most_voted_total_count(entity_type | [entity_type], opts) ::
+          {:ok, non_neg_integer()} | no_return()
+  def get_most_voted_total_count(type_or_types, opts),
+    do: do_get_most_voted_total_count(List.wrap(type_or_types), opts)
+
+  @doc ~s"""
+  Get the total count of entities of a given type or types.
+  A cursor can be applied, but pagination cannot.
+
+  ## Options
+
+  See the ["Shared options"](#module-shared-options) section at the module
+  documentation for more options.
+  """
+  @spec get_most_recent_total_count(entity_type | [entity_type], opts) ::
+          {:ok, non_neg_integer()} | no_return()
+  def get_most_recent_total_count(type_or_types, opts),
+    do: do_get_most_recent_total_count(List.wrap(type_or_types), opts)
 
   @doc ~s"""
   Map the entity type to the corresponding field in the votes table
@@ -54,7 +124,8 @@ defmodule Sanbase.Entity do
   def deduce_entity_vote_field(:address_watchlist), do: :watchlist_id
   def deduce_entity_vote_field(:screener), do: :watchlist_id
   def deduce_entity_vote_field(:chart_configuration), do: :chart_configuration_id
-  # keep the timeline_event here so it can have its id obtained by the Vote module
+  # keep the timeline_event here so it can have its id obtained by the Vote
+  # module
   def deduce_entity_vote_field(:timeline_event), do: :timeline_event_id
 
   @doc ~s"""
@@ -81,6 +152,7 @@ defmodule Sanbase.Entity do
   This query extension function is defined here and is called with the
   proper arguments from the entity modules' functions.
   """
+  @spec maybe_filter_by_cursor(Ecto.Query.t(), atom, opts) :: Ecto.Query.t()
   def maybe_filter_by_cursor(query, field, opts) do
     case Keyword.get(opts, :cursor) do
       nil ->
@@ -102,53 +174,33 @@ defmodule Sanbase.Entity do
 
   # Private functions
 
+  defp do_get_most_recent_total_count(entities, opts) when is_list(entities) and entities != [] do
+    {:ok, query} = most_recent_base_query(entities, opts)
+
+    total_count =
+      from(entity in subquery(query), select: fragment("count(*)"))
+      |> Sanbase.Repo.one()
+
+    {:ok, total_count}
+  end
+
+  defp do_get_most_voted_total_count(entities, opts) when is_list(entities) and entities != [] do
+    {:ok, query} = most_voted_base_query(entities, opts)
+
+    total_count =
+      from(entity in subquery(query), select: fragment("count(*)"))
+      |> Sanbase.Repo.one()
+
+    {:ok, total_count}
+  end
+
   defp do_get_most_recent(entities, opts) when is_list(entities) and entities != [] do
-    # The most recent entity could be a private one. For this reasonlook only at
-    # entities that are public. In the case where the user is fetching their own
-    # entities that are with most votes the filter is changed to return only the
-    # creations of that users
+    {:ok, query} = most_recent_base_query(entities, opts)
 
-    # Filter only rows that are related to the given entities. For every type in
-    # the entities list build a query that returns the entity id, entity type
-    # and the creation time as a map. These queries have the same field names
-    # (inserted_at/published_at are renamed) so they can be combined with a
-    # UNION. This is required as the result must pull data from multiple tables
-    # with different schemas.
-    query =
-      Enum.reduce(entities, nil, fn type, query_acc ->
-        entity_ids_query = entity_ids_query(type, opts)
-
-        {creation_time_field, creation_time_field_backup} =
-          deduce_entity_creation_time_field(type)
-
-        entity_query =
-          from(entity in entity_ids_query)
-          # Remove the existing `entity.id` select and replace it with another one
-          |> exclude(:select)
-          |> select([e], %{
-            entity_id: e.id,
-            entity_type: ^"#{type}",
-            # In all cases the fields are the same except for insights.
-            # When fetching user own insights, some of them might be drafts so they
-            # won't have :published_at field and then :inserted_at shall be used.
-            creation_time:
-              coalesce(field(e, ^creation_time_field), field(e, ^creation_time_field_backup))
-          })
-
-        case query_acc do
-          nil ->
-            entity_query
-
-          query_acc ->
-            query_acc
-            |> union(^entity_query)
-        end
-      end)
-
-    # Add pagination to the query. This uses the new map of arguments built
-    # by the base query above. This allows to have a creation time field
-    # with the same name, so we can properly sort the results before applying
-    # limit and offset.
+    # Add pagination to the query. This uses the new map of arguments built by
+    # the base query above. This allows to have a creation time field with the
+    # same name, so we can properly sort the results before applying limit and
+    # offset.
     query =
       from(
         entity in subquery(query),
@@ -160,14 +212,9 @@ defmodule Sanbase.Entity do
 
     result = fetch_entities_by_ids(db_result)
 
-    # Rewrite the keys of the result to match the expected format.
-    # The `watchlist` key must be rewritten to one of the different watchlist
-    # formats.
-    # result = rewrite_keys(result)
-
     # Order the full list of entities by the creation time in descending order.
-    # The end result is a list like:
-    # [%{project_watchlist: w}, %{insight: i}, %{chart_configuration: c}, %{screener: s}, %{address_watchlist: a}]
+    # The end result is a list like: [%{project_watchlist: w}, %{insight: i},
+    # %{chart_configuration: c}, %{screener: s}, %{address_watchlist: a}]
     sorted_result =
       Enum.sort_by(
         result,
@@ -177,8 +224,8 @@ defmodule Sanbase.Entity do
           {creation_time_field, creation_time_field_backup} =
             deduce_entity_creation_time_field(type)
 
-          # In all cases the fields are the same except for insights.
-          # When fetching user own insights, some of them might be drafts so they
+          # In all cases the fields are the same except for insights. When
+          # fetching user own insights, some of them might be drafts so they
           # won't have :published_at field and then :inserted_at shall be used.
           Map.get(entity, creation_time_field) || Map.get(entity, creation_time_field_backup)
         end,
@@ -188,34 +235,11 @@ defmodule Sanbase.Entity do
     {:ok, sorted_result}
   end
 
-  defp do_get_most_voted(entities, opts) when is_list(entities) do
-    # The most voted entity could have been  made private at some point after
-    # getting votes. For this reasonlook only at entities that are public. In
-    # the case where the user is fetching their own entities that are with most
-    # votes the filter is changed to return only the creations of that users
+  defp do_get_most_voted(entities, opts) when is_list(entities) and entities != [] do
+    {:ok, query} = most_voted_base_query(entities, opts)
 
-    # Base query. The required ids are fetched from the votes table, where voting
-    # for every entity type is stored. Every type uses its own column that bears the
-    # enitity type name + _id suffix.
-    query = from(vote in Sanbase.Vote)
-
-    # Filter only rows that are related to the given entities. This is done by
-    # building a list of where clauses join with OR. For every type in the
-    # entities, add a where clause that filters the rows that have the id that
-    # is included in the subquery. Watchlists and screener are both represented
-    # by the watchlist_id column but their subqueries are disjoint - they never
-    # share ids.
-    query =
-      Enum.reduce(entities, query, fn entity, query_acc ->
-        entity_ids_query = entity_ids_query(entity, opts)
-        field = deduce_entity_vote_field(entity)
-
-        query_acc
-        |> or_where([v], field(v, ^field) in subquery(entity_ids_query))
-      end)
-
-    # Add ordering and pagination. The group by is required so we can count
-    # all the votes for each entity. There is exactly one non-null entity id per
+    # Add ordering and pagination. The group by is required so we can count all
+    # the votes for each entity. There is exactly one non-null entity id per
     # row, so the chosen group by expression is working as expected.
     query =
       from(
@@ -260,11 +284,11 @@ defmodule Sanbase.Entity do
     # be lost once we split the result into different entity type groups is
     # order to fetch them. In order to preserve the order, we need to record it
     # beforehand. This is done by making a map where the keys are {entity_type,
-    # entity_id} and the value is the position in the original result.
-    # NOTE 1: As we are recording the position in the original result, we need
-    # to sort the result in ASCENDING order at the end. NOTE 2: The db_result
-    # from here includes only the entity id and entity type. This is not enough
-    # to distinguish between screener and watchlist. This will be done once the
+    # entity_id} and the value is the position in the original result. NOTE 1:
+    # As we are recording the position in the original result, we need to sort
+    # the result in ASCENDING order at the end. NOTE 2: The db_result from here
+    # includes only the entity id and entity type. This is not enough to
+    # distinguish between screener and watchlist. This will be done once the
     # full objects are returned.
     ordering =
       db_result
@@ -288,12 +312,90 @@ defmodule Sanbase.Entity do
     {:ok, result}
   end
 
+  defp most_recent_base_query(entities, opts) when is_list(entities) and entities != [] do
+    # The most recent entity could be a private one. For this reasonlook only at
+    # entities that are public. In the case where the user is fetching their own
+    # entities that are with most votes the filter is changed to return only the
+    # creations of that users
+
+    # Filter only rows that are related to the given entities. For every type in
+    # the entities list build a query that returns the entity id, entity type
+    # and the creation time as a map. These queries have the same field names
+    # (inserted_at/published_at are renamed) so they can be combined with a
+    # UNION. This is required as the result must pull data from multiple tables
+    # with different schemas.
+    query =
+      Enum.reduce(entities, nil, fn type, query_acc ->
+        entity_ids_query = entity_ids_query(type, opts)
+
+        {creation_time_field, creation_time_field_backup} =
+          deduce_entity_creation_time_field(type)
+
+        entity_query =
+          from(entity in entity_ids_query)
+          # Remove the existing `entity.id` select and replace it with another
+          # one
+          |> exclude(:select)
+          |> select([e], %{
+            entity_id: e.id,
+            entity_type: ^"#{type}",
+            # In all cases the fields are the same except for insights. When
+            # fetching user own insights, some of them might be drafts so they
+            # won't have :published_at field and then :inserted_at shall be
+            # used.
+            creation_time:
+              coalesce(field(e, ^creation_time_field), field(e, ^creation_time_field_backup))
+          })
+
+        case query_acc do
+          nil ->
+            entity_query
+
+          query_acc ->
+            query_acc
+            |> union(^entity_query)
+        end
+      end)
+
+    {:ok, query}
+  end
+
+  defp most_voted_base_query(entities, opts) when is_list(entities) and entities != [] do
+    # The most voted entity could have been  made private at some point after
+    # getting votes. For this reasonlook only at entities that are public. In
+    # the case where the user is fetching their own entities that are with most
+    # votes the filter is changed to return only the creations of that users
+
+    # Base query. The required ids are fetched from the votes table, where
+    # voting for every entity type is stored. Every type uses its own column
+    # that bears the enitity type name + _id suffix.
+    query = from(vote in Sanbase.Vote)
+
+    # Filter only rows that are related to the given entities. This is done by
+    # building a list of where clauses join with OR. For every type in the
+    # entities, add a where clause that filters the rows that have the id that
+    # is included in the subquery. Watchlists and screener are both represented
+    # by the watchlist_id column but their subqueries are disjoint - they never
+    # share ids.
+    query =
+      Enum.reduce(entities, query, fn entity, query_acc ->
+        entity_ids_query = entity_ids_query(entity, opts)
+        field = deduce_entity_vote_field(entity)
+
+        query_acc
+        |> or_where([v], field(v, ^field) in subquery(entity_ids_query))
+      end)
+
+    {:ok, query}
+  end
+
   defp fetch_entities_by_ids(list) do
     # Group the results by entity type and fetch the full entities from the
     # database. Every entity is then represented as a map with the entity as
     # value and its type as a key. This is required as the GraphQL API needs to
-    # match every different type to a GraphQL type. The end result is a list like
-    # [%{project_watchlist: w}, %{insight: i}, %{chart_configuration: c}, %{screener: s}, %{address_watchlist: a}]
+    # match every different type to a GraphQL type. The end result is a list
+    # like [%{project_watchlist: w}, %{insight: i}, %{chart_configuration: c},
+    # %{screener: s}, %{address_watchlist: a}]
     list
     |> Enum.group_by(&String.to_existing_atom(&1.entity_type), & &1.entity_id)
     |> Enum.flat_map(fn {type, ids} ->
@@ -323,8 +425,8 @@ defmodule Sanbase.Entity do
           end
 
         # Check if the argument is in the right format. If this was a catch-all
-        # case then wrong arugment types would still be passed through here without
-        # any changes.
+        # case then wrong arugment types would still be passed through here
+        # without any changes.
         [{type, entity}] when type in @supported_entity_type ->
           %{type => entity}
       end
@@ -332,8 +434,8 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:insight, opts) do
-    # `ordered?: false` is important otherwise the default order will be
-    # applied and this will conflict with the distinct(true) check
+    # `ordered?: false` is important otherwise the default order will be applied
+    # and this will conflict with the distinct(true) check
     entity_opts = [preload?: false, distinct?: true, ordered?: false, cursor: opts[:cursor]]
 
     case Keyword.get(opts, :current_user_data_only) do
@@ -343,8 +445,8 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:user_trigger, opts) do
-    # `ordered?: false` is important otherwise the default order will be
-    # applied and this will conflict with the distinct(true) check
+    # `ordered?: false` is important otherwise the default order will be applied
+    # and this will conflict with the distinct(true) check
     entity_opts = [preload?: false, distinct?: true, ordered?: false, cursor: opts[:cursor]]
 
     case Keyword.get(opts, :current_user_data_only) do

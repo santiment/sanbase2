@@ -24,7 +24,12 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 2, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 2,
+             "currentPage" => 1,
+             "currentPageSize" => 10,
+             "totalPagesCount" => 1
+           } = stats
 
     assert length(data) == 2
     assert Enum.at(data, 0)["insight"]["id"] == insight1.id
@@ -49,7 +54,12 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 2, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 2,
+             "currentPage" => 1,
+             "currentPageSize" => 10,
+             "totalPagesCount" => 1
+           } = stats
 
     assert length(data) == 2
     assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() == watchlist1.id
@@ -81,7 +91,12 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 2, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 2,
+             "currentPage" => 1,
+             "currentPageSize" => 10,
+             "totalPagesCount" => 1
+           } = stats
 
     assert length(data) == 2
     assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == watchlist1.id
@@ -113,7 +128,12 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 2, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 2,
+             "currentPage" => 1,
+             "currentPageSize" => 10,
+             "totalPagesCount" => 1
+           } = stats
 
     assert length(data) == 2
     assert Enum.at(data, 0)["addressWatchlist"]["id"] |> String.to_integer() == watchlist1.id
@@ -141,7 +161,12 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 2, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 2,
+             "currentPage" => 1,
+             "currentPageSize" => 10,
+             "totalPagesCount" => 1
+           } = stats
 
     assert length(data) == 2
     assert Enum.at(data, 0)["chartConfiguration"]["id"] == chart_configuration1.id
@@ -162,7 +187,12 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 2, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 2,
+             "currentPage" => 1,
+             "currentPageSize" => 10,
+             "totalPagesCount" => 1
+           } = stats
 
     assert length(data) == 2
     assert Enum.at(data, 0)["userTrigger"]["trigger"]["id"] == trigger1.id
@@ -204,7 +234,12 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 8, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 8,
+             "currentPage" => 1,
+             "currentPageSize" => 10,
+             "totalPagesCount" => 1
+           } = stats
 
     assert length(data) == 8
     assert Enum.at(data, 0)["insight"]["id"] == insight1.id
@@ -241,7 +276,13 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
 
     data = result["data"]
     stats = result["stats"]
-    assert %{"totalEntitiesCount" => 8, "currentPage" => 3, "currentPageSize" => 2} = stats
+
+    assert %{
+             "totalEntitiesCount" => 8,
+             "currentPage" => 3,
+             "currentPageSize" => 2,
+             "totalPagesCount" => 4
+           } = stats
 
     assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() ==
              project_watchlist.id
@@ -286,7 +327,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
         pageSize: #{page_size}
         cursor: { type: AFTER, datetime: "utc_now-7d" }
       ){
-        stats { currentPage currentPageSize totalEntitiesCount }
+        stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
         data {
           insight{ id }
           projectWatchlist{ id }
@@ -317,7 +358,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
         pageSize: #{page_size}
         cursor: { type: AFTER, datetime: "utc_now-7d" }
       ){
-        stats { currentPage currentPageSize totalEntitiesCount }
+        stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
         data {
           insight{ id }
           projectWatchlist{ id }

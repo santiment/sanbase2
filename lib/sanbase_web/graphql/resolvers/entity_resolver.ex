@@ -28,6 +28,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     stats = %{
       current_page: opts[:page],
       current_page_size: opts[:page_size],
+      total_pages_count: (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
       total_entities_count: total_entities_count
     }
 
@@ -52,6 +53,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     stats = %{
       current_page: opts[:page],
       current_page_size: opts[:page_size],
+      total_pages_count: (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
       total_entities_count: total_entities_count
     }
 

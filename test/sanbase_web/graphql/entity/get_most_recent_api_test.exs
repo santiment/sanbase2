@@ -27,7 +27,12 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 4, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
 
     assert length(data) == 4
     assert Enum.at(data, 0)["insight"]["id"] == insight4.id
@@ -50,7 +55,12 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 4, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
 
     assert length(data) == 4
     assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() == screener4.id
@@ -73,7 +83,12 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 4, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
 
     assert length(data) == 4
     assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == watchlist4.id
@@ -100,7 +115,12 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 4, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
 
     assert length(data) == 4
     assert Enum.at(data, 0)["addressWatchlist"]["id"] |> String.to_integer() == watchlist4.id
@@ -121,7 +141,12 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 4, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
 
     assert length(data) == 4
     assert Enum.at(data, 0)["chartConfiguration"]["id"] == chart_configuration4.id
@@ -142,7 +167,12 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 4, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
 
     assert length(data) == 4
     assert Enum.at(data, 0)["userTrigger"]["trigger"]["id"] == user_trigger4.id
@@ -179,7 +209,12 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     data = result["data"]
     stats = result["stats"]
 
-    assert %{"totalEntitiesCount" => 8, "currentPage" => 1, "currentPageSize" => 10} = stats
+    assert %{
+             "totalEntitiesCount" => 8,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
 
     assert length(data) == 8
 
@@ -214,7 +249,13 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
 
     data = result["data"]
     stats = result["stats"]
-    assert %{"totalEntitiesCount" => 8, "currentPage" => 3, "currentPageSize" => 2} = stats
+
+    assert %{
+             "totalEntitiesCount" => 8,
+             "currentPage" => 3,
+             "totalPagesCount" => 4,
+             "currentPageSize" => 2
+           } = stats
 
     assert Enum.at(data, 0)["insight"]["id"] == insight2.id
     assert Enum.at(data, 1)["chartConfiguration"]["id"] == conf1.id
@@ -234,7 +275,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
         page: #{page}
         pageSize: #{page_size}
       ){
-        stats { currentPage currentPageSize totalEntitiesCount }
+        stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
         data {
           insight{ id }
           projectWatchlist{ id }
@@ -264,7 +305,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
         page: #{page}
         pageSize: #{page_size}
       ){
-        stats { currentPage currentPageSize totalEntitiesCount }
+        stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
         data {
           insight{ id }
           projectWatchlist{ id }

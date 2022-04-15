@@ -218,7 +218,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
       {:eth_addresses, _} ->
         {:ok, nil}
 
-      error ->
+      {:error, error} ->
         Logger.warn(
           "Cannot calculate ETH spent for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )

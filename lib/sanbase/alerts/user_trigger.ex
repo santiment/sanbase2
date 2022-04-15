@@ -82,6 +82,21 @@ defmodule Sanbase.Alert.UserTrigger do
   end
 
   @impl Sanbase.Entity.Behaviour
+  def by_id!(id, opts) when is_integer(id), do: by_id(id, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id(id, _opts) when is_integer(id) do
+    result =
+      from(ut in __MODULE__, where: ut.id == ^id)
+      |> Repo.one()
+
+    case result do
+      nil -> {:error, "UserTrigger with id: #{id} does not exist."}
+      ut -> {:ok, ut |> trigger_in_struct()}
+    end
+  end
+
+  @impl Sanbase.Entity.Behaviour
   def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
@@ -152,11 +167,11 @@ defmodule Sanbase.Alert.UserTrigger do
   Get the trigger that has an id `trigger_id` if and only if it is owned by the
   user with id `user_id`
   """
-  @spec get_trigger_by_id(non_neg_integer() | nil, trigger_id) :: {:ok, %UserTrigger{} | nil}
-  def get_trigger_by_id(user_id, trigger_id)
+  @spec by_user_and_id(non_neg_integer() | nil, trigger_id) :: {:ok, %UserTrigger{} | nil}
+  def by_user_and_id(user_id, trigger_id)
       when is_nil(user_id) or (is_integer(user_id) and user_id > 0) do
     user_trigger =
-      get_trigger_by_id_query(user_id, trigger_id)
+      by_user_and_id_query(user_id, trigger_id)
       |> Repo.one()
 
     case user_trigger do
@@ -169,7 +184,7 @@ defmodule Sanbase.Alert.UserTrigger do
   end
 
   def get_trigger_by_if_owner(user_id, trigger_id) do
-    case get_trigger_by_id(user_id, trigger_id) do
+    case by_user_and_id(user_id, trigger_id) do
       {:ok, %UserTrigger{user_id: ^user_id} = user_trigger} ->
         {:ok, user_trigger}
 
@@ -371,7 +386,7 @@ defmodule Sanbase.Alert.UserTrigger do
     end
   end
 
-  defp get_trigger_by_id_query(nil, trigger_id) do
+  defp by_user_and_id_query(nil, trigger_id) do
     from(
       ut in UserTrigger,
       where: ut.id == ^trigger_id and trigger_is_public(),
@@ -379,7 +394,7 @@ defmodule Sanbase.Alert.UserTrigger do
     )
   end
 
-  defp get_trigger_by_id_query(user_id, trigger_id) do
+  defp by_user_and_id_query(user_id, trigger_id) do
     from(
       ut in UserTrigger,
       where: ut.id == ^trigger_id and (trigger_is_public() or ut.user_id == ^user_id),

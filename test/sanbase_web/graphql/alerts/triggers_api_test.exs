@@ -318,16 +318,16 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       telegram_error
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      {:ok, ut1} = UserTrigger.get_trigger_by_id(user.id, trigger.id)
-      {:ok, ut2} = UserTrigger.get_trigger_by_id(user.id, trigger2.id)
+      {:ok, ut1} = UserTrigger.by_user_and_id(user.id, trigger.id)
+      {:ok, ut2} = UserTrigger.by_user_and_id(user.id, trigger2.id)
       assert ut1.trigger.is_active == true
       assert ut2.trigger.is_active == true
 
       Sanbase.Alert.Scheduler.run_alert(Sanbase.Alert.Trigger.MetricTriggerSettings)
 
       # Deactivate only the alert whose only channel is telegram
-      {:ok, ut1} = UserTrigger.get_trigger_by_id(user.id, trigger.id)
-      {:ok, ut2} = UserTrigger.get_trigger_by_id(user.id, trigger2.id)
+      {:ok, ut1} = UserTrigger.by_user_and_id(user.id, trigger.id)
+      {:ok, ut2} = UserTrigger.by_user_and_id(user.id, trigger2.id)
       assert ut1.trigger.is_active == false
       assert ut2.trigger.is_active == true
     end)

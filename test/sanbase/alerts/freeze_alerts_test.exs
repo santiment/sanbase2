@@ -58,7 +58,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
 
     Sanbase.Alert.Job.freeze_alerts()
 
-    assert {:ok, trigger} = UserTrigger.get_trigger_by_id(trigger.user_id, trigger.id)
+    assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
     assert UserTrigger.is_frozen?(trigger) == false
   end
 
@@ -69,7 +69,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
 
     Sanbase.Alert.Job.freeze_alerts()
 
-    assert {:ok, trigger} = UserTrigger.get_trigger_by_id(trigger.user_id, trigger.id)
+    assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
     assert {:error, error_msg} = UserTrigger.is_frozen?(trigger)
     assert error_msg =~ "is frozen"
   end
@@ -82,7 +82,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
 
     Sanbase.Alert.Job.freeze_alerts()
 
-    assert {:ok, trigger} = UserTrigger.get_trigger_by_id(trigger.user_id, trigger.id)
+    assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
     assert UserTrigger.is_frozen?(trigger) == false
   end
 
@@ -93,7 +93,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     trigger = update_inserted_at(trigger, naive_days_ago(31))
     Sanbase.Alert.Job.freeze_alerts()
 
-    assert {:ok, trigger} = UserTrigger.get_trigger_by_id(trigger.user_id, trigger.id)
+    assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
     assert UserTrigger.is_frozen?(trigger) == false
   end
 
@@ -102,7 +102,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
   #   trigger = update_inserted_at(trigger, naive_days_ago(31))
   #   Sanbase.Alert.Job.freeze_alerts()
 
-  #   assert {:ok, trigger} = UserTrigger.get_trigger_by_id(trigger.user_id, trigger.id)
+  #   assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
   #   assert {:error, error_msg} = UserTrigger.is_frozen?(trigger)
   #   assert error_msg =~ "is frozen"
 
@@ -124,7 +124,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
   #       end)
 
   #     assert log =~ "[BillingEventSubscriber] Unfreezing alerts for user with id #{user.id}"
-  #     assert {:ok, trigger} = UserTrigger.get_trigger_by_id(trigger.user_id, trigger.id)
+  #     assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
   #     assert UserTrigger.is_frozen?(trigger) == false
   #   end)
   # end
@@ -137,7 +137,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
 
     Sanbase.Alert.Job.freeze_alerts()
 
-    assert {:ok, trigger} = UserTrigger.get_trigger_by_id(trigger.user_id, trigger.id)
+    assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
     assert UserTrigger.is_frozen?(trigger) == false
 
     # Rever the is_frozen back to true. This simulates the case when the event
@@ -148,7 +148,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
 
     Sanbase.Alert.Job.unfreeze_alerts()
 
-    assert {:ok, trigger} = UserTrigger.get_trigger_by_id(trigger.user_id, trigger.id)
+    assert {:ok, trigger} = UserTrigger.by_user_and_id(trigger.user_id, trigger.id)
     assert UserTrigger.is_frozen?(trigger) == false
   end
 end

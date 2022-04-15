@@ -78,22 +78,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       cache_resolve(&BlockchainAddressResolver.recent_transactions/3)
     end
 
-    @desc "Recent transfers for this address"
-    field :recent_transfers, list_of(:transaction) do
-      deprecate("Use recentTransfers instead.")
-      meta(access: :free)
-
-      arg(:address, non_null(:string))
-      arg(:type, non_null(:recent_transactions_type))
-      arg(:page, :integer)
-      arg(:page_size, :integer)
-      arg(:only_sender, non_null(:boolean), default_value: true)
-
-      cache_resolve(&BlockchainAddressResolver.recent_transactions/3)
-    end
-
     @desc ~s"""
-    Ret
     """
     field :incoming_transfers_summary, list_of(:transfers_summary) do
       meta(access: :free)
@@ -110,7 +95,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
     end
 
     @desc ~s"""
-
     """
     field :outgoing_transfers_summary, list_of(:transfers_summary) do
       meta(access: :free)

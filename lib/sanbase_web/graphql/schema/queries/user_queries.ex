@@ -69,57 +69,6 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
   end
 
   object :user_mutations do
-    field :destroy_sessions, :boolean do
-      middleware(JWTAuth)
-      resolve(&AuthResolver.revoke_refresh_token/3)
-      middleware(DeleteSession)
-    end
-
-    field :eth_login, :login do
-      arg(:signature, non_null(:string))
-      arg(:address, non_null(:string))
-      arg(:message_hash, non_null(:string))
-
-      resolve(&AuthResolver.eth_login/3)
-      middleware(CreateOrDeleteSession)
-    end
-
-    @desc ~s"""
-    Initiate email login. An email with a link that needs to be followed is sent
-    to the given email.
-    """
-    field :email_login, :email_login_request do
-      arg(:email, non_null(:string))
-      arg(:username, :string)
-      arg(:consent, :string)
-      arg(:subscribe_to_weekly_newsletter, :boolean)
-
-      resolve(&AuthResolver.email_login/2)
-    end
-
-    @desc ~s"""
-    Verifies the email login. This mutation does the actual login.
-    """
-    field :email_login_verify, :login do
-      arg(:email, non_null(:string))
-      arg(:token, non_null(:string))
-
-      resolve(&AuthResolver.email_login_verify/2)
-      middleware(CreateOrDeleteSession)
-    end
-
-    field :logout, :logout do
-      middleware(JWTAuth, allow_access_without_terms_accepted: true)
-
-      resolve(fn root, args, res ->
-        {:ok, true} = AuthResolver.revoke_current_refresh_token(root, args, res)
-
-        {:ok, %{success: true}}
-      end)
-
-      middleware(CreateOrDeleteSession)
-    end
-
     @desc ~s"""
     Verifies that the email change is valid. This mutation does the actual email change.
     """

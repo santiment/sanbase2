@@ -485,8 +485,13 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "fetch last_triggered_datetime", context do
+    %{project: project} = context
+
     mock_fun =
-      [fn -> {:ok, 100} end, fn -> {:ok, 5000} end]
+      [
+        fn -> {:ok, %{context.project.slug => 100}} end,
+        fn -> {:ok, %{context.project.slug => 5000}} end
+      ]
       |> Sanbase.Mock.wrap_consecutives(arity: 4)
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)

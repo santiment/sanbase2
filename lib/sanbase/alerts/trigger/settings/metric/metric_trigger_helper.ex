@@ -76,9 +76,9 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
       second_end: second_end
     } = timerange_params(settings)
 
-    to_value = fn
-      %{} = map -> Map.values(map) |> List.first()
-      value -> value
+    to_value = fn %{} = map ->
+      [{_slug, value}] = Map.to_list(map)
+      value
     end
 
     Cache.get_or_store(cache_key, fn ->

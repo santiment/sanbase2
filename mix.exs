@@ -152,7 +152,7 @@ defmodule Sanbase.Mixfile do
       {:telemetry_poller, "~> 0.4"},
       {:temp, "~> 0.4"},
       {:tesla, "~> 1.0"},
-      {:timex, "~> 3.5.0"},
+      {:timex, "~> 3.7"},
       {:ueberauth_google, "~> 0.10"},
       {:ueberauth_twitter, github: "santiment/ueberauth_twitter"},
       {:uuid, "~> 1.1"},

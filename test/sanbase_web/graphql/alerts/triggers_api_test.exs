@@ -232,6 +232,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     assert trigger["settings"] == trigger_settings
     assert trigger["id"] == trigger_id
+    assert result["data"]["getTriggerById"]["user"]["id"] == "#{user.id}"
   end
 
   test "can get other user public trigger", %{conn: conn} do
@@ -639,10 +640,11 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     query = """
     query {
       getTriggerById(id: #{id}) {
-          trigger{
-            id
-            settings
-            lastTriggeredDatetime
+        user{ id }
+        trigger{
+          id
+          settings
+          lastTriggeredDatetime
         }
       }
     }

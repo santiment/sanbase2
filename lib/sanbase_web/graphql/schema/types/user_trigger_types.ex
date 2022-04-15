@@ -1,13 +1,21 @@
 defmodule SanbaseWeb.Graphql.UserTriggerTypes do
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.UserTriggerResolver
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
 
   object :user_trigger do
     field(:user_id, :integer)
+
+    field :user, :public_user do
+      cache_resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3,
+        ttl: 60,
+        max_ttl: 60
+      )
+    end
+
     field(:trigger, :trigger)
 
     field :voted_at, :datetime do

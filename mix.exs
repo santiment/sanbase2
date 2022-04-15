@@ -70,7 +70,7 @@ defmodule Sanbase.Mixfile do
       {:csvlixir, "~> 2.0", override: true},
       {:dataloader, "~> 1.0.0"},
       {:db_connection, "~> 2.2", override: true},
-      {:decimal, "~> 1.0"},
+      {:decimal, "~> 2.0", override: true},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
       {:distillery, "~> 2.0", runtime: false},
       {:earmark, "~> 1.2"},

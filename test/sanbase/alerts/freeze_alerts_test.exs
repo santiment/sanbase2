@@ -2,7 +2,6 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  import ExUnit.CaptureLog
   alias Sanbase.Alert.UserTrigger
 
   setup do
@@ -97,6 +96,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
     assert UserTrigger.is_frozen?(trigger) == false
   end
 
+  # import ExUnit.CaptureLog
   # test "alert is unfrozen after subscription is created", context do
   #   %{user: user, trigger: trigger} = context
   #   trigger = update_inserted_at(trigger, naive_days_ago(31))

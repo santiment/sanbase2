@@ -131,8 +131,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
              end) =~
                "In total 1/1 trending_words alerts were sent successfully"
 
-      {:ok, ut} =
-        UserTrigger.get_trigger_by_id(context.user.id, context.trigger_trending_words.id)
+      {:ok, ut} = UserTrigger.by_user_and_id(context.user.id, context.trigger_trending_words.id)
 
       refute ut.trigger.is_active
     end

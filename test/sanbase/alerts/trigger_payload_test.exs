@@ -157,8 +157,7 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
 
       trigger = trigger |> Sanbase.Repo.preload([:user])
 
-      {:ok, user_trigger} =
-        Sanbase.Alert.UserTrigger.get_trigger_by_id(trigger.user.id, trigger.id)
+      {:ok, user_trigger} = Sanbase.Alert.UserTrigger.by_user_and_id(trigger.user.id, trigger.id)
 
       last_triggered_dt =
         user_trigger.trigger.last_triggered

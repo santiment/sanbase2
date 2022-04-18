@@ -30,6 +30,7 @@ defmodule Sanbase.Metric.Behaviour do
           default_aggregation: atom(),
           available_aggregations: list(atom()),
           available_selectors: list(atom()),
+          required_selectors: list(atom()),
           data_type: available_data_types(),
           complexity_weight: number()
         }
@@ -50,7 +51,8 @@ defmodule Sanbase.Metric.Behaviour do
           values: list(list(number()))
         }
 
-  @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median | :count
+  @type aggregation ::
+          nil | :any | :sum | :avg | :min | :max | :last | :first | :median | :count | :ohlc
 
   @type slug_float_value_pair :: %{slug: slug, value: float}
 

@@ -3139,7 +3139,8 @@ CREATE TABLE public.votes (
     count integer DEFAULT 1,
     chart_configuration_id bigint,
     watchlist_id bigint,
-    CONSTRAINT only_one_fk CHECK (((((
+    user_trigger_id bigint,
+    CONSTRAINT only_one_fk CHECK ((((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
@@ -3154,6 +3155,10 @@ CASE
 END) +
 CASE
     WHEN (watchlist_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (user_trigger_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -5719,6 +5724,13 @@ CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING 
 
 
 --
+-- Name: votes_user_trigger_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_user_trigger_id_user_id_index ON public.votes USING btree (user_trigger_id, user_id);
+
+
+--
 -- Name: votes_watchlist_id_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6664,6 +6676,14 @@ ALTER TABLE ONLY public.votes
 
 
 --
+-- Name: votes votes_user_trigger_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id);
+
+
+--
 -- Name: votes votes_watchlist_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7124,3 +7144,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20211206104913);
 INSERT INTO public."schema_migrations" (version) VALUES (20220201122953);
 INSERT INTO public."schema_migrations" (version) VALUES (20220330100631);
 INSERT INTO public."schema_migrations" (version) VALUES (20220404132445);
+INSERT INTO public."schema_migrations" (version) VALUES (20220413130352);

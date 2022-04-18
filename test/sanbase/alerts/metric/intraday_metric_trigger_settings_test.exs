@@ -59,8 +59,8 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
       # for consecutive calls
       mock_fun =
         [
-          fn -> {:ok, 100} end,
-          fn -> {:ok, 5000} end
+          fn -> {:ok, %{value: 100}} end,
+          fn -> {:ok, %{value: 5000}} end
         ]
         |> Sanbase.Mock.wrap_consecutives(arity: 5)
 

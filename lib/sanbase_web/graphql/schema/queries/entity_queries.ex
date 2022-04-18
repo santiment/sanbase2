@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
   alias SanbaseWeb.Graphql.Resolvers.EntityResolver
 
   object :entity_queries do
-    field :get_most_voted, list_of(:entity_result) do
+    field :get_most_voted, :most_voted_entity_result do
       meta(access: :free)
       arg(:type, :entity_type)
       arg(:types, list_of(:entity_type))
@@ -21,8 +21,9 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
       cache_resolve(&EntityResolver.get_most_voted/3, ttl: 30, max_ttl_offset: 30)
     end
 
-    field :get_most_recent, list_of(:entity_result) do
+    field :get_most_recent, :most_recent_entity_result do
       meta(access: :free)
+
       arg(:type, :entity_type)
       arg(:types, list_of(:entity_type))
       arg(:page, :integer)

@@ -20,6 +20,7 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
       arg(:watchlist_id, :integer)
       arg(:timeline_event_id, :integer)
       arg(:chart_configuration_id, :integer)
+      arg(:user_trigger_id, :integer)
 
       middleware(JWTAuth)
       resolve(&VoteResolver.vote/3)
@@ -34,6 +35,7 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
       arg(:watchlist_id, :integer)
       arg(:timeline_event_id, :integer)
       arg(:chart_configuration_id, :integer)
+      arg(:user_trigger_id, :integer)
 
       middleware(JWTAuth)
       resolve(&VoteResolver.unvote/3)

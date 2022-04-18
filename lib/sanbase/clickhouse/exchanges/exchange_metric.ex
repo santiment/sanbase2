@@ -77,7 +77,7 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
 
         ANY LEFT JOIN ( SELECT name AS metric_name, metric_id FROM metric_metadata FINAL ) USING metric_id
         PREWHERE
-          #{asset_id_filter(slug_or_slugs, argument_position: 1)} AND
+          #{asset_id_filter(%{slug: slug_or_slugs}, argument_position: 1)} AND
           label IN ('deposit', 'centralized_exchange', 'decentralized_exchange') AND
           dt < now() AND
           dt != toDateTime('1970-01-01 00:00:00') AND

@@ -107,7 +107,7 @@ defmodule Sanbase.Metric.LatestMetric do
       PREWHERE
         dt >= now() - INTERVAL 7 DAY AND dt <= now() AND dt < computed_at AND
         #{metric_id_filter(metrics, argument_position: 1)} AND
-        #{asset_id_filter(slugs, argument_position: 2)}
+        #{asset_id_filter(%{slug: slugs}, argument_position: 2)}
     )
     INNER JOIN (
       SELECT asset_id, name

@@ -68,16 +68,22 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
       when is_number(low) and is_number(high),
       do: "#{column} < #{low} OR #{column} > #{high}"
 
-  def asset_id_filter(slug, opts) when is_binary(slug) do
+  def asset_id_filter(%{slug: slug}, opts) when is_binary(slug) do
     arg_position = Keyword.fetch!(opts, :argument_position)
 
     "asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{arg_position} LIMIT 1 )"
   end
 
-  def asset_id_filter(slugs, opts) when is_list(slugs) do
+  def asset_id_filter(%{slug: slugs}, opts) when is_list(slugs) do
     arg_position = Keyword.fetch!(opts, :argument_position)
 
     "asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN (?#{arg_position}) )"
+  end
+
+  def asset_id_filter(%{contract_address_raw: contract}, opts) when is_binary(contract) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+
+    "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE has(contract_addresses, ?#{arg_position}) LIMIT 1)"
   end
 
   def metric_id_filter(metric, opts) when is_binary(metric) do

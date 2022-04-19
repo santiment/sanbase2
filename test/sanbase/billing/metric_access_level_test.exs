@@ -186,6 +186,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "exchange_inflow_usd",
         "exchange_outflow_usd",
         "age_consumed",
+        "age_consumed_change_1d",
+        "age_consumed_change_30d",
+        "age_consumed_change_7d",
         "age_destroyed",
         "nvt",
         "nvt_transaction_volume",
@@ -229,6 +232,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",
+        "nft_social_volume",
         "social_dominance_reddit",
         "social_dominance_telegram",
         "social_dominance_bitcointalk",
@@ -860,6 +864,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
 
     expected =
       [
+        "nft_social_volume",
         "social_volume_bitcointalk",
         "social_volume_reddit",
         "social_volume_telegram",

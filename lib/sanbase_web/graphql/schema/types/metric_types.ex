@@ -85,6 +85,9 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:label_fqn, :string)
     field(:label_fqns, list_of(:string))
     field(:holders_count, :integer)
+
+    # contract address not transformed to slug selector
+    field(:contract_address_raw, :string)
   end
 
   input_object :timeseries_metric_transform_input_object do

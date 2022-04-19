@@ -24,11 +24,21 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     insight4 = insert(:published_post, inserted_at: seconds_ago(5))
 
     result = get_most_recent(conn, :insight)
-    assert length(result) == 4
-    assert Enum.at(result, 0)["insight"]["id"] == insight4.id
-    assert Enum.at(result, 1)["insight"]["id"] == insight3.id
-    assert Enum.at(result, 2)["insight"]["id"] == insight2.id
-    assert Enum.at(result, 3)["insight"]["id"] == insight1.id
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert length(data) == 4
+    assert Enum.at(data, 0)["insight"]["id"] == insight4.id
+    assert Enum.at(data, 1)["insight"]["id"] == insight3.id
+    assert Enum.at(data, 2)["insight"]["id"] == insight2.id
+    assert Enum.at(data, 3)["insight"]["id"] == insight1.id
   end
 
   test "get most recent screener", %{conn: conn} do
@@ -42,29 +52,81 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     screener4 = insert(:screener, is_public: true, inserted_at: seconds_ago(20))
 
     result = get_most_recent(conn, :screener)
-    assert length(result) == 4
-    assert Enum.at(result, 0)["screener"]["id"] |> String.to_integer() == screener4.id
-    assert Enum.at(result, 1)["screener"]["id"] |> String.to_integer() == screener3.id
-    assert Enum.at(result, 2)["screener"]["id"] |> String.to_integer() == screener2.id
-    assert Enum.at(result, 3)["screener"]["id"] |> String.to_integer() == screener1.id
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert length(data) == 4
+    assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() == screener4.id
+    assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() == screener3.id
+    assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() == screener2.id
+    assert Enum.at(data, 3)["screener"]["id"] |> String.to_integer() == screener1.id
   end
 
-  test "get most recent watchlist", %{conn: conn} do
+  test "get most recent project watchlist", %{conn: conn} do
     # The screener should not be in the result
-    watchlist1 = insert(:watchlist, is_public: true, inserted_at: seconds_ago(30))
-    _private = insert(:watchlist, is_public: false, inserted_at: seconds_ago(25))
-    _private = insert(:watchlist, is_public: false, inserted_at: seconds_ago(20))
-    watchlist2 = insert(:watchlist, is_public: true, inserted_at: seconds_ago(15))
-    watchlist3 = insert(:watchlist, is_public: true, inserted_at: seconds_ago(10))
-    _screener = insert(:screener, is_public: true, inserted_at: seconds_ago(5))
-    watchlist4 = insert(:watchlist, is_public: true, inserted_at: seconds_ago(0))
+    watchlist1 = insert(:watchlist, type: :project, is_public: true, inserted_at: seconds_ago(30))
+    _private = insert(:watchlist, type: :project, is_public: false, inserted_at: seconds_ago(25))
+    _private = insert(:watchlist, type: :project, is_public: false, inserted_at: seconds_ago(20))
+    watchlist2 = insert(:watchlist, type: :project, is_public: true, inserted_at: seconds_ago(15))
+    watchlist3 = insert(:watchlist, type: :project, is_public: true, inserted_at: seconds_ago(10))
+    _screener = insert(:screener, type: :project, is_public: true, inserted_at: seconds_ago(5))
+    watchlist4 = insert(:watchlist, type: :project, is_public: true, inserted_at: seconds_ago(0))
 
-    result = get_most_recent(conn, :watchlist)
-    assert length(result) == 4
-    assert Enum.at(result, 0)["watchlist"]["id"] |> String.to_integer() == watchlist4.id
-    assert Enum.at(result, 1)["watchlist"]["id"] |> String.to_integer() == watchlist3.id
-    assert Enum.at(result, 2)["watchlist"]["id"] |> String.to_integer() == watchlist2.id
-    assert Enum.at(result, 3)["watchlist"]["id"] |> String.to_integer() == watchlist1.id
+    result = get_most_recent(conn, :project_watchlist)
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert length(data) == 4
+    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == watchlist4.id
+    assert Enum.at(data, 1)["projectWatchlist"]["id"] |> String.to_integer() == watchlist3.id
+    assert Enum.at(data, 2)["projectWatchlist"]["id"] |> String.to_integer() == watchlist2.id
+    assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() == watchlist1.id
+  end
+
+  test "get most recent address watchlist", %{conn: conn} do
+    make_opts = fn is_public, seconds_ago ->
+      [type: :blockchain_address, is_public: is_public, inserted_at: seconds_ago(seconds_ago)]
+    end
+
+    # The screener should not be in the result
+    watchlist1 = insert(:watchlist, make_opts.(true, 30))
+    _private = insert(:watchlist, make_opts.(false, 25))
+    _private = insert(:watchlist, make_opts.(false, 20))
+    watchlist2 = insert(:watchlist, make_opts.(true, 15))
+    watchlist3 = insert(:watchlist, make_opts.(true, 10))
+    _screener = insert(:screener, make_opts.(true, 5))
+    watchlist4 = insert(:watchlist, make_opts.(true, 0))
+
+    result = get_most_recent(conn, :address_watchlist)
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert length(data) == 4
+    assert Enum.at(data, 0)["addressWatchlist"]["id"] |> String.to_integer() == watchlist4.id
+    assert Enum.at(data, 1)["addressWatchlist"]["id"] |> String.to_integer() == watchlist3.id
+    assert Enum.at(data, 2)["addressWatchlist"]["id"] |> String.to_integer() == watchlist2.id
+    assert Enum.at(data, 3)["addressWatchlist"]["id"] |> String.to_integer() == watchlist1.id
   end
 
   test "get most recent chart configuration", %{conn: conn} do
@@ -76,47 +138,152 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     chart_configuration4 = insert(:chart_configuration, is_public: true)
 
     result = get_most_recent(conn, :chart_configuration)
-    assert length(result) == 4
+    data = result["data"]
+    stats = result["stats"]
 
-    assert Enum.at(result, 0)["chartConfiguration"]["id"] == chart_configuration4.id
-    assert Enum.at(result, 1)["chartConfiguration"]["id"] == chart_configuration3.id
-    assert Enum.at(result, 2)["chartConfiguration"]["id"] == chart_configuration2.id
-    assert Enum.at(result, 3)["chartConfiguration"]["id"] == chart_configuration1.id
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert length(data) == 4
+    assert Enum.at(data, 0)["chartConfiguration"]["id"] == chart_configuration4.id
+    assert Enum.at(data, 1)["chartConfiguration"]["id"] == chart_configuration3.id
+    assert Enum.at(data, 2)["chartConfiguration"]["id"] == chart_configuration2.id
+    assert Enum.at(data, 3)["chartConfiguration"]["id"] == chart_configuration1.id
+  end
+
+  test "get most recent user trigger", %{conn: conn} do
+    user_trigger1 = insert(:user_trigger, is_public: true)
+    user_trigger2 = insert(:user_trigger, is_public: true)
+    _private = insert(:user_trigger, is_public: false)
+    _private = insert(:user_trigger, is_public: false)
+    user_trigger3 = insert(:user_trigger, is_public: true)
+    user_trigger4 = insert(:user_trigger, is_public: true)
+
+    result = get_most_recent(conn, :user_trigger)
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert length(data) == 4
+    assert Enum.at(data, 0)["userTrigger"]["trigger"]["id"] == user_trigger4.id
+    assert Enum.at(data, 1)["userTrigger"]["trigger"]["id"] == user_trigger3.id
+    assert Enum.at(data, 2)["userTrigger"]["trigger"]["id"] == user_trigger2.id
+    assert Enum.at(data, 3)["userTrigger"]["trigger"]["id"] == user_trigger1.id
   end
 
   test "get most recent combined", %{conn: conn} do
+    user_trigger = insert(:user_trigger, is_public: true, inserted_at: seconds_ago(55))
     insight1 = insert(:published_post, published_at: seconds_ago(50))
     conf1 = insert(:chart_configuration, is_public: true, inserted_at: seconds_ago(45))
     insight2 = insert(:published_post, published_at: seconds_ago(40))
     conf2 = insert(:chart_configuration, is_public: true, inserted_at: seconds_ago(35))
-    screener1 = insert(:screener, is_public: true, inserted_at: seconds_ago(30))
-    watchlist1 = insert(:watchlist, is_public: true, inserted_at: seconds_ago(20))
+    screener = insert(:screener, is_public: true, inserted_at: seconds_ago(30))
 
-    result = get_most_recent(conn, [:insight, :watchlist, :screener, :chart_configuration])
+    project_watchlist =
+      insert(:watchlist, type: :project, is_public: true, inserted_at: seconds_ago(20))
 
-    assert length(result) == 6
-    assert Enum.at(result, 0)["watchlist"]["id"] |> String.to_integer() == watchlist1.id
-    assert Enum.at(result, 1)["screener"]["id"] |> String.to_integer() == screener1.id
-    assert Enum.at(result, 2)["chartConfiguration"]["id"] == conf2.id
-    assert Enum.at(result, 3)["insight"]["id"] == insight2.id
-    assert Enum.at(result, 4)["chartConfiguration"]["id"] == conf1.id
-    assert Enum.at(result, 5)["insight"]["id"] == insight1.id
+    address_watchlist =
+      insert(:watchlist, type: :blockchain_address, is_public: true, inserted_at: seconds_ago(20))
+
+    # Get with default page = 1 and pageSize = 10, all entities are returned
+    result =
+      get_most_recent(conn, [
+        :insight,
+        :project_watchlist,
+        :address_watchlist,
+        :screener,
+        :chart_configuration,
+        :user_trigger
+      ])
+
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 8,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert length(data) == 8
+
+    assert Enum.at(data, 0)["addressWatchlist"]["id"] |> String.to_integer() ==
+             address_watchlist.id
+
+    assert Enum.at(data, 1)["projectWatchlist"]["id"] |> String.to_integer() ==
+             project_watchlist.id
+
+    assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() == screener.id
+    assert Enum.at(data, 3)["chartConfiguration"]["id"] == conf2.id
+    assert Enum.at(data, 4)["insight"]["id"] == insight2.id
+    assert Enum.at(data, 5)["chartConfiguration"]["id"] == conf1.id
+    assert Enum.at(data, 6)["insight"]["id"] == insight1.id
+    assert Enum.at(data, 7)["userTrigger"]["trigger"]["id"] == user_trigger.id
+
+    # Get with default page = 3 and pageSize = 2, only some entities are returned
+    result =
+      get_most_recent(
+        conn,
+        [
+          :insight,
+          :project_watchlist,
+          :address_watchlist,
+          :screener,
+          :chart_configuration,
+          :user_trigger
+        ],
+        page: 3,
+        page_size: 2
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 8,
+             "currentPage" => 3,
+             "totalPagesCount" => 4,
+             "currentPageSize" => 2
+           } = stats
+
+    assert Enum.at(data, 0)["insight"]["id"] == insight2.id
+    assert Enum.at(data, 1)["chartConfiguration"]["id"] == conf1.id
   end
 
-  defp get_most_recent(conn, entities) when is_list(entities) do
+  defp get_most_recent(conn, entity_or_entities, opts \\ [])
+
+  defp get_most_recent(conn, entities, opts) when is_list(entities) do
+    page = Keyword.get(opts, :page, 1)
+    page_size = Keyword.get(opts, :page_size, 10)
     types = Enum.map(entities, &(&1 |> Atom.to_string() |> String.upcase())) |> Enum.join(", ")
 
     query = """
     {
       getMostRecent(
         types: [#{types}]
-        page: 1
-        pageSize: 10
+        page: #{page}
+        pageSize: #{page_size}
       ){
-        insight{ id publishedAt createdAt }
-        watchlist{ id insertedAt }
-        screener{ id insertedAt }
-        chartConfiguration{ id insertedAt }
+        stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
+        data {
+          insight{ id }
+          projectWatchlist{ id }
+          addressWatchlist{ id }
+          screener{ id }
+          chartConfiguration{ id }
+          userTrigger{ trigger{ id } }
+        }
       }
     }
     """
@@ -127,18 +294,26 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     |> get_in(["data", "getMostRecent"])
   end
 
-  defp get_most_recent(conn, entity) do
+  defp get_most_recent(conn, entity, opts) do
+    page = Keyword.get(opts, :page, 1)
+    page_size = Keyword.get(opts, :page_size, 10)
+
     query = """
     {
       getMostRecent(
         type: #{entity |> Atom.to_string() |> String.upcase()}
-        page: 1
-        pageSize: 10
+        page: #{page}
+        pageSize: #{page_size}
       ){
-        insight{ id }
-        watchlist{ id }
-        screener{ id }
-        chartConfiguration{ id }
+        stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
+        data {
+          insight{ id }
+          projectWatchlist{ id }
+          addressWatchlist{ id }
+          screener{ id }
+          chartConfiguration{ id }
+          userTrigger{ trigger{ id } }
+        }
       }
     }
     """

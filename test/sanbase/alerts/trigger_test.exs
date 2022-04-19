@@ -41,7 +41,7 @@ defmodule Sanbase.Alert.TriggersTest do
 
     trigger_id = created_trigger.id
 
-    {:ok, %UserTrigger{trigger: trigger}} = UserTrigger.get_trigger_by_id(user.id, trigger_id)
+    {:ok, %UserTrigger{trigger: trigger}} = UserTrigger.by_user_and_id(user.id, trigger_id)
 
     settings = trigger.settings |> Map.from_struct()
     assert drop_diff_keys(settings, trigger_settings) == trigger_settings

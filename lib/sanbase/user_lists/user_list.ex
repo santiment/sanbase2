@@ -128,7 +128,8 @@ defmodule Sanbase.UserList do
     from(ul in __MODULE__)
     |> where([ul], ul.is_public == true)
     |> select([ul], ul.id)
-    |> maybe_filter_is_screener(opts)
+    |> maybe_filter_is_screener_query(opts)
+    |> maybe_filter_by_type_query(opts)
     |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
   end
 
@@ -137,7 +138,8 @@ defmodule Sanbase.UserList do
     from(ul in __MODULE__)
     |> where([ul], ul.user_id == ^user_id)
     |> select([ul], ul.id)
-    |> maybe_filter_is_screener(opts)
+    |> maybe_filter_is_screener_query(opts)
+    |> maybe_filter_by_type_query(opts)
     |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
   end
 
@@ -148,6 +150,7 @@ defmodule Sanbase.UserList do
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
   def is_screener?(%__MODULE__{is_screener: is_screener}), do: is_screener
+  def type(%__MODULE__{type: type}), do: type
 
   @doc ~s"""
   Return a list of all blockchain addresses in a watchlist.
@@ -423,23 +426,30 @@ defmodule Sanbase.UserList do
     |> where([ul], ul.user_id == ^user_id)
   end
 
-  defp filter_by_type_query(query, type) do
-    query
-    |> where([ul], ul.type == ^type)
-  end
-
   defp filter_by_is_public_query(query, is_public) do
     query
     |> where([ul], ul.is_public == ^is_public)
   end
 
-  defp maybe_filter_is_screener(query, opts) do
+  defp maybe_filter_is_screener_query(query, opts) do
     case Keyword.get(opts, :is_screener) do
       nil ->
         query
 
       is_screener when is_screener in [true, false] ->
         query |> where([ul], ul.is_screener == ^is_screener)
+    end
+  end
+
+  defp filter_by_type_query(query, type), do: query |> where([ul], ul.type == ^type)
+
+  defp maybe_filter_by_type_query(query, opts) do
+    case Keyword.get(opts, :type) do
+      nil ->
+        query
+
+      type ->
+        filter_by_type_query(query, type)
     end
   end
 

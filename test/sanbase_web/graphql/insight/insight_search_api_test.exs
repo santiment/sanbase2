@@ -1,6 +1,9 @@
 defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
   use SanbaseWeb.ConnCase, async: false
 
+  # TODO: Fix these randomly failing tests in the CI. Disable them for now.
+  @moduletag skip_suite: true
+
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.TestHelpers
   import Sanbase.Factory

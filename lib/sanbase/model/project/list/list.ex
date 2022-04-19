@@ -421,6 +421,21 @@ defmodule Sanbase.Model.Project.List do
   end
 
   @doc ~s"""
+  Return a list of project ids that have a slug in the list of `slugs`
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
+  def ids_by_slugs(slugs, opts \\ []) do
+    opts = Keyword.put(opts, :preload?, false)
+
+    projects_query(opts)
+    |> where([p], p.slug in ^slugs)
+    |> select([p], p.id)
+    |> Repo.all()
+  end
+
+  @doc ~s"""
   Return a list of projects that a `field` value in the list of `values`.
   Filtering out projects based on some conditions can be controled by the options.
 

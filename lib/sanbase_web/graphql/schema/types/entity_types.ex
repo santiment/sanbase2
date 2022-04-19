@@ -3,6 +3,10 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.EntityResolver
 
+  input_object :entity_filter do
+    field(:slugs, list_of(:string))
+  end
+
   enum :entity_type do
     value(:user_trigger)
     value(:insight)

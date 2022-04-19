@@ -7,18 +7,13 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
   alias SanbaseWeb.Graphql.Resolvers.{
     AccessControlResolver,
     ApikeyResolver,
-    AuthResolver,
     TelegramResolver,
     UserFollowerResolver,
     UserResolver,
     UserSettingsResolver
   }
 
-  alias SanbaseWeb.Graphql.Middlewares.{
-    JWTAuth,
-    DeleteSession,
-    CreateOrDeleteSession
-  }
+  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :user_queries do
     @desc "Returns the user currently logged in."

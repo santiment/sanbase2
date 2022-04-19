@@ -95,6 +95,7 @@ defmodule Sanbase.Chart.Configuration do
   def public_entity_ids_query(opts) do
     from(config in __MODULE__)
     |> where([config], config.is_public == true)
+    |> maybe_apply_projects_filter(opts)
     |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([config], config.id)
   end
@@ -221,5 +222,16 @@ defmodule Sanbase.Chart.Configuration do
   defp accessible_by_user_query(query, querying_user_id) do
     query
     |> where([conf], conf.is_public == true or conf.user_id == ^querying_user_id)
+  end
+
+  defp maybe_apply_projects_filter(query, opts) do
+    case Keyword.get(opts, :filter) do
+      %{project_ids: project_ids} ->
+        query
+        |> where([config], config.project_id in ^project_ids)
+
+      data ->
+        query
+    end
   end
 end

@@ -77,7 +77,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     [
       page: Map.get(args, :page, 1),
       page_size: Map.get(args, :page_size, 10),
-      cursor: Map.get(args, :cursor)
+      cursor: Map.get(args, :cursor),
+      filter: Map.get(args, :filter)
     ]
     |> maybe_add_current_user_data_only(args, resolution)
   end

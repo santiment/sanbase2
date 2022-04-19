@@ -127,9 +127,11 @@ defmodule Sanbase.UserList do
   def public_entity_ids_query(opts) do
     from(ul in __MODULE__)
     |> where([ul], ul.is_public == true)
+    |> distinct(true)
     |> select([ul], ul.id)
     |> maybe_filter_is_screener_query(opts)
     |> maybe_filter_by_type_query(opts)
+    |> maybe_apply_projects_filter(opts)
     |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
   end
 
@@ -140,6 +142,7 @@ defmodule Sanbase.UserList do
     |> select([ul], ul.id)
     |> maybe_filter_is_screener_query(opts)
     |> maybe_filter_by_type_query(opts)
+    |> maybe_apply_projects_filter(opts)
     |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
   end
 
@@ -450,6 +453,18 @@ defmodule Sanbase.UserList do
 
       type ->
         filter_by_type_query(query, type)
+    end
+  end
+
+  defp maybe_apply_projects_filter(query, opts) do
+    case Keyword.get(opts, :filter) do
+      %{project_ids: project_ids} ->
+        query
+        |> join(:inner, [ul], item in assoc(ul, :list_items), as: :item)
+        |> where([item: item], item.project_id in ^project_ids)
+
+      data ->
+        query
     end
   end
 

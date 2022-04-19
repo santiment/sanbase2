@@ -62,8 +62,12 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
            } = stats
 
     assert length(data) == 2
-    assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() == watchlist1.id
-    assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() == watchlist2.id
+
+    assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() ==
+             watchlist1.id
+
+    assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() ==
+             watchlist2.id
   end
 
   test "get most voted project watchlist", %{conn: conn} do
@@ -99,8 +103,12 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
            } = stats
 
     assert length(data) == 2
-    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == watchlist1.id
-    assert Enum.at(data, 1)["projectWatchlist"]["id"] |> String.to_integer() == watchlist2.id
+
+    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() ==
+             watchlist1.id
+
+    assert Enum.at(data, 1)["projectWatchlist"]["id"] |> String.to_integer() ==
+             watchlist2.id
   end
 
   test "get most voted address watchlist", %{conn: conn} do
@@ -136,8 +144,12 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
            } = stats
 
     assert length(data) == 2
-    assert Enum.at(data, 0)["addressWatchlist"]["id"] |> String.to_integer() == watchlist1.id
-    assert Enum.at(data, 1)["addressWatchlist"]["id"] |> String.to_integer() == watchlist2.id
+
+    assert Enum.at(data, 0)["addressWatchlist"]["id"] |> String.to_integer() ==
+             watchlist1.id
+
+    assert Enum.at(data, 1)["addressWatchlist"]["id"] |> String.to_integer() ==
+             watchlist2.id
   end
 
   test "get most voted chart configuration", %{conn: conn} do
@@ -169,8 +181,12 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
            } = stats
 
     assert length(data) == 2
-    assert Enum.at(data, 0)["chartConfiguration"]["id"] == chart_configuration1.id
-    assert Enum.at(data, 1)["chartConfiguration"]["id"] == chart_configuration2.id
+
+    assert Enum.at(data, 0)["chartConfiguration"]["id"] ==
+             chart_configuration1.id
+
+    assert Enum.at(data, 1)["chartConfiguration"]["id"] ==
+             chart_configuration2.id
   end
 
   test "get most voted user trigger", %{conn: conn} do
@@ -291,6 +307,88 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
              screener.id
   end
 
+  test "get most voted with projects' slugs filter", context do
+    %{conn: conn} = context
+    to_ids = fn projects -> Enum.map(projects, &%{project_id: &1.id}) end
+    # projects
+    pl = [p1, p2, p3, p4] = for slug <- ["p1", "p2", "p3", "p4"], do: insert(:project, slug: slug)
+
+    [w1, w2, w3, _w4] =
+      for p_list <- [[p1, p2, p3], [p2, p3], [p3, p4], [p4]] do
+        w = insert(:watchlist, type: :project, is_public: true)
+
+        {:ok, w} =
+          Sanbase.UserList.update_user_list(context.user, %{id: w.id, list_items: to_ids.(p_list)})
+
+        w
+      end
+
+    [_i1, i2, i3, _i4] = for p <- pl, do: insert(:published_post, price_chart_project: p)
+
+    [_c1, c2, c3, _c4] =
+      for p <- pl, do: insert(:chart_configuration, is_public: true, project: p)
+
+    [_a1, a2, a3, _a4] = for p <- pl, do: create_alert(context.user, p)
+
+    for _ <- 1..10, do: vote(conn, "watchlistId", w1.id)
+    for _ <- 1..9, do: vote(conn, "insightId", i2.id)
+    for _ <- 1..8, do: vote(conn, "insightId", i3.id)
+    for _ <- 1..7, do: vote(conn, "watchlistId", w3.id)
+    for _ <- 1..6, do: vote(conn, "watchlistId", w2.id)
+    for _ <- 1..5, do: vote(conn, "userTriggerId", a3.id)
+    for _ <- 1..4, do: vote(conn, "chartConfigurationId", c2.id)
+    for _ <- 1..3, do: vote(conn, "chartConfigurationId", c3.id)
+    for _ <- 1..2, do: vote(conn, "userTriggerId", a2.id)
+
+    result =
+      get_most_voted(
+        conn,
+        [:project_watchlist, :insight, :chart_configuration, :user_trigger],
+        filter: %{slugs: [p2.slug, p3.slug]}
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    # Expect: w1, i1, c1, a1
+    assert %{
+             "totalEntitiesCount" => 9,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
+    assert Enum.at(data, 1)["insight"]["id"] == i2.id
+    assert Enum.at(data, 2)["insight"]["id"] == i3.id
+    assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() == w3.id
+    assert Enum.at(data, 4)["projectWatchlist"]["id"] |> String.to_integer() == w2.id
+    assert Enum.at(data, 5)["userTrigger"]["trigger"]["id"] == a3.id
+    assert Enum.at(data, 6)["chartConfiguration"]["id"] == c2.id
+    assert Enum.at(data, 7)["chartConfiguration"]["id"] == c3.id
+    assert Enum.at(data, 8)["userTrigger"]["trigger"]["id"] == a2.id
+  end
+
+  defp create_alert(user, project) do
+    trigger_settings = %{
+      type: "metric_signal",
+      metric: "active_addresses_24h",
+      target: %{slug: project.slug},
+      channel: "telegram",
+      time_window: "1d",
+      operation: %{percent_up: 300.0}
+    }
+
+    {:ok, created_trigger} =
+      Sanbase.Alert.UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: trigger_settings
+      })
+
+    created_trigger
+  end
+
   defp vote(conn, entity_key, entity_id) do
     mutation = """
     mutation {
@@ -309,54 +407,37 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
       |> get_in(["data", "vote"])
   end
 
-  defp get_most_voted(conn, entity_or_entities, opts \\ [])
-
-  defp get_most_voted(conn, entities, opts) when is_list(entities) do
+  defp get_most_voted(conn, entity_or_entities, opts \\ []) do
     page = Keyword.get(opts, :page, 1)
     page_size = Keyword.get(opts, :page_size, 10)
 
-    types =
-      Enum.map(entities, &(&1 |> Atom.to_string() |> String.upcase()))
-      |> Enum.join(", ")
+    types_str =
+      case entity_or_entities do
+        [_ | _] = types ->
+          types =
+            Enum.map(types, &(&1 |> Atom.to_string() |> String.upcase()))
+            |> Enum.join(", ")
+
+          "types: [#{types}]"
+
+        type when is_atom(type) ->
+          "type: #{type |> Atom.to_string() |> String.upcase()}"
+      end
+
+    filter_str =
+      case Keyword.get(opts, :filter, nil) do
+        nil -> ""
+        filter -> "filter: #{map_to_input_object_str(filter)}"
+      end
 
     query = """
     {
       getMostVoted(
-        types: [#{types}]
+        #{types_str}
         page: #{page}
         pageSize: #{page_size}
         cursor: { type: AFTER, datetime: "utc_now-7d" }
-      ){
-        stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
-        data {
-          insight{ id }
-          projectWatchlist{ id }
-          addressWatchlist{ id }
-          screener{ id }
-          chartConfiguration{ id }
-          userTrigger{ trigger{ id } }
-        }
-      }
-    }
-    """
-
-    conn
-    |> post("/graphql", query_skeleton(query))
-    |> json_response(200)
-    |> get_in(["data", "getMostVoted"])
-  end
-
-  defp get_most_voted(conn, entity, opts) when is_atom(entity) do
-    page = Keyword.get(opts, :page, 1)
-    page_size = Keyword.get(opts, :page_size, 10)
-
-    query = """
-    {
-      getMostVoted(
-        type: #{entity |> Atom.to_string() |> String.upcase()}
-        page: #{page}
-        pageSize: #{page_size}
-        cursor: { type: AFTER, datetime: "utc_now-7d" }
+        #{filter_str}
       ){
         stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
         data {

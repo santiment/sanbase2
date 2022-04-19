@@ -27,6 +27,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
      [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
     {StripeApi, [:passthrough],
      [retrieve_coupon: fn _ -> {:ok, %Stripe.Coupon{id: @coupon_code}} end]},
+    {StripeApi, [:passthrough], [delete_default_card: fn _ -> :ok end]},
     {Sanbase.StripeApi, [:passthrough],
      [
        update_subscription_item_by_id: fn _, _ ->
@@ -81,9 +82,16 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
   test "update customer card", context do
     query = update_customer_card()
-    response = execute_mutation(context.conn, query, "updateCustomerCard")
+    response = execute_mutation(context.conn, query)
 
-    assert response["success"]
+    assert response
+  end
+
+  test "delete customer card", context do
+    query = delete_customer_card()
+    response = execute_mutation(context.conn, query, "deleteDefaultPaymentInstrument")
+
+    assert response
   end
 
   test "list products with plans", context do
@@ -696,9 +704,15 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   defp update_customer_card() do
     """
     mutation {
-      updateCustomerCard(cardToken: "token") {
-        success
-      }
+      updateDefaultPaymentInstrument(cardToken: "token")
+    }
+    """
+  end
+
+  defp delete_customer_card() do
+    """
+    mutation {
+      deleteDefaultPaymentInstrument
     }
     """
   end

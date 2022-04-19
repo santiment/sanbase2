@@ -123,7 +123,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       middleware(JWTAuth)
 
-      resolve(&BillingResolver.update_customer_card/3)
+      resolve(&BillingResolver.update_default_payment_instrument/3)
     end
 
     @desc ~s"""

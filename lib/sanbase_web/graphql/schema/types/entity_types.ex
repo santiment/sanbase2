@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
 
   input_object :entity_filter do
     field(:slugs, list_of(:string))
+    field(:metrics, list_of(:string))
   end
 
   enum :entity_type do

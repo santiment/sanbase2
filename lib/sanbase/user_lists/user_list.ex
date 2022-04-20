@@ -130,6 +130,7 @@ defmodule Sanbase.UserList do
     |> distinct(true)
     |> select([ul], ul.id)
     |> maybe_filter_is_screener_query(opts)
+    |> maybe_apply_metrics_filter(opts)
     |> maybe_filter_by_type_query(opts)
     |> maybe_apply_projects_filter(opts)
     |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
@@ -141,6 +142,7 @@ defmodule Sanbase.UserList do
     |> where([ul], ul.user_id == ^user_id)
     |> select([ul], ul.id)
     |> maybe_filter_is_screener_query(opts)
+    |> maybe_apply_metrics_filter(opts)
     |> maybe_filter_by_type_query(opts)
     |> maybe_apply_projects_filter(opts)
     |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
@@ -463,7 +465,40 @@ defmodule Sanbase.UserList do
         |> join(:inner, [ul], item in assoc(ul, :list_items), as: :item)
         |> where([item: item], item.project_id in ^project_ids)
 
-      data ->
+      _ ->
+        query
+    end
+  end
+
+  defp maybe_apply_metrics_filter(query, opts) do
+    case Keyword.get(opts, :filter) do
+      %{metrics: metrics} ->
+        subquery =
+          from(
+            ul in __MODULE__,
+            select: %{
+              id: ul.id,
+              filter: fragment("jsonb_array_elements(function->'args'->'filters')")
+            }
+          )
+
+        query_ids =
+          from(
+            map in subquery(subquery),
+            where:
+              fragment(
+                # The case without args is for backwards compatibility
+                "filter->'args'->>'metric' = ANY(?) OR filter->>'metric' = ANY(?)",
+                ^metrics,
+                ^metrics
+              ),
+            select: map.id
+          )
+
+        query
+        |> where([ul], ul.id in subquery(query_ids))
+
+      _ ->
         query
     end
   end

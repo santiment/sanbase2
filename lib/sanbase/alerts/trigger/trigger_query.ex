@@ -45,6 +45,17 @@ defmodule Sanbase.Alert.TriggerQuery do
     end
   end
 
+  defmacro trigger_target_is_slug(slugs) do
+    quote do
+      fragment(
+        """
+        trigger->'settings'->'target'->'slug' = ANY(?)
+        """,
+        ^unquote(slugs)
+      )
+    end
+  end
+
   defmacro trigger_is_active() do
     quote do
       fragment("""

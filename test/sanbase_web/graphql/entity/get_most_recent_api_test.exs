@@ -261,49 +261,165 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     assert Enum.at(data, 1)["chartConfiguration"]["id"] == conf1.id
   end
 
-  defp get_most_recent(conn, entity_or_entities, opts \\ [])
+  test "get most recent with projects' slugs filter", context do
+    to_ids = fn projects -> Enum.map(projects, &%{project_id: &1.id}) end
+    # projects
+    pl = [p1, p2, p3, p4] = for slug <- ["p1", "p2", "p3", "p4"], do: insert(:project, slug: slug)
 
-  defp get_most_recent(conn, entities, opts) when is_list(entities) do
-    page = Keyword.get(opts, :page, 1)
-    page_size = Keyword.get(opts, :page_size, 10)
-    types = Enum.map(entities, &(&1 |> Atom.to_string() |> String.upcase())) |> Enum.join(", ")
+    offset = 40
 
-    query = """
-    {
-      getMostRecent(
-        types: [#{types}]
-        page: #{page}
-        pageSize: #{page_size}
-      ){
-        stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
-        data {
-          insight{ id }
-          projectWatchlist{ id }
-          addressWatchlist{ id }
-          screener{ id }
-          chartConfiguration{ id }
-          userTrigger{ trigger{ id } }
-        }
-      }
-    }
-    """
+    [w1, w2, w3, _w4] =
+      for {p_list, index} <- Enum.with_index([[p1, p2, p3], [p2, p3], [p3, p4], [p4]], 1) do
+        w =
+          insert(:watchlist,
+            type: :project,
+            is_public: true,
+            inserted_at: seconds_ago(offset - index)
+          )
 
-    conn
-    |> post("/graphql", query_skeleton(query))
-    |> json_response(200)
-    |> get_in(["data", "getMostRecent"])
+        {:ok, w} =
+          Sanbase.UserList.update_user_list(context.user, %{id: w.id, list_items: to_ids.(p_list)})
+
+        w
+      end
+
+    pl_index = Enum.with_index(pl, 1)
+
+    offset = 30
+
+    [i1, i2, i3, _i4] =
+      for {p, index} <- pl_index do
+        insert(:published_post,
+          price_chart_project: p,
+          published_at: seconds_ago(offset - index)
+        )
+      end
+
+    offset = 20
+
+    [c1, c2, c3, _c4] =
+      for {p, index} <- pl_index do
+        insert(:chart_configuration,
+          is_public: true,
+          project: p,
+          inserted_at: seconds_ago(offset - index)
+        )
+      end
+
+    offset = 10
+
+    [a1, a2, a3, _a4] =
+      for {p, index} <- pl_index do
+        create_alert(context.user, p, seconds_ago(offset - index))
+      end
+
+    result =
+      get_most_recent(
+        context.conn,
+        [:project_watchlist, :insight, :chart_configuration, :user_trigger],
+        filter: %{slugs: [p1.slug]}
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert Enum.at(data, 0)["userTrigger"]["trigger"]["id"] == a1.id
+    assert Enum.at(data, 1)["chartConfiguration"]["id"] == c1.id
+    assert Enum.at(data, 2)["insight"]["id"] == i1.id
+    assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
+
+    result =
+      get_most_recent(
+        context.conn,
+        [:project_watchlist, :insight, :chart_configuration, :user_trigger],
+        filter: %{slugs: [p2.slug, p3.slug]}
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 9,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert Enum.at(data, 0)["userTrigger"]["trigger"]["id"] == a3.id
+    assert Enum.at(data, 1)["userTrigger"]["trigger"]["id"] == a2.id
+    assert Enum.at(data, 2)["chartConfiguration"]["id"] == c3.id
+    assert Enum.at(data, 3)["chartConfiguration"]["id"] == c2.id
+    assert Enum.at(data, 4)["insight"]["id"] == i3.id
+    assert Enum.at(data, 5)["insight"]["id"] == i2.id
+    assert Enum.at(data, 6)["projectWatchlist"]["id"] |> String.to_integer() == w3.id
+    assert Enum.at(data, 7)["projectWatchlist"]["id"] |> String.to_integer() == w2.id
+    assert Enum.at(data, 8)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
   end
 
-  defp get_most_recent(conn, entity, opts) do
+  defp create_alert(user, project, inserted_at) do
+    trigger_settings = %{
+      type: "metric_signal",
+      metric: "active_addresses_24h",
+      target: %{slug: project.slug},
+      channel: "telegram",
+      time_window: "1d",
+      operation: %{percent_up: 300.0}
+    }
+
+    {:ok, created_trigger} =
+      Sanbase.Alert.UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: trigger_settings
+      })
+
+    naive_dt = DateTime.to_naive(inserted_at) |> NaiveDateTime.truncate(:second)
+
+    created_trigger =
+      created_trigger
+      |> Ecto.Changeset.change(%{inserted_at: naive_dt})
+      |> Sanbase.Repo.update!()
+
+    created_trigger
+  end
+
+  defp get_most_recent(conn, entity_or_entities, opts \\ []) do
     page = Keyword.get(opts, :page, 1)
     page_size = Keyword.get(opts, :page_size, 10)
+
+    types_str =
+      case entity_or_entities do
+        [_ | _] = types ->
+          types =
+            Enum.map(types, &(&1 |> Atom.to_string() |> String.upcase()))
+            |> Enum.join(", ")
+
+          "types: [#{types}]"
+
+        type when is_atom(type) ->
+          "type: #{type |> Atom.to_string() |> String.upcase()}"
+      end
+
+    filter_str =
+      case Keyword.get(opts, :filter, nil) do
+        nil -> ""
+        filter -> "filter: #{map_to_input_object_str(filter)}"
+      end
 
     query = """
     {
       getMostRecent(
-        type: #{entity |> Atom.to_string() |> String.upcase()}
+        #{types_str}
         page: #{page}
         pageSize: #{page_size}
+        #{filter_str}
       ){
         stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
         data {

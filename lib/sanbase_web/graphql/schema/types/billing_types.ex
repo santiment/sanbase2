@@ -88,8 +88,4 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:exp_year, non_null(:integer))
     field(:exp_month, non_null(:integer))
   end
-
-  object :update_card_result do
-    field(:success, :boolean)
-  end
 end

@@ -175,6 +175,7 @@ defmodule Sanbase.Entity do
   # Private functions
 
   defp do_get_most_recent_total_count(entities, opts) when is_list(entities) and entities != [] do
+    opts = update_opts(opts)
     {:ok, query} = most_recent_base_query(entities, opts)
 
     total_count =
@@ -185,6 +186,7 @@ defmodule Sanbase.Entity do
   end
 
   defp do_get_most_voted_total_count(entities, opts) when is_list(entities) and entities != [] do
+    opts = update_opts(opts)
     {:ok, query} = most_voted_base_query(entities, opts)
 
     total_count =
@@ -195,6 +197,7 @@ defmodule Sanbase.Entity do
   end
 
   defp do_get_most_recent(entities, opts) when is_list(entities) and entities != [] do
+    opts = update_opts(opts)
     {:ok, query} = most_recent_base_query(entities, opts)
 
     # Add pagination to the query. This uses the new map of arguments built by
@@ -236,6 +239,7 @@ defmodule Sanbase.Entity do
   end
 
   defp do_get_most_voted(entities, opts) when is_list(entities) and entities != [] do
+    opts = update_opts(opts)
     {:ok, query} = most_voted_base_query(entities, opts)
 
     # Add ordering and pagination. The group by is required so we can count all
@@ -436,7 +440,9 @@ defmodule Sanbase.Entity do
   defp entity_ids_query(:insight, opts) do
     # `ordered?: false` is important otherwise the default order will be applied
     # and this will conflict with the distinct(true) check
-    entity_opts = [preload?: false, distinct?: true, ordered?: false, cursor: opts[:cursor]]
+    entity_opts =
+      Keyword.take(opts, [:filter, :cursor]) ++
+        [preload?: false, distinct?: true, ordered?: false]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> Post.public_entity_ids_query(entity_opts)
@@ -447,7 +453,9 @@ defmodule Sanbase.Entity do
   defp entity_ids_query(:user_trigger, opts) do
     # `ordered?: false` is important otherwise the default order will be applied
     # and this will conflict with the distinct(true) check
-    entity_opts = [preload?: false, distinct?: true, ordered?: false, cursor: opts[:cursor]]
+    entity_opts =
+      Keyword.take(opts, [:filter, :cursor]) ++
+        [preload?: false, distinct?: true, ordered?: false]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> UserTrigger.public_entity_ids_query(entity_opts)
@@ -456,7 +464,7 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:screener, opts) do
-    entity_opts = [is_screener: true, cursor: opts[:cursor]]
+    entity_opts = Keyword.take(opts, [:filter, :cursor]) ++ [is_screener: true]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> UserList.public_entity_ids_query(entity_opts)
@@ -465,7 +473,7 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:project_watchlist, opts) do
-    entity_opts = [is_screener: false, type: :project, cursor: opts[:cursor]]
+    entity_opts = Keyword.take(opts, [:filter, :cursor]) ++ [is_screener: false, type: :project]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> UserList.public_entity_ids_query(entity_opts)
@@ -474,7 +482,8 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:address_watchlist, opts) do
-    entity_opts = [is_screener: false, type: :blockchain_address, cursor: opts[:cursor]]
+    entity_opts =
+      Keyword.take(opts, [:filter, :cursor]) ++ [is_screener: false, type: :blockchain_address]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> UserList.public_entity_ids_query(entity_opts)
@@ -483,7 +492,7 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:chart_configuration, opts) do
-    entity_opts = [cursor: opts[:cursor]]
+    entity_opts = Keyword.take(opts, [:filter, :cursor])
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> Chart.Configuration.public_entity_ids_query(entity_opts)
@@ -506,4 +515,16 @@ defmodule Sanbase.Entity do
 
   defp deduce_entity_creation_time_field(:insight), do: {:published_at, :inserted_at}
   defp deduce_entity_creation_time_field(_), do: {:inserted_at, :inserted_at}
+
+  defp update_opts(opts) do
+    case Keyword.get(opts, :filter) do
+      nil ->
+        opts
+
+      %{slugs: slugs} = filter ->
+        ids = Sanbase.Model.Project.List.ids_by_slugs(slugs, [])
+        filter = Map.put(filter, :project_ids, ids)
+        Keyword.put(opts, :filter, filter)
+    end
+  end
 end

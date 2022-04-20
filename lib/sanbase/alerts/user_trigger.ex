@@ -116,6 +116,7 @@ defmodule Sanbase.Alert.UserTrigger do
   def public_entity_ids_query(opts) do
     from(ul in __MODULE__)
     |> where([ul], trigger_is_public())
+    |> maybe_apply_projects_filter(opts)
     |> select([ul], ul.id)
     |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
   end
@@ -124,6 +125,7 @@ defmodule Sanbase.Alert.UserTrigger do
   def user_entity_ids_query(user_id, opts) do
     from(ul in __MODULE__)
     |> where([ul], ul.user_id == ^user_id)
+    |> maybe_apply_projects_filter(opts)
     |> select([ul], ul.id)
     |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
   end
@@ -460,5 +462,17 @@ defmodule Sanbase.Alert.UserTrigger do
     |> Map.drop([:id])
     |> Enum.reject(fn {_k, v} -> is_nil(v) end)
     |> Enum.into(%{})
+  end
+
+  defp maybe_apply_projects_filter(query, opts) do
+    case Keyword.get(opts, :filter) do
+      %{slugs: slugs} ->
+        from(ut in query,
+          where: trigger_target_is_slug(slugs)
+        )
+
+      data ->
+        query
+    end
   end
 end

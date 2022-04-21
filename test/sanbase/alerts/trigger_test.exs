@@ -20,7 +20,7 @@ defmodule Sanbase.Alert.TriggersTest do
     trigger_settings = %{
       type: "metric_signal",
       metric: "active_addresses_24h",
-      target: %{slug: "santiment"},
+      target: %{slug: ["santiment", "bitcoin"]},
       channel: "telegram",
       time_window: "1d",
       operation: %{percent_up: 300.0}

@@ -518,13 +518,13 @@ defmodule Sanbase.Entity do
 
   defp update_opts(opts) do
     case Keyword.get(opts, :filter) do
-      nil ->
-        opts
-
       %{slugs: slugs} = filter ->
         ids = Sanbase.Model.Project.List.ids_by_slugs(slugs, [])
         filter = Map.put(filter, :project_ids, ids)
         Keyword.put(opts, :filter, filter)
+
+      _ ->
+        opts
     end
   end
 end

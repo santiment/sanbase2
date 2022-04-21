@@ -182,11 +182,9 @@ defmodule Sanbase.Accounts.UserSettings do
       |> String.downcase()
       |> String.to_existing_atom()
 
-    %{
-      us.settings
-      | has_telegram_connected: us.settings.telegram_chat_id != nil,
-        alerts_per_day_limit: alerts_per_day_limit,
-        newsletter_subscription: newsletter_subscription
-    }
+    us.settings
+    |> Map.put(:has_telegram_connected, us.settings.telegram_chat_id != nil)
+    |> Map.put(:alerts_per_day_limit, alerts_per_day_limit)
+    |> Map.put(:newsletter_subscription, newsletter_subscription)
   end
 end

@@ -71,7 +71,6 @@ alias Sanbase.TechIndicators
 alias Sanbase.ExternalServices.Etherscan.Requests, as: EtherscanRequests
 alias Sanbase.ExternalServices.Etherscan.Scraper, as: EtherscanScraper
 alias Sanbase.ExternalServices.ProjectInfo
-alias Sanbase.Oauth2.Hydra
 
 alias Sanbase.Influxdb.Measurement
 alias Sanbase.Influxdb.Store, as: InfluxdbStore

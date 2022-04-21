@@ -77,7 +77,8 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
     } = timerange_params(settings)
 
     to_value = fn %{} = map ->
-      [{_slug, value}] = Map.to_list(map)
+      # TODO: Why this happens?
+      [{_slug, value}] = Map.to_list(map) |> Enum.reject(&match?({nil, _}, &1))
       value
     end
 

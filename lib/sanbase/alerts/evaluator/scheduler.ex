@@ -232,7 +232,13 @@ defmodule Sanbase.Alert.Scheduler do
               Sanbase.Accounts.User.can_receive_telegram_alert?(user)
 
             %{"webhook" => webhook_url} ->
-              match?(:ok, Sanbase.Validation.valid_url?(webhook_url))
+              Sanbase.Accounts.User.can_receive_webhook_alert?(user, webhook_url)
+
+            "web_push" ->
+              # web push cannot be received currently. So if the other channels
+              # like telegram and email are not receivable, then the presence of
+              # web push should not cause scheduling of the alert
+              false
 
             _ ->
               true

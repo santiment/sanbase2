@@ -22,6 +22,16 @@ defmodule Sanbase.Accounts.User.Alert do
     alert_receivable? and not alert_limit_reached?
   end
 
+  def can_receive_webhook_alert?(user, webhook_url) do
+    user = Sanbase.Repo.preload(user, :user_settings)
+    settings = UserSettings.settings_for(user)
+
+    valid_webhook_url? = match?(:ok, Sanbase.Validation.valid_url?(webhook_url))
+    alert_limit_reached? = daily_limit_reached?(settings, "webhook")
+
+    valid_webhook_url? and not alert_limit_reached?
+  end
+
   defp daily_limit_reached?(%{} = settings, channel) when is_binary(channel) do
     limit = Settings.get_alerts_limit_per_day(settings, channel)
     fired_today = Settings.get_alerts_fired_today(settings, channel)

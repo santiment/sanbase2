@@ -632,6 +632,67 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
              w.id
   end
 
+  test "get most recent screeners with metrics filter", context do
+    function = fn metrics ->
+      function = %Sanbase.WatchlistFunction{
+        name: "selector",
+        args: %{
+          filters:
+            Enum.map(metrics, fn metric ->
+              %{
+                metric: metric,
+                dynamic_from: "1d",
+                dynamic_to: "now",
+                operator: :greater_than,
+                threshold: 10,
+                aggregation: :last
+              }
+            end)
+        }
+      }
+
+      assert Sanbase.WatchlistFunction.valid_function?(function)
+
+      function
+    end
+
+    s1 =
+      insert(:screener,
+        is_public: true,
+        function: function.(["price_usd"]),
+        inserted_at: seconds_ago(30)
+      )
+
+    s2 =
+      insert(:screener,
+        is_public: true,
+        function: function.(["social_volume_total"]),
+        inserted_at: seconds_ago(20)
+      )
+
+    s3 =
+      insert(:screener,
+        is_public: true,
+        function: function.(["price_usd", "price_btc"]),
+        inserted_at: seconds_ago(10)
+      )
+
+    result = get_most_recent(context.conn, [:screener], filter: %{metrics: ["price_usd"]})
+
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 2,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() == s3.id
+    assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() == s1.id
+  end
+
   defp create_alert(user, project, inserted_at) do
     trigger_settings = %{
       type: "metric_signal",

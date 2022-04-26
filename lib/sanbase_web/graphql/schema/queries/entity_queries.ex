@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
       arg(:cursor, :cursor_input_no_order, default_value: nil)
       arg(:filter, :entity_filter)
 
-      resolve(&EntityResolver.get_most_recent/3)
+      cache_resolve(&EntityResolver.get_most_recent/3, ttl: 30, max_ttl_offset: 30)
     end
   end
 

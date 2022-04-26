@@ -59,6 +59,21 @@ defmodule Sanbase.Accounts.Settings do
     |> validate_change(:favorite_metrics, &validate_favorite_metrics/2)
   end
 
+  def get_alerts_limit_per_day(%__MODULE__{} = settings, channel) do
+    limits =
+      case settings.alerts_per_day_limit do
+        map when map_size(map) == 0 -> @default_alerts_limit_per_day
+        map -> map
+      end
+
+    limits[channel] |> Sanbase.Math.to_integer()
+  end
+
+  def get_alerts_fired_today(%__MODULE__{} = settings, channel) do
+    today_str = Date.utc_today() |> to_string()
+    settings.alerts_fired[today_str][channel] |> Sanbase.Math.to_integer() || 0
+  end
+
   def daily_subscription_type(), do: "DAILY"
   def weekly_subscription_type(), do: "WEEKLY"
 

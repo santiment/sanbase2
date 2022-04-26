@@ -115,7 +115,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
     org_to_slug_map =
       Enum.flat_map(projects_list, fn project ->
-        Enum.map(project.github_organizations, fn org -> {org.organization, project.slug} end)
+        Enum.map(project.github_organizations, fn org ->
+          {String.downcase(org.organization), project.slug}
+        end)
       end)
       |> Map.new()
 

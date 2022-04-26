@@ -29,6 +29,7 @@ defmodule Sanbase.Billing.Subscription do
   @preload_fields [:user, plan: [:product]]
   @during_trial_discount_percent_off 50
   @one_month_trial_discount_percent_off 35
+  @one_month_discount_days 30
   @trial_days 14
   @annual_discount_plan_ids [202]
 
@@ -235,7 +236,7 @@ defmodule Sanbase.Billing.Subscription do
         do_check_eligibility(trial_end)
 
       _ ->
-        %{eligible: false}
+        %{is_eligible: false}
     end
   end
 
@@ -522,24 +523,26 @@ defmodule Sanbase.Billing.Subscription do
   defp do_check_eligibility(trial_end) do
     now = DateTime.utc_now()
 
+    one_month_discount_expires_seconds = (@one_month_discount_days - @trial_days) * 24 * 3600
+
     cond do
       DateTime.diff(trial_end, now) > 0 ->
         %{
-          eligible: true,
+          is_eligible: true,
           discount: %{percent_off: @during_trial_discount_percent_off, expire_at: trial_end}
         }
 
-      DateTime.diff(now, trial_end) < 16 * 24 * 3600 ->
+      DateTime.diff(now, trial_end) < one_month_discount_expires_seconds ->
         %{
-          eligible: true,
+          is_eligible: true,
           discount: %{
             percent_off: @one_month_trial_discount_percent_off,
-            expire_at: DateTime.add(trial_end, 16 * 24 * 3600, :second)
+            expire_at: DateTime.add(trial_end, one_month_discount_expires_seconds, :second)
           }
         }
 
       true ->
-        %{eligible: false}
+        %{is_eligible: false}
     end
   end
 
@@ -547,8 +550,8 @@ defmodule Sanbase.Billing.Subscription do
 
   defp recalc_percent_off(user_id, plan_id) when plan_id in @annual_discount_plan_ids do
     case annual_discount_eligibility(user_id) do
-      %{eligible: true, discount: %{percent_off: percent_off}} -> percent_off
-      %{eligible: false} -> nil
+      %{is_eligible: true, discount: %{percent_off: percent_off}} -> percent_off
+      %{is_eligible: false} -> nil
     end
   end
 end

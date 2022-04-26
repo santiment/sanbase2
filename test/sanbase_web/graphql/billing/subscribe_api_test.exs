@@ -161,7 +161,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       )
 
       query = subscribe_without_card_mutation(context.plans.plan_pro_sanbase_yearly.id)
-      response = execute_mutation(context.conn, query) |> IO.inspect()
+      response = execute_mutation(context.conn, query)
 
       assert response["status"] == "ACTIVE"
     end
@@ -600,7 +600,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       )
 
       res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-      assert res.eligible
+      assert res.is_eligible
       assert res.discount.percent_off == 50
 
       query = check_annual_discount_eligibility()
@@ -616,12 +616,12 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       )
 
       res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-      assert res.eligible
+      assert res.is_eligible
       assert res.discount.percent_off == 35
 
       query = check_annual_discount_eligibility()
       res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-      assert res["eligible"]
+      assert res["isEligible"]
       assert res["discount"]["percentOff"] == 35
     end
 
@@ -633,11 +633,11 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       )
 
       res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-      refute res.eligible
+      refute res.is_eligible
 
       query = check_annual_discount_eligibility()
       res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-      refute res["eligible"]
+      refute res["isEligible"]
     end
   end
 
@@ -798,7 +798,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
     {
       checkAnnualDiscountEligibility {
-        eligible
+        isEligible
         discount {
           percentOff
           expireAt

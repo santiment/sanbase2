@@ -90,7 +90,7 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
   end
 
   object :annual_discount_eligibility do
-    field(:eligible, non_null(:boolean))
+    field(:is_eligible, non_null(:boolean))
     field(:discount, :annual_discount)
   end
 

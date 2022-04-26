@@ -220,6 +220,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     {:ok, Billing.eligible_for_sanbase_trial?(user.id)}
   end
 
+  def check_annual_discount_eligibility(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    {:ok, Subscription.annual_discount_eligibility(current_user.id)}
+  end
+
   # private functions
   defp transform_payments(%Stripe.List{data: payments}) do
     payments

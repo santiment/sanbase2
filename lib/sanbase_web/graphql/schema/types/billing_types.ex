@@ -88,4 +88,14 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:exp_year, non_null(:integer))
     field(:exp_month, non_null(:integer))
   end
+
+  object :annual_discount_eligibility do
+    field(:eligible, non_null(:boolean))
+    field(:discount, :annual_discount)
+  end
+
+  object :annual_discount do
+    field(:percent_off, non_null(:integer))
+    field(:expire_at, non_null(:datetime))
+  end
 end

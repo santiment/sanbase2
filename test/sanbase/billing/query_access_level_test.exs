@@ -39,6 +39,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :blockchain_address,
           :chart_configuration,
           :chart_configurations,
+          :check_annual_discount_eligibility,
           :comments_feed,
           :comments,
           :currencies_market_segments,

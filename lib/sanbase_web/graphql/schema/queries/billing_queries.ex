@@ -60,6 +60,17 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       resolve(&BillingResolver.fetch_default_payment_instrument/3)
     end
+
+    @desc ~s"""
+    Check whether customer is eligible for discount for buying annual subscription
+    """
+    field :check_annual_discount_eligibility, :annual_discount_eligibility do
+      meta(access: :free)
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.check_annual_discount_eligibility/3)
+    end
   end
 
   object :billing_mutations do

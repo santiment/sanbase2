@@ -108,7 +108,8 @@ config :waffle,
 
 config :ethereumex,
   url: "http://erigon-hz.stage.san:30250/",
-  http_options: [timeout: 25_000, recv_timeout: 25_000]
+  http_options: [timeout: 25_000, recv_timeout: 25_000],
+  http_headers: [{"Content-Type", "application/json"}]
 
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"

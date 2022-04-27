@@ -52,7 +52,8 @@ config :sanbase, SanbaseWeb.Plug.SessionPlug,
 
 config :ethereumex,
   url: "${PARITY_URL}",
-  http_options: [timeout: 25_000, recv_timeout: 25_000]
+  http_options: [timeout: 25_000, recv_timeout: 25_000],
+  http_headers: [{"Content-Type", "application/json"}]
 
 if File.exists?("config/prod.secret.exs") do
   import_config "prod.secret.exs"

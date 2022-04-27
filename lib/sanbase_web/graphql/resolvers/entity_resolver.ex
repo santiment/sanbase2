@@ -3,10 +3,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
 
   def get_most_voted(_root, args, _resolution) do
+    # Do not cache the queries that fetch the users' own data as they differ
+    # for every user and the cache key does not take into consideration the user id
+    if Map.get(args, :current_user_data_only), do: Process.put(:do_not_cache_query, true)
     {:ok, %{query: :get_most_voted, args: args}}
   end
 
   def get_most_recent(_root, args, _resolution) do
+    # Do not cache the queries that fetch the users' own data as they differ
+    # for every user and the cache key does not take into consideration the user id
+    if Map.get(args, :current_user_data_only), do: Process.put(:do_not_cache_query, true)
     {:ok, %{query: :get_most_recent, args: args}}
   end
 

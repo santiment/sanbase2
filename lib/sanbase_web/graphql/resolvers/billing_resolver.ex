@@ -160,7 +160,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
         context: %{auth: %{current_user: current_user}}
       }) do
     with {:ok, customer} <- StripeApi.fetch_default_card(current_user),
-         {:card?, card} <- {:card?, customer.default_source} do
+         {:card?, card} when not is_nil(card) <- {:card?, customer.default_source} do
       {:ok,
        %{
          last4: card.last4,

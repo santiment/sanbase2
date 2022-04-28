@@ -164,6 +164,7 @@ defmodule Sanbase.Accounts.User do
 
   defdelegate can_receive_telegram_alert?(user), to: __MODULE__.Alert
   defdelegate can_receive_email_alert?(user), to: __MODULE__.Alert
+  defdelegate can_receive_webhook_alert?(user, webhook_url), to: __MODULE__.Alert
 
   # Email functions
   defdelegate find_by_email_candidate(candidate, token), to: __MODULE__.Email

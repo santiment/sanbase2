@@ -16,6 +16,7 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
       arg(:page, :integer)
       arg(:page_size, :integer)
       arg(:current_user_data_only, :boolean, default_value: false)
+      arg(:current_user_voted_for_only, :boolean, default_value: false)
       arg(:cursor, :cursor_input_no_order, default_value: nil)
       arg(:filter, :entity_filter)
 

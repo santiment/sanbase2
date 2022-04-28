@@ -19,7 +19,11 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
       arg(:cursor, :cursor_input_no_order, default_value: nil)
       arg(:filter, :entity_filter)
 
-      cache_resolve(&EntityResolver.get_most_voted/3, ttl: 30, max_ttl_offset: 30)
+      cache_resolve(&EntityResolver.get_most_voted/3,
+        ttl: 30,
+        max_ttl_offset: 30,
+        honor_do_not_cache_flag: true
+      )
     end
 
     field :get_most_recent, :most_recent_entity_result do
@@ -33,7 +37,11 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
       arg(:cursor, :cursor_input_no_order, default_value: nil)
       arg(:filter, :entity_filter)
 
-      cache_resolve(&EntityResolver.get_most_recent/3, ttl: 30, max_ttl_offset: 30)
+      cache_resolve(&EntityResolver.get_most_recent/3,
+        ttl: 30,
+        max_ttl_offset: 30,
+        honor_do_not_cache_flag: true
+      )
     end
   end
 

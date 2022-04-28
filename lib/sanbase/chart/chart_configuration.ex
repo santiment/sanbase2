@@ -230,7 +230,7 @@ defmodule Sanbase.Chart.Configuration do
         query
         |> where([config], config.project_id in ^project_ids)
 
-      data ->
+      _ ->
         query
     end
   end

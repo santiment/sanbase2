@@ -1,4 +1,4 @@
-defmodule Sanbase.Email.Mailchimp do
+defmodule Sanbase.Email.MailchimpApi do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
@@ -6,6 +6,65 @@ defmodule Sanbase.Email.Mailchimp do
 
   @base_url "https://us14.api.mailchimp.com/3.0"
   @weekly_digest_list_id "41325871aa"
+  @bi_weekly_list_id "3e5b56534c"
+
+  def account() do
+    Mailchimp.Account.get!()
+  end
+
+  def all_lists do
+    Mailchimp.Account.get_all_lists!() |> Enum.map(&Map.take(&1, [:id, :name]))
+  end
+
+  def list(account, list_id) do
+    Mailchimp.Account.get_list!(account, list_id)
+  end
+
+  def members(list) do
+    members(list, [], 0)
+  end
+
+  defp members(list, members, offset) do
+    new_members =
+      Mailchimp.List.members!(list, %{
+        fields: "members.email_address,members.status",
+        count: 1000,
+        offset: offset
+      })
+      |> Enum.map(&Map.take(&1, [:email_address, :status]))
+
+    case length(new_members) < 1000 do
+      true -> members ++ new_members
+      false -> members(list, members ++ new_members, offset + length(new_members))
+    end
+  end
+
+  def batch_subscribe(list, emails) when is_list(emails) do
+    members = emails |> Enum.map(fn email -> %{email_address: email, status: "subscribed"} end)
+    Mailchimp.List.batch_subscribe!(list, members, %{update_existing: true})
+  end
+
+  def batch_unsubscribe(list, emails) when is_list(emails) do
+    members = emails |> Enum.map(fn email -> %{email_address: email, status: "unsubscribed"} end)
+    Mailchimp.List.batch_subscribe!(list, members, %{update_existing: true})
+  end
+
+  def sync() do
+    for list_id <- lists do
+      sync_list(list_id)
+    end
+  end
+
+  def sync_list(list_id) do
+    members = account() |> list(list_id) |> members()
+    {subscribed_in_mailchimp, unsubscribed_from_mailchimp} = get_members_by_status()
+
+    # if contact unsubscribes from email - update subscription status in Sanbase
+    update_unsubscribed_in_sanbase(list_id, unsubscribed_from_mailchimp)
+
+    newly_subscribed = subscribed_in_sanbase(list_id) -- subscribed_in_mailchimp
+    newly_unsubscribed = unsubscribed_in_sanbase(list_id) -- unsubscribed_from_mailchimp
+  end
 
   def run() do
     if mailchimp_api_key() do

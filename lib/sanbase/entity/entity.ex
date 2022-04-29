@@ -25,6 +25,7 @@ defmodule Sanbase.Entity do
        that can be either :before or :after and a :datetime, which is a DateTime.t() struct.
   """
   import Ecto.Query
+  import Sanbase.Entity.Query, only: [entity_id_selection: 0, entity_type_selection: 0]
 
   alias Sanbase.Chart
   alias Sanbase.Insight.Post
@@ -179,7 +180,9 @@ defmodule Sanbase.Entity do
     {:ok, query} = most_recent_base_query(entities, opts)
 
     total_count =
-      from(entity in subquery(query), select: fragment("count(*)"))
+      from(entity in subquery(query),
+        select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)
+      )
       |> Sanbase.Repo.one()
 
     {:ok, total_count}
@@ -189,8 +192,20 @@ defmodule Sanbase.Entity do
     opts = update_opts(opts)
     {:ok, query} = most_voted_base_query(entities, opts)
 
+    # Convert the rows to a list of entity_id and entity_type. This is because otherwise
+    # we count the total number of voters as every differnt user's vote is on its own
+    # row. On this transformed row it is possible to easily apply DISTINCT before
+    # COUNT, so every entity is counted only once.
+    query =
+      from(
+        v in query,
+        select: %{entity_id: entity_id_selection(), entity_type: entity_type_selection()}
+      )
+
     total_count =
-      from(entity in subquery(query), select: fragment("count(*)"))
+      from(entity in subquery(query),
+        select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)
+      )
       |> Sanbase.Repo.one()
 
     {:ok, total_count}
@@ -260,25 +275,8 @@ defmodule Sanbase.Entity do
       from(v in query,
         select: %{
           votes: sum(v.count),
-          entity_id:
-            fragment("""
-            CASE
-              WHEN post_id IS NOT NULL THEN post_id
-              WHEN watchlist_id IS NOT NULL THEN watchlist_id
-              WHEN chart_configuration_id IS NOT NULL THEN chart_configuration_id
-              WHEN user_trigger_id IS NOT NULL THEN user_trigger_id
-            END
-            """),
-          entity_type:
-            fragment("""
-            CASE
-              WHEN post_id IS NOT NULL THEN 'insight'
-              -- the watchlist_id can point to either screener or watchlist. This is handled later.
-              WHEN watchlist_id IS NOT NULL THEN 'watchlist'
-              WHEN chart_configuration_id IS NOT NULL THEN 'chart_configuration'
-              WHEN user_trigger_id IS NOT NULL THEN 'user_trigger'
-            END
-            """)
+          entity_id: entity_id_selection(),
+          entity_type: entity_type_selection()
         }
       )
 
@@ -364,7 +362,7 @@ defmodule Sanbase.Entity do
     {:ok, query}
   end
 
-  defp most_voted_base_query(entities, opts) when is_list(entities) and entities != [] do
+  def most_voted_base_query(entities, opts) when is_list(entities) and entities != [] do
     # The most voted entity could have been  made private at some point after
     # getting votes. For this reasonlook only at entities that are public. In
     # the case where the user is fetching their own entities that are with most
@@ -390,7 +388,52 @@ defmodule Sanbase.Entity do
         |> or_where([v], field(v, ^field) in subquery(entity_ids_query))
       end)
 
+    query =
+      case Keyword.get(opts, :current_user_voted_for_only) do
+        user_id when is_integer(user_id) ->
+          filter_user_voted_for_entities(query, user_id)
+
+        _ ->
+          query
+      end
+
     {:ok, query}
+  end
+
+  def filter_user_voted_for_entities(query, user_id) do
+    # Get a list of the entities that the given user has voted for. All votes
+    # (between 1 and 20) are recorded on the same row in the `count` column, so
+    # no `distinct` is required. These entity ids are then fed to a where clause
+    # filter that will return only those entities. NOTE: We cannot just put
+    # `where: vote.user_id == ^user_id` in the query as this will not properly
+    # count all votes but only the votes cast by the user. This will make it
+    # impossible to sort by most voted first then.
+    result =
+      from(v in Sanbase.Vote,
+        where: v.user_id == ^user_id,
+        distinct: true,
+        select: %{
+          entity_id: entity_id_selection(),
+          entity_type: entity_type_selection()
+        }
+      )
+      |> Sanbase.Repo.all()
+      |> Enum.reduce(%{}, fn %{entity_id: id, entity_type: type}, acc ->
+        Map.update(acc, type, [id], &[id | &1])
+      end)
+
+    post_ids = result["insight"] || []
+    watchlist_ids = result["watchlist"] || []
+    chart_configuration_ids = result["chart_configuration"] || []
+    user_trigger_ids = result["user_trigger"] || []
+
+    from(v in query,
+      where:
+        v.post_id in ^post_ids or
+          v.watchlist_id in ^watchlist_ids or
+          v.chart_configuration_id in ^chart_configuration_ids or
+          v.user_trigger_id in ^user_trigger_ids
+    )
   end
 
   defp fetch_entities_by_ids(list) do

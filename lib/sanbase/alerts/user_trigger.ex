@@ -471,7 +471,7 @@ defmodule Sanbase.Alert.UserTrigger do
           where: trigger_target_is_slug(slugs)
         )
 
-      data ->
+      _ ->
         query
     end
   end

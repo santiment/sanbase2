@@ -180,7 +180,9 @@ defmodule Sanbase.Entity do
     {:ok, query} = most_recent_base_query(entities, opts)
 
     total_count =
-      from(entity in subquery(query), select: fragment("COUNT(*)"))
+      from(entity in subquery(query),
+        select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)
+      )
       |> Sanbase.Repo.one()
 
     {:ok, total_count}

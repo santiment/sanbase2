@@ -263,10 +263,20 @@ defmodule Sanbase.Entity do
     query =
       from(
         v in query,
-        group_by: [v.post_id, v.watchlist_id, v.chart_configuration_id, v.user_trigger_id],
-        order_by: [desc: coalesce(sum(v.count), 0)]
+        group_by: [v.post_id, v.watchlist_id, v.chart_configuration_id, v.user_trigger_id]
       )
       |> paginate(opts)
+
+    query =
+      case Keyword.get(opts, :current_user_voted_for_only) do
+        user_id when is_integer(user_id) ->
+          query
+          |> order_by([_v], desc: fragment("MAX(updated_at) FILTER (WHERE user_id = ?)", ^user_id))
+
+        _ ->
+          query
+          |> order_by([v], desc: coalesce(sum(v.count), 0))
+      end
 
     # For simplicity include all the known in the query here. The ones that are
     # not wanted have their rows excluded in the above build where clause and
@@ -418,14 +428,17 @@ defmodule Sanbase.Entity do
         }
       )
       |> Sanbase.Repo.all()
+
+    ids =
+      result
       |> Enum.reduce(%{}, fn %{entity_id: id, entity_type: type}, acc ->
         Map.update(acc, type, [id], &[id | &1])
       end)
 
-    post_ids = result["insight"] || []
-    watchlist_ids = result["watchlist"] || []
-    chart_configuration_ids = result["chart_configuration"] || []
-    user_trigger_ids = result["user_trigger"] || []
+    post_ids = ids["insight"] || []
+    watchlist_ids = ids["watchlist"] || []
+    chart_configuration_ids = ids["chart_configuration"] || []
+    user_trigger_ids = ids["user_trigger"] || []
 
     from(v in query,
       where:

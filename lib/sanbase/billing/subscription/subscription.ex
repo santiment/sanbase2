@@ -546,7 +546,8 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  defp recalc_percent_off(user_id, plan_id) when plan_id not in @annual_discount_plan_ids, do: nil
+  defp recalc_percent_off(_user_id, plan_id) when plan_id not in @annual_discount_plan_ids,
+    do: nil
 
   defp recalc_percent_off(user_id, plan_id) when plan_id in @annual_discount_plan_ids do
     case annual_discount_eligibility(user_id) do

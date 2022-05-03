@@ -382,7 +382,10 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
         }
       }
 
-      assert Sanbase.WatchlistFunction.valid_function?(function)
+      Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_by_filter/6, {:ok, []})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert Sanbase.WatchlistFunction.valid_function?(function)
+      end)
 
       function
     end
@@ -394,7 +397,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
         inserted_at: seconds_ago(30)
       )
 
-    s2 =
+    _s2 =
       insert(:screener,
         is_public: true,
         function: function.(["social_volume_total"]),

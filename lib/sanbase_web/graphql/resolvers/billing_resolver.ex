@@ -159,17 +159,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def fetch_default_payment_instrument(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    with {:ok, customer} <- StripeApi.fetch_default_card(current_user) do
+    with {:ok, customer} <- StripeApi.fetch_default_card(current_user),
+         {:card?, card} when not is_nil(card) <- {:card?, customer.default_source} do
       {:ok,
        %{
-         last4: customer.default_source.last4,
-         dynamic_last4: customer.default_source.dynamic_last4,
-         exp_year: customer.default_source.exp_year,
-         exp_month: customer.default_source.exp_month,
-         brand: customer.default_source.brand,
-         funding: customer.default_source.funding
+         last4: card.last4,
+         dynamic_last4: card.dynamic_last4,
+         exp_year: card.exp_year,
+         exp_month: card.exp_month,
+         brand: card.brand,
+         funding: card.funding
        }}
     else
+      {:card?, nil} ->
+        {:error, "Customer has no default payment instrument"}
+
       {:error, %Stripe.Error{message: message} = reason} ->
         log_error("Error fetching default payment instrument", reason)
         {:error, message}

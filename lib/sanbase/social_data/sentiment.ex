@@ -40,6 +40,7 @@ defmodule Sanbase.SocialData.Sentiment do
   defp sentiment_request(selector, from, to, interval, source, type) do
     with {:ok, search_text} <- SocialHelper.social_metrics_selector_handler(selector) do
       url = "#{metrics_hub_url()}/sentiment_#{type}"
+      source = SocialHelper.process_source(source)
 
       options = [
         recv_timeout: @recv_timeout,

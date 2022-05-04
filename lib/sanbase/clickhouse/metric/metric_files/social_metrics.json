@@ -680,8 +680,7 @@
       "realtime": "free"
     },
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -703,8 +702,7 @@
       "realtime": "free"
     },
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",

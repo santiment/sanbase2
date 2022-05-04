@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.0
--- Dumped by pg_dump version 14.0
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -6648,7 +6648,7 @@ ALTER TABLE ONLY public.user_uniswap_staking
 --
 
 ALTER TABLE ONLY public.votes
-    ADD CONSTRAINT votes_chart_configuration_id_fkey FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id);
+    ADD CONSTRAINT votes_chart_configuration_id_fkey FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id) ON DELETE CASCADE;
 
 
 --
@@ -6680,7 +6680,7 @@ ALTER TABLE ONLY public.votes
 --
 
 ALTER TABLE ONLY public.votes
-    ADD CONSTRAINT votes_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id);
+    ADD CONSTRAINT votes_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id) ON DELETE CASCADE;
 
 
 --
@@ -6688,7 +6688,7 @@ ALTER TABLE ONLY public.votes
 --
 
 ALTER TABLE ONLY public.votes
-    ADD CONSTRAINT votes_watchlist_id_fkey FOREIGN KEY (watchlist_id) REFERENCES public.user_lists(id);
+    ADD CONSTRAINT votes_watchlist_id_fkey FOREIGN KEY (watchlist_id) REFERENCES public.user_lists(id) ON DELETE CASCADE;
 
 
 --
@@ -7064,7 +7064,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200826101751);
 INSERT INTO public."schema_migrations" (version) VALUES (20200826114101);
 INSERT INTO public."schema_migrations" (version) VALUES (20200908092849);
 INSERT INTO public."schema_migrations" (version) VALUES (20200923090710);
-INSERT INTO public."schema_migrations" (version) VALUES (20200930103424);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016091443);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016105225);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016124426);
@@ -7145,3 +7144,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220201122953);
 INSERT INTO public."schema_migrations" (version) VALUES (20220330100631);
 INSERT INTO public."schema_migrations" (version) VALUES (20220404132445);
 INSERT INTO public."schema_migrations" (version) VALUES (20220413130352);
+INSERT INTO public."schema_migrations" (version) VALUES (20220504082527);

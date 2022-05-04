@@ -322,6 +322,15 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     assert UserList.fetch_user_lists(user, :project) == {:ok, []}
   end
 
+  test "remove watchlist with vote", %{user: user, conn: conn} do
+    {:ok, watchlist} = UserList.create_user_list(user, %{name: "My Test List"})
+    vote(conn, watchlist.id, direction: :up)
+
+    remove_watchlist(conn, watchlist.id)
+
+    assert UserList.fetch_user_lists(user, :project) == {:ok, []}
+  end
+
   test "remove watchlist twice in a row, returns proper error message", %{user: user, conn: conn} do
     {:ok, watchlist} = UserList.create_user_list(user, %{name: "My Test List"})
 

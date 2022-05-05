@@ -25,7 +25,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_volume_twitter_crypto",
     "social_volume_twitter_news",
     "social_volume_youtube_videos",
-    "social_volume_discord",
     "social_volume_total"
   ]
 

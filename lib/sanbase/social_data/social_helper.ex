@@ -9,11 +9,11 @@ defmodule Sanbase.SocialData.SocialHelper do
     :bitcointalk,
     :twitter_crypto,
     :twitter_news,
-    :"youtube-videos"
+    :youtube_videos,
+    :discord
   ]
 
   def sources(), do: @sources
-  def sentiment_sources(), do: (@sources ++ [:youtube]) -- [:"youtube-videos"]
 
   def social_metrics_selector_handler(%{slug: slugs}) when is_list(slugs) do
     {:error, "Social Metrics cannot work with list of slugs."}
@@ -49,7 +49,7 @@ defmodule Sanbase.SocialData.SocialHelper do
     end
 
     source =
-      (sentiment_sources() ++ [:total])
+      (sources() ++ [:total])
       |> Enum.map(fn source -> Atom.to_string(source) end)
       |> Enum.find(&String.ends_with?(str, &1))
 
@@ -57,7 +57,4 @@ defmodule Sanbase.SocialData.SocialHelper do
 
     {type, source}
   end
-
-  def process_source("youtube"), do: "youtube-videos"
-  def process_source(source), do: source
 end

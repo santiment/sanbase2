@@ -65,7 +65,6 @@ defmodule Sanbase.SocialData.SocialDominance do
 
   defp social_dominance_request(%{slug: slug}, from, to, interval, source) do
     url = "#{metrics_hub_url()}/social_dominance"
-    source = SocialHelper.process_source(source)
 
     options = [
       recv_timeout: @recv_timeout,

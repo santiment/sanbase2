@@ -680,7 +680,8 @@
       "realtime": "free"
     },
     "selectors": [
-      "slug"
+      "slug",
+      "text"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -702,7 +703,8 @@
       "realtime": "free"
     },
     "selectors": [
-      "slug"
+      "slug",
+      "text"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -956,8 +958,8 @@
   },
   {
     "human_readable_name": "Social Volume Youtube",
-    "name": "social_volume_youtube",
-    "metric": "social_volume_youtube",
+    "name": "social_volume_youtube_videos",
+    "metric": "social_volume_youtube_videos",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -979,8 +981,8 @@
   },
   {
     "human_readable_name": "Social Dominance Youtube",
-    "name": "social_dominance_youtube",
-    "metric": "social_dominance_youtube",
+    "name": "social_dominance_youtube_videos",
+    "metric": "social_dominance_youtube_videos",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
@@ -999,8 +1001,8 @@
   },
   {
     "human_readable_name": "Sentiment Volume Consumed Youtube",
-    "name": "sentiment_volume_consumed_youtube",
-    "metric": "sentiment_volume_consumed_youtube",
+    "name": "sentiment_volume_consumed_youtube_videos",
+    "metric": "sentiment_volume_consumed_youtube_videos",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
@@ -1019,8 +1021,8 @@
   },
   {
     "human_readable_name": "Sentiment Positive Youtube",
-    "name": "sentiment_positive_youtube",
-    "metric": "sentiment_positive_youtube",
+    "name": "sentiment_positive_youtube_videos",
+    "metric": "sentiment_positive_youtube_videos",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
@@ -1039,8 +1041,8 @@
   },
   {
     "human_readable_name": "Sentiment Negative Youtube",
-    "name": "sentiment_negative_youtube",
-    "metric": "sentiment_negative_youtube",
+    "name": "sentiment_negative_youtube_videos",
+    "metric": "sentiment_negative_youtube_videos",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
@@ -1119,8 +1121,8 @@
   },
   {
     "human_readable_name": "Sentiment Balance Youtube",
-    "name": "sentiment_balance_youtube",
-    "metric": "sentiment_balance_youtube",
+    "name": "sentiment_balance_youtube_videos",
+    "metric": "sentiment_balance_youtube_videos",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
@@ -1287,8 +1289,7 @@
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1307,8 +1308,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1327,8 +1327,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1347,8 +1346,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1367,8 +1365,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1387,8 +1384,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1407,8 +1403,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1427,8 +1422,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1447,8 +1441,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1467,8 +1460,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1487,8 +1479,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1507,8 +1498,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1527,8 +1517,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1542,13 +1531,12 @@
   },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Youtube",
-    "name": "social_dominance_youtube_1h_moving_average",
-    "metric": "social_dominance_youtube_1h",
+    "name": "social_dominance_youtube_videos_1h_moving_average",
+    "metric": "social_dominance_youtube_videos_1h",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1562,13 +1550,12 @@
   },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance Youtube",
-    "name": "social_dominance_youtube_24h_moving_average",
-    "metric": "social_dominance_youtube_24h",
+    "name": "social_dominance_youtube_videos_24h_moving_average",
+    "metric": "social_dominance_youtube_videos_24h",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1587,8 +1574,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1607,8 +1593,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",

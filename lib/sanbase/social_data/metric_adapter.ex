@@ -24,7 +24,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_volume_bitcointalk",
     "social_volume_twitter_crypto",
     "social_volume_twitter_news",
-    "social_volume_youtube",
+    "social_volume_youtube_videos",
+    "social_volume_discord",
     "social_volume_total"
   ]
 
@@ -40,7 +41,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_dominance_reddit",
     "social_dominance_twitter_crypto",
     "social_dominance_twitter_news",
-    "social_dominance_youtube",
+    "social_dominance_youtube_videos",
     "social_dominance_total"
   ]
 
@@ -48,7 +49,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
                                     type <- ["positive", "negative", "balance", "volume_consumed"],
                                     source <-
                                       ["total"] ++
-                                        Sanbase.SocialData.SocialHelper.sentiment_sources(),
+                                        Sanbase.SocialData.SocialHelper.sources(),
                                     do: "#{name}_#{type}_#{source}"
 
   @active_users_timeseries_metrics ["social_active_users"]

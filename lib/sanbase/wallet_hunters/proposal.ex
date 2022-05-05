@@ -360,13 +360,19 @@ defmodule Sanbase.WalletHunters.Proposal do
            Contract.get_trx_receipt_by_id(transaction_id) do
       if receipt["status"] == "0x1" and logs != [] do
         event = hd(logs)
-        [_, proposal_id, _] = event["topics"]
-        proposal_id = proposal_id |> String.slice(2..-1) |> Integer.parse(16) |> elem(0)
 
-        update_by_transaction_id(transaction_id, %{
-          proposal_id: proposal_id,
-          transaction_status: "ok"
-        })
+        case event["topics"] do
+          [_, proposal_id, _] when is_binary(proposal_id) ->
+            proposal_id = proposal_id |> String.slice(2..-1) |> Integer.parse(16) |> elem(0)
+
+            update_by_transaction_id(transaction_id, %{
+              proposal_id: proposal_id,
+              transaction_status: "ok"
+            })
+
+          _ ->
+            update_by_transaction_id(transaction_id, %{transaction_status: "error"})
+        end
       else
         update_by_transaction_id(transaction_id, %{transaction_status: "error"})
       end

@@ -368,9 +368,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   defp asset_filter_value(%{slug: slug_or_slugs}), do: slug_or_slugs
 
-  defp asset_filter_value(%{contract_address_raw: address}),
-    do: Sanbase.BlockchainAddress.to_internal_format(address)
-
   defp asset_filter_value(not_supported),
     do: raise("Got unsupported selector: #{inspect(not_supported)}")
 end

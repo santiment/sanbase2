@@ -23,7 +23,10 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   def social_volume(%{contract_address: contract} = selector, from, to, interval, source, opts)
       when is_binary(contract) do
-    search_text = search_text_by_contract(contract)
+    search_text =
+      contract
+      |> Sanbase.BlockchainAddress.to_internal_format()
+      |> search_text_by_contract()
 
     case search_text do
       text when is_binary(text) ->

@@ -45,7 +45,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @type interval :: String.t()
 
   defguard is_supported_selector(s)
-           when is_map(s) and (is_map_key(s, :slug) or is_map_key(s, :contract_address_raw))
+           when is_map(s) and is_map_key(s, :slug)
 
   @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics

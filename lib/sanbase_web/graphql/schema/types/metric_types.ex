@@ -30,7 +30,6 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:ignored_slugs)
     value(:market_segments)
     value(:contract_address)
-    value(:contract_address_raw)
     # watchlist related
     value(:watchlist_slug)
     value(:watchlist_id)
@@ -86,9 +85,6 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:label_fqn, :string)
     field(:label_fqns, list_of(:string))
     field(:holders_count, :integer)
-
-    # contract address not transformed to slug selector
-    field(:contract_address_raw, :string)
   end
 
   input_object :timeseries_metric_transform_input_object do

@@ -87,7 +87,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     # FIXME: Some of the `nft` metrics need additional filter for `owner=opensea`
     # to show correct values. Remove after fixed by bigdata.
     filters =
-      if String.starts_with?(metric, "nft_") and metric not in ["nft_social_volume"] do
+      if String.starts_with?(metric, "nft_") do
         [owner: "opensea"]
       else
         Keyword.get(opts, :additional_filters, [])

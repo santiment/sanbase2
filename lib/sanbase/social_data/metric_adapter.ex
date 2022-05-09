@@ -22,7 +22,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_volume_reddit",
     "social_volume_twitter",
     "social_volume_bitcointalk",
-    "social_volume_total"
+    "social_volume_total",
+    "nft_social_volume"
   ]
 
   @community_messages_count_timeseries_metrics [
@@ -84,6 +85,30 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
+
+  @impl Sanbase.Metric.Behaviour
+  def timeseries_data("nft_social_volume", %{text: text} = selector, from, to, interval, _opts)
+      when is_binary(text) do
+    Sanbase.SocialData.social_volume(selector, from, to, interval, "total",
+      metric: "nft_social_volume"
+    )
+    |> transform_to_value_pairs(:mentions_count)
+  end
+
+  def timeseries_data(
+        "nft_social_volume",
+        %{contract_address: contract} = selector,
+        from,
+        to,
+        interval,
+        _opts
+      )
+      when is_binary(contract) do
+    Sanbase.SocialData.social_volume(selector, from, to, interval, "total",
+      metric: "nft_social_volume"
+    )
+    |> transform_to_value_pairs(:mentions_count)
+  end
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, selector, from, to, interval, _opts)

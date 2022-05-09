@@ -7,8 +7,6 @@ defmodule SanbaseWeb.ExAdmin.Billing.PromoTrial do
   alias Sanbase.Billing.Subscription.PromoTrial
 
   register_resource PromoTrial do
-    action_items(only: [:new, :show])
-
     form promo_trial do
       inputs do
         input(

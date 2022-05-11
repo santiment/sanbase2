@@ -58,9 +58,15 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
     end
   end
 
-  def halt_sansheets_request?(conn, %{auth: %{subscription: %{plan: %{name: plan_name}}}}) do
+  def halt_sansheets_request?(conn, %{auth: %{subscription: %{plan: %{name: plan_name}}} = auth}) do
     case is_sansheets_request(conn) and plan_name == "FREE" do
       true ->
+        user_id = get_in(auth, [:current_user, Access.key(:id)])
+
+        Logger.info(
+          "[RequestHaltPlug] Halt sansheets request with FREE plan. User id: #{user_id}"
+        )
+
         error_map = %{
           error_msg: """
           You need to upgrade Sanbase Pro in order to use SanSheets.

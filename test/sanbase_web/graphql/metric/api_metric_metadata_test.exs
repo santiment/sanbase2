@@ -39,7 +39,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
                    "SLUG",
                    "SLUGS",
                    "CONTRACT_ADDRESS",
-                   "CONTRACT_ADDRESS_RAW",
                    "MARKET_SEGMENTS",
                    "TEXT",
                    "LABEL",

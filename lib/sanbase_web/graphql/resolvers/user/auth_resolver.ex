@@ -79,6 +79,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
   def email_login(%{email: email} = args, %{
         context: %{
+          origin_url: origin_url,
           origin_host_parts: origin_host_parts,
           remote_ip: remote_ip
         }
@@ -94,6 +95,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
       {:ok, %{success: true, first_login: user.first_login}}
     else
       {:error, :too_many_login_attempts} ->
+        Logger.info(
+          "Login failed: too many login attempts. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"
+        )
+
         {:error, message: "Too many login attempts, try again after a few minutes"}
 
       _ ->

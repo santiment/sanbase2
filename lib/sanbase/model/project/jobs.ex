@@ -1,7 +1,11 @@
 defmodule Sanbase.Model.Project.Jobs do
   alias Sanbase.Model.Project
 
+  require Logger
+
   def fill_coinmarketcap_id() do
+    Logger.info("Run Sanbase.Model.Project.Jobs fill_coinmarketcap_id job")
+
     projects = Project.List.projects()
 
     coinmarketcap_mapping =

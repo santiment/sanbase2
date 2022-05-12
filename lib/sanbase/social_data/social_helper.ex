@@ -2,7 +2,15 @@ defmodule Sanbase.SocialData.SocialHelper do
   alias Sanbase.Model.Project
   alias Sanbase.Model.Project.SocialVolumeQuery
 
-  @sources [:telegram, :reddit, :twitter, :bitcointalk]
+  @sources [
+    :telegram,
+    :reddit,
+    :twitter,
+    :bitcointalk,
+    :twitter_crypto,
+    :twitter_news,
+    :youtube_videos
+  ]
 
   def sources(), do: @sources
 

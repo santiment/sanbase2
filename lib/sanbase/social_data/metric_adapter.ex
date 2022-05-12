@@ -86,13 +86,22 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
 
+  defguard is_supported_nft_sv_selector(s)
+           when is_map(s) and (is_map_key(s, :text) or is_map_key(s, :contract_address))
+
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data("nft_social_volume", %{text: text} = selector, from, to, interval, _opts)
-      when is_binary(text) do
+  def timeseries_data("nft_social_volume", selector, from, to, interval, _opts)
+      when is_supported_nft_sv_selector(selector) do
     Sanbase.SocialData.social_volume(selector, from, to, interval, "total",
       metric: "nft_social_volume"
     )
     |> transform_to_value_pairs(:mentions_count)
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def timeseries_data("nft_social_volume", selector, from, to, interval, _opts)
+      when not is_supported_nft_sv_selector(selector) do
+    {:error, "The provided selector can't be used for metric: nft_social_volume"}
   end
 
   def timeseries_data(

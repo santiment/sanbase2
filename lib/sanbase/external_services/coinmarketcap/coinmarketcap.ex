@@ -150,23 +150,26 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
 
     for %ScheduleRescrapePrice{project: project, from: from} = srp <- rescrapes do
-      {:ok, original_last_updated} =
-        case PriceScrapingProgress.last_scraped(project.slug, @source) do
-          nil -> WebApi.first_datetime(project)
-          %DateTime{} = dt -> {:ok, dt}
-        end
+      with {:ok, original_last_updated} <- get_last_scraped_datetime(project) do
+        kill_scheduled_scraping(project)
 
-      kill_scheduled_scraping(project)
+        {:ok, _} = PriceScrapingProgress.store_progress(project.slug, @source, from)
 
-      {:ok, _} = PriceScrapingProgress.store_progress(project.slug, @source, from)
+        srp
+        |> ScheduleRescrapePrice.changeset(%{
+          in_progress: true,
+          finished: false,
+          original_last_updated: original_last_updated
+        })
+        |> ScheduleRescrapePrice.update()
+      end
+    end
+  end
 
-      srp
-      |> ScheduleRescrapePrice.changeset(%{
-        in_progress: true,
-        finished: false,
-        original_last_updated: original_last_updated
-      })
-      |> ScheduleRescrapePrice.update()
+  defp get_last_scraped_datetime(project) do
+    case PriceScrapingProgress.last_scraped(project.slug, @source) do
+      nil -> WebApi.first_datetime(project)
+      %DateTime{} = dt -> {:ok, dt}
     end
   end
 

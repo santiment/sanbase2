@@ -671,9 +671,95 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Social Volume Twitter Crypto",
+    "name": "social_volume_twitter_crypto",
+    "metric": "social_volume_twitter_crypto",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Social Volume Twitter News",
+    "name": "social_volume_twitter_news",
+    "metric": "social_volume_twitter_news",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Social Dominance Twitter",
     "name": "social_dominance_twitter",
     "metric": "social_dominance_twitter_v2",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Social Dominance Twitter Crypto",
+    "name": "social_dominance_twitter_crypto",
+    "metric": "social_dominance_twitter_crypto",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Social Dominance Twitter News",
+    "name": "social_dominance_twitter_news",
+    "metric": "social_dominance_twitter_news",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
@@ -711,9 +797,89 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Sentiment Volume Consumed Twitter Crypto",
+    "name": "sentiment_volume_consumed_twitter_crypto",
+    "metric": "sentiment_volume_consumed_twitter_crypto",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Twitter News",
+    "name": "sentiment_volume_consumed_twitter_news",
+    "metric": "sentiment_volume_consumed_twitter_news",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Sentiment Positive Twitter",
     "name": "sentiment_positive_twitter",
     "metric": "sentiment_positive_twitter",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Positive Twitter Crypto",
+    "name": "sentiment_positive_twitter_crypto",
+    "metric": "sentiment_positive_twitter_crypto",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Positive Twitter News",
+    "name": "sentiment_positive_twitter_news",
+    "metric": "sentiment_positive_twitter_news",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
@@ -751,9 +917,212 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Sentiment Negative Twitter Crypto",
+    "name": "sentiment_negative_twitter_crypto",
+    "metric": "sentiment_negative_twitter_crypto",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Negative Twitter News",
+    "name": "sentiment_negative_twitter_news",
+    "metric": "sentiment_negative_twitter_news",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Social Volume Youtube",
+    "name": "social_volume_youtube_videos",
+    "metric": "social_volume_youtube_videos",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Social Dominance Youtube",
+    "name": "social_dominance_youtube_videos",
+    "metric": "social_dominance_youtube_videos",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Youtube",
+    "name": "sentiment_volume_consumed_youtube_videos",
+    "metric": "sentiment_volume_consumed_youtube_videos",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Positive Youtube",
+    "name": "sentiment_positive_youtube_videos",
+    "metric": "sentiment_positive_youtube_videos",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Negative Youtube",
+    "name": "sentiment_negative_youtube_videos",
+    "metric": "sentiment_negative_youtube_videos",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Sentiment Balance Twitter",
     "name": "sentiment_balance_twitter",
     "metric": "sentiment_balance_twitter",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Twitter Crypto",
+    "name": "sentiment_balance_twitter_crypto",
+    "metric": "sentiment_balance_twitter_crypto",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Twitter News",
+    "name": "sentiment_balance_twitter_news",
+    "metric": "sentiment_balance_twitter_news",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Youtube",
+    "name": "sentiment_balance_youtube_videos",
+    "metric": "sentiment_balance_youtube_videos",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
@@ -920,8 +1289,7 @@
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -940,8 +1308,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -960,8 +1327,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -980,8 +1346,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1000,8 +1365,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1020,8 +1384,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1040,8 +1403,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1060,8 +1422,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1080,8 +1441,121 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "1h Moving Average Of Social Dominance Twitter Crypto",
+    "name": "social_dominance_twitter_crypto_1h_moving_average",
+    "metric": "social_dominance_twitter_crypto_1h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "24h Moving Average Of Social Dominance Twitter Crypto",
+    "name": "social_dominance_twitter_crypto_24h_moving_average",
+    "metric": "social_dominance_twitter_crypto_24h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "1h Moving Average Of Social Dominance Twitter News",
+    "name": "social_dominance_twitter_news_1h_moving_average",
+    "metric": "social_dominance_twitter_news_1h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "24h Moving Average Of Social Dominance Twitter News",
+    "name": "social_dominance_twitter_news_24h_moving_average",
+    "metric": "social_dominance_twitter_news_24h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "1h Moving Average Of Social Dominance Youtube",
+    "name": "social_dominance_youtube_videos_1h_moving_average",
+    "metric": "social_dominance_youtube_videos_1h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "24h Moving Average Of Social Dominance Youtube",
+    "name": "social_dominance_youtube_videos_24h_moving_average",
+    "metric": "social_dominance_youtube_videos_24h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1100,8 +1574,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1120,30 +1593,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
-      "slug",
-      "text"
-    ],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "NFT Social volume",
-    "name": "nft_social_volume",
-    "metric": "nft_collections_social_volume",
-    "version": "2019-01-01",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": [
-      "contract_address_raw"
+      "slug"
     ],
     "min_plan": {
       "SANAPI": "free",

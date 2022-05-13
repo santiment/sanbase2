@@ -18,6 +18,9 @@ defmodule Sanbase.SocialData do
   defdelegate social_volume(selector, from, to, interval, source),
     to: SocialVolume
 
+  defdelegate social_volume(selector, from, to, interval, source, opts),
+    to: SocialVolume
+
   defdelegate social_active_users(selector, from, to, interval),
     to: ActiveUsers
 

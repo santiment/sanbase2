@@ -190,6 +190,8 @@ defmodule Sanbase.Price do
           timeseries_metric_data_result
   def timeseries_metric_data(slug_or_slugs, metric, from, to, interval, opts \\ [])
 
+  def timeseries_metric_data([], _, _, _, _, _), do: {:ok, []}
+
   # TODO: Use the source
   def timeseries_metric_data("TOTAL_ERC20", metric, from, to, interval, opts) do
     with {:ok, _source} <- opts_to_source(opts) do
@@ -224,6 +226,8 @@ defmodule Sanbase.Price do
       exec_timeseries_data_query(query, args)
     end
   end
+
+  def timeseries_metric_data_per_slug([], _, _, _, _, _), do: {:ok, []}
 
   def timeseries_metric_data_per_slug(slug_or_slugs, metric, from, to, interval, opts) do
     with {:ok, source} <- opts_to_source(opts) do

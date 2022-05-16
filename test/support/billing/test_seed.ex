@@ -3,6 +3,22 @@ defmodule Sanbase.Billing.TestSeed do
 
   @key :product_and_plans_map_for_tests
 
+  alias Sanbase.Accounts.Role
+
+  def seed_user_roles() do
+    case Sanbase.Repo.all(Role) do
+      [] ->
+        Sanbase.Repo.query!("""
+        INSERT INTO roles (id, name) VALUES
+          (1, 'Santiment Team Member'),
+          (2, 'Santiment Family Member')
+        """)
+
+      _ ->
+        :ok
+    end
+  end
+
   def seed_products_and_plans() do
     ets_table = Sanbase.TestSetupService.get_ets_table_name()
 

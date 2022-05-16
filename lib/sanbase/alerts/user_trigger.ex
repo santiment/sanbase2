@@ -117,8 +117,9 @@ defmodule Sanbase.Alert.UserTrigger do
     from(ul in __MODULE__)
     |> where([ul], trigger_is_public())
     |> maybe_apply_projects_filter(opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([ul], ul.id)
-    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
   end
 
   @impl Sanbase.Entity.Behaviour
@@ -126,8 +127,8 @@ defmodule Sanbase.Alert.UserTrigger do
     from(ul in __MODULE__)
     |> where([ul], ul.user_id == ^user_id)
     |> maybe_apply_projects_filter(opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([ul], ul.id)
-    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
   end
 
   @doc ~s"""

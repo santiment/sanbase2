@@ -39,6 +39,7 @@ defmodule SanbaseWeb.ConnCase do
     conn = Phoenix.ConnTest.build_conn()
 
     product_and_plans = Sanbase.Billing.TestSeed.seed_products_and_plans()
+    Sanbase.Billing.TestSeed.seed_user_roles()
 
     {:ok,
      conn: conn,

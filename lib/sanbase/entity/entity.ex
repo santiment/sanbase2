@@ -48,7 +48,12 @@ defmodule Sanbase.Entity do
   @supported_entity_type [:insight, :watchlist, :screener, :chart_configuration, :user_trigger]
 
   @type entity_type :: :insight | :watchlist | :screener | :chart_configuration | :user_trigger
-  @type option :: {:page, non_neg_integer()} | {:page_size, non_neg_integer()} | {:cursor, map()}
+  @type option ::
+          {:page, non_neg_integer()}
+          | {:page_size, non_neg_integer()}
+          | {:cursor, map()}
+          | {:user_ids, list(non_neg_integer())}
+
   @type opts :: [option]
   @type result_map :: %{
           optional(:insight) => %Post{},
@@ -145,32 +150,6 @@ defmodule Sanbase.Entity do
     query
     |> limit(^limit)
     |> offset(^offset)
-  end
-
-  @doc ~s"""
-  Apply a datetime filter, if defined in the opts, to a query.
-
-  This query extension function is defined here and is called with the
-  proper arguments from the entity modules' functions.
-  """
-  @spec maybe_filter_by_cursor(Ecto.Query.t(), atom, opts) :: Ecto.Query.t()
-  def maybe_filter_by_cursor(query, field, opts) do
-    case Keyword.get(opts, :cursor) do
-      nil ->
-        query
-
-      %{type: :before, datetime: datetime} ->
-        from(
-          entity in query,
-          where: field(entity, ^field) <= ^datetime
-        )
-
-      %{type: :after, datetime: datetime} ->
-        from(
-          entity in query,
-          where: field(entity, ^field) >= ^datetime
-        )
-    end
   end
 
   # Private functions
@@ -493,11 +472,14 @@ defmodule Sanbase.Entity do
     end)
   end
 
+  # Which of the provided by the API opts are passed to the entity modules
+  @passed_opts [:filter, :cursor, :user_ids]
+
   defp entity_ids_query(:insight, opts) do
     # `ordered?: false` is important otherwise the default order will be applied
     # and this will conflict with the distinct(true) check
     entity_opts =
-      Keyword.take(opts, [:filter, :cursor]) ++
+      Keyword.take(opts, @passed_opts) ++
         [preload?: false, distinct?: true, ordered?: false]
 
     case Keyword.get(opts, :current_user_data_only) do
@@ -510,7 +492,7 @@ defmodule Sanbase.Entity do
     # `ordered?: false` is important otherwise the default order will be applied
     # and this will conflict with the distinct(true) check
     entity_opts =
-      Keyword.take(opts, [:filter, :cursor]) ++
+      Keyword.take(opts, @passed_opts) ++
         [preload?: false, distinct?: true, ordered?: false]
 
     case Keyword.get(opts, :current_user_data_only) do
@@ -520,7 +502,7 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:screener, opts) do
-    entity_opts = Keyword.take(opts, [:filter, :cursor]) ++ [is_screener: true]
+    entity_opts = Keyword.take(opts, @passed_opts) ++ [is_screener: true]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> UserList.public_entity_ids_query(entity_opts)
@@ -529,7 +511,7 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:project_watchlist, opts) do
-    entity_opts = Keyword.take(opts, [:filter, :cursor]) ++ [is_screener: false, type: :project]
+    entity_opts = Keyword.take(opts, @passed_opts) ++ [is_screener: false, type: :project]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> UserList.public_entity_ids_query(entity_opts)
@@ -539,7 +521,8 @@ defmodule Sanbase.Entity do
 
   defp entity_ids_query(:address_watchlist, opts) do
     entity_opts =
-      Keyword.take(opts, [:filter, :cursor]) ++ [is_screener: false, type: :blockchain_address]
+      Keyword.take(opts, @passed_opts) ++
+        [is_screener: false, type: :blockchain_address]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> UserList.public_entity_ids_query(entity_opts)
@@ -548,7 +531,7 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:chart_configuration, opts) do
-    entity_opts = Keyword.take(opts, [:filter, :cursor])
+    entity_opts = Keyword.take(opts, @passed_opts)
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> Chart.Configuration.public_entity_ids_query(entity_opts)
@@ -573,14 +556,31 @@ defmodule Sanbase.Entity do
   defp deduce_entity_creation_time_field(_), do: {:inserted_at, :inserted_at}
 
   defp update_opts(opts) do
-    case Keyword.get(opts, :filter) do
-      %{slugs: slugs} = filter ->
-        ids = Sanbase.Model.Project.List.ids_by_slugs(slugs, [])
-        filter = Map.put(filter, :project_ids, ids)
-        Keyword.put(opts, :filter, filter)
+    opts =
+      case Keyword.get(opts, :filter) do
+        %{slugs: slugs} = filter ->
+          ids = Sanbase.Model.Project.List.ids_by_slugs(slugs, [])
+          filter = Map.put(filter, :project_ids, ids)
+          Keyword.put(opts, :filter, filter)
 
-      _ ->
-        opts
-    end
+        _ ->
+          opts
+      end
+
+    opts =
+      case Keyword.get(opts, :user_role_data_only) do
+        :san_family ->
+          user_ids = Sanbase.Accounts.Role.san_family_ids()
+          Keyword.put(opts, :user_ids, user_ids)
+
+        :san_team ->
+          user_ids = Sanbase.Accounts.Role.san_team_ids()
+          Keyword.put(opts, :user_ids, user_ids)
+
+        _ ->
+          opts
+      end
+
+    opts
   end
 end

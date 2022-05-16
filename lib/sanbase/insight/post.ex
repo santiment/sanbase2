@@ -89,7 +89,8 @@ defmodule Sanbase.Insight.Post do
   def public_entity_ids_query(opts) do
     public_insights_query(opts)
     |> maybe_apply_projects_filter(opts)
-    |> Sanbase.Entity.maybe_filter_by_cursor(:published_at, opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
     |> select([p], p.id)
   end
 
@@ -98,7 +99,7 @@ defmodule Sanbase.Insight.Post do
     base_insights_query(opts)
     |> by_user(user_id)
     |> maybe_apply_projects_filter(opts)
-    |> Sanbase.Entity.maybe_filter_by_cursor(:published_at, opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
     |> select([p], p.id)
   end
 

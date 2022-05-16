@@ -344,7 +344,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
       get_most_voted(
         conn,
         [:project_watchlist, :insight, :chart_configuration, :user_trigger],
-        filter: %{slugs: [p2.slug, p3.slug]}
+        slugs: [p2.slug, p3.slug]
       )
 
     data = result["data"]
@@ -367,6 +367,59 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     assert Enum.at(data, 6)["chartConfiguration"]["id"] == c2.id
     assert Enum.at(data, 7)["chartConfiguration"]["id"] == c3.id
     assert Enum.at(data, 8)["userTrigger"]["trigger"]["id"] == a2.id
+  end
+
+  test "get most voted entities with people with sanfam role", context do
+    %{conn: conn} = context
+    w0 = insert(:watchlist, type: :project, is_public: true)
+    s0 = insert(:screener, type: :project, is_public: true)
+    i0 = insert(:published_post)
+    c0 = insert(:chart_configuration, is_public: true)
+
+    user = insert(:user)
+
+    {:ok, _} =
+      Sanbase.Accounts.UserRole.create(user.id, Sanbase.Accounts.Role.san_family_role_id())
+
+    w1 = insert(:watchlist, type: :project, is_public: true, user: user)
+    s1 = insert(:screener, type: :project, is_public: true, user: user)
+    i1 = insert(:published_post, user: user)
+    c1 = insert(:chart_configuration, is_public: true, user: user)
+
+    # Vote for the non-san fam users'entities
+    for _ <- 1..4, do: vote(conn, "watchlistId", w0.id)
+    for _ <- 1..3, do: vote(conn, "insightId", i0.id)
+    for _ <- 1..2, do: vote(conn, "watchlistId", s0.id)
+    for _ <- 1..1, do: vote(conn, "chartConfigurationId", c0.id)
+
+    # Vote for the non-san fam users' entities
+    for _ <- 1..4, do: vote(conn, "watchlistId", w1.id)
+    for _ <- 1..3, do: vote(conn, "insightId", i1.id)
+    for _ <- 1..2, do: vote(conn, "watchlistId", s1.id)
+    for _ <- 1..1, do: vote(conn, "chartConfigurationId", c1.id)
+
+    result =
+      get_most_voted(
+        conn,
+        [:screener, :insight, :chart_configuration, :project_watchlist],
+        user_role_data_only: :san_family
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    # Expect: w1, i1, c1, a1
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
+    assert Enum.at(data, 1)["insight"]["id"] == i1.id
+    assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() == s1.id
+    assert Enum.at(data, 3)["chartConfiguration"]["id"] == c1.id
   end
 
   defp create_alert(user, project) do
@@ -430,6 +483,12 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
         filter -> "filter: #{map_to_input_object_str(filter)}"
       end
 
+    user_role_data_only_str =
+      case Keyword.get(opts, :user_role_data_only) do
+        nil -> ""
+        role -> "userRoleDataOnly: #{Atom.to_string(role) |> String.upcase()}"
+      end
+
     query = """
     {
       getMostVoted(
@@ -438,6 +497,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
         pageSize: #{page_size}
         cursor: { type: AFTER, datetime: "utc_now-7d" }
         #{filter_str}
+        #{user_role_data_only_str}
       ){
         stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
         data {

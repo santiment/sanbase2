@@ -13,8 +13,8 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
 
   test "alerts historical activity from sanclan user", %{conn: conn} do
     san_clan_user = insert(:user)
-    role_san_clan = insert(:role_san_clan)
-    insert(:user_role, user: san_clan_user, role: role_san_clan)
+    role_san_family = insert(:role_san_family)
+    insert(:user_role, user: san_clan_user, role: role_san_family)
 
     trigger_settings = default_trigger_settings_string_keys()
 

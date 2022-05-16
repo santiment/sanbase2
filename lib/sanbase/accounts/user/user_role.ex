@@ -17,4 +17,10 @@ defmodule Sanbase.Accounts.UserRole do
     |> cast(attrs, [:user_id, :role_id])
     |> unique_constraint(:user, name: :user_roles_user_id_role_id_index)
   end
+
+  def create(user_id, role_id) do
+    %__MODULE__{}
+    |> changeset(%{user_id: user_id, role_id: role_id})
+    |> Sanbase.Repo.insert()
+  end
 end

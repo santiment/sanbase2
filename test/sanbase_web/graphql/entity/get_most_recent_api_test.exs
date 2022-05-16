@@ -5,6 +5,8 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
   import Sanbase.Factory
 
   setup do
+    _role = insert(:role_san_family)
+
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
 
@@ -427,6 +429,51 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() == s1.id
   end
 
+  test "get most recent entities with people with sanfam role", context do
+    %{conn: conn} = context
+    _ = insert(:watchlist, type: :project, is_public: true)
+    _ = insert(:screener, type: :project, is_public: true)
+    _ = insert(:published_post)
+    _ = insert(:chart_configuration, is_public: true)
+
+    user = insert(:user)
+
+    {:ok, _} =
+      Sanbase.Accounts.UserRole.create(user.id, Sanbase.Accounts.Role.san_family_role_id())
+
+    w1 =
+      insert(:watchlist, type: :project, is_public: true, user: user, inserted_at: seconds_ago(30))
+
+    s1 =
+      insert(:screener, type: :project, is_public: true, user: user, inserted_at: seconds_ago(25))
+
+    i1 = insert(:published_post, user: user, published_at: seconds_ago(20))
+    c1 = insert(:chart_configuration, is_public: true, user: user, inserted_at: seconds_ago(15))
+
+    result =
+      get_most_recent(
+        conn,
+        [:screener, :insight, :chart_configuration, :project_watchlist],
+        user_role_data_only: :san_family
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    # Expect: w1, i1, c1, a1
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert Enum.at(data, 0)["chartConfiguration"]["id"] == c1.id
+    assert Enum.at(data, 1)["insight"]["id"] == i1.id
+    assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() == s1.id
+    assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
+  end
+
   defp create_alert(user, project, inserted_at) do
     trigger_settings = %{
       type: "metric_signal",
@@ -477,6 +524,12 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
         filter -> "filter: #{map_to_input_object_str(filter)}"
       end
 
+    user_role_data_only_str =
+      case Keyword.get(opts, :user_role_data_only) do
+        nil -> ""
+        role -> "userRoleDataOnly: #{Atom.to_string(role) |> String.upcase()}"
+      end
+
     query = """
     {
       getMostRecent(
@@ -484,6 +537,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
         page: #{page}
         pageSize: #{page_size}
         #{filter_str}
+        #{user_role_data_only_str}
       ){
         stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
         data {

@@ -128,24 +128,25 @@ defmodule Sanbase.UserList do
     from(ul in __MODULE__)
     |> where([ul], ul.is_public == true)
     |> distinct(true)
-    |> select([ul], ul.id)
     |> maybe_filter_is_screener_query(opts)
     |> maybe_apply_metrics_filter(opts)
     |> maybe_filter_by_type_query(opts)
     |> maybe_apply_projects_filter(opts)
-    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> select([ul], ul.id)
   end
 
   @impl Sanbase.Entity.Behaviour
   def user_entity_ids_query(user_id, opts) do
     from(ul in __MODULE__)
     |> where([ul], ul.user_id == ^user_id)
-    |> select([ul], ul.id)
     |> maybe_filter_is_screener_query(opts)
     |> maybe_apply_metrics_filter(opts)
     |> maybe_filter_by_type_query(opts)
     |> maybe_apply_projects_filter(opts)
-    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> select([ul], ul.id)
   end
 
   def by_slug(slug) when is_binary(slug) do

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 14.2
+-- Dumped by pg_dump version 14.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -3073,6 +3073,41 @@ ALTER SEQUENCE public.user_uniswap_staking_id_seq OWNED BY public.user_uniswap_s
 
 
 --
+-- Name: user_usage_activities; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_usage_activities (
+    id bigint NOT NULL,
+    user_id bigint,
+    entity_type character varying(255),
+    entity_id integer,
+    entity_details jsonb,
+    activity_type character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_usage_activities_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_usage_activities_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_usage_activities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_usage_activities_id_seq OWNED BY public.user_usage_activities.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4036,6 +4071,13 @@ ALTER TABLE ONLY public.user_uniswap_staking ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: user_usage_activities id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_usage_activities ALTER COLUMN id SET DEFAULT nextval('public.user_usage_activities_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4807,6 +4849,14 @@ ALTER TABLE ONLY public.user_triggers_tags
 
 ALTER TABLE ONLY public.user_uniswap_staking
     ADD CONSTRAINT user_uniswap_staking_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_usage_activities user_usage_activities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_usage_activities
+    ADD CONSTRAINT user_usage_activities_pkey PRIMARY KEY (id);
 
 
 --
@@ -5658,6 +5708,34 @@ CREATE INDEX user_triggers_user_id_index ON public.user_triggers USING btree (us
 --
 
 CREATE UNIQUE INDEX user_uniswap_staking_user_id_index ON public.user_uniswap_staking USING btree (user_id);
+
+
+--
+-- Name: user_usage_activities_activity_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_usage_activities_activity_type_index ON public.user_usage_activities USING btree (activity_type);
+
+
+--
+-- Name: user_usage_activities_entity_type_entity_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_usage_activities_entity_type_entity_id_index ON public.user_usage_activities USING btree (entity_type, entity_id);
+
+
+--
+-- Name: user_usage_activities_entity_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_usage_activities_entity_type_index ON public.user_usage_activities USING btree (entity_type);
+
+
+--
+-- Name: user_usage_activities_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_usage_activities_user_id_index ON public.user_usage_activities USING btree (user_id);
 
 
 --
@@ -6644,6 +6722,14 @@ ALTER TABLE ONLY public.user_uniswap_staking
 
 
 --
+-- Name: user_usage_activities user_usage_activities_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_usage_activities
+    ADD CONSTRAINT user_usage_activities_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: votes votes_chart_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7145,3 +7231,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220330100631);
 INSERT INTO public."schema_migrations" (version) VALUES (20220404132445);
 INSERT INTO public."schema_migrations" (version) VALUES (20220413130352);
 INSERT INTO public."schema_migrations" (version) VALUES (20220504082527);
+INSERT INTO public."schema_migrations" (version) VALUES (20220516082857);

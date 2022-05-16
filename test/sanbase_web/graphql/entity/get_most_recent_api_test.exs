@@ -5,6 +5,8 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
   import Sanbase.Factory
 
   setup do
+    _role = insert(:role_san_family)
+
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
 
@@ -467,8 +469,8 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
            } = stats
 
     assert Enum.at(data, 0)["chartConfiguration"]["id"] == c1.id
-    assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() == s1.id
-    assert Enum.at(data, 2)["insight"]["id"] == i1.id
+    assert Enum.at(data, 1)["insight"]["id"] == i1.id
+    assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() == s1.id
     assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
   end
 

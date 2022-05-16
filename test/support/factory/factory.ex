@@ -643,14 +643,14 @@ defmodule Sanbase.Factory do
   def role_san_team_factory() do
     %Role{
       id: 1,
-      name: "Santiment Team member"
+      name: "Santiment Team Member"
     }
   end
 
-  def role_san_clan_factory() do
+  def role_san_family_factory() do
     %Role{
       id: 2,
-      name: "Santiment Clan member"
+      name: "Santiment Family Member"
     }
   end
 

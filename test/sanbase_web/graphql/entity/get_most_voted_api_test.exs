@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
   import Sanbase.Factory
 
   setup do
+    _role = insert(:role_san_family)
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
 

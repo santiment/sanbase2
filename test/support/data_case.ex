@@ -31,7 +31,6 @@ defmodule Sanbase.DataCase do
     Sanbase.Price.Validator.clean_state()
 
     Sanbase.CaseHelpers.checkout_shared(tags)
-    Sanbase.Billing.TestSeed.seed_user_roles()
 
     product_and_plans = Sanbase.Billing.TestSeed.seed_products_and_plans()
 

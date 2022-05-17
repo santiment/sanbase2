@@ -247,6 +247,26 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
                :weekly
     end
+
+    describe "email settings" do
+      test "get default email settings", context do
+        result = execute_query(context.conn, current_user_query(), "currentUser")
+
+        assert result["settings"]["emailSettings"] == %{
+                 "biweeklyReport" => %{"isSubscribed" => false},
+                 "eduEmails" => nil,
+                 "monthlyNewsletter" => %{"isSubscribed" => true}
+               }
+      end
+
+      test "update email settings", context do
+        query = change_email_setting("isSubscribedBiweeklyReport: true")
+        result = execute_mutation(context.conn, query)
+
+        UserSettings.settings_for(context.user, force: true) |> IO.inspect()
+        assert true
+      end
+    end
   end
 
   defp current_user_query() do
@@ -263,6 +283,11 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
           pageSize
           tableColumns
           favorite_metrics
+          emailSettings {
+            eduEmails { isSubscribed }
+            monthlyNewsletter { isSubscribed }
+            biweeklyReport { isSubscribed }
+          }
         }
       }
     }
@@ -334,6 +359,20 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     """
   end
 
+  defp change_email_settings(arg) do
+    """
+    mutation {
+      updateUserSettings(settings: {#{arg}}) {
+        emailSettings {
+          eduEmails { isSubscribed }
+          monthlyNewsletter { isSubscribed }
+          biweeklyReport { isSubscribed }
+        }
+      }
+    }
+    """
+  end
+
   defp toggle_email_channel_query(is_active?) do
     """
     mutation {
@@ -357,6 +396,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
   defp execute(conn, query, query_str) do
     conn
     |> post("/graphql", mutation_skeleton(query))
+    |> IO.inspect()
     |> json_response(200)
     |> get_in(["data", query_str])
   end

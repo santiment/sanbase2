@@ -114,6 +114,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   def execute_query(conn, query, query_name) do
     conn
     |> post("/graphql", query_skeleton(query, query_name))
+    |> IO.inspect()
     |> json_response(200)
     |> get_in(["data", query_name])
   end
@@ -132,6 +133,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
 
     conn
     |> post("/graphql", mutation_skeleton(mutation))
+    |> IO.inspect()
     |> json_response(200)
     |> get_in(["data", mutation_name])
   end

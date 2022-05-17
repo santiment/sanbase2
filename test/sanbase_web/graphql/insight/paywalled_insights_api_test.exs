@@ -9,10 +9,10 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
   setup do
     user = insert(:user)
-    role_san_clan = insert(:role_san_clan)
+    role_san_family = insert(:role_san_family)
     conn = setup_jwt_auth(build_conn(), user)
 
-    {:ok, conn: conn, user: user, role_san_clan: role_san_clan}
+    {:ok, conn: conn, user: user, role_san_family: role_san_family}
   end
 
   describe "filter paywalled when fetching insight by id" do
@@ -116,7 +116,7 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
     test "text is filtered in timeline events", context do
       san_author = insert(:user)
-      insert(:user_role, user: san_author, role: context.role_san_clan)
+      insert(:user_role, user: san_author, role: context.role_san_family)
       insight = create_insight(context, %{user: san_author, is_paywall_required: true})
 
       timeline_event =

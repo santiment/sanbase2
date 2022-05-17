@@ -9,8 +9,6 @@ defmodule Sanbase.Accounts.Role do
 
   schema "roles" do
     field(:name, :string)
-
-    has_many(:users, {"user_roles", Sanbase.Accounts.UserRole}, on_delete: :delete_all)
   end
 
   def changeset(%__MODULE__{} = role, attrs \\ %{}) do
@@ -21,10 +19,14 @@ defmodule Sanbase.Accounts.Role do
   def san_team_role_id(), do: @san_team_role_id
   def san_family_role_id(), do: @san_family_role_id
 
-  def san_family_ids() do
+  def san_family_ids(), do: get_role_ids(@san_family_role_id)
+
+  def san_team_ids(), do: get_role_ids(@san_team_role_id)
+
+  defp get_role_ids(role_id) do
     from(
       ur in Sanbase.Accounts.UserRole,
-      where: ur.role_id == ^@san_family_role_id,
+      where: ur.role_id == ^role_id,
       select: ur.user_id
     )
     |> Sanbase.Repo.all()

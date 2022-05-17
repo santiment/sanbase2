@@ -116,7 +116,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   def public_entity_ids_query(opts) do
     from(te in __MODULE__)
     |> Query.events_with_public_entities_query()
-    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([te], te.id)
   end
 
@@ -124,7 +124,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   def user_entity_ids_query(user_id, opts) do
     from(te in __MODULE__)
     |> where([te], te.user_id == ^user_id)
-    |> Sanbase.Entity.maybe_filter_by_cursor(:inserted_at, opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([te], te.id)
   end
 

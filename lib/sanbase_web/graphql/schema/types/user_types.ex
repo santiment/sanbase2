@@ -19,6 +19,11 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     UserTriggerResolver
   }
 
+  enum :user_role do
+    value(:san_family)
+    value(:san_team)
+  end
+
   enum :api_call_auth_method do
     value(:all)
     value(:apikey)

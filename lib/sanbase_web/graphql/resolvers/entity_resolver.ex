@@ -88,6 +88,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     ]
     |> maybe_add_user_option(:current_user_data_only, args, resolution)
     |> maybe_add_user_option(:current_user_voted_for_only, args, resolution)
+    |> maybe_add_value_option(:user_role_data_only, args)
   end
 
   defp maybe_add_user_option(opts, key, args, resolution) do
@@ -97,6 +98,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
       Keyword.put(opts, key, user_id)
     else
       _ -> opts
+    end
+  end
+
+  defp maybe_add_value_option(opts, key, args) do
+    case Map.has_key?(args, key) do
+      true -> Keyword.put(opts, key, Map.get(args, key))
+      false -> opts
     end
   end
 

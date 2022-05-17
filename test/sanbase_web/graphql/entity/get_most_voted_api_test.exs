@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
+defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
   use SanbaseWeb.ConnCase, async: true
 
   import SanbaseWeb.Graphql.TestHelpers

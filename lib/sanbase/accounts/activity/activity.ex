@@ -31,7 +31,10 @@ defmodule Sanbase.Accounts.Activity do
   @spec store_user_activity(non_neg_integer(), Map.t()) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def store_user_activity(user_id, args) do
-    args = Map.put(args, :user_id, user_id)
+    args =
+      args
+      |> Map.put(:user_id, user_id)
+      |> Map.put(:entity_type, deduce_entity_column_name(args.entity_type))
 
     %__MODULE__{}
     |> cast(args, [:entity_id, :entity_type, :entity_details, :activity_type, :user_id])
@@ -48,8 +51,15 @@ defmodule Sanbase.Accounts.Activity do
   @spec get_user_most_used(non_neg_integer(), String.t() | list(String.t()), Keyword.t()) ::
           {:ok, list(t())}
   def get_user_most_used(user_id, entity_type_or_types, opts) do
+    get_user_most_used_query(user_id, entity_type_or_types, opts)
+    |> Sanbase.Repo.all()
+  end
+
+  def get_user_most_used_query(user_id, entity_type_or_types, opts) do
     {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
-    entity_types = List.wrap(entity_type_or_types)
+
+    entity_types =
+      List.wrap(entity_type_or_types) |> Enum.map(&deduce_entity_column_name/1) |> Enum.uniq()
 
     from(
       row in __MODULE__,
@@ -68,6 +78,12 @@ defmodule Sanbase.Accounts.Activity do
       offset: ^offset,
       limit: ^limit
     )
-    |> Sanbase.Repo.all()
+  end
+
+  def deduce_entity_column_name(entity_type) do
+    case entity_type do
+      x when x in [:project_watchlist, :address_watchlist, :screener, :watchlist] -> "watchlist"
+      x when x in [:insight, :chart_configuration, :user_trigger] -> to_string(x)
+    end
   end
 end

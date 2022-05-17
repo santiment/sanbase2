@@ -94,6 +94,21 @@ defmodule Sanbase.Entity do
     do: do_get_most_recent(List.wrap(type_or_types), opts)
 
   @doc ~s"""
+  Get a list of the most used entities of a given type or types.
+  The ordering is done by taking into consideration the amount of views and
+  other activity types (votes, comments, etc.) a given entity has.
+
+  ## Options
+
+  See the ["Shared options"](#module-shared-options) section at the module
+  documentation for more options.
+  """
+  @spec get_most_used(entity_type | [entity_type], opts) ::
+          {:ok, list(result_map)} | no_return()
+  def get_most_used(type_or_types, opts),
+    do: do_get_most_used(List.wrap(type_or_types), opts)
+
+  @doc ~s"""
   Get the total count of voted entities of a given type or types.
   A cursor can be applied, but pagination cannot.
   ## Options
@@ -121,6 +136,20 @@ defmodule Sanbase.Entity do
     do: do_get_most_recent_total_count(List.wrap(type_or_types), opts)
 
   @doc ~s"""
+  Get the total count of used entities of a given type or types for a user.
+  A cursor can be applied, but pagination cannot.
+
+  ## Options
+
+  See the ["Shared options"](#module-shared-options) section at the module
+  documentation for more options.
+  """
+  @spec get_most_used_total_count(entity_type | [entity_type], opts) ::
+          {:ok, non_neg_integer()} | no_return()
+  def get_most_used_total_count(type_or_types, opts),
+    do: do_get_most_used_total_count(List.wrap(type_or_types), opts)
+
+  @doc ~s"""
   Map the entity type to the corresponding field in the votes table
   """
   def deduce_entity_vote_field(:user_trigger), do: :user_trigger_id
@@ -130,6 +159,7 @@ defmodule Sanbase.Entity do
   def deduce_entity_vote_field(:address_watchlist), do: :watchlist_id
   def deduce_entity_vote_field(:screener), do: :watchlist_id
   def deduce_entity_vote_field(:chart_configuration), do: :chart_configuration_id
+
   # keep the timeline_event here so it can have its id obtained by the Vote
   # module
   def deduce_entity_vote_field(:timeline_event), do: :timeline_event_id
@@ -269,8 +299,24 @@ defmodule Sanbase.Entity do
         }
       )
 
-    db_result = Sanbase.Repo.all(query)
+    # The result is returned in descending order based on votes. This order will
+    # be lost once we split the result into different entity type groups is
+    # order to fetch them. In order to preserve the order, we need to record it
+    # beforehand. This is done by making a map where the keys are {entity_type,
+    # entity_id} and the value is the position in the original result. NOTE 1:
+    # As we are recording the position in the original result, we need to sort
+    # the result in ASCENDING order at the end. NOTE 2: The db_result from here
+    # includes only the entity id and entity type. This is not enough to
+    # distinguish between screener and watchlist. This will be done once the
+    # full objects are returned.
+    result =
+      Sanbase.Repo.all(query)
+      |> fetch_entities_by_ids_preserve_order_rewrite_keys()
 
+    {:ok, result}
+  end
+
+  defp fetch_entities_by_ids_preserve_order_rewrite_keys(db_result) do
     # The result is returned in descending order based on votes. This order will
     # be lost once we split the result into different entity type groups is
     # order to fetch them. In order to preserve the order, we need to record it
@@ -300,7 +346,65 @@ defmodule Sanbase.Entity do
 
     result = rewrite_keys(result)
 
+    result
+  end
+
+  defp do_get_most_used(entities, opts) when is_list(entities) and entities != [] do
+    # The most used entities are the ones that the user has visited the most.
+    opts = update_opts(opts)
+    query = most_used_base_query(entities, opts)
+
+    result =
+      Sanbase.Repo.all(query)
+      |> fetch_entities_by_ids_preserve_order_rewrite_keys()
+
     {:ok, result}
+  end
+
+  defp do_get_most_used_total_count(entities, opts) when is_list(entities) and entities != [] do
+    opts = update_opts(opts)
+    query = most_used_base_query(entities, opts)
+
+    total_count =
+      from(entity in subquery(query),
+        select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)
+      )
+      |> Sanbase.Repo.one()
+
+    {:ok, total_count}
+  end
+
+  defp most_used_base_query(entities, opts) when is_list(entities) and entities != [] do
+    user_id = Keyword.fetch!(opts, :current_user_id)
+    query = Sanbase.Accounts.Activity.get_user_most_used_query(user_id, entities, opts)
+
+    where_clause_query =
+      Enum.reduce(entities, nil, fn type, query_acc ->
+        entity_ids_query = entity_ids_query(type, opts)
+
+        entity_type_name = Sanbase.Accounts.Activity.deduce_entity_column_name(type)
+
+        case query_acc do
+          nil ->
+            dynamic(
+              [row],
+              row.entity_type == ^entity_type_name and row.entity_id in subquery(entity_ids_query)
+            )
+
+          _ ->
+            dynamic(
+              [row],
+              (row.entity_type == ^entity_type_name and
+                 row.entity_id in subquery(entity_ids_query)) or ^query_acc
+            )
+        end
+      end)
+
+    query =
+      query
+      |> where(^where_clause_query)
+
+    query
   end
 
   defp most_recent_base_query(entities, opts) when is_list(entities) and entities != [] do
@@ -389,7 +493,7 @@ defmodule Sanbase.Entity do
     {:ok, query}
   end
 
-  def filter_user_voted_for_entities(query, user_id) do
+  defp filter_user_voted_for_entities(query, user_id) do
     # Get a list of the entities that the given user has voted for. All votes
     # (between 1 and 20) are recorded on the same row in the `count` column, so
     # no `distinct` is required. These entity ids are then fed to a where clause

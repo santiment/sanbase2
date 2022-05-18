@@ -13,14 +13,22 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
                          |> Enum.map(fn {{_, name}, _} -> name end)
 
   def v2_restricted_metric_for_plan(position, product, plan_name) do
-    all_v2_restricted_metrics_for_plan(product, plan_name)
+    fully_restricted_metrics_for_plan(product, plan_name)
     |> Stream.cycle()
     |> Enum.at(position)
   end
 
-  def all_v2_restricted_metrics_for_plan(product, plan_name) do
-    (Metric.restricted_metrics() -- @custom_access_metrics)
+  def fully_restricted_metrics_for_plan(product, plan_name) do
+    fully_restricted = Metric.restricted_metrics() -- restricted_metrics_with_free_realtime()
+
+    (fully_restricted -- @custom_access_metrics)
     |> Enum.filter(&AccessChecker.plan_has_access?(plan_name, product, {:metric, &1}))
+  end
+
+  def restricted_metrics_with_free_realtime do
+    Sanbase.Metric.access_map()
+    |> Enum.filter(&match?({_, %{"historical" => :restricted, "realtime" => :free}}, &1))
+    |> Enum.map(&elem(&1, 0))
   end
 
   def restricted_signal_for_plan(position, product, plan_name) do

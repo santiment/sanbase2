@@ -282,6 +282,128 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     assert Enum.at(data, 4)["userTrigger"]["trigger"]["id"] == ut.id
   end
 
+  test "get most used with projects' slugs filter", context do
+    %{conn: conn, user: user} = context
+    slug = "some_slug"
+
+    to_ids = fn projects -> Enum.map(projects, &%{project_id: &1.id}) end
+    # projects
+    p1 = insert(:project, slug: slug)
+    p2 = insert(:project)
+
+    [w1, w2] =
+      for p_list <- [[p2], [p1, p2]] do
+        w = insert(:watchlist, type: :project, is_public: true)
+
+        {:ok, w} =
+          Sanbase.UserList.update_user_list(context.user, %{id: w.id, list_items: to_ids.(p_list)})
+
+        w
+      end
+
+    i1 = insert(:published_post, price_chart_project: p1)
+    i2 = insert(:published_post, price_chart_project: p2)
+
+    c1 = insert(:chart_configuration, is_public: true, project: p1)
+    c2 = insert(:chart_configuration, is_public: true, project: p2)
+
+    a1 = create_alert(context.user, p1)
+    a2 = create_alert(context.user, p2)
+
+    for index <- 1..60 do
+      if rem(index, 10) == 0, do: create_activity(user.id, :insight, i2.id)
+      if rem(index, 7) == 0, do: create_activity(user.id, :insight, i1.id)
+      if rem(index, 5) == 0, do: create_activity(user.id, :user_trigger, a1.id)
+      if rem(index, 5) == 0, do: create_activity(user.id, :user_trigger, a2.id)
+      if rem(index, 4) == 0, do: create_activity(user.id, :chart_configuration, c2.id)
+      if rem(index, 4) == 0, do: create_activity(user.id, :chart_configuration, c1.id)
+      if rem(index, 3) == 0, do: create_activity(user.id, :watchlist, w1.id)
+      if rem(index, 2) == 0, do: create_activity(user.id, :watchlist, w2.id)
+    end
+
+    result =
+      get_most_used(
+        conn,
+        [:project_watchlist, :insight, :chart_configuration, :user_trigger],
+        filter: %{slugs: [p1.slug]}
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    # Expect: w1, i1, c1, a1
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == w2.id
+    assert Enum.at(data, 1)["chartConfiguration"]["id"] == c1.id
+    assert Enum.at(data, 2)["userTrigger"]["trigger"]["id"] == a1.id
+    assert Enum.at(data, 3)["insight"]["id"] == i1.id
+  end
+
+  test "get most used screeners with metrics filter", context do
+    %{conn: conn, user: user} = context
+
+    function = fn metrics ->
+      function = %Sanbase.WatchlistFunction{
+        name: "selector",
+        args: %{
+          filters:
+            Enum.map(metrics, fn metric ->
+              %{
+                metric: metric,
+                dynamic_from: "1d",
+                dynamic_to: "now",
+                operator: :greater_than,
+                threshold: 10,
+                aggregation: :last
+              }
+            end)
+        }
+      }
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_by_filter/6, {:ok, []})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert Sanbase.WatchlistFunction.valid_function?(function)
+      end)
+
+      function
+    end
+
+    s1 = insert(:screener, is_public: true, function: function.(["price_usd"]))
+    s2 = insert(:screener, is_public: true, function: function.(["social_volume_total"]))
+    s3 = insert(:screener, is_public: true, function: function.(["price_usd", "price_btc"]))
+    s4 = insert(:screener, is_public: true, function: function.(["price_usd", "price_btc"]))
+    _unused = insert(:screener, is_public: true, function: function.(["price_usd", "price_btc"]))
+
+    for index <- 1..60 do
+      if rem(index, 20) == 0, do: create_activity(user.id, :screener, s2.id)
+      if rem(index, 10) == 0, do: create_activity(user.id, :screener, s1.id)
+      if rem(index, 8) == 0, do: create_activity(user.id, :screener, s3.id)
+      if rem(index, 5) == 0, do: create_activity(user.id, :screener, s4.id)
+    end
+
+    result = get_most_used(conn, [:screener], filter: %{metrics: ["price_usd"]})
+
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 3,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() == s4.id
+    assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() == s3.id
+    assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() == s1.id
+  end
+
   defp get_most_used(conn, entity_or_entities, opts \\ []) do
     page = Keyword.get(opts, :page, 1)
     page_size = Keyword.get(opts, :page_size, 10)
@@ -337,5 +459,25 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)
     |> get_in(["data", "getMostUsed"])
+  end
+
+  defp create_alert(user, project) do
+    trigger_settings = %{
+      type: "metric_signal",
+      metric: "active_addresses_24h",
+      target: %{slug: project.slug},
+      channel: "telegram",
+      time_window: "1d",
+      operation: %{percent_up: 300.0}
+    }
+
+    {:ok, created_trigger} =
+      Sanbase.Alert.UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: trigger_settings
+      })
+
+    created_trigger
   end
 end

@@ -265,6 +265,18 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     end
 
     test "update email settings", context do
+      query = change_email_settings("isSubscribedMonthlyNewsletter: false")
+      result = execute_mutation(context.conn, query)
+      refute result["isSubscribedMonthlyNewsletter"]
+    end
+
+    test "only pro user can update bi-weekly report email setting", context do
+      query = change_email_settings("isSubscribedBiweeklyReport: true")
+
+      assert execute_mutation_with_error(context.conn, query) =~
+               "Only PRO users can subscibe to Biweekly Report"
+
+      insert(:subscription_pro_sanbase, user: context.user)
       query = change_email_settings("isSubscribedBiweeklyReport: true")
       result = execute_mutation(context.conn, query)
       assert result["isSubscribedBiweeklyReport"]

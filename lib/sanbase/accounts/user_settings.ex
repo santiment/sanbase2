@@ -5,6 +5,7 @@ defmodule Sanbase.Accounts.UserSettings do
 
   alias Sanbase.Accounts.{User, Settings}
   alias Sanbase.Repo
+  alias Sanbase.Billing.{Subscription, Product}
 
   schema "user_settings" do
     belongs_to(:user, User)
@@ -95,6 +96,13 @@ defmodule Sanbase.Accounts.UserSettings do
     end)
     |> Enum.reject(fn {user_id, _v} -> is_nil(user_id) end)
     |> Enum.each(fn {user_id, paid_with} -> update_paid_with(user_id, paid_with) end)
+  end
+
+  def update_settings(user, %{is_subscribed_biweekly_report: true} = params) do
+    case Subscription.current_subscription_plan(user.id, Product.product_sanbase()) do
+      pro when pro in [:pro, :pro_plus] -> settings_update(user.id, params)
+      _ -> {:error, "Only PRO users can subscibe to Biweekly Report"}
+    end
   end
 
   def update_settings(%User{id: id}, params) do

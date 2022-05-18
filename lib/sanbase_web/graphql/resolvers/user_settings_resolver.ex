@@ -24,8 +24,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
       {:ok, %{settings: settings}} ->
         {:ok, settings}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:error, "Cannot update user settings. Reason: #{changeset_errors_string(changeset)}"}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

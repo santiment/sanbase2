@@ -8,6 +8,13 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
     field(:metrics, list_of(:string))
   end
 
+  enum :entity_interaction_interaction_type do
+    value(:view)
+    value(:upvote)
+    value(:downvote)
+    value(:comment)
+  end
+
   enum :entity_type do
     value(:user_trigger)
     value(:insight)

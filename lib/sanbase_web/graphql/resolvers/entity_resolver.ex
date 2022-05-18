@@ -2,6 +2,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
   import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
 
+  def store_user_entity_interaction(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    args = Map.take(args, [:entity_id, :entity_type, :interaction_type])
+
+    case Sanbase.Accounts.Interaction.store_user_interaction(user.id, args) do
+      {:ok, _} -> {:ok, true}
+      {:error, error} -> {:error, Sanbase.Utils.ErrorHandling.changeset_errors_string(error)}
+    end
+  end
+
   # Start Most Voted
 
   def get_most_voted(_root, args, _resolution) do

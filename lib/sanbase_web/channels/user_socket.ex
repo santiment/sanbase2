@@ -6,7 +6,6 @@ defmodule SanbaseWeb.UserSocket do
 
   # User-related channels
   channel("users:*", SanbaseWeb.UserChannel)
-  channel("user_activities:*", SanbaseWeb.UserActivityChannel)
   channel("open_restricted_tabs:*", SanbaseWeb.OpenRestrictedTabChannel)
 
   # Metrics-related channels

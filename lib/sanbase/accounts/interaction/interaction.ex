@@ -1,12 +1,23 @@
-defmodule Sanbase.Accounts.Activity do
+defmodule Sanbase.Accounts.Interaction do
   use Ecto.Schema
+
+  @supported_entity_types [
+    :project_watchlist,
+    :address_watchlsit,
+    :screener,
+    :insight,
+    :chart_configuration,
+    :user_trigger
+  ]
+
+  @supported_entity_types_internal ["watchlist", "insight", "chart_configuration", "user_trigger"]
 
   @type t :: %__MODULE__{
           id: non_neg_integer(),
           entity_id: non_neg_integer(),
           entity_type: String.t(),
           entity_details: Map.t(),
-          activity_type: String.t()
+          interaction_type: String.t()
         }
 
   import Ecto.Query
@@ -14,11 +25,11 @@ defmodule Sanbase.Accounts.Activity do
 
   alias Sanbase.Accounts.User
 
-  schema "user_usage_activities" do
+  schema "user_entity_interactions" do
     field(:entity_id, :integer)
     field(:entity_type, :string)
     field(:entity_details, :map)
-    field(:activity_type, :string)
+    field(:interaction_type, :string)
 
     belongs_to(:user, User)
 
@@ -28,16 +39,19 @@ defmodule Sanbase.Accounts.Activity do
   @doc ~s"""
 
   """
-  @spec store_user_activity(non_neg_integer(), Map.t()) ::
+  @spec store_user_interaction(non_neg_integer(), Map.t()) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def store_user_activity(user_id, args) do
+  def store_user_interaction(user_id, args) do
     args =
       args
       |> Map.put(:user_id, user_id)
+      |> Map.put(:interaction_type, to_string(args.interaction_type))
       |> Map.put(:entity_type, deduce_entity_column_name(args.entity_type))
 
     %__MODULE__{}
-    |> cast(args, [:entity_id, :entity_type, :entity_details, :activity_type, :user_id])
+    |> cast(args, [:entity_id, :entity_type, :entity_details, :interaction_type, :user_id])
+    |> validate_change(:entity_type, &validate_entity_type/2)
+    |> validate_change(:interaction_type, &validate_interaction_type/2)
     |> Sanbase.Repo.insert()
   end
 
@@ -46,7 +60,7 @@ defmodule Sanbase.Accounts.Activity do
   The usage rank is based on the number of times the entity was used/viewed. More recent
   views contributred more to the score compared to old usage.
 
-  In the future, the activity type can be weighted differently - 1 for view, 5 for like, etc.
+  In the future, the interaction type can be weighted differently - 1 for view, 5 for like, etc.
   """
   @spec get_user_most_used(non_neg_integer(), String.t() | list(String.t()), Keyword.t()) ::
           {:ok, list(t())}
@@ -84,6 +98,20 @@ defmodule Sanbase.Accounts.Activity do
     case entity_type do
       x when x in [:project_watchlist, :address_watchlist, :screener, :watchlist] -> "watchlist"
       x when x in [:insight, :chart_configuration, :user_trigger] -> to_string(x)
+    end
+  end
+
+  defp validate_entity_type(_changeset, entity_type) do
+    case entity_type in @supported_entity_types_internal do
+      true -> []
+      false -> [{:entity_type, "Unsupported entity type #{entity_type}"}]
+    end
+  end
+
+  defp validate_interaction_type(_changeset, interaction_type) do
+    case interaction_type in ["view", "upvote", "downvote", "comment"] do
+      true -> []
+      false -> [{:entity_type, "Unsupported interaction type #{interaction_type}"}]
     end
   end
 end

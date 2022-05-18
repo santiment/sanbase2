@@ -2814,6 +2814,41 @@ ALTER SEQUENCE public.user_api_key_tokens_id_seq OWNED BY public.user_api_key_to
 
 
 --
+-- Name: user_entity_interactions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_entity_interactions (
+    id bigint NOT NULL,
+    user_id bigint,
+    entity_type character varying(255),
+    entity_id integer,
+    entity_details jsonb,
+    interaction_type character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_entity_interactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_entity_interactions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_entity_interactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_entity_interactions_id_seq OWNED BY public.user_entity_interactions.id;
+
+
+--
 -- Name: user_events; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3070,41 +3105,6 @@ CREATE SEQUENCE public.user_uniswap_staking_id_seq
 --
 
 ALTER SEQUENCE public.user_uniswap_staking_id_seq OWNED BY public.user_uniswap_staking.id;
-
-
---
--- Name: user_usage_activities; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_usage_activities (
-    id bigint NOT NULL,
-    user_id bigint,
-    entity_type character varying(255),
-    entity_id integer,
-    entity_details jsonb,
-    activity_type character varying(255),
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: user_usage_activities_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.user_usage_activities_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: user_usage_activities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.user_usage_activities_id_seq OWNED BY public.user_usage_activities.id;
 
 
 --
@@ -4022,6 +4022,13 @@ ALTER TABLE ONLY public.user_api_key_tokens ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: user_entity_interactions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_entity_interactions ALTER COLUMN id SET DEFAULT nextval('public.user_entity_interactions_id_seq'::regclass);
+
+
+--
 -- Name: user_events id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4068,13 +4075,6 @@ ALTER TABLE ONLY public.user_triggers_tags ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.user_uniswap_staking ALTER COLUMN id SET DEFAULT nextval('public.user_uniswap_staking_id_seq'::regclass);
-
-
---
--- Name: user_usage_activities id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_usage_activities ALTER COLUMN id SET DEFAULT nextval('public.user_usage_activities_id_seq'::regclass);
 
 
 --
@@ -4780,6 +4780,14 @@ ALTER TABLE ONLY public.user_api_key_tokens
 
 
 --
+-- Name: user_entity_interactions user_entity_interactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_entity_interactions
+    ADD CONSTRAINT user_entity_interactions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: user_events user_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4849,14 +4857,6 @@ ALTER TABLE ONLY public.user_triggers_tags
 
 ALTER TABLE ONLY public.user_uniswap_staking
     ADD CONSTRAINT user_uniswap_staking_pkey PRIMARY KEY (id);
-
-
---
--- Name: user_usage_activities user_usage_activities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_usage_activities
-    ADD CONSTRAINT user_usage_activities_pkey PRIMARY KEY (id);
 
 
 --
@@ -5641,6 +5641,34 @@ CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_token
 
 
 --
+-- Name: user_entity_interactions_entity_type_entity_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_entity_interactions_entity_type_entity_id_index ON public.user_entity_interactions USING btree (entity_type, entity_id);
+
+
+--
+-- Name: user_entity_interactions_entity_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_entity_interactions_entity_type_index ON public.user_entity_interactions USING btree (entity_type);
+
+
+--
+-- Name: user_entity_interactions_interaction_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_entity_interactions_interaction_type_index ON public.user_entity_interactions USING btree (interaction_type);
+
+
+--
+-- Name: user_entity_interactions_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_entity_interactions_user_id_index ON public.user_entity_interactions USING btree (user_id);
+
+
+--
 -- Name: user_events_remote_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5708,34 +5736,6 @@ CREATE INDEX user_triggers_user_id_index ON public.user_triggers USING btree (us
 --
 
 CREATE UNIQUE INDEX user_uniswap_staking_user_id_index ON public.user_uniswap_staking USING btree (user_id);
-
-
---
--- Name: user_usage_activities_activity_type_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX user_usage_activities_activity_type_index ON public.user_usage_activities USING btree (activity_type);
-
-
---
--- Name: user_usage_activities_entity_type_entity_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX user_usage_activities_entity_type_entity_id_index ON public.user_usage_activities USING btree (entity_type, entity_id);
-
-
---
--- Name: user_usage_activities_entity_type_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX user_usage_activities_entity_type_index ON public.user_usage_activities USING btree (entity_type);
-
-
---
--- Name: user_usage_activities_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX user_usage_activities_user_id_index ON public.user_usage_activities USING btree (user_id);
 
 
 --
@@ -6618,6 +6618,14 @@ ALTER TABLE ONLY public.user_api_key_tokens
 
 
 --
+-- Name: user_entity_interactions user_entity_interactions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_entity_interactions
+    ADD CONSTRAINT user_entity_interactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: user_events user_events_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6719,14 +6727,6 @@ ALTER TABLE ONLY public.user_triggers
 
 ALTER TABLE ONLY public.user_uniswap_staking
     ADD CONSTRAINT user_uniswap_staking_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-
-
---
--- Name: user_usage_activities user_usage_activities_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_usage_activities
-    ADD CONSTRAINT user_usage_activities_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --

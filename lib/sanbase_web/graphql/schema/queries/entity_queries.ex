@@ -73,5 +73,14 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
   end
 
   object :entity_mutations do
+    field :store_user_entity_interaction, :boolean do
+      arg(:entity_type, :entity_type)
+      arg(:entity_id, :integer)
+      arg(:interaction_type, :entity_interaction_interaction_type)
+
+      middleware(JWTAuth)
+
+      resolve(&EntityResolver.store_user_entity_interaction/3)
+    end
   end
 end

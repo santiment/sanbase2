@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
-  alias Sanbase.Accounts.Activity
-
   setup do
     _role = insert(:role_san_family)
 
@@ -15,8 +13,20 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     {:ok, conn: conn, user: user}
   end
 
-  defp create_activity(user_id, type, id) do
-    {:ok, _} = Activity.store_user_activity(user_id, %{entity_type: type, entity_id: id})
+  defp create_interaction_api(conn, type, id) do
+    mutation = """
+    mutation{
+    storeUserEntityInteraction(
+    entityType: #{type |> to_string() |> String.upcase()}
+    entityId: #{id}
+    interactionType: VIEW)
+    }
+    """
+
+    %{"data" => %{"storeUserEntityInteraction" => true}} =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
   end
 
   test "get most used insights", context do
@@ -30,10 +40,10 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     _unused = insert(:published_post)
 
     for index <- 1..50 do
-      if rem(index, 5) == 0, do: create_activity(user.id, :insight, insight1.id)
-      if rem(index, 4) == 0, do: create_activity(user.id, :insight, insight2.id)
-      if rem(index, 3) == 0, do: create_activity(user.id, :insight, insight3.id)
-      if rem(index, 2) == 0, do: create_activity(user.id, :insight, insight4.id)
+      if rem(index, 5) == 0, do: create_interaction_api(conn, :insight, insight1.id)
+      if rem(index, 4) == 0, do: create_interaction_api(conn, :insight, insight2.id)
+      if rem(index, 3) == 0, do: create_interaction_api(conn, :insight, insight3.id)
+      if rem(index, 2) == 0, do: create_interaction_api(conn, :insight, insight4.id)
     end
 
     result = get_most_used(conn, :insight)
@@ -66,10 +76,10 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     _unused = insert(:screener, is_public: true)
 
     for index <- 1..50 do
-      if rem(index, 5) == 0, do: create_activity(user.id, :watchlist, screener1.id)
-      if rem(index, 4) == 0, do: create_activity(user.id, :watchlist, screener4.id)
-      if rem(index, 3) == 0, do: create_activity(user.id, :watchlist, screener3.id)
-      if rem(index, 2) == 0, do: create_activity(user.id, :watchlist, screener2.id)
+      if rem(index, 5) == 0, do: create_interaction_api(conn, :screener, screener1.id)
+      if rem(index, 4) == 0, do: create_interaction_api(conn, :screener, screener4.id)
+      if rem(index, 3) == 0, do: create_interaction_api(conn, :screener, screener3.id)
+      if rem(index, 2) == 0, do: create_interaction_api(conn, :screener, screener2.id)
     end
 
     result = get_most_used(conn, :screener)
@@ -104,10 +114,10 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     _unused = insert(:watchlist, type: :project, is_public: true)
 
     for index <- 1..50 do
-      if rem(index, 5) == 0, do: create_activity(user.id, :watchlist, watchlist2.id)
-      if rem(index, 4) == 0, do: create_activity(user.id, :watchlist, watchlist3.id)
-      if rem(index, 3) == 0, do: create_activity(user.id, :watchlist, watchlist1.id)
-      if rem(index, 2) == 0, do: create_activity(user.id, :watchlist, watchlist4.id)
+      if rem(index, 5) == 0, do: create_interaction_api(conn, :project_watchlist, watchlist2.id)
+      if rem(index, 4) == 0, do: create_interaction_api(conn, :project_watchlist, watchlist3.id)
+      if rem(index, 3) == 0, do: create_interaction_api(conn, :project_watchlist, watchlist1.id)
+      if rem(index, 2) == 0, do: create_interaction_api(conn, :project_watchlist, watchlist4.id)
     end
 
     result = get_most_used(conn, :project_watchlist)
@@ -142,10 +152,10 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     _unused = insert(:watchlist, type: :blockchain_address, is_public: true)
 
     for index <- 1..50 do
-      if rem(index, 5) == 0, do: create_activity(user.id, :watchlist, watchlist2.id)
-      if rem(index, 4) == 0, do: create_activity(user.id, :watchlist, watchlist3.id)
-      if rem(index, 3) == 0, do: create_activity(user.id, :watchlist, watchlist1.id)
-      if rem(index, 2) == 0, do: create_activity(user.id, :watchlist, watchlist4.id)
+      if rem(index, 5) == 0, do: create_interaction_api(conn, :address_watchlist, watchlist2.id)
+      if rem(index, 4) == 0, do: create_interaction_api(conn, :address_watchlist, watchlist3.id)
+      if rem(index, 3) == 0, do: create_interaction_api(conn, :address_watchlist, watchlist1.id)
+      if rem(index, 2) == 0, do: create_interaction_api(conn, :address_watchlist, watchlist4.id)
     end
 
     result = get_most_used(conn, :address_watchlist)
@@ -177,10 +187,17 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     _unused = insert(:chart_configuration, is_public: true)
 
     for index <- 1..50 do
-      if rem(index, 5) == 0, do: create_activity(user.id, :chart_configuration, c2.id)
-      if rem(index, 4) == 0, do: create_activity(user.id, :chart_configuration, c1.id)
-      if rem(index, 3) == 0, do: create_activity(user.id, :chart_configuration, c4.id)
-      if rem(index, 2) == 0, do: create_activity(user.id, :chart_configuration, c3.id)
+      if rem(index, 5) == 0,
+        do: create_interaction_api(conn, :chart_configuration, c2.id)
+
+      if rem(index, 4) == 0,
+        do: create_interaction_api(conn, :chart_configuration, c1.id)
+
+      if rem(index, 3) == 0,
+        do: create_interaction_api(conn, :chart_configuration, c4.id)
+
+      if rem(index, 2) == 0,
+        do: create_interaction_api(conn, :chart_configuration, c3.id)
     end
 
     result = get_most_used(conn, :chart_configuration)
@@ -213,10 +230,17 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     _unused = insert(:user_trigger, is_public: true)
 
     for index <- 1..50 do
-      if rem(index, 5) == 0, do: create_activity(user.id, :user_trigger, user_trigger2.id)
-      if rem(index, 4) == 0, do: create_activity(user.id, :user_trigger, user_trigger1.id)
-      if rem(index, 3) == 0, do: create_activity(user.id, :user_trigger, user_trigger3.id)
-      if rem(index, 2) == 0, do: create_activity(user.id, :user_trigger, user_trigger4.id)
+      if rem(index, 5) == 0,
+        do: create_interaction_api(conn, :user_trigger, user_trigger2.id)
+
+      if rem(index, 4) == 0,
+        do: create_interaction_api(conn, :user_trigger, user_trigger1.id)
+
+      if rem(index, 3) == 0,
+        do: create_interaction_api(conn, :user_trigger, user_trigger3.id)
+
+      if rem(index, 2) == 0,
+        do: create_interaction_api(conn, :user_trigger, user_trigger4.id)
     end
 
     result = get_most_used(conn, :user_trigger)
@@ -246,11 +270,11 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     w = insert(:watchlist, user: user, type: :project, is_public: true)
 
     for index <- 1..50 do
-      if rem(index, 6) == 0, do: create_activity(user.id, :user_trigger, ut.id)
-      if rem(index, 5) == 0, do: create_activity(user.id, :chart_configuration, c.id)
-      if rem(index, 4) == 0, do: create_activity(user.id, :watchlist, w.id)
-      if rem(index, 3) == 0, do: create_activity(user.id, :watchlist, s.id)
-      if rem(index, 2) == 0, do: create_activity(user.id, :insight, i.id)
+      if rem(index, 6) == 0, do: create_interaction_api(conn, :user_trigger, ut.id)
+      if rem(index, 5) == 0, do: create_interaction_api(conn, :chart_configuration, c.id)
+      if rem(index, 4) == 0, do: create_interaction_api(conn, :project_watchlist, w.id)
+      if rem(index, 3) == 0, do: create_interaction_api(conn, :screener, s.id)
+      if rem(index, 2) == 0, do: create_interaction_api(conn, :insight, i.id)
     end
 
     # Get with default page = 1 and pageSize = 10, all entities are returned
@@ -311,14 +335,19 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     a2 = create_alert(context.user, p2)
 
     for index <- 1..60 do
-      if rem(index, 10) == 0, do: create_activity(user.id, :insight, i2.id)
-      if rem(index, 7) == 0, do: create_activity(user.id, :insight, i1.id)
-      if rem(index, 5) == 0, do: create_activity(user.id, :user_trigger, a1.id)
-      if rem(index, 5) == 0, do: create_activity(user.id, :user_trigger, a2.id)
-      if rem(index, 4) == 0, do: create_activity(user.id, :chart_configuration, c2.id)
-      if rem(index, 4) == 0, do: create_activity(user.id, :chart_configuration, c1.id)
-      if rem(index, 3) == 0, do: create_activity(user.id, :watchlist, w1.id)
-      if rem(index, 2) == 0, do: create_activity(user.id, :watchlist, w2.id)
+      if rem(index, 10) == 0, do: create_interaction_api(conn, :insight, i2.id)
+      if rem(index, 7) == 0, do: create_interaction_api(conn, :insight, i1.id)
+      if rem(index, 5) == 0, do: create_interaction_api(conn, :user_trigger, a1.id)
+      if rem(index, 5) == 0, do: create_interaction_api(conn, :user_trigger, a2.id)
+
+      if rem(index, 4) == 0,
+        do: create_interaction_api(conn, :chart_configuration, c2.id)
+
+      if rem(index, 4) == 0,
+        do: create_interaction_api(conn, :chart_configuration, c1.id)
+
+      if rem(index, 3) == 0, do: create_interaction_api(conn, :project_watchlist, w1.id)
+      if rem(index, 2) == 0, do: create_interaction_api(conn, :project_watchlist, w2.id)
     end
 
     result =
@@ -381,10 +410,10 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     _unused = insert(:screener, is_public: true, function: function.(["price_usd", "price_btc"]))
 
     for index <- 1..60 do
-      if rem(index, 20) == 0, do: create_activity(user.id, :screener, s2.id)
-      if rem(index, 10) == 0, do: create_activity(user.id, :screener, s1.id)
-      if rem(index, 8) == 0, do: create_activity(user.id, :screener, s3.id)
-      if rem(index, 5) == 0, do: create_activity(user.id, :screener, s4.id)
+      if rem(index, 20) == 0, do: create_interaction_api(conn, :screener, s2.id)
+      if rem(index, 10) == 0, do: create_interaction_api(conn, :screener, s1.id)
+      if rem(index, 8) == 0, do: create_interaction_api(conn, :screener, s3.id)
+      if rem(index, 5) == 0, do: create_interaction_api(conn, :screener, s4.id)
     end
 
     result = get_most_used(conn, [:screener], filter: %{metrics: ["price_usd"]})

@@ -33,13 +33,9 @@ defmodule Sanbase.Accounts.Settings do
     field(:alerts_per_day_limit, :map, default: %{})
     field(:alerts_fired, :map, default: %{})
 
-    field(:email_settings, :map,
-      default: %{
-        edu_emails: %{is_subscribed: true, updated_at: nil},
-        monthly_newsletter: %{is_subscribed: true, updated_at: nil},
-        biweekly_report: %{is_subscribed: false, updated_at: nil}
-      }
-    )
+    field(:is_subscribed_edu_emails, :boolean, default: true)
+    field(:is_subscribed_monthly_newsletter, :boolean, default: true)
+    field(:is_subscribed_biweekly_report, :boolean, default: false)
   end
 
   def changeset(schema, params) do
@@ -58,7 +54,9 @@ defmodule Sanbase.Accounts.Settings do
       :favorite_metrics,
       :alerts_per_day_limit,
       :alerts_fired,
-      :email_settings
+      :is_subscribed_edu_emails,
+      :is_subscribed_monthly_newsletter,
+      :is_subscribed_biweekly_report
     ])
     |> normalize_newsletter_subscription(
       :newsletter_subscription,

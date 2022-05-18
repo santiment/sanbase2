@@ -113,10 +113,6 @@ defmodule Sanbase.Accounts.UserSettings do
     settings_update(user_id, %{paid_with: paid_with})
   end
 
-  def update_email_settings(user_id, email_settings) do
-    update_settings(user_id, %{email_settings: email_settings})
-  end
-
   def set_telegram_chat_id(user_id, chat_id) do
     settings_update(user_id, %{telegram_chat_id: chat_id})
   end
@@ -146,8 +142,6 @@ defmodule Sanbase.Accounts.UserSettings do
   end
 
   defp settings_update(user_id, params) do
-    IO.inspect(params)
-
     changeset =
       Repo.get_by(__MODULE__, user_id: user_id)
       |> case do

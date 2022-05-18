@@ -9,17 +9,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     value(:off)
   end
 
-  object :email_settings do
-    field(:edu_emails, :email_setting_values)
-    field(:monthly_newsletter, :email_setting_values)
-    field(:biweekly_report, :email_setting_values)
-  end
-
-  object :email_setting_values do
-    field(:is_subscribed, :boolean)
-    field(:updated_at, :datetime)
-  end
-
   object :user_settings do
     field(:hide_privacy_data, :boolean)
     field(:is_beta_mode, :boolean)
@@ -33,7 +22,9 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:alert_notify_email, :boolean)
     field(:alert_notify_telegram, :boolean)
     field(:alerts_per_day_limit, :json)
-    field(:email_settings, :email_settings)
+    field(:is_subscribed_edu_emails, :boolean)
+    field(:is_subscribed_monthly_newsletter, :boolean)
+    field(:is_subscribed_biweekly_report, :boolean)
 
     field :alerts_per_day_limit_left, :json do
       resolve(&UserSettingsResolver.alerts_per_dy_limit_left/3)
@@ -54,9 +45,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     end
   end
 
-  input_object :email_settings_input_object do
-  end
-
   input_object :user_settings_input_object do
     field(:hide_privacy_data, :boolean)
     field(:is_beta_mode, :boolean)
@@ -72,6 +60,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:is_subscribed_edu_emails, :boolean)
     field(:is_subscribed_monthly_newsletter, :boolean)
     field(:is_subscribed_biweekly_report, :boolean)
+
     # Deprecated fields
     field(:signal_notify_telegram, :boolean)
     field(:signal_notify_email, :boolean)

@@ -183,7 +183,10 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
              "pageSize" => 100,
              "tableColumns" => %{"shown" => ["price", "volume"]},
              "theme" => "nightmode",
-             "favorite_metrics" => ["daily_active_addresses", "nvt"]
+             "favorite_metrics" => ["daily_active_addresses", "nvt"],
+             "isSubscribedBiweeklyReport" => false,
+             "isSubscribedEduEmails" => true,
+             "isSubscribedMonthlyNewsletter" => true
            }
   end
 
@@ -199,7 +202,10 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
              "pageSize" => 20,
              "tableColumns" => %{},
              "theme" => "default",
-             "favorite_metrics" => []
+             "favorite_metrics" => [],
+             "isSubscribedBiweeklyReport" => false,
+             "isSubscribedEduEmails" => true,
+             "isSubscribedMonthlyNewsletter" => true
            }
   end
 
@@ -247,25 +253,21 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
                :weekly
     end
+  end
 
-    describe "email settings" do
-      test "get default email settings", context do
-        result = execute_query(context.conn, current_user_query(), "currentUser")
+  describe "email settings" do
+    test "get default email settings", context do
+      result = execute_query(context.conn, current_user_query(), "currentUser")
 
-        assert result["settings"]["emailSettings"] == %{
-                 "biweeklyReport" => %{"isSubscribed" => false},
-                 "eduEmails" => nil,
-                 "monthlyNewsletter" => %{"isSubscribed" => true}
-               }
-      end
+      assert result["settings"]["isSubscribedEduEmails"]
+      assert result["settings"]["isSubscribedMonthlyNewsletter"]
+      refute result["settings"]["isSubscribedBiweeklyReport"]
+    end
 
-      test "update email settings", context do
-        query = change_email_setting("isSubscribedBiweeklyReport: true")
-        result = execute_mutation(context.conn, query)
-
-        UserSettings.settings_for(context.user, force: true) |> IO.inspect()
-        assert true
-      end
+    test "update email settings", context do
+      query = change_email_settings("isSubscribedBiweeklyReport: true")
+      result = execute_mutation(context.conn, query)
+      assert result["isSubscribedBiweeklyReport"]
     end
   end
 
@@ -283,11 +285,9 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
           pageSize
           tableColumns
           favorite_metrics
-          emailSettings {
-            eduEmails { isSubscribed }
-            monthlyNewsletter { isSubscribed }
-            biweeklyReport { isSubscribed }
-          }
+          isSubscribedEduEmails
+          isSubscribedMonthlyNewsletter
+          isSubscribedBiweeklyReport
         }
       }
     }
@@ -363,11 +363,9 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     """
     mutation {
       updateUserSettings(settings: {#{arg}}) {
-        emailSettings {
-          eduEmails { isSubscribed }
-          monthlyNewsletter { isSubscribed }
-          biweeklyReport { isSubscribed }
-        }
+        isSubscribedEduEmails
+        isSubscribedMonthlyNewsletter
+        isSubscribedBiweeklyReport
       }
     }
     """
@@ -396,7 +394,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
   defp execute(conn, query, query_str) do
     conn
     |> post("/graphql", mutation_skeleton(query))
-    |> IO.inspect()
     |> json_response(200)
     |> get_in(["data", query_str])
   end

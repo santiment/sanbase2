@@ -1604,5 +1604,27 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Project rank based on the scores in the top trending words",
+    "name": "trending_rank",
+    "metric": "trending_rank",
+    "version": "2019-01-01",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
   }
 ]

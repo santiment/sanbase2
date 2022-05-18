@@ -301,6 +301,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_volume_consumed_bitcointalk",
         "sentiment_volume_consumed_total",
         "social_active_users",
+        "trending_rank",
         # histogram metrics
         "age_distribution",
         "price_histogram",

@@ -129,9 +129,10 @@ defmodule Sanbase.UserList do
     |> where([ul], ul.is_public == true)
     |> distinct(true)
     |> maybe_filter_is_screener_query(opts)
-    |> maybe_apply_metrics_filter(opts)
+    |> maybe_apply_metrics_filter_query(opts)
     |> maybe_filter_by_type_query(opts)
-    |> maybe_apply_projects_filter(opts)
+    |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_list_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([ul], ul.id)
@@ -142,9 +143,10 @@ defmodule Sanbase.UserList do
     from(ul in __MODULE__)
     |> where([ul], ul.user_id == ^user_id)
     |> maybe_filter_is_screener_query(opts)
-    |> maybe_apply_metrics_filter(opts)
+    |> maybe_apply_metrics_filter_query(opts)
     |> maybe_filter_by_type_query(opts)
-    |> maybe_apply_projects_filter(opts)
+    |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_list_id)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([ul], ul.id)
   end
@@ -459,7 +461,7 @@ defmodule Sanbase.UserList do
     end
   end
 
-  defp maybe_apply_projects_filter(query, opts) do
+  defp maybe_apply_projects_filter_query(query, opts) do
     case Keyword.get(opts, :filter) do
       %{project_ids: project_ids} ->
         query
@@ -471,7 +473,7 @@ defmodule Sanbase.UserList do
     end
   end
 
-  defp maybe_apply_metrics_filter(query, opts) do
+  defp maybe_apply_metrics_filter_query(query, opts) do
     case Keyword.get(opts, :filter) do
       %{metrics: metrics} ->
         subquery =

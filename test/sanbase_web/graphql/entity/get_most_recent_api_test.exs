@@ -474,6 +474,42 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
     assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
   end
 
+  test "get most recent featured entities", context do
+    %{conn: conn} = context
+    w = insert(:watchlist, type: :project, is_public: true, inserted_at: seconds_ago(30))
+    _ = insert(:screener, type: :project, is_public: true)
+    i = insert(:published_post, published_at: seconds_ago(25))
+    _ = insert(:published_post)
+    _ = insert(:chart_configuration, is_public: true)
+    c = insert(:chart_configuration, is_public: true, inserted_at: seconds_ago(20))
+
+    :ok = Sanbase.FeaturedItem.update_item(w, true)
+    :ok = Sanbase.FeaturedItem.update_item(i, true)
+    :ok = Sanbase.FeaturedItem.update_item(c, true)
+
+    result =
+      get_most_recent(
+        conn,
+        [:screener, :insight, :chart_configuration, :project_watchlist],
+        is_featured_data_only: true
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    # Expect: w1, i1, c1, a1
+    assert %{
+             "totalEntitiesCount" => 3,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert Enum.at(data, 0)["chartConfiguration"]["id"] == c.id
+    assert Enum.at(data, 1)["insight"]["id"] == i.id
+    assert Enum.at(data, 2)["projectWatchlist"]["id"] |> String.to_integer() == w.id
+  end
+
   defp create_alert(user, project, inserted_at) do
     trigger_settings = %{
       type: "metric_signal",
@@ -502,43 +538,21 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
   end
 
   defp get_most_recent(conn, entity_or_entities, opts \\ []) do
-    page = Keyword.get(opts, :page, 1)
-    page_size = Keyword.get(opts, :page_size, 10)
+    opts =
+      opts
+      |> Keyword.put_new(:page, 1)
+      |> Keyword.put_new(:page_size, 10)
+      |> Keyword.put_new(:types, List.wrap(entity_or_entities))
 
-    types_str =
-      case entity_or_entities do
-        [_ | _] = types ->
-          types =
-            Enum.map(types, &(&1 |> Atom.to_string() |> String.upcase()))
-            |> Enum.join(", ")
-
-          "types: [#{types}]"
-
-        type when is_atom(type) ->
-          "type: #{type |> Atom.to_string() |> String.upcase()}"
-      end
-
-    filter_str =
-      case Keyword.get(opts, :filter, nil) do
-        nil -> ""
-        filter -> "filter: #{map_to_input_object_str(filter)}"
-      end
-
-    user_role_data_only_str =
-      case Keyword.get(opts, :user_role_data_only) do
-        nil -> ""
-        role -> "userRoleDataOnly: #{Atom.to_string(role) |> String.upcase()}"
+    args =
+      case Map.new(opts) do
+        %{filter: _} = map -> put_in(map, [:filter, :map_as_input_object], true)
+        map -> map
       end
 
     query = """
     {
-      getMostRecent(
-        #{types_str}
-        page: #{page}
-        pageSize: #{page_size}
-        #{filter_str}
-        #{user_role_data_only_str}
-      ){
+      getMostRecent(#{map_to_args(args)}){
         stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
         data {
           insight{ id }

@@ -52,4 +52,8 @@ defmodule SanbaseWeb.Graphql.NftTypes do
     field(:quantities, list_of(:nft_quantity))
     field(:nft, :nft)
   end
+
+  object :nft_contract_data do
+    field(:nft_collection, :string)
+  end
 end

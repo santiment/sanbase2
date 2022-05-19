@@ -107,6 +107,24 @@ defmodule SanbaseWeb.Graphql.NftTradesApiTest do
     end)
   end
 
+  test "get nft collection by contract", context do
+    query = """
+    {
+      getNftCollectionByContract(selector:{address:"0x1"}) {
+        nftCollection
+      }
+    }
+    """
+
+    rows = [["BAYC"]]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      assert execute_query(context.conn, query, "getNftCollectionByContract")["nftCollection"] ==
+               "BAYC"
+    end)
+  end
+
   defp get_nft_influencer_trades(conn, from, to, page, page_size, order_by, direction) do
     query = """
     {

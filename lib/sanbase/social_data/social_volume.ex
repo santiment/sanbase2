@@ -22,7 +22,7 @@ defmodule Sanbase.SocialData.SocialVolume do
     social_volume(selector, from, to, interval, sources_string, opts)
   end
 
-  def social_volume(%{contract_address: contract} = selector, from, to, interval, source, opts)
+  def social_volume(%{contract_address: contract}, from, to, interval, source, opts)
       when is_binary(contract) do
     search_text =
       contract

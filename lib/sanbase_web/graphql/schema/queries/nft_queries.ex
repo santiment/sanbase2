@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Schema.NftQueries do
       )
     end
 
-    field :get_nft_collection_by_contract, :string do
+    field :get_nft_collection_by_contract, :nft_contract_data do
       meta(access: :free)
 
       arg(:selector, non_null(:nft_contract_input_object))

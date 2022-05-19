@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.NftResolver do
     infrastructure = selector[:infrastructure] || "ETH"
 
     case NftTrade.nft_collection_by_contract(contract, infrastructure) do
-      nft_collection when is_binary(nft_collection) -> {:ok, nft_collection}
+      nft_collection when is_binary(nft_collection) -> {:ok, %{nft_collection: nft_collection}}
       nil -> {:error, "Can't fetch nft collection name by this contract: #{contract}"}
     end
   end

@@ -39,6 +39,21 @@ defmodule Sanbase.Entity.Query do
     end
   end
 
+  @spec maybe_filter_is_featured_query(Ecto.Query.t(), Sanbase.Entity.opts(), Atom.t()) ::
+          Ecto.Query.t()
+  def maybe_filter_is_featured_query(query, opts, featured_item_field) do
+    case Keyword.get(opts, :is_featured_data_only) do
+      true ->
+        query
+        |> join(:inner, [elem], fi in Sanbase.FeaturedItem,
+          on: elem.id == field(fi, ^featured_item_field)
+        )
+
+      _ ->
+        query
+    end
+  end
+
   defmacro entity_id_selection() do
     quote do
       fragment("""

@@ -78,7 +78,12 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     {from, to}
   end
 
-  def query_skeleton(query, query_name \\ "", variable_defs \\ "", variables \\ "{}") do
+  def query_skeleton(
+        query,
+        query_name \\ "",
+        variable_defs \\ "",
+        variables \\ "{}"
+      ) do
     %{
       "operationName" => "#{query_name}",
       "query" => "query #{query_name}#{variable_defs} #{query}",
@@ -194,6 +199,15 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
       {k, a} when is_atom(a) ->
         ~s/#{k}: #{a |> Atom.to_string() |> String.upcase()}/
 
+      {k, [atom | _] = atom_list} when is_atom(atom) ->
+        atom_list_str =
+          Enum.map(atom_list, fn a ->
+            a |> Atom.to_string() |> String.upcase()
+          end)
+          |> Enum.join(", ")
+
+        ~s/#{k}: [#{atom_list_str}]/
+
       {k, v} ->
         ~s/#{k}: #{inspect(v)}/
     end)
@@ -248,13 +262,21 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   end
 
   defp add_missing_selector(:contract_address, selector),
-    do: Map.put(selector, :contract_address, "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098")
+    do:
+      Map.put(
+        selector,
+        :contract_address,
+        "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
+      )
 
   defp add_missing_selector(:label_fqn, selector),
     do: Map.put(selector, :label_fqn, "santiment/owner->Coinbase:v1")
 
   defp add_missing_selector(:label_fqns, selector) do
-    Map.put(selector, :label_fqns, ["santiment/owner->Coinbase:v1", "santiment/owner->Binance:v1"])
+    Map.put(selector, :label_fqns, [
+      "santiment/owner->Coinbase:v1",
+      "santiment/owner->Binance:v1"
+    ])
   end
 
   defp add_missing_selector(:source, selector) do
@@ -265,7 +287,11 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   defp add_missing_selector(:blockchain_address, selector) do
     # Add `map_as_input_object` flag as an implementation detail for the
     # map_to_input_object_str/{1,2} function so this is not encoded as json
-    blockchain_address = %{map_as_input_object: true, address: "0x" <> rand_hex_str(38)}
+    blockchain_address = %{
+      map_as_input_object: true,
+      address: "0x" <> rand_hex_str(38)
+    }
+
     Map.put(selector, :blockchain_address, blockchain_address)
   end
 end

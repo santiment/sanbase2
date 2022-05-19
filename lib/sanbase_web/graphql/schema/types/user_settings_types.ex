@@ -22,6 +22,9 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:alert_notify_email, :boolean)
     field(:alert_notify_telegram, :boolean)
     field(:alerts_per_day_limit, :json)
+    field(:is_subscribed_edu_emails, :boolean)
+    field(:is_subscribed_monthly_newsletter, :boolean)
+    field(:is_subscribed_biweekly_report, :boolean)
 
     field :alerts_per_day_limit_left, :json do
       resolve(&UserSettingsResolver.alerts_per_dy_limit_left/3)
@@ -54,6 +57,10 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:alert_notify_telegram, :boolean)
     field(:alerts_per_day_limit, :json)
     field(:favorite_metrics, list_of(:string))
+    field(:is_subscribed_edu_emails, :boolean)
+    field(:is_subscribed_monthly_newsletter, :boolean)
+    field(:is_subscribed_biweekly_report, :boolean)
+
     # Deprecated fields
     field(:signal_notify_telegram, :boolean)
     field(:signal_notify_email, :boolean)

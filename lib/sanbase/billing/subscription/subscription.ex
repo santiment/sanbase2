@@ -373,6 +373,10 @@ defmodule Sanbase.Billing.Subscription do
     fetch_current_subscription(user_id, product_id)
   end
 
+  def current_subscription_plan(user_id, product_id) do
+    current_subscription(user_id, product_id) |> plan_name()
+  end
+
   def plan_name(nil), do: :free
   def plan_name(%__MODULE__{plan: plan}), do: plan |> Plan.plan_atom_name()
 

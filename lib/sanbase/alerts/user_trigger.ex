@@ -30,6 +30,7 @@ defmodule Sanbase.Alert.UserTrigger do
   @type trigger_id :: non_neg_integer()
 
   schema "user_triggers" do
+    field(:is_deleted, :boolean, default: false)
     belongs_to(:user, User)
     embeds_one(:trigger, Trigger, on_replace: :update)
 
@@ -86,11 +87,9 @@ defmodule Sanbase.Alert.UserTrigger do
 
   @impl Sanbase.Entity.Behaviour
   def by_id(id, _opts) when is_integer(id) do
-    result =
-      from(ut in __MODULE__, where: ut.id == ^id)
-      |> Repo.one()
+    query = from(ut in base_query(), where: ut.id == ^id)
 
-    case result do
+    case Repo.one(query) do
       nil -> {:error, "UserTrigger with id: #{id} does not exist."}
       ut -> {:ok, ut |> trigger_in_struct()}
     end
@@ -102,7 +101,7 @@ defmodule Sanbase.Alert.UserTrigger do
   @impl Sanbase.Entity.Behaviour
   def by_ids(ids, _opts) when is_list(ids) do
     result =
-      from(ul in __MODULE__,
+      from(ul in base_query(),
         where: ul.id in ^ids,
         order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
       )
@@ -114,7 +113,7 @@ defmodule Sanbase.Alert.UserTrigger do
 
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
-    from(ul in __MODULE__)
+    base_query()
     |> where([ul], trigger_is_public())
     |> maybe_apply_projects_filter(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
@@ -125,7 +124,7 @@ defmodule Sanbase.Alert.UserTrigger do
 
   @impl Sanbase.Entity.Behaviour
   def user_entity_ids_query(user_id, opts) do
-    from(ul in __MODULE__)
+    base_query()
     |> where([ul], ul.user_id == ^user_id)
     |> maybe_apply_projects_filter(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
@@ -146,7 +145,9 @@ defmodule Sanbase.Alert.UserTrigger do
 
   @spec triggers_count_for(non_neg_integer()) :: integer()
   def triggers_count_for(user_id) when is_integer(user_id) and user_id > 0 do
-    from(ut in UserTrigger, where: ut.user_id == ^user_id, select: fragment("count(*)"))
+    base_query()
+    |> where([ut], ut.user_id == ^user_id)
+    |> select([_], fragment("count(*)"))
     |> Repo.one()
   end
 
@@ -163,7 +164,7 @@ defmodule Sanbase.Alert.UserTrigger do
   """
   @spec all_public_triggers() :: list(%UserTrigger{})
   def all_public_triggers() do
-    from(ut in UserTrigger, where: trigger_is_public(), preload: [:tags])
+    from(ut in base_query(), where: trigger_is_public(), preload: [:tags])
     |> Repo.all()
     |> Enum.map(&trigger_in_struct/1)
   end
@@ -206,7 +207,7 @@ defmodule Sanbase.Alert.UserTrigger do
   @spec get_all_triggers_by_type(String.t()) :: list(%__MODULE__{})
   def get_all_triggers_by_type(type) do
     from(
-      ut in UserTrigger,
+      ut in base_query(),
       where: trigger_type_is(type),
       preload: [{:user, :user_settings}, :tags]
     )
@@ -221,7 +222,7 @@ defmodule Sanbase.Alert.UserTrigger do
   @spec get_active_triggers_by_type(String.t()) :: list(%__MODULE__{})
   def get_active_triggers_by_type(type) do
     from(
-      ut in UserTrigger,
+      ut in base_query(),
       where: trigger_type_is(type) and trigger_is_active(),
       preload: [{:user, :user_settings}, :tags]
     )
@@ -393,7 +394,7 @@ defmodule Sanbase.Alert.UserTrigger do
 
   defp by_user_and_id_query(nil, trigger_id) do
     from(
-      ut in UserTrigger,
+      ut in base_query(),
       where: ut.id == ^trigger_id and trigger_is_public(),
       preload: [:tags]
     )
@@ -401,20 +402,20 @@ defmodule Sanbase.Alert.UserTrigger do
 
   defp by_user_and_id_query(user_id, trigger_id) do
     from(
-      ut in UserTrigger,
+      ut in base_query(),
       where: ut.id == ^trigger_id and (trigger_is_public() or ut.user_id == ^user_id),
       preload: [:tags]
     )
   end
 
   defp user_triggers_for(user_id) do
-    from(ut in UserTrigger, where: ut.user_id == ^user_id, preload: [:tags])
+    from(ut in base_query(), where: ut.user_id == ^user_id, preload: [:tags])
     |> Repo.all()
     |> Enum.map(&trigger_in_struct/1)
   end
 
   defp public_user_triggers_for(user_id) do
-    from(ut in UserTrigger,
+    from(ut in base_query(),
       where: ut.user_id == ^user_id and trigger_is_public(),
       preload: [:tags]
     )
@@ -465,6 +466,10 @@ defmodule Sanbase.Alert.UserTrigger do
     |> Map.drop([:id])
     |> Enum.reject(fn {_k, v} -> is_nil(v) end)
     |> Enum.into(%{})
+  end
+
+  defp base_query(_opts \\ []) do
+    from(ul in __MODULE__, where: ul.is_deleted != true)
   end
 
   defp maybe_apply_projects_filter(query, opts) do

@@ -32,15 +32,15 @@ defmodule Sanbase.UserList do
 
   schema "user_lists" do
     field(:type, WatchlistType, default: :project)
-
+    field(:name, :string)
+    field(:slug, :string)
     field(:color, ColorEnum, default: :none)
     field(:description, :string)
     field(:function, WatchlistFunction, default: %WatchlistFunction{})
     field(:is_monitored, :boolean, default: false)
     field(:is_public, :boolean, default: false)
     field(:is_screener, :boolean, default: false)
-    field(:name, :string)
-    field(:slug, :string)
+    field(:is_deleted, :boolean, default: false)
 
     belongs_to(:user, User)
     belongs_to(:table_configuration, Sanbase.TableConfiguration)
@@ -99,7 +99,7 @@ defmodule Sanbase.UserList do
   @impl Sanbase.Entity.Behaviour
   def by_id(id, _opts) when is_integer(id) or is_binary(id) do
     result =
-      from(ul in __MODULE__, where: ul.id == ^id)
+      from(ul in base_query(), where: ul.id == ^id)
       |> Repo.one()
 
     case result do
@@ -114,7 +114,7 @@ defmodule Sanbase.UserList do
   @impl Sanbase.Entity.Behaviour
   def by_ids(ids, _opts) when is_list(ids) do
     result =
-      from(ul in __MODULE__,
+      from(ul in base_query(),
         where: ul.id in ^ids,
         order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
       )
@@ -125,7 +125,7 @@ defmodule Sanbase.UserList do
 
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
-    from(ul in __MODULE__)
+    base_query()
     |> where([ul], ul.is_public == true)
     |> distinct(true)
     |> maybe_filter_is_screener_query(opts)
@@ -140,7 +140,7 @@ defmodule Sanbase.UserList do
 
   @impl Sanbase.Entity.Behaviour
   def user_entity_ids_query(user_id, opts) do
-    from(ul in __MODULE__)
+    base_query()
     |> where([ul], ul.user_id == ^user_id)
     |> maybe_filter_is_screener_query(opts)
     |> maybe_apply_metrics_filter_query(opts)
@@ -152,7 +152,7 @@ defmodule Sanbase.UserList do
   end
 
   def by_slug(slug) when is_binary(slug) do
-    from(ul in __MODULE__, where: ul.slug == ^slug)
+    from(ul in base_query(), where: ul.slug == ^slug)
     |> Repo.one()
   end
 
@@ -323,7 +323,7 @@ defmodule Sanbase.UserList do
 
   def fetch_user_lists(%User{id: user_id}, type) do
     result =
-      __MODULE__
+      base_query()
       |> filter_by_user_id_query(user_id)
       |> filter_by_type_query(type)
       |> Repo.all()
@@ -333,7 +333,7 @@ defmodule Sanbase.UserList do
 
   def fetch_public_user_lists(%User{id: user_id}, type) do
     result =
-      __MODULE__
+      base_query()
       |> filter_by_user_id_query(user_id)
       |> filter_by_is_public_query(true)
       |> filter_by_type_query(type)
@@ -344,7 +344,7 @@ defmodule Sanbase.UserList do
 
   def fetch_all_public_lists(type) do
     result =
-      __MODULE__
+      base_query()
       |> filter_by_is_public_query(true)
       |> filter_by_type_query(type)
       |> Repo.all()
@@ -364,6 +364,10 @@ defmodule Sanbase.UserList do
 
   # Private functions
 
+  defp base_query(_opts \\ []) do
+    from(ul in __MODULE__, where: ul.is_deleted != true)
+  end
+
   defp maybe_create_event({:ok, watchlist}, changeset, event_type) do
     TimelineEvent.maybe_create_event_async(event_type, watchlist, changeset)
     {:ok, watchlist}
@@ -373,11 +377,13 @@ defmodule Sanbase.UserList do
 
   defp user_list_query_by_user_id(%User{id: user_id})
        when is_integer(user_id) and user_id > 0 do
-    from(ul in __MODULE__, where: ul.is_public == true or ul.user_id == ^user_id)
+    from(ul in base_query(),
+      where: ul.is_public == true or ul.user_id == ^user_id
+    )
   end
 
   defp user_list_query_by_user_id(_) do
-    from(ul in __MODULE__, where: ul.is_public == true)
+    from(ul in base_query(), where: ul.is_public == true)
   end
 
   defp update_list_items_params(

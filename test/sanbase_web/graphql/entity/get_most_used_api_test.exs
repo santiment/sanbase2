@@ -16,10 +16,10 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   defp create_interaction_api(conn, type, id) do
     mutation = """
     mutation{
-    storeUserEntityInteraction(
-    entityType: #{type |> to_string() |> String.upcase()}
-    entityId: #{id}
-    interactionType: VIEW)
+      storeUserEntityInteraction(
+        entityType: #{type |> to_string() |> String.upcase()}
+        entityId: #{id}
+        interactionType: VIEW)
     }
     """
 
@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   end
 
   test "get most used insights", context do
-    %{conn: conn, user: user} = context
+    %{conn: conn} = context
     insight1 = insert(:published_post)
     _unpublished = insert(:post)
     insight2 = insert(:published_post)
@@ -65,7 +65,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   end
 
   test "get most used screener", context do
-    %{conn: conn, user: user} = context
+    %{conn: conn} = context
     _not_screener = insert(:watchlist, is_public: true)
     screener1 = insert(:screener, is_public: true)
     screener2 = insert(:screener, is_public: true)
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   end
 
   test "get most recent project watchlist", context do
-    %{conn: conn, user: user} = context
+    %{conn: conn} = context
 
     # The screener should not be in the result
     watchlist1 = insert(:watchlist, type: :project, is_public: true)
@@ -139,7 +139,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   end
 
   test "get most recent address watchlist", context do
-    %{conn: conn, user: user} = context
+    %{conn: conn} = context
 
     # The screener should not be in the result
     watchlist1 = insert(:watchlist, type: :blockchain_address, is_public: true)
@@ -177,7 +177,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   end
 
   test "get most recent chart configuration", context do
-    %{conn: conn, user: user} = context
+    %{conn: conn} = context
     c1 = insert(:chart_configuration, is_public: true)
     c2 = insert(:chart_configuration, is_public: true)
     _private = insert(:chart_configuration, is_public: false)
@@ -219,7 +219,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   end
 
   test "get most recent user trigger", context do
-    %{conn: conn, user: user} = context
+    %{conn: conn} = context
 
     user_trigger1 = insert(:user_trigger, is_public: true)
     user_trigger2 = insert(:user_trigger, is_public: true)
@@ -262,12 +262,12 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   end
 
   test "get most recent combined", context do
-    %{conn: conn, user: user} = context
-    ut = insert(:user_trigger, user: user, is_public: true)
-    i = insert(:published_post, user: user)
-    c = insert(:chart_configuration, user: user, is_public: true)
-    s = insert(:screener, user: user, is_public: true)
-    w = insert(:watchlist, user: user, type: :project, is_public: true)
+    %{conn: conn} = context
+    ut = insert(:user_trigger, is_public: true)
+    i = insert(:published_post)
+    c = insert(:chart_configuration, is_public: true)
+    s = insert(:screener, is_public: true)
+    w = insert(:watchlist, type: :project, is_public: true)
 
     for index <- 1..50 do
       if rem(index, 6) == 0, do: create_interaction_api(conn, :user_trigger, ut.id)
@@ -307,7 +307,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   end
 
   test "get most used with projects' slugs filter", context do
-    %{conn: conn, user: user} = context
+    %{conn: conn} = context
     slug = "some_slug"
 
     to_ids = fn projects -> Enum.map(projects, &%{project_id: &1.id}) end
@@ -375,7 +375,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   end
 
   test "get most used screeners with metrics filter", context do
-    %{conn: conn, user: user} = context
+    %{conn: conn} = context
 
     function = fn metrics ->
       function = %Sanbase.WatchlistFunction{
@@ -433,44 +433,67 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() == s1.id
   end
 
+  test "get most used featured entities", context do
+    %{conn: conn} = context
+    w1 = insert(:watchlist, type: :project, is_public: true)
+    s1 = insert(:screener, type: :project, is_public: true)
+    i1 = insert(:published_post)
+    i2 = insert(:published_post)
+    c1 = insert(:chart_configuration, is_public: true)
+    c2 = insert(:chart_configuration, is_public: true)
+
+    :ok = Sanbase.FeaturedItem.update_item(w1, true)
+    :ok = Sanbase.FeaturedItem.update_item(i2, true)
+    :ok = Sanbase.FeaturedItem.update_item(c1, true)
+
+    for index <- 1..60 do
+      if rem(index, 20) == 0, do: create_interaction_api(conn, :project_watchlist, w1.id)
+      if rem(index, 20) == 0, do: create_interaction_api(conn, :screener, s1.id)
+      if rem(index, 10) == 0, do: create_interaction_api(conn, :insight, i1.id)
+      if rem(index, 10) == 0, do: create_interaction_api(conn, :insight, i2.id)
+      if rem(index, 5) == 0, do: create_interaction_api(conn, :chart_configuration, c1.id)
+      if rem(index, 5) == 0, do: create_interaction_api(conn, :chart_configuration, c2.id)
+    end
+
+    result =
+      get_most_used(
+        conn,
+        [:screener, :insight, :chart_configuration, :project_watchlist],
+        is_featured_data_only: true
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    # Expect: w1, i1, c1, a1
+    assert %{
+             "totalEntitiesCount" => 3,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert Enum.at(data, 0)["chartConfiguration"]["id"] == c1.id
+    assert Enum.at(data, 1)["insight"]["id"] == i2.id
+    assert Enum.at(data, 2)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
+  end
+
   defp get_most_used(conn, entity_or_entities, opts \\ []) do
-    page = Keyword.get(opts, :page, 1)
-    page_size = Keyword.get(opts, :page_size, 10)
+    opts =
+      opts
+      |> Keyword.put_new(:page, 1)
+      |> Keyword.put_new(:page_size, 10)
+      |> Keyword.put_new(:types, List.wrap(entity_or_entities))
 
-    types_str =
-      case entity_or_entities do
-        [_ | _] = types ->
-          types =
-            Enum.map(types, &(&1 |> Atom.to_string() |> String.upcase()))
-            |> Enum.join(", ")
-
-          "types: [#{types}]"
-
-        type when is_atom(type) ->
-          "type: #{type |> Atom.to_string() |> String.upcase()}"
-      end
-
-    filter_str =
-      case Keyword.get(opts, :filter, nil) do
-        nil -> ""
-        filter -> "filter: #{map_to_input_object_str(filter)}"
-      end
-
-    user_role_data_only_str =
-      case Keyword.get(opts, :user_role_data_only) do
-        nil -> ""
-        role -> "userRoleDataOnly: #{Atom.to_string(role) |> String.upcase()}"
+    args =
+      case Map.new(opts) do
+        %{filter: _} = map -> put_in(map, [:filter, :map_as_input_object], true)
+        map -> map
       end
 
     query = """
     {
-      getMostUsed(
-        #{types_str}
-        page: #{page}
-        pageSize: #{page_size}
-        #{filter_str}
-        #{user_role_data_only_str}
-      ){
+      getMostUsed(#{map_to_args(args)}){
         stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
         data {
           insight{ id }

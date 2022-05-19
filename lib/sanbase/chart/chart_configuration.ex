@@ -96,6 +96,7 @@ defmodule Sanbase.Chart.Configuration do
     from(config in __MODULE__)
     |> where([config], config.is_public == true)
     |> maybe_apply_projects_filter(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :chart_configuration_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([config], config.id)
@@ -105,6 +106,7 @@ defmodule Sanbase.Chart.Configuration do
   def user_entity_ids_query(user_id, opts) do
     from(config in __MODULE__)
     |> where([config], config.user_id == ^user_id)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :chart_configuration_id)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([config], config.id)
   end

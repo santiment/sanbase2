@@ -299,16 +299,6 @@ defmodule Sanbase.Entity do
         }
       )
 
-    # The result is returned in descending order based on votes. This order will
-    # be lost once we split the result into different entity type groups is
-    # order to fetch them. In order to preserve the order, we need to record it
-    # beforehand. This is done by making a map where the keys are {entity_type,
-    # entity_id} and the value is the position in the original result. NOTE 1:
-    # As we are recording the position in the original result, we need to sort
-    # the result in ASCENDING order at the end. NOTE 2: The db_result from here
-    # includes only the entity id and entity type. This is not enough to
-    # distinguish between screener and watchlist. This will be done once the
-    # full objects are returned.
     result =
       Sanbase.Repo.all(query)
       |> fetch_entities_by_ids_preserve_order_rewrite_keys()

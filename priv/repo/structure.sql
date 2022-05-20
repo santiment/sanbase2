@@ -2819,11 +2819,10 @@ ALTER SEQUENCE public.user_api_key_tokens_id_seq OWNED BY public.user_api_key_to
 
 CREATE TABLE public.user_entity_interactions (
     id bigint NOT NULL,
-    user_id bigint,
-    entity_type character varying(255),
-    entity_id integer,
-    entity_details jsonb,
-    interaction_type character varying(255),
+    user_id bigint NOT NULL,
+    entity_type character varying(255) NOT NULL,
+    entity_id integer NOT NULL,
+    interaction_type character varying(255) NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );

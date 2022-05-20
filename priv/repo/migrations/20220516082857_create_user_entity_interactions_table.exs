@@ -3,11 +3,10 @@ defmodule Sanbase.Repo.Migrations.CreateUserEntityInteractionsTable do
 
   def change do
     create table(:user_entity_interactions) do
-      add(:user_id, references(:users))
-      add(:entity_type, :string)
-      add(:entity_id, :integer)
-      add(:entity_details, :jsonb)
-      add(:interaction_type, :string)
+      add(:user_id, references(:users), null: false)
+      add(:entity_type, :string, null: false)
+      add(:entity_id, :integer, null: false)
+      add(:interaction_type, :string, null: false)
 
       timestamps()
     end

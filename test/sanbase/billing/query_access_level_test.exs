@@ -80,6 +80,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_metric,
           :get_most_recent,
           :get_most_voted,
+          :get_nft_collection_by_contract,
           :get_nft_trades,
           :get_nft_trades_count,
           :get_primary_user,

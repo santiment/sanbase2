@@ -1,10 +1,12 @@
 defmodule Sanbase.Clickhouse.NftTrade do
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
+  alias Sanbase.ClickhouseRepo
+
   def get_trades_count(label_key, from, to) do
     {query, args} = get_trades_count_query(label_key, from, to)
 
-    Sanbase.ClickhouseRepo.query_transform(query, args, fn [count] -> count end)
+    ClickhouseRepo.query_transform(query, args, fn [count] -> count end)
     |> maybe_unwrap_ok_value()
   end
 
@@ -12,7 +14,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
       when label_key in [:nft_influencer, :nft_whale] do
     {query, args} = get_trades_query(label_key, from, to, opts)
 
-    Sanbase.ClickhouseRepo.query_transform(
+    ClickhouseRepo.query_transform(
       query,
       args,
       fn list ->
@@ -60,6 +62,48 @@ defmodule Sanbase.Clickhouse.NftTrade do
         }
       end
     )
+  end
+
+  def nft_collection_by_contract(contract, infrastructure \\ "ETH") do
+    contract = Sanbase.BlockchainAddress.to_internal_format(contract)
+    blockchain = Sanbase.Model.Project.infrastructure_to_blockchain(infrastructure)
+
+    {query, args} = fetch_label_query(contract, blockchain, "value")
+
+    case ClickhouseRepo.query_transform(query, args, fn [label] -> label end) do
+      {:ok, [label]} when not is_nil(label) -> label
+      _ -> nil
+    end
+  end
+
+  def nft_search_text_by_contract(contract, infrastructure \\ "ETH") do
+    contract = Sanbase.BlockchainAddress.to_internal_format(contract)
+    blockchain = Sanbase.Model.Project.infrastructure_to_blockchain(infrastructure)
+
+    {query, args} = fetch_label_query(contract, blockchain, "search_text")
+
+    case ClickhouseRepo.query_transform(query, args, fn [search_term] -> search_term end) do
+      {:ok, [search_term]} when not is_nil(search_term) -> search_term
+      _ -> nil
+    end
+  end
+
+  defp fetch_label_query(contract, blockchain, field) do
+    query = """
+    SELECT dictGet('default.labels_dict', '#{field}', label_id)
+    FROM
+    (
+        SELECT labels
+        FROM default.current_labels
+        WHERE (blockchain = ?1) AND (address = lower(?2))
+    )
+    ARRAY JOIN labels AS label_id
+    WHERE dictGet('default.labels_dict', 'key', label_id) = 'name'
+    """
+
+    args = [blockchain, contract]
+
+    {query, args}
   end
 
   defp get_trades_count_query(label_key, from, to) do

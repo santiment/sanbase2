@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Schema.NftQueries do
   """
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.NftResolver
 
@@ -32,6 +32,14 @@ defmodule SanbaseWeb.Graphql.Schema.NftQueries do
         ttl: 30,
         max_ttl_offset: 30
       )
+    end
+
+    field :get_nft_collection_by_contract, :nft_contract_data do
+      meta(access: :free)
+
+      arg(:selector, non_null(:nft_contract_input_object))
+
+      cache_resolve(&NftResolver.get_nft_collection_by_contract/3)
     end
   end
 

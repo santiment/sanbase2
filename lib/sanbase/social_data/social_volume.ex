@@ -7,7 +7,7 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   alias Sanbase.SocialData.SocialHelper
   alias Sanbase.Model.Project
-  alias Sanbase.ClickhouseRepo
+  alias Sanbase.Clickhouse.NftTrade
 
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
@@ -16,10 +16,7 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   def social_volume(selector, from, to, interval, source, opts)
       when source in [:all, "all", :total, "total"] do
-    # FIXME: bugfix, check if :twitter source have to be completely removed
-    sources_string = SocialHelper.sources() |> Enum.reject(&(&1 == :twitter)) |> Enum.join(",")
-
-    social_volume(selector, from, to, interval, sources_string, opts)
+    social_volume(selector, from, to, interval, SocialHelper.sources_total_string(), opts)
   end
 
   def social_volume(%{contract_address: contract}, from, to, interval, source, opts)
@@ -27,7 +24,7 @@ defmodule Sanbase.SocialData.SocialVolume do
     search_text =
       contract
       |> Sanbase.BlockchainAddress.to_internal_format()
-      |> search_text_by_contract()
+      |> NftTrade.nft_search_text_by_contract()
 
     case search_text do
       text when is_binary(text) ->
@@ -146,27 +143,6 @@ defmodule Sanbase.SocialData.SocialVolume do
       }
     end)
     |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
-  end
-
-  def search_text_by_contract(contract, blockchain \\ "ethereum") do
-    query = """
-    SELECT dictGet('default.labels_dict', 'search_text', label_id)
-    FROM
-    (
-        SELECT labels
-        FROM default.current_labels
-        WHERE (blockchain = ?1) AND (address = lower(?2))
-    )
-    ARRAY JOIN labels AS label_id
-    WHERE dictGet('default.labels_dict', 'key', label_id) = 'name'
-    """
-
-    args = [blockchain, contract]
-
-    case ClickhouseRepo.query_transform(query, args, fn [search_term] -> search_term end) do
-      {:ok, [search_term]} when not is_nil(search_term) -> search_term
-      _ -> nil
-    end
   end
 
   def opts_to_metric(opts) do

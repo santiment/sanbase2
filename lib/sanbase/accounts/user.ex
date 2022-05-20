@@ -237,6 +237,13 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
+  def by_twitter_id(twitter_id) when is_binary(twitter_id) do
+    case Sanbase.Repo.get_by(User, twitter_id: twitter_id) do
+      nil -> {:error, "Cannot fetch user with twitter_id #{twitter_id}"}
+      %__MODULE__{} = user -> {:ok, user}
+    end
+  end
+
   def by_stripe_customer_id(stripe_customer_id) do
     case Repo.get_by(User, stripe_customer_id: stripe_customer_id) do
       nil -> {:error, "Cannot fetch user with stripe_customer_id #{stripe_customer_id}"}
@@ -247,6 +254,7 @@ defmodule Sanbase.Accounts.User do
   def by_selector(%{id: id}), do: by_id(Sanbase.Math.to_integer(id))
   def by_selector(%{email: email}), do: by_email(email)
   def by_selector(%{username: username}), do: by_username(username)
+  def by_selector(%{twitter_id: twitter_id}), do: by_twitter_id(twitter_id)
 
   def update_field(%__MODULE__{} = user, field, value) do
     case Map.fetch!(user, field) == value do

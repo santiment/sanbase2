@@ -60,6 +60,19 @@ defmodule Sanbase.Accounts.User.Email do
     |> Repo.update()
   end
 
+  @doc false
+  def update_email(user, email) do
+    # This function should be used in rare cases where we are sure the email belongs
+    # to the user. One such case is Twitter OAuth where if the response contains
+    # the email then it has been properly validated.
+    old_email = user.email || "<no_email>"
+
+    user
+    |> User.changeset(%{email: email})
+    |> Repo.update()
+    |> emit_event(:update_email, %{old_email: old_email, new_email: email})
+  end
+
   def update_email_from_email_candidate(user) do
     validated_at =
       (user.email_candidate_token_validated_at || Timex.now())

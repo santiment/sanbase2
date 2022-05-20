@@ -49,6 +49,7 @@ defmodule SanbaseWeb.AccountsController do
   end
 
   def callback(%{assigns: %{ueberauth_auth: %{provider: :twitter} = auth}} = conn, params) do
+    IO.inspect("=================== START CALLBACK")
     redirect_urls = get_redirect_urls(params)
     device_data = SanbaseWeb.Guardian.device_data(conn)
 
@@ -75,17 +76,32 @@ defmodule SanbaseWeb.AccountsController do
     end
   end
 
-  # In case the twitter profile has an email address, try fetching the user with
-  # that email and set its twitter_id to the given id. This is done so existing
-  # account can be linked to a twitter account when email addresses match.
-  # The User.update_twitter_id/2 is no-op if the user with that email already exists and
-  # has that twitter_id set. So this results in a single DB call in all cases
-  # except the first time twitter login is used.
   defp twitter_login(email, twitter_id) when is_binary(email) and byte_size(email) > 0 do
-    with {:ok, user} <-
-           User.find_or_insert_by(:email, email, %{is_registered: true, login_origin: :twitter}),
-         {:ok, user} <- User.update_field(user, :twitter_id, twitter_id) do
-      {:ok, user}
+    # There are 2 cases: The user has their email address visible AFTER
+    # their first sanbase login. In this case this operation might fail - the find_or_insert_by/3
+    # will return a new user but the update_field/3 will fail as another user will have the same
+    # twitter_id
+
+    case User.by_selector(%{twitter_id: twitter_id}) do
+      {:ok, user} ->
+        # The email might be missing in the database if user has been created in the past but
+        # at that point the email address was not visible.
+        # This could succeed or fail, depending on the existence of another user with the same email.
+        # Regardless of the success of this operation, the login succeeds.
+        _ = User.Email.update_email(user, email)
+        {:ok, user}
+
+      _ ->
+        # If there is not user with that twitter_id then fetch or create a user with that email
+        # and put the twitter_id.
+        with {:ok, user} <-
+               User.find_or_insert_by(:email, email, %{
+                 is_registered: true,
+                 login_origin: :twitter
+               }),
+             {:ok, user} <- User.update_field(user, :twitter_id, twitter_id) do
+          {:ok, user}
+        end
     end
   end
 

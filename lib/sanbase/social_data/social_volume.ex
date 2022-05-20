@@ -16,10 +16,7 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   def social_volume(selector, from, to, interval, source, opts)
       when source in [:all, "all", :total, "total"] do
-    # FIXME: bugfix, check if :twitter source have to be completely removed
-    sources_string = SocialHelper.sources() |> Enum.reject(&(&1 == :twitter)) |> Enum.join(",")
-
-    social_volume(selector, from, to, interval, sources_string, opts)
+    social_volume(selector, from, to, interval, SocialHelper.sources_total_string(), opts)
   end
 
   def social_volume(%{contract_address: contract}, from, to, interval, source, opts)

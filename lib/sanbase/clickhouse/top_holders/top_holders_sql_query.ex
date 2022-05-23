@@ -12,7 +12,8 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
                      is_list(:erlang.map_get(:exclude_labels, map)) and
                      length(:erlang.map_get(:exclude_labels, map)) > 0)
 
-  def timeseries_data_query("amount_in_top_holders", %{} = params) when has_labels(params) do
+  def timeseries_data_query("amount_in_top_holders", %{} = params)
+      when has_labels(params) do
     decimals = Sanbase.Math.ipow(10, params.decimals)
 
     args = [
@@ -30,10 +31,16 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     # The reason for this is perfromance - in some cases the query would need
     # more than the allowed RAM usage and would fail otherwise.
     {include_labels_str, args} =
-      include_labels_str_args(params, args, trailing_and: false, blockchain_arg_position: 6)
+      include_labels_str_args(params, args,
+        trailing_and: false,
+        blockchain_arg_position: 6
+      )
 
     {exclude_labels_str, args} =
-      exclude_labels_str_args(params, args, trailing_and: true, blockchain_arg_position: 6)
+      exclude_labels_str_args(params, args,
+        trailing_and: true,
+        blockchain_arg_position: 6
+      )
 
     query = """
     SELECT dt, SUM(value) AS value
@@ -42,7 +49,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
         #{aggregation(params.aggregation, "value", "dt")} / #{decimals} AS value,
         toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS dt,
         address
-      FROM #{params.table} FINAL
+      FROM #{params.table}
       #{table_to_where_keyword(params.table)}
         #{exclude_labels_str}
         contract = ?2 AND
@@ -70,7 +77,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
       SELECT
         toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS dt,
         #{aggregation(params.aggregation, "value", "dt")} / #{decimals} AS value
-      FROM #{params.table} FINAL
+      FROM #{params.table}
       #{table_to_where_keyword(params.table)}
         contract = ?2 AND
         rank <= ?3 AND
@@ -100,7 +107,10 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     params =
       params
       |> Map.drop([:include_labels, :exclude_labels])
-      |> Map.put(:include_labels, ["centralized_exchange", "decentralized_exchange"])
+      |> Map.put(:include_labels, [
+        "centralized_exchange",
+        "decentralized_exchange"
+      ])
 
     timeseries_data_query("amount_in_top_holders", params)
   end
@@ -109,7 +119,10 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     params =
       params
       |> Map.drop([:include_labels, :exclude_labels])
-      |> Map.put(:exclude_labels, ["centralized_exchange", "decentralized_exchange"])
+      |> Map.put(:exclude_labels, [
+        "centralized_exchange",
+        "decentralized_exchange"
+      ])
 
     timeseries_data_query("amount_in_top_holders", params)
   end
@@ -131,9 +144,9 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     query = """
     SELECT
       toUnixTimestamp(max(dt))
-    FROM #{table} FINAL
+    FROM #{table}
     #{table_to_where_keyword(table)}
-      contract = ?1
+      contract = ?1 AND dt >= now() - INTERVAL 14 DAY
     """
 
     args = [contract]
@@ -196,7 +209,9 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
         """
 
         labels_str =
-          if Keyword.get(opts, :trailing_and), do: labels_str <> " AND", else: labels_str
+          if Keyword.get(opts, :trailing_and),
+            do: labels_str <> " AND",
+            else: labels_str
 
         {labels_str, args ++ [labels]}
 

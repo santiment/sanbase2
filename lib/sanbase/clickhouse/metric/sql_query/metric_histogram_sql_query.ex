@@ -148,11 +148,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
       FROM (
         SELECT address, SUM(amount) AS locked_sum
         FROM (
-            SELECT distinct *
-            FROM eth2_staking_transfers_v2 FINAL
-            WHERE
+            SELECT argMax(address, dt) AS address, argMax(amount, dt) AS amount
+            FROM eth2_staking_transfers_v2
+            PREWHERE
               dt < toDateTime(?2)
               #{if from, do: "AND dt >= toDateTime(?3)"}
+            GROUP BY primaryKey
         )
         GROUP BY address
       )
@@ -189,8 +190,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         #{label_select(label_as: "label")}
         FROM (
           SELECT DISTINCT(address)
-          FROM eth2_staking_transfers_v2 FINAL
-          WHERE
+          FROM eth2_staking_transfers_v2
+          PREWHERE
             dt < toDateTime(?2)
             #{if from, do: "AND dt >= toDateTime(?3)"}
         )
@@ -239,8 +240,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
                 dictGet('default.eth_label_dict', 'labels', (cityHash64(address), toUInt64(0))) AS label_str
               FROM (
                 SELECT DISTINCT(address)
-                FROM eth2_staking_transfers_v2 FINAL
-                WHERE
+                FROM eth2_staking_transfers_v2
+                PREWHERE
                   dt < toDateTime(?2)
                   #{if from, do: "AND dt >= toDateTime(?3)"}
               )
@@ -280,20 +281,20 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     FROM (
       SELECT
         address,
-        locked_value,
+        SUM(amount) AS locked_value,
         #{label_select(label_as: "label")}
       FROM (
         SELECT
-          address,
-          SUM(amount) AS locked_value
-        FROM eth2_staking_transfers_v2 FINAL
-        WHERE
+          argMax(address, dt) AS address,
+          argMax(amount, dt) AS amount
+        FROM eth2_staking_transfers_v2
+        PREWHERE
           dt < toDateTime(?2)
           #{if from, do: "AND dt >= toDateTime(?3)"}
-        GROUP BY address
-        ORDER BY locked_value DESC
-        LIMIT ?1
-      )
+        GROUP BY primaryKey
+        )
+      ORDER BY locked_value DESC
+      LIMIT ?1
     )
     ORDER BY staked DESC
     """

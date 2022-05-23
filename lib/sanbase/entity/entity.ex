@@ -355,6 +355,11 @@ defmodule Sanbase.Entity do
     opts = update_opts(opts)
     query = most_used_base_query(entities, opts)
 
+    from(entity in subquery(query),
+      select: {entity.entity_id, entity.entity_type}
+    )
+    |> Sanbase.Repo.all()
+
     total_count =
       from(entity in subquery(query),
         select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)

@@ -49,7 +49,6 @@ defmodule SanbaseWeb.AccountsController do
   end
 
   def callback(%{assigns: %{ueberauth_auth: %{provider: :twitter} = auth}} = conn, params) do
-    IO.inspect("=================== START CALLBACK")
     redirect_urls = get_redirect_urls(params)
     device_data = SanbaseWeb.Guardian.device_data(conn)
 

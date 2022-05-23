@@ -10,7 +10,7 @@ defmodule Sanbase.Accounts.Interaction do
 
   @supported_entity_types [
     :project_watchlist,
-    :address_watchlsit,
+    :address_watchlist,
     :screener,
     :insight,
     :chart_configuration,
@@ -84,7 +84,7 @@ defmodule Sanbase.Accounts.Interaction do
     |> Sanbase.Repo.all()
   end
 
-  @weight_1d_to_now 3
+  @weight_1d_to_now 3.0
   @weight_7d_to_1d 1.5
   @weight_60d_to_7d 0.5
   @wight_90d_to_60d 0.2
@@ -113,10 +113,10 @@ defmodule Sanbase.Accounts.Interaction do
         desc:
           fragment(
             """
-            ? * COUNT(CASE WHEN inserted_at >= now() - INTERVAL '1 day' THEN 1 ELSE NULL END) +
-            ? * COUNT(CASE WHEN inserted_at >= now() - INTERVAL '7 days' AND inserted_at < now() - INTERVAL '1 day' THEN 1 ELSE NULL END) +
-            ? * COUNT(CASE WHEN inserted_at >= now() - INTERVAL '60 days' AND inserted_at < now() - INTERVAL '7 day' THEN 1 ELSE NULL END) +
-            ? * COUNT(CASE WHEN inserted_at >= now() - INTERVAL '90 days' AND inserted_at < now() - INTERVAL '60 days' THEN 1 ELSE NULL END)
+            ?::float * COUNT(CASE WHEN inserted_at >= now() - INTERVAL '1 day' THEN 1 ELSE NULL END) +
+            ?::float * COUNT(CASE WHEN inserted_at >= now() - INTERVAL '7 days' AND inserted_at < now() - INTERVAL '1 day' THEN 1 ELSE NULL END) +
+            ?::float * COUNT(CASE WHEN inserted_at >= now() - INTERVAL '60 days' AND inserted_at < now() - INTERVAL '7 day' THEN 1 ELSE NULL END) +
+            ?::float * COUNT(CASE WHEN inserted_at >= now() - INTERVAL '90 days' AND inserted_at < now() - INTERVAL '60 days' THEN 1 ELSE NULL END)
             """,
             ^@weight_1d_to_now,
             ^@weight_7d_to_1d,

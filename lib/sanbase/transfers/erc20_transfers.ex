@@ -285,6 +285,18 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     {limit, offset} = opts_to_limit_offset(opts)
     only_sender = Keyword.get(opts, :only_sender, false)
 
+    maybe_union_with_to_table =
+      case only_sender do
+        true ->
+          ""
+
+        false ->
+          """
+          UNION DISTINCT
+          SELECT * FROM erc20_transfers_to PREWHERE to = ?1
+          """
+      end
+
     query = """
     SELECT
       toUnixTimestamp(dt) AS datetime,
@@ -296,8 +308,10 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       decimals
     FROM (
       SELECT assetRefId, from, to, dt, transactionHash, any(value) AS value
-      FROM erc20_transfers
-      PREWHERE #{if only_sender, do: "from = ?1", else: "(from = ?1 OR to = ?1)"}
+      FROM (
+        SELECT * FROM erc20_transfers PREWHERE from = ?1
+        #{maybe_union_with_to_table}
+      )
       GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
     )
     INNER JOIN (

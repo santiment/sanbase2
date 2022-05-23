@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 14.2
+-- Dumped by pg_dump version 14.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2814,6 +2814,40 @@ ALTER SEQUENCE public.user_api_key_tokens_id_seq OWNED BY public.user_api_key_to
 
 
 --
+-- Name: user_entity_interactions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_entity_interactions (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    entity_type character varying(255) NOT NULL,
+    entity_id integer NOT NULL,
+    interaction_type character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_entity_interactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_entity_interactions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_entity_interactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_entity_interactions_id_seq OWNED BY public.user_entity_interactions.id;
+
+
+--
 -- Name: user_events; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3987,6 +4021,13 @@ ALTER TABLE ONLY public.user_api_key_tokens ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: user_entity_interactions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_entity_interactions ALTER COLUMN id SET DEFAULT nextval('public.user_entity_interactions_id_seq'::regclass);
+
+
+--
 -- Name: user_events id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4735,6 +4776,14 @@ ALTER TABLE ONLY public.timeline_events
 
 ALTER TABLE ONLY public.user_api_key_tokens
     ADD CONSTRAINT user_api_key_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_entity_interactions user_entity_interactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_entity_interactions
+    ADD CONSTRAINT user_entity_interactions_pkey PRIMARY KEY (id);
 
 
 --
@@ -5588,6 +5637,34 @@ CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USI
 --
 
 CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_tokens USING btree (token);
+
+
+--
+-- Name: user_entity_interactions_entity_type_entity_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_entity_interactions_entity_type_entity_id_index ON public.user_entity_interactions USING btree (entity_type, entity_id);
+
+
+--
+-- Name: user_entity_interactions_entity_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_entity_interactions_entity_type_index ON public.user_entity_interactions USING btree (entity_type);
+
+
+--
+-- Name: user_entity_interactions_interaction_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_entity_interactions_interaction_type_index ON public.user_entity_interactions USING btree (interaction_type);
+
+
+--
+-- Name: user_entity_interactions_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_entity_interactions_user_id_index ON public.user_entity_interactions USING btree (user_id);
 
 
 --
@@ -6540,6 +6617,14 @@ ALTER TABLE ONLY public.user_api_key_tokens
 
 
 --
+-- Name: user_entity_interactions user_entity_interactions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_entity_interactions
+    ADD CONSTRAINT user_entity_interactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: user_events user_events_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7145,3 +7230,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220330100631);
 INSERT INTO public."schema_migrations" (version) VALUES (20220404132445);
 INSERT INTO public."schema_migrations" (version) VALUES (20220413130352);
 INSERT INTO public."schema_migrations" (version) VALUES (20220504082527);
+INSERT INTO public."schema_migrations" (version) VALUES (20220516082857);

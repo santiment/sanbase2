@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.GetMostRecentApitest do
+defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
   use SanbaseWeb.ConnCase, async: true
 
   import SanbaseWeb.Graphql.TestHelpers

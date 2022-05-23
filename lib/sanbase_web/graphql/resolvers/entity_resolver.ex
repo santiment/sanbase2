@@ -2,15 +2,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
   import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
 
+  def store_user_entity_interaction(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    args = Map.take(args, [:entity_id, :entity_type, :interaction_type])
+
+    case Sanbase.Accounts.Interaction.store_user_interaction(user.id, args) do
+      {:ok, _} -> {:ok, true}
+      {:error, error} -> {:error, Sanbase.Utils.ErrorHandling.changeset_errors_string(error)}
+    end
+  end
+
+  # Start Most Voted
+
   def get_most_voted(_root, args, _resolution) do
     maybe_do_not_cache(args)
 
     {:ok, %{query: :get_most_voted, args: args}}
-  end
-
-  def get_most_recent(_root, args, _resolution) do
-    maybe_do_not_cache(args)
-    {:ok, %{query: :get_most_recent, args: args}}
   end
 
   def get_most_voted_data(_root, _args, resolution) do
@@ -40,6 +46,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     {:ok, stats}
   end
 
+  # End Most Voted
+
+  # Start Most Recent
+
   def get_most_recent_data(_root, _args, %{source: %{args: args}} = resolution) do
     maybe_do_not_cache(args)
     types = get_types(args)
@@ -66,6 +76,49 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     {:ok, stats}
   end
 
+  def get_most_recent(_root, args, _resolution) do
+    maybe_do_not_cache(args)
+    {:ok, %{query: :get_most_recent, args: args}}
+  end
+
+  # End Most Recent
+
+  # Start Most Used
+
+  def get_most_used(_root, args, _resolution) do
+    maybe_do_not_cache(args)
+    {:ok, %{query: :get_most_used, args: args}}
+  end
+
+  def get_most_used_data(_root, _args, %{source: %{args: args}} = resolution) do
+    maybe_do_not_cache(args)
+    types = get_types(args)
+    opts = get_opts(args, resolution)
+
+    Sanbase.Entity.get_most_used(types, opts)
+    |> maybe_apply_function(&handle_result/1)
+  end
+
+  def get_most_used_stats(_root, _args, resolution) do
+    %{source: %{args: args}} = resolution
+    maybe_do_not_cache(args)
+
+    types = get_types(args)
+    opts = get_opts(args, resolution)
+    {:ok, total_entities_count} = Sanbase.Entity.get_most_used_total_count(types, opts)
+
+    stats = %{
+      current_page: opts[:page],
+      current_page_size: opts[:page_size],
+      total_pages_count: (total_entities_count / opts[:page_size]) |> Float.ceil() |> trunc(),
+      total_entities_count: total_entities_count
+    }
+
+    {:ok, stats}
+  end
+
+  # End Most Used
+
   defp handle_result(list) do
     Enum.map(list, fn map ->
       case Map.to_list(map) do
@@ -86,10 +139,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
       cursor: Map.get(args, :cursor),
       filter: Map.get(args, :filter)
     ]
+    |> maybe_add_user_id_option(resolution)
     |> maybe_add_user_option(:current_user_data_only, args, resolution)
     |> maybe_add_user_option(:current_user_voted_for_only, args, resolution)
     |> maybe_add_value_option(:user_role_data_only, args)
     |> maybe_add_value_option(:is_featured_data_only, args)
+  end
+
+  defp maybe_add_user_id_option(opts, resolution) do
+    case get_in(resolution.context.auth, [:current_user, Access.key(:id)]) do
+      nil -> opts
+      user_id -> Keyword.put(opts, :current_user_id, user_id)
+    end
   end
 
   defp maybe_add_user_option(opts, key, args, resolution) do
@@ -112,7 +173,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
   defp maybe_do_not_cache(args) do
     # Do not cache the queries that fetch the users' own data as they differ
     # for every user and the cache key does not take into consideration the user id
-    if Map.get(args, :current_user_data_only) or Map.get(args, :current_user_voted_for_only),
+    if Map.get(args, :current_user_data_only) || Map.get(args, :current_user_voted_for_only),
       do: Process.put(:do_not_cache_query, true)
   end
 end

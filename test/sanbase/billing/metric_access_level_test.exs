@@ -301,7 +301,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_volume_consumed_bitcointalk",
         "sentiment_volume_consumed_total",
         "social_active_users",
-        "trending_rank",
+        "trending_words_rank",
         # histogram metrics
         "age_distribution",
         "price_histogram",
@@ -899,7 +899,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_volume_twitter_news",
         "social_volume_youtube_videos",
         "social_volume_ai_total",
-        "trending_rank"
+        "trending_words_rank"
       ]
       |> Enum.sort()
 

@@ -120,10 +120,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "00 10 * * *",
       task: {Sanbase.Intercom.UserEvent, :sync_events_from_intercom, []}
     ],
-    sync_newsletter_subscribers_to_mailchimp: [
-      schedule: "@daily",
-      task: {Sanbase.Email.Mailchimp, :run, []}
-    ],
     sync_paid_with: [
       schedule: "20 * * * *",
       task: {Sanbase.Accounts.UserSettings, :sync_paid_with, []}

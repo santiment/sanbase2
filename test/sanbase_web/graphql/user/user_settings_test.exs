@@ -178,12 +178,15 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     assert result["settings"] == %{
              "alertNotifyEmail" => false,
              "alertNotifyTelegram" => true,
-             "newsletterSubscription" => "OFF",
              "isBetaMode" => true,
              "pageSize" => 100,
              "tableColumns" => %{"shown" => ["price", "volume"]},
              "theme" => "nightmode",
-             "favorite_metrics" => ["daily_active_addresses", "nvt"]
+             "favorite_metrics" => ["daily_active_addresses", "nvt"],
+             "isSubscribedBiweeklyReport" => false,
+             "isSubscribedEduEmails" => true,
+             "isSubscribedMonthlyNewsletter" => true,
+             "isSubscribedMarketingEmails" => false
            }
   end
 
@@ -192,60 +195,45 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     result = conn |> execute(query, "currentUser")
 
     assert result["settings"] == %{
-             "newsletterSubscription" => "OFF",
              "alertNotifyEmail" => false,
              "alertNotifyTelegram" => false,
              "isBetaMode" => false,
              "pageSize" => 20,
              "tableColumns" => %{},
              "theme" => "default",
-             "favorite_metrics" => []
+             "favorite_metrics" => [],
+             "isSubscribedBiweeklyReport" => false,
+             "isSubscribedEduEmails" => true,
+             "isSubscribedMonthlyNewsletter" => true,
+             "isSubscribedMarketingEmails" => false
            }
   end
 
-  describe "newsletter subscription" do
-    test "changes subscription to daily", %{conn: conn, user: user} do
-      insert(:user_settings, user: user, settings: %{newsletter_subscription: "WEEKLY"})
-      query = change_newsletter_subscription_query("DAILY")
-      result = conn |> execute(query, "changeNewsletterSubscription")
+  describe "email settings" do
+    test "get default email settings", context do
+      result = execute_query(context.conn, current_user_query(), "currentUser")
 
-      assert result["newsletterSubscription"] == "DAILY"
-
-      assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
-               :daily
+      assert result["settings"]["isSubscribedEduEmails"]
+      assert result["settings"]["isSubscribedMonthlyNewsletter"]
+      refute result["settings"]["isSubscribedBiweeklyReport"]
     end
 
-    test "changes subscription to weekly", %{conn: conn, user: user} do
-      insert(:user_settings, user: user, settings: %{newsletter_subscription: "DAILY"})
-      query = change_newsletter_subscription_query("WEEKLY")
-      result = conn |> execute(query, "changeNewsletterSubscription")
-
-      assert result["newsletterSubscription"] == "WEEKLY"
-
-      assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
-               :weekly
+    test "update email settings", context do
+      query = change_email_settings("isSubscribedMonthlyNewsletter: false")
+      result = execute_mutation(context.conn, query)
+      refute result["isSubscribedMonthlyNewsletter"]
     end
 
-    test "can turn off subscription", %{conn: conn, user: user} do
-      insert(:user_settings, user: user, settings: %{newsletter_subscription: "WEEKLY"})
-      query = change_newsletter_subscription_query("OFF")
-      result = conn |> execute(query, "changeNewsletterSubscription")
+    test "only pro user can update bi-weekly report email setting", context do
+      query = change_email_settings("isSubscribedBiweeklyReport: true")
 
-      assert result["newsletterSubscription"] == "OFF"
+      assert execute_mutation_with_error(context.conn, query) =~
+               "Only PRO users can subscibe to Biweekly Report"
 
-      assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
-               :off
-    end
-
-    test "can handle unknown subscription types", %{conn: conn, user: user} do
-      insert(:user_settings, user: user, settings: %{newsletter_subscription: "WEEKLY"})
-      query = change_newsletter_subscription_query("UNKNOWN")
-      result = conn |> execute(query, "changeNewsletterSubscription")
-
-      assert result["newsletterSubscription"] == nil
-
-      assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
-               :weekly
+      insert(:subscription_pro_sanbase, user: context.user)
+      query = change_email_settings("isSubscribedBiweeklyReport: true")
+      result = execute_mutation(context.conn, query)
+      assert result["isSubscribedBiweeklyReport"]
     end
   end
 
@@ -257,12 +245,15 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
         settings {
           alertNotifyEmail
           alertNotifyTelegram
-          newsletterSubscription
           isBetaMode
           theme
           pageSize
           tableColumns
           favorite_metrics
+          isSubscribedEduEmails
+          isSubscribedMonthlyNewsletter
+          isSubscribedBiweeklyReport
+          isSubscribedMarketingEmails
         }
       }
     }
@@ -334,21 +325,23 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     """
   end
 
-  defp toggle_email_channel_query(is_active?) do
+  defp change_email_settings(arg) do
     """
     mutation {
-      settingsToggleChannel(alertNotifyEmail: #{is_active?}) {
-        alertNotifyEmail
+      updateUserSettings(settings: {#{arg}}) {
+        isSubscribedEduEmails
+        isSubscribedMonthlyNewsletter
+        isSubscribedBiweeklyReport
       }
     }
     """
   end
 
-  defp change_newsletter_subscription_query(type) do
+  defp toggle_email_channel_query(is_active?) do
     """
     mutation {
-      changeNewsletterSubscription(newsletterSubscription: #{type}) {
-        newsletterSubscription
+      settingsToggleChannel(alertNotifyEmail: #{is_active?}) {
+        alertNotifyEmail
       }
     }
     """

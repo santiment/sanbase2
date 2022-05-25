@@ -7,6 +7,11 @@ defmodule SanbaseWeb.Graphql.NftTypes do
     value(:nft_influencer)
   end
 
+  input_object :nft_contract_input_object do
+    field(:address, non_null(:string))
+    field(:infrastructure, :string)
+  end
+
   enum :nft_trades_order_by do
     value(:datetime)
     value(:amount)
@@ -46,5 +51,9 @@ defmodule SanbaseWeb.Graphql.NftTypes do
     field(:quantity, :float)
     field(:quantities, list_of(:nft_quantity))
     field(:nft, :nft)
+  end
+
+  object :nft_contract_data do
+    field(:nft_collection, :string)
   end
 end

@@ -1,10 +1,11 @@
-defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
+defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
   use SanbaseWeb.ConnCase, async: true
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
   setup do
+    _role = insert(:role_san_family)
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
 
@@ -369,6 +370,102 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
     assert Enum.at(data, 8)["userTrigger"]["trigger"]["id"] == a2.id
   end
 
+  test "get most voted entities with people with sanfam role", context do
+    %{conn: conn} = context
+    w0 = insert(:watchlist, type: :project, is_public: true)
+    s0 = insert(:screener, type: :project, is_public: true)
+    i0 = insert(:published_post)
+    c0 = insert(:chart_configuration, is_public: true)
+
+    user = insert(:user)
+
+    {:ok, _} =
+      Sanbase.Accounts.UserRole.create(user.id, Sanbase.Accounts.Role.san_family_role_id())
+
+    w1 = insert(:watchlist, type: :project, is_public: true, user: user)
+    s1 = insert(:screener, type: :project, is_public: true, user: user)
+    i1 = insert(:published_post, user: user)
+    c1 = insert(:chart_configuration, is_public: true, user: user)
+
+    # Vote for the non-san fam users'entities
+    for _ <- 1..4, do: vote(conn, "watchlistId", w0.id)
+    for _ <- 1..3, do: vote(conn, "insightId", i0.id)
+    for _ <- 1..2, do: vote(conn, "watchlistId", s0.id)
+    for _ <- 1..1, do: vote(conn, "chartConfigurationId", c0.id)
+
+    # Vote for the non-san fam users' entities
+    for _ <- 1..4, do: vote(conn, "watchlistId", w1.id)
+    for _ <- 1..3, do: vote(conn, "insightId", i1.id)
+    for _ <- 1..2, do: vote(conn, "watchlistId", s1.id)
+    for _ <- 1..1, do: vote(conn, "chartConfigurationId", c1.id)
+
+    result =
+      get_most_voted(
+        conn,
+        [:screener, :insight, :chart_configuration, :project_watchlist],
+        user_role_data_only: :san_family
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    # Expect: w1, i1, c1, a1
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
+    assert Enum.at(data, 1)["insight"]["id"] == i1.id
+    assert Enum.at(data, 2)["screener"]["id"] |> String.to_integer() == s1.id
+    assert Enum.at(data, 3)["chartConfiguration"]["id"] == c1.id
+  end
+
+  test "get most voted featured entities", context do
+    %{conn: conn} = context
+    w1 = insert(:watchlist, type: :project, is_public: true)
+    s1 = insert(:screener, type: :project, is_public: true)
+    i1 = insert(:published_post)
+    i2 = insert(:published_post)
+    c1 = insert(:chart_configuration, is_public: true)
+    c2 = insert(:chart_configuration, is_public: true)
+
+    :ok = Sanbase.FeaturedItem.update_item(w1, true)
+    :ok = Sanbase.FeaturedItem.update_item(i2, true)
+    :ok = Sanbase.FeaturedItem.update_item(c2, true)
+
+    for _ <- 1..8, do: vote(conn, "watchlistId", w1.id)
+    for _ <- 1..7, do: vote(conn, "watchlistId", s1.id)
+    for _ <- 1..6, do: vote(conn, "chartConfigurationId", c1.id)
+    for _ <- 1..6, do: vote(conn, "chartConfigurationId", c2.id)
+    for _ <- 1..4, do: vote(conn, "insightId", i1.id)
+    for _ <- 1..4, do: vote(conn, "insightId", i2.id)
+
+    result =
+      get_most_voted(
+        conn,
+        [:screener, :insight, :chart_configuration, :project_watchlist],
+        is_featured_data_only: true
+      )
+
+    data = result["data"]
+    stats = result["stats"]
+
+    # Expect: w1, i1, c1, a1
+    assert %{
+             "totalEntitiesCount" => 3,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
+    assert Enum.at(data, 1)["chartConfiguration"]["id"] == c2.id
+    assert Enum.at(data, 2)["insight"]["id"] == i2.id
+  end
+
   defp create_alert(user, project) do
     trigger_settings = %{
       type: "metric_signal",
@@ -407,38 +504,28 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApitest do
       |> get_in(["data", "vote"])
   end
 
+  # Get the most voted entity. Filter only those created in the last 7 days
   defp get_most_voted(conn, entity_or_entities, opts \\ []) do
-    page = Keyword.get(opts, :page, 1)
-    page_size = Keyword.get(opts, :page_size, 10)
+    opts =
+      opts
+      |> Keyword.put_new(:page, 1)
+      |> Keyword.put_new(:page_size, 10)
+      |> Keyword.put_new(:types, List.wrap(entity_or_entities))
+      |> Keyword.put_new(:cursor, %{
+        type: :after,
+        datetime: "utc_now-7d",
+        map_as_input_object: true
+      })
 
-    types_str =
-      case entity_or_entities do
-        [_ | _] = types ->
-          types =
-            Enum.map(types, &(&1 |> Atom.to_string() |> String.upcase()))
-            |> Enum.join(", ")
-
-          "types: [#{types}]"
-
-        type when is_atom(type) ->
-          "type: #{type |> Atom.to_string() |> String.upcase()}"
-      end
-
-    filter_str =
-      case Keyword.get(opts, :filter, nil) do
-        nil -> ""
-        filter -> "filter: #{map_to_input_object_str(filter)}"
+    args =
+      case Map.new(opts) do
+        %{filter: _} = map -> put_in(map, [:filter, :map_as_input_object], true)
+        map -> map
       end
 
     query = """
     {
-      getMostVoted(
-        #{types_str}
-        page: #{page}
-        pageSize: #{page_size}
-        cursor: { type: AFTER, datetime: "utc_now-7d" }
-        #{filter_str}
-      ){
+      getMostVoted(#{map_to_args(args)}){
         stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
         data {
           insight{ id }

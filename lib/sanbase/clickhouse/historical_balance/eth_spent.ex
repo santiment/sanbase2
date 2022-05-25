@@ -54,8 +54,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthSpent do
     of the difference between the two balance
     - Zero otherwise
   """
-  # @spec eth_spent(address | list(address), DateTime.t(), DateTime.t()) ::
-  #         {:ok, number()} | {:error, String.t()} # TODO: Undo
+  @spec eth_spent(address | list(address), DateTime.t(), DateTime.t()) ::
+          {:ok, number()} | {:error, String.t()}
   def eth_spent(addresses, from, to) do
     case eth_balance_change(addresses, from, to) do
       {:ok, balance_changes} ->

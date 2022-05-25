@@ -88,8 +88,10 @@ defmodule Sanbase.Insight.Post do
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
     public_insights_query(opts)
-    |> maybe_apply_projects_filter(opts)
-    |> Sanbase.Entity.maybe_filter_by_cursor(:published_at, opts)
+    |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :post_id)
+    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
     |> select([p], p.id)
   end
 
@@ -97,8 +99,9 @@ defmodule Sanbase.Insight.Post do
   def user_entity_ids_query(user_id, opts) do
     base_insights_query(opts)
     |> by_user(user_id)
-    |> maybe_apply_projects_filter(opts)
-    |> Sanbase.Entity.maybe_filter_by_cursor(:published_at, opts)
+    |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :post_id)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
     |> select([p], p.id)
   end
 
@@ -710,7 +713,7 @@ defmodule Sanbase.Insight.Post do
     ]
   end
 
-  defp maybe_apply_projects_filter(query, opts) do
+  defp maybe_apply_projects_filter_query(query, opts) do
     case Keyword.get(opts, :filter) do
       %{project_ids: project_ids} ->
         query |> where([p], p.price_chart_project_id in ^project_ids)

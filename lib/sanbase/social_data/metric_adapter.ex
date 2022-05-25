@@ -106,7 +106,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data("nft_social_volume", selector, from, to, interval, _opts)
+  def timeseries_data("nft_social_volume", selector, _from, _to, _interval, _opts)
       when not is_supported_nft_sv_selector(selector) do
     {:error, "The provided selector can't be used for metric: nft_social_volume"}
   end

@@ -6,16 +6,20 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
+  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
   alias SanbaseWeb.Graphql.Resolvers.EntityResolver
 
   object :entity_queries do
     field :get_most_voted, :most_voted_entity_result do
       meta(access: :free)
+
       arg(:type, :entity_type)
       arg(:types, list_of(:entity_type))
       arg(:page, :integer)
       arg(:page_size, :integer)
       arg(:current_user_data_only, :boolean, default_value: false)
+      arg(:is_featured_data_only, :boolean, default_value: false)
+      arg(:user_role_data_only, :user_role)
       arg(:current_user_voted_for_only, :boolean, default_value: false)
       arg(:cursor, :cursor_input_no_order, default_value: nil)
       arg(:filter, :entity_filter)
@@ -34,6 +38,8 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
       arg(:types, list_of(:entity_type))
       arg(:page, :integer)
       arg(:page_size, :integer)
+      arg(:is_featured_data_only, :boolean, default_value: false)
+      arg(:user_role_data_only, :user_role)
       arg(:current_user_data_only, :boolean, default_value: false)
       arg(:cursor, :cursor_input_no_order, default_value: nil)
       arg(:filter, :entity_filter)
@@ -44,8 +50,38 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
         honor_do_not_cache_flag: true
       )
     end
+
+    field :get_most_used, :most_used_entity_result do
+      meta(access: :free)
+
+      arg(:type, :entity_type)
+      arg(:types, list_of(:entity_type))
+      arg(:page, :integer)
+      arg(:page_size, :integer)
+      arg(:is_featured_data_only, :boolean, default_value: false)
+      arg(:user_role_data_only, :user_role)
+      arg(:cursor, :cursor_input_no_order, default_value: nil)
+      arg(:filter, :entity_filter)
+
+      middleware(JWTAuth)
+
+      cache_resolve(&EntityResolver.get_most_used/3,
+        ttl: 30,
+        max_ttl_offset: 30,
+        honor_do_not_cache_flag: true
+      )
+    end
   end
 
   object :entity_mutations do
+    field :store_user_entity_interaction, :boolean do
+      arg(:entity_type, :entity_type)
+      arg(:entity_id, :integer)
+      arg(:interaction_type, :entity_interaction_interaction_type)
+
+      middleware(JWTAuth)
+
+      resolve(&EntityResolver.store_user_entity_interaction/3)
+    end
   end
 end

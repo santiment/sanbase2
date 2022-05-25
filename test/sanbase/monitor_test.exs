@@ -11,7 +11,7 @@ defmodule Sanbase.MonitorTest do
   setup do
     user = insert(:user)
     author = insert(:user, username: "tsetso")
-    role_san_clan = insert(:role_san_clan)
+    role_san_family = insert(:role_san_family)
 
     project = insert(:project, slug: "santiment")
     project2 = insert(:project, slug: "ethereum", ticker: "ETH", name: "Ethereum")
@@ -19,7 +19,7 @@ defmodule Sanbase.MonitorTest do
     [
       user: user,
       author: author,
-      role_san_clan: role_san_clan,
+      role_san_family: role_san_family,
       project: project,
       project2: project2,
       week_ago: Timex.shift(Timex.now(), days: -7)
@@ -72,7 +72,7 @@ defmodule Sanbase.MonitorTest do
     test "with author in san clan returns it", context do
       insight = create_insight(context)
 
-      insert(:user_role, user: context.author, role: context.role_san_clan)
+      insert(:user_role, user: context.author, role: context.role_san_family)
       create_watchlist(context)
 
       insights_to_send =
@@ -121,7 +121,7 @@ defmodule Sanbase.MonitorTest do
     end
 
     test "when insight is with other tags - returns []", context do
-      insert(:user_role, user: context.author, role: context.role_san_clan)
+      insert(:user_role, user: context.author, role: context.role_san_family)
 
       create_insight(context, %{
         tags: [build(:tag, name: "alabala")]
@@ -141,7 +141,7 @@ defmodule Sanbase.MonitorTest do
     end
 
     test "when the user is insight author - returns []", context do
-      insert(:user_role, user: context.author, role: context.role_san_clan)
+      insert(:user_role, user: context.author, role: context.role_san_family)
 
       create_insight(context, %{user: context.user})
 
@@ -159,7 +159,7 @@ defmodule Sanbase.MonitorTest do
     end
 
     test "when insight is with tag the name of the project - it returns it", context do
-      insert(:user_role, user: context.author, role: context.role_san_clan)
+      insert(:user_role, user: context.author, role: context.role_san_family)
 
       insight =
         create_insight(context, %{

@@ -5,6 +5,7 @@ defmodule Sanbase.Accounts.UserSettings do
 
   alias Sanbase.Accounts.{User, Settings}
   alias Sanbase.Repo
+  alias Sanbase.Billing.{Subscription, Product}
 
   schema "user_settings" do
     belongs_to(:user, User)
@@ -97,6 +98,13 @@ defmodule Sanbase.Accounts.UserSettings do
     |> Enum.each(fn {user_id, paid_with} -> update_paid_with(user_id, paid_with) end)
   end
 
+  def update_settings(user, %{is_subscribed_biweekly_report: true} = params) do
+    case Subscription.current_subscription_plan(user.id, Product.product_sanbase()) do
+      pro when pro in [:pro, :pro_plus] -> settings_update(user.id, params)
+      _ -> {:error, "Only PRO users can subscibe to Biweekly Report"}
+    end
+  end
+
   def update_settings(%User{id: id}, params) do
     settings_update(id, params)
   end
@@ -115,30 +123,6 @@ defmodule Sanbase.Accounts.UserSettings do
 
   def set_telegram_chat_id(user_id, chat_id) do
     settings_update(user_id, %{telegram_chat_id: chat_id})
-  end
-
-  def change_newsletter_subscription(%User{id: user_id, email: nil}, params) do
-    settings_update(user_id, params)
-  end
-
-  def change_newsletter_subscription(%User{id: user_id, email: email}, params) do
-    settings_update(user_id, params)
-    |> case do
-      {:ok, %{settings: %{newsletter_subscription: :off}}} = response ->
-        Sanbase.Email.Mailchimp.unsubscribe_email(email)
-        response
-
-      {:ok, %{settings: %{newsletter_subscription: :weekly}}} = response ->
-        Sanbase.Email.Mailchimp.subscribe_email(email)
-        response
-
-      {:ok, %{settings: %{newsletter_subscription: :daily}}} = response ->
-        Sanbase.Email.Mailchimp.subscribe_email(email)
-        response
-
-      response ->
-        response
-    end
   end
 
   defp settings_update(user_id, params) do
@@ -177,14 +161,8 @@ defmodule Sanbase.Accounts.UserSettings do
           map
       end
 
-    newsletter_subscription =
-      us.settings.newsletter_subscription
-      |> String.downcase()
-      |> String.to_existing_atom()
-
     us.settings
     |> Map.put(:has_telegram_connected, us.settings.telegram_chat_id != nil)
     |> Map.put(:alerts_per_day_limit, alerts_per_day_limit)
-    |> Map.put(:newsletter_subscription, newsletter_subscription)
   end
 end

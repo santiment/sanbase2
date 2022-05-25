@@ -48,7 +48,12 @@ defmodule Sanbase.Entity do
   @supported_entity_type [:insight, :watchlist, :screener, :chart_configuration, :user_trigger]
 
   @type entity_type :: :insight | :watchlist | :screener | :chart_configuration | :user_trigger
-  @type option :: {:page, non_neg_integer()} | {:page_size, non_neg_integer()} | {:cursor, map()}
+  @type option ::
+          {:page, non_neg_integer()}
+          | {:page_size, non_neg_integer()}
+          | {:cursor, map()}
+          | {:user_ids, list(non_neg_integer())}
+
   @type opts :: [option]
   @type result_map :: %{
           optional(:insight) => %Post{},
@@ -89,6 +94,21 @@ defmodule Sanbase.Entity do
     do: do_get_most_recent(List.wrap(type_or_types), opts)
 
   @doc ~s"""
+  Get a list of the most used entities of a given type or types.
+  The ordering is done by taking into consideration the amount of views and
+  other activity types (votes, comments, etc.) a given entity has.
+
+  ## Options
+
+  See the ["Shared options"](#module-shared-options) section at the module
+  documentation for more options.
+  """
+  @spec get_most_used(entity_type | [entity_type], opts) ::
+          {:ok, list(result_map)} | no_return()
+  def get_most_used(type_or_types, opts),
+    do: do_get_most_used(List.wrap(type_or_types), opts)
+
+  @doc ~s"""
   Get the total count of voted entities of a given type or types.
   A cursor can be applied, but pagination cannot.
   ## Options
@@ -116,6 +136,20 @@ defmodule Sanbase.Entity do
     do: do_get_most_recent_total_count(List.wrap(type_or_types), opts)
 
   @doc ~s"""
+  Get the total count of used entities of a given type or types for a user.
+  A cursor can be applied, but pagination cannot.
+
+  ## Options
+
+  See the ["Shared options"](#module-shared-options) section at the module
+  documentation for more options.
+  """
+  @spec get_most_used_total_count(entity_type | [entity_type], opts) ::
+          {:ok, non_neg_integer()} | no_return()
+  def get_most_used_total_count(type_or_types, opts),
+    do: do_get_most_used_total_count(List.wrap(type_or_types), opts)
+
+  @doc ~s"""
   Map the entity type to the corresponding field in the votes table
   """
   def deduce_entity_vote_field(:user_trigger), do: :user_trigger_id
@@ -125,6 +159,7 @@ defmodule Sanbase.Entity do
   def deduce_entity_vote_field(:address_watchlist), do: :watchlist_id
   def deduce_entity_vote_field(:screener), do: :watchlist_id
   def deduce_entity_vote_field(:chart_configuration), do: :chart_configuration_id
+
   # keep the timeline_event here so it can have its id obtained by the Vote
   # module
   def deduce_entity_vote_field(:timeline_event), do: :timeline_event_id
@@ -145,32 +180,6 @@ defmodule Sanbase.Entity do
     query
     |> limit(^limit)
     |> offset(^offset)
-  end
-
-  @doc ~s"""
-  Apply a datetime filter, if defined in the opts, to a query.
-
-  This query extension function is defined here and is called with the
-  proper arguments from the entity modules' functions.
-  """
-  @spec maybe_filter_by_cursor(Ecto.Query.t(), atom, opts) :: Ecto.Query.t()
-  def maybe_filter_by_cursor(query, field, opts) do
-    case Keyword.get(opts, :cursor) do
-      nil ->
-        query
-
-      %{type: :before, datetime: datetime} ->
-        from(
-          entity in query,
-          where: field(entity, ^field) <= ^datetime
-        )
-
-      %{type: :after, datetime: datetime} ->
-        from(
-          entity in query,
-          where: field(entity, ^field) >= ^datetime
-        )
-    end
   end
 
   # Private functions
@@ -290,8 +299,14 @@ defmodule Sanbase.Entity do
         }
       )
 
-    db_result = Sanbase.Repo.all(query)
+    result =
+      Sanbase.Repo.all(query)
+      |> fetch_entities_by_ids_preserve_order_rewrite_keys()
 
+    {:ok, result}
+  end
+
+  defp fetch_entities_by_ids_preserve_order_rewrite_keys(db_result) do
     # The result is returned in descending order based on votes. This order will
     # be lost once we split the result into different entity type groups is
     # order to fetch them. In order to preserve the order, we need to record it
@@ -321,7 +336,70 @@ defmodule Sanbase.Entity do
 
     result = rewrite_keys(result)
 
+    result
+  end
+
+  defp do_get_most_used(entities, opts) when is_list(entities) and entities != [] do
+    # The most used entities are the ones that the user has visited the most.
+    opts = update_opts(opts)
+    query = most_used_base_query(entities, opts)
+
+    result =
+      Sanbase.Repo.all(query)
+      |> fetch_entities_by_ids_preserve_order_rewrite_keys()
+
     {:ok, result}
+  end
+
+  defp do_get_most_used_total_count(entities, opts) when is_list(entities) and entities != [] do
+    opts = update_opts(opts)
+    query = most_used_base_query(entities, opts)
+
+    from(entity in subquery(query),
+      select: {entity.entity_id, entity.entity_type}
+    )
+    |> Sanbase.Repo.all()
+
+    total_count =
+      from(entity in subquery(query),
+        select: fragment("COUNT(DISTINCT(?, ?))", entity.entity_id, entity.entity_type)
+      )
+      |> Sanbase.Repo.one()
+
+    {:ok, total_count}
+  end
+
+  defp most_used_base_query(entities, opts) when is_list(entities) and entities != [] do
+    user_id = Keyword.fetch!(opts, :current_user_id)
+    query = Sanbase.Accounts.Interaction.get_user_most_used_query(user_id, entities, opts)
+
+    where_clause_query =
+      Enum.reduce(entities, nil, fn type, query_acc ->
+        entity_ids_query = entity_ids_query(type, opts)
+
+        entity_type_name = Sanbase.Accounts.Interaction.deduce_entity_column_name(type)
+
+        case query_acc do
+          nil ->
+            dynamic(
+              [row],
+              row.entity_type == ^entity_type_name and row.entity_id in subquery(entity_ids_query)
+            )
+
+          _ ->
+            dynamic(
+              [row],
+              (row.entity_type == ^entity_type_name and
+                 row.entity_id in subquery(entity_ids_query)) or ^query_acc
+            )
+        end
+      end)
+
+    query =
+      query
+      |> where(^where_clause_query)
+
+    query
   end
 
   defp most_recent_base_query(entities, opts) when is_list(entities) and entities != [] do
@@ -410,7 +488,7 @@ defmodule Sanbase.Entity do
     {:ok, query}
   end
 
-  def filter_user_voted_for_entities(query, user_id) do
+  defp filter_user_voted_for_entities(query, user_id) do
     # Get a list of the entities that the given user has voted for. All votes
     # (between 1 and 20) are recorded on the same row in the `count` column, so
     # no `distinct` is required. These entity ids are then fed to a where clause
@@ -493,11 +571,15 @@ defmodule Sanbase.Entity do
     end)
   end
 
+  # Which of the provided by the API opts are passed to the entity modules.
+
+  @passed_opts [:filter, :cursor, :user_ids, :is_featured_data_only]
+
   defp entity_ids_query(:insight, opts) do
     # `ordered?: false` is important otherwise the default order will be applied
     # and this will conflict with the distinct(true) check
     entity_opts =
-      Keyword.take(opts, [:filter, :cursor]) ++
+      Keyword.take(opts, @passed_opts) ++
         [preload?: false, distinct?: true, ordered?: false]
 
     case Keyword.get(opts, :current_user_data_only) do
@@ -510,7 +592,7 @@ defmodule Sanbase.Entity do
     # `ordered?: false` is important otherwise the default order will be applied
     # and this will conflict with the distinct(true) check
     entity_opts =
-      Keyword.take(opts, [:filter, :cursor]) ++
+      Keyword.take(opts, @passed_opts) ++
         [preload?: false, distinct?: true, ordered?: false]
 
     case Keyword.get(opts, :current_user_data_only) do
@@ -520,7 +602,7 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:screener, opts) do
-    entity_opts = Keyword.take(opts, [:filter, :cursor]) ++ [is_screener: true]
+    entity_opts = Keyword.take(opts, @passed_opts) ++ [is_screener: true]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> UserList.public_entity_ids_query(entity_opts)
@@ -529,7 +611,7 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:project_watchlist, opts) do
-    entity_opts = Keyword.take(opts, [:filter, :cursor]) ++ [is_screener: false, type: :project]
+    entity_opts = Keyword.take(opts, @passed_opts) ++ [is_screener: false, type: :project]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> UserList.public_entity_ids_query(entity_opts)
@@ -539,7 +621,8 @@ defmodule Sanbase.Entity do
 
   defp entity_ids_query(:address_watchlist, opts) do
     entity_opts =
-      Keyword.take(opts, [:filter, :cursor]) ++ [is_screener: false, type: :blockchain_address]
+      Keyword.take(opts, @passed_opts) ++
+        [is_screener: false, type: :blockchain_address]
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> UserList.public_entity_ids_query(entity_opts)
@@ -548,7 +631,7 @@ defmodule Sanbase.Entity do
   end
 
   defp entity_ids_query(:chart_configuration, opts) do
-    entity_opts = Keyword.take(opts, [:filter, :cursor])
+    entity_opts = Keyword.take(opts, @passed_opts)
 
     case Keyword.get(opts, :current_user_data_only) do
       nil -> Chart.Configuration.public_entity_ids_query(entity_opts)
@@ -573,14 +656,31 @@ defmodule Sanbase.Entity do
   defp deduce_entity_creation_time_field(_), do: {:inserted_at, :inserted_at}
 
   defp update_opts(opts) do
-    case Keyword.get(opts, :filter) do
-      %{slugs: slugs} = filter ->
-        ids = Sanbase.Model.Project.List.ids_by_slugs(slugs, [])
-        filter = Map.put(filter, :project_ids, ids)
-        Keyword.put(opts, :filter, filter)
+    opts =
+      case Keyword.get(opts, :filter) do
+        %{slugs: slugs} = filter ->
+          ids = Sanbase.Model.Project.List.ids_by_slugs(slugs, [])
+          filter = Map.put(filter, :project_ids, ids)
+          Keyword.put(opts, :filter, filter)
 
-      _ ->
-        opts
-    end
+        _ ->
+          opts
+      end
+
+    opts =
+      case Keyword.get(opts, :user_role_data_only) do
+        :san_family ->
+          user_ids = Sanbase.Accounts.Role.san_family_ids()
+          Keyword.put(opts, :user_ids, user_ids)
+
+        :san_team ->
+          user_ids = Sanbase.Accounts.Role.san_team_ids()
+          Keyword.put(opts, :user_ids, user_ids)
+
+        _ ->
+          opts
+      end
+
+    opts
   end
 end

@@ -13,9 +13,7 @@ defmodule Sanbase.SocialData.SocialDominance do
 
   def social_dominance(selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
-    sources_string = SocialHelper.sources() |> Enum.join(",")
-
-    social_dominance(selector, from, to, interval, sources_string)
+    social_dominance(selector, from, to, interval, SocialHelper.sources_total_string())
   end
 
   def social_dominance(%{text: text}, from, to, interval, source) do

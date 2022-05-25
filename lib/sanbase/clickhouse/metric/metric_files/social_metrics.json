@@ -1607,7 +1607,7 @@
   },
   {
     "human_readable_name": "Project rank based on the scores in the top trending words",
-    "name": "trending_rank",
+    "name": "trending_words_rank",
     "metric": "trending_rank",
     "version": "2019-01-01",
     "access": {

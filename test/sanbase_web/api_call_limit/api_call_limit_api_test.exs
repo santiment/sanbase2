@@ -270,7 +270,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       api_calls_made = Enum.max(Map.values(acl.api_calls))
 
-      allowed_difference = max_quota
+      allowed_difference = max_quota * 2
       real_api_calls_made = (iterations - days_in_old_month) * api_calls_per_iteration
 
       assert api_calls_made >= real_api_calls_made - allowed_difference
@@ -334,7 +334,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       api_calls_made = Enum.max(Map.values(acl.api_calls))
 
-      allowed_difference = max_quota
+      allowed_difference = max_quota * 2
 
       # The amount stored should never exceed the real amount of api calls
       assert iterations * api_calls_per_iteration >= api_calls_made
@@ -403,7 +403,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       api_calls_made = Enum.max(Map.values(acl.api_calls))
 
-      allowed_difference = max_quota
+      allowed_difference = max_quota * 2
 
       # The amount stored should never exceed the real amount of api calls
       assert iterations * api_calls_per_iteration >= api_calls_made

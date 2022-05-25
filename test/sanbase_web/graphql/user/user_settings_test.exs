@@ -211,52 +211,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
            }
   end
 
-  describe "newsletter subscription" do
-    test "changes subscription to daily", %{conn: conn, user: user} do
-      insert(:user_settings, user: user, settings: %{newsletter_subscription: "WEEKLY"})
-      query = change_newsletter_subscription_query("DAILY")
-      result = conn |> execute(query, "changeNewsletterSubscription")
-
-      assert result["newsletterSubscription"] == "DAILY"
-
-      assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
-               :daily
-    end
-
-    test "changes subscription to weekly", %{conn: conn, user: user} do
-      insert(:user_settings, user: user, settings: %{newsletter_subscription: "DAILY"})
-      query = change_newsletter_subscription_query("WEEKLY")
-      result = conn |> execute(query, "changeNewsletterSubscription")
-
-      assert result["newsletterSubscription"] == "WEEKLY"
-
-      assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
-               :weekly
-    end
-
-    test "can turn off subscription", %{conn: conn, user: user} do
-      insert(:user_settings, user: user, settings: %{newsletter_subscription: "WEEKLY"})
-      query = change_newsletter_subscription_query("OFF")
-      result = conn |> execute(query, "changeNewsletterSubscription")
-
-      assert result["newsletterSubscription"] == "OFF"
-
-      assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
-               :off
-    end
-
-    test "can handle unknown subscription types", %{conn: conn, user: user} do
-      insert(:user_settings, user: user, settings: %{newsletter_subscription: "WEEKLY"})
-      query = change_newsletter_subscription_query("UNKNOWN")
-      result = conn |> execute(query, "changeNewsletterSubscription")
-
-      assert result["newsletterSubscription"] == nil
-
-      assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
-               :weekly
-    end
-  end
-
   describe "email settings" do
     test "get default email settings", context do
       result = execute_query(context.conn, current_user_query(), "currentUser")
@@ -391,16 +345,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     mutation {
       settingsToggleChannel(alertNotifyEmail: #{is_active?}) {
         alertNotifyEmail
-      }
-    }
-    """
-  end
-
-  defp change_newsletter_subscription_query(type) do
-    """
-    mutation {
-      changeNewsletterSubscription(newsletterSubscription: #{type}) {
-        newsletterSubscription
       }
     }
     """

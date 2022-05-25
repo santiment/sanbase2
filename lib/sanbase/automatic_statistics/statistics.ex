@@ -1,7 +1,4 @@
 defmodule Sanbase.Statistics do
-  import Sanbase.Accounts.Settings,
-    only: [daily_subscription_type: 0, weekly_subscription_type: 0]
-
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Accounts.Statistics, as: UserStatistics
   alias Sanbase.UserLists.Statistics, as: WatchlistStatistics
@@ -10,8 +7,6 @@ defmodule Sanbase.Statistics do
     "staking_users",
     "registered_users",
     "registered_staking_users",
-    "users_with_daily_newsletter_subscriptions",
-    "users_with_weekly_newsletter_subscriptions",
     "watchlists",
     "tokens_staked",
     "active_users"
@@ -70,120 +65,6 @@ defmodule Sanbase.Statistics do
   def get("tokens_staked") do
     # Returns a map of total, average and median tokens staked
     UserStatistics.tokens_staked()
-  end
-
-  def get("users_with_daily_newsletter_subscriptions") do
-    now = Timex.now()
-
-    last_7d =
-      UserStatistics.newsletter_subscribed_users_count(
-        daily_subscription_type(),
-        Timex.shift(now, days: -7),
-        now
-      )
-
-    last_14d =
-      UserStatistics.newsletter_subscribed_users_count(
-        daily_subscription_type(),
-        Timex.shift(now, days: -14),
-        now
-      )
-
-    last_30d =
-      UserStatistics.newsletter_subscribed_users_count(
-        daily_subscription_type(),
-        Timex.shift(now, days: -30),
-        now
-      )
-
-    last_180d =
-      UserStatistics.newsletter_subscribed_users_count(
-        daily_subscription_type(),
-        Timex.shift(now, days: -180),
-        now
-      )
-
-    overall = UserStatistics.newsletter_subscribed_users_count(daily_subscription_type())
-
-    newsletter_subscribed_new_users_14d =
-      UserStatistics.newsletter_subscribed_new_users_count(
-        daily_subscription_type(),
-        Timex.shift(now, days: -14)
-      )
-
-    newsletter_subscribed_old_users_14d =
-      UserStatistics.newsletter_subscribed_old_users(
-        daily_subscription_type(),
-        Timex.shift(now, days: -14),
-        Timex.shift(now, days: -14)
-      )
-
-    %{
-      "subscribed_in_the_last_7_days" => last_7d,
-      "subscribed_in_the_last_14_days" => last_14d,
-      "subscribed_in_the_last_30_days" => last_30d,
-      "subscribed_in_the_last_180_days" => last_180d,
-      "subscribed_overall" => overall,
-      "subscribed_new_users" => newsletter_subscribed_new_users_14d,
-      "longtime_users_who_subscribed_in_the_last_14_days" => newsletter_subscribed_old_users_14d
-    }
-  end
-
-  def get("users_with_weekly_newsletter_subscriptions") do
-    now = Timex.now()
-
-    last_7d =
-      UserStatistics.newsletter_subscribed_users_count(
-        weekly_subscription_type(),
-        Timex.shift(now, days: -7),
-        now
-      )
-
-    last_14d =
-      UserStatistics.newsletter_subscribed_users_count(
-        weekly_subscription_type(),
-        Timex.shift(now, days: -14),
-        now
-      )
-
-    last_30d =
-      UserStatistics.newsletter_subscribed_users_count(
-        weekly_subscription_type(),
-        Timex.shift(now, days: -30),
-        now
-      )
-
-    last_180d =
-      UserStatistics.newsletter_subscribed_users_count(
-        weekly_subscription_type(),
-        Timex.shift(now, days: -180),
-        now
-      )
-
-    overall = UserStatistics.newsletter_subscribed_users_count(weekly_subscription_type())
-
-    newsletter_subscribed_new_users_14d =
-      UserStatistics.newsletter_subscribed_new_users_count(
-        weekly_subscription_type(),
-        Timex.shift(now, days: -14)
-      )
-
-    newsletter_subscribed_old_users_14d =
-      UserStatistics.newsletter_subscribed_old_users(
-        weekly_subscription_type(),
-        Timex.shift(now, days: -14),
-        Timex.shift(now, days: -14)
-      )
-
-    %{
-      "subscribed_in_the_last_7_days" => last_7d,
-      "subscribed_in_the_last_14_days" => last_14d,
-      "subscribed_in_the_last_30_days" => last_30d,
-      "subscribed_in_the_last_180_days" => last_180d,
-      "subscribed_overall" => overall,
-      "subscribed_new_users" => newsletter_subscribed_new_users_14d,
-      "longtime_users_who_subscribed_in_the_last_14_days" => newsletter_subscribed_old_users_14d
-    }
   end
 
   def get("watchlists") do

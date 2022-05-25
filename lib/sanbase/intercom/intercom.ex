@@ -185,9 +185,6 @@ defmodule Sanbase.Intercom do
           sanbase_trial_created_at: sanbase_trial_created_at,
           user_paid_after_trial: user_paid_after_trial,
           user_paid_with: Map.get(customer_payment_type_map, stripe_customer_id, "not_paid"),
-          weekly_digest:
-            Sanbase.Accounts.UserSettings.settings_for(user).newsletter_subscription
-            |> to_string(),
           used_sanapi: id in users_used_api_list,
           used_sansheets: id in users_used_sansheets_list,
           api_calls_count: Map.get(api_calls_per_user_count, id, 0),

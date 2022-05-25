@@ -331,8 +331,7 @@ defmodule Sanbase.Factory do
     %UserSettings{
       settings: %{
         alert_notify_telegram: false,
-        alert_notify_email: false,
-        newsletter_subscription: "OFF"
+        alert_notify_email: false
       }
     }
   end

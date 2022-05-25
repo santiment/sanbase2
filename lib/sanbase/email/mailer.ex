@@ -2,7 +2,6 @@ defmodule Sanbase.Mailer do
   use Oban.Worker, queue: :email_queue
 
   alias Sanbase.Accounts.User
-  alias Sanbase.Accounts.UserSettings
 
   @edu_templates ~w(first_edu_email_v2 second_edu_email_v2)
 

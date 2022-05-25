@@ -216,7 +216,7 @@ config :sanbase, Sanbase.GrafanaApi,
 
 config :sanbase, Sanbase.Intercom, api_key: {:system, "INTERCOM_API_KEY"}
 
-config :sanbase, Sanbase.Email.Mailchimp, api_key: {:system, "MAILCHIMP_API_KEY"}
+config :sanbase, Sanbase.Email.MailchimpApi, api_key: {:system, "MAILCHIMP_API_KEY"}
 
 config :sanbase, Sanbase.Promoters.FirstPromoterApi,
   api_id: {:system, "FIRST_PROMOTER_API_ID"},

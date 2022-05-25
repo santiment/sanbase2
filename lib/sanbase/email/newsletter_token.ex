@@ -59,7 +59,7 @@ defmodule Sanbase.Email.NewsletterToken do
   end
 
   def subscribe_to_newsletter(email) do
-    Sanbase.Email.Mailchimp.add_email_to_mailchimp(email)
+    Sanbase.Email.MailchimpApi.add_email_to_mailchimp(email)
   end
 
   # helpers

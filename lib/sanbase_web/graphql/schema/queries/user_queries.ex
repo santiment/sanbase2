@@ -174,14 +174,6 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       resolve(&UserSettingsResolver.settings_toggle_channel/3)
     end
 
-    @desc "Change subscription to Santiment newsletter"
-    field :change_newsletter_subscription, :user_settings do
-      arg(:newsletter_subscription, :newsletter_subscription_type)
-
-      middleware(JWTAuth)
-      resolve(&UserSettingsResolver.change_newsletter_subscription/3)
-    end
-
     @desc """
     Revoke the telegram deep link for the currently logged in user if present.
     The link will continue to work and following it will send a request to sanbase,

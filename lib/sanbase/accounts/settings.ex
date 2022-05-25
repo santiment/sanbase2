@@ -12,16 +12,12 @@ defmodule Sanbase.Accounts.Settings do
 
   def default_alerts_limit_per_day(), do: @default_alerts_limit_per_day
 
-  @newsletter_subscription_types ["DAILY", "WEEKLY", "OFF"]
-
   embedded_schema do
     field(:hide_privacy_data, :boolean, default: true)
     field(:theme, :string, default: "default")
     field(:page_size, :integer, default: 20)
     field(:is_beta_mode, :boolean, default: false)
     field(:table_columns, :map, default: %{})
-    field(:newsletter_subscription, :string, default: "OFF")
-    field(:newsletter_subscription_updated_at_unix, :integer, default: nil)
     field(:is_promoter, :boolean, default: false)
     field(:paid_with, :string, default: nil)
     field(:favorite_metrics, {:array, :string}, default: [])
@@ -70,11 +66,6 @@ defmodule Sanbase.Accounts.Settings do
       :is_subscribed_comments_emails,
       :is_subscribed_likes_emails
     ])
-    |> normalize_newsletter_subscription(
-      :newsletter_subscription,
-      params[:newsletter_subscription]
-    )
-    |> validate_change(:newsletter_subscription, &validate_subscription_type/2)
     |> validate_change(:favorite_metrics, &validate_favorite_metrics/2)
   end
 
@@ -93,20 +84,6 @@ defmodule Sanbase.Accounts.Settings do
     settings.alerts_fired[today_str][channel] |> Sanbase.Math.to_integer() || 0
   end
 
-  def daily_subscription_type(), do: "DAILY"
-  def weekly_subscription_type(), do: "WEEKLY"
-
-  defp normalize_newsletter_subscription(changeset, _field, nil), do: changeset
-
-  defp normalize_newsletter_subscription(changeset, field, value) do
-    changeset
-    |> put_change(field, value |> Atom.to_string() |> String.upcase())
-    |> put_change(
-      :newsletter_subscription_updated_at_unix,
-      DateTime.utc_now() |> DateTime.to_unix()
-    )
-  end
-
   defp validate_favorite_metrics(_, nil), do: []
 
   defp validate_favorite_metrics(_, metrics) do
@@ -120,15 +97,5 @@ defmodule Sanbase.Accounts.Settings do
           [favorite_metrics: "Invalid metric found in the favorite metrics list. #{error}"]
       end
     end)
-  end
-
-  defp validate_subscription_type(_, nil), do: []
-  defp validate_subscription_type(_, type) when type in @newsletter_subscription_types, do: []
-
-  defp validate_subscription_type(_, _type) do
-    [
-      newsletter_subscription:
-        "Type not in allowed types: #{inspect(@newsletter_subscription_types)}"
-    ]
   end
 end

@@ -3,12 +3,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.UserSettingsResolver
 
-  enum :newsletter_subscription_type do
-    value(:weekly)
-    value(:daily)
-    value(:off)
-  end
-
   object :user_settings do
     field(:hide_privacy_data, :boolean)
     field(:is_beta_mode, :boolean)
@@ -16,7 +10,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:theme, :string)
     field(:page_size, :integer)
     field(:table_columns, :json)
-    field(:newsletter_subscription, :newsletter_subscription_type)
     field(:has_telegram_connected, :boolean)
     field(:paid_with, :string)
     field(:alert_notify_email, :boolean)
@@ -54,7 +47,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:theme, :string)
     field(:page_size, :integer)
     field(:table_columns, :json)
-    field(:newsletter_subscription, :newsletter_subscription_type)
     field(:has_telegram_connected, :boolean)
     field(:alert_notify_email, :boolean)
     field(:alert_notify_telegram, :boolean)

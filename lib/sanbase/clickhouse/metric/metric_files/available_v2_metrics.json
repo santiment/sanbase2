@@ -2312,5 +2312,233 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Hodl Waves for coins not older than 1 day",
+    "name": "hodl_waves_0_to_1d",
+    "metric": "hodl_waves_0_to_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Hodl Waves for coins between 1 and 7 days old",
+    "name": "hodl_waves_1d_to_7d",
+    "metric": "hodl_waves_1d_to_7d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Hodl Waves for coins between 7 and 30 days old",
+    "name": "hodl_waves_7d_to_1m",
+    "metric": "hodl_waves_7d_to_1m",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Hodl Waves for coins between 1 and 2 months old",
+    "name": "hodl_waves_1m_to_2m",
+    "metric": "hodl_waves_1m_to_2m",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Hodl Waves for coins between 2 and 3 months old",
+    "name": "hodl_waves_2m_to_3m",
+    "metric": "hodl_waves_2m_to_3m",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Hodl Waves for coins between 3 and 6 months old",
+    "name": "hodl_waves_3m_to_6m",
+    "metric": "hodl_waves_3m_to_6m",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Hodl Waves for coins between 6 and 12 months old",
+    "name": "hodl_waves_6m_to_1y",
+    "metric": "hodl_waves_6m_to_1y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Hodl Waves for coins between 1 and 2 years old",
+    "name": "hodl_waves_1y_to_2y",
+    "metric": "hodl_waves_1y_to_2y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Hodl Waves for coins between 2 and 3 years old",
+    "name": "hodl_waves_2y_to_3y",
+    "metric": "hodl_waves_2y_to_3y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Hodl Waves for coins between 3 and 5 years old",
+    "name": "hodl_waves_3y_to_5y",
+    "metric": "hodl_waves_3y_to_5y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Hodl Waves for coins between 5 and 10 years old",
+    "name": "hodl_waves_5y_to_10y",
+    "metric": "hodl_waves_5y_to_10y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Hodl Waves for coins between 10 and 20 years old",
+    "name": "hodl_waves_10y_to_20y",
+    "metric": "hodl_waves_10y_to_20y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
   }
 ]

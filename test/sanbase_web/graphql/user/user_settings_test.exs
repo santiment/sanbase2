@@ -186,7 +186,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
              "favorite_metrics" => ["daily_active_addresses", "nvt"],
              "isSubscribedBiweeklyReport" => false,
              "isSubscribedEduEmails" => true,
-             "isSubscribedMonthlyNewsletter" => true
+             "isSubscribedMonthlyNewsletter" => true,
+             "isSubscribedMarketingEmails" => false
            }
   end
 
@@ -205,7 +206,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
              "favorite_metrics" => [],
              "isSubscribedBiweeklyReport" => false,
              "isSubscribedEduEmails" => true,
-             "isSubscribedMonthlyNewsletter" => true
+             "isSubscribedMonthlyNewsletter" => true,
+             "isSubscribedMarketingEmails" => false
            }
   end
 
@@ -300,6 +302,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
           isSubscribedEduEmails
           isSubscribedMonthlyNewsletter
           isSubscribedBiweeklyReport
+          isSubscribedMarketingEmails
         }
       }
     }

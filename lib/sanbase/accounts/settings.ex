@@ -25,7 +25,8 @@ defmodule Sanbase.Accounts.Settings do
     field(:is_promoter, :boolean, default: false)
     field(:paid_with, :string, default: nil)
     field(:favorite_metrics, {:array, :string}, default: [])
-    # Alert fields
+
+    # Alerts settings
     field(:has_telegram_connected, :boolean, virtual: true)
     field(:telegram_chat_id, :integer)
     field(:alert_notify_email, :boolean, default: false)
@@ -33,7 +34,15 @@ defmodule Sanbase.Accounts.Settings do
     field(:alerts_per_day_limit, :map, default: %{})
     field(:alerts_fired, :map, default: %{})
 
+    # Email settings
+
+    # 1. Emails sent through Sanbase
     field(:is_subscribed_edu_emails, :boolean, default: true)
+    field(:is_subscribed_marketing_emails, :boolean, default: false)
+    field(:is_subscribed_comments_emails, :boolean, default: true)
+    field(:is_subscribed_likes_emails, :boolean, default: true)
+
+    # 2. Email campaigns/lists through Mailchimp
     field(:is_subscribed_monthly_newsletter, :boolean, default: true)
     field(:is_subscribed_biweekly_report, :boolean, default: false)
   end
@@ -56,7 +65,10 @@ defmodule Sanbase.Accounts.Settings do
       :alerts_fired,
       :is_subscribed_edu_emails,
       :is_subscribed_monthly_newsletter,
-      :is_subscribed_biweekly_report
+      :is_subscribed_biweekly_report,
+      :is_subscribed_marketing_emails,
+      :is_subscribed_comments_emails,
+      :is_subscribed_likes_emails
     ])
     |> normalize_newsletter_subscription(
       :newsletter_subscription,

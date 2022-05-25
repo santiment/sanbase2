@@ -178,7 +178,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     assert result["settings"] == %{
              "alertNotifyEmail" => false,
              "alertNotifyTelegram" => true,
-             "newsletterSubscription" => "OFF",
              "isBetaMode" => true,
              "pageSize" => 100,
              "tableColumns" => %{"shown" => ["price", "volume"]},
@@ -196,7 +195,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     result = conn |> execute(query, "currentUser")
 
     assert result["settings"] == %{
-             "newsletterSubscription" => "OFF",
              "alertNotifyEmail" => false,
              "alertNotifyTelegram" => false,
              "isBetaMode" => false,
@@ -247,7 +245,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
         settings {
           alertNotifyEmail
           alertNotifyTelegram
-          newsletterSubscription
           isBetaMode
           theme
           pageSize

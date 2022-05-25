@@ -173,12 +173,14 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   defp get_by_and_lock(:user, user) do
-    from(acl in __MODULE__,
-      where: acl.user_id == ^user.id,
-      lock: "FOR UPDATE"
-    )
-    |> Repo.one()
-    |> case do
+    result =
+      from(acl in __MODULE__,
+        where: acl.user_id == ^user.id,
+        lock: "FOR UPDATE"
+      )
+      |> Repo.one()
+
+    case result do
       nil ->
         # Ensure that the result we get back has a lock. This is making more
         # DB calls, but it should be executed only once per user/remote_ip and

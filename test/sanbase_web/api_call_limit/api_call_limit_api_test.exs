@@ -270,10 +270,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       api_calls_made = Enum.max(Map.values(acl.api_calls))
 
-      # The quota size in test env is between 10 and 20. I would expect
-      # a max difference of 20 with the DB stored calls - at most `max_quota`
-      # There are some API calls lost (I don't know why) so there is +10 extra
-      allowed_difference = max_quota * 2
+      allowed_difference = max_quota
       real_api_calls_made = (iterations - days_in_old_month) * api_calls_per_iteration
 
       assert api_calls_made >= real_api_calls_made - allowed_difference
@@ -337,10 +334,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       api_calls_made = Enum.max(Map.values(acl.api_calls))
 
-      # The quota size in test env is between 10 and 20. I would expect
-      # a max difference of 20 with the DB stored calls - at most `max_quota`
-      # There are some API calls lost (I don't know why) so there is +10 extra
-      allowed_difference = max_quota * 2
+      allowed_difference = max_quota
 
       # The amount stored should never exceed the real amount of api calls
       assert iterations * api_calls_per_iteration >= api_calls_made
@@ -409,10 +403,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
       api_calls_made = Enum.max(Map.values(acl.api_calls))
 
-      # The quota size in test env is between 10 and 20. I would expect
-      # a max difference of 20 with the DB stored calls - at most `max_quota`
-      # There are some API calls lost (I don't know why) so there is +10 extra
-      allowed_difference = max_quota * 2
+      allowed_difference = max_quota
 
       # The amount stored should never exceed the real amount of api calls
       assert iterations * api_calls_per_iteration >= api_calls_made

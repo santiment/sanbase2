@@ -224,25 +224,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     {additional_filters, args} = additional_filters(filters, args, trailing_and: true)
 
     query = """
-    SELECT name AS slug, value
+    SELECT name AS slug, value2 AS value
     FROM (
-      SELECT
-        asset_id,
-        #{aggregation(aggregation, "value", "dt")} AS value
-      FROM(
-        SELECT dt, asset_id, argMax(value, computed_at) AS value
-        FROM (
-          SELECT dt, asset_id, metric_id, value, computed_at
-          FROM #{Map.get(@table_map, metric)}
-          PREWHERE
-            #{additional_filters}
-            metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
-            isNotNull(value) AND NOT isNaN(value) AND
-            #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
-            #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
-          )
-          GROUP BY asset_id, metric_id, dt
-      )
+      SELECT asset_id, #{aggregation(aggregation, "value", "dt")} AS value2
+      FROM intraday_metrics
+      PREWHERE
+        #{additional_filters}
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
+        isNotNull(value) AND NOT isNaN(value) AND
+        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
+        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
       GROUP BY asset_id
     ) AS a
     ALL LEFT JOIN

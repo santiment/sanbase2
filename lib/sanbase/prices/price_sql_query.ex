@@ -239,6 +239,12 @@ defmodule Sanbase.Price.SqlQuery do
   end
 
   defp filter_order_base_query(metric, from, to, aggregation, source) do
+    from =
+      case aggregation do
+        :last -> Enum.max([from, Timex.shift(to, days: -7)], DateTime)
+        _ -> from
+      end
+
     query = """
     SELECT slug, value
     FROM (

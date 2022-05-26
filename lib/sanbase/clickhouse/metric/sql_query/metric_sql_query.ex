@@ -238,7 +238,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     query = """
     SELECT name AS slug, value2 AS value
     FROM (
-      SELECT asset_id, #{aggregation(aggregation, "value", "dt")} AS value2
+      SELECT asset_id, #{aggregation(aggregation, "value", "(dt, computed_at)")} AS value2
       FROM intraday_metrics
       PREWHERE
         #{additional_filters}

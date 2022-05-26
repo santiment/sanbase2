@@ -125,6 +125,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   def aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters) do
+    # In case of `:last` aggregation, scanning big intervals of data leads to
+    # unnecessarily increased resources consumption as we're getting only the
+    # last value. We rewrite the `from` paramter to be closer to `to`. This
+    # rewrite has negative effect in cases there are lagging values. If the
+    # value is lagging more than 7 days, though, it's safe to assume it is not
+    # supported.
+    from =
+      case aggregation do
+        :last -> Enum.max([from, Timex.shift(to, days: -7)], DateTime)
+        _ -> from
+      end
+
     args = [
       slugs,
       # Fetch internal metric name used. Fallback to the same name if missing.
@@ -202,6 +214,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   defp aggregated_slugs_base_query(metric, from, to, aggregation, filters) do
+    # In case of `:last` aggregation, scanning big intervals of data leads to
+    # unnecessarily increased resources consumption as we're getting only the
+    # last value. We rewrite the `from` paramter to be closer to `to`. This
+    # rewrite has negative effect in cases there are lagging values. If the
+    # value is lagging more than 7 days, though, it's safe to assume it is not
+    # supported.
+    from =
+      case aggregation do
+        :last -> Enum.max([from, Timex.shift(to, days: -7)], DateTime)
+        _ -> from
+      end
+
     args = [
       # Fetch internal metric name used. Fallback to the same name if missing.
       Map.get(@name_to_metric_map, metric),
@@ -212,25 +236,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     {additional_filters, args} = additional_filters(filters, args, trailing_and: true)
 
     query = """
-    SELECT name AS slug, value
+    SELECT name AS slug, value2 AS value
     FROM (
-      SELECT
-        asset_id,
-        #{aggregation(aggregation, "value", "dt")} AS value
-      FROM(
-        SELECT dt, asset_id, argMax(value, computed_at) AS value
-        FROM (
-          SELECT dt, asset_id, metric_id, value, computed_at
-          FROM #{Map.get(@table_map, metric)}
-          PREWHERE
-            #{additional_filters}
-            metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
-            isNotNull(value) AND NOT isNaN(value) AND
-            #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
-            #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
-          )
-          GROUP BY asset_id, metric_id, dt
-      )
+      SELECT asset_id, #{aggregation(aggregation, "value", "dt")} AS value2
+      FROM intraday_metrics
+      PREWHERE
+        #{additional_filters}
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
+        isNotNull(value) AND NOT isNaN(value) AND
+        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
+        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
       GROUP BY asset_id
     ) AS a
     ALL LEFT JOIN

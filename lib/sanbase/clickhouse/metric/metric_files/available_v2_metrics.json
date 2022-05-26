@@ -1858,9 +1858,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Age Bands for coins not older than 1 day",
-    "name": "age_bands_0_to_1d",
-    "metric": "stack_age_bands_0_to_1d",
+    "human_readable_name": "The Spent Coins Age Band for coins not older than 1 day",
+    "name": "spent_coins_age_band_0d_to_1d",
+    "metric": "spent_coins_age_band_0d_to_1d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -1877,9 +1877,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Age Bands for coins between 1 and 7 days old",
-    "name": "age_bands_1d_to_7d",
-    "metric": "stack_age_bands_1d_to_7d",
+    "human_readable_name": "The Spent Coins Age Band for coins between 1 and 7 days old",
+    "name": "spent_coins_age_band_1d_to_7d",
+    "metric": "spent_coins_age_band_1d_to_7d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -1896,9 +1896,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Age Bands for coins between 7 and 30 days old",
-    "name": "age_bands_7d_to_1m",
-    "metric": "stack_age_bands_7d_to_1m",
+    "human_readable_name": "The Spent Coins Age Band for coins between 7 and 30 days old",
+    "name": "spent_coins_age_band_7d_to_30d",
+    "metric": "spent_coins_age_band_7d_to_30d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -1915,9 +1915,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Age Bands for coins between 1 and 3 months old",
-    "name": "age_bands_1m_to_3m",
-    "metric": "stack_age_bands_1m_to_3m",
+    "human_readable_name": "The Spent Coins Age Band for coins between 30 and 60 days old",
+    "name": "spent_coins_age_band_30d_to_60d",
+    "metric": "spent_coins_age_band_30d_to_60d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -1934,9 +1934,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Age Bands for coins between 3 and 6 months old",
-    "name": "age_bands_3m_to_6m",
-    "metric": "stack_age_bands_3m_to_6m",
+    "human_readable_name": "The Spent Coins Age Band for coins between 60 and 90 days old",
+    "name": "spent_coins_age_band_60d_to_90d",
+    "metric": "spent_coins_age_band_60d_to_90d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -1953,9 +1953,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Age Bands for coins between 6 and 12 months old",
-    "name": "age_bands_6m_to_1y",
-    "metric": "stack_age_bands_6m_to_1y",
+    "human_readable_name": "The Spent Coins Age Band for coins between 90 and 180 days old",
+    "name": "spent_coins_age_band_90d_to_180d",
+    "metric": "spent_coins_age_band_90d_to_180d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -1972,9 +1972,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Age Bands for coins between 1 and 2 years old",
-    "name": "age_bands_1y_to_2y",
-    "metric": "stack_age_bands_1y_to_2y",
+    "human_readable_name": "The Spent Coins Age Band for coins between 180 and 365 days old",
+    "name": "spent_coins_age_band_180d_to_365d",
+    "metric": "spent_coins_age_band_180d_to_365d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -1991,9 +1991,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Age Bands for coins between 2 and 3 years old",
-    "name": "age_bands_2y_to_3y",
-    "metric": "stack_age_bands_2y_to_3y",
+    "human_readable_name": "The Spent Coins Age Band for coins between 1 and 2 years old",
+    "name": "spent_coins_age_band_365d_to_2y",
+    "metric": "spent_coins_age_band_365d_to_2y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2010,9 +2010,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Age Bands for coins between 3 and 5 years old",
-    "name": "age_bands_3y_to_5y",
-    "metric": "stack_age_bands_3y_to_5y",
+    "human_readable_name": "The Spent Coins Age Band for coins between 2 and 3 years old",
+    "name": "spent_coins_age_band_2y_to_3y",
+    "metric": "spent_coins_age_band_2y_to_3y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2029,9 +2029,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Age Bands for coins between 5 and 7 years old",
-    "name": "age_bands_5y_to_7y",
-    "metric": "stack_age_bands_5y_to_7y",
+    "human_readable_name": "The Spent Coins Age Band for coins between 3 and 5 years old",
+    "name": "spent_coins_age_band_3y_to_5y",
+    "metric": "spent_coins_age_band_3y_to_5y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2048,9 +2048,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Age Bands for coins between 7 and 10 years old",
-    "name": "age_bands_7y_to_10y",
-    "metric": "stack_age_bands_7y_to_10y",
+    "human_readable_name": "The Spent Coins Age Band for coins between 5 and 7 years old",
+    "name": "spent_coins_age_band_5y_to_7y",
+    "metric": "spent_coins_age_band_5y_to_7y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2067,9 +2067,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Age Bands for coins older than 10 years",
-    "name": "age_bands_10y_to_inf",
-    "metric": "stack_age_bands_10y_to_inf",
+    "human_readable_name": "The Spent Coins Age Band for coins between 7 and 10 years old",
+    "name": "spent_coins_age_band_7y_to_10y",
+    "metric": "spent_coins_age_band_7y_to_10y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2086,9 +2086,28 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The percentage of Age Bands for coins not older than 1 day",
-    "name": "percent_of_age_bands_0_to_1d",
-    "metric": "percent_of_stack_age_bands_0_to_1d",
+    "human_readable_name": "The Spent Coins Age Band for coins older than 10 years",
+    "name": "spent_coins_age_band_10y_to_inf",
+    "metric": "spent_coins_age_band_10y_to_inf",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins not older than 1 day",
+    "name": "percent_of_spent_coins_age_band_0d_to_1d",
+    "metric": "percent_of_spent_coins_age_band_0d_to_1d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2105,9 +2124,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The percentage of Age Bands for coins between 1 and 7 days old",
-    "name": "percent_of_age_bands_1d_to_7d",
-    "metric": "percent_of_stack_age_bands_1d_to_7d",
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins between 1 and 7 days old",
+    "name": "percent_of_spent_coins_age_band_1d_to_7d",
+    "metric": "percent_of_spent_coins_age_band_1d_to_7d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2124,9 +2143,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The percentage of Age Bands for coins between 7 and 30 days old",
-    "name": "percent_of_age_bands_7d_to_1m",
-    "metric": "percent_of_stack_age_bands_7d_to_1m",
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins between 7 and 30 days old",
+    "name": "percent_of_spent_coins_age_band_7d_to_30d",
+    "metric": "percent_of_spent_coins_age_band_7d_to_30d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2143,9 +2162,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The percentage of Age Bands for coins between 1 and 3 months old",
-    "name": "percent_of_age_bands_1m_to_3m",
-    "metric": "percent_of_stack_age_bands_1m_to_3m",
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins between 30 and 60 days old",
+    "name": "percent_of_spent_coins_age_band_30d_to_60d",
+    "metric": "percent_of_spent_coins_age_band_30d_to_60d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2162,9 +2181,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The percentage of Age Bands for coins between 3 and 6 months old",
-    "name": "percent_of_age_bands_3m_to_6m",
-    "metric": "percent_of_stack_age_bands_3m_to_6m",
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins between 60 and 90 days old",
+    "name": "percent_of_spent_coins_age_band_60d_to_90d",
+    "metric": "percent_of_spent_coins_age_band_60d_to_90d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2181,9 +2200,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The percentage of Age Bands for coins between 6 and 12 months old",
-    "name": "percent_of_age_bands_6m_to_1y",
-    "metric": "percent_of_stack_age_bands_6m_to_1y",
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins between 90 and 180 days old",
+    "name": "percent_of_spent_coins_age_band_90d_to_180d",
+    "metric": "percent_of_spent_coins_age_band_90d_to_180d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2200,9 +2219,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The percentage of Age Bands for coins between 1 and 2 years old",
-    "name": "percent_of_age_bands_1y_to_2y",
-    "metric": "percent_of_stack_age_bands_1y_to_2y",
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins between 180 and 365 days old",
+    "name": "percent_of_spent_coins_age_band_180d_to_365d",
+    "metric": "percent_of_spent_coins_age_band_180d_to_365d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2219,9 +2238,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The percentage of Age Bands for coins between 2 and 3 years old",
-    "name": "percent_of_age_bands_2y_to_3y",
-    "metric": "percent_of_stack_age_bands_2y_to_3y",
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins between 1 and 2 years old",
+    "name": "percent_of_spent_coins_age_band_365d_to_2y",
+    "metric": "percent_of_spent_coins_age_band_365d_to_2y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2238,9 +2257,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The percentage of Age Bands for coins between 2 and 3 years old",
-    "name": "percent_of_age_bands_3y_to_5y",
-    "metric": "percent_of_stack_age_bands_3y_to_5y",
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins between 2 and 3 years old",
+    "name": "percent_of_spent_coins_age_band_2y_to_3y",
+    "metric": "percent_of_spent_coins_age_band_2y_to_3y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2257,9 +2276,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The percentage of Age Bands for coins between 3 and 5 years old",
-    "name": "percent_of_age_bands_5y_to_7y",
-    "metric": "percent_of_stack_age_bands_5y_to_7y",
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins between 3 and 5 years old",
+    "name": "percent_of_spent_coins_age_band_3y_to_5y",
+    "metric": "percent_of_spent_coins_age_band_3y_to_5y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2276,9 +2295,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The percentage of Age Bands for coins between 5 and 7 years old",
-    "name": "percent_of_age_bands_7y_to_10y",
-    "metric": "percent_of_stack_age_bands_7y_to_10y",
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins between 5 and 7 years old",
+    "name": "percent_of_spent_coins_age_band_5y_to_7y",
+    "metric": "percent_of_spent_coins_age_band_5y_to_7y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2295,9 +2314,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The percentage of Age Bands for coins between 7 and 10 years old",
-    "name": "percent_of_age_bands_10y_to_inf",
-    "metric": "percent_of_stack_age_bands_10y_to_inf",
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins between 7 and 10 years old",
+    "name": "percent_of_spent_coins_age_band_7y_to_10y",
+    "metric": "percent_of_spent_coins_age_band_7y_to_10y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2314,9 +2333,28 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Hodl Waves for coins not older than 1 day",
-    "name": "hodl_waves_0_to_1d",
-    "metric": "hodl_waves_0_to_1d",
+    "human_readable_name": "The percentage of Spent Coins Age Band for coins older than 10 years",
+    "name": "percent_of_spent_coins_age_band_10y_to_inf",
+    "metric": "percent_of_spent_coins_age_band_10y_to_inf",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "The Realized Cap Hodl Waves for coins not older than 1 day",
+    "name": "realized_cap_hodl_waves_0d_to_1d",
+    "metric": "realized_cap_hodl_waves_0d_to_1d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2333,9 +2371,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Hodl Waves for coins between 1 and 7 days old",
-    "name": "hodl_waves_1d_to_7d",
-    "metric": "hodl_waves_1d_to_7d",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between 1 and 7 days old",
+    "name": "realized_cap_hodl_waves_1d_to_7d",
+    "metric": "realized_cap_hodl_waves_1d_to_7d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2352,9 +2390,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Hodl Waves for coins between 7 and 30 days old",
-    "name": "hodl_waves_7d_to_1m",
-    "metric": "hodl_waves_7d_to_1m",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between 7 and 30 days old",
+    "name": "realized_cap_hodl_waves_7d_to_30d",
+    "metric": "realized_cap_hodl_waves_7d_to_30d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2371,9 +2409,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Hodl Waves for coins between 1 and 2 months old",
-    "name": "hodl_waves_1m_to_2m",
-    "metric": "hodl_waves_1m_to_2m",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between 30 and 60 days old",
+    "name": "realized_cap_hodl_waves_30d_to_60d",
+    "metric": "realized_cap_hodl_waves_30d_to_60d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2390,9 +2428,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Hodl Waves for coins between 2 and 3 months old",
-    "name": "hodl_waves_2m_to_3m",
-    "metric": "hodl_waves_2m_to_3m",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between 60 and 90 days old",
+    "name": "realized_cap_hodl_waves_60d_to_90d",
+    "metric": "realized_cap_hodl_waves_60d_to_90d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2409,9 +2447,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Hodl Waves for coins between 3 and 6 months old",
-    "name": "hodl_waves_3m_to_6m",
-    "metric": "hodl_waves_3m_to_6m",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between 90 and 180 days old",
+    "name": "realized_cap_hodl_waves_90d_to_180d",
+    "metric": "realized_cap_hodl_waves_90d_to_180d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2428,9 +2466,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Hodl Waves for coins between 6 and 12 months old",
-    "name": "hodl_waves_6m_to_1y",
-    "metric": "hodl_waves_6m_to_1y",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between 180 and 365 days old",
+    "name": "realized_cap_hodl_waves_180d_to_365d",
+    "metric": "realized_cap_hodl_waves_180d_to_365d",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2447,9 +2485,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Hodl Waves for coins between 1 and 2 years old",
-    "name": "hodl_waves_1y_to_2y",
-    "metric": "hodl_waves_1y_to_2y",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between 1 and 2 years old",
+    "name": "realized_cap_hodl_waves_365d_to_2y",
+    "metric": "realized_cap_hodl_waves_365d_to_2y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2466,9 +2504,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Hodl Waves for coins between 2 and 3 years old",
-    "name": "hodl_waves_2y_to_3y",
-    "metric": "hodl_waves_2y_to_3y",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between 2 and 3 years old",
+    "name": "realized_cap_hodl_waves_2y_to_3y",
+    "metric": "realized_cap_hodl_waves_2y_to_3y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2485,9 +2523,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Hodl Waves for coins between 3 and 5 years old",
-    "name": "hodl_waves_3y_to_5y",
-    "metric": "hodl_waves_3y_to_5y",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between 3 and 5 years old",
+    "name": "realized_cap_hodl_waves_3y_to_5y",
+    "metric": "realized_cap_hodl_waves_3y_to_5y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2504,9 +2542,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Hodl Waves for coins between 5 and 10 years old",
-    "name": "hodl_waves_5y_to_10y",
-    "metric": "hodl_waves_5y_to_10y",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between 5 and 10 years old",
+    "name": "realized_cap_hodl_waves_5y_to_10y",
+    "metric": "realized_cap_hodl_waves_5y_to_10y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [
@@ -2523,9 +2561,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Hodl Waves for coins between 10 and 20 years old",
-    "name": "hodl_waves_10y_to_20y",
-    "metric": "hodl_waves_10y_to_20y",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between 10 and 20 years old",
+    "name": "realized_cap_hodl_waves_10y_to_20y",
+    "metric": "realized_cap_hodl_waves_10y_to_20y",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [

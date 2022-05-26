@@ -125,6 +125,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   def aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters) do
+    from =
+      case aggregation do
+        :last -> Enum.max([from, Timex.shift(to, days: -7)], DateTime)
+        _ -> from
+      end
+
     args = [
       slugs,
       # Fetch internal metric name used. Fallback to the same name if missing.
@@ -202,6 +208,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   defp aggregated_slugs_base_query(metric, from, to, aggregation, filters) do
+    from =
+      case aggregation do
+        :last -> Enum.max([from, Timex.shift(to, days: -7)], DateTime)
+        _ -> from
+      end
+
     args = [
       # Fetch internal metric name used. Fallback to the same name if missing.
       Map.get(@name_to_metric_map, metric),

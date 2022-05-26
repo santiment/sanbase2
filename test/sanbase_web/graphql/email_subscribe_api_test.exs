@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.EmailSubscribeApiTest do
 
   setup_with_mocks([
     {Sanbase.MandrillApi, [:passthrough], send: fn _, _, _ -> {:ok, %{"status" => "sent"}} end},
-    {Sanbase.Email.Mailchimp, [:passthrough], add_email_to_mailchimp: fn _ -> :ok end}
+    {Sanbase.Email.MailchimpApi, [:passthrough], add_email_to_mailchimp: fn _ -> :ok end}
   ]) do
     {:ok, email: "test@example.com"}
   end

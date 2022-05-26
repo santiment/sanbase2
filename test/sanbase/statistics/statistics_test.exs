@@ -7,8 +7,6 @@ defmodule Sanbase.StatisticsTest do
   import Mock
 
   setup_all_with_mocks([
-    {Sanbase.Email.Mailchimp, [:passthrough], [unsubscribe_email: fn _ -> :ok end]},
-    {Sanbase.Email.Mailchimp, [:passthrough], [subscribe_email: fn _ -> :ok end]},
     {Sanbase.ClickhouseRepo, [:passthrough], [query: fn _, _ -> {:ok, %{rows: [10]}} end]}
   ]) do
     []

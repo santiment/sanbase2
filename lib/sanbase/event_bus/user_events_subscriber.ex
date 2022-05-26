@@ -40,6 +40,42 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     state
   end
 
+  defp handle_event(
+         %{data: %{event_type: :subscribe_monthly_newsletter, user_id: user_id}} = data,
+         event_shadow,
+         state
+       ) do
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
+  defp handle_event(
+         %{data: %{event_type: :unsubscribe_monthly_newsletter, user_id: user_id}} = data,
+         event_shadow,
+         state
+       ) do
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
+  defp handle_event(
+         %{data: %{event_type: :subscribe_biweekly_pro, user_id: user_id}} = data,
+         event_shadow,
+         state
+       ) do
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
+  defp handle_event(
+         %{data: %{event_type: :unsubscribe_biweekly_pro, user_id: user_id}} = data,
+         event_shadow,
+         state
+       ) do
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
   defp handle_event(_event, event_shadow, state) do
     # The unhandled events are marked as completed
     EventBus.mark_as_completed({__MODULE__, event_shadow})

@@ -185,6 +185,19 @@ defmodule Sanbase.EventBus.EventValidation do
     valid_integer_id?(user_id) and is_binary(promoter_origin) and promoter_origin != ""
   end
 
+  def valid?(%{
+        event_type: event_type,
+        user_id: user_id
+      })
+      when event_type in [
+             :subscribe_biweekly_report,
+             :unsubscribe_biweekly_report,
+             :subscribe_monthly_newsletter,
+             :unsubscribe_monthly_newsletter
+           ] do
+    valid_integer_id?(user_id)
+  end
+
   #############################################################################
   ## Invalid Events
   #############################################################################

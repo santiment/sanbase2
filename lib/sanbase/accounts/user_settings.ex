@@ -139,12 +139,30 @@ defmodule Sanbase.Accounts.UserSettings do
 
     case changeset |> Repo.insert_or_update() do
       {:ok, %__MODULE__{} = us} ->
+        maybe_emit_event_on_changes(user_id, changeset.changes)
         {:ok, %{us | settings: modify_settings(us)}}
 
       {:error, changeset} ->
         {:error, changeset}
     end
   end
+
+  defp maybe_emit_event_on_changes(user_id, %{settings: settings}) do
+    settings_changes = settings.changes
+    mailchimp_lists_keys = [:is_subscribed_biweekly_report, :is_subscribed_monthly_newsletter]
+
+    for key <- Map.keys(settings_changes) do
+      if key in mailchimp_lists_keys do
+        Sanbase.Email.MailchimpEventEmitter.emit_event(
+          {:ok, user_id},
+          key,
+          Map.put(%{}, key, settings_changes[key])
+        )
+      end
+    end
+  end
+
+  defp maybe_emit_event_on_changes(user_id, _), do: :ok
 
   defp modify_settings(%__MODULE__{} = us) do
     # The default value of the alerts limit is an empty map.

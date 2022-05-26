@@ -207,7 +207,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     query =
       query <>
         """
-        ORDER BY a.value #{direction |> Atom.to_string() |> String.upcase()}
+        ORDER BY a.value2 #{direction |> Atom.to_string() |> String.upcase()}
         """
 
     {query, args}

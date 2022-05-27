@@ -72,8 +72,8 @@ defmodule Sanbase.Accounts.User.Name do
       )
 
     case Sanbase.Repo.one(query) do
-      1 -> {:error, "#{fieldname} is taken"}
       0 -> true
+      _ -> {:error, "#{fieldname} is taken"}
     end
   end
 

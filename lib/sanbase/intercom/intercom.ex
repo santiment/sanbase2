@@ -168,11 +168,17 @@ defmodule Sanbase.Intercom do
       end)
       |> Enum.join(" | ")
 
+    signed_up_at =
+      case user.is_registered do
+        true -> DateTime.from_naive!(inserted_at, "Etc/UTC") |> DateTime.to_unix()
+        false -> 0
+      end
+
     stats = %{
       user_id: id,
       email: email,
       name: username,
-      signed_up_at: DateTime.from_naive!(inserted_at, "Etc/UTC") |> DateTime.to_unix(),
+      signed_up_at: signed_up_at,
       custom_attributes:
         %{
           all_watchlists_count: Map.get(watchlists_map, id, 0),

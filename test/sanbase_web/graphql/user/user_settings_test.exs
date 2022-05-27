@@ -5,7 +5,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
-  import Sanbase.TestHelpers
 
   setup do
     user = insert(:user, email: "test@example.com")

@@ -164,6 +164,19 @@ defmodule Sanbase.Entity do
   # module
   def deduce_entity_vote_field(:timeline_event), do: :timeline_event_id
 
+  # This needs to stay here even though it's not a supported entity type by the
+  # API. This is because internally all watchlist/screener types are stored as
+  # watchlists and we need to be able to know from which module to call by_ids/2
+  # so the objects can be fetched. Only when the full object is fetched we can
+  # call rewrite_keys/1 and put the proper key
+  def deduce_entity_module(:watchlist), do: UserList
+  def deduce_entity_module(:project_watchlist), do: UserList
+  def deduce_entity_module(:address_watchlist), do: UserList
+  def deduce_entity_module(:screener), do: UserList
+  def deduce_entity_module(:user_trigger), do: UserTrigger
+  def deduce_entity_module(:insight), do: Post
+  def deduce_entity_module(:chart_configuration), do: Chart.Configuration
+
   @doc ~s"""
   Apply the pagination options from `opts` to `query`.
 
@@ -573,7 +586,7 @@ defmodule Sanbase.Entity do
 
   # Which of the provided by the API opts are passed to the entity modules.
 
-  @passed_opts [:filter, :cursor, :user_ids, :is_featured_data_only]
+  @passed_opts [:filter, :cursor, :user_ids, :is_featured_data_only, :is_san_moderator]
 
   defp entity_ids_query(:insight, opts) do
     # `ordered?: false` is important otherwise the default order will be applied
@@ -638,19 +651,6 @@ defmodule Sanbase.Entity do
       user_id -> Chart.Configuration.user_entity_ids_query(user_id, entity_opts)
     end
   end
-
-  # This needs to stay here even though it's not a supported entity type by the
-  # API. This is because internally all watchlist/screener types are stored as
-  # watchlists and we need to be able to know from which module to call by_ids/2
-  # so the objects can be fetched. Only when the full object is fetched we can
-  # call rewrite_keys/1 and put the proper key
-  defp deduce_entity_module(:watchlist), do: UserList
-  defp deduce_entity_module(:project_watchlist), do: UserList
-  defp deduce_entity_module(:address_watchlist), do: UserList
-  defp deduce_entity_module(:screener), do: UserList
-  defp deduce_entity_module(:user_trigger), do: UserTrigger
-  defp deduce_entity_module(:insight), do: Post
-  defp deduce_entity_module(:chart_configuration), do: Chart.Configuration
 
   defp deduce_entity_creation_time_field(:insight), do: {:published_at, :inserted_at}
   defp deduce_entity_creation_time_field(_), do: {:inserted_at, :inserted_at}

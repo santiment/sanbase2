@@ -5,27 +5,34 @@ defmodule SanbaseWeb.Graphql.Schema.ModerationQueries do
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Resolvers.ModerationResolver
+  alias SanbaseWeb.Graphql.Middlewares.JWTModeratorAuth
 
   object :moderation_queries do
   end
 
   object :moderation_mutations do
-    field :moderate_set_deleted, :boolean do
-      arg(:entity_type, non_null(:entity_type))
+    field :moderate_hide, :boolean do
       arg(:entity_id, non_null(:integer))
+      arg(:entity_type, non_null(:entity_type))
 
-      resolve(&ModerationResolver.set_deleted/3)
+      middleware(JWTModeratorAuth)
+
+      resolve(&ModerationResolver.moderate_hide/3)
     end
 
-    field :moderate_unset_deleted, :boolean do
+    field :moderate_delete, :boolean do
       arg(:entity_type, non_null(:entity_type))
       arg(:entity_id, non_null(:integer))
 
-      resolve(&ModerationResolver.unset_deleted/3)
+      middleware(JWTModeratorAuth)
+
+      resolve(&ModerationResolver.moderate_delete/3)
     end
 
     field :moderate_unpublish_insight, :boolean do
       arg(:insight_id, non_null(:integer))
+
+      middleware(JWTModeratorAuth)
 
       resolve(&ModerationResolver.unpublish_insight/3)
     end

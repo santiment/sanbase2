@@ -13,6 +13,7 @@ defmodule Sanbase.Chart.Configuration do
     field(:description, :string)
     field(:is_public, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
 
     field(:metrics, {:array, :string}, default: [])
     field(:metrics_json, :map, default: %{})
@@ -51,6 +52,8 @@ defmodule Sanbase.Chart.Configuration do
       :title,
       :description,
       :is_public,
+      :is_deleted,
+      :is_hidden,
       :metrics,
       :metrics_json,
       :anomalies,
@@ -97,6 +100,7 @@ defmodule Sanbase.Chart.Configuration do
     base_query()
     |> where([config], config.is_public == true)
     |> maybe_apply_projects_filter(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :chart_configuration_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
@@ -107,6 +111,7 @@ defmodule Sanbase.Chart.Configuration do
   def user_entity_ids_query(user_id, opts) do
     base_query()
     |> where([config], config.user_id == ^user_id)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :chart_configuration_id)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([config], config.id)

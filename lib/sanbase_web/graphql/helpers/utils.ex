@@ -61,7 +61,11 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
 
     %{
       ut
-      | trigger: trigger |> Map.put(:tags, tags) |> Map.put(:id, ut.id)
+      | trigger:
+          trigger
+          |> Map.put(:tags, tags)
+          |> Map.put(:id, ut.id)
+          |> Map.put(:is_hidden, ut.is_hidden)
     }
   end
 

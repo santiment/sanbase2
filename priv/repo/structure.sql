@@ -517,7 +517,8 @@ CREATE TABLE public.chart_configurations (
     post_id bigint,
     queries jsonb,
     metrics_json jsonb DEFAULT '{}'::jsonb,
-    is_deleted boolean DEFAULT false
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 
@@ -587,7 +588,8 @@ CREATE TABLE public.comments (
     edited_at timestamp without time zone,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    is_deleted boolean DEFAULT false
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 
@@ -1668,7 +1670,8 @@ CREATE TABLE public.posts (
     is_chart_event boolean DEFAULT false,
     chart_event_datetime timestamp(0) without time zone,
     chart_configuration_for_event_id bigint,
-    is_deleted boolean DEFAULT false
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 
@@ -2949,7 +2952,8 @@ CREATE TABLE public.user_lists (
     description text,
     type public.watchlist_type DEFAULT 'project'::public.watchlist_type NOT NULL,
     is_screener boolean DEFAULT false,
-    is_deleted boolean DEFAULT false
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 
@@ -3026,7 +3030,8 @@ CREATE TABLE public.user_triggers (
     trigger jsonb NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    is_deleted boolean DEFAULT false
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 

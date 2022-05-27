@@ -48,6 +48,7 @@ defmodule Sanbase.Insight.Post do
     field(:short_desc, :string)
     field(:text, :string)
     field(:is_deleted, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
     field(:state, :string, default: @approved)
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
@@ -90,6 +91,7 @@ defmodule Sanbase.Insight.Post do
   def public_entity_ids_query(opts) do
     public_insights_query(opts)
     |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :post_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
@@ -101,6 +103,7 @@ defmodule Sanbase.Insight.Post do
     base_insights_query(opts)
     |> by_user(user_id)
     |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :post_id)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
     |> select([p], p.id)
@@ -194,6 +197,8 @@ defmodule Sanbase.Insight.Post do
       :state,
       :ready_state,
       :is_pulse,
+      :is_deleted,
+      :is_hidden,
       :is_paywall_required,
       :prediction,
       :price_chart_project_id,
@@ -266,7 +271,7 @@ defmodule Sanbase.Insight.Post do
       {:ok, post} ->
         emit_event({:ok, post}, :create_insight, %{})
         :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
-        {:ok, post |> Tag.Preloader.order_tags()}
+        {:ok, post}
 
       {:error, changeset} ->
         {
@@ -293,7 +298,7 @@ defmodule Sanbase.Insight.Post do
           {:ok, post} ->
             emit_event({:ok, post}, :update_insight, %{})
             :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
-            {:ok, post |> Tag.Preloader.order_tags()}
+            {:ok, post}
 
           {:error, error} ->
             {:error, error}
@@ -320,7 +325,7 @@ defmodule Sanbase.Insight.Post do
           {:ok, post} ->
             emit_event({:ok, post}, :delete_insight, %{})
 
-            {:ok, post |> Tag.Preloader.order_tags()}
+            {:ok, post}
 
           {:error, changeset} ->
             {:error,
@@ -337,23 +342,40 @@ defmodule Sanbase.Insight.Post do
     post_id = Sanbase.Math.to_integer(post_id)
 
     with {:ok, post} <- by_id(post_id, preload?: false),
-         {_, %Post{id: ^post_id}} <- {:nil?, post},
          {_, %Post{user_id: ^user_id}} <- {:own_post?, post},
          {_, %Post{ready_state: @draft}} <- {:draft?, post},
          {:ok, post} <- publish_post(post) do
       emit_event({:ok, post}, :publish_insight, %{})
-      post = post |> Repo.preload(@preloads) |> Tag.Preloader.order_tags()
+      post = post |> Repo.preload(@preloads)
 
       {:ok, post}
     else
-      {:nil?, nil} ->
-        {:error, "Cannot publish insight with id #{post_id}"}
-
       {:draft?, _} ->
         {:error, "Cannot publish already published insight with id: #{post_id}"}
 
       {:own_post?, _} ->
         {:error, "Cannot publish not own insight with id: #{post_id}"}
+
+      {:error, error} ->
+        error_message = "Cannot publish insight with id #{post_id}"
+        Logger.error("#{error_message}. Reason: #{inspect(error)}")
+        {:error, error_message}
+    end
+  end
+
+  def unpublish(post_id) do
+    post_id = Sanbase.Math.to_integer(post_id)
+
+    with {:ok, post} <- by_id(post_id, preload?: false),
+         {_, %Post{ready_state: @published}} <- {:published?, post},
+         {:ok, post} <- unpublish_post(post) do
+      emit_event({:ok, post}, :unpublish_insight, %{})
+      post = post |> Repo.preload(@preloads)
+
+      {:ok, post}
+    else
+      {:published?, _} ->
+        {:error, "Cannot unpublish a draft insight with id: #{post_id}"}
 
       {:error, error} ->
         error_message = "Cannot publish insight with id #{post_id}"
@@ -531,6 +553,11 @@ defmodule Sanbase.Insight.Post do
       error ->
         error
     end
+  end
+
+  defp unpublish_post(post) do
+    publish_changeset(post, %{ready_state: Post.draft()})
+    |> Repo.update()
   end
 
   defp by_user(query, user_id) do

@@ -31,6 +31,8 @@ defmodule Sanbase.Alert.UserTrigger do
 
   schema "user_triggers" do
     field(:is_deleted, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
+
     belongs_to(:user, User)
     embeds_one(:trigger, Trigger, on_replace: :update)
 
@@ -69,7 +71,7 @@ defmodule Sanbase.Alert.UserTrigger do
   @spec update_changeset(%UserTrigger{}, map()) :: Ecto.Changeset.t()
   def update_changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do
     user_triggers
-    |> cast(attrs, [:user_id])
+    |> cast(attrs, [:user_id, :is_deleted, :is_hidden])
     |> Tag.put_tags(Map.get(attrs, :trigger, %{}))
     |> cast_embed(:trigger, required: true, with: &Trigger.update_changeset/2)
     |> validate_required([:user_id, :trigger])
@@ -90,7 +92,7 @@ defmodule Sanbase.Alert.UserTrigger do
     query = from(ut in base_query(), where: ut.id == ^id)
 
     case Repo.one(query) do
-      nil -> {:error, "UserTrigger with id: #{id} does not exist."}
+      nil -> {:error, "UserTrigger with id: #{id} does not exist"}
       ut -> {:ok, ut |> trigger_in_struct()}
     end
   end
@@ -116,6 +118,7 @@ defmodule Sanbase.Alert.UserTrigger do
     base_query()
     |> where([ul], trigger_is_public())
     |> maybe_apply_projects_filter(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
@@ -127,6 +130,7 @@ defmodule Sanbase.Alert.UserTrigger do
     base_query()
     |> where([ul], ul.user_id == ^user_id)
     |> maybe_apply_projects_filter(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([ul], ul.id)

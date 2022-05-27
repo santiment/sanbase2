@@ -54,6 +54,25 @@ defmodule Sanbase.Entity.Query do
     end
   end
 
+  @spec maybe_filter_is_hidden(Ecto.Query.t(), Sanbase.Entity.opts()) :: Ecto.Query.t()
+  def maybe_filter_is_hidden(query, opts) do
+    default_value =
+      if Keyword.get(opts, :is_san_moderator), do: :hidden_and_not_hidden, else: :only_not_hidden
+
+    case Keyword.get(opts, :show_hidden_entities, default_value) do
+      :only_not_hidden ->
+        query
+        |> where([elem], elem.is_hidden != true)
+
+      :only_hidden ->
+        query
+        |> where([elem], elem.is_hidden == true)
+
+      :hidden_and_not_hidden ->
+        query
+    end
+  end
+
   defmacro entity_id_selection() do
     quote do
       fragment("""

@@ -41,6 +41,7 @@ defmodule Sanbase.UserList do
     field(:is_public, :boolean, default: false)
     field(:is_screener, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
 
     belongs_to(:user, User)
     belongs_to(:table_configuration, Sanbase.TableConfiguration)
@@ -61,19 +62,20 @@ defmodule Sanbase.UserList do
     update_changeset(user_list, attrs)
   end
 
-  @create_update_fields [:color, :description, :function, :is_monitored, :is_public, :is_screener] ++
-                          [:name, :slug, :table_configuration_id, :type, :user_id]
+  @create_fields [:color, :description, :function, :is_monitored, :is_public, :is_screener] ++
+                   [:name, :slug, :table_configuration_id, :type, :user_id]
   def create_changeset(%__MODULE__{} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, @create_update_fields)
+    |> cast(attrs, @create_fields)
     |> validate_required([:name, :user_id])
     |> validate_change(:function, &validate_function/2)
     |> unique_constraint(:slug)
   end
 
+  @update_fields @create_fields ++ [:is_deleted, :is_hidden]
   def update_changeset(%__MODULE__{id: _id} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, @create_update_fields)
+    |> cast(attrs, @update_fields)
     |> cast_assoc(:list_items)
     |> validate_change(:function, &validate_function/2)
     |> unique_constraint(:slug)
@@ -103,7 +105,7 @@ defmodule Sanbase.UserList do
       |> Repo.one()
 
     case result do
-      nil -> {:error, "Watchlist with id: #{id} does not exist."}
+      nil -> {:error, "Watchlist with id #{id} does not exist"}
       watchlist -> {:ok, watchlist}
     end
   end
@@ -132,6 +134,7 @@ defmodule Sanbase.UserList do
     |> maybe_apply_metrics_filter_query(opts)
     |> maybe_filter_by_type_query(opts)
     |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_list_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
@@ -146,6 +149,7 @@ defmodule Sanbase.UserList do
     |> maybe_apply_metrics_filter_query(opts)
     |> maybe_filter_by_type_query(opts)
     |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_list_id)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([ul], ul.id)

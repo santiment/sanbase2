@@ -110,6 +110,11 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
 
     conn
     |> Plug.Test.init_test_session(tokens)
+    |> SanbaseWeb.Graphql.AuthPlug.call(%{})
+    |> SanbaseWeb.Graphql.ContextPlug.call(%{})
+
+    # conn
+    # |> Plug.Test.init_test_session(tokens)
   end
 
   def setup_apikey_auth(conn, apikey) do

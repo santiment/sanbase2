@@ -21,6 +21,9 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:is_subscribed_marketing_emails, :boolean)
     field(:is_subscribed_comments_emails, :boolean)
     field(:is_subscribed_likes_emails, :boolean)
+    # Fixme: backwards compatibility, should be removed when removed from frontend.
+    # option is not used
+    field(:newsletter_subscription, :string, default_value: "OFF")
 
     field :alerts_per_day_limit_left, :json do
       resolve(&UserSettingsResolver.alerts_per_dy_limit_left/3)

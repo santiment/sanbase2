@@ -24,7 +24,7 @@ defmodule Sanbase.Cache.RehydratingCache.Supervisor do
          [
            name: Store.name(),
            ttl_check_interval: :timer.seconds(15),
-           global_ttl: :timer.hours(6),
+           global_ttl: :timer.hours(1),
            acquire_lock_timeout: 60_000
          ]},
         id: :__rehydrating_cache_con_cache__

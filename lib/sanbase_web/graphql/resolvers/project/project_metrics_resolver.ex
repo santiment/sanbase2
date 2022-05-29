@@ -11,9 +11,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
-  @ttl 7200
+  @ttl 2700
   @refresh_time_delta 1800
-  @refresh_time_max_offset 1800
+  @refresh_time_max_offset 900
 
   def available_metrics(%Project{slug: slug}, _args, _resolution) do
     query = :available_metrics

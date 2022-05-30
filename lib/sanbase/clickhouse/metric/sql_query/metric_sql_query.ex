@@ -207,7 +207,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     query =
       query <>
         """
-        ORDER BY a.value2 #{direction |> Atom.to_string() |> String.upcase()}
+        ORDER BY value #{direction |> Atom.to_string() |> String.upcase()}
         """
 
     {query, args}
@@ -239,7 +239,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     SELECT name AS slug, value2 AS value
     FROM (
       SELECT asset_id, #{aggregation(aggregation, "value", "(dt, computed_at)")} AS value2
-      FROM intraday_metrics
+      FROM #{Map.get(@table_map, metric)}
       PREWHERE
         #{additional_filters}
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND

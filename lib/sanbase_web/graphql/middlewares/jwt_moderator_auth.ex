@@ -1,8 +1,7 @@
 defmodule SanbaseWeb.Graphql.Middlewares.JWTModeratorAuth do
   @moduledoc """
-  Authenticate that the request contains a valid JWT token and that the user has
-  enough san tokens to access the data. If the san tokens are not specified
-  it is assumed that 0 tokens are required.
+  Authenticate that the request contains a valid JWT token and that the user
+  has moderator permissions
 
   Example:
 
@@ -28,13 +27,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.JWTModeratorAuth do
   def call(
         %Resolution{
           context: %{
-            is_san_moderator: is_san_moderator,
+            is_moderator: is_moderator,
             auth: %{auth_method: auth_method}
           }
         } = resolution,
         _opts
       ) do
-    case is_san_moderator == true and auth_method == :user_token do
+    case is_moderator == true and auth_method == :user_token do
       true ->
         resolution
 

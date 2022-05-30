@@ -8,6 +8,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   alias Sanbase.Accounts.{User, UserFollower}
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
+  def is_moderator(_root, _args, %{context: %{is_moderator: is_moderator} = context}) do
+    {:ok, is_moderator}
+  end
+
+  def is_moderator(_root, _args, _resolution), do: {:ok, false}
+
   def email(%User{email: nil}, _args, _resolution), do: {:ok, nil}
 
   def email(%User{id: id, email: email}, _args, %{

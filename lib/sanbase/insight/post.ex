@@ -378,7 +378,7 @@ defmodule Sanbase.Insight.Post do
         {:error, "Cannot unpublish a draft insight with id: #{post_id}"}
 
       {:error, error} ->
-        error_message = "Cannot publish insight with id #{post_id}"
+        error_message = "Cannot unpublish insight with id #{post_id}"
         Logger.error("#{error_message}. Reason: #{inspect(error)}")
         {:error, error_message}
     end

@@ -51,6 +51,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:price_chart_project, :project, resolve: dataloader(SanbaseRepo))
     field(:prediction, :string)
     field(:is_pulse, :boolean)
+    field(:is_hidden, non_null(:boolean))
     field(:is_paywall_required, :boolean)
     field(:is_chart_event, :boolean)
     field(:chart_event_datetime, :datetime)

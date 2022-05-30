@@ -162,7 +162,7 @@ defmodule Sanbase.Accounts.UserSettings do
     end
   end
 
-  defp maybe_emit_event_on_changes(user_id, _), do: :ok
+  defp maybe_emit_event_on_changes(_user_id, _), do: :ok
 
   defp modify_settings(%__MODULE__{} = us) do
     # The default value of the alerts limit is an empty map.

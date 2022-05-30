@@ -98,6 +98,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:avatar_url, :string)
     field(:stripe_customer_id, :string)
 
+    field :is_moderator, :boolean do
+      resolve(&UserResolver.is_moderator/3)
+    end
+
     field :permissions, :access_level do
       resolve(&UserResolver.permissions/3)
     end

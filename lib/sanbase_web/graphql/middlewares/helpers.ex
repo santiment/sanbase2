@@ -3,19 +3,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.Helpers do
   Common functions used among multiple middlewares
   """
 
-  alias __MODULE__
   alias Sanbase.Accounts.User
   alias Absinthe.Resolution
-
-  def has_enough_san_tokens?(_, 0), do: true
-
-  def has_enough_san_tokens?(san_tokens, required_san_tokens) do
-    if san_tokens >= required_san_tokens do
-      true
-    else
-      {:error, "Insufficient SAN balance"}
-    end
-  end
 
   def allow_access?(_current_user, true), do: true
 
@@ -27,14 +16,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.Helpers do
     end
   end
 
-  def handle_user_access(current_user, san_tokens, opts, resolution) do
-    required_san_tokens = Keyword.get(opts, :san_tokens, 0) |> Sanbase.Math.to_float()
+  def handle_user_access(current_user, opts, resolution) do
     allow_access = Keyword.get(opts, :allow_access_without_terms_accepted, false)
 
-    with true <- Helpers.allow_access?(current_user, allow_access),
-         true <- Helpers.has_enough_san_tokens?(san_tokens, required_san_tokens) do
-      resolution
-    else
+    case allow_access?(current_user, allow_access) do
+      true ->
+        resolution
+
       {:error, _message} = error ->
         resolution
         |> Resolution.put_result(error)

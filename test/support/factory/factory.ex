@@ -123,14 +123,14 @@ defmodule Sanbase.Factory do
     %Chart.Configuration{
       title: "chart configuration",
       project: insert(:random_project),
-      user: insert(:user)
+      user: build(:user)
     }
   end
 
   def table_configuration_factory() do
     %TableConfiguration{
       title: "table configuration",
-      user: insert(:user)
+      user: build(:user)
     }
   end
 
@@ -650,6 +650,13 @@ defmodule Sanbase.Factory do
     %Role{
       id: 2,
       name: "Santiment Family Member"
+    }
+  end
+
+  def role_san_moderator_factory() do
+    %Role{
+      id: 3,
+      name: "Santiment Moderator"
     }
   end
 

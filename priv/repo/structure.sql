@@ -516,7 +516,9 @@ CREATE TABLE public.chart_configurations (
     options jsonb,
     post_id bigint,
     queries jsonb,
-    metrics_json jsonb DEFAULT '{}'::jsonb
+    metrics_json jsonb DEFAULT '{}'::jsonb,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 
@@ -585,7 +587,9 @@ CREATE TABLE public.comments (
     root_parent_id bigint,
     edited_at timestamp without time zone,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 
@@ -1665,7 +1669,9 @@ CREATE TABLE public.posts (
     document_tokens tsvector,
     is_chart_event boolean DEFAULT false,
     chart_event_datetime timestamp(0) without time zone,
-    chart_configuration_for_event_id bigint
+    chart_configuration_for_event_id bigint,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 
@@ -2945,7 +2951,9 @@ CREATE TABLE public.user_lists (
     table_configuration_id bigint,
     description text,
     type public.watchlist_type DEFAULT 'project'::public.watchlist_type NOT NULL,
-    is_screener boolean DEFAULT false
+    is_screener boolean DEFAULT false,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 
@@ -3021,7 +3029,9 @@ CREATE TABLE public.user_triggers (
     user_id bigint NOT NULL,
     trigger jsonb NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 
@@ -7231,3 +7241,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220404132445);
 INSERT INTO public."schema_migrations" (version) VALUES (20220413130352);
 INSERT INTO public."schema_migrations" (version) VALUES (20220504082527);
 INSERT INTO public."schema_migrations" (version) VALUES (20220516082857);
+INSERT INTO public."schema_migrations" (version) VALUES (20220519083249);
+INSERT INTO public."schema_migrations" (version) VALUES (20220519135027);

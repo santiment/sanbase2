@@ -311,4 +311,26 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
                }
     end
   end
+
+  test "check is moderator", %{conn: conn, user: user} do
+    query = "{ currentUser{ isModerator } }"
+
+    assert false ==
+             conn
+             |> post("/graphql", query_skeleton(query))
+             |> json_response(200)
+             |> get_in(["data", "currentUser", "isModerator"])
+
+    role = insert(:role_san_moderator)
+    assert {:ok, _} = Sanbase.Accounts.UserRole.create(user.id, role.id)
+
+    # Clear the cache that hols the moderator user ids
+    Sanbase.Cache.clear_all()
+
+    assert true ==
+             conn
+             |> post("/graphql", query_skeleton(query))
+             |> json_response(200)
+             |> get_in(["data", "currentUser", "isModerator"])
+  end
 end

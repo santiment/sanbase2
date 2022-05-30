@@ -47,6 +47,8 @@ defmodule Sanbase.Insight.Post do
     field(:title, :string)
     field(:short_desc, :string)
     field(:text, :string)
+    field(:is_deleted, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
     field(:state, :string, default: @approved)
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
@@ -89,6 +91,7 @@ defmodule Sanbase.Insight.Post do
   def public_entity_ids_query(opts) do
     public_insights_query(opts)
     |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :post_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
@@ -100,6 +103,7 @@ defmodule Sanbase.Insight.Post do
     base_insights_query(opts)
     |> by_user(user_id)
     |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :post_id)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
     |> select([p], p.id)
@@ -193,6 +197,8 @@ defmodule Sanbase.Insight.Post do
       :state,
       :ready_state,
       :is_pulse,
+      :is_deleted,
+      :is_hidden,
       :is_paywall_required,
       :prediction,
       :price_chart_project_id,
@@ -227,13 +233,12 @@ defmodule Sanbase.Insight.Post do
     do: ready_state == @published
 
   @impl Sanbase.Entity.Behaviour
-  def by_id!(id, opts) when is_integer(id), do: by_id(id, opts) |> to_bang()
+  def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
-  def by_id(id, opts) when is_integer(id) do
+  def by_id(id, opts) do
     result =
-      from(p in __MODULE__)
-      |> maybe_preload(opts)
+      base_insights_query(opts)
       |> Repo.get(id)
 
     case result do
@@ -248,7 +253,7 @@ defmodule Sanbase.Insight.Post do
   @impl Sanbase.Entity.Behaviour
   def by_ids(post_ids, _opts) when is_list(post_ids) do
     result =
-      from(p in __MODULE__,
+      from(p in base_query(),
         where: p.id in ^post_ids,
         order_by: fragment("array_position(?, ?::int)", ^post_ids, p.id)
       )
@@ -266,7 +271,7 @@ defmodule Sanbase.Insight.Post do
       {:ok, post} ->
         emit_event({:ok, post}, :create_insight, %{})
         :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
-        {:ok, post |> Tag.Preloader.order_tags()}
+        {:ok, post}
 
       {:error, changeset} ->
         {
@@ -279,8 +284,8 @@ defmodule Sanbase.Insight.Post do
   @spec update(non_neg_integer(), %User{}, map()) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Keyword.t()}
   def update(post_id, %User{id: user_id}, args) do
-    case Repo.get(__MODULE__, post_id) do
-      %__MODULE__{user_id: ^user_id} = post ->
+    case by_id(post_id, preload?: false) do
+      {:ok, %__MODULE__{user_id: ^user_id} = post} ->
         # If the tags are updated they need to be dropped from the mapping table
         # and inserted again as the order needs to be preserved.
         maybe_drop_post_tags(post, args)
@@ -293,28 +298,25 @@ defmodule Sanbase.Insight.Post do
           {:ok, post} ->
             emit_event({:ok, post}, :update_insight, %{})
             :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
-            {:ok, post |> Tag.Preloader.order_tags()}
+            {:ok, post}
 
           {:error, error} ->
             {:error, error}
         end
 
-      %__MODULE__{user_id: another_user_id} when user_id != another_user_id ->
+      {:ok, %__MODULE__{user_id: another_user_id}} when user_id != another_user_id ->
         {:error, "Cannot update not owned insight: #{post_id}"}
 
-      {:error, changeset} ->
-        {:error, message: "Cannot update insight", details: changeset_errors(changeset)}
-
-      _post ->
-        {:error, "Cannot update insight with id: #{post_id}"}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
   @spec delete(non_neg_integer(), %User{}) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Keyword.t()}
   def delete(post_id, %User{id: user_id}) do
-    case Repo.get(Post, post_id) do
-      %__MODULE__{user_id: ^user_id} = post ->
+    case by_id(post_id, preload?: false) do
+      {:ok, %__MODULE__{user_id: ^user_id} = post} ->
         # Delete the images from the S3/Local store.
         delete_post_images(post)
 
@@ -323,7 +325,7 @@ defmodule Sanbase.Insight.Post do
           {:ok, post} ->
             emit_event({:ok, post}, :delete_insight, %{})
 
-            {:ok, post |> Tag.Preloader.order_tags()}
+            {:ok, post}
 
           {:error, changeset} ->
             {:error,
@@ -332,26 +334,22 @@ defmodule Sanbase.Insight.Post do
         end
 
       _post ->
-        {:error, "You don't own the post with id #{post_id}"}
+        {:error, "Post with id #{post_id} does not exist or it's not yours"}
     end
   end
 
   def publish(post_id, user_id) do
     post_id = Sanbase.Math.to_integer(post_id)
-    post = Repo.get(Post, post_id)
 
-    with {_, %Post{id: ^post_id}} <- {:nil?, post},
+    with {:ok, post} <- by_id(post_id, preload?: false),
          {_, %Post{user_id: ^user_id}} <- {:own_post?, post},
          {_, %Post{ready_state: @draft}} <- {:draft?, post},
          {:ok, post} <- publish_post(post) do
       emit_event({:ok, post}, :publish_insight, %{})
-      post = post |> Repo.preload(@preloads) |> Tag.Preloader.order_tags()
+      post = post |> Repo.preload(@preloads)
 
       {:ok, post}
     else
-      {:nil?, nil} ->
-        {:error, "Cannot publish insight with id #{post_id}"}
-
       {:draft?, _} ->
         {:error, "Cannot publish already published insight with id: #{post_id}"}
 
@@ -360,6 +358,27 @@ defmodule Sanbase.Insight.Post do
 
       {:error, error} ->
         error_message = "Cannot publish insight with id #{post_id}"
+        Logger.error("#{error_message}. Reason: #{inspect(error)}")
+        {:error, error_message}
+    end
+  end
+
+  def unpublish(post_id) do
+    post_id = Sanbase.Math.to_integer(post_id)
+
+    with {:ok, post} <- by_id(post_id, preload?: false),
+         {_, %Post{ready_state: @published}} <- {:published?, post},
+         {:ok, post} <- unpublish_post(post) do
+      emit_event({:ok, post}, :unpublish_insight, %{})
+      post = post |> Repo.preload(@preloads)
+
+      {:ok, post}
+    else
+      {:published?, _} ->
+        {:error, "Cannot unpublish a draft insight with id: #{post_id}"}
+
+      {:error, error} ->
+        error_message = "Cannot unpublish insight with id #{post_id}"
         Logger.error("#{error_message}. Reason: #{inspect(error)}")
         {:error, error_message}
     end
@@ -390,7 +409,7 @@ defmodule Sanbase.Insight.Post do
   end
 
   def base_insights_query(opts) do
-    Post
+    base_query()
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> by_from_to_datetime(opts)
@@ -398,6 +417,10 @@ defmodule Sanbase.Insight.Post do
     |> maybe_order_by_published_at(opts)
     |> page(opts)
     |> maybe_preload(opts)
+  end
+
+  defp base_query(_opts \\ []) do
+    from(p in __MODULE__, where: p.is_deleted != true)
   end
 
   @doc """
@@ -459,6 +482,7 @@ defmodule Sanbase.Insight.Post do
   def assign_all_user_insights_to_anonymous(user_id) do
     anon_user_id = User.anonymous_user_id()
 
+    # This should also be applied to posts with is_deleted == true
     from(p in Post, where: p.user_id == ^user_id)
     |> Repo.update_all(set: [user_id: anon_user_id])
   end
@@ -490,7 +514,7 @@ defmodule Sanbase.Insight.Post do
 
   def user_id_to_post_ids_list() do
     from(
-      p in Post,
+      p in base_query(),
       select: {p.user_id, fragment("array_agg(?)", p.id)},
       group_by: p.user_id
     )
@@ -529,6 +553,11 @@ defmodule Sanbase.Insight.Post do
       error ->
         error
     end
+  end
+
+  defp unpublish_post(post) do
+    publish_changeset(post, %{ready_state: Post.draft()})
+    |> Repo.update()
   end
 
   defp by_user(query, user_id) do

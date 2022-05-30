@@ -144,6 +144,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     |> maybe_add_user_option(:current_user_voted_for_only, args, resolution)
     |> maybe_add_value_option(:user_role_data_only, args)
     |> maybe_add_value_option(:is_featured_data_only, args)
+    |> add_is_moderator_option(resolution)
   end
 
   defp maybe_add_user_id_option(opts, resolution) do
@@ -168,6 +169,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
       true -> Keyword.put(opts, key, Map.get(args, key))
       false -> opts
     end
+  end
+
+  defp add_is_moderator_option(opts, resolution) do
+    is_moderator = Map.get(resolution.context, :is_moderator)
+    Keyword.put(opts, :is_moderator, is_moderator)
   end
 
   defp maybe_do_not_cache(args) do

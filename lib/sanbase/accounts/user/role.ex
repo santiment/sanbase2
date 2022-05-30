@@ -6,6 +6,7 @@ defmodule Sanbase.Accounts.Role do
 
   @san_team_role_id 1
   @san_family_role_id 2
+  @san_moderator_role_id 3
 
   schema "roles" do
     field(:name, :string)
@@ -18,10 +19,13 @@ defmodule Sanbase.Accounts.Role do
 
   def san_team_role_id(), do: @san_team_role_id
   def san_family_role_id(), do: @san_family_role_id
+  def san_moderator_role_id(), do: @san_moderator_role_id
 
   def san_family_ids(), do: get_role_ids(@san_family_role_id)
-
   def san_team_ids(), do: get_role_ids(@san_team_role_id)
+  def san_moderator_ids(), do: get_role_ids(@san_moderator_role_id)
+
+  # Private functions
 
   defp get_role_ids(role_id) do
     from(

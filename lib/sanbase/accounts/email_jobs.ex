@@ -54,14 +54,7 @@ defmodule Sanbase.Accounts.EmailJobs do
       end_subscription_date: Timex.format!(subscription.current_period_end, "{Mfull} {D}, {YYYY}")
     }
 
-    data =
-      Sanbase.Mailer.new(%{
-        user_id: subscription.user_id,
-        template: template,
-        vars: vars
-      })
-
-    Oban.insert(@oban_conf_name, data)
+    add_email_job(subscription.user_id, template, vars)
   end
 
   def send_trial_will_end_email(subscription) do
@@ -73,12 +66,19 @@ defmodule Sanbase.Accounts.EmailJobs do
       subscription_duration: subscription.plan.interval <> "ly"
     }
 
+    add_email_job(user.id, Sanbase.Email.Template.end_of_trial_template(), vars)
+  end
+
+  def add_email_job(user_id, email_template, email_vars, opts \\ []) do
     data =
-      Sanbase.Mailer.new(%{
-        user_id: user.id,
-        template: Sanbase.Email.Template.end_of_trial_template(),
-        vars: vars
-      })
+      Sanbase.Mailer.new(
+        %{
+          user_id: user_id,
+          template: email_template,
+          vars: email_vars
+        },
+        opts
+      )
 
     Oban.insert(@oban_conf_name, data)
   end

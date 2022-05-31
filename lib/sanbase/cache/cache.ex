@@ -21,6 +21,7 @@ defmodule Sanbase.Cache do
   def hash(data) do
     :crypto.hash(:sha256, :erlang.term_to_binary(data))
     |> Base.encode64()
+    |> binary_part(0, 16)
   end
 
   def name, do: @cache_name

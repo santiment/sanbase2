@@ -31,7 +31,7 @@ defmodule Sanbase.Cache.Behaviour do
 
   @callback size(cache, size_type) :: float()
 
-  @callback clear_all(cache) :: :ok
+  @callback clear_all(cache) :: boolean()
 
   @optional_callbacks get_or_store: 3, get_or_store: 4
 end

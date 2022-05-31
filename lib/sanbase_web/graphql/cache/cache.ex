@@ -258,8 +258,23 @@ defmodule SanbaseWeb.Graphql.Cache do
     cache_key =
       {__MODULE__, :__internal_graphql_api_caching__, name, args} |> Sanbase.Cache.hash()
 
+    cache_key = extend_cache_key_info(name) <> cache_key
+
     {cache_key, ttl}
   end
+
+  defp extend_cache_key_info({name, %{} = args, _}) do
+    slug = Map.get(args, :slug)
+    id = Map.get(args, :id)
+    metric = Map.get(args, :metric)
+
+    string = to_string(name) <> if slug || id, do: "_#{slug || id}_", else: "_"
+    string = string <> if metric, do: "#{metric}_", else: ""
+
+    string
+  end
+
+  defp extend_cache_key_info(_), do: ""
 
   # Convert the values for using in the cache. A special treatement is done for
   # `%DateTime{}` so all datetimes in a @ttl sized window are treated the same

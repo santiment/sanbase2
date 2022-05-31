@@ -44,15 +44,18 @@ defmodule Sanbase.ClickhouseRepo do
 
   @doc ~s"""
   Execute a query and apply the transform_fn on every row the result.
-  Return a map with the transformed rows and the column names.
+  Return a map with the transformed rows alongside some metadata -
+  the query id, column names and a short summary of the used resources
   """
-  def query_transform_with_columns(query, args, transform_fn) do
+  def query_transform_with_metadata(query, args, transform_fn) do
     case execute_query_transform(query, args) do
       {:ok, result} ->
         {:ok,
          %{
            rows: Enum.map(result.rows, transform_fn),
-           columns: result.columns
+           columns: result.columns,
+           query_id: result.query_id,
+           summary: result.summary
          }}
 
       {:error, error} ->
@@ -60,7 +63,7 @@ defmodule Sanbase.ClickhouseRepo do
     end
   rescue
     e ->
-      log_and_return_error(e, "query_transform_with_columns/3", __STACKTRACE__,
+      log_and_return_error(e, "query_transform_with_metadata/3", __STACKTRACE__,
         propagate_error: true
       )
   end
@@ -69,8 +72,7 @@ defmodule Sanbase.ClickhouseRepo do
     ordered_params = order_params(query, args)
     sanitized_query = sanitize_query(query)
 
-    __MODULE__.query(sanitized_query, ordered_params)
-    |> case do
+    case __MODULE__.query(sanitized_query, ordered_params) do
       {:ok, result} -> {:ok, Enum.reduce(result.rows, init, reducer)}
       {:error, error} -> log_and_return_error(inspect(error), "query_reduce/4")
     end
@@ -84,8 +86,7 @@ defmodule Sanbase.ClickhouseRepo do
     ordered_params = order_params(query, args)
     sanitized_query = sanitize_query(query)
 
-    __MODULE__.query(sanitized_query, ordered_params)
-    |> case do
+    case __MODULE__.query(sanitized_query, ordered_params) do
       {:ok, result} ->
         {:ok, result}
 

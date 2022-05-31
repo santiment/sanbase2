@@ -83,9 +83,17 @@ defmodule Sanbase.Dashboard.Panel do
   def compute(%__MODULE__{} = panel) do
     %{sql: %{"query" => query, "args" => args}} = panel
 
-    case Sanbase.ClickhouseRepo.query_transform_with_columns(query, args, &transform_result/1) do
+    case Sanbase.ClickhouseRepo.query_transform_with_metadata(query, args, &transform_result/1) do
       {:ok, map} ->
-        {:ok, %{rows: map.rows, rows_json: Jason.encode!(map.rows), columns: map.columns}}
+        {:ok,
+         %{
+           query_id: map.query_id,
+           summary_json: Jason.encode!(map.summary),
+           rows: map.rows,
+           rows_json: Jason.encode!(map.rows),
+           columns: map.columns,
+           executed_at: DateTime.utc_now()
+         }}
 
       {:error, error} ->
         # This error is nice enough to be logged and returned to the user.
@@ -116,7 +124,7 @@ defmodule Sanbase.Dashboard.Panel do
 
   defp valid_sql_query?(sql) do
     case Map.has_key?(sql, :query) and is_binary(sql[:query]) do
-      true -> :ok
+      true -> Sanbase.Dashboard.SqlValidation.validate(sql[:query])
       false -> {:error, "sql query must be a binary string"}
     end
   end

@@ -1,5 +1,7 @@
 defmodule Sanbase.Dashboard.SqlValidation do
   @validation_functions [:from_clauses]
+
+  @spec validate(String.t()) :: :ok | {:error, String.t()}
   def validate(query) do
     query =
       String.replace(query, ["\r\n", "\n"], " ")
@@ -15,13 +17,13 @@ defmodule Sanbase.Dashboard.SqlValidation do
     end)
   end
 
-  @allowed_tables [
-    "asset_metadata",
-    "asset_prices",
-    "intraday_metrics",
-    "daily_metrics_v2",
-    "numbers"
-  ]
+  @allowed_tables ~w(
+    asset_metadata metric_metadata asset_prices_v3 asset_price_pairs_only intraday_metrics
+    daily_metrics_v2 numbers balances_aggregated xrp_balances doge_balances eth_balancs
+    btc_balances cardano_balances bnb_balances bch_balances trending_words_v4_top_500 signals
+    signals_metadata polygon_transfers eth_transfers erc20_transfers erc20_transfers_dt_order
+    github_v2 daily_label_based_metrics
+  )
 
   def validate(:from_clauses, query) do
     Regex.scan(~r/from\s+([\w,.]+)/, query, include_captures: true, trim: true)

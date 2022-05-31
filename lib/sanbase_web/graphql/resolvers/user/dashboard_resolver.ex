@@ -50,7 +50,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
   defp can_view_dashboard?(dashboard_id, user_id) do
     # Users can see their own dashboard and other people's public dashboards
-    IO.inspect({user_id, Dashboard.get_access_data(dashboard_id)})
 
     case Dashboard.get_access_data(dashboard_id) do
       {:ok, %{user_id: ^user_id}} -> true

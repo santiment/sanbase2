@@ -4,7 +4,8 @@ defmodule Sanbase.Dashboard do
   against Clickhouse.
 
   This module dispatches between the internal representations of the
-  dashboard. Dashboards have two representations: Schema and Cache
+  dashboard, panels, credits cost computation.
+  Dashboards have two representations: Schema and Cache
 
   Dashboard.Schema represents the configuration of the dashboard, stored
   in the databse. This includes the name, description, public status and panels'

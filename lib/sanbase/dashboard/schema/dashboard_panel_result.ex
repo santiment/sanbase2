@@ -1,6 +1,6 @@
 defmodule Sanbase.Dashboard.Panel.Result do
   @moduledoc ~s"""
-  The result of computing a dashboard panel SQL
+  The result of computing a dashboard panel SQL query.
   """
 
   @type t :: %__MODULE__{

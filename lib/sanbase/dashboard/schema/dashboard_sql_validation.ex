@@ -1,4 +1,11 @@
 defmodule Sanbase.Dashboard.SqlValidation do
+  @moduledoc ~s"""
+  Basic checks for SQL queries.
+  These are simply validations that can be done before running the query.
+  Most of the checks are done in the database itself by adding restrictions,
+  read-write permissions, etc.
+  """
+
   @validation_functions [:from_clauses]
 
   @spec validate(String.t()) :: :ok | {:error, String.t()}
@@ -18,13 +25,17 @@ defmodule Sanbase.Dashboard.SqlValidation do
   end
 
   @allowed_tables ~w(
-    asset_metadata metric_metadata asset_prices_v3 asset_price_pairs_only intraday_metrics
-    daily_metrics_v2 numbers balances_aggregated xrp_balances doge_balances eth_balancs
-    btc_balances cardano_balances bnb_balances bch_balances trending_words_v4_top_500 signals
-    signals_metadata polygon_transfers eth_transfers erc20_transfers erc20_transfers_dt_order
+    asset_metadata metric_metadata asset_prices_v3 asset_price_pairs_only
+    intraday_metrics daily_metrics_v2 numbers balances_aggregated xrp_balances
+    doge_balances eth_balancs btc_balances cardano_balances bnb_balances
+    bch_balances trending_words_v4_top_500 signals signals_metadata
+    polygon_transfers eth_transfers erc20_transfers erc20_transfers_dt_order
     github_v2 daily_label_based_metrics
   )
 
+  @doc ~s"""
+  Check if the SQL attempts to access tables that are not allowed
+  """
   def validate(:from_clauses, query) do
     Regex.scan(~r/from\s+([\w,.]+)/, query, include_captures: true, trim: true)
     |> Enum.reduce_while(:ok, fn

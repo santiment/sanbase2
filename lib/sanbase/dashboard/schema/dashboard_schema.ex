@@ -1,4 +1,12 @@
 defmodule Sanbase.Dashboard.Schema do
+  @moduledoc ~s"""
+  Dashboard database schema and CRUD functions for working
+  with it.
+
+  This module is used for creating and updating dashboard fields.
+  It also provide functions for adding/updating/removing dashboard panels
+  """
+
   use Ecto.Schema
 
   import Ecto.Query
@@ -25,6 +33,8 @@ defmodule Sanbase.Dashboard.Schema do
           user: %User{}
         }
 
+  @type dashboard_id :: non_neg_integer()
+
   schema "dashboards" do
     field(:name, :string)
     field(:description, :string)
@@ -40,8 +50,8 @@ defmodule Sanbase.Dashboard.Schema do
   @spec by_id(non_neg_integer()) :: {:ok, t()} | {:error, String.t()}
   def by_id(dashboard_id) do
     case Sanbase.Repo.get(__MODULE__, dashboard_id) do
-      nil -> {:error, "Dashboard does not exist"}
       %__MODULE__{} = dashboard -> {:ok, dashboard}
+      nil -> {:error, "Dashboard does not exist"}
     end
   end
 
@@ -78,7 +88,7 @@ defmodule Sanbase.Dashboard.Schema do
   All fields except the panels and the user_id can be updated.
   In order to update a panel use the update_panel/3 function
   """
-  @spec update(t(), schema_args()) :: {:ok, t()} | {:error, Changeset.t()}
+  @spec update(dashboard_id(), schema_args()) :: {:ok, t()} | {:error, Changeset.t()}
   def update(dashboard_id, args) do
     {:ok, dashboard} = by_id(dashboard_id)
 
@@ -137,9 +147,13 @@ defmodule Sanbase.Dashboard.Schema do
       panel ->
         {:ok, panel} = Panel.update(panel, panel_args)
 
+        # Atomically remove and add the panel to simulate update.
+        # Either both succeed or neither of them does. This guards against
+        # removing the panel and failing to add it back.
         Ecto.Multi.new()
         |> Ecto.Multi.run(:remove_panel, fn _, _ -> remove_panel(dashboard_id, panel_id) end)
         |> Ecto.Multi.run(:add_panel, fn _, _ -> add_panel(dashboard_id, panel) end)
+        |> Sanbase.Repo.transaction()
         |> case do
           {:ok, %{add_panel: result}} -> {:ok, result}
           {:error, _failed_op, error, _changes} -> {:error, error}

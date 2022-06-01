@@ -1,4 +1,7 @@
 defmodule Sanbase.Dashboard.Credit do
+  @moduledoc ~s"""
+  TODO
+  """
   use Ecto.Schema
 
   import Ecto.Query
@@ -8,6 +11,19 @@ defmodule Sanbase.Dashboard.Credit do
   alias Sanbase.Accounts.User
 
   @type user_id :: non_neg_integer()
+  @type dashboard_id :: non_neg_integer()
+  @type credits_cost :: non_neg_integer()
+
+  @type t :: %__MODULE__{
+          dashboard_id: dashboard_id()(),
+          user_id: user_id(),
+          panel_id: String.t(),
+          query_id: String.t(),
+          query_data: Map.t(),
+          credits_cost: credits_cost(),
+          inserted_at: NaiveDateTime.t(),
+          updated_at: NaiveDateTime.t()
+        }
 
   schema "dashboard_credits" do
     belongs_to(:dashboard, Dashboard.Schema)
@@ -21,7 +37,10 @@ defmodule Sanbase.Dashboard.Credit do
     timestamps()
   end
 
-  @spec credits_spent(user_id, DateTime.t(), DateTime.t()) :: {:ok, non_neg_integer()}
+  @doc ~s"""
+  Compute how many credits a user has spent between two datetimes
+  """
+  @spec credits_spent(user_id, DateTime.t(), DateTime.t()) :: {:ok, credits_cost()}
   def credits_spent(user_id, from, to) do
     credits_cost =
       from(c in __MODULE__,
@@ -34,6 +53,13 @@ defmodule Sanbase.Dashboard.Credit do
   end
 
   @fields [:dashboard_id, :panel_id, :user_id, :panel_id, :s, :query_data, :credits_cost]
+
+  @doc ~s"""
+  Store a coimputation run by a user. It computes the credits cost
+  of the computation and stores it alongside some metadata
+  """
+  @spec store_computation(user_id, Dashboard.Panel.Result.t()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
   def store_computation(user_id, args) do
     %{credits_cost: credits_cost, query_data: query_data} = compute_credits_cost(args)
 

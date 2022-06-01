@@ -542,6 +542,41 @@ ALTER SEQUENCE public.chart_configurations_id_seq OWNED BY public.chart_configur
 
 
 --
+-- Name: clickhouse_query_executions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.clickhouse_query_executions (
+    id bigint NOT NULL,
+    user_id bigint,
+    query_id character varying(255) NOT NULL,
+    clickhouse_query_id character varying(255) NOT NULL,
+    execution_details jsonb NOT NULL,
+    credits_cost integer NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: clickhouse_query_executions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.clickhouse_query_executions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: clickhouse_query_executions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.clickhouse_query_executions_id_seq OWNED BY public.clickhouse_query_executions.id;
+
+
+--
 -- Name: comment_notifications; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -674,42 +709,6 @@ CREATE SEQUENCE public.currencies_id_seq
 --
 
 ALTER SEQUENCE public.currencies_id_seq OWNED BY public.currencies.id;
-
-
---
--- Name: dashboard_credits; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.dashboard_credits (
-    id bigint NOT NULL,
-    user_id bigint,
-    dashboard_id bigint,
-    panel_id character varying(255) NOT NULL,
-    query_id character varying(255) NOT NULL,
-    query_data jsonb NOT NULL,
-    credits_cost integer NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: dashboard_credits_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.dashboard_credits_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: dashboard_credits_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.dashboard_credits_id_seq OWNED BY public.dashboard_credits.id;
 
 
 --
@@ -3693,6 +3692,13 @@ ALTER TABLE ONLY public.chart_configurations ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: clickhouse_query_executions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clickhouse_query_executions ALTER COLUMN id SET DEFAULT nextval('public.clickhouse_query_executions_id_seq'::regclass);
+
+
+--
 -- Name: comment_notifications id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3718,13 +3724,6 @@ ALTER TABLE ONLY public.contract_addresses ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.currencies ALTER COLUMN id SET DEFAULT nextval('public.currencies_id_seq'::regclass);
-
-
---
--- Name: dashboard_credits id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dashboard_credits ALTER COLUMN id SET DEFAULT nextval('public.dashboard_credits_id_seq'::regclass);
 
 
 --
@@ -4361,6 +4360,14 @@ ALTER TABLE ONLY public.chart_configurations
 
 
 --
+-- Name: clickhouse_query_executions clickhouse_query_executions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clickhouse_query_executions
+    ADD CONSTRAINT clickhouse_query_executions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: comment_notifications comment_notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4390,14 +4397,6 @@ ALTER TABLE ONLY public.contract_addresses
 
 ALTER TABLE ONLY public.currencies
     ADD CONSTRAINT currencies_pkey PRIMARY KEY (id);
-
-
---
--- Name: dashboard_credits dashboard_credits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dashboard_credits
-    ADD CONSTRAINT dashboard_credits_pkey PRIMARY KEY (id);
 
 
 --
@@ -6182,6 +6181,14 @@ ALTER TABLE ONLY public.chart_configurations
 
 
 --
+-- Name: clickhouse_query_executions clickhouse_query_executions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clickhouse_query_executions
+    ADD CONSTRAINT clickhouse_query_executions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: comments comments_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6211,22 +6218,6 @@ ALTER TABLE ONLY public.comments
 
 ALTER TABLE ONLY public.contract_addresses
     ADD CONSTRAINT contract_addresses_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id);
-
-
---
--- Name: dashboard_credits dashboard_credits_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dashboard_credits
-    ADD CONSTRAINT dashboard_credits_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
-
-
---
--- Name: dashboard_credits dashboard_credits_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dashboard_credits
-    ADD CONSTRAINT dashboard_credits_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --

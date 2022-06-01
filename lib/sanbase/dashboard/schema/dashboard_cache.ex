@@ -12,23 +12,29 @@ defmodule Sanbase.Dashboard.Cache do
   import Ecto.Changeset
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
+  @type dashboard_id :: non_neg_integer()
+
+  # Example of a dashboard cache
+  # %{
+  #   "updated_at" => DateTime.t(),
+  #   "data" => %{
+  #     "rows" => [String.t()],
+  #     "columns" => [String.t()]
+  #     "compressed_rows_json" => String.t()
+  #   }
+  # }
   @type panel_cache :: %{
-          # "data" key
           String.t() => %{
-            # "columns" key
             String.t() => list(String.t()),
-            # "rows" key
             String.t() => list(String.t() | number() | boolean() | DateTime.t()),
-            # "rows_json" key
             String.t() => String.t()
           },
-          #  "updated_at" key
           String.t() => DateTime.t() | String.t()
         }
 
   @type t :: %__MODULE__{
           id: non_neg_integer(),
-          dashboard_id: non_neg_integer(),
+          dashboard_id: dashboard_id(),
           panels: %{
             # the key is panel_id
             optional(String.t()) => panel_cache()
@@ -51,13 +57,12 @@ defmodule Sanbase.Dashboard.Cache do
       nil -> new(dashboard_id)
       %__MODULE__{} = cache -> {:ok, cache}
     end
-    |> maybe_apply_function(&transform_cache/1)
+    |> maybe_apply_function(&transform_loaded_cache/1)
   end
 
   @doc ~s"""
-  Create a new empty record for the given dashboard_id
+  Create a new empty record for the given dashboard_id.
   """
-
   @spec new(non_neg_integer()) :: {:ok, t()} | {:error, any()}
   def new(dashboard_id) do
     %__MODULE__{}
@@ -68,13 +73,13 @@ defmodule Sanbase.Dashboard.Cache do
   @doc ~s"""
   Update the dashboard's panel cache with the provided result.
   """
-  @spec update_panel_result(non_neg_integer(), String.t(), map()) ::
+  @spec update_panel_cache(non_neg_integer(), String.t(), Dashboad.Query.Result.t()) ::
           {:ok, t()} | {:error, any()}
-  def update_panel_result(dashboard_id, panel_id, result) do
+  def update_panel_cache(dashboard_id, panel_id, query_result) do
     {:ok, cache} = by_dashboard_id(dashboard_id)
 
-    panel = %{data: result, updated_at: DateTime.utc_now()}
-    panels = Map.update(cache.panels, panel_id, panel, fn _ -> panel end)
+    panel_cache = build_panel_cache(query_result)
+    panels = Map.update(cache.panels, panel_id, panel_cache, fn _ -> panel_cache end)
 
     cache
     |> change(%{panels: panels})
@@ -85,9 +90,9 @@ defmodule Sanbase.Dashboard.Cache do
   Remove the panel result from the cache. This is invoked when the panel is
   removed from the dashboard.
   """
-  @spec remove_panel_result(non_neg_integer(), String.t()) ::
+  @spec remove_panel_cache(non_neg_integer(), String.t()) ::
           {:ok, t()} | {:error, any()}
-  def remove_panel_result(dashboard_id, panel_id) do
+  def remove_panel_cache(dashboard_id, panel_id) do
     {:ok, cache} = by_dashboard_id(dashboard_id)
     panels = Enum.reject(cache.panels, &(&1.id == panel_id))
 
@@ -98,17 +103,39 @@ defmodule Sanbase.Dashboard.Cache do
 
   # Private functions
 
-  defp transform_cache(%__MODULE__{} = cache) do
+  defp build_panel_cache(query_result) do
+    %{
+      data: %{
+        columns: query_result.columns,
+        compressed_rows_json: query_result.compressed_rows_json |> Base.encode64()
+      },
+      updated_at: DateTime.utc_now()
+    }
+  end
+
+  defp transform_loaded_cache(%__MODULE__{} = cache) do
     panels =
       cache.panels
       |> Map.new(fn {panel_id, panel_cache} ->
-        %{"data" => %{"rows" => rows}, "updated_at" => updated_at} = panel_cache
+        %{
+          "data" => %{"columns" => columns, "compressed_rows_json" => compressed_rows_json},
+          "updated_at" => updated_at
+        } = panel_cache
+
+        rows =
+          compressed_rows_json
+          |> Base.decode64!()
+          |> :zlib.gunzip()
+          |> Jason.decode!()
+
         {:ok, updated_at, _} = DateTime.from_iso8601(updated_at)
         {:ok, rows} = transform_cache_rows(rows)
 
         panel_cache =
           panel_cache
           |> put_in(["data", "rows"], rows)
+          |> put_in(["data", "compressed_rows_json"], compressed_rows_json)
+          |> put_in(["data", "columns"], columns)
           |> put_in(["updated_at"], updated_at)
 
         {panel_id, panel_cache}

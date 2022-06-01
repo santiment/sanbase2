@@ -7,11 +7,12 @@ defmodule Sanbase.Dashboard.Panel do
 
   import Ecto.Changeset
 
-  alias __MODULE__.Result
+  alias Sanbase.Dashboard.Query
 
   @type sql :: %{
+          san_query_id: String.t(),
           query: String.t(),
-          args: list(String.t() | number() | boolean())
+          args: list(String.t() | DateTime.t() | List.t() | number() | boolean())
         }
 
   @type t :: %__MODULE__{
@@ -25,12 +26,15 @@ defmodule Sanbase.Dashboard.Panel do
         }
 
   @type panel_args :: %{
-          required(:name) => String.t(),
-          required(:description) => String.t(),
-          optional(:position) => String.t()
+          optional(:name) => String.t(),
+          optional(:description) => String.t(),
+          optional(:position) => String.t(),
+          optional(:size) => Map.t(),
+          optional(:sql) => sql()
         }
 
   embedded_schema do
+    # Auotegenerate on creation
     field(:name, :string)
     field(:description, :string)
     field(:position, :map)
@@ -47,7 +51,7 @@ defmodule Sanbase.Dashboard.Panel do
   """
   @spec new(panel_args()) :: {:ok, t()} | {:error, any()}
   def new(args) do
-    create_panel(%__MODULE__{}, args, check_required?: true)
+    handle_panel(%__MODULE__{}, args, check_required: true, put_san_query_id: true)
   end
 
   @doc ~s"""
@@ -58,18 +62,31 @@ defmodule Sanbase.Dashboard.Panel do
   """
   @spec update(t(), panel_args) :: {:ok, t()} | {:error, any()}
   def update(%__MODULE__{} = panel, args) do
-    create_panel(panel, args, check_required?: false)
+    handle_panel(panel, args, check_required: false, put_san_query_id: false)
   end
 
-  defp create_panel(%__MODULE__{} = panel, args, opts) do
+  defp handle_panel(%__MODULE__{} = panel, args, opts) do
+    args =
+      case Keyword.get(opts, :put_san_query_id) do
+        true -> put_in(args, [:sql, :san_query_id], UUID.uuid4())
+        false -> args
+      end
+
     changeset =
       panel
-      |> cast(args, [:name, :description, :position, :type, :size, :sql])
+      |> cast(args, [
+        :name,
+        :description,
+        :position,
+        :type,
+        :size,
+        :sql
+      ])
       |> validate_change(:sql, &valid_sql?/2)
 
     changeset =
-      case Keyword.fetch!(opts, :check_required?) do
-        true -> changeset |> validate_required([:name, :type, :sql])
+      case Keyword.fetch!(opts, :check_required) do
+        true -> changeset |> validate_required([:sql])
         false -> changeset
       end
 
@@ -89,24 +106,27 @@ defmodule Sanbase.Dashboard.Panel do
   The SQL query and arguments are taken from the panel and are executed.
   The result is transformed by converting the Date and NaiveDateTime types to DateTime.
   """
-  def compute(%__MODULE__{} = panel, dashboard_id) do
-    %{sql: %{"query" => query, "args" => args}} = panel
+  def compute(%__MODULE__{} = panel) do
+    %{sql: %{"query" => query, "args" => args, "query_id" => query_id}} = panel
 
-    query_start = DateTime.utc_now()
+    query_start_time = DateTime.utc_now()
 
-    case Sanbase.ClickhouseRepo.query_transform_with_metadata(query, args, &transform_result/1) do
+    case Sanbase.ClickhouseRepo.query_transform_with_metadata(
+           query,
+           args,
+           &transform_result/1
+         ) do
       {:ok, map} ->
         {:ok,
-         %Result{
-           query_id: map.query_id,
+         %Query.Result{
+           san_query_id: query_id,
+           clickhouse_query_id: map.query_id,
            summary_json: Jason.encode!(map.summary),
            rows: map.rows,
-           rows_json: Jason.encode!(map.rows),
+           compressed_rows_json: :zlib.gzip(Jason.encode!(map.rows)),
            columns: map.columns,
-           query_start: query_start,
-           query_end: DateTime.utc_now(),
-           panel_id: panel.id,
-           dashboard_id: dashboard_id
+           query_start_time: query_start_time,
+           query_end_time: DateTime.utc_now()
          }}
 
       {:error, error} ->
@@ -123,8 +143,12 @@ defmodule Sanbase.Dashboard.Panel do
   # It is executed for every row in the result set
   defp transform_result(list), do: Enum.map(list, &handle_result_param/1)
 
-  defp handle_result_param(%Date{} = date), do: DateTime.new!(date, ~T[00:00:00])
-  defp handle_result_param(%NaiveDateTime{} = ndt), do: DateTime.from_naive!(ndt, "Etc/UTC")
+  defp handle_result_param(%Date{} = date),
+    do: DateTime.new!(date, ~T[00:00:00])
+
+  defp handle_result_param(%NaiveDateTime{} = ndt),
+    do: DateTime.from_naive!(ndt, "Etc/UTC")
+
   defp handle_result_param(data), do: data
 
   defp valid_sql?(_changeset, sql) do

@@ -4,7 +4,8 @@ defmodule Sanbase.Dashboard do
   against Clickhouse.
 
   This module dispatches between the internal representations of the
-  dashboard. Dashboards have two representations: Schema and Cache
+  dashboard, panels, credits cost computation.
+  Dashboards have two representations: Schema and Cache
 
   Dashboard.Schema represents the configuration of the dashboard, stored
   in the databse. This includes the name, description, public status and panels'
@@ -44,27 +45,44 @@ defmodule Sanbase.Dashboard do
           {:ok, Dashboard.Schema.t()} | {:error, any}
   def create(args, user_id) do
     args = Map.put(args, :user_id, user_id)
-    Dashboard.Schema.new(args)
+    Dashboard.Schema.create(args)
+  end
+
+  def delete(dashboard_id) do
+    Dashboard.Schema.delete(dashboard_id)
   end
 
   @doc ~s"""
-  TODO
+  Get the dashboard schema
+
+  The schema includes the static data that does not change after execution - name,
+  description, panels' definition, public status, etc.
   """
   @spec load_schema(dashboard_id) :: {:ok, Dashboard.Schema.t()} | {:error, any()}
   def load_schema(dashboard_id), do: Dashboard.Schema.by_id(dashboard_id)
 
   @doc ~s"""
-  TODO
+  Get the dashboard cached version
+
+  The cache includes the list of latest results of the SQL queries that are executed.
+  The keys in the list are the panel ids.
   """
   @spec load_cache(dashboard_id) :: {:ok, Dashboard.Cache.t()} | {:error, any()}
   def load_cache(dashboard_id), do: Dashboard.Cache.by_dashboard_id(dashboard_id)
 
+  @doc ~s"""
+  Check if a given user has credits left
+
+  Credits are used to pay for query execution. For every month a user can
+  execute queries for #{@max_credits_per_month} credits. This mechanism is
+  used to prevent users from using the system to consume too much resources
+  """
   @spec has_credits_left?(user_id) :: boolean()
   def has_credits_left?(user_id) do
     now = DateTime.utc_now()
     from = Timex.beginning_of_month(now)
 
-    case Dashboard.Credit.credits_spent(user_id, from, now) do
+    case Dashboard.QueryExecution.credits_spent(user_id, from, now) do
       {:ok, credits_spent} when credits_spent < @max_credits_per_month -> true
       _ -> false
     end
@@ -78,10 +96,9 @@ defmodule Sanbase.Dashboard do
     with {:ok, dashboard} <- Dashboard.Schema.by_id(dashboard_id),
          {:ok, result} <- do_compute_panel(dashboard, panel_id) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-        Dashboard.Credit.store_computation(dashboard.user_id, result)
+        Dashboard.QueryExecution.store_execution(dashboard.user_id, result)
       end)
 
-      {:ok, result}
       {:ok, result}
     end
   end
@@ -97,7 +114,7 @@ defmodule Sanbase.Dashboard do
   def compute_and_store_panel(dashboard_id, panel_id) do
     with {:ok, dashboard} <- Dashboard.Schema.by_id(dashboard_id),
          {:ok, result} <- do_compute_panel(dashboard, panel_id) do
-      Dashboard.Cache.update_panel_result(dashboard_id, panel_id, result)
+      Dashboard.Cache.update_panel_cache(dashboard_id, panel_id, result)
     end
   end
 
@@ -108,10 +125,8 @@ defmodule Sanbase.Dashboard do
   @spec compute_and_store_dashboard(dashboard_id()) ::
           {:ok, Dashboard.Cache.t()} | {:error, any()}
   def compute_and_store_dashboard(dashboard_id) do
-    # TODO: Make async and implement retries in case of failure
     {:ok, dashboard} = Dashboard.Schema.by_id(dashboard_id)
 
-    # The last result contains the fully built cache
     Enum.reduce_while(dashboard.panels, nil, fn panel, _cache ->
       case compute_and_store_panel(dashboard_id, panel.id) do
         {:ok, _cache} = ok_result -> {:cont, ok_result}
@@ -124,7 +139,7 @@ defmodule Sanbase.Dashboard do
   defp do_compute_panel(%Dashboard.Schema{} = dashboard, panel_id) do
     case Enum.find(dashboard.panels, &(&1.id == panel_id)) do
       nil -> {:error, :panel_does_not_exist}
-      panel -> Sanbase.Dashboard.Panel.compute(panel, dashboard.id)
+      panel -> Sanbase.Dashboard.Panel.compute(panel)
     end
   end
 end

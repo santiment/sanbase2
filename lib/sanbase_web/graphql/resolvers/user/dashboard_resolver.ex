@@ -12,6 +12,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     Dashboard.create(args, user.id)
   end
 
+  def delete_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    with true <- can_edit_dashboard?(args.dashboard_id, user.id) do
+      Dashboard.delete(args.dashboard_id)
+    end
+  end
+
   def add_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with true <- can_edit_dashboard?(args.dashboard_id, user.id) do
       Dashboard.add_panel(args.dashboard_id, args.panel)

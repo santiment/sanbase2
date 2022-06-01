@@ -98,7 +98,7 @@ defmodule Sanbase.ClickhouseRepo do
   defp log_and_return_error(%{} = e, function_executed, stacktrace, opts \\ []) do
     propagate_error = Keyword.get(opts, :propagate_error, false)
 
-    log_id = Ecto.UUID.generate()
+    log_id = UUID.uuid4()
     error = extract_error_from_stacktrace(stacktrace) || Exception.message(e)
 
     Logger.warn("""
@@ -112,7 +112,7 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   defp log_and_return_error(error_str, function_executed) do
-    log_id = Ecto.UUID.generate()
+    log_id = UUID.uuid4()
 
     Logger.warn(
       "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_str}"

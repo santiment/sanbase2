@@ -12,4 +12,20 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
 
   describe "work with panels" do
   end
+
+  defp create_dashboard(conn, args) do
+    mutation = """
+    mutation{
+      createDashboard(#{map_to_args(args)}){
+        id
+        name
+        user{ id }
+        panels { id }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+  end
 end

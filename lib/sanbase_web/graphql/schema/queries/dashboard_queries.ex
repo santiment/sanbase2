@@ -9,6 +9,25 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :dashboard_queries do
+    @desc ~s"""
+    TODO: Write me before merging
+    """
+    field :get_dashboard_schema, :dashboard_schema do
+      meta(access: :free)
+      arg(:dashboard_id, non_null(:integer))
+
+      resolve(&DashboardResolver.get_dashboard_schema/3)
+    end
+
+    @desc ~s"""
+    TODO: Write me before merging
+    """
+    field :get_dashboard_cache, :dashboard_cache do
+      meta(access: :free)
+      arg(:dashboard_id, non_null(:integer))
+
+      resolve(&DashboardResolver.get_dashboard_cache/3)
+    end
   end
 
   object :dashboard_mutations do
@@ -25,26 +44,12 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
       resolve(&DashboardResolver.create_dashboard/3)
     end
 
-    @desc ~s"""
-    TODO: Write me before merging
-    """
-    field :get_dashboard_schema, :dashboard_schema do
+    field :remove_dashboard, :dashboard_schema do
       arg(:dashboard_id, non_null(:integer))
 
       middleware(JWTAuth)
 
-      resolve(&DashboardResolver.get_dashboard_schema/3)
-    end
-
-    @desc ~s"""
-    TODO: Write me before merging
-    """
-    field :get_dashboard_cache, :dashboard_cache do
-      arg(:dashboard_id, non_null(:integer))
-
-      middleware(JWTAuth)
-
-      resolve(&DashboardResolver.get_dashboard_cache/3)
+      resolve(&DashboardResolver.delete_dashboard/3)
     end
 
     @desc ~s"""

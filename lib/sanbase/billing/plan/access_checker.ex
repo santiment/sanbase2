@@ -42,6 +42,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       Break.break("""
       There are GraphQL queries defined without specifying their access level.
       The access level could be either `free` or `restricted`.
+      To define an access level, put `meta(access: <level>)` in the field definition.
+
       Queries without access level: #{inspect(queries)}
       """)
   end

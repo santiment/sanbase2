@@ -23,8 +23,8 @@ defmodule Sanbase.Billing.StripeEvent do
   @primary_key false
   schema "stripe_events" do
     field(:event_id, :string, primary_key: true)
-    field(:type, :string, null: false)
-    field(:payload, :map, null: false)
+    field(:type, :string)
+    field(:payload, :map)
     field(:is_processed, :boolean, default: false)
 
     timestamps()

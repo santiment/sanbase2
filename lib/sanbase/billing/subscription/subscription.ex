@@ -36,7 +36,7 @@ defmodule Sanbase.Billing.Subscription do
   schema "subscriptions" do
     field(:stripe_id, :string)
     field(:current_period_end, :utc_datetime)
-    field(:cancel_at_period_end, :boolean, null: false, default: false)
+    field(:cancel_at_period_end, :boolean, default: false)
     field(:status, SubscriptionStatusEnum)
     field(:trial_end, :utc_datetime)
 

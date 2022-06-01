@@ -677,13 +677,49 @@ ALTER SEQUENCE public.currencies_id_seq OWNED BY public.currencies.id;
 
 
 --
+-- Name: dashboard_credits; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dashboard_credits (
+    id bigint NOT NULL,
+    user_id bigint,
+    dashboard_id bigint,
+    panel_id character varying(255) NOT NULL,
+    query_id character varying(255) NOT NULL,
+    query_data jsonb NOT NULL,
+    credits_cost integer NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: dashboard_credits_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dashboard_credits_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dashboard_credits_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dashboard_credits_id_seq OWNED BY public.dashboard_credits.id;
+
+
+--
 -- Name: dashboards; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.dashboards (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
-    description character varying(255) NOT NULL,
+    description character varying(255),
     is_public boolean DEFAULT false NOT NULL,
     panels jsonb,
     user_id bigint,
@@ -3685,6 +3721,13 @@ ALTER TABLE ONLY public.currencies ALTER COLUMN id SET DEFAULT nextval('public.c
 
 
 --
+-- Name: dashboard_credits id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_credits ALTER COLUMN id SET DEFAULT nextval('public.dashboard_credits_id_seq'::regclass);
+
+
+--
 -- Name: dashboards id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4347,6 +4390,14 @@ ALTER TABLE ONLY public.contract_addresses
 
 ALTER TABLE ONLY public.currencies
     ADD CONSTRAINT currencies_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dashboard_credits dashboard_credits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_credits
+    ADD CONSTRAINT dashboard_credits_pkey PRIMARY KEY (id);
 
 
 --
@@ -6163,6 +6214,22 @@ ALTER TABLE ONLY public.contract_addresses
 
 
 --
+-- Name: dashboard_credits dashboard_credits_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_credits
+    ADD CONSTRAINT dashboard_credits_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dashboard_credits dashboard_credits_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_credits
+    ADD CONSTRAINT dashboard_credits_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: dashboards_cache dashboards_cache_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7364,3 +7431,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220516082857);
 INSERT INTO public."schema_migrations" (version) VALUES (20220519083249);
 INSERT INTO public."schema_migrations" (version) VALUES (20220519135027);
 INSERT INTO public."schema_migrations" (version) VALUES (20220531133311);
+INSERT INTO public."schema_migrations" (version) VALUES (20220531143545);

@@ -7,6 +7,8 @@ defmodule Sanbase.Dashboard.Panel do
 
   import Ecto.Changeset
 
+  alias __MODULE__.Result
+
   @type sql :: %{
           query: String.t(),
           args: list(String.t() | number() | boolean())
@@ -38,7 +40,8 @@ defmodule Sanbase.Dashboard.Panel do
   end
 
   @doc ~s"""
-  Create a struct from the provided arguments.
+  Create a struct from the provided arguments
+
   The struct exists only in memory and should manually be put
   inside a dashboard
   """
@@ -47,6 +50,12 @@ defmodule Sanbase.Dashboard.Panel do
     create_panel(%__MODULE__{}, args, check_required?: true)
   end
 
+  @doc ~s"""
+  Update a panel in-memory.
+
+  This method is usually used with Dashboard.Schema.update_panel/3 so
+  the changes are persisted in the database
+  """
   @spec update(t(), panel_args) :: {:ok, t()} | {:error, any()}
   def update(%__MODULE__{} = panel, args) do
     create_panel(panel, args, check_required?: false)
@@ -80,19 +89,24 @@ defmodule Sanbase.Dashboard.Panel do
   The SQL query and arguments are taken from the panel and are executed.
   The result is transformed by converting the Date and NaiveDateTime types to DateTime.
   """
-  def compute(%__MODULE__{} = panel) do
+  def compute(%__MODULE__{} = panel, dashboard_id) do
     %{sql: %{"query" => query, "args" => args}} = panel
+
+    query_start = DateTime.utc_now()
 
     case Sanbase.ClickhouseRepo.query_transform_with_metadata(query, args, &transform_result/1) do
       {:ok, map} ->
         {:ok,
-         %{
+         %Result{
            query_id: map.query_id,
            summary_json: Jason.encode!(map.summary),
            rows: map.rows,
            rows_json: Jason.encode!(map.rows),
            columns: map.columns,
-           executed_at: DateTime.utc_now()
+           query_start: query_start,
+           query_end: DateTime.utc_now(),
+           panel_id: panel.id,
+           dashboard_id: dashboard_id
          }}
 
       {:error, error} ->

@@ -22,30 +22,53 @@ defmodule Sanbase.Dashboard do
 
   alias Sanbase.Dashboard
 
+  @type user_id :: non_neg_integer()
   @type dashboard_id :: non_neg_integer()
-  @type panel_id :: non_neg_integer()
+  @type panel_id :: String.t()
 
-  defdelegate get_access_data(dashboard_id), to: Dashboard.Schema
+  @max_credits_per_month 1_000_000
+
+  defdelegate update(dashboard_id, args), to: Dashboard.Schema
+  defdelegate get_is_public_and_owner(dashboard_id), to: Dashboard.Schema
   defdelegate add_panel(dashboard_id, panel_args), to: Dashboard.Schema
   defdelegate remove_panel(dashboard_id, panel_id), to: Dashboard.Schema
   defdelegate update_panel(dashboard_id, panel_id, args), to: Dashboard.Schema
 
-  @spec create(Dashboard.Schema.schema_args(), non_neg_integer) ::
+  @doc ~s"""
+  Create a new and empty dashboard
+
+  The dashboards are created without any panels (SQL). Panels are then added
+  by the add/update/remove functions
+  """
+  @spec create(Dashboard.Schema.schema_args(), user_id) ::
           {:ok, Dashboard.Schema.t()} | {:error, any}
   def create(args, user_id) do
     args = Map.put(args, :user_id, user_id)
     Dashboard.Schema.new(args)
   end
 
-  def update(dashboard_id, args) do
-    Dashboard.Schema.update(dashboard_id, args)
-  end
-
+  @doc ~s"""
+  TODO
+  """
   @spec load_schema(dashboard_id) :: {:ok, Dashboard.Schema.t()} | {:error, any()}
   def load_schema(dashboard_id), do: Dashboard.Schema.by_id(dashboard_id)
 
+  @doc ~s"""
+  TODO
+  """
   @spec load_cache(dashboard_id) :: {:ok, Dashboard.Cache.t()} | {:error, any()}
   def load_cache(dashboard_id), do: Dashboard.Cache.by_dashboard_id(dashboard_id)
+
+  @spec has_credits_left?(user_id) :: boolean()
+  def has_credits_left?(user_id) do
+    now = DateTime.utc_now()
+    from = Timex.beginning_of_month(now)
+
+    case Dashboard.Credit.credits_spent(user_id, from, now) do
+      {:ok, credits_spent} when credits_spent < @max_credits_per_month -> true
+      _ -> false
+    end
+  end
 
   @doc ~s"""
   Trigger computation of a single panel of the dashboard
@@ -54,7 +77,11 @@ defmodule Sanbase.Dashboard do
   def compute_panel(dashboard_id, panel_id) do
     with {:ok, dashboard} <- Dashboard.Schema.by_id(dashboard_id),
          {:ok, result} <- do_compute_panel(dashboard, panel_id) do
-      # TODO: Transform result into a more usable type
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        Dashboard.Credit.store_computation(dashboard.user_id, result)
+      end)
+
+      {:ok, result}
       {:ok, result}
     end
   end
@@ -97,7 +124,7 @@ defmodule Sanbase.Dashboard do
   defp do_compute_panel(%Dashboard.Schema{} = dashboard, panel_id) do
     case Enum.find(dashboard.panels, &(&1.id == panel_id)) do
       nil -> {:error, :panel_does_not_exist}
-      panel -> {:ok, _result} = Sanbase.Dashboard.Panel.compute(panel)
+      panel -> Sanbase.Dashboard.Panel.compute(panel, dashboard.id)
     end
   end
 end

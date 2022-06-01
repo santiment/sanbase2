@@ -31,8 +31,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   end
 
   def compute_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_view_dashboard?(args.dashboard_id, user.id) do
+    with true <- can_view_dashboard?(args.dashboard_id, user.id),
+         true <- can_run_computation?(user.id) do
       Dashboard.compute_panel(args.dashboard_id, args.panel_id)
+    end
+  end
+
+  def compute_and_store_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    # storing requires edit access, not just view access
+    with true <- can_edit_dashboard?(args.dashboard_id, user.id),
+         true <- can_run_computation?(user.id) do
+      Dashboard.compute_and_store_panel(args.dashboard_id, args.panel_id)
     end
   end
 
@@ -51,7 +60,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   defp can_view_dashboard?(dashboard_id, user_id) do
     # Users can see their own dashboard and other people's public dashboards
 
-    case Dashboard.get_access_data(dashboard_id) do
+    case Dashboard.get_is_public_and_owner(dashboard_id) do
       {:ok, %{user_id: ^user_id}} -> true
       {:ok, %{is_public: true}} -> true
       _ -> {:error, "Dashboard is private or does not exist"}
@@ -59,9 +68,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   end
 
   defp can_edit_dashboard?(dashboard_id, user_id) do
-    case Dashboard.get_access_data(dashboard_id) do
-      {:ok, %{user_id: ^user_id}} -> true
-      _ -> {:error, "Dashboard is private or does not exist"}
+    case Dashboard.get_is_public_and_owner(dashboard_id) do
+      {:ok, %{user_id: ^user_id}} ->
+        true
+
+      _ ->
+        {:error,
+         "Dashboard is private, does not exist or you don't have permission to execute this."}
+    end
+  end
+
+  defp can_run_computation?(user_id) do
+    case Dashboard.has_credits_left?(user_id) do
+      true -> true
+      false -> {:error, "The user with id #{user_id} has no credits left"}
     end
   end
 end

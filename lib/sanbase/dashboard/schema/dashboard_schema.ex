@@ -37,8 +37,7 @@ defmodule Sanbase.Dashboard.Schema do
     timestamps()
   end
 
-  @spec by_id(non_neg_integer()) ::
-          {:ok, t()} | {:error, String.t()}
+  @spec by_id(non_neg_integer()) :: {:ok, t()} | {:error, String.t()}
   def by_id(dashboard_id) do
     case Sanbase.Repo.get(__MODULE__, dashboard_id) do
       nil -> {:error, "Dashboard does not exist"}
@@ -46,7 +45,9 @@ defmodule Sanbase.Dashboard.Schema do
     end
   end
 
-  def get_access_data(dashboard_id) do
+  @spec get_is_public_and_owner(non_neg_integer()) ::
+          {:ok, %{user_id: non_neg_integer(), is_public: boolean()}} | {:error, String.t()}
+  def get_is_public_and_owner(dashboard_id) do
     result =
       from(d in __MODULE__,
         where: d.id == ^dashboard_id,
@@ -72,21 +73,24 @@ defmodule Sanbase.Dashboard.Schema do
   end
 
   @doc ~s"""
-  Update a dashboard.
+  Update an existing dashboard
+
+  All fields except the panels and the user_id can be updated.
+  In order to update a panel use the update_panel/3 function
   """
   @spec update(t(), schema_args()) :: {:ok, t()} | {:error, Changeset.t()}
-  def update(%__MODULE__{} = dashboard, args) do
+  def update(dashboard_id, args) do
+    {:ok, dashboard} = by_id(dashboard_id)
+
     dashboard
-    |> cast(args, [:name, :description, :is_public, :user_id])
+    |> cast(args, [:name, :description, :is_public])
     |> Sanbase.Repo.update()
   end
 
   @doc ~s"""
   Add a panel to the dashboard
   """
-  @spec add_panel(non_neg_integer(), Panel.panel_args()) ::
-          {:ok, t()} | {:error, Changeset.t()}
-  @spec add_panel(non_neg_integer(), Panel.t()) ::
+  @spec add_panel(non_neg_integer(), Panel.panel_args() | Panel.t()) ::
           {:ok, t()} | {:error, Changeset.t()}
   def add_panel(dashboard_id, %Panel{} = panel) do
     {:ok, dashboard} = by_id(dashboard_id)
@@ -103,7 +107,7 @@ defmodule Sanbase.Dashboard.Schema do
   end
 
   @doc ~s"""
-  Remove a panel from the dashboard.
+  Remove a panel from a dashboard.
   """
   @spec remove_panel(non_neg_integer(), non_neg_integer()) ::
           {:ok, t()} | {:error, Changeset.t()}
@@ -119,7 +123,7 @@ defmodule Sanbase.Dashboard.Schema do
 
   @doc ~s"""
   Update a panel on a dashboard.
-  This operation preserves the panel id
+  This operation preserves the panel id.
   """
   @spec update_panel(non_neg_integer(), non_neg_integer(), Panel.panel_args()) ::
           {:ok, t()} | {:error, :dashboard_panel_does_not_exist}
@@ -132,8 +136,14 @@ defmodule Sanbase.Dashboard.Schema do
 
       panel ->
         {:ok, panel} = Panel.update(panel, panel_args)
-        {:ok, _} = remove_panel(dashboard_id, panel_id)
-        {:ok, _} = add_panel(dashboard_id, panel)
+
+        Ecto.Multi.new()
+        |> Ecto.Multi.run(:remove_panel, fn _, _ -> remove_panel(dashboard_id, panel_id) end)
+        |> Ecto.Multi.run(:add_panel, fn _, _ -> add_panel(dashboard_id, panel) end)
+        |> case do
+          {:ok, %{add_panel: result}} -> {:ok, result}
+          {:error, _failed_op, error, _changes} -> {:error, error}
+        end
     end
   end
 end

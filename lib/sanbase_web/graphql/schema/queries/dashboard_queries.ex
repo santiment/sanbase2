@@ -81,7 +81,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
 
       middleware(JWTAuth)
 
-      resolve(&DashboardResolver.remove_dashboard_panel/3)
+      resolve(&DashboardResolver.update_dashboard_panel/3)
     end
 
     @desc ~s"""
@@ -93,7 +93,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
 
       middleware(JWTAuth)
 
-      resolve(&DashboardResolver.remove_dashboard_panel/3)
+      resolve(&DashboardResolver.compute_dashboard_panel/3)
     end
 
     @desc ~s"""
@@ -105,7 +105,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
 
       middleware(JWTAuth)
 
-      resolve(&DashboardResolver.remove_dashboard_panel/3)
+      resolve(&DashboardResolver.compute_and_store_dashboard_panel/3)
     end
   end
 end

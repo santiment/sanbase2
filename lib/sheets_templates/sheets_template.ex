@@ -11,9 +11,9 @@ defmodule Sanbase.SheetsTemplate do
   alias Sanbase.Repo
 
   schema "sheets_templates" do
-    field(:name, :string, null: false)
-    field(:description, :string, null: true)
-    field(:url, :string, null: false)
+    field(:name, :string)
+    field(:description, :string)
+    field(:url, :string)
     field(:is_pro, :boolean, default: false)
 
     timestamps()

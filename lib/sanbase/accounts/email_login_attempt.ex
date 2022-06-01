@@ -8,11 +8,10 @@ defmodule Sanbase.Accounts.EmailLoginAttempt do
   @interval_in_minutes 5
   @allowed_login_attempts 5
   @allowed_ip_attempts 20
-  @ipv6_max_length 39
 
   schema "email_login_attempts" do
     belongs_to(:user, Sanbase.Accounts.User)
-    field(:ip_address, :string, size: @ipv6_max_length)
+    field(:ip_address, :string)
 
     timestamps()
   end

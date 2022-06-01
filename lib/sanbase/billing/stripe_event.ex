@@ -118,18 +118,6 @@ defmodule Sanbase.Billing.StripeEvent do
     )
   end
 
-  defp handle_event(%{
-         "id" => id,
-         "type" => "customer.subscription.trial_will_end",
-         "data" => %{"object" => %{"id" => subscription_id}}
-       }) do
-    subscription_id
-    |> Subscription.by_stripe_id()
-    |> Sanbase.Accounts.EmailJobs.send_trial_will_end_email()
-
-    update(id, %{is_processed: true})
-  end
-
   defp handle_event(_), do: :ok
 
   defp handle_subscription_created(id, type, subscription_id) do

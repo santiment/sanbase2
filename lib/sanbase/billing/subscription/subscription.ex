@@ -336,6 +336,16 @@ defmodule Sanbase.Billing.Subscription do
     |> Sanbase.Repo.all()
   end
 
+  def is_trialing_sanbase_pro?(subscription) do
+    subscription = Repo.preload(subscription, :plan)
+    subscription.status == :trialing and subscription.plan.name in ["PRO", "PRO_PLUS"]
+  end
+
+  def is_active_sanbase_pro?(subscription) do
+    subscription = Repo.preload(subscription, :plan)
+    subscription.status == :active and subscription.plan.name in ["PRO", "PRO_PLUS"]
+  end
+
   def user_has_sanbase_pro?(user_id) do
     case get_user_subscription(user_id, @product_sanbase) do
       {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> true

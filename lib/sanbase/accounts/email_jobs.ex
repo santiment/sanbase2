@@ -130,11 +130,11 @@ defmodule Sanbase.Accounts.EmailJobs do
     Oban.insert(@oban_conf_name, data)
   end
 
-  # Private
-
-  defp format_date(datetime) do
+  def format_date(datetime) do
     Timex.format!(datetime, "{Mfull} {D}, {YYYY}")
   end
+
+  # Private
 
   defp scheduled_email(email_type, templates, user, vars) do
     scheduled_at =

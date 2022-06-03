@@ -3,13 +3,14 @@ defmodule Sanbase.Mailer do
 
   import Sanbase.Email.Template
 
-  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.{User, UserSettings}
   alias Sanbase.Billing.{Subscription, Product}
 
   @edu_templates ~w(first_edu_email_v2 second_edu_email_v2)
   @during_trial_annual_discount_template during_trial_annual_discount_template()
   @after_trial_annual_discount_template after_trial_annual_discount_template()
   @end_of_trial_template end_of_trial_template()
+  @trial_started_template trial_started_template()
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"user_id" => user_id, "template" => template} = args}) do
@@ -40,24 +41,32 @@ defmodule Sanbase.Mailer do
   defp can_send?(user, template, _params) when template in @edu_templates do
     user = Sanbase.Repo.preload(user, :user_settings)
 
-    user.user_settings.settings.is_subscribed_edu_emails
+    UserSettings.settings_for(user).is_subscribed_edu_emails
   end
 
-  defp can_send?(user, template, _params) when template == @end_of_trial_template do
-    Subscription.current_subscription(user.id, Product.product_sanbase())
-    |> Subscription.is_trialing_sanbase_pro?()
+  defp can_send?(user, template, _params)
+       when template in [@trial_started_template, @end_of_trial_template] do
+    subscription = Subscription.current_subscription(user.id, Product.product_sanbase())
+
+    case subscription do
+      %Subscription{} = subscription ->
+        Subscription.is_trialing_sanbase_pro?(subscription)
+
+      _ ->
+        false
+    end
   end
 
   defp can_send?(user, template, _params)
        when template == @during_trial_annual_discount_template do
     res = Sanbase.Billing.Subscription.annual_discount_eligibility(user.id)
-    res.is_eligible and res.discount.percent_of == 50
+    res.is_eligible and res.discount.percent_off == 50
   end
 
   defp can_send?(user, template, _params)
        when template == @after_trial_annual_discount_template do
     res = Sanbase.Billing.Subscription.annual_discount_eligibility(user.id)
-    res.is_eligible and res.discount.percent_of == 35
+    res.is_eligible and res.discount.percent_off == 35
   end
 
   defp can_send?(_user, _template, _params), do: true

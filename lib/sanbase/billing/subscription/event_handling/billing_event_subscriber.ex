@@ -41,7 +41,7 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     :update_api_call_limit_table,
     :send_discord_notification,
     :unfreeze_user_frozen_alerts,
-    :send_pro_started_email
+    :sanbase_pro_started
   ]
 
   @doc false
@@ -71,18 +71,18 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     end
   end
 
-  defp do_handle(:send_pro_started_email, event_type, event)
+  defp do_handle(:sanbase_pro_started, event_type, event)
        when event_type == :create_subscription do
     subscription = Sanbase.Billing.Subscription.by_id(event.data.subscription_id)
 
     cond do
       Subscription.is_trialing_sanbase_pro?(subscription) ->
-        EmailJobs.send_trial_started_email(subscription) |> IO.inspect()
-        EmailJobs.schedule_trial_will_end_email(subscription) |> IO.inspect()
+        EmailJobs.send_trial_started_email(subscription)
+        EmailJobs.schedule_trial_will_end_email(subscription)
 
         case subscription.plan.interval do
           "month" ->
-            Sanbase.Accounts.EmailJobs.schedule_annual_discounts(subscription) |> IO.inspect()
+            Sanbase.Accounts.EmailJobs.schedule_annual_discount_emails(subscription)
 
           _ ->
             :ok

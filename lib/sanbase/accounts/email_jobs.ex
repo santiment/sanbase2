@@ -70,7 +70,7 @@ defmodule Sanbase.Accounts.EmailJobs do
     add_email_job(user.id, end_of_trial_template(), vars, scheduled_at: days_after(11))
   end
 
-  def schedule_annual_discounts(subscription) do
+  def schedule_annual_discount_emails(subscription) do
     user = Sanbase.Accounts.User.by_id!(subscription.user_id)
 
     common_vars = %{

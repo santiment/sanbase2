@@ -14,15 +14,6 @@ defmodule Sanbase.Dashboard.Cache do
 
   @type dashboard_id :: non_neg_integer()
 
-  # Example of a dashboard cache
-  # %{
-  #   "updated_at" => DateTime.t(),
-  #   "data" => %{
-  #     "rows" => [String.t()],
-  #     "columns" => [String.t()]
-  #     "compressed_rows_json" => String.t()
-  #   }
-  # }
   @type panel_cache :: %{
           String.t() => %{
             String.t() => list(String.t()),
@@ -78,7 +69,11 @@ defmodule Sanbase.Dashboard.Cache do
   def update_panel_cache(dashboard_id, panel_id, query_result) do
     {:ok, cache} = by_dashboard_id(dashboard_id)
 
-    panel_cache = build_panel_cache(query_result)
+    panel_cache =
+      Sanbase.Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
+      |> Map.from_struct()
+      |> Map.drop([:rows])
+
     panels = Map.update(cache.panels, panel_id, panel_cache, fn _ -> panel_cache end)
 
     cache
@@ -103,49 +98,37 @@ defmodule Sanbase.Dashboard.Cache do
 
   # Private functions
 
-  defp build_panel_cache(query_result) do
-    %{
-      data: %{
-        columns: query_result.columns,
-        compressed_rows_json: query_result.compressed_rows_json |> Base.encode64()
-      },
-      updated_at: DateTime.utc_now()
-    }
-  end
-
   defp transform_loaded_cache(%__MODULE__{} = cache) do
     panels =
       cache.panels
       |> Map.new(fn {panel_id, panel_cache} ->
-        %{
-          "data" => %{"columns" => columns, "compressed_rows_json" => compressed_rows_json},
-          "updated_at" => updated_at
-        } = panel_cache
+        %{"compressed_rows_json" => compressed_rows_json, "updated_at" => updated_at} =
+          panel_cache
 
         rows =
           compressed_rows_json
           |> Base.decode64!()
           |> :zlib.gunzip()
-          |> Jason.decode!()
+          |> :erlang.binary_to_term()
 
         {:ok, updated_at, _} = DateTime.from_iso8601(updated_at)
         {:ok, rows} = transform_cache_rows(rows)
 
         panel_cache =
           panel_cache
-          |> put_in(["data", "rows"], rows)
-          |> put_in(["data", "compressed_rows_json"], compressed_rows_json)
-          |> put_in(["data", "columns"], columns)
-          |> put_in(["updated_at"], updated_at)
+          |> Map.put("rows", rows)
+          |> Map.put("updated_at", updated_at)
+          |> Map.put("id", panel_id)
+          |> Map.delete("compressed_rows_json")
+          |> IO.inspect(label: "122", limit: :infinity)
 
         {panel_id, panel_cache}
       end)
 
     %{cache | panels: panels}
+    |> IO.inspect(label: "128", limit: :infinity)
   end
 
-  # Transform the rows of the panel cache. Transformations applied:
-  # 1. Transform ISO8601 datetimes to DateTime objects
   defp transform_cache_rows(rows) do
     transformed_rows =
       rows

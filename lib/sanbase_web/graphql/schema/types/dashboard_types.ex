@@ -45,9 +45,9 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:clickhouse_query_id, non_null(:string))
     field(:column_names, non_null(list_of(:string)))
     field(:rows, non_null(:json))
-    field(:query_start_time, non_null(:datetime))
-    field(:query_end_time, non_null(:datetime))
-    field(:summary, non_null(:json))
+    field(:query_start_time, :datetime)
+    field(:query_end_time, :datetime)
+    field(:summary, :json)
     field(:updated_at, non_null(:datetime))
   end
 

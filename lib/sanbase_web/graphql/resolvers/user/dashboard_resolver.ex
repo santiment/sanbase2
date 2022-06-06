@@ -74,9 +74,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   end
 
   def get_dashboard_cache(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_view_dashboard?(args.id, user.id) do
-      Dashboard.load_cache(args.id)
+    with true <- can_view_dashboard?(args.id, user.id),
+         {:ok, dashboard_cache} <- Dashboard.load_cache(args.id) do
+      dashboard_cache |> IO.inspect(label: "79", limit: :infinity)
+
+      panels =
+        Enum.map(dashboard_cache.panels, fn {panel_id, panel_cache} ->
+          Map.put(panel_cache, "id", panel_id)
+        end)
+
+      {:ok, %{dashboard_cache | panels: panels}}
     end
+    |> IO.inspect(label: "86", limit: :infinity)
   end
 
   defp can_view_dashboard?(id, user_id) do

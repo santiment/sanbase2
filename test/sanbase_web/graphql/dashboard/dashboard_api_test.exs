@@ -169,20 +169,8 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
   end
 
   describe "compute and get cache" do
-    test "compute panel", context do
-      dashboard =
-        execute_dashboard_mutation(context.conn, :create_dashboard)
-        |> get_in(["data", "createDashboard"])
-
-      panel =
-        execute_dashboard_panel_schema_mutation(
-          context.conn,
-          :create_dashboard_panel,
-          default_dashboard_panel_args() |> Map.put(:dashboard_id, dashboard["id"])
-        )
-        |> get_in(["data", "createDashboardPanel"])
-
-      mocked_result = %Clickhousex.Result{
+    defp panel_mocked_clickhouse_query() do
+      %Clickhousex.Result{
         columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
         command: :selected,
         num_rows: 2,
@@ -199,8 +187,25 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
           "written_rows" => "0"
         }
       }
+    end
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, mocked_result})
+    test "compute a panel", context do
+      dashboard =
+        execute_dashboard_mutation(context.conn, :create_dashboard)
+        |> get_in(["data", "createDashboard"])
+
+      panel =
+        execute_dashboard_panel_schema_mutation(
+          context.conn,
+          :create_dashboard_panel,
+          default_dashboard_panel_args() |> Map.put(:dashboard_id, dashboard["id"])
+        )
+        |> get_in(["data", "createDashboardPanel"])
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, panel_mocked_clickhouse_query()}
+      )
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           execute_dashboard_panel_cache_mutation(context.conn, :compute_dashboard_panel, %{
@@ -235,6 +240,72 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
         assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
       end)
+    end
+
+    test "compute and store a panel", context do
+      dashboard =
+        execute_dashboard_mutation(context.conn, :create_dashboard)
+        |> get_in(["data", "createDashboard"])
+
+      panel =
+        execute_dashboard_panel_schema_mutation(
+          context.conn,
+          :create_dashboard_panel,
+          default_dashboard_panel_args() |> Map.put(:dashboard_id, dashboard["id"])
+        )
+        |> get_in(["data", "createDashboardPanel"])
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, panel_mocked_clickhouse_query()}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          execute_dashboard_panel_cache_mutation(
+            context.conn,
+            :compute_and_store_dashboard_panel,
+            %{
+              dashboard_id: dashboard["id"],
+              panel_id: panel["id"]
+            }
+          )
+
+        dashboard_id = dashboard["id"]
+
+        assert %{
+                 "data" => %{
+                   "computeAndStoreDashboardPanel" => %{
+                     "columnNames" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                     "dashboardId" => ^dashboard_id,
+                     "id" => _,
+                     "rows" => [
+                       [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                       [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                     ],
+                     "summary" => %{
+                       "read_bytes" => "0",
+                       "read_rows" => "0",
+                       "total_rows_to_read" => "0",
+                       "written_bytes" => "0",
+                       "written_rows" => "0"
+                     },
+                     "updatedAt" => updated_at
+                   }
+                 }
+               } = result
+
+        updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
+        assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
+      end)
+
+      # Run the next part outside the mock
+
+      dashboard =
+        get_dashboard_cache(context.conn, dashboard["id"])
+        |> IO.inspect(label: "305", limit: :infinity)
+        |> get_in(["data", "getDashboardCache"])
+
+      assert dashboard == %{}
     end
   end
 
@@ -317,6 +388,27 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         description
         isPublic
         panels { id }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
+  defp get_dashboard_cache(conn, dashboard_id) do
+    query = """
+    {
+      getDashboardCache(id: #{dashboard_id}){
+        panels{
+          id
+          dashboardId
+          columnNames
+          rows
+          summary
+          updatedAt
+        }
       }
     }
     """

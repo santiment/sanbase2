@@ -129,7 +129,7 @@ defmodule Sanbase.Dashboard.Panel do
            clickhouse_query_id: map.query_id,
            summary: map.summary,
            rows: map.rows,
-           compressed_rows_json: :zlib.gzip(Jason.encode!(map.rows)),
+           compressed_rows_json: Base.encode64(:zlib.gzip(:erlang.term_to_binary(map.rows))),
            columns: map.columns,
            query_start_time: query_start_time,
            query_end_time: DateTime.utc_now()

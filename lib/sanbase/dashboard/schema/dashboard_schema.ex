@@ -11,6 +11,7 @@ defmodule Sanbase.Dashboard.Schema do
 
   import Ecto.Query
   import Ecto.Changeset
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
   alias Sanbase.Accounts.User
   alias Sanbase.Dashboard.Panel
@@ -31,6 +32,11 @@ defmodule Sanbase.Dashboard.Schema do
           inserted_at: NaiveDateTime.t(),
           updated_at: NaiveDateTime.t(),
           user: %User{}
+        }
+
+  @type panel_dashboad_map :: %{
+          panel: Panel.t(),
+          dashboard: t()
         }
 
   @type dashboard_id :: non_neg_integer()
@@ -108,35 +114,43 @@ defmodule Sanbase.Dashboard.Schema do
   @doc ~s"""
   Add a panel to the dashboard
   """
-  @spec add_panel(non_neg_integer(), Panel.panel_args() | Panel.t()) ::
-          {:ok, t()} | {:error, Changeset.t()}
-  def add_panel(dashboard_id, %Panel{} = panel) do
+  @spec create_panel(non_neg_integer(), Panel.panel_args() | Panel.t()) ::
+          {:ok, panel_dashboad_map()} | {:error, Changeset.t()}
+  def create_panel(dashboard_id, %Panel{} = panel) do
     {:ok, dashboard} = by_id(dashboard_id)
 
     dashboard
     |> change()
-    |> put_embed(:panels, [panel] ++ dashboard.panels)
+    |> put_embed(:panels, dashboard.panels ++ [panel])
     |> Sanbase.Repo.update()
+    |> maybe_apply_function(fn dashboard ->
+      %{panel: panel, dashboard: dashboard}
+    end)
   end
 
-  def add_panel(dashboard_id, panel_args) when is_map(panel_args) do
+  def create_panel(dashboard_id, panel_args) when is_map(panel_args) do
     {:ok, panel} = Panel.new(panel_args)
-    add_panel(dashboard_id, panel)
+    create_panel(dashboard_id, panel)
   end
 
   @doc ~s"""
   Remove a panel from a dashboard.
   """
   @spec remove_panel(non_neg_integer(), non_neg_integer()) ::
-          {:ok, t()} | {:error, Changeset.t()}
+          {:ok, panel_dashboad_map()} | {:error, Changeset.t()}
   def remove_panel(dashboard_id, panel_id) do
-    {:ok, dashboard} = by_id(dashboard_id)
-    panels = Enum.reject(dashboard.panels, &(&1.id == panel_id))
-
-    dashboard
-    |> change()
-    |> put_embed(:panels, panels)
-    |> Sanbase.Repo.update()
+    with {:ok, dashboard} <- by_id(dashboard_id),
+         {[panel], panels_left} <- Enum.split_with(dashboard.panels, &(&1.id == panel_id)) do
+      dashboard
+      |> change()
+      |> put_embed(:panels, panels_left)
+      |> Sanbase.Repo.update()
+      |> maybe_apply_function(fn dashboard ->
+        %{panel: panel, dashboard: dashboard}
+      end)
+    else
+      _ -> {:error, "Failed removing a panel"}
+    end
   end
 
   @doc ~s"""
@@ -144,7 +158,7 @@ defmodule Sanbase.Dashboard.Schema do
   This operation preserves the panel id.
   """
   @spec update_panel(non_neg_integer(), non_neg_integer(), Panel.panel_args()) ::
-          {:ok, t()} | {:error, :dashboard_panel_does_not_exist}
+          {:ok, panel_dashboad_map()} | {:error, :dashboard_panel_does_not_exist}
   def update_panel(dashboard_id, panel_id, panel_args) do
     {:ok, dashboard} = by_id(dashboard_id)
 
@@ -160,10 +174,10 @@ defmodule Sanbase.Dashboard.Schema do
         # removing the panel and failing to add it back.
         Ecto.Multi.new()
         |> Ecto.Multi.run(:remove_panel, fn _, _ -> remove_panel(dashboard_id, panel_id) end)
-        |> Ecto.Multi.run(:add_panel, fn _, _ -> add_panel(dashboard_id, panel) end)
+        |> Ecto.Multi.run(:create_panel, fn _, _ -> create_panel(dashboard_id, panel) end)
         |> Sanbase.Repo.transaction()
         |> case do
-          {:ok, %{add_panel: result}} -> {:ok, result}
+          {:ok, %{create_panel: result}} -> {:ok, result}
           {:error, _failed_op, error, _changes} -> {:error, error}
         end
     end

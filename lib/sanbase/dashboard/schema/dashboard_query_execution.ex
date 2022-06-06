@@ -175,7 +175,6 @@ defmodule Sanbase.Dashboard.QueryExecution do
         }
       end
     )
-    |> IO.inspect(label: "165", limit: :infinity)
     |> Sanbase.Utils.Transform.maybe_unwrap_ok_value()
   end
 end

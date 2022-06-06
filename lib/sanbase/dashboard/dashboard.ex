@@ -31,7 +31,7 @@ defmodule Sanbase.Dashboard do
 
   defdelegate update(dashboard_id, args), to: Dashboard.Schema
   defdelegate get_is_public_and_owner(dashboard_id), to: Dashboard.Schema
-  defdelegate add_panel(dashboard_id, panel_args), to: Dashboard.Schema
+  defdelegate create_panel(dashboard_id, panel_args), to: Dashboard.Schema
   defdelegate remove_panel(dashboard_id, panel_id), to: Dashboard.Schema
   defdelegate update_panel(dashboard_id, panel_id, args), to: Dashboard.Schema
 
@@ -91,7 +91,8 @@ defmodule Sanbase.Dashboard do
   @doc ~s"""
   Trigger computation of a single panel of the dashboard
   """
-  @spec compute_panel(dashboard_id(), panel_id()) :: {:ok, any()} | {:error, any()}
+  @spec compute_panel(dashboard_id(), panel_id()) ::
+          {:ok, Dashboard.Query.Result.t()} | {:error, String.t()}
   def compute_panel(dashboard_id, panel_id) do
     with {:ok, dashboard} <- Dashboard.Schema.by_id(dashboard_id),
          {:ok, result} <- do_compute_panel(dashboard, panel_id) do

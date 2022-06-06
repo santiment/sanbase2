@@ -51,7 +51,7 @@ defmodule Sanbase.Dashboard.Panel do
   """
   @spec new(panel_args()) :: {:ok, t()} | {:error, any()}
   def new(args) do
-    handle_panel(%__MODULE__{}, args, check_required: true, put_san_query_id: true)
+    handle_panel(%__MODULE__{}, args, check_required: true, put_ids: true)
   end
 
   @doc ~s"""
@@ -62,14 +62,19 @@ defmodule Sanbase.Dashboard.Panel do
   """
   @spec update(t(), panel_args) :: {:ok, t()} | {:error, any()}
   def update(%__MODULE__{} = panel, args) do
-    handle_panel(panel, args, check_required: false, put_san_query_id: false)
+    handle_panel(panel, args, check_required: false, put_ids: false)
   end
 
   defp handle_panel(%__MODULE__{} = panel, args, opts) do
     args =
-      case Keyword.get(opts, :put_san_query_id) do
-        true -> put_in(args, [:sql, :san_query_id], UUID.uuid4())
-        false -> args
+      case Keyword.get(opts, :put_ids) do
+        true ->
+          args
+          |> put_in([:sql, :san_query_id], UUID.uuid4())
+          |> put_in([:id], UUID.uuid4())
+
+        false ->
+          args
       end
 
     changeset =
@@ -106,6 +111,7 @@ defmodule Sanbase.Dashboard.Panel do
   The SQL query and arguments are taken from the panel and are executed.
   The result is transformed by converting the Date and NaiveDateTime types to DateTime.
   """
+  @spec compute(t()) :: {:ok, Query.Result.t()} | {:error, String.t()}
   def compute(%__MODULE__{} = panel) do
     %{sql: %{"query" => query, "args" => args, "query_id" => query_id}} = panel
 

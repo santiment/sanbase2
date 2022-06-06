@@ -13,6 +13,7 @@ defmodule Sanbase.Dashboard.Query.Result do
           query_start_time: DateTime.t(),
           query_end_time: DateTime.t()
         }
+
   defstruct san_query_id: nil,
             clickhouse_query_id: nil,
             summary_json: nil,

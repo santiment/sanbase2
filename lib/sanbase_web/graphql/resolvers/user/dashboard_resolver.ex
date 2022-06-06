@@ -12,69 +12,82 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     Dashboard.create(args, user.id)
   end
 
-  def delete_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_edit_dashboard?(args.dashboard_id, user.id) do
-      Dashboard.delete(args.dashboard_id)
+  def update_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    with true <- can_edit_dashboard?(args.id, user.id) do
+      Dashboard.update(args.id, args)
     end
   end
 
-  def add_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_edit_dashboard?(args.dashboard_id, user.id) do
-      Dashboard.add_panel(args.dashboard_id, args.panel)
+  def delete_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    with true <- can_edit_dashboard?(args.id, user.id) do
+      Dashboard.delete(args.id)
+    end
+  end
+
+  def create_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    with true <- can_edit_dashboard?(args.dashboard_id, user.id),
+         {:ok, %{} = result} <- Dashboard.create_panel(args.dashboard_id, args.panel) do
+      {:ok, result.panel |> Map.put(:dashboard_id, result.dashboard.id)}
     end
   end
 
   def remove_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_edit_dashboard?(args.dashboard_id, user.id) do
-      Dashboard.remove_panel(args.dashboard_id, args.panel_id)
+    %{dashboard_id: dashboard_id, panel_id: panel_id} = args
+
+    with true <- can_edit_dashboard?(dashboard_id, user.id),
+         {:ok, %{} = result} <- Dashboard.remove_panel(dashboard_id, panel_id) do
+      {:ok, result.panel |> Map.put(:dashboard_id, result.dashboard.id)}
     end
   end
 
   def update_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_edit_dashboard?(args.dashboard_id, user.id) do
-      Dashboard.update_panel(args.dashboard_id, args.panel_id, args.panel)
+    %{dashboard_id: dashboard_id, panel_id: panel_id, panel: panel} = args
+
+    with true <- can_edit_dashboard?(dashboard_id, user.id),
+         {:ok, %{} = result} <- Dashboard.update_panel(dashboard_id, panel_id, panel) do
+      {:ok, result.panel |> Map.put(:dashboard_id, result.dashboard.id)}
     end
   end
 
   def compute_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_view_dashboard?(args.dashboard_id, user.id),
+    with true <- can_view_dashboard?(args.id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_panel(args.dashboard_id, args.panel_id)
+      Dashboard.compute_panel(args.id, args.panel_id)
     end
   end
 
   def compute_and_store_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
     # storing requires edit access, not just view access
-    with true <- can_edit_dashboard?(args.dashboard_id, user.id),
+    with true <- can_edit_dashboard?(args.id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_and_store_panel(args.dashboard_id, args.panel_id)
+      Dashboard.compute_and_store_panel(args.id, args.panel_id)
     end
   end
 
   def get_dashboard_schema(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_view_dashboard?(args.dashboard_id, user.id) do
-      Dashboard.load_schema(args.dashboard_id)
+    with true <- can_view_dashboard?(args.id, user.id) do
+      Dashboard.load_schema(args.id)
     end
   end
 
   def get_dashboard_cache(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_view_dashboard?(args.dashboard_id, user.id) do
-      Dashboard.load_cache(args.dashboard_id)
+    with true <- can_view_dashboard?(args.id, user.id) do
+      Dashboard.load_cache(args.id)
     end
   end
 
-  defp can_view_dashboard?(dashboard_id, user_id) do
+  defp can_view_dashboard?(id, user_id) do
     # Users can see their own dashboard and other people's public dashboards
 
-    case Dashboard.get_is_public_and_owner(dashboard_id) do
+    case Dashboard.get_is_public_and_owner(id) do
       {:ok, %{user_id: ^user_id}} -> true
       {:ok, %{is_public: true}} -> true
       _ -> {:error, "Dashboard is private or does not exist"}
     end
   end
 
-  defp can_edit_dashboard?(dashboard_id, user_id) do
-    case Dashboard.get_is_public_and_owner(dashboard_id) do
+  defp can_edit_dashboard?(id, user_id) do
+    case Dashboard.get_is_public_and_owner(id) do
       {:ok, %{user_id: ^user_id}} ->
         true
 

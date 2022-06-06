@@ -113,7 +113,7 @@ defmodule Sanbase.Dashboard.Panel do
   """
   @spec compute(t()) :: {:ok, Query.Result.t()} | {:error, String.t()}
   def compute(%__MODULE__{} = panel) do
-    %{sql: %{"query" => query, "args" => args, "query_id" => query_id}} = panel
+    %{sql: %{"query" => query, "args" => args, "san_query_id" => san_query_id}} = panel
 
     query_start_time = DateTime.utc_now()
 
@@ -125,9 +125,9 @@ defmodule Sanbase.Dashboard.Panel do
       {:ok, map} ->
         {:ok,
          %Query.Result{
-           san_query_id: query_id,
+           san_query_id: san_query_id,
            clickhouse_query_id: map.query_id,
-           summary_json: Jason.encode!(map.summary),
+           summary: map.summary,
            rows: map.rows,
            compressed_rows_json: :zlib.gzip(Jason.encode!(map.rows)),
            columns: map.columns,

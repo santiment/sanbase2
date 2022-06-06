@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
     with true <- can_edit_dashboard?(dashboard_id, user.id),
          {:ok, %{} = result} <- Dashboard.remove_panel(dashboard_id, panel_id) do
-      {:ok, result.panel |> Map.put(:dashboard_id, result.dashboard.id)}
+      {:ok, result.panel |> Map.put(:dashboard_id, dashboard_id)}
     end
   end
 
@@ -45,22 +45,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
     with true <- can_edit_dashboard?(dashboard_id, user.id),
          {:ok, %{} = result} <- Dashboard.update_panel(dashboard_id, panel_id, panel) do
-      {:ok, result.panel |> Map.put(:dashboard_id, result.dashboard.id)}
+      {:ok, result.panel |> Map.put(:dashboard_id, dashboard_id)}
     end
   end
 
   def compute_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_view_dashboard?(args.id, user.id),
+    %{dashboard_id: dashboard_id, panel_id: panel_id} = args
+
+    with true <- can_view_dashboard?(dashboard_id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_panel(args.id, args.panel_id)
+      Dashboard.compute_panel(dashboard_id, panel_id)
     end
   end
 
   def compute_and_store_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    %{dashboard_id: dashboard_id, panel_id: panel_id} = args
     # storing requires edit access, not just view access
-    with true <- can_edit_dashboard?(args.id, user.id),
+    with true <- can_edit_dashboard?(dashboard_id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_and_store_panel(args.id, args.panel_id)
+      Dashboard.compute_and_store_panel(dashboard_id, panel_id)
     end
   end
 

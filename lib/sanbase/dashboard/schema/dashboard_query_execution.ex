@@ -22,7 +22,7 @@ defmodule Sanbase.Dashboard.QueryExecution do
           updated_at: NaiveDateTime.t()
         }
 
-  schema "query_executions" do
+  schema "clickhouse_query_executions" do
     belongs_to(:user, User)
 
     field(:clickhouse_query_id, :string)

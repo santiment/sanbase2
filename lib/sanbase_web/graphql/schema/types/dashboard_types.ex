@@ -39,8 +39,15 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   end
 
   object :panel_cache do
-    field(:panel_id, non_null(:string))
-    field(:data, non_null(:json))
+    field(:id, non_null(:string))
+    field(:dashboard_id, non_null(:integer))
+    field(:san_query_id, non_null(:string))
+    field(:clickhouse_query_id, non_null(:string))
+    field(:column_names, non_null(list_of(:string)))
+    field(:rows, non_null(:json))
+    field(:query_start_time, non_null(:datetime))
+    field(:query_end_time, non_null(:datetime))
+    field(:summary, non_null(:json))
     field(:updated_at, non_null(:datetime))
   end
 
@@ -48,6 +55,7 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:id, non_null(:integer))
     field(:name, non_null(:string))
     field(:description, :string)
+    field(:is_public, non_null(:boolean))
     field(:panels, list_of(:panel_schema))
 
     field :user, non_null(:public_user) do

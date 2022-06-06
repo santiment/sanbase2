@@ -2578,5 +2578,158 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Minimum daily price of nft collections in eth",
+    "name": "nft_collection_min_price",
+    "metric": "nft_collection_min_price",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address", "token_id"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Maximum daily price of nft collections in eth",
+    "name": "nft_collection_max_price",
+    "metric": "nft_collection_max_price",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address", "token_id"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Average daily price of nft collections in eth",
+    "name": "nft_collection_avg_price",
+    "metric": "nft_collection_avg_price",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address", "token_id"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily trade count of nft collections",
+    "name": "nft_collection_trades_count",
+    "metric": "nft_collection_trades_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address", "token_id"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Minimum daily price of nft collections in usd",
+    "name": "nft_collection_min_price_usd",
+    "metric": "nft_collection_min_price_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address", "token_id"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Maximum daily price of nft collections in usd",
+    "name": "nft_collection_max_price_usd",
+    "metric": "nft_collection_max_price_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address", "token_id"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Average daily price of nft collections in usd",
+    "name": "nft_collection_avg_price_usd",
+    "metric": "nft_collection_avg_price_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address", "token_id"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Price in eth for specific token ids in NFT collection",
+    "name": "nft_token_id_price",
+    "metric": "nft_token_id_price",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address", "token_id"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Price in usd for specific token ids in NFT collection",
+    "name": "nft_token_id_price_usd",
+    "metric": "nft_token_id_price_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address", "token_id"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
   }
 ]

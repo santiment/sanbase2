@@ -34,9 +34,9 @@ defmodule Sanbase.Accounts.Interaction do
   alias Sanbase.Accounts.User
 
   schema "user_entity_interactions" do
-    field(:entity_id, :integer, null: false)
-    field(:entity_type, :string, null: false)
-    field(:interaction_type, :string, null: false)
+    field(:entity_id, :integer)
+    field(:entity_type, :string)
+    field(:interaction_type, :string)
 
     belongs_to(:user, User)
 

@@ -4,8 +4,6 @@ defmodule Sanbase.StatisticsTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers
 
-  import Mock
-
   setup_all_with_mocks([
     {Sanbase.ClickhouseRepo, [:passthrough], [query: fn _, _ -> {:ok, %{rows: [10]}} end]}
   ]) do
@@ -17,10 +15,8 @@ defmodule Sanbase.StatisticsTest do
     _user2 = insert(:user, inserted_at: Timex.shift(Timex.now(), days: -20))
     user3 = insert(:user, inserted_at: Timex.shift(Timex.now(), days: -2))
     user4 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -500))
-    user5 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -15))
+    _user5 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -15))
     user6 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -171))
-
-    before_170d = Timex.shift(Timex.now(), days: -170)
 
     insert(:watchlist, %{user: user1})
     insert(:watchlist, %{user: user1})

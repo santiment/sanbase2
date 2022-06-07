@@ -235,7 +235,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         |> hd()
         |> Map.get("message")
 
-      assert error_msg =~ "not owned by the user"
+      assert error_msg =~ "does not exist or is private"
     end
 
     test "delete", context do
@@ -373,7 +373,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         |> hd()
         |> Map.get("message")
 
-      assert error_msg =~ "not owned by the user"
+      assert error_msg =~ "does not exist or is private"
     end
 
     test "get all chart configurations", context do

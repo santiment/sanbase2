@@ -41,6 +41,7 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
     field(:settings, non_null(:json))
     field(:cooldown, non_null(:string))
     field(:is_public, non_null(:boolean))
+    field(:is_hidden, non_null(:boolean))
     field(:is_active, non_null(:boolean))
     field(:is_repeating, non_null(:boolean))
     field(:is_frozen, non_null(:boolean))

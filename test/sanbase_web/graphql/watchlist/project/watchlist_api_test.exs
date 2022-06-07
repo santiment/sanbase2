@@ -344,7 +344,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
 
     assert String.contains?(
              error["message"],
-             "Watchlist with id: #{watchlist.id} does not exist."
+             "Watchlist with id #{watchlist.id} does not exist"
            )
   end
 

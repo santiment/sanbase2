@@ -7,7 +7,13 @@ defmodule Sanbase.Insight.EventEmitter do
   def handle_event({:error, _}, _event_type, _extra_args), do: :ok
 
   def handle_event({:ok, insight}, event_type, _args)
-      when event_type in [:create_insight, :update_insight, :delete_insight, :publish_insight] do
+      when event_type in [
+             :create_insight,
+             :update_insight,
+             :delete_insight,
+             :publish_insight,
+             :unpublish_insight
+           ] do
     %{
       event_type: event_type,
       insight_id: insight.id,

@@ -108,8 +108,11 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
         client: device_data.client
       )
 
+    # Call both plugs so the context can be properly set up every time
     conn
     |> Plug.Test.init_test_session(tokens)
+    |> SanbaseWeb.Graphql.AuthPlug.call(%{})
+    |> SanbaseWeb.Graphql.ContextPlug.call(%{})
   end
 
   def setup_apikey_auth(conn, apikey) do

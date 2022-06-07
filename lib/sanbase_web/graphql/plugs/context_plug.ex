@@ -26,6 +26,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
     context =
       auth_struct
+      |> put_is_moderator_flag()
       |> Map.put(:remote_ip, conn.remote_ip)
       |> Map.put(:origin_url, origin_url)
       |> Map.put(:origin_host, origin_host)
@@ -36,6 +37,25 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       |> Map.delete(:new_access_token)
 
     put_private(conn, :absinthe, %{context: context})
+  end
+
+  defp put_is_moderator_flag(context) do
+    with %{auth: %{current_user: %{id: user_id}}} <- context,
+         {:ok, moderator_ids} <-
+           Sanbase.Cache.get_or_store(:get_san_moderator_ids, fn ->
+             {:ok, Sanbase.Accounts.Role.san_moderator_ids()}
+           end) do
+      context
+      |> Map.put(:is_moderator, user_id in moderator_ids)
+    else
+      _ ->
+        context
+        |> Map.put(:is_moderator, false)
+    end
+  rescue
+    _ ->
+      context
+      |> Map.put(:is_moderator, false)
   end
 
   defp conn_to_jwt_tokens(conn) do

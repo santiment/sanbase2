@@ -66,7 +66,13 @@ defmodule Sanbase.EventBus.EventValidation do
   ## Insight Events
   #############################################################################
   def valid?(%{event_type: event_type, user_id: user_id, insight_id: insight_id})
-      when event_type in [:create_insight, :update_insight, :delete_insight, :publish_insight],
+      when event_type in [
+             :create_insight,
+             :update_insight,
+             :delete_insight,
+             :publish_insight,
+             :unpublish_insight
+           ],
       do: valid_integer_id?(user_id) and valid_integer_id?(insight_id)
 
   #############################################################################

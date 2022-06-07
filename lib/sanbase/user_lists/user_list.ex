@@ -32,15 +32,16 @@ defmodule Sanbase.UserList do
 
   schema "user_lists" do
     field(:type, WatchlistType, default: :project)
-
+    field(:name, :string)
+    field(:slug, :string)
     field(:color, ColorEnum, default: :none)
     field(:description, :string)
     field(:function, WatchlistFunction, default: %WatchlistFunction{})
     field(:is_monitored, :boolean, default: false)
     field(:is_public, :boolean, default: false)
     field(:is_screener, :boolean, default: false)
-    field(:name, :string)
-    field(:slug, :string)
+    field(:is_deleted, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
 
     belongs_to(:user, User)
     belongs_to(:table_configuration, Sanbase.TableConfiguration)
@@ -61,19 +62,20 @@ defmodule Sanbase.UserList do
     update_changeset(user_list, attrs)
   end
 
-  @create_update_fields [:color, :description, :function, :is_monitored, :is_public, :is_screener] ++
-                          [:name, :slug, :table_configuration_id, :type, :user_id]
+  @create_fields [:color, :description, :function, :is_monitored, :is_public, :is_screener] ++
+                   [:name, :slug, :table_configuration_id, :type, :user_id]
   def create_changeset(%__MODULE__{} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, @create_update_fields)
+    |> cast(attrs, @create_fields)
     |> validate_required([:name, :user_id])
     |> validate_change(:function, &validate_function/2)
     |> unique_constraint(:slug)
   end
 
+  @update_fields @create_fields ++ [:is_deleted, :is_hidden]
   def update_changeset(%__MODULE__{id: _id} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, @create_update_fields)
+    |> cast(attrs, @update_fields)
     |> cast_assoc(:list_items)
     |> validate_change(:function, &validate_function/2)
     |> unique_constraint(:slug)
@@ -99,11 +101,11 @@ defmodule Sanbase.UserList do
   @impl Sanbase.Entity.Behaviour
   def by_id(id, _opts) when is_integer(id) or is_binary(id) do
     result =
-      from(ul in __MODULE__, where: ul.id == ^id)
+      from(ul in base_query(), where: ul.id == ^id)
       |> Repo.one()
 
     case result do
-      nil -> {:error, "Watchlist with id: #{id} does not exist."}
+      nil -> {:error, "Watchlist with id #{id} does not exist"}
       watchlist -> {:ok, watchlist}
     end
   end
@@ -114,7 +116,7 @@ defmodule Sanbase.UserList do
   @impl Sanbase.Entity.Behaviour
   def by_ids(ids, _opts) when is_list(ids) do
     result =
-      from(ul in __MODULE__,
+      from(ul in base_query(),
         where: ul.id in ^ids,
         order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
       )
@@ -125,13 +127,14 @@ defmodule Sanbase.UserList do
 
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
-    from(ul in __MODULE__)
+    base_query()
     |> where([ul], ul.is_public == true)
     |> distinct(true)
     |> maybe_filter_is_screener_query(opts)
     |> maybe_apply_metrics_filter_query(opts)
     |> maybe_filter_by_type_query(opts)
     |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_list_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
@@ -140,19 +143,20 @@ defmodule Sanbase.UserList do
 
   @impl Sanbase.Entity.Behaviour
   def user_entity_ids_query(user_id, opts) do
-    from(ul in __MODULE__)
+    base_query()
     |> where([ul], ul.user_id == ^user_id)
     |> maybe_filter_is_screener_query(opts)
     |> maybe_apply_metrics_filter_query(opts)
     |> maybe_filter_by_type_query(opts)
     |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_list_id)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> select([ul], ul.id)
   end
 
   def by_slug(slug) when is_binary(slug) do
-    from(ul in __MODULE__, where: ul.slug == ^slug)
+    from(ul in base_query(), where: ul.slug == ^slug)
     |> Repo.one()
   end
 
@@ -323,7 +327,7 @@ defmodule Sanbase.UserList do
 
   def fetch_user_lists(%User{id: user_id}, type) do
     result =
-      __MODULE__
+      base_query()
       |> filter_by_user_id_query(user_id)
       |> filter_by_type_query(type)
       |> Repo.all()
@@ -333,7 +337,7 @@ defmodule Sanbase.UserList do
 
   def fetch_public_user_lists(%User{id: user_id}, type) do
     result =
-      __MODULE__
+      base_query()
       |> filter_by_user_id_query(user_id)
       |> filter_by_is_public_query(true)
       |> filter_by_type_query(type)
@@ -344,7 +348,7 @@ defmodule Sanbase.UserList do
 
   def fetch_all_public_lists(type) do
     result =
-      __MODULE__
+      base_query()
       |> filter_by_is_public_query(true)
       |> filter_by_type_query(type)
       |> Repo.all()
@@ -364,6 +368,10 @@ defmodule Sanbase.UserList do
 
   # Private functions
 
+  defp base_query(_opts \\ []) do
+    from(ul in __MODULE__, where: ul.is_deleted != true)
+  end
+
   defp maybe_create_event({:ok, watchlist}, changeset, event_type) do
     TimelineEvent.maybe_create_event_async(event_type, watchlist, changeset)
     {:ok, watchlist}
@@ -373,11 +381,13 @@ defmodule Sanbase.UserList do
 
   defp user_list_query_by_user_id(%User{id: user_id})
        when is_integer(user_id) and user_id > 0 do
-    from(ul in __MODULE__, where: ul.is_public == true or ul.user_id == ^user_id)
+    from(ul in base_query(),
+      where: ul.is_public == true or ul.user_id == ^user_id
+    )
   end
 
   defp user_list_query_by_user_id(_) do
-    from(ul in __MODULE__, where: ul.is_public == true)
+    from(ul in base_query(), where: ul.is_public == true)
   end
 
   defp update_list_items_params(

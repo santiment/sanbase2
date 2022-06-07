@@ -79,17 +79,18 @@ defimpl Sanbase.Alert, for: Any do
 
   defp send_email(
          %{
-           user: %User{
-             email: email,
-             user_settings: %{settings: %{alert_notify_email: true}}
-           }
+           user:
+             %User{
+               email: email,
+               user_settings: %{settings: %{alert_notify_email: true}}
+             } = user
          } = trigger,
          %{"email" => max_alerts_to_send}
        )
        when is_binary(email) do
     fun = fn _identifier, payload ->
       payload = transform_payload(payload, trigger.id, :email)
-      do_send_email(email, payload)
+      do_send_email(user, payload)
     end
 
     send_or_limit("email", trigger, max_alerts_to_send, fun)
@@ -273,10 +274,11 @@ defimpl Sanbase.Alert, for: Any do
   defp maybe_add_alert_link(payload, _, :webhook), do: payload
   defp maybe_add_alert_link(payload, _trigger_id, :telegram_channel), do: payload
 
-  defp do_send_email(email, payload) do
+  defp do_send_email(user, payload) do
     Sanbase.Email.Template.alerts_template()
-    |> Sanbase.MandrillApi.send(email, %{
-      payload: Earmark.as_html!(payload, breaks: true, timeout: nil, mapper: &Enum.map/2)
+    |> Sanbase.MandrillApi.send(user.email, %{
+      payload: Earmark.as_html!(payload, breaks: true, timeout: nil, mapper: &Enum.map/2),
+      name: Sanbase.Accounts.User.get_name(user)
     })
     |> case do
       {:ok, _} -> :ok
@@ -388,7 +390,10 @@ defimpl Sanbase.Alert, for: Any do
   defp send_limit_reached_notification("email", user) do
     Sanbase.Email.Template.alerts_template()
     |> Sanbase.MandrillApi.send(user.email, %{
-      payload: limit_reached_payload("email") |> Earmark.as_html!(breaks: true)
+      payload:
+        limit_reached_payload("email")
+        |> Earmark.as_html!(breaks: true, timeout: nil, mapper: &Enum.map/2),
+      name: Sanbase.Accounts.User.get_name(user)
     })
     |> case do
       {:ok, _} -> :ok

@@ -1,5 +1,6 @@
 defmodule Sanbase.Accounts.EmailJobs do
   import Sanbase.DateTimeUtils, only: [days_after: 1]
+  import Sanbase.Email.Template
 
   @oban_conf_name :oban_web
 
@@ -46,25 +47,18 @@ defmodule Sanbase.Accounts.EmailJobs do
     Sanbase.Repo.transaction(multi)
   end
 
-  def send_post_cancellation_email(subscription) do
-    template = Sanbase.Email.Template.post_cancellation_template()
+  def send_trial_started_email(subscription) do
+    user = Sanbase.Accounts.User.by_id!(subscription.user_id)
 
     vars = %{
-      subscription_type: subscription_type(subscription),
-      end_subscription_date: Timex.format!(subscription.current_period_end, "{Mfull} {D}, {YYYY}")
+      name: Sanbase.Accounts.User.get_name(user),
+      subscription_type: subscription_type(subscription)
     }
 
-    data =
-      Sanbase.Mailer.new(%{
-        user_id: subscription.user_id,
-        template: template,
-        vars: vars
-      })
-
-    Oban.insert(@oban_conf_name, data)
+    add_email_job(subscription.user_id, trial_started_template(), vars)
   end
 
-  def send_trial_will_end_email(subscription) do
+  def schedule_trial_will_end_email(subscription) do
     user = Sanbase.Accounts.User.by_id!(subscription.user_id)
 
     vars = %{
@@ -73,15 +67,74 @@ defmodule Sanbase.Accounts.EmailJobs do
       subscription_duration: subscription.plan.interval <> "ly"
     }
 
+    add_email_job(user.id, end_of_trial_template(), vars, scheduled_at: days_after(11))
+  end
+
+  def schedule_annual_discount_emails(subscription) do
+    user = Sanbase.Accounts.User.by_id!(subscription.user_id)
+
+    common_vars = %{
+      name: Sanbase.Accounts.User.get_name(user)
+    }
+
+    vars_50 = Map.put(common_vars, :expire_at, days_after(14) |> format_date())
+    vars_35 = Map.put(common_vars, :expire_at, days_after(30) |> format_date())
+
+    add_email_job(subscription.user_id, during_trial_annual_discount_template(), vars_50,
+      scheduled_at: days_after(12)
+    )
+
+    add_email_job(subscription.user_id, after_trial_annual_discount_template(), vars_35,
+      scheduled_at: days_after(24)
+    )
+  end
+
+  def send_pro_started_email(subscription) do
+    user = Sanbase.Accounts.User.by_id!(subscription.user_id)
+
+    vars = %{
+      name: Sanbase.Accounts.User.get_name(user),
+      subscription_type: subscription_type(subscription),
+      subscription_duration: subscription.plan.interval
+    }
+
+    add_email_job(
+      subscription.user_id,
+      Sanbase.Email.Template.pro_subscription_stared_template(),
+      vars
+    )
+  end
+
+  def send_post_cancellation_email(subscription) do
+    template = Sanbase.Email.Template.post_cancellation_template()
+
+    vars = %{
+      subscription_type: subscription_type(subscription),
+      end_subscription_date: format_date(subscription.current_period_end)
+    }
+
+    add_email_job(subscription.user_id, template, vars)
+  end
+
+  def add_email_job(user_id, email_template, email_vars, opts \\ []) do
     data =
-      Sanbase.Mailer.new(%{
-        user_id: user.id,
-        template: Sanbase.Email.Template.end_of_trial_template(),
-        vars: vars
-      })
+      Sanbase.Mailer.new(
+        %{
+          user_id: user_id,
+          template: email_template,
+          vars: email_vars
+        },
+        opts
+      )
 
     Oban.insert(@oban_conf_name, data)
   end
+
+  def format_date(datetime) do
+    Timex.format!(datetime, "{Mfull} {D}, {YYYY}")
+  end
+
+  # Private
 
   defp scheduled_email(email_type, templates, user, vars) do
     scheduled_at =

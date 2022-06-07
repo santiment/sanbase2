@@ -2731,5 +2731,39 @@
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily market buy/sell volume in eth for NFT collections",
+    "name": "nft_market_volume",
+    "metric": "nft_market_volume",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address", "token_id"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily market buy/sell count for NFT collections",
+    "name": "nft_market_count",
+    "metric": "nft_market_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address", "token_id"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
   }
 ]

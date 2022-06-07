@@ -269,43 +269,66 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
               panel_id: panel["id"]
             }
           )
+          |> get_in(["data", "computeAndStoreDashboardPanel"])
 
         dashboard_id = dashboard["id"]
 
         assert %{
-                 "data" => %{
-                   "computeAndStoreDashboardPanel" => %{
-                     "columnNames" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
-                     "dashboardId" => ^dashboard_id,
-                     "id" => _,
-                     "rows" => [
-                       [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
-                       [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
-                     ],
-                     "summary" => %{
-                       "read_bytes" => "0",
-                       "read_rows" => "0",
-                       "total_rows_to_read" => "0",
-                       "written_bytes" => "0",
-                       "written_rows" => "0"
-                     },
-                     "updatedAt" => updated_at
-                   }
-                 }
+                 "columnNames" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                 "dashboardId" => ^dashboard_id,
+                 "id" => id,
+                 "rows" => [
+                   [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                   [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                 ],
+                 "summary" => %{
+                   "read_bytes" => "0",
+                   "read_rows" => "0",
+                   "total_rows_to_read" => "0",
+                   "written_bytes" => "0",
+                   "written_rows" => "0"
+                 },
+                 "updatedAt" => updated_at
                } = result
 
+        assert is_binary(id) and String.length(id) == 36
         updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
         assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
       end)
 
-      # Run the next part outside the mock
+      # Run the next part outside the mock, so if there's data it's not coming from Clickhouse
 
-      dashboard =
+      dashboard_cache =
         get_dashboard_cache(context.conn, dashboard["id"])
-        |> IO.inspect(label: "305", limit: :infinity)
         |> get_in(["data", "getDashboardCache"])
 
-      assert dashboard == %{}
+      dashboard_id = dashboard["id"]
+
+      assert %{
+               "panels" => [
+                 %{
+                   "columnNames" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                   "dashboardId" => ^dashboard_id,
+                   "id" => id,
+                   "rows" => [
+                     [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                     [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                   ],
+                   "summary" => %{
+                     "read_bytes" => "0",
+                     "read_rows" => "0",
+                     "total_rows_to_read" => "0",
+                     "written_bytes" => "0",
+                     "written_rows" => "0"
+                   },
+                   "updatedAt" => updated_at
+                 }
+               ]
+             } = dashboard_cache
+
+      assert is_binary(id) and String.length(id) == 36
+      updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
+      assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
     end
   end
 

@@ -116,17 +116,16 @@ defmodule Sanbase.Dashboard.Cache do
 
         panel_cache =
           panel_cache
-          |> Map.put("rows", rows)
-          |> Map.put("updated_at", updated_at)
-          |> Map.put("id", panel_id)
           |> Map.delete("compressed_rows_json")
-          |> IO.inspect(label: "122", limit: :infinity)
+          |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
+          |> Map.put(:rows, rows)
+          |> Map.put(:updated_at, updated_at)
+          |> Map.put(:id, panel_id)
 
         {panel_id, panel_cache}
       end)
 
     %{cache | panels: panels}
-    |> IO.inspect(label: "128", limit: :infinity)
   end
 
   defp transform_cache_rows(rows) do

@@ -36,19 +36,21 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
                metadata["availableSelectors"],
                &Enum.member?(
                  [
-                   "SLUG",
-                   "SLUGS",
+                   "ADDRESS",
+                   "BLOCKCHAIN_ADDRESS",
+                   "BLOCKCHAIN",
                    "CONTRACT_ADDRESS",
-                   "MARKET_SEGMENTS",
-                   "TEXT",
-                   "LABEL",
-                   "OWNER",
                    "HOLDERS_COUNT",
-                   "SOURCE",
                    "LABEL_FQN",
                    "LABEL_FQNS",
-                   "BLOCKCHAIN",
-                   "BLOCKCHAIN_ADDRESS"
+                   "LABEL",
+                   "MARKET_SEGMENTS",
+                   "OWNER",
+                   "SLUG",
+                   "SLUGS",
+                   "SOURCE",
+                   "TEXT",
+                   "TOKEN_ID"
                  ],
                  &1
                )

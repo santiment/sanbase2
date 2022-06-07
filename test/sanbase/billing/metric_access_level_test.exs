@@ -451,6 +451,16 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "nft_whale_trade_volume_usd",
         "nft_retail_trades_count",
         "nft_retail_trade_volume_usd",
+        # nft collection metrics
+        "nft_collection_min_price",
+        "nft_collection_max_price",
+        "nft_collection_avg_price",
+        "nft_collection_trades_count",
+        "nft_collection_min_price_usd",
+        "nft_collection_max_price_usd",
+        "nft_collection_avg_price_usd",
+        "nft_token_id_price",
+        "nft_token_id_price_usd",
         # label balances
         "labelled_historical_balance",
         "labelled_historical_balance_changes",

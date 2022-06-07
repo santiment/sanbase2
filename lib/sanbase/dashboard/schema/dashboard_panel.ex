@@ -38,6 +38,7 @@ defmodule Sanbase.Dashboard.Panel do
     field(:name, :string)
     field(:description, :string)
     field(:position, :map)
+    field(:visualization, :map)
     field(:size, :map)
     field(:type, :string)
     field(:sql, :map)

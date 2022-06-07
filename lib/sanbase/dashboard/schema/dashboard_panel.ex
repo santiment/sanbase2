@@ -118,6 +118,13 @@ defmodule Sanbase.Dashboard.Panel do
 
     query_start_time = DateTime.utc_now()
 
+    # Use the pool defined by the ReadOnly repo. This is used only here
+    # as this is the only place where we need to execute queries written
+    # by the user. The ReadOnly repo is connecting to the database with
+    # a different user that has read-only access. This is valid within
+    # this process only.
+    Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
+
     case Sanbase.ClickhouseRepo.query_transform_with_metadata(
            query,
            args,

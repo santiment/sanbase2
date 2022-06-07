@@ -68,6 +68,11 @@ config :sanbase, Sanbase.ClickhouseRepo,
   queue_target: 10_000,
   queue_interval: 2000
 
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
+  adapter: Ecto.Adapters.Postgres,
+  queue_target: 60_000,
+  queue_interval: 60_000
+
 config :sanbase, Sanbase.Repo,
   loggers: [Ecto.LogEntry],
   adapter: Ecto.Adapters.Postgres,

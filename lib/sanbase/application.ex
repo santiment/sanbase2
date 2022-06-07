@@ -230,6 +230,13 @@ defmodule Sanbase.Application do
             Sanbase.ClickhouseRepo.enabled?()
         end
       ),
+      start_if(
+        fn -> Sanbase.ClickhouseRepo.ReadOnly end,
+        fn ->
+          Application.get_env(:sanbase, :env) in [:dev, :prod] and
+            Sanbase.ClickhouseRepo.enabled?()
+        end
+      ),
 
       # Star the API call service
       Sanbase.ApiCallLimit.ETS,

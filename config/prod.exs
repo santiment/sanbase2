@@ -31,8 +31,20 @@ config :sanbase, Sanbase.ClickhouseRepo,
   username: "not_secret_default",
   password: "",
   timeout: 60_000,
-  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "30"},
+  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "25"},
   pool_overflow: 5
+
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
+  adapter: ClickhouseEcto,
+  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
+  hostname: "clickhouse",
+  port: 8123,
+  database: "not_secret_default",
+  username: "not_secret_default",
+  password: "",
+  timeout: 600_000,
+  pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "0"},
+  pool_overflow: 10
 
 # Do not print debug messages in production
 config :logger, level: :info

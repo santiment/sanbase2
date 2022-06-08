@@ -4,8 +4,9 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
   """
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
+  alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :dashboard_queries do
@@ -142,7 +143,10 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
 
       middleware(JWTAuth)
 
-      resolve(&DashboardResolver.compute_raw_clickhouse_query/3)
+      cache_resolve(&DashboardResolver.compute_raw_clickhouse_query/3,
+        ttl: 10,
+        max_ttl_offset: 10
+      )
     end
 
     @desc ~s"""

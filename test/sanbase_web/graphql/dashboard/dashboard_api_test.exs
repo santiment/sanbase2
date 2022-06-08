@@ -86,9 +86,9 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                "id" => binary_id,
                "dashboardId" => ^dashboard_id,
                "sql" => %{
-                 "args" => [20, "bitcoin"],
+                 "parameters" => %{"limit" => 20, "slug" => "bitcoin"},
                  "query" =>
-                   "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = ?2 LIMIT ?1)"
+                   "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT {{limit}})"
                }
              } = result
 
@@ -117,8 +117,8 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
             name: "New name",
             sql: %{
               map_as_input_object: true,
-              query: "SELECT * FROM intraday_metrics LIMIT ?1",
-              args: Jason.encode!([20])
+              query: "SELECT * FROM intraday_metrics LIMIT {{limit}}",
+              parameters: Jason.encode!(%{"limit" => 20})
             }
           }
         })
@@ -128,8 +128,8 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                "id" => panel["id"],
                "dashboardId" => dashboard_id,
                "sql" => %{
-                 "args" => [20],
-                 "query" => "SELECT * FROM intraday_metrics LIMIT ?1"
+                 "parameters" => %{"limit" => 20},
+                 "query" => "SELECT * FROM intraday_metrics LIMIT {{limit}}"
                }
              } == updated_panel
     end
@@ -342,7 +342,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         dashboardId
         sql {
           query
-          args
+          parameters
         }
       }
     }
@@ -449,8 +449,8 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         sql: %{
           map_as_input_object: true,
           query:
-            "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = ?2 LIMIT ?1)",
-          args: Jason.encode!([20, "bitcoin"])
+            "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT {{limit}})",
+          parameters: Jason.encode!(%{"slug" => "bitcoin", "limit" => 20})
         }
       }
     }

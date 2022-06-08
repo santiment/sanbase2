@@ -1,9 +1,24 @@
 defmodule SanbaseWeb.Graphql.DashboardTypes do
   use Absinthe.Schema.Notation
 
+  @desc ~s"""
+  Input object for an SQL query and its parameters.
+
+  The SQL query is expected to be a valid SQL query.
+  The parametrization is done via the {{key}} syntax
+  where the {{key}} is the name of the parameter and when
+  the query is computed, the key is substituted for the
+  value provided in `parameters`.
+  The parameters are a JSON map where the key is the
+  parameter name and the value is its value.
+
+  Example:
+  query: 'SELECT * FROM table WHERE slug = {{slug}} LIMIT {{limit}}'
+  parameters: '{slug: "bitcoin", limit: 10}'
+  """
   input_object :panel_sql_input_object do
     field(:query, non_null(:string))
-    field(:args, non_null(:json))
+    field(:parameters, non_null(:json))
   end
 
   enum :panel_type do
@@ -23,7 +38,7 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
 
   object :panel_sql do
     field(:query, non_null(:string))
-    field(:args, non_null(:json))
+    field(:parameters, non_null(:json))
   end
 
   object :panel_schema do

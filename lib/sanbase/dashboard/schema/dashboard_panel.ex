@@ -12,7 +12,7 @@ defmodule Sanbase.Dashboard.Panel do
   @type sql :: %{
           san_query_id: String.t(),
           query: String.t(),
-          args: list(String.t() | DateTime.t() | List.t() | number() | boolean())
+          parameters: list(String.t() | DateTime.t() | List.t() | number() | boolean())
         }
 
   @type t :: %__MODULE__{
@@ -114,7 +114,8 @@ defmodule Sanbase.Dashboard.Panel do
   """
   @spec compute(t()) :: {:ok, Query.Result.t()} | {:error, String.t()}
   def compute(%__MODULE__{} = panel) do
-    %{sql: %{"query" => query, "args" => args, "san_query_id" => san_query_id}} = panel
+    %{sql: %{"query" => query, "parameters" => parameters, "san_query_id" => san_query_id}} =
+      panel
 
     query_start_time = DateTime.utc_now()
 
@@ -124,6 +125,8 @@ defmodule Sanbase.Dashboard.Panel do
     # a different user that has read-only access. This is valid within
     # this process only.
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
+
+    {query, args} = transform_parameters_to_args(query, parameters)
 
     case Sanbase.ClickhouseRepo.query_transform_with_metadata(
            query,
@@ -152,6 +155,25 @@ defmodule Sanbase.Dashboard.Panel do
   end
 
   # Private functions
+
+  defp transform_parameters_to_args(query, parameters) do
+    # Transform the named parameters to positional parameters that are
+    # understood by the ClickhouseRepo
+    param_names = Map.keys(parameters)
+    param_name_positions = Enum.with_index(param_names, 1)
+    # Get the args in the same order as the param_names
+    args = Enum.map(param_names, &Map.get(parameters, &1))
+
+    query =
+      Enum.reduce(param_name_positions, query, fn {param_name, position}, query_acc ->
+        # Replace all occurences of {{<param_name>}} with ?<position>
+        # For example: WHERE address = {{address}} => WHERE address = ?1
+        kv = %{param_name => "?#{position}"}
+        Sanbase.TemplateEngine.run(query_acc, kv)
+      end)
+
+    {query, args}
+  end
 
   # This is passed as the transform function to the ClickhouseRepo function
   # It is executed for every row in the result set
@@ -182,9 +204,9 @@ defmodule Sanbase.Dashboard.Panel do
   end
 
   defp valid_sql_args?(sql) do
-    case Map.has_key?(sql, :args) and is_list(sql[:args]) do
+    case Map.has_key?(sql, :parameters) and is_map(sql[:parameters]) do
       true -> :ok
-      false -> {:error, "sql args must be a list"}
+      false -> {:error, "sql parameters must be a map"}
     end
   end
 end

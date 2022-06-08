@@ -136,6 +136,15 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
       resolve(&DashboardResolver.compute_dashboard_panel/3)
     end
 
+    field :compute_raw_clickhouse_query, :query_result do
+      arg(:query, non_null(:string))
+      arg(:parameters, non_null(:json))
+
+      middleware(JWTAuth)
+
+      resolve(&DashboardResolver.compute_raw_clickhouse_query/3)
+    end
+
     @desc ~s"""
     TODO: Write me before merging
     """

@@ -129,8 +129,13 @@ defmodule Sanbase.Dashboard.Schema do
   end
 
   def create_panel(dashboard_id, panel_args) when is_map(panel_args) do
-    {:ok, panel} = Panel.new(panel_args)
-    create_panel(dashboard_id, panel)
+    case Panel.new(panel_args) do
+      {:ok, panel} ->
+        create_panel(dashboard_id, panel)
+
+      {:error, changeset} ->
+        {:error, Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)}
+    end
   end
 
   @doc ~s"""

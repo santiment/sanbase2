@@ -45,7 +45,7 @@ defmodule Sanbase.Dashboard.SqlValidation do
       [_, table], _acc ->
         case table in @allowed_tables do
           true -> {:cont, :ok}
-          false -> {:halt, {:error, "table #{table} is not allowed"}}
+          false -> {:halt, {:error, "table #{table} is not allowed or does not exist"}}
         end
     end)
   end

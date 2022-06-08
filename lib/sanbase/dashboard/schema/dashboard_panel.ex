@@ -88,7 +88,7 @@ defmodule Sanbase.Dashboard.Panel do
         :size,
         :sql
       ])
-      |> validate_change(:sql, &Query.valid_sql?/2)
+      |> validate_change(:sql, &Query.changeset_valid_sql?/2)
 
     changeset =
       case Keyword.fetch!(opts, :check_required) do
@@ -102,7 +102,7 @@ defmodule Sanbase.Dashboard.Panel do
         {:ok, struct}
 
       false ->
-        {:error, changeset.errors}
+        {:error, changeset}
     end
   end
 

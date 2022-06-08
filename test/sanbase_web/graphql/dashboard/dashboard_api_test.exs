@@ -95,6 +95,36 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
       assert is_binary(binary_id)
     end
 
+    test "create panel - error invalid query", context do
+      dashboard_id =
+        execute_dashboard_mutation(context.conn, :create_dashboard)
+        |> get_in(["data", "createDashboard", "id"])
+
+      error_msg =
+        execute_dashboard_panel_schema_mutation(
+          context.conn,
+          :create_dashboard_panel,
+          default_dashboard_panel_args()
+          |> Map.put(:dashboard_id, dashboard_id)
+          |> put_in([:panel, :sql, :query], "SELECT * FROM system.query_log")
+        )
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg == "{\"sql\":[\"system tables are not allowed\"]}"
+
+      error_msg =
+        execute_dashboard_panel_schema_mutation(
+          context.conn,
+          :create_dashboard_panel,
+          default_dashboard_panel_args()
+          |> Map.put(:dashboard_id, dashboard_id)
+          |> put_in([:panel, :sql, :query], "SELECT * FROM non_existing")
+        )
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg == "{\"sql\":[\"table non_existing is not allowed or does not exist\"]}"
+    end
+
     test "update panel", context do
       dashboard_id =
         execute_dashboard_mutation(context.conn, :create_dashboard)
@@ -169,7 +199,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
   end
 
   describe "compute and get cache" do
-    defp panel_mocked_clickhouse_query() do
+    defp mocked_clickhouse_result() do
       %Clickhousex.Result{
         columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
         command: :selected,
@@ -204,7 +234,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
 
       Sanbase.Mock.prepare_mock2(
         &Sanbase.ClickhouseRepo.query/2,
-        {:ok, panel_mocked_clickhouse_query()}
+        {:ok, mocked_clickhouse_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
@@ -257,7 +287,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
 
       Sanbase.Mock.prepare_mock2(
         &Sanbase.ClickhouseRepo.query/2,
-        {:ok, panel_mocked_clickhouse_query()}
+        {:ok, mocked_clickhouse_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
@@ -329,6 +359,56 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
       assert is_binary(id) and String.length(id) == 36
       updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
       assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
+    end
+  end
+
+  describe "execute raw queries" do
+    test "compute raw clickhouse query", context do
+      args = %{
+        query:
+          "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}}) LIMIT {{limit}}",
+        parameters: %{slug: "bitcoin", limit: 2},
+        map_as_input_object: true
+      }
+
+      mutation = """
+      mutation{
+        computeRawClickhouseQuery(#{map_to_args(args)}){
+          columns
+          rows
+          clickhouseQueryId
+          summary
+        }
+      }
+      """
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, mocked_clickhouse_result()}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          context.conn
+          |> post("/graphql", mutation_skeleton(mutation))
+          |> json_response(200)
+          |> get_in(["data", "computeRawClickhouseQuery"])
+
+        assert result == %{
+                 "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
+                 "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                 "rows" => [
+                   [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                   [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                 ],
+                 "summary" => %{
+                   "read_bytes" => "0",
+                   "read_rows" => "0",
+                   "total_rows_to_read" => "0",
+                   "written_bytes" => "0",
+                   "written_rows" => "0"
+                 }
+               }
+      end)
     end
   end
 

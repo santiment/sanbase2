@@ -85,6 +85,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
+  def compute_raw_clickhouse_query(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    san_query_id = UUID.uuid4()
+
+    with true <- can_run_computation?(user.id),
+         true <- Sanbase.Dashboard.Query.valid_sql?(args),
+         {:ok, query_result} <-
+           Sanbase.Dashboard.Query.run(args.query, args.parameters, san_query_id) do
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        Dashboard.QueryExecution.store_execution(user.id, query_result)
+      end)
+
+      {:ok, query_result}
+    end
+  end
+
+  # Private functions
+
   defp can_view_dashboard?(id, user_id) do
     # Users can see their own dashboard and other people's public dashboards
 

@@ -46,12 +46,17 @@ defmodule Sanbase.Dashboard.Query do
     end
   end
 
-  def valid_sql?(_changeset, sql) do
+  def valid_sql?(sql) do
     with :ok <- valid_sql_query?(sql),
-         :ok <- valid_sql_args?(sql) do
-      []
-    else
-      error -> [sql: error]
+         :ok <- valid_sql_parameters?(sql) do
+      true
+    end
+  end
+
+  def changeset_valid_sql?(_changeset, sql) do
+    case valid_sql?(sql) do
+      true -> []
+      {:error, error} -> [sql: error]
     end
   end
 
@@ -62,7 +67,7 @@ defmodule Sanbase.Dashboard.Query do
     end
   end
 
-  def valid_sql_args?(sql) do
+  def valid_sql_parameters?(sql) do
     case Map.has_key?(sql, :parameters) and is_map(sql[:parameters]) do
       true -> :ok
       false -> {:error, "sql parameters must be a map"}

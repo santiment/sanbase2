@@ -36,6 +36,16 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:size, :json)
   end
 
+  object :query_result do
+    field(:san_query_id, non_null(:string))
+    field(:clickhouse_query_id, non_null(:string))
+    field(:summary, non_null(:json))
+    field(:rows, non_null(:json))
+    field(:columns, non_null(list_of(:string)))
+    field(:query_start_time, non_null(:datetime))
+    field(:query_end_time, non_null(:datetime))
+  end
+
   object :panel_sql do
     field(:query, non_null(:string))
     field(:parameters, non_null(:json))

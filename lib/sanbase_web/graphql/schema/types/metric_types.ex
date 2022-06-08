@@ -25,6 +25,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     # blockchain address related
     value(:address)
     value(:blockchain_address)
+    value(:token_id)
     # project related
     value(:slug)
     value(:slugs)

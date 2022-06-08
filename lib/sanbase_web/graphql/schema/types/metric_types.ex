@@ -45,6 +45,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:label_fqn)
     value(:label_fqns)
     value(:holders_count)
+    # nft related
+    value(:token_id)
     # dev activity related
     value(:organization)
     value(:organizations)

@@ -23,6 +23,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     # common
     value(:blockchain)
     # blockchain address related
+    value(:address)
     value(:blockchain_address)
     # project related
     value(:slug)

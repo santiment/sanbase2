@@ -8,7 +8,7 @@ defmodule Sanbase.Repo.Migrations.AddDashboardsRelatedTables do
       add(:is_public, :boolean, default: false, null: false)
       add(:panels, :map, null: true, default: nil)
 
-      add(:user_id, references(:users), nill: false, on_delete: :delete_all)
+      add(:user_id, references(:users), null: false, on_delete: :delete_all)
 
       timestamps()
     end

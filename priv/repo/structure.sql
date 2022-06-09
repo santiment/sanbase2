@@ -542,6 +542,41 @@ ALTER SEQUENCE public.chart_configurations_id_seq OWNED BY public.chart_configur
 
 
 --
+-- Name: clickhouse_query_executions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.clickhouse_query_executions (
+    id bigint NOT NULL,
+    user_id bigint,
+    query_id character varying(255) NOT NULL,
+    clickhouse_query_id character varying(255) NOT NULL,
+    execution_details jsonb NOT NULL,
+    credits_cost integer NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: clickhouse_query_executions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.clickhouse_query_executions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: clickhouse_query_executions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.clickhouse_query_executions_id_seq OWNED BY public.clickhouse_query_executions.id;
+
+
+--
 -- Name: comment_notifications; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -674,6 +709,73 @@ CREATE SEQUENCE public.currencies_id_seq
 --
 
 ALTER SEQUENCE public.currencies_id_seq OWNED BY public.currencies.id;
+
+
+--
+-- Name: dashboards; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dashboards (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description character varying(255),
+    is_public boolean DEFAULT false NOT NULL,
+    panels jsonb,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: dashboards_cache; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dashboards_cache (
+    id bigint NOT NULL,
+    dashboard_id bigint,
+    panels jsonb NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: dashboards_cache_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dashboards_cache_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dashboards_cache_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dashboards_cache_id_seq OWNED BY public.dashboards_cache.id;
+
+
+--
+-- Name: dashboards_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dashboards_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dashboards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dashboards_id_seq OWNED BY public.dashboards.id;
 
 
 --
@@ -3590,6 +3692,13 @@ ALTER TABLE ONLY public.chart_configurations ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: clickhouse_query_executions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clickhouse_query_executions ALTER COLUMN id SET DEFAULT nextval('public.clickhouse_query_executions_id_seq'::regclass);
+
+
+--
 -- Name: comment_notifications id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3615,6 +3724,20 @@ ALTER TABLE ONLY public.contract_addresses ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.currencies ALTER COLUMN id SET DEFAULT nextval('public.currencies_id_seq'::regclass);
+
+
+--
+-- Name: dashboards id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards ALTER COLUMN id SET DEFAULT nextval('public.dashboards_id_seq'::regclass);
+
+
+--
+-- Name: dashboards_cache id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_cache ALTER COLUMN id SET DEFAULT nextval('public.dashboards_cache_id_seq'::regclass);
 
 
 --
@@ -4237,6 +4360,14 @@ ALTER TABLE ONLY public.chart_configurations
 
 
 --
+-- Name: clickhouse_query_executions clickhouse_query_executions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clickhouse_query_executions
+    ADD CONSTRAINT clickhouse_query_executions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: comment_notifications comment_notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4266,6 +4397,22 @@ ALTER TABLE ONLY public.contract_addresses
 
 ALTER TABLE ONLY public.currencies
     ADD CONSTRAINT currencies_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dashboards_cache dashboards_cache_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_cache
+    ADD CONSTRAINT dashboards_cache_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dashboards dashboards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards
+    ADD CONSTRAINT dashboards_pkey PRIMARY KEY (id);
 
 
 --
@@ -5073,6 +5220,13 @@ CREATE UNIQUE INDEX contract_addresses_project_id_address_index ON public.contra
 --
 
 CREATE UNIQUE INDEX currencies_code_index ON public.currencies USING btree (code);
+
+
+--
+-- Name: dashboards_cache_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX dashboards_cache_dashboard_id_index ON public.dashboards_cache USING btree (dashboard_id);
 
 
 --
@@ -6027,6 +6181,14 @@ ALTER TABLE ONLY public.chart_configurations
 
 
 --
+-- Name: clickhouse_query_executions clickhouse_query_executions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clickhouse_query_executions
+    ADD CONSTRAINT clickhouse_query_executions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: comments comments_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6056,6 +6218,22 @@ ALTER TABLE ONLY public.comments
 
 ALTER TABLE ONLY public.contract_addresses
     ADD CONSTRAINT contract_addresses_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id);
+
+
+--
+-- Name: dashboards_cache dashboards_cache_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_cache
+    ADD CONSTRAINT dashboards_cache_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dashboards dashboards_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards
+    ADD CONSTRAINT dashboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -7243,3 +7421,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220504082527);
 INSERT INTO public."schema_migrations" (version) VALUES (20220516082857);
 INSERT INTO public."schema_migrations" (version) VALUES (20220519083249);
 INSERT INTO public."schema_migrations" (version) VALUES (20220519135027);
+INSERT INTO public."schema_migrations" (version) VALUES (20220531133311);
+INSERT INTO public."schema_migrations" (version) VALUES (20220531143545);

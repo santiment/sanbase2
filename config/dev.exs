@@ -73,6 +73,19 @@ config :sanbase, Sanbase.ClickhouseRepo,
   pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "3"},
   show_sensitive_data_on_connection_error: true
 
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
+  adapter: ClickhouseEcto,
+  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
+  hostname: "clickhouse",
+  port: 8123,
+  database: "default",
+  username: "sanbase",
+  password: "",
+  timeout: 600_000,
+  pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "0"},
+  pool_overflow: 10,
+  show_sensitive_data_on_connection_error: true
+
 # These are not the values that are used in production. They are set to some
 # default values. When running the app locally these values are overridden by
 # the values in the .env.dev or dev.secret.exs files, which are ignored by git

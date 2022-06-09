@@ -23,8 +23,6 @@ defmodule Sanbase.Repo.Migrations.FillMarketSegmentsType do
 
   defp setup() do
     Application.ensure_all_started(:tzdata)
-    Application.ensure_all_started(:prometheus_ecto)
-    Sanbase.Prometheus.EctoInstrumenter.setup()
   end
 
   defp infrastructural_market_segments() do

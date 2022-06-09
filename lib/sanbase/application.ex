@@ -17,7 +17,7 @@ defmodule Sanbase.Application do
     print_starting_log(container_type)
 
     # Do some initialization. This includes increasing the backtrace depth,
-    # setting up some monitoring instruments, etc.
+    # starting the event bus, etc.
     init(container_type)
 
     # Get the proper children that have to be started in the current container type
@@ -51,11 +51,6 @@ defmodule Sanbase.Application do
     # Increase the backtrace depth here and not in the phoenix config
     # so it applies to all non-phoenix work, too
     :erlang.system_flag(:backtrace_depth, 20)
-
-    # Prometheus related
-    Sanbase.Prometheus.EctoInstrumenter.setup()
-    Sanbase.Prometheus.PipelineInstrumenter.setup()
-    Sanbase.Prometheus.Exporter.setup()
 
     Sanbase.EventBus.init()
 

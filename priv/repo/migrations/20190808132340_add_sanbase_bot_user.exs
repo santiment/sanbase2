@@ -6,8 +6,6 @@ defmodule Sanbase.Repo.Migrations.AddSanbaseBotUser do
 
   def up do
     Application.ensure_all_started(:tzdata)
-    Application.ensure_all_started(:prometheus_ecto)
-    Sanbase.Prometheus.EctoInstrumenter.setup()
 
     %User{
       salt: User.generate_salt(),
@@ -20,8 +18,6 @@ defmodule Sanbase.Repo.Migrations.AddSanbaseBotUser do
 
   def down do
     Application.ensure_all_started(:tzdata)
-    Application.ensure_all_started(:prometheus_ecto)
-    Sanbase.Prometheus.EctoInstrumenter.setup()
 
     User
     |> Repo.get_by(email: User.sanbase_bot_email())

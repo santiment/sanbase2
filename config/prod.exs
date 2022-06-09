@@ -24,7 +24,7 @@ config :sanbase, SanbaseWeb.Endpoint,
 # by defining defining `:url` in the ClickhouseRepo `init` function.
 config :sanbase, Sanbase.ClickhouseRepo,
   adapter: ClickhouseEcto,
-  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
+  loggers: [Ecto.LogEntry],
   hostname: "clickhouse",
   port: 8123,
   database: "not_secret_default",

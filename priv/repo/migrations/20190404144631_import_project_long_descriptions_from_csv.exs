@@ -6,9 +6,6 @@ defmodule Sanbase.Repo.Migrations.ImportProjectLongDescriptionsFromCSV do
   alias Sanbase.Model.Project
 
   def up() do
-    Application.ensure_all_started(:prometheus_ecto)
-    Sanbase.Prometheus.EctoInstrumenter.setup()
-
     Path.expand("project_long_desc.csv", __DIR__)
     |> File.stream!()
     |> CSV.decode()

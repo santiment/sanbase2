@@ -9,8 +9,6 @@ defmodule Sanbase.Repo.Migrations.CreatePlansAndProductsInStripe do
 
   def up do
     Application.ensure_all_started(:tzdata)
-    Application.ensure_all_started(:prometheus_ecto)
-    Sanbase.Prometheus.EctoInstrumenter.setup()
 
     stripe_api_key = stripe_api_key()
 

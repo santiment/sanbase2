@@ -69,7 +69,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   queue_interval: 2000
 
 config :sanbase, Sanbase.Repo,
-  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
+  loggers: [Ecto.LogEntry],
   adapter: Ecto.Adapters.Postgres,
   pool_size: {:system, "SANBASE_POOL_SIZE", "20"},
   max_overflow: 5,

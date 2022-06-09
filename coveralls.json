@@ -7,7 +7,6 @@
     "file_column_width": 100
   },
   "skip_files": [
-    "lib/prometheus",
     "lib/mix",
     "lib/sanbase_web/admin",
     "lib/sanbase_web/channels",

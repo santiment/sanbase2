@@ -63,7 +63,7 @@ config :sanbase, Sanbase.Repo,
 # Please do not report these as security issues.
 config :sanbase, Sanbase.ClickhouseRepo,
   adapter: ClickhouseEcto,
-  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
+  loggers: [Ecto.LogEntry],
   hostname: "clickhouse",
   port: 8123,
   database: "default",

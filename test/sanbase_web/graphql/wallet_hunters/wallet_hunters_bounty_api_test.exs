@@ -27,8 +27,6 @@ defmodule SanbaseWeb.Graphql.WalletHuntersBountyApiTest do
     end
 
     test "everything is ok", context do
-      args = context.create_args
-
       result = execute_mutation(context.conn, create_bounty_mutation(), "createWhBounty")
 
       assert result == %{

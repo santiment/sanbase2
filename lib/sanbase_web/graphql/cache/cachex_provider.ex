@@ -5,30 +5,32 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
 
   import Cachex.Spec
 
+  def start_link(opts) do
+    Cachex.start_link(opts(opts))
+  end
+
   def child_spec(opts) do
-    Supervisor.child_spec(
-      {
-        Cachex,
-        [
-          name: Keyword.fetch!(opts, :name),
-          # When the keys reach 2 million, remove 30% of the
-          # least recently written keys
-          limit: 2_000_000,
-          policy: Cachex.Policy.LRW,
-          reclaim: 0.3,
-          # How often the Janitor process runs to clean the cache
-          interval: 5000,
-          # The default TTL of keys in the cache
-          expiration:
-            expiration(
-              default: :timer.seconds(@default_ttl_seconds),
-              interval: :timer.seconds(10),
-              lazy: true
-            )
-        ]
-      },
-      id: Keyword.fetch!(opts, :id)
-    )
+    Supervisor.child_spec({Cachex, opts(opts)}, id: Keyword.fetch!(opts, :id))
+  end
+
+  defp opts(opts) do
+    [
+      name: Keyword.fetch!(opts, :name),
+      # When the keys reach 2 million, remove 30% of the
+      # least recently written keys
+      limit: 2_000_000,
+      policy: Cachex.Policy.LRW,
+      reclaim: 0.3,
+      # How often the Janitor process runs to clean the cache
+      interval: 5000,
+      # The default TTL of keys in the cache
+      expiration:
+        expiration(
+          default: :timer.seconds(@default_ttl_seconds),
+          interval: :timer.seconds(10),
+          lazy: true
+        )
+    ]
   end
 
   @impl SanbaseWeb.Graphql.CacheProvider

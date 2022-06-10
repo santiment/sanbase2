@@ -14,18 +14,22 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
 
   @max_cache_ttl 7200
 
+  def start_link(opts) do
+    ConCache.start_link(opts(opts))
+  end
+
   @impl SanbaseWeb.Graphql.CacheProvider
   def child_spec(opts) do
-    Supervisor.child_spec(
-      {ConCache,
-       [
-         name: Keyword.fetch!(opts, :name),
-         ttl_check_interval: Keyword.get(opts, :ttl_check_interval, :timer.seconds(5)),
-         global_ttl: Keyword.get(opts, :global_ttl, :timer.minutes(5)),
-         acquire_lock_timeout: Keyword.get(opts, :aquire_lock_timeout, 30_000)
-       ]},
-      id: Keyword.fetch!(opts, :id)
-    )
+    Supervisor.child_spec({ConCache, opts(opts)}, id: Keyword.fetch!(opts, :id))
+  end
+
+  defp opts(opts) do
+    [
+      name: Keyword.fetch!(opts, :name),
+      ttl_check_interval: Keyword.get(opts, :ttl_check_interval, :timer.seconds(5)),
+      global_ttl: Keyword.get(opts, :global_ttl, :timer.minutes(5)),
+      acquire_lock_timeout: Keyword.get(opts, :aquire_lock_timeout, 30_000)
+    ]
   end
 
   @impl SanbaseWeb.Graphql.CacheProvider

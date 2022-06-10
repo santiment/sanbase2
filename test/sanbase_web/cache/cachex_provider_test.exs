@@ -1,14 +1,13 @@
-defmodule SanbaseWeb.Graphql.ConCacheProviderTest do
+defmodule SanbaseWeb.Graphql.CachexProviderTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
+  alias SanbaseWeb.Graphql.CachexProvider, as: CacheProvider
 
-  @cache_name :graphql_cache_test_con_cache
-  @cache_id :graphql_cache_test_con_cache
+  @cache_name :graphql_cache_test
+  @cache_id :graphql_cache_id
 
   setup do
     {:ok, pid} = CacheProvider.start_link(name: @cache_name, id: @cache_id)
-
     on_exit(fn -> Process.exit(pid, :normal) end)
 
     :ok

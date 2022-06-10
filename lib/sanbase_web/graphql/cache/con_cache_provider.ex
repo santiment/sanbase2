@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.ConCacheProvider do
   @moduledoc ~s"""
-  Implements Sanbase.Cache.Behaviour for con_cache
+  Implements SanbaseWeb.Graphql.CacheProvider for con_cache
   """
-  @behaviour Sanbase.Cache.Behaviour
+  @behaviour SanbaseWeb.Graphql.CacheProvider
 
   @compile {:inline,
             get: 2,
@@ -12,15 +12,34 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
             get_or_store_isolated: 5,
             execute_and_maybe_cache_function: 4}
 
-  @max_cache_ttl 86_400
+  @max_cache_ttl 7200
 
-  @impl true
-  def size(cache, :megabytes) do
-    bytes_size = :ets.info(ConCache.ets(cache), :memory) * :erlang.system_info(:wordsize)
-
-    (bytes_size / (1024 * 1024)) |> Float.round(2)
+  def start_link(opts) do
+    ConCache.start_link(opts(opts))
   end
 
+  @impl SanbaseWeb.Graphql.CacheProvider
+  def child_spec(opts) do
+    Supervisor.child_spec({ConCache, opts(opts)}, id: Keyword.fetch!(opts, :id))
+  end
+
+  defp opts(opts) do
+    [
+      name: Keyword.fetch!(opts, :name),
+      ttl_check_interval: Keyword.get(opts, :ttl_check_interval, :timer.seconds(5)),
+      global_ttl: Keyword.get(opts, :global_ttl, :timer.minutes(5)),
+      acquire_lock_timeout: Keyword.get(opts, :aquire_lock_timeout, 30_000)
+    ]
+  end
+
+  @impl SanbaseWeb.Graphql.CacheProvider
+  def size(cache) do
+    bytes_size = :ets.info(ConCache.ets(cache), :memory) * :erlang.system_info(:wordsize)
+
+    _megabytes_size = (bytes_size / (1024 * 1024)) |> Float.round(2)
+  end
+
+  @impl SanbaseWeb.Graphql.CacheProvider
   def count(cache) do
     cache
     |> ConCache.ets()
@@ -28,7 +47,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     |> length
   end
 
-  @impl true
+  @impl SanbaseWeb.Graphql.CacheProvider
   def clear_all(cache) do
     cache
     |> ConCache.ets()
@@ -36,7 +55,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     |> Enum.each(fn {key, _} -> ConCache.delete(cache, key) end)
   end
 
-  @impl true
+  @impl SanbaseWeb.Graphql.CacheProvider
   def get(cache, key) do
     case ConCache.get(cache, true_key(key)) do
       {:stored, value} -> value
@@ -44,7 +63,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     end
   end
 
-  @impl true
+  @impl SanbaseWeb.Graphql.CacheProvider
   def store(cache, key, value) do
     case value do
       {:error, _} ->
@@ -59,7 +78,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     end
   end
 
-  @impl true
+  @impl SanbaseWeb.Graphql.CacheProvider
   def get_or_store(cache, key, func, cache_modify_middleware) do
     # Do not include the TTL as part of the key name.
     true_key = true_key(key)

@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.Cache do
 
   alias __MODULE__, as: CacheMod
   alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
+  # alias SanbaseWeb.Graphql.CachexProvider, as: CacheProvider
 
   require Logger
 
@@ -28,7 +29,9 @@ defmodule SanbaseWeb.Graphql.Cache do
             convert_values: 2,
             generate_additional_args: 1}
 
-  def child_spec(opts), do: Sanbase.Cache.child_spec(opts)
+  def child_spec(opts) do
+    CacheProvider.child_spec(opts)
+  end
 
   @doc ~s"""
   Macro that's used instead of Absinthe's `resolve`. This resolver can perform
@@ -95,30 +98,17 @@ defmodule SanbaseWeb.Graphql.Cache do
     end
   end
 
-  @doc ~s"""
-  Clears the whole cache. Slow.
-  """
-  def clear_all() do
-    CacheProvider.clear_all(@cache_name)
-  end
+  @doc "Clears the whole cache. Slow."
+  def clear_all(), do: CacheProvider.clear_all(@cache_name)
 
-  @doc ~s"""
-  The size of the cache in megabytes
-  """
-  def size() do
-    CacheProvider.size(@cache_name, :megabytes)
-  end
+  @doc " The size of the cache in megabytes"
+  def size(), do: CacheProvider.size(@cache_name)
 
-  @doc ~s"""
-  The number of entries in the cache
-  """
-  def count() do
-    CacheProvider.count(@cache_name)
-  end
+  @doc "The number of entries in the cache"
+  def count(), do: CacheProvider.count(@cache_name)
 
-  def get(key) do
-    CacheProvider.get(@cache_name, key)
-  end
+  @doc "The the value for a given key form the cache"
+  def get(key), do: CacheProvider.get(@cache_name, key)
 
   @doc false
   def from(captured_mfa, opts) when is_function(captured_mfa) do

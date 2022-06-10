@@ -8,7 +8,11 @@ defmodule Sanbase.Cache.Behaviour do
   @type error :: String.t()
   @type stored_value :: any()
   @type cache :: atom()
-  @type size_type :: :megabytes
+
+  @callback child_spec(Keyword.t()) :: Supervisor.child_spec()
+
+  @callback hash(any) :: String.t()
+
   @doc ~s"""
   Get the value for the given key from the cache
   """
@@ -26,12 +30,22 @@ defmodule Sanbase.Cache.Behaviour do
   must be executed only once and the rest of the queries will wait until the result
   is ready.
   """
-  @callback get_or_store(cache, key, fun, fun) :: {:ok, stored_value} | {:error, error}
   @callback get_or_store(cache, key, fun) :: {:ok, stored_value} | {:error, error}
 
-  @callback size(cache, size_type) :: float()
+  @doc ~s"""
+  Get the size of the cache in megabytes
+  """
+  @callback size(cache) :: float()
 
+  @doc ~s"""
+  Count the elements in the cache
+  """
+  @callback count(cache) :: non_neg_integer()
+
+  @doc ~s"""
+  Delete all objects in the cache. The cache itself is not deleted
+  """
   @callback clear_all(cache) :: :ok
 
-  @optional_callbacks get_or_store: 3, get_or_store: 4
+  @optional_callbacks get_or_store: 3
 end

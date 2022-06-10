@@ -9,6 +9,9 @@ defmodule SanbaseWeb.Graphql.CacheProvider do
   @type stored_value :: any()
   @type cache :: atom()
   @type size_type :: :megabytes
+
+  @callback child_spec(Keyword.t()) :: Supervisor.child_spec()
+
   @doc ~s"""
   Get the value for the given key from the cache
   """
@@ -28,7 +31,18 @@ defmodule SanbaseWeb.Graphql.CacheProvider do
   """
   @callback get_or_store(cache, key, fun, fun) :: {:ok, stored_value} | {:error, error}
 
-  @callback size(cache, size_type) :: float()
+  @doc ~s"""
+  Get the size of the cache in megabytes
+  """
+  @callback size(cache) :: float()
 
+  @doc ~s"""
+  Count the elements in the cache
+  """
+  @callback count(cache) :: non_neg_integer()
+
+  @doc ~s"""
+  Delete all objects in the cache. The cache itself is not deleted
+  """
   @callback clear_all(cache) :: :ok
 end

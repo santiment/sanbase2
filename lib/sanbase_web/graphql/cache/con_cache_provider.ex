@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
 
   @max_cache_ttl 7200
 
+  @impl SanbaseWeb.Graphql.CacheProvider
   def start_link(opts) do
     ConCache.start_link(opts(opts))
   end
@@ -131,9 +132,9 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
         Process.put(:do_not_cache_query, true)
         value
 
-      value ->
-        cache_item(cache, key, {:stored, value})
-        value
+      {:ok, _value} = ok_tuple ->
+        cache_item(cache, key, {:stored, ok_tuple})
+        ok_tuple
     end
   end
 

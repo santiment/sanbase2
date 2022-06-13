@@ -3,8 +3,8 @@ defmodule SanbaseWeb.Graphql.ConCacheProviderTest do
 
   alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
 
-  @cache_name :graphql_cache_test_con_cache
-  @cache_id :graphql_cache_test_con_cache
+  @cache_name :graphql_cache_test_name_con_cache
+  @cache_id :graphql_cache_test_id_con_cache
 
   setup do
     {:ok, pid} = CacheProvider.start_link(name: @cache_name, id: @cache_id)

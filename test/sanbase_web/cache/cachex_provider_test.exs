@@ -3,8 +3,8 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
 
   alias SanbaseWeb.Graphql.CachexProvider, as: CacheProvider
 
-  @cache_name :graphql_cache_test
-  @cache_id :graphql_cache_id
+  @cache_name :graphql_cache_test_name_cachex
+  @cache_id :graphql_cache_test_id_cachex
 
   setup do
     {:ok, pid} = CacheProvider.start_link(name: @cache_name, id: @cache_id)
@@ -23,6 +23,29 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
     value = "something"
     CacheProvider.store(@cache_name, cache_key, {:ok, value})
     assert {:ok, value} == CacheProvider.get(@cache_name, key)
+  end
+
+  test "only one computation is run if slow function is accessed multiple times" do
+    test_pid = self()
+
+    get_or_store_fun = fn ->
+      CacheProvider.get_or_store(
+        @cache_name,
+        :same_key,
+        fn ->
+          Process.sleep(1000)
+          send(test_pid, "message from precalculation")
+          {:ok, "Hello"}
+        end,
+        & &1
+      )
+    end
+
+    for _ <- 1..10, do: spawn(get_or_store_fun)
+
+    Process.sleep(1050)
+    assert_receive("message from precalculation")
+    refute_receive("message from precalculation")
   end
 
   test "value is actually cached and not precalculated" do

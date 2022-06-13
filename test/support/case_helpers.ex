@@ -14,7 +14,7 @@ defmodule Sanbase.CaseHelpers do
       |> Enum.each(fn repo ->
         :ok = Ecto.Adapters.SQL.Sandbox.checkout(repo)
 
-        unless tags[:async] do
+        if not tags[:async] do
           Ecto.Adapters.SQL.Sandbox.mode(repo, {:shared, self()})
         end
       end)

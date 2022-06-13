@@ -149,14 +149,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   end
 
   defp get_trending_words_stats(projects) do
-    trending_words =
+    {:ok, trending_words} =
       Cache.wrap(
         fn ->
           {:ok, words} = TrendingWords.get_currently_trending_words(@trending_words_size)
 
-          words
-          |> Enum.map(fn %{word: word} -> String.downcase(word) end)
-          |> MapSet.new()
+          result =
+            words
+            |> Enum.map(fn %{word: word} -> String.downcase(word) end)
+            |> MapSet.new()
+
+          {:ok, result}
         end,
         :currently_trending_words,
         %{size: @trending_words_size}

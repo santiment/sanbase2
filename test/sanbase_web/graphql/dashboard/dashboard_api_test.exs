@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.DashboardApiTest do
-  use SanbaseWeb.ConnCase, async: true
+  use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers

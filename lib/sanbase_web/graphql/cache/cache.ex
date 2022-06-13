@@ -6,8 +6,8 @@ defmodule SanbaseWeb.Graphql.Cache do
   """
 
   alias __MODULE__, as: CacheMod
-  alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
-  # alias SanbaseWeb.Graphql.CachexProvider, as: CacheProvider
+  # alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
+  alias SanbaseWeb.Graphql.CachexProvider, as: CacheProvider
 
   require Logger
 

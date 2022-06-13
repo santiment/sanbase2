@@ -143,7 +143,6 @@ defmodule Sanbase.Billing.Plan.Restrictions do
               "githubActivity",
               "historicalBalance",
               "historyPrice",
-              "priceVolumeDiff",
               "socialDominance",
               "githubActivity",
               "minersBalance",

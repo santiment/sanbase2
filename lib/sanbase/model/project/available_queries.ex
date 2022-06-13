@@ -34,7 +34,6 @@ defmodule Sanbase.Model.Project.AvailableQueries do
     project = project |> Sanbase.Repo.preload([:eth_addresses, :infrastructure])
 
     [
-      &slug_queries/1,
       &historical_balance_queries/1,
       &holders_queries/1,
       &blockchain_metric_queries/1,
@@ -58,16 +57,6 @@ defmodule Sanbase.Model.Project.AvailableQueries do
     case project do
       %Project{eth_addresses: addresses} when addresses != [] ->
         ["ethSpent", "ethSpentOverTime", "ethTopTransactions"]
-
-      _ ->
-        []
-    end
-  end
-
-  defp slug_queries(%Project{slug: slug}) do
-    case slug do
-      slug when is_binary(slug) and slug != "" ->
-        ["priceVolumeDiff"]
 
       _ ->
         []

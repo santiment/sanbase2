@@ -5,7 +5,6 @@
     - [Settings fields](#settings-fields)
     - [Examples](#examples)
       - [Example settings structure for `trending_words`](#example-settings-structure-for-trending_words)
-      - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-price_volume_difference)
       - [Example settings structure for `signal_data`](#example-settings-structure-for-signal_data)
       - [Example settings structure for `wallet_movement`](#example-settings-structure-for-wallet_movement)
       - [Example settings structure for `wallet_usd_valuation`](#example-settings-structure-for-wallet_usd_valuation)
@@ -50,12 +49,11 @@ These are the fields describing a trigger.
 
 ### Settings fields
 
-- **type** Defines the type of the trigger. Can be one of: `["trending_words", "price_volume_difference", "metric_signal", "daily_metric_signal", "wallet_movement", "signal_data"]`
+- **type** Defines the type of the trigger. Can be one of: `["trending_words", "metric_signal", "daily_metric_signal", "wallet_movement", "signal_data"]`
 - **target**: Slug or list of slugs or watchlist or ethereum addresses or list of ethereum addresses - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"watchlist_id": watchlsit_id} | {"eth_address": "0x123"} | {"eth_address": ["0x123", "0x234"]}`.
 - **channel**: A channel where the alert is sent. Can be one of `"telegram" | "email" | "web_push" | {"webhook": <webhook_url>}` | `{"telegram_channel": "@<channel_name>"}` or a list of any combination. In case of telegram_channel, the bot must be an admin that has post messages priviliges.
 - **time_window**: `1d`, `4w`, `1h` - Time string we use throughout the API for `interval`
 - **operation** - A map describing the operation that triggers the alert. Check the examples.
-- **threshold** - Float threshold used in `price_volume_difference`
 - **trigger_time** - At what time of the day to fire the alert. It ISO8601 UTC time used only in `trending_words`, ex: `"12:00:00"`
 
 ### Examples
@@ -128,18 +126,6 @@ These are the fields describing a trigger.
   "channel": "telegram",
   "target": { "word": ["btc", "eth", "xrp"] },
   "operation": { "trending_word": true }
-}
-```
-
-#### Example settings structure for `price_volume_difference`
-
-```json
-// The price and volume of santiment diverged.
-{
-  "type": "price_volume_difference",
-  "channel": "telegram",
-  "target": { "slug": "santiment" },
-  "threshold": 0.002
 }
 ```
 
@@ -838,7 +824,6 @@ Takes currently filled settings and a chosen cooldown and calculates historical 
 
 - Daily Active Addresses - 90 days of historical data. Minimal `time_window` is 2 days because intervals are 1 day each.
 - Price - percent and absolute - 90 days of data. Minimal `time_window` is 2 hours because intervals are 1 hour each.
-- PriceVolumeDifference - 180 days of data.
 
 ```graphql
 {

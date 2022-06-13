@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   import Cachex.Spec
 
   @compile inline: [
-             execute_cache_miss_function: 4,
+             execute_cache_miss_function: 5,
              handle_execute_cache_miss_function: 4,
              obtain_lock: 3
            ]
@@ -91,17 +91,18 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
         value
 
       _ ->
-        execute_cache_miss_function(cache, key, func, cache_modify_middleware)
+        cache_record = Cachex.Services.Overseer.ensure(cache)
+
+        execute_cache_miss_function(cache, cache_record, key, func, cache_modify_middleware)
     end
   end
 
-  defp execute_cache_miss_function(cache, key, func, cache_modify_middleware) do
+  defp execute_cache_miss_function(cache, cache_record, key, func, cache_modify_middleware) do
     # This is the only place where we need to have the transactional get_or_store
     # mechanism. Cachex.fetch! is running in multiple processes, which causes issues
     # when testing. Cachex.transaction has a non-configurable timeout. We actually
     # can achieve the required behavior by manually getting and realeasing the lock.
     # The transactional guarantees are not needed.
-    cache_record = Cachex.Services.Overseer.ensure(cache)
 
     try do
       true = obtain_lock(cache_record, [true_key(key)])

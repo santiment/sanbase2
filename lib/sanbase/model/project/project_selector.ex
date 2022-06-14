@@ -77,7 +77,14 @@ defmodule Sanbase.Model.Project.Selector do
       Sanbase.Model.Project.List.by_contracts(List.wrap(contract_address))
       |> Enum.map(& &1.slug)
 
-    {:ok, Map.put(selector, :slug, slugs)}
+    # In case the contract address is not found in the database, do not add
+    # the empty slugs list. This will prevent the selector from matching any
+    # empty slug guards that directly return empty results. In this case, the
+    # contract address selector will be used.
+    case slugs do
+      [] -> {:ok, selector}
+      _ -> {:ok, Map.put(selector, :slug, slugs)}
+    end
   end
 
   defp transform_selector(%{watchlist_id: watchlist_id} = selector)

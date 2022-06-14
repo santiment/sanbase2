@@ -54,7 +54,13 @@ config :sanbase, Sanbase.ClickhouseRepo,
   clickhouse_repo_enabled?: false,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",
-  pool_size: 5
+  pool_size: 1
+
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
+  clickhouse_repo_enabled?: false,
+  pool: Ecto.Adapters.SQL.Sandbox,
+  database: "sanbase_test",
+  pool_size: 1
 
 config :sanbase, Sanbase.Accounts.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
 

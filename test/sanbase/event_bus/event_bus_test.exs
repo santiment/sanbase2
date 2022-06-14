@@ -1,6 +1,5 @@
 defmodule Sanbase.EventBusTest do
   use ExUnit.Case, async: false
-  import Sanbase.TestHelpers, only: [wait_event_bus_subscriber: 1]
 
   defmodule EventBusTestSubscriber do
     @receiver_name :__internal_event_test_process_name_given__

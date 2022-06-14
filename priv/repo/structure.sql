@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.2
--- Dumped by pg_dump version 14.2
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -5769,6 +5769,13 @@ CREATE INDEX timeline_event_comments_mapping_timeline_event_id_index ON public.t
 
 
 --
+-- Name: timeline_events_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX timeline_events_inserted_at_index ON public.timeline_events USING btree (inserted_at);
+
+
+--
 -- Name: timeline_events_post_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7423,3 +7430,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220519083249);
 INSERT INTO public."schema_migrations" (version) VALUES (20220519135027);
 INSERT INTO public."schema_migrations" (version) VALUES (20220531133311);
 INSERT INTO public."schema_migrations" (version) VALUES (20220531143545);
+INSERT INTO public."schema_migrations" (version) VALUES (20220614091809);

@@ -152,13 +152,19 @@ defmodule Sanbase.Dashboard.Cache do
   # can be executed and fill the database with lots of data.
   @allowed_kb_size 500
   defp query_result_size_allowed?(query_result) do
-    case byte_size(query_result.compressed_rows) / 1024 do
+    kb_size = byte_size(query_result.compressed_rows) / 1024
+    kb_size = Float.round(kb_size, 2)
+
+    case kb_size do
       size when size <= @allowed_kb_size ->
         true
 
       size ->
-        {:error, "Cannot cache the panel because its compressed size is #{size}KB \
-         which is over the limit of #{@allowed_kb_size}KB"}
+        {:error,
+         """
+         Cannot cache the panel because its compressed size is #{size}KB \
+         which is over the limit of #{@allowed_kb_size}KB
+         """}
     end
   end
 end

@@ -340,56 +340,6 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
       updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
       assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
     end
-  end
-
-  describe "execute raw queries" do
-    test "compute raw clickhouse query", context do
-      args = %{
-        query:
-          "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}}) LIMIT {{limit}}",
-        parameters: %{slug: "bitcoin", limit: 2},
-        map_as_input_object: true
-      }
-
-      mutation = """
-      mutation{
-        computeRawClickhouseQuery(#{map_to_args(args)}){
-          columns
-          rows
-          clickhouseQueryId
-          summary
-        }
-      }
-      """
-
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, mocked_clickhouse_result()}
-      )
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
-          context.conn
-          |> post("/graphql", mutation_skeleton(mutation))
-          |> json_response(200)
-          |> get_in(["data", "computeRawClickhouseQuery"])
-
-        assert result == %{
-                 "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
-                 "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
-                 "rows" => [
-                   [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
-                   [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
-                 ],
-                 "summary" => %{
-                   "read_bytes" => "0",
-                   "read_rows" => "0",
-                   "total_rows_to_read" => "0",
-                   "written_bytes" => "0",
-                   "written_rows" => "0"
-                 }
-               }
-      end)
-    end
 
     test "compute panel and store it with a separate mutation", context do
       dashboard =
@@ -496,6 +446,56 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                    }
                  ]
                } = dashboard_cache
+      end)
+    end
+  end
+
+  describe "execute raw queries" do
+    test "compute raw clickhouse query", context do
+      args = %{
+        query:
+          "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}}) LIMIT {{limit}}",
+        parameters: %{slug: "bitcoin", limit: 2},
+        map_as_input_object: true
+      }
+
+      mutation = """
+      mutation{
+        computeRawClickhouseQuery(#{map_to_args(args)}){
+          columns
+          rows
+          clickhouseQueryId
+          summary
+        }
+      }
+      """
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, mocked_clickhouse_result()}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          context.conn
+          |> post("/graphql", mutation_skeleton(mutation))
+          |> json_response(200)
+          |> get_in(["data", "computeRawClickhouseQuery"])
+
+        assert result == %{
+                 "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
+                 "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                 "rows" => [
+                   [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                   [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                 ],
+                 "summary" => %{
+                   "read_bytes" => "0",
+                   "read_rows" => "0",
+                   "total_rows_to_read" => "0",
+                   "written_bytes" => "0",
+                   "written_rows" => "0"
+                 }
+               }
       end)
     end
 

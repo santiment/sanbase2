@@ -224,6 +224,49 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
       resolve(&DashboardResolver.compute_and_store_dashboard_panel/3)
     end
 
+    @desc ~s"""
+    Update the dashboard cache with the provided data.
+
+    This mutation, along with computeDashboardPanel, provides
+    the capabilities to compute and store dashboard panel results
+    separately. In contrast to computeAndStoreDashboardPanel, having
+    the methods separated allows users to compute many different panel
+    configurations and only store the result of the one that satisfies
+    the requirements.
+
+    All the panel fields are required.
+
+    The `rows` and `summary` fields must be JSON encoded.
+
+    Example:
+
+    mutation {
+      storeDashboardPanel(
+        dashboardId: 134
+        panelId: "c5a3b5dd-0e31-42ae-954a-83b741818a28"
+        panel: {
+            clickhouseQueryId: "177a5a3d-072b-48ac-8cf5-d8375c8314ef"
+            columns: ["asset_id", "metric_id", "dt", "value", "computed_at"]
+            queryEndTime: "2022-06-14T12:08:10Z"
+            queryStartTime: "2022-06-14T12:08:10Z"
+            rows: "[[2503,250,\"2008-12-10T00:00:00Z\",0.0,\"2020-02-28T15:18:42Z\"],[2503,250,\"2008-12-10T00:05:00Z\",0.0,\"2020-02-28T15:18:42Z\"]]"
+            sanQueryId: "b90cdcc6-4f66-4e58-9dec-d2ee2794bead"
+            summary: "{\"read_bytes\":\"0\",\"read_rows\":\"0\",\"total_rows_to_read\":\"0\",\"written_bytes\":\"0\",\"written_rows\":\"0\"}"
+        }
+      ){
+        id
+        clickhouseQueryId
+        sanQueryId
+        dashboardId
+        columns
+        rows
+        summary
+        updatedAt
+        queryStartTime
+        queryEndTime
+      }
+    }
+    """
     field :store_dashboard_panel, :panel_cache do
       arg(:dashboard_id, non_null(:integer))
       arg(:panel_id, non_null(:string))

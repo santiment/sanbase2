@@ -12,6 +12,9 @@ defmodule Sanbase.Dashboard.Cache do
   import Ecto.Changeset
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
+  alias Sanbase.Repo
+  alias Sanbase.Dashboard
+
   @type dashboard_id :: non_neg_integer()
 
   @type panel_cache :: %{
@@ -44,7 +47,7 @@ defmodule Sanbase.Dashboard.Cache do
   """
   @spec by_dashboard_id(non_neg_integer()) :: {:ok, t()} | {:error, any()}
   def by_dashboard_id(dashboard_id) do
-    case Sanbase.Repo.get_by(__MODULE__, dashboard_id: dashboard_id) do
+    case Repo.get_by(__MODULE__, dashboard_id: dashboard_id) do
       nil -> new(dashboard_id)
       %__MODULE__{} = cache -> {:ok, cache}
     end
@@ -58,7 +61,7 @@ defmodule Sanbase.Dashboard.Cache do
   def new(dashboard_id) do
     %__MODULE__{}
     |> change(%{dashboard_id: dashboard_id})
-    |> Sanbase.Repo.insert()
+    |> Repo.insert()
   end
 
   @doc ~s"""
@@ -70,7 +73,7 @@ defmodule Sanbase.Dashboard.Cache do
     {:ok, cache} = by_dashboard_id(dashboard_id)
 
     panel_cache =
-      Sanbase.Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
+      Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
       |> Map.from_struct()
       |> Map.drop([:rows])
 
@@ -78,7 +81,7 @@ defmodule Sanbase.Dashboard.Cache do
 
     cache
     |> change(%{panels: panels})
-    |> Sanbase.Repo.update()
+    |> Repo.update()
   end
 
   @doc ~s"""
@@ -93,7 +96,7 @@ defmodule Sanbase.Dashboard.Cache do
 
     cache
     |> change(%{panels: panels})
-    |> Sanbase.Repo.update()
+    |> Repo.update()
   end
 
   # Private functions
@@ -102,21 +105,16 @@ defmodule Sanbase.Dashboard.Cache do
     panels =
       cache.panels
       |> Map.new(fn {panel_id, panel_cache} ->
-        %{"compressed_rows_json" => compressed_rows_json, "updated_at" => updated_at} =
-          panel_cache
+        %{"compressed_rows" => compressed_rows, "updated_at" => updated_at} = panel_cache
 
-        rows =
-          compressed_rows_json
-          |> Base.decode64!()
-          |> :zlib.gunzip()
-          |> :erlang.binary_to_term()
+        rows = Dashboard.Query.compressed_rows_to_rows(compressed_rows)
 
         {:ok, updated_at, _} = DateTime.from_iso8601(updated_at)
         {:ok, rows} = transform_cache_rows(rows)
 
         panel_cache =
           panel_cache
-          |> Map.delete("compressed_rows_json")
+          |> Map.delete("compressed_rows")
           |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
           |> Map.put(:rows, rows)
           |> Map.put(:updated_at, updated_at)

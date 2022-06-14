@@ -67,6 +67,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
+  def store_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    %{dashboard_id: dashboard_id, panel_id: panel_id, panel: panel} = args
+    # storing requires edit access, not just view access
+    compressed_rows = Dashboard.Query.rows_to_compressed_rows(panel.rows)
+    panel = Map.put(panel, :compressed_rows, compressed_rows)
+
+    with true <- can_edit_dashboard?(dashboard_id, user.id),
+         %{} = query_result <- struct!(Dashboard.Query.Result, panel),
+         {:ok, _} <- Dashboard.Cache.update_panel_cache(dashboard_id, panel_id, query_result) do
+      panel_cache = Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
+      {:ok, panel_cache}
+    end
+  end
+
   def get_dashboard_schema(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with true <- can_view_dashboard?(args.id, user.id) do
       Dashboard.load_schema(args.id)
@@ -89,9 +103,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     san_query_id = UUID.uuid4()
 
     with true <- can_run_computation?(user.id),
-         true <- Sanbase.Dashboard.Query.valid_sql?(args),
-         {:ok, query_result} <-
-           Sanbase.Dashboard.Query.run(args.query, args.parameters, san_query_id) do
+         true <- Dashboard.Query.valid_sql?(args),
+         {:ok, query_result} <- Dashboard.Query.run(args.query, args.parameters, san_query_id) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Dashboard.QueryExecution.store_execution(user.id, query_result)
       end)

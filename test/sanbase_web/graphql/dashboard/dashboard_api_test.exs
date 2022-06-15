@@ -199,26 +199,6 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
   end
 
   describe "compute and get cache" do
-    defp mocked_clickhouse_result() do
-      %Clickhousex.Result{
-        columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
-        command: :selected,
-        num_rows: 2,
-        query_id: "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
-        rows: [
-          [2503, 250, ~N[2008-12-10 00:00:00], 0.0, ~N[2020-02-28 15:18:42]],
-          [2503, 250, ~N[2008-12-10 00:05:00], 0.0, ~N[2020-02-28 15:18:42]]
-        ],
-        summary: %{
-          "read_bytes" => "0",
-          "read_rows" => "0",
-          "total_rows_to_read" => "0",
-          "written_bytes" => "0",
-          "written_rows" => "0"
-        }
-      }
-    end
-
     test "compute a panel", context do
       dashboard =
         execute_dashboard_mutation(context.conn, :create_dashboard)
@@ -248,7 +228,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         assert %{
                  "data" => %{
                    "computeDashboardPanel" => %{
-                     "columnNames" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                     "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                      "dashboardId" => ^dashboard_id,
                      "id" => _,
                      "rows" => [
@@ -304,7 +284,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         dashboard_id = dashboard["id"]
 
         assert %{
-                 "columnNames" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                 "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                  "dashboardId" => ^dashboard_id,
                  "id" => id,
                  "rows" => [
@@ -337,7 +317,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
       assert %{
                "panels" => [
                  %{
-                   "columnNames" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                   "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                    "dashboardId" => ^dashboard_id,
                    "id" => id,
                    "rows" => [
@@ -359,6 +339,114 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
       assert is_binary(id) and String.length(id) == 36
       updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
       assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
+    end
+
+    test "compute panel and store it with a separate mutation", context do
+      dashboard =
+        execute_dashboard_mutation(context.conn, :create_dashboard)
+        |> get_in(["data", "createDashboard"])
+
+      panel =
+        execute_dashboard_panel_schema_mutation(
+          context.conn,
+          :create_dashboard_panel,
+          default_dashboard_panel_args() |> Map.put(:dashboard_id, dashboard["id"])
+        )
+        |> get_in(["data", "createDashboardPanel"])
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, mocked_clickhouse_result()}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          execute_dashboard_panel_cache_mutation(
+            context.conn,
+            :compute_dashboard_panel,
+            %{
+              dashboard_id: dashboard["id"],
+              panel_id: panel["id"]
+            }
+          )
+          |> get_in(["data", "computeDashboardPanel"])
+
+        stored =
+          execute_dashboard_panel_cache_mutation(
+            context.conn,
+            :store_dashboard_panel,
+            %{
+              dashboard_id: dashboard["id"],
+              panel_id: panel["id"],
+              panel: %{
+                map_as_input_object: true,
+                san_query_id: result["sanQueryId"],
+                clickhouse_query_id: result["clickhouseQueryId"],
+                columns: result["columns"],
+                rows: Jason.encode!(result["rows"]),
+                summary: Jason.encode!(result["summary"]),
+                query_start_time: result["queryStartTime"],
+                query_end_time: result["queryEndTime"]
+              }
+            }
+          )
+          |> get_in(["data", "storeDashboardPanel"])
+
+        dashboard_id = dashboard["id"]
+        panel_id = panel["id"]
+        san_query_id = result["sanQueryId"]
+        query_start_time = result["queryStartTime"]
+        query_end_time = result["queryEndTime"]
+
+        assert %{
+                 "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
+                 "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                 "dashboardId" => ^dashboard_id,
+                 "id" => ^panel_id,
+                 "queryEndTime" => ^query_start_time,
+                 "queryStartTime" => ^query_end_time,
+                 "rows" => [
+                   [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                   [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                 ],
+                 "sanQueryId" => ^san_query_id,
+                 "summary" => %{
+                   "read_bytes" => "0",
+                   "read_rows" => "0",
+                   "total_rows_to_read" => "0",
+                   "written_bytes" => "0",
+                   "written_rows" => "0"
+                 },
+                 "updatedAt" => _
+               } = stored
+
+        dashboard_cache =
+          get_dashboard_cache(context.conn, dashboard["id"])
+          |> get_in(["data", "getDashboardCache"])
+
+        dashboard_id = dashboard["id"]
+
+        assert %{
+                 "panels" => [
+                   %{
+                     "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                     "dashboardId" => ^dashboard_id,
+                     "id" => ^panel_id,
+                     "rows" => [
+                       [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                       [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                     ],
+                     "summary" => %{
+                       "read_bytes" => "0",
+                       "read_rows" => "0",
+                       "total_rows_to_read" => "0",
+                       "written_bytes" => "0",
+                       "written_rows" => "0"
+                     },
+                     "updatedAt" => _
+                   }
+                 ]
+               } = dashboard_cache
+      end)
     end
   end
 
@@ -410,6 +498,26 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                }
       end)
     end
+
+    defp mocked_clickhouse_result() do
+      %Clickhousex.Result{
+        columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
+        command: :selected,
+        num_rows: 2,
+        query_id: "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
+        rows: [
+          [2503, 250, ~N[2008-12-10 00:00:00], 0.0, ~N[2020-02-28 15:18:42]],
+          [2503, 250, ~N[2008-12-10 00:05:00], 0.0, ~N[2020-02-28 15:18:42]]
+        ],
+        summary: %{
+          "read_bytes" => "0",
+          "read_rows" => "0",
+          "total_rows_to_read" => "0",
+          "written_bytes" => "0",
+          "written_rows" => "0"
+        }
+      }
+    end
   end
 
   defp execute_dashboard_panel_schema_mutation(conn, mutation, args) do
@@ -440,11 +548,15 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
     mutation {
       #{mutation_name}(#{map_to_args(args)}){
         id
+        clickhouseQueryId
+        sanQueryId
         dashboardId
-        columnNames
+        columns
         rows
         summary
         updatedAt
+        queryStartTime
+        queryEndTime
       }
     }
     """
@@ -507,7 +619,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         panels{
           id
           dashboardId
-          columnNames
+          columns
           rows
           summary
           updatedAt

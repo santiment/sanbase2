@@ -45,7 +45,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @type interval :: String.t()
 
   defguard is_supported_selector(s)
-           when is_map(s) and is_map_key(s, :slug)
+           when is_map(s) and
+                  (is_map_key(s, :slug) or is_map_key(s, :address) or
+                     is_map_key(s, :contract_address))
 
   @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics
@@ -84,14 +86,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
       when is_supported_selector(selector) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
 
-    # FIXME: Some of the `nft` metrics need additional filter for `owner=opensea`
-    # to show correct values. Remove after fixed by bigdata.
-    filters =
-      if String.starts_with?(metric, "nft_") do
-        [owner: "opensea"]
-      else
-        Keyword.get(opts, :additional_filters, [])
-      end
+    filters = get_filters(metric, opts)
 
     {query, args} =
       timeseries_data_query(metric, selector, from, to, interval, aggregation, filters)
@@ -102,7 +97,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def timeseries_data_per_slug(metric, %{slug: slug}, from, to, interval, opts) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
-    filters = Keyword.get(opts, :additional_filters, [])
+    filters = get_filters(metric, opts)
 
     {query, args} =
       timeseries_data_per_slug_query(metric, slug, from, to, interval, aggregation, filters)
@@ -301,5 +296,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
       value = if has_changed == 1, do: value, else: nil
       Map.put(acc, slug, value)
     end)
+  end
+
+  defp get_filters(metric, opts) do
+    # FIXME: Some of the `nft` metrics need additional filter for `owner=opensea`
+    # to show correct values. Remove after fixed by bigdata.
+    case String.starts_with?(metric, "nft_") and "owner" in Map.get(@selectors_map, metric) do
+      true -> [owner: "opensea"]
+      false -> Keyword.get(opts, :additional_filters, [])
+    end
   end
 end

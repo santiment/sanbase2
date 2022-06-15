@@ -448,6 +448,58 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                } = dashboard_cache
       end)
     end
+
+    test "cannot store result bigger than the allowed limit", context do
+      dashboard =
+        execute_dashboard_mutation(context.conn, :create_dashboard)
+        |> get_in(["data", "createDashboard"])
+
+      panel =
+        execute_dashboard_panel_schema_mutation(
+          context.conn,
+          :create_dashboard_panel,
+          default_dashboard_panel_args() |> Map.put(:dashboard_id, dashboard["id"])
+        )
+        |> get_in(["data", "createDashboardPanel"])
+
+      mock = mocked_clickhouse_result()
+
+      # seed the rand generator so it gives the same result every time
+      :rand.seed(:default, 42)
+
+      rows =
+        for i <- 1..25_000 do
+          [
+            0 + :rand.uniform(1000),
+            0 + :rand.uniform(1000),
+            "2008-#{rem(i, 12) + 1}-10T00:00:00Z",
+            :rand.uniform() * 1000,
+            "2020-#{rem(i, 12) + 1}-28T15:18:42Z"
+          ]
+        end
+
+      mock = Map.put(mock, :rows, rows)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, mock}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        error_msg =
+          execute_dashboard_panel_cache_mutation(
+            context.conn,
+            :compute_and_store_dashboard_panel,
+            %{
+              dashboard_id: dashboard["id"],
+              panel_id: panel["id"]
+            }
+          )
+          |> get_in(["errors", Access.at(0), "message"])
+
+        assert error_msg =~
+                 "Cannot cache the panel because its compressed size is 517.88KB which is over the limit of 500KB"
+      end)
+    end
   end
 
   describe "execute raw queries" do

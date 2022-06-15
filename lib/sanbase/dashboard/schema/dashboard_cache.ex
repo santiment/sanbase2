@@ -70,18 +70,19 @@ defmodule Sanbase.Dashboard.Cache do
   @spec update_panel_cache(non_neg_integer(), String.t(), Dashboad.Query.Result.t()) ::
           {:ok, t()} | {:error, any()}
   def update_panel_cache(dashboard_id, panel_id, query_result) do
-    {:ok, cache} = by_dashboard_id(dashboard_id)
+    with true <- query_result_size_allowed?(query_result),
+         {:ok, cache} <- by_dashboard_id(dashboard_id) do
+      panel_cache =
+        Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
+        |> Map.from_struct()
+        |> Map.drop([:rows])
 
-    panel_cache =
-      Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
-      |> Map.from_struct()
-      |> Map.drop([:rows])
+      panels = Map.update(cache.panels, panel_id, panel_cache, fn _ -> panel_cache end)
 
-    panels = Map.update(cache.panels, panel_id, panel_cache, fn _ -> panel_cache end)
-
-    cache
-    |> change(%{panels: panels})
-    |> Repo.update()
+      cache
+      |> change(%{panels: panels})
+      |> Repo.update()
+    end
   end
 
   @doc ~s"""
@@ -144,5 +145,26 @@ defmodule Sanbase.Dashboard.Cache do
       end)
 
     {:ok, transformed_rows}
+  end
+
+  # The byte size of the compressed rows should not exceed the allowed limit.
+  # Otherwise simple queries like `select * from intraday_metircs limit 9999999`
+  # can be executed and fill the database with lots of data.
+  @allowed_kb_size 500
+  defp query_result_size_allowed?(query_result) do
+    kb_size = byte_size(query_result.compressed_rows) / 1024
+    kb_size = Float.round(kb_size, 2)
+
+    case kb_size do
+      size when size <= @allowed_kb_size ->
+        true
+
+      size ->
+        {:error,
+         """
+         Cannot cache the panel because its compressed size is #{size}KB \
+         which is over the limit of #{@allowed_kb_size}KB
+         """}
+    end
   end
 end

@@ -3,6 +3,16 @@ defmodule Sanbase.Billing.StripeSync do
 
   @topic "sanbase_stripe_transactions"
 
+  def run do
+    if not localhost_or_stage?() do
+      start_dt = Timex.now() |> Timex.beginning_of_day()
+
+      sync_all_transactions(start_dt)
+    end
+
+    :ok
+  end
+
   def sync_all_transactions(start_dt) do
     cust_map = stripe_customer_user_id_map()
     plan_map = plan_map()
@@ -41,14 +51,10 @@ defmodule Sanbase.Billing.StripeSync do
 
   def transactions(params \\ %{}) do
     # %{created: %{gte: from_ux, lt: to_ux}}
-    params = %{limit: 100} |> Map.merge(params)
-
-    IO.inspect(params, label: "params")
+    params = %{limit: 10} |> Map.merge(params)
 
     {:ok, res} =
       Stripe.Charge.list(params, expand: ["invoice.subscription.plan"], timeout: 30_000)
-
-    IO.inspect("#{length(res.data)}", label: "fetch charges: ")
 
     transactions =
       res.data
@@ -114,7 +120,6 @@ defmodule Sanbase.Billing.StripeSync do
         to_json_kv_tuple(transactions),
         @topic
       )
-      |> IO.inspect(label: "save to kafka")
     end)
   end
 
@@ -125,5 +130,12 @@ defmodule Sanbase.Billing.StripeSync do
       transaction = Map.delete(transaction, :id)
       {key, Jason.encode!(transaction)}
     end)
+  end
+
+  defp localhost_or_stage? do
+    frontend_url = SanbaseWeb.Endpoint.frontend_url()
+
+    is_binary(frontend_url) &&
+      String.contains?(frontend_url, ["stage", "localhost"])
   end
 end

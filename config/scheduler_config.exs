@@ -136,6 +136,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "7-59/30 * * * *",
       task: {Sanbase.Billing, :sync_liquidity_subscriptions_staked_users, []}
     ],
+    sync_stripe_transactions: [
+      schedule: "30 00 * * *",
+      task: {Sanbase.Billing.StripeSync, :run, []}
+    ],
     sync_coinmarketcap_projects: [
       # When a new project gets a coinmarketcap string slug associated with it,
       # it is not until the first scrape which includes it, that it also gets the

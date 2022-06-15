@@ -3,6 +3,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
   alias Sanbase.Model.Project
 
   @volume_usd_limit 500_000_000_000
+  @price_usd_limit 1_000_000
+
   @prices_source "coinmarketcap"
   defstruct [
     :ticker,
@@ -36,6 +38,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
       %{volume_usd: volume_usd} = price_point
       when is_number(volume_usd) and volume_usd > @volume_usd_limit ->
         %{price_point | volume_usd: nil}
+
+      %{price_usd: price_usd} = price_point
+      when is_number(price_usd) and price_usd > @price_usd_limit ->
+        %{price_point | price_usd: nil}
 
       price_point ->
         price_point

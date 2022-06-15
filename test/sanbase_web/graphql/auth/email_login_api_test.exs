@@ -326,8 +326,12 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       emailLoginVerify(email: "#{user.email}", token: "#{user.email_token}") {
         user {
           email
+          settings {
+            newsletterSubscription
+          }
         }
         token
+
       }
     }
     """

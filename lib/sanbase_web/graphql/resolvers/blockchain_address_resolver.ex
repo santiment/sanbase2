@@ -252,6 +252,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
+  def add_blockchain_address_labels(_root, args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    with :ok <-
+           Label.add_user_labels_to_address(current_user, args.selector, args.labels) do
+      {:ok, true}
+    end
+  end
+
   def labels(root, _args, %{context: %{loader: loader}}) do
     case root_to_raw_address(root) do
       nil ->
@@ -278,7 +287,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
           user_labels =
             Map.get(root, :labels, [])
             |> Enum.map(fn label ->
-              label |> Map.from_struct() |> Map.put(:origin, "user")
+              label |> Map.put(:origin, "user")
             end)
 
           labels =

@@ -36,13 +36,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @incomplete_data_map FileHandler.incomplete_data_map()
   @selectors_map FileHandler.selectors_map()
   @required_selectors_map FileHandler.required_selectors_map()
-  @metric_to_name_map FileHandler.metric_to_name_map()
+  @metric_to_names_map FileHandler.metric_to_names_map()
   @deprecated_metrics_map FileHandler.deprecated_metrics_map()
   @default_complexity_weight 0.3
 
   @type slug :: String.t()
   @type metric :: String.t()
   @type interval :: String.t()
+
+  defguard is_supported_selector(s)
+           when is_map(s) and is_map_key(s, :slug)
 
   @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics
@@ -77,11 +80,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   def timeseries_data(_metric, %{slug: []}, _from, _to, _interval, _opts), do: {:ok, []}
 
-  def timeseries_data(metric, %{slug: slug}, from, to, interval, opts) do
+  def timeseries_data(metric, selector, from, to, interval, opts)
+      when is_supported_selector(selector) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
-    filters = Keyword.get(opts, :additional_filters, [])
 
-    {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation, filters)
+    # FIXME: Some of the `nft` metrics need additional filter for `owner=opensea`
+    # to show correct values. Remove after fixed by bigdata.
+    filters =
+      if String.starts_with?(metric, "nft_") do
+        [owner: "opensea"]
+      else
+        Keyword.get(opts, :additional_filters, [])
+      end
+
+    {query, args} =
+      timeseries_data_query(metric, selector, from, to, interval, aggregation, filters)
 
     exec_timeseries_data_query(query, args)
   end
@@ -197,10 +210,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     {query, args} = available_metrics_for_slug_query(slug)
 
     ClickhouseRepo.query_transform(query, args, fn [metric] ->
-      Map.get(@metric_to_name_map, metric)
+      Map.get(@metric_to_names_map, metric)
     end)
     |> maybe_apply_function(fn metrics ->
-      MapSet.intersection(@metrics_mapset, MapSet.new(metrics))
+      metrics
+      |> List.flatten()
+      |> MapSet.new()
+      |> MapSet.intersection(@metrics_mapset)
       |> Enum.to_list()
     end)
   end
@@ -219,8 +235,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
       when metric in ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"],
       do: HistogramMetric.first_datetime(metric, selector)
 
-  def first_datetime(metric, %{slug: slug}) do
-    {query, args} = first_datetime_query(metric, slug)
+  def first_datetime(metric, selector) do
+    {query, args} = first_datetime_query(metric, selector)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
       DateTime.from_unix!(datetime)
@@ -233,8 +249,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
       when metric in ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"],
       do: HistogramMetric.last_datetime_computed_at(metric, selector)
 
-  def last_datetime_computed_at(metric, %{slug: slug}) do
-    {query, args} = last_datetime_computed_at_query(metric, slug)
+  def last_datetime_computed_at(metric, selector) do
+    {query, args} = last_datetime_computed_at_query(metric, selector)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
       DateTime.from_unix!(datetime)

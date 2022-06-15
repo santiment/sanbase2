@@ -59,25 +59,6 @@ defmodule Sanbase.Validation do
 
   def valid_iso8601_time_string?(str), do: {:error, "#{inspect(str)} is not a valid ISO8601 time"}
 
-  def valid_url?(url) do
-    case URI.parse(url) do
-      %URI{scheme: nil} ->
-        {:error,
-         "`#{url}` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"}
-
-      %URI{host: nil} ->
-        {:error,
-         "`#{url}` is not a valid URL. Reason: it is missing host (e.g. missing the example.com part)"}
-
-      %URI{path: nil} ->
-        {:error,
-         "`#{url}` is not a valid URL. Reason: it is missing path (e.g. missing the /image.png part)"}
-
-      _ ->
-        :ok
-    end
-  end
-
   def valid_threshold?(t) when is_number(t) and t > 0, do: :ok
 
   def valid_threshold?(t) do
@@ -113,6 +94,35 @@ defmodule Sanbase.Validation do
       _ ->
         {:error,
          "The metric #{inspect(metric)} is not supported or is mistyped or does not have min interval equal or bigger than to 1 day."}
+    end
+  end
+
+  def valid_url?(url, opts \\ []) do
+    check_host_online? = Keyword.get(opts, :check_host_online, false)
+    uri = URI.parse(url)
+
+    cond do
+      url == "" ->
+        {:error, "URL is an empty string"}
+
+      uri.scheme == nil ->
+        {:error, "URL '#{url}' is missing a scheme (e.g. https)"}
+
+      uri.host == nil ->
+        {:error, "URL '#{url}' is missing a host"}
+
+      uri.path == nil ->
+        {:error, "URL '#{url}' is missing path (e.g. missing the /image.png part)"}
+
+      # If true this will try to DNS resolve the hostname and check if it exists
+      check_host_online? == true ->
+        case :inet.gethostbyname(to_charlist(uri.host)) do
+          {:ok, _} -> :ok
+          {:error, _} -> {:error, "URL '#{url}' host is not resolvable"}
+        end
+
+      true ->
+        :ok
     end
   end
 end

@@ -96,6 +96,7 @@ defmodule Sanbase.Model.Project.ListSelector do
       filters
       |> included_slugs_by_filters(filters_combinator)
       |> intersect_with_base_slugs(base_slugs)
+      |> remove_hidden_slugs()
 
     ordered_slugs = order_by |> ordered_slugs_by_order_by(included_slugs)
 
@@ -119,6 +120,19 @@ defmodule Sanbase.Model.Project.ListSelector do
     MapSet.intersection(MapSet.new(slugs), MapSet.new(base_slugs))
     |> Enum.to_list()
   end
+
+  defp remove_hidden_slugs(slugs) when is_list(slugs) do
+    {:ok, hidden_slugs} =
+      Sanbase.Cache.get_or_store(:hidden_projects_slugs_list, fn ->
+        {:ok, Project.List.hidden_projects_slugs()}
+      end)
+
+    # The &Kernel.--/2 operator removes the first occurrence only. Apply
+    # Enum.uniq/1 to make sure there are no duplicates that will be left
+    Enum.uniq(slugs) -- hidden_slugs
+  end
+
+  defp remove_hidden_slugs(slugs), do: slugs
 
   defp total_projects_count(list, opts) do
     with true <- Keyword.get(opts, :has_pagination?),
@@ -174,15 +188,17 @@ defmodule Sanbase.Model.Project.ListSelector do
 
   defp base_slugs(args_list) do
     Enum.flat_map(args_list, fn args ->
-      {:ok, slugs} = get_base_slugs(args)
-      slugs
+      case get_base_slugs(args) do
+        {:ok, slugs} -> slugs
+        {:error, error} -> raise(error)
+      end
     end)
   end
 
   defp get_base_slugs(%{watchlist_id: id} = map) do
     detect_cycles!(map)
 
-    id |> Sanbase.UserList.by_id!() |> Sanbase.UserList.get_slugs()
+    id |> Sanbase.UserList.by_id!([]) |> Sanbase.UserList.get_slugs()
   end
 
   defp get_base_slugs(%{watchlist_slug: slug} = map) do
@@ -192,6 +208,10 @@ defmodule Sanbase.Model.Project.ListSelector do
 
   defp get_base_slugs(%{slugs: slugs}) when is_list(slugs) do
     {:ok, slugs}
+  end
+
+  defp get_base_slugs(data) do
+    {:error, "The base slugs argument is invalid: #{inspect(data)}."}
   end
 
   defp included_slugs_by_filters([], _filters_combinator), do: :all

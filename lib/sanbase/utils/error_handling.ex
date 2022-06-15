@@ -20,13 +20,13 @@ defmodule Sanbase.Utils.ErrorHandling do
   end
 
   def error_result(message, query_name \\ "query") do
-    log_id = Ecto.UUID.generate()
+    log_id = UUID.uuid4()
     Logger.error("[#{log_id}] #{message}")
     {:error, "[#{log_id}] Error executing #{query_name}. See logs for details."}
   end
 
   def warn_result(message, query_name \\ "query") do
-    log_id = Ecto.UUID.generate()
+    log_id = UUID.uuid4()
     Logger.warn("[#{log_id}] #{message}")
     {:error, "[#{log_id}] Error executing #{query_name}. See logs for details."}
   end
@@ -40,10 +40,10 @@ defmodule Sanbase.Utils.ErrorHandling do
           {uuid, message |> String.trim()}
 
         %Ecto.Changeset{} = changeset ->
-          {Ecto.UUID.generate(), changeset_errors_string(changeset)}
+          {UUID.uuid4(), changeset_errors_string(changeset)}
 
         _ ->
-          {Ecto.UUID.generate(), reason}
+          {UUID.uuid4(), reason}
       end
 
     target_str =

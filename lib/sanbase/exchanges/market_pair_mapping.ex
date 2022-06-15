@@ -6,13 +6,13 @@ defmodule Sanbase.Exchanges.MarketPairMapping do
   @default_source "coinmarketcap"
 
   schema "exchange_market_pair_mappings" do
-    field(:exchange, :string, null: false)
-    field(:market_pair, :string, null: false)
-    field(:from_ticker, :string, null: false)
-    field(:to_ticker, :string, null: false)
-    field(:from_slug, :string, null: false)
-    field(:to_slug, :string, null: false)
-    field(:source, :string, null: false)
+    field(:exchange, :string)
+    field(:market_pair, :string)
+    field(:from_ticker, :string)
+    field(:to_ticker, :string)
+    field(:from_slug, :string)
+    field(:to_slug, :string)
+    field(:source, :string)
 
     timestamps()
   end

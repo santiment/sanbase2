@@ -16,25 +16,29 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   setup do
     user = insert(:user, email: "test@example.com")
     conn = setup_jwt_auth(build_conn(), user)
-    role_san_clan = insert(:role_san_clan)
+    role_san_family = insert(:role_san_family)
 
     project = insert(:project, slug: "santiment", ticker: "SAN")
     project2 = insert(:project, slug: "ethereum", ticker: "ETH", name: "Ethereum")
 
     {:ok,
-     conn: conn, user: user, role_san_clan: role_san_clan, project: project, project2: project2}
+     conn: conn,
+     user: user,
+     role_san_family: role_san_family,
+     project: project,
+     project2: project2}
   end
 
   test "timeline events with public entities by followed users or by san family are fetched", %{
     conn: conn,
     user: user,
-    role_san_clan: role_san_clan
+    role_san_family: role_san_family
   } do
     user_to_follow = insert(:user)
     UserFollower.follow(user_to_follow.id, user.id)
 
     san_author = insert(:user)
-    insert(:user_role, user: san_author, role: role_san_clan)
+    insert(:user_role, user: san_author, role: role_san_family)
 
     post =
       insert(:post,
@@ -85,13 +89,13 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
        %{
          conn: conn,
          user: user,
-         role_san_clan: role_san_clan
+         role_san_family: role_san_family
        } do
     user_to_follow = insert(:user)
     UserFollower.follow(user_to_follow.id, user.id)
 
     san_author = insert(:user)
-    insert(:user_role, user: san_author, role: role_san_clan)
+    insert(:user_role, user: san_author, role: role_san_family)
 
     {:ok, user_list} =
       UserList.create_user_list(user_to_follow, %{name: "My Test List", is_public: false})
@@ -148,7 +152,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   test "trigger fired event from public trigger from san family member is fetched",
        context do
     san_author = insert(:user)
-    insert(:user_role, user: san_author, role: context.role_san_clan)
+    insert(:user_role, user: san_author, role: context.role_san_family)
 
     user_trigger =
       insert(:user_trigger,
@@ -207,7 +211,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   test "trigger fired event from private trigger from san family member is not fetched",
        context do
     san_author = insert(:user)
-    insert(:user_role, user: san_author, role: context.role_san_clan)
+    insert(:user_role, user: san_author, role: context.role_san_family)
 
     user_trigger =
       insert(:user_trigger,
@@ -260,7 +264,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   describe "timeline events for not logged in user" do
     test "shows sanfamily insight", context do
       san_author = insert(:user)
-      insert(:user_role, user: san_author, role: context.role_san_clan)
+      insert(:user_role, user: san_author, role: context.role_san_family)
 
       post =
         insert(:post,
@@ -282,7 +286,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
     test "doesn't show private trigger that fired", context do
       san_author = insert(:user)
-      insert(:user_role, user: san_author, role: context.role_san_clan)
+      insert(:user_role, user: san_author, role: context.role_san_family)
 
       user_trigger =
         insert(:user_trigger,
@@ -864,7 +868,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     UserFollower.follow(user_to_follow.id, context.user.id)
 
     san_author2 = insert(:user, username: "b")
-    insert(:user_role, user: san_author2, role: context.role_san_clan)
+    insert(:user_role, user: san_author2, role: context.role_san_family)
 
     post1 =
       insert(:post,

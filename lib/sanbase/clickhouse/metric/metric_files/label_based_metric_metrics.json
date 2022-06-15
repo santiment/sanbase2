@@ -324,5 +324,107 @@
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total NFT Trades Count",
+    "name": "nft_trades_count",
+    "metric": "nft_trades_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total NFT Trades Volume In USD",
+    "name": "nft_trade_volume_usd",
+    "metric": "nft_trade_volume_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Amount of Uniq Addresses Bought More Than 100k USD of NFTs",
+    "name": "nft_whale_trades_count",
+    "metric": "nft_whale_trades_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total Volume For NFT Worth More Than 100k USD",
+    "name": "nft_whale_trade_volume_usd",
+    "metric": "nft_whale_trade_volume_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Amount of Uniq Addresses Bought Less Than 1k USD of NFTs",
+    "name": "nft_retail_trades_count",
+    "metric": "nft_retail_trades_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total Volume For NFT Worth Less Than 1k USD",
+    "name": "nft_retail_trade_volume_usd",
+    "metric": "nft_retail_trade_volume_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_label_based_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
   }
 ]

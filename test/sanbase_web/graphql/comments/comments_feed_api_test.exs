@@ -15,7 +15,8 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
     insight = insert(:published_post, user: user)
     insight2 = insert(:published_post, user: user)
     short_url = insert(:short_url)
-    chart_configuration = insert(:chart_configuration, user: user)
+    chart_configuration = insert(:chart_configuration, user: user, is_public: true)
+    chart_configuration2 = insert(:chart_configuration, user: user, is_public: false)
 
     timeline_event =
       insert(:timeline_event,
@@ -35,6 +36,7 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
       blockchain_address: blockchain_address,
       short_url: short_url,
       chart_configuration: chart_configuration,
+      chart_configuration2: chart_configuration2,
       timeline_event: timeline_event
     }
   end
@@ -107,8 +109,17 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
         "some comment5"
       )
 
+    {:ok, _} =
+      EntityComment.create_and_link(
+        :chart_configuration,
+        context.chart_configuration2.id,
+        context.user.id,
+        nil,
+        "some comment on private chart layout - must not be seen"
+      )
+
     assert {:ok, _} = Sanbase.Insight.Post.delete(context.insight2.id, context.user)
-    assert {:error, _} = Sanbase.Insight.Post.by_id(context.insight2.id)
+    assert {:error, _} = Sanbase.Insight.Post.by_id(context.insight2.id, [])
 
     query = comments_feed_query()
 

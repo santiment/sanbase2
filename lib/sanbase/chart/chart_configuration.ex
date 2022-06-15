@@ -1,7 +1,10 @@
 defmodule Sanbase.Chart.Configuration do
+  @behaviour Sanbase.Entity.Behaviour
+
   use Ecto.Schema
 
   import Ecto.{Query, Changeset}
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
 
   alias Sanbase.Repo
 
@@ -9,8 +12,11 @@ defmodule Sanbase.Chart.Configuration do
     field(:title, :string)
     field(:description, :string)
     field(:is_public, :boolean, default: false)
+    field(:is_deleted, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
 
     field(:metrics, {:array, :string}, default: [])
+    field(:metrics_json, :map, default: %{})
     field(:anomalies, {:array, :string}, default: [])
     field(:queries, :map, default: %{})
     field(:drawings, :map, default: %{})
@@ -46,7 +52,10 @@ defmodule Sanbase.Chart.Configuration do
       :title,
       :description,
       :is_public,
+      :is_deleted,
+      :is_hidden,
       :metrics,
+      :metrics_json,
       :anomalies,
       :queries,
       :drawings,
@@ -58,9 +67,54 @@ defmodule Sanbase.Chart.Configuration do
     |> validate_required([:user_id, :project_id])
   end
 
-  def by_id(config_id, opts \\ []) do
+  @impl Sanbase.Entity.Behaviour
+  def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id(id, opts) do
     querying_user_id = Keyword.get(opts, :querying_user_id)
-    get_chart_configuration(config_id, querying_user_id, opts)
+    get_chart_configuration(id, querying_user_id, opts)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids!(ids, opts), do: by_ids(ids, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids(config_ids, opts) do
+    preload = Keyword.get(opts, :preload, [:chart_events])
+
+    result =
+      from(
+        conf in base_query(),
+        where: conf.id in ^config_ids,
+        preload: ^preload,
+        order_by: fragment("array_position(?, ?::int)", ^config_ids, conf.id)
+      )
+      |> Repo.all()
+
+    {:ok, result}
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    base_query()
+    |> where([config], config.is_public == true)
+    |> maybe_apply_projects_filter(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :chart_configuration_id)
+    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> select([config], config.id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def user_entity_ids_query(user_id, opts) do
+    base_query()
+    |> where([config], config.user_id == ^user_id)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :chart_configuration_id)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> select([config], config.id)
   end
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
@@ -76,7 +130,7 @@ defmodule Sanbase.Chart.Configuration do
   end
 
   def configurations(querying_user_id \\ nil) do
-    __MODULE__
+    base_query()
     |> accessible_by_user_query(querying_user_id)
     |> Repo.all()
   end
@@ -110,12 +164,18 @@ defmodule Sanbase.Chart.Configuration do
     end
   end
 
+  # Private functions
+
+  defp base_query(_opts \\ []) do
+    from(conf in __MODULE__, where: conf.is_deleted != true)
+  end
+
   defp get_chart_configuration(config_id, querying_user_id, opts) do
     preload = Keyword.get(opts, :preload, [:chart_events])
 
     query =
       from(
-        conf in __MODULE__,
+        conf in base_query(),
         where: conf.id == ^config_id,
         preload: ^preload
       )
@@ -125,30 +185,29 @@ defmodule Sanbase.Chart.Configuration do
       when user_id == querying_user_id or is_public == true ->
         {:ok, conf}
 
-      %__MODULE__{} ->
-        {:error, "Chart configuration with id #{config_id} is private."}
-
-      nil ->
-        {:error, "Chart configuration with id #{config_id} does not exist."}
+      _ ->
+        {:error, "Chart configuration with id #{config_id} does not exist or is private."}
     end
   end
 
   defp get_chart_configuration_if_owner(config_id, user_id) do
-    case Repo.get(__MODULE__, config_id) do
+    query =
+      from(
+        conf in base_query(),
+        where: conf.id == ^config_id
+      )
+
+    case Repo.one(query) do
       %__MODULE__{user_id: ^user_id} = conf ->
         {:ok, conf}
 
-      %__MODULE__{} ->
-        {:error,
-         "Chart configuration with id #{config_id} is not owned by the user with id #{user_id}"}
-
-      nil ->
-        {:error, "Chart configuration with id #{config_id} does not exist."}
+      _ ->
+        {:error, "Chart configuration with id #{config_id} does not exist or is private."}
     end
   end
 
   defp user_chart_configurations_query(user_id, querying_user_id, nil) do
-    __MODULE__
+    base_query()
     |> where([conf], conf.user_id == ^user_id)
     |> accessible_by_user_query(querying_user_id)
   end
@@ -165,7 +224,7 @@ defmodule Sanbase.Chart.Configuration do
   end
 
   defp filter_by_project_query(project_id) when not is_nil(project_id) do
-    __MODULE__
+    base_query()
     |> where([conf], conf.project_id == ^project_id)
   end
 
@@ -177,5 +236,16 @@ defmodule Sanbase.Chart.Configuration do
   defp accessible_by_user_query(query, querying_user_id) do
     query
     |> where([conf], conf.is_public == true or conf.user_id == ^querying_user_id)
+  end
+
+  defp maybe_apply_projects_filter(query, opts) do
+    case Keyword.get(opts, :filter) do
+      %{project_ids: project_ids} ->
+        query
+        |> where([config], config.project_id in ^project_ids)
+
+      _ ->
+        query
+    end
   end
 end

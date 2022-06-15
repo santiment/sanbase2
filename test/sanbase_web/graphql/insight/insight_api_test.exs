@@ -107,7 +107,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         currentUser {
           insights {
             id,
-            text,
+            text
+            pulseText
             readyState
           }
         }
@@ -121,12 +122,14 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
           %{
             "id" => published.id,
             "readyState" => "#{published.ready_state}",
-            "text" => "#{published.text}"
+            "text" => "#{published.text}",
+            "pulseText" => nil
           },
           %{
             "id" => draft.id,
             "readyState" => "#{draft.ready_state}",
-            "text" => "#{draft.text}"
+            "text" => "#{draft.text}",
+            "pulseText" => nil
           }
         ]
         |> Enum.sort_by(& &1["id"])
@@ -1165,7 +1168,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         })
 
       res = execute_mutation_with_errors(query, context.conn)
-      assert res["message"] == "Chart configuration with id 123 does not exist."
+      assert res["message"] == "Chart configuration with id 123 does not exist or is private."
     end
   end
 

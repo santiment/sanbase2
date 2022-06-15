@@ -1,8 +1,9 @@
 defmodule Sanbase.ClickhouseRepo do
   # Clickhouse tests are done only through mocking the results.
   require Application
-  @env Application.compile_env(:sanbase, :env)
-  @adapter if @env == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
+
+  env = Application.compile_env(:sanbase, :env)
+  @adapter if env == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
 
   use Ecto.Repo, otp_app: :sanbase, adapter: @adapter
 
@@ -10,7 +11,11 @@ defmodule Sanbase.ClickhouseRepo do
   require Logger
 
   def enabled?() do
-    System.get_env("CLICKHOUSE_REPO_ENABLED", "true") |> String.to_existing_atom()
+    case Config.module_get(__MODULE__, :clickhouse_repo_enabled?) do
+      true -> true
+      false -> false
+      nil -> System.get_env("CLICKHOUSE_REPO_ENABLED", "true") |> String.to_existing_atom()
+    end
   end
 
   @doc """
@@ -28,53 +33,87 @@ defmodule Sanbase.ClickhouseRepo do
     {:ok, opts}
   end
 
-  @error_message "Cannot execute database query. If issue persists please contact Santiment Support."
   def query_transform(query, args, transform_fn) do
-    ordered_params = order_params(query, args)
-    sanitized_query = sanitize_query(query)
-
-    __MODULE__.query(sanitized_query, ordered_params)
-    |> case do
-      {:ok, result} ->
-        {:ok, Enum.map(result.rows, transform_fn)}
-
-      {:error, error} ->
-        log_and_return_error(inspect(error), "query_transform/3")
+    case execute_query_transform(query, args) do
+      {:ok, result} -> {:ok, Enum.map(result.rows, transform_fn)}
+      {:error, error} -> {:error, error}
     end
   rescue
     e ->
-      log_and_return_error(e, "query_transform/3")
+      log_and_return_error(e, "query_transform/3", __STACKTRACE__)
+  end
+
+  @doc ~s"""
+  Execute a query and apply the transform_fn on every row the result.
+  Return a map with the transformed rows alongside some metadata -
+  the query id, column names and a short summary of the used resources
+  """
+  def query_transform_with_metadata(query, args, transform_fn) do
+    case execute_query_transform(query, args) do
+      {:ok, result} ->
+        {:ok,
+         %{
+           rows: Enum.map(result.rows, transform_fn),
+           columns: result.columns,
+           query_id: result.query_id,
+           summary: result.summary
+         }}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  rescue
+    e ->
+      log_and_return_error(e, "query_transform_with_metadata/3", __STACKTRACE__,
+        propagate_error: true
+      )
   end
 
   def query_reduce(query, args, init, reducer) do
     ordered_params = order_params(query, args)
     sanitized_query = sanitize_query(query)
 
-    __MODULE__.query(sanitized_query, ordered_params)
-    |> case do
+    case __MODULE__.query(sanitized_query, ordered_params) do
       {:ok, result} -> {:ok, Enum.reduce(result.rows, init, reducer)}
       {:error, error} -> log_and_return_error(inspect(error), "query_reduce/4")
     end
   rescue
     e ->
-      log_and_return_error(e, "query_reduce/4")
+      log_and_return_error(e, "query_reduce/4", __STACKTRACE__)
   end
 
-  defp log_and_return_error(%{} = e, function_executed) do
-    log_id = Ecto.UUID.generate()
+  @error_message "Cannot execute database query. If issue persists please contact Santiment Support."
+  defp execute_query_transform(query, args) do
+    ordered_params = order_params(query, args)
+    sanitized_query = sanitize_query(query)
+
+    case __MODULE__.query(sanitized_query, ordered_params) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, error} ->
+        log_and_return_error(inspect(error), "query_transform/3")
+    end
+  end
+
+  defp log_and_return_error(%{} = e, function_executed, stacktrace, opts \\ []) do
+    propagate_error = Keyword.get(opts, :propagate_error, false)
+
+    log_id = UUID.uuid4()
+    error = extract_error_from_stacktrace(stacktrace) || Exception.message(e)
 
     Logger.warn("""
-    [#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{Exception.message(e)}
+    [#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error}
 
     Stacktrace:
     #{Exception.format_stacktrace()}
     """)
 
-    {:error, "[#{log_id}] #{@error_message}"}
+    {:error, "[#{log_id}] #{if propagate_error, do: error, else: @error_message}"}
   end
 
   defp log_and_return_error(error_str, function_executed) do
-    log_id = Ecto.UUID.generate()
+    log_id = UUID.uuid4()
 
     Logger.warn(
       "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_str}"
@@ -121,6 +160,24 @@ defmodule Sanbase.ClickhouseRepo do
     case ordered_params do
       [] -> params
       _ -> ordered_params
+    end
+  end
+
+  defp extract_error_from_stacktrace(stacktrace) do
+    case Enum.find(stacktrace, fn
+           {_, _, [line | _], _} -> String.contains?(line, "DB::Exception")
+           _ -> false
+         end) do
+      nil ->
+        nil
+
+      {_, _, [line | _], _} ->
+        error = String.split(line, "DB::Exception: ") |> List.last()
+
+        [error_msg, error_code, _version_str] =
+          Regex.split(~r|\([A-Z_]+\)|, error, include_captures: true, trim: true)
+
+        "#{error_code} #{error_msg}" |> String.trim()
     end
   end
 end

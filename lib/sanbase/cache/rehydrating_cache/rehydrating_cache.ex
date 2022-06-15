@@ -284,49 +284,59 @@ defmodule Sanbase.Cache.RehydratingCache do
     %{state | waiting: new_waiting}
   end
 
+  defp run_function_get_updated_progress(state, key, fun_map) do
+    %{progress: progress, task_supervisor: task_supervisor, now_unix: now_unix} = state
+    now_dt = DateTime.from_unix!(now_unix)
+
+    %{pid: pid} = run_function(self(), fun_map, task_supervisor)
+    # Put both the datetime and unix timestamp in the progress map. The unix is used
+    # in checks and guards as it is plain number comparisons. The DateTime is used
+    # when inspecting the state during runtime to debug/observe.
+    Map.put(progress, key, {:in_progress, pid, {now_dt, now_unix}})
+  end
+
+  defp handle_in_progress_function_run(state, pid, key, fun_map, started_unix) do
+    case Process.alive?(pid) do
+      false ->
+        # If the process is dead but for some reason the progress is not
+        # changed to some timestamp or to :failed, we rerun it
+        run_function_get_updated_progress(state, key, fun_map)
+
+      true ->
+        if state.now_unix - started_unix > @function_runtime_timeout do
+          # Process computing the function is alive but it is taking
+          # too long, maybe something is stuck. Restart the computation
+          Process.exit(pid, :kill)
+          run_function_get_updated_progress(state, key, fun_map)
+        else
+          state.progress
+        end
+    end
+  end
+
   # Walk over the functions and re-evaluate the ones that have to be re-evaluated
   defp do_run(state) do
     now = Timex.now()
     now_unix = now |> DateTime.to_unix()
-    %{progress: progress, functions: functions, task_supervisor: task_supervisor} = state
-
-    run_fun_update_progress = fn prog, key, fun_map ->
-      %{pid: pid} = run_function(self(), fun_map, task_supervisor)
-      Map.put(prog, key, {:in_progress, pid, {now, DateTime.to_unix(now)}})
-    end
+    state = Map.put(state, :now_unix, now_unix)
 
     new_progress =
-      Enum.reduce(functions, %{}, fn {key, fun_map}, acc ->
-        case Map.get(progress, key, now_unix) do
+      Enum.reduce(state.functions, %{}, fn {key, fun_map}, acc ->
+        case Map.get(state.progress, key, now_unix) do
           :failed ->
             # Task execution failed, retry immediatelly
-            run_fun_update_progress.(progress, key, fun_map)
+            _progress = run_function_get_updated_progress(state, key, fun_map)
 
           run_after_unix when is_integer(run_after_unix) and now_unix >= run_after_unix ->
             # It is time to execute the function again
-            run_fun_update_progress.(progress, key, fun_map)
+            _progress = run_function_get_updated_progress(state, key, fun_map)
 
           {:in_progress, pid, {_started_datetime, started_unix}} ->
-            case Process.alive?(pid) do
-              false ->
-                # If the process is dead but for some reason the progress is not
-                # changed to some timestamp or to :failed, we rerun it
-                run_fun_update_progress.(progress, key, fun_map)
-
-              true ->
-                if now_unix - started_unix > @function_runtime_timeout do
-                  # Process computing the function is alive but it is taking
-                  # too long, maybe something is stuck. Restart the computation
-                  Process.exit(pid, :kill)
-                  run_fun_update_progress.(progress, key, fun_map)
-                else
-                  progress
-                end
-            end
+            handle_in_progress_function_run(state, pid, key, fun_map, started_unix)
 
           nil ->
             # No recorded progress. Should not happend.
-            run_fun_update_progress.(progress, key, fun_map)
+            _progress = run_function_get_updated_progress(state, key, fun_map)
 
           run_after_unix when is_integer(run_after_unix) and now_unix < run_after_unix ->
             # It's still not time to reevaluate the function again

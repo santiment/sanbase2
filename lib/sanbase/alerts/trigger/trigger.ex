@@ -36,6 +36,7 @@ defmodule Sanbase.Alert.Trigger do
   """
   use Ecto.Schema
   use Vex.Struct
+
   import Ecto.Changeset
 
   alias __MODULE__
@@ -43,6 +44,7 @@ defmodule Sanbase.Alert.Trigger do
 
   embedded_schema do
     field(:settings, :map)
+    field(:is_frozen, :boolean, default: false)
     field(:title, :string)
     field(:description, :string)
     field(:is_public, :boolean, default: false)
@@ -69,6 +71,7 @@ defmodule Sanbase.Alert.Trigger do
   @fields [
     :settings,
     :is_public,
+    :is_frozen,
     :cooldown,
     :last_triggered,
     :title,
@@ -104,6 +107,10 @@ defmodule Sanbase.Alert.Trigger do
 
   def payload_to_string({template, kv}) do
     Sanbase.TemplateEngine.run(template, kv)
+  end
+
+  def get_filtered_target(%Trigger{settings: %{target: target}} = trigger) do
+    remove_targets_on_cooldown(target, trigger)
   end
 
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
@@ -164,7 +171,7 @@ defmodule Sanbase.Alert.Trigger do
   end
 
   defp remove_targets_on_cooldown(%{watchlist_id: watchlist_id}, trigger) do
-    case Sanbase.UserList.by_id(watchlist_id) do
+    case Sanbase.UserList.by_id(watchlist_id, []) do
       {:error, _} ->
         %{list: [], type: :slug}
 
@@ -219,6 +226,7 @@ defmodule Sanbase.Alert.Trigger do
        when is_binary(address) or is_list(address) do
     address
     |> List.wrap()
+    |> Enum.map(&Sanbase.BlockchainAddress.to_internal_format/1)
     |> remove_targets_on_cooldown(trigger, :eth_address)
   end
 
@@ -226,6 +234,7 @@ defmodule Sanbase.Alert.Trigger do
        when is_binary(address) or is_list(address) do
     address
     |> List.wrap()
+    |> Enum.map(&Sanbase.BlockchainAddress.to_internal_format/1)
     |> remove_targets_on_cooldown(trigger, :address)
   end
 

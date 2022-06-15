@@ -24,7 +24,12 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
             target: "default",
             channel: nil,
             operation: nil,
-            state: nil,
+            # State keeps the list of assets the screener has had
+            # during the last check. On every run the newly generated
+            # list of assets is compared against the one stored in the
+            # state. If there is a difference, the alert is triggered.
+            state: %{},
+            # Private fields, not stored
             filtered_target: %{list: []},
             triggered?: false,
             payload: %{},
@@ -56,12 +61,9 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
   Return a list of the `settings.metric` values for the necessary time range
   """
   @spec get_data(ScreenerTriggerSettings.t()) :: list(String.t())
-
   def get_data(%__MODULE__{operation: %{selector: %{watchlist_id: watchlist_id}}}) do
     {:ok, slugs} =
-      watchlist_id
-      |> Sanbase.UserList.by_id()
-      |> case do
+      case Sanbase.UserList.by_id(watchlist_id, []) do
         {:error, _} -> {:ok, []}
         {:ok, watchlist} -> watchlist |> Sanbase.UserList.get_slugs()
       end
@@ -85,6 +87,7 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
 
   defimpl Sanbase.Alert.Settings, for: ScreenerTriggerSettings do
     alias Sanbase.Alert.Trigger.ScreenerTriggerSettings
+    alias Sanbase.Alert.ResultBuilder
 
     def triggered?(%ScreenerTriggerSettings{triggered?: triggered}), do: triggered
 
@@ -100,29 +103,15 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
     end
 
     def build_result(current_slugs, settings, trigger) do
-      %{state: %{slugs_in_screener: previous_slugs}} = settings
-      added_slugs = (current_slugs -- previous_slugs) |> Enum.reject(&is_nil/1)
-      removed_slugs = (previous_slugs -- current_slugs) |> Enum.reject(&is_nil/1)
+      # The ResultBuilder expects a 2-arity function, so we bind the
+      # third `trigger` argument and make it a 2-arity function
+      template_kv_fun = &template_kv(&1, &2, trigger)
 
-      case added_slugs != [] or removed_slugs != [] do
-        true ->
-          template_kv =
-            template_kv(
-              %{added_slugs: added_slugs, removed_slugs: removed_slugs},
-              settings,
-              trigger
-            )
-
-          %ScreenerTriggerSettings{
-            settings
-            | template_kv: %{"default" => template_kv},
-              state: %{slugs_in_screener: current_slugs},
-              triggered?: true
-          }
-
-        false ->
-          %ScreenerTriggerSettings{settings | triggered?: false}
-      end
+      ResultBuilder.build_state_difference(current_slugs, settings, template_kv_fun,
+        state_list_key: :slugs_in_screener,
+        added_items_key: :added_slugs,
+        removed_items_key: :removed_slugs
+      )
     end
 
     def cache_key(%ScreenerTriggerSettings{}) do
@@ -141,35 +130,11 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
       }
 
       template = """
-      🔔Screener "#{trigger.title}" changes:
-      #{format_enter_exit_slugs(added_slugs, removed_slugs)}
+      🔔 Screener "#{trigger.title}" changes:
+      #{ResultBuilder.build_enter_exit_projects_str(added_slugs, removed_slugs)}
       """
 
       {template, kv}
-    end
-
-    defp format_enter_exit_slugs(added_slugs, removed_slugs) do
-      projects_map =
-        Project.List.by_slugs(added_slugs ++ removed_slugs, preload?: false)
-        |> Enum.into(%{}, fn %{slug: slug} = project -> {slug, project} end)
-
-      newcomers = slugs_to_projects_string_list(added_slugs, projects_map)
-      leavers = slugs_to_projects_string_list(removed_slugs, projects_map)
-
-      """
-      #{length(newcomers)} Newcomers:
-      #{newcomers |> Enum.join("\n")}
-      ---
-      #{length(leavers)} Leavers:
-      #{leavers |> Enum.join("\n")}
-      """
-    end
-
-    defp slugs_to_projects_string_list(slugs, projects_map) do
-      slugs
-      |> Enum.map(&Map.get(projects_map, &1))
-      |> Enum.reject(&is_nil/1)
-      |> Enum.map(&"[##{&1.ticker} | #{&1.name}](#{Project.sanbase_link(&1)})")
     end
   end
 end

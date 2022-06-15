@@ -161,6 +161,19 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end
   end
 
+  defp get_user_subscription(user_id, product_id) do
+    # If there is an account linked, get the subscription of the
+    # primary user. Otherwise, get the subscription of that user.
+
+    case Subscription.get_user_subscription(user_id, product_id) do
+      {:ok, subscription} ->
+        subscription
+
+      {:error, error_msg} ->
+        {:error, error_msg}
+    end
+  end
+
   # TODO: After these changes, the session will now also contain `access_token`
   # insted of only `auth_token`, which is better named and should be used. This
   # is a process of authentication, not authentication
@@ -169,8 +182,11 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
     case access_token && bearer_authenticate(conn, access_token) do
       {:ok, %{current_user: current_user} = map} ->
+        # This will fetch the subscription of the primary user, if any is linked.
+        # If there is no primary user linked it will return the subscription of the
+        # current user
         subscription =
-          Subscription.current_subscription(current_user, @product_id_sanbase) ||
+          get_user_subscription(current_user.id, @product_id_sanbase) ||
             @free_subscription
 
         %AuthStruct{
@@ -302,9 +318,9 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
         bearer_authenticate_refresh_token(conn)
 
       {:error, :invalid_token} ->
-        %{permissions: User.Permissions.no_permissions()}
+        {:error, "Invalid JSON Web Token (JWT)"}
 
-      _ ->
+      _error ->
         {:error, "Invalid JSON Web Token (JWT)"}
     end
   end
@@ -374,7 +390,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   defp get_no_auth_product_id(nil), do: @product_id_api
 
   defp get_no_auth_product_id(origin) do
-    case String.ends_with?(origin, "santiment.net") do
+    case String.ends_with?(origin, "santiment.net") or String.ends_with?(origin, "sanr.app") do
       true -> @product_id_sanbase
       false -> @product_id_api
     end

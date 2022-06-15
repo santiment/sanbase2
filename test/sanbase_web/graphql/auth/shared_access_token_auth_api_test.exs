@@ -146,7 +146,7 @@ defmodule SanbaseWeb.Graphql.SharedAccessTokenAuthApiTest do
       get_chart_configuration_shared_access_token(context.pro_conn, chart_config.id)
       |> get_in(["errors", Access.at(0), "message"])
 
-    assert error == "Chart configuration with id #{chart_config.id} is private."
+    assert error == "Chart configuration with id #{chart_config.id} does not exist or is private."
   end
 
   defp get_metric(conn, metric, slug, from, to, interval) do

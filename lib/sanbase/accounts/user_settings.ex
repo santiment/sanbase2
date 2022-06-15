@@ -5,6 +5,7 @@ defmodule Sanbase.Accounts.UserSettings do
 
   alias Sanbase.Accounts.{User, Settings}
   alias Sanbase.Repo
+  alias Sanbase.Billing.{Subscription, Product}
 
   schema "user_settings" do
     belongs_to(:user, User)
@@ -97,6 +98,13 @@ defmodule Sanbase.Accounts.UserSettings do
     |> Enum.each(fn {user_id, paid_with} -> update_paid_with(user_id, paid_with) end)
   end
 
+  def update_settings(user, %{is_subscribed_biweekly_report: true} = params) do
+    case Subscription.current_subscription_plan(user.id, Product.product_sanbase()) do
+      pro when pro in [:pro, :pro_plus] -> settings_update(user.id, params)
+      _ -> {:error, "Only PRO users can subscribe to Biweekly Report"}
+    end
+  end
+
   def update_settings(%User{id: id}, params) do
     settings_update(id, params)
   end
@@ -117,30 +125,6 @@ defmodule Sanbase.Accounts.UserSettings do
     settings_update(user_id, %{telegram_chat_id: chat_id})
   end
 
-  def change_newsletter_subscription(%User{id: user_id, email: nil}, params) do
-    settings_update(user_id, params)
-  end
-
-  def change_newsletter_subscription(%User{id: user_id, email: email}, params) do
-    settings_update(user_id, params)
-    |> case do
-      {:ok, %{settings: %{newsletter_subscription: :off}}} = response ->
-        Sanbase.Email.Mailchimp.unsubscribe_email(email)
-        response
-
-      {:ok, %{settings: %{newsletter_subscription: :weekly}}} = response ->
-        Sanbase.Email.Mailchimp.subscribe_email(email)
-        response
-
-      {:ok, %{settings: %{newsletter_subscription: :daily}}} = response ->
-        Sanbase.Email.Mailchimp.subscribe_email(email)
-        response
-
-      response ->
-        response
-    end
-  end
-
   defp settings_update(user_id, params) do
     changeset =
       Repo.get_by(__MODULE__, user_id: user_id)
@@ -155,12 +139,30 @@ defmodule Sanbase.Accounts.UserSettings do
 
     case changeset |> Repo.insert_or_update() do
       {:ok, %__MODULE__{} = us} ->
+        maybe_emit_event_on_changes(user_id, changeset.changes)
         {:ok, %{us | settings: modify_settings(us)}}
 
       {:error, changeset} ->
         {:error, changeset}
     end
   end
+
+  defp maybe_emit_event_on_changes(user_id, %{settings: settings}) do
+    settings_changes = settings.changes
+    mailchimp_lists_keys = [:is_subscribed_biweekly_report, :is_subscribed_monthly_newsletter]
+
+    for key <- Map.keys(settings_changes) do
+      if key in mailchimp_lists_keys do
+        Sanbase.Email.MailchimpEventEmitter.emit_event(
+          {:ok, user_id},
+          key,
+          Map.put(%{}, key, settings_changes[key])
+        )
+      end
+    end
+  end
+
+  defp maybe_emit_event_on_changes(_user_id, _), do: :ok
 
   defp modify_settings(%__MODULE__{} = us) do
     # The default value of the alerts limit is an empty map.
@@ -177,16 +179,8 @@ defmodule Sanbase.Accounts.UserSettings do
           map
       end
 
-    newsletter_subscription =
-      us.settings.newsletter_subscription
-      |> String.downcase()
-      |> String.to_existing_atom()
-
-    %{
-      us.settings
-      | has_telegram_connected: us.settings.telegram_chat_id != nil,
-        alerts_per_day_limit: alerts_per_day_limit,
-        newsletter_subscription: newsletter_subscription
-    }
+    us.settings
+    |> Map.put(:has_telegram_connected, us.settings.telegram_chat_id != nil)
+    |> Map.put(:alerts_per_day_limit, alerts_per_day_limit)
   end
 end

@@ -30,9 +30,7 @@ defmodule Sanbase.Repo.Migrations.SyncExchangeWalletsPlans do
 
   defp setup() do
     Application.ensure_all_started(:tzdata)
-    Application.ensure_all_started(:prometheus_ecto)
     Application.ensure_all_started(:stripity_stripe)
-    Sanbase.Prometheus.EctoInstrumenter.setup()
   end
 
   defp stripe_api_key() do

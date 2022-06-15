@@ -136,7 +136,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
     WITH
       ( SELECT argMax(balance, dt) FROM eth_balances_realtime total_balance,
       ( SELECT pow(10, decimals) FROM asset_metadata FINAL where name = ?1 LIMIT 1 ) AS decimals,
-      ( SELECT argMax(value, dt) FROM intraday_metrics PREWHERE #{asset_id_filter(slug, argument_position: 1)} AND #{metric_id_filter("price_usd", argument_position: 2)} ) AS price_usd
+      ( SELECT argMax(value, dt) FROM intraday_metrics PREWHERE #{asset_id_filter(%{slug: slug}, argument_position: 1)} AND #{metric_id_filter("price_usd", argument_position: 2)} ) AS price_usd
 
     SELECT
       toUnixTimestamp(max(dt)),
@@ -169,7 +169,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
     WITH
       ( SELECT argMax(balance, dt) FROM erc20_balances_realtime PREWHERE assetRefId = #{asset_data.("asset_ref_id", argument_position: 1)} AND addressType = 'total' ) AS total_balance,
       ( SELECT pow(10, decimals) FROM asset_metadata FINAL where name = ?1 LIMIT 1 ) AS decimals,
-      ( SELECT argMax(value, dt) FROM intraday_metrics PREWHERE #{asset_id_filter(slug, argument_position: 1)} AND #{metric_id_filter("price_usd", argument_position: 2)} ) AS price_usd
+      ( SELECT argMax(value, dt) FROM intraday_metrics PREWHERE #{asset_id_filter(%{slug: slug}, argument_position: 1)} AND #{metric_id_filter("price_usd", argument_position: 2)} ) AS price_usd
 
     SELECT
       toUnixTimestamp(max(dt)),

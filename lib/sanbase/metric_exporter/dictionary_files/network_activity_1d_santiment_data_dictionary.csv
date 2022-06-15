@@ -1,0 +1,14 @@
+Field name,Date Type,Description,Primary key,Foreign key
+identifier,string,Cryptocurrency name,Y,N
+datetime,datetime,Datetime mark,Y,N
+circulation,decimal,Circulation shows the number of unique tokens transacted on chain within a certain (specified) timeframe.,N,N
+circulation1d,decimal,Circulation shows the number of unique tokens transacted on chain within a certain (1 day) timeframe.,N,N
+circulation7d,decimal,Circulation shows the number of unique tokens transacted on chain within a certain (7 days) timeframe.,N,N
+circulation30d,decimal,Circulation shows the number of unique tokens transacted on chain within a certain (30 days) timeframe.,N,N
+circulation60d,decimal,Circulation shows the number of unique tokens transacted on chain within a certain (60 days) timeframe.,N,N
+circulation90d,decimal,Circulation shows the number of unique tokens transacted on chain within a certain (90 days) timeframe.,N,N
+circulation180d,decimal,Circulation shows the number of unique tokens transacted on chain within a certain (180 days) timeframe.,N,N
+circulation365d,decimal,Circulation shows the number of unique tokens transacted on chain within a certain (365 days) timeframe.,N,N
+circulation3y,decimal,Circulation shows the number of unique tokens transacted on chain within a certain (3 years) timeframe.,N,N
+circulation5y,decimal,Circulation shows the number of unique tokens transacted on chain within a certain (5 years) timeframe.,N,N
+circulation10y,decimal,Circulation shows the number of unique tokens transacted on chain within a certain (10 years) timeframe.,N,N

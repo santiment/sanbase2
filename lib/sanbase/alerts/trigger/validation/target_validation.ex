@@ -109,4 +109,23 @@ defmodule Sanbase.Alert.Validation.Target do
     {:error,
      "#{inspect(selector)} is not a valid historical balance selector - it has to be a map"}
   end
+
+  def valid_infrastructure_selector?(%{infrastructure: infrastructure})
+      when is_binary(infrastructure) do
+    supported_infrastructures = Sanbase.Clickhouse.HistoricalBalance.supported_infrastructures()
+
+    case infrastructure in supported_infrastructures do
+      true ->
+        :ok
+
+      false ->
+        {:error,
+         "Infrastructure #{infrastructure} is not in the list of supported infrastructures: #{inspect(supported_infrastructures)}"}
+    end
+  end
+
+  def valid_infrastructure_selector?(_) do
+    {:error,
+     "The provided selector is not a valid infrastructure selector. The selector must be a map with a single key 'infrastructure'"}
+  end
 end

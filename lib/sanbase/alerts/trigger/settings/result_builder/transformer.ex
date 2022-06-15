@@ -23,16 +23,16 @@ defmodule Sanbase.Alert.ResultBuilder.Transformer do
 
   @doc ~s"""
   ## Examples
-      iex> data = [{"eos", [%{value: 1}, %{value: 2}, %{value: 5}]}]
+      iex> data = [{"bitcoin", [%{value: 1}, %{value: 2}, %{value: 5}]}]
       ...> Sanbase.Alert.ResultBuilder.Transformer.transform(data, :value)
       [%Sanbase.Alert.ResultBuilder.Transformer.Data{
-        identifier: "eos", absolute_change: 3, current: 5, previous: 2, percent_change: 150.0, previous_average: 1.5
+        identifier: "bitcoin", absolute_change: 3, current: 5, previous: 2, percent_change: 150.0, previous_average: 1.5
       }]
 
-      iex> data = [{"eos", [%{value: 2}, %{value: 2}, %{value: 3}, %{value: 4}]}]
+      iex> data = [{"bitcoin", [%{value: 2}, %{value: 2}, %{value: 3}, %{value: 4}]}]
       ...> Sanbase.Alert.ResultBuilder.Transformer.transform(data, :value)
       [%Sanbase.Alert.ResultBuilder.Transformer.Data{
-        absolute_change: 1, current: 4, previous: 3, identifier: "eos", percent_change: 33.33, previous_average: 2.33
+        absolute_change: 1, current: 4, previous: 3, identifier: "bitcoin", percent_change: 33.33, previous_average: 2.33
       }]
 
       iex> data = []

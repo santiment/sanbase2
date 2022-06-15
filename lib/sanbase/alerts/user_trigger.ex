@@ -7,9 +7,12 @@ defmodule Sanbase.Alert.UserTrigger do
   """
   use Ecto.Schema
 
+  @behaviour Sanbase.Entity.Behaviour
+
   import Ecto.Changeset
   import Ecto.Query
   import Sanbase.Alert.EventEmitter, only: [emit_event: 3]
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
   import Sanbase.Alert.TriggerQuery
   import Sanbase.Alert.StructMapTransformation
 
@@ -27,6 +30,9 @@ defmodule Sanbase.Alert.UserTrigger do
   @type trigger_id :: non_neg_integer()
 
   schema "user_triggers" do
+    field(:is_deleted, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
+
     belongs_to(:user, User)
     embeds_one(:trigger, Trigger, on_replace: :update)
 
@@ -65,17 +71,69 @@ defmodule Sanbase.Alert.UserTrigger do
   @spec update_changeset(%UserTrigger{}, map()) :: Ecto.Changeset.t()
   def update_changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do
     user_triggers
-    |> cast(attrs, [:user_id])
+    |> cast(attrs, [:user_id, :is_deleted, :is_hidden])
     |> Tag.put_tags(Map.get(attrs, :trigger, %{}))
     |> cast_embed(:trigger, required: true, with: &Trigger.update_changeset/2)
     |> validate_required([:user_id, :trigger])
   end
 
   def update_is_active(user_trigger_id, user, is_active) do
-    update_user_trigger(user, %{
+    update_user_trigger(user.id, %{
       id: user_trigger_id,
       is_active: is_active
     })
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id!(id, opts) when is_integer(id), do: by_id(id, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id(id, _opts) when is_integer(id) do
+    query = from(ut in base_query(), where: ut.id == ^id)
+
+    case Repo.one(query) do
+      nil -> {:error, "UserTrigger with id: #{id} does not exist"}
+      ut -> {:ok, ut |> trigger_in_struct()}
+    end
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids(ids, _opts) when is_list(ids) do
+    result =
+      from(ul in base_query(),
+        where: ul.id in ^ids,
+        order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
+      )
+      |> Repo.all()
+      |> Enum.map(&trigger_in_struct/1)
+
+    {:ok, result}
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    base_query()
+    |> where([ul], trigger_is_public())
+    |> maybe_apply_projects_filter(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
+    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> select([ul], ul.id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def user_entity_ids_query(user_id, opts) do
+    base_query()
+    |> where([ul], ul.user_id == ^user_id)
+    |> maybe_apply_projects_filter(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> select([ul], ul.id)
   end
 
   @doc ~s"""
@@ -83,15 +141,17 @@ defmodule Sanbase.Alert.UserTrigger do
   The result is transformed so all trigger settings are loaded in their
   corresponding struct
   """
-  @spec triggers_for(%User{}) :: list(Trigger.t())
-  def triggers_for(%User{id: user_id}) do
+  @spec triggers_for(non_neg_integer()) :: list(%UserTrigger{})
+  def triggers_for(user_id) when is_integer(user_id) and user_id > 0 do
     user_id
     |> user_triggers_for()
   end
 
-  @spec triggers_count_for(%User{}) :: integer()
-  def triggers_count_for(user) do
-    from(ut in UserTrigger, where: ut.user_id == ^user.id, select: fragment("count(*)"))
+  @spec triggers_count_for(non_neg_integer()) :: integer()
+  def triggers_count_for(user_id) when is_integer(user_id) and user_id > 0 do
+    base_query()
+    |> where([ut], ut.user_id == ^user_id)
+    |> select([_], fragment("count(*)"))
     |> Repo.one()
   end
 
@@ -100,16 +160,15 @@ defmodule Sanbase.Alert.UserTrigger do
   The result is transformed so all trigger settings are loaded in their
   corresponding struct
   """
-  @spec public_triggers_for(non_neg_integer() | %User{}) :: list(Trigger.t())
-  def public_triggers_for(%User{id: user_id}), do: user_id |> public_user_triggers_for()
+  @spec public_triggers_for(non_neg_integer()) :: list(%UserTrigger{})
   def public_triggers_for(user_id), do: user_id |> public_user_triggers_for()
 
   @doc ~s"""
   Get all public triggers from the database
   """
-  @spec all_public_triggers() :: list(%__MODULE__{})
+  @spec all_public_triggers() :: list(%UserTrigger{})
   def all_public_triggers() do
-    from(ut in UserTrigger, where: trigger_is_public(), preload: [:tags])
+    from(ut in base_query(), where: trigger_is_public(), preload: [:tags])
     |> Repo.all()
     |> Enum.map(&trigger_in_struct/1)
   end
@@ -118,16 +177,30 @@ defmodule Sanbase.Alert.UserTrigger do
   Get the trigger that has an id `trigger_id` if and only if it is owned by the
   user with id `user_id`
   """
-  @spec get_trigger_by_id(%User{} | nil, trigger_id) :: {:ok, %UserTrigger{} | nil}
-  def get_trigger_by_id(user, trigger_id) do
-    get_trigger_by_id_query(user, trigger_id)
-    |> Repo.one()
-    |> case do
-      %UserTrigger{} = ut ->
-        {:ok, ut |> trigger_in_struct()}
+  @spec by_user_and_id(non_neg_integer() | nil, trigger_id) :: {:ok, %UserTrigger{} | nil}
+  def by_user_and_id(user_id, trigger_id)
+      when is_nil(user_id) or (is_integer(user_id) and user_id > 0) do
+    user_trigger =
+      by_user_and_id_query(user_id, trigger_id)
+      |> Repo.one()
+
+    case user_trigger do
+      %UserTrigger{} = user_trigger ->
+        {:ok, trigger_in_struct(user_trigger)}
 
       nil ->
         {:ok, nil}
+    end
+  end
+
+  def get_trigger_by_if_owner(user_id, trigger_id) do
+    case by_user_and_id(user_id, trigger_id) do
+      {:ok, %UserTrigger{user_id: ^user_id} = user_trigger} ->
+        {:ok, user_trigger}
+
+      _ ->
+        {:error,
+         "The trigger with id #{trigger_id} does not exists or does not belong to the current user"}
     end
   end
 
@@ -138,7 +211,7 @@ defmodule Sanbase.Alert.UserTrigger do
   @spec get_all_triggers_by_type(String.t()) :: list(%__MODULE__{})
   def get_all_triggers_by_type(type) do
     from(
-      ut in UserTrigger,
+      ut in base_query(),
       where: trigger_type_is(type),
       preload: [{:user, :user_settings}, :tags]
     )
@@ -153,12 +226,37 @@ defmodule Sanbase.Alert.UserTrigger do
   @spec get_active_triggers_by_type(String.t()) :: list(%__MODULE__{})
   def get_active_triggers_by_type(type) do
     from(
-      ut in UserTrigger,
+      ut in base_query(),
       where: trigger_type_is(type) and trigger_is_active(),
       preload: [{:user, :user_settings}, :tags]
     )
     |> Repo.all()
     |> Enum.map(&trigger_in_struct/1)
+  end
+
+  @doc ~s"""
+  Check if a trigger is frozen.
+
+  Triggers get automatically frozen after a predefined number of days if
+  the user does not have a Sanbase PRO subscription. This alert restriction
+  is deprecatng the restriction of having 10 free alerts with free accounts.
+  """
+  @spec is_frozen?(%__MODULE__{}) :: false | {:error, String.t()}
+  def is_frozen?(%__MODULE__{} = user_trigger) do
+    case Map.get(user_trigger.trigger, :is_frozen, false) do
+      false -> false
+      true -> {:error, "The trigger with id #{user_trigger.id} is frozen."}
+    end
+  end
+
+  def unfreeze_user_frozen_alerts(user_id) do
+    triggers_for(user_id)
+    |> Enum.each(fn %__MODULE__{} = user_trigger ->
+      case is_frozen?(user_trigger) do
+        false -> :ok
+        _ -> update_user_trigger(user_id, %{id: user_trigger.id, is_frozen: false})
+      end
+    end)
   end
 
   @doc ~s"""
@@ -199,18 +297,21 @@ defmodule Sanbase.Alert.UserTrigger do
   Update an existing user trigger with a given UUID `trigger_id`.
   There are not required parameters.
   """
-  @spec update_user_trigger(%User{}, map()) ::
+  @spec update_user_trigger(non_neg_integer, map()) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
-  def update_user_trigger(%User{} = user, %{id: trigger_id} = params) do
+  def update_user_trigger(user_id, %{id: trigger_id} = params)
+      when is_integer(user_id) and user_id > 0 do
     settings = Map.get(params, :settings)
 
     with {_, :ok} <- {:valid?, valid_or_nil?(settings)},
-         {_, {:ok, struct}} when not is_nil(struct) <-
-           {:get_trigger, get_trigger_by_id(user, trigger_id)} do
-      struct
-      |> update_changeset(%{trigger: clean_params(params)})
-      |> Repo.update()
-      |> case do
+         {_, {:ok, %__MODULE__{} = struct}} <-
+           {:get_trigger, get_trigger_by_if_owner(user_id, trigger_id)} do
+      update_result =
+        struct
+        |> update_changeset(%{trigger: clean_params(params)})
+        |> Repo.update()
+
+      case update_result do
         {:ok, ut} ->
           # Trigger a post-update process only if the settings changed
           if settings != ut.trigger.settings, do: post_update_process(ut), else: {:ok, ut}
@@ -238,13 +339,13 @@ defmodule Sanbase.Alert.UserTrigger do
   @spec remove_user_trigger(%User{}, trigger_id) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
   def remove_user_trigger(%User{} = user, trigger_id) do
-    case get_trigger_by_id(user, trigger_id) do
-      {:ok, nil} ->
-        {:error, "Can't remove trigger with id #{trigger_id}"}
-
-      {:ok, struct} ->
-        Repo.delete(struct)
+    case get_trigger_by_if_owner(user.id, trigger_id) do
+      {:ok, %__MODULE__{} = user_trigger} ->
+        Repo.delete(user_trigger)
         |> emit_event(:delete_alert, %{})
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -295,30 +396,30 @@ defmodule Sanbase.Alert.UserTrigger do
     end
   end
 
-  defp get_trigger_by_id_query(nil, trigger_id) do
+  defp by_user_and_id_query(nil, trigger_id) do
     from(
-      ut in UserTrigger,
+      ut in base_query(),
       where: ut.id == ^trigger_id and trigger_is_public(),
       preload: [:tags]
     )
   end
 
-  defp get_trigger_by_id_query(%User{id: user_id}, trigger_id) do
+  defp by_user_and_id_query(user_id, trigger_id) do
     from(
-      ut in UserTrigger,
+      ut in base_query(),
       where: ut.id == ^trigger_id and (trigger_is_public() or ut.user_id == ^user_id),
       preload: [:tags]
     )
   end
 
   defp user_triggers_for(user_id) do
-    from(ut in UserTrigger, where: ut.user_id == ^user_id, preload: [:tags])
+    from(ut in base_query(), where: ut.user_id == ^user_id, preload: [:tags])
     |> Repo.all()
     |> Enum.map(&trigger_in_struct/1)
   end
 
   defp public_user_triggers_for(user_id) do
-    from(ut in UserTrigger,
+    from(ut in base_query(),
       where: ut.user_id == ^user_id and trigger_is_public(),
       preload: [:tags]
     )
@@ -369,5 +470,21 @@ defmodule Sanbase.Alert.UserTrigger do
     |> Map.drop([:id])
     |> Enum.reject(fn {_k, v} -> is_nil(v) end)
     |> Enum.into(%{})
+  end
+
+  defp base_query(_opts \\ []) do
+    from(ul in __MODULE__, where: ul.is_deleted != true)
+  end
+
+  defp maybe_apply_projects_filter(query, opts) do
+    case Keyword.get(opts, :filter) do
+      %{slugs: slugs} ->
+        from(ut in query,
+          where: trigger_target_is_slug(slugs)
+        )
+
+      _ ->
+        query
+    end
   end
 end

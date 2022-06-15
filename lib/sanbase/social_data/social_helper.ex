@@ -2,9 +2,21 @@ defmodule Sanbase.SocialData.SocialHelper do
   alias Sanbase.Model.Project
   alias Sanbase.Model.Project.SocialVolumeQuery
 
-  @sources [:telegram, :reddit, :twitter, :bitcointalk]
+  @sources [
+    :telegram,
+    :reddit,
+    :twitter,
+    :bitcointalk,
+    :twitter_crypto,
+    :twitter_news,
+    :youtube_videos
+  ]
 
   def sources(), do: @sources
+
+  # NOTE 19.05.2022: Remove twitter because a combination of twitter and twitter_* source leads to exception in metric hub
+  # the values for the twitter source are actually the sum of values for twitter_crypto and twitter_news sources
+  def sources_total_string(), do: @sources |> Enum.reject(&(&1 == :twitter)) |> Enum.join(",")
 
   def social_metrics_selector_handler(%{slug: slugs}) when is_list(slugs) do
     {:error, "Social Metrics cannot work with list of slugs."}

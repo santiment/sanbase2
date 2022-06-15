@@ -14,8 +14,6 @@ defmodule Sanbase.Repo.Migrations.MigrateOldTriggersSettingsFields do
   alias Sanbase.Repo
 
   def up do
-    Application.ensure_all_started(:prometheus_ecto)
-    Sanbase.Prometheus.EctoInstrumenter.setup()
     run()
   end
 
@@ -34,7 +32,7 @@ defmodule Sanbase.Repo.Migrations.MigrateOldTriggersSettingsFields do
   defp update_triggers(triggers) do
     triggers
     |> Enum.map(fn {user, id, settings} ->
-      UserTrigger.update_user_trigger(user, %{id: id, settings: settings})
+      UserTrigger.update_user_trigger(user.id, %{id: id, settings: settings})
     end)
   end
 

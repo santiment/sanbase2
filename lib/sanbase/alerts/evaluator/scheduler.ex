@@ -54,6 +54,7 @@ defmodule Sanbase.Alert.Scheduler do
       type
       |> UserTrigger.get_active_triggers_by_type()
       |> filter_receivable_triggers(info_map)
+      |> filter_not_frozen_triggers(info_map)
 
     # The batches are run sequentially for now. If they start running in parallel
     # the batches creation becomes more complicated - all the alerts of a user
@@ -186,11 +187,34 @@ defmodule Sanbase.Alert.Scheduler do
       alerts_count: alerts_count
     } = info_map
 
+    # TODO: Fix logging. It can print:  Batch 1/4, with size 63. Alerts 339-402 out of 221.
     Logger.info("""
     [#{run_uuid}] Run batch of alerts of type #{type}. Batch #{index}/#{batches_count}, \
     with size #{batch_map.batch_size}. Alerts #{batch_map.alerts_from}-#{batch_map.alerts_to} \
     out of #{alerts_count}.
     """)
+  end
+
+  # Do not execute alerts that are frozen. Frozen alerts are alerts
+  # that were created more than X days ago and their owner is a free user.
+  # This is the current restriction about alerts of free users.
+  defp filter_not_frozen_triggers(user_triggers, info_map) do
+    %{type: type, run_uuid: run_uuid} = info_map
+
+    filtered =
+      Enum.reject(user_triggers, fn %{trigger: trigger} ->
+        Map.get(trigger, :is_frozen, false)
+      end)
+
+    total_count = length(user_triggers)
+    frozen_count = total_count - length(filtered)
+
+    Logger.info("""
+    [#{run_uuid}] In total #{frozen_count}/#{total_count} active receivable alerts of type \
+    #{type} are frozen and won't be processed.
+    """)
+
+    filtered
   end
 
   defp filter_receivable_triggers(user_triggers, info_map) do
@@ -202,11 +226,23 @@ defmodule Sanbase.Alert.Scheduler do
 
         channels != [] and
           Enum.any?(channels, fn
-            "email" -> Sanbase.Accounts.User.can_receive_email_alert?(user)
-            "telegram" -> Sanbase.Accounts.User.can_receive_telegram_alert?(user)
-            # The other types - telegram channel and webhooks are always enabled
-            # and cannot be disabled by some settings.
-            _ -> true
+            "email" ->
+              Sanbase.Accounts.User.can_receive_email_alert?(user)
+
+            "telegram" ->
+              Sanbase.Accounts.User.can_receive_telegram_alert?(user)
+
+            %{"webhook" => webhook_url} ->
+              Sanbase.Accounts.User.can_receive_webhook_alert?(user, webhook_url)
+
+            "web_push" ->
+              # web push cannot be received currently. So if the other channels
+              # like telegram and email are not receivable, then the presence of
+              # web push should not cause scheduling of the alert
+              false
+
+            _ ->
+              true
           end)
       end)
 
@@ -296,7 +332,7 @@ defmodule Sanbase.Alert.Scheduler do
 
   defp update_trigger_last_triggered(user_trigger, last_triggered) do
     {:ok, updated_user_trigger} =
-      UserTrigger.update_user_trigger(user_trigger.user, %{
+      UserTrigger.update_user_trigger(user_trigger.user.id, %{
         id: user_trigger.id,
         last_triggered: last_triggered,
         settings: user_trigger.trigger.settings
@@ -327,27 +363,20 @@ defmodule Sanbase.Alert.Scheduler do
     # - missing email/telegram linked when such channel is chosen;
     # - webhook failed to be sent;
     # - daily alerts limit is reached;
-    failed_count = fn failed, result ->
-      failed + if result == :ok, do: 0, else: 1
-    end
-
     {last_triggered, total_triggered, total_failed} =
       send_results_list
       |> Enum.reduce({last_triggered, _total = 0, _failed = 0}, fn
-        {list, result}, {acc, total, failed} when is_list(list) ->
-          # Example: {["elem1", "elem2"], :ok}.
+        {identifier_or_list, _result = :ok}, {acc, total, failed} ->
+          # Example: {["elem1", "elem2"], :ok} or {"0x123", :ok}
           # This case happens when multiple identifiers (for example emerging words)
           # are handled in one notification.
+          list = identifier_or_list |> List.wrap()
           acc = Enum.reduce(list, acc, &Map.put(&2, &1, now))
 
-          {acc, total + 1, failed_count.(failed, result)}
+          {acc, total + 1, failed}
 
-        {identifier, result}, {acc, total, failed} ->
-          # Example: {"santiment", :ok}.
-          # This is the most common case - one notification per identificator.
-
-          acc = Map.put(acc, identifier, now)
-          {acc, total + 1, failed_count.(failed, result)}
+        {_identifier_or_list, _error_result}, {acc, total, failed} ->
+          {acc, total + 1, failed + 1}
       end)
 
     {:ok,

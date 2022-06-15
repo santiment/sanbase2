@@ -67,8 +67,7 @@ defmodule Sanbase.Model.Project.Roi do
         |> Enum.reduce(zero, &Decimal.add/2)
 
       unknown_tokens_sum =
-        Decimal.cmp(project.latest_coinmarketcap_data.available_supply, known_tokens_sum)
-        |> case do
+        case Decimal.compare(project.latest_coinmarketcap_data.available_supply, known_tokens_sum) do
           :gt ->
             Decimal.sub(project.latest_coinmarketcap_data.available_supply, known_tokens_sum)
 

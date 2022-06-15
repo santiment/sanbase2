@@ -11,6 +11,10 @@ defmodule SanbaseWeb.Graphql.Schema.FeaturedQueries do
   object :featured_queries do
     field :featured_insights, list_of(:post) do
       meta(access: :free)
+
+      arg(:page, :integer, default_value: 1)
+      arg(:page_size, :integer, default_value: 5)
+
       cache_resolve(&FeaturedItemResolver.insights/3)
     end
 

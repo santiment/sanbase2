@@ -20,9 +20,9 @@ defmodule Sanbase.Report do
         }
 
   schema "reports" do
-    field(:name, :string, null: false)
-    field(:description, :string, null: true)
-    field(:url, :string, null: false)
+    field(:name, :string)
+    field(:description, :string)
+    field(:url, :string)
     field(:is_pro, :boolean, default: false)
     field(:is_published, :boolean, default: false)
     field(:tags, {:array, :string}, default: [])

@@ -188,13 +188,14 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       from,
       to,
       transactionHash,
-      value / ?7
-    FROM erc20_transfers FINAL
+      (any(value) / ?7) AS value
+    FROM erc20_transfers
     PREWHERE
       #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
       assetRefId = cityHash64('ETH_' || ?2) AND
       dt >= toDateTime(?3) AND
       dt < toDateTime(?4)
+    GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
     ORDER BY value DESC
     LIMIT ?5 OFFSET ?6
     """
@@ -251,13 +252,14 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       from,
       to,
       transactionHash,
-      value / ?1
-    FROM #{dt_ordered_table()} FINAL
+      (any(value) / ?1) AS value
+    FROM #{dt_ordered_table()}
     PREWHERE
       assetRefId = cityHash64('ETH_' || ?2) AND
       dt >= toDateTime(?3) AND
       dt < toDateTime(?4)
       #{maybe_exclude_addresses(excluded_addresses, arg_position: 7)}
+    GROUP BY assetRefId, from, to, dt, transactionHash
     ORDER BY value DESC
     LIMIT ?5 OFFSET ?6
     """
@@ -283,6 +285,18 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     {limit, offset} = opts_to_limit_offset(opts)
     only_sender = Keyword.get(opts, :only_sender, false)
 
+    maybe_union_with_to_table =
+      case only_sender do
+        true ->
+          ""
+
+        false ->
+          """
+          UNION DISTINCT
+          SELECT * FROM erc20_transfers_to PREWHERE to = ?1
+          """
+      end
+
     query = """
     SELECT
       toUnixTimestamp(dt) AS datetime,
@@ -293,10 +307,12 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       name,
       decimals
     FROM (
-      SELECT assetRefId, from, to, value, dt, transactionHash
-      FROM erc20_transfers
-      PREWHERE #{if only_sender, do: "from = ?1", else: "(from = ?1 OR to = ?1)"}
-      GROUP BY assetRefId, from, to, value, dt, transactionHash
+      SELECT assetRefId, from, to, dt, transactionHash, any(value) AS value
+      FROM (
+        SELECT * FROM erc20_transfers PREWHERE from = ?1
+        #{maybe_union_with_to_table}
+      )
+      GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
     )
     INNER JOIN (
       SELECT asset_ref_id AS assetRefId, name, decimals
@@ -357,26 +373,28 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       SELECT
         from AS address,
         0 AS incoming,
-        value AS outgoing
-      FROM erc20_transfers FINAL
+        any(value) AS outgoing
+      FROM erc20_transfers
       PREWHERE
         from IN (?1) AND
         assetRefId = cityHash64('ETH_' || ?2) AND
         dt >= toDateTime(?4) AND
         dt < toDateTime(?5)
+      GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
 
       UNION ALL
 
       SELECT
         to AS address,
-        value AS incoming,
+        any(value) AS incoming,
         0 AS outgoing
-      FROM erc20_transfers_to FINAL
+      FROM erc20_transfers_to
       PREWHERE
         to in (?1) AND
         assetRefId = cityHash64('ETH_' || ?2) AND
         dt >= toDateTime(?4) AND
         dt < toDateTime(?5)
+      GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
     )
     GROUP BY address
     """
@@ -410,26 +428,28 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       SELECT
         dt,
         0 AS incoming,
-        value AS outgoing
-      FROM erc20_transfers FINAL
+        any(value) AS outgoing
+      FROM erc20_transfers
       PREWHERE
         from IN (?2) AND
         assetRefId = cityHash64('ETH_' || ?3) AND
         dt >= toDateTime(?5) AND
         dt < toDateTime(?6)
+      GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
 
       UNION ALL
 
       SELECT
         dt,
-        value AS incoming,
+        any(value) AS incoming,
         0 AS outgoing
-      FROM erc20_transfers_to FINAL
+      FROM erc20_transfers_to
       PREWHERE
         to in (?2) AND
         assetRefId = cityHash64('ETH_' || ?3) AND
         dt >= toDateTime(?5) AND
         dt < toDateTime(?6)
+      GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
     )
     GROUP BY time
     """
@@ -463,12 +483,15 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       "#{select_column}" AS address,
       SUM(value) / ?1 AS transaction_volume,
       COUNT(*) AS transfers_count
-    FROM #{table}
-    PREWHERE
+    FROM (
+      SELECT dt, from, to, any(value) AS value
+      FROM #{table}
       assetRefId = cityHash64('ETH_' || ?2) AND
       #{filter_column} = ?3 AND
       dt >= toDateTime(?4) AND
       dt < toDateTime(?5)
+      GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
+    )
     GROUP BY "#{select_column}"
     ORDER BY #{order_by_str} DESC
     LIMIT ?6 OFFSET ?7

@@ -1,5 +1,6 @@
 defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
+
   import Sanbase.Utils.Transform
 
   alias Sanbase.Transfers.Erc20Transfers
@@ -127,6 +128,9 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   def available_aggregations(), do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
+  def restricted_metrics(), do: @restricted_metrics
+
+  @impl Sanbase.Metric.Behaviour
   def available_timeseries_metrics(), do: @timeseries_metrics
 
   @impl Sanbase.Metric.Behaviour
@@ -158,9 +162,6 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics
-
-  @impl Sanbase.Metric.Behaviour
-  def restricted_metrics(), do: @restricted_metrics
 
   @impl Sanbase.Metric.Behaviour
   def access_map(), do: @access_map

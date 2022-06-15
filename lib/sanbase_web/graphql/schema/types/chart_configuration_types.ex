@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationTypes do
     field(:description, :string)
     field(:is_public, :boolean)
     field(:metrics, list_of(:string))
+    field(:metrics_json, :json)
     field(:anomalies, list_of(:string))
     field(:queries, :json)
     field(:drawings, :json)
@@ -26,14 +27,16 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationTypes do
     field(:id, non_null(:integer))
     field(:title, :string)
     field(:description, :string)
-    field(:is_public, :boolean)
+    field(:is_public, non_null(:boolean))
+    field(:is_hidden, non_null(:boolean))
     field(:metrics, list_of(:string))
+    field(:metrics_json, :json)
     field(:anomalies, list_of(:string))
     field(:queries, :json)
     field(:drawings, :json)
     field(:options, :json)
 
-    field :user, non_null(:user) do
+    field :user, non_null(:public_user) do
       resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
     end
 

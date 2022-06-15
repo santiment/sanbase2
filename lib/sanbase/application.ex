@@ -17,7 +17,7 @@ defmodule Sanbase.Application do
     print_starting_log(container_type)
 
     # Do some initialization. This includes increasing the backtrace depth,
-    # setting up some monitoring instruments, etc.
+    # starting the event bus, etc.
     init(container_type)
 
     # Get the proper children that have to be started in the current container type
@@ -52,12 +52,9 @@ defmodule Sanbase.Application do
     # so it applies to all non-phoenix work, too
     :erlang.system_flag(:backtrace_depth, 20)
 
-    # Prometheus related
-    Sanbase.Prometheus.EctoInstrumenter.setup()
-    Sanbase.Prometheus.PipelineInstrumenter.setup()
-    Sanbase.Prometheus.Exporter.setup()
-
     Sanbase.EventBus.init()
+
+    Application.put_env(:mailchimp, :api_key, System.get_env("MAILCHIMP_API_KEY"))
 
     # Container specific init
     case container_type do
@@ -140,11 +137,26 @@ defmodule Sanbase.Application do
   """
   def prepended_children(container_type) do
     [
-      # SanExporterEx is the module that handles the data pushing to Kafka
+      start_in(
+        %{
+          id: :sanbase_brod_sup_id,
+          start: {:brod_sup, :start_link, []},
+          type: :supervisor
+        },
+        # Start manually in dev and prod. SanExporterEx won't start its
+        # brod supervisor because of the `start_brod_supervisor: false` option
+        [:dev, :prod]
+      ),
+
+      # SanExporterEx is the module that handles the data pushing to Kafka. As other
+      # parts can be started that also require :brod_sup, :brod_sup will be started
+      # separately and `start_brod_supervisor: false` is provided to
+      # SanExporterEx
       {SanExporterEx,
        [
          kafka_producer_module: Config.module_get!(Sanbase.KafkaExporter, :supervisor),
-         kafka_endpoint: kafka_endpoint()
+         kafka_endpoint: kafka_endpoint(),
+         start_brod_supervisor: false
        ]},
 
       # API Calls exporter is started only in `web` and `all` pods.
@@ -195,14 +207,17 @@ defmodule Sanbase.Application do
   @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
   def common_children() do
     [
+      # Start the PubSub
+      {Phoenix.PubSub, name: Sanbase.PubSub},
+
+      # Start the Presence
+      SanbaseWeb.Presence,
+
       # Start the endpoint when the application starts
       SanbaseWeb.Endpoint,
 
       # Start the Postgres Ecto repository
       Sanbase.Repo,
-
-      # Start the PubSub
-      {Phoenix.PubSub, name: Sanbase.PubSub},
 
       # Telemetry metrics
       SanbaseWeb.Telemetry,
@@ -210,6 +225,13 @@ defmodule Sanbase.Application do
       # Start the Clickhouse Repo
       start_if(
         fn -> Sanbase.ClickhouseRepo end,
+        fn ->
+          Application.get_env(:sanbase, :env) in [:dev, :prod] and
+            Sanbase.ClickhouseRepo.enabled?()
+        end
+      ),
+      start_if(
+        fn -> Sanbase.ClickhouseRepo.ReadOnly end,
         fn ->
           Application.get_env(:sanbase, :env) in [:dev, :prod] and
             Sanbase.ClickhouseRepo.enabled?()
@@ -266,8 +288,8 @@ defmodule Sanbase.Application do
   end
 
   defp kafka_endpoint() do
-    url = Config.module_get!(Sanbase.KafkaExporter, :kafka_url) |> to_charlist()
-    port = Config.module_get!(Sanbase.KafkaExporter, :kafka_port) |> Sanbase.Math.to_integer()
+    url = Config.module_get!(Sanbase.Kafka, :kafka_url) |> to_charlist()
+    port = Config.module_get_integer!(Sanbase.Kafka, :kafka_port)
 
     [{url, port}]
   end

@@ -18,11 +18,23 @@ config :sanbase, SanbaseWeb.Endpoint,
   load_from_system_env: true,
   secret_key_base: "${SECRET_KEY_BASE}",
   live_view: [signing_salt: "${PHOENIX_LIVE_VIEW_SIGNING_SALT}"],
-  check_origin: ["//*.santiment.net"]
+  check_origin: ["//*.santiment.net", "//*.sanr.app"]
 
 # Clickhousex does not support `:system` tuples. The configuration is done
 # by defining defining `:url` in the ClickhouseRepo `init` function.
 config :sanbase, Sanbase.ClickhouseRepo,
+  adapter: ClickhouseEcto,
+  loggers: [Ecto.LogEntry],
+  hostname: "clickhouse",
+  port: 8123,
+  database: "not_secret_default",
+  username: "not_secret_default",
+  password: "",
+  timeout: 60_000,
+  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "25"},
+  pool_overflow: 5
+
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
   adapter: ClickhouseEcto,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   hostname: "clickhouse",
@@ -30,12 +42,14 @@ config :sanbase, Sanbase.ClickhouseRepo,
   database: "not_secret_default",
   username: "not_secret_default",
   password: "",
-  timeout: 60_000,
-  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "30"},
-  pool_overflow: 5
+  timeout: 600_000,
+  pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "0"},
+  pool_overflow: 10
 
 # Do not print debug messages in production
 config :logger, level: :info
+
+config :sanbase, Sanbase.Kafka.Consumer, enabled?: {:system, "KAFKA_CONSUMER_ENABLED", true}
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
@@ -50,7 +64,8 @@ config :sanbase, SanbaseWeb.Plug.SessionPlug,
 
 config :ethereumex,
   url: "${PARITY_URL}",
-  http_options: [timeout: 25_000, recv_timeout: 25_000]
+  http_options: [timeout: 25_000, recv_timeout: 25_000],
+  http_headers: [{"Content-Type", "application/json"}]
 
 if File.exists?("config/prod.secret.exs") do
   import_config "prod.secret.exs"

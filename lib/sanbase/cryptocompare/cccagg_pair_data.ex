@@ -49,17 +49,18 @@ defmodule Sanbase.Cryptocompare.CCCAGGPairData do
 
     Logger.info("[CCCAGG Pair Data] Scheduling oban jobs for #{length(list)} pairs")
 
-    list
-    |> Enum.map(fn elem ->
-      elem = %{
-        start_date: days_ago_60,
-        end_date: elem.end_date,
-        base_asset: elem.base_asset,
-        quote_asset: elem.quote_asset
-      }
+    :ok =
+      list
+      |> Enum.each(fn elem ->
+        elem = %{
+          start_date: days_ago_60,
+          end_date: elem.end_date,
+          base_asset: elem.base_asset,
+          quote_asset: elem.quote_asset
+        }
 
-      add_jobs(elem)
-    end)
+        add_jobs(elem)
+      end)
 
     Logger.info("[CCCAGG Pair Data] Finished scheduling cryptocompare previous day oban jobs")
   end
@@ -83,18 +84,20 @@ defmodule Sanbase.Cryptocompare.CCCAGGPairData do
   defp pairs_to_maps(pairs) do
     pairs
     |> Enum.flat_map(fn {base_asset, map} ->
-      Enum.map(map["tsyms"], fn {quote_asset,
-                                 %{
-                                   "histo_minute_start" => start_date_iso8601,
-                                   "histo_minute_end" => end_date_iso8601
-                                 }} ->
-        %{
-          base_asset: base_asset,
-          quote_asset: quote_asset,
-          start_date: Date.from_iso8601!(start_date_iso8601),
-          end_date: Date.from_iso8601!(end_date_iso8601)
-        }
+      Enum.map(map["tsyms"], fn
+        {quote_asset,
+         %{"histo_minute_start" => start_date_iso8601, "histo_minute_end" => end_date_iso8601}} ->
+          %{
+            base_asset: base_asset,
+            quote_asset: quote_asset,
+            start_date: Date.from_iso8601!(start_date_iso8601),
+            end_date: Date.from_iso8601!(end_date_iso8601)
+          }
+
+        _ ->
+          nil
       end)
+      |> Enum.reject(&is_nil/1)
     end)
   end
 

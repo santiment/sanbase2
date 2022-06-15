@@ -123,6 +123,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:is_paywall_required, :boolean)
       arg(:from, :datetime)
       arg(:to, :datetime)
+      arg(:page, :integer, default_value: 1)
+      arg(:page_size, :integer, default_value: 10)
 
       cache_resolve(&InsightResolver.all_insights_by_search_term/3, ttl: 5, max_ttl_offset: 5)
       middleware(PostPaywallFilter)

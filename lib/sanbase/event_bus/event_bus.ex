@@ -75,7 +75,7 @@ defmodule Sanbase.EventBus do
     params =
       params
       |> Map.merge(%{
-        id: Map.get(params, :id, Ecto.UUID.generate()),
+        id: Map.get(params, :id, UUID.uuid4()),
         topic: Map.fetch!(params, :topic),
         transaction_id: Map.get(params, :transaction_id),
         error_topic: Map.fetch!(params, :topic)

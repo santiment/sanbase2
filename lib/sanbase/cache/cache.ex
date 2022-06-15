@@ -5,6 +5,7 @@ defmodule Sanbase.Cache do
 
   @compile {:inline, get_or_store_isolated: 4}
 
+  @impl Sanbase.Cache.Behaviour
   def child_spec(opts) do
     Supervisor.child_spec(
       {ConCache,
@@ -18,6 +19,7 @@ defmodule Sanbase.Cache do
     )
   end
 
+  @impl Sanbase.Cache.Behaviour
   def hash(data) do
     :crypto.hash(:sha256, :erlang.term_to_binary(data))
     |> Base.encode64()
@@ -26,11 +28,14 @@ defmodule Sanbase.Cache do
   def name, do: @cache_name
 
   @impl Sanbase.Cache.Behaviour
-  def size(cache \\ @cache_name, size_type)
-
-  def size(cache, :megabytes) do
+  def size(cache) do
     bytes_size = :ets.info(ConCache.ets(cache), :memory) * :erlang.system_info(:wordsize)
     (bytes_size / (1024 * 1024)) |> Float.round(2)
+  end
+
+  @impl Sanbase.Cache.Behaviour
+  def count(cache) do
+    :ets.info(ConCache.ets(cache), :size)
   end
 
   @impl Sanbase.Cache.Behaviour

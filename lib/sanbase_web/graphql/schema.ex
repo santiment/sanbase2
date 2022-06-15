@@ -17,7 +17,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   use Absinthe.Schema
 
   alias SanbaseWeb.Graphql
-  alias SanbaseWeb.Graphql.Prometheus
   alias SanbaseWeb.Graphql.{SanbaseRepo, SanbaseDataloader}
   alias SanbaseWeb.Graphql.Middlewares.ApiUsage
 
@@ -32,25 +31,28 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.CustomTypes.IntervalOrNow)
   import_types(Graphql.CustomTypes.JSON)
   # End of custom types
-  import_types(Graphql.AuthTypes)
   import_types(Graphql.AggregationTypes)
   import_types(Graphql.AlertsHistoricalActivityTypes)
+  import_types(Graphql.AuthTypes)
   import_types(Graphql.BillingTypes)
-  import_types(Graphql.BlockchainAddressType)
   import_types(Graphql.BlockchainAddressType)
   import_types(Graphql.BlockchainTypes)
   import_types(Graphql.ChartConfigurationTypes)
   import_types(Graphql.ClickhouseTypes)
   import_types(Graphql.CommentTypes)
+  import_types(Graphql.DashboardTypes)
+  import_types(Graphql.EntityTypes)
   import_types(Graphql.EtherbiTypes)
   import_types(Graphql.ExchangeTypes)
   import_types(Graphql.FileTypes)
   import_types(Graphql.GithubTypes)
   import_types(Graphql.HistoricalBalanceTypes)
   import_types(Graphql.InsightTypes)
+  import_types(Graphql.IntercomTypes)
   import_types(Graphql.MarketSegmentTypes)
   import_types(Graphql.MarketTypes)
   import_types(Graphql.MetricTypes)
+  import_types(Graphql.NftTypes)
   import_types(Graphql.PaginationTypes)
   import_types(Graphql.PriceTypes)
   import_types(Graphql.ProjectTypes)
@@ -85,17 +87,20 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.BlockchainQueries)
   import_types(Graphql.Schema.ChartConfigurationQueries)
   import_types(Graphql.Schema.CommentQueries)
+  import_types(Graphql.Schema.DashboardQueries)
   import_types(Graphql.Schema.DiscordQueries)
   import_types(Graphql.Schema.EmailQueries)
+  import_types(Graphql.Schema.EntityQueries)
   import_types(Graphql.Schema.ExchangeQueries)
   import_types(Graphql.Schema.FeaturedQueries)
   import_types(Graphql.Schema.GithubQueries)
   import_types(Graphql.Schema.HistoricalBalanceQueries)
   import_types(Graphql.Schema.InsightQueries)
   import_types(Graphql.Schema.IntercomQueries)
-  import_types(Graphql.Schema.IntercomQueries)
+  import_types(Graphql.Schema.LinkedUserQueries)
   import_types(Graphql.Schema.MarketQueries)
   import_types(Graphql.Schema.MetricQueries)
+  import_types(Graphql.Schema.NftQueries)
   import_types(Graphql.Schema.PriceQueries)
   import_types(Graphql.Schema.ProjectQueries)
   import_types(Graphql.Schema.PromoterQueries)
@@ -111,6 +116,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.UserListQueries)
   import_types(Graphql.Schema.UserQueries)
   import_types(Graphql.Schema.UserTriggerQueries)
+  import_types(Graphql.Schema.ModerationQueries)
   import_types(Graphql.Schema.VoteQueries)
   import_types(Graphql.Schema.WalletHunterQueries)
   import_types(Graphql.Schema.WebinarQueries)
@@ -135,18 +141,8 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   def middleware(middlewares, field, object) do
     case object.identifier do
-      :query ->
-        [
-          ApiUsage
-          | middlewares
-            |> Prometheus.HistogramInstrumenter.instrument(field, object)
-            |> Prometheus.CounterInstrumenter.instrument(field, object)
-        ]
-
-      _ ->
-        middlewares
-        |> Prometheus.HistogramInstrumenter.instrument(field, object)
-        |> Prometheus.CounterInstrumenter.instrument(field, object)
+      :query -> [ApiUsage | middlewares]
+      _ -> middlewares
     end
   end
 
@@ -158,15 +154,19 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:blockchain_metric_queries)
     import_fields(:blockchain_queries)
     import_fields(:comment_queries)
+    import_fields(:dashboard_queries)
+    import_fields(:entity_queries)
     import_fields(:exchange_queries)
     import_fields(:featured_queries)
     import_fields(:github_queries)
     import_fields(:historical_balance_queries)
     import_fields(:insight_queries)
     import_fields(:intercom_queries)
-    import_fields(:intercom_queries)
+    import_fields(:linked_user_queries)
     import_fields(:market_queries)
     import_fields(:metric_queries)
+    import_fields(:moderation_queries)
+    import_fields(:nft_queries)
     import_fields(:price_queries)
     import_fields(:project_chart_queries)
     import_fields(:project_eth_spent_queries)
@@ -195,10 +195,14 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:billing_mutations)
     import_fields(:blockchain_address_mutations)
     import_fields(:comment_mutations)
+    import_fields(:dashboard_mutations)
     import_fields(:discord_mutations)
     import_fields(:email_mutations)
+    import_fields(:entity_mutations)
     import_fields(:insight_mutations)
     import_fields(:intercom_mutations)
+    import_fields(:linked_user_mutations)
+    import_fields(:moderation_mutations)
     import_fields(:project_chart_mutations)
     import_fields(:promoter_mutations)
     import_fields(:report_mutations)

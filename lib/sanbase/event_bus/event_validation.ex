@@ -66,7 +66,13 @@ defmodule Sanbase.EventBus.EventValidation do
   ## Insight Events
   #############################################################################
   def valid?(%{event_type: event_type, user_id: user_id, insight_id: insight_id})
-      when event_type in [:create_insight, :update_insight, :delete_insight, :publish_insight],
+      when event_type in [
+             :create_insight,
+             :update_insight,
+             :delete_insight,
+             :publish_insight,
+             :unpublish_insight
+           ],
       do: valid_integer_id?(user_id) and valid_integer_id?(insight_id)
 
   #############################################################################
@@ -185,6 +191,19 @@ defmodule Sanbase.EventBus.EventValidation do
     valid_integer_id?(user_id) and is_binary(promoter_origin) and promoter_origin != ""
   end
 
+  def valid?(%{
+        event_type: event_type,
+        user_id: user_id
+      })
+      when event_type in [
+             :subscribe_biweekly_report,
+             :unsubscribe_biweekly_report,
+             :subscribe_monthly_newsletter,
+             :unsubscribe_monthly_newsletter
+           ] do
+    valid_integer_id?(user_id)
+  end
+
   #############################################################################
   ## Invalid Events
   #############################################################################
@@ -200,7 +219,6 @@ defmodule Sanbase.EventBus.EventValidation do
 
   defp valid_integer_id?(id), do: is_integer(id) and id > 0
   defp valid_string_id?(id), do: is_binary(id) and id != ""
-  defp valid_string_field_change?(old, new), do: is_binary(old) and is_binary(new) and old != new
 
   defp valid_maybe_nil_string_field_change?(old, new),
     do: (is_nil(old) or is_binary(old)) and (is_nil(new) or is_binary(new)) and old != new

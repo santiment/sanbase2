@@ -60,7 +60,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   # of computing the latest data
   @hours_back_ensure_has_data 3
 
-  schema Config.get(:trending_words_table) do
+  schema "trending_words_v4_top_500" do
     field(:dt, :utc_datetime)
     field(:word, :string)
     field(:volume, :float)
@@ -101,7 +101,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, map()} | {:error, String.t()}
   def get_trending_projects(from, to, interval, size, sources \\ @default_sources) do
-    {query, args} = get_trending_words_query(from, to, interval, sources, size)
+    {query, args} = get_trending_words_query(from, to, interval, size, sources)
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn
       [_dt, _word, nil, _score], acc ->

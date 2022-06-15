@@ -1,31 +1,48 @@
 defmodule Sanbase.SocialData.SocialVolume do
   import Sanbase.Utils.ErrorHandling
 
-  alias Sanbase.SocialData.SocialHelper
-  alias Sanbase.Model.Project
-
   require Logger
   require Mockery.Macro
   require Sanbase.Utils.Config, as: Config
 
+  alias Sanbase.SocialData.SocialHelper
+  alias Sanbase.Model.Project
+  alias Sanbase.Clickhouse.NftTrade
+
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000
+  def social_volume(selector, from, to, interval, source, opts \\ [])
 
-  def social_volume(selector, from, to, interval, source)
+  def social_volume(selector, from, to, interval, source, opts)
       when source in [:all, "all", :total, "total"] do
-    sources_string = SocialHelper.sources() |> Enum.join(",")
-
-    social_volume(selector, from, to, interval, sources_string)
+    social_volume(selector, from, to, interval, SocialHelper.sources_total_string(), opts)
   end
 
-  def social_volume(%{words: words} = selector, from, to, interval, source) when is_list(words) do
-    social_volume_list_request(selector, from, to, interval, source)
+  def social_volume(%{contract_address: contract}, from, to, interval, source, opts)
+      when is_binary(contract) do
+    search_text =
+      contract
+      |> Sanbase.BlockchainAddress.to_internal_format()
+      |> NftTrade.nft_search_text_by_contract()
+
+    case search_text do
+      text when is_binary(text) ->
+        social_volume(%{text: text}, from, to, interval, source, opts)
+
+      _ ->
+        {:error, "Cannot fetch Social Volume for this contract: #{contract}"}
+    end
+  end
+
+  def social_volume(%{words: words} = selector, from, to, interval, source, opts)
+      when is_list(words) do
+    social_volume_list_request(selector, from, to, interval, source, opts)
     |> handle_list_response(selector)
   end
 
-  def social_volume(selector, from, to, interval, source) do
-    social_volume_request(selector, from, to, interval, source)
+  def social_volume(selector, from, to, interval, source, opts) do
+    social_volume_request(selector, from, to, interval, source, opts)
     |> handle_response(selector)
   end
 
@@ -82,8 +99,8 @@ defmodule Sanbase.SocialData.SocialVolume do
     {:ok, projects}
   end
 
-  defp social_volume_list_request(%{words: words}, from, to, interval, source) do
-    url = Path.join([metrics_hub_url(), "social_volume"])
+  defp social_volume_list_request(%{words: words}, from, to, interval, source, opts) do
+    url = Path.join([metrics_hub_url(), opts_to_metric(opts)])
 
     options = [
       recv_timeout: @recv_timeout,
@@ -99,9 +116,9 @@ defmodule Sanbase.SocialData.SocialVolume do
     http_client().get(url, [], options)
   end
 
-  defp social_volume_request(selector, from, to, interval, source) do
+  defp social_volume_request(selector, from, to, interval, source, opts) do
     with {:ok, search_text} <- SocialHelper.social_metrics_selector_handler(selector) do
-      url = Path.join([metrics_hub_url(), "social_volume"])
+      url = Path.join([metrics_hub_url(), opts_to_metric(opts)])
 
       options = [
         recv_timeout: @recv_timeout,
@@ -126,6 +143,13 @@ defmodule Sanbase.SocialData.SocialVolume do
       }
     end)
     |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
+  end
+
+  def opts_to_metric(opts) do
+    case Keyword.get(opts, :metric) do
+      "nft_social_volume" -> "nft_collections_social_volume"
+      _ -> "social_volume"
+    end
   end
 
   defp metrics_hub_url() do

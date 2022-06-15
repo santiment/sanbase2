@@ -98,21 +98,25 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
   end
 
   defp fetch_price(slug, :last) do
-    Cache.wrap(
-      fn ->
-        now = Timex.now()
-        yesterday = Timex.shift(now, days: -1)
+    {:ok, tuple} =
+      Cache.wrap(
+        fn ->
+          now = Timex.now()
+          yesterday = Timex.shift(now, days: -1)
 
-        case Sanbase.Price.aggregated_timeseries_data(slug, yesterday, now) do
-          {:ok, [%{slug: ^slug, price_usd: price_usd, price_btc: price_btc}]} ->
-            {price_usd, price_btc}
+          case Sanbase.Price.aggregated_timeseries_data(slug, yesterday, now) do
+            {:ok, [%{slug: ^slug, price_usd: price_usd, price_btc: price_btc}]} ->
+              {:ok, {price_usd, price_btc}}
 
-          _error ->
-            {nil, nil}
-        end
-      end,
-      :fetch_price_last_record,
-      %{slug: slug}
-    ).()
+            _error ->
+              # TODO: Maybe wrap in :nonache tuple
+              {:ok, {nil, nil}}
+          end
+        end,
+        :fetch_price_last_record,
+        %{slug: slug}
+      ).()
+
+    tuple
   end
 end

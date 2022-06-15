@@ -86,6 +86,14 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
 
       resolve(&AlertsHistoricalActivityResolver.fetch_historical_activity_for/3)
     end
+
+    field :alerts_stats, :alerts_stats do
+      meta(access: :free)
+
+      middleware(JWTAuth)
+
+      resolve(&UserTriggerResolver.alerts_stats/3)
+    end
   end
 
   object :alert_mutations do

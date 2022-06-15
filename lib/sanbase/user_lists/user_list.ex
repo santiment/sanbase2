@@ -14,11 +14,14 @@ defmodule Sanbase.UserList do
   of the top 50 ERC20 projects or all projects with a market segment "stablecoin"
   """
 
+  @behaviour Sanbase.Entity.Behaviour
+
   use Ecto.Schema
 
   import Ecto.Changeset
   import Ecto.Query
   import Sanbase.UserList.EventEmitter, only: [emit_event: 3]
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
 
   alias Sanbase.Accounts.User
   alias Sanbase.UserList.ListItem
@@ -29,15 +32,16 @@ defmodule Sanbase.UserList do
 
   schema "user_lists" do
     field(:type, WatchlistType, default: :project)
-
+    field(:name, :string)
+    field(:slug, :string)
     field(:color, ColorEnum, default: :none)
     field(:description, :string)
     field(:function, WatchlistFunction, default: %WatchlistFunction{})
     field(:is_monitored, :boolean, default: false)
     field(:is_public, :boolean, default: false)
     field(:is_screener, :boolean, default: false)
-    field(:name, :string)
-    field(:slug, :string)
+    field(:is_deleted, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
 
     belongs_to(:user, User)
     belongs_to(:table_configuration, Sanbase.TableConfiguration)
@@ -58,19 +62,20 @@ defmodule Sanbase.UserList do
     update_changeset(user_list, attrs)
   end
 
-  @create_update_fields [:color, :description, :function, :is_monitored, :is_public, :is_screener] ++
-                          [:name, :slug, :table_configuration_id, :type, :user_id]
+  @create_fields [:color, :description, :function, :is_monitored, :is_public, :is_screener] ++
+                   [:name, :slug, :table_configuration_id, :type, :user_id]
   def create_changeset(%__MODULE__{} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, @create_update_fields)
+    |> cast(attrs, @create_fields)
     |> validate_required([:name, :user_id])
     |> validate_change(:function, &validate_function/2)
     |> unique_constraint(:slug)
   end
 
+  @update_fields @create_fields ++ [:is_deleted, :is_hidden]
   def update_changeset(%__MODULE__{id: _id} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, @create_update_fields)
+    |> cast(attrs, @update_fields)
     |> cast_assoc(:list_items)
     |> validate_change(:function, &validate_function/2)
     |> unique_constraint(:slug)
@@ -82,35 +87,82 @@ defmodule Sanbase.UserList do
     {:ok, function} = function |> WatchlistFunction.cast()
 
     case WatchlistFunction.valid_function?(function) do
-      true -> []
-      {:error, error} -> [function: "Provided watchlist function is not valid. Reason: #{error}"]
+      true ->
+        []
+
+      {:error, error} ->
+        [function: "Provided watchlist function is not valid. Reason: #{error}"]
     end
   end
 
-  def by_id(id) do
-    from(ul in __MODULE__, where: ul.id == ^id)
-    |> Repo.one()
-    |> case do
-      nil -> {:error, "Watchlist with id: #{id} does not exist."}
+  @impl Sanbase.Entity.Behaviour
+  def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id(id, _opts) when is_integer(id) or is_binary(id) do
+    result =
+      from(ul in base_query(), where: ul.id == ^id)
+      |> Repo.one()
+
+    case result do
+      nil -> {:error, "Watchlist with id #{id} does not exist"}
       watchlist -> {:ok, watchlist}
     end
   end
 
-  def by_id!(id) do
-    by_id(id)
-    |> case do
-      {:ok, watchlist} -> watchlist
-      {:error, error} -> raise(error)
-    end
+  @impl Sanbase.Entity.Behaviour
+  def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids(ids, _opts) when is_list(ids) do
+    result =
+      from(ul in base_query(),
+        where: ul.id in ^ids,
+        order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
+      )
+      |> Repo.all()
+
+    {:ok, result}
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    base_query()
+    |> where([ul], ul.is_public == true)
+    |> distinct(true)
+    |> maybe_filter_is_screener_query(opts)
+    |> maybe_apply_metrics_filter_query(opts)
+    |> maybe_filter_by_type_query(opts)
+    |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_list_id)
+    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> select([ul], ul.id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def user_entity_ids_query(user_id, opts) do
+    base_query()
+    |> where([ul], ul.user_id == ^user_id)
+    |> maybe_filter_is_screener_query(opts)
+    |> maybe_apply_metrics_filter_query(opts)
+    |> maybe_filter_by_type_query(opts)
+    |> maybe_apply_projects_filter_query(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_list_id)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> select([ul], ul.id)
   end
 
   def by_slug(slug) when is_binary(slug) do
-    from(ul in __MODULE__, where: ul.slug == ^slug)
+    from(ul in base_query(), where: ul.slug == ^slug)
     |> Repo.one()
   end
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
   def is_screener?(%__MODULE__{is_screener: is_screener}), do: is_screener
+  def type(%__MODULE__{type: type}), do: type
 
   @doc ~s"""
   Return a list of all blockchain addresses in a watchlist.
@@ -161,7 +213,12 @@ defmodule Sanbase.UserList do
 
       # If there is pagination, the total number of projects cannot be properly
       # defined without having all the slugs, including the ones from the other pages
-      {:ok, %{projects: projects, has_pagination?: true, all_included_slugs: all_included_slugs}} ->
+      {:ok,
+       %{
+         projects: projects,
+         has_pagination?: true,
+         all_included_slugs: all_included_slugs
+       }} ->
         list_item_projects = ListItem.get_projects(watchlist)
 
         unique_projects =
@@ -175,7 +232,11 @@ defmodule Sanbase.UserList do
           |> Enum.uniq_by(& &1.id)
           |> length()
 
-        {:ok, %{projects: unique_projects, total_projects_count: total_projects_count}}
+        {:ok,
+         %{
+           projects: unique_projects,
+           total_projects_count: total_projects_count
+         }}
 
       {:ok, %{projects: projects}} ->
         list_item_projects = ListItem.get_projects(watchlist)
@@ -185,7 +246,11 @@ defmodule Sanbase.UserList do
           |> Enum.reject(&is_nil(&1.slug))
           |> Enum.uniq_by(& &1.id)
 
-        {:ok, %{projects: unique_projects, total_projects_count: length(unique_projects)}}
+        {:ok,
+         %{
+           projects: unique_projects,
+           total_projects_count: length(unique_projects)
+         }}
     end
   end
 
@@ -209,8 +274,11 @@ defmodule Sanbase.UserList do
     |> case do
       {:ok, user_list} ->
         case list_items = Map.get(params, :list_items) do
-          nil -> {:ok, user_list}
-          _ -> update_user_list(user, %{id: user_list.id, list_items: list_items})
+          nil ->
+            {:ok, user_list}
+
+          _ ->
+            update_user_list(user, %{id: user_list.id, list_items: list_items})
         end
 
       {:error, error} ->
@@ -224,7 +292,7 @@ defmodule Sanbase.UserList do
 
     changeset =
       user_list_id
-      |> by_id!()
+      |> by_id!([])
       |> Repo.preload(:list_items)
       |> update_changeset(params)
 
@@ -236,7 +304,7 @@ defmodule Sanbase.UserList do
     %{list_items: list_items} = update_list_items_params(params, user)
 
     case ListItem.create(list_items) do
-      {:ok, _} -> by_id(id)
+      {:ok, _} -> by_id(id, [])
       {:error, error} -> {:error, error}
     end
   end
@@ -245,21 +313,21 @@ defmodule Sanbase.UserList do
     %{list_items: list_items} = update_list_items_params(params, user)
 
     case ListItem.delete(list_items) do
-      {nil, _} -> by_id(id)
-      {num, _} when is_integer(num) -> by_id(id)
+      {nil, _} -> by_id(id, [])
+      {num, _} when is_integer(num) -> by_id(id, [])
       {:error, error} -> {:error, error}
     end
   end
 
   def remove_user_list(_user, %{id: id}) do
-    by_id!(id)
+    by_id!(id, [])
     |> Repo.delete()
     |> emit_event(:delete_watchlist, %{})
   end
 
   def fetch_user_lists(%User{id: user_id}, type) do
     result =
-      __MODULE__
+      base_query()
       |> filter_by_user_id_query(user_id)
       |> filter_by_type_query(type)
       |> Repo.all()
@@ -269,7 +337,7 @@ defmodule Sanbase.UserList do
 
   def fetch_public_user_lists(%User{id: user_id}, type) do
     result =
-      __MODULE__
+      base_query()
       |> filter_by_user_id_query(user_id)
       |> filter_by_is_public_query(true)
       |> filter_by_type_query(type)
@@ -280,7 +348,7 @@ defmodule Sanbase.UserList do
 
   def fetch_all_public_lists(type) do
     result =
-      __MODULE__
+      base_query()
       |> filter_by_is_public_query(true)
       |> filter_by_type_query(type)
       |> Repo.all()
@@ -300,6 +368,10 @@ defmodule Sanbase.UserList do
 
   # Private functions
 
+  defp base_query(_opts \\ []) do
+    from(ul in __MODULE__, where: ul.is_deleted != true)
+  end
+
   defp maybe_create_event({:ok, watchlist}, changeset, event_type) do
     TimelineEvent.maybe_create_event_async(event_type, watchlist, changeset)
     {:ok, watchlist}
@@ -307,20 +379,28 @@ defmodule Sanbase.UserList do
 
   defp maybe_create_event(error_result, _, _), do: error_result
 
-  defp user_list_query_by_user_id(%User{id: user_id}) when is_integer(user_id) and user_id > 0 do
-    from(ul in __MODULE__, where: ul.is_public == true or ul.user_id == ^user_id)
+  defp user_list_query_by_user_id(%User{id: user_id})
+       when is_integer(user_id) and user_id > 0 do
+    from(ul in base_query(),
+      where: ul.is_public == true or ul.user_id == ^user_id
+    )
   end
 
   defp user_list_query_by_user_id(_) do
-    from(ul in __MODULE__, where: ul.is_public == true)
+    from(ul in base_query(), where: ul.is_public == true)
   end
 
-  defp update_list_items_params(%{list_items: [%{project_id: _} | _]} = params, _user) do
+  defp update_list_items_params(
+         %{list_items: [%{project_id: _} | _]} = params,
+         _user
+       ) do
     %{id: user_list_id, list_items: input_objects} = params
 
     list_items =
       input_objects
-      |> Enum.map(fn item -> %{project_id: item.project_id, user_list_id: user_list_id} end)
+      |> Enum.map(fn item ->
+        %{project_id: item.project_id, user_list_id: user_list_id}
+      end)
       |> Enum.uniq_by(& &1.project_id)
 
     %{params | list_items: list_items}
@@ -340,7 +420,10 @@ defmodule Sanbase.UserList do
 
     # A list of Sanbase.BlockchainAddressUserPair structs
     {:ok, blockchain_address_user_pairs} =
-      get_or_create_blockchain_address_user_pairs(input_blockchain_addresses, user)
+      get_or_create_blockchain_address_user_pairs(
+        input_blockchain_addresses,
+        user
+      )
 
     list_items =
       blockchain_address_user_pairs
@@ -361,17 +444,82 @@ defmodule Sanbase.UserList do
     |> where([ul], ul.user_id == ^user_id)
   end
 
-  defp filter_by_type_query(query, type) do
-    query
-    |> where([ul], ul.type == ^type)
-  end
-
   defp filter_by_is_public_query(query, is_public) do
     query
     |> where([ul], ul.is_public == ^is_public)
   end
 
-  defp get_or_create_blockchain_address_user_pairs(input_blockchain_addresses, user) do
+  defp maybe_filter_is_screener_query(query, opts) do
+    case Keyword.get(opts, :is_screener) do
+      nil ->
+        query
+
+      is_screener when is_screener in [true, false] ->
+        query |> where([ul], ul.is_screener == ^is_screener)
+    end
+  end
+
+  defp filter_by_type_query(query, type), do: query |> where([ul], ul.type == ^type)
+
+  defp maybe_filter_by_type_query(query, opts) do
+    case Keyword.get(opts, :type) do
+      nil ->
+        query
+
+      type ->
+        filter_by_type_query(query, type)
+    end
+  end
+
+  defp maybe_apply_projects_filter_query(query, opts) do
+    case Keyword.get(opts, :filter) do
+      %{project_ids: project_ids} ->
+        query
+        |> join(:inner, [ul], item in assoc(ul, :list_items), as: :item)
+        |> where([item: item], item.project_id in ^project_ids)
+
+      _ ->
+        query
+    end
+  end
+
+  defp maybe_apply_metrics_filter_query(query, opts) do
+    case Keyword.get(opts, :filter) do
+      %{metrics: metrics} ->
+        subquery =
+          from(
+            ul in __MODULE__,
+            select: %{
+              id: ul.id,
+              filter: fragment("jsonb_array_elements(function->'args'->'filters')")
+            }
+          )
+
+        query_ids =
+          from(
+            map in subquery(subquery),
+            where:
+              fragment(
+                # The case without args is for backwards compatibility
+                "filter->'args'->>'metric' = ANY(?) OR filter->>'metric' = ANY(?)",
+                ^metrics,
+                ^metrics
+              ),
+            select: map.id
+          )
+
+        query
+        |> where([ul], ul.id in subquery(query_ids))
+
+      _ ->
+        query
+    end
+  end
+
+  defp get_or_create_blockchain_address_user_pairs(
+         input_blockchain_addresses,
+         user
+       ) do
     blockchain_address_to_id_map = blockchain_address_to_id_map(input_blockchain_addresses)
 
     input_blockchain_addresses

@@ -1,0 +1,7 @@
+Field name,Date Type,Description,Primary key,Foreign key
+identifier,string,Cryptocurrency name,Y,N
+datetime,datetime,Datetime mark,Y,N
+exchangeInflow,decimal,Exchange inflow shows the amount of tokens moving to known exchange wallets daily. Excludes exchange-to-exchange transactions.,N,N
+exchangeOutflow,decimal,Exchange outflow shows the amount of tokens withdrawn from known exchange wallets daily. Excludes exchange-to-exchange transactions.,N,N
+exchangeBalance,decimal,"Exchange flow balance shows the difference in the amount of tokens moving to and out of exchange wallets. If the value is positive, more tokens entered the exchange than have left. If the value is negative, more tokens flowed out of exchanges than flowed in.",N,N
+activeDeposits5m,integer,Active deposits shows the amount of unique deposit addresses for a specific token. Deposit addresses are used to deposit cryptocurrencies to centralized exchanges.,N,N

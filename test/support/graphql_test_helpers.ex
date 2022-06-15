@@ -13,14 +13,22 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
                          |> Enum.map(fn {{_, name}, _} -> name end)
 
   def v2_restricted_metric_for_plan(position, product, plan_name) do
-    all_v2_restricted_metrics_for_plan(product, plan_name)
+    fully_restricted_metrics_for_plan(product, plan_name)
     |> Stream.cycle()
     |> Enum.at(position)
   end
 
-  def all_v2_restricted_metrics_for_plan(product, plan_name) do
-    (Metric.restricted_metrics() -- @custom_access_metrics)
+  def fully_restricted_metrics_for_plan(product, plan_name) do
+    fully_restricted = Metric.restricted_metrics() -- restricted_metrics_with_free_realtime()
+
+    (fully_restricted -- @custom_access_metrics)
     |> Enum.filter(&AccessChecker.plan_has_access?(plan_name, product, {:metric, &1}))
+  end
+
+  def restricted_metrics_with_free_realtime do
+    Sanbase.Metric.access_map()
+    |> Enum.filter(&match?({_, %{"historical" => :restricted, "realtime" => :free}}, &1))
+    |> Enum.map(&elem(&1, 0))
   end
 
   def restricted_signal_for_plan(position, product, plan_name) do
@@ -70,7 +78,12 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     {from, to}
   end
 
-  def query_skeleton(query, query_name \\ "", variable_defs \\ "", variables \\ "{}") do
+  def query_skeleton(
+        query,
+        query_name \\ "",
+        variable_defs \\ "",
+        variables \\ "{}"
+      ) do
     %{
       "operationName" => "#{query_name}",
       "query" => "query #{query_name}#{variable_defs} #{query}",
@@ -95,8 +108,11 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
         client: device_data.client
       )
 
+    # Call both plugs so the context can be properly set up every time
     conn
     |> Plug.Test.init_test_session(tokens)
+    |> SanbaseWeb.Graphql.AuthPlug.call(%{})
+    |> SanbaseWeb.Graphql.ContextPlug.call(%{})
   end
 
   def setup_apikey_auth(conn, apikey) do
@@ -127,6 +143,15 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> Map.get("message")
   end
 
+  def execute_mutation(conn, mutation) do
+    [_, mutation_name] = Regex.run(~r/^\s*mutation\s*\{\s*([\w]+)\s*\(/, mutation)
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+    |> get_in(["data", mutation_name])
+  end
+
   def execute_mutation(conn, query, query_name) do
     conn
     |> post("/graphql", mutation_skeleton(query))
@@ -152,6 +177,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     map_as_input_object? = Keyword.get(opts, :map_as_input_object, false)
 
     map = Map.delete(map, :map_as_input_object)
+    map = Map.new(map, fn {k, v} -> {Inflex.camelize(k, :lower), v} end)
 
     Enum.map(map, fn
       {k, [%{} | _] = l} ->
@@ -175,6 +201,15 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
 
       {k, a} when is_atom(a) ->
         ~s/#{k}: #{a |> Atom.to_string() |> String.upcase()}/
+
+      {k, [atom | _] = atom_list} when is_atom(atom) ->
+        atom_list_str =
+          Enum.map(atom_list, fn a ->
+            a |> Atom.to_string() |> String.upcase()
+          end)
+          |> Enum.join(", ")
+
+        ~s/#{k}: [#{atom_list_str}]/
 
       {k, v} ->
         ~s/#{k}: #{inspect(v)}/
@@ -229,11 +264,22 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     end
   end
 
+  defp add_missing_selector(:contract_address, selector),
+    do:
+      Map.put(
+        selector,
+        :contract_address,
+        "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
+      )
+
   defp add_missing_selector(:label_fqn, selector),
     do: Map.put(selector, :label_fqn, "santiment/owner->Coinbase:v1")
 
   defp add_missing_selector(:label_fqns, selector) do
-    Map.put(selector, :label_fqns, ["santiment/owner->Coinbase:v1", "santiment/owner->Binance:v1"])
+    Map.put(selector, :label_fqns, [
+      "santiment/owner->Coinbase:v1",
+      "santiment/owner->Binance:v1"
+    ])
   end
 
   defp add_missing_selector(:source, selector) do
@@ -244,7 +290,11 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   defp add_missing_selector(:blockchain_address, selector) do
     # Add `map_as_input_object` flag as an implementation detail for the
     # map_to_input_object_str/{1,2} function so this is not encoded as json
-    blockchain_address = %{map_as_input_object: true, address: "0x" <> rand_hex_str(38)}
+    blockchain_address = %{
+      map_as_input_object: true,
+      address: "0x" <> rand_hex_str(38)
+    }
+
     Map.put(selector, :blockchain_address, blockchain_address)
   end
 end

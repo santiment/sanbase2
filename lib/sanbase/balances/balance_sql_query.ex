@@ -329,7 +329,7 @@ defmodule Sanbase.Balance.SqlQuery do
         decimals,
         operator,
         threshold,
-        table = "eth_balances_realtime",
+        "eth_balances_realtime" = table,
         _opts
       ) do
     query = """
@@ -370,7 +370,7 @@ defmodule Sanbase.Balance.SqlQuery do
     {query, args}
   end
 
-  def top_addresses_query(_slug, decimals, blockchain, table = "eth_balances_realtime", opts) do
+  def top_addresses_query(_slug, decimals, blockchain, "eth_balances_realtime" = table, opts) do
     direction = if Keyword.get(opts, :direction) == :asc, do: "ASC", else: "DESC"
     labels = Keyword.get(opts, :labels, :all)
 
@@ -445,6 +445,38 @@ defmodule Sanbase.Balance.SqlQuery do
     {str, args ++ [blockchain, labels]}
   end
 
+  def assets_held_by_address_changes_query(address, datetime) do
+    query = """
+    SELECT
+      name,
+      greatest(argMaxIf(value, dt, dt <= toDateTime(?2)) / pow(10, decimals), 0) AS previous_balance,
+      greatest(argMax(value, dt) / pow(10, decimals), 0) AS current_balance,
+      current_balance - previous_balance AS balance_change
+    FROM (
+      SELECT
+        address,
+        asset_ref_id,
+        arrayJoin(groupArrayMerge(values)) AS values_merged,
+        values_merged.1 AS dt,
+        values_merged.2 AS value
+      FROM balances_aggregated
+      WHERE
+        #{address_clause(address, argument_position: 1)}
+      GROUP BY address, blockchain, asset_ref_id
+    )
+    INNER JOIN (
+      SELECT asset_ref_id, name, decimals
+      FROM asset_metadata FINAL
+    ) USING (asset_ref_id)
+    GROUP BY address, asset_ref_id, name, decimals
+    HAVING previous_balance > 0 AND current_balance > 0
+    """
+
+    args = [address, DateTime.to_unix(datetime)]
+
+    {query, args}
+  end
+
   def assets_held_by_address_query(address) do
     query = """
     SELECT
@@ -467,9 +499,66 @@ defmodule Sanbase.Balance.SqlQuery do
       FROM asset_metadata FINAL
     ) USING (asset_ref_id)
     GROUP BY address, asset_ref_id, name, decimals
+    HAVING balance > 0
     """
 
     args = [address]
+
+    {query, args}
+  end
+
+  def usd_value_address_change_query(address, datetime) do
+    # It has `name` and `balance` as fields
+    {query, args} = assets_held_by_address_changes_query(address, datetime)
+
+    query = """
+    SELECT
+      name,
+      previous_balance,
+      current_balance,
+      previous_price_usd,
+      current_price_usd,
+      previous_balance * previous_price_usd AS previous_usd_value,
+      current_balance * current_price_usd AS current_usd_value
+    FROM (
+      #{query}
+    )
+    INNER JOIN
+    (
+      SELECT slug AS name,
+        argMax(price_usd, dt) AS current_price_usd,
+        argMaxIf(price_usd, dt, dt <= toDateTime(?2)) AS previous_price_usd
+      FROM asset_prices_v3
+      PREWHERE (dt >= now() - interval 24 hour) OR (dt >= toDateTime(?2) - interval 24 hour AND dt <= toDateTime(?2))
+      GROUP BY name
+    ) USING (name)
+    """
+
+    {query, args}
+  end
+
+  def usd_value_held_by_address_query(address) do
+    # It has `name` and `balance` as fields
+    {query, args} = assets_held_by_address_query(address)
+
+    query = """
+    SELECT
+      name,
+      current_balance,
+      current_price_usd,
+      current_balance * current_price_usd AS current_usd_value
+    FROM (
+      #{query}
+    )
+    INNER JOIN
+    (
+      SELECT slug AS name,
+        argMax(price_usd, dt) AS current_price_usd,
+      FROM asset_prices_v3
+      PREWHERE (dt >= now() - interval 24 hour)
+      GROUP BY name
+    ) USING (name)
+    """
 
     {query, args}
   end

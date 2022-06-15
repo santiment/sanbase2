@@ -97,6 +97,10 @@ defmodule Sanbase.Accounts.User do
     timestamps()
   end
 
+  def get_name(%__MODULE__{} = user) do
+    user.name || user.username || user.email || "Anon"
+  end
+
   def get_unique_str(%__MODULE__{} = user) do
     user.email || user.username || user.twitter_id || "id_#{user.id}"
   end
@@ -160,6 +164,7 @@ defmodule Sanbase.Accounts.User do
 
   defdelegate can_receive_telegram_alert?(user), to: __MODULE__.Alert
   defdelegate can_receive_email_alert?(user), to: __MODULE__.Alert
+  defdelegate can_receive_webhook_alert?(user, webhook_url), to: __MODULE__.Alert
 
   # Email functions
   defdelegate find_by_email_candidate(candidate, token), to: __MODULE__.Email
@@ -232,6 +237,13 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
+  def by_twitter_id(twitter_id) when is_binary(twitter_id) do
+    case Sanbase.Repo.get_by(User, twitter_id: twitter_id) do
+      nil -> {:error, "Cannot fetch user with twitter_id #{twitter_id}"}
+      %__MODULE__{} = user -> {:ok, user}
+    end
+  end
+
   def by_stripe_customer_id(stripe_customer_id) do
     case Repo.get_by(User, stripe_customer_id: stripe_customer_id) do
       nil -> {:error, "Cannot fetch user with stripe_customer_id #{stripe_customer_id}"}
@@ -242,6 +254,7 @@ defmodule Sanbase.Accounts.User do
   def by_selector(%{id: id}), do: by_id(Sanbase.Math.to_integer(id))
   def by_selector(%{email: email}), do: by_email(email)
   def by_selector(%{username: username}), do: by_username(username)
+  def by_selector(%{twitter_id: twitter_id}), do: by_twitter_id(twitter_id)
 
   def update_field(%__MODULE__{} = user, field, value) do
     case Map.fetch!(user, field) == value do
@@ -297,20 +310,17 @@ defmodule Sanbase.Accounts.User do
     |> String.trim()
   end
 
-  defp validate_name_change(_, name), do: validate_utf8_string_field(:name, name)
-  defp validate_username_change(_, username), do: validate_ascii_or_nil_field(:username, username)
-
-  defp validate_ascii_or_nil_field(name, value) when is_atom(name) do
-    case ascii_string_or_nil?(value) do
+  defp validate_name_change(_, name) do
+    case __MODULE__.Name.valid_name?(name) do
       true -> []
-      false -> [{name, "#{name} can contain only valid ASCII symbols."}]
+      {:error, error} -> [name: error]
     end
   end
 
-  defp validate_utf8_string_field(name, value) when is_atom(name) do
-    case String.valid?(value) do
+  defp validate_username_change(_, username) do
+    case __MODULE__.Name.valid_username?(username) do
       true -> []
-      false -> [{name, "#{name} can contain is not a valid UTF-8 string."}]
+      {:error, error} -> [username: error]
     end
   end
 

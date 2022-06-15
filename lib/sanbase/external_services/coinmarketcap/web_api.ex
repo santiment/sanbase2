@@ -50,13 +50,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         get_first_datetime(id)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        body
-        |> Jason.decode!()
+        json_decoded_body = body |> Jason.decode!()
+
+        json_decoded_body
         |> get_in(["data", "points"])
-        |> Map.keys()
-        |> Enum.map(&String.to_integer/1)
-        |> Enum.min()
-        |> DateTime.from_unix()
+        |> case do
+          %{} = map ->
+            map
+            |> Map.keys()
+            |> Enum.map(&String.to_integer/1)
+            |> Enum.min()
+            |> DateTime.from_unix()
+
+          _ ->
+            Logger.info([
+              "[CMC] Cannot properly parse response from coinmarketcap: #{inspect(json_decoded_body)}"
+            ])
+
+            {:error, "Cannot parse the response from coinmarketcap for #{id}"}
+        end
 
       error ->
         Logger.warn("[CMC] Error fetching first datetime for #{id}. Reason: #{inspect(error)}")

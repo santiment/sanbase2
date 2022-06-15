@@ -21,9 +21,19 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:parameters, non_null(:json))
   end
 
+  input_object :computed_panel_input_object do
+    field(:san_query_id, non_null(:string))
+    field(:clickhouse_query_id, non_null(:string))
+    field(:columns, non_null(list_of(:string)))
+    field(:rows, non_null(:json))
+    field(:query_start_time, non_null(:datetime))
+    field(:query_end_time, non_null(:datetime))
+    field(:summary, non_null(:json))
+  end
+
   enum :panel_type do
     value(:chart)
-    value(:type)
+    value(:table)
   end
 
   input_object :panel_input_object do
@@ -68,7 +78,7 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:dashboard_id, non_null(:integer))
     field(:san_query_id, non_null(:string))
     field(:clickhouse_query_id, non_null(:string))
-    field(:column_names, non_null(list_of(:string)))
+    field(:columns, non_null(list_of(:string)))
     field(:rows, non_null(:json))
     field(:query_start_time, :datetime)
     field(:query_end_time, :datetime)

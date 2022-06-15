@@ -179,28 +179,30 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     map = Map.delete(map, :map_as_input_object)
     map = Map.new(map, fn {k, v} -> {Inflex.camelize(k, :lower), v} end)
 
+    key = fn k -> Inflex.camelize(k, :lower) end
+
     Enum.map(map, fn
       {k, [%{} | _] = l} ->
-        ~s/#{k}: [#{Enum.map(l, &map_to_input_object_str/1) |> Enum.join(",")}]/
+        ~s/#{key.(k)}: [#{Enum.map(l, &map_to_input_object_str/1) |> Enum.join(",")}]/
 
       {k, %DateTime{} = dt} ->
-        ~s/#{k}: "#{dt |> DateTime.truncate(:second) |> DateTime.to_iso8601()}"/
+        ~s/#{key.(k)}: "#{dt |> DateTime.truncate(:second) |> DateTime.to_iso8601()}"/
 
       {k, m} when is_map(m) ->
         if map_as_input_object? || Map.get(m, :map_as_input_object) do
           m = Map.delete(m, :map_as_input_object)
-          ~s/#{k}: #{map_to_input_object_str(m)}/
+          ~s/#{key.(k)}: #{map_to_input_object_str(m)}/
         else
-          ~s/#{k}: '#{Jason.encode!(m)}'/
+          ~s/#{key.(k)}: '#{Jason.encode!(m)}'/
           |> String.replace(~r|\"|, ~S|\\"|)
           |> String.replace(~r|'|, ~S|"|)
         end
 
       {k, a} when a in [true, false, nil] ->
-        ~s/#{k}: #{inspect(a)}/
+        ~s/#{key.(k)}: #{inspect(a)}/
 
       {k, a} when is_atom(a) ->
-        ~s/#{k}: #{a |> Atom.to_string() |> String.upcase()}/
+        ~s/#{key.(k)}: #{a |> Atom.to_string() |> String.upcase()}/
 
       {k, [atom | _] = atom_list} when is_atom(atom) ->
         atom_list_str =
@@ -209,10 +211,10 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
           end)
           |> Enum.join(", ")
 
-        ~s/#{k}: [#{atom_list_str}]/
+        ~s/#{key.(k)}: [#{atom_list_str}]/
 
       {k, v} ->
-        ~s/#{k}: #{inspect(v)}/
+        ~s/#{key.(k)}: #{inspect(v)}/
     end)
     |> Enum.join(", ")
   end

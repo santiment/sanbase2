@@ -65,6 +65,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     # common
     field(:blockchain, :string)
     # blockchain address related
+    field(:address, :string)
     field(:blockchain_address, :blockchain_address_selector_input_object)
     # project related
     field(:slug, :string)

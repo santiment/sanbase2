@@ -42,9 +42,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       str_to_sec(interval),
       Map.get(@name_to_metric_map, metric),
       dt_to_unix(:from, from),
-      dt_to_unix(:to, to),
-      asset_filter_value
+      dt_to_unix(:to, to)
     ]
+
+    args = if asset_filter_value, do: args ++ [asset_filter_value], else: args
 
     {additional_filters, args} = additional_filters(filters, args, trailing_and: true)
 
@@ -62,7 +63,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         #{additional_filters}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
-        #{asset_id_filter(selector, argument_position: 5)} AND
+        #{asset_id_filter(selector, argument_position: 5, allow_missing_slug: true)} AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
         GROUP BY asset_id, metric_id, dt
     )
@@ -383,6 +384,5 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   defp asset_filter_value(%{slug: slug_or_slugs}), do: slug_or_slugs
 
-  defp asset_filter_value(not_supported),
-    do: raise("Got unsupported selector: #{inspect(not_supported)}")
+  defp asset_filter_value(_), do: nil
 end

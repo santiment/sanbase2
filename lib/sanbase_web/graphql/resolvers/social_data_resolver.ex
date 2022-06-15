@@ -90,15 +90,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     SocialData.TrendingWords.get_project_trending_history(slug, from, to, interval, size)
   end
 
-  def trending_words(
-        _root,
-        %{source: source, size: size, hour: hour, from: from, to: to},
-        _resolution
-      ) do
-    size = Enum.min([size, 30])
-    SocialData.trending_words(source, size, hour, from, to)
-  end
-
   def words_social_volume(
         _root,
         %{selector: %{words: _words} = selector, from: from, to: to, interval: interval},

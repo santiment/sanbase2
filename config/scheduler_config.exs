@@ -20,10 +20,6 @@ config :sanbase, Sanbase.Alerts.Scheduler,
       schedule: "0 10 * * *",
       task: {Sanbase.Alert.Job, :unfreeze_alerts, []}
     ],
-    price_volume_difference_sonar_alert: [
-      schedule: "1-59/5 * * * *",
-      task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.PriceVolumeDifferenceTriggerSettings]}
-    ],
     raw_signal_alert: [
       schedule: "1-59/5 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.RawSignalTriggerSettings]}

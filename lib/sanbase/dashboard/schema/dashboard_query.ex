@@ -32,7 +32,7 @@ defmodule Sanbase.Dashboard.Query do
            clickhouse_query_id: map.query_id,
            summary: map.summary,
            rows: map.rows,
-           compressed_rows_json: Base.encode64(:zlib.gzip(:erlang.term_to_binary(map.rows))),
+           compressed_rows: rows_to_compressed_rows(map.rows),
            columns: map.columns,
            query_start_time: query_start_time,
            query_end_time: DateTime.utc_now()
@@ -44,6 +44,20 @@ defmodule Sanbase.Dashboard.Query do
         # `table X does not exist` are extracted
         {:error, error}
     end
+  end
+
+  def rows_to_compressed_rows(rows) do
+    rows
+    |> :erlang.term_to_binary()
+    |> :zlib.gzip()
+    |> Base.encode64()
+  end
+
+  def compressed_rows_to_rows(compressed_rows) do
+    compressed_rows
+    |> Base.decode64!()
+    |> :zlib.gunzip()
+    |> :erlang.binary_to_term()
   end
 
   def valid_sql?(sql) do

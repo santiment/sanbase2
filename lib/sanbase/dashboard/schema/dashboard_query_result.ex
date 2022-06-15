@@ -8,7 +8,7 @@ defmodule Sanbase.Dashboard.Query.Result do
           clickhouse_query_id: String.t(),
           summary: Map.t(),
           rows: list(String.t() | number() | boolean() | DateTime.t()),
-          compressed_rows_json: String.t(),
+          compressed_rows: String.t(),
           columns: list(String.t()),
           query_start_time: DateTime.t(),
           query_end_time: DateTime.t()
@@ -18,7 +18,7 @@ defmodule Sanbase.Dashboard.Query.Result do
             clickhouse_query_id: nil,
             summary: nil,
             rows: nil,
-            compressed_rows_json: nil,
+            compressed_rows: nil,
             columns: nil,
             query_start_time: nil,
             query_end_time: nil

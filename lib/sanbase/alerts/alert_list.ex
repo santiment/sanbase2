@@ -6,7 +6,6 @@ defmodule Sanbase.Alert.List do
       Trigger.DailyMetricTriggerSettings,
       Trigger.EthWalletTriggerSettings,
       Trigger.MetricTriggerSettings,
-      Trigger.PriceVolumeDifferenceTriggerSettings,
       Trigger.RawSignalTriggerSettings,
       Trigger.ScreenerTriggerSettings,
       Trigger.SignalTriggerSettings,

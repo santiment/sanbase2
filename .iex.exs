@@ -66,7 +66,6 @@ alias Sanbase.ExternalServices.Coinmarketcap.{
   Ticker
 }
 
-alias Sanbase.TechIndicators
 
 alias Sanbase.ExternalServices.Etherscan.Requests, as: EtherscanRequests
 alias Sanbase.ExternalServices.Etherscan.Scraper, as: EtherscanScraper
@@ -104,7 +103,6 @@ alias SanbaseWeb.Graphql.Resolvers.{
   ProjectBalanceResolver,
   ProjectResolver,
   ProjectTransfersResolver,
-  TechIndicatorsResolver,
   TwitterResolver,
   UserListResolver,
   InsightResolver,
@@ -119,11 +117,6 @@ alias Sanbase.Prices.Utils, as: PricesUtils
 alias Sanbase.SocialData
 
 alias Sanbase.Alert.{UserTrigger, Trigger, Scheduler}
-
-alias Sanbase.Alert.Trigger.{
-  PriceVolumeDifferenceTriggerSettings,
-  TrendingWordsTriggerSettings
-}
 
 alias Sanbase.Billing.{
   Product,

@@ -41,7 +41,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
   end
 
   defp handle_event(
-         %{data: %{event_type: :subscribe_monthly_newsletter, user_id: user_id}} = data,
+         %{data: %{event_type: :subscribe_monthly_newsletter}},
          event_shadow,
          state
        ) do
@@ -50,7 +50,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
   end
 
   defp handle_event(
-         %{data: %{event_type: :unsubscribe_monthly_newsletter, user_id: user_id}} = data,
+         %{data: %{event_type: :unsubscribe_monthly_newsletter}},
          event_shadow,
          state
        ) do
@@ -59,7 +59,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
   end
 
   defp handle_event(
-         %{data: %{event_type: :subscribe_biweekly_pro, user_id: user_id}} = data,
+         %{data: %{event_type: :subscribe_biweekly_pro}},
          event_shadow,
          state
        ) do
@@ -68,7 +68,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
   end
 
   defp handle_event(
-         %{data: %{event_type: :unsubscribe_biweekly_pro, user_id: user_id}} = data,
+         %{data: %{event_type: :unsubscribe_biweekly_pro}},
          event_shadow,
          state
        ) do

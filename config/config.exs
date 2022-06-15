@@ -169,12 +169,7 @@ config :sanbase, Sanbase.MandrillApi,
   apikey: {:system, "MANDRILL_APIKEY"},
   from_email: {:system, "MANDRILL_FROM_EMAIL", "admin@santiment.net"}
 
-config :sanbase, Sanbase.TechIndicators,
-  url: {:system, "TECH_INDICATORS_URL", "bohman"},
-  price_volume_diff_window_type: {:system, "PRICE_VOLUME_DIFF_WINDOW_TYPE"},
-  price_volume_diff_approximation_window:
-    {:system, "PRICE_VOLUME_DIFF_APPROXIMATION_WINDOW", "14"},
-  price_volume_diff_comparison_window: {:system, "PRICE_VOLUME_DIFF_COMPARISON_WINDOW", "7"}
+config :sanbase, Sanbase.TechIndicators, url: {:system, "TECH_INDICATORS_URL"}
 
 config :sanbase, Sanbase.SocialData,
   metricshub_url: {:system, "METRICS_HUB_URL", "http://metrics-hub-server"}

@@ -5,7 +5,7 @@ defmodule Sanbase.Project.AvailableQueriesTest do
 
   alias Sanbase.Model.Project.AvailableQueries
 
-  @slug_metrics ["priceVolumeDiff", "socialGainersLosersStatus"] |> Enum.sort()
+  @slug_metrics ["socialGainersLosersStatus"] |> Enum.sort()
 
   test "ethereum has specific metrics" do
     project =

@@ -13,7 +13,6 @@ defmodule Sanbase.WalletHunters.Contract do
                       raise("Missing wallet hunters Ropsten address.")
   @mainnet_contract get_in(@abi_file, ["networks", "mainnet", "address"]) ||
                       raise("Missing wallet hunters Mainnet address.")
-  @mainnet_start_block "0xBBF049"
 
   def contract() do
     if localhost_or_stage?(), do: @rinkeby_contract, else: @mainnet_contract

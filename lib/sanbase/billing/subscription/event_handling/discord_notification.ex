@@ -92,7 +92,7 @@ defmodule Sanbase.Billing.DiscordNotification do
     end
   end
 
-  defp do_send_to_discord(message, title, opts \\ []) do
+  defp do_send_to_discord(message, title, opts) do
     payload = [message] |> Discord.encode!(publish_user())
 
     webhook_url =

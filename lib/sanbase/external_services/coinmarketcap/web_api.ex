@@ -7,7 +7,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, PriceScrapingProgress}
-  alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
 
   @rate_limiting_server :graph_coinmarketcap_rate_limiter
@@ -19,7 +18,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
   @source "coinmarketcap"
   @prices_exporter :prices_exporter
-  @total_market_measurement "TOTAL_MARKET_total-market"
+
   @doc ~s"""
   Return the first datetime for which a given asset (a projct or the whole market)
   has data. Used when deciding the first datetime to start scraping from

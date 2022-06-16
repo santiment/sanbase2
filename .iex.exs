@@ -71,9 +71,6 @@ alias Sanbase.ExternalServices.Etherscan.Requests, as: EtherscanRequests
 alias Sanbase.ExternalServices.Etherscan.Scraper, as: EtherscanScraper
 alias Sanbase.ExternalServices.ProjectInfo
 
-alias Sanbase.Influxdb.Measurement
-alias Sanbase.Influxdb.Store, as: InfluxdbStore
-
 alias Sanbase.Discourse.Api, as: DiscourseApi
 alias Sanbase.Discourse.Config, as: DiscourseConfig
 

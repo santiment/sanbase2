@@ -18,7 +18,6 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   alias SanbaseWeb.Graphql
   alias SanbaseWeb.Graphql.{SanbaseRepo, SanbaseDataloader}
-  alias SanbaseWeb.Graphql.Middlewares.ApiUsage
 
   # Types
   import_types(Absinthe.Plug.Types)
@@ -135,13 +134,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     [
       Absinthe.Middleware.Dataloader | Absinthe.Plugin.defaults()
     ]
-  end
-
-  def middleware(middlewares, field, object) do
-    case object.identifier do
-      :query -> [ApiUsage | middlewares]
-      _ -> middlewares
-    end
   end
 
   query do

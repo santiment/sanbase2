@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
 
+  alias Sanbase.Clickhouse.Github
   alias Sanbase.Model.Project
 
   def dev_activity(
@@ -20,7 +21,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
       ) do
     with {:ok, github_organizations} <- Project.github_organizations(slug),
          {:ok, result} <-
-           Sanbase.Clickhouse.Github.dev_activity(
+           Github.dev_activity(
              github_organizations,
              from,
              to,
@@ -49,7 +50,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
       ) do
     with {:ok, github_organizations} <- Project.github_organizations(slug),
          {:ok, result} <-
-           Sanbase.Clickhouse.Github.dev_activity(
+           Github.dev_activity(
              github_organizations,
              from,
              to,
@@ -113,7 +114,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         },
         _resolution
       ) do
-    case Sanbase.Clickhouse.Github.dev_activity(
+    case Github.dev_activity(
            organizations,
            from,
            to,
@@ -130,6 +131,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
     end
   end
 
+  @one_day_seconds 24 * 3600
   def github_activity(
         _root,
         %{
@@ -145,12 +147,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
     with {:ok, github_organizations} <- Project.github_organizations(slug),
          {:ok, from, to, interval} <-
            calibrate(
-             Sanbase.Clickhouse.Github,
+             Github,
              github_organizations,
              from,
              to,
              interval,
-             24 * 60 * 60
+             @one_day_seconds
            ),
          {:ok, result} <-
            Sanbase.Clickhouse.Github.github_activity(

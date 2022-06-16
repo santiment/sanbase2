@@ -45,11 +45,7 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
     users_san_staked =
       users
       |> Enum.map(fn user ->
-        san_staked =
-          Enum.map(user.eth_accounts, fn account ->
-            Map.get(users_staked_map, account.address, 0)
-          end)
-          |> Enum.sum()
+        san_staked = user_san_staked_amount(user, users_staked_map)
 
         %{
           user_id: user.id,
@@ -115,5 +111,11 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
       |> List.insert_at(-1, acc)
       |> Enum.sum()
     end)
+  end
+
+  defp user_san_staked_amount(user, users_staked_map) do
+    user.eth_accounts
+    |> Enum.map(fn account -> Map.get(users_staked_map, account.address, 0) end)
+    |> Enum.sum()
   end
 end

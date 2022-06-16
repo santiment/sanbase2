@@ -44,6 +44,12 @@ defmodule Sanbase.Dashboard.Panel do
     field(:sql, :map)
   end
 
+  def changeset(%__MODULE__{} = panel, attrs) do
+    panel
+    |> cast(attrs, [:name, :description, :position, :type, :size, :sql])
+    |> validate_change(:sql, &Query.changeset_valid_sql?/2)
+  end
+
   @doc ~s"""
   Create a struct from the provided arguments
 
@@ -78,17 +84,7 @@ defmodule Sanbase.Dashboard.Panel do
           args
       end
 
-    changeset =
-      panel
-      |> cast(args, [
-        :name,
-        :description,
-        :position,
-        :type,
-        :size,
-        :sql
-      ])
-      |> validate_change(:sql, &Query.changeset_valid_sql?/2)
+    changeset = changeset(panel, args)
 
     changeset =
       case Keyword.fetch!(opts, :check_required) do

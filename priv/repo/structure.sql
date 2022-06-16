@@ -796,6 +796,44 @@ ALTER SEQUENCE public.dashboards_cache_id_seq OWNED BY public.dashboards_cache.i
 
 
 --
+-- Name: dashboards_history; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dashboards_history (
+    id bigint NOT NULL,
+    dashboard_id bigint,
+    user_id bigint,
+    panels jsonb,
+    name character varying(255),
+    description text,
+    is_public boolean,
+    message text,
+    hash text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: dashboards_history_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dashboards_history_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dashboards_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dashboards_history_id_seq OWNED BY public.dashboards_history.id;
+
+
+--
 -- Name: dashboards_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -3922,6 +3960,13 @@ ALTER TABLE ONLY public.dashboards_cache ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
+-- Name: dashboards_history id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_history ALTER COLUMN id SET DEFAULT nextval('public.dashboards_history_id_seq'::regclass);
+
+
+--
 -- Name: email_login_attempts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4594,6 +4639,14 @@ ALTER TABLE ONLY public.dashboard_comments_mapping
 
 ALTER TABLE ONLY public.dashboards_cache
     ADD CONSTRAINT dashboards_cache_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dashboards_history dashboards_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_history
+    ADD CONSTRAINT dashboards_history_pkey PRIMARY KEY (id);
 
 
 --
@@ -5430,6 +5483,20 @@ CREATE INDEX dashboard_comments_mapping_dashboard_id_index ON public.dashboard_c
 --
 
 CREATE UNIQUE INDEX dashboards_cache_dashboard_id_index ON public.dashboards_cache USING btree (dashboard_id);
+
+
+--
+-- Name: dashboards_history_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dashboards_history_dashboard_id_index ON public.dashboards_history USING btree (dashboard_id);
+
+
+--
+-- Name: dashboards_history_hash_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dashboards_history_hash_index ON public.dashboards_history USING btree (hash);
 
 
 --
@@ -6466,6 +6533,22 @@ ALTER TABLE ONLY public.dashboard_comments_mapping
 
 ALTER TABLE ONLY public.dashboards_cache
     ADD CONSTRAINT dashboards_cache_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dashboards_history dashboards_history_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_history
+    ADD CONSTRAINT dashboards_history_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id);
+
+
+--
+-- Name: dashboards_history dashboards_history_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_history
+    ADD CONSTRAINT dashboards_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -7688,3 +7771,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220616131454);
 INSERT INTO public."schema_migrations" (version) VALUES (20220617112317);
 INSERT INTO public."schema_migrations" (version) VALUES (20220620132733);
 INSERT INTO public."schema_migrations" (version) VALUES (20220620143734);
+INSERT INTO public."schema_migrations" (version) VALUES (20220627144857);

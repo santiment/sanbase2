@@ -15,6 +15,7 @@ defmodule Sanbase.Vote do
   alias Sanbase.UserList
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Dashboard
 
   @type vote_params :: %{
           :user_id => non_neg_integer(),
@@ -22,7 +23,8 @@ defmodule Sanbase.Vote do
           optional(:watchlist_id) => non_neg_integer(),
           optional(:timeline_event_id) => non_neg_integer(),
           optional(:chart_configuration_id) => non_neg_integer(),
-          optional(:user_trigger_id_id) => non_neg_integer()
+          optional(:user_trigger_id) => non_neg_integer(),
+          optional(:dashboard_id) => non_neg_integer()
         }
 
   @type vote_option ::
@@ -32,6 +34,7 @@ defmodule Sanbase.Vote do
           | {:timeline_event_id, non_neg_integer()}
           | {:chart_configuration_id, non_neg_integer()}
           | {:user_trigger_id, non_neg_integer()}
+          | {:dashboard_id, non_neg_integer()}
   @type vote_kw_list_params :: [vote_option]
 
   @max_votes 20
@@ -44,8 +47,11 @@ defmodule Sanbase.Vote do
     belongs_to(:post, Post)
     belongs_to(:timeline_event, TimelineEvent)
     belongs_to(:watchlist, UserList, foreign_key: :watchlist_id)
+
     belongs_to(:chart_configuration, Chart.Configuration, foreign_key: :chart_configuration_id)
+
     belongs_to(:user_trigger, UserTrigger, foreign_key: :user_trigger_id)
+    belongs_to(:dashboard, Dashboard.Schema, foreign_key: :dashboard_id)
 
     timestamps()
   end
@@ -58,19 +64,19 @@ defmodule Sanbase.Vote do
       :chart_configuration_id,
       :user_trigger_id,
       :watchlist_id,
+      :dashboard_id,
       :user_id,
       :count
     ])
     |> validate_required([:user_id])
     |> unique_constraint(:post_id, name: :votes_post_id_user_id_index)
-    |> unique_constraint(:timeline_event_id,
-      name: :votes_timeline_event_id_user_id_index
-    )
+    |> unique_constraint(:timeline_event_id, name: :votes_timeline_event_id_user_id_index)
     |> unique_constraint(:chart_configuration_id,
       name: :votes_chart_configuration_id_user_id_index
     )
     |> unique_constraint(:watchlist_id, name: :votes_watchlist_id_user_id_index)
     |> unique_constraint(:user_trigger_id, name: :votes_user_trigger_id_user_id_index)
+    |> unique_constraint(:dashboard_id, name: :votes_dashboard_id_index)
   end
 
   @doc ~s"""

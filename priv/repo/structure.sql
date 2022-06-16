@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 14.2
+-- Dumped by pg_dump version 14.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -712,6 +712,38 @@ ALTER SEQUENCE public.currencies_id_seq OWNED BY public.currencies.id;
 
 
 --
+-- Name: dashboard_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dashboard_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    dashboard_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: dashboard_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dashboard_comments_mapping_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dashboard_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dashboard_comments_mapping_id_seq OWNED BY public.dashboard_comments_mapping.id;
+
+
+--
 -- Name: dashboards; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -723,7 +755,9 @@ CREATE TABLE public.dashboards (
     panels jsonb,
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 
@@ -938,7 +972,8 @@ CREATE TABLE public.featured_items (
     updated_at timestamp without time zone NOT NULL,
     chart_configuration_id bigint,
     table_configuration_id bigint,
-    CONSTRAINT only_one_fk CHECK ((((((
+    dashboard_id bigint,
+    CONSTRAINT only_one_fk CHECK (((((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
@@ -957,6 +992,10 @@ CASE
 END) +
 CASE
     WHEN (table_configuration_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (dashboard_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -3286,7 +3325,8 @@ CREATE TABLE public.votes (
     chart_configuration_id bigint,
     watchlist_id bigint,
     user_trigger_id bigint,
-    CONSTRAINT only_one_fk CHECK ((((((
+    dashboard_id bigint,
+    CONSTRAINT only_one_fk CHECK (((((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
@@ -3305,6 +3345,10 @@ CASE
 END) +
 CASE
     WHEN (user_trigger_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (dashboard_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -3724,6 +3768,13 @@ ALTER TABLE ONLY public.contract_addresses ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.currencies ALTER COLUMN id SET DEFAULT nextval('public.currencies_id_seq'::regclass);
+
+
+--
+-- Name: dashboard_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.dashboard_comments_mapping_id_seq'::regclass);
 
 
 --
@@ -4397,6 +4448,14 @@ ALTER TABLE ONLY public.contract_addresses
 
 ALTER TABLE ONLY public.currencies
     ADD CONSTRAINT currencies_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dashboard_comments_mapping dashboard_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_comments_mapping
+    ADD CONSTRAINT dashboard_comments_mapping_pkey PRIMARY KEY (id);
 
 
 --
@@ -5223,6 +5282,20 @@ CREATE UNIQUE INDEX currencies_code_index ON public.currencies USING btree (code
 
 
 --
+-- Name: dashboard_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX dashboard_comments_mapping_comment_id_index ON public.dashboard_comments_mapping USING btree (comment_id);
+
+
+--
+-- Name: dashboard_comments_mapping_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dashboard_comments_mapping_dashboard_id_index ON public.dashboard_comments_mapping USING btree (dashboard_id);
+
+
+--
 -- Name: dashboards_cache_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5283,6 +5356,13 @@ CREATE UNIQUE INDEX exchange_market_pair_mappings_exchange_source_market_pair_in
 --
 
 CREATE UNIQUE INDEX featured_items_chart_configuration_id_index ON public.featured_items USING btree (chart_configuration_id);
+
+
+--
+-- Name: featured_items_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX featured_items_dashboard_id_index ON public.featured_items USING btree (dashboard_id);
 
 
 --
@@ -5951,6 +6031,13 @@ CREATE UNIQUE INDEX votes_chart_configuration_id_user_id_index ON public.votes U
 
 
 --
+-- Name: votes_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_dashboard_id_index ON public.votes USING btree (dashboard_id);
+
+
+--
 -- Name: votes_post_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6228,6 +6315,22 @@ ALTER TABLE ONLY public.contract_addresses
 
 
 --
+-- Name: dashboard_comments_mapping dashboard_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_comments_mapping
+    ADD CONSTRAINT dashboard_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dashboard_comments_mapping dashboard_comments_mapping_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_comments_mapping
+    ADD CONSTRAINT dashboard_comments_mapping_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
+
+
+--
 -- Name: dashboards_cache dashboards_cache_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6273,6 +6376,14 @@ ALTER TABLE ONLY public.exchange_addresses
 
 ALTER TABLE ONLY public.featured_items
     ADD CONSTRAINT featured_items_chart_configuration_id_fkey FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: featured_items featured_items_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.featured_items
+    ADD CONSTRAINT featured_items_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id);
 
 
 --
@@ -6932,6 +7043,14 @@ ALTER TABLE ONLY public.votes
 
 
 --
+-- Name: votes votes_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id);
+
+
+--
 -- Name: votes votes_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7431,3 +7550,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220519135027);
 INSERT INTO public."schema_migrations" (version) VALUES (20220531133311);
 INSERT INTO public."schema_migrations" (version) VALUES (20220531143545);
 INSERT INTO public."schema_migrations" (version) VALUES (20220614091809);
+INSERT INTO public."schema_migrations" (version) VALUES (20220615120713);
+INSERT INTO public."schema_migrations" (version) VALUES (20220615121150);
+INSERT INTO public."schema_migrations" (version) VALUES (20220615122849);
+INSERT INTO public."schema_migrations" (version) VALUES (20220615135946);

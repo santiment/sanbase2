@@ -15,6 +15,7 @@ defmodule Sanbase.FeaturedItem do
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Chart.Configuration, as: ChartConfiguration
   alias Sanbase.TableConfiguration
+  alias Sanbase.Dashboard
 
   @table "featured_items"
   schema @table do
@@ -23,6 +24,7 @@ defmodule Sanbase.FeaturedItem do
     belongs_to(:user_trigger, UserTrigger)
     belongs_to(:chart_configuration, ChartConfiguration)
     belongs_to(:table_configuration, TableConfiguration)
+    belongs_to(:dashboard, Dashboard.Schema)
 
     timestamps()
   end
@@ -39,13 +41,15 @@ defmodule Sanbase.FeaturedItem do
       :user_list_id,
       :user_trigger_id,
       :chart_configuration_id,
-      :table_configuration_id
+      :table_configuration_id,
+      :dashboard_id
     ])
     |> unique_constraint(:post_id)
     |> unique_constraint(:user_list_id)
     |> unique_constraint(:user_trigger_id)
     |> unique_constraint(:chart_configuration_id)
     |> unique_constraint(:table_configuration_id)
+    |> unique_constraint(:dashboard_id)
     |> check_constraint(:one_featured_item_per_row, name: :only_one_fk)
   end
 
@@ -98,6 +102,13 @@ defmodule Sanbase.FeaturedItem do
     |> Repo.all()
   end
 
+  def dashboards() do
+    dashboards_query()
+    |> join(:inner, [fi], fi in assoc(fi, :dashboard))
+    |> select([_fi, dashboard], dashboard)
+    |> Repo.all()
+  end
+
   @doc ~s"""
   Mark the insight, watchlist or user trigger as featured or not.
 
@@ -145,6 +156,13 @@ defmodule Sanbase.FeaturedItem do
     end
   end
 
+  def update_item(%Dashboard.Schema{} = dashboard, featured?) do
+    case Dashboard.Schema.is_public?(dashboard) || featured? == false do
+      true -> update_item(:dashboard_id, dashboard.id, featured?)
+      false -> {:error, "Private table dashboards cannot be made featured."}
+    end
+  end
+
   # Private functions
 
   defp update_item(type, id, false) do
@@ -175,4 +193,7 @@ defmodule Sanbase.FeaturedItem do
 
   defp table_configurations_query(),
     do: from(fi in __MODULE__, where: not is_nil(fi.table_configuration_id))
+
+  defp dashboards_query(),
+    do: from(fi in __MODULE__, where: not is_nil(fi.dashboard_id))
 end

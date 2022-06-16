@@ -9,15 +9,22 @@ defmodule Sanbase.Accounts.Interaction do
   use Ecto.Schema
 
   @supported_entity_types [
-    :project_watchlist,
     :address_watchlist,
-    :screener,
-    :insight,
     :chart_configuration,
+    :dashboard,
+    :insight,
+    :project_watchlist,
+    :screener,
     :user_trigger
   ]
 
-  @supported_entity_types_internal ["watchlist", "insight", "chart_configuration", "user_trigger"]
+  @supported_entity_types_internal [
+    "watchlist",
+    "insight",
+    "chart_configuration",
+    "user_trigger",
+    "dashboard"
+  ]
 
   @type t :: %__MODULE__{
           id: non_neg_integer(),
@@ -129,10 +136,11 @@ defmodule Sanbase.Accounts.Interaction do
     )
   end
 
+  @watchlist_entities [:project_watchlist, :address_watchlist, :screener, :watchlist]
   def deduce_entity_column_name(entity_type) when entity_type in @supported_entity_types do
     case entity_type do
-      x when x in [:project_watchlist, :address_watchlist, :screener, :watchlist] -> "watchlist"
-      x when x in [:insight, :chart_configuration, :user_trigger] -> to_string(x)
+      x when x in @watchlist_entities -> "watchlist"
+      x -> to_string(x)
     end
   end
 

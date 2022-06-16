@@ -14,6 +14,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentEntityIdResolver do
     get_dataloader_comment_entity_id(loader, :comment_blockchain_address_id, id)
   end
 
+  def dashboard_id(%Sanbase.Comment{id: id}, _args, %{context: %{loader: loader}}) do
+    get_dataloader_comment_entity_id(loader, :comment_dashboard_id, id)
+  end
+
   def proposal_id(%Sanbase.Comment{id: id}, _args, %{context: %{loader: loader}}) do
     get_dataloader_comment_entity_id(loader, :comment_wallet_hunter_proposal_id, id)
   end
@@ -29,6 +33,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentEntityIdResolver do
   def chart_configuration_id(%Sanbase.Comment{id: id}, _args, %{context: %{loader: loader}}) do
     get_dataloader_comment_entity_id(loader, :comment_chart_configuration_id, id)
   end
+
+  # Private functions
 
   defp get_dataloader_comment_entity_id(loader, entity_id_name, id) do
     loader

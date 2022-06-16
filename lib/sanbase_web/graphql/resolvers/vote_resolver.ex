@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   alias Sanbase.Vote
   alias Sanbase.Insight.Post
   alias Sanbase.Chart
+  alias Sanbase.Dashboard
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.UserList
@@ -39,6 +40,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     selector = %{chart_configuration_id: config.id, user_id: user.id}
 
     get_votes(loader, :chart_configuration_vote_stats, selector)
+  end
+
+  def votes(%Dashboard.Schema{} = dashboard, _args, %{
+        context: %{loader: loader} = context
+      }) do
+    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
+    selector = %{dashboard_id: dashboard.id, user_id: user.id}
+
+    get_votes(loader, :dashboard_vote_stats, selector)
   end
 
   def votes(%{trigger: %{id: user_trigger_id}}, _args, %{
@@ -91,6 +101,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     votes(%Chart.Configuration{id: id}, args, resolution)
   end
 
+  def votes(_root, args, %{source: %{dashboard_id: id}} = resolution) do
+    # Handles the case where the `votes` is called on top of the result
+    # from `vote`/`unvote`. They return the entity id as a result which
+    # can be used from the `source` map in the resolution
+    votes(%Dashboard.Schema{id: id}, args, resolution)
+  end
+
   def votes(_root, args, %{source: %{user_trigger_id: id}} = resolution) do
     # Handles the case where the `votes` is called on top of the result
     # from `vote`/`unvote`. They return the entity id as a result which
@@ -131,6 +148,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
       }) do
     selector = %{chart_configuration_id: config.id, user_id: user.id}
     get_voted_at(loader, :chart_configuration_voted_at, selector)
+  end
+
+  def voted_at(%Dashboard.Schema{} = config, _args, %{
+        context: %{loader: loader, auth: %{current_user: user}}
+      }) do
+    selector = %{dashboard_id: config.id, user_id: user.id}
+    get_voted_at(loader, :dashboard_voted_at, selector)
   end
 
   def voted_at(%{trigger: %{id: id}}, _args, %{
@@ -175,17 +199,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   end
 
   defp only_one_entity_id?(args) do
-    ids =
-      Map.take(args, [
-        :insight_id,
-        :post_id,
-        :watchlist_id,
-        :chart_configuration_id,
-        :user_trigger_id,
-        :timeline_event_id
-      ])
-
-    case Enum.reject(ids, fn {_k, v} -> v == nil end) do
+    case Enum.reject(args, fn {_k, v} -> v == nil end) do
       [{key, value}] -> {:ok, entity_id_to_entity_name(key), value}
       _ -> {:error, "When voting/unvoting you must provide only one entity id."}
     end
@@ -193,33 +207,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
 
   defp entity_id_to_entity_name(entity_id) do
     case entity_id do
-      x when x in [:post_id, :insight_id] -> :post
-      :watchlist_id -> :watchlist
-      :timeline_event_id -> :timeline_event
-      :chart_configuration_id -> :chart_configuration
-      :user_trigger_id -> :user_trigger
+      :insight_id ->
+        :post
+
+      x ->
+        x
+        |> to_string()
+        |> String.trim_trailing("_id")
+        |> String.to_existing_atom()
     end
   end
 
   defp args_to_vote_args(args, user) do
     case args do
-      %{post_id: id} ->
-        %{post_id: id, user_id: user.id}
-
       %{insight_id: id} ->
         %{post_id: id, user_id: user.id}
 
-      %{watchlist_id: id} ->
-        %{watchlist_id: id, user_id: user.id}
-
-      %{chart_configuration_id: id} ->
-        %{chart_configuration_id: id, user_id: user.id}
-
-      %{user_trigger_id: id} ->
-        %{user_trigger_id: id, user_id: user.id}
-
-      %{timeline_event_id: id} ->
-        %{timeline_event_id: id, user_id: user.id}
+      map ->
+        Map.put(map, :user_id, user.id)
     end
   end
 

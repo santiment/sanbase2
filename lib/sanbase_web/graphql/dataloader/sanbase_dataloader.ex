@@ -38,6 +38,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     # comment entity id
     :comment_blockchain_address_id,
     :comment_chart_configuration_id,
+    :comment_dashboard_id,
     :comment_insight_id,
     :comment_short_url_id,
     :comment_timeline_event_id,
@@ -46,6 +47,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     # Comments count
     :blockchain_addresses_comments_count,
     :chart_configuration_comments_count,
+    :dashboard_comments_count,
     :insights_comments_count,
     :short_urls_comments_count,
     :timeline_events_comments_count,
@@ -54,16 +56,18 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     # Users
     :users_by_id,
     # Votes
-    :insight_vote_stats,
-    :insight_voted_at,
     :chart_configuration_vote_stats,
     :chart_configuration_voted_at,
+    :dashboard_vote_stats,
+    :dashboard_voted_at,
+    :insight_vote_stats,
+    :insight_voted_at,
+    :timeline_event_vote_stats,
+    :timeline_event_voted_at,
     :user_trigger_vote_stats,
     :user_trigger_voted_at,
     :watchlist_vote_stats,
-    :watchlist_voted_at,
-    :timeline_event_vote_stats,
-    :timeline_event_voted_at
+    :watchlist_voted_at
   ]
   @postgres_dataloader [
     :current_user_address_details,

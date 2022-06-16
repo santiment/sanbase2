@@ -30,6 +30,7 @@ defmodule Sanbase.Entity do
   alias Sanbase.Chart
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
+  alias Sanbase.Dashboard
   alias Sanbase.Alert.UserTrigger
 
   # The list of supported entitiy types. In order to add a new entity type, the
@@ -45,9 +46,23 @@ defmodule Sanbase.Entity do
   #    It is necessary if the new entity needs to use a different than
   #    inserted_at field to check its creation time. For example, insights have
   #    their published_at time taken, not inserted_at
-  @supported_entity_type [:insight, :watchlist, :screener, :chart_configuration, :user_trigger]
+  @supported_entity_type [
+    :insight,
+    :watchlist,
+    :screener,
+    :chart_configuration,
+    :user_trigger,
+    :dashboard
+  ]
 
-  @type entity_type :: :insight | :watchlist | :screener | :chart_configuration | :user_trigger
+  @type entity_type ::
+          :insight
+          | :watchlist
+          | :screener
+          | :chart_configuration
+          | :user_trigger
+          | :dashboard
+
   @type option ::
           {:page, non_neg_integer()}
           | {:page_size, non_neg_integer()}
@@ -61,7 +76,8 @@ defmodule Sanbase.Entity do
           optional(:project_watchlist) => %UserTrigger{},
           optional(:address_watchlist) => %UserTrigger{},
           optional(:chart_configuration) => %Chart.Configuration{},
-          optional(:user_trigger) => %UserTrigger{}
+          optional(:user_trigger) => %UserTrigger{},
+          optional(:dashboard) => %Dashboard.Schema{}
         }
 
   @doc ~s"""
@@ -154,14 +170,13 @@ defmodule Sanbase.Entity do
   """
   def deduce_entity_vote_field(:user_trigger), do: :user_trigger_id
   def deduce_entity_vote_field(:insight), do: :post_id
+  def deduce_entity_vote_field(:post), do: :post_id
   def deduce_entity_vote_field(:watchlist), do: :watchlist_id
   def deduce_entity_vote_field(:project_watchlist), do: :watchlist_id
   def deduce_entity_vote_field(:address_watchlist), do: :watchlist_id
   def deduce_entity_vote_field(:screener), do: :watchlist_id
   def deduce_entity_vote_field(:chart_configuration), do: :chart_configuration_id
-
-  # keep the timeline_event here so it can have its id obtained by the Vote
-  # module
+  def deduce_entity_vote_field(:dashboard), do: :dashboard_id
   def deduce_entity_vote_field(:timeline_event), do: :timeline_event_id
 
   # This needs to stay here even though it's not a supported entity type by the
@@ -176,6 +191,7 @@ defmodule Sanbase.Entity do
   def deduce_entity_module(:user_trigger), do: UserTrigger
   def deduce_entity_module(:insight), do: Post
   def deduce_entity_module(:chart_configuration), do: Chart.Configuration
+  def deduce_entity_module(:dashboard), do: Dashboard.Schema
 
   @doc ~s"""
   Apply the pagination options from `opts` to `query`.
@@ -285,7 +301,13 @@ defmodule Sanbase.Entity do
     query =
       from(
         v in query,
-        group_by: [v.post_id, v.watchlist_id, v.chart_configuration_id, v.user_trigger_id]
+        group_by: [
+          v.post_id,
+          v.watchlist_id,
+          v.chart_configuration_id,
+          v.user_trigger_id,
+          v.dashboard_id
+        ]
       )
       |> paginate(opts)
 
@@ -530,13 +552,15 @@ defmodule Sanbase.Entity do
     watchlist_ids = ids["watchlist"] || []
     chart_configuration_ids = ids["chart_configuration"] || []
     user_trigger_ids = ids["user_trigger"] || []
+    dashboard_ids = ids["dashboard"] || []
 
     from(v in query,
       where:
         v.post_id in ^post_ids or
           v.watchlist_id in ^watchlist_ids or
           v.chart_configuration_id in ^chart_configuration_ids or
-          v.user_trigger_id in ^user_trigger_ids
+          v.user_trigger_id in ^user_trigger_ids or
+          v.dashboard_id in ^dashboard_ids
     )
   end
 
@@ -649,6 +673,15 @@ defmodule Sanbase.Entity do
     case Keyword.get(opts, :current_user_data_only) do
       nil -> Chart.Configuration.public_entity_ids_query(entity_opts)
       user_id -> Chart.Configuration.user_entity_ids_query(user_id, entity_opts)
+    end
+  end
+
+  defp entity_ids_query(:dashboard, opts) do
+    entity_opts = Keyword.take(opts, @passed_opts)
+
+    case Keyword.get(opts, :current_user_data_only) do
+      nil -> Dashboard.Schema.public_entity_ids_query(entity_opts)
+      user_id -> Dashboard.Schema.user_entity_ids_query(user_id, entity_opts)
     end
   end
 

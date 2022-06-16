@@ -7,12 +7,15 @@ defmodule Sanbase.Dashboard.Schema do
   It also provide functions for adding/updating/removing dashboard panels
   """
 
+  @behaviour Sanbase.Entity.Behaviour
+
   use Ecto.Schema
 
   import Ecto.Query
   import Ecto.Changeset
-  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2, to_bang: 1]
 
+  alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Dashboard.Panel
 
@@ -45,6 +48,8 @@ defmodule Sanbase.Dashboard.Schema do
     field(:name, :string)
     field(:description, :string)
     field(:is_public, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
+    field(:is_deleted, :boolean, default: false)
 
     belongs_to(:user, User)
 
@@ -53,13 +58,55 @@ defmodule Sanbase.Dashboard.Schema do
     timestamps()
   end
 
+  @impl Sanbase.Entity.Behaviour
   @spec by_id(non_neg_integer()) :: {:ok, t()} | {:error, String.t()}
-  def by_id(dashboard_id) do
-    case Sanbase.Repo.get(__MODULE__, dashboard_id) do
+  def by_id(dashboard_id, _opts \\ []) do
+    case Repo.get(__MODULE__, dashboard_id) do
       %__MODULE__{} = dashboard -> {:ok, dashboard}
       nil -> {:error, "Dashboard does not exist"}
     end
   end
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id!(dashboard_id, opts \\ []), do: by_id(dashboard_id, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids(ids, _opts) when is_list(ids) do
+    result =
+      from(ul in base_query(),
+        where: ul.id in ^ids,
+        order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
+      )
+      |> Repo.all()
+
+    {:ok, result}
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids!(ids, opts \\ []), do: by_ids(ids, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    base_query()
+    |> where([d], d.is_public == true)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :dashboard_id)
+    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> select([ul], ul.id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def user_entity_ids_query(user_id, opts) do
+    base_query()
+    |> where([ul], ul.user_id == ^user_id)
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
+    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :dashboard_id)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> select([ul], ul.id)
+  end
+
+  def is_public?(%__MODULE__{is_public: is_public}), do: is_public
 
   @spec get_is_public_and_owner(non_neg_integer()) ::
           {:ok, %{user_id: non_neg_integer(), is_public: boolean()}} | {:error, String.t()}
@@ -69,7 +116,7 @@ defmodule Sanbase.Dashboard.Schema do
         where: d.id == ^dashboard_id,
         select: %{user_id: d.user_id, is_public: d.is_public}
       )
-      |> Sanbase.Repo.one()
+      |> Repo.one()
 
     case result do
       nil -> {:error, "Dashboard does not exist"}
@@ -85,7 +132,7 @@ defmodule Sanbase.Dashboard.Schema do
     %__MODULE__{}
     |> cast(args, [:name, :description, :is_public, :user_id])
     |> validate_required([:name, :user_id])
-    |> Sanbase.Repo.insert()
+    |> Repo.insert()
   end
 
   @doc ~s"""
@@ -93,7 +140,7 @@ defmodule Sanbase.Dashboard.Schema do
   """
   @spec delete(dashboard_id) :: {:ok, t()} | {:error, Changeset.t()}
   def delete(dashboard_id) do
-    Sanbase.Repo.get(__MODULE__, dashboard_id) |> Sanbase.Repo.delete()
+    Repo.get(__MODULE__, dashboard_id) |> Repo.delete()
   end
 
   @doc ~s"""
@@ -108,7 +155,7 @@ defmodule Sanbase.Dashboard.Schema do
 
     dashboard
     |> cast(args, [:name, :description, :is_public])
-    |> Sanbase.Repo.update()
+    |> Repo.update()
   end
 
   @doc ~s"""
@@ -122,7 +169,7 @@ defmodule Sanbase.Dashboard.Schema do
     dashboard
     |> change()
     |> put_embed(:panels, dashboard.panels ++ [panel])
-    |> Sanbase.Repo.update()
+    |> Repo.update()
     |> maybe_apply_function(fn dashboard ->
       %{panel: panel, dashboard: dashboard}
     end)
@@ -149,7 +196,7 @@ defmodule Sanbase.Dashboard.Schema do
       dashboard
       |> change()
       |> put_embed(:panels, panels_left)
-      |> Sanbase.Repo.update()
+      |> Repo.update()
       |> maybe_apply_function(fn dashboard ->
         %{panel: panel, dashboard: dashboard}
       end)
@@ -180,11 +227,17 @@ defmodule Sanbase.Dashboard.Schema do
         Ecto.Multi.new()
         |> Ecto.Multi.run(:remove_panel, fn _, _ -> remove_panel(dashboard_id, panel_id) end)
         |> Ecto.Multi.run(:create_panel, fn _, _ -> create_panel(dashboard_id, panel) end)
-        |> Sanbase.Repo.transaction()
+        |> Repo.transaction()
         |> case do
           {:ok, %{create_panel: result}} -> {:ok, result}
           {:error, _failed_op, error, _changes} -> {:error, error}
         end
     end
+  end
+
+  # Private functions
+
+  defp base_query() do
+    from(conf in __MODULE__, where: conf.is_deleted != true)
   end
 end

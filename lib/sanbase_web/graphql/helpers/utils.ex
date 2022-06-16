@@ -21,8 +21,6 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   Works when the result is a list of elements that contain a datetime and the query arguments
   have a `from` argument. In that case the first element's `datetime` is update to be
   the max of `datetime` and `from` from the query.
-  This is used when a query to influxdb is made. Influxdb can return a timestamp
-  that's outside `from` - `to` interval due to its inner working with buckets
   """
   def fit_from_datetime([%{datetime: _} | _] = data, %{from: from, interval: interval}) do
     interval_sec = str_to_sec(interval)

@@ -9,13 +9,6 @@ config :sanbase, Sanbase.Influxdb.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086}
 
-config :sanbase, Sanbase.Prices.Store,
-  init: {Sanbase.Prices.Store, :init},
-  host: "localhost",
-  port: 8086,
-  pool: [max_overflow: 40, size: 30],
-  database: "prices"
-
 config :sanbase, Sanbase.Twitter.Store,
   init: {Sanbase.Twitter.Store, :init},
   host: "localhost",

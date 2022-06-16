@@ -241,9 +241,6 @@ defmodule Sanbase.Application do
       # Star the API call service
       Sanbase.ApiCallLimit.ETS,
 
-      # Time series Prices DB connection
-      Sanbase.Prices.Store,
-
       # Start the Task Supervisor
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 

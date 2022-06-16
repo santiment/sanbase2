@@ -79,8 +79,6 @@ config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
 
-config :sanbase, Sanbase.Prices.Store, database: "prices_test"
-
 config :waffle,
   storage: Waffle.Storage.Local,
   storage_dir: "/tmp/sanbase/filestore-test/",

@@ -10,11 +10,6 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_DB: santiment
 
-  influxdb:
-    image: influxdb
-    ports:
-      - "8086"
-
   clickhouse-server:
     image: yandex/clickhouse-server:20.8.11.17
     ports:
@@ -46,13 +41,11 @@ services:
 
     depends_on:
       - postgres
-      - influxdb
 
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/santiment
       ADMIN_BASIC_AUTH_USERNAME: admin
       ADMIN_BASIC_AUTH_PASSWORD: admin
-      INFLUXDB_HOST: influxdb
       WEBSITE_URL: http://localhost:4000
       PUBLIC_URL: http://localhost:4000
       PARITY_URL: http://parity.stage.san:30954

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.2
--- Dumped by pg_dump version 14.2
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -586,7 +586,9 @@ CREATE TABLE public.comment_notifications (
     last_timeline_event_comment_id integer,
     notify_users_map jsonb,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    last_chart_configuration_comment_id integer,
+    last_watchlist_comment_id integer
 );
 
 
@@ -7554,3 +7556,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220615120713);
 INSERT INTO public."schema_migrations" (version) VALUES (20220615121150);
 INSERT INTO public."schema_migrations" (version) VALUES (20220615122849);
 INSERT INTO public."schema_migrations" (version) VALUES (20220615135946);
+INSERT INTO public."schema_migrations" (version) VALUES (20220617112317);

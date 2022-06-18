@@ -231,7 +231,7 @@ defmodule Sanbase.Billing.Subscription do
     |> Query.last_subscription_for_product(@product_sanbase)
     |> Repo.one()
     |> case do
-      %__MODULE__{trial_end: trial_end} ->
+      %__MODULE__{trial_end: trial_end} when not is_nil(trial_end) ->
         do_check_eligibility(trial_end)
 
       _ ->

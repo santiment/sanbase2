@@ -191,21 +191,6 @@ defmodule Sanbase.SocialData do
     http_client().get(url, [], options)
   end
 
-  defp trending_words_result(result) do
-    result
-    |> Enum.map(fn %{"timestamp" => timestamp, "top_words" => top_words} ->
-      %{
-        datetime: DateTime.from_unix!(timestamp),
-        top_words:
-          top_words
-          |> Enum.map(fn {k, v} ->
-            %{word: k, score: v}
-          end)
-      }
-    end)
-    |> wrap_ok()
-  end
-
   defp word_context_result(result) do
     result
     |> Enum.map(fn {k, v} -> %{word: k, score: v["score"]} end)

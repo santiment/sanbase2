@@ -102,7 +102,6 @@ In order to be able to start, the following dependencies are required:
 
 - Metricshub
 - Tech Indicators
-- InfluxDB
 - Elasticsearch
 - Parity
 

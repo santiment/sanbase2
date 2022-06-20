@@ -64,6 +64,41 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     assert Enum.at(data, 3)["insight"]["id"] == insight1.id
   end
 
+  test "get most used dashboard", context do
+    %{conn: conn} = context
+    dashboard1 = insert(:dashboard, is_public: true)
+    dashboard2 = insert(:dashboard, is_public: true)
+    dashboard3 = insert(:dashboard, is_public: true)
+    _private = insert(:dashboard, is_public: false)
+    _private = insert(:dashboard, is_public: false)
+    dashboard4 = insert(:dashboard, is_public: true)
+    _unused = insert(:dashboard, is_public: true)
+
+    for index <- 1..50 do
+      if rem(index, 5) == 0, do: create_interaction_api(conn, :dashboard, dashboard1.id)
+      if rem(index, 4) == 0, do: create_interaction_api(conn, :dashboard, dashboard4.id)
+      if rem(index, 3) == 0, do: create_interaction_api(conn, :dashboard, dashboard3.id)
+      if rem(index, 2) == 0, do: create_interaction_api(conn, :dashboard, dashboard2.id)
+    end
+
+    result = get_most_used(conn, :dashboard)
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 4,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert length(data) == 4
+    assert Enum.at(data, 0)["dashboard"]["id"] == dashboard2.id
+    assert Enum.at(data, 1)["dashboard"]["id"] == dashboard3.id
+    assert Enum.at(data, 2)["dashboard"]["id"] == dashboard4.id
+    assert Enum.at(data, 3)["dashboard"]["id"] == dashboard1.id
+  end
+
   test "get most used screener", context do
     %{conn: conn} = context
     _not_screener = insert(:watchlist, is_public: true)
@@ -100,7 +135,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     assert Enum.at(data, 3)["screener"]["id"] |> String.to_integer() == screener1.id
   end
 
-  test "get most recent project watchlist", context do
+  test "get most used project watchlist", context do
     %{conn: conn} = context
 
     # The screener should not be in the result
@@ -138,7 +173,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() == watchlist2.id
   end
 
-  test "get most recent address watchlist", context do
+  test "get most used address watchlist", context do
     %{conn: conn} = context
 
     # The screener should not be in the result
@@ -176,7 +211,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     assert Enum.at(data, 3)["addressWatchlist"]["id"] |> String.to_integer() == watchlist2.id
   end
 
-  test "get most recent chart configuration", context do
+  test "get most used chart configuration", context do
     %{conn: conn} = context
     c1 = insert(:chart_configuration, is_public: true)
     c2 = insert(:chart_configuration, is_public: true)
@@ -218,7 +253,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     assert Enum.at(data, 3)["chartConfiguration"]["id"] == c2.id
   end
 
-  test "get most recent user trigger", context do
+  test "get most used user trigger", context do
     %{conn: conn} = context
 
     user_trigger1 = insert(:user_trigger, is_public: true)
@@ -261,15 +296,17 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     assert Enum.at(data, 3)["userTrigger"]["trigger"]["id"] == user_trigger2.id
   end
 
-  test "get most recent combined", context do
+  test "get most used combined", context do
     %{conn: conn} = context
     ut = insert(:user_trigger, is_public: true)
     i = insert(:published_post)
     c = insert(:chart_configuration, is_public: true)
     s = insert(:screener, is_public: true)
     w = insert(:watchlist, type: :project, is_public: true)
+    d = insert(:dashboard, is_public: true)
 
     for index <- 1..50 do
+      if rem(index, 7) == 0, do: create_interaction_api(conn, :dashboard, d.id)
       if rem(index, 6) == 0, do: create_interaction_api(conn, :user_trigger, ut.id)
       if rem(index, 5) == 0, do: create_interaction_api(conn, :chart_configuration, c.id)
       if rem(index, 4) == 0, do: create_interaction_api(conn, :project_watchlist, w.id)
@@ -284,26 +321,28 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
         :project_watchlist,
         :screener,
         :chart_configuration,
-        :user_trigger
+        :user_trigger,
+        :dashboard
       ])
 
     data = result["data"]
     stats = result["stats"]
 
     assert %{
-             "totalEntitiesCount" => 5,
+             "totalEntitiesCount" => 6,
              "currentPage" => 1,
              "totalPagesCount" => 1,
              "currentPageSize" => 10
            } = stats
 
-    assert length(data) == 5
+    assert length(data) == 6
 
     assert Enum.at(data, 0)["insight"]["id"] == i.id
     assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() == s.id
     assert Enum.at(data, 2)["projectWatchlist"]["id"] |> String.to_integer() == w.id
     assert Enum.at(data, 3)["chartConfiguration"]["id"] == c.id
     assert Enum.at(data, 4)["userTrigger"]["trigger"]["id"] == ut.id
+    assert Enum.at(data, 5)["dashboard"]["id"] == d.id
   end
 
   test "get most used with projects' slugs filter", context do
@@ -502,6 +541,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
           screener{ id }
           chartConfiguration{ id }
           userTrigger{ trigger{ id } }
+          dashboard{ id }
         }
       }
     }

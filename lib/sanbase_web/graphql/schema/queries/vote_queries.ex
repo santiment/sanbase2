@@ -16,11 +16,12 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
     """
     field :vote, :vote_result do
       arg(:post_id, :integer, deprecate: "Use `insightId` instead")
-      arg(:insight_id, :integer)
-      arg(:watchlist_id, :integer)
-      arg(:timeline_event_id, :integer)
       arg(:chart_configuration_id, :integer)
+      arg(:dashboard_id, :integer)
+      arg(:insight_id, :integer)
+      arg(:timeline_event_id, :integer)
       arg(:user_trigger_id, :integer)
+      arg(:watchlist_id, :integer)
 
       middleware(JWTAuth)
       resolve(&VoteResolver.vote/3)
@@ -31,11 +32,12 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
     """
     field :unvote, :vote_result do
       arg(:post_id, :integer, deprecate: "Use `insightId` instead")
-      arg(:insight_id, :integer)
-      arg(:watchlist_id, :integer)
-      arg(:timeline_event_id, :integer)
       arg(:chart_configuration_id, :integer)
+      arg(:dashboard_id, :integer)
+      arg(:insight_id, :integer)
+      arg(:timeline_event_id, :integer)
       arg(:user_trigger_id, :integer)
+      arg(:watchlist_id, :integer)
 
       middleware(JWTAuth)
       resolve(&VoteResolver.unvote/3)

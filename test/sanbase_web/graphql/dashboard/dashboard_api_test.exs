@@ -11,6 +11,30 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
     %{conn: conn, user: user}
   end
 
+  describe "voting" do
+    test "vote and get votes", context do
+      dashboard_id =
+        execute_dashboard_mutation(context.conn, :create_dashboard)
+        |> get_in(["data", "createDashboard", "id"])
+
+      vote = fn ->
+        context.conn
+        |> post(
+          "/graphql",
+          mutation_skeleton("mutation{vote(dashboardId: #{dashboard_id}) {votedAt}}")
+        )
+      end
+
+      for _ <- 1..10, do: vote.()
+
+      total_votes =
+        get_dashboard_schema(context.conn, dashboard_id)
+        |> get_in(["data", "getDashboardSchema", "votes", "totalVotes"])
+
+      assert total_votes == 10
+    end
+  end
+
   describe "create/update/delete dashboard" do
     test "create", context do
       result =
@@ -655,6 +679,9 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         description
         isPublic
         panels { id }
+        votes {
+          totalVotes
+        }
       }
     }
     """

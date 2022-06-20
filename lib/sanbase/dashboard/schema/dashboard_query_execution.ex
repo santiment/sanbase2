@@ -94,7 +94,7 @@ defmodule Sanbase.Dashboard.QueryExecution do
       # table or some other clickouse error occurs. Allow for 3 attempts in total before
       # reraising the exception.
       case attempts_left do
-        0 -> raise(e)
+        0 -> reraise(e, __STACKTRACE__)
         _ -> store_execution(user_id, query_result, attempts_left - 1)
       end
   end

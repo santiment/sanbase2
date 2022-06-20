@@ -3,10 +3,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   Module with resolvers connected to the Apikey authentication. All the logic
   is delegated to the `Apikey` module
   """
-
-  require Logger
+  import Absinthe.Resolution.Helpers, except: [async: 1]
 
   alias Sanbase.Dashboard
+
+  require Logger
 
   def create_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
     Dashboard.create(args, user.id)
@@ -111,6 +112,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
       {:ok, query_result}
     end
+  end
+
+  def comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :dashboard_comments_count, id)
+    |> on_load(fn loader ->
+      count = Dataloader.get(loader, SanbaseDataloader, :dashboard_comments_count, id)
+      {:ok, count || 0}
+    end)
   end
 
   # Private functions

@@ -37,6 +37,33 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
     assert Enum.at(data, 1)["insight"]["id"] == insight2.id
   end
 
+  test "get most voted dashboard", %{conn: conn} do
+    dashboard0 = insert(:dashboard, is_public: true, inserted_at: days_ago())
+    dashboard1 = insert(:dashboard, is_public: true)
+    dashboard2 = insert(:dashboard, is_public: true)
+    _dashboard_without_votes = insert(:dashboard, is_public: true)
+
+    for _ <- 1..20, do: vote(conn, "dashboardId", dashboard0.id)
+    for _ <- 1..10, do: vote(conn, "dashboardId", dashboard1.id)
+    for _ <- 1..5, do: vote(conn, "dashboardId", dashboard2.id)
+
+    result = get_most_voted(conn, :dashboard)
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 2,
+             "currentPage" => 1,
+             "currentPageSize" => 10,
+             "totalPagesCount" => 1
+           } = stats
+
+    assert length(data) == 2
+
+    assert Enum.at(data, 0)["dashboard"]["id"] == dashboard1.id
+    assert Enum.at(data, 1)["dashboard"]["id"] == dashboard2.id
+  end
+
   test "get most voted screener", %{conn: conn} do
     # The non-screener should not be in the result
     watchlist0 = insert(:watchlist, is_public: true)
@@ -534,6 +561,7 @@ defmodule SanbaseWeb.Graphql.GetMostVotedApiTest do
           screener{ id }
           chartConfiguration{ id }
           userTrigger{ trigger{ id } }
+          dashboard{ id }
         }
       }
     }

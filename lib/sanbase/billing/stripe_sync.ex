@@ -104,14 +104,6 @@ defmodule Sanbase.Billing.StripeSync do
     |> Enum.reduce(%{}, fn x, acc -> Map.merge(acc, x) end)
   end
 
-  defp persist_in_kafka_async([]), do: :ok
-
-  defp persist_in_kafka_async(transactions) do
-    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-      do_persist_sync(transactions)
-    end)
-  end
-
   defp do_persist_sync(transactions) do
     transactions
     |> Enum.chunk_every(100)

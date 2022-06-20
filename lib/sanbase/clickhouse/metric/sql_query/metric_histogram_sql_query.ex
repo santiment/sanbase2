@@ -24,7 +24,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
             toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?3) * ?3) AS t,
             sum(measure) AS tokens_amount
         FROM (
-          SELECT dt, argMax(measure, computed_at) AS measure
+          SELECT dt, argMax(measure, computed_at) AS measure, value
           FROM distribution_deltas_5min
           PREWHERE
             metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{metric}' ) AND
@@ -83,7 +83,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
             toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?4) * ?4) AS t,
             -sum(measure) AS tokens_amount
         FROM (
-          SELECT dt, value, argMax(measure, computed_at) AS measure
+          SELECT dt, value, argMax(measure, computed_at) AS measure, value
           FROM distribution_deltas_5min
           PREWHERE
             metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{metric}' ) AND

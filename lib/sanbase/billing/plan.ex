@@ -28,8 +28,11 @@ defmodule Sanbase.Billing.Plan do
     field(:interval, :string)
     field(:stripe_id, :string)
 
-    # There might be still customers on this plan, but new subscriptions should be disabled.
+    # there might be still customers on this plan, but new subscriptions should be disabled.
     field(:is_deprecated, :boolean, default: false)
+
+    # plans that customers can't subscribe on their own
+    field(:is_private, :boolean, default: false)
 
     # order first by `order` field, then by id
     field(:order, :integer, default: 0)
@@ -40,7 +43,7 @@ defmodule Sanbase.Billing.Plan do
 
   def changeset(%__MODULE__{} = plan, attrs \\ %{}) do
     plan
-    |> cast(attrs, [:amount, :name, :stripe_id, :is_deprecated, :order])
+    |> cast(attrs, [:amount, :name, :stripe_id, :is_deprecated, :is_private, :order])
   end
 
   def by_ids(plan_ids) when is_list(plan_ids) do

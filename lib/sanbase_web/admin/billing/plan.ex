@@ -20,6 +20,7 @@ defmodule SanbaseWeb.ExAdmin.Billing.Plan do
         input(plan, :amount)
         input(plan, :stripe_id)
         input(plan, :is_deprecated)
+        input(plan, :is_private)
         input(plan, :order)
       end
     end

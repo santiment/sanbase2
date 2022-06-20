@@ -1931,7 +1931,8 @@ CREATE TABLE public.plans (
     product_id bigint NOT NULL,
     stripe_id character varying(255),
     is_deprecated boolean DEFAULT false,
-    "order" integer DEFAULT 0
+    "order" integer DEFAULT 0,
+    is_private boolean DEFAULT false
 );
 
 
@@ -7686,3 +7687,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220615135946);
 INSERT INTO public."schema_migrations" (version) VALUES (20220616131454);
 INSERT INTO public."schema_migrations" (version) VALUES (20220617112317);
 INSERT INTO public."schema_migrations" (version) VALUES (20220620132733);
+INSERT INTO public."schema_migrations" (version) VALUES (20220620143734);

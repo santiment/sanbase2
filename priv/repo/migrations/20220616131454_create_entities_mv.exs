@@ -95,6 +95,31 @@ defmodule Sanbase.Repo.Migrations.CreateEntitiesMv do
     UNION
 
     SELECT
+      d.id as entity_id,
+      'dashboards' as entity_type,
+      d.user_id,
+      d.inserted_at as created_at,
+      d.is_deleted,
+      d.is_hidden,
+      d.is_public,
+      COALESCE(comments_count, 0) as comments_count,
+      COALESCE(voted_users_count, 0) as voted_users_count,
+      COALESCE(votes_count, 0) as votes_count
+    FROM dashboards as d
+    LEFT JOIN (
+      SELECT dashboard_id, count(*) AS comments_count
+      FROM dashboard_comments_mapping
+      GROUP BY dashboard_id
+    ) as dcm ON d.id = dcm.dashboard_id
+    LEFT JOIN (
+      SELECT dashboard_id, count(*) AS voted_users_count, sum(count) as votes_count
+      FROM votes
+      GROUP BY dashboard_id
+    ) as votes ON d.id = votes.dashboard_id
+
+    UNION
+
+    SELECT
       ut.id as entity_id,
       'user_trigger' as entity_type,
       ut.user_id,

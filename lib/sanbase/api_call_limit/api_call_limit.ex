@@ -12,7 +12,13 @@ defmodule Sanbase.ApiCallLimit do
   @quota_size_base Application.compile_env(:sanbase, [__MODULE__, :quota_size])
   @quota_size_max_offset Application.compile_env(:sanbase, [__MODULE__, :quota_size_max_offset])
 
-  @plans_without_limits ["sanapi_enterprise", "sanapi_premium", "sanapi_custom"]
+  @plans_without_limits [
+    "sanapi_enterprise",
+    "sanapi_premium",
+    "sanapi_custom",
+    "sanapi_enterprise_basic",
+    "sanapi_enterprise_plus"
+  ]
   @limits_per_month %{
     "sanbase_pro" => 5000,
     "sanapi_free" => 1000,

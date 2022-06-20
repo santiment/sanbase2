@@ -3,7 +3,6 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
   Export all the event bus events to a kafka topic for persistence
   """
   use GenServer
-  alias Sanbase.Email.MailchimpApi
 
   def topics(), do: ["user_events"]
 

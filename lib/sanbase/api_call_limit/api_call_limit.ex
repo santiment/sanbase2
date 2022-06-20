@@ -61,9 +61,15 @@ defmodule Sanbase.ApiCallLimit do
   def update_user_plan(%User{} = user) do
     %__MODULE__{} = acl = get_by_and_lock(:user, user)
 
+    plan = user_to_plan(user)
+
+    has_limits =
+      user_has_limits?(user) and
+        plan not in @plans_without_limits
+
     changeset =
       acl
-      |> changeset(%{api_calls_limit_plan: user_to_plan(user)})
+      |> changeset(%{api_calls_limit_plan: plan, has_limits: has_limits})
 
     case Repo.update(changeset) do
       {:ok, _} = result ->

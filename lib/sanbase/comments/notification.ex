@@ -14,6 +14,7 @@ defmodule Sanbase.Comments.Notification do
   }
 
   alias Sanbase.Repo
+  alias Sanbase.UserList
 
   @default_avatar "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png"
 
@@ -298,7 +299,7 @@ defmodule Sanbase.Comments.Notification do
       entity: "chart_configuration",
       event: event_type,
       comment_text: comment.content,
-      entity_link: "",
+      entity_link: deduce_entity_link(cc_comment.chart_configuration, :chart_configuration),
       entity_name: cc_comment.chart_configuration.title || "",
       username: get_name(comment.user),
       avatar_url: comment.user.avatar_url || @default_avatar
@@ -324,7 +325,7 @@ defmodule Sanbase.Comments.Notification do
       entity: entity_type,
       event: event_type,
       comment_text: comment.content,
-      entity_link: "",
+      entity_link: deduce_entity_link(watchlist_comment.watchlist, :watchlist),
       entity_name: watchlist_comment.watchlist.name,
       username: get_name(comment.user),
       avatar_url: comment.user.avatar_url || @default_avatar
@@ -489,5 +490,22 @@ defmodule Sanbase.Comments.Notification do
       new_list = list ++ (acc[email] || [])
       Map.put(acc, email, new_list)
     end)
+  end
+
+  defp deduce_entity_link(chart_configuration, :chart_configuration) do
+    SanbaseWeb.Endpoint.frontend_url() <> "/charts/-#{chart_configuration.id}"
+  end
+
+  defp deduce_entity_link(watchlist, :watchlist) do
+    case {UserList.is_screener?(watchlist), UserList.type(watchlist)} do
+      {true, _type} ->
+        SanbaseWeb.Endpoint.frontend_url() <> "/screener/#{watchlist.id}"
+
+      {false, :project} ->
+        SanbaseWeb.Endpoint.frontend_url() <> "/watchlist/projects/#{watchlist.id}"
+
+      {false, :blockchain_address} ->
+        SanbaseWeb.Endpoint.frontend_url() <> "/watchlist/addresses/#{watchlist.id}"
+    end
   end
 end

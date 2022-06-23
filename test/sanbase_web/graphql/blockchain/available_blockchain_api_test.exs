@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.AvailableBlockchainApiTest do
                "blockchain" => "bitcoin",
                "hasBalanceMetrics" => true,
                "hasExchangeMetrics" => true,
-               "hasMinersMetrics" => false,
+               "hasMinersMetrics" => true,
                "hasOnchainFinancialMetrics" => true,
                "hasPureOnchainMetrics" => true,
                "hasTopHoldersMetrics" => true,
@@ -72,6 +72,39 @@ defmodule SanbaseWeb.Graphql.AvailableBlockchainApiTest do
                "hasTopHoldersMetrics" => true,
                "infrastructure" => "BNB",
                "slug" => "binance-coin"
+             },
+             %{
+               "blockchain" => "dogecoin",
+               "hasBalanceMetrics" => true,
+               "hasExchangeMetrics" => false,
+               "hasMinersMetrics" => false,
+               "hasOnchainFinancialMetrics" => true,
+               "hasPureOnchainMetrics" => true,
+               "hasTopHoldersMetrics" => false,
+               "infrastructure" => "DOGE",
+               "slug" => "dogecoin"
+             },
+             %{
+               "blockchain" => "matic-network",
+               "hasBalanceMetrics" => true,
+               "hasExchangeMetrics" => false,
+               "hasMinersMetrics" => false,
+               "hasOnchainFinancialMetrics" => true,
+               "hasPureOnchainMetrics" => true,
+               "hasTopHoldersMetrics" => false,
+               "infrastructure" => "MATIC",
+               "slug" => "matic-network"
+             },
+             %{
+               "blockchain" => "cardano",
+               "hasBalanceMetrics" => true,
+               "hasExchangeMetrics" => false,
+               "hasMinersMetrics" => false,
+               "hasOnchainFinancialMetrics" => true,
+               "hasPureOnchainMetrics" => true,
+               "hasTopHoldersMetrics" => false,
+               "infrastructure" => "ADA",
+               "slug" => "cardano"
              }
            ]
   end

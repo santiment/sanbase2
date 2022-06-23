@@ -3,6 +3,11 @@ defmodule SanbaseWeb.Graphql.PaginationTypes do
 
   enum(:cursor_type, values: [:before, :after])
 
+  input_object :cursor_input_no_order do
+    field(:type, non_null(:cursor_type))
+    field(:datetime, non_null(:datetime))
+  end
+
   input_object :cursor_input do
     field(:type, non_null(:cursor_type))
     field(:datetime, non_null(:datetime))

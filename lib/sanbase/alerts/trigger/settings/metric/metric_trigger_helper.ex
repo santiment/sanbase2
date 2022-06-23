@@ -76,9 +76,9 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
       second_end: second_end
     } = timerange_params(settings)
 
-    to_value = fn
-      %{} = map -> Map.values(map) |> List.first()
-      value -> value
+    to_value = fn %{} = map ->
+      [{_slug, value}] = Map.to_list(map)
+      value
     end
 
     Cache.get_or_store(cache_key, fn ->
@@ -144,13 +144,48 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
         metric_human_readable_name: human_readable_name,
         extra_explanation: settings.extra_explanation
       }
-      |> Map.merge(operation_kv)
-      |> Map.merge(curr_value_kv)
+      |> OperationText.merge_kvs(operation_kv)
+      |> OperationText.merge_kvs(curr_value_kv)
 
     template = """
     🔔 The search term '#{text}''s {{metric_human_readable_name}} #{operation_template}.
     #{curr_value_template}.
     #{maybe_add_extra_explanation(settings.extra_explanation)}
+    """
+
+    template = settings.template || template
+
+    {template, kv}
+  end
+
+  defp template_kv(values, %{target: %{slug: "TOTAL_MARKET"}} = settings) do
+    {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(settings.metric)
+
+    {operation_template, operation_kv} = OperationText.to_template_kv(values, settings.operation)
+
+    {curr_value_template, curr_value_kv} = OperationText.current_value(values)
+
+    {details_template, details_kv} = OperationText.details(:metric, settings)
+
+    kv =
+      %{
+        type: settings.type,
+        operation: settings.operation,
+        project_slug: "TOTAL_MARKET",
+        metric: settings.metric,
+        metric_human_readable_name: human_readable_name,
+        extra_explanation: settings.extra_explanation
+      }
+      |> OperationText.merge_kvs(operation_kv)
+      |> OperationText.merge_kvs(curr_value_kv)
+      |> OperationText.merge_kvs(details_kv)
+
+    template = """
+    🔔 The total market's {{metric_human_readable_name}} #{operation_template}* 💥
+
+    #{curr_value_template}
+    #{maybe_add_extra_explanation(settings.extra_explanation)}
+    #{details_template}
     """
 
     template = settings.template || template
@@ -188,9 +223,9 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
         metric_human_readable_name: human_readable_name,
         extra_explanation: settings.extra_explanation
       }
-      |> Map.merge(operation_kv)
-      |> Map.merge(curr_value_kv)
-      |> Map.merge(details_kv)
+      |> OperationText.merge_kvs(operation_kv)
+      |> OperationText.merge_kvs(curr_value_kv)
+      |> OperationText.merge_kvs(details_kv)
 
     template = """
     🔔 [\#{{project_ticker}}]({{sanbase_project_link}}) | *{{project_name}}'s {{metric_human_readable_name}} #{operation_template}* 💥

@@ -5,14 +5,22 @@
     "metric": "labeled_balance",
     "version": "2020-01-01",
     "access": "restricted",
-    "selectors": ["slug", "label_fqn", "label_fqns", "blockchain"],
-    "required_selectors": ["slug", "label_fqn|label_fqns"],
+    "selectors": [
+      "slug",
+      "label_fqn",
+      "label_fqns",
+      "blockchain"
+    ],
+    "required_selectors": [
+      "slug",
+      "label_fqn|label_fqns"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "sum",
-    "min_interval": "1d",
+    "aggregation": "last",
+    "min_interval": "15m",
     "table": "labeled_intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
@@ -23,14 +31,22 @@
     "metric": "labeled_balance_delta",
     "version": "2020-01-01",
     "access": "restricted",
-    "selectors": ["slug", "label_fqn", "label_fqns", "blockchain"],
-    "required_selectors": ["slug", "label_fqn|label_fqns"],
+    "selectors": [
+      "slug",
+      "label_fqn",
+      "label_fqns",
+      "blockchain"
+    ],
+    "required_selectors": [
+      "slug",
+      "label_fqn|label_fqns"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "sum",
-    "min_interval": "1d",
+    "min_interval": "15m",
     "table": "labeled_intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"

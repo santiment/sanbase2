@@ -118,6 +118,28 @@ defmodule Sanbase.StripeApi do
     {:ok, []}
   end
 
+  def upcoming_invoice(stripe_id) do
+    Stripe.Invoice.upcoming(%{subscription: stripe_id})
+  end
+
+  def fetch_default_card(%User{stripe_customer_id: stripe_customer_id})
+      when is_binary(stripe_customer_id) do
+    Stripe.Customer.retrieve(stripe_customer_id, expand: ["default_source"])
+  end
+
+  def fetch_default_card(_), do: {:error, "Customer has no default card"}
+
+  def delete_default_card(%User{stripe_customer_id: stripe_customer_id})
+      when is_binary(stripe_customer_id) do
+    with {:ok, customer} <- Stripe.Customer.retrieve(stripe_customer_id),
+         {:ok, %Stripe.Card{}} <-
+           Stripe.Card.delete(customer.default_source, %{customer: stripe_customer_id}) do
+      :ok
+    end
+  end
+
+  def delete_default_card(_), do: {:error, "Customer has no default card"}
+
   # Helpers
 
   defp get_subscription_first_item_id(stripe_id) do

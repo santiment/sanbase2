@@ -47,6 +47,7 @@ defmodule Sanbase.Accounts.User do
   schema "users" do
     field(:email, :string)
     field(:email_candidate, :string)
+    field(:name, :string)
     field(:username, :string)
     field(:salt, :string)
     field(:san_balance, :decimal)
@@ -96,6 +97,10 @@ defmodule Sanbase.Accounts.User do
     timestamps()
   end
 
+  def get_name(%__MODULE__{} = user) do
+    user.name || user.username || user.email || "Anon"
+  end
+
   def get_unique_str(%__MODULE__{} = user) do
     user.email || user.username || user.twitter_id || "id_#{user.id}"
   end
@@ -141,11 +146,13 @@ defmodule Sanbase.Accounts.User do
       :stripe_customer_id,
       :test_san_balance,
       :twitter_id,
-      :username
+      :username,
+      :name
     ])
     |> normalize_user_identificator(:username, attrs[:username])
     |> normalize_user_identificator(:email, attrs[:email])
     |> normalize_user_identificator(:email_candidate, attrs[:email_candidate])
+    |> validate_change(:name, &validate_name_change/2)
     |> validate_change(:username, &validate_username_change/2)
     |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> validate_change(:avatar_url, &validate_url_change/2)
@@ -157,6 +164,7 @@ defmodule Sanbase.Accounts.User do
 
   defdelegate can_receive_telegram_alert?(user), to: __MODULE__.Alert
   defdelegate can_receive_email_alert?(user), to: __MODULE__.Alert
+  defdelegate can_receive_webhook_alert?(user, webhook_url), to: __MODULE__.Alert
 
   # Email functions
   defdelegate find_by_email_candidate(candidate, token), to: __MODULE__.Email
@@ -229,6 +237,13 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
+  def by_twitter_id(twitter_id) when is_binary(twitter_id) do
+    case Sanbase.Repo.get_by(User, twitter_id: twitter_id) do
+      nil -> {:error, "Cannot fetch user with twitter_id #{twitter_id}"}
+      %__MODULE__{} = user -> {:ok, user}
+    end
+  end
+
   def by_stripe_customer_id(stripe_customer_id) do
     case Repo.get_by(User, stripe_customer_id: stripe_customer_id) do
       nil -> {:error, "Cannot fetch user with stripe_customer_id #{stripe_customer_id}"}
@@ -239,6 +254,7 @@ defmodule Sanbase.Accounts.User do
   def by_selector(%{id: id}), do: by_id(Sanbase.Math.to_integer(id))
   def by_selector(%{email: email}), do: by_email(email)
   def by_selector(%{username: username}), do: by_username(username)
+  def by_selector(%{twitter_id: twitter_id}), do: by_twitter_id(twitter_id)
 
   def update_field(%__MODULE__{} = user, field, value) do
     case Map.fetch!(user, field) == value do
@@ -269,9 +285,9 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
-  def ascii_username?(nil), do: true
+  def ascii_string_or_nil?(nil), do: true
 
-  def ascii_username?(username) do
+  def ascii_string_or_nil?(username) do
     username
     |> String.to_charlist()
     |> List.ascii_printable?()
@@ -294,11 +310,17 @@ defmodule Sanbase.Accounts.User do
     |> String.trim()
   end
 
+  defp validate_name_change(_, name) do
+    case __MODULE__.Name.valid_name?(name) do
+      true -> []
+      {:error, error} -> [name: error]
+    end
+  end
+
   defp validate_username_change(_, username) do
-    if ascii_username?(username) do
-      []
-    else
-      [username: "Username can contain only latin letters and numbers"]
+    case __MODULE__.Name.valid_username?(username) do
+      true -> []
+      {:error, error} -> [username: error]
     end
   end
 
@@ -315,6 +337,15 @@ defmodule Sanbase.Accounts.User do
       :ok -> []
       {:error, msg} -> [avatar_url: msg]
     end
+  end
+
+  def change_name(%__MODULE__{name: name} = user, name), do: {:ok, user}
+
+  def change_name(%__MODULE__{} = user, name) do
+    user
+    |> changeset(%{name: name})
+    |> Repo.update()
+    |> emit_event(:update_name, %{old_name: user.name, new_name: name})
   end
 
   def change_username(%__MODULE__{username: username} = user, username), do: {:ok, user}

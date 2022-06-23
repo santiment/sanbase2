@@ -83,9 +83,10 @@ defmodule Sanbase.Clickhouse.Fees do
             SELECT assetRefId, contract, sum(value) / 1e18 AS fees
             FROM
             (
-                SELECT transactionHash, value
-                FROM eth_transfers FINAL
+                SELECT transactionHash, any(value) AS value
+                FROM eth_transfers
                 PREWHERE dt >= toDateTime(?1) AND dt < toDateTime(?2) AND type = 'fee'
+                GROUP BY from, type, to, dt, transactionHash, primaryKey
             )
             ANY LEFT JOIN
             (

@@ -21,7 +21,7 @@ defmodule Sanbase.Intercom do
   @users_page_size 100
 
   def sync_intercom_to_kafka do
-    if intercom_api_key() do
+    if has_intercom_api_key?() do
       Logger.info("Start sync_intercom_to_kafka")
 
       from(u in User, order_by: [asc: u.id], select: u.id)
@@ -94,7 +94,7 @@ defmodule Sanbase.Intercom do
     # Skip if api key not present in env. (Run only on production)
     all_users_stats = all_users_stats()
 
-    if intercom_api_key() do
+    if has_intercom_api_key?() do
       1..user_pages()
       |> Stream.flat_map(fn page ->
         users_by_page(page, @users_page_size)
@@ -120,6 +120,11 @@ defmodule Sanbase.Intercom do
 
   def intercom_api_key() do
     Config.get(:api_key)
+  end
+
+  def has_intercom_api_key?() do
+    apikey = intercom_api_key()
+    is_binary(apikey) and apikey != ""
   end
 
   # helpers
@@ -163,11 +168,17 @@ defmodule Sanbase.Intercom do
       end)
       |> Enum.join(" | ")
 
+    signed_up_at =
+      case user.is_registered do
+        true -> DateTime.from_naive!(inserted_at, "Etc/UTC") |> DateTime.to_unix()
+        false -> 0
+      end
+
     stats = %{
       user_id: id,
       email: email,
       name: username,
-      signed_up_at: DateTime.from_naive!(inserted_at, "Etc/UTC") |> DateTime.to_unix(),
+      signed_up_at: signed_up_at,
       custom_attributes:
         %{
           all_watchlists_count: Map.get(watchlists_map, id, 0),
@@ -180,9 +191,6 @@ defmodule Sanbase.Intercom do
           sanbase_trial_created_at: sanbase_trial_created_at,
           user_paid_after_trial: user_paid_after_trial,
           user_paid_with: Map.get(customer_payment_type_map, stripe_customer_id, "not_paid"),
-          weekly_digest:
-            Sanbase.Accounts.UserSettings.settings_for(user).newsletter_subscription
-            |> to_string(),
           used_sanapi: id in users_used_api_list,
           used_sansheets: id in users_used_sansheets_list,
           api_calls_count: Map.get(api_calls_per_user_count, id, 0),
@@ -199,7 +207,7 @@ defmodule Sanbase.Intercom do
   end
 
   defp triggers_type_count(user) do
-    user
+    user.id
     |> UserTrigger.triggers_for()
     |> Enum.group_by(fn ut -> ut.trigger.settings.type end)
     |> Enum.map(fn {type, list} -> {"trigger_" <> type, length(list)} end)
@@ -235,19 +243,19 @@ defmodule Sanbase.Intercom do
     HTTPoison.post(@intercom_url, stats_json, intercom_headers())
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        Logger.info("Stats sent: #{inspect(stats_json |> Jason.decode!())}}")
+        Logger.info("Stats sent for user: #{stats.user_id}}")
         stats = merge_intercom_attributes(stats, body)
         UserAttributes.save(%{user_id: stats.user_id, properties: stats})
         :ok
 
       {:ok, %HTTPoison.Response{} = response} ->
         Logger.error(
-          "Error sending to intercom stats: #{inspect(stats_json |> Jason.decode!())}}. Response: #{inspect(response)}"
+          "Error sending to intercom stats: #{inspect(stats)}. Response: #{inspect(response)}"
         )
 
       {:error, reason} ->
         Logger.error(
-          "Error sending to intercom stats: #{inspect(stats_json |> Jason.decode!())}}. Reason: #{inspect(reason)}"
+          "Error sending to intercom stats: #{inspect(stats)}. Reason: #{inspect(reason)}"
         )
     end
   end
@@ -284,13 +292,13 @@ defmodule Sanbase.Intercom do
           reraise e, __STACKTRACE__
       end
     end)
-    |> Enum.each(fn user ->
+    |> Enum.each(fn user_stats ->
       try do
-        send_user_stats_to_intercom(user)
+        send_user_stats_to_intercom(user_stats)
       rescue
         e ->
           Logger.error(
-            "Error sync_users to Intercom (send_user_stats_to_intercom) for user: #{user.id}, error: #{inspect(e)}"
+            "Error sync_users to Intercom (send_user_stats_to_intercom) for user: #{user_stats.user_id}, error: #{inspect(e)}"
           )
       end
     end)

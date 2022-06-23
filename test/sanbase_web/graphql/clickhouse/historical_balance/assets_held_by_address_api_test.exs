@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -137,30 +136,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
 
       assert result == %{"data" => %{"assetsHeldByAddress" => []}}
     end)
-  end
-
-  test "negative balances are discarded", context do
-    with_mocks [
-      {Sanbase.Clickhouse.HistoricalBalance.XrpBalance, [:passthrough],
-       assets_held_by_address: fn _ ->
-         {:ok,
-          [
-            %{balance: -100.0, slug: context.p1.slug},
-            %{balance: -200.0, slug: context.p2.slug}
-          ]}
-       end}
-    ] do
-      address = "0x123"
-
-      query = assets_held_by_address_query(address, "XRP")
-
-      result =
-        context.conn
-        |> post("/graphql", query_skeleton(query, "assetsHeldByAddress"))
-        |> json_response(200)
-
-      assert result == %{"data" => %{"assetsHeldByAddress" => []}}
-    end
   end
 
   defp assets_held_by_address_query(address, infrastructure) do

@@ -11,20 +11,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     Plan.product_with_plans()
   end
 
-  def update_customer_card(_root, %{card_token: card_token}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    Billing.create_or_update_stripe_customer(current_user, card_token)
-    |> case do
-      {:ok, _} ->
-        {:ok, %{success: true}}
-
-      {:error, %Stripe.Error{message: message} = reason} ->
-        log_error("Update customer card: user=#{inspect(current_user)}", reason)
-        {:error, message}
-    end
-  end
-
   def subscribe(_root, %{plan_id: plan_id} = args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
@@ -145,12 +131,103 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
+  def upcoming_invoice(_root, %{subscription_id: subscription_id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    current_user_id = current_user.id
+
+    with %Subscription{user_id: ^current_user_id} = subscription <-
+           Subscription.by_id(subscription_id),
+         true <- subscription.status in [:active, :trialing, :past_due],
+         {:ok, %Stripe.Invoice{} = invoice} <- StripeApi.upcoming_invoice(subscription.stripe_id) do
+      {:ok,
+       %{
+         period_start: DateTime.from_unix!(invoice.period_start),
+         period_end: DateTime.from_unix!(invoice.period_end),
+         amount_due: invoice.total
+       }}
+    else
+      {:error, %Stripe.Error{message: message} = reason} ->
+        log_error("Error fetching upcoming invoice", reason)
+        {:error, message}
+
+      _ ->
+        {:error, "Can't fetch upcoming invoice for the provided subscription"}
+    end
+  end
+
+  def fetch_default_payment_instrument(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    with {:ok, customer} <- StripeApi.fetch_default_card(current_user),
+         {:card?, card} when not is_nil(card) <- {:card?, customer.default_source} do
+      {:ok,
+       %{
+         last4: card.last4,
+         dynamic_last4: card.dynamic_last4,
+         exp_year: card.exp_year,
+         exp_month: card.exp_month,
+         brand: card.brand,
+         funding: card.funding
+       }}
+    else
+      {:card?, nil} ->
+        {:error, "Customer has no default payment instrument"}
+
+      {:error, %Stripe.Error{message: message} = reason} ->
+        log_error("Error fetching default payment instrument", reason)
+        {:error, message}
+
+      _ ->
+        {:error, "Can't fetch the default payment instrument"}
+    end
+  end
+
+  def update_default_payment_instrument(_root, %{card_token: card_token}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    Billing.create_or_update_stripe_customer(current_user, card_token)
+    |> case do
+      {:ok, _} ->
+        {:ok, true}
+
+      {:error, %Stripe.Error{message: message} = reason} ->
+        log_error("Update customer card: user=#{inspect(current_user)}", reason)
+        {:error, message}
+
+      _ ->
+        {:error, "Can't update the default payment instrument"}
+    end
+  end
+
+  def delete_default_payment_instrument(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    case StripeApi.delete_default_card(current_user) do
+      :ok ->
+        {:ok, true}
+
+      {:error, %Stripe.Error{message: message} = reason} ->
+        log_error("Delete customer card: user=#{inspect(current_user)}", reason)
+        {:error, message}
+
+      _ ->
+        {:error, "Can't delete the default payment instrument"}
+    end
+  end
+
   def subscriptions(%User{} = user, _args, _resolution) do
     {:ok, Subscription.user_subscriptions(user)}
   end
 
   def eligible_for_sanbase_trial?(%User{} = user, _args, _resolution) do
     {:ok, Billing.eligible_for_sanbase_trial?(user.id)}
+  end
+
+  def check_annual_discount_eligibility(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    {:ok, Subscription.annual_discount_eligibility(current_user.id)}
   end
 
   # private functions

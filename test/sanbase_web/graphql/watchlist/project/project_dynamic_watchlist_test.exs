@@ -83,7 +83,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
     }
 
     error =
-      execute_mutation(conn, create_watchlist_query(function: function))
+      do_execute_mutation(conn, create_watchlist_query(function: function))
       |> Map.get("errors")
       |> hd()
 
@@ -121,7 +121,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
     }
 
     error =
-      execute_mutation(conn, update_watchlist_query(id: watchlist.id, function: function))
+      do_execute_mutation(conn, update_watchlist_query(id: watchlist.id, function: function))
       |> Map.get("errors")
       |> hd()
 
@@ -163,9 +163,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
       {:ok, ["ethereum", "dai", "bitcoin"]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result = execute_mutation(conn, create_watchlist_query(function: function))
-
-      user_list = result["data"]["createWatchlist"]
+      user_list = execute_mutation(conn, create_watchlist_query(function: function))
 
       assert user_list["name"] == "My list"
       assert user_list["color"] == "BLACK"
@@ -220,7 +218,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
       "nvt", _, _, _, _, _ -> {:ok, [p3.slug, p4.slug, p5.slug]}
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result = execute_mutation(conn, create_watchlist_query(function: function))
+      result = do_execute_mutation(conn, create_watchlist_query(function: function))
 
       user_list = result["data"]["createWatchlist"]
 
@@ -262,7 +260,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        execute_mutation(conn, create_watchlist_query(function: function, is_screener: true))
+        do_execute_mutation(conn, create_watchlist_query(function: function, is_screener: true))
 
       user_list = result["data"]["createWatchlist"]
 
@@ -282,7 +280,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
   test "dynamic watchlist for market segments", %{conn: conn, user: user} do
     function = %{"name" => "market_segment", "args" => %{"market_segment" => "stablecoin"}}
 
-    result = execute_mutation(conn, create_watchlist_query(function: function))
+    result = do_execute_mutation(conn, create_watchlist_query(function: function))
     user_list = result["data"]["createWatchlist"]
 
     assert user_list["name"] == "My list"
@@ -296,7 +294,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
 
   test "dynamic watchlist for top erc20 projects", %{conn: conn} do
     function = %{"name" => "top_erc20_projects", "args" => %{"size" => 2}}
-    result = execute_mutation(conn, create_watchlist_query(function: function))
+    result = do_execute_mutation(conn, create_watchlist_query(function: function))
     user_list = result["data"]["createWatchlist"]
 
     assert user_list["listItems"] == [
@@ -311,7 +309,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
       "args" => %{"size" => 2, "ignored_projects" => ["dai"]}
     }
 
-    result = execute_mutation(conn, create_watchlist_query(function: function))
+    result = do_execute_mutation(conn, create_watchlist_query(function: function))
     user_list = result["data"]["createWatchlist"]
 
     assert user_list["listItems"] == [
@@ -322,7 +320,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
 
   test "dynamic watchlist for top all projects", %{conn: conn} do
     function = %{"name" => "top_all_projects", "args" => %{"size" => 3}}
-    result = execute_mutation(conn, create_watchlist_query(function: function))
+    result = do_execute_mutation(conn, create_watchlist_query(function: function))
     user_list = result["data"]["createWatchlist"]
 
     assert user_list["listItems"] == [
@@ -334,7 +332,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
 
   test "dynamic watchlist for min volume", %{conn: conn} do
     function = %{"name" => "min_volume", "args" => %{"min_volume" => 1_000_000_000}}
-    result = execute_mutation(conn, create_watchlist_query(function: function))
+    result = do_execute_mutation(conn, create_watchlist_query(function: function))
     user_list = result["data"]["createWatchlist"]
 
     assert user_list["listItems"] == [
@@ -347,7 +345,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
 
   test "dynamic watchlist for slug list", %{conn: conn} do
     function = %{"name" => "slugs", "args" => %{"slugs" => ["bitcoin", "santiment"]}}
-    result = execute_mutation(conn, create_watchlist_query(function: function))
+    result = do_execute_mutation(conn, create_watchlist_query(function: function))
     user_list = result["data"]["createWatchlist"]
 
     assert user_list["listItems"] == [
@@ -369,7 +367,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
       end
     ) do
       function = %{"name" => "trending_projects"}
-      result = execute_mutation(conn, create_watchlist_query(function: function))
+      result = do_execute_mutation(conn, create_watchlist_query(function: function))
       user_list = result["data"]["createWatchlist"]
       slugs = user_list["listItems"] |> Enum.map(fn %{"project" => %{"slug" => slug}} -> slug end)
 
@@ -434,7 +432,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
     |> String.replace(~r|'|, ~S|"|)
   end
 
-  defp execute_mutation(conn, query) do
+  defp do_execute_mutation(conn, query) do
     conn
     |> post("/graphql", mutation_skeleton(query))
     |> json_response(200)

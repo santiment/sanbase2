@@ -89,7 +89,7 @@ defmodule Sanbase.SmartContracts.Utils do
       end)
 
     with {:ok, result} <- Ethereumex.HttpClient.batch_request(requests) do
-      Enum.map(result, fn hex_encoded_binary_response ->
+      Enum.map(result, fn {:ok, hex_encoded_binary_response} ->
         hex_encoded_binary_response
         # Strip `0x` prefix
         |> String.slice(2..-1)

@@ -101,62 +101,73 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
       json
       |> Jason.decode!()
 
-    data
-    |> Enum.map(fn project_data ->
-      %{
-        "id" => id,
-        "name" => name,
-        "symbol" => symbol,
-        "slug" => slug,
-        "cmc_rank" => rank,
-        "circulating_supply" => circulating_supply,
-        "total_supply" => total_supply,
-        "max_supply" => _max_supply,
-        "last_updated" => last_updated,
-        "quote" => %{
-          "USD" => %{
-            "price" => price_usd,
-            "volume_24h" => volume_24h_usd,
-            "market_cap" => mcap_usd,
-            "percent_change_1h" => percent_change_1h_usd,
-            "percent_change_24h" => percent_change_24h_usd,
-            "percent_change_7d" => percent_change_7d_usd
-          },
-          "BTC" => %{
-            "price" => price_btc,
-            "volume_24h" => _volume_btc,
-            "market_cap" => _mcap_btc,
-            "percent_change_1h" => _percent_change_1h_btc,
-            "percent_change_24h" => _percent_change_24h_btc,
-            "percent_change_7d" => _percent_change_7d_btc
+    data =
+      data
+      |> Enum.map(fn project_data ->
+        %{
+          "id" => id,
+          "name" => name,
+          "symbol" => symbol,
+          "slug" => slug,
+          "cmc_rank" => rank,
+          "circulating_supply" => circulating_supply,
+          "total_supply" => total_supply,
+          "max_supply" => _max_supply,
+          "last_updated" => last_updated,
+          "quote" => %{
+            "USD" => %{
+              "price" => price_usd,
+              "volume_24h" => volume_24h_usd,
+              "market_cap" => mcap_usd,
+              "percent_change_1h" => percent_change_1h_usd,
+              "percent_change_24h" => percent_change_24h_usd,
+              "percent_change_7d" => percent_change_7d_usd
+            },
+            "BTC" => %{
+              "price" => price_btc,
+              "volume_24h" => _volume_btc,
+              "market_cap" => _mcap_btc,
+              "percent_change_1h" => _percent_change_1h_btc,
+              "percent_change_24h" => _percent_change_24h_btc,
+              "percent_change_7d" => _percent_change_7d_btc
+            }
           }
-        }
-      } = project_data
+        } = project_data
 
-      %__MODULE__{
-        id: id,
-        slug: slug,
-        name: name,
-        symbol: symbol,
-        price_usd: price_usd,
-        price_btc: price_btc,
-        rank: rank,
-        volume_usd: volume_24h_usd,
-        market_cap_usd: mcap_usd,
-        last_updated: last_updated,
-        available_supply: circulating_supply,
-        total_supply: total_supply,
-        percent_change_1h: percent_change_1h_usd,
-        percent_change_24h: percent_change_24h_usd,
-        percent_change_7d: percent_change_7d_usd
-      }
-    end)
-    |> Enum.filter(fn %__MODULE__{last_updated: last_updated} -> last_updated end)
+        %__MODULE__{
+          id: id,
+          slug: slug,
+          name: name,
+          symbol: symbol,
+          price_usd: price_usd,
+          price_btc: price_btc,
+          rank: rank,
+          volume_usd: volume_24h_usd,
+          market_cap_usd: mcap_usd,
+          last_updated: last_updated,
+          available_supply: circulating_supply,
+          total_supply: total_supply,
+          percent_change_1h: percent_change_1h_usd,
+          percent_change_24h: percent_change_24h_usd,
+          percent_change_7d: percent_change_7d_usd
+        }
+      end)
+      |> Enum.filter(fn %__MODULE__{last_updated: last_updated} -> last_updated end)
+
+    data
   end
 
   @spec convert_for_importing(%__MODULE__{}, %{}) :: [%Measurement{}]
   def convert_for_importing(%__MODULE__{} = ticker, cmc_id_to_slugs_mapping) do
     price_point = to_price_point(ticker) |> PricePoint.sanity_filters()
+
+    get_ticker = fn
+      ticker, slug ->
+        case ticker.slug == slug do
+          true -> ticker.symbol
+          false -> Project.ticker_by_slug(slug)
+        end
+    end
 
     case Map.get(cmc_id_to_slugs_mapping, ticker.slug, []) |> List.wrap() do
       [] ->
@@ -164,7 +175,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
       slugs ->
         Enum.map(slugs, fn slug ->
-          symbol = if ticker.slug == slug, do: ticker.symbol, else: Project.ticker_by_slug(slug)
+          symbol = get_ticker.(ticker, slug)
           measurement = Measurement.name_from(%{ticker | id: slug, symbol: symbol})
 
           PricePoint.convert_to_measurement(price_point, measurement)

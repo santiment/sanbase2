@@ -29,10 +29,16 @@ config :sanbase, SanbaseWeb.Plug.BasicAuth,
   password: {:system, "ADMIN_BASIC_AUTH_PASSWORD", "admin"}
 
 config :sanbase, Sanbase.Transfers.Erc20Transfers,
-  dt_ordered_table: {:system, "DT_ORDERED_ERC20_TRANFERS_TABLE", "erc20_transfers_new"},
+  dt_ordered_table: {:system, "DT_ORDERED_ERC20_TRANFERS_TABLE", "erc20_transfers_dt_order"},
   address_ordered_table: {:system, "ADDRESS_ORDERED_ERC20_TRANSFERS_TABLE", "erc20_transfers"}
 
+config :sanbase, Sanbase.Price.Validator, enabled: {:system, "PRICE_VALIDATOR_ENABLED", true}
+
 config :sanbase, Sanbase.Cryptocompare, api_key: {:system, "CRYPTOCOMPARE_API_KEY"}
+
+config :sanbase, Sanbase.Kafka,
+  kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
+  kafka_port: {:system, "KAFKA_PORT", "9092"}
 
 config :sanbase, Sanbase.KafkaExporter,
   supervisor: SanExporterEx.Producer.Supervisor,
@@ -45,7 +51,8 @@ config :sanbase, Sanbase.KafkaExporter,
     {:system, "KAFKA_CRYPTOCOMPARE_PRICES_ONLY_TOPIC", "asset_price_pairs_only"},
   asset_ohlcv_price_pairs_topic:
     {:system, "KAFKA_ASSET_OHLCV_PRICE_POINTS_TOPIC", "asset_ohlcv_price_pairs"},
-  api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"}
+  api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"},
+  twitter_followers_topic: {:system, "KAFKA_TWITTER_FOLLOWERS_TOPIC", "twitter_followers"}
 
 config :sanbase, Sanbase.EventBus.KafkaExporterSubscriber,
   event_bus_topic: {:system, "KAFKA_EVENT_BUS_TOPIC", "sanbase_event_bus"},
@@ -61,8 +68,13 @@ config :sanbase, Sanbase.ClickhouseRepo,
   queue_target: 10_000,
   queue_interval: 2000
 
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
+  adapter: Ecto.Adapters.Postgres,
+  queue_target: 60_000,
+  queue_interval: 60_000
+
 config :sanbase, Sanbase.Repo,
-  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
+  loggers: [Ecto.LogEntry],
   adapter: Ecto.Adapters.Postgres,
   pool_size: {:system, "SANBASE_POOL_SIZE", "20"},
   max_overflow: 5,
@@ -125,6 +137,10 @@ config :tesla,
   adapter: Tesla.Adapter.Hackney,
   recv_timeout: 30_000
 
+config :sanbase, Sanbase.ApiCallLimit,
+  quota_size: 100,
+  quota_size_max_offset: 100
+
 config :sanbase, Sanbase.InternalServices.Ethauth,
   url: {:system, "ETHAUTH_URL"},
   basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},
@@ -153,12 +169,7 @@ config :sanbase, Sanbase.MandrillApi,
   apikey: {:system, "MANDRILL_APIKEY"},
   from_email: {:system, "MANDRILL_FROM_EMAIL", "admin@santiment.net"}
 
-config :sanbase, Sanbase.TechIndicators,
-  url: {:system, "TECH_INDICATORS_URL", "bohman"},
-  price_volume_diff_window_type: {:system, "PRICE_VOLUME_DIFF_WINDOW_TYPE"},
-  price_volume_diff_approximation_window:
-    {:system, "PRICE_VOLUME_DIFF_APPROXIMATION_WINDOW", "14"},
-  price_volume_diff_comparison_window: {:system, "PRICE_VOLUME_DIFF_COMPARISON_WINDOW", "7"}
+config :sanbase, Sanbase.TechIndicators, url: {:system, "TECH_INDICATORS_URL"}
 
 config :sanbase, Sanbase.SocialData,
   metricshub_url: {:system, "METRICS_HUB_URL", "http://metrics-hub-server"}
@@ -172,18 +183,11 @@ config :waffle,
   virtual_host: true,
   bucket: {:system, "POSTS_IMAGE_BUCKET"}
 
-config :sanbase, Sanbase.Oauth2.Hydra,
-  base_url: {:system, "HYDRA_BASE_URL", "http://localhost:4444"},
-  token_uri: {:system, "HYDRA_TOKEN_URI", "/oauth2/token"},
-  consent_uri: {:system, "HYDRA_CONSENT_URI", "/oauth2/consent/requests"},
-  client_id: {:system, "HYDRA_CLIENT_ID", "consent-app"},
-  client_secret: {:system, "HYDRA_CLIENT_SECRET", "consent-secret"},
-  clients_that_require_san_tokens:
-    {:system, "CLIENTS_THAT_REQUIRE_SAN_TOKENS", "{\"grafana\": 100}"}
-
 config :sanbase, SanbaseWeb.Graphql.Middlewares.AccessControl,
   restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},
   restrict_from_in_days: {:system, "RESTRICT_FROM_IN_MONTHS", "90"}
+
+config :sanbase, Sanbase.MetricExporter.S3, bucket: {:system, "METRICS_EXPORTER_S3_BUCKET"}
 
 config :libcluster,
   topologies: [
@@ -212,7 +216,7 @@ config :sanbase, Sanbase.GrafanaApi,
 
 config :sanbase, Sanbase.Intercom, api_key: {:system, "INTERCOM_API_KEY"}
 
-config :sanbase, Sanbase.Email.Mailchimp, api_key: {:system, "MAILCHIMP_API_KEY"}
+config :sanbase, Sanbase.Email.MailchimpApi, api_key: {:system, "MAILCHIMP_API_KEY"}
 
 config :sanbase, Sanbase.Promoters.FirstPromoterApi,
   api_id: {:system, "FIRST_PROMOTER_API_ID"},
@@ -229,6 +233,19 @@ config :kaffy,
   otp_app: :sanbase,
   ecto_repo: Sanbase.Repo,
   router: SanbaseWeb.Router
+
+config :sanbase, Sanbase.Kafka.Consumer,
+  enabled?: {:system, "KAFKA_CONSUMER_ENABLED", false},
+  metrics_stream_topic: {:system, "KAFKA_METRIC_STREAM_TOPIC", "sanbase_combined_metrics"},
+  consumer_group_basename: {:system, "KAFKA_CONSUMER_GROUP_BASENAME", "sanbase_kafka_consumer"}
+
+config :kaffe,
+  consumer: [
+    message_handler: Sanbase.Kafka.MessageProcessor,
+    async_message_ack: false,
+    start_with_earliest_message: false,
+    offset_reset_policy: :reset_to_latest
+  ]
 
 # Import configs
 import_config "ueberauth_config.exs"

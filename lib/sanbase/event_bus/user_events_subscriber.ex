@@ -40,15 +40,46 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     state
   end
 
-  defp handle_event(%{data: %{event_type: :update_email}}, event_shadow, state) do
-    # msg = "The email of sanbae has been changed"
-    # Madril.send(user, msg)
+  defp handle_event(
+         %{data: %{event_type: :subscribe_monthly_newsletter, user_id: user_id}},
+         event_shadow,
+         state
+       ) do
+    email = Sanbase.Accounts.get_user!(user_id).email
+    Sanbase.Email.MailchimpApi.subscribe(:monthly_newsletter, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
-  defp handle_event(%{data: %{event_type: :update_username}}, event_shadow, state) do
-    # Do something
+  defp handle_event(
+         %{data: %{event_type: :unsubscribe_monthly_newsletter, user_id: user_id}},
+         event_shadow,
+         state
+       ) do
+    email = Sanbase.Accounts.get_user!(user_id).email
+    Sanbase.Email.MailchimpApi.unsubscribe(:monthly_newsletter, email)
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
+  defp handle_event(
+         %{data: %{event_type: :subscribe_biweekly_pro, user_id: user_id}},
+         event_shadow,
+         state
+       ) do
+    email = Sanbase.Accounts.get_user!(user_id).email
+    Sanbase.Email.MailchimpApi.subscribe(:bi_weekly, email)
+    EventBus.mark_as_completed({__MODULE__, event_shadow})
+    state
+  end
+
+  defp handle_event(
+         %{data: %{event_type: :unsubscribe_biweekly_pro, user_id: user_id}},
+         event_shadow,
+         state
+       ) do
+    email = Sanbase.Accounts.get_user!(user_id).email
+    Sanbase.Email.MailchimpApi.unsubscribe(:bi_weekly, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end

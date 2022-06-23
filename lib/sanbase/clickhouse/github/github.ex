@@ -25,7 +25,7 @@ defmodule Sanbase.Clickhouse.Github do
   """
 
   @spec total_github_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
-          {:ok, map()} | {:error, String.t()}
+          {:ok, %{optional(String.t()) => non_neg_integer()}} | {:error, String.t()}
   def total_github_activity([], _from, _to), do: {:ok, %{}}
 
   def total_github_activity(organizations, from, to) when length(organizations) > 20 do
@@ -53,10 +53,12 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   @doc ~s"""
-  Return the number of github events, excluding the non-development related events (#{non_dev_events()}) for a given organization and time period
+  Return the number of github events, excluding the non-development
+  related events (#{non_dev_events()}) for a given organization and
+  time period
   """
   @spec total_dev_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
-          {:ok, list({String.t(), non_neg_integer()})} | {:error, String.t()}
+          {:ok, %{optional(String.t()) => non_neg_integer()}} | {:error, String.t()}
   def total_dev_activity([], _from, _to), do: {:ok, %{}}
 
   def total_dev_activity(organizations, from, to) when length(organizations) > 20 do
@@ -77,6 +79,73 @@ defmodule Sanbase.Clickhouse.Github do
 
   def total_dev_activity(organizations, from, to) do
     {query, args} = total_dev_activity_query(organizations, from, to)
+
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [organization, dev_activity], acc ->
+      Map.put(acc, organization, dev_activity |> Sanbase.Math.to_integer(0))
+    end)
+  end
+
+  @doc ~s"""
+  Return the number of total dev activity contributors, excluding those
+  who only contributed to (#{non_dev_events()}) events for a given list
+  of organizatinons and time period
+  """
+  @spec total_dev_activity_contributors_count(list(String.t()), DateTime.t(), DateTime.t()) ::
+          {:ok, %{optional(String.t()) => non_neg_integer()}} | {:error, String.t()}
+  def total_dev_activity_contributors_count([], _from, _to), do: {:ok, %{}}
+
+  def total_dev_activity_contributors_count(organizations, from, to)
+      when length(organizations) > 20 do
+    total_dev_activity_contributors_count =
+      Enum.chunk_every(organizations, 20)
+      |> Sanbase.Parallel.map(
+        &total_dev_activity_contributors_count(&1, from, to),
+        timeout: 25_000,
+        max_concurrency: 8,
+        ordered: false
+      )
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.reduce(%{}, &Map.merge(&1, &2))
+
+    {:ok, total_dev_activity_contributors_count}
+  end
+
+  def total_dev_activity_contributors_count(organizations, from, to) do
+    {query, args} = total_dev_activity_contributors_count_query(organizations, from, to)
+
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [organization, dev_activity], acc ->
+      Map.put(acc, organization, dev_activity |> Sanbase.Math.to_integer(0))
+    end)
+  end
+
+  @doc ~s"""
+  Return the number of total github activity contributors for a given list
+  of organizatinons and time period
+  """
+  @spec total_github_activity_contributors_count(list(String.t()), DateTime.t(), DateTime.t()) ::
+          {:ok, %{optional(String.t()) => non_neg_integer()}} | {:error, String.t()}
+  def total_github_activity_contributors_count([], _from, _to), do: {:ok, %{}}
+
+  def total_github_activity_contributors_count(organizations, from, to)
+      when length(organizations) > 20 do
+    total_github_activity_contributors_count =
+      Enum.chunk_every(organizations, 20)
+      |> Sanbase.Parallel.map(
+        &total_github_activity_contributors_count(&1, from, to),
+        timeout: 25_000,
+        max_concurrency: 8,
+        ordered: false
+      )
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.reduce(%{}, &Map.merge(&1, &2))
+
+    {:ok, total_github_activity_contributors_count}
+  end
+
+  def total_github_activity_contributors_count(organizations, from, to) do
+    {query, args} = total_github_activity_contributors_count_query(organizations, from, to)
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn [organization, dev_activity], acc ->
       Map.put(acc, organization, dev_activity |> Sanbase.Math.to_integer(0))
@@ -172,17 +241,17 @@ defmodule Sanbase.Clickhouse.Github do
     end
   end
 
-  def first_datetime(organization) when is_binary(organization) do
-    {query, args} = first_datetime_query(organization)
+  def first_datetime(organization_or_organizations) do
+    {query, args} = first_datetime_query(organization_or_organizations)
 
-    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
-      datetime |> DateTime.from_unix!()
+    ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
+      timestamp |> DateTime.from_unix!()
     end)
     |> maybe_unwrap_ok_value()
   end
 
-  def last_datetime_computed_at(organization) when is_binary(organization) do
-    {query, args} = last_datetime_computed_at_query(organization)
+  def last_datetime_computed_at(organization_or_organizations) do
+    {query, args} = last_datetime_computed_at_query(organization_or_organizations)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
       datetime |> DateTime.from_unix!()

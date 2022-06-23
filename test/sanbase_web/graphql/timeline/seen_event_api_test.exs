@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.SeenEventApiTest do
   setup do
     user = insert(:user, email: "test@example.com")
     conn = setup_jwt_auth(build_conn(), user)
-    _role_san_clan = insert(:role_san_clan)
+    _role_san_family = insert(:role_san_family)
     san_author = insert(:user)
 
     UserFollower.follow(san_author.id, user.id)
@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.SeenEventApiTest do
 
   test "Fetch only new timeline events", context do
     result = execute_query(context.conn, new_timeline_events_query(), "timelineEvents")
-    assert result == [%{"events" => [%{"id" => "#{context.event1.id}"}]}]
+    assert result == [%{"events" => [%{"id" => context.event1.id}]}]
 
     SeenEvent.fetch_or_create(%{user_id: context.user.id, event_id: context.event1.id})
     result = execute_query(context.conn, new_timeline_events_query(), "timelineEvents")

@@ -27,6 +27,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
      [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
     {StripeApi, [:passthrough],
      [retrieve_coupon: fn _ -> {:ok, %Stripe.Coupon{id: @coupon_code}} end]},
+    {StripeApi, [:passthrough], [delete_default_card: fn _ -> :ok end]},
     {Sanbase.StripeApi, [:passthrough],
      [
        update_subscription_item_by_id: fn _, _ ->
@@ -45,6 +46,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
          StripeApiTestResponse.update_subscription_resp()
        end
      ]},
+    {Sanbase.StripeApi, [:passthrough], [delete_subscription: fn _ -> {:ok, %{}} end]},
     {Sanbase.Notifications.Discord, [:passthrough],
      [
        send_notification: fn _, _, _ -> :ok end
@@ -81,9 +83,16 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
   test "update customer card", context do
     query = update_customer_card()
-    response = execute_mutation(context.conn, query, "updateCustomerCard")
+    response = execute_mutation(context.conn, query)
 
-    assert response["success"]
+    assert response
+  end
+
+  test "delete customer card", context do
+    query = delete_customer_card()
+    response = execute_mutation(context.conn, query, "deleteDefaultPaymentInstrument")
+
+    assert response
   end
 
   test "list products with plans", context do
@@ -140,6 +149,21 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       response = execute_mutation(context.conn, query, "subscribe")
 
       assert response["plan"]["name"] == context.plans.plan_essential.name
+    end
+
+    test "annual subscription gets discounted", context do
+      context.user |> User.changeset(%{stripe_customer_id: "alabala"}) |> Sanbase.Repo.update!()
+
+      insert(:subscription_pro_sanbase,
+        user: context.user,
+        status: "trialing",
+        trial_end: DateTime.add(Timex.now(), 10 * 24 * 3600)
+      )
+
+      query = subscribe_without_card_mutation(context.plans.plan_pro_sanbase_yearly.id)
+      response = execute_mutation(context.conn, query)
+
+      assert response["status"] == "ACTIVE"
     end
 
     test "when not existing plan provided - returns proper error", context do
@@ -567,6 +591,56 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
   end
 
+  describe "annual discount eligibility" do
+    test "50% off", context do
+      insert(:subscription_pro_sanbase,
+        user: context.user,
+        status: "trialing",
+        trial_end: DateTime.add(Timex.now(), 10 * 24 * 3600)
+      )
+
+      res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
+      assert res.is_eligible
+      assert res.discount.percent_off == 50
+
+      query = check_annual_discount_eligibility()
+      res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
+      assert res["discount"]["percentOff"] == 50
+    end
+
+    test "35% off", context do
+      insert(:subscription_pro_sanbase,
+        user: context.user,
+        status: "trialing",
+        trial_end: DateTime.add(Timex.now(), -10 * 24 * 3600)
+      )
+
+      res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
+      assert res.is_eligible
+      assert res.discount.percent_off == 35
+
+      query = check_annual_discount_eligibility()
+      res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
+      assert res["isEligible"]
+      assert res["discount"]["percentOff"] == 35
+    end
+
+    test "not eligible", context do
+      insert(:subscription_pro_sanbase,
+        user: context.user,
+        status: "trialing",
+        trial_end: DateTime.add(Timex.now(), -20 * 24 * 3600)
+      )
+
+      res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
+      refute res.is_eligible
+
+      query = check_annual_discount_eligibility()
+      res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
+      refute res["isEligible"]
+    end
+  end
+
   defp check_coupon(coupon) do
     """
     {
@@ -627,6 +701,17 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
             name
           }
         }
+      }
+    }
+    """
+  end
+
+  defp subscribe_without_card_mutation(plan_id) do
+    """
+    mutation {
+      subscribe(plan_id: #{plan_id}) {
+        id
+        status
       }
     }
     """
@@ -696,8 +781,28 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   defp update_customer_card() do
     """
     mutation {
-      updateCustomerCard(cardToken: "token") {
-        success
+      updateDefaultPaymentInstrument(cardToken: "token")
+    }
+    """
+  end
+
+  defp delete_customer_card() do
+    """
+    mutation {
+      deleteDefaultPaymentInstrument
+    }
+    """
+  end
+
+  defp check_annual_discount_eligibility() do
+    """
+    {
+      checkAnnualDiscountEligibility {
+        isEligible
+        discount {
+          percentOff
+          expireAt
+        }
       }
     }
     """

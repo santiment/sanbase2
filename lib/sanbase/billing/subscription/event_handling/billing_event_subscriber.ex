@@ -2,6 +2,8 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
   use GenServer
 
   alias Sanbase.{Accounts, ApiCallLimit}
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.Accounts.EmailJobs
 
   require Logger
 
@@ -35,7 +37,12 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
 
   @payment_events [:payment_success, :payment_fail, :charge_fail]
 
-  @handler_types [:update_api_call_limit_table, :send_discord_notification]
+  @handler_types [
+    :update_api_call_limit_table,
+    :send_discord_notification,
+    :unfreeze_user_frozen_alerts,
+    :sanbase_pro_started
+  ]
 
   @doc false
   defp handle_event(event_type, event, event_shadow) do
@@ -64,9 +71,49 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     end
   end
 
+  defp do_handle(:sanbase_pro_started, event_type, event)
+       when event_type == :create_subscription do
+    subscription = Sanbase.Billing.Subscription.by_id(event.data.subscription_id)
+
+    cond do
+      Subscription.is_trialing_sanbase_pro?(subscription) ->
+        EmailJobs.send_trial_started_email(subscription)
+        EmailJobs.schedule_trial_will_end_email(subscription)
+
+        case subscription.plan.interval do
+          "month" ->
+            Sanbase.Accounts.EmailJobs.schedule_annual_discount_emails(subscription)
+
+          _ ->
+            :ok
+        end
+
+      Subscription.is_active_sanbase_pro?(subscription) ->
+        Sanbase.Accounts.EmailJobs.send_pro_started_email(subscription)
+
+      true ->
+        :ok
+    end
+  end
+
   defp do_handle(:send_discord_notification, event_type, event)
        when event_type in @subscription_events or event_type in @payment_events do
     Sanbase.Billing.DiscordNotification.handle_event(event_type, event)
+  end
+
+  defp do_handle(:unfreeze_user_frozen_alerts, event_type, event)
+       when event_type in [:create_subscription, :update_subscription, :renew_subscription] do
+    case Sanbase.Billing.Subscription.user_has_sanbase_pro?(event.data.user_id) do
+      true ->
+        Logger.info(
+          "[BillingEventSubscriber] Unfreezing alerts for user with id #{event.data.user_id}"
+        )
+
+        :ok = Sanbase.Alert.UserTrigger.unfreeze_user_frozen_alerts(event.data.user_id)
+
+      false ->
+        :ok
+    end
   end
 
   defp do_handle(_type, _event_type, _event) do

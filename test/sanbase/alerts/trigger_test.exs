@@ -20,7 +20,7 @@ defmodule Sanbase.Alert.TriggersTest do
     trigger_settings = %{
       type: "metric_signal",
       metric: "active_addresses_24h",
-      target: %{slug: "santiment"},
+      target: %{slug: ["santiment", "bitcoin"]},
       channel: "telegram",
       time_window: "1d",
       operation: %{percent_up: 300.0}
@@ -41,7 +41,7 @@ defmodule Sanbase.Alert.TriggersTest do
 
     trigger_id = created_trigger.id
 
-    {:ok, %UserTrigger{trigger: trigger}} = UserTrigger.get_trigger_by_id(user, trigger_id)
+    {:ok, %UserTrigger{trigger: trigger}} = UserTrigger.by_user_and_id(user.id, trigger_id)
 
     settings = trigger.settings |> Map.from_struct()
     assert drop_diff_keys(settings, trigger_settings) == trigger_settings
@@ -95,10 +95,39 @@ defmodule Sanbase.Alert.TriggersTest do
     assert changeset_errors(changeset) == %{
              trigger: %{
                icon_url: [
-                 "`not_a_url` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+                 "URL 'not_a_url' is missing a scheme (e.g. https)"
                ]
              }
            }
+  end
+
+  test "try creating user trigger with invalid webhook_url" do
+    user = insert(:user)
+
+    trigger_settings = %{
+      type: "metric_signal",
+      metric: "active_addresses_24h",
+      target: %{slug: "santiment"},
+      channel: %{"webhook_url" => "not_a_url"},
+      time_window: "1d",
+      operation: %{percent_up: 300.0},
+      triggered?: false,
+      payload: nil
+    }
+
+    capture_log(fn ->
+      {:error, error_msg} =
+        UserTrigger.create_user_trigger(user, %{
+          title: "Generic title",
+          is_public: true,
+          settings: trigger_settings
+        })
+
+      assert error_msg =~ "Trigger structure is invalid. Key `settings` is not valid. "
+
+      assert error_msg =~
+               "Reason: [\"%{webhook_url: \\\"not_a_url\\\"} is not a valid notification channel. The available notification channels are [telegram_channel, telegram, email, web_push, webhook]\\n\"]"
+    end)
   end
 
   test "try creating user trigger with unknown channel" do
@@ -238,7 +267,7 @@ defmodule Sanbase.Alert.TriggersTest do
       trigger: %{title: "Generic title", is_public: true, settings: trigger_settings1}
     )
 
-    assert length(UserTrigger.triggers_for(user)) == 1
+    assert length(UserTrigger.triggers_for(user.id)) == 1
 
     trigger_settings2 = %{
       type: "metric_signal",
@@ -256,7 +285,7 @@ defmodule Sanbase.Alert.TriggersTest do
         settings: trigger_settings2
       })
 
-    assert length(UserTrigger.triggers_for(user)) == 2
+    assert length(UserTrigger.triggers_for(user.id)) == 2
   end
 
   test "update trigger" do
@@ -290,7 +319,7 @@ defmodule Sanbase.Alert.TriggersTest do
       trigger: %{title: "Generic title2", is_public: true, settings: trigger_settings2}
     )
 
-    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
+    trigger_id = UserTrigger.triggers_for(user.id) |> hd |> Map.get(:id)
 
     updated_trigger = %{
       type: "metric_signal",
@@ -308,7 +337,7 @@ defmodule Sanbase.Alert.TriggersTest do
       "http://stage-sanbase-images.s3.amazonaws.com/uploads/_empowr-coinHY5QG72SCGKYWMN4AEJQ2BRDLXNWXECT.png"
 
     {:ok, _} =
-      UserTrigger.update_user_trigger(user, %{
+      UserTrigger.update_user_trigger(user.id, %{
         id: trigger_id,
         settings: updated_trigger,
         is_public: false,
@@ -317,7 +346,7 @@ defmodule Sanbase.Alert.TriggersTest do
         icon_url: new_icon_url
       })
 
-    triggers = UserTrigger.triggers_for(user)
+    triggers = UserTrigger.triggers_for(user.id)
 
     assert length(triggers) == 2
 
@@ -346,11 +375,11 @@ defmodule Sanbase.Alert.TriggersTest do
       trigger: %{title: "Generic title", is_public: false, settings: trigger_settings}
     )
 
-    ut = UserTrigger.triggers_for(user)
+    ut = UserTrigger.triggers_for(user.id)
     trigger_id = ut |> hd |> Map.get(:id)
 
-    UserTrigger.update_user_trigger(user, %{id: trigger_id, is_public: true, cooldown: "1h"})
-    user_triggers = UserTrigger.triggers_for(user)
+    UserTrigger.update_user_trigger(user.id, %{id: trigger_id, is_public: true, cooldown: "1h"})
+    user_triggers = UserTrigger.triggers_for(user.id)
     assert length(user_triggers) == 1
     trigger = user_triggers |> hd()
     assert trigger.trigger.is_public == true

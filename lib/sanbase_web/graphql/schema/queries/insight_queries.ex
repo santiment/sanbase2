@@ -123,6 +123,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:is_paywall_required, :boolean)
       arg(:from, :datetime)
       arg(:to, :datetime)
+      arg(:page, :integer, default_value: 1)
+      arg(:page_size, :integer, default_value: 10)
 
       cache_resolve(&InsightResolver.all_insights_by_search_term/3, ttl: 5, max_ttl_offset: 5)
       middleware(PostPaywallFilter)
@@ -287,26 +289,6 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
       middleware(JWTAuth)
       resolve(&InsightResolver.publish_insight/3)
-    end
-
-    @desc """
-    Vote for an insight. The user must logged in.
-    """
-    field :vote, :post do
-      arg(:post_id, :integer, deprecate: "Use `insightId` instead")
-      arg(:insight_id, :integer)
-      middleware(JWTAuth)
-      resolve(&InsightResolver.vote/3)
-    end
-
-    @desc """
-    Remove your vote for an insight. The user must logged in.
-    """
-    field :unvote, :post do
-      arg(:post_id, :integer, deprecate: "Use `insightId` instead")
-      arg(:insight_id, :integer)
-      middleware(JWTAuth)
-      resolve(&InsightResolver.unvote/3)
     end
 
     @desc """

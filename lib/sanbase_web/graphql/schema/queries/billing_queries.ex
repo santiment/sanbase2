@@ -36,6 +36,41 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       resolve(&BillingResolver.get_coupon/3)
     end
+
+    @desc ~s"""
+    Get upcoming invoice for a subscription
+    """
+    field :upcoming_invoice, :upcoming_invoice do
+      meta(access: :free)
+
+      arg(:subscription_id, non_null(:id))
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.upcoming_invoice/3)
+    end
+
+    @desc ~s"""
+    Fetch the default customer's card
+    """
+    field :fetch_default_payment_instrument, :payment_instrument do
+      meta(access: :free)
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.fetch_default_payment_instrument/3)
+    end
+
+    @desc ~s"""
+    Check whether customer is eligible for discount for buying annual subscription
+    """
+    field :check_annual_discount_eligibility, :annual_discount_eligibility do
+      meta(access: :free)
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.check_annual_discount_eligibility/3)
+    end
   end
 
   object :billing_mutations do
@@ -92,14 +127,25 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
     end
 
     @desc ~s"""
-    Request to add payment source when customer is trialing without a card.
+    Update the default customer's card
     """
-    field :update_customer_card, :update_card_result do
+    field :update_default_payment_instrument, :boolean do
       arg(:card_token, non_null(:string))
 
       middleware(JWTAuth)
 
-      resolve(&BillingResolver.update_customer_card/3)
+      resolve(&BillingResolver.update_default_payment_instrument/3)
+    end
+
+    @desc ~s"""
+    Delete the default customer's card
+    """
+    field :delete_default_payment_instrument, :boolean do
+      meta(access: :free)
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.delete_default_payment_instrument/3)
     end
   end
 end

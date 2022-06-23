@@ -143,6 +143,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
         description
         isPro
         tags
+        insertedAt
       }
     }
     """
@@ -160,6 +161,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
         url
         name
         tags
+        insertedAt
       }
     }
     """

@@ -58,6 +58,9 @@ defmodule Sanbase.Application.Scrapers do
         time_between_requests: 10
       ),
 
+      #
+      Sanbase.Price.Validator,
+
       # Historical coinmarketcap price fetcher
       Sanbase.ExternalServices.Coinmarketcap,
 

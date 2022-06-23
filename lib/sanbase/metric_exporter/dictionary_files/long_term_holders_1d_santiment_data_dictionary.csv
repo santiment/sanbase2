@@ -1,0 +1,10 @@
+Field name,Date Type,Description,Primary key,Foreign key
+identifier,string,Cryptocurrency name,Y,N
+datetime,datetime,Datetime mark,Y,N
+dormantCirculation90d,decimal,Dormant circulation shows the (daily) renewed movement of tokens which previously haven’t moved for more than a specified amount of days (90 days).,N,N
+dormantCirculation180d,decimal,Dormant circulation shows the (daily) renewed movement of tokens which previously haven’t moved for more than a specified amount of days (180 days).,N,N
+dormantCirculation365d,decimal,Dormant circulation shows the (daily) renewed movement of tokens which previously haven’t moved for more than a specified amount of days (365 days).,N,N
+dormantCirculation2y,decimal,Dormant circulation shows the (daily) renewed movement of tokens which previously haven’t moved for more than a specified amount of days (2 years).,N,N
+dormantCirculation3y,decimal,Dormant circulation shows the (daily) renewed movement of tokens which previously haven’t moved for more than a specified amount of days (3 years).,N,N
+dormantCirculation5y,decimal,Dormant circulation shows the (daily) renewed movement of tokens which previously haven’t moved for more than a specified amount of days (5 years).,N,N
+dormantCirculation10y,decimal,Dormant circulation shows the (daily) renewed movement of tokens which previously haven’t moved for more than a specified amount of days (10 years).,N,N

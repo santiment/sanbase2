@@ -2,26 +2,35 @@
 
 - [Table of contents](#table-of-contents)
   - [Trigger structure](#trigger-structure)
-  - [Settings fields](#settings-fields)
-  - [Examples](#examples)
-    - [Example settings structure for `trending_words`](#example-settings-structure-for-trending_words)
-    - [Example settings structure for `signal_data`](#example-settings-structure-for-signal_data)
-    - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-price_volume_difference)
-    - [Example settings structure for `wallet_movement`](#example-settings-structure-for-wallet_movement)
-    - [Example settings structure for `metric_signal`](#example-settings-structure-for-metric_signal)
-    - [Example settings structure for `daily_metric_signal`](#example-settings-structure-for-daily_metric_signal)
-    - [Example settings structure for `screener_signal`](#example-settings-structure-for-metric_signal)
-  - [Create trigger](#create-trigger)
-  - [Get all triggers for current user](#get-all-triggers-for-current-user)
-  - [Update trigger by id](#update-trigger-by-id)
-  - [Remove trigger by id](#remove-trigger-by-id)
-  - [Getting trigger by id](#getting-trigger-by-id)
-  - [Getting all public triggers](#getting-all-public-triggers)
-  - [Getting all public triggers for given user](#getting-all-public-triggers-for-given-user)
-  - [Featured user triggers](#featured-user-triggers)
-  - [API for alerts historical activity (user alerts timeline)](#api-for-alerts-historical-activity-user-alerts-timeline)
-    - [Historical activity request](#historical-activity-request)
-    - [Historical activity response](#historical-activity-response)
+    - [Settings fields](#settings-fields)
+    - [Examples](#examples)
+      - [Example settings structure for `trending_words`](#example-settings-structure-for-trending_words)
+      - [Example settings structure for `signal_data`](#example-settings-structure-for-signal_data)
+      - [Example settings structure for `wallet_movement`](#example-settings-structure-for-wallet_movement)
+      - [Example settings structure for `wallet_usd_valuation`](#example-settings-structure-for-wallet_usd_valuation)
+      - [Example settings structure for `wallet_assets_held`](#example-settings-structure-for-wallet_assets_held)
+      - [Example settings structure for `metric_signal`](#example-settings-structure-for-metric_signal)
+        - [Price data](#price-data)
+        - [Social data](#social-data)
+        - [On-chain data](#on-chain-data)
+        - [Github data](#github-data)
+        - [Intraday MVRV](#intraday-mvrv)
+      - [Example settings structure for `daily_metric_signal`](#example-settings-structure-for-daily_metric_signal)
+      - [Example settings structure for `screener_signal`](#example-settings-structure-for-screener_signal)
+    - [Create trigger](#create-trigger)
+    - [Get all triggers for current user](#get-all-triggers-for-current-user)
+    - [Update trigger by id](#update-trigger-by-id)
+    - [Remove trigger by id](#remove-trigger-by-id)
+    - [Getting trigger by id](#getting-trigger-by-id)
+    - [Getting all public triggers](#getting-all-public-triggers)
+    - [Getting all public triggers for given user](#getting-all-public-triggers-for-given-user)
+    - [Featured user triggers](#featured-user-triggers)
+    - [API for alerts historical activity (user alerts timeline)](#api-for-alerts-historical-activity-user-alerts-timeline)
+      - [Historical activity request](#historical-activity-request)
+      - [Historical activity response](#historical-activity-response)
+      - [Take activities newer than certain datetime](#take-activities-newer-than-certain-datetime)
+      - [Take activities before certain datetime](#take-activities-before-certain-datetime)
+    - [Historical trigger points](#historical-trigger-points)
 
 ## Trigger structure
 
@@ -40,12 +49,11 @@ These are the fields describing a trigger.
 
 ### Settings fields
 
-- **type** Defines the type of the trigger. Can be one of: `["trending_words", "price_volume_difference", "metric_signal", "daily_metric_signal", "wallet_movement", "signal_data"]`
+- **type** Defines the type of the trigger. Can be one of: `["trending_words", "metric_signal", "daily_metric_signal", "wallet_movement", "signal_data"]`
 - **target**: Slug or list of slugs or watchlist or ethereum addresses or list of ethereum addresses - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"watchlist_id": watchlsit_id} | {"eth_address": "0x123"} | {"eth_address": ["0x123", "0x234"]}`.
 - **channel**: A channel where the alert is sent. Can be one of `"telegram" | "email" | "web_push" | {"webhook": <webhook_url>}` | `{"telegram_channel": "@<channel_name>"}` or a list of any combination. In case of telegram_channel, the bot must be an admin that has post messages priviliges.
 - **time_window**: `1d`, `4w`, `1h` - Time string we use throughout the API for `interval`
 - **operation** - A map describing the operation that triggers the alert. Check the examples.
-- **threshold** - Float threshold used in `price_volume_difference`
 - **trigger_time** - At what time of the day to fire the alert. It ISO8601 UTC time used only in `trending_words`, ex: `"12:00:00"`
 
 ### Examples
@@ -121,18 +129,6 @@ These are the fields describing a trigger.
 }
 ```
 
-#### Example settings structure for `price_volume_difference`
-
-```json
-// The price and volume of santiment diverged.
-{
-  "type": "price_volume_difference",
-  "channel": "telegram",
-  "target": { "slug": "santiment" },
-  "threshold": 0.002
-}
-```
-
 #### Example settings structure for `signal_data`
 ```json
 // Send an alert if there are any signals
@@ -162,15 +158,14 @@ These are the fields describing a trigger.
 This alert is the successor of `eth_wallet`. It allows for a wider variety
 of blockchains and operations.
 
-The following blockchains are supported, identifier by `infrastructure`:
+The following blockchains are supported, identified by `infrastructure`:
 
 - (ETH) Ethereum
 - (BTC) Bitcoin
 - (BCH) Bitcoin Cash
 - (LTC) Litecoin
-- (EOS) EOS
 - (XRP) Ripple
-- (BNB) Binance Chain
+- (BNB or BEP2) Binance Chain
 
 When working with `infrastructure` BTC, BCH or LTC no additional parameter is needed
 as there are no tokens on these blockchains.
@@ -276,6 +271,68 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 }
 ```
 
+#### Example settings structure for `wallet_usd_valuation`
+
+This alert allows you to monitor the full USD valuation of an address over
+time. The USD valuation of an address is defined as the combined USD value of
+all the coins/tokens held by that address. When change is monitored, the price
+of the tokens at different point in time is used.
+
+The following blockchains are supported, identified by `infrastructure`:
+
+- (ETH) Ethereum
+- (BTC) Bitcoin
+- (BCH) Bitcoin Cash
+- (LTC) Litecoin
+- (XRP) Ripple
+- (BNB or BEP2) Binance Chain
+
+When working with the alert, provide the `infrastructure` in the selector and the
+address in the `target`.
+```json
+// The USD valuation of the null address increased by $1 million in the past 24 hours
+{
+  "type": "wallet_usd_valuation",
+  "channel": "telegram",
+  "target": { "address": "0x0000000000000000000000000000000000000000" },
+  "time_window": "1d",
+  "selector": { "infrastructure": "ETH"},
+  "operation": { "amount_up": 1000000 }
+}
+```
+
+#### Example settings structure for `wallet_assets_held`
+
+This alert allows you to monitor the assets held by an address. The assets held are
+those assets that have non-zero balance for a given address. When a previously held
+assets does no longer have a non-zero balance or a new asset appears in the list, the
+alert is fired. Assets can re-appear and trigger the alert - if an asset was previously
+held by the address, then it was completely sold and now it again has non-zero balance,
+the alert is fired.
+
+The following blockchains are supported, identified by `infrastructure`:
+
+- (ETH) Ethereum
+- (BTC) Bitcoin
+- (BCH) Bitcoin Cash
+- (LTC) Litecoin
+- (XRP) Ripple
+- (BNB or BEP2) Binance Chain
+
+When working with the alert, provide the `infrastructure` in the selector and the
+address in the `target`.
+```json
+// The set of assets the NULL address holds has changed
+{
+  "type": "wallet_assets_held",
+  "channel": "telegram",
+  "target": { "address": "0x0000000000000000000000000000000000000000" },
+  "time_window": "1d",
+  "selector": { "infrastructure": "ETH"}
+}
+```
+
+
 #### Example settings structure for `metric_signal`
 
 Supported most metrics that are obtainable by the getMetric API and have a min interval at most 5 minutes. These metrics are:
@@ -292,16 +349,11 @@ All `social_volume_*` metrics also support the `text` target.
 
 ##### Social data
 
-- "community_messages_count_discord"
 - "community_messages_count_telegram"
 - "community_messages_count_total"
-- "social_dominance_discord"
-- "social_dominance_professional_traders_chat"
 - "social_dominance_reddit"
 - "social_dominance_telegram"
 - "social_dominance_total"
-- "social_volume_discord"
-- "social_volume_professional_traders_chat"
 - "social_volume_reddit"
 - "social_volume_twitter"
 - "social_volume_bitcointalk"
@@ -772,7 +824,6 @@ Takes currently filled settings and a chosen cooldown and calculates historical 
 
 - Daily Active Addresses - 90 days of historical data. Minimal `time_window` is 2 days because intervals are 1 day each.
 - Price - percent and absolute - 90 days of data. Minimal `time_window` is 2 hours because intervals are 1 hour each.
-- PriceVolumeDifference - 180 days of data.
 
 ```graphql
 {

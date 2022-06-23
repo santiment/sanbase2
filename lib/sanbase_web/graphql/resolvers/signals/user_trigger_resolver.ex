@@ -3,41 +3,84 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
   import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
+  import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
   alias Sanbase.Accounts.User
   alias Sanbase.Alert.{Trigger, UserTrigger}
   alias Sanbase.Telegram
-  alias Sanbase.Billing.Plan.AccessChecker
+  alias SanbaseWeb.Graphql.SanbaseDataloader
+  alias Sanbase.Billing.Plan.SanbaseAccessChecker
+
+  def project(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :project_by_slug, slug)
+    |> on_load(fn loader ->
+      {:ok, Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)}
+    end)
+  end
 
   def triggers(%User{} = user, _args, _resolution) do
     {:ok,
-     UserTrigger.triggers_for(user)
+     UserTrigger.triggers_for(user.id)
      |> Enum.map(&transform_user_trigger/1)
      |> Enum.map(& &1.trigger)}
   end
 
   def public_triggers(%User{} = user, _args, _resolution) do
-    {:ok,
-     UserTrigger.public_triggers_for(user)
-     |> Enum.map(&transform_user_trigger/1)
-     |> Enum.map(& &1.trigger)}
+    public_triggers =
+      user.id
+      |> UserTrigger.public_triggers_for()
+      |> Enum.map(&transform_user_trigger/1)
+      |> Enum.map(& &1.trigger)
+
+    {:ok, public_triggers}
   end
 
   def create_trigger(_root, args, %{
-        context: %{auth: %{current_user: current_user, subscription: subscription}}
+        context: %{auth: %{current_user: current_user} = auth}
       }) do
-    if AccessChecker.user_can_create_alert?(current_user, subscription) do
-      do_create_trigger(current_user, args)
-    else
-      {:error, AccessChecker.alerts_limits_upgrade_message()}
+    # Can be :free, :pro or :pro_plus. If we reach here then the
+    # authentication has been done via the JWT token, so the plan
+    # is actually a sanbase plan
+    sanbase_plan = auth[:plan]
+    triggers_count = UserTrigger.triggers_count_for(current_user.id)
+
+    can_create? =
+      cond do
+        sanbase_plan == :free and
+            triggers_count >= SanbaseAccessChecker.alerts_limit(:free) ->
+          {:error,
+           "Sanbase FREE plan has a limit of #{SanbaseAccessChecker.alerts_limit(:free)} alerts."}
+
+        sanbase_plan == :pro and
+            triggers_count >= SanbaseAccessChecker.alerts_limit(:pro) ->
+          {:error,
+           "Sanbase PRO plan has a limit of #{SanbaseAccessChecker.alerts_limit(:pro)} alerts."}
+
+        sanbase_plan == :pro_plus and
+            triggers_count >= SanbaseAccessChecker.alerts_limit(:pro_plus) ->
+          {:error,
+           "Sanbase PRO+ plan has a limit of #{triggers_count >= SanbaseAccessChecker.alerts_limit(:pro_plus)} alerts."}
+
+        true ->
+          true
+      end
+
+    case can_create? do
+      true -> do_create_trigger(current_user, args)
+      {:error, error} -> {:error, error}
     end
   end
 
   def update_trigger(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    UserTrigger.update_user_trigger(current_user, args)
-    |> handle_result("update")
+    with {:ok, %UserTrigger{} = user_trigger} <-
+           UserTrigger.get_trigger_by_if_owner(current_user.id, args.id),
+         false <- UserTrigger.is_frozen?(user_trigger) do
+      UserTrigger.update_user_trigger(current_user.id, args)
+      |> handle_result("update")
+    end
   end
 
   def remove_trigger(_root, args, %{
@@ -66,7 +109,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   def get_trigger_by_id(_root, %{id: id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    case UserTrigger.get_trigger_by_id(current_user, id) do
+    case UserTrigger.by_user_and_id(current_user.id, id) do
       {:ok, nil} ->
         {:error,
          "Trigger with id #{id} does not exist or it is a private trigger owned by another user."}
@@ -78,7 +121,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   end
 
   def get_trigger_by_id(_root, %{id: id}, _resolution) do
-    case UserTrigger.get_trigger_by_id(nil, id) do
+    case UserTrigger.by_user_and_id(nil, id) do
       {:ok, nil} ->
         {:error,
          "Trigger with id #{id} does not exist or it is a private trigger owned by another user."}
@@ -90,7 +133,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   end
 
   def public_triggers_for_user(_root, args, _resolution) do
-    {:ok, UserTrigger.public_triggers_for(args.user_id) |> Enum.map(&transform_user_trigger/1)}
+    public_triggers =
+      args.user_id
+      |> UserTrigger.public_triggers_for()
+      |> Enum.map(&transform_user_trigger/1)
+
+    {:ok, public_triggers}
   end
 
   def all_public_triggers(_root, _args, _resolution) do
@@ -101,7 +149,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     UserTrigger.historical_trigger_points(args)
   end
 
-  # helpers
+  def alerts_stats(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    stats = Sanbase.Alerts.Stats.fired_alerts_24h(current_user.id)
+
+    if stats == %{} do
+      {:error, "No stats available"}
+    else
+      {:ok, stats}
+    end
+  end
+
+  # Private functions
 
   defp do_create_trigger(current_user, args) do
     UserTrigger.create_user_trigger(current_user, args)

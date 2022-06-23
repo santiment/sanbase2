@@ -3,8 +3,9 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
 
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2, rename_map_keys: 2]
 
-  alias Sanbase.Model.Project
   alias Sanbase.Balance
+  alias Sanbase.Model.Project
+  alias Sanbase.BlockchainAddress
 
   @aggregations [:sum, :ohlc]
   @default_aggregation :sum
@@ -58,7 +59,7 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) do
     with {:ok, _, _, infrastructure} <- Project.contract_info_infrastructure_by_slug(slug),
-         str when is_binary(str) <- Balance.blockchain_from_infrastructure(infrastructure) do
+         <<_::binary>> <- BlockchainAddress.blockchain_from_infrastructure(infrastructure) do
       {:ok, @metrics}
     else
       _ -> {:ok, []}

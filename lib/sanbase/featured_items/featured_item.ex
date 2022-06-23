@@ -15,6 +15,7 @@ defmodule Sanbase.FeaturedItem do
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Chart.Configuration, as: ChartConfiguration
   alias Sanbase.TableConfiguration
+  alias Sanbase.Dashboard
 
   @table "featured_items"
   schema @table do
@@ -23,6 +24,7 @@ defmodule Sanbase.FeaturedItem do
     belongs_to(:user_trigger, UserTrigger)
     belongs_to(:chart_configuration, ChartConfiguration)
     belongs_to(:table_configuration, TableConfiguration)
+    belongs_to(:dashboard, Dashboard.Schema)
 
     timestamps()
   end
@@ -39,24 +41,28 @@ defmodule Sanbase.FeaturedItem do
       :user_list_id,
       :user_trigger_id,
       :chart_configuration_id,
-      :table_configuration_id
+      :table_configuration_id,
+      :dashboard_id
     ])
     |> unique_constraint(:post_id)
     |> unique_constraint(:user_list_id)
     |> unique_constraint(:user_trigger_id)
     |> unique_constraint(:chart_configuration_id)
     |> unique_constraint(:table_configuration_id)
+    |> unique_constraint(:dashboard_id)
     |> check_constraint(:one_featured_item_per_row, name: :only_one_fk)
   end
 
-  def insights() do
+  def insights(opts \\ []) do
     insights_query()
     |> join(:inner, [fi], fi in assoc(fi, :post))
     |> where(
       [_fi, post],
       post.ready_state == ^Post.published() and post.state == ^Post.approved_state()
     )
-    |> select([_fi, post], post)
+    |> order_by([fi, _post], desc: fi.inserted_at, desc: fi.id)
+    |> Sanbase.Entity.paginate(opts)
+    |> select([fi, post], post)
     |> Repo.all()
     |> Repo.preload([:user, :tags])
   end
@@ -93,6 +99,13 @@ defmodule Sanbase.FeaturedItem do
     table_configurations_query()
     |> join(:inner, [fi], fi in assoc(fi, :table_configuration))
     |> select([_fi, config], config)
+    |> Repo.all()
+  end
+
+  def dashboards() do
+    dashboards_query()
+    |> join(:inner, [fi], fi in assoc(fi, :dashboard))
+    |> select([_fi, dashboard], dashboard)
     |> Repo.all()
   end
 
@@ -143,6 +156,13 @@ defmodule Sanbase.FeaturedItem do
     end
   end
 
+  def update_item(%Dashboard.Schema{} = dashboard, featured?) do
+    case Dashboard.Schema.is_public?(dashboard) || featured? == false do
+      true -> update_item(:dashboard_id, dashboard.id, featured?)
+      false -> {:error, "Private table dashboards cannot be made featured."}
+    end
+  end
+
   # Private functions
 
   defp update_item(type, id, false) do
@@ -173,4 +193,7 @@ defmodule Sanbase.FeaturedItem do
 
   defp table_configurations_query(),
     do: from(fi in __MODULE__, where: not is_nil(fi.table_configuration_id))
+
+  defp dashboards_query(),
+    do: from(fi in __MODULE__, where: not is_nil(fi.dashboard_id))
 end

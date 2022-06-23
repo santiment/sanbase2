@@ -3,7 +3,16 @@ defmodule SanbaseWeb.Graphql.ConCacheProviderTest do
 
   alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
 
-  @cache_name :graphql_cache
+  @cache_name :graphql_cache_test_name_con_cache
+  @cache_id :graphql_cache_test_id_con_cache
+
+  setup do
+    {:ok, pid} = CacheProvider.start_link(name: @cache_name, id: @cache_id)
+
+    on_exit(fn -> Process.exit(pid, :normal) end)
+
+    :ok
+  end
 
   test "return plain nil when no value stored" do
     assert nil == CacheProvider.get(@cache_name, "somekeyj")

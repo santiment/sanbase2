@@ -16,7 +16,7 @@ defmodule Sanbase.Billing.DiscordNotification do
       )
       when total > 1 do
     build_payload(stripe_event, event)
-    |> do_send_to_discord("Stripe Payment")
+    |> do_send_to_discord("Stripe Payment", webhook: "payments")
   end
 
   def handle_event(
@@ -40,7 +40,7 @@ defmodule Sanbase.Billing.DiscordNotification do
     Event: https://dashboard.stripe.com/events/#{stripe_event_id}
     """
 
-    do_send_to_discord(message, "Stripe Charge")
+    do_send_to_discord(message, "Stripe Charge", webhook: "failed_payments")
   end
 
   def handle_event(:cancel_subscription, %{
@@ -58,7 +58,7 @@ defmodule Sanbase.Billing.DiscordNotification do
     """
 
     if subscription.status == :active do
-      do_send_to_discord(message, "Stripe Cancellation")
+      do_send_to_discord(message, "Stripe Cancellation", webhook: "failed_payments")
 
       if subscription.plan.product_id == Product.product_sanbase() do
         Sanbase.Accounts.EmailJobs.send_post_cancellation_email(subscription)
@@ -92,10 +92,17 @@ defmodule Sanbase.Billing.DiscordNotification do
     end
   end
 
-  defp do_send_to_discord(message, title) do
+  defp do_send_to_discord(message, title, opts) do
     payload = [message] |> Discord.encode!(publish_user())
 
-    Discord.send_notification(webhook_url(), title, payload)
+    webhook_url =
+      if Keyword.get(opts, :webhook, "payments") == "payments" do
+        payments_webhook_url()
+      else
+        failed_payments_webhook_url()
+      end
+
+    Discord.send_notification(webhook_url, title, payload)
   end
 
   defp build_payload(
@@ -229,7 +236,7 @@ defmodule Sanbase.Billing.DiscordNotification do
     "$" <> Number.Delimit.number_to_delimited(amount / 100, precision: 0)
   end
 
-  defp webhook_url(), do: Config.get(:webhook_url)
-
+  defp payments_webhook_url(), do: Config.get(:payments_webhook_url)
+  defp failed_payments_webhook_url(), do: Config.get(:failed_payments_webhook_url)
   defp publish_user(), do: Config.get(:publish_user)
 end

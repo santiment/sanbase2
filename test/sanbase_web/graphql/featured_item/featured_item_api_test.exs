@@ -77,11 +77,18 @@ defmodule Sanbase.FeaturedItemApiTest do
 
   describe "insight featured items" do
     test "no insights are featured", context do
-      assert fetch_insights(context.conn) == %{"data" => %{"featuredInsights" => []}}
+      assert fetch_insights(context.conn) == %{
+               "data" => %{"featuredInsights" => []}
+             }
     end
 
     test "marking insights as featured", context do
-      insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
+      insight =
+        insert(:post,
+          state: Post.approved_state(),
+          ready_state: Post.published()
+        )
+
       tags = insight.tags |> Enum.map(fn %{name: name} -> %{"name" => name} end)
 
       :ok = FeaturedItem.update_item(insight, true)
@@ -89,28 +96,58 @@ defmodule Sanbase.FeaturedItemApiTest do
       assert fetch_insights(context.conn) == %{
                "data" => %{
                  "featuredInsights" => [
-                   %{"id" => "#{insight.id}", "title" => "#{insight.title}", "tags" => tags}
+                   %{
+                     "id" => insight.id,
+                     "title" => "#{insight.title}",
+                     "tags" => tags
+                   }
                  ]
                }
              }
+    end
+
+    test "ordering and pagination of featured insights works", context do
+      insight1 = insert(:post, state: Post.approved_state(), ready_state: Post.published())
+      insight2 = insert(:post, state: Post.approved_state(), ready_state: Post.published())
+
+      :ok = FeaturedItem.update_item(insight2, true)
+      :ok = FeaturedItem.update_item(insight1, true)
+
+      query = "{featuredInsights(page: 1, page_size: 1){ id }}"
+      assert execute_query(context.conn, query, "featuredInsights") == [%{"id" => insight1.id}]
     end
 
     test "Not published insight cannot be featured", context do
       insight = insert(:post)
       {:error, _} = FeaturedItem.update_item(insight, true)
 
-      assert fetch_insights(context.conn) == %{"data" => %{"featuredInsights" => []}}
+      assert fetch_insights(context.conn) == %{
+               "data" => %{"featuredInsights" => []}
+             }
     end
 
     test "unmarking insights as featured", context do
-      insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
+      insight =
+        insert(:post,
+          state: Post.approved_state(),
+          ready_state: Post.published()
+        )
+
       :ok = FeaturedItem.update_item(insight, true)
       :ok = FeaturedItem.update_item(insight, false)
-      assert fetch_insights(context.conn) == %{"data" => %{"featuredInsights" => []}}
+
+      assert fetch_insights(context.conn) == %{
+               "data" => %{"featuredInsights" => []}
+             }
     end
 
     test "marking insight as featured is idempotent", context do
-      insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
+      insight =
+        insert(:post,
+          state: Post.approved_state(),
+          ready_state: Post.published()
+        )
+
       tags = insight.tags |> Enum.map(fn %{name: name} -> %{"name" => name} end)
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)
@@ -120,7 +157,7 @@ defmodule Sanbase.FeaturedItemApiTest do
                "data" => %{
                  "featuredInsights" => [
                    %{
-                     "id" => "#{insight.id}",
+                     "id" => insight.id,
                      "title" => "#{insight.title}",
                      "tags" => tags
                    }
@@ -148,7 +185,9 @@ defmodule Sanbase.FeaturedItemApiTest do
 
   describe "watchlist featured items" do
     test "no watchlists are featured", context do
-      assert fetch_watchlists(context.conn) == %{"data" => %{"featuredWatchlists" => []}}
+      assert fetch_watchlists(context.conn) == %{
+               "data" => %{"featuredWatchlists" => []}
+             }
     end
 
     test "marking watchlists as featured", context do
@@ -196,7 +235,10 @@ defmodule Sanbase.FeaturedItemApiTest do
       watchlist = insert(:watchlist, is_public: true)
       :ok = FeaturedItem.update_item(watchlist, true)
       :ok = FeaturedItem.update_item(watchlist, false)
-      assert fetch_watchlists(context.conn) == %{"data" => %{"featuredWatchlists" => []}}
+
+      assert fetch_watchlists(context.conn) == %{
+               "data" => %{"featuredWatchlists" => []}
+             }
     end
 
     test "marking watchlist as featured is idempotent", context do
@@ -247,7 +289,9 @@ defmodule Sanbase.FeaturedItemApiTest do
 
   describe "user_trigger featured items" do
     test "no user_triggers are featured", context do
-      assert fetch_user_triggers(context.conn) == %{"data" => %{"featuredUserTriggers" => []}}
+      assert fetch_user_triggers(context.conn) == %{
+               "data" => %{"featuredUserTriggers" => []}
+             }
     end
 
     test "marking user_triggers as featured", context do
@@ -272,7 +316,10 @@ defmodule Sanbase.FeaturedItemApiTest do
       user_trigger = insert(:user_trigger, is_public: true)
       :ok = FeaturedItem.update_item(user_trigger, true)
       :ok = FeaturedItem.update_item(user_trigger, false)
-      assert fetch_user_triggers(context.conn) == %{"data" => %{"featuredUserTriggers" => []}}
+
+      assert fetch_user_triggers(context.conn) == %{
+               "data" => %{"featuredUserTriggers" => []}
+             }
     end
 
     test "marking user_trigger as featured is idempotent", context do

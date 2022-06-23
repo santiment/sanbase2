@@ -169,6 +169,37 @@ defmodule Sanbase.Utils.ListSelector.Validator do
     end
   end
 
+  def valid_filter?(
+        :blockchain_address,
+        %{name: "addresses_by_labels", args: %{label_fqns: _} = filter}
+      ) do
+    filter_schema =
+      schema(%{
+        blockchain: spec(is_binary()),
+        labels_combinator: spec(is_binary()),
+        label_fqns: spec(is_list() and (&(length(&1) > 0)))
+      })
+
+    with {:ok, _} <- conform(filter, filter_schema) do
+      true
+    end
+  end
+
+  def valid_filter?(
+        :blockchain_address,
+        %{name: "addresses_by_label_keys", args: %{label_fqns: _} = filter}
+      ) do
+    filter_schema =
+      schema(%{
+        blockchain: spec(is_binary()),
+        label_keys: spec(is_list() and (&(length(&1) > 0)))
+      })
+
+    with {:ok, _} <- conform(filter, filter_schema) do
+      true
+    end
+  end
+
   def valid_filter?(type, filter),
     do:
       {:error,

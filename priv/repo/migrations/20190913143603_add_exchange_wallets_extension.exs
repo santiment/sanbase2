@@ -23,8 +23,6 @@ defmodule Sanbase.Repo.Migrations.AddExchangeWalletsExtension do
 
   defp setup do
     Application.ensure_all_started(:tzdata)
-    Application.ensure_all_started(:prometheus_ecto)
     Application.ensure_all_started(:stripity_stripe)
-    Sanbase.Prometheus.EctoInstrumenter.setup()
   end
 end

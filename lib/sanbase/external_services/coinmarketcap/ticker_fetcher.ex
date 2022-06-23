@@ -15,8 +15,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   alias Sanbase.DateTimeUtils
   alias Sanbase.Model.{LatestCoinmarketcapData, Project}
   alias Sanbase.ExternalServices.Coinmarketcap.{Ticker, PricePoint}
-  alias Sanbase.Prices.Store
-
+  alias Sanbase.Price.Validator
   @prices_exporter :prices_exporter
 
   def start_link(_state) do
@@ -25,8 +24,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
   def init(:ok) do
     if Config.get(:sync_enabled, false) do
-      Store.create_db()
-
       Process.send(self(), :sync, [:noconnect])
 
       update_interval = Config.get(:update_interval) |> String.to_integer()
@@ -46,30 +43,21 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     # Fetch current coinmarketcap data for many tickers
     {:ok, tickers} = Ticker.fetch_data(opts)
 
+    # Create a map where the coinmarketcap_id is key and the values is the list of
+    # santiment slugs that have that coinmarketcap_id
+    cmc_id_to_slugs_mapping = coinmarketcap_to_santiment_slug_map()
+
+    tickers = remove_not_valid_prices(tickers, cmc_id_to_slugs_mapping)
+
     # Create a project if it's a new one in the top projects and we don't have it
     tickers
     |> Enum.take(top_projects_to_follow())
     |> Enum.each(&insert_or_update_project/1)
 
-    # Create a map where the coinmarketcap_id is key and the values is the list of
-    # santiment slugs that have that coinmarketcap_id
-    cmc_id_to_slugs_mapping =
-      Project.List.projects_with_source("coinmarketcap", include_hidden: true)
-      |> Enum.reduce(%{}, fn %Project{slug: slug} = project, acc ->
-        Map.update(acc, Project.coinmarketcap_id(project), [slug], fn slugs -> [slug | slugs] end)
-      end)
-
     # Store the data in LatestCoinmarketcapData in postgres
 
     tickers
     |> Enum.each(&store_latest_coinmarketcap_data!/1)
-
-    # Store the data in Influxdb
-    if Application.get_env(:sanbase, :influx_store_enabled, true) do
-      tickers
-      |> Enum.flat_map(&Ticker.convert_for_importing(&1, cmc_id_to_slugs_mapping))
-      |> Store.import()
-    end
 
     tickers
     |> export_to_kafka(cmc_id_to_slugs_mapping)
@@ -79,13 +67,59 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     )
   end
 
+  defp coinmarketcap_to_santiment_slug_map() do
+    Project.List.projects_with_source("coinmarketcap", include_hidden: true)
+    |> Enum.reduce(%{}, fn %Project{slug: slug} = project, acc ->
+      Map.update(acc, Project.coinmarketcap_id(project), [slug], fn slugs ->
+        [slug | slugs]
+      end)
+    end)
+  end
+
+  defp remove_not_valid_prices(tickers, cmc_id_to_slugs_mapping) do
+    tickers
+    |> Enum.map(fn %{slug: cmc_slug, price_usd: price_usd, price_btc: price_btc} = ticker ->
+      case Map.get(cmc_id_to_slugs_mapping, cmc_slug) do
+        nil ->
+          ticker
+
+        slug ->
+          ticker
+          |> then(fn t ->
+            case Validator.valid_price?(slug, "USD", price_usd) do
+              true ->
+                t
+
+              {:error, error} ->
+                Logger.info("[CMC] Price validation failed: #{error}")
+                Map.put(t, :price_usd, nil)
+            end
+          end)
+          |> then(fn t ->
+            case Validator.valid_price?(slug, "BTC", price_btc) do
+              true ->
+                t
+
+              {:error, error} ->
+                Logger.info("[CMC] Price validation failed: #{error}")
+                Map.put(t, :price_usd, nil)
+            end
+          end)
+      end
+    end)
+    |> Enum.filter(fn t -> t.price_usd != nil or t.price_btc != nil end)
+  end
+
   defp export_to_kafka(tickers, cmc_id_to_slugs_mapping) do
     tickers
     |> Enum.flat_map(fn %Ticker{} = ticker ->
       case Map.get(cmc_id_to_slugs_mapping, ticker.slug, []) |> List.wrap() do
         [_ | _] = slugs ->
           price_point = Ticker.to_price_point(ticker) |> PricePoint.sanity_filters()
-          Enum.map(slugs, fn slug -> PricePoint.json_kv_tuple(price_point, slug) end)
+
+          Enum.map(slugs, fn slug ->
+            PricePoint.json_kv_tuple(price_point, slug)
+          end)
 
         _ ->
           []

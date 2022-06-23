@@ -79,6 +79,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
   def email_login(%{email: email} = args, %{
         context: %{
+          origin_url: origin_url,
           origin_host_parts: origin_host_parts,
           remote_ip: remote_ip
         }
@@ -94,6 +95,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
       {:ok, %{success: true, first_login: user.first_login}}
     else
       {:error, :too_many_login_attempts} ->
+        Logger.info(
+          "Login failed: too many login attempts. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"
+        )
+
         {:error, message: "Too many login attempts, try again after a few minutes"}
 
       _ ->
@@ -127,51 +132,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     end
   end
 
-  # No eth account and there is a user logged in
-
   defp allowed_origin?(["santiment", "net"] = _hosted_parts), do: true
   defp allowed_origin?([_origin_app, "santiment", "net"] = _hosted_parts), do: true
   defp allowed_origin?(_hosted_parts), do: {:error, "Origin header is not supported."}
 
-  defp fetch_user(
-         %{address: address, context: %{auth: %{auth_method: :user_token, current_user: user}}},
-         nil
-       ) do
-    _ = EthAccount.create(%{user_id: user.id, address: address})
-
-    {:ok, user}
-  end
-
-  # No eth account and no user logged in
   defp fetch_user(%{address: address}, nil) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.insert(
-      :add_user,
-      User.changeset(%User{}, %{
-        username: address,
-        salt: User.generate_salt(),
-        first_login: true
-      })
-    )
-    |> Ecto.Multi.run(:add_eth_account, fn _repo, %{add_user: %User{id: id}} ->
-      eth_account =
-        EthAccount.changeset(%EthAccount{}, %{user_id: id, address: address})
-        |> Sanbase.Repo.insert()
-
-      {:ok, eth_account}
-    end)
-    |> Sanbase.Repo.transaction()
-    |> case do
-      {:ok, %{add_user: user}} ->
-        {:ok, user}
-
-      {:error, _, reason, _} ->
-        {:error, message: reason}
-    end
+    # No EthAccount and no user logged in. This means that the address is used
+    # for the first time. Create a User and create an EthAccount linked with
+    # the user. The username is automatically set to the address but is not
+    # used for logging in after that.
+    Sanbase.Accounts.create_user_with_eth_address(address)
   end
 
-  # Existing eth account, login as the user of the eth account
-  defp fetch_user(_, %EthAccount{user_id: user_id}) do
+  defp fetch_user(_args, %EthAccount{user_id: user_id}) do
+    # Existing EthAccount, login as the user of EthAccount
     User.by_id(user_id)
   end
 

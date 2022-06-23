@@ -44,7 +44,8 @@ defmodule Sanbase.Transfers.BtcTransfers do
           :in | :out | :all
         ) ::
           {:ok, nil} | {:ok, list(map())} | {:error, String.t()}
-  def top_wallet_transfers([], _from, _to, _page, _page_size, _type), do: {:ok, []}
+  def top_wallet_transfers([], _from, _to, _page, _page_size, _type),
+    do: {:ok, []}
 
   def top_wallet_transfers(wallets, from, to, page, page_size, type) do
     {query, args} = top_wallet_transfers_query(wallets, from, to, page, page_size, type)
@@ -75,15 +76,16 @@ defmodule Sanbase.Transfers.BtcTransfers do
     SELECT
       toUnixTimestamp(dt),
       address,
-      txID,
-      balance,
-      oldBalance,
-      abs(balance - oldBalance) AS absValue
-    FROM btc_balances FINAL
-    PREWHERE
-      #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
-      dt >= toDateTime(?2) AND
-      dt < toDateTime(?3)
+      any(txID) AS txID,
+      any(balance) AS balance,
+      any(oldBalance) AS oldBalance,
+      any(absValue) AS absValue
+    FROM (
+      SELECT dt, address, txID, blockNumber, txPos, balance, oldBalance, balance - oldBalance AS absValue
+      FROM btc_balances
+      PREWHERE dt >= toDateTime(?2) AND dt < toDateTime(?3) AND #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: false)}
+    )
+    GROUP BY dt, address, blockNumber, txPos
     ORDER BY absValue DESC
     LIMIT ?4 OFFSET ?5
     """
@@ -92,8 +94,8 @@ defmodule Sanbase.Transfers.BtcTransfers do
 
     args = [
       wallets,
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
+      DateTime.to_unix(from),
+      DateTime.to_unix(to),
       page_size,
       offset
     ]
@@ -132,6 +134,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
     to_unix = DateTime.to_unix(to)
     from_unix = DateTime.to_unix(from)
     offset = (page - 1) * page_size
+
     # only > 100 BTC transfers if range is > 1 week, otherwise only bigger than 20
     amount_filter = if Timex.diff(to, from, :days) > 7, do: 100, else: 20
 
@@ -139,14 +142,18 @@ defmodule Sanbase.Transfers.BtcTransfers do
     SELECT
       toUnixTimestamp(dt),
       address,
-      balance - oldBalance AS amount,
-      txID
-    FROM btc_balances FINAL
-    PREWHERE
-      amount > ?1 AND
-      dt >= toDateTime(?2) AND
-      dt < toDateTime(?3)
-      #{maybe_exclude_addresses(excluded_addresses, arg_position: 5)}
+      any(amount) AS amount,
+      any(txID) AS txID
+    FROM (
+      SELECT dt, address, blockNumber, txPos, txID,  balance, oldBalance, balance - oldBalance AS amount
+      FROM btc_balances
+      PREWHERE
+        amount >= ?1 AND
+        dt >= toDateTime(?2) AND
+        dt < toDateTime(?3)
+        #{maybe_exclude_addresses(excluded_addresses, arg_position: 6)}
+    )
+    GROUP BY dt, address, blockNumber, txPos
     ORDER BY amount DESC
     LIMIT ?4 OFFSET ?5
     """

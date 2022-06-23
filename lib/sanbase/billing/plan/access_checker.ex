@@ -27,7 +27,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   as we have different restrictions.
   """
 
-  alias Sanbase.Billing.{Product, Subscription, GraphqlSchema}
+  alias Sanbase.Billing.{Product, GraphqlSchema}
   alias Sanbase.Billing.Plan.{CustomAccess, ApiAccessChecker, SanbaseAccessChecker}
 
   @doc documentation_ref: "# DOCS access-plans/index.md"
@@ -42,6 +42,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       Break.break("""
       There are GraphQL queries defined without specifying their access level.
       The access level could be either `free` or `restricted`.
+      To define an access level, put `meta(access: <level>)` in the field definition.
+
       Queries without access level: #{inspect(queries)}
       """)
   end
@@ -65,8 +67,6 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @custom_access_queries_stats CustomAccess.get()
   @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
   @custom_access_queries_mapset MapSet.new(@custom_access_queries)
-
-  @free_subscription Subscription.free_subscription()
 
   @min_plan_map GraphqlSchema.min_plan_map()
 
@@ -209,12 +209,4 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       end
     end
   end
-
-  def user_can_create_alert?(user, subscription) do
-    subscription = subscription || @free_subscription
-
-    SanbaseAccessChecker.alerts_limits_not_reached?(user, subscription)
-  end
-
-  def alerts_limits_upgrade_message(), do: SanbaseAccessChecker.alerts_limits_upgrade_message()
 end

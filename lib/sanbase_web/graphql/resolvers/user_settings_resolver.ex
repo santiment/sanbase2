@@ -24,8 +24,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
       {:ok, %{settings: settings}} ->
         {:ok, settings}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:error, "Cannot update user settings. Reason: #{changeset_errors_string(changeset)}"}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -35,13 +38,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
     args = maybe_update_settings_args(args)
 
     UserSettings.toggle_notification_channel(current_user, args)
-    |> handle_toggle_result()
-  end
-
-  def change_newsletter_subscription(_root, args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    UserSettings.change_newsletter_subscription(current_user, args)
     |> handle_toggle_result()
   end
 

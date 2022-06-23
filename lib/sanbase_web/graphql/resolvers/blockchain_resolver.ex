@@ -1,5 +1,15 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
-  @blockchains ["ethereum", "bitcoin", "bitcoin-cash", "litecoin", "ripple", "binance-coin"]
+  @blockchains [
+    "ethereum",
+    "bitcoin",
+    "bitcoin-cash",
+    "litecoin",
+    "ripple",
+    "binance-coin",
+    "dogecoin",
+    "matic-network",
+    "cardano"
+  ]
 
   def available_blockchains_metadata(_root, _argsargs, _resolution) do
     {:ok, Enum.map(@blockchains, &blockchain_data/1)}
@@ -29,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       infrastructure: "BTC",
       created_on: ~U[2009-01-03 00:00:00Z],
       has_exchange_metrics: true,
-      has_miners_metrics: false,
+      has_miners_metrics: true,
       has_label_metrics: false,
       has_top_holders_metrics: true,
       has_onchain_financial_metrics: true,
@@ -100,6 +110,57 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       has_miners_metrics: false,
       has_label_metrics: false,
       has_top_holders_metrics: true,
+      has_onchain_financial_metrics: true,
+      has_pure_onchain_metrics: true,
+      has_balance_metrics: true
+    }
+    |> add_complex_fields()
+  end
+
+  defp blockchain_data("dogecoin") do
+    %{
+      blockchain: "dogecoin",
+      slug: "dogecoin",
+      infrastructure: "DOGE",
+      created_on: ~U[2013-12-08 00:00:00Z],
+      has_exchange_metrics: false,
+      has_miners_metrics: false,
+      has_label_metrics: false,
+      has_top_holders_metrics: false,
+      has_onchain_financial_metrics: true,
+      has_pure_onchain_metrics: true,
+      has_balance_metrics: true
+    }
+    |> add_complex_fields()
+  end
+
+  defp blockchain_data("matic-network") do
+    %{
+      blockchain: "matic-network",
+      slug: "matic-network",
+      infrastructure: "MATIC",
+      created_on: ~U[2017-07-12 00:00:00Z],
+      has_exchange_metrics: false,
+      has_miners_metrics: false,
+      has_label_metrics: false,
+      has_top_holders_metrics: false,
+      has_onchain_financial_metrics: true,
+      has_pure_onchain_metrics: true,
+      has_balance_metrics: true
+    }
+    |> add_complex_fields()
+  end
+
+  defp blockchain_data("cardano") do
+    %{
+      blockchain: "cardano",
+      slug: "cardano",
+      infrastructure: "ADA",
+      created_on: ~U[2017-09-23 00:00:00Z],
+      has_exchange_metrics: false,
+      has_miners_metrics: false,
+      has_label_metrics: false,
+      has_top_holders_metrics: false,
       has_onchain_financial_metrics: true,
       has_pure_onchain_metrics: true,
       has_balance_metrics: true

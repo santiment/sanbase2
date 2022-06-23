@@ -1,4 +1,11 @@
 defmodule Sanbase.Utils.Transform do
+  def to_bang(result) do
+    case result do
+      {:ok, result} -> result
+      {:error, error} -> raise error
+    end
+  end
+
   @doc ~s"""
   Combine all the MapSets from the mapsets_list either by
   taking their intersection or their union. The decision is

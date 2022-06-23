@@ -226,7 +226,7 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
       }
 
       template = """
-      🔔The address {{address}}'s {{asset}} balance #{operation_text(settings.operation)} by {{balance_change_abs}} since {{since}}.
+      🔔 The address {{address}}'s {{asset}} balance #{operation_text(settings.operation)} by {{balance_change_abs}} since {{since}}.
       was: {{previous_balance}}, now: {{balance}}
       """
 

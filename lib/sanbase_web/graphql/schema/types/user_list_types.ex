@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.SanbaseRepo
-  alias SanbaseWeb.Graphql.Resolvers.UserListResolver
+  alias SanbaseWeb.Graphql.Resolvers.{UserListResolver, VoteResolver}
 
   enum :color_enum do
     value(:none)
@@ -71,8 +71,9 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:name, non_null(:string))
     field(:slug, :string)
     field(:description, :string)
-    field(:is_public, :boolean)
-    field(:is_screener, :boolean)
+    field(:is_public, non_null(:boolean))
+    field(:is_hidden, non_null(:boolean))
+    field(:is_screener, non_null(:boolean))
     field(:color, :color_enum)
     field(:function, :json)
     field(:is_monitored, :boolean)
@@ -104,6 +105,14 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
 
     field :comments_count, :integer do
       resolve(&UserListResolver.comments_count/3)
+    end
+
+    field :voted_at, :datetime do
+      resolve(&VoteResolver.voted_at/3)
+    end
+
+    field :votes, :vote do
+      resolve(&VoteResolver.votes/3)
     end
   end
 end

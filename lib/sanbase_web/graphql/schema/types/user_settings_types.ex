@@ -3,12 +3,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.UserSettingsResolver
 
-  enum :newsletter_subscription_type do
-    value(:weekly)
-    value(:daily)
-    value(:off)
-  end
-
   object :user_settings do
     field(:hide_privacy_data, :boolean)
     field(:is_beta_mode, :boolean)
@@ -16,12 +10,20 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:theme, :string)
     field(:page_size, :integer)
     field(:table_columns, :json)
-    field(:newsletter_subscription, :newsletter_subscription_type)
     field(:has_telegram_connected, :boolean)
     field(:paid_with, :string)
     field(:alert_notify_email, :boolean)
     field(:alert_notify_telegram, :boolean)
     field(:alerts_per_day_limit, :json)
+    field(:is_subscribed_edu_emails, :boolean)
+    field(:is_subscribed_monthly_newsletter, :boolean)
+    field(:is_subscribed_biweekly_report, :boolean)
+    field(:is_subscribed_marketing_emails, :boolean)
+    field(:is_subscribed_comments_emails, :boolean)
+    field(:is_subscribed_likes_emails, :boolean)
+    # Fixme: backwards compatibility, should be removed when removed from frontend.
+    # option is not used
+    field(:newsletter_subscription, :string, default_value: "OFF")
 
     field :alerts_per_day_limit_left, :json do
       resolve(&UserSettingsResolver.alerts_per_dy_limit_left/3)
@@ -48,12 +50,18 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:theme, :string)
     field(:page_size, :integer)
     field(:table_columns, :json)
-    field(:newsletter_subscription, :newsletter_subscription_type)
     field(:has_telegram_connected, :boolean)
     field(:alert_notify_email, :boolean)
     field(:alert_notify_telegram, :boolean)
     field(:alerts_per_day_limit, :json)
     field(:favorite_metrics, list_of(:string))
+    field(:is_subscribed_edu_emails, :boolean)
+    field(:is_subscribed_monthly_newsletter, :boolean)
+    field(:is_subscribed_biweekly_report, :boolean)
+    field(:is_subscribed_marketing_emails, :boolean)
+    field(:is_subscribed_comments_emails, :boolean)
+    field(:is_subscribed_likes_emails, :boolean)
+
     # Deprecated fields
     field(:signal_notify_telegram, :boolean)
     field(:signal_notify_email, :boolean)

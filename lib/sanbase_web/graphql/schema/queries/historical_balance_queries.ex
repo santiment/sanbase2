@@ -20,6 +20,16 @@ defmodule SanbaseWeb.Graphql.Schema.HistoricalBalanceQueries do
       cache_resolve(&HistoricalBalanceResolver.assets_held_by_address/3)
     end
 
+    field :usd_value_address_change, list_of(:usd_value_address_change) do
+      meta(access: :free)
+
+      arg(:selector, :address_selector_input_object)
+      arg(:address, :string)
+      arg(:datetime, non_null(:datetime))
+
+      cache_resolve(&HistoricalBalanceResolver.usd_value_address_change/3)
+    end
+
     @desc ~s"""
     Historical balance for erc20 token or eth address.
     Returns the historical balance for a given address in the given interval.

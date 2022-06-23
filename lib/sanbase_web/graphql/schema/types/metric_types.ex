@@ -23,7 +23,9 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     # common
     value(:blockchain)
     # blockchain address related
+    value(:address)
     value(:blockchain_address)
+    value(:token_id)
     # project related
     value(:slug)
     value(:slugs)
@@ -44,6 +46,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:label_fqn)
     value(:label_fqns)
     value(:holders_count)
+    # nft related
+    value(:token_id)
     # dev activity related
     value(:organization)
     value(:organizations)
@@ -61,6 +65,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     # common
     field(:blockchain, :string)
     # blockchain address related
+    field(:address, :string)
     field(:blockchain_address, :blockchain_address_selector_input_object)
     # project related
     field(:slug, :string)

@@ -18,6 +18,9 @@ defmodule Sanbase.SocialData do
   defdelegate social_volume(selector, from, to, interval, source),
     to: SocialVolume
 
+  defdelegate social_volume(selector, from, to, interval, source, opts),
+    to: SocialVolume
+
   defdelegate social_active_users(selector, from, to, interval),
     to: ActiveUsers
 
@@ -28,11 +31,6 @@ defmodule Sanbase.SocialData do
 
   defdelegate community_messages_count(slug, from, to, interval, source),
     to: Community
-
-  def trending_words(source, size, hour, from_datetime, to_datetime) do
-    trending_words_request(source, size, hour, from_datetime, to_datetime)
-    |> handle_response(&trending_words_result/1, "trending words", "source: #{source}")
-  end
 
   def word_context(words, source, size, from_datetime, to_datetime) when is_list(words) do
     words_str = Enum.join(words, ",")
@@ -88,26 +86,6 @@ defmodule Sanbase.SocialData do
   end
 
   # Private functions
-
-  defp trending_words_request(source, size, hour, from_datetime, to_datetime) do
-    from_unix = DateTime.to_unix(from_datetime)
-    to_unix = DateTime.to_unix(to_datetime)
-
-    url = "#{tech_indicators_url()}/indicator/trending_words"
-
-    options = [
-      recv_timeout: @recv_timeout,
-      params: [
-        {"source", source |> Atom.to_string()},
-        {"n", size},
-        {"hour", hour},
-        {"from_timestamp", from_unix},
-        {"to_timestamp", to_unix}
-      ]
-    ]
-
-    http_client().get(url, [], options)
-  end
 
   defp words_context_request(words, source, size, from_datetime, to_datetime)
        when is_list(words) do
@@ -211,21 +189,6 @@ defmodule Sanbase.SocialData do
     ]
 
     http_client().get(url, [], options)
-  end
-
-  defp trending_words_result(result) do
-    result
-    |> Enum.map(fn %{"timestamp" => timestamp, "top_words" => top_words} ->
-      %{
-        datetime: DateTime.from_unix!(timestamp),
-        top_words:
-          top_words
-          |> Enum.map(fn {k, v} ->
-            %{word: k, score: v}
-          end)
-      }
-    end)
-    |> wrap_ok()
   end
 
   defp word_context_result(result) do

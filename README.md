@@ -102,7 +102,6 @@ In order to be able to start, the following dependencies are required:
 
 - Metricshub
 - Tech Indicators
-- InfluxDB
 - Elasticsearch
 - Parity
 
@@ -157,11 +156,3 @@ You can easily run the tests using docker with the command:
 ```bash
 ./bin/test.sh
 ```
-
-## Setting up Hydra Oauth2 server locally
-
-[Setup Hydra locally](docs/hydra-development-setup.md)
-
-[Grafana generic oauth setup](docs/setup-generic-oauth-grafana.md)
-
-[Triggers API](docs/user-triggers-api.md)

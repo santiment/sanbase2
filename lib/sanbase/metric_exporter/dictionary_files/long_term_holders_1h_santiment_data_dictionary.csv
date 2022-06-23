@@ -1,0 +1,4 @@
+Field name,Date Type,Description,Primary key,Foreign key
+identifier,string,Cryptocurrency name,Y,N
+datetime,datetime,Datetime mark,Y,N
+ageConsumed,decimal,Age consumed tracks the movement of previously idle tokens. The metric shows the amount of tokens changing addresses daily multiplied by the number of days since they last moved.,N,N

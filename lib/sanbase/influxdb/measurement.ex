@@ -1,6 +1,6 @@
 defmodule Sanbase.Influxdb.Measurement do
   @moduledoc ~S"""
-    Module, defining the structure and common parts of a influxdb measurement
+  Module, defining the structure and common parts of a influxdb measurement
   """
   defstruct [:timestamp, :fields, :tags, :name]
 

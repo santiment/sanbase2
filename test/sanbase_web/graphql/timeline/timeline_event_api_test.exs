@@ -16,25 +16,29 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   setup do
     user = insert(:user, email: "test@example.com")
     conn = setup_jwt_auth(build_conn(), user)
-    role_san_clan = insert(:role_san_clan)
+    role_san_family = insert(:role_san_family)
 
     project = insert(:project, slug: "santiment", ticker: "SAN")
     project2 = insert(:project, slug: "ethereum", ticker: "ETH", name: "Ethereum")
 
     {:ok,
-     conn: conn, user: user, role_san_clan: role_san_clan, project: project, project2: project2}
+     conn: conn,
+     user: user,
+     role_san_family: role_san_family,
+     project: project,
+     project2: project2}
   end
 
   test "timeline events with public entities by followed users or by san family are fetched", %{
     conn: conn,
     user: user,
-    role_san_clan: role_san_clan
+    role_san_family: role_san_family
   } do
     user_to_follow = insert(:user)
     UserFollower.follow(user_to_follow.id, user.id)
 
     san_author = insert(:user)
-    insert(:user_role, user: san_author, role: role_san_clan)
+    insert(:user_role, user: san_author, role: role_san_family)
 
     post =
       insert(:post,
@@ -85,13 +89,13 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
        %{
          conn: conn,
          user: user,
-         role_san_clan: role_san_clan
+         role_san_family: role_san_family
        } do
     user_to_follow = insert(:user)
     UserFollower.follow(user_to_follow.id, user.id)
 
     san_author = insert(:user)
-    insert(:user_role, user: san_author, role: role_san_clan)
+    insert(:user_role, user: san_author, role: role_san_family)
 
     {:ok, user_list} =
       UserList.create_user_list(user_to_follow, %{name: "My Test List", is_public: false})
@@ -148,7 +152,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   test "trigger fired event from public trigger from san family member is fetched",
        context do
     san_author = insert(:user)
-    insert(:user_role, user: san_author, role: context.role_san_clan)
+    insert(:user_role, user: san_author, role: context.role_san_family)
 
     user_trigger =
       insert(:user_trigger,
@@ -207,7 +211,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   test "trigger fired event from private trigger from san family member is not fetched",
        context do
     san_author = insert(:user)
-    insert(:user_role, user: san_author, role: context.role_san_clan)
+    insert(:user_role, user: san_author, role: context.role_san_family)
 
     user_trigger =
       insert(:user_trigger,
@@ -260,7 +264,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   describe "timeline events for not logged in user" do
     test "shows sanfamily insight", context do
       san_author = insert(:user)
-      insert(:user_role, user: san_author, role: context.role_san_clan)
+      insert(:user_role, user: san_author, role: context.role_san_family)
 
       post =
         insert(:post,
@@ -282,7 +286,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
     test "doesn't show private trigger that fired", context do
       san_author = insert(:user)
-      insert(:user_role, user: san_author, role: context.role_san_clan)
+      insert(:user_role, user: san_author, role: context.role_san_family)
 
       user_trigger =
         insert(:user_trigger,
@@ -309,14 +313,22 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     end
   end
 
-  describe "upvoteTimelineEvent/downvoteTimelineEvent mutations" do
+  describe "vote/unvote mutations" do
     test "upvote succeeds", context do
       user = insert(:user)
       {timeline_event, _user_trigger} = create_timeline_event(user)
       mutation = upvote_timeline_event_mutation(timeline_event.id)
-      result = execute_mutation(context.conn, mutation, "upvoteTimelineEvent")
+      result = execute_mutation(context.conn, mutation, "vote")
 
-      assert result["votes"] == [%{"userId" => context.user.id}]
+      assert result["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
+      voted_at = result["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+
+      assert Sanbase.TestUtils.datetime_close_to(
+               Timex.now(),
+               Sanbase.DateTimeUtils.from_iso8601!(voted_at),
+               2,
+               :seconds
+             )
     end
 
     test "when user has upvoted, he can downvote", context do
@@ -325,19 +337,29 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       upvote_mutation = upvote_timeline_event_mutation(timeline_event.id)
       downvote_mutation = downvote_timeline_event_mutation(timeline_event.id)
 
-      result1 = execute_mutation(context.conn, upvote_mutation, "upvoteTimelineEvent")
-      assert result1["votes"] == [%{"userId" => context.user.id}]
+      result1 = execute_mutation(context.conn, upvote_mutation, "vote")
+      assert result1["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
+      voted_at = result1["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
 
-      result2 = execute_mutation(context.conn, downvote_mutation, "downvoteTimelineEvent")
-      assert result2["votes"] == []
+      assert Sanbase.TestUtils.datetime_close_to(
+               Timex.now(),
+               Sanbase.DateTimeUtils.from_iso8601!(voted_at),
+               2,
+               :seconds
+             )
+
+      result2 = execute_mutation(context.conn, downvote_mutation, "unvote")
+      assert result2["votes"] == %{"currentUserVotes" => 0, "totalVoters" => 0, "totalVotes" => 0}
+      assert result2["votedAt"] == nil
     end
 
     test "when user has not upvoted, downvoting does nothing", context do
       user = insert(:user)
       {timeline_event, _user_trigger} = create_timeline_event(user)
       mutation = downvote_timeline_event_mutation(timeline_event.id)
-      result = execute_mutation(context.conn, mutation, "downvoteTimelineEvent")
-      assert result["votes"] == []
+      result = execute_mutation(context.conn, mutation, "unvote")
+      assert result["votes"] == %{"currentUserVotes" => 0, "totalVoters" => 0, "totalVotes" => 0}
+      assert result["votedAt"] == nil
     end
   end
 
@@ -778,10 +800,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   defp upvote_timeline_event_mutation(timeline_event_id) do
     """
     mutation {
-      upvoteTimelineEvent(timelineEventId: #{timeline_event_id}) {
-        id
+      vote(timelineEventId: #{timeline_event_id}) {
+        votedAt
         votes {
-          userId
+          totalVotes totalVoters currentUserVotes
         }
       }
     }
@@ -791,10 +813,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   defp downvote_timeline_event_mutation(timeline_event_id) do
     """
     mutation {
-      downvoteTimelineEvent(timelineEventId: #{timeline_event_id}) {
-        id
+      unvote(timelineEventId: #{timeline_event_id}) {
+        votedAt
         votes {
-          userId
+          totalVotes totalVoters currentUserVotes
         }
       }
     }
@@ -846,7 +868,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     UserFollower.follow(user_to_follow.id, context.user.id)
 
     san_author2 = insert(:user, username: "b")
-    insert(:user_role, user: san_author2, role: context.role_san_clan)
+    insert(:user_role, user: san_author2, role: context.role_san_family)
 
     post1 =
       insert(:post,
@@ -958,10 +980,12 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     }
 
     trigger_settings = %{
-      type: "price_volume_difference",
-      target: %{slug: context.project.slug},
-      channel: "telegram",
-      threshold: 0.1
+      type: "metric_signal",
+      metric: "active_addresses_24h",
+      target: %{slug: "santiment"},
+      channel: ["telegram"],
+      time_window: "1d",
+      operation: %{percent_up: 300.0}
     }
 
     trending_words_settings = %{
@@ -1003,6 +1027,6 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     result
     |> hd()
     |> Map.get("events", [])
-    |> Enum.map(&String.to_integer(&1["id"]))
+    |> Enum.map(& &1["id"])
   end
 end

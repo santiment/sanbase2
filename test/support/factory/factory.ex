@@ -108,7 +108,8 @@ defmodule Sanbase.Factory do
       metrics: [
         Sanbase.Repo.get_by(Sanbase.Metric.MetricPostgresData, name: metric) ||
           build(:metric_postgres, %{name: metric})
-      ]
+      ],
+      published_at: DateTime.utc_now()
     }
   end
 
@@ -122,14 +123,21 @@ defmodule Sanbase.Factory do
     %Chart.Configuration{
       title: "chart configuration",
       project: insert(:random_project),
-      user: insert(:user)
+      user: build(:user)
+    }
+  end
+
+  def dashboard_factory() do
+    %Sanbase.Dashboard.Schema{
+      name: "My Dashboard",
+      user: build(:user)
     }
   end
 
   def table_configuration_factory() do
     %TableConfiguration{
       title: "table configuration",
-      user: insert(:user)
+      user: build(:user)
     }
   end
 
@@ -330,8 +338,7 @@ defmodule Sanbase.Factory do
     %UserSettings{
       settings: %{
         alert_notify_telegram: false,
-        alert_notify_email: false,
-        newsletter_subscription: "OFF"
+        alert_notify_email: false
       }
     }
   end
@@ -369,7 +376,11 @@ defmodule Sanbase.Factory do
   end
 
   def watchlist_factory() do
-    %UserList{name: "Generic User List name", color: :red, user: build(:user)}
+    %UserList{name: "Generic User List name", color: :red, user: build(:user), is_screener: false}
+  end
+
+  def screener_factory() do
+    %UserList{name: "Generic User List name", color: :red, user: build(:user), is_screener: true}
   end
 
   def product_api_factory() do
@@ -638,14 +649,21 @@ defmodule Sanbase.Factory do
   def role_san_team_factory() do
     %Role{
       id: 1,
-      name: "Santiment Team member"
+      name: "Santiment Team Member"
     }
   end
 
-  def role_san_clan_factory() do
+  def role_san_family_factory() do
     %Role{
       id: 2,
-      name: "Santiment Clan member"
+      name: "Santiment Family Member"
+    }
+  end
+
+  def role_san_moderator_factory() do
+    %Role{
+      id: 3,
+      name: "Santiment Moderator"
     }
   end
 

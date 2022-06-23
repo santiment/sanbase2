@@ -1,5 +1,7 @@
 defmodule Sanbase.Utils.JsonLogger do
-  def format(level, message, {date, {h, min, s, ms}} = timestamp, metadata) do
+  def format(level, message, timestamp, metadata) do
+    {date, {h, min, s, ms}} = timestamp
+
     [
       %{
         timestamp: NaiveDateTime.from_erl!({date, {h, min, s}}, {ms * 1000, 3}),

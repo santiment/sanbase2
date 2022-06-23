@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13.1
--- Dumped by pg_dump version 13.1
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -205,6 +205,8 @@ $$;
 
 
 SET default_tablespace = '';
+
+SET default_table_access_method = heap;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -513,7 +515,10 @@ CREATE TABLE public.chart_configurations (
     drawings jsonb,
     options jsonb,
     post_id bigint,
-    queries jsonb
+    queries jsonb,
+    metrics_json jsonb DEFAULT '{}'::jsonb,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 
@@ -537,6 +542,41 @@ ALTER SEQUENCE public.chart_configurations_id_seq OWNED BY public.chart_configur
 
 
 --
+-- Name: clickhouse_query_executions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.clickhouse_query_executions (
+    id bigint NOT NULL,
+    user_id bigint,
+    query_id character varying(255) NOT NULL,
+    clickhouse_query_id character varying(255) NOT NULL,
+    execution_details jsonb NOT NULL,
+    credits_cost integer NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: clickhouse_query_executions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.clickhouse_query_executions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: clickhouse_query_executions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.clickhouse_query_executions_id_seq OWNED BY public.clickhouse_query_executions.id;
+
+
+--
 -- Name: comment_notifications; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -546,7 +586,9 @@ CREATE TABLE public.comment_notifications (
     last_timeline_event_comment_id integer,
     notify_users_map jsonb,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    last_chart_configuration_comment_id integer,
+    last_watchlist_comment_id integer
 );
 
 
@@ -582,7 +624,9 @@ CREATE TABLE public.comments (
     root_parent_id bigint,
     edited_at timestamp without time zone,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
 );
 
 
@@ -670,6 +714,107 @@ ALTER SEQUENCE public.currencies_id_seq OWNED BY public.currencies.id;
 
 
 --
+-- Name: dashboard_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dashboard_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    dashboard_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: dashboard_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dashboard_comments_mapping_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dashboard_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dashboard_comments_mapping_id_seq OWNED BY public.dashboard_comments_mapping.id;
+
+
+--
+-- Name: dashboards; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dashboards (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description character varying(255),
+    is_public boolean DEFAULT false NOT NULL,
+    panels jsonb,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
+);
+
+
+--
+-- Name: dashboards_cache; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dashboards_cache (
+    id bigint NOT NULL,
+    dashboard_id bigint,
+    panels jsonb NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: dashboards_cache_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dashboards_cache_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dashboards_cache_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dashboards_cache_id_seq OWNED BY public.dashboards_cache.id;
+
+
+--
+-- Name: dashboards_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dashboards_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dashboards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dashboards_id_seq OWNED BY public.dashboards.id;
+
+
+--
 -- Name: email_login_attempts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -699,6 +844,274 @@ CREATE SEQUENCE public.email_login_attempts_id_seq
 --
 
 ALTER SEQUENCE public.email_login_attempts_id_seq OWNED BY public.email_login_attempts.id;
+
+
+--
+-- Name: post_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.post_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    post_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: posts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.posts (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    title character varying(255) NOT NULL,
+    link text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    state character varying(255),
+    moderation_comment character varying(255),
+    short_desc text,
+    text text,
+    ready_state character varying(255) DEFAULT 'draft'::character varying,
+    discourse_topic_url character varying(255),
+    published_at timestamp without time zone,
+    is_pulse boolean DEFAULT false,
+    is_paywall_required boolean DEFAULT false,
+    metrics character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    prediction character varying(255) DEFAULT NULL::character varying,
+    price_chart_project_id bigint,
+    document_tokens tsvector,
+    is_chart_event boolean DEFAULT false,
+    chart_event_datetime timestamp(0) without time zone,
+    chart_configuration_for_event_id bigint,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
+);
+
+
+--
+-- Name: user_lists; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_lists (
+    id bigint NOT NULL,
+    name character varying(255),
+    is_public boolean DEFAULT false,
+    color public.color,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    function jsonb DEFAULT '{"args": [], "name": "empty"}'::jsonb,
+    slug character varying(255),
+    is_monitored boolean DEFAULT false,
+    table_configuration_id bigint,
+    description text,
+    type public.watchlist_type DEFAULT 'project'::public.watchlist_type NOT NULL,
+    is_screener boolean DEFAULT false,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
+);
+
+
+--
+-- Name: user_triggers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_triggers (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    trigger jsonb NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    is_deleted boolean DEFAULT false,
+    is_hidden boolean DEFAULT false
+);
+
+
+--
+-- Name: votes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.votes (
+    id bigint NOT NULL,
+    post_id bigint,
+    user_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    timeline_event_id bigint,
+    count integer DEFAULT 1,
+    chart_configuration_id bigint,
+    watchlist_id bigint,
+    user_trigger_id bigint,
+    dashboard_id bigint,
+    CONSTRAINT only_one_fk CHECK (((((((
+CASE
+    WHEN (post_id IS NULL) THEN 0
+    ELSE 1
+END +
+CASE
+    WHEN (timeline_event_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (chart_configuration_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (watchlist_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (user_trigger_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (dashboard_id IS NULL) THEN 0
+    ELSE 1
+END) = 1))
+);
+
+
+--
+-- Name: watchlist_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.watchlist_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    watchlist_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: entities; Type: MATERIALIZED VIEW; Schema: public; Owner: -
+--
+
+CREATE MATERIALIZED VIEW public.entities AS
+ SELECT foo.entity_id,
+    foo.entity_type,
+    foo.user_id,
+    foo.created_at,
+    foo.is_deleted,
+    foo.is_hidden,
+    foo.is_public,
+    foo.comments_count,
+    foo.voted_users_count,
+    foo.votes_count
+   FROM ( SELECT p.id AS entity_id,
+            'insight'::text AS entity_type,
+            p.user_id,
+            COALESCE(p.published_at, p.inserted_at) AS created_at,
+            p.is_deleted,
+            p.is_hidden,
+                CASE
+                    WHEN (((p.ready_state)::text = 'published'::text) AND ((p.state)::text = 'approved'::text)) THEN true
+                    WHEN (((p.ready_state)::text <> 'published'::text) OR ((p.state)::text <> 'approved'::text)) THEN false
+                    ELSE NULL::boolean
+                END AS is_public,
+            COALESCE(pcm.comments_count, (0)::bigint) AS comments_count,
+            COALESCE(votes.voted_users_count, (0)::bigint) AS voted_users_count,
+            COALESCE(votes.votes_count, (0)::bigint) AS votes_count
+           FROM ((public.posts p
+             LEFT JOIN ( SELECT post_comments_mapping.post_id,
+                    count(*) AS comments_count
+                   FROM public.post_comments_mapping
+                  GROUP BY post_comments_mapping.post_id) pcm ON ((p.id = pcm.post_id)))
+             LEFT JOIN ( SELECT votes_1.post_id,
+                    count(*) AS voted_users_count,
+                    sum(votes_1.count) AS votes_count
+                   FROM public.votes votes_1
+                  GROUP BY votes_1.post_id) votes ON ((p.id = votes.post_id)))
+        UNION
+         SELECT cc.id AS entity_id,
+            'chart_configuration'::text AS entity_type,
+            cc.user_id,
+            cc.inserted_at AS created_at,
+            cc.is_deleted,
+            cc.is_hidden,
+            cc.is_public,
+            COALESCE(cccm.comments_count, (0)::bigint) AS comments_count,
+            COALESCE(votes.voted_users_count, (0)::bigint) AS voted_users_count,
+            COALESCE(votes.votes_count, (0)::bigint) AS votes_count
+           FROM ((public.chart_configurations cc
+             LEFT JOIN ( SELECT chart_configuration_comments_mapping.chart_configuration_id,
+                    count(*) AS comments_count
+                   FROM public.chart_configuration_comments_mapping
+                  GROUP BY chart_configuration_comments_mapping.chart_configuration_id) cccm ON ((cc.id = cccm.chart_configuration_id)))
+             LEFT JOIN ( SELECT votes_1.chart_configuration_id,
+                    count(*) AS voted_users_count,
+                    sum(votes_1.count) AS votes_count
+                   FROM public.votes votes_1
+                  GROUP BY votes_1.chart_configuration_id) votes ON ((cc.id = votes.chart_configuration_id)))
+        UNION
+         SELECT ul.id AS entity_id,
+                CASE
+                    WHEN ul.is_screener THEN 'screener'::text
+                    WHEN (ul.type = 'project'::public.watchlist_type) THEN 'project_watchlist'::text
+                    WHEN (ul.type = 'blockchain_address'::public.watchlist_type) THEN 'address_watchlist'::text
+                    ELSE NULL::text
+                END AS entity_type,
+            ul.user_id,
+            ul.inserted_at AS created_at,
+            ul.is_deleted,
+            ul.is_hidden,
+            ul.is_public,
+            COALESCE(wcm.comments_count, (0)::bigint) AS comments_count,
+            COALESCE(votes.voted_users_count, (0)::bigint) AS voted_users_count,
+            COALESCE(votes.votes_count, (0)::bigint) AS votes_count
+           FROM ((public.user_lists ul
+             LEFT JOIN ( SELECT watchlist_comments_mapping.watchlist_id,
+                    count(*) AS comments_count
+                   FROM public.watchlist_comments_mapping
+                  GROUP BY watchlist_comments_mapping.watchlist_id) wcm ON ((ul.id = wcm.watchlist_id)))
+             LEFT JOIN ( SELECT votes_1.watchlist_id,
+                    count(*) AS voted_users_count,
+                    sum(votes_1.count) AS votes_count
+                   FROM public.votes votes_1
+                  GROUP BY votes_1.watchlist_id) votes ON ((ul.id = votes.watchlist_id)))
+        UNION
+         SELECT d.id AS entity_id,
+            'dashboards'::text AS entity_type,
+            d.user_id,
+            d.inserted_at AS created_at,
+            d.is_deleted,
+            d.is_hidden,
+            d.is_public,
+            COALESCE(dcm.comments_count, (0)::bigint) AS comments_count,
+            COALESCE(votes.voted_users_count, (0)::bigint) AS voted_users_count,
+            COALESCE(votes.votes_count, (0)::bigint) AS votes_count
+           FROM ((public.dashboards d
+             LEFT JOIN ( SELECT dashboard_comments_mapping.dashboard_id,
+                    count(*) AS comments_count
+                   FROM public.dashboard_comments_mapping
+                  GROUP BY dashboard_comments_mapping.dashboard_id) dcm ON ((d.id = dcm.dashboard_id)))
+             LEFT JOIN ( SELECT votes_1.dashboard_id,
+                    count(*) AS voted_users_count,
+                    sum(votes_1.count) AS votes_count
+                   FROM public.votes votes_1
+                  GROUP BY votes_1.dashboard_id) votes ON ((d.id = votes.dashboard_id)))
+        UNION
+         SELECT ut.id AS entity_id,
+            'user_trigger'::text AS entity_type,
+            ut.user_id,
+            ut.inserted_at AS created_at,
+            ut.is_deleted,
+            ut.is_hidden,
+            ((ut.trigger ->> 'is_public'::text) = 'true'::text) AS is_public,
+            0 AS comments_count,
+            COALESCE(votes.voted_users_count, (0)::bigint) AS voted_users_count,
+            COALESCE(votes.votes_count, (0)::bigint) AS votes_count
+           FROM (public.user_triggers ut
+             LEFT JOIN ( SELECT votes_1.user_trigger_id,
+                    count(*) AS voted_users_count,
+                    sum(votes_1.count) AS votes_count
+                   FROM public.votes votes_1
+                  GROUP BY votes_1.user_trigger_id) votes ON ((ut.id = votes.user_trigger_id)))) foo
+  WITH NO DATA;
 
 
 --
@@ -829,7 +1242,8 @@ CREATE TABLE public.featured_items (
     updated_at timestamp without time zone NOT NULL,
     chart_configuration_id bigint,
     table_configuration_id bigint,
-    CONSTRAINT only_one_fk CHECK ((((((
+    dashboard_id bigint,
+    CONSTRAINT only_one_fk CHECK (((((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
@@ -848,6 +1262,10 @@ CASE
 END) +
 CASE
     WHEN (table_configuration_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (dashboard_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -1133,6 +1551,72 @@ ALTER SEQUENCE public.latest_coinmarketcap_data_id_seq OWNED BY public.latest_co
 
 
 --
+-- Name: linked_users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.linked_users (
+    id bigint NOT NULL,
+    primary_user_id bigint NOT NULL,
+    secondary_user_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: linked_users_candidates; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.linked_users_candidates (
+    id bigint NOT NULL,
+    primary_user_id bigint NOT NULL,
+    secondary_user_id bigint NOT NULL,
+    token character varying(255) NOT NULL,
+    is_confirmed boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: linked_users_candidates_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.linked_users_candidates_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: linked_users_candidates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.linked_users_candidates_id_seq OWNED BY public.linked_users_candidates.id;
+
+
+--
+-- Name: linked_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.linked_users_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: linked_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.linked_users_id_seq OWNED BY public.linked_users.id;
+
+
+--
 -- Name: list_items; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1400,7 +1884,7 @@ CREATE TABLE public.oban_jobs (
 -- Name: TABLE oban_jobs; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.oban_jobs IS '10';
+COMMENT ON TABLE public.oban_jobs IS '11';
 
 
 --
@@ -1423,6 +1907,18 @@ ALTER SEQUENCE public.oban_jobs_id_seq OWNED BY public.oban_jobs.id;
 
 
 --
+-- Name: oban_peers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE UNLOGGED TABLE public.oban_peers (
+    name text NOT NULL,
+    node text NOT NULL,
+    started_at timestamp without time zone NOT NULL,
+    expires_at timestamp without time zone NOT NULL
+);
+
+
+--
 -- Name: plans; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1435,7 +1931,8 @@ CREATE TABLE public.plans (
     product_id bigint NOT NULL,
     stripe_id character varying(255),
     is_deprecated boolean DEFAULT false,
-    "order" integer DEFAULT 0
+    "order" integer DEFAULT 0,
+    is_private boolean DEFAULT false
 );
 
 
@@ -1494,19 +1991,6 @@ ALTER SEQUENCE public.popular_search_terms_id_seq OWNED BY public.popular_search
 
 
 --
--- Name: post_comments_mapping; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.post_comments_mapping (
-    id bigint NOT NULL,
-    comment_id bigint,
-    post_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
 -- Name: post_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -1556,36 +2040,6 @@ CREATE SEQUENCE public.post_images_id_seq
 --
 
 ALTER SEQUENCE public.post_images_id_seq OWNED BY public.post_images.id;
-
-
---
--- Name: posts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.posts (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    title character varying(255) NOT NULL,
-    link text,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    state character varying(255),
-    moderation_comment character varying(255),
-    short_desc text,
-    text text,
-    ready_state character varying(255) DEFAULT 'draft'::character varying,
-    discourse_topic_url character varying(255),
-    published_at timestamp without time zone,
-    is_pulse boolean DEFAULT false,
-    is_paywall_required boolean DEFAULT false,
-    metrics character varying(255)[] DEFAULT ARRAY[]::character varying[],
-    prediction character varying(255) DEFAULT NULL::character varying,
-    price_chart_project_id bigint,
-    document_tokens tsvector,
-    is_chart_event boolean DEFAULT false,
-    chart_event_datetime timestamp(0) without time zone,
-    chart_configuration_for_event_id bigint
-);
 
 
 --
@@ -2254,6 +2708,39 @@ ALTER SEQUENCE public.seen_timeline_events_id_seq OWNED BY public.seen_timeline_
 
 
 --
+-- Name: shared_access_tokens; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.shared_access_tokens (
+    id bigint NOT NULL,
+    uuid character varying(255) NOT NULL,
+    user_id bigint NOT NULL,
+    chart_configuration_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: shared_access_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.shared_access_tokens_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: shared_access_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.shared_access_tokens_id_seq OWNED BY public.shared_access_tokens.id;
+
+
+--
 -- Name: sheets_templates; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2700,6 +3187,40 @@ ALTER SEQUENCE public.user_api_key_tokens_id_seq OWNED BY public.user_api_key_to
 
 
 --
+-- Name: user_entity_interactions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_entity_interactions (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    entity_type character varying(255) NOT NULL,
+    entity_id integer NOT NULL,
+    interaction_type character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_entity_interactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_entity_interactions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_entity_interactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_entity_interactions_id_seq OWNED BY public.user_entity_interactions.id;
+
+
+--
 -- Name: user_events; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2780,28 +3301,6 @@ ALTER SEQUENCE public.user_intercom_attributes_id_seq OWNED BY public.user_inter
 
 
 --
--- Name: user_lists; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_lists (
-    id bigint NOT NULL,
-    name character varying(255),
-    is_public boolean DEFAULT false,
-    color public.color,
-    user_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    function jsonb DEFAULT '{"args": [], "name": "empty"}'::jsonb,
-    slug character varying(255),
-    is_monitored boolean DEFAULT false,
-    table_configuration_id bigint,
-    description text,
-    type public.watchlist_type DEFAULT 'project'::public.watchlist_type NOT NULL,
-    is_screener boolean DEFAULT false
-);
-
-
---
 -- Name: user_lists_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -2862,19 +3361,6 @@ CREATE SEQUENCE public.user_settings_id_seq
 --
 
 ALTER SEQUENCE public.user_settings_id_seq OWNED BY public.user_settings.id;
-
-
---
--- Name: user_triggers; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_triggers (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    trigger jsonb NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
 
 
 --
@@ -2987,7 +3473,8 @@ CREATE TABLE public.users (
     avatar_url character varying(255),
     is_registered boolean DEFAULT false,
     is_superuser boolean DEFAULT false,
-    twitter_id character varying(255) DEFAULT NULL::character varying
+    twitter_id character varying(255) DEFAULT NULL::character varying,
+    name character varying(255)
 );
 
 
@@ -3008,30 +3495,6 @@ CREATE SEQUENCE public.users_id_seq
 --
 
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
-
-
---
--- Name: votes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.votes (
-    id bigint NOT NULL,
-    post_id bigint,
-    user_id bigint NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    timeline_event_id bigint,
-    count integer DEFAULT 1,
-    CONSTRAINT only_one_fk CHECK (((
-CASE
-    WHEN (post_id IS NULL) THEN 0
-    ELSE 1
-END +
-CASE
-    WHEN (timeline_event_id IS NULL) THEN 0
-    ELSE 1
-END) = 1))
-);
 
 
 --
@@ -3234,19 +3697,6 @@ ALTER SEQUENCE public.wallet_hunters_votes_id_seq OWNED BY public.wallet_hunters
 
 
 --
--- Name: watchlist_comments_mapping; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.watchlist_comments_mapping (
-    id bigint NOT NULL,
-    comment_id bigint,
-    watchlist_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
 -- Name: watchlist_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -3416,6 +3866,13 @@ ALTER TABLE ONLY public.chart_configurations ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: clickhouse_query_executions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clickhouse_query_executions ALTER COLUMN id SET DEFAULT nextval('public.clickhouse_query_executions_id_seq'::regclass);
+
+
+--
 -- Name: comment_notifications id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3441,6 +3898,27 @@ ALTER TABLE ONLY public.contract_addresses ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.currencies ALTER COLUMN id SET DEFAULT nextval('public.currencies_id_seq'::regclass);
+
+
+--
+-- Name: dashboard_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.dashboard_comments_mapping_id_seq'::regclass);
+
+
+--
+-- Name: dashboards id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards ALTER COLUMN id SET DEFAULT nextval('public.dashboards_id_seq'::regclass);
+
+
+--
+-- Name: dashboards_cache id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_cache ALTER COLUMN id SET DEFAULT nextval('public.dashboards_cache_id_seq'::regclass);
 
 
 --
@@ -3525,6 +4003,20 @@ ALTER TABLE ONLY public.latest_btc_wallet_data ALTER COLUMN id SET DEFAULT nextv
 --
 
 ALTER TABLE ONLY public.latest_coinmarketcap_data ALTER COLUMN id SET DEFAULT nextval('public.latest_coinmarketcap_data_id_seq'::regclass);
+
+
+--
+-- Name: linked_users id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users ALTER COLUMN id SET DEFAULT nextval('public.linked_users_id_seq'::regclass);
+
+
+--
+-- Name: linked_users_candidates id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users_candidates ALTER COLUMN id SET DEFAULT nextval('public.linked_users_candidates_id_seq'::regclass);
 
 
 --
@@ -3752,6 +4244,13 @@ ALTER TABLE ONLY public.seen_timeline_events ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: shared_access_tokens id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.shared_access_tokens ALTER COLUMN id SET DEFAULT nextval('public.shared_access_tokens_id_seq'::regclass);
+
+
+--
 -- Name: sheets_templates id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3833,6 +4332,13 @@ ALTER TABLE ONLY public.timeline_events ALTER COLUMN id SET DEFAULT nextval('pub
 --
 
 ALTER TABLE ONLY public.user_api_key_tokens ALTER COLUMN id SET DEFAULT nextval('public.user_api_key_tokens_id_seq'::regclass);
+
+
+--
+-- Name: user_entity_interactions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_entity_interactions ALTER COLUMN id SET DEFAULT nextval('public.user_entity_interactions_id_seq'::regclass);
 
 
 --
@@ -4035,6 +4541,14 @@ ALTER TABLE ONLY public.chart_configurations
 
 
 --
+-- Name: clickhouse_query_executions clickhouse_query_executions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clickhouse_query_executions
+    ADD CONSTRAINT clickhouse_query_executions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: comment_notifications comment_notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4064,6 +4578,30 @@ ALTER TABLE ONLY public.contract_addresses
 
 ALTER TABLE ONLY public.currencies
     ADD CONSTRAINT currencies_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dashboard_comments_mapping dashboard_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_comments_mapping
+    ADD CONSTRAINT dashboard_comments_mapping_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dashboards_cache dashboards_cache_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_cache
+    ADD CONSTRAINT dashboards_cache_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dashboards dashboards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards
+    ADD CONSTRAINT dashboards_pkey PRIMARY KEY (id);
 
 
 --
@@ -4179,6 +4717,22 @@ ALTER TABLE ONLY public.latest_coinmarketcap_data
 
 
 --
+-- Name: linked_users_candidates linked_users_candidates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users_candidates
+    ADD CONSTRAINT linked_users_candidates_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: linked_users linked_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users
+    ADD CONSTRAINT linked_users_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: list_items list_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4240,6 +4794,14 @@ ALTER TABLE ONLY public.notifications
 
 ALTER TABLE ONLY public.oban_jobs
     ADD CONSTRAINT oban_jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oban_peers oban_peers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oban_peers
+    ADD CONSTRAINT oban_peers_pkey PRIMARY KEY (name);
 
 
 --
@@ -4443,6 +5005,14 @@ ALTER TABLE ONLY public.seen_timeline_events
 
 
 --
+-- Name: shared_access_tokens shared_access_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.shared_access_tokens
+    ADD CONSTRAINT shared_access_tokens_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: sheets_templates sheets_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4552,6 +5122,14 @@ ALTER TABLE ONLY public.timeline_events
 
 ALTER TABLE ONLY public.user_api_key_tokens
     ADD CONSTRAINT user_api_key_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_entity_interactions user_entity_interactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_entity_interactions
+    ADD CONSTRAINT user_entity_interactions_pkey PRIMARY KEY (id);
 
 
 --
@@ -4834,6 +5412,27 @@ CREATE UNIQUE INDEX currencies_code_index ON public.currencies USING btree (code
 
 
 --
+-- Name: dashboard_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX dashboard_comments_mapping_comment_id_index ON public.dashboard_comments_mapping USING btree (comment_id);
+
+
+--
+-- Name: dashboard_comments_mapping_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dashboard_comments_mapping_dashboard_id_index ON public.dashboard_comments_mapping USING btree (dashboard_id);
+
+
+--
+-- Name: dashboards_cache_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX dashboards_cache_dashboard_id_index ON public.dashboards_cache USING btree (dashboard_id);
+
+
+--
 -- Name: document_tokens_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4887,6 +5486,13 @@ CREATE UNIQUE INDEX exchange_market_pair_mappings_exchange_source_market_pair_in
 --
 
 CREATE UNIQUE INDEX featured_items_chart_configuration_id_index ON public.featured_items USING btree (chart_configuration_id);
+
+
+--
+-- Name: featured_items_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX featured_items_dashboard_id_index ON public.featured_items USING btree (dashboard_id);
 
 
 --
@@ -4988,6 +5594,20 @@ CREATE UNIQUE INDEX latest_coinmarketcap_data_coinmarketcap_id_index ON public.l
 
 
 --
+-- Name: linked_users_candidates_token_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX linked_users_candidates_token_index ON public.linked_users_candidates USING btree (token);
+
+
+--
+-- Name: linked_users_secondary_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX linked_users_secondary_user_id_index ON public.linked_users USING btree (secondary_user_id);
+
+
+--
 -- Name: list_items_user_list_id_blockchain_address_user_pair_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5051,10 +5671,10 @@ CREATE INDEX oban_jobs_meta_index ON public.oban_jobs USING gin (meta);
 
 
 --
--- Name: oban_jobs_queue_state_priority_scheduled_at_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: oban_jobs_state_queue_priority_scheduled_at_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX oban_jobs_queue_state_priority_scheduled_at_id_index ON public.oban_jobs USING btree (queue, state, priority, scheduled_at, id);
+CREATE INDEX oban_jobs_state_queue_priority_scheduled_at_id_index ON public.oban_jobs USING btree (state, queue, priority, scheduled_at, id);
 
 
 --
@@ -5254,6 +5874,20 @@ CREATE UNIQUE INDEX seen_timeline_events_user_id_event_id_index ON public.seen_t
 
 
 --
+-- Name: shared_access_tokens_chart_configuration_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX shared_access_tokens_chart_configuration_id_index ON public.shared_access_tokens USING btree (chart_configuration_id);
+
+
+--
+-- Name: shared_access_tokens_uuid_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX shared_access_tokens_uuid_index ON public.shared_access_tokens USING btree (uuid);
+
+
+--
 -- Name: short_url_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5345,6 +5979,13 @@ CREATE INDEX timeline_event_comments_mapping_timeline_event_id_index ON public.t
 
 
 --
+-- Name: timeline_events_inserted_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX timeline_events_inserted_at_index ON public.timeline_events USING btree (inserted_at);
+
+
+--
 -- Name: timeline_events_post_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5377,6 +6018,34 @@ CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USI
 --
 
 CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_tokens USING btree (token);
+
+
+--
+-- Name: user_entity_interactions_entity_type_entity_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_entity_interactions_entity_type_entity_id_index ON public.user_entity_interactions USING btree (entity_type, entity_id);
+
+
+--
+-- Name: user_entity_interactions_entity_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_entity_interactions_entity_type_index ON public.user_entity_interactions USING btree (entity_type);
+
+
+--
+-- Name: user_entity_interactions_interaction_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_entity_interactions_interaction_type_index ON public.user_entity_interactions USING btree (interaction_type);
+
+
+--
+-- Name: user_entity_interactions_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_entity_interactions_user_id_index ON public.user_entity_interactions USING btree (user_id);
 
 
 --
@@ -5485,6 +6154,20 @@ CREATE UNIQUE INDEX users_username_index ON public.users USING btree (username);
 
 
 --
+-- Name: votes_chart_configuration_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_chart_configuration_id_user_id_index ON public.votes USING btree (chart_configuration_id, user_id);
+
+
+--
+-- Name: votes_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_dashboard_id_index ON public.votes USING btree (dashboard_id);
+
+
+--
 -- Name: votes_post_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5503,6 +6186,20 @@ CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (pos
 --
 
 CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING btree (timeline_event_id, user_id);
+
+
+--
+-- Name: votes_user_trigger_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_user_trigger_id_user_id_index ON public.votes USING btree (user_trigger_id, user_id);
+
+
+--
+-- Name: votes_watchlist_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_watchlist_id_user_id_index ON public.votes USING btree (watchlist_id, user_id);
 
 
 --
@@ -5600,7 +6297,7 @@ CREATE INDEX webinar_registrations_webinar_id_index ON public.webinar_registrati
 -- Name: oban_jobs oban_notify; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE PROCEDURE public.oban_jobs_notify();
+CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE FUNCTION public.oban_jobs_notify();
 
 
 --
@@ -5708,6 +6405,14 @@ ALTER TABLE ONLY public.chart_configurations
 
 
 --
+-- Name: clickhouse_query_executions clickhouse_query_executions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clickhouse_query_executions
+    ADD CONSTRAINT clickhouse_query_executions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: comments comments_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5740,6 +6445,38 @@ ALTER TABLE ONLY public.contract_addresses
 
 
 --
+-- Name: dashboard_comments_mapping dashboard_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_comments_mapping
+    ADD CONSTRAINT dashboard_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dashboard_comments_mapping dashboard_comments_mapping_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_comments_mapping
+    ADD CONSTRAINT dashboard_comments_mapping_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dashboards_cache dashboards_cache_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_cache
+    ADD CONSTRAINT dashboards_cache_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dashboards dashboards_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards
+    ADD CONSTRAINT dashboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: email_login_attempts email_login_attempts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5769,6 +6506,14 @@ ALTER TABLE ONLY public.exchange_addresses
 
 ALTER TABLE ONLY public.featured_items
     ADD CONSTRAINT featured_items_chart_configuration_id_fkey FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: featured_items featured_items_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.featured_items
+    ADD CONSTRAINT featured_items_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id);
 
 
 --
@@ -5841,6 +6586,38 @@ ALTER TABLE ONLY public.icos
 
 ALTER TABLE ONLY public.icos
     ADD CONSTRAINT icos_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
+-- Name: linked_users_candidates linked_users_candidates_primary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users_candidates
+    ADD CONSTRAINT linked_users_candidates_primary_user_id_fkey FOREIGN KEY (primary_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: linked_users_candidates linked_users_candidates_secondary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users_candidates
+    ADD CONSTRAINT linked_users_candidates_secondary_user_id_fkey FOREIGN KEY (secondary_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: linked_users linked_users_primary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users
+    ADD CONSTRAINT linked_users_primary_user_id_fkey FOREIGN KEY (primary_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: linked_users linked_users_secondary_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.linked_users
+    ADD CONSTRAINT linked_users_secondary_user_id_fkey FOREIGN KEY (secondary_user_id) REFERENCES public.users(id);
 
 
 --
@@ -6108,6 +6885,22 @@ ALTER TABLE ONLY public.seen_timeline_events
 
 
 --
+-- Name: shared_access_tokens shared_access_tokens_chart_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.shared_access_tokens
+    ADD CONSTRAINT shared_access_tokens_chart_configuration_id_fkey FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id);
+
+
+--
+-- Name: shared_access_tokens shared_access_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.shared_access_tokens
+    ADD CONSTRAINT shared_access_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: short_url_comments_mapping short_url_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6260,6 +7053,14 @@ ALTER TABLE ONLY public.user_api_key_tokens
 
 
 --
+-- Name: user_entity_interactions user_entity_interactions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_entity_interactions
+    ADD CONSTRAINT user_entity_interactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: user_events user_events_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6364,6 +7165,22 @@ ALTER TABLE ONLY public.user_uniswap_staking
 
 
 --
+-- Name: votes votes_chart_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_chart_configuration_id_fkey FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: votes votes_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id);
+
+
+--
 -- Name: votes votes_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6385,6 +7202,22 @@ ALTER TABLE ONLY public.votes
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: votes votes_user_trigger_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: votes votes_watchlist_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_watchlist_id_fkey FOREIGN KEY (watchlist_id) REFERENCES public.user_lists(id) ON DELETE CASCADE;
 
 
 --
@@ -6760,7 +7593,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200826101751);
 INSERT INTO public."schema_migrations" (version) VALUES (20200826114101);
 INSERT INTO public."schema_migrations" (version) VALUES (20200908092849);
 INSERT INTO public."schema_migrations" (version) VALUES (20200923090710);
-INSERT INTO public."schema_migrations" (version) VALUES (20200930103424);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016091443);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016105225);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016124426);
@@ -6832,3 +7664,27 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210816150914);
 INSERT INTO public."schema_migrations" (version) VALUES (20210907104846);
 INSERT INTO public."schema_migrations" (version) VALUES (20210907104919);
 INSERT INTO public."schema_migrations" (version) VALUES (20210921100450);
+INSERT INTO public."schema_migrations" (version) VALUES (20211109131726);
+INSERT INTO public."schema_migrations" (version) VALUES (20211117104935);
+INSERT INTO public."schema_migrations" (version) VALUES (20211124075928);
+INSERT INTO public."schema_migrations" (version) VALUES (20211126144929);
+INSERT INTO public."schema_migrations" (version) VALUES (20211206104913);
+INSERT INTO public."schema_migrations" (version) VALUES (20220201122953);
+INSERT INTO public."schema_migrations" (version) VALUES (20220330100631);
+INSERT INTO public."schema_migrations" (version) VALUES (20220404132445);
+INSERT INTO public."schema_migrations" (version) VALUES (20220413130352);
+INSERT INTO public."schema_migrations" (version) VALUES (20220504082527);
+INSERT INTO public."schema_migrations" (version) VALUES (20220516082857);
+INSERT INTO public."schema_migrations" (version) VALUES (20220519083249);
+INSERT INTO public."schema_migrations" (version) VALUES (20220519135027);
+INSERT INTO public."schema_migrations" (version) VALUES (20220531133311);
+INSERT INTO public."schema_migrations" (version) VALUES (20220531143545);
+INSERT INTO public."schema_migrations" (version) VALUES (20220614091809);
+INSERT INTO public."schema_migrations" (version) VALUES (20220615120713);
+INSERT INTO public."schema_migrations" (version) VALUES (20220615121150);
+INSERT INTO public."schema_migrations" (version) VALUES (20220615122849);
+INSERT INTO public."schema_migrations" (version) VALUES (20220615135946);
+INSERT INTO public."schema_migrations" (version) VALUES (20220616131454);
+INSERT INTO public."schema_migrations" (version) VALUES (20220617112317);
+INSERT INTO public."schema_migrations" (version) VALUES (20220620132733);
+INSERT INTO public."schema_migrations" (version) VALUES (20220620143734);

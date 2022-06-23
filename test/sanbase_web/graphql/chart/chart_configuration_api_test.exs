@@ -27,6 +27,9 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         "daily_active_addresses",
         "ethereum-CC-ETH-CC-daily_active_addresses"
       ],
+      metrics_json: %{
+        "price_usd" => %{"slug" => "bitcoin"}
+      },
       queries: %{
         "top_holders" => %{
           "query" => "top_holders",
@@ -60,6 +63,87 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
     }
   end
 
+  describe "chart configuration voting" do
+    test "vote and downvote", context do
+      %{conn: conn, settings: settings} = context
+
+      config =
+        create_chart_configuration(conn, settings)
+        |> get_in(["data", "createChartConfiguration"])
+
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert config_res["votedAt"] == nil
+
+      assert config_res["votes"] == %{
+               "currentUserVotes" => 0,
+               "totalVoters" => 0,
+               "totalVotes" => 0
+             }
+
+      %{"data" => %{"vote" => vote}} = vote(conn, config["id"], direction: :up)
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert config_res["votedAt"] == vote["votedAt"]
+      voted_at = vote["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      assert Sanbase.TestUtils.datetime_close_to(voted_at, Timex.now(), seconds: 2)
+      assert vote["votes"] == config_res["votes"]
+      assert vote["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
+
+      %{"data" => %{"vote" => vote}} = vote(conn, config["id"], direction: :up)
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert vote["votes"] == config_res["votes"]
+      assert vote["votes"] == %{"currentUserVotes" => 2, "totalVoters" => 1, "totalVotes" => 2}
+
+      %{"data" => %{"unvote" => vote}} = vote(conn, config["id"], direction: :down)
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert vote["votes"] == config_res["votes"]
+      assert vote["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
+
+      %{"data" => %{"unvote" => vote}} = vote(conn, config["id"], direction: :down)
+      config_res = get_chart_configuration_votes(conn, config["id"])
+      assert vote["votes"] == config_res["votes"]
+      assert vote["votedAt"] == nil
+      assert vote["votes"] == %{"currentUserVotes" => 0, "totalVoters" => 0, "totalVotes" => 0}
+    end
+
+    defp get_chart_configuration_votes(conn, chart_configuration_id) do
+      query = """
+      {
+        chartConfiguration(id: #{chart_configuration_id}){
+          id
+          votedAt
+          votes { currentUserVotes totalVotes totalVoters }
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+      |> get_in(["data", "chartConfiguration"])
+    end
+
+    defp vote(conn, chart_configuration_id, opts) do
+      function =
+        case Keyword.get(opts, :direction, :up) do
+          :up -> "vote"
+          :down -> "unvote"
+        end
+
+      mutation = """
+      mutation {
+        #{function}(chartConfigurationId: #{chart_configuration_id}){
+          votedAt
+          votes { currentUserVotes totalVotes totalVoters }
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
+    end
+  end
+
   describe "chart configuration mutations" do
     test "create", context do
       %{user: user, conn: conn, project: project, post: post, settings: settings} = context
@@ -73,6 +157,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["isPublic"] == settings.is_public
       assert config["anomalies"] == settings.anomalies
       assert config["metrics"] == settings.metrics
+      assert config["metricsJson"] == settings.metrics_json
       assert config["drawings"] == settings.drawings
       assert config["queries"] == settings.queries
       assert config["options"] == settings.options
@@ -80,7 +165,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["project"]["slug"] == project.slug
       assert config["user"]["id"] |> String.to_integer() == user.id
       assert config["user"]["email"] == user.email
-      assert config["post"]["id"] |> String.to_integer() == post.id
+      assert config["post"]["id"] == post.id
       assert config["post"]["title"] == post.title
     end
 
@@ -98,6 +183,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         description: "New description",
         is_public: true,
         metrics: ["getMetric|nvt"],
+        metrics_json: %{"price_btc" => %{"slug" => "bitcoin"}},
         anomalies: [],
         post_id: new_post.id,
         drawings: %{
@@ -128,10 +214,11 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["isPublic"] == new_settings.is_public
       assert config["anomalies"] == new_settings.anomalies
       assert config["metrics"] == new_settings.metrics
+      assert config["metricsJson"] == new_settings.metrics_json
       assert config["drawings"] == new_settings.drawings
       assert config["queries"] == new_settings.queries
       assert config["options"] == new_settings.options
-      assert config["post"]["id"] |> String.to_integer() == new_settings.post_id
+      assert config["post"]["id"] == new_settings.post_id
       assert config["post"]["title"] == new_post.title
     end
 
@@ -148,7 +235,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         |> hd()
         |> Map.get("message")
 
-      assert error_msg =~ "not owned by the user"
+      assert error_msg =~ "does not exist or is private"
     end
 
     test "delete", context do
@@ -159,7 +246,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         |> get_in(["data", "createChartConfiguration", "id"])
 
       _ = delete_chart_configuration(conn, config_id)
-      {:error, error_msg} = Sanbase.Chart.Configuration.by_id(config_id)
+      {:error, error_msg} = Sanbase.Chart.Configuration.by_id(config_id, [])
       assert error_msg =~ "does not exist"
     end
   end
@@ -216,13 +303,14 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["isPublic"] == settings.is_public
       assert config["anomalies"] == settings.anomalies
       assert config["metrics"] == settings.metrics
+      assert config["metricsJson"] == settings.metrics_json
       assert config["drawings"] == settings.drawings
       assert config["queries"] == settings.queries
       assert config["project"]["id"] |> String.to_integer() == project.id
       assert config["project"]["slug"] == project.slug
       assert config["user"]["id"] |> String.to_integer() == user.id
       assert config["user"]["email"] == user.email
-      assert config["post"]["id"] |> String.to_integer() == post.id
+      assert config["post"]["id"] == post.id
       assert config["post"]["title"] == post.title
     end
 
@@ -285,7 +373,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         |> hd()
         |> Map.get("message")
 
-      assert error_msg =~ "not owned by the user"
+      assert error_msg =~ "does not exist or is private"
     end
 
     test "get all chart configurations", context do
@@ -530,6 +618,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        metricsJson
         anomalies
         queries
         drawings
@@ -555,6 +644,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        metricsJson
         anomalies
         queries
         drawings
@@ -580,6 +670,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        metricsJson
         anomalies
         queries
         drawings
@@ -605,6 +696,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        metricsJson
         anomalies
         queries
         drawings
@@ -637,6 +729,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        metricsJson
         queries
         anomalies
         drawings
@@ -669,6 +762,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         post{ id title }
         metrics
+        metricsJson
         anomalies
         queries
         drawings

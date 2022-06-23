@@ -1,7 +1,7 @@
 defmodule Sanbase.ApiCallLimit do
   use Ecto.Schema
 
-  import Ecto.Changeset
+  import Ecto.{Query, Changeset}
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
@@ -9,9 +9,16 @@ defmodule Sanbase.ApiCallLimit do
 
   require Logger
 
-  @compile inline: [by_user: 1, by_remote_ip: 1]
+  @quota_size_base Application.compile_env(:sanbase, [__MODULE__, :quota_size])
+  @quota_size_max_offset Application.compile_env(:sanbase, [__MODULE__, :quota_size_max_offset])
 
-  @plans_without_limits ["sanapi_enterprise", "sanapi_premium", "sanapi_custom"]
+  @plans_without_limits [
+    "sanapi_enterprise",
+    "sanapi_premium",
+    "sanapi_custom",
+    "sanapi_enterprise_basic",
+    "sanapi_enterprise_plus"
+  ]
   @limits_per_month %{
     "sanbase_pro" => 5000,
     "sanapi_free" => 1000,
@@ -52,32 +59,34 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   def update_user_plan(%User{} = user) do
-    case by_user(user) do
-      nil ->
-        {:ok, nil}
+    %__MODULE__{} = acl = get_by_and_lock(:user, user)
 
-      %__MODULE__{} = acl ->
-        changeset =
-          acl
-          |> changeset(%{api_calls_limit_plan: user_to_plan(user)})
+    plan = user_to_plan(user)
 
-        case Repo.update(changeset) do
-          {:ok, _} = result ->
-            # Clear the in-memory data for a user so the new restrictions
-            # can be picked up faster. Do this only if the plan actually changes
-            if new_plan = Ecto.Changeset.get_change(changeset, :api_calls_limit_plan) do
-              Logger.info(
-                "Updating ApiCallLimit record for user with id #{user.id}. Was: #{acl.api_calls_limit_plan}, now: #{new_plan}"
-              )
+    has_limits =
+      user_has_limits?(user) and
+        plan not in @plans_without_limits
 
-              __MODULE__.ETS.clear_data(:user, user)
-            end
+    changeset =
+      acl
+      |> changeset(%{api_calls_limit_plan: plan, has_limits: has_limits})
 
-            result
+    case Repo.update(changeset) do
+      {:ok, _} = result ->
+        # Clear the in-memory data for a user so the new restrictions
+        # can be picked up faster. Do this only if the plan actually changes
+        __MODULE__.ETS.clear_data(:user, user)
 
-          {:error, error} ->
-            {:error, error}
+        if new_plan = Ecto.Changeset.get_change(changeset, :api_calls_limit_plan) do
+          Logger.info(
+            "Updating ApiCallLimit record for user with id #{user.id}. Was: #{acl.api_calls_limit_plan}, now: #{new_plan}"
+          )
         end
+
+        result
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -85,23 +94,32 @@ defmodule Sanbase.ApiCallLimit do
   defdelegate update_usage(type, entity, count, auth_method), to: __MODULE__.ETS
 
   def get_quota_db(type, entity) do
-    case get_by(type, entity) do
-      nil ->
-        {:ok, %__MODULE__{} = acl} = create(type, entity)
-        do_get_quota(acl)
-
-      %__MODULE__{has_limits: false} ->
-        {:ok, %{quota: :infinity}}
-
-      %__MODULE__{} = acl ->
-        do_get_quota(acl)
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_acl, fn _repo, _changes ->
+      {:ok, get_by(type, entity)}
+    end)
+    |> Ecto.Multi.run(:get_quota, fn _repo, %{get_acl: acl} ->
+      do_get_quota(acl)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{get_quota: quota}} -> {:ok, quota}
+      {:error, _name, error, _} -> {:error, error}
     end
   end
 
   def update_usage_db(type, entity, count) do
-    case get_by(type, entity) do
-      nil -> create(type, entity, count)
-      %__MODULE__{} = acl -> do_update_usage_db(acl, count)
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_acl, fn _repo, _changes ->
+      {:ok, get_by_and_lock(type, entity)}
+    end)
+    |> Ecto.Multi.run(:update_quota, fn _repo, %{get_acl: acl} ->
+      do_update_usage_db(acl, count)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_quota: quota}} -> {:ok, quota}
+      {:error, _name, error, _} -> {:error, error}
     end
   end
 
@@ -144,14 +162,70 @@ defmodule Sanbase.ApiCallLimit do
     |> Repo.insert()
   end
 
-  defp get_by(:user, user), do: by_user(user)
-  defp get_by(:remote_ip, remote_ip), do: by_remote_ip(remote_ip)
+  defp get_by(:user, user) do
+    case Repo.get_by(__MODULE__, user_id: user.id) do
+      nil ->
+        {:ok, acl} = create(:user, user)
+        acl
 
-  defp by_user(%User{} = user), do: Repo.get_by(__MODULE__, user_id: user.id)
-  defp by_remote_ip(remote_ip), do: Repo.get_by(__MODULE__, remote_ip: remote_ip)
+      %__MODULE__{} = acl ->
+        acl
+    end
+  end
+
+  defp get_by(:remote_ip, remote_ip) do
+    case Repo.get_by(__MODULE__, remote_ip: remote_ip) do
+      nil ->
+        {:ok, acl} = create(:remote_ip, remote_ip)
+        acl
+
+      %__MODULE__{} = acl ->
+        acl
+    end
+  end
+
+  defp get_by_and_lock(:user, user) do
+    result =
+      from(acl in __MODULE__,
+        where: acl.user_id == ^user.id,
+        lock: "FOR UPDATE"
+      )
+      |> Repo.one()
+
+    case result do
+      nil ->
+        # Ensure that the result we get back has a lock. This is making more
+        # DB calls, but it should be executed only once per user/remote_ip and
+        # after that all subsequent calls should go into the second case.
+        {:ok, _acl} = create(:user, user)
+        get_by_and_lock(:user, user)
+
+      %__MODULE__{} = acl ->
+        acl
+    end
+  end
+
+  defp get_by_and_lock(:remote_ip, remote_ip) do
+    from(acl in __MODULE__,
+      where: acl.remote_ip == ^remote_ip,
+      lock: "FOR UPDATE"
+    )
+    |> Repo.one()
+    |> case do
+      nil ->
+        # Ensure that the result we get back has a lock. This is making more
+        # DB calls, but it should be executed only once per user/remote_ip and
+        # after that all subsequent calls should go into the second case.
+        {:ok, _acl} = create(:remote_ip, remote_ip)
+        get_by_and_lock(:remote_ip, remote_ip)
+
+      %__MODULE__{} = acl ->
+        acl
+    end
+  end
 
   defp get_time_str_keys() do
-    now = Timex.now()
+    now = DateTime.utc_now()
 
     %{
       month_str: now |> Timex.beginning_of_month() |> to_string(),
@@ -205,11 +279,11 @@ defmodule Sanbase.ApiCallLimit do
     }
 
     min_remaining = api_calls_remaining |> Map.values() |> Enum.min()
-    quota_size = :rand.uniform(100) + 100
+    quota_size = @quota_size_base + :rand.uniform(@quota_size_max_offset)
 
     case Enum.min([quota_size, min_remaining]) do
       0 ->
-        now = Timex.now()
+        now = DateTime.utc_now()
 
         blocked_for_seconds =
           cond do

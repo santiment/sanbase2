@@ -56,6 +56,14 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  def hidden_projects_slugs() do
+    from(p in Project,
+      where: p.is_hidden == true,
+      select: p.slug
+    )
+    |> Repo.all()
+  end
+
   @doc ~s"""
   Return all erc20 projects ordered by name.
   Filtering out projects based on some conditions can be controled by the options.
@@ -409,6 +417,21 @@ defmodule Sanbase.Model.Project.List do
   def by_slugs(slugs, opts) when is_list(slugs) do
     projects_query(opts)
     |> where([p], p.slug in ^slugs)
+    |> Repo.all()
+  end
+
+  @doc ~s"""
+  Return a list of project ids that have a slug in the list of `slugs`
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
+  def ids_by_slugs(slugs, opts \\ []) do
+    opts = Keyword.put(opts, :preload?, false)
+
+    projects_query(opts)
+    |> where([p], p.slug in ^slugs)
+    |> select([p], p.id)
     |> Repo.all()
   end
 

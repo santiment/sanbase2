@@ -54,7 +54,7 @@ defmodule Sanbase.Intercom.UserEvent do
     Logger.info("Start sync_events_from_intercom")
 
     # Skip if api key not present in env. (Run only on production)
-    if Sanbase.Intercom.intercom_api_key() do
+    if Sanbase.Intercom.has_intercom_api_key?() do
       User
       |> Repo.all()
       |> Enum.map(& &1.id)

@@ -12,6 +12,16 @@ defmodule SanbaseWeb.Graphql.HistoricalBalanceTypes do
     end
   end
 
+  object :usd_value_address_change do
+    field(:slug, non_null(:string))
+    field(:current_balance, non_null(:float))
+    field(:previous_balance, non_null(:float))
+    field(:balance_change, non_null(:float))
+    field(:current_usd_value, non_null(:float))
+    field(:previous_usd_value, non_null(:float))
+    field(:usd_value_change, non_null(:float))
+  end
+
   object :historical_balance do
     field(:datetime, non_null(:datetime))
     field(:balance, :float)

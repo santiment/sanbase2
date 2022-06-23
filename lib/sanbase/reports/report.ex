@@ -20,9 +20,9 @@ defmodule Sanbase.Report do
         }
 
   schema "reports" do
-    field(:name, :string, null: false)
-    field(:description, :string, null: true)
-    field(:url, :string, null: false)
+    field(:name, :string)
+    field(:description, :string)
+    field(:url, :string)
     field(:is_pro, :boolean, default: false)
     field(:is_published, :boolean, default: false)
     field(:tags, {:array, :string}, default: [])
@@ -113,11 +113,14 @@ defmodule Sanbase.Report do
   defp normalize_tags(attrs), do: attrs
 
   defp get_by_tags_query(query, tags) do
-    from(r in query, where: fragment("select ? && ?", r.tags, ^tags))
+    from(r in query,
+      where: fragment("select ? && ?", r.tags, ^tags),
+      order_by: [desc: r.inserted_at]
+    )
   end
 
   defp get_published_reports_query(query) do
-    from(r in query, where: r.is_published == true)
+    from(r in query, where: r.is_published == true, order_by: [desc: r.inserted_at])
   end
 
   defp show_only_preview_fields?(reports, %{is_logged_in: false}) do

@@ -37,6 +37,7 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:interval, :interval)
     field(:amount, :integer)
     field(:is_deprecated, :boolean)
+    field(:is_private, :boolean)
   end
 
   object :subscription_plan do
@@ -74,7 +75,28 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:percent_off, :float)
   end
 
-  object :update_card_result do
-    field(:success, :boolean)
+  object :upcoming_invoice do
+    field(:period_start, non_null(:datetime))
+    field(:period_end, non_null(:datetime))
+    field(:amount_due, non_null(:integer))
+  end
+
+  object :payment_instrument do
+    field(:last4, non_null(:string))
+    field(:dynamic_last4, :string)
+    field(:brand, non_null(:string))
+    field(:funding, :string)
+    field(:exp_year, non_null(:integer))
+    field(:exp_month, non_null(:integer))
+  end
+
+  object :annual_discount_eligibility do
+    field(:is_eligible, non_null(:boolean))
+    field(:discount, :annual_discount)
+  end
+
+  object :annual_discount do
+    field(:percent_off, non_null(:integer))
+    field(:expire_at, non_null(:datetime))
   end
 end

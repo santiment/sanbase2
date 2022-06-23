@@ -130,9 +130,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       * word - the word the historical score is requested for
       * source - one of the following:
         1. TELEGRAM
-        2. PROFESSIONAL_TRADERS_CHAT
-        3. REDDIT
-        4. ALL
+        2. REDDIT
+        3. ALL
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     """
@@ -156,9 +155,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       * word - the word the context is requested for
       * source - one of the following:
         1. TELEGRAM
-        2. PROFESSIONAL_TRADERS_CHAT
-        3. REDDIT
-        4. ALL
+        2. REDDIT
+        3. ALL
       * size - an integer showing how many words should be included in the top list (max 100)
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
@@ -213,10 +211,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * socialVolumeType - the source of mention counts, one of the following:
-        1. "PROFESSIONAL_TRADERS_CHAT_OVERVIEW" - shows how many times the given project has been mentioned in the professional traders chat
-        2. "TELEGRAM_CHATS_OVERVIEW" - shows how many times the given project has been mentioned across all telegram chats, except the project's own community chat (if there is one)
-        3. "TELEGRAM_DISCUSSION_OVERVIEW" - the general volume of messages in the project's community chat (if there is one)
-        4. "DISCORD_DISCUSSION_OVERVIEW" - shows how many times the given project has been mentioned in the discord channels
+        1. "TELEGRAM_CHATS_OVERVIEW" - shows how many times the given project has been mentioned across all telegram chats, except the project's own community chat (if there is one)
+        2. "TELEGRAM_DISCUSSION_OVERVIEW" - the general volume of messages in the project's community chat (if there is one)
     """
     field :social_volume, list_of(:social_volume) do
       meta(access: :restricted)
@@ -247,9 +243,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
     Arguments description:
       * source - one of the following:
         1. TELEGRAM
-        2. PROFESSIONAL_TRADERS_CHAT
-        3. REDDIT
-        4. DISCORD
+        2. REDDIT
       * searchText - a string containing the key words for which the sources should be searched.
       * interval - an integer followed by one of: `m`, `h`, `d`, `w`
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
@@ -278,11 +272,9 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * source - the source of mention counts, one of the following:
-        1. PROFESSIONAL_TRADERS_CHAT - shows the relative social dominance of this project on the web chats where trades talk
-        2. TELEGRAM - shows the relative social dominance of this project in the telegram crypto channels
-        3. DISCORD - shows the relative social dominance of this project on discord crypto communities
-        4. REDDIT - shows the relative social dominance of this project on crypto subreddits
-        5. ALL - shows the average value of the social dominance across all sources
+        1. TELEGRAM - shows the relative social dominance of this project in the telegram crypto channels
+        2. REDDIT - shows the relative social dominance of this project on crypto subreddits
+        3. ALL - shows the average value of the social dominance across all sources
     """
     field :social_dominance, list_of(:social_dominance) do
       meta(access: :restricted)

@@ -164,6 +164,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     Sanbase.Transfers.outgoing_transfers_summary(slug, address, from, to, opts)
   end
 
+  @eth_infr "ETH"
   def recent_transactions(
         _root,
         %{address: address, type: type, only_sender: only_sender} = args,
@@ -173,12 +174,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
 
     # Only Eth and Erc20 are possible here, so the Label.add_labels call has
     # ethereum explicitly set as the blockchain. Same for infrastructure
-    infr = "ETH"
     module = @recent_transactions_type_map[type].module
     opts = [page: page, page_size: page_size, only_sender: only_sender]
 
     with {:ok, transfers} <- module.recent_transactions(address, opts),
-         {:ok, transfers} <- BlockchainAddressUtils.transform_address_to_map(transfers, infr),
+         {:ok, transfers} <-
+           BlockchainAddressUtils.transform_address_to_map(transfers, @eth_infr),
          {:ok, transfers} <- Label.add_labels("ethereum", transfers),
          {:ok, transfers} <- Sanbase.MarkExchanges.mark_exchanges(transfers) do
       {:ok, transfers}
@@ -252,6 +253,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
+  def add_blockchain_address_labels(_root, args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    with :ok <-
+           Label.add_user_labels_to_address(current_user, args.selector, args.labels) do
+      {:ok, true}
+    end
+  end
+
   def labels(root, _args, %{context: %{loader: loader}}) do
     case root_to_raw_address(root) do
       nil ->
@@ -278,7 +288,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
           user_labels =
             Map.get(root, :labels, [])
             |> Enum.map(fn label ->
-              label |> Map.from_struct() |> Map.put(:origin, "user")
+              label |> Map.put(:origin, "user")
             end)
 
           labels =

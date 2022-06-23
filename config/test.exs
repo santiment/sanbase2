@@ -3,6 +3,8 @@ import Config
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 
+config :phoenix, :stacktrace_depth, 60
+
 config :sanbase,
   influx_store_enabled: false,
   available_slugs_module: Sanbase.DirectAvailableSlugs
@@ -17,6 +19,10 @@ config :sanbase, SanbaseWeb.Endpoint,
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   level: :warn
+
+config :sanbase, Sanbase.ApiCallLimit,
+  quota_size: 10,
+  quota_size_max_offset: 10
 
 # Test adapter that allows mocking
 config :tesla, adapter: Tesla.Mock
@@ -45,9 +51,16 @@ config :sanbase, Sanbase.Repo,
   pool_size: 5
 
 config :sanbase, Sanbase.ClickhouseRepo,
+  clickhouse_repo_enabled?: false,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",
-  pool_size: 5
+  pool_size: 1
+
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
+  clickhouse_repo_enabled?: false,
+  pool: Ecto.Adapters.SQL.Sandbox,
+  database: "sanbase_test",
+  pool_size: 1
 
 config :sanbase, Sanbase.Accounts.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
 
@@ -60,17 +73,11 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, sync_enabled: false
 
-config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
-  webhook_url: "http://example.com/webhook_url",
-  notifications_enabled: true
-
 config :sanbase, Sanbase.Twitter.Store, database: "twitter_followers_data_test"
 
 config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
-
-config :sanbase, Sanbase.Prices.Store, database: "prices_test"
 
 config :waffle,
   storage: Waffle.Storage.Local,

@@ -16,7 +16,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @aggregated_metrics_function_mapping %{
     "dev_activity" => :total_dev_activity,
-    "github_activity" => :total_github_activity
+    "github_activity" => :total_github_activity,
+    "dev_activity_contributors_count" => :total_dev_activity_contributors_count,
+    "github_activity_contributors_count" => :total_github_activity_contributors_count
   }
 
   @timeseries_metrics Map.keys(@timeseries_metrics_function_mapping)
@@ -83,6 +85,13 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def timeseries_data_per_slug(metric, selector, from, to, interval, opts \\ [])
+
+  def timeseries_data_per_slug(_metric, _selector, _from, _to, _interval, _opts) do
+    {:error, "not_implemented"}
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, %{organization: organization}, from, to, opts) do
     aggregated_timeseries_data(metric, %{organizations: [organization]}, from, to, opts)
   end
@@ -106,7 +115,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
     org_to_slug_map =
       Enum.flat_map(projects_list, fn project ->
-        Enum.map(project.github_organizations, fn org -> {org.organization, project.slug} end)
+        Enum.map(project.github_organizations, fn org ->
+          {String.downcase(org.organization), project.slug}
+        end)
       end)
       |> Map.new()
 
@@ -262,36 +273,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def min_plan_map(), do: @min_plan_map
 
   defp first_datetime_for_organizations([]), do: {:ok, nil}
-
-  defp first_datetime_for_organizations(organizations) do
-    datetime =
-      organizations
-      |> Enum.map(fn org ->
-        case Github.first_datetime(org) do
-          {:ok, datetime} -> datetime
-          _ -> nil
-        end
-      end)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.min_by(&DateTime.to_unix(&1))
-
-    {:ok, datetime}
-  end
+  defp first_datetime_for_organizations(organizations), do: Github.first_datetime(organizations)
 
   defp last_datetime_computed_at_for_organizations([]), do: {:ok, nil}
 
-  defp last_datetime_computed_at_for_organizations(organizations) do
-    datetime =
-      organizations
-      |> Enum.map(fn org ->
-        case Github.last_datetime_computed_at(org) do
-          {:ok, datetime} -> datetime
-          _ -> nil
-        end
-      end)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.max_by(&DateTime.to_unix(&1))
-
-    {:ok, datetime}
-  end
+  defp last_datetime_computed_at_for_organizations(organizations),
+    do: Github.last_datetime_computed_at(organizations)
 end

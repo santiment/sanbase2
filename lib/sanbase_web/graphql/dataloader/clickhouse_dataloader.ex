@@ -188,7 +188,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
           {address, {:ok, balance_change_amount}}
         end)
 
-      _ ->
+      {:error, _} ->
         eth_addresses
         |> Enum.map(fn addr -> {addr, {:error, :novalue}} end)
     end

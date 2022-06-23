@@ -34,7 +34,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         make_api_call(context.apikey_conn, [])
         |> json_response(200)
 
-      assert result == %{"data" => %{"allProjects" => [%{"slug" => context.project.slug}]}}
+      assert result == %{
+               "data" => %{"allProjects" => [%{"slug" => context.project.slug}]}
+             }
     end
 
     test "make request after minute rate limit is applied", context do
@@ -63,7 +65,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         make_api_call(context.apikey_conn, [])
         |> json_response(200)
 
-      assert result == %{"data" => %{"allProjects" => [%{"slug" => context.project.slug}]}}
+      assert result == %{
+               "data" => %{"allProjects" => [%{"slug" => context.project.slug}]}
+             }
     end
 
     test "make request after hour rate limit is applied", context do
@@ -125,7 +129,12 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     end
 
     test "@santiment.net emails do not have limits", context do
-      Sanbase.ApiCallLimit.update_usage(:user, context.san_user, 999_999_999, :apikey)
+      Sanbase.ApiCallLimit.update_usage(
+        :user,
+        context.san_user,
+        999_999_999,
+        :apikey
+      )
 
       response = make_api_call(context.san_apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
@@ -133,7 +142,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         response
         |> json_response(200)
 
-      assert result == %{"data" => %{"allProjects" => [%{"slug" => context.project.slug}]}}
+      assert result == %{
+               "data" => %{"allProjects" => [%{"slug" => context.project.slug}]}
+             }
     end
   end
 
@@ -147,12 +158,15 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
         |> json_response(200)
 
-      assert result == %{"data" => %{"allProjects" => [%{"slug" => context.project.slug}]}}
+      assert result == %{
+               "data" => %{"allProjects" => [%{"slug" => context.project.slug}]}
+             }
     end
 
     test "pro sanapi subscription after rate limiting", context do
       insert(:subscription_pro, user: context.user)
 
+      Sanbase.ApiCallLimit.update_user_plan(context.user)
       # 600/6_000/600_000 are the minute/hour/month rate limits
       Sanbase.ApiCallLimit.update_usage(:user, context.user, 700, :apikey)
 
@@ -171,8 +185,236 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       assert {"x-ratelimit-remaining-minute", "0"} in response.resp_headers
       assert {"x-ratelimit-remaining", "0"} in response.resp_headers
     end
+
+    test "concurrent update of the stored values", context do
+      insert(:subscription_pro, user: context.user)
+      Sanbase.ApiCallLimit.update_usage(:user, context.user, 0, :apikey)
+
+      iterations = 100
+      api_calls_per_iteration = 5
+
+      Sanbase.Parallel.map(
+        1..iterations,
+        fn _ ->
+          {:ok, _updated} =
+            Sanbase.ApiCallLimit.update_usage_db(:user, context.user, api_calls_per_iteration)
+        end,
+        max_concurrency: 30
+      )
+
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
+      this_month_limit = Enum.max(Map.values(quota.api_calls_limits))
+
+      this_month_remaining = Enum.max(Map.values(quota.api_calls_remaining))
+
+      assert this_month_remaining == this_month_limit - iterations * api_calls_per_iteration
+    end
+
+    test "make many concurrent api calls - datetime goes over the next month", context do
+      insert(:subscription_pro, user: context.user)
+      Sanbase.ApiCallLimit.update_usage(:user, context.user, 0, :apikey)
+
+      acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
+      api_calls_made = Enum.max(Map.values(acl.api_calls))
+
+      assert api_calls_made == 0
+
+      max_quota = 20
+      iterations = 10
+      api_calls_per_iteration = 300
+
+      # `now` is set to 4 days before the end of next month. This way the `can_send_after` of
+      # KafkaExporter won't sleep forever (as it will be in the past). Setting it to 3 days before
+      # the month ends makes sure that 7 of the iteartions will be executed in the next day.
+      days_in_old_month = 4
+
+      now =
+        Timex.now()
+        |> Timex.end_of_month()
+        |> Timex.shift(days: 1)
+        |> Timex.end_of_month()
+        |> Timex.beginning_of_day()
+        # Shift by 1 less as we're already at the beginning of the last day
+        |> Timex.shift(days: -(days_in_old_month - 1))
+
+      for i <- 0..(iterations - 1) do
+        dt = DateTime.add(now, 86400 * i, :second)
+
+        Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
+        |> Sanbase.Mock.run_with_mocks(fn ->
+          Sanbase.Parallel.map(
+            1..(api_calls_per_iteration - 1),
+            fn _ ->
+              res = make_api_call(context.apikey_conn, [])
+              assert res.status == 200
+            end,
+            max_concurrent: 50,
+            ordered: false
+          )
+        end)
+
+        acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
+
+        api_calls_this_minute =
+          acl.api_calls
+          |> Enum.max_by(fn {k, _v} ->
+            Sanbase.DateTimeUtils.from_iso8601!(k) |> DateTime.to_unix()
+          end)
+          |> elem(1)
+
+        assert api_calls_this_minute <= api_calls_per_iteration + max_quota
+        assert api_calls_per_iteration - max_quota <= api_calls_this_minute
+      end
+
+      acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
+
+      api_calls_made = Enum.max(Map.values(acl.api_calls))
+
+      allowed_difference = max_quota * 2
+      real_api_calls_made = (iterations - days_in_old_month) * api_calls_per_iteration
+
+      assert api_calls_made >= real_api_calls_made - allowed_difference
+      assert api_calls_made <= real_api_calls_made + allowed_difference
+    end
+
+    test "make many concurrent api calls - all succeed", context do
+      insert(:subscription_pro, user: context.user)
+      Sanbase.ApiCallLimit.update_usage(:user, context.user, 0, :apikey)
+
+      acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
+      api_calls_made = Enum.max(Map.values(acl.api_calls))
+
+      assert api_calls_made == 0
+
+      max_quota = 20
+      iterations = 14
+      api_calls_per_iteration = 300
+
+      # Set now to be the beginning of a month so when it is shifted 14 times by 1 day
+      # it won't go in the next month. We're shifting forward otherwise the KafkaExporter
+      # will timeout in the `can_send_after` check as it will be in the past if we shift
+      # backwards
+      now =
+        Timex.now()
+        |> Timex.end_of_month()
+        |> Timex.shift(days: 1)
+
+      for i <- 0..(iterations - 1) do
+        # This test might fail if executed 0-14 minutes before midnight
+        # If we mock the dt to be a concrete date, then the KafkaExporter
+        # send_after will fail
+        dt = DateTime.add(now, 86400 * i, :second)
+
+        Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
+        |> Sanbase.Mock.run_with_mocks(fn ->
+          Sanbase.Parallel.map(
+            1..(api_calls_per_iteration - 1),
+            fn _ ->
+              res = make_api_call(context.apikey_conn, [])
+              assert res.status == 200
+            end,
+            max_concurrent: 50,
+            ordered: false
+          )
+        end)
+
+        acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
+
+        api_calls_this_minute =
+          acl.api_calls
+          |> Enum.max_by(fn {k, _v} ->
+            Sanbase.DateTimeUtils.from_iso8601!(k) |> DateTime.to_unix()
+          end)
+          |> elem(1)
+
+        assert api_calls_this_minute <= api_calls_per_iteration + max_quota
+      end
+
+      acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
+
+      api_calls_made = Enum.max(Map.values(acl.api_calls))
+
+      allowed_difference = max_quota * 2
+
+      # The amount stored should never exceed the real amount of api calls
+      assert iterations * api_calls_per_iteration >= api_calls_made
+
+      # The amount stored should never differ by more the max quota size
+      assert iterations * api_calls_per_iteration - allowed_difference <=
+               api_calls_made
+    end
+
+    test "make many concurrent api calls while updating user - all succeed", context do
+      insert(:subscription_pro, user: context.user)
+      Sanbase.ApiCallLimit.update_usage(:user, context.user, 0, :apikey)
+
+      acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
+      api_calls_made = Enum.max(Map.values(acl.api_calls))
+
+      assert api_calls_made == 0
+
+      max_quota = 20
+      iterations = 5
+      api_calls_per_iteration = 100
+
+      # Set now to be the beginning of a month so when it is shifted 14 times by 1 day
+      # it won't go in the next month. We're shifting forward otherwise the KafkaExporter
+      # will timeout in the `can_send_after` check as it will be in the past if we shift
+      # backwards
+      now =
+        Timex.now()
+        |> Timex.end_of_month()
+        |> Timex.shift(days: 1)
+
+      for i <- 0..(iterations - 1) do
+        # This test might fail if executed 0-14 minutes before midnight
+        # If we mock the dt to be a concrete date, then the KafkaExporter
+        # send_after will fail
+        dt = DateTime.add(now, 86400 * i, :second)
+
+        Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, dt)
+        |> Sanbase.Mock.run_with_mocks(fn ->
+          Sanbase.Parallel.map(
+            1..(api_calls_per_iteration - 1),
+            fn i ->
+              {:ok, _} = Sanbase.Accounts.User.change_username(context.user, "username_#{i}")
+
+              res = make_api_call(context.apikey_conn, [])
+              assert res.status == 200
+            end,
+            max_concurrent: 50,
+            ordered: false
+          )
+        end)
+
+        acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
+
+        api_calls_this_minute =
+          acl.api_calls
+          |> Enum.max_by(fn {k, _v} ->
+            Sanbase.DateTimeUtils.from_iso8601!(k) |> DateTime.to_unix()
+          end)
+          |> elem(1)
+
+        assert api_calls_this_minute <= api_calls_per_iteration + max_quota
+      end
+
+      acl = Sanbase.Repo.get_by(Sanbase.ApiCallLimit, user_id: context.user.id)
+
+      api_calls_made = Enum.max(Map.values(acl.api_calls))
+
+      allowed_difference = max_quota * 2
+
+      # The amount stored should never exceed the real amount of api calls
+      assert iterations * api_calls_per_iteration >= api_calls_made
+
+      # The amount stored should never differ by more the max quota size
+      assert iterations * api_calls_per_iteration - allowed_difference <=
+               api_calls_made
+    end
   end
 
+  # This tests making API requests with Sanbase subscription. It should make no difference
   describe "paid sanbase user" do
     test "make request before rate limit is applied", context do
       insert(:subscription_pro_sanbase, user: context.user)
@@ -183,7 +425,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         make_api_call(context.apikey_conn, [])
         |> json_response(200)
 
-      assert result == %{"data" => %{"allProjects" => [%{"slug" => context.project.slug}]}}
+      assert result == %{
+               "data" => %{"allProjects" => [%{"slug" => context.project.slug}]}
+             }
     end
 
     test "make request after minute rate limit is applied", context do
@@ -214,11 +458,18 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         make_api_call(context.conn, [{"x-forwarded-for", @remote_ip}])
         |> json_response(200)
 
-      assert result == %{"data" => %{"allProjects" => [%{"slug" => context.project.slug}]}}
+      assert result == %{
+               "data" => %{"allProjects" => [%{"slug" => context.project.slug}]}
+             }
     end
 
     test "ip address cannot make request after quota is exhausted", context do
-      Sanbase.ApiCallLimit.update_usage(:remote_ip, @remote_ip, 999_999_999, :unauthorized)
+      Sanbase.ApiCallLimit.update_usage(
+        :remote_ip,
+        @remote_ip,
+        999_999_999,
+        :unauthorized
+      )
 
       response = make_api_call(context.conn, [{"x-forwarded-for", @remote_ip}])
 
@@ -262,7 +513,10 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
         assert error_msg =~ "API Rate Limit Reached. Try again in"
 
-        Sanbase.Billing.Subscription.subscribe(context.user, context.plans.plan_pro)
+        Sanbase.Billing.Subscription.subscribe(
+          context.user,
+          context.plans.plan_pro
+        )
 
         response = make_api_call(context.apikey_conn, [{"x-forwarded-for", @remote_ip}])
 
@@ -270,7 +524,11 @@ defmodule SanbaseWeb.ApiCallLimitTest do
           response
           |> json_response(200)
 
-        assert result == %{"data" => %{"allProjects" => [%{"slug" => context.project.slug}]}}
+        assert result == %{
+                 "data" => %{
+                   "allProjects" => [%{"slug" => context.project.slug}]
+                 }
+               }
       end)
     end
   end

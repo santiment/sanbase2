@@ -3,9 +3,6 @@ defmodule SanbaseWeb.RootController do
 
   require Logger
 
-  alias Sanbase.Oauth2.Hydra
-  alias Sanbase.Accounts.User
-
   # Used in production mode to serve the reactjs application
   def index(conn, _params) do
     conn
@@ -21,49 +18,8 @@ defmodule SanbaseWeb.RootController do
     |> send_resp(200, "")
   end
 
-  def consent(conn, %{"consent" => consent} = params) do
-    token = Map.get(params, "token")
-
-    token =
-      if token != nil and token != "null" do
-        token
-      else
-        %Plug.Conn{
-          private: %{plug_session: %{"auth_token" => token}}
-        } = conn
-
-        token
-      end
-
-    with {:ok, user} <- bearer_authorize(token),
-         {:ok, access_token} <- Hydra.get_access_token(),
-         {:ok, redirect_url, _client_id} <- Hydra.get_consent_data(consent, access_token),
-         {:ok, _} <- Hydra.manage_consent(consent, access_token, user) do
-      redirect(conn, external: redirect_url)
-    else
-      error ->
-        Logger.error("Error in ouath #{inspect(error)}")
-        redirect(conn, to: "/")
-    end
-  end
-
-  def consent(conn, _params) do
-    redirect(conn, to: "/")
-  end
-
   defp path(file) do
     Application.app_dir(:sanbase)
     |> Path.join(file)
-  end
-
-  defp bearer_authorize(token) do
-    case SanbaseWeb.Guardian.resource_from_token(token) do
-      {:ok, %User{} = user, _} ->
-        {:ok, user}
-
-      _ ->
-        Logger.warn("Invalid bearer token in request: #{token}")
-        {:error, :invalid_token}
-    end
   end
 end

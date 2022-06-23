@@ -68,7 +68,6 @@ Examples for different types of alerts/settings:
 - `WalletTriggerSettings`
 - `ScreenerTriggerSettings`
 - `TrendingWordsTriggerSettings`
-- `PriceVolumeDifferenceTriggerSettings`
 - `DailyMetricTriggerSettings` (deprecated in favour of `MetricTriggerSettings`)
 - `EthWalletTriggerSettings` (deprecated in favour of `WalletTriggerSettings`)
 

@@ -1,4 +1,20 @@
 defmodule Sanbase.Alert.TriggerQuery do
+  defmacro trigger_is_not_frozen() do
+    quote do
+      fragment("""
+      trigger->'is_frozen' = 'false'
+      """)
+    end
+  end
+
+  defmacro trigger_is_frozen() do
+    quote do
+      fragment("""
+      trigger->'is_frozen' = 'true'
+      """)
+    end
+  end
+
   defmacro trigger_type_is(type) do
     quote do
       fragment(
@@ -26,6 +42,17 @@ defmodule Sanbase.Alert.TriggerQuery do
       fragment("""
       trigger->>'is_public' = 'true'
       """)
+    end
+  end
+
+  defmacro trigger_target_is_slug(slugs) do
+    quote do
+      fragment(
+        """
+        trigger->'settings'->'target'->'slug' = ANY(?)
+        """,
+        ^unquote(slugs)
+      )
     end
   end
 

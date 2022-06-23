@@ -3,14 +3,8 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
 
   import Absinthe.Resolution.Helpers
 
-  alias SanbaseWeb.Graphql.Resolvers.InsightResolver
+  alias SanbaseWeb.Graphql.Resolvers.{InsightResolver, VoteResolver}
   alias SanbaseWeb.Graphql.SanbaseRepo
-
-  object :vote do
-    field(:total_votes, non_null(:integer))
-    field(:total_voters, non_null(:integer))
-    field(:current_user_votes, :integer)
-  end
 
   object :metric_short_description do
     field(:name, non_null(:string))
@@ -34,7 +28,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
   end
 
   object :post do
-    field(:id, non_null(:id))
+    field(:id, non_null(:integer))
 
     field :user, non_null(:public_user) do
       resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
@@ -43,6 +37,11 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:title, non_null(:string))
     field(:short_desc, :string)
     field(:text, :string)
+
+    field :pulse_text, :string do
+      resolve(&InsightResolver.pulse_text/3)
+    end
+
     field(:state, :string)
     field(:moderation_comment, :string)
     field(:ready_state, :string)
@@ -52,6 +51,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:price_chart_project, :project, resolve: dataloader(SanbaseRepo))
     field(:prediction, :string)
     field(:is_pulse, :boolean)
+    field(:is_hidden, non_null(:boolean))
     field(:is_paywall_required, :boolean)
     field(:is_chart_event, :boolean)
     field(:chart_event_datetime, :datetime)
@@ -81,11 +81,11 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:updated_at, non_null(:datetime))
 
     field :voted_at, :datetime do
-      resolve(&InsightResolver.voted_at/3)
+      resolve(&VoteResolver.voted_at/3)
     end
 
     field :votes, :vote do
-      resolve(&InsightResolver.votes/3)
+      resolve(&VoteResolver.votes/3)
     end
   end
 end

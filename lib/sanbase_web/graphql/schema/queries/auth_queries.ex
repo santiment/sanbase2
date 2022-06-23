@@ -23,6 +23,15 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
 
   object :auth_mutations do
     @desc ~s"""
+
+    """
+    field :destroy_sessions, :boolean do
+      middleware(JWTAuth)
+      resolve(&AuthResolver.revoke_refresh_token/3)
+      middleware(DeleteSession)
+    end
+
+    @desc ~s"""
     Destroy the current session, revoke the JWT refresh token and remove the
     access and refresh tokens from the sessions.
     After all existing JWT access tokens expire in less than 5 minutes, the existing
@@ -118,8 +127,14 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
     Delete the current session without revoking the refresh token.
     """
     field :logout, :logout do
-      middleware(JWTAuth, allow_access: true)
-      resolve(fn _, _ -> {:ok, %{success: true}} end)
+      middleware(JWTAuth, allow_access_without_terms_accepted: true)
+
+      resolve(fn root, args, res ->
+        {:ok, true} = AuthResolver.revoke_current_refresh_token(root, args, res)
+
+        {:ok, %{success: true}}
+      end)
+
       middleware(CreateOrDeleteSession)
     end
   end

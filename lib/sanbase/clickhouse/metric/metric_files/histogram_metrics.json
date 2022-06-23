@@ -5,10 +5,15 @@
     "metric": "price_histogram",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "aggregation": "last",
     "min_interval": "5m",
-    "table": ["distribution_deltas_5min", "intraday_metrics"],
+    "table": [
+      "distribution_deltas_5min",
+      "intraday_metrics"
+    ],
     "has_incomplete_data": false,
     "data_type": "histogram",
     "min_plan": {
@@ -22,10 +27,15 @@
     "metric": "spent_coins_cost",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "aggregation": "last",
     "min_interval": "5m",
-    "table": ["distribution_deltas_5min", "intraday_metrics"],
+    "table": [
+      "distribution_deltas_5min",
+      "intraday_metrics"
+    ],
     "has_incomplete_data": false,
     "data_type": "histogram",
     "min_plan": {
@@ -39,10 +49,15 @@
     "metric": "all_spent_coins_cost",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "aggregation": "last",
     "min_interval": "5m",
-    "table": ["distribution_deltas_5min", "intraday_metrics"],
+    "table": [
+      "distribution_deltas_5min",
+      "intraday_metrics"
+    ],
     "has_incomplete_data": false,
     "data_type": "histogram",
     "min_plan": {
@@ -56,7 +71,9 @@
     "metric": "age_distribution_5min_delta",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -73,14 +90,16 @@
     "metric": "eth2_staked_amount_per_label",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
     "min_interval": "5m",
-    "table": "eth2_staking_transfers_mv",
+    "table": "eth2_staking_transfers_v2",
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -90,14 +109,16 @@
     "metric": "eth2_staked_address_count_per_label",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
     "min_interval": "5m",
-    "table": "eth2_staking_transfers_mv",
+    "table": "eth2_staking_transfers_v2",
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -107,14 +128,16 @@
     "metric": "eth2_unlabeled_staker_inflow_sources",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
     "min_interval": "5m",
-    "table": "eth2_staking_transfers_mv",
+    "table": "eth2_staking_transfers_v2",
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -124,14 +147,16 @@
     "metric": "eth2_top_stakers",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
     "min_interval": "5m",
-    "table": "eth2_staking_transfers_mv",
+    "table": "eth2_staking_transfers_v2",
     "has_incomplete_data": false,
     "data_type": "histogram"
   }

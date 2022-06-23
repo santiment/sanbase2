@@ -21,6 +21,85 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     {:ok, conn: conn, user: user, user2: user2}
   end
 
+  describe "watchlist voting" do
+    test "vote and downvote", context do
+      %{conn: conn} = context
+      watchlist = insert(:watchlist, user: context.user)
+
+      result = get_watchlist_votes(conn, watchlist.id)
+      assert result["votedAt"] == nil
+
+      assert result["votes"] == %{
+               "currentUserVotes" => 0,
+               "totalVoters" => 0,
+               "totalVotes" => 0
+             }
+
+      %{"data" => %{"vote" => vote}} = vote(conn, watchlist.id, direction: :up)
+
+      result = get_watchlist_votes(conn, watchlist.id)
+      assert result["votedAt"] == vote["votedAt"]
+      voted_at = vote["votedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
+      assert Sanbase.TestUtils.datetime_close_to(voted_at, Timex.now(), seconds: 2)
+      assert vote["votes"] == result["votes"]
+      assert vote["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
+
+      %{"data" => %{"vote" => vote}} = vote(conn, watchlist.id, direction: :up)
+      result = get_watchlist_votes(conn, watchlist.id)
+      assert vote["votes"] == result["votes"]
+      assert vote["votes"] == %{"currentUserVotes" => 2, "totalVoters" => 1, "totalVotes" => 2}
+
+      %{"data" => %{"unvote" => vote}} = vote(conn, watchlist.id, direction: :down)
+      result = get_watchlist_votes(conn, watchlist.id)
+      assert vote["votes"] == result["votes"]
+      assert vote["votes"] == %{"currentUserVotes" => 1, "totalVoters" => 1, "totalVotes" => 1}
+
+      %{"data" => %{"unvote" => vote}} = vote(conn, watchlist.id, direction: :down)
+      result = get_watchlist_votes(conn, watchlist.id)
+      assert vote["votes"] == result["votes"]
+      assert vote["votedAt"] == nil
+      assert vote["votes"] == %{"currentUserVotes" => 0, "totalVoters" => 0, "totalVotes" => 0}
+    end
+
+    defp get_watchlist_votes(conn, watchlist_id) do
+      query = """
+      {
+        watchlist(id: #{watchlist_id}){
+          id
+          votedAt
+          votes { currentUserVotes totalVotes totalVoters }
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+      |> get_in(["data", "watchlist"])
+    end
+
+    defp vote(conn, watchlist_id, opts) do
+      function =
+        case Keyword.get(opts, :direction, :up) do
+          :up -> "vote"
+          :down -> "unvote"
+        end
+
+      mutation = """
+      mutation {
+        #{function}(watchlistId: #{watchlist_id}){
+          votedAt
+          votes { currentUserVotes totalVotes totalVoters }
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
+    end
+  end
+
   test "create watchlist", %{user: user, conn: conn} do
     project = insert(:project)
 
@@ -243,6 +322,15 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     assert UserList.fetch_user_lists(user, :project) == {:ok, []}
   end
 
+  test "remove watchlist with vote", %{user: user, conn: conn} do
+    {:ok, watchlist} = UserList.create_user_list(user, %{name: "My Test List"})
+    vote(conn, watchlist.id, direction: :up)
+
+    remove_watchlist(conn, watchlist.id)
+
+    assert UserList.fetch_user_lists(user, :project) == {:ok, []}
+  end
+
   test "remove watchlist twice in a row, returns proper error message", %{user: user, conn: conn} do
     {:ok, watchlist} = UserList.create_user_list(user, %{name: "My Test List"})
 
@@ -256,7 +344,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
 
     assert String.contains?(
              error["message"],
-             "Watchlist with id: #{watchlist.id} does not exist."
+             "Watchlist with id #{watchlist.id} does not exist"
            )
   end
 

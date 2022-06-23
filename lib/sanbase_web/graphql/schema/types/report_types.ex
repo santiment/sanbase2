@@ -7,5 +7,6 @@ defmodule SanbaseWeb.Graphql.ReportTypes do
     field(:description, :string)
     field(:tags, list_of(:string))
     field(:is_pro, non_null(:boolean))
+    field(:inserted_at, :datetime)
   end
 end

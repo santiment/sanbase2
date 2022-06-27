@@ -165,7 +165,7 @@ defmodule Sanbase.ClickhouseRepo do
 
   defp extract_error_from_stacktrace(stacktrace) do
     case Enum.find(stacktrace, fn
-           {_, _, [line | _], _} -> String.contains?(line, "DB::Exception")
+           {_, _, [line | _], _} when is_binary(line) -> String.contains?(line, "DB::Exception")
            _ -> false
          end) do
       nil ->

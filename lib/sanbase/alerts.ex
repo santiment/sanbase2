@@ -23,8 +23,8 @@ defmodule Sanbase.Application.Alerts do
        [
          id: :alerts_evaluator_cache,
          name: :alerts_evaluator_cache,
-         ttl_check_interval: :timer.minutes(1),
-         global_ttl: :timer.minutes(3),
+         ttl_check_interval: :timer.seconds(15),
+         global_ttl: :timer.minutes(5),
          acquire_lock_timeout: 120_000
        ]},
 

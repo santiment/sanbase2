@@ -37,7 +37,7 @@ defmodule Sanbase.Balance.SqlQuery do
           #{address_clause(addresses, argument_position: 2)} AND
           blockchain = ?3 AND
           asset_ref_id = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?4 LIMIT 1)
-        GROUP BY address, blockchain, asset_ref_id
+        GROUP BY address
       )
       ARRAY JOIN dates AS dt, balance_changes AS balance_change
       WHERE dt >= toDateTime(?6) AND dt < toDateTime(?7)

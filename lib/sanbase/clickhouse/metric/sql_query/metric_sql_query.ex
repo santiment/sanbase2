@@ -55,7 +55,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       #{aggregation(aggregation, "value", "dt")}
     FROM(
       SELECT
-        asset_id,
         dt,
         argMax(value, computed_at) AS value
       FROM #{Map.get(@table_map, metric)}
@@ -65,7 +64,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         #{asset_id_filter(selector, argument_position: 5, allow_missing_slug: true)} AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
-        GROUP BY asset_id, metric_id, dt
+        GROUP BY asset_id, dt
     )
     WHERE isNotNull(value) AND NOT isNaN(value)
     GROUP BY t
@@ -97,7 +96,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
-      name AS slug,
+      dictGetString('asset_metadata_dict', 'name', asset_id) AS slug,
       #{aggregation(aggregation, "value2", "dt")} AS value
     FROM(
       SELECT
@@ -112,13 +111,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         isNotNull(value) AND NOT isNaN(value) AND
         #{asset_id_filter(%{slug: slug_or_slugs}, argument_position: 5)} AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
-      GROUP BY asset_id, metric_id, dt
+      GROUP BY asset_id, dt
     )
-    INNER JOIN (
-      SELECT asset_id, name
-      FROM asset_metadata FINAL
-    ) USING (asset_id)
-    GROUP BY t, name
+    GROUP BY t, asset_id
     ORDER BY t
     """
 
@@ -175,7 +170,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
             #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
             #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")}
           )
-          GROUP BY asset_id, metric_id, dt
+          GROUP BY asset_id, dt
       )
       INNER JOIN (
         SELECT asset_id, name
@@ -237,7 +232,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     {additional_filters, args} = additional_filters(filters, args, trailing_and: true)
 
     query = """
-    SELECT name AS slug, value2 AS value
+    SELECT
+      dictGetString('asset_metadata_dict', 'name', asset_id) AS slug,
+      value2 AS value
     FROM (
       SELECT asset_id, #{aggregation(aggregation, "value", "(dt, computed_at)")} AS value2
       FROM #{Map.get(@table_map, metric)}
@@ -248,12 +245,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
       GROUP BY asset_id
-    ) AS a
-    ALL LEFT JOIN
-    (
-      SELECT asset_id, name
-      FROM asset_metadata FINAL
-    ) AS b USING (asset_id)
+    )
     """
 
     {query, args}
@@ -332,7 +324,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     PREWHERE
       #{asset_id_filter(selector, argument_position: 1)} AND
       metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
-    GROUP BY asset_id, metric_id
     """
 
     args = [asset_filter_value, Map.get(@name_to_metric_map, metric)]

@@ -226,9 +226,9 @@ defmodule Sanbase.Model.Project.ListSelector do
 
         slugs |> MapSet.new()
       end,
-      timeout: 40_000,
+      timeout: 60_000,
       ordered: false,
-      max_concurrency: 4
+      max_concurrency: 3
     )
     |> Sanbase.Utils.Transform.combine_mapsets(combinator: filters_combinator)
     |> Enum.to_list()

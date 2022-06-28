@@ -71,10 +71,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "@daily",
       task: {Sanbase.ApiCallLimit.Sync, :run, []}
     ],
-    notify_users_for_comments: [
-      schedule: "@hourly",
-      task: {Sanbase.Comments.Notification, :notify_users, []}
-    ],
     sync_products_with_stripe: [
       schedule: "@reboot",
       task: {Sanbase.Billing, :sync_products_with_stripe, []}

@@ -97,23 +97,8 @@ defmodule Sanbase.WatchlistFunction do
     end
   end
 
-  def valid_function?(%__MODULE__{name: "top_erc20_projects", args: args} = fun, opts) do
-    size = Map.get(args, "size") || Map.fetch!(args, :size)
-    ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
-
-    case is_integer(size) and size > 0 do
-      false ->
-        {:error, "The size argument must be a positive integer."}
-
-      true ->
-        case is_list(ignored_projects) do
-          true -> maybe_check_evaluates(fun, opts)
-          false -> {:error, "The ignored projects argument must be a list."}
-        end
-    end
-  end
-
-  def valid_function?(%__MODULE__{name: "top_all_projects", args: args} = fun, opts) do
+  def valid_function?(%__MODULE__{name: name, args: args} = fun, opts)
+      when name in ["top_all_projects", "top_erc20_projects"] do
     size = Map.get(args, "size") || Map.fetch!(args, :size)
     ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
 

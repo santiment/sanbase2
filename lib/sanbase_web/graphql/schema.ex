@@ -18,7 +18,6 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   alias SanbaseWeb.Graphql
   alias SanbaseWeb.Graphql.{SanbaseRepo, SanbaseDataloader}
-  alias SanbaseWeb.Graphql.Middlewares.ApiUsage
 
   # Types
   import_types(Absinthe.Plug.Types)
@@ -65,7 +64,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.SocialDataTypes)
   import_types(Graphql.TableConfigurationTypes)
   import_types(Graphql.TagTypes)
-  import_types(Graphql.TechIndicatorsTypes)
   import_types(Graphql.TimelineEventTypes)
   import_types(Graphql.TransactionTypes)
   import_types(Graphql.TransferTypes)
@@ -111,7 +109,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.SignalQueries)
   import_types(Graphql.Schema.SocialDataQueries)
   import_types(Graphql.Schema.TableConfigurationQueries)
-  import_types(Graphql.Schema.TechIndicatorsQueries)
   import_types(Graphql.Schema.TimelineQueries)
   import_types(Graphql.Schema.UserListQueries)
   import_types(Graphql.Schema.UserQueries)
@@ -137,13 +134,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     [
       Absinthe.Middleware.Dataloader | Absinthe.Plugin.defaults()
     ]
-  end
-
-  def middleware(middlewares, field, object) do
-    case object.identifier do
-      :query -> [ApiUsage | middlewares]
-      _ -> middlewares
-    end
   end
 
   query do
@@ -179,7 +169,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:signal_queries)
     import_fields(:social_data_queries)
     import_fields(:table_configuration_queries)
-    import_fields(:tech_indicators_queries)
     import_fields(:timeline_queries)
     import_fields(:user_list_queries)
     import_fields(:user_queries)

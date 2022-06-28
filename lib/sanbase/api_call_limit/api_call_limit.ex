@@ -12,7 +12,13 @@ defmodule Sanbase.ApiCallLimit do
   @quota_size_base Application.compile_env(:sanbase, [__MODULE__, :quota_size])
   @quota_size_max_offset Application.compile_env(:sanbase, [__MODULE__, :quota_size_max_offset])
 
-  @plans_without_limits ["sanapi_enterprise", "sanapi_premium", "sanapi_custom"]
+  @plans_without_limits [
+    "sanapi_enterprise",
+    "sanapi_premium",
+    "sanapi_custom",
+    "sanapi_enterprise_basic",
+    "sanapi_enterprise_plus"
+  ]
   @limits_per_month %{
     "sanbase_pro" => 5000,
     "sanapi_free" => 1000,
@@ -55,9 +61,15 @@ defmodule Sanbase.ApiCallLimit do
   def update_user_plan(%User{} = user) do
     %__MODULE__{} = acl = get_by_and_lock(:user, user)
 
+    plan = user_to_plan(user)
+
+    has_limits =
+      user_has_limits?(user) and
+        plan not in @plans_without_limits
+
     changeset =
       acl
-      |> changeset(%{api_calls_limit_plan: user_to_plan(user)})
+      |> changeset(%{api_calls_limit_plan: plan, has_limits: has_limits})
 
     case Repo.update(changeset) do
       {:ok, _} = result ->

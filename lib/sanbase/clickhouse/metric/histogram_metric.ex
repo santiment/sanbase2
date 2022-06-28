@@ -110,56 +110,33 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     end
   end
 
-  # Aggregate the separate prices into `limit` number of evenly spaced buckets
-  defp maybe_transform_into_buckets({:ok, []}, _slug, _from, _to, _limit), do: {:ok, []}
+  # Aggregate the separate prices into `buckets_count` number of evenly spaced buckets
+  defp maybe_transform_into_buckets({:ok, []}, _slug, _from, _to, _buckets_count), do: {:ok, []}
 
-  defp maybe_transform_into_buckets({:ok, data}, slug, from, to, limit) do
-    {min, max} = Enum.map(data, & &1.price) |> Sanbase.Math.min_max()
-
-    # Avoid precision issues when using `round` for prices.
-    min = Float.floor(min, 2)
-    max = Float.ceil(max, 2)
-    # `limit - 1` because one of the buckets will be split into 2
-    bucket_size = Enum.max([Float.round((max - min) / (limit - 1), 2), 0.01])
-
-    # Generate the range for given low and high price
-    low_high_range = fn low, high ->
-      [Float.round(low, 2), Float.round(high, 2)]
-    end
-
-    # Generate ranges tuples in the format needed by Stream.unfold/2
-    price_ranges = fn value ->
-      [lower, upper] = low_high_range.(value, value + bucket_size)
-      {[lower, upper], upper}
-    end
-
-    # Generate limit number of ranges to properly empty ranges as 0
-    ranges_map =
-      Stream.unfold(min, price_ranges)
-      |> Enum.take(limit)
-      |> Enum.into(%{}, fn range -> {range, 0.0} end)
-
-    # Map every price to the proper range
-    price_to_range = fn price ->
-      bucket = floor((price - min) / bucket_size)
-      lower = min + bucket * bucket_size
-      upper = min + (1 + bucket) * bucket_size
-
-      low_high_range.(lower, upper)
-    end
-
+  defp maybe_transform_into_buckets({:ok, data}, slug, from, to, buckets_count) do
     # Get the average price for the queried. time range. It will break the [X,Y]
     # price interval containing that price into [X, price_break] and [price_break, Y]
     {:ok, %{^slug => price_break}} =
       Metric.aggregated_timeseries_data("price_usd", %{slug: slug}, from, to, aggregation: :avg)
 
-    price_break = price_break |> Sanbase.Math.round_float()
-    price_break_range = price_to_range.(price_break)
+    # The bucket that contains the average price will be the one that gets split into two.
+    price_break = Sanbase.Math.round_float(price_break)
+
+    # Avoid precision issues when using `round` for prices.
+    {min, max} = Enum.map(data, & &1.price) |> Sanbase.Math.min_max()
+    {min, max} = {Float.floor(min, 2), Float.ceil(max, 2)}
+
+    # `buckets_count - 1` because one of the buckets will be split into 2
+    bucket_size = Enum.max([Float.round((max - min) / (buckets_count - 1), 2), 0.01])
+
+    ranges_map = ranges_map(min, buckets_count, bucket_size)
+
+    price_break_range = price_to_range(price_break, min, bucket_size)
 
     # Put every amount moved at a given price in the proper bucket
     bucketed_data =
       Enum.reduce(data, ranges_map, fn %{price: price, value: value}, acc ->
-        key = price_to_range.(price)
+        key = price_to_range(price, min, bucket_size)
         Map.update(acc, key, 0.0, fn curr_amount -> Float.round(curr_amount + value, 2) end)
       end)
       |> break_bucket(data, price_break_range, price_break)
@@ -171,6 +148,32 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   defp maybe_transform_into_buckets({:error, error}, _slug, _from, _to, _limit),
     do: {:error, error}
+
+  defp low_high_range(low, high) do
+    # Generate the range for given low and high price
+    [Float.round(low, 2), Float.round(high, 2)]
+  end
+
+  defp ranges_map(min, buckets_count, bucket_size) do
+    # Generate ranges tuples in the format needed by Stream.unfold/2
+    price_ranges = fn value ->
+      [lower, upper] = low_high_range(value, value + bucket_size)
+      {[lower, upper], upper}
+    end
+
+    Stream.unfold(min, price_ranges)
+    |> Enum.take(buckets_count)
+    |> Enum.into(%{}, fn range -> {range, 0.0} end)
+  end
+
+  def price_to_range(price, min, bucket_size) do
+    # Map the price to the proper [low, high] range
+    bucket = floor((price - min) / bucket_size)
+    lower = min + bucket * bucket_size
+    upper = min + (1 + bucket) * bucket_size
+
+    low_high_range(lower, upper)
+  end
 
   # Break a bucket with range [low, high] into 2 buckes [low, divider] and [divider, high]
   # putting the proper number of entities that fall into each of the 2 ranges

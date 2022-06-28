@@ -73,17 +73,11 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, sync_enabled: false
 
-config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
-  webhook_url: "http://example.com/webhook_url",
-  notifications_enabled: true
-
 config :sanbase, Sanbase.Twitter.Store, database: "twitter_followers_data_test"
 
 config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
-
-config :sanbase, Sanbase.Prices.Store, database: "prices_test"
 
 config :waffle,
   storage: Waffle.Storage.Local,

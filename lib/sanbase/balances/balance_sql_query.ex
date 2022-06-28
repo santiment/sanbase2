@@ -37,7 +37,7 @@ defmodule Sanbase.Balance.SqlQuery do
           #{address_clause(addresses, argument_position: 2)} AND
           blockchain = ?3 AND
           asset_ref_id = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?4 LIMIT 1)
-        GROUP BY address, blockchain, asset_ref_id
+        GROUP BY address
       )
       ARRAY JOIN dates AS dt, balance_changes AS balance_change
       WHERE dt >= toDateTime(?6) AND dt < toDateTime(?7)
@@ -84,7 +84,7 @@ defmodule Sanbase.Balance.SqlQuery do
     FROM (
       SELECT
         address,
-        arrayJoin(arrayReduce('groupUniqArray', groupArrayMerge(values))) AS values_merged,
+        arrayJoin(groupArrayMerge(values)) AS values_merged,
         values_merged.1 AS dt,
         values_merged.2 AS value
       FROM balances_aggregated
@@ -92,7 +92,8 @@ defmodule Sanbase.Balance.SqlQuery do
         #{address_clause(addresses, argument_position: 1)} AND
         blockchain = ?2 AND
         asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?3 LIMIT 1 )
-      GROUP BY address, blockchain, asset_ref_id
+      GROUP BY address
+      HAVING dt <= toDateTime(?5)
     )
     GROUP BY address
     """

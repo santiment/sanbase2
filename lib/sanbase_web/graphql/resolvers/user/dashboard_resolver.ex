@@ -3,10 +3,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   Module with resolvers connected to the Apikey authentication. All the logic
   is delegated to the `Apikey` module
   """
-
-  require Logger
+  import Absinthe.Resolution.Helpers, except: [async: 1]
 
   alias Sanbase.Dashboard
+
+  require Logger
 
   def create_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
     Dashboard.create(args, user.id)
@@ -67,6 +68,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
+  def store_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    %{dashboard_id: dashboard_id, panel_id: panel_id, panel: panel} = args
+    # storing requires edit access, not just view access
+    compressed_rows = Dashboard.Query.rows_to_compressed_rows(panel.rows)
+    panel = Map.put(panel, :compressed_rows, compressed_rows)
+
+    with true <- can_edit_dashboard?(dashboard_id, user.id),
+         %{} = query_result <- struct!(Dashboard.Query.Result, panel),
+         {:ok, _} <- Dashboard.Cache.update_panel_cache(dashboard_id, panel_id, query_result) do
+      panel_cache = Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
+      {:ok, panel_cache}
+    end
+  end
+
   def get_dashboard_schema(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with true <- can_view_dashboard?(args.id, user.id) do
       Dashboard.load_schema(args.id)
@@ -89,15 +104,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     san_query_id = UUID.uuid4()
 
     with true <- can_run_computation?(user.id),
-         true <- Sanbase.Dashboard.Query.valid_sql?(args),
-         {:ok, query_result} <-
-           Sanbase.Dashboard.Query.run(args.query, args.parameters, san_query_id) do
+         true <- Dashboard.Query.valid_sql?(args),
+         {:ok, query_result} <- Dashboard.Query.run(args.query, args.parameters, san_query_id) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Dashboard.QueryExecution.store_execution(user.id, query_result)
       end)
 
       {:ok, query_result}
     end
+  end
+
+  def comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :dashboard_comments_count, id)
+    |> on_load(fn loader ->
+      count = Dataloader.get(loader, SanbaseDataloader, :dashboard_comments_count, id)
+      {:ok, count || 0}
+    end)
   end
 
   # Private functions

@@ -201,12 +201,7 @@ defmodule Sanbase.Metric do
         |> Sanbase.Utils.Transform.maybe_apply_function(fn list ->
           Enum.sort_by(list, & &1.datetime, {:asc, DateTime})
         end)
-        |> Sanbase.Utils.Transform.maybe_apply_function(fn list ->
-          Enum.map(list, fn %{data: data} = elem ->
-            data_sorted_by_slug = Enum.sort_by(data, & &1.slug, :asc)
-            %{elem | data: data_sorted_by_slug}
-          end)
-        end)
+        |> Sanbase.Utils.Transform.maybe_apply_function(&sort_data_field_by_slug_asc/1)
     end
   end
 
@@ -826,5 +821,12 @@ defmodule Sanbase.Metric do
       true -> {:nocache, {:ok, available_metrics}}
       false -> {:ok, available_metrics}
     end
+  end
+
+  defp sort_data_field_by_slug_asc(list) do
+    Enum.map(list, fn %{data: data} = elem ->
+      data_sorted_by_slug = Enum.sort_by(data, & &1.slug, :asc)
+      %{elem | data: data_sorted_by_slug}
+    end)
   end
 end

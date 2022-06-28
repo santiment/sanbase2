@@ -20,10 +20,6 @@ config :sanbase, Sanbase.Alerts.Scheduler,
       schedule: "0 10 * * *",
       task: {Sanbase.Alert.Job, :unfreeze_alerts, []}
     ],
-    price_volume_difference_sonar_alert: [
-      schedule: "1-59/5 * * * *",
-      task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.PriceVolumeDifferenceTriggerSettings]}
-    ],
     raw_signal_alert: [
       schedule: "1-59/5 * * * *",
       task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.RawSignalTriggerSettings]}
@@ -74,10 +70,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     update_api_call_limit_plans: [
       schedule: "@daily",
       task: {Sanbase.ApiCallLimit.Sync, :run, []}
-    ],
-    notify_users_for_comments: [
-      schedule: "@hourly",
-      task: {Sanbase.Comments.Notification, :notify_users, []}
     ],
     sync_products_with_stripe: [
       schedule: "@reboot",
@@ -135,6 +127,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_liquidity_subscriptions_staked_users: [
       schedule: "7-59/30 * * * *",
       task: {Sanbase.Billing, :sync_liquidity_subscriptions_staked_users, []}
+    ],
+    sync_stripe_transactions: [
+      schedule: "30 00 * * *",
+      task: {Sanbase.Billing.StripeSync, :run, []}
     ],
     sync_coinmarketcap_projects: [
       # When a new project gets a coinmarketcap string slug associated with it,

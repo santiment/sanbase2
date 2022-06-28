@@ -118,9 +118,11 @@ defmodule Sanbase.Alert.Scheduler do
         alerts_to: size_so_far + MapSet.size(alerts)
       }
 
-      {[elem | batches], size_so_far + elem.alerts_to + 1}
+      {[elem | batches], elem.alerts_to + 1}
     end)
     |> elem(0)
+    # Reverse so the `alerts_from: 0` is first in the list, not last
+    |> Enum.reverse()
   end
 
   defp run_batches([], info_map) do

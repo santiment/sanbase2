@@ -980,10 +980,12 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     }
 
     trigger_settings = %{
-      type: "price_volume_difference",
-      target: %{slug: context.project.slug},
-      channel: "telegram",
-      threshold: 0.1
+      type: "metric_signal",
+      metric: "active_addresses_24h",
+      target: %{slug: "santiment"},
+      channel: ["telegram"],
+      time_window: "1d",
+      operation: %{percent_up: 300.0}
     }
 
     trending_words_settings = %{

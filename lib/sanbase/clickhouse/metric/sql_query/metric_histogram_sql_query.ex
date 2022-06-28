@@ -24,13 +24,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
             toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?3) * ?3) AS t,
             sum(measure) AS tokens_amount
         FROM (
-          SELECT dt, argMax(measure, computed_at) AS measure
+          SELECT dt, argMax(measure, computed_at) AS measure, value
           FROM distribution_deltas_5min
           PREWHERE
             metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{metric}' ) AND
             asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
             dt < toDateTime(?2)
-          GROUP BY asset_id, metric_id, dt, value
+          GROUP BY dt, value
         )
         GROUP BY t
         ORDER BY t ASC
@@ -46,7 +46,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
           PREWHERE
             asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1) AND
             metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd' LIMIT 1)
-          GROUP BY asset_id, metric_id, dt
+          GROUP BY dt
         )
         GROUP BY t
       ) USING (t)
@@ -83,7 +83,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
             toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?4) * ?4) AS t,
             -sum(measure) AS tokens_amount
         FROM (
-          SELECT dt, value, argMax(measure, computed_at) AS measure
+          SELECT dt, value, argMax(measure, computed_at) AS measure, value
           FROM distribution_deltas_5min
           PREWHERE
             metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{metric}' ) AND
@@ -92,7 +92,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
             dt < toDateTime(?3) AND
             dt != value AND
             value < toDateTime(?2)
-          GROUP BY asset_id, metric_id, dt, value
+          GROUP BY dt, value
           )
         GROUP BY t
         ORDER BY t ASC
@@ -108,7 +108,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
           PREWHERE
             asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1) AND
             metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd' LIMIT 1)
-          GROUP BY asset_id, metric_id, dt
+          GROUP BY dt
         )
         GROUP BY t
       ) USING (t)
@@ -322,7 +322,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         dt >= toDateTime(?3) AND
         dt < toDateTime(?4) AND
         value < toDateTime(?3)
-      GROUP BY asset_id, metric_id, dt, value
+      GROUP BY dt, value
     )
     GROUP BY t
     ORDER BY sum_measure DESC

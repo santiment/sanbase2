@@ -37,6 +37,7 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:interval, :interval)
     field(:amount, :integer)
     field(:is_deprecated, :boolean)
+    field(:is_private, :boolean)
   end
 
   object :subscription_plan do

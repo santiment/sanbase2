@@ -27,6 +27,7 @@ defmodule Sanbase.Comment do
   alias Sanbase.ShortUrl
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.BlockchainAddress
+  alias Sanbase.Dashboard
   alias Sanbase.UserList
   alias Sanbase.Chart.Configuration, as: ChartConfiguration
   alias Sanbase.WalletHunters.Proposal, as: WHProposal
@@ -39,6 +40,7 @@ defmodule Sanbase.Comment do
   @short_urls_table "short_url_comments_mapping"
   @timeline_events_table "timeline_event_comments_mapping"
   @blockchain_addrs_table "blockchain_address_comments_mapping"
+  @dashboard_table "dashboard_comments_mapping"
   @watchlists_table "watchlist_comments_mapping"
   @chart_configs_table "chart_configuration_comments_mapping"
   @wh_proposals_table "wallet_hunters_proposals_comments_mapping"
@@ -71,6 +73,11 @@ defmodule Sanbase.Comment do
     many_to_many(:short_urls, ShortUrl, join_through: @short_urls_table)
     many_to_many(:timeline_events, TimelineEvent, join_through: @timeline_events_table)
     many_to_many(:blockchain_addresses, BlockchainAddress, join_through: @blockchain_addrs_table)
+
+    many_to_many(:dashboards, Dashboard.Schema,
+      join_keys: [comment_id: :id, dashboard_id: :id],
+      join_through: @dashboard_table
+    )
 
     many_to_many(:chart_configurations, ChartConfiguration,
       join_through: @chart_configs_table,

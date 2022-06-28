@@ -12,6 +12,9 @@ defmodule Sanbase.Dashboard.Cache do
   import Ecto.Changeset
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
+  alias Sanbase.Repo
+  alias Sanbase.Dashboard
+
   @type dashboard_id :: non_neg_integer()
 
   @type panel_cache :: %{
@@ -44,7 +47,7 @@ defmodule Sanbase.Dashboard.Cache do
   """
   @spec by_dashboard_id(non_neg_integer()) :: {:ok, t()} | {:error, any()}
   def by_dashboard_id(dashboard_id) do
-    case Sanbase.Repo.get_by(__MODULE__, dashboard_id: dashboard_id) do
+    case Repo.get_by(__MODULE__, dashboard_id: dashboard_id) do
       nil -> new(dashboard_id)
       %__MODULE__{} = cache -> {:ok, cache}
     end
@@ -58,7 +61,7 @@ defmodule Sanbase.Dashboard.Cache do
   def new(dashboard_id) do
     %__MODULE__{}
     |> change(%{dashboard_id: dashboard_id})
-    |> Sanbase.Repo.insert()
+    |> Repo.insert()
   end
 
   @doc ~s"""
@@ -67,18 +70,19 @@ defmodule Sanbase.Dashboard.Cache do
   @spec update_panel_cache(non_neg_integer(), String.t(), Dashboad.Query.Result.t()) ::
           {:ok, t()} | {:error, any()}
   def update_panel_cache(dashboard_id, panel_id, query_result) do
-    {:ok, cache} = by_dashboard_id(dashboard_id)
+    with true <- query_result_size_allowed?(query_result),
+         {:ok, cache} <- by_dashboard_id(dashboard_id) do
+      panel_cache =
+        Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
+        |> Map.from_struct()
+        |> Map.drop([:rows])
 
-    panel_cache =
-      Sanbase.Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
-      |> Map.from_struct()
-      |> Map.drop([:rows])
+      panels = Map.update(cache.panels, panel_id, panel_cache, fn _ -> panel_cache end)
 
-    panels = Map.update(cache.panels, panel_id, panel_cache, fn _ -> panel_cache end)
-
-    cache
-    |> change(%{panels: panels})
-    |> Sanbase.Repo.update()
+      cache
+      |> change(%{panels: panels})
+      |> Repo.update()
+    end
   end
 
   @doc ~s"""
@@ -93,7 +97,7 @@ defmodule Sanbase.Dashboard.Cache do
 
     cache
     |> change(%{panels: panels})
-    |> Sanbase.Repo.update()
+    |> Repo.update()
   end
 
   # Private functions
@@ -102,21 +106,16 @@ defmodule Sanbase.Dashboard.Cache do
     panels =
       cache.panels
       |> Map.new(fn {panel_id, panel_cache} ->
-        %{"compressed_rows_json" => compressed_rows_json, "updated_at" => updated_at} =
-          panel_cache
+        %{"compressed_rows" => compressed_rows, "updated_at" => updated_at} = panel_cache
 
-        rows =
-          compressed_rows_json
-          |> Base.decode64!()
-          |> :zlib.gunzip()
-          |> :erlang.binary_to_term()
+        rows = Dashboard.Query.compressed_rows_to_rows(compressed_rows)
 
         {:ok, updated_at, _} = DateTime.from_iso8601(updated_at)
         {:ok, rows} = transform_cache_rows(rows)
 
         panel_cache =
           panel_cache
-          |> Map.delete("compressed_rows_json")
+          |> Map.delete("compressed_rows")
           |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
           |> Map.put(:rows, rows)
           |> Map.put(:updated_at, updated_at)
@@ -146,5 +145,26 @@ defmodule Sanbase.Dashboard.Cache do
       end)
 
     {:ok, transformed_rows}
+  end
+
+  # The byte size of the compressed rows should not exceed the allowed limit.
+  # Otherwise simple queries like `select * from intraday_metircs limit 9999999`
+  # can be executed and fill the database with lots of data.
+  @allowed_kb_size 500
+  defp query_result_size_allowed?(query_result) do
+    kb_size = byte_size(query_result.compressed_rows) / 1024
+    kb_size = Float.round(kb_size, 2)
+
+    case kb_size do
+      size when size <= @allowed_kb_size ->
+        true
+
+      size ->
+        {:error,
+         """
+         Cannot cache the panel because its compressed size is #{size}KB \
+         which is over the limit of #{@allowed_kb_size}KB
+         """}
+    end
   end
 end

@@ -15,6 +15,9 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:watchlist_vote_stats, data), do: get_votes_stats(:watchlist, :watchlist_id, data)
   def query(:watchlist_voted_at, data), do: get_voted_at(:watchlist, :watchlist_id, data)
 
+  def query(:dashboard_vote_stats, data), do: get_votes_stats(:dashboard, :dashboard_id, data)
+  def query(:dashboard_voted_at, data), do: get_voted_at(:dashboard, :dashboard_id, data)
+
   def query(:timeline_event_vote_stats, data),
     do: get_votes_stats(:timeline_event, :timeline_event_id, data)
 
@@ -86,6 +89,10 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     get_comment_entity_id(ids_mapset, Comment.WatchlistComment, :watchlist_id)
   end
 
+  def query(:comment_dashboard_id, ids_mapset) do
+    get_comment_entity_id(ids_mapset, Comment.DashboardComment, :dashboard_id)
+  end
+
   def query(:comment_chart_configuration_id, ids_mapset) do
     get_comment_entity_id(ids_mapset, Comment.ChartConfigurationComment, :chart_configuration_id)
   end
@@ -131,6 +138,10 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
 
   def query(:watchlist_comments_count, ids_mapset) do
     get_comments_count(ids_mapset, Comment.WatchlistComment, :watchlist_id)
+  end
+
+  def query(:dashboard_comments_count, ids_mapset) do
+    get_comments_count(ids_mapset, Comment.DashboardComment, :dashboard_id)
   end
 
   def query(:chart_configuration_comments_count, ids_mapset) do

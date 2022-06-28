@@ -7,9 +7,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, PriceScrapingProgress}
-  alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
-  alias Sanbase.Prices.Store
 
   @rate_limiting_server :graph_coinmarketcap_rate_limiter
   plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: @rate_limiting_server)
@@ -20,7 +18,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
   @source "coinmarketcap"
   @prices_exporter :prices_exporter
-  @total_market_measurement "TOTAL_MARKET_total-market"
+
   @doc ~s"""
   Return the first datetime for which a given asset (a projct or the whole market)
   has data. Used when deciding the first datetime to start scraping from
@@ -141,10 +139,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
     export_prices_to_kafka(project, price_points)
 
-    if Application.get_env(:sanbase, :influx_store_enabled, true) do
-      export_prices_to_influxdb(Measurement.name_from(project), price_points)
-    end
-
     PriceScrapingProgress.store_progress(slug, @source, latest_datetime)
   end
 
@@ -155,30 +149,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
     export_prices_to_kafka("TOTAL_MARKET", price_points)
 
-    # The influxdb TOTAL_MARKET measurement has float types
-    price_points =
-      Enum.map(
-        price_points,
-        fn %PricePoint{marketcap_usd: marketcap_usd, volume_usd: volume_usd} = point ->
-          %PricePoint{
-            point
-            | marketcap_usd: marketcap_usd |> Sanbase.Math.to_float(),
-              volume_usd: volume_usd |> Sanbase.Math.to_float()
-          }
-        end
-      )
-
-    if Application.get_env(:sanbase, :influx_store_enabled, true) do
-      export_prices_to_influxdb(@total_market_measurement, price_points)
-    end
-
     PriceScrapingProgress.store_progress("TOTAL_MARKET", @source, latest_datetime)
-  end
-
-  defp export_prices_to_influxdb(measurement, price_points) do
-    price_points
-    |> Enum.flat_map(&PricePoint.price_points_to_measurements(&1, measurement))
-    |> Store.import()
   end
 
   defp export_prices_to_kafka(%Project{slug: slug}, price_points) do

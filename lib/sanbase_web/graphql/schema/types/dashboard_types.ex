@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.DashboardTypes do
   use Absinthe.Schema.Notation
 
+  alias SanbaseWeb.Graphql.Resolvers.{DashboardResolver, UserResolver, VoteResolver}
+
   @desc ~s"""
   Input object for an SQL query and its parameters.
 
@@ -21,9 +23,19 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:parameters, non_null(:json))
   end
 
+  input_object :computed_panel_input_object do
+    field(:san_query_id, non_null(:string))
+    field(:clickhouse_query_id, non_null(:string))
+    field(:columns, non_null(list_of(:string)))
+    field(:rows, non_null(:json))
+    field(:query_start_time, non_null(:datetime))
+    field(:query_end_time, non_null(:datetime))
+    field(:summary, non_null(:json))
+  end
+
   enum :panel_type do
     value(:chart)
-    value(:type)
+    value(:table)
   end
 
   input_object :panel_input_object do
@@ -68,7 +80,7 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:dashboard_id, non_null(:integer))
     field(:san_query_id, non_null(:string))
     field(:clickhouse_query_id, non_null(:string))
-    field(:column_names, non_null(list_of(:string)))
+    field(:columns, non_null(list_of(:string)))
     field(:rows, non_null(:json))
     field(:query_start_time, :datetime)
     field(:query_end_time, :datetime)
@@ -84,7 +96,19 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:panels, list_of(:panel_schema))
 
     field :user, non_null(:public_user) do
-      resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
+      resolve(&UserResolver.user_no_preloads/3)
+    end
+
+    field :comments_count, :integer do
+      resolve(&DashboardResolver.comments_count/3)
+    end
+
+    field :voted_at, :datetime do
+      resolve(&VoteResolver.voted_at/3)
+    end
+
+    field :votes, :vote do
+      resolve(&VoteResolver.votes/3)
     end
   end
 

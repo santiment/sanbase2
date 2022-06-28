@@ -198,23 +198,22 @@ defmodule Sanbase.Billing.Subscription do
 
   https://stripe.com/docs/billing/subscriptions/canceling-pausing#reactivating-canceled-subscriptions
   """
-  def renew_cancelled_subscription(%__MODULE__{} = db_subscription) do
-    dt_comparison = DateTime.compare(Timex.now(), db_subscription.current_period_end)
+  def renew_cancelled_subscription(%__MODULE__{} = db_sub) do
+    dt_comparison = DateTime.compare(Timex.now(), db_sub.current_period_end)
 
     with {_, :lt} <- {:end_period_reached?, dt_comparison},
-         {:ok, stripe_subscription} <-
-           StripeApi.update_subscription(db_subscription.stripe_id, %{cancel_at_period_end: false}),
-         {:ok, db_subscription} <-
-           sync_subscription_with_stripe(stripe_subscription, db_subscription),
-         db_subscription = default_preload(db_subscription, force: true) do
-      emit_event({:ok, db_subscription}, :renew_subscription, %{})
-      {:ok, db_subscription}
+         {:ok, stripe_sub} <-
+           StripeApi.update_subscription(db_sub.stripe_id, %{cancel_at_period_end: false}),
+         {:ok, db_sub} <- sync_subscription_with_stripe(stripe_sub, db_sub),
+         db_sub <- default_preload(db_sub, force: true) do
+      emit_event({:ok, db_sub}, :renew_subscription, %{})
+      {:ok, db_sub}
     else
       {:end_period_reached?, _} ->
         {:end_period_reached_error,
          """
          Cancelled subscription has already reached the end period at \
-         #{db_subscription.current_period_end}
+         #{db_sub.current_period_end}
          """}
 
       {:error, reason} ->
@@ -232,7 +231,7 @@ defmodule Sanbase.Billing.Subscription do
     |> Query.last_subscription_for_product(@product_sanbase)
     |> Repo.one()
     |> case do
-      %__MODULE__{trial_end: trial_end} ->
+      %__MODULE__{trial_end: trial_end} when not is_nil(trial_end) ->
         do_check_eligibility(trial_end)
 
       _ ->

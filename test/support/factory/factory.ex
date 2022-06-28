@@ -127,6 +127,13 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def dashboard_factory() do
+    %Sanbase.Dashboard.Schema{
+      name: "My Dashboard",
+      user: build(:user)
+    }
+  end
+
   def table_configuration_factory() do
     %TableConfiguration{
       title: "table configuration",

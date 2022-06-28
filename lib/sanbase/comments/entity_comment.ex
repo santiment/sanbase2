@@ -11,6 +11,7 @@ defmodule Sanbase.Comments.EntityComment do
   alias Sanbase.Comment.{
     BlockchainAddressComment,
     ChartConfigurationComment,
+    DashboardComment,
     PostComment,
     ShortUrlComment,
     TimelineEventComment,
@@ -21,6 +22,7 @@ defmodule Sanbase.Comments.EntityComment do
   @type comment_struct ::
           %BlockchainAddressComment{}
           | %ChartConfigurationComment{}
+          | %DashboardComment{}
           | %PostComment{}
           | %ShortUrlComment{}
           | %TimelineEventComment{}
@@ -30,6 +32,7 @@ defmodule Sanbase.Comments.EntityComment do
   @type entity ::
           :blockchain_address
           | :chart_configuration
+          | :dashboard
           | :insight
           | :short_url
           | :timeline_event
@@ -37,11 +40,12 @@ defmodule Sanbase.Comments.EntityComment do
           | :watchlist
 
   @comments_feed_entities [
-    :insights,
-    :timeline_events,
-    :short_urls,
     :blockchain_addresses,
-    :chart_configurations
+    :chart_configurations,
+    :dashboards,
+    :insights,
+    :short_urls,
+    :timeline_events
   ]
 
   @spec create_and_link(
@@ -98,6 +102,15 @@ defmodule Sanbase.Comments.EntityComment do
     |> BlockchainAddressComment.changeset(%{
       comment_id: comment_id,
       blockchain_address_id: entity_id
+    })
+    |> Repo.insert()
+  end
+
+  def link(:dashboard, entity_id, comment_id) do
+    %DashboardComment{}
+    |> DashboardComment.changeset(%{
+      comment_id: comment_id,
+      dashboard_id: entity_id
     })
     |> Repo.insert()
   end
@@ -163,6 +176,7 @@ defmodule Sanbase.Comments.EntityComment do
     |> exclude_wallet_hunters_comments()
     |> exclude_not_public_insights()
     |> exclude_not_public_chart_configurations()
+    |> exclude_not_public_dashboards()
     |> apply_cursor(cursor)
     |> order_by([c], [{^order, c.id}])
     |> limit(^limit)
@@ -226,6 +240,22 @@ defmodule Sanbase.Comments.EntityComment do
     )
   end
 
+  defp exclude_not_public_dashboards(query) do
+    subquery =
+      from(
+        dashboard_comment in DashboardComment,
+        left_join: dashboard in Sanbase.Dashboard.Schema,
+        on: dashboard_comment.dashboard_id == dashboard.id,
+        where: dashboard.is_public != true,
+        select: dashboard_comment.comment_id
+      )
+
+    from(
+      c in query,
+      where: c.id not in subquery(subquery)
+    )
+  end
+
   defp exclude_not_public_chart_configurations(query) do
     subquery =
       from(
@@ -275,6 +305,14 @@ defmodule Sanbase.Comments.EntityComment do
       preload: [:comment, comment: :user]
     )
     |> maybe_add_entity_id_clause(:chart_configuration_id, entity_id)
+  end
+
+  defp entity_comments_query(:dashboard, entity_id) do
+    from(
+      comment in DashboardComment,
+      preload: [:comment, comment: :user]
+    )
+    |> maybe_add_entity_id_clause(:dashboard_id, entity_id)
   end
 
   defp entity_comments_query(:timeline_event, entity_id) do

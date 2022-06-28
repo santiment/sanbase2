@@ -744,6 +744,10 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def vote_factory do
+    %Sanbase.Vote{}
+  end
+
   def rand_str(length \\ 10) do
     :crypto.strong_rand_bytes(length) |> Base.encode64() |> binary_part(0, length)
   end

@@ -62,7 +62,7 @@ defmodule Sanbase.Intercom do
     HTTPoison.post!(
       "https://api.intercom.io/contacts/search",
       body,
-      intercom_headers() ++ [{"Intercom-Version", "2.0"}]
+      intercom_headers() ++ [{"Intercom-Version", "2.5"}]
     )
     |> Map.get(:body)
     |> Jason.decode!()

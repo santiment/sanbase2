@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 14.2
+-- Dumped by pg_dump version 14.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -6953,7 +6953,7 @@ ALTER TABLE ONLY public.signals_historical_activity
 --
 
 ALTER TABLE ONLY public.signals_historical_activity
-    ADD CONSTRAINT signals_historical_activity_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id);
+    ADD CONSTRAINT signals_historical_activity_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id) ON DELETE CASCADE;
 
 
 --
@@ -7686,6 +7686,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220615122849);
 INSERT INTO public."schema_migrations" (version) VALUES (20220615135946);
 INSERT INTO public."schema_migrations" (version) VALUES (20220616131454);
 INSERT INTO public."schema_migrations" (version) VALUES (20220617112317);
-INSERT INTO public."schema_migrations" (version) VALUES (20220617151459);
 INSERT INTO public."schema_migrations" (version) VALUES (20220620132733);
 INSERT INTO public."schema_migrations" (version) VALUES (20220620143734);

@@ -91,6 +91,9 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def incomplete_metrics(), do: []
+
+  @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics
 
   @impl Sanbase.Metric.Behaviour
@@ -109,6 +112,7 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
     {:ok,
      %{
        metric: metric,
+       has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "5m",
        default_aggregation: @default_aggregation,
        available_aggregations: @aggregations,

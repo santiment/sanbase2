@@ -24,6 +24,7 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
 
       arg(:product, :products_enum, default_value: :sanapi)
       arg(:plan, :plans_enum)
+      arg(:has_incomplete_data, :boolean, default_value: nil)
 
       cache_resolve(&MetricResolver.get_available_metrics/3, ttl: 600)
     end

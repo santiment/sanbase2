@@ -100,6 +100,7 @@ defmodule Sanbase.Contract.MetricAdapter do
     {:ok,
      %{
        metric: metric,
+       has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "1m",
        default_aggregation: :count,
        available_aggregations: @aggregations,
@@ -128,6 +129,9 @@ defmodule Sanbase.Contract.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_aggregations(), do: @aggregations
+
+  @impl Sanbase.Metric.Behaviour
+  def incomplete_metrics(), do: []
 
   @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics

@@ -228,6 +228,8 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback available_table_metrics() :: list(metric)
 
+  @callback incomplete_metrics() :: list(metric)
+
   @callback free_metrics() :: list(metric)
 
   @callback restricted_metrics() :: list(metric)

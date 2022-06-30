@@ -463,6 +463,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "nft_token_id_price_usd",
         "nft_market_volume",
         "nft_market_count",
+        "nft_collection_holders_balance",
+        "nft_network_profit_loss",
+        "nft_network_profit_loss_usd",
+        "nft_collection_profit_loss",
+        "nft_collection_profit_loss_usd",
         # label balances
         "labelled_historical_balance",
         "labelled_historical_balance_changes",

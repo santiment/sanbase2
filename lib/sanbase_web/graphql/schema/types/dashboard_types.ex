@@ -110,6 +110,28 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field :votes, :vote do
       resolve(&VoteResolver.votes/3)
     end
+
+    field(:inserted_at, :datetime)
+    field(:updated_at, :datetime)
+  end
+
+  object :dashboard_schema_history_preview do
+    field(:dashboard_id, non_null(:integer))
+    field(:hash, :string)
+    field(:message, :string)
+    field(:inserted_at, :datetime)
+  end
+
+  object :dashboard_schema_history do
+    field(:message, :string)
+    field(:hash, :string)
+
+    field(:dashboard_id, non_null(:integer))
+    field(:name, non_null(:string))
+    field(:description, :string)
+    field(:is_public, non_null(:boolean))
+    field(:panels, list_of(:panel_schema))
+    field(:inserted_at, :datetime)
   end
 
   object :dashboard_cache do

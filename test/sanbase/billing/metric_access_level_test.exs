@@ -321,7 +321,14 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "realized_value_usd_365d",
         "holders_distribution_combined_balance_over_100",
         "sentiment_volume_consumed_total",
-        "holders_labeled_negative_distribution_combined_balance_10k_to_100k"
+        "holders_labeled_negative_distribution_combined_balance_10k_to_100k",
+        "nft_market_volume",
+        "nft_market_count",
+        "nft_collection_holders_balance",
+        "nft_network_profit_loss",
+        "nft_network_profit_loss_usd",
+        "nft_collection_profit_loss",
+        "nft_collection_profit_loss_usd"
       ]
       |> Enum.sort()
 

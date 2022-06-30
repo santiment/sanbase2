@@ -21,7 +21,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         context.conn
         |> post(
           "/graphql",
-          mutation_skeleton("mutation{vote(dashboardId: #{dashboard_id}) {votedAt}}")
+          mutation_skeleton("mutation{ vote(dashboardId: #{dashboard_id}) { votedAt } }")
         )
       end
 
@@ -207,7 +207,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         get_dashboard_schema(context.conn, dashboard["id"])
         |> get_in(["data", "getDashboardSchema"])
 
-      assert dashboard["panels"] == [%{"id" => panel["id"]}]
+      assert get_in(dashboard, ["panels", Access.at(0), "id"]) == panel["id"]
 
       execute_dashboard_panel_schema_mutation(context.conn, :remove_dashboard_panel, %{
         dashboard_id: dashboard["id"],
@@ -596,6 +596,119 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
     end
   end
 
+  describe "keep dashboard history" do
+    test "keep dashboard history", context do
+      # Create empty dashboard
+      dashboard_id =
+        execute_dashboard_mutation(context.conn, :create_dashboard)
+        |> get_in(["data", "createDashboard", "id"])
+
+      # Store the dashboard schema
+      hash1 =
+        store_dashboard_schema_history(
+          context.conn,
+          %{id: dashboard_id, message: "Store initial version of dashboard schema"}
+        )
+        |> get_in(["data", "storeDashboardSchemaHistory", "hash"])
+
+      # Add a panel to the dashboard
+      execute_dashboard_panel_schema_mutation(
+        context.conn,
+        :create_dashboard_panel,
+        default_dashboard_panel_args()
+        |> Map.put(:dashboard_id, dashboard_id)
+      )
+      |> get_in(["data", "createDashboardPanel"])
+
+      # Store the dashboard schema again
+      hash2 =
+        store_dashboard_schema_history(
+          context.conn,
+          %{id: dashboard_id, message: "Store second version"}
+        )
+        |> get_in(["data", "storeDashboardSchemaHistory", "hash"])
+
+      history_list =
+        get_dashboard_schema_history_list(context.conn, dashboard_id)
+        |> get_in(["data", "getDashboardSchemaHistoryList"])
+
+      assert [
+               %{
+                 "hash" => ^hash1,
+                 "insertedAt" => _,
+                 "message" => "Store initial version of dashboard schema"
+               },
+               %{
+                 "hash" => ^hash2,
+                 "insertedAt" => _,
+                 "message" => "Store second version"
+               }
+             ] = history_list
+
+      schema_history1 =
+        get_dashboard_schema_history(context.conn, dashboard_id, hash1)
+        |> get_in(["data", "getDashboardSchemaHistory"])
+
+      assert %{
+               "description" => "some text",
+               "hash" => ^hash1,
+               "insertedAt" => _,
+               "isPublic" => true,
+               "message" => "Store initial version of dashboard schema",
+               "name" => "MyDashboard",
+               "panels" => []
+             } = schema_history1
+
+      schema_history2 =
+        get_dashboard_schema_history(context.conn, dashboard_id, hash2)
+        |> get_in(["data", "getDashboardSchemaHistory"])
+
+      assert %{
+               "description" => "some text",
+               "hash" => ^hash2,
+               "insertedAt" => _,
+               "isPublic" => true,
+               "message" => "Store second version",
+               "name" => "MyDashboard",
+               "panels" => [
+                 %{
+                   "sql" => %{
+                     "parameters" => %{"limit" => 20, "slug" => "bitcoin"},
+                     "query" =>
+                       "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT {{limit}})"
+                   }
+                 }
+               ]
+             } = schema_history2
+    end
+  end
+
+  defp store_dashboard_schema_history(conn, args) do
+    mutation = """
+    mutation {
+      storeDashboardSchemaHistory(#{map_to_args(args)}){
+        message
+        hash
+
+        dashboardId
+        name
+        description
+        panels{
+          id
+          sql {
+            query
+            parameters
+          }
+        }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+  end
+
   defp execute_dashboard_panel_schema_mutation(conn, mutation, args) do
     mutation_name = mutation |> Inflex.camelize(:lower)
 
@@ -678,7 +791,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         name
         description
         isPublic
-        panels { id }
+        panels { id sql { query parameters } }
         votes {
           totalVotes
         }
@@ -703,6 +816,43 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
           summary
           updatedAt
         }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
+  defp get_dashboard_schema_history_list(conn, dashboard_id) do
+    query = """
+    {
+      getDashboardSchemaHistoryList(id: #{dashboard_id}, page: 1, pageSize: 10){
+        message
+        hash
+        insertedAt
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
+  defp get_dashboard_schema_history(conn, dashboard_id, hash) do
+    query = """
+    {
+      getDashboardSchemaHistory(id: #{dashboard_id}, hash: "#{hash}"){
+        name
+        description
+        isPublic
+        panels { sql { query parameters } }
+
+        message
+        hash
+        insertedAt
       }
     }
     """

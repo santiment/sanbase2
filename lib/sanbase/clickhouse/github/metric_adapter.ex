@@ -189,6 +189,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     {:ok,
      %{
        metric: metric,
+       has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "1m",
        default_aggregation: :sum,
        available_aggregations: @aggregations,
@@ -259,6 +260,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def available_slugs(metric) when metric in @metrics do
     available_slugs()
   end
+
+  @impl Sanbase.Metric.Behaviour
+  def incomplete_metrics(), do: []
 
   @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics

@@ -48,6 +48,7 @@ defmodule Sanbase.Metric do
   @access_map Helper.access_map()
   @aggregations Helper.aggregations()
   @aggregations_per_metric Helper.aggregations_per_metric()
+  @incomplete_metrics Helper.incomplete_metrics()
   @free_metrics Helper.free_metrics()
   @histogram_metric_to_module_map Helper.histogram_metric_to_module_map()
   @histogram_metrics Helper.histogram_metrics()
@@ -624,6 +625,12 @@ defmodule Sanbase.Metric do
 
     Sanbase.Cache.get_or_store({cache_key, 1800}, &get_available_slugs/0)
   end
+
+  @doc ~s"""
+  Get all incomplete metrics
+  """
+  @spec incomplete_metrics() :: list(metric)
+  def incomplete_metrics(), do: @incomplete_metrics
 
   @doc ~s"""
   Get all free metrics

@@ -19,14 +19,14 @@ defmodule Sanbase.Billing.Invoices.Download do
       list_invoices([], %{created: %{gte: from, lte: to}, limit: 100, status: "paid"})
       |> Enum.filter(&(&1.total > 0 or abs(&1.starting_balance) > 0))
 
-    IO.inspect(length(invoices), label: "Number of invoices for #{year}_#{month}")
+    IO.puts("Number of invoices for #{year}_#{month}: #{length(invoices)}")
 
     invoices =
       invoices
       |> Enum.map(fn inv ->
         label = if inv.starting_balance == 0, do: "fiat", else: "crypto"
         url = inv.invoice_pdf
-        IO.inspect(url, label: "#{year}_#{month} fetching url ...")
+        IO.puts("#{year}_#{month} fetching url: #{url}")
 
         response =
           HTTPoison.get!(url, [],
@@ -43,7 +43,9 @@ defmodule Sanbase.Billing.Invoices.Download do
 
     zipname = "#{year}_#{month}.zip"
     {:ok, _zipfile} = :zip.create(zipname |> to_charlist(), invoices)
-    IO.inspect(zipname, label: "***************** result zipfile")
+    IO.puts("***************** result zipfile: #{zipname}")
+
+    zipname
   end
 
   def extract_filename(response) do

@@ -76,6 +76,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_coupon,
           :get_dashboard_cache,
           :get_dashboard_schema,
+          :get_dashboard_schema_history,
+          :get_dashboard_schema_history_list,
           :get_events_for_users,
           :get_full_url,
           :get_market_exchanges,

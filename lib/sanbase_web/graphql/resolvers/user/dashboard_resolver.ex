@@ -55,7 +55,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
     with true <- can_view_dashboard?(dashboard_id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_panel(dashboard_id, panel_id)
+      Dashboard.compute_panel(dashboard_id, panel_id, user.id)
     end
   end
 
@@ -64,7 +64,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     # storing requires edit access, not just view access
     with true <- is_dashboard_owner?(dashboard_id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_and_store_panel(dashboard_id, panel_id)
+      Dashboard.compute_and_store_panel(dashboard_id, panel_id, user.id)
     end
   end
 
@@ -79,6 +79,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
          {:ok, _} <- Dashboard.Cache.update_panel_cache(dashboard_id, panel_id, query_result) do
       panel_cache = Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
       {:ok, panel_cache}
+    end
+  end
+
+  def get_query_execution_stats(
+        _root,
+        %{clickhouse_query_id: clickhouse_query_id},
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    case Dashboard.QueryExecution.get_execution_stats(user.id, clickhouse_query_id) do
+      {:ok, stats} ->
+        result =
+          stats
+          |> Map.from_struct()
+          |> Map.take([:credits_cost, :query_start_time, :query_end_time])
+          |> Map.merge(stats.query_details)
+
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

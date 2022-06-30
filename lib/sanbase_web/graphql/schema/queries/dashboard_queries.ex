@@ -90,6 +90,14 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
 
       resolve(&DashboardResolver.get_dashboard_schema_history_list/3)
     end
+
+    field :get_query_execution_stats, :query_execution_stats do
+      meta(access: :free)
+      arg(:clickhouse_query_id, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&DashboardResolver.get_query_execution_stats/3)
+    end
   end
 
   object :dashboard_mutations do

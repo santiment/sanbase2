@@ -13,10 +13,21 @@ defmodule Sanbase.Dashboard.QueryExecution do
   @type user_id :: non_neg_integer()
   @type credits_cost :: non_neg_integer()
 
+  @type execution_details :: %{
+          read_compressed_gb: number(),
+          cpu_time_microseconds: number(),
+          query_duration_ms: number(),
+          memory_usage_gb: number(),
+          read_rows: number(),
+          read_gb: number(),
+          result_rows: number(),
+          result_gb: number()
+        }
+
   @type t :: %__MODULE__{
           user_id: user_id(),
-          query_id: String.t(),
-          execution_details: Map.t(),
+          san_query_id: String.t(),
+          execution_details: execution_details(),
           credits_cost: credits_cost(),
           inserted_at: NaiveDateTime.t(),
           updated_at: NaiveDateTime.t()
@@ -26,9 +37,12 @@ defmodule Sanbase.Dashboard.QueryExecution do
     belongs_to(:user, User)
 
     field(:clickhouse_query_id, :string)
-    field(:query_id, :string)
+    field(:san_query_id, :string)
     field(:execution_details, :map)
     field(:credits_cost, :integer)
+
+    field(:query_start_time, :naive_datetime)
+    field(:query_end_time, :naive_datetime)
 
     timestamps()
   end
@@ -40,11 +54,14 @@ defmodule Sanbase.Dashboard.QueryExecution do
   the query profiling details - how much RAM memory it used, how much data it
   read from the disk, how big is the result, etc.
   """
-  @spec credits_spent(user_id, DateTime.t(), DateTime.t()) :: {:ok, credits_cost()}
+  @spec credits_spent(user_id, DateTime.t(), DateTime.t()) ::
+          {:ok, credits_cost()}
   def credits_spent(user_id, from, to) do
     credits_cost =
       from(c in __MODULE__,
-        where: c.user_id == ^user_id and c.inserted_at >= ^from and c.inserted_at <= ^to,
+        where:
+          c.user_id == ^user_id and c.inserted_at >= ^from and
+            c.inserted_at <= ^to,
         select: sum(c.credits_cost)
       )
       |> Sanbase.Repo.one()
@@ -52,11 +69,21 @@ defmodule Sanbase.Dashboard.QueryExecution do
     {:ok, credits_cost || 0}
   end
 
-  @fields [:user_id, :query_id, :clickhouse_query_id, :execution_details, :credits_cost]
+  @fields [
+    :user_id,
+    :san_query_id,
+    :clickhouse_query_id,
+    :execution_details,
+    :credits_cost,
+    :query_start_time,
+    :query_end_time
+  ]
 
   @doc ~s"""
   Store a query execution run by a user. It computes the credits cost
-  of the computation and stores it alongside some metadata
+  of the computation and stores it alongside some metadata.
+
+  The data is stored in the system.query_log table
   """
   @spec store_execution(user_id, Dashboard.Query.Result.t()) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
@@ -69,15 +96,25 @@ defmodule Sanbase.Dashboard.QueryExecution do
       compute_credits_cost(query_result)
 
     credits_cost =
-      Enum.max([Float.round(credits_cost), 1])
+      [Float.round(credits_cost), 1]
+      |> Enum.max()
       |> Kernel.trunc()
 
     # credits_cost is stored outside the execution_details as it's not
     # really an execution detail, but a business logic detail. Also having
     # it in a separate field makes it easier to compute the total credits spent
+    IO.inspect("HERE")
+
     args =
       query_result
-      |> Map.take([:query_id, :clickhouse_query_id])
+      |> IO.inspect(label: "108", limit: :infinity)
+      |> Map.take([
+        :san_query_id,
+        :clickhouse_query_id,
+        :query_start_time,
+        :query_end_time
+      ])
+      |> IO.inspect(label: "114", limit: :infinity)
       |> Map.merge(%{
         credits_cost: credits_cost,
         user_id: user_id,
@@ -88,25 +125,69 @@ defmodule Sanbase.Dashboard.QueryExecution do
     |> cast(args, @fields)
     |> validate_required(@fields)
     |> Sanbase.Repo.insert()
+    |> IO.inspect(label: "105", limit: :infinity)
   rescue
     e ->
+      IO.inspect(e)
+      IO.inspect(Exception.message(e))
       # This can happen if the query details are not flushed to the system.query_log
       # table or some other clickouse error occurs. Allow for 3 attempts in total before
       # reraising the exception.
       case attempts_left do
-        0 -> reraise(e, __STACKTRACE__)
+        0 -> {:error, "Cannot store execution"}
         _ -> store_execution(user_id, query_result, attempts_left - 1)
       end
+  end
+
+  @doc ~s"""
+  Get the execution stats for a query.
+
+  The stats include information about how many rows and bytes have been
+  read from the disk, how much CPU time was used, how big is the result, etc.
+
+
+  """
+  @spec get_execution_stats(non_neg_integer(), String.t(), non_neg_integer()) ::
+          {:ok, t()} | {:error, String.t()}
+  def get_execution_stats(user_id, clickhouse_query_id, attempts_left \\ 2) do
+    query =
+      from(
+        qe in __MODULE__,
+        where:
+          qe.user_id == ^user_id and
+            qe.clickhouse_query_id == ^clickhouse_query_id
+      )
+
+    case Sanbase.Repo.one(query) do
+      %__MODULE__{} = query_execution ->
+        {:ok, query_execution}
+
+      nil ->
+        case attempts_left do
+          0 ->
+            {:error, "Query execution not found"}
+
+          _ ->
+            Process.sleep(5000)
+            get_execution_stats(user_id, clickhouse_query_id, attempts_left - 1)
+        end
+    end
   end
 
   # Private functions
 
   defp compute_credits_cost(args) do
-    %{clickhouse_query_id: clickhouse_query_id, query_start_time: query_start_time} = args
-    {:ok, execution_details} = get_execution_details(clickhouse_query_id, query_start_time)
+    %{
+      clickhouse_query_id: clickhouse_query_id,
+      query_start_time: query_start_time
+    } = args
+
+    # If there is no result yet this will return {:ok, nil} which will fail and will be retried
+    # from inside the rescue block
+    {:ok, %{} = execution_details} = get_execution_details(clickhouse_query_id, query_start_time)
 
     # The credits cost is computed as the dot product of the vectors
-    # representing the statistics' values and the weights, i.e
+    # representing the stats' values and the weights, i.e
     # value(read_gb)*weight(read_gb) + value(result_gb)*weight(result_gb) + ...
     # The values for the weights are manually picked. They are going to be tuned
     # as times go by.
@@ -122,7 +203,9 @@ defmodule Sanbase.Dashboard.QueryExecution do
     }
 
     credits_cost =
-      Map.merge(execution_details, weights, fn _k, value, weight -> value * weight end)
+      Map.merge(execution_details, weights, fn _k, value, weight ->
+        value * weight
+      end)
       |> Map.values()
       |> Enum.sum()
 
@@ -130,25 +213,9 @@ defmodule Sanbase.Dashboard.QueryExecution do
   end
 
   defp get_execution_details(query_id, event_time_start) do
-    query = """
-    SELECT
-      ProfileEvents['ReadCompressedBytes'] / pow(2,30) AS read_compressed_gb,
-      ProfileEvents['OSCPUVirtualTimeMicroseconds'] AS cpu_time_microseconds,
-      query_duration_ms,
-      memory_usage / pow(2, 30) AS memory_usage_gb,
-      read_rows,
-      read_bytes / pow(2, 30) AS read_gb,
-      result_rows,
-      result_bytes / pow(2, 30) AS result_gb
-    FROM system.query_log_distributed
-    PREWHERE
-      query_id = ?1 AND
-      type = 'QueryFinish' AND
-      event_time >= toDateTime(?2) - INTERVAL 1 MINUTE AND
-      event_time <= toDateTime(?2) + INTERVAL 1 MINUTE
-    """
+    {query, args} = get_execution_details_query(query_id, event_time_start)
 
-    args = [query_id, DateTime.to_unix(event_time_start)]
+    Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
 
     Sanbase.ClickhouseRepo.query_transform(
       query,
@@ -175,6 +242,31 @@ defmodule Sanbase.Dashboard.QueryExecution do
         }
       end
     )
+    |> IO.inspect(label: "224", limit: :infinity)
     |> Sanbase.Utils.Transform.maybe_unwrap_ok_value()
+  end
+
+  defp get_execution_details_query(query_id, event_time_start) do
+    query = """
+    SELECT
+      ProfileEvents['ReadCompressedBytes'] / pow(2,30) AS read_compressed_gb,
+      ProfileEvents['OSCPUVirtualTimeMicroseconds'] AS cpu_time_microseconds,
+      query_duration_ms,
+      memory_usage / pow(2, 30) AS memory_usage_gb,
+      read_rows,
+      read_bytes / pow(2, 30) AS read_gb,
+      result_rows,
+      result_bytes / pow(2, 30) AS result_gb
+    FROM system.query_log_distributed
+    PREWHERE
+      query_id = ?1 AND
+      type = 'QueryFinish' AND
+      event_time >= toDateTime(?2) - INTERVAL 1 MINUTE AND
+      event_time <= toDateTime(?2) + INTERVAL 1 MINUTE
+    """
+
+    args = [query_id, DateTime.to_unix(event_time_start)]
+
+    {query, args}
   end
 end

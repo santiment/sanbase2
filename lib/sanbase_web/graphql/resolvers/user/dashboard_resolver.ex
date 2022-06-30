@@ -82,18 +82,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
-  def get_query_execution_stats(
+  def get_clickhouse_query_execution_stats(
         _root,
         %{clickhouse_query_id: clickhouse_query_id},
         %{context: %{auth: %{current_user: user}}}
       ) do
     case Dashboard.QueryExecution.get_execution_stats(user.id, clickhouse_query_id) do
       {:ok, stats} ->
+        execution_details = %{
+          cpu_time_microseconds: stats.execution_details["cpu_time_microseconds"],
+          memory_usage_gb: stats.execution_details["memory_usage_gb"],
+          query_duration_ms: stats.execution_details["query_duration_ms"],
+          read_compressed_gb: stats.execution_details["read_compressed_gb"],
+          read_gb: stats.execution_details["read_gb"],
+          read_rows: stats.execution_details["read_rows"],
+          result_gb: stats.execution_details["result_gb"],
+          result_rows: stats.execution_details["result_rows"]
+        }
+
         result =
           stats
           |> Map.from_struct()
           |> Map.take([:credits_cost, :query_start_time, :query_end_time])
-          |> Map.merge(stats.query_details)
+          |> Map.merge(execution_details)
 
         {:ok, result}
 

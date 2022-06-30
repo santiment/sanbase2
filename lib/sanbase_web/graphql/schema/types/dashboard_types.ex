@@ -67,6 +67,8 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:result_rows, non_null(:float))
     field(:result_gb, non_null(:float))
     field(:credits_cost, non_null(:float))
+    field(:query_start_time, non_null(:datetime))
+    field(:query_end_time, non_null(:datetime))
     field(:inserted_at, non_null(:datetime))
   end
 

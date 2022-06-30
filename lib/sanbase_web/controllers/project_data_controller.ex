@@ -57,6 +57,7 @@ defmodule SanbaseWeb.ProjectDataController do
           %{
             slug: project.slug,
             ticker: project.ticker,
+            name: project.name,
             infrastructure: infr_code,
             github_organizations: github_organizations |> Enum.sort() |> Enum.join(","),
             contract: contract,

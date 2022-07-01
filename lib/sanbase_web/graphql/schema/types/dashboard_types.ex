@@ -23,6 +23,9 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:parameters, non_null(:json))
   end
 
+  @desc ~s"""
+  TOOD
+  """
   input_object :computed_panel_input_object do
     field(:san_query_id, non_null(:string))
     field(:clickhouse_query_id, non_null(:string))
@@ -33,6 +36,9 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:summary, non_null(:json))
   end
 
+  @desc ~s"""
+  TODO
+  """
   enum :panel_type do
     value(:chart)
     value(:table)
@@ -46,6 +52,24 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:description, :string)
     field(:position, :json)
     field(:size, :json)
+  end
+
+  @desc ~s"""
+  TODO
+  """
+  object :query_execution_stats do
+    field(:read_compressed_gb, non_null(:float))
+    field(:cpu_time_microseconds, non_null(:float))
+    field(:query_duration_ms, non_null(:float))
+    field(:memory_usage_gb, non_null(:float))
+    field(:read_rows, non_null(:float))
+    field(:read_gb, non_null(:float))
+    field(:result_rows, non_null(:float))
+    field(:result_gb, non_null(:float))
+    field(:credits_cost, non_null(:float))
+    field(:query_start_time, non_null(:datetime))
+    field(:query_end_time, non_null(:datetime))
+    field(:inserted_at, non_null(:datetime))
   end
 
   object :query_result do

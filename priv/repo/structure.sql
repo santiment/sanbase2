@@ -548,12 +548,15 @@ ALTER SEQUENCE public.chart_configurations_id_seq OWNED BY public.chart_configur
 CREATE TABLE public.clickhouse_query_executions (
     id bigint NOT NULL,
     user_id bigint,
-    query_id character varying(255) NOT NULL,
+    query_id character varying(255),
     clickhouse_query_id character varying(255) NOT NULL,
     execution_details jsonb NOT NULL,
     credits_cost integer NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    san_query_id character varying(255) NOT NULL,
+    query_start_time timestamp(0) without time zone NOT NULL,
+    query_end_time timestamp(0) without time zone NOT NULL
 );
 
 
@@ -7772,3 +7775,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220617112317);
 INSERT INTO public."schema_migrations" (version) VALUES (20220620132733);
 INSERT INTO public."schema_migrations" (version) VALUES (20220620143734);
 INSERT INTO public."schema_migrations" (version) VALUES (20220627144857);
+INSERT INTO public."schema_migrations" (version) VALUES (20220630123257);

@@ -2585,7 +2585,7 @@
     "metric": "nft_collection_min_price",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address", "token_id"],
+    "selectors": ["slug", "address"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2602,7 +2602,7 @@
     "metric": "nft_collection_max_price",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address", "token_id"],
+    "selectors": ["slug", "address"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2619,7 +2619,7 @@
     "metric": "nft_collection_avg_price",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address", "token_id"],
+    "selectors": ["slug", "address"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2636,7 +2636,7 @@
     "metric": "nft_collection_trades_count",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address", "token_id"],
+    "selectors": ["slug", "address"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2653,7 +2653,7 @@
     "metric": "nft_collection_min_price_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address", "token_id"],
+    "selectors": ["slug", "address"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2670,7 +2670,7 @@
     "metric": "nft_collection_max_price_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address", "token_id"],
+    "selectors": ["slug", "address"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2687,7 +2687,7 @@
     "metric": "nft_collection_avg_price_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address", "token_id"],
+    "selectors": ["slug", "address"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2728,6 +2728,125 @@
     },
     "aggregation": "last",
     "min_interval": "5m",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily market buy/sell volume in eth for NFT collections",
+    "name": "nft_market_volume",
+    "metric": "nft_market_volume",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily market buy/sell count for NFT collections",
+    "name": "nft_market_count",
+    "metric": "nft_market_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily NFT collection holders average balance",
+    "name": "nft_collection_holders_balance",
+    "metric": "nft_collection_holders_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "NFT network realized profit/loss for all NFTs in ETH",
+    "name": "nft_network_profit_loss",
+    "metric": "nft_network_profit_loss",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "NFT network realized profit/loss for all NFTs in USD",
+    "name": "nft_network_profit_loss_usd",
+    "metric": "nft_network_profit_loss_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "NFT network realized profit/loss for each NFT collection separately in ETH",
+    "name": "nft_collection_profit_loss",
+    "metric": "nft_collection_profit_loss",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "intraday_nft_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "NFT network realized profit/loss for each NFT collection separately in USD",
+    "name": "nft_collection_profit_loss_usd",
+    "metric": "nft_collection_profit_loss_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "address"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"

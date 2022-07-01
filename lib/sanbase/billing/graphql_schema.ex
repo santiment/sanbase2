@@ -46,26 +46,8 @@ defmodule Sanbase.Billing.GraphqlSchema do
     # Metadata looks like this:
     # meta(access: :restricted, min_plan: [sanapi: :pro, sanbase: :free])
     query_min_plan_map = get_query_min_plan_map()
-
-    metric_min_plan_map =
-      Sanbase.Metric.min_plan_map()
-      |> Enum.into(%{}, fn
-        {metric, product_plan_map} when is_map(product_plan_map) ->
-          {{:metric, metric}, product_plan_map}
-
-        {metric, _} ->
-          {{:metric, metric}, %{"SANAPI" => :free, "SANBASE" => :free}}
-      end)
-
-    signal_min_plan_map =
-      Sanbase.Signal.min_plan_map()
-      |> Enum.into(%{}, fn
-        {signal, product_plan_map} when is_map(product_plan_map) ->
-          {{:signal, signal}, product_plan_map}
-
-        {signal, _} ->
-          {{:signal, signal}, %{"SANAPI" => :free, "SANBASE" => :free}}
-      end)
+    metric_min_plan_map = get_metric_min_plan_map()
+    signal_min_plan_map = get_signal_min_plan_map()
 
     query_min_plan_map
     |> Map.merge(metric_min_plan_map)
@@ -141,6 +123,28 @@ defmodule Sanbase.Billing.GraphqlSchema do
 
       {query, _} ->
         {{:query, query}, %{"SANAPI" => :free, "SANBASE" => :free}}
+    end)
+  end
+
+  defp get_metric_min_plan_map() do
+    Sanbase.Metric.min_plan_map()
+    |> Enum.into(%{}, fn
+      {metric, product_plan_map} when is_map(product_plan_map) ->
+        {{:metric, metric}, product_plan_map}
+
+      {metric, _} ->
+        {{:metric, metric}, %{"SANAPI" => :free, "SANBASE" => :free}}
+    end)
+  end
+
+  defp get_signal_min_plan_map() do
+    Sanbase.Signal.min_plan_map()
+    |> Enum.into(%{}, fn
+      {signal, product_plan_map} when is_map(product_plan_map) ->
+        {{:signal, signal}, product_plan_map}
+
+      {signal, _} ->
+        {{:signal, signal}, %{"SANAPI" => :free, "SANBASE" => :free}}
     end)
   end
 

@@ -505,16 +505,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp valid_metric_selector_pair?(_metric, _selector), do: true
 
-  defp maybe_filter_incomplete_metrics(metrics, _has_incomplete_data = nil), do: metrics
+  defp maybe_filter_incomplete_metrics(metrics, nil = _has_incomplete_data), do: metrics
 
-  defp maybe_filter_incomplete_metrics(metrics, _has_incomplete_data = true) do
+  defp maybe_filter_incomplete_metrics(metrics, true = _has_incomplete_data) do
     incomplete_metrics = Metric.incomplete_metrics()
 
     MapSet.intersection(MapSet.new(incomplete_metrics), MapSet.new(metrics))
     |> Enum.to_list()
   end
 
-  defp maybe_filter_incomplete_metrics(metrics, _has_incomplete_data = false) do
+  defp maybe_filter_incomplete_metrics(metrics, false = _has_incomplete_data) do
     incomplete_metrics = Metric.incomplete_metrics()
 
     metrics -- incomplete_metrics

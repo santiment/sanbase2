@@ -144,6 +144,9 @@ defmodule Sanbase.Utils.Transform do
 
   def maybe_unwrap_ok_value({:error, error}), do: {:error, error}
 
+  def maybe_extract_value_from_tuple({:ok, value}), do: value
+  def maybe_extract_value_from_tuple({:error, error}), do: {:error, error}
+
   def maybe_apply_function({:ok, list}, fun) when is_function(fun, 1),
     do: {:ok, fun.(list)}
 

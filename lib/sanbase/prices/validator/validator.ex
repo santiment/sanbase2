@@ -19,6 +19,7 @@ defmodule Sanbase.Price.Validator do
   def init(_opts) do
     children =
       for num <- 0..(@gen_servers_count - 1) do
+        # credo:disable-for-next-line
         name = String.to_atom("Sanbase.Price.Validator.Node_#{num}")
         {Sanbase.Price.Validator.Node, name: name, number: num}
       end
@@ -28,6 +29,7 @@ defmodule Sanbase.Price.Validator do
 
   def clean_state() do
     for num <- 0..(@gen_servers_count - 1) do
+      # credo:disable-for-next-line
       name = String.to_atom("Sanbase.Price.Validator.Node_#{num}")
       :ok = GenServer.call(name, :clean_state)
     end

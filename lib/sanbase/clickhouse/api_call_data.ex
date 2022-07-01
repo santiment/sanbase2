@@ -4,7 +4,8 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   Get data about the API Calls that were made by users
   """
 
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+  import Sanbase.Utils.Transform,
+    only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, maybe_extract_value_from_tuple: 1]
 
   alias Sanbase.ClickhouseRepo
 
@@ -43,30 +44,22 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     {query, args} = active_users_count_query(from, to)
 
     ClickhouseRepo.query_transform(query, args, fn value -> value end)
-    |> case do
-      {:ok, [result]} -> result
-      {:error, error} -> error
-    end
+    |> maybe_unwrap_ok_value()
+    |> maybe_extract_value_from_tuple()
   end
 
   def users_used_api() do
     {query, args} = users_used_api_query()
 
     ClickhouseRepo.query_transform(query, args, fn [value] -> value end)
-    |> case do
-      {:ok, result} -> result
-      {:error, _error} -> []
-    end
+    |> maybe_extract_value_from_tuple()
   end
 
   def users_used_sansheets() do
     {query, args} = users_used_sansheets_query()
 
     ClickhouseRepo.query_transform(query, args, fn [value] -> value end)
-    |> case do
-      {:ok, result} -> result
-      {:error, _error} -> []
-    end
+    |> maybe_extract_value_from_tuple()
   end
 
   def api_calls_count_per_user() do
@@ -75,10 +68,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     ClickhouseRepo.query_reduce(query, args, %{}, fn [user_id, count], acc ->
       Map.put(acc, user_id, count)
     end)
-    |> case do
-      {:ok, result} -> result
-      {:error, _error} -> %{}
-    end
+    |> maybe_extract_value_from_tuple()
   end
 
   def api_metric_distribution() do
@@ -93,13 +83,35 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     ClickhouseRepo.query_transform(query, [], fn [metric, count] ->
       %{metric: metric, count: count}
     end)
-    |> case do
-      {:ok, result} -> result
-      {:error, _error} -> []
-    end
+    |> maybe_extract_value_from_tuple()
   end
 
   def api_metric_distribution_per_user() do
+    {query, args} = api_metric_distribution_per_user_query()
+
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [user_id, metric, count], acc ->
+      Map.update(acc, user_id, %{}, fn previous ->
+        count_all = (previous[:count] || 0) + count
+
+        metric_count_map = %{metric: metric, count: count}
+
+        current =
+          Map.update(previous, :metrics, [metric_count_map], fn metrics ->
+            [metric_count_map | metrics]
+          end)
+
+        Map.put(current, :count, count_all)
+      end)
+    end)
+    |> maybe_apply_function(fn result ->
+      result
+      |> Enum.sort_by(fn {_, map} -> map[:count] || 0 end, :desc)
+      |> Enum.map(fn {user_id, map} -> Map.put(map, :user_id, user_id) end)
+    end)
+    |> maybe_extract_value_from_tuple()
+  end
+
+  defp api_metric_distribution_per_user_query() do
     query = """
     SELECT user_id, query, count(*) as count
     FROM api_call_data
@@ -108,27 +120,9 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     ORDER BY count desc
     """
 
-    ClickhouseRepo.query_reduce(query, [], %{}, fn [user_id, metric, count], acc ->
-      Map.update(acc, user_id, %{}, fn previous ->
-        count_all = (previous[:count] || 0) + count
+    args = []
 
-        current =
-          Map.update(previous, :metrics, [], fn metrics ->
-            [%{metric: metric, count: count} | metrics]
-          end)
-
-        Map.put(current, :count, count_all)
-      end)
-    end)
-    |> case do
-      {:ok, result} ->
-        result
-        |> Enum.sort_by(fn {_, map} -> map[:count] || 0 end, :desc)
-        |> Enum.map(fn {user_id, map} -> Map.put(map, :user_id, user_id) end)
-
-      {:error, _error} ->
-        []
-    end
+    {query, args}
   end
 
   defp api_call_history_query(user_id, from, to, interval, auth_method) do

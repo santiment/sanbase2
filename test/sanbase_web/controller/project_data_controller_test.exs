@@ -60,6 +60,7 @@ defmodule SanbaseWeb.ProjectDataControllerTest do
       "decimals" => decimals,
       "ticker" => project.ticker,
       "slug" => project.slug,
+      "name" => project.name,
       "infrastructure" => infrastructure.code,
       "github_organizations" => github_organizations |> Enum.sort() |> Enum.join(",")
     }

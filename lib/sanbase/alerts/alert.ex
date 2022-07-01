@@ -34,27 +34,26 @@ defimpl Sanbase.Alert, for: Any do
     result =
       channel
       |> List.wrap()
-      |> Enum.map(fn
-        "telegram" ->
-          {"telegram", send_telegram(user_trigger, max_alerts_to_send)}
-
-        "email" ->
-          {"email", send_email(user_trigger, max_alerts_to_send)}
-
-        "web_push" ->
-          {"web_push", []}
-
-        %{webhook: webhook_url} ->
-          {"webhook", send_webhook(user_trigger, webhook_url, max_alerts_to_send)}
-
-        %{telegram_channel: channel} ->
-          {"telegram_channel", send_telegram_channel(user_trigger, channel, max_alerts_to_send)}
-      end)
+      |> Enum.map(&send_to_channel(&1, user_trigger, max_alerts_to_send))
 
     update_user_alerts_sent_per_day(user, result)
 
     Enum.flat_map(result, fn {_type, list} -> list end)
   end
+
+  defp send_to_channel("telegram", user_trigger, max_alerts_to_send),
+    do: {"telegram", send_telegram(user_trigger, max_alerts_to_send)}
+
+  defp send_to_channel("email", user_trigger, max_alerts_to_send),
+    do: {"email", send_email(user_trigger, max_alerts_to_send)}
+
+  defp send_to_channel(%{webhook: webhook_url}, user_trigger, max_alerts_to_send),
+    do: {"webhook", send_webhook(user_trigger, webhook_url, max_alerts_to_send)}
+
+  defp send_to_channel(%{telegram_channel: channel}, user_trigger, max_alerts_to_send),
+    do: {"telegram_channel", send_telegram_channel(user_trigger, channel, max_alerts_to_send)}
+
+  defp send_to_channel("web_push", _user_trigger, _max_alerts_to_send), do: {"web_push", []}
 
   defp send_webhook(
          trigger,

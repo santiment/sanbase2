@@ -29,6 +29,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.CustomTypes.Interval)
   import_types(Graphql.CustomTypes.IntervalOrNow)
   import_types(Graphql.CustomTypes.JSON)
+  import_types(Graphql.CustomTypes.SanitizedString)
   # End of custom types
   import_types(Graphql.AggregationTypes)
   import_types(Graphql.AlertsHistoricalActivityTypes)

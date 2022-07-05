@@ -40,6 +40,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @deprecated_metrics_map FileHandler.deprecated_metrics_map()
   @default_complexity_weight 0.3
 
+  @incomplete_metrics Enum.filter(@incomplete_data_map, &(elem(&1, 1) == true))
+                      |> Enum.map(&elem(&1, 0))
+
   @type slug :: String.t()
   @type metric :: String.t()
   @type interval :: String.t()
@@ -48,6 +51,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
            when is_map(s) and
                   (is_map_key(s, :slug) or is_map_key(s, :address) or
                      is_map_key(s, :contract_address))
+
+  @impl Sanbase.Metric.Behaviour
+  def incomplete_metrics(), do: @incomplete_metrics
 
   @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics
@@ -169,6 +175,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     {:ok,
      %{
        metric: metric,
+       has_incomplete_data: has_incomplete_data?(metric),
        min_interval: min_interval,
        default_aggregation: default_aggregation,
        available_aggregations: @plain_aggregations,

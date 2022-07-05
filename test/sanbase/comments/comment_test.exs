@@ -116,7 +116,6 @@ defmodule Sanbase.CommentTest do
     watchlist = insert(:watchlist)
     user = insert(:user)
 
-    # Timeline event with watchlist
     timeline_event =
       insert(:timeline_event,
         user_list: watchlist,

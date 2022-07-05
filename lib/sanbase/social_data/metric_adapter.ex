@@ -273,6 +273,9 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def incomplete_metrics(), do: []
+
+  @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: []
 
   @impl Sanbase.Metric.Behaviour
@@ -296,6 +299,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     {:ok,
      %{
        metric: metric,
+       has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "5m",
        default_aggregation: :sum,
        available_aggregations: @aggregations,

@@ -25,13 +25,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  def get_available_metrics(_root, %{product: product, plan: plan}, _resolution) do
+  def get_available_metrics(_root, %{product: product, plan: plan} = args, _resolution) do
     product = product |> Atom.to_string() |> String.upcase()
-    {:ok, AccessChecker.get_available_metrics_for_plan(product, plan)}
+    metrics = AccessChecker.get_available_metrics_for_plan(product, plan)
+    metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
+    {:ok, metrics}
   end
 
-  def get_available_metrics(_root, _args, _resolution),
-    do: {:ok, Metric.available_metrics()}
+  def get_available_metrics(_root, args, _resolution) do
+    metrics = Metric.available_metrics()
+    metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
+    {:ok, metrics}
+  end
 
   def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
     do: Metric.available_slugs(metric)
@@ -499,4 +504,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   defp valid_metric_selector_pair?(_metric, _selector), do: true
+
+  defp maybe_filter_incomplete_metrics(metrics, nil = _has_incomplete_data), do: metrics
+
+  defp maybe_filter_incomplete_metrics(metrics, true = _has_incomplete_data) do
+    incomplete_metrics = Metric.incomplete_metrics()
+
+    MapSet.intersection(MapSet.new(incomplete_metrics), MapSet.new(metrics))
+    |> Enum.to_list()
+  end
+
+  defp maybe_filter_incomplete_metrics(metrics, false = _has_incomplete_data) do
+    incomplete_metrics = Metric.incomplete_metrics()
+
+    metrics -- incomplete_metrics
+  end
 end

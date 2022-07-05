@@ -52,6 +52,55 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
 
       resolve(&DashboardResolver.get_dashboard_cache/3)
     end
+
+    @desc ~s"""
+    Get a history revision of the dashboard schema, identified by the
+    dashboard id and hash.
+
+    The history revision contains the same fields as the dashboard schema
+    and is enriched with a comment, a computed hash that identifies the
+    revision and datetime fields indicating when it was created.
+    """
+    field :get_dashboard_schema_history, :dashboard_schema_history do
+      meta(access: :free)
+
+      arg(:id, non_null(:integer))
+      arg(:hash, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&DashboardResolver.get_dashboard_schema_history/3)
+    end
+
+    @desc ~s"""
+    Get a list of all stored history revisionf of the dashboard schema, identified
+    by the dashboard id.
+
+    The returned result is a list of previews, including the hash, comment and creation
+    datetime. The hash is used to obtain the full dashboard history revision.
+    """
+    field :get_dashboard_schema_history_list, list_of(:dashboard_schema_history_preview) do
+      meta(access: :free)
+
+      arg(:id, non_null(:integer))
+      arg(:page, non_null(:integer))
+      arg(:page_size, non_null(:integer))
+
+      middleware(JWTAuth)
+
+      resolve(&DashboardResolver.get_dashboard_schema_history_list/3)
+    end
+
+    @desc ~s"""
+    TODO
+    """
+    field :get_clickhouse_query_execution_stats, :query_execution_stats do
+      meta(access: :free)
+      arg(:clickhouse_query_id, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&DashboardResolver.get_clickhouse_query_execution_stats/3)
+    end
   end
 
   object :dashboard_mutations do
@@ -303,6 +352,18 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
         ttl: 10,
         max_ttl_offset: 10
       )
+    end
+
+    @desc ~s"""
+    Store the dashboard schema to allow to revisit it again in the future.
+    """
+    field :store_dashboard_schema_history, :dashboard_schema_history do
+      arg(:id, non_null(:integer))
+      arg(:message, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&DashboardResolver.store_dashboard_schema_history/3)
     end
   end
 end

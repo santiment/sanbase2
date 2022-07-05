@@ -14,19 +14,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   end
 
   def update_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_edit_dashboard?(args.id, user.id) do
+    with true <- is_dashboard_owner?(args.id, user.id) do
       Dashboard.update(args.id, args)
     end
   end
 
   def delete_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_edit_dashboard?(args.id, user.id) do
+    with true <- is_dashboard_owner?(args.id, user.id) do
       Dashboard.delete(args.id)
     end
   end
 
   def create_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_edit_dashboard?(args.dashboard_id, user.id),
+    with true <- is_dashboard_owner?(args.dashboard_id, user.id),
          {:ok, %{} = result} <- Dashboard.create_panel(args.dashboard_id, args.panel) do
       {:ok, result.panel |> Map.put(:dashboard_id, result.dashboard.id)}
     end
@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   def remove_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
     %{dashboard_id: dashboard_id, panel_id: panel_id} = args
 
-    with true <- can_edit_dashboard?(dashboard_id, user.id),
+    with true <- is_dashboard_owner?(dashboard_id, user.id),
          {:ok, %{} = result} <- Dashboard.remove_panel(dashboard_id, panel_id) do
       {:ok, result.panel |> Map.put(:dashboard_id, dashboard_id)}
     end
@@ -44,7 +44,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   def update_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
     %{dashboard_id: dashboard_id, panel_id: panel_id, panel: panel} = args
 
-    with true <- can_edit_dashboard?(dashboard_id, user.id),
+    with true <- is_dashboard_owner?(dashboard_id, user.id),
          {:ok, %{} = result} <- Dashboard.update_panel(dashboard_id, panel_id, panel) do
       {:ok, result.panel |> Map.put(:dashboard_id, dashboard_id)}
     end
@@ -55,16 +55,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
     with true <- can_view_dashboard?(dashboard_id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_panel(dashboard_id, panel_id)
+      Dashboard.compute_panel(dashboard_id, panel_id, user.id)
     end
   end
 
   def compute_and_store_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
     %{dashboard_id: dashboard_id, panel_id: panel_id} = args
     # storing requires edit access, not just view access
-    with true <- can_edit_dashboard?(dashboard_id, user.id),
+    with true <- is_dashboard_owner?(dashboard_id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_and_store_panel(dashboard_id, panel_id)
+      Dashboard.compute_and_store_panel(dashboard_id, panel_id, user.id)
     end
   end
 
@@ -74,7 +74,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     compressed_rows = Dashboard.Query.rows_to_compressed_rows(panel.rows)
     panel = Map.put(panel, :compressed_rows, compressed_rows)
 
-    with true <- can_edit_dashboard?(dashboard_id, user.id),
+    with true <- is_dashboard_owner?(dashboard_id, user.id),
          %{} = query_result <- struct!(Dashboard.Query.Result, panel),
          {:ok, _} <- Dashboard.Cache.update_panel_cache(dashboard_id, panel_id, query_result) do
       panel_cache = Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
@@ -82,9 +82,41 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
+  def get_clickhouse_query_execution_stats(
+        _root,
+        %{clickhouse_query_id: clickhouse_query_id},
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    case Dashboard.QueryExecution.get_execution_stats(user.id, clickhouse_query_id) do
+      {:ok, stats} ->
+        execution_details = %{
+          cpu_time_microseconds: stats.execution_details["cpu_time_microseconds"],
+          memory_usage_gb: stats.execution_details["memory_usage_gb"],
+          query_duration_ms: stats.execution_details["query_duration_ms"],
+          read_compressed_gb: stats.execution_details["read_compressed_gb"],
+          read_gb: stats.execution_details["read_gb"],
+          read_rows: stats.execution_details["read_rows"],
+          result_gb: stats.execution_details["result_gb"],
+          result_rows: stats.execution_details["result_rows"]
+        }
+
+        result =
+          stats
+          |> Map.from_struct()
+          |> Map.take([:credits_cost, :query_start_time, :query_end_time])
+          |> Map.merge(execution_details)
+
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   def get_dashboard_schema(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_view_dashboard?(args.id, user.id) do
-      Dashboard.load_schema(args.id)
+    with true <- can_view_dashboard?(args.id, user.id),
+         {:ok, dashboard_schema} <- Dashboard.load_schema(args.id) do
+      {:ok, atomize_panel_sql_keys(dashboard_schema)}
     end
   end
 
@@ -114,6 +146,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
+  def get_dashboard_schema_history_list(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    with true <- is_dashboard_owner?(args.id, user.id) do
+      opts = [page: args.page, page_size: args.page_size]
+      Dashboard.History.get_history_list(args.id, opts)
+    end
+  end
+
+  def get_dashboard_schema_history(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    with true <- is_dashboard_owner?(args.id, user.id),
+         {:ok, dashboard_schema_history} <- Dashboard.History.get_history(args.id, args.hash) do
+      {:ok, atomize_panel_sql_keys(dashboard_schema_history)}
+    end
+  end
+
+  def store_dashboard_schema_history(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    with true <- is_dashboard_owner?(args.id, user.id),
+         {:ok, dashboard} <- Dashboard.load_schema(args.id) do
+      Dashboard.History.commit(dashboard, args.message)
+    end
+  end
+
   def comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :dashboard_comments_count, id)
@@ -135,14 +188,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
-  defp can_edit_dashboard?(id, user_id) do
+  defp is_dashboard_owner?(id, user_id) do
     case Dashboard.get_is_public_and_owner(id) do
       {:ok, %{user_id: ^user_id}} ->
         true
 
       _ ->
-        {:error,
-         "Dashboard is private, does not exist or you don't have permission to execute this."}
+        {:error, "Dashboard does not exist or it's not owned by the user."}
     end
   end
 
@@ -151,5 +203,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
       true -> true
       false -> {:error, "The user with id #{user_id} has no credits left"}
     end
+  end
+
+  defp atomize_panel_sql_keys(struct) do
+    panels =
+      Enum.map(struct.panels, fn
+        %{sql: %{} = sql} = panel ->
+          sql = %{
+            query: sql["query"],
+            parameters: sql["parameters"],
+            san_query_id: sql["san_query_id"]
+          }
+
+          %{panel | sql: sql}
+
+        panel ->
+          panel
+      end)
+
+    struct
+    |> Map.put(:panels, panels)
   end
 end

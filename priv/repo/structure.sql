@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 14.2
+-- Dumped by pg_dump version 14.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -548,12 +548,15 @@ ALTER SEQUENCE public.chart_configurations_id_seq OWNED BY public.chart_configur
 CREATE TABLE public.clickhouse_query_executions (
     id bigint NOT NULL,
     user_id bigint,
-    query_id character varying(255) NOT NULL,
+    query_id character varying(255),
     clickhouse_query_id character varying(255) NOT NULL,
     execution_details jsonb NOT NULL,
     credits_cost integer NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    san_query_id character varying(255) NOT NULL,
+    query_start_time timestamp(0) without time zone NOT NULL,
+    query_end_time timestamp(0) without time zone NOT NULL
 );
 
 
@@ -793,6 +796,44 @@ CREATE SEQUENCE public.dashboards_cache_id_seq
 --
 
 ALTER SEQUENCE public.dashboards_cache_id_seq OWNED BY public.dashboards_cache.id;
+
+
+--
+-- Name: dashboards_history; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dashboards_history (
+    id bigint NOT NULL,
+    dashboard_id bigint,
+    user_id bigint,
+    panels jsonb,
+    name character varying(255),
+    description text,
+    is_public boolean,
+    message text,
+    hash text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: dashboards_history_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dashboards_history_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dashboards_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dashboards_history_id_seq OWNED BY public.dashboards_history.id;
 
 
 --
@@ -3922,6 +3963,13 @@ ALTER TABLE ONLY public.dashboards_cache ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
+-- Name: dashboards_history id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_history ALTER COLUMN id SET DEFAULT nextval('public.dashboards_history_id_seq'::regclass);
+
+
+--
 -- Name: email_login_attempts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4594,6 +4642,14 @@ ALTER TABLE ONLY public.dashboard_comments_mapping
 
 ALTER TABLE ONLY public.dashboards_cache
     ADD CONSTRAINT dashboards_cache_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dashboards_history dashboards_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_history
+    ADD CONSTRAINT dashboards_history_pkey PRIMARY KEY (id);
 
 
 --
@@ -5430,6 +5486,20 @@ CREATE INDEX dashboard_comments_mapping_dashboard_id_index ON public.dashboard_c
 --
 
 CREATE UNIQUE INDEX dashboards_cache_dashboard_id_index ON public.dashboards_cache USING btree (dashboard_id);
+
+
+--
+-- Name: dashboards_history_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dashboards_history_dashboard_id_index ON public.dashboards_history USING btree (dashboard_id);
+
+
+--
+-- Name: dashboards_history_hash_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dashboards_history_hash_index ON public.dashboards_history USING btree (hash);
 
 
 --
@@ -6469,6 +6539,22 @@ ALTER TABLE ONLY public.dashboards_cache
 
 
 --
+-- Name: dashboards_history dashboards_history_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_history
+    ADD CONSTRAINT dashboards_history_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id);
+
+
+--
+-- Name: dashboards_history dashboards_history_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboards_history
+    ADD CONSTRAINT dashboards_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: dashboards dashboards_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6953,7 +7039,7 @@ ALTER TABLE ONLY public.signals_historical_activity
 --
 
 ALTER TABLE ONLY public.signals_historical_activity
-    ADD CONSTRAINT signals_historical_activity_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id);
+    ADD CONSTRAINT signals_historical_activity_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id) ON DELETE CASCADE;
 
 
 --
@@ -7688,3 +7774,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220616131454);
 INSERT INTO public."schema_migrations" (version) VALUES (20220617112317);
 INSERT INTO public."schema_migrations" (version) VALUES (20220620132733);
 INSERT INTO public."schema_migrations" (version) VALUES (20220620143734);
+INSERT INTO public."schema_migrations" (version) VALUES (20220627144857);
+INSERT INTO public."schema_migrations" (version) VALUES (20220630123257);

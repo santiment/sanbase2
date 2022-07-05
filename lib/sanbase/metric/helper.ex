@@ -30,6 +30,7 @@ defmodule Sanbase.Metric.Helper do
 
   Module.register_attribute(__MODULE__, :aggregations_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :aggregations_per_metric_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :incomplete_metrics_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :free_metrics_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :restricted_metrics_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :access_map_acc, accumulate: true)
@@ -43,6 +44,7 @@ defmodule Sanbase.Metric.Helper do
   for module <- @metric_modules do
     @required_selectors_map_acc module.required_selectors
     @aggregations_acc module.available_aggregations()
+    @incomplete_metrics_acc module.incomplete_metrics()
     @free_metrics_acc module.free_metrics()
     @restricted_metrics_acc module.restricted_metrics()
     @access_map_acc module.access_map()
@@ -76,6 +78,7 @@ defmodule Sanbase.Metric.Helper do
 
   flat_unique = fn list -> list |> List.flatten() |> Enum.uniq() end
   @aggregations @aggregations_acc |> then(flat_unique)
+  @incomplete_metrics @incomplete_metrics_acc |> then(flat_unique)
   @free_metrics @free_metrics_acc |> then(flat_unique)
   @restricted_metrics @restricted_metrics_acc |> then(flat_unique)
   @timeseries_metric_module_mapping @timeseries_metric_module_mapping_acc |> then(flat_unique)
@@ -132,6 +135,7 @@ defmodule Sanbase.Metric.Helper do
   def access_map(), do: @access_map
   def aggregations_per_metric(), do: @aggregations_per_metric
   def aggregations(), do: @aggregations
+  def incomplete_metrics(), do: @incomplete_metrics
   def free_metrics(), do: @free_metrics
   def deprecated_metrics_map(), do: @deprecated_metrics_map
   def histogram_metric_module_mapping(), do: @histogram_metric_module_mapping

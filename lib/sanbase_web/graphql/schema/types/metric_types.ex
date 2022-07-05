@@ -271,6 +271,22 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:metric, non_null(:string))
 
     @desc ~s"""
+    The metrics that have this flag set to true have their
+    latest data point considered as incomplete. These are mostly daily metrics
+    that are comptued multiple times throughout the day.
+
+    For example, the daily active addresses for today, computed at 18:00pm, is
+    incomplete as the day is not yet finished and the metric includes data for
+    3/4 of the day. The metric value will only grow until the day is over.
+
+    Whether or not to include such data points in the result is controlled by
+    the `includeIncompleteData` flag, which has a default value of false.
+    When set to true, the incopmplete data points will be included in the result,
+    but the usage of them should be carefully considered.
+    """
+    field(:has_incomplete_data, non_null(:boolean))
+
+    @desc ~s"""
     A human readable name of the metric.
     For example the human readable name of `mvrv_usd_5y` is `MVRV for coins that moved in the past 5 years`
     """

@@ -88,6 +88,7 @@ defmodule Sanbase.PricePair.MetricAdapter do
     {:ok,
      %{
        metric: metric,
+       has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "1s",
        default_aggregation: @default_aggregation,
        available_aggregations: @aggregations,
@@ -155,6 +156,9 @@ defmodule Sanbase.PricePair.MetricAdapter do
       PricePair.available_slugs(quote_asset, opts)
     end)
   end
+
+  @impl Sanbase.Metric.Behaviour
+  def incomplete_metrics(), do: []
 
   @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics

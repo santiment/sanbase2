@@ -181,5 +181,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     export_metrics_csv: [
       schedule: "0 5 * * *",
       task: {Sanbase.MetricExporter.CSV, :export, []}
+    ],
+    comments_notification: [
+      schedule: "0 18 * * *",
+      task: {Sanbase.Comments.Notification, :notify_users, []}
     ]
   ]

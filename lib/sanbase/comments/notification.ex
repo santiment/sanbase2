@@ -56,66 +56,157 @@ defmodule Sanbase.Comments.Notification do
   end
 
   def notify_users do
-    data = build_ntf_events_map()
-
-    data.notify_users_map
+    notify_users_map()
     |> Enum.each(fn {email, data} ->
-      params = %{
-        "total_number" => length(data),
-        "events" => data
-      }
-
-      send_email(email, params)
+      send_email(email, data)
     end)
-
-    create(data)
   end
 
-  def build_ntf_events_map() do
-    last_comment_notification = get_last_record()
+  def notify_users_map do
+    comments_map = comments_ntf_map()
+    votes_map = votes_ntf_map()
 
-    recent_insight_comments =
-      recent_comments_query(:insight, last_comment_notification) |> Repo.all()
+    {comments_and_votes_map, rcpts_ids} = comments_and_votes_map(comments_map, votes_map)
+    votes_only_map = votes_only_map(votes_map, rcpts_ids)
 
-    recent_timeline_event_comments =
-      recent_comments_query(:timeline_event, last_comment_notification) |> Repo.all()
+    Map.merge(comments_and_votes_map, votes_only_map)
+  end
+
+  def comments_ntf_map() do
+    recent_insight_comments = recent_comments_query(:insight) |> Repo.all()
+    recent_timeline_event_comments = recent_comments_query(:timeline_event) |> Repo.all()
 
     recent_chart_configuration_comments =
-      recent_comments_query(:chart_configuration, last_comment_notification) |> Repo.all()
+      recent_comments_query(:chart_configuration) |> Repo.all()
 
-    recent_watchlist_comments =
-      recent_comments_query(:watchlist, last_comment_notification) |> Repo.all()
+    recent_watchlist_comments = recent_comments_query(:watchlist) |> Repo.all()
 
-    notify_map(recent_chart_configuration_comments, :chart_configuration)
-
-    notify_users_map =
-      notify_map(recent_insight_comments, :insight)
-      |> merge_events(notify_map(recent_timeline_event_comments, :timeline_event))
-      |> merge_events(notify_map(recent_chart_configuration_comments, :chart_configuration))
-      |> merge_events(notify_map(recent_watchlist_comments, :watchlist))
-
-    %{
-      notify_users_map: notify_users_map,
-      last_insight_comment_id: last_sent_id(recent_insight_comments, :insight),
-      last_timeline_event_comment_id:
-        last_sent_id(recent_timeline_event_comments, :timeline_event),
-      last_chart_configuration_comment_id:
-        last_sent_id(recent_chart_configuration_comments, :chart_configuration),
-      last_watchlist_comment_id: last_sent_id(recent_watchlist_comments, :watchlist)
-    }
+    notify_map(recent_insight_comments, :insight)
+    |> merge_events(notify_map(recent_timeline_event_comments, :timeline_event))
+    |> merge_events(notify_map(recent_chart_configuration_comments, :chart_configuration))
+    |> merge_events(notify_map(recent_watchlist_comments, :watchlist))
   end
 
   def notify_map(recent_comments, type) do
     recent_comments
     |> Enum.reduce(%{}, fn comment, acc ->
       acc
-      |> ntf_previously_commented(comment, type)
       |> ntf_author(comment, type)
       |> ntf_reply(comment, type)
     end)
   end
 
+  def votes_map do
+    recent_votes_query() |> Repo.all()
+  end
+
   # private functions
+
+  def votes_ntf_map() do
+    # get votes for last 24 hours
+    recent_votes_query()
+    |> Repo.all()
+    |> Enum.map(&separate_into_entities/1)
+    |> Enum.group_by(fn vote -> vote.author_id end)
+    |> Enum.into(%{}, &build_votes_ntf_map/1)
+  end
+
+  defp votes_only_map(votes_map, rcpts_ids) do
+    votes_map
+    |> Map.reject(fn {key, _val} -> key in rcpts_ids end)
+    |> Enum.reduce(%{}, fn {user_id, votes}, acc ->
+      user = Sanbase.Accounts.get_user!(user_id)
+
+      data = %{
+        username: get_name(user),
+        comments_count: 0,
+        likes_count: Enum.reduce(votes, 0, fn vote, acc -> acc + vote.likes_count end),
+        comments: [],
+        likes: votes
+      }
+
+      Map.put(acc, user.email, data)
+    end)
+  end
+
+  defp comments_and_votes_map(comments_map, votes_map) do
+    comments_map
+    |> Enum.reduce({%{}, []}, fn {user_id, comments}, {ntf_users_map, rcpts} ->
+      user = Sanbase.Accounts.get_user!(user_id)
+      votes = votes_map[user_id] || []
+
+      data = %{
+        username: get_name(user),
+        comments_count: length(comments),
+        likes_count: Enum.reduce(votes, 0, fn vote, acc -> acc + vote.likes_count end),
+        comments: comments |> maybe_update_comments(),
+        likes: votes
+      }
+
+      ntf_users_map = Map.put(ntf_users_map, user.email, data)
+      rcpts = rcpts ++ [user_id]
+
+      {ntf_users_map, rcpts}
+    end)
+  end
+
+  defp maybe_update_comments(comments) do
+    comments
+    |> Enum.map(fn
+      %{type: "reply"} = comment -> Map.put(comment, :reply_to_text, "reply")
+      comment -> comment
+    end)
+  end
+
+  defp separate_into_entities(vote) do
+    {entity, entity_id, title, link, author_id} =
+      cond do
+        not is_nil(vote.post_id) ->
+          {"insight", vote.post_id, vote.post.title, deduce_entity_link(vote.post_id, :insight),
+           vote.post.user_id}
+
+        not is_nil(vote.wathlist_id) ->
+          {"#{watchlist_type(vote.wathlist)}", vote.watchlist_id, vote.wathlist.name,
+           deduce_entity_link(vote.watchlist, :watchlist), vote.watchlist.user_id}
+
+        not is_nil(vote.chart_configuration) ->
+          {"chart layout", vote.chart_configuration_id, vote.chart_configuration.title,
+           deduce_entity_link(vote.chart_configuration, :chart_configuration),
+           vote.chart_configuration.user_id}
+      end
+
+    %{
+      entity: entity,
+      entity_id: entity_id,
+      link: link,
+      title: title,
+      user: vote.user,
+      author_id: author_id
+    }
+  end
+
+  defp build_votes_ntf_map({author_id, votes}) do
+    result =
+      Enum.group_by(votes, fn vote -> {vote.entity, vote.entity_id} end)
+      |> Enum.map(fn {{entity, entity_id}, votes} ->
+        vote0 = Enum.at(votes, 0)
+        avatar_url = vote0.user.avatar_url || @default_avatar
+        usernames = votes |> Enum.map(fn vote -> get_name(vote.user) end)
+
+        result =
+          Map.take(vote0, [:entity, :entity_id, :link, :title])
+          |> Map.put(:usernames, Enum.join(usernames, ", "))
+          |> Map.put(:avatar_url, avatar_url)
+          |> Map.put(:likes_count, length(usernames))
+
+        case length(usernames) do
+          num when num > 3 -> Map.put(result, :rest, num - 3)
+          _ -> Map.put(result, :rest, 0)
+        end
+      end)
+
+    {author_id, result}
+  end
 
   defp ntf_author(
          notify_users_map,
@@ -163,38 +254,34 @@ defmodule Sanbase.Comments.Notification do
 
   defp ntf_author(
          notify_users_map,
-         %PostComment{post: %{user: %{email: email}}} = comment,
+         %PostComment{post: %{user_id: user_id}} = comment,
          :insight
-       )
-       when is_binary(email) do
-    put_event_in_map(notify_users_map, email, comment, "ntf_author", :insight)
+       ) do
+    put_event_in_map(notify_users_map, user_id, comment, "comment", :insight)
   end
 
   defp ntf_author(
          notify_users_map,
-         %TimelineEventComment{timeline_event: %{user: %{email: email}}} = comment,
+         %TimelineEventComment{timeline_event: %{user_id: user_id}} = comment,
          :timeline_event
-       )
-       when is_binary(email) do
-    put_event_in_map(notify_users_map, email, comment, "ntf_author", :timeline_event)
+       ) do
+    put_event_in_map(notify_users_map, user_id, comment, "comment", :timeline_event)
   end
 
   defp ntf_author(
          notify_users_map,
-         %ChartConfigurationComment{chart_configuration: %{user: %{email: email}}} = comment,
+         %ChartConfigurationComment{chart_configuration: %{user_id: user_id}} = comment,
          :chart_configuration
-       )
-       when is_binary(email) do
-    put_event_in_map(notify_users_map, email, comment, "ntf_author", :chart_configuration)
+       ) do
+    put_event_in_map(notify_users_map, user_id, comment, "comment", :chart_configuration)
   end
 
   defp ntf_author(
          notify_users_map,
-         %WatchlistComment{watchlist: %{user: %{email: email}}} = comment,
+         %WatchlistComment{watchlist: %{user_id: user_id}} = comment,
          :watchlist
-       )
-       when is_binary(email) do
-    put_event_in_map(notify_users_map, email, comment, "ntf_author", :watchlist)
+       ) do
+    put_event_in_map(notify_users_map, user_id, comment, "comment", :watchlist)
   end
 
   defp ntf_author(notify_users_map, _, _), do: notify_users_map
@@ -214,259 +301,161 @@ defmodule Sanbase.Comments.Notification do
 
   defp ntf_reply(
          notify_users_map,
-         %{comment: %{parent: %{user: %{email: email}}}} = comment,
+         %{comment: %{parent: %{user_id: user_id}}} = comment,
          entity
-       )
-       when is_binary(email) do
-    put_event_in_map(notify_users_map, email, comment, "ntf_reply", entity)
+       ) do
+    put_event_in_map(notify_users_map, user_id, comment, "reply", entity)
   end
 
   defp ntf_reply(notify_users_map, _, _), do: notify_users_map
 
-  # Get comments on the same post added before certain comment
-  defp ntf_previously_commented(notify_users_map, comment, entity) do
-    emails =
-      previous_comments_query(comment, entity)
-      |> Repo.all()
-      |> Enum.reject(&(&1.comment.id == comment.comment.parent_id))
-      |> Enum.map(& &1.comment.user.email)
-      |> Enum.reject(&(&1 == nil || &1 == comment.comment.user.email))
-      |> Enum.dedup()
-
-    put_event_in_map(
-      notify_users_map,
-      emails,
-      comment,
-      "ntf_previously_commented",
-      entity
-    )
-  end
-
-  defp put_event_in_map(notify_users_map, emails, comment, event, entity) when is_list(emails) do
-    Enum.reduce(emails, notify_users_map, fn email, acc ->
-      put_event_in_map(acc, email, comment, event, entity)
+  defp put_event_in_map(notify_users_map, user_ids, comment, event, entity)
+       when is_list(user_ids) do
+    Enum.reduce(user_ids, notify_users_map, fn user_id, acc ->
+      put_event_in_map(acc, user_id, comment, event, entity)
     end)
   end
 
-  defp put_event_in_map(notify_users_map, email, post_comment, event_type, :insight) do
+  defp put_event_in_map(notify_users_map, user_id, post_comment, event_type, :insight) do
     comment = post_comment.comment
-    events = notify_users_map[email] || []
+    events = notify_users_map[user_id] || []
 
     events = events |> Enum.reject(fn event -> event.comment_id == post_comment.id end)
 
     new_event = %{
-      comment_id: post_comment.id,
+      comment_id: comment.id,
       entity: "insight",
-      event: event_type,
+      type: event_type,
       comment_text: comment.content,
-      entity_link: "https://insights.santiment.net/read/#{post_comment.post_id}",
-      entity_name: post_comment.post.title,
+      link: "https://insights.santiment.net/read/#{post_comment.post_id}",
+      title: post_comment.post.title,
       username: get_name(comment.user),
       avatar_url: comment.user.avatar_url || @default_avatar
     }
 
-    Map.put(notify_users_map, email, events ++ [new_event])
+    Map.put(notify_users_map, user_id, events ++ [new_event])
   end
 
-  defp put_event_in_map(notify_users_map, email, feed_comment, event_type, :timeline_event) do
+  defp put_event_in_map(notify_users_map, user_id, feed_comment, event_type, :timeline_event) do
     comment = feed_comment.comment
-    events = notify_users_map[email] || []
+    events = notify_users_map[user_id] || []
 
     events = events |> Enum.reject(fn event -> event.comment_id == feed_comment.id end)
 
     new_event = %{
       comment_id: feed_comment.id,
-      entity: "timeline_event",
-      event: event_type,
+      entity: "feed",
+      type: event_type,
       comment_text: comment.content,
-      entity_link: "",
-      entity_name: feed_entity_title(feed_comment.timeline_event_id),
+      link: deduce_entity_link(feed_comment.timeline_event, :timeline_event),
+      title: feed_entity_title(feed_comment.timeline_event_id),
       username: get_name(comment.user),
       avatar_url: comment.user.avatar_url || @default_avatar
     }
 
-    Map.put(notify_users_map, email, events ++ [new_event])
+    Map.put(notify_users_map, user_id, events ++ [new_event])
   end
 
-  defp put_event_in_map(notify_users_map, email, cc_comment, event_type, :chart_configuration) do
+  defp put_event_in_map(notify_users_map, user_id, cc_comment, event_type, :chart_configuration) do
     comment = cc_comment.comment
-    events = notify_users_map[email] || []
+    events = notify_users_map[user_id] || []
 
     events = events |> Enum.reject(fn event -> event.comment_id == cc_comment.id end)
 
     new_event = %{
       comment_id: cc_comment.id,
-      entity: "chart_configuration",
-      event: event_type,
+      entity: "chart layout",
+      type: event_type,
       comment_text: comment.content,
-      entity_link: deduce_entity_link(cc_comment.chart_configuration, :chart_configuration),
-      entity_name: cc_comment.chart_configuration.title || "",
+      link: deduce_entity_link(cc_comment.chart_configuration, :timeline_event),
+      title: cc_comment.chart_configuration.title || "",
       username: get_name(comment.user),
       avatar_url: comment.user.avatar_url || @default_avatar
     }
 
-    Map.put(notify_users_map, email, events ++ [new_event])
+    Map.put(notify_users_map, user_id, events ++ [new_event])
   end
 
-  defp put_event_in_map(notify_users_map, email, watchlist_comment, event_type, :watchlist) do
+  defp put_event_in_map(notify_users_map, user_id, watchlist_comment, event_type, :watchlist) do
     comment = watchlist_comment.comment
-    events = notify_users_map[email] || []
+    events = notify_users_map[user_id] || []
 
     events = events |> Enum.reject(fn event -> event.comment_id == watchlist_comment.id end)
 
-    entity_type =
-      case watchlist_comment.watchlist.is_screener do
-        true -> "screener"
-        false -> "watchlist"
-      end
-
     new_event = %{
       comment_id: watchlist_comment.id,
-      entity: entity_type,
-      event: event_type,
+      entity: watchlist_type(watchlist_comment.watchlist),
+      type: event_type,
       comment_text: comment.content,
-      entity_link: deduce_entity_link(watchlist_comment.watchlist, :watchlist),
-      entity_name: watchlist_comment.watchlist.name,
+      link: deduce_entity_link(watchlist_comment.watchlist, :watchlist),
+      title: watchlist_comment.watchlist.name,
       username: get_name(comment.user),
       avatar_url: comment.user.avatar_url || @default_avatar
     }
 
-    Map.put(notify_users_map, email, events ++ [new_event])
+    Map.put(notify_users_map, user_id, events ++ [new_event])
   end
 
-  defp recent_comments_query(:insight, last_comment_notification) do
-    last_insight_comment_id =
-      if last_comment_notification, do: last_comment_notification.last_insight_comment_id, else: 0
-
+  defp recent_comments_query(:insight) do
     yesterday = Timex.shift(Timex.now(), days: -1)
 
     from(p in PostComment,
-      where: p.id > ^last_insight_comment_id and p.inserted_at > ^yesterday,
+      where: p.inserted_at > ^yesterday,
       preload: [comment: [:user, parent: :user], post: :user],
       order_by: [asc: :inserted_at]
     )
   end
 
-  defp recent_comments_query(:timeline_event, last_comment_notification) do
-    last_timeline_event_comment_id =
-      if last_comment_notification,
-        do: last_comment_notification.last_timeline_event_comment_id,
-        else: 0
-
-    yesterday = Timex.shift(Timex.now(), days: -1)
+  defp recent_comments_query(:timeline_event) do
+    yesterday =
+      Timex.shift(Timex.now(),
+        days: -1
+      )
 
     from(t in TimelineEventComment,
-      where: t.id > ^last_timeline_event_comment_id and t.inserted_at > ^yesterday,
+      where: t.inserted_at > ^yesterday,
       preload: [comment: [:user, parent: :user], timeline_event: :user],
       order_by: [asc: :inserted_at]
     )
   end
 
-  defp recent_comments_query(:chart_configuration, last_comment_notification) do
-    last_comment_id =
-      if last_comment_notification,
-        do: last_comment_notification.last_chart_configuration_comment_id,
-        else: 0
-
+  defp recent_comments_query(:chart_configuration) do
     yesterday = Timex.shift(Timex.now(), days: -1)
 
     from(t in ChartConfigurationComment,
-      where: t.id > ^last_comment_id and t.inserted_at > ^yesterday,
+      where: t.inserted_at > ^yesterday,
       preload: [comment: [:user, parent: :user], chart_configuration: :user],
       order_by: [asc: :inserted_at]
     )
   end
 
-  defp recent_comments_query(:watchlist, last_comment_notification) do
-    last_comment_id =
-      if last_comment_notification,
-        do: last_comment_notification.last_watchlist_comment_id,
-        else: 0
-
+  defp recent_comments_query(:watchlist) do
     yesterday = Timex.shift(Timex.now(), days: -1)
 
-    from(t in WatchlistComment,
-      where: t.id > ^last_comment_id and t.inserted_at > ^yesterday,
+    from(wc in WatchlistComment,
+      where: wc.inserted_at > ^yesterday,
       preload: [comment: [:user, parent: :user], watchlist: :user],
       order_by: [asc: :inserted_at]
     )
   end
 
-  defp previous_comments_query(post_comment, :insight) do
-    from(p in PostComment,
-      where:
-        p.post_id == ^post_comment.post.id and
-          p.comment_id != ^post_comment.comment.id and
-          p.inserted_at <= ^post_comment.inserted_at,
-      preload: [comment: :user]
+  defp recent_votes_query() do
+    yesterday = Timex.shift(Timex.now(), days: -1)
+
+    from(v in Sanbase.Vote,
+      where: v.inserted_at > ^yesterday,
+      preload: [:post, :watchlist, :timeline_event, :chart_configuration, :user],
+      order_by: [asc: :inserted_at]
     )
   end
 
-  defp previous_comments_query(timeline_event_comment, :timeline_event) do
-    from(t in TimelineEventComment,
-      where:
-        t.timeline_event_id == ^timeline_event_comment.timeline_event.id and
-          t.comment_id != ^timeline_event_comment.comment.id and
-          t.inserted_at <= ^timeline_event_comment.inserted_at,
-      preload: [comment: :user]
-    )
+  defp get_name(user_id) when is_number(user_id) do
+    user = Sanbase.Accounts.get_user!(user_id)
+    get_name(user)
   end
-
-  defp previous_comments_query(cc_comment, :chart_configuration) do
-    from(ccc in ChartConfigurationComment,
-      where:
-        ccc.chart_configuration_id == ^cc_comment.chart_configuration.id and
-          ccc.comment_id != ^cc_comment.comment.id and
-          ccc.inserted_at <= ^cc_comment.inserted_at,
-      preload: [comment: :user]
-    )
-  end
-
-  defp previous_comments_query(watchlist_comment, :watchlist) do
-    from(wc in WatchlistComment,
-      where:
-        wc.watchlist_id == ^watchlist_comment.watchlist.id and
-          wc.comment_id != ^watchlist_comment.comment.id and
-          wc.inserted_at <= ^watchlist_comment.inserted_at,
-      preload: [comment: :user]
-    )
-  end
-
-  defp last_sent_id(recent_comments, type) do
-    recent_comments
-    |> List.last()
-    |> last_id(get_last_record(), type)
-  end
-
-  defp last_id(nil, nil, _), do: 0
-
-  defp last_id(nil, %__MODULE__{last_insight_comment_id: last_insight_comment_id}, :insight),
-    do: last_insight_comment_id
-
-  defp last_id(
-         nil,
-         %__MODULE__{last_timeline_event_comment_id: last_timeline_event_comment_id},
-         :timeline_event
-       ),
-       do: last_timeline_event_comment_id
-
-  defp last_id(
-         nil,
-         %__MODULE__{last_chart_configuration_comment_id: last_id},
-         :chart_configuration
-       ),
-       do: last_id
-
-  defp last_id(nil, %__MODULE__{last_watchlist_comment_id: last_id}, :watchlist),
-    do: last_id
-
-  defp last_id(%PostComment{id: id}, _, _), do: id
-  defp last_id(%TimelineEventComment{id: id}, _, _), do: id
-  defp last_id(%ChartConfigurationComment{id: id}, _, _), do: id
-  defp last_id(%WatchlistComment{id: id}, _, _), do: id
 
   defp get_name(user) do
-    user.username || "Anon"
+    "@" <> (user.username || "Anon")
   end
 
   defp feed_entity_title(timeline_event_id) do
@@ -486,14 +475,29 @@ defmodule Sanbase.Comments.Notification do
   end
 
   defp merge_events(map1, map2) do
-    Enum.reduce(map2, map1, fn {email, list}, acc ->
-      new_list = list ++ (acc[email] || [])
-      Map.put(acc, email, new_list)
+    Enum.reduce(map2, map1, fn {user_id, list}, acc ->
+      new_list = list ++ (acc[user_id] || [])
+      Map.put(acc, user_id, new_list)
     end)
+  end
+
+  defp deduce_entity_link(insight_id, :insight) do
+    SanbaseWeb.Endpoint.frontend_url() <> "/read/#{insight_id}"
+  end
+
+  defp deduce_entity_link(chart_configuration, :timeline_event) do
+    SanbaseWeb.Endpoint.frontend_url()
   end
 
   defp deduce_entity_link(chart_configuration, :chart_configuration) do
     SanbaseWeb.Endpoint.frontend_url() <> "/charts/-#{chart_configuration.id}"
+  end
+
+  defp watchlist_type(watchlist) do
+    case watchlist.is_screener do
+      true -> "screener"
+      false -> "watchlist"
+    end
   end
 
   defp deduce_entity_link(watchlist, :watchlist) do

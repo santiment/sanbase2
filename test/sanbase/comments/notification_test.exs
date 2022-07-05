@@ -78,7 +78,8 @@ defmodule Sanbase.Comments.NotificationTest do
     insert(:vote, post: context.post, user: context.user)
     insert(:vote, post: context.post, user: build(:user))
     insert(:vote, post: insight2, user: user5)
-
+    insert(:vote, watchlist: context.watchlist, user: build(:user))
+    insert(:vote, chart_configuration: context.chart_configuration, user: build(:user))
     result = Notification.notify_users_map()
 
     assert result[insight2.user.email] == %{
@@ -122,6 +123,6 @@ defmodule Sanbase.Comments.NotificationTest do
 
     author_data = result[context.author.email]
     assert author_data.comments_count == 6
-    assert author_data.likes_count == 2
+    assert author_data.likes_count == 4
   end
 end

@@ -4,8 +4,10 @@ defmodule Sanbase.Comments.NotificationTest do
   import Sanbase.Factory
   alias Sanbase.Comments.{EntityComment, Notification}
 
+  @default_avatar "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png"
+
   setup do
-    author = insert(:user, email: "author@santiment.net")
+    author = insert(:user)
     post = insert(:post, user: author)
     user = insert(:user)
 
@@ -30,8 +32,8 @@ defmodule Sanbase.Comments.NotificationTest do
      screener: screener}
   end
 
-  test "comments notification map", context do
-    [user2, user3, user4] = [insert(:user), insert(:user), insert(:user)]
+  test "comments and likes", context do
+    [user2, user3] = [insert(:user), insert(:user)]
 
     {:ok, comment1} =
       EntityComment.create_and_link(:insight, context.post.id, context.user.id, nil, "comment1")
@@ -47,23 +49,13 @@ defmodule Sanbase.Comments.NotificationTest do
         "subcomment"
       )
 
-    {:ok, comment4} =
-      EntityComment.create_and_link(
-        :timeline_event,
-        context.timeline_event.id,
-        user4.id,
-        nil,
-        "an event comment"
-      )
-
-    {:ok, comment5} =
-      EntityComment.create_and_link(
-        :chart_configuration,
-        context.chart_configuration.id,
-        user2.id,
-        nil,
-        "chart layout comment"
-      )
+    EntityComment.create_and_link(
+      :chart_configuration,
+      context.chart_configuration.id,
+      user2.id,
+      nil,
+      "chart layout comment"
+    )
 
     EntityComment.create_and_link(
       :watchlist,
@@ -73,55 +65,63 @@ defmodule Sanbase.Comments.NotificationTest do
       "watchlist comment"
     )
 
-    {:ok, comment7} =
-      EntityComment.create_and_link(
-        :watchlist,
-        context.screener.id,
-        user2.id,
-        nil,
-        "screener comment"
-      )
+    EntityComment.create_and_link(
+      :watchlist,
+      context.screener.id,
+      user2.id,
+      nil,
+      "screener comment"
+    )
 
-    comment_notification = Notification.build_ntf_events_map() |> IO.inspect()
-
-    assert true
-
-    # assert comment_notification.last_insight_comment_id == entity_id(comment3.id)
-    # assert comment_notification.last_timeline_event_comment_id == entity_id(comment4.id)
-    # assert comment_notification.last_chart_configuration_comment_id == entity_id(comment5.id)
-    # assert comment_notification.last_watchlist_comment_id == entity_id(comment7.id)
-
-    # author_data = comment_notification.notify_users_map[context.author.email]
-    # assert length(author_data) == 7
-
-    # author_events =
-    #   Enum.map(author_data, fn %{event: event} -> event end)
-    #   |> Enum.filter(&(&1 == "ntf_author"))
-
-    # assert length(author_events) == 7
-
-    # assert Enum.map(comment_notification.notify_users_map[context.user.email], fn %{event: event} ->
-    #          event
-    #        end) == ["ntf_previously_commented", "ntf_reply"]
-  end
-
-  test "comments and likes", context do
-    {:ok, comment1} =
-      EntityComment.create_and_link(:insight, context.post.id, context.user.id, nil, "comment1")
-
-    Notification.comments_ntf_map() |> IO.inspect()
-
+    insight2 = insert(:post)
+    user5 = insert(:user)
     insert(:vote, post: context.post, user: context.user)
     insert(:vote, post: context.post, user: build(:user))
-    Notification.votes_ntf_map() |> IO.inspect()
+    insert(:vote, post: insight2, user: user5)
 
-    assert true
-  end
+    result = Notification.notify_users_map()
 
-  defp entity_id(comment_id) do
-    (Sanbase.Repo.get_by(Sanbase.Comment.PostComment, comment_id: comment_id) ||
-       Sanbase.Repo.get_by(Sanbase.Comment.TimelineEventComment, comment_id: comment_id) ||
-       Sanbase.Repo.get_by(Sanbase.Comment.ChartConfigurationComment, comment_id: comment_id) ||
-       Sanbase.Repo.get_by(Sanbase.Comment.WatchlistComment, comment_id: comment_id)).id
+    assert result[insight2.user.email] == %{
+             comments: [],
+             comments_count: 0,
+             likes: [
+               %{
+                 avatar_url: @default_avatar,
+                 entity: "insight",
+                 entity_id: insight2.id,
+                 link: "http://localhost:4000/read/#{insight2.id}",
+                 rest: 0,
+                 title: insight2.title,
+                 usernames: "@#{user5.username}",
+                 likes_count: 1
+               }
+             ],
+             likes_count: 1,
+             username: "@#{insight2.user.username}"
+           }
+
+    assert result[context.user.email] == %{
+             comments: [
+               %{
+                 avatar_url: @default_avatar,
+                 comment_id: comment3.id,
+                 comment_text: "subcomment",
+                 entity: "insight",
+                 link: "https://insights.santiment.net/read/#{context.post.id}",
+                 reply_to_text: "reply",
+                 title: context.post.title,
+                 type: "reply",
+                 username: "@#{user3.username}"
+               }
+             ],
+             comments_count: 1,
+             likes: [],
+             likes_count: 0,
+             username: "@#{context.user.username}"
+           }
+
+    author_data = result[context.author.email]
+    assert author_data.comments_count == 6
+    assert author_data.likes_count == 2
   end
 end

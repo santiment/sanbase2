@@ -17,55 +17,6 @@ defmodule Sanbase.Comments.Notification do
   alias Sanbase.UserList
 
   @default_avatar "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png"
-  @mock_data %{
-    username: "@tsetso",
-    comments_count: 2,
-    likes_count: 12,
-    comments: [
-      %{
-        entity: "Insight",
-        comment_text: "Comment body text",
-        link: "https://insights.santiment.net/read/7007",
-        title: "The wall of worry",
-        username: "@aishray9",
-        avatar_url:
-          "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png",
-        type: "comment"
-      },
-      %{
-        entity: "Insight",
-        comment_text: "This us a comment reply",
-        link: "https://insights.santiment.net/read/7007",
-        title: "The wall of worry",
-        username: "@alabala",
-        avatar_url:
-          "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png",
-        type: "reply",
-        reply_to_text:
-          "Could you explain what those line actually represent compared to whale line"
-      }
-    ],
-    likes: [
-      %{
-        entity: "Chart layout",
-        link: "https://app.santiment.net",
-        title: "Some interesting chart layout",
-        usernames: "@u1, @u2, @u3",
-        rest: 7,
-        avatar_url:
-          "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png"
-      },
-      %{
-        entity: "Insight",
-        link: "https://app.santiment.net",
-        title: "Some interesting insight",
-        usernames: "@pesho, @gosho",
-        avatar_url:
-          "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png",
-        rest: 0
-      }
-    ]
-  }
 
   schema "comment_notifications" do
     field(:last_insight_comment_id, :integer)
@@ -105,74 +56,20 @@ defmodule Sanbase.Comments.Notification do
   end
 
   def notify_users do
-    data = comments_ntf_map()
-
-    data.notify_users_map
-    |> Enum.each(fn {user_id, data} ->
-      params = %{
-        "total_number" => length(data),
-        "events" => data
-      }
-
-      send_email(user_id, params)
+    notify_users_map()
+    |> Enum.each(fn {email, data} ->
+      send_email(email, data)
     end)
-
-    create(data)
   end
 
-  def votes_ntf_map() do
-    # get votes for last 24 hours
-    recent_votes_query()
-    |> Repo.all()
-    |> Enum.map(fn vote ->
-      {entity, entity_id, title, link, author_id} =
-        cond do
-          not is_nil(vote.post_id) ->
-            {:insight, vote.post_id, vote.post.title, deduce_entity_link(vote.post_id, :insight),
-             vote.post.user_id}
+  def notify_users_map do
+    comments_map = comments_ntf_map()
+    votes_map = votes_ntf_map()
 
-          not is_nil(vote.wathlist_id) ->
-            {watchlist_type(vote.wathlist), vote.watchlist_id, vote.wathlist.name,
-             deduce_entity_link(vote.watchlist, :watchlist), vote.watchlist.user_id}
+    {comments_and_votes_map, rcpts_ids} = comments_and_votes_map(comments_map, votes_map)
+    votes_only_map = votes_only_map(votes_map, rcpts_ids)
 
-          not is_nil(vote.chart_configuration) ->
-            {:chart_configuration, vote.chart_configuration_id, vote.chart_configuration.title,
-             deduce_entity_link(vote.chart_configuration, :chart_configuration),
-             vote.chart_configuration.user_id}
-        end
-
-      %{
-        entity: entity,
-        entity_id: entity_id,
-        link: link,
-        title: title,
-        user: vote.user,
-        author_id: author_id
-      }
-    end)
-    |> Enum.group_by(fn vote -> vote.author_id end)
-    |> Enum.into(%{}, fn {author_id, votes} ->
-      rest =
-        Enum.group_by(votes, fn vote -> {vote.entity, vote.entity_id} end)
-        |> Enum.map(fn {{entity, entity_id}, votes} ->
-          vote0 = Enum.at(votes, 0)
-          avatar_url = vote0.user.avatar_url || @default_avatar
-          usernames = votes |> Enum.map(fn vote -> "@" <> get_name(vote.user) end)
-
-          result = Map.take(vote0, [:entity, :entity_id, :link, :title])
-          result = Map.put(result, :usernames, usernames)
-
-          result =
-            case length(usernames) do
-              num when num > 3 -> Map.put(result, :rest, num - 3)
-              _ -> Map.put(result, :rest, 0)
-            end
-
-          result
-        end)
-
-      {author_id, rest}
-    end)
+    Map.merge(comments_and_votes_map, votes_only_map)
   end
 
   def comments_ntf_map() do
@@ -204,6 +101,112 @@ defmodule Sanbase.Comments.Notification do
   end
 
   # private functions
+
+  def votes_ntf_map() do
+    # get votes for last 24 hours
+    recent_votes_query()
+    |> Repo.all()
+    |> Enum.map(&separate_into_entities/1)
+    |> Enum.group_by(fn vote -> vote.author_id end)
+    |> Enum.into(%{}, &build_votes_ntf_map/1)
+  end
+
+  defp votes_only_map(votes_map, rcpts_ids) do
+    votes_map
+    |> Map.reject(fn {key, _val} -> key in rcpts_ids end)
+    |> Enum.reduce(%{}, fn {user_id, votes}, acc ->
+      user = Sanbase.Accounts.get_user!(user_id)
+
+      data = %{
+        username: get_name(user),
+        comments_count: 0,
+        likes_count: Enum.reduce(votes, 0, fn vote, acc -> acc + vote.likes_count end),
+        comments: [],
+        likes: votes
+      }
+
+      Map.put(acc, user.email, data)
+    end)
+  end
+
+  defp comments_and_votes_map(comments_map, votes_map) do
+    comments_map
+    |> Enum.reduce({%{}, []}, fn {user_id, comments}, {ntf_users_map, rcpts} ->
+      user = Sanbase.Accounts.get_user!(user_id)
+      votes = votes_map[user_id] || []
+
+      data = %{
+        username: get_name(user),
+        comments_count: length(comments),
+        likes_count: Enum.reduce(votes, 0, fn vote, acc -> acc + vote.likes_count end),
+        comments: comments |> maybe_update_comments(),
+        likes: votes
+      }
+
+      ntf_users_map = Map.put(ntf_users_map, user.email, data)
+      rcpts = rcpts ++ [user_id]
+
+      {ntf_users_map, rcpts}
+    end)
+  end
+
+  defp maybe_update_comments(comments) do
+    comments
+    |> Enum.map(fn
+      %{type: "reply"} = comment -> Map.put(comment, :reply_to_text, "reply")
+      comment -> comment
+    end)
+  end
+
+  defp separate_into_entities(vote) do
+    {entity, entity_id, title, link, author_id} =
+      cond do
+        not is_nil(vote.post_id) ->
+          {"insight", vote.post_id, vote.post.title, deduce_entity_link(vote.post_id, :insight),
+           vote.post.user_id}
+
+        not is_nil(vote.wathlist_id) ->
+          {"#{watchlist_type(vote.wathlist)}", vote.watchlist_id, vote.wathlist.name,
+           deduce_entity_link(vote.watchlist, :watchlist), vote.watchlist.user_id}
+
+        not is_nil(vote.chart_configuration) ->
+          {"chart layout", vote.chart_configuration_id, vote.chart_configuration.title,
+           deduce_entity_link(vote.chart_configuration, :chart_configuration),
+           vote.chart_configuration.user_id}
+      end
+
+    %{
+      entity: entity,
+      entity_id: entity_id,
+      link: link,
+      title: title,
+      user: vote.user,
+      author_id: author_id
+    }
+  end
+
+  defp build_votes_ntf_map({author_id, votes}) do
+    result =
+      Enum.group_by(votes, fn vote -> {vote.entity, vote.entity_id} end)
+      |> Enum.map(fn {{entity, entity_id}, votes} ->
+        vote0 = Enum.at(votes, 0)
+        avatar_url = vote0.user.avatar_url || @default_avatar
+        usernames = votes |> Enum.map(fn vote -> get_name(vote.user) end)
+
+        result =
+          Map.take(vote0, [:entity, :entity_id, :link, :title])
+          |> Map.put(:usernames, Enum.join(usernames, ", "))
+          |> Map.put(:avatar_url, avatar_url)
+          |> Map.put(:likes_count, length(usernames))
+
+        case length(usernames) do
+          num when num > 3 -> Map.put(result, :rest, num - 3)
+          _ -> Map.put(result, :rest, 0)
+        end
+      end)
+
+    {author_id, result}
+  end
 
   defp ntf_author(
          notify_users_map,
@@ -320,7 +323,7 @@ defmodule Sanbase.Comments.Notification do
     events = events |> Enum.reject(fn event -> event.comment_id == post_comment.id end)
 
     new_event = %{
-      comment_id: post_comment.id,
+      comment_id: comment.id,
       entity: "insight",
       type: event_type,
       comment_text: comment.content,
@@ -446,6 +449,11 @@ defmodule Sanbase.Comments.Notification do
     )
   end
 
+  defp get_name(user_id) when is_number(user_id) do
+    user = Sanbase.Accounts.get_user!(user_id)
+    get_name(user)
+  end
+
   defp get_name(user) do
     "@" <> (user.username || "Anon")
   end
@@ -487,8 +495,8 @@ defmodule Sanbase.Comments.Notification do
 
   defp watchlist_type(watchlist) do
     case watchlist.is_screener do
-      true -> :screener
-      false -> :watchlist
+      true -> "screener"
+      false -> "watchlist"
     end
   end
 

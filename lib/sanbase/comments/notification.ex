@@ -165,11 +165,11 @@ defmodule Sanbase.Comments.Notification do
           {"insight", vote.post_id, vote.post.title, deduce_entity_link(vote.post_id, :insight),
            vote.post.user_id}
 
-        not is_nil(vote.wathlist_id) ->
-          {"#{watchlist_type(vote.wathlist)}", vote.watchlist_id, vote.wathlist.name,
+        not is_nil(vote.watchlist_id) ->
+          {"#{watchlist_type(vote.watchlist)}", vote.watchlist_id, vote.watchlist.name,
            deduce_entity_link(vote.watchlist, :watchlist), vote.watchlist.user_id}
 
-        not is_nil(vote.chart_configuration) ->
+        not is_nil(vote.chart_configuration_id) ->
           {"chart layout", vote.chart_configuration_id, vote.chart_configuration.title,
            deduce_entity_link(vote.chart_configuration, :chart_configuration),
            vote.chart_configuration.user_id}

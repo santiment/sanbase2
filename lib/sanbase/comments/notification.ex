@@ -1,9 +1,5 @@
 defmodule Sanbase.Comments.Notification do
-  use Ecto.Schema
-
   require Logger
-
-  import Ecto.Changeset
   import Ecto.Query
 
   alias Sanbase.Comment.{
@@ -17,43 +13,6 @@ defmodule Sanbase.Comments.Notification do
   alias Sanbase.UserList
 
   @default_avatar "https://production-sanbase-images.s3.amazonaws.com/uploads/684aec65d98c952d6a29c8f0fbdcaea95787f1d4e752e62316e955a84ae97bf5_1588611275860_default-avatar.png"
-
-  schema "comment_notifications" do
-    field(:last_insight_comment_id, :integer)
-    field(:last_timeline_event_comment_id, :integer)
-    field(:last_chart_configuration_comment_id, :integer)
-    field(:last_watchlist_comment_id, :integer)
-    field(:notify_users_map, :map)
-
-    timestamps()
-  end
-
-  @doc false
-  def changeset(notifications, attrs) do
-    notifications
-    |> cast(attrs, [
-      :last_insight_comment_id,
-      :last_timeline_event_comment_id,
-      :last_chart_configuration_comment_id,
-      :last_watchlist_comment_id,
-      :notify_users_map
-    ])
-    |> validate_required([
-      :last_insight_comment_id,
-      :last_timeline_event_comment_id,
-      :last_chart_configuration_comment_id,
-      :last_watchlist_comment_id,
-      :notify_users_map
-    ])
-  end
-
-  def get_last_record() do
-    __MODULE__ |> last() |> Repo.one()
-  end
-
-  def create(params) do
-    %__MODULE__{} |> changeset(params) |> Repo.insert()
-  end
 
   def notify_users do
     notify_users_map()
@@ -81,13 +40,13 @@ defmodule Sanbase.Comments.Notification do
 
     recent_watchlist_comments = recent_comments_query(:watchlist) |> Repo.all()
 
-    notify_map(recent_insight_comments, :insight)
-    |> merge_events(notify_map(recent_timeline_event_comments, :timeline_event))
-    |> merge_events(notify_map(recent_chart_configuration_comments, :chart_configuration))
-    |> merge_events(notify_map(recent_watchlist_comments, :watchlist))
+    build_notify_map(recent_insight_comments, :insight)
+    |> merge_events(build_notify_map(recent_timeline_event_comments, :timeline_event))
+    |> merge_events(build_notify_map(recent_chart_configuration_comments, :chart_configuration))
+    |> merge_events(build_notify_map(recent_watchlist_comments, :watchlist))
   end
 
-  def notify_map(recent_comments, type) do
+  def build_notify_map(recent_comments, type) do
     recent_comments
     |> Enum.reduce(%{}, fn comment, acc ->
       acc
@@ -100,8 +59,6 @@ defmodule Sanbase.Comments.Notification do
     recent_votes_query() |> Repo.all()
   end
 
-  # private functions
-
   def votes_ntf_map() do
     # get votes for last 24 hours
     recent_votes_query()
@@ -110,6 +67,8 @@ defmodule Sanbase.Comments.Notification do
     |> Enum.group_by(fn vote -> vote.author_id end)
     |> Enum.into(%{}, &build_votes_ntf_map/1)
   end
+
+  # private functions
 
   defp votes_only_map(votes_map, rcpts_ids) do
     votes_map
@@ -188,7 +147,7 @@ defmodule Sanbase.Comments.Notification do
   defp build_votes_ntf_map({author_id, votes}) do
     result =
       Enum.group_by(votes, fn vote -> {vote.entity, vote.entity_id} end)
-      |> Enum.map(fn {{entity, entity_id}, votes} ->
+      |> Enum.map(fn {{_entity, _entity_id}, votes} ->
         vote0 = Enum.at(votes, 0)
         avatar_url = vote0.user.avatar_url || @default_avatar
         usernames = votes |> Enum.map(fn vote -> get_name(vote.user) end)
@@ -481,23 +440,23 @@ defmodule Sanbase.Comments.Notification do
     end)
   end
 
-  defp deduce_entity_link(insight_id, :insight) do
-    SanbaseWeb.Endpoint.frontend_url() <> "/read/#{insight_id}"
-  end
-
-  defp deduce_entity_link(chart_configuration, :timeline_event) do
-    SanbaseWeb.Endpoint.frontend_url()
-  end
-
-  defp deduce_entity_link(chart_configuration, :chart_configuration) do
-    SanbaseWeb.Endpoint.frontend_url() <> "/charts/-#{chart_configuration.id}"
-  end
-
   defp watchlist_type(watchlist) do
     case watchlist.is_screener do
       true -> "screener"
       false -> "watchlist"
     end
+  end
+
+  defp deduce_entity_link(insight_id, :insight) do
+    SanbaseWeb.Endpoint.frontend_url() <> "/read/#{insight_id}"
+  end
+
+  defp deduce_entity_link(_chart_configuration, :timeline_event) do
+    SanbaseWeb.Endpoint.frontend_url()
+  end
+
+  defp deduce_entity_link(chart_configuration, :chart_configuration) do
+    SanbaseWeb.Endpoint.frontend_url() <> "/charts/-#{chart_configuration.id}"
   end
 
   defp deduce_entity_link(watchlist, :watchlist) do

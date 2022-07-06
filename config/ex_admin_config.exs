@@ -69,7 +69,6 @@ config :ex_admin,
     SanbaseWeb.ExAdmin.Accounts.UserSettings,
     SanbaseWeb.ExAdmin.Alert.UserTrigger,
     SanbaseWeb.ExAdmin.Exchanges.MarketPairMapping,
-    SanbaseWeb.ExAdmin.Comments.Notification,
     SanbaseWeb.ExAdmin.Intercom.UserAttributes,
     SanbaseWeb.ExAdmin.Intercom.UserEvent,
     SanbaseWeb.ExAdmin.Report

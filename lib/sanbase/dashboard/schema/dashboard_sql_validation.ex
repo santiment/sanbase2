@@ -10,8 +10,12 @@ defmodule Sanbase.Dashboard.SqlValidation do
 
   @spec validate(String.t()) :: :ok | {:error, String.t()}
   def validate(query) do
+    # The first 2 replaces removes the comments
     query =
-      String.replace(query, ["\r\n", "\n"], " ")
+      query
+      |> String.replace(~r/(?<=--)(.*?)(?=\n)/, "")
+      |> String.replace("--\n", "\n")
+      |> String.replace(["\r\n", "\n"], " ")
       |> String.replace(~r|\s+|, " ")
       |> String.trim()
       |> String.downcase()

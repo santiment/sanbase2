@@ -10,6 +10,11 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :dashboard_queries do
+    field :get_available_clickhouse_tables, list_of(:clickhouse_table_definition) do
+      meta(access: :free)
+      resolve(&DashboardResolver.get_available_clickhouse_tables/3)
+    end
+
     @desc ~s"""
     Get the schema of a dashboard.
 
@@ -204,7 +209,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     """
     field :create_dashboard_panel, :panel_schema do
       arg(:dashboard_id, non_null(:integer))
-      arg(:panel, non_null(:panel_input_object))
+      arg(:panel, non_null(:panel_schema_input_object))
 
       middleware(JWTAuth)
 
@@ -220,7 +225,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     field :update_dashboard_panel, :panel_schema do
       arg(:dashboard_id, non_null(:integer))
       arg(:panel_id, non_null(:string))
-      arg(:panel, non_null(:panel_input_object))
+      arg(:panel, non_null(:panel_schema_input_object))
 
       middleware(JWTAuth)
 
@@ -319,7 +324,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     field :store_dashboard_panel, :panel_cache do
       arg(:dashboard_id, non_null(:integer))
       arg(:panel_id, non_null(:string))
-      arg(:panel, non_null(:computed_panel_input_object))
+      arg(:panel, non_null(:computed_panel_schema_input_object))
 
       middleware(JWTAuth)
       resolve(&DashboardResolver.store_dashboard_panel/3)

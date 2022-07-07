@@ -1,7 +1,11 @@
 defmodule SanbaseWeb.Graphql.DashboardTypes do
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.{DashboardResolver, UserResolver, VoteResolver}
+  alias SanbaseWeb.Graphql.Resolvers.{
+    DashboardResolver,
+    UserResolver,
+    VoteResolver
+  }
 
   @desc ~s"""
   Input object for an SQL query and its parameters.
@@ -24,9 +28,13 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   end
 
   @desc ~s"""
-  TOOD
+  Input object for a computed panel.
+
+  A panel obtained via computeDashboardPanel can be
+  passed back to the API and store in the cache. The input
+  object used when providing that panel result is this.
   """
-  input_object :computed_panel_input_object do
+  input_object :computed_panel_schema_input_object do
     field(:san_query_id, non_null(:string))
     field(:clickhouse_query_id, non_null(:string))
     field(:columns, non_null(list_of(:string)))
@@ -37,14 +45,21 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   end
 
   @desc ~s"""
-  TODO
+  The type of a panel that describes the visualization method
   """
   enum :panel_type do
     value(:chart)
     value(:table)
+    value(:textbox)
   end
 
-  input_object :panel_input_object do
+  @desc ~s"""
+  Input object for a panel definition (schema).
+
+  This object is used to create a new panel or to
+  update an existing panel's definition.
+  """
+  input_object :panel_schema_input_object do
     field(:name, non_null(:string))
     field(:type, :panel_type)
     field(:sql, non_null(:panel_sql_input_object))
@@ -55,7 +70,25 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   end
 
   @desc ~s"""
-  TODO
+  """
+  object :clickhouse_table_definition do
+    field(:table, non_null(:string))
+    field(:description, non_null(:string))
+    field(:engine, non_null(:string))
+    field(:order_by, non_null(list_of(:string)))
+    field(:partition_by, non_null(:string))
+    field(:columns, non_null(:json))
+  end
+
+  @desc ~s"""
+  Get memory/duration/credits/etc. details about an
+  executed clickhouse query.
+
+  Every computation (from a panel or a raw query) generates
+  a clickhouse_query_id that uniquly identifies that exact
+  query run. It can be used to get the details about a
+  query execution - how much memory it used, how long it run,
+  how many credits were spent running this query, etc.
   """
   object :query_execution_stats do
     field(:read_compressed_gb, non_null(:float))
@@ -72,6 +105,8 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:inserted_at, non_null(:datetime))
   end
 
+  @desc ~s"""
+  """
   object :query_result do
     field(:san_query_id, non_null(:string))
     field(:clickhouse_query_id, non_null(:string))
@@ -82,11 +117,15 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:query_end_time, non_null(:datetime))
   end
 
+  @desc ~s"""
+  """
   object :panel_sql do
     field(:query, non_null(:string))
     field(:parameters, non_null(:json))
   end
 
+  @desc ~s"""
+  """
   object :panel_schema do
     field(:id, non_null(:string))
     field(:dashboard_id, non_null(:integer))

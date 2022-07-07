@@ -9,6 +9,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
   require Logger
 
+  def get_available_clickhouse_tables(_root, _args, _resolution) do
+    tables = Dashboard.Database.Table.get_tables()
+    {:ok, tables}
+  end
+
   def create_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
     Dashboard.create(args, user.id)
   end

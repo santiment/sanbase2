@@ -55,9 +55,7 @@ defmodule Sanbase.Repo.Migrations.PopulateInfluxdbLastCmcDatetime do
   end
 
   defp do_last_datetime(pair) do
-    case Store.last_datetime!(pair) do
-      nil -> 0
-      datetime -> datetime |> DateTime.to_unix()
-    end
+    {:ok, datetime} = Sanbase.Twitter.last_datetime(pair)
+    datetime
   end
 end

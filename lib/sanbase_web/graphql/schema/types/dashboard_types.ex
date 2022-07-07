@@ -70,6 +70,15 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   end
 
   @desc ~s"""
+  Describe a clickhouse table structure.
+
+  The description includes about the columns and their types,
+  the engine used, the partition and order by expressions.
+
+  The order_by is a list of columns that are used to order the
+  data and is of vital importance when the data is queried.
+  Filtering of columns that are to the front of the order by
+  is much faster than filtering of columns that are not.
   """
   object :clickhouse_table_definition do
     field(:table, non_null(:string))
@@ -106,6 +115,7 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   end
 
   @desc ~s"""
+  The result of executing a raw Clickhouse SQL query.
   """
   object :query_result do
     field(:san_query_id, non_null(:string))
@@ -118,6 +128,17 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   end
 
   @desc ~s"""
+  Define the Clickhouse SQL query and parameters it takes.
+
+  The query is expected to be a valid SQL query, except for
+  the parametrization {{key}} syntax where the {{key}} is the
+  name of a key found in the parameters map. When executed,
+  the parameters are transformed to positional parameters and
+  passed to the query.
+
+  Example:
+  query: 'SELECT * FROM table WHERE slug = {{slug}} LIMIT {{limit}}'
+  parameters: '{slug: "bitcoin", limit: 10}'
   """
   object :panel_sql do
     field(:query, non_null(:string))
@@ -125,6 +146,11 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   end
 
   @desc ~s"""
+  The panel schema describe the definition of a panel -
+  its name, type, SQL query, SQL parameters, etc.
+
+  The dashboard schema contains a list of panel schemas,
+  ultimately describing the whole dashboard.
   """
   object :panel_schema do
     field(:id, non_null(:string))
@@ -138,6 +164,13 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:sql, :panel_sql)
   end
 
+  @desc ~s"""
+  When a panel is computed, the result can be persisted in
+  the database so it can be accessed again without running
+  the computation. The Panel Cache represents the result of
+  a panel computation. The id is the panel_id as seen in the
+  Panel Schema.
+  """
   object :panel_cache do
     field(:id, non_null(:string))
     field(:dashboard_id, non_null(:integer))
@@ -151,6 +184,11 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:updated_at, non_null(:datetime))
   end
 
+  @desc ~s"""
+  The Dashboard Schema defines the dashboard's name, description,
+  public status and the list of panel schemas that hold the
+  actual Clickhouse SQL query and parameters.
+  """
   object :dashboard_schema do
     field(:id, non_null(:integer))
     field(:name, non_null(:string))
@@ -178,6 +216,15 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:updated_at, :datetime)
   end
 
+  @desc ~s"""
+  This object holds basic information about a stored
+  historical dashboard schema - the dashboard id, hash,
+  messsage written by the user and time of creation.
+
+  A list of such objects is returned when listing the
+  history log of a dashboard. It does not contain details
+  like the SQL query, description, etc.
+  """
   object :dashboard_schema_history_preview do
     field(:dashboard_id, non_null(:integer))
     field(:hash, :string)
@@ -185,6 +232,11 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:inserted_at, :datetime)
   end
 
+  @desc ~s"""
+  Describe a past state of a Dashboard Schema.
+  This has the same fields as the Dashboard Schema,
+  but is extended with a message, hash and inserted_at
+  """
   object :dashboard_schema_history do
     field(:message, :string)
     field(:hash, :string)
@@ -197,6 +249,10 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:inserted_at, :datetime)
   end
 
+  @desc ~s"""
+  This object sticks together all the Panel Cache
+  objects that are associated with a given dashboard
+  """
   object :dashboard_cache do
     field(:dashboard_id, non_null(:integer))
     field(:panels, list_of(:panel_cache))

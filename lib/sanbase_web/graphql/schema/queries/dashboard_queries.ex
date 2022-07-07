@@ -10,6 +10,10 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :dashboard_queries do
+    @desc ~s"""
+    Get a list of clickhouse tables that the users have access to
+    via the SQL editor.
+    """
     field :get_available_clickhouse_tables, list_of(:clickhouse_table_definition) do
       meta(access: :free)
       resolve(&DashboardResolver.get_available_clickhouse_tables/3)

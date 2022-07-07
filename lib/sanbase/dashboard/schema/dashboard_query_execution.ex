@@ -103,18 +103,15 @@ defmodule Sanbase.Dashboard.QueryExecution do
     # credits_cost is stored outside the execution_details as it's not
     # really an execution detail, but a business logic detail. Also having
     # it in a separate field makes it easier to compute the total credits spent
-    IO.inspect("HERE")
 
     args =
       query_result
-      |> IO.inspect(label: "108", limit: :infinity)
       |> Map.take([
         :san_query_id,
         :clickhouse_query_id,
         :query_start_time,
         :query_end_time
       ])
-      |> IO.inspect(label: "114", limit: :infinity)
       |> Map.merge(%{
         credits_cost: credits_cost,
         user_id: user_id,
@@ -125,11 +122,8 @@ defmodule Sanbase.Dashboard.QueryExecution do
     |> cast(args, @fields)
     |> validate_required(@fields)
     |> Sanbase.Repo.insert()
-    |> IO.inspect(label: "105", limit: :infinity)
   rescue
     e ->
-      IO.inspect(e)
-      IO.inspect(Exception.message(e))
       # This can happen if the query details are not flushed to the system.query_log
       # table or some other clickouse error occurs. Allow for 3 attempts in total before
       # reraising the exception.
@@ -242,7 +236,6 @@ defmodule Sanbase.Dashboard.QueryExecution do
         }
       end
     )
-    |> IO.inspect(label: "224", limit: :infinity)
     |> Sanbase.Utils.Transform.maybe_unwrap_ok_value()
   end
 

@@ -1,0 +1,157 @@
+[
+    {
+        "table": "asset_prices_v3",
+        "description": "Provide price_usd, price_btc, volume_usd and marketcap_usd metrics for assets",
+        "engine": "ReplicatedReplacingMergeTree",
+        "partition_by": "toYYYYMM(dt)",
+        "order_by": [
+            "base_asset",
+            "quote_asset",
+            "source",
+            "dt"
+        ],
+        "columns": {
+            "dt": "DateTime",
+            "source": "LowCardinality(String)",
+            "base_asset": "LowCardinality(String)",
+            "quote_asset": "LowCardinality(String)",
+            "price": "Float64"
+        }
+    },
+    {
+        "table": "asset_price_pairs_only",
+        "description": "Provide a wide range of price pairs for assets (USD, USDT, BTC, ETH, etc.)",
+        "engine": "ReplicatedReplacingMergeTree",
+        "partition_by": "toYYYYMM(dt)",
+        "order_by": [
+            "slug",
+            "source",
+            "dt"
+        ],
+        "columns": {
+            "dt": "DateTime",
+            "source": "LowCardinality(String)",
+            "slug": "LowCardinality(String)",
+            "price_usd": "Float64",
+            "price_btc": "Float64",
+            "marketcap_usd": "Float64",
+            "volume_usd": "Float64"
+        }
+    },
+    {
+        "table": "intraday_metrics",
+        "description": "Provide a list of metrics available at intraday (5 minutes) intervals",
+        "engine": "ReplicatedReplacingMergeTree",
+        "partition_by": "toYYYYMM(dt)",
+        "order_by": [
+            "asset_id",
+            "metric_id",
+            "dt"
+        ],
+        "columns": {
+            "asset_id": "UInt64",
+            "metric_id": "UInt64",
+            "dt": "DateTime",
+            "value": "Float64",
+            "computed_at": "DateTime"
+        }
+    },
+    {
+        "table": "daily_metrics_v2",
+        "description": "Provide a list of metrics available at daily intervals",
+        "engine": "ReplicatedReplacingMergeTree",
+        "partition_by": "toYYYYMM(dt)",
+        "order_by": [
+            "asset_id",
+            "metric_id",
+            "dt"
+        ],
+        "columns": {
+            "asset_id": "UInt64",
+            "metric_id": "UInt64",
+            "dt": "DateTime",
+            "value": "Float64",
+            "computed_at": "DateTime"
+        }
+    },
+    {
+        "table": "eth_transfers",
+        "description": "Provide the on-chain transfers for Ethereum itself",
+        "engine": "Distributed",
+        "partition_by": "toStartOfMonth(dt)",
+        "order_by": [
+            "from",
+            "type",
+            "to",
+            "dt",
+            "transactionHash",
+            "primaryKey"
+        ],
+        "columns": {
+            "dt": "DateTime",
+            "from": "String",
+            "to": "String",
+            "value": "Float64",
+            "valueExactBase36": "String",
+            "blockNumber": "UInt32",
+            "transactionHash": "String",
+            "transactionPosition": "UInt32",
+            "type": "Enum8('call' = 0, 'fee' = 1, 'genesis' = 2, 'suicide' = 3, 'reward' = 4, 'create' = 5, 'dao_hack' = 6, 'fee_burnt' = 7)"
+        },
+        "primaryKey": "UInt64"
+    },
+    {
+        "table": "eth_transfers_to",
+        "description": "Provide the on-chain transfers for Ethereum itself with a different `order_by`",
+        "engine": "Distributed",
+        "partition_by": "toStartOfMonth(dt)",
+        "order_by": [
+            "from",
+            "type",
+            "to",
+            "dt",
+            "transactionHash",
+            "primaryKey"
+        ],
+        "columns": {
+            "dt": "DateTime",
+            "from": "String",
+            "to": "String",
+            "value": "Float64",
+            "valueExactBase36": "String",
+            "blockNumber": "UInt32",
+            "transactionHash": "String",
+            "transactionPosition": "UInt32",
+            "type": "Enum8('call' = 0, 'fee' = 1, 'genesis' = 2, 'suicide' = 3, 'reward' = 4, 'create' = 5, 'dao_hack' = 6, 'fee_burnt' = 7)"
+        },
+        "primaryKey": "UInt64"
+    },
+    {
+        "table": "erc20_transfers",
+        "description": "Provide the on-chain transfers for Ethereum itself",
+        "engine": "Distributed",
+        "partition_by": "toStartOfMonth(dt)",
+        "order_by": [
+            "from",
+            "type",
+            "to",
+            "dt",
+            "transactionHash",
+            "primaryKey"
+        ],
+        "columns": {
+            "dt": "DateTime",
+            "from": "LowCardinality(String)",
+            "to": "LowCardinality(String)",
+            "value": "Float64",
+            "valueExactBase36": "String",
+            "contract": "LowCardinality(String)",
+            "blockNumber": "UInt32",
+            "transactionHash": "String",
+            "logIndex": "UInt32",
+            "primaryKey": "UInt64",
+            "assetRefId": "UInt64"
+        },
+        "primaryKey": "UInt64"
+    }
+]

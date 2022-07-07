@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
          {:ok, from, to, interval} <-
            calibrate(Sanbase.Twitter, twitter_name, from, to, interval, 60 * 60),
          {:ok, data} <-
-           Sanbase.Twitter.twitter_timeseries_data(twitter_name, from, to, interval) do
+           Sanbase.Twitter.timeseries_data(twitter_name, from, to, interval) do
       {:ok, data}
     else
       {:error, reason} ->

@@ -39,7 +39,7 @@ defmodule Sanbase.Twitter.MetricAdapter do
   def timeseries_data("twitter_followers", %{slug: slug}, from, to, interval, _opts) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project),
-         {:ok, data} <- Sanbase.Twitter.twitter_timeseries_data(twitter_name, from, to, interval) do
+         {:ok, data} <- Sanbase.Twitter.timeseries_data(twitter_name, from, to, interval) do
       {:ok, data}
     else
       nil -> {:error, "Project with slug #{slug} does not exist"}

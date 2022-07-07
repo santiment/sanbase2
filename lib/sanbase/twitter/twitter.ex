@@ -1,8 +1,8 @@
 defmodule Sanbase.Twitter do
   @table "twitter_followers"
 
-  def twitter_timeseries_data(twitter_handle, from, to, interval) do
-    {query, args} = twitter_timeseries_data_query(twitter_handle, from, to, interval)
+  def timeseries_data(twitter_handle, from, to, interval) do
+    {query, args} = timeseries_data_query(twitter_handle, from, to, interval)
 
     Sanbase.ClickhouseRepo.query_transform(query, args, fn [dt, value] ->
       %{
@@ -35,7 +35,7 @@ defmodule Sanbase.Twitter do
 
   # private
 
-  defp twitter_timeseries_data_query(twitter_handle, from, to, interval) do
+  defp timeseries_data_query(twitter_handle, from, to, interval) do
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
 
     query = """
@@ -62,7 +62,7 @@ defmodule Sanbase.Twitter do
         dt,
         followers_count
       FROM #{@table}
-      PREWHERE twitter_handle = ?1
+      PREWHERE twitter_handle = ?1 AND dt >= now() - INTERVAL 14 DAY
       ORDER BY dt DESC
       LIMIT 1
     """

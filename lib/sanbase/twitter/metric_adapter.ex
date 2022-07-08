@@ -1,6 +1,5 @@
 defmodule Sanbase.Twitter.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
-  alias Sanbase.Twitter.Store
   alias Sanbase.Model.Project
 
   @aggregations [:last]
@@ -40,19 +39,10 @@ defmodule Sanbase.Twitter.MetricAdapter do
   def timeseries_data("twitter_followers", %{slug: slug}, from, to, interval, _opts) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project),
-         {:ok, data} <- Store.all_records_for_measurement(twitter_name, from, to, interval) do
-      result =
-        data
-        |> Enum.map(fn {datetime, followers} ->
-          %{
-            datetime: datetime,
-            value: followers
-          }
-        end)
-
-      {:ok, result}
+         {:ok, data} <- Sanbase.Twitter.timeseries_data(twitter_name, from, to, interval) do
+      {:ok, data}
     else
-      nil -> {:error, "Project with slug #{slug} is not existing"}
+      nil -> {:error, "Project with slug #{slug} does not exist"}
       error -> error
     end
   end
@@ -83,10 +73,7 @@ defmodule Sanbase.Twitter.MetricAdapter do
   def first_datetime("twitter_followers", %{slug: slug}) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project) do
-      Store.first_datetime(twitter_name)
-    else
-      nil -> {:error, "Project with slug #{slug} is not existing"}
-      error -> error
+      Sanbase.Twitter.first_datetime(twitter_name)
     end
   end
 
@@ -94,7 +81,7 @@ defmodule Sanbase.Twitter.MetricAdapter do
   def last_datetime_computed_at("twitter_followers", %{slug: slug}) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project) do
-      Store.last_datetime(twitter_name)
+      Sanbase.Twitter.last_datetime(twitter_name)
     end
   end
 

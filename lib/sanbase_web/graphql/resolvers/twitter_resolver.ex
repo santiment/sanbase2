@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
   alias Sanbase.Model.Project
-  alias Sanbase.Twitter.Store
 
   def twitter_data(_root, %{slug: slug}, _resolution) do
     calculate_twitter_data(slug)
@@ -21,12 +20,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   defp calculate_twitter_data(slug) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project),
-         {datetime, followers_count} <- Store.last_record_for_measurement(twitter_name) do
-      {:ok,
-       %{
-         datetime: datetime,
-         followers_count: followers_count
-       }}
+         {:ok, [data]} <- Sanbase.Twitter.last_record(twitter_name) do
+      {:ok, data}
     else
       _error ->
         {:ok, nil}
@@ -51,16 +46,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project),
          {:ok, from, to, interval} <-
-           calibrate(Store, twitter_name, from, to, interval, 60 * 60),
-         twitter_historical_data <-
-           Store.all_records_for_measurement!(twitter_name, from, to, interval) do
-      result =
-        twitter_historical_data
-        |> Enum.map(fn {datetime, followers_count} ->
-          %{datetime: datetime, followers_count: followers_count}
-        end)
-
-      {:ok, result}
+           calibrate(Sanbase.Twitter, twitter_name, from, to, interval, 60 * 60),
+         {:ok, data} <-
+           Sanbase.Twitter.timeseries_data(twitter_name, from, to, interval) do
+      {:ok, data}
     else
       {:error, reason} ->
         {:error, "Cannot fetch twitter history data for slug #{slug}: #{reason}"}

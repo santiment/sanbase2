@@ -56,7 +56,7 @@ defmodule Sanbase.Github.TwitterApiTest do
   test "fetch current twitter followers", context do
     %{dt1: dt, project: project, conn: conn} = context
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Twitter.Store.last_record_for_measurement/1, {dt, 1000})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: [[dt, 1000]]}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_current_twitter_followers(conn, project.slug)
@@ -69,9 +69,13 @@ defmodule Sanbase.Github.TwitterApiTest do
   test "fetching timeseries twitter followers", context do
     %{dt1: dt1, dt2: dt2, dt3: dt3, project: project, conn: conn} = context
 
-    data = {:ok, [{dt1, 11_437}, {dt2, 11_434}, {dt3, 11_439}]}
+    rows = [
+      [DateTime.to_unix(dt1), 11_437],
+      [DateTime.to_unix(dt2), 11_434],
+      [DateTime.to_unix(dt3), 11_439]
+    ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Twitter.Store.all_records_for_measurement/4, data)
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_twitter_followers(conn, project.slug, dt1, dt3, "1d")

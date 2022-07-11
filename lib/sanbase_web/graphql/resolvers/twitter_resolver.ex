@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   defp calculate_twitter_data(slug) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project),
-         {:ok, [data]} <- Sanbase.Twitter.last_record(twitter_name) do
+         {:ok, data} <- Sanbase.Twitter.last_record(twitter_name) do
       {:ok, data}
     else
       _error ->

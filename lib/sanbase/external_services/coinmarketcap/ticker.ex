@@ -34,7 +34,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
-  alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.Coinmarketcap
   alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, TickerFetcher}
 
@@ -155,32 +154,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
       |> Enum.filter(fn %__MODULE__{last_updated: last_updated} -> last_updated end)
 
     data
-  end
-
-  @spec convert_for_importing(%__MODULE__{}, %{}) :: [%Measurement{}]
-  def convert_for_importing(%__MODULE__{} = ticker, cmc_id_to_slugs_mapping) do
-    price_point = to_price_point(ticker) |> PricePoint.sanity_filters()
-
-    get_ticker = fn
-      ticker, slug ->
-        case ticker.slug == slug do
-          true -> ticker.symbol
-          false -> Project.ticker_by_slug(slug)
-        end
-    end
-
-    case Map.get(cmc_id_to_slugs_mapping, ticker.slug, []) |> List.wrap() do
-      [] ->
-        []
-
-      slugs ->
-        Enum.map(slugs, fn slug ->
-          symbol = get_ticker.(ticker, slug)
-          measurement = Measurement.name_from(%{ticker | id: slug, symbol: symbol})
-
-          PricePoint.convert_to_measurement(price_point, measurement)
-        end)
-    end
   end
 
   # Convert a Ticker to a PricePoint

@@ -6,7 +6,6 @@ import Config
 config :phoenix, :stacktrace_depth, 60
 
 config :sanbase,
-  influx_store_enabled: false,
   available_slugs_module: Sanbase.DirectAvailableSlugs
 
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}
@@ -72,8 +71,6 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   time_between_requests: 1000
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, sync_enabled: false
-
-config :sanbase, Sanbase.Twitter.Store, database: "twitter_followers_data_test"
 
 config :sanbase, SanbaseWeb.Graphql.AuthPlug,
   basic_auth_username: "user",

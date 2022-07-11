@@ -26,9 +26,6 @@ defmodule Sanbase.Application.Web do
         name: :graphql_cache
       ),
 
-      # Time sereies Twitter DB connection
-      Sanbase.Twitter.Store.child_spec(),
-
       # Sweeping the Guardian JWT refresh tokens
       {Guardian.DB.Token.SweeperServer, []},
       # Rehydrating cache

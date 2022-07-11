@@ -15,9 +15,6 @@ defmodule Sanbase.Application.Scrapers do
       # Start a Registry
       {Registry, keys: :unique, name: Sanbase.Registry},
 
-      # Time sereies Twitter DB connection
-      Sanbase.Twitter.Store.child_spec(),
-
       # Etherscan rate limiter
       RateLimiting.Server.child_spec(
         :etherscan_rate_limiter,

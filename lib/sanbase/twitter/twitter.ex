@@ -1,6 +1,8 @@
 defmodule Sanbase.Twitter do
   @table "twitter_followers"
 
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+
   def timeseries_data(twitter_handle, from, to, interval) do
     {query, args} = timeseries_data_query(twitter_handle, from, to, interval)
 
@@ -21,16 +23,21 @@ defmodule Sanbase.Twitter do
         followers_count: value
       }
     end)
+    |> maybe_unwrap_ok_value()
   end
 
   def first_datetime(twitter_handle) do
     {query, args} = first_datetime_query(twitter_handle)
+
     Sanbase.ClickhouseRepo.query_transform(query, args, fn [dt] -> dt end)
+    |> maybe_unwrap_ok_value()
   end
 
   def last_datetime(twitter_handle) do
     {query, args} = last_datetime_query(twitter_handle)
+
     Sanbase.ClickhouseRepo.query_transform(query, args, fn [dt] -> dt end)
+    |> maybe_unwrap_ok_value()
   end
 
   # private

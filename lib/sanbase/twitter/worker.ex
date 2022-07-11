@@ -15,9 +15,7 @@ defmodule Sanbase.Twitter.Worker do
 
   alias Sanbase.Repo
   alias Sanbase.Model.Project
-  alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.RateLimiting.Server
-  alias Sanbase.Twitter.Store
 
   @default_update_interval 1000 * 60 * 60 * 6
 
@@ -33,7 +31,6 @@ defmodule Sanbase.Twitter.Worker do
       )
 
     if Config.get(:sync_enabled, false) do
-      Store.create_db()
       update_interval_ms = Config.get(:update_interval, @default_update_interval)
 
       GenServer.cast(self(), :sync)
@@ -108,7 +105,6 @@ defmodule Sanbase.Twitter.Worker do
 
     twitter_data_user_data = fetch_twitter_user_data(twitter_name)
 
-    store_twitter_user_data(twitter_data_user_data, twitter_name)
     export_to_kafka(twitter_name, twitter_data_user_data)
   end
 
@@ -130,26 +126,4 @@ defmodule Sanbase.Twitter.Worker do
   end
 
   defp export_to_kafka(_twitter_handle, _), do: :ok
-
-  defp store_twitter_user_data(nil, _twitter_name), do: :ok
-
-  defp store_twitter_user_data(twitter_user_data, twitter_name) do
-    if Application.get_env(:sanbase, :influx_store_enabled, true) do
-      twitter_user_data
-      |> convert_to_measurement(twitter_name)
-      |> Store.import()
-    end
-  end
-
-  defp convert_to_measurement(
-         %ExTwitter.Model.User{followers_count: followers_count},
-         measurement_name
-       ) do
-    %Measurement{
-      timestamp: DateTime.to_unix(DateTime.utc_now(), :nanosecond),
-      fields: %{followers_count: followers_count},
-      tags: [],
-      name: measurement_name
-    }
-  end
 end

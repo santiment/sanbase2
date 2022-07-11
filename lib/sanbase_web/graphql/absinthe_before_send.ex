@@ -24,6 +24,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   Most of the simple queries use 1 cache call and won't benefit from this approach.
   Only queries with many resolvers are included in the list of allowed queries.
   """
+
   alias SanbaseWeb.Graphql.Cache
   alias Sanbase.Utils.IP
 

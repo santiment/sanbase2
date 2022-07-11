@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
 
   object :dashboard_queries do
     @desc ~s"""
-    Get a list of clickhouse tables that the users have access to
+    Get a list of clickhouse tables that the users can access
     via the SQL editor.
     """
     field :get_available_clickhouse_tables, list_of(:clickhouse_table_definition) do
@@ -101,7 +101,13 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     end
 
     @desc ~s"""
-    TODO
+    Every SQL query executed in Clickhouse is uniquely identified by an id.
+
+    This unique id is called `clickhouseQueryId` throught our API. If it is
+    provided back to thi query by the user that executed it, it returns
+    data about the execution of the query - how much RAM memory it used,
+    how many gigabytes/rows were read, how big is the result, how much CPU
+    time it used, etc.
     """
     field :get_clickhouse_query_execution_stats, :query_execution_stats do
       meta(access: :free)
@@ -237,7 +243,9 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     end
 
     @desc ~s"""
-    Remove a dashboard panel
+    Remove a dashboard panel.
+
+    Only the owner of the dashboard can remove a panel from it.
     """
     field :remove_dashboard_panel, :panel_schema do
       arg(:dashboard_id, non_null(:integer))
@@ -365,6 +373,10 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
 
     @desc ~s"""
     Store the dashboard schema to allow to revisit it again in the future.
+
+    The schema is stored in the database alongside a comment added by the
+    author. All fields and the current datetime are used to generate a hash,
+    similar to git commit hashes, that uniquely identifies the revision.
     """
     field :store_dashboard_schema_history, :dashboard_schema_history do
       arg(:id, non_null(:integer))

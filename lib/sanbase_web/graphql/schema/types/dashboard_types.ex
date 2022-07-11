@@ -251,7 +251,10 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
 
   @desc ~s"""
   This object sticks together all the Panel Cache
-  objects that are associated with a given dashboard
+  objects that are associated with a given dashboard.
+
+  It contains a list of Panel Cache objects, each of which
+  holds the result of a panel computation.
   """
   object :dashboard_cache do
     field(:dashboard_id, non_null(:integer))

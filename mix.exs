@@ -55,7 +55,6 @@ defmodule Sanbase.Mixfile do
       {:absinthe_phoenix, "~> 2.0"},
       {:absinthe_plug, "~> 1.5"},
       {:absinthe, "~> 1.5"},
-      {:async_with, github: "fertapric/async_with"},
       {:browser, "~> 0.4.4"},
       {:cachex, "~> 3.4"},
       {:cidr, "~> 1.1"},
@@ -93,6 +92,7 @@ defmodule Sanbase.Mixfile do
       {:excoveralls, "~> 0.8", optional: true, only: [:test]},
       {:expletive, "~> 0.1.0"},
       {:exprof, "~> 0.2.0"},
+      # Move back to hex when https://github.com/parroty/extwitter/pull/150 is merged
       {:extwitter, github: "santiment/extwitter"},
       {:faker, "~> 0.17", only: [:dev, :test]},
       {:floki, "~> 0.20"},
@@ -120,8 +120,7 @@ defmodule Sanbase.Mixfile do
       {:nimble_csv, "~> 1.1"},
       {:norm, "~> 0.12"},
       {:number, "~> 1.0"},
-      # TODO: Go back to original once https://github.com/lexmag/oauther/pull/22 is merged
-      {:oauther, github: "tobstarr/oauther", override: true},
+      {:oauther, "~> 1.3"},
       {:oban, "~> 2.7"},
       {:observer_cli, "~> 1.3"},
       {:phoenix_ecto, "~> 4.1"},

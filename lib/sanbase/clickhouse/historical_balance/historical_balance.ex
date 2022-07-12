@@ -5,8 +5,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   for many different database tables and schemas.
   """
 
-  use AsyncWith
-
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
   alias Sanbase.Model.Project

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.2
--- Dumped by pg_dump version 14.2
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -253,7 +253,8 @@ CREATE TABLE public.api_call_limits (
     remote_ip character varying(255) DEFAULT NULL::character varying,
     has_limits boolean DEFAULT true,
     api_calls_limit_plan character varying(255) DEFAULT 'free'::character varying,
-    api_calls jsonb DEFAULT '{}'::jsonb
+    api_calls jsonb DEFAULT '{}'::jsonb,
+    has_limits_no_matter_plan boolean DEFAULT true
 );
 
 
@@ -7041,7 +7042,6 @@ ALTER TABLE ONLY public.signals_historical_activity
 ALTER TABLE ONLY public.signals_historical_activity
     ADD CONSTRAINT signals_historical_activity_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id) ON DELETE CASCADE;
 
-
 --
 -- Name: source_slug_mappings source_slug_mappings_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
@@ -7776,3 +7776,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220620132733);
 INSERT INTO public."schema_migrations" (version) VALUES (20220620143734);
 INSERT INTO public."schema_migrations" (version) VALUES (20220627144857);
 INSERT INTO public."schema_migrations" (version) VALUES (20220630123257);
+INSERT INTO public."schema_migrations" (version) VALUES (20220712122954);

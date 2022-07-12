@@ -44,6 +44,9 @@ defmodule Sanbase.ApiCallLimit do
   @product_sanbase_id Product.product_sanbase()
 
   schema "api_call_limits" do
+    # If has_limits_no_matter_plan is false then plan is not checked.
+    # This is used for manually setting no limits api customers without resetting on plan change.
+    field(:has_limits_no_matter_plan, :boolean, default: true)
     field(:has_limits, :boolean, default: true)
     field(:api_calls_limit_plan, :string, default: "sanapi_free")
     field(:api_calls, :map, default: %{})
@@ -54,7 +57,14 @@ defmodule Sanbase.ApiCallLimit do
 
   def changeset(%__MODULE__{} = acl, attrs \\ %{}) do
     acl
-    |> cast(attrs, [:user_id, :remote_ip, :has_limits, :api_calls_limit_plan, :api_calls])
+    |> cast(attrs, [
+      :user_id,
+      :remote_ip,
+      :has_limits_no_matter_plan,
+      :has_limits,
+      :api_calls_limit_plan,
+      :api_calls
+    ])
     |> validate_required([:has_limits, :api_calls_limit_plan])
   end
 
@@ -249,6 +259,10 @@ defmodule Sanbase.ApiCallLimit do
       _ ->
         "sanapi_free"
     end
+  end
+
+  defp do_get_quota(%__MODULE__{has_limits_no_matter_plan: false}) do
+    {:ok, %{quota: :infinity}}
   end
 
   defp do_get_quota(%__MODULE__{has_limits: false}) do

@@ -7,6 +7,7 @@ defmodule SanbaseWeb.ExAdmin.ApiCallLimit do
       column(:user, link: true)
       column(:remote_ip)
       column(:has_limits)
+      column(:has_limits_no_matter_plan)
       column(:api_calls_limit_plan)
       column(:api_calls)
     end
@@ -17,7 +18,7 @@ defmodule SanbaseWeb.ExAdmin.ApiCallLimit do
 
     form acl do
       inputs do
-        input(acl, :has_limits)
+        input(acl, :has_limits_no_matter_plan)
       end
     end
   end

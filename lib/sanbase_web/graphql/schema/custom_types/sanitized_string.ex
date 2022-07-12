@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.SanitizedString do
   defp serialize_sanitized_markdown_string(markdown) when is_binary(markdown) do
     # mark lines that start with "> " (valid markdown blockquote syntax)
     markdown = Regex.replace(~r/^>\s+([^\s+])/m, markdown, "REPLACED_BLOCKQUOTE\\1")
-    markdown = HtmlSanitizeEx.markdown_html(markdown)
+    markdown = HtmlSanitizeEx.Scrubber.scrub(markdown, Sanbase.CustomMarkdownScrubber)
     # Bring back the blockquotes
     Regex.replace(~r/^REPLACED_BLOCKQUOTE/m, markdown, "> ")
   end

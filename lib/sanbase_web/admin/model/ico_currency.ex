@@ -3,7 +3,7 @@ defmodule SanbaseWeb.ExAdmin.Model.IcoCurrency do
 
   import Ecto.Query, warn: false
 
-  alias Sanbase.Model.{Ico, Currency, IcoCurrency}
+  alias Sanbase.Model.{Ico, Currency}
 
   register_resource Sanbase.Model.IcoCurrency do
     index do

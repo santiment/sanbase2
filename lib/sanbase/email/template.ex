@@ -46,7 +46,7 @@ defmodule Sanbase.Email.Template do
 
   # Send after 2 weeks of inactivity.
   # FIXME- currently not send, inactivity should be defined
-  @slip_away_template "slip-away-users"
+  # @slip_away_template "slip-away-users"
 
   # Send on new comment for insights and timeline events entities
   # The recipient is either author of the entity, previous commenter or the comment is a reply

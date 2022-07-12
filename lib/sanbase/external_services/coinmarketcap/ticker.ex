@@ -32,7 +32,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   import Sanbase.Math, only: [to_integer: 1, to_float: 1]
 
-  alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
   alias Sanbase.ExternalServices.Coinmarketcap
   alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, TickerFetcher}
@@ -40,7 +39,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
+  plug(Sanbase.ExternalServices.RateLimiting.Middleware,
+    name: :api_coinmarketcap_rate_limiter
+  )
 
   plug(Tesla.Middleware.Headers, [
     {"X-CMC_PRO_API_KEY", Config.module_get(Coinmarketcap, :api_key)}
@@ -62,8 +63,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   def fetch_data(opts \\ []) do
     projects_number =
       case Keyword.get(opts, :projects_number) do
-        count when is_integer(count) and count > 0 -> count
-        _ -> Config.module_get(TickerFetcher, :projects_number) |> String.to_integer()
+        count when is_integer(count) and count > 0 ->
+          count
+
+        _ ->
+          Config.module_get(TickerFetcher, :projects_number)
+          |> String.to_integer()
       end
 
     Logger.info("[CMC] Fetching the realtime data for top #{projects_number} projects")
@@ -151,7 +156,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
           percent_change_7d: percent_change_7d_usd
         }
       end)
-      |> Enum.filter(fn %__MODULE__{last_updated: last_updated} -> last_updated end)
+      |> Enum.filter(fn %__MODULE__{last_updated: last_updated} ->
+        last_updated
+      end)
 
     data
   end

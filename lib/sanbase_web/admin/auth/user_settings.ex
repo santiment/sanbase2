@@ -1,8 +1,6 @@
 defmodule SanbaseWeb.ExAdmin.Accounts.UserSettings do
   use ExAdmin.Register
 
-  alias Sanbase.Accounts.UserSettings
-
   register_resource Sanbase.Accounts.UserSettings do
     action_items(only: [:show])
   end

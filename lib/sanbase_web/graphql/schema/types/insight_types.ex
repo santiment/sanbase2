@@ -34,11 +34,11 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
       resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
     end
 
-    field(:title, non_null(:sanitized_string))
-    field(:short_desc, :sanitized_markdown_string)
-    field(:text, :sanitized_markdown_string)
+    field(:title, non_null(:sanitized_string_no_tags))
+    field(:short_desc, :sanitized_html_subet_string)
+    field(:text, :sanitized_html_subet_string)
 
-    field :pulse_text, :sanitized_markdown_string do
+    field :pulse_text, :sanitized_html_subet_string do
       resolve(&InsightResolver.pulse_text/3)
     end
 

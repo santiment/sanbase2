@@ -1,6 +1,5 @@
 defmodule Sanbase.Price do
   use Ecto.Schema
-  use AsyncWith
 
   import Sanbase.Price.SqlQuery
 

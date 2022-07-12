@@ -250,7 +250,6 @@ config :kaffe,
 # Import configs
 import_config "ueberauth_config.exs"
 import_config "ex_admin_config.exs"
-import_config "influxdb_config.exs"
 import_config "scrapers_config.exs"
 import_config "notifications_config.exs"
 import_config "stripe_config.exs"

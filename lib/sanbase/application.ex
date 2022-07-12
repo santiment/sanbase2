@@ -216,6 +216,9 @@ defmodule Sanbase.Application do
       # Start the endpoint when the application starts
       SanbaseWeb.Endpoint,
 
+      # Prometheus metrics
+      SanbaseWeb.Prometheus,
+
       # Start the Postgres Ecto repository
       Sanbase.Repo,
 

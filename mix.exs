@@ -95,6 +95,7 @@ defmodule Sanbase.Mixfile do
       # Move back to hex when https://github.com/parroty/extwitter/pull/150 is merged
       {:extwitter, github: "santiment/extwitter"},
       {:faker, "~> 0.17", only: [:dev, :test]},
+      {:finch, "~> 0.12", override: true},
       {:floki, "~> 0.20"},
       {:gettext, "~> 0.11"},
       {:guardian_db, "~> 2.0"},
@@ -132,6 +133,7 @@ defmodule Sanbase.Mixfile do
       {:phoenix, "~> 1.6.0"},
       {:plug_cowboy, "~> 2.0"},
       {:postgrex, "~> 0.16", override: true},
+      {:prom_ex, "~> 1.7.1"},
       {:quantum, "~> 3.0"},
       {:remote_ip, "~> 1.0"},
       {:rexbug, ">= 1.0.0"},

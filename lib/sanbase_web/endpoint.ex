@@ -31,6 +31,9 @@ defmodule SanbaseWeb.Endpoint do
   plug(Plug.Static, at: "/", from: :sanbase, gzip: false)
   plug(Plug.Static, at: "/kaffy", from: :kaffy, gzip: false, only: ~w(assets))
 
+  # Prometheus /metrics endpoint
+  plug(PromEx.Plug, prom_ex_module: SanbaseWeb.Prometheus)
+
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
   if code_reloading? do

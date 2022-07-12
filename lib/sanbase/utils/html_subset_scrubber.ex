@@ -1,4 +1,4 @@
-defmodule Sanbase.HtmlSubsetScrubber do
+defmodule Sanbase.Utils.HtmlSubsetScrubber do
   require HtmlSanitizeEx.Scrubber.Meta
   alias HtmlSanitizeEx.Scrubber.Meta
 

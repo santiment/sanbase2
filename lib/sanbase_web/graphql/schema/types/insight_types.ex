@@ -35,10 +35,10 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     end
 
     field(:title, non_null(:sanitized_string_no_tags))
-    field(:short_desc, :sanitized_html_subet_string)
-    field(:text, :sanitized_html_subet_string)
+    field(:short_desc, :sanitized_html_subset_string)
+    field(:text, :sanitized_html_subset_string)
 
-    field :pulse_text, :sanitized_html_subet_string do
+    field :pulse_text, :sanitized_html_subset_string do
       resolve(&InsightResolver.pulse_text/3)
     end
 

@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
     field(:short_url, :short_url)
     field(:timeline_event, :timeline_event)
 
-    field(:content, non_null(:string))
+    field(:content, non_null(:sanitized_html_subset_string))
 
     field :user, non_null(:public_user) do
       resolve(&UserResolver.user_no_preloads/3)
@@ -73,7 +73,7 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
       cache_resolve(&CommentEntityIdResolver.short_url_id/3)
     end
 
-    field(:content, non_null(:string))
+    field(:content, non_null(:sanitized_html_subset_string))
 
     field :user, non_null(:public_user) do
       resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)

@@ -18,6 +18,14 @@ defmodule SanbaseWeb.RootController do
     |> send_resp(200, "")
   end
 
+  def nginx(conn, _params) do
+    Process.sleep(75000)
+
+    conn
+    |> put_resp_content_type("text/plain")
+    |> send_resp(200, "OK")
+  end
+
   defp path(file) do
     Application.app_dir(:sanbase)
     |> Path.join(file)

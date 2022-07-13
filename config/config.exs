@@ -15,6 +15,13 @@ config :sanbase,
   ecto_repos: [Sanbase.Repo],
   available_slugs_module: Sanbase.AvailableSlugs
 
+config :sanbase, Sanbase.PromEx,
+  disabled: false,
+  manual_metrics_start_delay: :no_delay,
+  drop_metrics_groups: [],
+  grafana: :disabled,
+  metrics_server: :disabled
+
 config :phoenix, :json_library, Jason
 
 config :postgrex, :json_library, Jason

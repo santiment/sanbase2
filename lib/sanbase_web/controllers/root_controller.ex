@@ -22,8 +22,6 @@ defmodule SanbaseWeb.RootController do
     Process.sleep(75000)
 
     conn
-    |> put_resp_content_type("text/plain")
-    |> send_resp(200, "OK")
   end
 
   defp path(file) do

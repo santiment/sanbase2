@@ -134,7 +134,6 @@ defmodule SanbaseWeb.Router do
     pipe_through(:api)
 
     get("/get_routed_conn", RootController, :get_routed_conn)
-    post("/nginx", RootController, :nginx)
   end
 
   get("/", SanbaseWeb.RootController, :healthcheck)

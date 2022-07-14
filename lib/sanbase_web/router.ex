@@ -1,6 +1,10 @@
 defmodule SanbaseWeb.Router do
   use SanbaseWeb, :router
 
+  pipeline :admin_pod_only do
+    plug(SanbaseWeb.Plug.AdminPodOnly)
+  end
+
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -32,7 +36,7 @@ defmodule SanbaseWeb.Router do
   end
 
   use ExAdmin.Router
-  use Kaffy.Routes, scope: "/admin3", pipe_through: [:basic_auth]
+  use Kaffy.Routes, scope: "/admin3", pipe_through: [:admin_pod_only, :basic_auth]
 
   scope "/auth", SanbaseWeb do
     pipe_through(:browser)
@@ -43,12 +47,12 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/admin", ExAdmin do
-    pipe_through([:browser, :basic_auth])
+    pipe_through([:admin_pod_only, :browser, :basic_auth])
     admin_routes()
   end
 
   scope "/admin2", SanbaseWeb do
-    pipe_through([:browser, :basic_auth])
+    pipe_through([:admin_pod_only, :browser, :basic_auth])
     import Phoenix.LiveDashboard.Router
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])

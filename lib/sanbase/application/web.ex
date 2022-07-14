@@ -17,6 +17,12 @@ defmodule Sanbase.Application.Web do
   def children() do
     # Define workers and child supervisors to be supervised
     children = [
+      # Mutex for forcing sequential execution when updating api call limits
+      Supervisor.child_spec(
+        {Mutex, name: Sanbase.ApiCallLimitMutex},
+        id: Sanbase.ApiCallLimitMutex
+      ),
+
       # Start GraphQL subscriptions
       {Absinthe.Subscription, SanbaseWeb.Endpoint},
 

@@ -63,6 +63,9 @@ defmodule Sanbase.Application do
         Sanbase.Application.Scrapers.init()
         Sanbase.Application.Alerts.init()
 
+      "admin" ->
+        Sanbase.Application.Admin.init()
+
       "web" ->
         Sanbase.Application.Web.init()
 
@@ -81,6 +84,9 @@ defmodule Sanbase.Application do
     case container_type do
       "all" ->
         Logger.info("Starting all Sanbase container types.")
+
+      "admin" ->
+        Logger.info("Starting Admin Sanbase.")
 
       "web" ->
         Logger.info("Starting Web Sanbase.")
@@ -103,8 +109,9 @@ defmodule Sanbase.Application do
         {web_children, _} = Sanbase.Application.Web.children()
         {scrapers_children, _} = Sanbase.Application.Scrapers.children()
         {alerts_children, _} = Sanbase.Application.Alerts.children()
+        {admin_children, _} = Sanbase.Application.Admin.children()
 
-        children = web_children ++ scrapers_children ++ alerts_children
+        children = web_children ++ scrapers_children ++ alerts_children ++ admin_children
         children = children |> Enum.uniq()
 
         opts = [
@@ -115,6 +122,9 @@ defmodule Sanbase.Application do
         ]
 
         {children, opts}
+
+      "admin" ->
+        Sanbase.Application.Admin.children()
 
       "web" ->
         Sanbase.Application.Web.children()
@@ -246,12 +256,6 @@ defmodule Sanbase.Application do
 
       # Start the Task Supervisor
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
-
-      # Mutex for forcing sequential execution when updating api call limits
-      Supervisor.child_spec(
-        {Mutex, name: Sanbase.ApiCallLimitMutex},
-        id: Sanbase.ApiCallLimitMutex
-      ),
 
       # Start telegram rate limiter. Used both in web and alerts
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(

@@ -286,7 +286,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_queries, list_of(:string) do
-      cache_resolve(&ProjectResolver.available_queries/3, ttl: 1800)
+      cache_resolve(&ProjectResolver.available_queries/3, ttl: 120)
     end
 
     field :aggregated_timeseries_data, :float do

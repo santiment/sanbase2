@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Plug.AdminPodOnly do
     case Sanbase.ApplicationUtils.container_type() do
       # The `all` type is used only when developing locally.
       type when type in ["admin", "all"] ->
-        conn
+        Plug.Conn.put_private(conn, :plug_skip_csrf_protection, true)
 
       _ ->
         conn

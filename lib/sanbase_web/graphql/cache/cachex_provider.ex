@@ -138,7 +138,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
         # backoff fashion - 10, 130, 375, 709, etc. milliseconds
         # The backoff is capped at 2 seconds
         sleep_ms = (:math.pow(attempt * 20, 1.6) + 10) |> trunc()
-        sleep_ms = Enum.max([sleep_ms, 2000])
+        sleep_ms = Enum.min([sleep_ms, 2000])
 
         Process.sleep(sleep_ms)
         obtain_lock(cache_record, keys, attempt + 1)

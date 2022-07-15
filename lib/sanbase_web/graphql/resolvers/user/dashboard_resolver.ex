@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
   alias Sanbase.Dashboard
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
 

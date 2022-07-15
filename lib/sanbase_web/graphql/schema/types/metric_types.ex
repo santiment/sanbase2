@@ -291,7 +291,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     For example the human readable name of `mvrv_usd_5y` is `MVRV for coins that moved in the past 5 years`
     """
     field :human_readable_name, non_null(:string) do
-      cache_resolve(&MetricResolver.get_human_readable_name/3, ttl: 3600)
+      cache_resolve(&MetricResolver.get_human_readable_name/3, ttl: 120)
     end
 
     @desc ~s"""
@@ -300,7 +300,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     """
     field :available_slugs, list_of(:string) do
       arg(:selector, :aggregated_timeseries_data_selector_input_object)
-      cache_resolve(&MetricResolver.get_available_slugs/3, ttl: 600)
+      cache_resolve(&MetricResolver.get_available_slugs/3, ttl: 300)
     end
 
     @desc ~s"""

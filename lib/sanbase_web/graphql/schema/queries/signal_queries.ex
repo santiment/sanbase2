@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Schema.SignalQueries do
 
     field :get_available_signals, list_of(:string) do
       meta(access: :free)
-      cache_resolve(&SignalResolver.get_available_signals/3, ttl: 600)
+      cache_resolve(&SignalResolver.get_available_signals/3, ttl: 120)
     end
 
     field :get_raw_signals, list_of(:raw_signal) do

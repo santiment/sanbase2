@@ -19,8 +19,8 @@ defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
       middleware(AccessControl)
 
       cache_resolve(&ExchangeResolver.top_exchanges_by_balance/3,
-        ttl: 1800,
-        max_ttl_offset: 1800
+        ttl: 120,
+        max_ttl_offset: 120
       )
     end
   end

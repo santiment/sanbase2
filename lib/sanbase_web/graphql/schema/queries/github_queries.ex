@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
-      cache_resolve(&GithubResolver.dev_activity/3, ttl: 600, max_ttl_offset: 600)
+      cache_resolve(&GithubResolver.dev_activity/3, ttl: 300, max_ttl_offset: 120)
     end
   end
 end

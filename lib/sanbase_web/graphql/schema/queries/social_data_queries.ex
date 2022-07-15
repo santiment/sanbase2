@@ -93,7 +93,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, %{allow_realtime_data: true})
 
-      cache_resolve(&SocialDataResolver.get_word_trending_history/3, ttl: 600, max_ttl_offset: 240)
+      cache_resolve(&SocialDataResolver.get_word_trending_history/3, ttl: 300, max_ttl_offset: 240)
     end
 
     @desc ~s"""
@@ -118,8 +118,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       middleware(AccessControl, %{allow_realtime_data: true})
 
       cache_resolve(&SocialDataResolver.get_project_trending_history/3,
-        ttl: 600,
-        max_ttl_offset: 240
+        ttl: 300,
+        max_ttl_offset: 120
       )
     end
 

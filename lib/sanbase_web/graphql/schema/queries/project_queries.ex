@@ -166,7 +166,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       middleware(AccessControl)
 
       cache_resolve(&ProjectTransfersResolver.eth_spent_by_all_projects/3,
-        ttl: 600,
+        ttl: 120,
         max_ttl_offset: 240
       )
     end
@@ -182,7 +182,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       middleware(AccessControl)
 
       cache_resolve(&ProjectTransfersResolver.eth_spent_by_erc20_projects/3,
-        ttl: 600,
+        ttl: 120,
         max_ttl_offset: 240
       )
     end
@@ -202,8 +202,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       middleware(AccessControl)
 
       cache_resolve(&ProjectTransfersResolver.eth_spent_over_time_by_erc20_projects/3,
-        ttl: 600,
-        max_ttl_offset: 240
+        ttl: 120,
+        max_ttl_offset: 120
       )
     end
 
@@ -222,8 +222,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       middleware(AccessControl)
 
       cache_resolve(&ProjectTransfersResolver.eth_spent_over_time_by_all_projects/3,
-        ttl: 600,
-        max_ttl_offset: 240
+        ttl: 120,
+        max_ttl_offset: 120
       )
     end
   end

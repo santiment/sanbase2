@@ -200,7 +200,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 1200)
+      cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 300)
     end
 
     @desc ~s"""
@@ -222,7 +222,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_timeseries_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_timeseries_metrics/3, ttl: 1200)
+      cache_resolve(&ProjectMetricsResolver.available_timeseries_metrics/3, ttl: 300)
     end
 
     @desc ~s"""
@@ -245,11 +245,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_histogram_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_histogram_metrics/3, ttl: 1200)
+      cache_resolve(&ProjectMetricsResolver.available_histogram_metrics/3, ttl: 300)
     end
 
     field :available_table_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_table_metrics/3, ttl: 1200)
+      cache_resolve(&ProjectMetricsResolver.available_table_metrics/3, ttl: 300)
     end
 
     field :traded_on_exchanges, list_of(:string) do
@@ -496,36 +496,25 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :volume_change24h, :float do
-      cache_resolve(&ProjectResolver.volume_change_24h/3,
-        max_ttl_offset: 600
-      )
+      cache_resolve(&ProjectResolver.volume_change_24h/3, ttl: 300)
     end
 
     field :average_dev_activity, :float do
       description("Average dev activity for the last `days` days")
       arg(:days, :integer, default_value: 30)
 
-      cache_resolve(&ProjectResolver.average_dev_activity/3,
-        ttl: 600,
-        max_ttl_offset: 600
-      )
+      cache_resolve(&ProjectResolver.average_dev_activity/3, ttl: 300)
     end
 
     field :average_github_activity, :float do
       description("Average github activity for the last `days` days")
       arg(:days, :integer, default_value: 30)
 
-      cache_resolve(&ProjectResolver.average_github_activity/3,
-        ttl: 600,
-        max_ttl_offset: 600
-      )
+      cache_resolve(&ProjectResolver.average_github_activity/3, ttl: 300)
     end
 
     field :twitter_data, :twitter_data do
-      cache_resolve(&TwitterResolver.twitter_data/3,
-        ttl: 600,
-        max_ttl_offset: 600
-      )
+      cache_resolve(&TwitterResolver.twitter_data/3, ttl: 300)
     end
 
     field :marketcap_usd, :float do
@@ -561,20 +550,20 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :funds_raised_eth_ico_end_price, :float do
       cache_resolve(&ProjectResolver.funds_raised_eth_ico_end_price/3,
-        ttl: 600,
-        max_ttl_offset: 600
+        ttl: 300,
+        max_ttl_offset: 300
       )
     end
 
     field :funds_raised_btc_ico_end_price, :float do
       cache_resolve(&ProjectResolver.funds_raised_btc_ico_end_price/3,
-        ttl: 600,
-        max_ttl_offset: 600
+        ttl: 300,
+        max_ttl_offset: 300
       )
     end
 
     field :initial_ico, :ico do
-      cache_resolve(&ProjectResolver.initial_ico/3, ttl: 600, max_ttl_offset: 600)
+      cache_resolve(&ProjectResolver.initial_ico/3, ttl: 300, max_ttl_offset: 300)
     end
 
     field(:icos, list_of(:ico), resolve: dataloader(SanbaseRepo))
@@ -593,7 +582,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:days, :integer, default_value: 30)
 
       cache_resolve(&ProjectTransfersResolver.eth_spent/3,
-        ttl: 600,
+        ttl: 300,
         max_ttl_offset: 240
       )
     end

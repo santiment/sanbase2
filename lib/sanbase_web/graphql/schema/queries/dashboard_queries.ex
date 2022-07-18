@@ -138,6 +138,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
       arg(:name, non_null(:string))
       arg(:description, :string)
       arg(:is_public, :boolean)
+      arg(:temp_json, :json)
 
       middleware(JWTAuth)
 
@@ -157,6 +158,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
       arg(:name, :string)
       arg(:description, :string)
       arg(:is_public, :boolean)
+      arg(:temp_json, :json)
 
       middleware(JWTAuth)
 

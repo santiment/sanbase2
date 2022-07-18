@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 14.2
+-- Dumped by pg_dump version 14.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -763,7 +763,8 @@ CREATE TABLE public.dashboards (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     is_deleted boolean DEFAULT false,
-    is_hidden boolean DEFAULT false
+    is_hidden boolean DEFAULT false,
+    temp_json jsonb DEFAULT '{}'::jsonb
 );
 
 
@@ -7042,6 +7043,7 @@ ALTER TABLE ONLY public.signals_historical_activity
 ALTER TABLE ONLY public.signals_historical_activity
     ADD CONSTRAINT signals_historical_activity_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id) ON DELETE CASCADE;
 
+
 --
 -- Name: source_slug_mappings source_slug_mappings_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
@@ -7777,3 +7779,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220620143734);
 INSERT INTO public."schema_migrations" (version) VALUES (20220627144857);
 INSERT INTO public."schema_migrations" (version) VALUES (20220630123257);
 INSERT INTO public."schema_migrations" (version) VALUES (20220712122954);
+INSERT INTO public."schema_migrations" (version) VALUES (20220718125615);

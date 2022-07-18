@@ -34,7 +34,8 @@ defmodule Sanbase.Dashboard.Schema do
           panels: list(Panel.t()),
           inserted_at: NaiveDateTime.t(),
           updated_at: NaiveDateTime.t(),
-          user: %User{}
+          user: %User{},
+          temp_json: Map.t()
         }
 
   @type panel_dashboad_map :: %{
@@ -51,12 +52,19 @@ defmodule Sanbase.Dashboard.Schema do
     field(:is_hidden, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)
 
+    # Temporary add JSON field for tests. Will be removed before
+    # final version is released for public use
+    field(:temp_json, :map)
+
     belongs_to(:user, User)
 
     embeds_many(:panels, Panel, on_replace: :delete)
 
     timestamps()
   end
+
+  @create_fields [:name, :description, :is_public, :user_id, :temp_json]
+  @update_fields [:name, :description, :is_public, :temp_json]
 
   @impl Sanbase.Entity.Behaviour
   @spec by_id(non_neg_integer()) :: {:ok, t()} | {:error, String.t()}
@@ -150,17 +158,9 @@ defmodule Sanbase.Dashboard.Schema do
   @spec create(schema_args()) :: {:ok, t()} | {:error, Changeset.t()}
   def create(args) do
     %__MODULE__{}
-    |> cast(args, [:name, :description, :is_public, :user_id])
+    |> cast(args, @create_fields)
     |> validate_required([:name, :user_id])
     |> Repo.insert()
-  end
-
-  @doc ~s"""
-  Delete a dashboard.
-  """
-  @spec delete(dashboard_id) :: {:ok, t()} | {:error, Changeset.t()}
-  def delete(dashboard_id) do
-    Repo.get(__MODULE__, dashboard_id) |> Repo.delete()
   end
 
   @doc ~s"""
@@ -174,8 +174,16 @@ defmodule Sanbase.Dashboard.Schema do
     {:ok, dashboard} = by_id(dashboard_id)
 
     dashboard
-    |> cast(args, [:name, :description, :is_public])
+    |> cast(args, @update_fields)
     |> Repo.update()
+  end
+
+  @doc ~s"""
+  Delete a dashboard.
+  """
+  @spec delete(dashboard_id) :: {:ok, t()} | {:error, Changeset.t()}
+  def delete(dashboard_id) do
+    Repo.get(__MODULE__, dashboard_id) |> Repo.delete()
   end
 
   @doc ~s"""

@@ -10,6 +10,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
   require Logger
 
+  def user_public_dashboards(%Sanbase.Accounts.User{} = user, _args, _resolution) do
+    Dashboard.get_user_public_dashboard_schemas(user.id)
+  end
+
+  def user_dashboards(%Sanbase.Accounts.User{} = user, _args, _resolution) do
+    Dashboard.get_user_dashboard_schemas(user.id)
+  end
+
   def get_available_clickhouse_tables(_root, _args, _resolution) do
     tables = Dashboard.Database.Table.get_tables()
     {:ok, tables}

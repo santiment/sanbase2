@@ -15,7 +15,6 @@ defmodule Sanbase.Comments.EntityComment do
     PostComment,
     ShortUrlComment,
     TimelineEventComment,
-    WalletHuntersProposalComment,
     WatchlistComment
   }
 
@@ -26,7 +25,6 @@ defmodule Sanbase.Comments.EntityComment do
           | %PostComment{}
           | %ShortUrlComment{}
           | %TimelineEventComment{}
-          | %WalletHuntersProposalComment{}
           | %WatchlistComment{}
 
   @type entity ::

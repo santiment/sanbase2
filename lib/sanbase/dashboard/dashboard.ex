@@ -62,6 +62,20 @@ defmodule Sanbase.Dashboard do
   def load_schema(dashboard_id), do: Dashboard.Schema.by_id(dashboard_id)
 
   @doc ~s"""
+  Get a list of the public dashboard schemas of a user
+  """
+  @spec get_user_public_dashboard_schemas(user_id) ::
+          {:ok, list(Dashboard.Schema.t())} | {:error, any()}
+  def get_user_public_dashboard_schemas(user_id),
+    do: Dashboard.Schema.user_public_dashboards(user_id)
+
+  @doc ~s"""
+  Get a list of all the dashboards of a user - both public and private
+  """
+  @spec get_user_dashboard_schemas(user_id) :: {:ok, list(Dashboard.Schema.t())} | {:error, any()}
+  def get_user_dashboard_schemas(user_id), do: Dashboard.Schema.user_dashboards(user_id)
+
+  @doc ~s"""
   Get the dashboard cached version
 
   The cache includes the list of latest results of the SQL queries that are executed.

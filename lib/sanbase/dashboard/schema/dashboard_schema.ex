@@ -108,6 +108,26 @@ defmodule Sanbase.Dashboard.Schema do
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
 
+  def user_dashboards(user_id) do
+    query =
+      from(
+        ds in __MODULE__,
+        where: ds.user_id == ^user_id
+      )
+
+    {:ok, Repo.all(query)}
+  end
+
+  def user_public_dashboards(user_id) do
+    query =
+      from(
+        ds in __MODULE__,
+        where: ds.user_id == ^user_id and ds.is_public == true
+      )
+
+    {:ok, Repo.all(query)}
+  end
+
   @spec get_is_public_and_owner(non_neg_integer()) ::
           {:ok, %{user_id: non_neg_integer(), is_public: boolean()}} | {:error, String.t()}
   def get_is_public_and_owner(dashboard_id) do

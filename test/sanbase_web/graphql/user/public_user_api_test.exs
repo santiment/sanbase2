@@ -34,7 +34,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "watchlists" => [
                    %{"id" => "#{watchlist.id}"}
                  ],
-                 "chartConfigurations" => []
+                 "chartConfigurations" => [],
+                 "dashboards" => []
                }
              }
            }
@@ -62,7 +63,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "triggers" => [],
                  "username" => "#{user.username}",
                  "watchlists" => [],
-                 "chartConfigurations" => []
+                 "chartConfigurations" => [],
+                 "dashboards" => []
                }
              }
            }
@@ -88,7 +90,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "triggers" => [%{"id" => user_trigger.id}],
                  "username" => "#{user.username}",
                  "watchlists" => [],
-                 "chartConfigurations" => []
+                 "chartConfigurations" => [],
+                 "dashboards" => []
                }
              }
            }
@@ -114,7 +117,35 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "triggers" => [],
                  "username" => "#{user.username}",
                  "watchlists" => [],
-                 "chartConfigurations" => [%{"id" => chart_configuration.id}]
+                 "chartConfigurations" => [%{"id" => chart_configuration.id}],
+                 "dashboards" => []
+               }
+             }
+           }
+  end
+
+  test "fetch public dashboards of a user", context do
+    %{conn: conn, user: user} = context
+
+    insert(:dashboard, %{user: user, is_public: false})
+    dashboard = insert(:dashboard, %{user: user, is_public: true})
+
+    result = get_user(conn, user)
+
+    assert result == %{
+             "data" => %{
+               "getUser" => %{
+                 "email" => "<email hidden>",
+                 "followers" => %{"count" => 0, "users" => []},
+                 "following" => %{"count" => 0, "users" => []},
+                 "id" => "#{user.id}",
+                 "insightsCount" => %{"totalCount" => 0, "pulseCount" => 0, "paywallCount" => 0},
+                 "insights" => [],
+                 "triggers" => [],
+                 "username" => "#{user.username}",
+                 "watchlists" => [],
+                 "chartConfigurations" => [],
+                 "dashboards" => [%{"id" => dashboard.id}]
                }
              }
            }
@@ -137,7 +168,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "triggers" => [],
                  "username" => "#{user.username}",
                  "watchlists" => [],
-                 "chartConfigurations" => []
+                 "chartConfigurations" => [],
+                 "dashboards" => []
                }
              }
            }
@@ -160,7 +192,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "triggers" => [],
                  "username" => "#{user.username}",
                  "watchlists" => [],
-                 "chartConfigurations" => []
+                 "chartConfigurations" => [],
+                 "dashboards" => []
                }
              }
            }
@@ -178,6 +211,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
         triggers{ id }
         watchlists{ id }
         chartConfigurations{ id }
+        dashboards{ id }
         followers{ count users { id } }
         following{ count users { id } }
       }

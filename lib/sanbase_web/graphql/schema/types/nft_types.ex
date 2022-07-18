@@ -3,6 +3,11 @@ defmodule SanbaseWeb.Graphql.NftTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
 
+  enum :sort_direction do
+    value(:asc)
+    value(:desc)
+  end
+
   enum :nft_trade_label_key do
     value(:nft_influencer)
   end

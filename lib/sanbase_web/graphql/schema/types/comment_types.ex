@@ -12,7 +12,6 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
     value(:insight)
     value(:short_url)
     value(:timeline_event)
-    value(:wallet_hunters_proposal)
     value(:watchlist)
   end
 

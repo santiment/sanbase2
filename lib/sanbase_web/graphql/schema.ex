@@ -74,7 +74,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.UserTriggerTypes)
   import_types(Graphql.UserTypes)
   import_types(Graphql.VoteTypes)
-  import_types(Graphql.WalletHuntersTypes)
   import_types(Graphql.WebinarTypes)
   import_types(Graphql.WidgetTypes)
 
@@ -116,7 +115,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.UserTriggerQueries)
   import_types(Graphql.Schema.ModerationQueries)
   import_types(Graphql.Schema.VoteQueries)
-  import_types(Graphql.Schema.WalletHunterQueries)
   import_types(Graphql.Schema.WebinarQueries)
   import_types(Graphql.Schema.WidgetQueries)
 
@@ -174,7 +172,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:user_list_queries)
     import_fields(:user_queries)
     import_fields(:vote_queries)
-    import_fields(:wallet_hunter_queries)
     import_fields(:webinar_queries)
     import_fields(:widget_queries)
   end
@@ -202,7 +199,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:user_list_mutations)
     import_fields(:user_mutations)
     import_fields(:vote_mutations)
-    import_fields(:wallet_hunter_mutations)
     import_fields(:webinar_mutations)
   end
 end

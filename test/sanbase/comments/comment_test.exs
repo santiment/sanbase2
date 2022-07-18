@@ -69,34 +69,6 @@ defmodule Sanbase.CommentTest do
     assert comment.id == chart_configuration_id
   end
 
-  test "add a comment to a wallet hunters proposal" do
-    user = insert(:user)
-
-    proposal =
-      insert(:wallet_hunters_proposal,
-        proposal_id: 2,
-        user: user,
-        hunter_address: "0x26caae548b7cecf98da12ccaaa633d6d140447aa",
-        transaction_id: "0x2"
-      )
-
-    {:ok, comment} =
-      EntityComment.create_and_link(
-        :wallet_hunters_proposal,
-        proposal.id,
-        user.id,
-        nil,
-        "some comment"
-      )
-
-    proposal_comments =
-      EntityComment.get_comments(:wallet_hunters_proposal, proposal.id, %{cursor: nil, limit: 100})
-
-    assert length(proposal_comments) == 1
-    [%{comment: %{id: proposal_id}}] = proposal_comments
-    assert comment.id == proposal_id
-  end
-
   test "add a comment to a short url" do
     short_url = insert(:short_url)
     user = insert(:user)

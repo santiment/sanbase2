@@ -15,7 +15,6 @@ defmodule Sanbase.Comments.EntityComment do
     PostComment,
     ShortUrlComment,
     TimelineEventComment,
-    WalletHuntersProposalComment,
     WatchlistComment
   }
 
@@ -26,7 +25,6 @@ defmodule Sanbase.Comments.EntityComment do
           | %PostComment{}
           | %ShortUrlComment{}
           | %TimelineEventComment{}
-          | %WalletHuntersProposalComment{}
           | %WatchlistComment{}
 
   @type entity ::
@@ -36,7 +34,6 @@ defmodule Sanbase.Comments.EntityComment do
           | :insight
           | :short_url
           | :timeline_event
-          | :wallet_hunters_proposal
           | :watchlist
 
   @comments_feed_entities [
@@ -115,15 +112,6 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.insert()
   end
 
-  def link(:wallet_hunters_proposal, entity_id, comment_id) do
-    %WalletHuntersProposalComment{}
-    |> WalletHuntersProposalComment.changeset(%{
-      comment_id: comment_id,
-      proposal_id: entity_id
-    })
-    |> Repo.insert()
-  end
-
   def link(:short_url, entity_id, comment_id) do
     %ShortUrlComment{}
     |> ShortUrlComment.changeset(%{
@@ -173,7 +161,6 @@ defmodule Sanbase.Comments.EntityComment do
     order = Map.get(cursor, :order, :desc)
 
     all_feed_comments_query()
-    |> exclude_wallet_hunters_comments()
     |> exclude_not_public_insights()
     |> exclude_not_public_chart_configurations()
     |> exclude_not_public_dashboards()
@@ -212,15 +199,6 @@ defmodule Sanbase.Comments.EntityComment do
       c in Comment,
       where: c.id in subquery(comment_ids_query),
       preload: ^@comments_feed_entities
-    )
-  end
-
-  defp exclude_wallet_hunters_comments(query) do
-    from(
-      c in query,
-      left_join: whp_comment in WalletHuntersProposalComment,
-      on: c.id == whp_comment.comment_id,
-      where: is_nil(whp_comment.proposal_id)
     )
   end
 
@@ -335,13 +313,6 @@ defmodule Sanbase.Comments.EntityComment do
       preload: [:comment, comment: :user]
     )
     |> maybe_add_entity_id_clause(:blockchain_address_id, entity_id)
-  end
-
-  defp entity_comments_query(:wallet_hunters_proposal, entity_id) do
-    from(comment in WalletHuntersProposalComment,
-      preload: [:comment, comment: :user]
-    )
-    |> maybe_add_entity_id_clause(:proposal_id, entity_id)
   end
 
   defp entity_comments_query(:short_url, entity_id) do

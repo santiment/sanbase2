@@ -30,7 +30,6 @@ defmodule Sanbase.Comment do
   alias Sanbase.Dashboard
   alias Sanbase.UserList
   alias Sanbase.Chart.Configuration, as: ChartConfiguration
-  alias Sanbase.WalletHunters.Proposal, as: WHProposal
 
   require Sanbase.Utils.Config, as: Config
 
@@ -43,7 +42,6 @@ defmodule Sanbase.Comment do
   @dashboard_table "dashboard_comments_mapping"
   @watchlists_table "watchlist_comments_mapping"
   @chart_configs_table "chart_configuration_comments_mapping"
-  @wh_proposals_table "wallet_hunters_proposals_comments_mapping"
 
   schema "comments" do
     field(:content, :string)
@@ -83,8 +81,6 @@ defmodule Sanbase.Comment do
       join_through: @chart_configs_table,
       join_keys: [comment_id: :id, chart_configuration_id: :id]
     )
-
-    many_to_many(:wallet_hunters_propsals, WHProposal, join_through: @wh_proposals_table)
 
     timestamps()
   end

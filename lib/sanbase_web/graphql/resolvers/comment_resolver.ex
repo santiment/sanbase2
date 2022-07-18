@@ -16,12 +16,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
         %{entity_type: entity_type, id: id, content: content} = args,
         %{context: %{auth: %{current_user: user}}}
       ) do
-    content =
-      case entity_type do
-        :wallet_hunters_proposal -> sanitize_markdown(content)
-        _ -> content
-      end
-
     EntityComment.create_and_link(entity_type, id, user.id, Map.get(args, :parent_id), content)
   end
 
@@ -35,12 +29,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
         %{comment_id: comment_id, content: content},
         %{context: %{auth: %{current_user: user}}}
       ) do
-    content =
-      case Sanbase.Comment.WalletHuntersProposalComment.has_type?(comment_id) do
-        true -> sanitize_markdown(content)
-        false -> content
-      end
-
     Comment.update(comment_id, user.id, content)
   end
 
@@ -88,13 +76,5 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
     comments = EntityComment.get_comments(args)
 
     {:ok, comments}
-  end
-
-  defp sanitize_markdown(markdown) do
-    # mark lines that start with "> " (valid markdown blockquote syntax)
-    markdown = Regex.replace(~r/^>\s+([^\s+])/m, markdown, "REPLACED_BLOCKQUOTE\\1")
-    markdown = HtmlSanitizeEx.markdown_html(markdown)
-    # Bring back the blockquotes
-    Regex.replace(~r/^REPLACED_BLOCKQUOTE/m, markdown, "> ")
   end
 end

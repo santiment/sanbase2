@@ -105,10 +105,6 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     get_comment_entity_id(ids_mapset, Comment.BlockchainAddressComment, :blockchain_address_id)
   end
 
-  def query(:comment_wallet_hunter_proposal_id, ids_mapset) do
-    get_comment_entity_id(ids_mapset, Comment.WalletHuntersProposalComment, :proposal_id)
-  end
-
   def query(:comment_short_url_id, ids_mapset) do
     get_comment_entity_id(ids_mapset, Comment.ShortUrlComment, :short_url_id)
   end
@@ -130,10 +126,6 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
 
   def query(:short_urls_comments_count, ids_mapset) do
     get_comments_count(ids_mapset, Comment.ShortUrlComment, :short_url_id)
-  end
-
-  def query(:wallet_hunters_proposals_comments_count, ids_mapset) do
-    get_comments_count(ids_mapset, Comment.WalletHuntersProposalComment, :proposal_id)
   end
 
   def query(:watchlist_comments_count, ids_mapset) do

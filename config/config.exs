@@ -229,8 +229,6 @@ config :sanbase, Sanbase.Promoters.FirstPromoterApi,
   api_id: {:system, "FIRST_PROMOTER_API_ID"},
   api_key: {:system, "FIRST_PROMOTER_API_KEY"}
 
-config :sanbase, Sanbase.WalletHunters.Contract, rinkeby_url: {:system, "RINKEBY_URL"}
-
 config :sanbase, Oban.Web,
   repo: Sanbase.Repo,
   queues: [email_queue: 5],

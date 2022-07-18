@@ -28,7 +28,6 @@ defmodule Sanbase.Factory do
   alias Sanbase.Report
   alias Sanbase.BlockchainAddress
   alias Sanbase.SheetsTemplate
-  alias Sanbase.WalletHunters.{Proposal, Bounty}
   alias Sanbase.Webinar
 
   def user_factory() do
@@ -718,20 +717,6 @@ defmodule Sanbase.Factory do
   def uniswap_staking_factory do
     %Sanbase.Accounts.User.UniswapStaking{
       san_staked: 3000
-    }
-  end
-
-  def wallet_hunters_proposal_factory do
-    %Proposal{}
-  end
-
-  def wallet_hunters_bounty_factory do
-    %Bounty{
-      description: "t1",
-      title: "t2",
-      duration: "1w",
-      proposals_count: 1,
-      proposal_reward: 300
     }
   end
 

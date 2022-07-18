@@ -20,6 +20,7 @@ defmodule Sanbase.Dashboard.Panel do
           name: String.t(),
           description: String.t(),
           type: String.t(),
+          settings: map(),
           position: map(),
           size: map(),
           sql: sql()
@@ -28,7 +29,8 @@ defmodule Sanbase.Dashboard.Panel do
   @type panel_args :: %{
           optional(:name) => String.t(),
           optional(:description) => String.t(),
-          optional(:position) => String.t(),
+          optional(:settings) => Map.t(),
+          optional(:position) => Map.t(),
           optional(:size) => Map.t(),
           optional(:sql) => sql()
         }
@@ -37,6 +39,7 @@ defmodule Sanbase.Dashboard.Panel do
     # Auotegenerate on creation
     field(:name, :string)
     field(:description, :string)
+    field(:settings, :map)
     field(:position, :map)
     field(:visualization, :map)
     field(:size, :map)
@@ -46,7 +49,7 @@ defmodule Sanbase.Dashboard.Panel do
 
   def changeset(%__MODULE__{} = panel, attrs) do
     panel
-    |> cast(attrs, [:name, :description, :position, :type, :size, :sql])
+    |> cast(attrs, [:name, :description, :settings, :position, :type, :size, :sql])
     |> validate_change(:sql, &Query.changeset_valid_sql?/2)
   end
 

@@ -63,8 +63,8 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:name, non_null(:string))
     field(:type, :panel_type)
     field(:sql, non_null(:panel_sql_input_object))
-
     field(:description, :string)
+    field(:settings, :json)
     field(:position, :json)
     field(:size, :json)
   end
@@ -159,6 +159,7 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:name, non_null(:string))
     field(:type, non_null(:string))
     field(:description, :string)
+    field(:settings, :json)
     field(:position, :json)
     field(:size, :json)
     field(:sql, :panel_sql)

@@ -45,15 +45,6 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   end
 
   @desc ~s"""
-  The type of a panel that describes the visualization method
-  """
-  enum :panel_type do
-    value(:chart)
-    value(:table)
-    value(:textbox)
-  end
-
-  @desc ~s"""
   Input object for a panel definition (schema).
 
   This object is used to create a new panel or to
@@ -61,12 +52,9 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   """
   input_object :panel_schema_input_object do
     field(:name, non_null(:string))
-    field(:type, :panel_type)
     field(:sql, non_null(:panel_sql_input_object))
     field(:description, :string)
     field(:settings, :json)
-    field(:position, :json)
-    field(:size, :json)
   end
 
   @desc ~s"""
@@ -157,11 +145,8 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:dashboard_id, non_null(:integer))
     field(:string, non_null(:string))
     field(:name, non_null(:string))
-    field(:type, non_null(:string))
     field(:description, :string)
     field(:settings, :json)
-    field(:position, :json)
-    field(:size, :json)
     field(:sql, :panel_sql)
   end
 

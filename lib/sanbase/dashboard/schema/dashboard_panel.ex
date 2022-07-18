@@ -19,10 +19,7 @@ defmodule Sanbase.Dashboard.Panel do
           id: String.t(),
           name: String.t(),
           description: String.t(),
-          type: String.t(),
           settings: map(),
-          position: map(),
-          size: map(),
           sql: sql()
         }
 
@@ -30,8 +27,6 @@ defmodule Sanbase.Dashboard.Panel do
           optional(:name) => String.t(),
           optional(:description) => String.t(),
           optional(:settings) => Map.t(),
-          optional(:position) => Map.t(),
-          optional(:size) => Map.t(),
           optional(:sql) => sql()
         }
 
@@ -40,16 +35,12 @@ defmodule Sanbase.Dashboard.Panel do
     field(:name, :string)
     field(:description, :string)
     field(:settings, :map)
-    field(:position, :map)
-    field(:visualization, :map)
-    field(:size, :map)
-    field(:type, :string)
     field(:sql, :map)
   end
 
   def changeset(%__MODULE__{} = panel, attrs) do
     panel
-    |> cast(attrs, [:name, :description, :settings, :position, :type, :size, :sql])
+    |> cast(attrs, [:name, :description, :settings, :sql])
     |> validate_change(:sql, &Query.changeset_valid_sql?/2)
   end
 

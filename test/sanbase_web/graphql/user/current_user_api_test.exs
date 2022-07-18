@@ -26,6 +26,9 @@ defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
     chart_configuration = insert(:chart_configuration, user: user, is_public: true)
     chart_configuration2 = insert(:chart_configuration, user: user, is_public: false)
 
+    dashboard = insert(:dashboard, user: user, is_public: true)
+    dashboard2 = insert(:dashboard, user: user, is_public: false)
+
     result = get_user(conn) |> get_in(["data", "currentUser"])
 
     assert result["email"] == user.email
@@ -50,6 +53,10 @@ defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
     # Chart Configurations
     assert %{"id" => chart_configuration.id} in result["chartConfigurations"]
     assert %{"id" => chart_configuration2.id} in result["chartConfigurations"]
+
+    # Dashboards
+    assert %{"id" => dashboard.id} in result["dashboards"]
+    assert %{"id" => dashboard2.id} in result["dashboards"]
   end
 
   describe "eligible_for_sanbase_trial" do
@@ -75,6 +82,7 @@ defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
         insights{ id }
         triggers{ id }
         watchlists{ id }
+        dashboards{ id }
         chartConfigurations{ id }
         followers{ count users { id } }
         following{ count users { id } }

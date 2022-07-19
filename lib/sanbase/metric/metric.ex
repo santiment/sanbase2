@@ -19,6 +19,7 @@ defmodule Sanbase.Metric do
   # Use only the types from the behaviour module
   alias Sanbase.Metric.Behaviour, as: Type
   alias Sanbase.Metric.Helper
+  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
 
   @compile inline: [
              execute_if_aggregation_valid: 3,
@@ -516,13 +517,20 @@ defmodule Sanbase.Metric do
   The available metrics list is the combination of the available metrics lists
   of every metric module.
   """
-  @spec available_metrics_for_slug(any) :: available_metrics_with_nocache_result
-  def available_metrics_for_slug(%{slug: slug} = selector) do
+  @spec available_metrics_for_selector(any) :: available_metrics_with_nocache_result
+
+  def available_metrics_for_selector(%{address: _address}) do
+    FileHandler.selectors_map()
+    |> Enum.filter(fn {_k, v} -> :address in v end)
+    |> Enum.map(fn {k, _v} -> k end)
+  end
+
+  def available_metrics_for_selector(selector) do
     parallel_opts = [ordered: false, max_concurrency: 8, timeout: 60_000]
 
     parallel_fun = fn module ->
       cache_key =
-        {__MODULE__, :available_metrics_for_slug_in_module, module, selector}
+        {__MODULE__, :available_metrics_for_selector_in_module, module, selector}
         |> Sanbase.Cache.hash()
 
       Sanbase.Cache.get_or_store(cache_key, fn -> module.available_metrics(selector) end)
@@ -530,7 +538,7 @@ defmodule Sanbase.Metric do
 
     metrics_in_modules = Sanbase.Parallel.map(@metric_modules, parallel_fun, parallel_opts)
 
-    combine_metrics_in_modules(metrics_in_modules, slug)
+    combine_metrics_in_modules(metrics_in_modules, selector)
   end
 
   @doc ~s"""
@@ -542,7 +550,7 @@ defmodule Sanbase.Metric do
     available_metrics =
       Sanbase.Cache.get_or_store(
         {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_slug(selector) end
+        fn -> available_metrics_for_selector(selector) end
       )
 
     case available_metrics do
@@ -563,7 +571,7 @@ defmodule Sanbase.Metric do
     available_metrics =
       Sanbase.Cache.get_or_store(
         {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_slug(selector) end
+        fn -> available_metrics_for_selector(selector) end
       )
 
     case available_metrics do
@@ -584,7 +592,7 @@ defmodule Sanbase.Metric do
     available_metrics =
       Sanbase.Cache.get_or_store(
         {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_slug(selector) end
+        fn -> available_metrics_for_selector(selector) end
       )
 
     case available_metrics do
@@ -806,7 +814,7 @@ defmodule Sanbase.Metric do
     end
   end
 
-  defp combine_metrics_in_modules(metrics_in_modules, slug) do
+  defp combine_metrics_in_modules(metrics_in_modules, selector) do
     # Combine the results of the different metric modules. In case any of the
     # metric modules returned an :error tuple, wrap the result in a :nocache
     # tuple so the next attempt to fetch the data will try to fetch the metrics
@@ -816,7 +824,7 @@ defmodule Sanbase.Metric do
         {:ok, metrics} -> metrics
         _ -> []
       end)
-      |> maybe_replace_metrics(slug)
+      |> maybe_replace_metrics(selector)
       |> Enum.uniq()
       |> Enum.sort()
 

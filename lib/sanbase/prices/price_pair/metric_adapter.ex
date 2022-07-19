@@ -122,6 +122,12 @@ defmodule Sanbase.PricePair.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
+  def available_metrics(%{address: _address}), do: []
+
+  def available_metrics(%{contract_address: contract_address}) do
+    Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address)
+  end
+
   def available_metrics(%{slug: slug}) do
     cache_key = {__MODULE__, :has_price_data?, slug} |> Sanbase.Cache.hash()
     cache_key_with_ttl = {cache_key, 600}

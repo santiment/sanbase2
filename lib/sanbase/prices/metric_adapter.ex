@@ -111,6 +111,12 @@ defmodule Sanbase.Price.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
+  def available_metrics(%{address: _address}), do: []
+
+  def available_metrics(%{contract_address: contract_address}) do
+    Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address)
+  end
+
   def available_metrics(%{slug: "TOTAL_ERC20"}), do: @metrics
 
   def available_metrics(%{slug: slug}) do

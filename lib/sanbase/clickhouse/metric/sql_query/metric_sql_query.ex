@@ -331,6 +331,30 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     {query, args}
   end
 
+  def available_metrics_for_selector_query(selector) do
+    value =
+      case selector do
+        %{slug: slug} -> slug
+        %{contract_address: contract_address} -> contract_address
+      end
+
+    query = """
+    SELECT name
+    FROM available_metrics FINAL
+    INNER JOIN (
+      SELECT name, metric_id
+      FROM metric_metadata FINAL
+    ) USING (metric_id)
+    PREWHERE
+      #{asset_id_filter(selector, argument_position: 1)} AND
+      end_dt > now() - INTERVAL 14 DAY
+
+    """
+
+    args = [value]
+    {query, args}
+  end
+
   def available_metrics_for_slug_query(slug) do
     query = """
     SELECT name

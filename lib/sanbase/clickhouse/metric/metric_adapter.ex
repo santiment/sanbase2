@@ -208,8 +208,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def available_metrics(), do: @metrics_name_list
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(%{slug: slug}) when is_binary(slug) do
-    {query, args} = available_metrics_for_slug_query(slug)
+  def available_metrics(selector) do
+    {query, args} = available_metrics_for_selector_query(selector)
 
     ClickhouseRepo.query_transform(query, args, fn [metric] ->
       Map.get(@metric_to_names_map, metric)

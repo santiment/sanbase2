@@ -80,6 +80,13 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     "asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN (?#{arg_position}) )"
   end
 
+  def asset_id_filter(%{contract_address: contract_address}, opts)
+      when is_binary(contract_address) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+
+    "asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE has(contract_addresses, ?#{arg_position}) LIMIT 1 )"
+  end
+
   def asset_id_filter(_, opts) do
     case Keyword.get(opts, :allow_missing_slug, false) do
       true -> "1 = 1"

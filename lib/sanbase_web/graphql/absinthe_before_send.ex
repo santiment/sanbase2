@@ -170,8 +170,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     duration_ms = Enum.max([duration_ms, 0])
     user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
 
-    {user_id, san_tokens, auth_method, api_token} =
-      extract_caller_data(blueprint.execution.context)
+    {user_id, auth_method, api_token} = extract_caller_data(blueprint.execution.context)
 
     # Replace all occurences of getMetric and getSignal with names where
     # the metric or signal argument is also included
@@ -195,8 +194,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         api_token: api_token,
         remote_ip: remote_ip(blueprint),
         user_agent: user_agent,
-        duration_ms: duration_ms,
-        san_tokens: san_tokens
+        duration_ms: duration_ms
       }
     end)
     |> Sanbase.Kafka.ApiCall.json_kv_tuple()
@@ -212,24 +210,24 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   defp extract_caller_data(%{
-         auth: %{auth_method: :user_token, current_user: user, san_balance: san_balance}
+         auth: %{auth_method: :user_token, current_user: user}
        }) do
-    {user.id, san_balance, :jwt, nil}
+    {user.id, :jwt, nil}
   end
 
   defp extract_caller_data(%{
-         auth: %{auth_method: :apikey, current_user: user, token: token, san_balance: san_balance}
+         auth: %{auth_method: :apikey, current_user: user, token: token}
        }) do
-    {user.id, san_balance, :apikey, token}
+    {user.id, :apikey, token}
   end
 
   defp extract_caller_data(%{
-         auth: %{auth_method: :basic, san_balance: san_balance}
+         auth: %{auth_method: :basic}
        }) do
-    {nil, san_balance, :basic, nil}
+    {nil, :basic, nil}
   end
 
-  defp extract_caller_data(_), do: {nil, nil, nil, nil}
+  defp extract_caller_data(_), do: {nil, nil, nil}
 
   defp has_graphql_errors?(%Absinthe.Blueprint{result: %{errors: _}}), do: true
   defp has_graphql_errors?(_), do: false

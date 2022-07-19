@@ -15,8 +15,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     user =
       %User{
         salt: User.generate_salt(),
-        privacy_policy_accepted: true,
-        test_san_balance: Decimal.new(500_000)
+        privacy_policy_accepted: true
       }
       |> Repo.insert!()
 
@@ -32,7 +31,6 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     assert conn_context.auth == %{
              auth_method: :user_token,
              current_user: user,
-             san_balance: 500_000.0,
              subscription: Subscription.free_subscription(),
              plan: :free
            }

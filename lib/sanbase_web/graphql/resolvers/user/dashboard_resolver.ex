@@ -28,8 +28,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   end
 
   def update_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- is_dashboard_owner?(args.id, user.id) do
-      Dashboard.update(args.id, args)
+    with true <- is_dashboard_owner?(args.id, user.id),
+         {:ok, dashboard_schema} <- Dashboard.update(args.id, args) do
+      {:ok, atomize_panel_sql_keys(dashboard_schema)}
     end
   end
 
@@ -223,13 +224,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     panels =
       Enum.map(struct.panels, fn
         %{sql: %{} = sql} = panel ->
-          sql = %{
-            query: sql["query"],
-            parameters: sql["parameters"],
-            san_query_id: sql["san_query_id"]
-          }
+          atomized_sql = Map.new(sql, fn {k, v} -> {String.to_existing_atom(k), v} end)
 
-          %{panel | sql: sql}
+          %{panel | sql: atomized_sql}
 
         panel ->
           panel

@@ -212,21 +212,21 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   defp extract_caller_data(%{
-         auth: %{auth_method: :user_token, current_user: user, san_balance: san_balance}
+         auth: %{auth_method: :user_token, current_user: user}
        }) do
-    {user.id, san_balance, :jwt, nil}
+    {user.id, _san_balance = nil, :jwt, nil}
   end
 
   defp extract_caller_data(%{
-         auth: %{auth_method: :apikey, current_user: user, token: token, san_balance: san_balance}
+         auth: %{auth_method: :apikey, current_user: user, token: token}
        }) do
-    {user.id, san_balance, :apikey, token}
+    {user.id, _san_balance = nil, :apikey, token}
   end
 
   defp extract_caller_data(%{
-         auth: %{auth_method: :basic, san_balance: san_balance}
+         auth: %{auth_method: :basic}
        }) do
-    {nil, san_balance, :basic, nil}
+    {nil, _san_balance = nil, :basic, nil}
   end
 
   defp extract_caller_data(_), do: {nil, nil, nil, nil}

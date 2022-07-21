@@ -33,7 +33,8 @@ defmodule Sanbase.Dashboard.Query do
            summary: map.summary,
            rows: map.rows,
            compressed_rows: rows_to_compressed_rows(map.rows),
-           columns: map.columns,
+           columns: map.column_names,
+           column_types: map.column_types,
            query_start_time: query_start_time,
            query_end_time: DateTime.utc_now()
          }}

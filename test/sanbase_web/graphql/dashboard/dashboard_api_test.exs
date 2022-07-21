@@ -406,6 +406,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                 san_query_id: result["sanQueryId"],
                 clickhouse_query_id: result["clickhouseQueryId"],
                 columns: result["columns"],
+                column_types: result["columnTypes"],
                 rows: Jason.encode!(result["rows"]),
                 summary: Jason.encode!(result["summary"]),
                 query_start_time: result["queryStartTime"],
@@ -539,6 +540,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
       mutation{
         computeRawClickhouseQuery(#{map_to_args(args)}){
           columns
+          columnTypes
           rows
           clickhouseQueryId
           summary
@@ -560,6 +562,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         assert result == %{
                  "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
                  "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                 "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
                  "rows" => [
                    [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
                    [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
@@ -578,6 +581,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
     defp mocked_clickhouse_result() do
       %Clickhousex.Result{
         columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
+        column_types: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
         command: :selected,
         num_rows: 2,
         query_id: "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
@@ -801,6 +805,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         sanQueryId
         dashboardId
         columns
+        columnTypes
         rows
         summary
         updatedAt
@@ -872,6 +877,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
           id
           dashboardId
           columns
+          columnTypes
           rows
           summary
           updatedAt

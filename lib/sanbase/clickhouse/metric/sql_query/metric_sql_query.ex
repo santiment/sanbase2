@@ -234,16 +234,20 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     query = """
     SELECT
       dictGetString('asset_metadata_dict', 'name', asset_id) AS slug,
-      value2 AS value
+      value3 AS value
     FROM (
-      SELECT asset_id, #{aggregation(aggregation, "value", "(dt, computed_at)")} AS value2
-      FROM #{Map.get(@table_map, metric)}
-      PREWHERE
-        #{additional_filters}
-        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
-        isNotNull(value) AND NOT isNaN(value) AND
-        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
-        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
+      SELECT asset_id, #{aggregation(aggregation, "value2", "dt")} AS value3
+      FROM (
+        SELECT asset_id, argMax(value, computed_at) AS value2
+        FROM #{Map.get(@table_map, metric)}
+        PREWHERE
+          #{additional_filters}
+          metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
+          isNotNull(value) AND NOT isNaN(value) AND
+          #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
+          #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
+        GROUP BY asset_id, dt
+      )
       GROUP BY asset_id
     )
     """

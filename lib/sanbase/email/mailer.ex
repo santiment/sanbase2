@@ -44,12 +44,23 @@ defmodule Sanbase.Mailer do
     UserSettings.settings_for(user).is_subscribed_edu_emails
   end
 
-  defp can_send?(user, template, _params)
-       when template in [@trial_started_template, @end_of_trial_template] do
+  defp can_send?(user, @trial_started_template, _params) do
     subscription = Subscription.current_subscription(user.id, Product.product_sanbase())
 
     case subscription do
       %Subscription{} = subscription ->
+        Subscription.is_trialing_sanbase_pro?(subscription)
+
+      _ ->
+        false
+    end
+  end
+
+  defp can_send?(user, @end_of_trial_template, _params) do
+    subscription = Subscription.current_subscription(user.id, Product.product_sanbase())
+
+    case subscription do
+      %Subscription{cancel_at_period_end: false} = subscription ->
         Subscription.is_trialing_sanbase_pro?(subscription)
 
       _ ->

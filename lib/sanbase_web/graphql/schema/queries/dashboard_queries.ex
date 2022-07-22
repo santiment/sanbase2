@@ -315,6 +315,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
         panel: {
             clickhouseQueryId: "177a5a3d-072b-48ac-8cf5-d8375c8314ef"
             columns: ["asset_id", "metric_id", "dt", "value", "computed_at"]
+            columnTypes: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"]
             queryEndTime: "2022-06-14T12:08:10Z"
             queryStartTime: "2022-06-14T12:08:10Z"
             rows: "[[2503,250,\"2008-12-10T00:00:00Z\",0.0,\"2020-02-28T15:18:42Z\"],[2503,250,\"2008-12-10T00:05:00Z\",0.0,\"2020-02-28T15:18:42Z\"]]"

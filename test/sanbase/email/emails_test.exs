@@ -20,7 +20,7 @@ defmodule Sanbase.EmailsTest do
      [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
     {StripeApi, [:passthrough],
      [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
-    {Sanbase.MandrillApi, [], [send: fn _, _, _, _ -> {:ok, :mocked} end]}
+    {Sanbase.MandrillApi, [], [send: fn _, _, _, _ -> {:ok, :email_sent} end]}
   ]) do
     not_registered_user = insert(:user, email: "example@santiment.net", is_registered: false)
     user = insert(:user)
@@ -143,7 +143,7 @@ defmodule Sanbase.EmailsTest do
 
   describe "performing email jobs" do
     test "send welcome email", context do
-      assert {:ok, :mocked} =
+      assert {:ok, :email_sent} =
                perform_job(Sanbase.Mailer, %{
                  "user_id" => context.user.id,
                  "template" => sign_up_templates()[:welcome_email]
@@ -163,7 +163,7 @@ defmodule Sanbase.EmailsTest do
     end
 
     test "send 1st edu email", context do
-      assert {:ok, :mocked} =
+      assert {:ok, :email_sent} =
                perform_job(Sanbase.Mailer, %{
                  "user_id" => context.user.id,
                  "template" => sign_up_templates()[:first_education_email]
@@ -173,7 +173,7 @@ defmodule Sanbase.EmailsTest do
     end
 
     test "send 2nd edu email", context do
-      assert {:ok, :mocked} =
+      assert {:ok, :email_sent} =
                perform_job(Sanbase.Mailer, %{
                  "user_id" => context.user.id,
                  "template" => sign_up_templates()[:second_education_email]
@@ -197,7 +197,7 @@ defmodule Sanbase.EmailsTest do
     test "send trial started", context do
       insert(:subscription_pro_sanbase, user: context.user, status: "trialing")
 
-      assert {:ok, :mocked} =
+      assert {:ok, :email_sent} =
                perform_job(Sanbase.Mailer, %{
                  "user_id" => context.user.id,
                  "template" => trial_started_template()
@@ -209,7 +209,7 @@ defmodule Sanbase.EmailsTest do
     test "send trial end", context do
       insert(:subscription_pro_sanbase, user: context.user, status: "trialing")
 
-      assert {:ok, :mocked} =
+      assert {:ok, :email_sent} =
                perform_job(Sanbase.Mailer, %{
                  "user_id" => context.user.id,
                  "template" => trial_started_template()
@@ -228,11 +228,17 @@ defmodule Sanbase.EmailsTest do
       refute called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
     end
 
-    test "do not send trial end", context do
+    test "do not send trial end when scheduled for cancellation", context do
+      insert(:subscription_pro_sanbase,
+        user: context.user,
+        status: "trialing",
+        cancel_at_period_end: true
+      )
+
       assert :ok =
                perform_job(Sanbase.Mailer, %{
                  "user_id" => context.user.id,
-                 "template" => trial_started_template()
+                 "template" => end_of_trial_template()
                })
 
       refute called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
@@ -245,7 +251,7 @@ defmodule Sanbase.EmailsTest do
         trial_end: days_after(10)
       )
 
-      assert {:ok, :mocked} =
+      assert {:ok, :email_sent} =
                perform_job(Sanbase.Mailer, %{
                  "user_id" => context.user.id,
                  "template" => during_trial_annual_discount_template()
@@ -261,7 +267,7 @@ defmodule Sanbase.EmailsTest do
         trial_end: days_after(-10)
       )
 
-      assert {:ok, :mocked} =
+      assert {:ok, :email_sent} =
                perform_job(Sanbase.Mailer, %{
                  "user_id" => context.user.id,
                  "template" => after_trial_annual_discount_template()

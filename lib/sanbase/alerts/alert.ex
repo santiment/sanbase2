@@ -325,7 +325,8 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  defp send_or_limit(channel, trigger, limit, fun) when is_function(fun, 2) do
+  defp send_or_limit(channel, trigger, limit, send_alert_fun)
+       when is_function(send_alert_fun, 2) do
     %{
       user: user,
       trigger: %{settings: %{payload: payload_map}}
@@ -335,10 +336,12 @@ defimpl Sanbase.Alert, for: Any do
       payload_map
       |> Enum.reduce({[], limit}, fn
         {identifier, _payload}, {list, 0 = _remaining} ->
-          {[{identifier, limits_reached_error_tuple(user, trigger, channel)} | list], 0}
+          elem = {identifier, limits_reached_error_tuple(user, trigger, channel)}
+          {[elem | list], _remaining = 0}
 
         {identifier, payload}, {list, remaining} ->
-          {[{identifier, fun.(identifier, payload)} | list], remaining - 1}
+          elem = {identifier, send_alert_fun.(identifier, payload)}
+          {[elem | list], remaining - 1}
       end)
 
     if remaining_to_send == 0 and limit != 0 do

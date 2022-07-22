@@ -568,25 +568,27 @@ defmodule Sanbase.Model.Project.List do
   defp projects_page_query(page, page_size, opts) do
     projects_query(opts)
     |> order_by_rank(opts)
-    |> page(page, page_size)
+    |> page(page: page, page_size: page_size)
   end
 
   defp erc20_projects_page_query(page, page_size, opts) do
     erc20_projects_query(opts)
     |> order_by_rank(opts)
-    |> page(page, page_size)
+    |> page(page: page, page_size: page_size)
   end
 
   defp currency_projects_page_query(page, page_size, opts) do
     currency_projects_query(opts)
     |> order_by_rank(opts)
-    |> page(page, page_size)
+    |> page(page: page, page_size: page_size)
   end
 
-  defp page(query, page, page_size) do
+  defp page(query, opts) do
+    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
+
     query
-    |> offset(^((page - 1) * page_size))
-    |> limit(^page_size)
+    |> limit(^limit)
+    |> offset(^offset)
   end
 
   # Add an optional ordering by rank. If the project has no known rank, the project
@@ -700,13 +702,9 @@ defmodule Sanbase.Model.Project.List do
 
   defp maybe_paginate(query, opts) do
     case Keyword.get(opts, :has_pagination?) do
-      # Do not exclude any projects
       true ->
-        page = opts[:pagination][:page]
-        page_size = opts[:pagination][:page_size]
-
-        query
-        |> page(page, page_size)
+        %{page: page, page_size: page_size} = opts[:pagination]
+        page(query, page: page, page_size: page_size)
 
       _ ->
         query

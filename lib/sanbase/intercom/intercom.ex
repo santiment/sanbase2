@@ -267,11 +267,12 @@ defmodule Sanbase.Intercom do
   end
 
   defp users_by_page(page, page_size) do
-    offset = (page - 1) * page_size
+    {limit, offset} =
+      Sanbase.Utils.Transform.opts_to_limit_offset(page: page, page_size: page_size)
 
     from(u in User,
       order_by: u.id,
-      limit: ^page_size,
+      limit: ^limit,
       offset: ^offset,
       preload: [:eth_accounts]
     )

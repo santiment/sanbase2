@@ -91,10 +91,11 @@ defmodule Sanbase.Accounts.Interaction do
     |> Sanbase.Repo.all()
   end
 
-  @weight_1d_to_now 3.0
+  @weight_1d_to_now 2.0
   @weight_7d_to_1d 1.5
-  @weight_60d_to_7d 0.5
-  @wight_90d_to_60d 0.2
+  @weight_30d_to_7d 1.0
+  @weight_60d_to_30d 0.8
+  @weight_90d_to_60d 0.6
 
   @doc ~s"""
   Return the Ecto query for fetching the most used entities.
@@ -113,22 +114,27 @@ defmodule Sanbase.Accounts.Interaction do
 
     from(
       row in __MODULE__,
-      where: row.entity_type in ^entity_types and row.user_id == ^user_id,
+      where:
+        row.entity_type in ^entity_types and row.user_id == ^user_id and
+          row.interaction_type == "view",
       group_by: [row.entity_type, row.entity_id],
       select: %{entity_type: row.entity_type, entity_id: row.entity_id},
       order_by: [
+        # Subtract 1 from every counter to remove entities that are opened just once
         desc:
           fragment(
             """
-            ?::float * COUNT(CASE WHEN inserted_at >= now() - INTERVAL '1 day' THEN 1 ELSE NULL END) +
-            ?::float * COUNT(CASE WHEN inserted_at >= now() - INTERVAL '7 days' AND inserted_at < now() - INTERVAL '1 day' THEN 1 ELSE NULL END) +
-            ?::float * COUNT(CASE WHEN inserted_at >= now() - INTERVAL '60 days' AND inserted_at < now() - INTERVAL '7 day' THEN 1 ELSE NULL END) +
-            ?::float * COUNT(CASE WHEN inserted_at >= now() - INTERVAL '90 days' AND inserted_at < now() - INTERVAL '60 days' THEN 1 ELSE NULL END)
+            ?::float * GREATEST(0, COUNT(CASE WHEN inserted_at >= now() - INTERVAL '1 day' THEN 1 ELSE NULL END) - 1) +
+            ?::float * GREATEST(0, COUNT(CASE WHEN inserted_at >= now() - INTERVAL '7 days' AND inserted_at < now() - INTERVAL '1 day' THEN 1 ELSE NULL END) - 1) +
+            ?::float * GREATEST(0, COUNT(CASE WHEN inserted_at >= now() - INTERVAL '30 days' AND inserted_at < now() - INTERVAL '7 day' THEN 1 ELSE NULL END) - 1) +
+            ?::float * GREATEST(0, COUNT(CASE WHEN inserted_at >= now() - INTERVAL '60 days' AND inserted_at < now() - INTERVAL '30 day' THEN 1 ELSE NULL END) - 1) +
+            ?::float * GREATEST(0, COUNT(CASE WHEN inserted_at >= now() - INTERVAL '90 days' AND inserted_at < now() - INTERVAL '60 days' THEN 1 ELSE NULL END) - 1)
             """,
             ^@weight_1d_to_now,
             ^@weight_7d_to_1d,
-            ^@weight_60d_to_7d,
-            ^@wight_90d_to_60d
+            ^@weight_30d_to_7d,
+            ^@weight_60d_to_30d,
+            ^@weight_90d_to_60d
           )
       ],
       offset: ^offset,

@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider.Unlocker do
     {:ok, %{max_lock_acquired_time_ms: max_lock_acquired_time_ms}}
   end
 
-  def handle_cast({:unlock_after, unlock_fun}, _from, state) do
+  def handle_cast({:unlock_after, unlock_fun}, state) do
     Process.send_after(self(), {:unlock_lock, unlock_fun}, state[:max_lock_acquired_time_ms])
     {:noreply, state}
   end

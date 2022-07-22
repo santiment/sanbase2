@@ -238,7 +238,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     FROM (
       SELECT asset_id, #{aggregation(aggregation, "value2", "dt")} AS value3
       FROM (
-        SELECT asset_id, argMax(value, computed_at) AS value2
+        SELECT asset_id, dt, argMax(value, computed_at) AS value2
         FROM #{Map.get(@table_map, metric)}
         PREWHERE
           #{additional_filters}

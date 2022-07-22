@@ -38,6 +38,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, metrics}
   end
 
+  def get_available_metrics_for_selector(_root, args, _resolution) do
+    metrics = Metric.available_metrics_for_selector(args.selector)
+    {:ok, metrics}
+  end
+
   def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
     do: Metric.available_slugs(metric)
 

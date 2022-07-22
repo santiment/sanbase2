@@ -29,6 +29,14 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
       cache_resolve(&MetricResolver.get_available_metrics/3, ttl: 300)
     end
 
+    field :get_available_metrics_for_selector, list_of(:string) do
+      meta(access: :free)
+
+      arg(:selector, :metric_target_selector_input_object)
+
+      cache_resolve(&MetricResolver.get_available_metrics_for_selector/3, ttl: 300)
+    end
+
     field :get_latest_metric_data, list_of(:latest_metric_data) do
       deprecate("""
       This API is not intended for widespread use. \

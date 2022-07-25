@@ -58,7 +58,6 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     permissions: User.Permissions.no_permissions(),
     auth: %{
       auth_method: :none,
-      san_balance: 0,
       subscription: @free_subscription,
       plan: Subscription.plan_name(@free_subscription)
     }
@@ -194,7 +193,6 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
           auth: %{
             auth_method: :user_token,
             current_user: current_user,
-            san_balance: san_balance(current_user),
             subscription: subscription,
             plan: Subscription.plan_name(subscription)
           },
@@ -222,7 +220,6 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
         auth: %{
           auth_method: :user_token,
           current_user: current_user,
-          san_balance: san_balance(current_user),
           subscription: subscription,
           plan: Subscription.plan_name(subscription)
         },
@@ -247,7 +244,6 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
         auth: %{
           auth_method: :basic,
           current_user: current_user,
-          san_balance: 0,
           subscription: nil,
           plan: nil
         },
@@ -283,7 +279,6 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
           auth_method: :apikey,
           current_user: current_user,
           token: token,
-          san_balance: san_balance(current_user),
           subscription: subscription,
           plan: Subscription.plan_name(subscription)
         },
@@ -377,13 +372,6 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
       _ ->
         {:error, :invalid_refresh_token}
-    end
-  end
-
-  defp san_balance(%User{} = user) do
-    case User.san_balance(user) do
-      {:ok, balance} -> balance
-      _ -> 0
     end
   end
 

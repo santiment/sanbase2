@@ -38,6 +38,7 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:san_query_id, non_null(:string))
     field(:clickhouse_query_id, non_null(:string))
     field(:columns, non_null(list_of(:string)))
+    field(:column_types, non_null(list_of(:string)))
     field(:rows, non_null(:json))
     field(:query_start_time, non_null(:datetime))
     field(:query_end_time, non_null(:datetime))
@@ -111,6 +112,7 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:summary, non_null(:json))
     field(:rows, non_null(:json))
     field(:columns, non_null(list_of(:string)))
+    field(:column_types, non_null(list_of(:string)))
     field(:query_start_time, non_null(:datetime))
     field(:query_end_time, non_null(:datetime))
   end
@@ -163,6 +165,7 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:san_query_id, non_null(:string))
     field(:clickhouse_query_id, non_null(:string))
     field(:columns, non_null(list_of(:string)))
+    field(:column_types, non_null(list_of(:string)))
     field(:rows, non_null(:json))
     field(:query_start_time, :datetime)
     field(:query_end_time, :datetime)

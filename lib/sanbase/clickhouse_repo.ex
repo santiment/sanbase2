@@ -54,7 +54,8 @@ defmodule Sanbase.ClickhouseRepo do
         {:ok,
          %{
            rows: Enum.map(result.rows, transform_fn),
-           columns: result.columns,
+           column_names: result.columns,
+           column_types: result.column_types,
            query_id: result.query_id,
            summary: result.summary
          }}

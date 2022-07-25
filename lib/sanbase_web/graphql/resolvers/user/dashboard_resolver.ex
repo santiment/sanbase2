@@ -152,6 +152,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
+  def get_dashboard_panel_cache(_root, args, resolution) do
+    user_id_or_nil = resolution_to_user_id_or_nil(resolution)
+
+    with true <- can_view_dashboard?(args.dashboard_id, user_id_or_nil),
+         {:ok, panel_cache} <- Dashboard.load_panel_cache(args.dashboard_id, args.panel_id) do
+      {:ok, panel_cache}
+    end
+  end
+
   def compute_raw_clickhouse_query(_root, args, %{context: %{auth: %{current_user: user}}}) do
     san_query_id = UUID.uuid4()
 

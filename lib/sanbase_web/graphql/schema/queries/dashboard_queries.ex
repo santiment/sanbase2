@@ -63,6 +63,20 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     end
 
     @desc ~s"""
+    Get the last computed version of a Dashboard Cache.
+
+    This API returns a single Dashboard Panel Cache, the same
+    as the one returned by getDashboardCache
+    """
+    field :get_dashboard_panel_cache, :panel_cache do
+      meta(access: :free)
+      arg(:dashboard_id, non_null(:integer))
+      arg(:panel_id, non_null(:string))
+
+      resolve(&DashboardResolver.get_dashboard_panel_cache/3)
+    end
+
+    @desc ~s"""
     Get a history revision of the dashboard schema, identified by the
     dashboard id and hash.
 

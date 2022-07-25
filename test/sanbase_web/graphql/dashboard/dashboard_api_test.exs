@@ -332,6 +332,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
 
       # Run the next part outside the mock, so if there's data it's not coming from Clickhouse
 
+      # Get the whole dashboard cache
       dashboard_cache =
         get_dashboard_cache(context.conn, dashboard["id"])
         |> get_in(["data", "getDashboardCache"])
@@ -359,6 +360,35 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                  }
                ]
              } = dashboard_cache
+
+      assert is_binary(id) and String.length(id) == 36
+      updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
+      assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
+
+      # Get a single dashboard panel cache
+      panel_id = panel["id"]
+
+      panel_cache =
+        get_dashboard_panel_cache(context.conn, dashboard_id, panel_id)
+        |> get_in(["data", "getDashboardPanelCache"])
+
+      assert %{
+               "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+               "dashboardId" => ^dashboard_id,
+               "id" => id,
+               "rows" => [
+                 [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                 [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+               ],
+               "summary" => %{
+                 "read_bytes" => "0",
+                 "read_rows" => "0",
+                 "total_rows_to_read" => "0",
+                 "written_bytes" => "0",
+                 "written_rows" => "0"
+               },
+               "updatedAt" => updated_at
+             } = panel_cache
 
       assert is_binary(id) and String.length(id) == 36
       updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
@@ -882,6 +912,26 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
           summary
           updatedAt
         }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
+  defp get_dashboard_panel_cache(conn, dashboard_id, panel_id) do
+    query = """
+    {
+      getDashboardPanelCache(dashboardId: #{dashboard_id}, panelId: "#{panel_id}"){
+        id
+        dashboardId
+        columns
+        columnTypes
+        rows
+        summary
+        updatedAt
       }
     }
     """

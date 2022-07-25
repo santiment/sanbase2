@@ -51,7 +51,29 @@ defmodule Sanbase.Dashboard.Cache do
       nil -> new(dashboard_id)
       %__MODULE__{} = cache -> {:ok, cache}
     end
-    |> maybe_apply_function(&transform_loaded_cache/1)
+    |> maybe_apply_function(&transform_loaded_dashboard_cache/1)
+  end
+
+  def by_dashboard_and_panel_id(dashboard_id, panel_id) do
+    query = """
+    SELECT t.panel
+    FROM dashboards_cache cache
+    CROSS JOIN LATERAL (
+      SELECT value AS panel
+      FROM jsonb_each(cache.panels) AS x(key, value)
+      WHERE cache.dashboard_id = $1 AND key = $2
+    ) AS t
+    """
+
+    params = [dashboard_id, panel_id]
+
+    case Repo.query(query, params) do
+      {:ok, %{rows: [[%{} = panel_cache]]}} ->
+        {:ok, transform_loaded_panel_cache(panel_cache)}
+
+      _ ->
+        {:error, "Cannot load dashboard panel cache"}
+    end
   end
 
   @doc ~s"""
@@ -102,29 +124,31 @@ defmodule Sanbase.Dashboard.Cache do
 
   # Private functions
 
-  defp transform_loaded_cache(%__MODULE__{} = cache) do
+  defp transform_loaded_dashboard_cache(%__MODULE__{} = cache) do
     panels =
       cache.panels
       |> Map.new(fn {panel_id, panel_cache} ->
-        %{"compressed_rows" => compressed_rows, "updated_at" => updated_at} = panel_cache
-
-        rows = Dashboard.Query.compressed_rows_to_rows(compressed_rows)
-
-        {:ok, updated_at, _} = DateTime.from_iso8601(updated_at)
-        {:ok, rows} = transform_cache_rows(rows)
-
-        panel_cache =
-          panel_cache
-          |> Map.delete("compressed_rows")
-          |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
-          |> Map.put(:rows, rows)
-          |> Map.put(:updated_at, updated_at)
-          |> Map.put(:id, panel_id)
-
+        panel_cache = transform_loaded_panel_cache(panel_cache)
         {panel_id, panel_cache}
       end)
 
     %{cache | panels: panels}
+  end
+
+  defp transform_loaded_panel_cache(panel_cache) do
+    %{"compressed_rows" => compressed_rows, "updated_at" => updated_at} = panel_cache
+
+    rows = Dashboard.Query.compressed_rows_to_rows(compressed_rows)
+
+    {:ok, updated_at, _} = DateTime.from_iso8601(updated_at)
+    {:ok, rows} = transform_cache_rows(rows)
+
+    panel_cache
+    |> Map.delete("compressed_rows")
+    |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
+    |> Map.put(:rows, rows)
+    |> Map.put(:updated_at, updated_at)
+    |> Map.put(:id, panel_cache["id"])
   end
 
   defp transform_cache_rows(rows) do

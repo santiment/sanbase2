@@ -2850,5 +2850,33 @@
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Mean Age in days for the past {{timebound_human_readable}}",
+    "name": "mean_age_{{timebound}}",
+    "metric": "stack_mean_age_days_{{timebound}}",
+    "timebound": [
+      "90d",
+      "180d",
+      "365d",
+      "2y",
+      "3y",
+      "5y"
+    ],
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "unit": "days"
   }
 ]

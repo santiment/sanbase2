@@ -8,6 +8,47 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   }
 
   @desc ~s"""
+  Information about the columns in the Clickhouse database
+  """
+  object :clickhouse_database_column_metadata do
+    field(:name, non_null(:string))
+    field(:table, non_null(:string))
+    field(:type, non_null(:string))
+    field(:is_in_partition_key, non_null(:boolean))
+    field(:is_in_sorting_key, non_null(:boolean))
+    field(:is_in_primary_key, non_null(:boolean))
+  end
+
+  @desc ~s"""
+  Information about the tables in the Clickhouse database
+  """
+  object :clickhouse_database_table_metadata do
+    field(:name, non_null(:string))
+    field(:engine, non_null(:string))
+    field(:partition_key, non_null(:string))
+    field(:sorting_key, non_null(:string))
+    field(:primary_key, non_null(:string))
+  end
+
+  @desc ~s"""
+  Information about the functions in the Clickhouse database
+  """
+  object :clickhouse_database_function_metadata do
+    field(:name, non_null(:string))
+  end
+
+  @desc ~s"""
+  Information about the Clickhouse database. It includes information
+  about the columns, tables and functions. This information can be used
+  for displaying info to user and also in the autocomplete implementation
+  """
+  object :clickhouse_database_metadata do
+    field(:columns, list_of(:clickhouse_database_column_metadata))
+    field(:tables, list_of(:clickhouse_database_table_metadata))
+    field(:functions, list_of(:clickhouse_database_function_metadata))
+  end
+
+  @desc ~s"""
   Input object for an SQL query and its parameters.
 
   The SQL query is expected to be a valid SQL query.

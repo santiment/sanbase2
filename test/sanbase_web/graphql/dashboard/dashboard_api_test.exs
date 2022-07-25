@@ -717,7 +717,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
     end
   end
 
-  describe "get available clickhouse tables" do
+  describe "get clickhouse database information" do
     test "get available clickhouse tables API", context do
       query = """
       {
@@ -774,6 +774,85 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                "partitionBy" => "toStartOfMonth(dt)",
                "table" => "erc20_transfers"
              } in result
+    end
+
+    test "get clickhouse database metadata", context do
+      query = """
+      {
+        getClickhouseDatabaseMetadata{
+          columns{ name isInSortingKey isInPartitionKey }
+          tables{ name partitionKey sortingKey primaryKey }
+          functions{ name }
+        }
+      }
+      """
+
+      mock_fun =
+        [
+          # mock columns response
+          fn ->
+            {:ok,
+             %{
+               rows: [
+                 ["asset_metadata", "asset_id", "UInt64", 0, 1, 1],
+                 ["asset_metadata", "computed_at", "DateTime", 0, 0, 0]
+               ]
+             }}
+          end,
+          # mock functions response
+          fn -> {:ok, %{rows: [["logTrace"], ["aes_decrypt_mysql"]]}} end,
+          # mock tables response
+          fn ->
+            {:ok,
+             %{
+               rows: [
+                 ["asset_metadata", "ReplicatedReplacingMergeTree", "", "asset_id", "asset_id"],
+                 [
+                   "asset_price_pairs_only",
+                   "ReplicatedReplacingMergeTree",
+                   "toYYYYMM(dt)",
+                   "base_asset, quote_asset, source, dt",
+                   "base_asset, quote_asset, source, dt"
+                 ]
+               ]
+             }}
+          end
+        ]
+        |> Sanbase.Mock.wrap_consecutives(arity: 2)
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        metadata =
+          post(context.conn, "/graphql", query_skeleton(query))
+          |> json_response(200)
+          |> get_in(["data", "getClickhouseDatabaseMetadata"])
+
+        assert metadata == %{
+                 "columns" => [
+                   %{"isInPartitionKey" => false, "isInSortingKey" => true, "name" => "asset_id"},
+                   %{
+                     "isInPartitionKey" => false,
+                     "isInSortingKey" => false,
+                     "name" => "computed_at"
+                   }
+                 ],
+                 "functions" => [%{"name" => "logTrace"}, %{"name" => "aes_decrypt_mysql"}],
+                 "tables" => [
+                   %{
+                     "name" => "asset_metadata",
+                     "partitionKey" => "",
+                     "primaryKey" => "asset_id",
+                     "sortingKey" => "asset_id"
+                   },
+                   %{
+                     "name" => "asset_price_pairs_only",
+                     "partitionKey" => "toYYYYMM(dt)",
+                     "primaryKey" => "base_asset, quote_asset, source, dt",
+                     "sortingKey" => "base_asset, quote_asset, source, dt"
+                   }
+                 ]
+               }
+      end)
     end
   end
 

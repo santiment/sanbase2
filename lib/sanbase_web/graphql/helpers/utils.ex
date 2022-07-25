@@ -1,6 +1,16 @@
 defmodule SanbaseWeb.Graphql.Helpers.Utils do
   import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_sec: 1]
 
+  def resolution_to_user_id_or_nil(resolution) do
+    case resolution do
+      %{context: %{auth: %{current_user: %{id: user_id}}}} ->
+        user_id
+
+      _ ->
+        nil
+    end
+  end
+
   def selector_args_to_opts(args) when is_map(args) do
     opts = [aggregation: Map.get(args, :aggregation, nil)]
     selector = args[:selector]

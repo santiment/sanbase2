@@ -520,9 +520,12 @@ defmodule Sanbase.Metric do
   @spec available_metrics_for_selector(any) :: available_metrics_with_nocache_result
 
   def available_metrics_for_selector(%{address: _address}) do
-    FileHandler.selectors_map()
-    |> Enum.filter(fn {_k, v} -> :address in v end)
-    |> Enum.map(fn {k, _v} -> k end)
+    metrics =
+      FileHandler.selectors_map()
+      |> Enum.filter(fn {_k, v} -> :address in v end)
+      |> Enum.map(fn {k, _v} -> k end)
+
+    {:ok, metrics}
   end
 
   def available_metrics_for_selector(selector) do

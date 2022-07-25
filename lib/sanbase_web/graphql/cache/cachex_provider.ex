@@ -151,7 +151,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
       true = unlock_fun.()
       # We expect the process to unlock only in case we don't reach here for some reason.
       # If we're here we can kill the process. If the process has already unlocked
-      Process.exit(unlocker_pid, :normal)
+      _ = GenServer.cast(unlocker_pid, :stop)
     end
   end
 

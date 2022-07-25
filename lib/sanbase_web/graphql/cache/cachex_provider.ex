@@ -2,6 +2,8 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   @behaviour SanbaseWeb.Graphql.CacheProvider
   @default_ttl_seconds 300
 
+  @max_lock_acquired_time_ms 60_000
+
   import Cachex.Spec
 
   @compile inline: [
@@ -95,6 +97,23 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
     end
   end
 
+  # defp execute_cache_miss_function(cache, key, func, cache_modify_middleware) do
+  #   Cachex.transaction!(cache, [key], fn cache ->
+  #     case Cachex.get(cache, true_key(key)) do
+  #       {:ok, {:stored, value}} ->
+  #         value
+
+  #       _ ->
+  #         handle_execute_cache_miss_function(
+  #           cache,
+  #           key,
+  #           _result = func.(),
+  #           cache_modify_middleware
+  #         )
+  #     end
+  #   end)
+  # end
+
   defp execute_cache_miss_function(cache, key, func, cache_modify_middleware) do
     # This is the only place where we need to have the transactional get_or_store
     # mechanism. Cachex.fetch! is running in multiple processes, which causes issues
@@ -103,8 +122,17 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
     # The transactional guarantees are not needed.
     cache_record = Cachex.Services.Overseer.ensure(cache)
 
+    # Start a process that will handle the unlock in case this process terminates
+    # without releasing the lock. The process is not linked to the current one so
+    # it can continue to live and do its job even if this process terminates.
+    {:ok, unlocker_pid} =
+      __MODULE__.Unlocker.start(max_lock_acquired_time_ms: @max_lock_acquired_time_ms)
+
+    unlock_fun = fn -> Cachex.Services.Locksmith.unlock(cache_record, [true_key(key)]) end
+
     try do
       true = obtain_lock(cache_record, [true_key(key)])
+      _ = GenServer.cast(unlocker_pid, {:unlock_after, unlock_fun})
 
       case Cachex.get(cache, true_key(key)) do
         {:ok, {:stored, value}} ->
@@ -120,7 +148,10 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
           )
       end
     after
-      true = Cachex.Services.Locksmith.unlock(cache_record, [true_key(key)])
+      true = unlock_fun.()
+      # We expect the process to unlock only in case we don't reach here for some reason.
+      # If we're here we can kill the process. If the process has already unlocked
+      Process.exit(unlocker_pid, :normal)
     end
   end
 

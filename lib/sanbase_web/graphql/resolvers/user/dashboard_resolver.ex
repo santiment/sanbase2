@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   is delegated to the `Apikey` module
   """
   import Absinthe.Resolution.Helpers, except: [async: 1]
+  import SanbaseWeb.Graphql.Helpers.Utils, only: [resolution_to_user_id_or_nil: 1]
 
   alias Sanbase.Dashboard
   alias SanbaseWeb.Graphql.SanbaseDataloader
@@ -128,15 +129,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
-  def get_dashboard_schema(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_view_dashboard?(args.id, user.id),
+  def get_dashboard_schema(_root, args, resolution) do
+    user_id_or_nil = resolution_to_user_id_or_nil(resolution)
+
+    with true <- can_view_dashboard?(args.id, user_id_or_nil),
          {:ok, dashboard_schema} <- Dashboard.load_schema(args.id) do
       {:ok, atomize_panel_sql_keys(dashboard_schema)}
     end
   end
 
-  def get_dashboard_cache(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    with true <- can_view_dashboard?(args.id, user.id),
+  def get_dashboard_cache(_root, args, resolution) do
+    user_id_or_nil = resolution_to_user_id_or_nil(resolution)
+
+    with true <- can_view_dashboard?(args.id, user_id_or_nil),
          {:ok, dashboard_cache} <- Dashboard.load_cache(args.id) do
       panels =
         Enum.map(dashboard_cache.panels, fn {panel_id, panel_cache} ->

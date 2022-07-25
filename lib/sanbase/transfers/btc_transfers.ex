@@ -90,13 +90,14 @@ defmodule Sanbase.Transfers.BtcTransfers do
     LIMIT ?4 OFFSET ?5
     """
 
-    offset = (page - 1) * page_size
+    {limit, offset} =
+      Sanbase.Utils.Transform.opts_to_limit_offset(page: page, page_size: page_size)
 
     args = [
       wallets,
       DateTime.to_unix(from),
       DateTime.to_unix(to),
-      page_size,
+      limit,
       offset
     ]
 
@@ -133,7 +134,9 @@ defmodule Sanbase.Transfers.BtcTransfers do
   defp top_transfers_query(from, to, page, page_size, excluded_addresses) do
     to_unix = DateTime.to_unix(to)
     from_unix = DateTime.to_unix(from)
-    offset = (page - 1) * page_size
+
+    {limit, offset} =
+      Sanbase.Utils.Transform.opts_to_limit_offset(page: page, page_size: page_size)
 
     # only > 100 BTC transfers if range is > 1 week, otherwise only bigger than 20
     amount_filter = if Timex.diff(to, from, :days) > 7, do: 100, else: 20
@@ -159,7 +162,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
     """
 
     args =
-      [amount_filter, from_unix, to_unix, page_size, offset] ++
+      [amount_filter, from_unix, to_unix, limit, offset] ++
         if excluded_addresses == [], do: [], else: [excluded_addresses]
 
     {query, args}

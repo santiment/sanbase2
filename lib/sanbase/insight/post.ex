@@ -638,20 +638,15 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp page(query, opts) do
-    page = Keyword.get(opts, :page, nil)
-    page_size = Keyword.get(opts, :page_size, nil)
+    if Keyword.get(opts, :page) && Keyword.get(opts, :page_size) do
+      {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
 
-    if page && page_size do
-      page(query, page, page_size)
+      query
+      |> limit(^limit)
+      |> offset(^offset)
     else
       query
     end
-  end
-
-  defp page(query, page, page_size) do
-    query
-    |> offset(^((page - 1) * page_size))
-    |> limit(^page_size)
   end
 
   # If only the tags or images change, then the `updated_at` is not changed.

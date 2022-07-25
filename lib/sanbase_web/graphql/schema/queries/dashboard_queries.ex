@@ -4,12 +4,25 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
   """
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :dashboard_queries do
+    @desc ~s"""
+    Get metadata bout the Clickhouse database exposed for the SQL Editor.
+
+    The metadata about the Clickhouse database includes information
+    about the columns, tables and functions. This information can be used
+    for displaying info to user and also in the autocomplete implementation
+    """
+    field :get_clickhouse_database_metadata, :clickhouse_database_metadata do
+      meta(access: :free)
+
+      cache_resolve(&DashboardResolver.get_clickhouse_database_metadata/3)
+    end
+
     @desc ~s"""
     Get a list of clickhouse tables that the users can access
     via the SQL editor.

@@ -29,6 +29,10 @@ defmodule SanbaseWeb.Graphql.CachexProvider.Unlocker do
     {:noreply, state}
   end
 
+  def handle_cast(:stop, state) do
+    {:stop, :normal, state}
+  end
+
   def handle_info({:unlock_lock, unlock_fun}, state) do
     unlock_fun.()
     {:noreply, state}
@@ -38,5 +42,7 @@ defmodule SanbaseWeb.Graphql.CachexProvider.Unlocker do
     {:stop, :normal, state}
   end
 
-  def terminate(_reason, _state), do: :normal
+  def terminate(_reason, _state) do
+    :normal
+  end
 end

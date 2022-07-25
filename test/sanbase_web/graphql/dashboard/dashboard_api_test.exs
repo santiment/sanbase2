@@ -332,6 +332,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
 
       # Run the next part outside the mock, so if there's data it's not coming from Clickhouse
 
+      # Get the whole dashboard cache
       dashboard_cache =
         get_dashboard_cache(context.conn, dashboard["id"])
         |> get_in(["data", "getDashboardCache"])
@@ -359,6 +360,35 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                  }
                ]
              } = dashboard_cache
+
+      assert is_binary(id) and String.length(id) == 36
+      updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
+      assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
+
+      # Get a single dashboard panel cache
+      panel_id = panel["id"]
+
+      panel_cache =
+        get_dashboard_panel_cache(context.conn, dashboard_id, panel_id)
+        |> get_in(["data", "getDashboardPanelCache"])
+
+      assert %{
+               "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+               "dashboardId" => ^dashboard_id,
+               "id" => id,
+               "rows" => [
+                 [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                 [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+               ],
+               "summary" => %{
+                 "read_bytes" => "0",
+                 "read_rows" => "0",
+                 "total_rows_to_read" => "0",
+                 "written_bytes" => "0",
+                 "written_rows" => "0"
+               },
+               "updatedAt" => updated_at
+             } = panel_cache
 
       assert is_binary(id) and String.length(id) == 36
       updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
@@ -687,7 +717,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
     end
   end
 
-  describe "get available clickhouse tables" do
+  describe "get clickhouse database information" do
     test "get available clickhouse tables API", context do
       query = """
       {
@@ -744,6 +774,85 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                "partitionBy" => "toStartOfMonth(dt)",
                "table" => "erc20_transfers"
              } in result
+    end
+
+    test "get clickhouse database metadata", context do
+      query = """
+      {
+        getClickhouseDatabaseMetadata{
+          columns{ name isInSortingKey isInPartitionKey }
+          tables{ name partitionKey sortingKey primaryKey }
+          functions{ name }
+        }
+      }
+      """
+
+      mock_fun =
+        [
+          # mock columns response
+          fn ->
+            {:ok,
+             %{
+               rows: [
+                 ["asset_metadata", "asset_id", "UInt64", 0, 1, 1],
+                 ["asset_metadata", "computed_at", "DateTime", 0, 0, 0]
+               ]
+             }}
+          end,
+          # mock functions response
+          fn -> {:ok, %{rows: [["logTrace"], ["aes_decrypt_mysql"]]}} end,
+          # mock tables response
+          fn ->
+            {:ok,
+             %{
+               rows: [
+                 ["asset_metadata", "ReplicatedReplacingMergeTree", "", "asset_id", "asset_id"],
+                 [
+                   "asset_price_pairs_only",
+                   "ReplicatedReplacingMergeTree",
+                   "toYYYYMM(dt)",
+                   "base_asset, quote_asset, source, dt",
+                   "base_asset, quote_asset, source, dt"
+                 ]
+               ]
+             }}
+          end
+        ]
+        |> Sanbase.Mock.wrap_consecutives(arity: 2)
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        metadata =
+          post(context.conn, "/graphql", query_skeleton(query))
+          |> json_response(200)
+          |> get_in(["data", "getClickhouseDatabaseMetadata"])
+
+        assert metadata == %{
+                 "columns" => [
+                   %{"isInPartitionKey" => false, "isInSortingKey" => true, "name" => "asset_id"},
+                   %{
+                     "isInPartitionKey" => false,
+                     "isInSortingKey" => false,
+                     "name" => "computed_at"
+                   }
+                 ],
+                 "functions" => [%{"name" => "logTrace"}, %{"name" => "aes_decrypt_mysql"}],
+                 "tables" => [
+                   %{
+                     "name" => "asset_metadata",
+                     "partitionKey" => "",
+                     "primaryKey" => "asset_id",
+                     "sortingKey" => "asset_id"
+                   },
+                   %{
+                     "name" => "asset_price_pairs_only",
+                     "partitionKey" => "toYYYYMM(dt)",
+                     "primaryKey" => "base_asset, quote_asset, source, dt",
+                     "sortingKey" => "base_asset, quote_asset, source, dt"
+                   }
+                 ]
+               }
+      end)
     end
   end
 
@@ -882,6 +991,26 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
           summary
           updatedAt
         }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
+  defp get_dashboard_panel_cache(conn, dashboard_id, panel_id) do
+    query = """
+    {
+      getDashboardPanelCache(dashboardId: #{dashboard_id}, panelId: "#{panel_id}"){
+        id
+        dashboardId
+        columns
+        columnTypes
+        rows
+        summary
+        updatedAt
       }
     }
     """

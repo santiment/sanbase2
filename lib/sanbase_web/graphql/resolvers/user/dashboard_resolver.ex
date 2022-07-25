@@ -11,6 +11,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
   require Logger
 
+  def get_clickhouse_database_metadata(_root, _args, _resolution) do
+    Dashboard.Autocomplete.get_data()
+  end
+
   def user_public_dashboards(%Sanbase.Accounts.User{} = user, _args, _resolution) do
     Dashboard.get_user_public_dashboard_schemas(user.id)
   end
@@ -149,6 +153,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
         end)
 
       {:ok, %{dashboard_cache | panels: panels}}
+    end
+  end
+
+  def get_dashboard_panel_cache(_root, args, resolution) do
+    user_id_or_nil = resolution_to_user_id_or_nil(resolution)
+
+    with true <- can_view_dashboard?(args.dashboard_id, user_id_or_nil),
+         {:ok, panel_cache} <- Dashboard.load_panel_cache(args.dashboard_id, args.panel_id) do
+      {:ok, panel_cache}
     end
   end
 

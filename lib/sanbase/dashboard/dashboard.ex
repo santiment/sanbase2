@@ -82,7 +82,18 @@ defmodule Sanbase.Dashboard do
   The keys in the list are the panel ids.
   """
   @spec load_cache(dashboard_id) :: {:ok, Dashboard.Cache.t()} | {:error, any()}
-  def load_cache(dashboard_id), do: Dashboard.Cache.by_dashboard_id(dashboard_id)
+  def load_cache(dashboard_id),
+    do: Dashboard.Cache.by_dashboard_id(dashboard_id)
+
+  @doc ~s"""
+  Get a single dashboard panel cached version
+
+  The cache includes the list of latest results of the SQL queries that are executed
+  """
+  @spec load_panel_cache(dashboard_id, panel_id) ::
+          {:ok, Dashboard.Cache.panel_cache()} | {:error, any()}
+  def load_panel_cache(dashboard_id, panel_id),
+    do: Dashboard.Cache.by_dashboard_and_panel_id(dashboard_id, panel_id)
 
   @doc ~s"""
   Check if a given user has credits left
@@ -114,7 +125,12 @@ defmodule Sanbase.Dashboard do
         Dashboard.QueryExecution.store_execution(querying_user_id, query_result)
       end)
 
-      {:ok, Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)}
+      {:ok,
+       Dashboard.Panel.Cache.from_query_result(
+         query_result,
+         panel_id,
+         dashboard_id
+       )}
     end
   end
 
@@ -129,12 +145,23 @@ defmodule Sanbase.Dashboard do
   def compute_and_store_panel(dashboard_id, panel_id, querying_user_id) do
     with {:ok, dashboard} <- Dashboard.Schema.by_id(dashboard_id),
          {:ok, query_result} <- do_compute_panel(dashboard, panel_id),
-         {:ok, _} <- Dashboard.Cache.update_panel_cache(dashboard_id, panel_id, query_result) do
+         {:ok, _} <-
+           Dashboard.Cache.update_panel_cache(
+             dashboard_id,
+             panel_id,
+             query_result
+           ) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Dashboard.QueryExecution.store_execution(querying_user_id, query_result)
       end)
 
-      panel_cache = Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
+      panel_cache =
+        Dashboard.Panel.Cache.from_query_result(
+          query_result,
+          panel_id,
+          dashboard_id
+        )
+
       {:ok, panel_cache}
     end
   end

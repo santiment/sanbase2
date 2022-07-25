@@ -4,12 +4,25 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
   """
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :dashboard_queries do
+    @desc ~s"""
+    Get metadata bout the Clickhouse database exposed for the SQL Editor.
+
+    The metadata about the Clickhouse database includes information
+    about the columns, tables and functions. This information can be used
+    for displaying info to user and also in the autocomplete implementation
+    """
+    field :get_clickhouse_database_metadata, :clickhouse_database_metadata do
+      meta(access: :free)
+
+      cache_resolve(&DashboardResolver.get_clickhouse_database_metadata/3)
+    end
+
     @desc ~s"""
     Get a list of clickhouse tables that the users can access
     via the SQL editor.
@@ -60,6 +73,20 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
       arg(:id, non_null(:integer))
 
       resolve(&DashboardResolver.get_dashboard_cache/3)
+    end
+
+    @desc ~s"""
+    Get the last computed version of a Dashboard Cache.
+
+    This API returns a single Dashboard Panel Cache, the same
+    as the one returned by getDashboardCache
+    """
+    field :get_dashboard_panel_cache, :panel_cache do
+      meta(access: :free)
+      arg(:dashboard_id, non_null(:integer))
+      arg(:panel_id, non_null(:string))
+
+      resolve(&DashboardResolver.get_dashboard_panel_cache/3)
     end
 
     @desc ~s"""

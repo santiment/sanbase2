@@ -2,7 +2,6 @@ defmodule Sanbase.Timeline.TimelineEvent do
   @moduledoc ~s"""
   Persisting events on create/update insights, watchlists and triggers
   """
-  @behaviour Sanbase.Entity.Behaviour
 
   use Ecto.Schema
 
@@ -80,10 +79,8 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   @by_id_preloads [:user_trigger, [post: :tags], :user_list, :user, :votes]
 
-  @impl Sanbase.Entity.Behaviour
   def by_id!(id, opts), do: by_id(id, opts) |> to_bang()
 
-  @impl Sanbase.Entity.Behaviour
   def by_id(id, _opts) when is_integer(id) do
     from(te in TimelineEvent,
       where: te.id == ^id,
@@ -96,10 +93,8 @@ defmodule Sanbase.Timeline.TimelineEvent do
     end
   end
 
-  @impl Sanbase.Entity.Behaviour
   def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
 
-  @impl Sanbase.Entity.Behaviour
   def by_ids(ids, _opts) when is_list(ids) do
     result =
       from(te in TimelineEvent,
@@ -110,22 +105,6 @@ defmodule Sanbase.Timeline.TimelineEvent do
       |> Repo.all()
 
     {:ok, result}
-  end
-
-  @impl Sanbase.Entity.Behaviour
-  def public_entity_ids_query(opts) do
-    from(te in __MODULE__)
-    |> Query.events_with_public_entities_query()
-    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
-    |> select([te], te.id)
-  end
-
-  @impl Sanbase.Entity.Behaviour
-  def user_entity_ids_query(user_id, opts) do
-    from(te in __MODULE__)
-    |> where([te], te.user_id == ^user_id)
-    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
-    |> select([te], te.id)
   end
 
   @doc """

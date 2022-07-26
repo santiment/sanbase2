@@ -125,10 +125,9 @@ defmodule Sanbase.UserList do
     {:ok, result}
   end
 
-  @impl Sanbase.Entity.Behaviour
-  def public_entity_ids_query(opts) do
+  # The base of all the entity queries
+  defp base_entity_ids_query(opts) do
     base_query()
-    |> where([ul], ul.is_public == true)
     |> distinct(true)
     |> maybe_filter_is_screener_query(opts)
     |> maybe_apply_metrics_filter_query(opts)
@@ -142,17 +141,24 @@ defmodule Sanbase.UserList do
   end
 
   @impl Sanbase.Entity.Behaviour
+  def public_and_user_entity_ids_query(user_id, opts) do
+    base_entity_ids_query(opts)
+    |> where([ul], ul.is_public == true or ul.user_id == ^user_id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    base_entity_ids_query(opts)
+    |> where([ul], ul.is_public == true)
+  end
+
+  @impl Sanbase.Entity.Behaviour
   def user_entity_ids_query(user_id, opts) do
-    base_query()
+    # Disable the filter by users
+    opts = Keyword.put(opts, :user_ids, nil)
+
+    base_entity_ids_query(opts)
     |> where([ul], ul.user_id == ^user_id)
-    |> maybe_filter_is_screener_query(opts)
-    |> maybe_apply_metrics_filter_query(opts)
-    |> maybe_filter_by_type_query(opts)
-    |> maybe_apply_projects_filter_query(opts)
-    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
-    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_list_id)
-    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
-    |> select([ul], ul.id)
   end
 
   def by_slug(slug) when is_binary(slug) do

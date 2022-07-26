@@ -87,9 +87,9 @@ defmodule Sanbase.Insight.Post do
     timestamps()
   end
 
-  @impl Sanbase.Entity.Behaviour
-  def public_entity_ids_query(opts) do
-    public_insights_query(opts)
+  # The base of all the entity queries
+  defp base_entity_ids_query(opts) do
+    base_insights_query(opts)
     |> maybe_apply_projects_filter_query(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :post_id)
@@ -99,14 +99,24 @@ defmodule Sanbase.Insight.Post do
   end
 
   @impl Sanbase.Entity.Behaviour
+  def public_and_user_entity_ids_query(user_id, opts) do
+    base_entity_ids_query(opts)
+    |> where(
+      [p],
+      (p.ready_state == ^@published and p.state == ^@approved) or p.user_id == ^user_id
+    )
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    base_entity_ids_query(opts)
+    |> filter_published_and_approved()
+  end
+
+  @impl Sanbase.Entity.Behaviour
   def user_entity_ids_query(user_id, opts) do
-    base_insights_query(opts)
+    base_entity_ids_query(opts)
     |> by_user(user_id)
-    |> maybe_apply_projects_filter_query(opts)
-    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
-    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :post_id)
-    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:published_at, opts)
-    |> select([p], p.id)
   end
 
   def insights_count_map() do

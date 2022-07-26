@@ -93,10 +93,9 @@ defmodule Sanbase.Dashboard.Schema do
   @impl Sanbase.Entity.Behaviour
   def by_ids!(ids, opts \\ []), do: by_ids(ids, opts) |> to_bang()
 
-  @impl Sanbase.Entity.Behaviour
-  def public_entity_ids_query(opts) do
+  # The base of all the entity queries
+  defp base_entity_ids_query(opts) do
     base_query()
-    |> where([d], d.is_public == true)
     |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :dashboard_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
@@ -105,13 +104,24 @@ defmodule Sanbase.Dashboard.Schema do
   end
 
   @impl Sanbase.Entity.Behaviour
+  def public_and_user_entity_ids_query(user_id, opts) do
+    base_entity_ids_query(opts)
+    |> where([d], d.is_public == true or d.user_id == ^user_id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    base_entity_ids_query(opts)
+    |> where([d], d.is_public == true)
+  end
+
+  @impl Sanbase.Entity.Behaviour
   def user_entity_ids_query(user_id, opts) do
-    base_query()
+    # Disable the filter by users
+    opts = Keyword.put(opts, :user_ids, nil)
+
+    base_entity_ids_query(opts)
     |> where([ul], ul.user_id == ^user_id)
-    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
-    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :dashboard_id)
-    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
-    |> select([ul], ul.id)
   end
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public

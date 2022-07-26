@@ -12,4 +12,5 @@ defmodule Sanbase.Entity.Behaviour do
 
   @callback public_entity_ids_query(opts) :: Ecto.Query.t()
   @callback user_entity_ids_query(user_id :: non_neg_integer(), opts) :: Ecto.Query.t()
+  @callback public_and_user_entity_ids_query(user_id :: non_neg_integer(), opts) :: Ecto.Query.t()
 end

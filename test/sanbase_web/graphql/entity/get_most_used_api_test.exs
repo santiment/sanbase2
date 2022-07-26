@@ -66,11 +66,10 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
 
   test "get most used dashboard", context do
     %{conn: conn} = context
-    dashboard1 = insert(:dashboard, is_public: true)
+    dashboard1 = insert(:dashboard, is_public: false, user: context.user)
     dashboard2 = insert(:dashboard, is_public: true)
-    dashboard3 = insert(:dashboard, is_public: true)
-    _private = insert(:dashboard, is_public: false)
-    _private = insert(:dashboard, is_public: false)
+    dashboard3 = insert(:dashboard, is_public: false, user: context.user)
+    _unused = insert(:dashboard, is_public: false)
     dashboard4 = insert(:dashboard, is_public: true)
     _unused = insert(:dashboard, is_public: true)
 
@@ -103,11 +102,10 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     %{conn: conn} = context
     _not_screener = insert(:watchlist, is_public: true)
     screener1 = insert(:screener, is_public: true)
-    screener2 = insert(:screener, is_public: true)
+    screener2 = insert(:screener, is_public: false, user: context.user)
     screener3 = insert(:screener, is_public: true)
-    _private = insert(:screener, is_public: false)
-    _private = insert(:screener, is_public: false)
-    screener4 = insert(:screener, is_public: true)
+    _unused = insert(:screener, is_public: false)
+    screener4 = insert(:screener, is_public: false, user: context.user)
     _unused = insert(:screener, is_public: true)
 
     for index <- 1..50 do
@@ -139,11 +137,9 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     %{conn: conn} = context
 
     # The screener should not be in the result
-    watchlist1 = insert(:watchlist, type: :project, is_public: true)
-    _private = insert(:watchlist, type: :project, is_public: false)
-    _private = insert(:watchlist, type: :project, is_public: false)
+    watchlist1 = insert(:watchlist, type: :project, is_public: false, user: context.user)
     watchlist2 = insert(:watchlist, type: :project, is_public: true)
-    watchlist3 = insert(:watchlist, type: :project, is_public: true)
+    watchlist3 = insert(:watchlist, type: :project, is_public: false, user: context.user)
     _screener = insert(:screener, type: :project, is_public: true)
     watchlist4 = insert(:watchlist, type: :project, is_public: true)
     _unused = insert(:watchlist, type: :project, is_public: true)
@@ -178,12 +174,16 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
 
     # The screener should not be in the result
     watchlist1 = insert(:watchlist, type: :blockchain_address, is_public: true)
-    _private = insert(:watchlist, type: :blockchain_address, is_public: false)
-    _private = insert(:watchlist, type: :blockchain_address, is_public: false)
-    watchlist2 = insert(:watchlist, type: :blockchain_address, is_public: true)
+
+    watchlist2 =
+      insert(:watchlist, type: :blockchain_address, is_public: false, user: context.user)
+
     watchlist3 = insert(:watchlist, type: :blockchain_address, is_public: true)
     _screener = insert(:screener, type: :blockchain_address, is_public: true)
-    watchlist4 = insert(:watchlist, type: :blockchain_address, is_public: true)
+
+    watchlist4 =
+      insert(:watchlist, type: :blockchain_address, is_public: false, user: context.user)
+
     _unused = insert(:watchlist, type: :blockchain_address, is_public: true)
 
     for index <- 1..50 do
@@ -214,9 +214,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   test "get most used chart configuration", context do
     %{conn: conn} = context
     c1 = insert(:chart_configuration, is_public: true)
-    c2 = insert(:chart_configuration, is_public: true)
-    _private = insert(:chart_configuration, is_public: false)
-    _private = insert(:chart_configuration, is_public: false)
+    c2 = insert(:chart_configuration, is_public: false, user: context.user)
     c3 = insert(:chart_configuration, is_public: true)
     c4 = insert(:chart_configuration, is_public: true)
     _unused = insert(:chart_configuration, is_public: true)
@@ -256,11 +254,9 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   test "get most used user trigger", context do
     %{conn: conn} = context
 
-    user_trigger1 = insert(:user_trigger, is_public: true)
+    user_trigger1 = insert(:user_trigger, is_public: false, user: context.user)
     user_trigger2 = insert(:user_trigger, is_public: true)
-    _private = insert(:user_trigger, is_public: false)
-    _private = insert(:user_trigger, is_public: false)
-    user_trigger3 = insert(:user_trigger, is_public: true)
+    user_trigger3 = insert(:user_trigger, is_public: false, user: context.user)
     user_trigger4 = insert(:user_trigger, is_public: true)
     _unused = insert(:user_trigger, is_public: true)
 
@@ -298,7 +294,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
 
   test "get most used combined", context do
     %{conn: conn} = context
-    ut = insert(:user_trigger, is_public: true)
+    ut = insert(:user_trigger, is_public: false, user: context.user)
     i = insert(:published_post)
     c = insert(:chart_configuration, is_public: true)
     s = insert(:screener, is_public: true)
@@ -443,7 +439,14 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     end
 
     s1 = insert(:screener, is_public: true, function: function.(["price_usd"]))
-    s2 = insert(:screener, is_public: true, function: function.(["social_volume_total"]))
+
+    s2 =
+      insert(:screener,
+        is_public: false,
+        function: function.(["social_volume_total"]),
+        user: context.user
+      )
+
     s3 = insert(:screener, is_public: true, function: function.(["price_usd", "price_btc"]))
     s4 = insert(:screener, is_public: true, function: function.(["price_usd", "price_btc"]))
     _unused = insert(:screener, is_public: true, function: function.(["price_usd", "price_btc"]))
@@ -475,11 +478,11 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   test "get most used featured entities", context do
     %{conn: conn} = context
     w1 = insert(:watchlist, type: :project, is_public: true)
-    s1 = insert(:screener, type: :project, is_public: true)
+    s1 = insert(:screener, type: :project, is_public: false, user: context.user)
     i1 = insert(:published_post)
     i2 = insert(:published_post)
     c1 = insert(:chart_configuration, is_public: true)
-    c2 = insert(:chart_configuration, is_public: true)
+    c2 = insert(:chart_configuration, is_public: false, user: context.user)
 
     :ok = Sanbase.FeaturedItem.update_item(w1, true)
     :ok = Sanbase.FeaturedItem.update_item(i2, true)

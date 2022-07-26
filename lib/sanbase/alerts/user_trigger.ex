@@ -113,10 +113,9 @@ defmodule Sanbase.Alert.UserTrigger do
     {:ok, result}
   end
 
-  @impl Sanbase.Entity.Behaviour
-  def public_entity_ids_query(opts) do
+  # The base of all the entity queries
+  defp base_entity_ids_query(opts) do
     base_query()
-    |> where([ul], trigger_is_public())
     |> maybe_apply_projects_filter(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
@@ -126,14 +125,24 @@ defmodule Sanbase.Alert.UserTrigger do
   end
 
   @impl Sanbase.Entity.Behaviour
+  def public_and_user_entity_ids_query(user_id, opts) do
+    base_entity_ids_query(opts)
+    |> where([ul], trigger_is_public() or ul.user_id == ^user_id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    base_entity_ids_query(opts)
+    |> where([ul], trigger_is_public())
+  end
+
+  @impl Sanbase.Entity.Behaviour
   def user_entity_ids_query(user_id, opts) do
-    base_query()
+    # Disable the filter by users
+    opts = Keyword.put(opts, :user_ids, nil)
+
+    base_entity_ids_query(opts)
     |> where([ul], ul.user_id == ^user_id)
-    |> maybe_apply_projects_filter(opts)
-    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
-    |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
-    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
-    |> select([ul], ul.id)
   end
 
   @doc ~s"""

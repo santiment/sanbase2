@@ -1,6 +1,7 @@
 defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
   import Sanbase.Metric.Transform
+  import Sanbase.Metric.Utils
 
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.Github
@@ -232,6 +233,12 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
+  def available_metrics(%{address: _address}), do: []
+
+  def available_metrics(%{contract_address: contract_address}) do
+    available_metrics_for_contract(__MODULE__, contract_address)
+  end
+
   def available_metrics(%{slug: slug}) when is_binary(slug) do
     case Project.github_organizations(slug) do
       {:ok, []} ->

@@ -11,7 +11,7 @@ defmodule Sanbase.Project.AvailableMetricsTest do
     metrics =
       available_metrics |> Enum.shuffle() |> Enum.take(Enum.random(1..length(available_metrics)))
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_metrics_for_slug/1, {:ok, metrics})
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_metrics_for_selector/1, {:ok, metrics})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_available_metrics(project)
       %{"data" => %{"projectBySlug" => %{"availableMetrics" => available_metrics}}} = result

@@ -5,7 +5,7 @@ defmodule Sanbase.PricePair.MetricAdapter do
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :ohlc]
   @default_aggregation :last
 
-  @timeseries_metrics ["price_usd", "price_btc"]
+  @timeseries_metrics ["price_usd", "price_usdt", "price_btc"]
   @histogram_metrics []
   @table_metrics []
 
@@ -185,4 +185,5 @@ defmodule Sanbase.PricePair.MetricAdapter do
 
   defp metric_to_quote_asset("price_btc"), do: "BTC"
   defp metric_to_quote_asset("price_usd"), do: "USD"
+  defp metric_to_quote_asset("price_usdt"), do: "USDT"
 end

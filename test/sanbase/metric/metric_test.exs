@@ -26,6 +26,8 @@ defmodule Sanbase.MetricTest do
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
     {Sanbase.Price.MetricAdapter, [:passthrough],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.PricePair.MetricAdapter, [:passthrough],
+     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
     {Sanbase.Clickhouse.TopHolders.MetricAdapter, [:passthrough],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
     {Sanbase.BlockchainAddress.MetricAdapter, [:passthrough],

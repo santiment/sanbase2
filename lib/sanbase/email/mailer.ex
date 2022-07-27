@@ -61,7 +61,7 @@ defmodule Sanbase.Mailer do
 
     case subscription do
       %Subscription{cancel_at_period_end: false} = subscription ->
-        Subscription.is_trialing_sanbase_pro?(subscription)
+        Subscription.is_trialing_sanbase_pro?(subscription) and has_card?(user)
 
       _ ->
         false
@@ -81,4 +81,11 @@ defmodule Sanbase.Mailer do
   end
 
   defp can_send?(_user, _template, _params), do: true
+
+  defp has_card?(user) do
+    case Sanbase.StripeApi.fetch_default_card(user) do
+      {:ok, customer} -> not is_nil(customer.default_source)
+      _ -> false
+    end
+  end
 end

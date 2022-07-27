@@ -20,6 +20,8 @@ defmodule Sanbase.EmailsTest do
      [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
     {StripeApi, [:passthrough],
      [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
+    {StripeApi, [:passthrough],
+     [fetch_default_card: fn _ -> {:ok, %{default_source: "123"}} end]},
     {Sanbase.MandrillApi, [], [send: fn _, _, _, _ -> {:ok, :email_sent} end]}
   ]) do
     not_registered_user = insert(:user, email: "example@santiment.net", is_registered: false)
@@ -212,7 +214,7 @@ defmodule Sanbase.EmailsTest do
       assert {:ok, :email_sent} =
                perform_job(Sanbase.Mailer, %{
                  "user_id" => context.user.id,
-                 "template" => trial_started_template()
+                 "template" => end_of_trial_template()
                })
 
       assert_called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))

@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
 
       assert metadata["humanReadableName"] |> is_binary()
       assert metadata["defaultAggregation"] in aggregations
-      assert metadata["minInterval"] in ["1m", "5m", "15m", "1h", "6h", "8h", "1d"]
+      assert metadata["minInterval"] in ["1s", "1m", "5m", "15m", "1h", "6h", "8h", "1d"]
       assert metadata["dataType"] in ["TIMESERIES", "HISTOGRAM", "TABLE"]
       assert metadata["isRestricted"] in [true, false]
 

@@ -4,6 +4,11 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
+  # Note: There cannot be more than 1 interaction for the same user, type and entity
+  # in a predefined time window. This option is disabled in test env by adding
+  # `config :sanbase, Sanbase.Accounts.Interaction, interaction_cooldown_seconds: 0`
+  # to test.exs config.
+
   setup do
     _role = insert(:role_san_family)
 

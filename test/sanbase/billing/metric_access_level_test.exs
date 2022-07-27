@@ -371,6 +371,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "marketcap_usd",
         "price_btc",
         "price_usd",
+        "price_usdt",
         "price_eth",
         "price_usd_5m",
         "volume_usd",

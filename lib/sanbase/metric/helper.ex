@@ -16,11 +16,16 @@ defmodule Sanbase.Metric.Helper do
   will override the ones in Sanbase.SocialData.MetricAdapter.
   """
 
+  #
+  # It's important that the Price module goes before the PricePair module.
+  # This way the default data shown is for the metrics from the Price module
+  # This way the behavior is backward compatible
   @metric_modules [
+    Sanbase.Price.MetricAdapter,
+    Sanbase.PricePair.MetricAdapter,
     Sanbase.Clickhouse.Github.MetricAdapter,
     Sanbase.Clickhouse.MetricAdapter,
     Sanbase.SocialData.MetricAdapter,
-    Sanbase.Price.MetricAdapter,
     Sanbase.Twitter.MetricAdapter,
     Sanbase.Clickhouse.TopHolders.MetricAdapter,
     Sanbase.Clickhouse.Uniswap.MetricAdapter,

@@ -245,20 +245,25 @@ defmodule Sanbase.DateTimeUtils do
   datetime, usable in cache key construction
   """
   def round_datetime(datetime, opts \\ []) do
-    seconds = Keyword.get(opts, :second, 300)
-    rounding = Keyword.get(opts, :rounding, :down)
-    datetime_unix = DateTime.to_unix(datetime)
+    case Keyword.get(opts, :second, 300) do
+      0 ->
+        datetime
 
-    datetime_unix =
-      case rounding do
-        :up -> datetime_unix + seconds
-        :down -> datetime_unix
-      end
+      seconds ->
+        rounding = Keyword.get(opts, :rounding, :down)
+        datetime_unix = DateTime.to_unix(datetime)
 
-    datetime_unix
-    |> div(seconds)
-    |> Kernel.*(seconds)
-    |> DateTime.from_unix!()
+        datetime_unix =
+          case rounding do
+            :up -> datetime_unix + seconds
+            :down -> datetime_unix
+          end
+
+        datetime_unix
+        |> div(seconds)
+        |> Kernel.*(seconds)
+        |> DateTime.from_unix!()
+    end
   end
 
   # Private

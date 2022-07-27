@@ -103,6 +103,7 @@ defmodule Sanbase.PricePair.MetricAdapter do
     case metric do
       "price_usd" -> {:ok, "Price in USD"}
       "price_btc" -> {:ok, "Price in BTC"}
+      "price_usdt" -> {:ok, "Price in USDT"}
     end
   end
 
@@ -138,7 +139,8 @@ defmodule Sanbase.PricePair.MetricAdapter do
       {:ok, quote_assets} ->
         metrics =
           if("BTC" in quote_assets, do: ["price_btc"], else: []) ++
-            if "USD" in quote_assets, do: ["price_usd"], else: []
+            if("USD" in quote_assets, do: ["price_usd"], else: []) ++
+            if("USDT" in quote_assets, do: ["price_usdt"], else: [])
 
         {:ok, metrics}
 

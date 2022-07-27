@@ -6114,13 +6114,6 @@ CREATE INDEX user_entity_interactions_interaction_type_index ON public.user_enti
 
 
 --
--- Name: user_entity_interactions_user_id_entity_type_entity_id_interact; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX user_entity_interactions_user_id_entity_type_entity_id_interact ON public.user_entity_interactions USING btree (user_id, entity_type, entity_id, interaction_type, inserted_at);
-
-
---
 -- Name: user_entity_interactions_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7787,4 +7780,3 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220627144857);
 INSERT INTO public."schema_migrations" (version) VALUES (20220630123257);
 INSERT INTO public."schema_migrations" (version) VALUES (20220712122954);
 INSERT INTO public."schema_migrations" (version) VALUES (20220718125615);
-INSERT INTO public."schema_migrations" (version) VALUES (20220727072726);

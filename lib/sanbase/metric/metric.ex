@@ -779,8 +779,9 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @price_pair_metrics Sanbase.PricePair.MetricAdapter.available_metrics()
   defp maybe_change_module(module, metric, selector, opts)
-       when metric in ["price_usd", "price_btc"] do
+       when metric in @price_pair_metrics do
     case Keyword.get(opts, :source) || Map.get(selector, :source) do
       "cryptocompare" -> Sanbase.PricePair.MetricAdapter
       _ -> module

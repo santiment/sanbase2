@@ -214,14 +214,15 @@ defmodule Sanbase.Price.PricePairSql do
 
   def available_slugs_query(source) do
     query = """
-    SELECT dictGetString('cryptocompare_to_san_asset_mapping', 'slug', tuple(base_asset))
+    SELECT dictGetString('cryptocompare_to_san_asset_mapping', 'slug', tuple(base_asset)) AS slug
     FROM (
       SELECT distinct(base_asset) AS base_asset
       FROM #{@table}
       PREWHERE
-        dt >= ?1 AND
+        dt >= toDateTime(?1) AND
         source = ?3
     )
+    WHERE slug != ''
     """
 
     datetime = Timex.shift(Timex.now(), days: -7) |> DateTime.to_unix()
@@ -233,15 +234,16 @@ defmodule Sanbase.Price.PricePairSql do
 
   def available_slugs_query(quote_asset, source, days \\ 7) do
     query = """
-    SELECT dictGetString('cryptocompare_to_san_asset_mapping', 'slug', tuple(base_asset))
+    SELECT dictGetString('cryptocompare_to_san_asset_mapping', 'slug', tuple(base_asset)) AS slug
     FROM (
       SELECT distinct(base_asset) AS base_asset
       FROM #{@table}
       PREWHERE
         quote_asset = ?1 AND
-        dt >= ?2 AND
+        dt >= toDateTime(?2) AND
         source = ?3
     )
+    WHERE slug != ''
     """
 
     datetime = Timex.shift(Timex.now(), days: -days) |> DateTime.to_unix()

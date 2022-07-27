@@ -23,6 +23,12 @@ defmodule Sanbase.Accounts.Interaction do
                                   10
                                 )
 
+  @datetime_module Application.compile_env(
+                     :sanbase,
+                     [__MODULE__, :datetime_module],
+                     DateTime
+                   )
+
   @supported_entity_types [
     :address_watchlist,
     :chart_configuration,
@@ -87,12 +93,12 @@ defmodule Sanbase.Accounts.Interaction do
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def store_user_interaction(user_id, args) do
     inserted_at =
-      DateTime.utc_now()
+      @datetime_module.utc_now()
       |> Sanbase.DateTimeUtils.round_datetime(
         second: @interaction_cooldown_seconds,
         rounding: :down
       )
-      |> DateTime.to_naive()
+      |> @datetime_module.to_naive()
 
     args =
       args

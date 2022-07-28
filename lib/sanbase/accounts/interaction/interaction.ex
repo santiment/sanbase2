@@ -8,6 +8,27 @@ defmodule Sanbase.Accounts.Interaction do
   """
   use Ecto.Schema
 
+  import Ecto.Query
+  import Ecto.Changeset
+
+  alias Sanbase.Accounts.User
+  # The same [:user_id, :entity_id, :entity_type, :interaction_type] cannot be stored
+  # more than once per coooldown period. This helps avoid storing the same interaction
+  # multiple times in case of browser reload, opening the entity in multiple tabs, etc.
+  # This value is set to 0 in test env, so the interactions can be stored without mocking
+  # the DateTime module.
+  @interaction_cooldown_seconds Application.compile_env(
+                                  :sanbase,
+                                  [__MODULE__, :interaction_cooldown_seconds],
+                                  10
+                                )
+
+  @datetime_module Application.compile_env(
+                     :sanbase,
+                     [__MODULE__, :datetime_module],
+                     DateTime
+                   )
+
   @supported_entity_types [
     :address_watchlist,
     :chart_configuration,
@@ -35,11 +56,6 @@ defmodule Sanbase.Accounts.Interaction do
           updated_at: NaiveDateTime.t()
         }
 
-  import Ecto.Query
-  import Ecto.Changeset
-
-  alias Sanbase.Accounts.User
-
   schema "user_entity_interactions" do
     field(:entity_id, :integer)
     field(:entity_type, :string)
@@ -52,7 +68,17 @@ defmodule Sanbase.Accounts.Interaction do
 
   def changeset(%__MODULE__{} = interaction, args) do
     interaction
-    |> cast(args, [:entity_id, :entity_type, :interaction_type, :user_id])
+    # cast the `:inserted_at` and `:updated_at` as the datetime is rounded
+    # so the same interaction cannot be submitted multiple times in the span of
+    # a few seconds (browser reload, open the same entity in multiple tabs fast, etc.)
+    |> cast(args, [
+      :entity_id,
+      :entity_type,
+      :interaction_type,
+      :user_id,
+      :inserted_at,
+      :updated_at
+    ])
     |> validate_change(:entity_type, &validate_entity_type/2)
     |> validate_change(:interaction_type, &validate_interaction_type/2)
   end
@@ -66,15 +92,27 @@ defmodule Sanbase.Accounts.Interaction do
   @spec store_user_interaction(non_neg_integer(), Map.t()) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def store_user_interaction(user_id, args) do
+    inserted_at =
+      @datetime_module.utc_now()
+      |> Sanbase.DateTimeUtils.round_datetime(
+        second: @interaction_cooldown_seconds,
+        rounding: :down
+      )
+      |> @datetime_module.to_naive()
+
     args =
       args
-      |> Map.put(:user_id, user_id)
-      |> Map.put(:interaction_type, to_string(args.interaction_type))
-      |> Map.put(:entity_type, deduce_entity_column_name(args.entity_type))
+      |> Map.merge(%{
+        user_id: user_id,
+        inserted_at: inserted_at,
+        updated_at: inserted_at,
+        interaction_type: to_string(args.interaction_type),
+        entity_type: deduce_entity_column_name(args.entity_type)
+      })
 
     %__MODULE__{}
     |> changeset(args)
-    |> Sanbase.Repo.insert()
+    |> Sanbase.Repo.insert(on_conflict: :nothing)
   end
 
   @doc ~s"""

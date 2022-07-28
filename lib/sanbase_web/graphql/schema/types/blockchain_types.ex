@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.BlockchainTypes do
   object :blockchain_metadata do
     field(:blockchain, non_null(:string))
     field(:slug, non_null(:string))
-    field(:ticker, non_null(:string))
     field(:infrastructure, non_null(:string))
     field(:created_on, :datetime)
 

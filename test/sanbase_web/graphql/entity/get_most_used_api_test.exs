@@ -4,6 +4,11 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
+  # Note: There cannot be more than 1 interaction for the same user, type and entity
+  # in a predefined time window. This option is disabled in test env by adding
+  # `config :sanbase, Sanbase.Accounts.Interaction, interaction_cooldown_seconds: 0`
+  # to test.exs config.
+
   setup do
     _role = insert(:role_san_family)
 
@@ -39,11 +44,11 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     insight4 = insert(:published_post)
     _unused = insert(:published_post)
 
-    for index <- 1..50 do
-      if rem(index, 5) == 0, do: create_interaction_api(conn, :insight, insight1.id)
-      if rem(index, 4) == 0, do: create_interaction_api(conn, :insight, insight2.id)
-      if rem(index, 3) == 0, do: create_interaction_api(conn, :insight, insight3.id)
-      if rem(index, 2) == 0, do: create_interaction_api(conn, :insight, insight4.id)
+    for index <- 1..10 do
+      if rem(index, 4) == 0, do: create_interaction_api(conn, :insight, insight1.id)
+      if rem(index, 3) == 0, do: create_interaction_api(conn, :insight, insight2.id)
+      if rem(index, 2) == 0, do: create_interaction_api(conn, :insight, insight3.id)
+      if rem(index, 1) == 0, do: create_interaction_api(conn, :insight, insight4.id)
     end
 
     result = get_most_used(conn, :insight)
@@ -73,11 +78,11 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     dashboard4 = insert(:dashboard, is_public: true)
     _unused = insert(:dashboard, is_public: true)
 
-    for index <- 1..50 do
-      if rem(index, 5) == 0, do: create_interaction_api(conn, :dashboard, dashboard1.id)
-      if rem(index, 4) == 0, do: create_interaction_api(conn, :dashboard, dashboard4.id)
-      if rem(index, 3) == 0, do: create_interaction_api(conn, :dashboard, dashboard3.id)
-      if rem(index, 2) == 0, do: create_interaction_api(conn, :dashboard, dashboard2.id)
+    for i <- 1..10 do
+      if rem(i, 4) == 0, do: create_interaction_api(conn, :dashboard, dashboard1.id)
+      if rem(i, 3) == 0, do: create_interaction_api(conn, :dashboard, dashboard4.id)
+      if rem(i, 2) == 0, do: create_interaction_api(conn, :dashboard, dashboard3.id)
+      if rem(i, 1) == 0, do: create_interaction_api(conn, :dashboard, dashboard2.id)
     end
 
     result = get_most_used(conn, :dashboard)
@@ -108,11 +113,11 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     screener4 = insert(:screener, is_public: false, user: context.user)
     _unused = insert(:screener, is_public: true)
 
-    for index <- 1..50 do
-      if rem(index, 5) == 0, do: create_interaction_api(conn, :screener, screener1.id)
-      if rem(index, 4) == 0, do: create_interaction_api(conn, :screener, screener4.id)
-      if rem(index, 3) == 0, do: create_interaction_api(conn, :screener, screener3.id)
-      if rem(index, 2) == 0, do: create_interaction_api(conn, :screener, screener2.id)
+    for i <- 1..10 do
+      if rem(i, 4) == 0, do: create_interaction_api(conn, :screener, screener1.id)
+      if rem(i, 3) == 0, do: create_interaction_api(conn, :screener, screener4.id)
+      if rem(i, 2) == 0, do: create_interaction_api(conn, :screener, screener3.id)
+      if rem(i, 1) == 0, do: create_interaction_api(conn, :screener, screener2.id)
     end
 
     result = get_most_used(conn, :screener)
@@ -137,18 +142,18 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     %{conn: conn} = context
 
     # The screener should not be in the result
-    watchlist1 = insert(:watchlist, type: :project, is_public: false, user: context.user)
-    watchlist2 = insert(:watchlist, type: :project, is_public: true)
-    watchlist3 = insert(:watchlist, type: :project, is_public: false, user: context.user)
+    w1 = insert(:watchlist, type: :project, is_public: false, user: context.user)
+    w2 = insert(:watchlist, type: :project, is_public: true)
+    w3 = insert(:watchlist, type: :project, is_public: false, user: context.user)
     _screener = insert(:screener, type: :project, is_public: true)
-    watchlist4 = insert(:watchlist, type: :project, is_public: true)
+    w4 = insert(:watchlist, type: :project, is_public: true)
     _unused = insert(:watchlist, type: :project, is_public: true)
 
-    for index <- 1..50 do
-      if rem(index, 5) == 0, do: create_interaction_api(conn, :project_watchlist, watchlist2.id)
-      if rem(index, 4) == 0, do: create_interaction_api(conn, :project_watchlist, watchlist3.id)
-      if rem(index, 3) == 0, do: create_interaction_api(conn, :project_watchlist, watchlist1.id)
-      if rem(index, 2) == 0, do: create_interaction_api(conn, :project_watchlist, watchlist4.id)
+    for i <- 1..10 do
+      if rem(i, 4) == 0, do: create_interaction_api(conn, :project_watchlist, w2.id)
+      if rem(i, 3) == 0, do: create_interaction_api(conn, :project_watchlist, w3.id)
+      if rem(i, 2) == 0, do: create_interaction_api(conn, :project_watchlist, w1.id)
+      if rem(i, 1) == 0, do: create_interaction_api(conn, :project_watchlist, w4.id)
     end
 
     result = get_most_used(conn, :project_watchlist)
@@ -163,34 +168,28 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
            } = stats
 
     assert length(data) == 4
-    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == watchlist4.id
-    assert Enum.at(data, 1)["projectWatchlist"]["id"] |> String.to_integer() == watchlist1.id
-    assert Enum.at(data, 2)["projectWatchlist"]["id"] |> String.to_integer() == watchlist3.id
-    assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() == watchlist2.id
+    assert Enum.at(data, 0)["projectWatchlist"]["id"] |> String.to_integer() == w4.id
+    assert Enum.at(data, 1)["projectWatchlist"]["id"] |> String.to_integer() == w1.id
+    assert Enum.at(data, 2)["projectWatchlist"]["id"] |> String.to_integer() == w3.id
+    assert Enum.at(data, 3)["projectWatchlist"]["id"] |> String.to_integer() == w2.id
   end
 
   test "get most used address watchlist", context do
     %{conn: conn} = context
 
     # The screener should not be in the result
-    watchlist1 = insert(:watchlist, type: :blockchain_address, is_public: true)
-
-    watchlist2 =
-      insert(:watchlist, type: :blockchain_address, is_public: false, user: context.user)
-
-    watchlist3 = insert(:watchlist, type: :blockchain_address, is_public: true)
+    w1 = insert(:watchlist, type: :blockchain_address, is_public: true)
+    w2 = insert(:watchlist, type: :blockchain_address, is_public: false, user: context.user)
+    w3 = insert(:watchlist, type: :blockchain_address, is_public: true)
     _screener = insert(:screener, type: :blockchain_address, is_public: true)
-
-    watchlist4 =
-      insert(:watchlist, type: :blockchain_address, is_public: false, user: context.user)
-
+    w4 = insert(:watchlist, type: :blockchain_address, is_public: false, user: context.user)
     _unused = insert(:watchlist, type: :blockchain_address, is_public: true)
 
-    for index <- 1..50 do
-      if rem(index, 5) == 0, do: create_interaction_api(conn, :address_watchlist, watchlist2.id)
-      if rem(index, 4) == 0, do: create_interaction_api(conn, :address_watchlist, watchlist3.id)
-      if rem(index, 3) == 0, do: create_interaction_api(conn, :address_watchlist, watchlist1.id)
-      if rem(index, 2) == 0, do: create_interaction_api(conn, :address_watchlist, watchlist4.id)
+    for i <- 1..10 do
+      if rem(i, 4) == 0, do: create_interaction_api(conn, :address_watchlist, w2.id)
+      if rem(i, 3) == 0, do: create_interaction_api(conn, :address_watchlist, w3.id)
+      if rem(i, 2) == 0, do: create_interaction_api(conn, :address_watchlist, w1.id)
+      if rem(i, 1) == 0, do: create_interaction_api(conn, :address_watchlist, w4.id)
     end
 
     result = get_most_used(conn, :address_watchlist)
@@ -205,10 +204,10 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
            } = stats
 
     assert length(data) == 4
-    assert Enum.at(data, 0)["addressWatchlist"]["id"] |> String.to_integer() == watchlist4.id
-    assert Enum.at(data, 1)["addressWatchlist"]["id"] |> String.to_integer() == watchlist1.id
-    assert Enum.at(data, 2)["addressWatchlist"]["id"] |> String.to_integer() == watchlist3.id
-    assert Enum.at(data, 3)["addressWatchlist"]["id"] |> String.to_integer() == watchlist2.id
+    assert Enum.at(data, 0)["addressWatchlist"]["id"] |> String.to_integer() == w4.id
+    assert Enum.at(data, 1)["addressWatchlist"]["id"] |> String.to_integer() == w1.id
+    assert Enum.at(data, 2)["addressWatchlist"]["id"] |> String.to_integer() == w3.id
+    assert Enum.at(data, 3)["addressWatchlist"]["id"] |> String.to_integer() == w2.id
   end
 
   test "get most used chart configuration", context do
@@ -219,18 +218,11 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     c4 = insert(:chart_configuration, is_public: true)
     _unused = insert(:chart_configuration, is_public: true)
 
-    for index <- 1..50 do
-      if rem(index, 5) == 0,
-        do: create_interaction_api(conn, :chart_configuration, c2.id)
-
-      if rem(index, 4) == 0,
-        do: create_interaction_api(conn, :chart_configuration, c1.id)
-
-      if rem(index, 3) == 0,
-        do: create_interaction_api(conn, :chart_configuration, c4.id)
-
-      if rem(index, 2) == 0,
-        do: create_interaction_api(conn, :chart_configuration, c3.id)
+    for i <- 1..10 do
+      if rem(i, 4) == 0, do: create_interaction_api(conn, :chart_configuration, c2.id)
+      if rem(i, 3) == 0, do: create_interaction_api(conn, :chart_configuration, c1.id)
+      if rem(i, 2) == 0, do: create_interaction_api(conn, :chart_configuration, c4.id)
+      if rem(i, 1) == 0, do: create_interaction_api(conn, :chart_configuration, c3.id)
     end
 
     result = get_most_used(conn, :chart_configuration)
@@ -254,24 +246,17 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
   test "get most used user trigger", context do
     %{conn: conn} = context
 
-    user_trigger1 = insert(:user_trigger, is_public: false, user: context.user)
-    user_trigger2 = insert(:user_trigger, is_public: true)
-    user_trigger3 = insert(:user_trigger, is_public: false, user: context.user)
-    user_trigger4 = insert(:user_trigger, is_public: true)
+    ut1 = insert(:user_trigger, is_public: false, user: context.user)
+    ut2 = insert(:user_trigger, is_public: true)
+    ut3 = insert(:user_trigger, is_public: false, user: context.user)
+    ut4 = insert(:user_trigger, is_public: true)
     _unused = insert(:user_trigger, is_public: true)
 
-    for index <- 1..50 do
-      if rem(index, 5) == 0,
-        do: create_interaction_api(conn, :user_trigger, user_trigger2.id)
-
-      if rem(index, 4) == 0,
-        do: create_interaction_api(conn, :user_trigger, user_trigger1.id)
-
-      if rem(index, 3) == 0,
-        do: create_interaction_api(conn, :user_trigger, user_trigger3.id)
-
-      if rem(index, 2) == 0,
-        do: create_interaction_api(conn, :user_trigger, user_trigger4.id)
+    for i <- 1..10 do
+      if rem(i, 4) == 0, do: create_interaction_api(conn, :user_trigger, ut2.id)
+      if rem(i, 3) == 0, do: create_interaction_api(conn, :user_trigger, ut1.id)
+      if rem(i, 2) == 0, do: create_interaction_api(conn, :user_trigger, ut3.id)
+      if rem(i, 1) == 0, do: create_interaction_api(conn, :user_trigger, ut4.id)
     end
 
     result = get_most_used(conn, :user_trigger)
@@ -286,28 +271,28 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
            } = stats
 
     assert length(data) == 4
-    assert Enum.at(data, 0)["userTrigger"]["trigger"]["id"] == user_trigger4.id
-    assert Enum.at(data, 1)["userTrigger"]["trigger"]["id"] == user_trigger3.id
-    assert Enum.at(data, 2)["userTrigger"]["trigger"]["id"] == user_trigger1.id
-    assert Enum.at(data, 3)["userTrigger"]["trigger"]["id"] == user_trigger2.id
+    assert Enum.at(data, 0)["userTrigger"]["trigger"]["id"] == ut4.id
+    assert Enum.at(data, 1)["userTrigger"]["trigger"]["id"] == ut3.id
+    assert Enum.at(data, 2)["userTrigger"]["trigger"]["id"] == ut1.id
+    assert Enum.at(data, 3)["userTrigger"]["trigger"]["id"] == ut2.id
   end
 
   test "get most used combined", context do
     %{conn: conn} = context
     ut = insert(:user_trigger, is_public: false, user: context.user)
-    i = insert(:published_post)
+    p = insert(:published_post)
     c = insert(:chart_configuration, is_public: true)
     s = insert(:screener, is_public: true)
     w = insert(:watchlist, type: :project, is_public: true)
     d = insert(:dashboard, is_public: true)
 
-    for index <- 1..50 do
-      if rem(index, 7) == 0, do: create_interaction_api(conn, :dashboard, d.id)
-      if rem(index, 6) == 0, do: create_interaction_api(conn, :user_trigger, ut.id)
-      if rem(index, 5) == 0, do: create_interaction_api(conn, :chart_configuration, c.id)
-      if rem(index, 4) == 0, do: create_interaction_api(conn, :project_watchlist, w.id)
-      if rem(index, 3) == 0, do: create_interaction_api(conn, :screener, s.id)
-      if rem(index, 2) == 0, do: create_interaction_api(conn, :insight, i.id)
+    for i <- 1..20 do
+      if rem(i, 6) == 0, do: create_interaction_api(conn, :dashboard, d.id)
+      if rem(i, 5) == 0, do: create_interaction_api(conn, :user_trigger, ut.id)
+      if rem(i, 4) == 0, do: create_interaction_api(conn, :chart_configuration, c.id)
+      if rem(i, 3) == 0, do: create_interaction_api(conn, :project_watchlist, w.id)
+      if rem(i, 2) == 0, do: create_interaction_api(conn, :screener, s.id)
+      if rem(i, 1) == 0, do: create_interaction_api(conn, :insight, p.id)
     end
 
     # Get with default page = 1 and pageSize = 10, all entities are returned
@@ -333,7 +318,7 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
 
     assert length(data) == 6
 
-    assert Enum.at(data, 0)["insight"]["id"] == i.id
+    assert Enum.at(data, 0)["insight"]["id"] == p.id
     assert Enum.at(data, 1)["screener"]["id"] |> String.to_integer() == s.id
     assert Enum.at(data, 2)["projectWatchlist"]["id"] |> String.to_integer() == w.id
     assert Enum.at(data, 3)["chartConfiguration"]["id"] == c.id
@@ -369,20 +354,15 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     a1 = create_alert(context.user, p1)
     a2 = create_alert(context.user, p2)
 
-    for index <- 1..60 do
-      if rem(index, 10) == 0, do: create_interaction_api(conn, :insight, i2.id)
-      if rem(index, 7) == 0, do: create_interaction_api(conn, :insight, i1.id)
-      if rem(index, 5) == 0, do: create_interaction_api(conn, :user_trigger, a1.id)
-      if rem(index, 5) == 0, do: create_interaction_api(conn, :user_trigger, a2.id)
-
-      if rem(index, 4) == 0,
-        do: create_interaction_api(conn, :chart_configuration, c2.id)
-
-      if rem(index, 4) == 0,
-        do: create_interaction_api(conn, :chart_configuration, c1.id)
-
-      if rem(index, 3) == 0, do: create_interaction_api(conn, :project_watchlist, w1.id)
-      if rem(index, 2) == 0, do: create_interaction_api(conn, :project_watchlist, w2.id)
+    for i <- 1..60 do
+      if rem(i, 10) == 0, do: create_interaction_api(conn, :insight, i2.id)
+      if rem(i, 7) == 0, do: create_interaction_api(conn, :insight, i1.id)
+      if rem(i, 5) == 0, do: create_interaction_api(conn, :user_trigger, a1.id)
+      if rem(i, 5) == 0, do: create_interaction_api(conn, :user_trigger, a2.id)
+      if rem(i, 4) == 0, do: create_interaction_api(conn, :chart_configuration, c2.id)
+      if rem(i, 4) == 0, do: create_interaction_api(conn, :chart_configuration, c1.id)
+      if rem(i, 3) == 0, do: create_interaction_api(conn, :project_watchlist, w1.id)
+      if rem(i, 2) == 0, do: create_interaction_api(conn, :project_watchlist, w2.id)
     end
 
     result =
@@ -451,11 +431,11 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     s4 = insert(:screener, is_public: true, function: function.(["price_usd", "price_btc"]))
     _unused = insert(:screener, is_public: true, function: function.(["price_usd", "price_btc"]))
 
-    for index <- 1..60 do
-      if rem(index, 20) == 0, do: create_interaction_api(conn, :screener, s2.id)
-      if rem(index, 10) == 0, do: create_interaction_api(conn, :screener, s1.id)
-      if rem(index, 8) == 0, do: create_interaction_api(conn, :screener, s3.id)
-      if rem(index, 5) == 0, do: create_interaction_api(conn, :screener, s4.id)
+    for i <- 1..10 do
+      if rem(i, 4) == 0, do: create_interaction_api(conn, :screener, s2.id)
+      if rem(i, 3) == 0, do: create_interaction_api(conn, :screener, s1.id)
+      if rem(i, 2) == 0, do: create_interaction_api(conn, :screener, s3.id)
+      if rem(i, 1) == 0, do: create_interaction_api(conn, :screener, s4.id)
     end
 
     result = get_most_used(conn, [:screener], filter: %{metrics: ["price_usd"]})
@@ -488,13 +468,13 @@ defmodule SanbaseWeb.Graphql.GetMostUsedApiTest do
     :ok = Sanbase.FeaturedItem.update_item(i2, true)
     :ok = Sanbase.FeaturedItem.update_item(c1, true)
 
-    for index <- 1..60 do
-      if rem(index, 20) == 0, do: create_interaction_api(conn, :project_watchlist, w1.id)
-      if rem(index, 20) == 0, do: create_interaction_api(conn, :screener, s1.id)
-      if rem(index, 10) == 0, do: create_interaction_api(conn, :insight, i1.id)
-      if rem(index, 10) == 0, do: create_interaction_api(conn, :insight, i2.id)
-      if rem(index, 5) == 0, do: create_interaction_api(conn, :chart_configuration, c1.id)
-      if rem(index, 5) == 0, do: create_interaction_api(conn, :chart_configuration, c2.id)
+    for i <- 1..60 do
+      if rem(i, 20) == 0, do: create_interaction_api(conn, :project_watchlist, w1.id)
+      if rem(i, 20) == 0, do: create_interaction_api(conn, :screener, s1.id)
+      if rem(i, 10) == 0, do: create_interaction_api(conn, :insight, i1.id)
+      if rem(i, 10) == 0, do: create_interaction_api(conn, :insight, i2.id)
+      if rem(i, 5) == 0, do: create_interaction_api(conn, :chart_configuration, c1.id)
+      if rem(i, 5) == 0, do: create_interaction_api(conn, :chart_configuration, c2.id)
     end
 
     result =

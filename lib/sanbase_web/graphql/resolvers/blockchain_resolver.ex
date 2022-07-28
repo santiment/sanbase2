@@ -18,6 +18,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
   defp blockchain_data("ethereum") do
     %{
       blockchain: "ethereum",
+      name: "Ethereum",
       slug: "ethereum",
       infrastructure: "ETH",
       created_on: ~U[2015-07-30 00:00:00Z],
@@ -35,6 +36,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
   defp blockchain_data("bitcoin") do
     %{
       blockchain: "bitcoin",
+      name: "Bitcoin",
       slug: "bitcoin",
       infrastructure: "BTC",
       created_on: ~U[2009-01-03 00:00:00Z],
@@ -52,6 +54,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
   defp blockchain_data("bitcoin-cash") do
     %{
       blockchain: "bitcoin-cash",
+      name: "Bitcoin Cash",
       slug: "bitcoin-cash",
       infrastructure: "BCH",
       created_on: ~U[2017-08-01 00:00:00Z],
@@ -69,6 +72,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
   defp blockchain_data("litecoin") do
     %{
       blockchain: "litecoin",
+      name: "Litecoin",
       slug: "litecoin",
       infrastructure: "LTC",
       created_on: ~U[2011-10-13 00:00:00Z],
@@ -86,6 +90,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
   defp blockchain_data("ripple") do
     %{
       blockchain: "ripple",
+      name: "Ripple",
       slug: "ripple",
       infrastructure: "XRP",
       created_on: ~U[2013-01-02 00:00:00Z],
@@ -103,6 +108,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
   defp blockchain_data("binance-coin") do
     %{
       blockchain: "binance-coin",
+      name: "Binance Coin",
       slug: "binance-coin",
       infrastructure: "BNB",
       created_on: ~U[2019-04-18 00:00:00Z],
@@ -120,6 +126,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
   defp blockchain_data("dogecoin") do
     %{
       blockchain: "dogecoin",
+      name: "Dogecoin",
       slug: "dogecoin",
       infrastructure: "DOGE",
       created_on: ~U[2013-12-08 00:00:00Z],
@@ -137,6 +144,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
   defp blockchain_data("matic-network") do
     %{
       blockchain: "matic-network",
+      name: "Matic Network",
       slug: "matic-network",
       infrastructure: "MATIC",
       created_on: ~U[2017-07-12 00:00:00Z],
@@ -154,6 +162,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
   defp blockchain_data("cardano") do
     %{
       blockchain: "cardano",
+      name: "Cardano",
       slug: "cardano",
       infrastructure: "ADA",
       created_on: ~U[2017-09-23 00:00:00Z],

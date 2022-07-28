@@ -23,6 +23,10 @@ config :sanbase, Sanbase.ApiCallLimit,
   quota_size: 10,
   quota_size_max_offset: 10
 
+config :sanbase, Sanbase.Accounts.Interaction,
+  interaction_cooldown_seconds: 0,
+  datetime_module: Sanbase.Interaction.DateTime
+
 # Test adapter that allows mocking
 config :tesla, adapter: Tesla.Mock
 

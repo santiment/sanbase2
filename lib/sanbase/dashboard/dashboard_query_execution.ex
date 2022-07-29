@@ -209,7 +209,7 @@ defmodule Sanbase.Dashboard.QueryExecution do
   defp get_execution_details(query_id, event_time_start) do
     {query, args} = get_execution_details_query(query_id, event_time_start)
 
-    Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
+    Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo)
 
     Sanbase.ClickhouseRepo.query_transform(
       query,

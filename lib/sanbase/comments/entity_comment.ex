@@ -195,9 +195,12 @@ defmodule Sanbase.Comments.EntityComment do
       |> union_all(^from(pc in ShortUrlComment, select: pc.comment_id))
       |> union_all(^from(pc in ChartConfigurationComment, select: pc.comment_id))
 
+    # Exclude deleted comments
+    anonymous_user_id = Sanbase.Accounts.User.anonymous_user_id()
+
     from(
       c in Comment,
-      where: c.id in subquery(comment_ids_query),
+      where: c.id in subquery(comment_ids_query) and c.user_id != ^anonymous_user_id,
       preload: ^@comments_feed_entities
     )
   end

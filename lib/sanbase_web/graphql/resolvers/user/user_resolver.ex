@@ -192,10 +192,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
 
   def add_user_eth_address(
         _root,
-        %{signature: signature, address: address, message_hash: message_hash},
+        %{signature: signature, address: address, message_hash: _message_hash},
         %{context: %{auth: %{auth_method: :user_token, current_user: user}}}
       ) do
-    with true <- Ethauth.verify_signature(signature, address, message_hash),
+    with true <- Ethauth.is_valid_signature?(address, signature),
          {:ok, _} <- User.add_eth_account(user, address) do
       {:ok, user}
     else

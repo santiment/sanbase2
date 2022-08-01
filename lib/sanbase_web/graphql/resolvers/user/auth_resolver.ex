@@ -48,8 +48,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
       ) do
     event_args = %{login_origin: :eth_login}
 
-    with true <- address_message_hash(address) == message_hash,
-         true <- Ethauth.verify_signature(signature, address, message_hash),
+    with true <- Ethauth.is_valid_signature?(address, signature),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
          {:ok, %{} = jwt_tokens_map} <-
            SanbaseWeb.Guardian.get_jwt_tokens(user,
@@ -147,12 +146,5 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   defp fetch_user(_args, %EthAccount{user_id: user_id}) do
     # Existing EthAccount, login as the user of EthAccount
     User.by_id(user_id)
-  end
-
-  defp address_message_hash(address) do
-    message = "Login in Santiment with address #{address}"
-    full_message = "\x19Ethereum Signed Message:\n" <> "#{String.length(message)}" <> message
-    hash = ExKeccak.hash_256(full_message)
-    "0x" <> Base.encode16(hash, case: :lower)
   end
 end

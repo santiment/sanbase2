@@ -49,7 +49,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     event_args = %{login_origin: :eth_login}
 
     with true <- address_message_hash(address) == message_hash,
-         true <- Ethauth.verify_signature(signature, address, message_hash),
+         true <- Ethauth.is_valid_signature?(address, signature),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
          {:ok, %{} = jwt_tokens_map} <-
            SanbaseWeb.Guardian.get_jwt_tokens(user,

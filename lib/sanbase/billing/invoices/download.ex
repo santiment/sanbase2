@@ -50,8 +50,7 @@ defmodule Sanbase.Billing.Invoices.Download do
 
   def extract_filename(response) do
     header =
-      response[:headers]
-      |> Map.fetch!(:headers)
+      response.headers
       |> Enum.into(%{})
       |> Map.get("Content-Disposition")
 

@@ -40,35 +40,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
         context: %{auth: %{current_user: current_user} = auth}
       }) do
     # Can be :free, :pro or :pro_plus. If we reach here then the
-    # authentication has been done via the JWT token, so the plan
-    # is actually a sanbase plan
+    # authentication has been done via the JWT token, using the
+    # JWTAuth middleware, so the plan is a sanbase plan
     sanbase_plan = auth[:plan]
-    triggers_count = UserTrigger.triggers_count_for(current_user.id)
 
-    can_create? =
-      cond do
-        sanbase_plan == :free and
-            triggers_count >= SanbaseAccessChecker.alerts_limit(:free) ->
-          {:error,
-           "Sanbase FREE plan has a limit of #{SanbaseAccessChecker.alerts_limit(:free)} alerts."}
-
-        sanbase_plan == :pro and
-            triggers_count >= SanbaseAccessChecker.alerts_limit(:pro) ->
-          {:error,
-           "Sanbase PRO plan has a limit of #{SanbaseAccessChecker.alerts_limit(:pro)} alerts."}
-
-        sanbase_plan == :pro_plus and
-            triggers_count >= SanbaseAccessChecker.alerts_limit(:pro_plus) ->
-          {:error,
-           "Sanbase PRO+ plan has a limit of #{triggers_count >= SanbaseAccessChecker.alerts_limit(:pro_plus)} alerts."}
-
-        true ->
-          true
-      end
-
-    case can_create? do
+    case user_can_create_trigger?(current_user, sanbase_plan) do
       true -> do_create_trigger(current_user, args)
       {:error, error} -> {:error, error}
+    end
+  end
+
+  defp user_can_create_trigger?(user, sanbase_plan) do
+    triggers_count = UserTrigger.triggers_count_for(user.id)
+
+    cond do
+      sanbase_plan == :free and triggers_count >= SanbaseAccessChecker.alerts_limit(:free) ->
+        {:error,
+         "Sanbase FREE plan has a limit of #{SanbaseAccessChecker.alerts_limit(:free)} alerts."}
+
+      sanbase_plan == :pro and triggers_count >= SanbaseAccessChecker.alerts_limit(:pro) ->
+        {:error,
+         "Sanbase PRO plan has a limit of #{SanbaseAccessChecker.alerts_limit(:pro)} alerts."}
+
+      sanbase_plan == :pro_plus and triggers_count >= SanbaseAccessChecker.alerts_limit(:pro_plus) ->
+        {:error,
+         "Sanbase PRO+ plan has a limit of #{triggers_count >= SanbaseAccessChecker.alerts_limit(:pro_plus)} alerts."}
+
+      true ->
+        true
     end
   end
 

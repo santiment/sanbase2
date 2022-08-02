@@ -121,10 +121,11 @@ defmodule SanbaseWeb.Guardian do
     end
   end
 
-  # TODO: Some time after deploying, change this to also pattern match the type
-  # wait some time so all the issues access tokens would have the
-  # `type` in their claims.
-  def resource_from_claims(%{"sub" => user_id} = _claims) do
+  # This is reached with both the user_access_token when it's present and valid or
+  # the user_refresh_token when the access token is expired and the refresh token
+  # needs to be exchanged for a new access token
+  def resource_from_claims(%{"sub" => user_id, "type" => type})
+      when type in ["user_access_token", "user_refresh_token"] do
     case Sanbase.Accounts.get_user(Sanbase.Math.to_integer(user_id)) do
       {:ok, user} -> {:ok, user}
       {:error, _} -> {:error, :no_existing_user}

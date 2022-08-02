@@ -227,10 +227,6 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
       cache_resolve(&UserResolver.api_calls_count/3)
     end
-
-    field :relays_quota, :relays_quota do
-      resolve(&UserResolver.relays_quota/3)
-    end
   end
 
   object :relays_quota do

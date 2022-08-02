@@ -71,7 +71,10 @@ defmodule Sanbase.Dashboard.History do
   def get_history(dashboard_id, hash) do
     query =
       from(dh in __MODULE__,
-        where: dh.dashboard_id == ^dashboard_id and dh.hash == ^hash
+        where: dh.dashboard_id == ^dashboard_id and dh.hash == ^hash,
+        # Order by dt and not inserted_at as there could be records with the
+        # same inserted_at, especially in tests
+        order_by: [desc: dh.id]
       )
 
     case Repo.one(query) do

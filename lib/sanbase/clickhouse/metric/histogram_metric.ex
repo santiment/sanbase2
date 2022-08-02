@@ -114,6 +114,38 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   defp maybe_transform_into_buckets({:ok, []}, _slug, _from, _to, _buckets_count), do: {:ok, []}
 
   defp maybe_transform_into_buckets({:ok, data}, slug, from, to, buckets_count) do
+    # The bucket containing the avg price will get split in two
+    price_break = get_price_break_point(slug, from, to)
+
+    {min, max} = get_min_max_prices(data)
+
+    # `buckets_count - 1` because one of the buckets will be split into 2
+    bucket_size = Enum.max([Float.round((max - min) / (buckets_count - 1), 2), 0.01])
+
+    ranges_map = ranges_map(min, buckets_count, bucket_size)
+
+    # Put every amount moved at a given price in the proper bucket
+    bucketed_data = do_transform_to_buckets(data, ranges_map, min, bucket_size, price_break)
+
+    {:ok, bucketed_data}
+  end
+
+  defp maybe_transform_into_buckets({:error, error}, _slug, _from, _to, _limit),
+    do: {:error, error}
+
+  defp do_transform_to_buckets(prices_list, ranges_map, min, bucket_size, price_break) do
+    price_break_range = price_to_range(price_break, min, bucket_size)
+
+    Enum.reduce(prices_list, ranges_map, fn %{price: price, value: value}, acc ->
+      key = price_to_range(price, min, bucket_size)
+      Map.update(acc, key, 0.0, fn curr_amount -> Float.round(curr_amount + value, 2) end)
+    end)
+    |> split_bucket_containing_price(prices_list, price_break_range, price_break)
+    |> Enum.map(fn {range, amount} -> %{range: range, value: amount} end)
+    |> Enum.sort_by(fn %{range: [range_start | _]} -> range_start end)
+  end
+
+  defp get_price_break_point(slug, from, to) do
     # Get the average price for the queried. time range. It will break the [X,Y]
     # price interval containing that price into [X, price_break] and [price_break, Y]
     {:ok, %{^slug => price_break}} =
@@ -122,32 +154,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     # The bucket that contains the average price will be the one that gets split into two.
     price_break = Sanbase.Math.round_float(price_break)
 
-    # Avoid precision issues when using `round` for prices.
-    {min, max} = Enum.map(data, & &1.price) |> Sanbase.Math.min_max()
-    {min, max} = {Float.floor(min, 2), Float.ceil(max, 2)}
-
-    # `buckets_count - 1` because one of the buckets will be split into 2
-    bucket_size = Enum.max([Float.round((max - min) / (buckets_count - 1), 2), 0.01])
-
-    ranges_map = ranges_map(min, buckets_count, bucket_size)
-
-    price_break_range = price_to_range(price_break, min, bucket_size)
-
-    # Put every amount moved at a given price in the proper bucket
-    bucketed_data =
-      Enum.reduce(data, ranges_map, fn %{price: price, value: value}, acc ->
-        key = price_to_range(price, min, bucket_size)
-        Map.update(acc, key, 0.0, fn curr_amount -> Float.round(curr_amount + value, 2) end)
-      end)
-      |> break_bucket(data, price_break_range, price_break)
-      |> Enum.map(fn {range, amount} -> %{range: range, value: amount} end)
-      |> Enum.sort_by(fn %{range: [range_start | _]} -> range_start end)
-
-    {:ok, bucketed_data}
+    price_break
   end
 
-  defp maybe_transform_into_buckets({:error, error}, _slug, _from, _to, _limit),
-    do: {:error, error}
+  defp get_min_max_prices(prices_list) do
+    # Avoid precision issues when using `round` for prices.
+    {min, max} = Enum.map(prices_list, & &1.price) |> Sanbase.Math.min_max()
+    {min, max} = {Float.floor(min, 2), Float.ceil(max, 2)}
+
+    {min, max}
+  end
 
   defp low_high_range(low, high) do
     # Generate the range for given low and high price
@@ -177,7 +193,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   # Break a bucket with range [low, high] into 2 buckes [low, divider] and [divider, high]
   # putting the proper number of entities that fall into each of the 2 ranges
-  defp break_bucket(bucketed_data, original_data, [low, high], divider) do
+  defp split_bucket_containing_price(bucketed_data, original_data, [low, high], divider) do
     {lower_half_amount, upper_half_amount} =
       original_data
       |> Enum.reduce({0.0, 0.0}, fn %{price: price, value: value}, {acc_lower, acc_upper} ->

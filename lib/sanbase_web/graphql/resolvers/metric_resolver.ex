@@ -31,17 +31,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     metrics = AccessChecker.get_available_metrics_for_plan(product, plan)
 
     metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
+    metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
     {:ok, metrics}
   end
 
   def get_available_metrics(_root, args, _resolution) do
     metrics = Metric.available_metrics()
     metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
+    metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
     {:ok, metrics}
   end
 
   def get_available_metrics_for_selector(_root, args, _resolution) do
-    Metric.available_metrics_for_selector(args.selector)
+    case Metric.available_metrics_for_selector(args.selector) do
+      {:ok, metrics} ->
+        metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
+        {:ok, metrics}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
@@ -524,5 +533,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     incomplete_metrics = Metric.incomplete_metrics()
 
     metrics -- incomplete_metrics
+  end
+
+  defp maybe_apply_regex_filter(metrics, nil), do: metrics
+
+  defp maybe_apply_regex_filter(metrics, regex) do
+    {:ok, regex} = Regex.compile(regex)
+    Enum.filter(metrics, fn metric -> Regex.match?(regex, metric) end)
   end
 end

@@ -52,8 +52,9 @@ defmodule Sanbase.InternalServices.Ethauth do
            get(client(), "verify",
              query: [signer: address, signature: signature, message: message],
              opts: @tesla_opts
-           ) do
-      body == "true"
+           ),
+         {:ok, %{"is_valid" => is_valid}} <- Jason.decode(body) do
+      is_valid
     else
       {:ok, %Tesla.Env{status: status}} ->
         {:error, "Error veryfing signature for address. #{address}. Status: #{status}"}

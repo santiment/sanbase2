@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
     signature = "0xeba4d1a091ca6e7cb0_signature_check_will_be_mocked"
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
-    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.is_valid_signature?/3, true)
+    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.is_valid_signature?/2, true)
     |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.EthAccount.san_staked_address/2, 0.0)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
@@ -70,7 +70,7 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
     signature = "0xeba4d1a091ca6e7cb0_signature_check_will_be_mocked"
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
-    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.is_valid_signature?/3, true)
+    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.is_valid_signature?/2, true)
     |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.EthAccount.san_staked_address/2, 0.0)
     |> Sanbase.Mock.run_with_mocks(fn ->
       user_id =
@@ -97,7 +97,7 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
     signature = "0xeba4d1a091ca6e7cb0_signature_check_will_be_mocked"
 
     # Mock the external call to Ethauth
-    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.is_valid_signature?/3, true)
+    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.is_valid_signature?/2, true)
     |> Sanbase.Mock.run_with_mocks(fn ->
       log =
         capture_log(fn ->

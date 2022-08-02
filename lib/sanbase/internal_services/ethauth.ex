@@ -42,17 +42,19 @@ defmodule Sanbase.InternalServices.Ethauth do
   @doc ~s"""
   Verify that a user that claims to own a given Ethereum address acttually owns it.
   """
-  @spec verify_signature(any(), any(), any()) :: boolean() | {:error, String.t()}
-  def verify_signature(signature, address, message_hash) do
+  @spec is_valid_signature?(any(), any()) :: boolean() | {:error, String.t()}
+  def is_valid_signature?(address, signature) do
     Logger.info(["[Ethauth] Verify signature"])
 
+    message = "Login in Santiment with address #{address}"
+
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
-           get(client(), "recover",
-             query: [sign: signature, hash: message_hash],
+           get(client(), "verify",
+             query: [signer: address, signature: signature, message: message],
              opts: @tesla_opts
            ),
-         {:ok, %{"recovered" => recovered}} <- Jason.decode(body) do
-      String.downcase(address) == String.downcase(recovered)
+         {:ok, %{"is_valid" => is_valid}} <- Jason.decode(body) do
+      is_valid
     else
       {:ok, %Tesla.Env{status: status}} ->
         {:error, "Error veryfing signature for address. #{address}. Status: #{status}"}

@@ -94,7 +94,7 @@ defmodule SanbaseWeb.Graphql.UserEthAccountApiTest do
 
   defp add_eth_address(conn, address) do
     mock(fn %{method: :get} ->
-      {:ok, %Tesla.Env{status: 200, body: %{"recovered" => address} |> Jason.encode!()}}
+      {:ok, %Tesla.Env{status: 200, body: %{"is_valid" => true} |> Jason.encode!()}}
     end)
 
     mutation = """

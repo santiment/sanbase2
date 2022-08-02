@@ -7,6 +7,8 @@ defmodule SanbaseWeb.Graphql.Comments.CommentsFeedApiTest do
   alias Sanbase.Comments.EntityComment
 
   setup do
+    insert(:insights_fallback_user)
+
     user = insert(:user)
     watchlist = insert(:watchlist)
 

@@ -56,10 +56,6 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
       cache_resolve(&CommentEntityIdResolver.dashboard_id/3)
     end
 
-    field :proposal_id, non_null(:integer) do
-      cache_resolve(&CommentEntityIdResolver.proposal_id/3)
-    end
-
     field :watchlist_id, non_null(:integer) do
       cache_resolve(&CommentEntityIdResolver.watchlist_id/3)
     end

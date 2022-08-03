@@ -28,6 +28,14 @@ To provide the highest possible performance, some features are not present:
 - No full-fledged transactions. The SQL Editor has read-only access, and Clickhouse is used
   mainly as append-only storage, so the lack of transactions does not cause any issues
   for this use case.
+
+Official Clickhouse SQL Reference: https://clickhouse.com/docs/en/sql-reference/
+Some of the important pages that contain useful information:
+- https://clickhouse.com/docs/en/sql-reference/syntax/
+- https://clickhouse.com/docs/en/sql-reference/statements/select/
+- https://clickhouse.com/docs/en/sql-reference/functions/
+- https://clickhouse.com/docs/en/sql-reference/operators/
+- https://clickhouse.com/docs/en/sql-reference/aggregate-functions/
   
 ## Using pre-computed metrics
 
@@ -168,12 +176,16 @@ LIMIT 12
 
 ### Using precomputed metrics to build new metrics
 
+Not all metrics are build from the raw data only. Some of the metrics are
+computed by combining a set of pre-computed metrics.
+
 The MVRV is defined as the ratio between the Market Value and Realized Value.
-The total supply is part of the nominator and the denominator, so it can be eliminated.
-The result is that the nominator is just `price_usd` and the denominator is `realized_price_usd`.
-There are precomputed metrics for both, so we can use them to compute the MVRV (and that's how we
-do it for the official MVRV metric!). Depending on the load on the database, the query duration can vary.
-At the moment of writing this, running the query takes 0.13 seconds.
+The total supply is part of the nominator and the denominator, so it can be
+eliminated. The result is that the nominator is just `price_usd` and the
+denominator is `realized_price_usd`. There are precomputed metrics for both, so
+we can use them to compute the MVRV (and that's how we do it for the official
+MVRV metric!). Depending on the load on the database, the query duration can
+vary. At the moment of writing this, running the query takes 0.13 seconds.
 
 ```sql
 SELECT
@@ -258,4 +270,5 @@ This function call has three parameters:
 
 ## Using raw data
 
-TODO
+### Examples for address balance
+

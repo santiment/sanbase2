@@ -251,7 +251,7 @@ defmodule Sanbase.ApiCallLimit do
 
     case subscription do
       %Subscription{plan: %{product: %{id: @product_api_id}}} ->
-        "sanapi_#{Subscription.plan_name(subscription)}"
+        "sanapi_#{Subscription.plan_name(subscription)}" |> String.downcase()
 
       %Subscription{plan: %{product: %{id: @product_sanbase_id}}} ->
         "sanbase_pro"

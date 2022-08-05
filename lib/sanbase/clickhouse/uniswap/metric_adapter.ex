@@ -17,9 +17,11 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
 
   @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
 
-  @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :restricted} end)
-  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
+  # plan related - the plan is upcase string
+  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, "FREE"} end)
 
+  # restriction related - the restriction is atom :free or :restricted
+  @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :restricted} end)
   @free_metrics Enum.filter(@access_map, &match?({_, :free}, &1)) |> Enum.map(&elem(&1, 0))
   @restricted_metrics Enum.filter(@access_map, &match?({_, :restricted}, &1))
                       |> Enum.map(&elem(&1, 0))

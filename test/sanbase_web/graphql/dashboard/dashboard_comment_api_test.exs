@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
+defmodule SanbaseWeb.Graphql.DashboardCommentApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory

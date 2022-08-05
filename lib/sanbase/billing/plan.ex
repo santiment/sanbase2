@@ -55,25 +55,17 @@ defmodule Sanbase.Billing.Plan do
     %__MODULE__{name: "FREE"}
   end
 
-  def plan_atom_name(%__MODULE__{} = plan) do
+  @plan_same_name ["FREE", "BASIC", "PRO", "PRO_PLUS", "PREMIUM", "CUSTOM", "EXTENSION"]
+  def plan_name(%__MODULE__{} = plan) do
     case plan do
-      %{name: "FREE"} -> :free
-      %{name: "BASIC"} -> :basic
-      # should be renamed to basic in the DB
-      %{name: "ESSENTIAL"} -> :basic
-      %{name: "PRO"} -> :pro
-      %{name: "PRO_PLUS"} -> :pro_plus
-      %{name: "PREMIUM"} -> :premium
-      %{name: "CUSTOM"} -> :custom
-      %{name: "ENTERPRISE"} -> :custom
-      %{name: "ENTERPRISE_BASIC"} -> :custom
-      %{name: "ENTERPRISE_PLUS"} -> :custom
-      %{name: "EXTENSION"} -> :extension
-      %{name: name} -> String.downcase(name) |> String.to_existing_atom()
+      %{name: name} when name in @plan_same_name -> name
+      %{name: "ESSENTIAL"} -> "BASIC"
+      %{name: "ENTERPRISE" <> _rest} -> "CUSTOM"
+      %{name: "CUSTOM_" <> _ = name} -> name
     end
   end
 
-  def plan_atom_name(_), do: :free
+  def plan_name(_), do: "FREE"
 
   def plan_full_name(plan) do
     plan = plan |> Repo.preload(:product)

@@ -66,7 +66,7 @@ defmodule Sanbase.SheetsTemplate do
     Enum.map(sheets_templates, fn sheets_template -> %{sheets_template | url: nil} end)
   end
 
-  defp show_only_preview_fields?(sheets_templates, %{is_logged_in: true, plan_atom_name: :free}) do
+  defp show_only_preview_fields?(sheets_templates, %{is_logged_in: true, plan_name: "FREE"}) do
     sheets_templates
     |> Enum.map(fn
       %__MODULE__{is_pro: true} = sheets_template ->
@@ -77,8 +77,8 @@ defmodule Sanbase.SheetsTemplate do
     end)
   end
 
-  defp show_only_preview_fields?(sheets_templates, %{is_logged_in: true, plan_atom_name: plan})
-       when plan != :free do
+  defp show_only_preview_fields?(sheets_templates, %{is_logged_in: true, plan_name: plan})
+       when plan != "FREE" do
     sheets_templates
   end
 end

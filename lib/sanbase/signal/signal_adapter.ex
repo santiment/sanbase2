@@ -200,7 +200,7 @@ defmodule Sanbase.Signal.SignalAdapter do
     Enum.into(restrictions, %{}, fn {k, v} -> {k, String.to_existing_atom(v)} end)
   end
 
-  defp resolve_restrictions(restriction) when restriction in [:restricted, :free] do
+  defp resolve_restrictions(restriction) when restriction in [:free, :restriction] do
     %{"historical" => restriction, "realtime" => restriction}
   end
 end

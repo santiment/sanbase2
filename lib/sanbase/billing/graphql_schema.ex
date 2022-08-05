@@ -44,7 +44,7 @@ defmodule Sanbase.Billing.GraphqlSchema do
 
   def min_plan_map() do
     # Metadata looks like this:
-    # meta(access: :restricted, min_plan: [sanapi: :pro, sanbase: :free])
+    # meta(access: :restricted, min_plan: [sanapi: "PRO", sanbase: "FREE"])
     query_min_plan_map = get_query_min_plan_map()
     metric_min_plan_map = get_metric_min_plan_map()
     signal_min_plan_map = get_signal_min_plan_map()
@@ -77,18 +77,26 @@ defmodule Sanbase.Billing.GraphqlSchema do
   end
 
   def get_all_with_access_level(level) do
+    # List of {:query, atom()}
+    queries_with_access_level =
+      get_queries_with_access_level(level)
+      |> Enum.map(&{:query, &1})
+
+    # List of {:signal, String.t()}
     signals_with_access_level =
       Sanbase.Signal.access_map()
       |> get_with_access_level(level)
       |> Enum.map(&{:signal, &1})
 
+    # List of {:metric, String.t()}
     metrics_with_access_level =
       Sanbase.Metric.access_map()
       |> get_with_access_level(level)
       |> Enum.map(&{:metric, &1})
 
-    Enum.map(get_queries_with_access_level(level), &{:query, &1}) ++
-      signals_with_access_level ++ metrics_with_access_level
+    queries_with_access_level ++
+      signals_with_access_level ++
+      metrics_with_access_level
   end
 
   def get_with_access_level(access_map, level) do
@@ -117,12 +125,12 @@ defmodule Sanbase.Billing.GraphqlSchema do
       {query, kw_list} when is_list(kw_list) ->
         {{:query, query},
          %{
-           "SANAPI" => Keyword.get(kw_list, :sanapi, :free),
-           "SANBASE" => Keyword.get(kw_list, :sanbase, :free)
+           "SANAPI" => Keyword.get(kw_list, :sanapi, "FREE"),
+           "SANBASE" => Keyword.get(kw_list, :sanbase, "FREE")
          }}
 
       {query, _} ->
-        {{:query, query}, %{"SANAPI" => :free, "SANBASE" => :free}}
+        {{:query, query}, %{"SANAPI" => "FREE", "SANBASE" => "FREE"}}
     end)
   end
 
@@ -133,7 +141,7 @@ defmodule Sanbase.Billing.GraphqlSchema do
         {{:metric, metric}, product_plan_map}
 
       {metric, _} ->
-        {{:metric, metric}, %{"SANAPI" => :free, "SANBASE" => :free}}
+        {{:metric, metric}, %{"SANAPI" => "FREE", "SANBASE" => "FREE"}}
     end)
   end
 
@@ -144,7 +152,7 @@ defmodule Sanbase.Billing.GraphqlSchema do
         {{:signal, signal}, product_plan_map}
 
       {signal, _} ->
-        {{:signal, signal}, %{"SANAPI" => :free, "SANBASE" => :free}}
+        {{:signal, signal}, %{"SANAPI" => "FREE", "SANBASE" => "FREE"}}
     end)
   end
 

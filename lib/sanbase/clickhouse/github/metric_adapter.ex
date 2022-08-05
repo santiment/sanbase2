@@ -28,8 +28,11 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
 
+  # plan related - the plan is upcase string
+  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, "FREE"} end)
+
+  # restriction related - the restriction is atom :free or :restricted
   @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
-  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
 
   @free_metrics @metrics
   @restricted_metrics []

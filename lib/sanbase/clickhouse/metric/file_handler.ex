@@ -191,7 +191,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @min_interval_map Helper.name_to_field_map(@metrics_json, "min_interval")
   @min_plan_map Helper.name_to_field_map(@metrics_json, "min_plan",
                   transform_fn: fn plan_map ->
-                    Enum.into(plan_map, %{}, fn {k, v} -> {k, String.to_atom(v)} end)
+                    Enum.into(plan_map, %{}, fn {k, v} -> {k, String.upcase(v)} end)
                   end
                 )
 

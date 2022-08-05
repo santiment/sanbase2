@@ -62,7 +62,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "cannot access RESTRICTED metrics for over 2 years", context do
       {from, to} = from_to(2 * 365 + 1, 31)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
       slug = context.project.slug
       selector = %{slug: slug}
       query = metric_query(metric, selector, from, to)
@@ -93,7 +93,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics within 2 years and 30 days interval", context do
       {from, to} = from_to(2 * 365, 31)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
       slug = context.project.slug
       selector = %{slug: slug}
       query = metric_query(metric, selector, from, to)
@@ -251,7 +251,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     # test "can't access signal with min plan PRO", context do
     #   {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
-    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
+    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, "PRO")
     #   slug = context.project.slug
     #   query = signal_query(signal, slug, from, to)
     #   error_message = execute_query_with_error(context.conn, query, "getSignal")
@@ -320,7 +320,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics for less than 7 years", context do
       {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "PRO")
       slug = context.project.slug
       selector = %{slug: slug}
       query = metric_query(metric, selector, from, to)
@@ -332,7 +332,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     # test "can access RESTRICTED signals for less than 7 years", context do
     #   {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
-    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
+    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, "PRO")
     #   slug = context.project.slug
     #   query = signal_query(signal, slug, from, to)
     #   result = execute_query(context.conn, query, "getSignal")
@@ -352,7 +352,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics for over 7 years", context do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "PRO")
       slug = context.project.slug
       selector = %{slug: slug}
       query = metric_query(metric, selector, from, to)
@@ -364,7 +364,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     # test "can access RESTRICTED signals for over 7 years", context do
     #   {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
-    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
+    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, "PRO")
     #   slug = context.project.slug
     #   query = signal_query(signal, slug, from, to)
     #   result = execute_query(context.conn, query, "getSignal")
@@ -384,7 +384,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics realtime", context do
       {from, to} = from_to(10, 0)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "PRO")
       slug = context.project.slug
       selector = %{slug: slug}
       query = metric_query(metric, selector, from, to)
@@ -405,7 +405,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     # test "can access RESTRICTED signals realtime", context do
     #   {from, to} = from_to(10, 0)
-    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
+    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, "PRO")
     #   slug = context.project.slug
     #   query = signal_query(signal, slug, from, to)
     #   result = execute_query(context.conn, query, "getSignal")
@@ -465,7 +465,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics for all time & realtime", context do
       {from, to} = from_to(2500, 0)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :custom)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "CUSTOM")
       slug = context.project.slug
       selector = %{slug: slug}
       query = metric_query(metric, selector, from, to)

@@ -10,8 +10,11 @@ defmodule Sanbase.Twitter.MetricAdapter do
 
   @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
 
+  # plan related - the plan is upcase string
+  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, "FREE"} end)
+
+  # restriction related - the restriction is atom :free or :restricted
   @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
-  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
 
   @free_metrics Enum.filter(@access_map, fn {_, level} -> level == :free end)
                 |> Enum.map(&elem(&1, 0))

@@ -42,11 +42,13 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
 
-  @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :restricted} end)
+  # plan related - the plan is upcase string
   @min_plan_map Enum.into(@metrics, %{}, fn metric ->
-                  {metric, %{"SANAPI" => :free, "SANBASE" => :free}}
+                  {metric, %{"SANAPI" => "FREE", "SANBASE" => "FREE"}}
                 end)
 
+  # restriction related - the restriction is atom :free or :restricted
+  @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :restricted} end)
   @free_metrics Enum.filter(@access_map, fn {_, level} -> level == :free end)
                 |> Enum.map(&elem(&1, 0))
   @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)

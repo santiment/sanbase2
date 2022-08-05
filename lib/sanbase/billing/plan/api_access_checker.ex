@@ -32,21 +32,21 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
 
   def historical_data_in_days(plan, _query) do
     case plan do
-      :free -> @free_plan_stats[:historical_data_in_days]
-      :basic -> @basic_plan_stats[:historical_data_in_days]
-      :pro -> @pro_plan_stats[:historical_data_in_days]
-      :premium -> @premium_plan_stats[:historical_data_in_days]
-      :custom -> @custom_plan_stats[:historical_data_in_days]
+      "FREE" -> @free_plan_stats[:historical_data_in_days]
+      "BASIC" -> @basic_plan_stats[:historical_data_in_days]
+      "PRO" -> @pro_plan_stats[:historical_data_in_days]
+      "PREMIUM" -> @premium_plan_stats[:historical_data_in_days]
+      "CUSTOM" -> @custom_plan_stats[:historical_data_in_days]
     end
   end
 
   def realtime_data_cut_off_in_days(plan, _query) do
     case plan do
-      :free -> @free_plan_stats[:realtime_data_cut_off_in_days]
-      :basic -> @basic_plan_stats[:realtime_data_cut_off_in_days]
-      :pro -> @pro_plan_stats[:realtime_data_cut_off_in_days]
-      :premium -> @premium_plan_stats[:realtime_data_cut_off_in_days]
-      :custom -> @premium_plan_stats[:realtime_data_cut_off_in_days]
+      "FREE" -> @free_plan_stats[:realtime_data_cut_off_in_days]
+      "BASIC" -> @basic_plan_stats[:realtime_data_cut_off_in_days]
+      "PRO" -> @pro_plan_stats[:realtime_data_cut_off_in_days]
+      "PREMIUM" -> @premium_plan_stats[:realtime_data_cut_off_in_days]
+      "CUSTOM" -> @premium_plan_stats[:realtime_data_cut_off_in_days]
     end
   end
 end

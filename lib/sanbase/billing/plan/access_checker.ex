@@ -9,7 +9,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   The subscription plan needed for a given query is given in the query definition
     ```
     field :network_growth, list_of(:network_growth) do
-        meta(access: :restricted, min_plan: [sanapi: :pro, sanbase: :free])
+        meta(access: :restricted, min_plan: [sanapi: "PRO", sanbase: "FREE"])
         ...
     end
     ```
@@ -27,6 +27,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   as we have different restrictions.
   """
 
+  @type plan :: String.t()
   alias Sanbase.Billing.{Product, GraphqlSchema}
   alias Sanbase.Billing.Plan.{CustomAccess, ApiAccessChecker, SanbaseAccessChecker}
 
@@ -85,7 +86,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       require Sanbase.Break, as: Break
 
       Break.break("""
-      There are queries with access level `:free` that are defined in the
+      There are queries with access level `FREE` that are defined in the
       CustomAccess module. These queries custom access logic will never be
       executed.
 
@@ -104,26 +105,26 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     do: query_or_argument not in @free_query_or_argument_mapset
 
   @spec plan_has_access?(plan, product, query_or_argument) :: boolean()
-        when plan: atom(), product: binary()
+        when plan: plan, product: binary()
   def plan_has_access?(plan, product, query_or_argument) do
     case min_plan(product, query_or_argument) do
-      :free -> true
-      :basic -> plan != :free
-      :pro -> plan not in [:free, :basic]
-      :premium -> plan not in [:free, :basic, :pro]
-      :custom -> plan == :custom
+      "FREE" -> true
+      "BASIC" -> plan != "FREE"
+      "PRO" -> plan not in ["FREE", "BASIC"]
+      "PREMIUM" -> plan not in ["FREE", "BASIC", "PRO"]
+      "CUSTOM" -> plan == "CUSTOM"
       # extensions plans can be with other plan. They're handled separately
       _ -> true
     end
   end
 
-  @spec min_plan(product, query_or_argument) :: atom() when product: binary()
+  @spec min_plan(product, query_or_argument) :: plan when product: binary()
   def min_plan(product, query_or_argument) do
-    @min_plan_map[query_or_argument][product] || :free
+    @min_plan_map[query_or_argument][product] || "FREE"
   end
 
   @spec get_available_metrics_for_plan(product, plan, restriction_type) :: list(binary())
-        when plan: atom(), product: binary(), restriction_type: atom()
+        when plan: plan(), product: binary(), restriction_type: atom()
   def get_available_metrics_for_plan(product, plan, restriction_type \\ :all) do
     case restriction_type do
       :free -> @free_query_or_argument

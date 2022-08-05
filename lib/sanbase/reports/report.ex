@@ -16,7 +16,7 @@ defmodule Sanbase.Report do
 
   @type get_reports_opts :: %{
           required(:is_logged_in) => boolean(),
-          optional(:plan_atom_name) => atom()
+          optional(:plan_name) => atom()
         }
 
   schema "reports" do
@@ -127,7 +127,7 @@ defmodule Sanbase.Report do
     Enum.map(reports, fn report -> %{report | url: nil} end)
   end
 
-  defp show_only_preview_fields?(reports, %{is_logged_in: true, plan_atom_name: :free}) do
+  defp show_only_preview_fields?(reports, %{is_logged_in: true, plan_name: "FREE"}) do
     reports
     |> Enum.map(fn
       %__MODULE__{is_pro: true} = report ->
@@ -138,8 +138,7 @@ defmodule Sanbase.Report do
     end)
   end
 
-  defp show_only_preview_fields?(reports, %{is_logged_in: true, plan_atom_name: plan})
-       when plan != :free do
+  defp show_only_preview_fields?(reports, %{is_logged_in: true}) do
     reports
   end
 

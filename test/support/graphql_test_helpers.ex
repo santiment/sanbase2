@@ -49,8 +49,8 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   defp free_timeseries_elements(product, :metric) do
     Metric.min_plan_map()
     |> Enum.filter(fn
-      {_, :free} -> true
-      {_, %{^product => :free}} -> true
+      {_, "FREE"} -> true
+      {_, %{^product => "FREE"}} -> true
       _ -> false
     end)
     |> Enum.map(fn {metric, _} -> metric end)
@@ -62,8 +62,8 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   defp free_timeseries_elements(product, :signal) do
     Signal.min_plan_map()
     |> Enum.filter(fn
-      {_, :free} -> true
-      {_, %{^product => :free}} -> true
+      {_, "FREE"} -> true
+      {_, %{^product => "FREE"}} -> true
       _ -> false
     end)
     |> Enum.map(fn {signal, _} -> signal end)

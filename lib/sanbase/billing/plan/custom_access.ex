@@ -33,8 +33,8 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
       {:metric, "realized_value_usd"}
     ],
     plan_access: %{
-      free: %{realtime_data_cut_off_in_days: 30, historical_data_in_days: 365},
-      basic: %{realtime_data_cut_off_in_days: 14, historical_data_in_days: 2 * 365}
+      "FREE" => %{realtime_data_cut_off_in_days: 30, historical_data_in_days: 365},
+      "BASIC" => %{realtime_data_cut_off_in_days: 14, historical_data_in_days: 2 * 365}
     }
   }
 
@@ -42,7 +42,7 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
   @metric %{
     metric_name: [{:query, :token_age_consumed}, {:query, :burn_rate}, {:metric, "age_destroyed"}],
     plan_access: %{
-      free: %{realtime_data_cut_off_in_days: 30}
+      "FREE" => %{realtime_data_cut_off_in_days: 30}
     }
   }
 

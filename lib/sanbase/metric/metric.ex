@@ -666,7 +666,7 @@ defmodule Sanbase.Metric do
   """
   @spec is_historical_data_allowed?(metric) :: boolean
   def is_historical_data_allowed?(metric) do
-    get_in(@access_map, [metric, "historical"]) == :free
+    get_in(@access_map, [metric, "historical"]) == "FREE"
   end
 
   @doc ~s"""
@@ -674,7 +674,7 @@ defmodule Sanbase.Metric do
   """
   @spec is_realtime_data_allowed?(metric) :: boolean
   def is_realtime_data_allowed?(metric) do
-    get_in(@access_map, [metric, "realtime"]) == :free
+    get_in(@access_map, [metric, "realtime"]) == "FREE"
   end
 
   @doc ~s"""

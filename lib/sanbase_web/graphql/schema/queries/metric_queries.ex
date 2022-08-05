@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
       It will be deprecated once Websocket Subscriptions are added
       """)
 
-      meta(access: :restricted, min_plan: [sanapi: :pro, sanbase: :pro])
+      meta(access: :restricted, min_plan: [sanapi: "PRO", sanbase: "PRO"])
 
       arg(:selector, :metric_target_selector_input_object)
       arg(:metrics, list_of(:string))

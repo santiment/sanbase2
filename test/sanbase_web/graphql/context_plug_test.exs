@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
              auth_method: :user_token,
              current_user: user,
              subscription: Subscription.free_subscription(),
-             plan: :free
+             plan: "FREE"
            }
 
     assert conn_context.remote_ip == {127, 0, 0, 1}
@@ -62,7 +62,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     assert Map.has_key?(conn_context, :auth)
     assert conn_context.auth.auth_method == :none
-    assert conn_context.auth.plan == :free
+    assert conn_context.auth.plan == "FREE"
     assert conn_context.remote_ip == {127, 0, 0, 1}
     assert conn_context.permissions == User.Permissions.no_permissions()
   end
@@ -144,7 +144,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     assert Map.has_key?(conn_context, :auth)
     assert conn_context.auth.auth_method == :none
-    assert conn_context.auth.plan == :free
+    assert conn_context.auth.plan == "FREE"
     assert conn_context.remote_ip == {127, 0, 0, 1}
     assert conn_context.permissions == User.Permissions.no_permissions()
   end
@@ -164,7 +164,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     assert Map.has_key?(conn_context, :auth)
     assert conn_context.auth.auth_method == :none
-    assert conn_context.auth.plan == :free
+    assert conn_context.auth.plan == "FREE"
     assert conn_context.remote_ip == {127, 0, 0, 1}
     assert conn_context.permissions == User.Permissions.no_permissions()
   end
@@ -180,7 +180,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     assert Map.has_key?(conn_context, :auth)
     assert conn_context.auth.auth_method == :none
-    assert conn_context.auth.plan == :free
+    assert conn_context.auth.plan == "FREE"
     assert conn_context.remote_ip == {127, 0, 0, 1}
     assert conn_context.permissions == User.Permissions.no_permissions()
   end

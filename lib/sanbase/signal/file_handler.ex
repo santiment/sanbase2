@@ -88,7 +88,7 @@ defmodule Sanbase.Signal.FileHandler do
 
     def resolve_access_level(access) when is_map(access) do
       case access do
-        %{"historical" => :free, "realtime" => :free} -> :free
+        %{"historical" => "FREE", "realtime" => "FREE"} -> "FREE"
         _ -> :restricted
       end
     end
@@ -131,7 +131,7 @@ defmodule Sanbase.Signal.FileHandler do
   @signals_mapset MapSet.new(@signals_list)
   @min_plan_map Helper.name_to_field_map(@signals_json, "min_plan",
                   transform_fn: fn plan_map ->
-                    Enum.into(plan_map, %{}, fn {k, v} -> {k, String.to_atom(v)} end)
+                    Enum.into(plan_map, %{}, fn {k, v} -> {k, String.upcase(v)} end)
                   end
                 )
 

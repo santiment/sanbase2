@@ -17,12 +17,14 @@ defmodule Sanbase.Contract.MetricAdapter do
   @histogram_metrics []
   @table_metrics []
 
+  # plan related - the plan is upcase string
+  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, "FREE"} end)
+
+  # restriction related - the restriction is atom :free or :restricted
   @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :restricted} end)
   @free_metrics Enum.filter(@access_map, &match?({_, :free}, &1)) |> Enum.map(&elem(&1, 0))
   @restricted_metrics Enum.filter(@access_map, &match?({_, :restricted}, &1))
                       |> Enum.map(&elem(&1, 0))
-
-  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
 
   @required_selectors Enum.into(@metrics, %{}, &{&1, [[:contract_address]]})
   @default_complexity_weight 1.0

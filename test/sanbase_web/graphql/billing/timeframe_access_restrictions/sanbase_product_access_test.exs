@@ -72,7 +72,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "cannot access RESTRICTED metrics for over 2 years", context do
       {from, to} = from_to(2 * 365 + 1, 31)
       slug = context.project.slug
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
       selector = %{slug: slug}
       query = metric_query(metric, selector, from, to)
 
@@ -98,7 +98,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "cannot access RESTRICTED metrics for the past 30 days", context do
       {from, to} = from_to(32, 28)
       slug = context.project.slug
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
       selector = %{slug: slug}
       query = metric_query(metric, selector, from, to)
 
@@ -113,7 +113,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       {from, to} = from_to(20, 10)
       slug = context.project.slug
 
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
 
       selector = %{slug: slug}
       query = metric_query(metric, selector, from, to)
@@ -161,7 +161,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access RESTRICTED metrics within 2 years and 30 day ago interval", context do
       {from, to} = from_to(2 * 365 - 1, 31)
       slug = context.project.slug
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
       selector = %{slug: slug}
       query = metric_query(metric, selector, from, to)
 
@@ -217,7 +217,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access RESTRICTED metrics for all time", context do
       {from, to} = from_to(4000, 10)
       slug = context.project.slug
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "PRO")
       selector = %{slug: slug}
       query = metric_query(metric, selector, from, to)
 
@@ -230,7 +230,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     # test "can access RESTRICTED signals for all time", context do
     #   {from, to} = from_to(4000, 10)
     #   slug = context.project.slug
-    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
+    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, "PRO")
     #   query = signal_query(signal, slug, from, to)
 
     #   result = execute_query(context.conn, query, "getSignal")

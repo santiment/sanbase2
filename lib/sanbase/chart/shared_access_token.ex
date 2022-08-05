@@ -86,7 +86,7 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
              shared_access_token: %__MODULE__{},
              metrics: list(),
              queries: list(),
-             plan: atom(),
+             plan: String.t(),
              product_id: integer(),
              product: String.t()
            }}
@@ -105,7 +105,7 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
             shared_access_token: token,
             metrics: metrics,
             queries: queries,
-            plan: :pro,
+            plan: "PRO",
             product_id: Sanbase.Billing.Product.product_sanbase(),
             product: "SANBASE"
           }

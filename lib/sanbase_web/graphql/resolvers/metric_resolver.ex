@@ -27,7 +27,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def get_available_metrics(_root, %{product: product, plan: plan} = args, _resolution) do
     product = product |> Atom.to_string() |> String.upcase()
+    plan = plan |> to_string() |> String.upcase()
     metrics = AccessChecker.get_available_metrics_for_plan(product, plan)
+
     metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
     {:ok, metrics}
   end

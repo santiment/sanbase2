@@ -97,7 +97,7 @@ defmodule SanbaseWeb.Graphql.LinkedUserApiTest do
   test "secondary user gets access to metrics", context do
     %{"errors" => [%{"message" => error_msg}]} = get_pro_metric(context.conn)
     assert error_msg =~ "parameters are outside the allowed interval"
-    assert error_msg =~ "current subscription SANBASE free"
+    assert error_msg =~ "current subscription SANBASE FREE"
 
     token = generate_linked_user_token(context.pro_conn, context.user)
     true = confirm_linked_user_token(context.conn, token)

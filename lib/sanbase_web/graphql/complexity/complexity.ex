@@ -36,13 +36,14 @@ defmodule SanbaseWeb.Graphql.Complexity do
       when not is_nil(subscription) do
     complexity = calculate_complexity(args, child_complexity, struct)
 
-    case Sanbase.Billing.Plan.plan_atom_name(subscription.plan) do
-      :free -> complexity
-      :basic -> div(complexity, 4)
-      :pro -> div(complexity, 5)
-      :pro_plus -> div(complexity, 5)
-      :premium -> div(complexity, 6)
-      :custom -> div(complexity, 7)
+    case Sanbase.Billing.Plan.plan_name(subscription.plan) do
+      "FREE" -> complexity
+      "BASIC" -> div(complexity, 4)
+      "PRO" -> div(complexity, 5)
+      "PRO_PLUS" -> div(complexity, 5)
+      "PREMIUM" -> div(complexity, 6)
+      "CUSTOM" -> div(complexity, 7)
+      "CUSTOM_" <> _ -> div(complexity, 7)
     end
   end
 

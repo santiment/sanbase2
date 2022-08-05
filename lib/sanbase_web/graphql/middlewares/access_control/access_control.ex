@@ -151,7 +151,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     %Resolution{context: %{__query_argument_atom_name__: query_or_argument} = context} =
       resolution
 
-    plan = context[:auth][:plan] || :free
+    plan = context[:auth][:plan] || "FREE"
     product = Product.code_by_id(context[:product_id]) || "SANAPI"
 
     case AccessChecker.plan_has_access?(plan, product, query_or_argument) do
@@ -282,7 +282,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          middleware_args,
          query_or_argument
        ) do
-    plan = context[:auth][:plan] || :free
+    plan = context[:auth][:plan] || "FREE"
     product_id = context[:product_id] || Product.product_api()
 
     historical_data_in_days =
@@ -382,6 +382,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp check_from_to_both_outside(
          %Resolution{arguments: %{from: from, to: to}, context: context} = resolution
        ) do
+    plan = context[:resolved_shared_access_token][:plan] || context[:auth][:plan] || "FREE"
+
+    product_id =
+      context[:resolved_shared_access_token][:product_id] || context[:product_id] ||
+        Product.product_api()
+
     case to_param_is_after_from(from, to) do
       true ->
         resolution
@@ -390,7 +396,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         # If we reach here the first time we checked to < from was not true
         # This means that the middleware rewrote the params in a way that this is
         # now true. If that happens - both from and to are outside the allowed interval
-        plan = context[:resolved_shared_access_token][:plan] || context[:auth][:plan] || :free
+        plan = context[:resolved_shared_access_token][:plan] || context[:auth][:plan] || "FREE"
 
         product_id =
           context[:resolved_shared_access_token][:product_id] || context[:product_id] ||
@@ -407,7 +413,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         |> Resolution.put_result(
           {:error,
            """
-           Both `from` and `to` parameters are outside the allowed interval you can query #{context[:__query_argument_atom_name__] |> elem(1)} with your current subscription #{context[:product_id] |> Product.code_by_id()} #{context[:auth][:plan] || :free}. Upgrade to a higher tier in order to access more data.
+           Both `from` and `to` parameters are outside the allowed interval you can query #{context[:__query_argument_atom_name__] |> elem(1)} with your current subscription #{context[:product_id] |> Product.code_by_id()} #{context[:auth][:plan] || "FREE"}. Upgrade to a higher tier in order to access more data.
 
            Allowed time restrictions:
              - `from` - #{restricted_from || "unrestricted"}

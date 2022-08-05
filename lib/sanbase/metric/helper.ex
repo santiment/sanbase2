@@ -115,7 +115,7 @@ defmodule Sanbase.Metric.Helper do
     restrictions when is_map(restrictions) ->
       restrictions
 
-    restriction when restriction in [:restricted, :free] ->
+    restriction when restriction in [:free, :restricted] ->
       %{"historical" => restriction, "realtime" => restriction}
   end
 

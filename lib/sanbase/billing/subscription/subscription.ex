@@ -386,8 +386,8 @@ defmodule Sanbase.Billing.Subscription do
     current_subscription(user_id, product_id) |> plan_name()
   end
 
-  def plan_name(nil), do: :free
-  def plan_name(%__MODULE__{plan: plan}), do: plan |> Plan.plan_atom_name()
+  def plan_name(nil), do: "FREE"
+  def plan_name(%__MODULE__{plan: plan}), do: plan |> Plan.plan_name()
 
   # Private functions
 

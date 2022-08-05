@@ -50,19 +50,20 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
 
   def can_access_paywalled_insights?(subscription) do
     subscription.plan
-    |> Plan.plan_atom_name()
+    |> Plan.plan_name()
     |> plan_stats()
     |> Map.get(:access_paywalled_insights, false)
   end
 
   defp plan_stats(plan) do
     case plan do
-      :free -> @free_plan_stats
-      :basic -> @basic_plan_stats
-      :pro -> @pro_plan_stats
-      :pro_plus -> @pro_plus_plan_stats
-      :premium -> @custom_plan_stats
-      :custom -> @custom_plan_stats
+      "FREE" -> @free_plan_stats
+      "BASIC" -> @basic_plan_stats
+      "PRO" -> @pro_plan_stats
+      "PRO_PLUS" -> @pro_plus_plan_stats
+      "PREMIUM" -> @custom_plan_stats
+      "CUSTOM" -> @custom_plan_stats
+      "CUSTOM_" <> _ -> @custom_plan_stats
     end
   end
 end

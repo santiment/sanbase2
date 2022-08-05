@@ -382,12 +382,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp check_from_to_both_outside(
          %Resolution{arguments: %{from: from, to: to}, context: context} = resolution
        ) do
-    plan = context[:resolved_shared_access_token][:plan] || context[:auth][:plan] || "FREE"
-
-    product_id =
-      context[:resolved_shared_access_token][:product_id] || context[:product_id] ||
-        Product.product_api()
-
     case to_param_is_after_from(from, to) do
       true ->
         resolution

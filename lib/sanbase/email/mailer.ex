@@ -48,7 +48,7 @@ defmodule Sanbase.Mailer do
 
     new()
     |> to(rcpt_email)
-    |> from(sender_email)
+    |> from({"Santiment", sender_email})
     |> subject(subject)
     |> text_body(body)
     |> Sanbase.Mailer.deliver()
@@ -70,7 +70,7 @@ defmodule Sanbase.Mailer do
 
     new()
     |> to(rcpt_email)
-    |> from(sender_email)
+    |> from({"Santiment", sender_email})
     |> subject(subject)
     |> text_body(body)
     |> Sanbase.Mailer.deliver()

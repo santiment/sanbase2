@@ -157,7 +157,8 @@ defmodule Sanbase.Mixfile do
       {:waffle, "~> 1.1"},
       {:websockex, "~> 0.4.3"},
       {:kaffy, github: "santiment/kaffy"},
-      {:mailchimp, "~> 0.2.0"}
+      {:mailchimp, "~> 0.2.0"},
+      {:swoosh, "~> 1.7"}
     ]
   end
 

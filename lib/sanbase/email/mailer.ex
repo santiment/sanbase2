@@ -1,7 +1,9 @@
 defmodule Sanbase.Mailer do
   use Oban.Worker, queue: :email_queue
+  use Swoosh.Mailer, otp_app: :sanbase
 
   import Sanbase.Email.Template
+  import Swoosh.Email
 
   alias Sanbase.Accounts.{User, UserSettings}
   alias Sanbase.Billing.{Subscription, Product}
@@ -31,6 +33,48 @@ defmodule Sanbase.Mailer do
       _ -> :ok
     end
   end
+
+  def sign_in_email(rcpt_email, login_link) do
+    sender_email = "support@santiment.net"
+    subject = "Login link"
+
+    body = """
+    Welcome back!
+
+    Santiment doesn't make you remember yet another password. Just click the link below and you’re in.
+
+    #{login_link}
+    """
+
+    new()
+    |> to(rcpt_email)
+    |> from(sender_email)
+    |> subject(subject)
+    |> text_body(body)
+  end
+
+  def sign_up_email(rcpt_email, login_link) do
+    sender_email = "support@santiment.net"
+    subject = "Login link"
+
+    body = """
+    Thanks for signing-up!
+
+    We’re excited you’ve joined us!
+
+    As a little necessary step, please confirm your registration below.
+
+    #{login_link}
+    """
+
+    new()
+    |> to(rcpt_email)
+    |> from(sender_email)
+    |> subject(subject)
+    |> text_body(body)
+  end
+
+  # helpers
 
   defp can_send?(user, template, params \\ %{})
 

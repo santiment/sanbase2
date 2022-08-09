@@ -139,13 +139,21 @@ defmodule Sanbase.Accounts.User.Email do
   defp do_send_login_email(user, origin_host_parts, args) do
     origin_url = "https://" <> Enum.join(origin_host_parts, ".")
 
-    origin_url
-    |> Sanbase.Email.Template.choose_login_template(first_login?: user.first_login)
-    |> mandrill_api().send(
-      user.email,
-      %{LOGIN_LINK: generate_login_link(user, origin_url, args)},
-      %{subaccount: "login-emails"}
-    )
+    if System.get_env("MAILJET_API_KEY") do
+      if user.first_login do
+        Sanbase.Mailer.sign_up_email(user.email, generate_login_link(user, origin_url, args))
+      else
+        Sanbase.Mailer.sign_in_email(user.email, generate_login_link(user, origin_url, args))
+      end
+    else
+      origin_url
+      |> Sanbase.Email.Template.choose_login_template(first_login?: user.first_login)
+      |> mandrill_api().send(
+        user.email,
+        %{LOGIN_LINK: generate_login_link(user, origin_url, args)},
+        %{subaccount: "login-emails"}
+      )
+    end
   end
 
   defp generate_login_link(user, origin_url, args) do

@@ -34,7 +34,7 @@ defmodule Sanbase.Mailer do
     end
   end
 
-  def sign_in_email(rcpt_email, login_link) do
+  def send_sign_in_email(rcpt_email, login_link) do
     sender_email = "support@santiment.net"
     subject = "Login link"
 
@@ -51,9 +51,10 @@ defmodule Sanbase.Mailer do
     |> from(sender_email)
     |> subject(subject)
     |> text_body(body)
+    |> Sanbase.Mailer.deliver()
   end
 
-  def sign_up_email(rcpt_email, login_link) do
+  def send_sign_up_email(rcpt_email, login_link) do
     sender_email = "support@santiment.net"
     subject = "Login link"
 
@@ -72,6 +73,7 @@ defmodule Sanbase.Mailer do
     |> from(sender_email)
     |> subject(subject)
     |> text_body(body)
+    |> Sanbase.Mailer.deliver()
   end
 
   # helpers

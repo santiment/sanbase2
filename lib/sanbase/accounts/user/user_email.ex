@@ -141,9 +141,9 @@ defmodule Sanbase.Accounts.User.Email do
 
     if System.get_env("MAILJET_API_KEY") do
       if user.first_login do
-        Sanbase.Mailer.sign_up_email(user.email, generate_login_link(user, origin_url, args))
+        Sanbase.Mailer.send_sign_up_email(user.email, generate_login_link(user, origin_url, args))
       else
-        Sanbase.Mailer.sign_in_email(user.email, generate_login_link(user, origin_url, args))
+        Sanbase.Mailer.send_sign_in_email(user.email, generate_login_link(user, origin_url, args))
       end
     else
       origin_url

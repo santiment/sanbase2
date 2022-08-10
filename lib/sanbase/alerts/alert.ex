@@ -274,11 +274,18 @@ defimpl Sanbase.Alert, for: Any do
   defp maybe_add_alert_link(payload, _trigger_id, :telegram_channel), do: payload
 
   defp do_send_email(user, payload) do
-    Sanbase.Email.Template.alerts_template()
-    |> Sanbase.MandrillApi.send(user.email, %{
-      payload: Earmark.as_html!(payload, breaks: true, timeout: nil, mapper: &Enum.map/2),
-      name: Sanbase.Accounts.User.get_name(user)
-    })
+    payload_html = Earmark.as_html!(payload, breaks: true, timeout: nil, mapper: &Enum.map/2)
+    name = Sanbase.Accounts.User.get_name(user)
+
+    if System.get_env("MAILJET_API_KEY") do
+      Sanbase.Mailer.send_alert_email(user.email, %{name: name, payload_html: payload_html})
+    else
+      Sanbase.Email.Template.alerts_template()
+      |> Sanbase.MandrillApi.send(user.email, %{
+        payload: payload_html,
+        name: name
+      })
+    end
     |> case do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, reason}
@@ -390,13 +397,21 @@ defimpl Sanbase.Alert, for: Any do
   end
 
   defp send_limit_reached_notification("email", user) do
-    Sanbase.Email.Template.alerts_template()
-    |> Sanbase.MandrillApi.send(user.email, %{
-      payload:
-        limit_reached_payload("email")
-        |> Earmark.as_html!(breaks: true, timeout: nil, mapper: &Enum.map/2),
-      name: Sanbase.Accounts.User.get_name(user)
-    })
+    payload_html =
+      limit_reached_payload("email")
+      |> Earmark.as_html!(breaks: true, timeout: nil, mapper: &Enum.map/2)
+
+    name = Sanbase.Accounts.User.get_name(user)
+
+    if System.get_env("MAILJET_API_KEY") do
+      Sanbase.Mailer.send_alert_email(user.email, %{name: name, payload_html: payload_html})
+    else
+      Sanbase.Email.Template.alerts_template()
+      |> Sanbase.MandrillApi.send(user.email, %{
+        payload: payload_html,
+        name: name
+      })
+    end
     |> case do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, %{reason: :email_send_fail, error: reason}}

@@ -52,10 +52,14 @@ defmodule Sanbase.Email.NewsletterToken do
   end
 
   def send_email(%__MODULE__{email: email, token: token}) do
-    link = verify_url(token, email, "weekly_digest")
+    verify_link = verify_url(token, email, "weekly_digest")
 
-    Sanbase.Email.Template.verification_email_template()
-    |> Sanbase.MandrillApi.send(email, %{VERIFY_LINK: link})
+    if System.get_env("MAILJET_API_KEY") do
+      Sanbase.Mailer.send_verify_email(email, verify_link)
+    else
+      Sanbase.Email.Template.verification_email_template()
+      |> Sanbase.MandrillApi.send(email, %{VERIFY_LINK: verify_link})
+    end
   end
 
   def subscribe_to_newsletter(email) do

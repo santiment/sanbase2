@@ -76,6 +76,48 @@ defmodule Sanbase.Mailer do
     |> Sanbase.Mailer.deliver()
   end
 
+  def send_verify_email(rcpt_email, verify_link) do
+    sender_email = "support@santiment.net"
+    subject = "Verify your email"
+
+    body = """
+    Confirm your email
+
+    Please verify that you are the owner of this email in order to use it with your Sanbase account.
+
+    #{verify_link}
+
+    Thank you for trusting Santiment!
+    """
+
+    new()
+    |> to(rcpt_email)
+    |> from({"Santiment", sender_email})
+    |> subject(subject)
+    |> text_body(body)
+    |> Sanbase.Mailer.deliver()
+  end
+
+  def send_alert_email("tsvetozar.penov@gmail.com" = rcpt_email, args) do
+    sender_email = "support@santiment.net"
+    subject = "Signal alert!"
+
+    body = """
+    <p>Hey, #{args.name}</p>
+
+    #{args.payload_html}
+    """
+
+    new()
+    |> to(rcpt_email)
+    |> from({"Santiment", sender_email})
+    |> subject(subject)
+    |> html_body(body)
+    |> Sanbase.Mailer.deliver()
+  end
+
+  def send_alert_email(_, _name, _payload_html), do: {:ok, :sent}
+
   # helpers
 
   defp can_send?(user, template, params \\ %{})

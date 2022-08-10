@@ -125,15 +125,18 @@ defmodule Sanbase.Accounts.User.Email do
     do: do_send_login_email(user, origin_host_parts, args)
 
   def send_verify_email(user) do
-    mandrill_api().send(
-      Sanbase.Email.Template.verification_email_template(),
-      user.email_candidate,
-      %{
-        VERIFY_LINK:
-          SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
-      },
-      %{subaccount: "login-emails"}
-    )
+    verify_link = SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
+
+    if System.get_env("MAILJET_API_KEY") do
+      Sanbase.Mailer.send_verify_email(user.email_candidate, verify_link)
+    else
+      mandrill_api().send(
+        Sanbase.Email.Template.verification_email_template(),
+        user.email_candidate,
+        %{VERIFY_LINK: verify_link},
+        %{subaccount: "login-emails"}
+      )
+    end
   end
 
   defp do_send_login_email(user, origin_host_parts, args) do

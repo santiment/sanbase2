@@ -98,12 +98,12 @@ defmodule Sanbase.Mailer do
     |> Sanbase.Mailer.deliver()
   end
 
-  def send_alert_email("tsvetozar.penov@gmail.com" = rcpt_email, args) do
+  def send_alert_email(rcpt_email, args) do
     sender_email = "support@santiment.net"
     subject = "Signal alert!"
 
     body = """
-    <p>Hey, #{args.name}</p>
+    <h3>Hey, #{args.name}</h3>
 
     #{args.payload_html}
     """
@@ -116,7 +116,7 @@ defmodule Sanbase.Mailer do
     |> Sanbase.Mailer.deliver()
   end
 
-  def send_alert_email(_, _name, _payload_html), do: {:ok, :sent}
+  def send_alert_email(_, _), do: {:ok, :sent}
 
   # helpers
 

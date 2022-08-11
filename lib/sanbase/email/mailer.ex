@@ -118,6 +118,37 @@ defmodule Sanbase.Mailer do
 
   def send_alert_email(_, _name, _payload_html), do: {:ok, :sent}
 
+  def send_welcome_email(rcpt_email, template_id, vars) do
+    sender_email = "support@santiment.net"
+    subject = "Welcome to Sanbase"
+
+    new()
+    |> to(rcpt_email)
+    |> from({"Santiment", sender_email})
+    |> subject(subject)
+    |> put_provider_option(:template_id, template_id)
+    |> put_provider_option(:template_error_deliver, true)
+    |> put_provider_option(:template_error_reporting, "tsvetozar.penov@gmail.com")
+    |> put_provider_option(:variables, vars)
+    |> Sanbase.Mailer.deliver()
+  end
+
+  def template_send(rcpt_email, template, vars) do
+    sender_email = "support@santiment.net"
+    template_id = Template.templates()[template][:id]
+    subject = Template.templates()[template][:subject]
+
+    new()
+    |> to(rcpt_email)
+    |> from({"Santiment", sender_email})
+    |> subject(subject)
+    |> put_provider_option(:template_id, template_id)
+    |> put_provider_option(:template_error_deliver, true)
+    |> put_provider_option(:template_error_reporting, "tsvetozar.penov@gmail.com")
+    |> put_provider_option(:variables, vars)
+    |> Sanbase.Mailer.deliver()
+  end
+
   # helpers
 
   defp can_send?(user, template, params \\ %{})

@@ -1,4 +1,32 @@
 defmodule Sanbase.Email.Template do
+  @templates %{
+    "sanbase-sign-up-mail" => %{
+      id: 4_127_535,
+      subject: "Confirm your registration",
+      required_vars: [:login_link]
+    },
+    "sanbase-post-registration-mail" => %{
+      id: 4_127_351,
+      subject: "Welcome to Sanbase",
+      required_vars: [:username]
+    },
+    "sanbase-verify-email-mail" => %{
+      id: 4_127_547,
+      subject: "Verify your email",
+      required_vars: [:verify_link]
+    },
+    "pro-started" => %{
+      id: 4_127_555,
+      subject: "",
+      required_vars: [:subscription_type, :username, :subscription_duration]
+    },
+    "cancelled-subscription-mail" => %{
+      id: 4_127_563,
+      subject: "You’ve cancelled your subscription",
+      required_vars: [:subscription_type, :subscription_enddate]
+    }
+  }
+
   # Sign up / Sign in from app.santiment.net
   @sanbase_login_templates %{login: "sanbase-welcome-back-mail", register: "sanbase-sign-up-mail"}
 

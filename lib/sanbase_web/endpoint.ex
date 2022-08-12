@@ -94,7 +94,7 @@ defmodule SanbaseWeb.Endpoint do
 
   def sonar_url() do
     website_url()
-    |> Path.join("sonar")
+    |> Path.join("alerts")
   end
 
   def my_alerts_url() do
@@ -168,7 +168,7 @@ defmodule SanbaseWeb.Endpoint do
   end
 
   def show_alert_url(id) do
-    sonar_url() <> "/signal/#{id}"
+    sonar_url() <> "/#{id}"
   end
 
   def trending_words_datetime_url(datetime_iso) do

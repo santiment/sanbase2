@@ -10,6 +10,16 @@ defmodule Sanbase.Email.Template do
       subject: "Confirm your registration",
       required_vars: [:login_link]
     },
+    "sheets-sign-in" => %{
+      id: 4_129_863,
+      subject: "Login link",
+      required_vars: [:login_link]
+    },
+    "sheets-sign-up" => %{
+      id: 4_129_866,
+      subject: "Confirm your registration",
+      required_vars: [:login_link]
+    },
     "sanbase-post-registration-mail" => %{
       id: 4_127_351,
       subject: "Welcome to Sanbase",

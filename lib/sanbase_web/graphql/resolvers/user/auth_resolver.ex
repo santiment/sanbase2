@@ -101,7 +101,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
         {:error, message: "Too many login attempts, try again after a few minutes"}
 
-      _ ->
+      error ->
+        Logger.info(
+          "Login failed: unknown error #{inspect(error)}. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"
+        )
+
         {:error, message: "Can't login"}
     end
   end

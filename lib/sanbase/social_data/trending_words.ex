@@ -53,7 +53,7 @@ defmodule Sanbase.SocialData.TrendingWords do
           position: position
         }
 
-  @default_sources [:twitter, :telegram, :reddit]
+  @default_sources [:telegram, :reddit]
 
   # When calculating the trending now words fetch the data for the last
   # N hours to ensure that there is some data and we're not in the middle

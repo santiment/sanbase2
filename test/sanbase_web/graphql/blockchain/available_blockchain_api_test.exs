@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.AvailableBlockchainApiTest do
                "hasOnchainFinancialMetrics" => true,
                "hasPureOnchainMetrics" => true,
                "hasTopHoldersMetrics" => false,
-               "infrastructure" => "XRP",
+               "infrastructure" => "Ripple",
                "slug" => "ripple"
              },
              %{
@@ -70,7 +70,7 @@ defmodule SanbaseWeb.Graphql.AvailableBlockchainApiTest do
                "hasOnchainFinancialMetrics" => true,
                "hasPureOnchainMetrics" => true,
                "hasTopHoldersMetrics" => true,
-               "infrastructure" => "BNB",
+               "infrastructure" => "BEP20",
                "slug" => "binance-coin"
              },
              %{
@@ -92,7 +92,7 @@ defmodule SanbaseWeb.Graphql.AvailableBlockchainApiTest do
                "hasOnchainFinancialMetrics" => true,
                "hasPureOnchainMetrics" => true,
                "hasTopHoldersMetrics" => false,
-               "infrastructure" => "MATIC",
+               "infrastructure" => "Polygon",
                "slug" => "matic-network"
              },
              %{
@@ -103,7 +103,7 @@ defmodule SanbaseWeb.Graphql.AvailableBlockchainApiTest do
                "hasOnchainFinancialMetrics" => true,
                "hasPureOnchainMetrics" => true,
                "hasTopHoldersMetrics" => false,
-               "infrastructure" => "ADA",
+               "infrastructure" => "Cardano",
                "slug" => "cardano"
              },
              %{
@@ -114,7 +114,7 @@ defmodule SanbaseWeb.Graphql.AvailableBlockchainApiTest do
                "hasOnchainFinancialMetrics" => true,
                "hasPureOnchainMetrics" => true,
                "hasTopHoldersMetrics" => false,
-               "infrastructure" => "AVAX",
+               "infrastructure" => "Avalanche",
                "slug" => "avalanche"
              }
            ]

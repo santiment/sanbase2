@@ -2,11 +2,16 @@ defmodule Sanbase.Mailer do
   use Oban.Worker, queue: :email_queue
   use Swoosh.Mailer, otp_app: :sanbase
 
+  require Logger
+
   import Sanbase.Email.Template
   import Swoosh.Email
 
   alias Sanbase.Accounts.{User, UserSettings}
   alias Sanbase.Billing.{Subscription, Product}
+
+  @sender_email "support@santiment.net"
+  @sender_name "Santiment"
 
   @edu_templates ~w(first_edu_email_v2 second_edu_email_v2)
   @during_trial_annual_discount_template during_trial_annual_discount_template()
@@ -28,7 +33,7 @@ defmodule Sanbase.Mailer do
     # the rest of the emails in this case.
     with email when is_binary(email) <- user.email,
          true <- can_send?(user, template) do
-      Sanbase.MandrillApi.send(template, user.email, vars, opts)
+      template_send(user.email, template, vars)
     else
       _ -> :ok
     end
@@ -133,20 +138,29 @@ defmodule Sanbase.Mailer do
     |> Sanbase.Mailer.deliver()
   end
 
-  def template_send(rcpt_email, template, vars) do
-    sender_email = "support@santiment.net"
-    template_id = Template.templates()[template][:id]
-    subject = Template.templates()[template][:subject]
+  def template_send(rcpt_email, template_slug, vars) do
+    template = templates()[template_slug]
 
-    new()
-    |> to(rcpt_email)
-    |> from({"Santiment", sender_email})
-    |> subject(subject)
-    |> put_provider_option(:template_id, template_id)
-    |> put_provider_option(:template_error_deliver, true)
-    |> put_provider_option(:template_error_reporting, "tsvetozar.penov@gmail.com")
-    |> put_provider_option(:variables, vars)
-    |> Sanbase.Mailer.deliver()
+    if template do
+      subject =
+        case template[:dynamic_subject] do
+          subject when is_binary(subject) -> Sanbase.TemplateEngine.run(subject, vars)
+          nil -> template[:subject]
+        end
+
+      new()
+      |> to(rcpt_email)
+      |> from({@sender_name, @sender_email})
+      |> subject(subject)
+      |> put_provider_option(:template_id, template[:id])
+      |> put_provider_option(:template_error_deliver, true)
+      |> put_provider_option(:template_error_reporting, "tsvetozar.p@santiment.net")
+      |> put_provider_option(:variables, vars)
+      |> Sanbase.Mailer.deliver()
+    else
+      Logger.info("Missing email template: #{template_slug}")
+      :ok
+    end
   end
 
   # helpers

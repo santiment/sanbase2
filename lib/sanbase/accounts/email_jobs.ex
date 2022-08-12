@@ -8,7 +8,8 @@ defmodule Sanbase.Accounts.EmailJobs do
     user = Sanbase.Accounts.User.by_id!(user_id)
     templates = Sanbase.Email.Template.sign_up_templates()
 
-    vars = %{name: Sanbase.Accounts.User.get_name(user)}
+    name = Sanbase.Accounts.User.get_name(user)
+    vars = %{name: name, username: name}
 
     multi = Ecto.Multi.new()
 
@@ -49,9 +50,11 @@ defmodule Sanbase.Accounts.EmailJobs do
 
   def send_trial_started_email(subscription) do
     user = Sanbase.Accounts.User.by_id!(subscription.user_id)
+    name = Sanbase.Accounts.User.get_name(user)
 
     vars = %{
-      name: Sanbase.Accounts.User.get_name(user),
+      name: name,
+      username: name,
       subscription_type: subscription_type(subscription)
     }
 
@@ -60,9 +63,11 @@ defmodule Sanbase.Accounts.EmailJobs do
 
   def schedule_trial_will_end_email(subscription) do
     user = Sanbase.Accounts.User.by_id!(subscription.user_id)
+    name = Sanbase.Accounts.User.get_name(user)
 
     vars = %{
-      name: Sanbase.Accounts.User.get_name(user),
+      name: name,
+      username: name,
       subscription_type: subscription_type(subscription),
       subscription_duration: subscription.plan.interval <> "ly"
     }
@@ -72,13 +77,15 @@ defmodule Sanbase.Accounts.EmailJobs do
 
   def schedule_annual_discount_emails(subscription) do
     user = Sanbase.Accounts.User.by_id!(subscription.user_id)
+    name = Sanbase.Accounts.User.get_name(user)
 
     common_vars = %{
-      name: Sanbase.Accounts.User.get_name(user)
+      name: name,
+      username: name
     }
 
-    vars_50 = Map.put(common_vars, :expire_at, days_after(14) |> format_date())
-    vars_35 = Map.put(common_vars, :expire_at, days_after(30) |> format_date())
+    vars_50 = Map.put(common_vars, :end_subscription_date, days_after(14) |> format_date())
+    vars_35 = Map.put(common_vars, :date, days_after(30) |> format_date())
 
     add_email_job(subscription.user_id, during_trial_annual_discount_template(), vars_50,
       scheduled_at: days_after(12)
@@ -91,9 +98,11 @@ defmodule Sanbase.Accounts.EmailJobs do
 
   def send_pro_started_email(subscription) do
     user = Sanbase.Accounts.User.by_id!(subscription.user_id)
+    name = Sanbase.Accounts.User.get_name(user)
 
     vars = %{
-      name: Sanbase.Accounts.User.get_name(user),
+      name: name,
+      username: name,
       subscription_type: subscription_type(subscription),
       subscription_duration: subscription.plan.interval
     }
@@ -110,7 +119,7 @@ defmodule Sanbase.Accounts.EmailJobs do
 
     vars = %{
       subscription_type: subscription_type(subscription),
-      end_subscription_date: format_date(subscription.current_period_end)
+      subscription_enddate: format_date(subscription.current_period_end)
     }
 
     add_email_job(subscription.user_id, template, vars)

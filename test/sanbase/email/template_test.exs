@@ -38,7 +38,7 @@ defmodule Sanbase.Email.TemplateTest do
 
     test "when user comes from other place (mainly sanbase)" do
       assert Template.choose_login_template("http://example.com", first_login?: false) ==
-               "sanbase-welcome-back-mail"
+               "sanbase-sign-in-mail"
     end
   end
 end

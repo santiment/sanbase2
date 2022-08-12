@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
      [
        send_notification: fn _, _, _ -> :ok end
      ]},
-    {Sanbase.MandrillApi, [:passthrough], send: fn _, _, _, _ -> {:ok, %{"status" => "sent"}} end}
+    {Sanbase.TemplateMailer, [:passthrough], send: fn _, _, _ -> {:ok, %{"status" => "sent"}} end}
   ]) do
     # Needs to be staked to apply the discount
     user = insert(:staked_user)

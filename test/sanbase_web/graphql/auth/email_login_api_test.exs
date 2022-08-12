@@ -159,7 +159,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
   describe "Email login" do
     setup_with_mocks([
-      {Sanbase.MandrillApi, [], [send: fn _, _, _, _ -> {:ok, %{}} end]}
+      {Sanbase.TemplateMailer, [], [send: fn _, _, _ -> {:ok, %{}} end]}
     ]) do
       []
     end
@@ -211,29 +211,6 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       assert {:ok, %User{}} = User.by_email("john@example.com")
       assert result["success"]
       assert result["firstLogin"]
-    end
-
-    test "emailLogin with newsletter subscription adds newsletter subscription param", context do
-      result =
-        context.conn
-        |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
-        |> email_login(%{email: "john@example.com", subscribeToWeeklyNewsletter: true})
-        |> get_in(["data", "emailLogin"])
-
-      assert {:ok, %User{}} = User.by_email("john@example.com")
-      assert result["success"]
-      assert result["firstLogin"]
-
-      assert_called(
-        Sanbase.MandrillApi.send(
-          :_,
-          "john@example.com",
-          :meck.is(fn %{LOGIN_LINK: login_link} ->
-            assert login_link =~ "subscribe_to_weekly_newsletter=true"
-          end),
-          :_
-        )
-      )
     end
 
     test "succeeds if the user has attempted to login 5 times", context do

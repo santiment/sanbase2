@@ -277,15 +277,11 @@ defimpl Sanbase.Alert, for: Any do
     payload_html = Earmark.as_html!(payload, breaks: true, timeout: nil, mapper: &Enum.map/2)
     name = Sanbase.Accounts.User.get_name(user)
 
-    if System.get_env("MAILJET_API_KEY") do
-      Sanbase.Mailer.send_alert_email(user.email, %{name: name, payload_html: payload_html})
-    else
-      Sanbase.Email.Template.alerts_template()
-      |> Sanbase.MandrillApi.send(user.email, %{
-        payload: payload_html,
-        name: name
-      })
-    end
+    Sanbase.TemplateMailer.send(user.email, Sanbase.Email.Template.alerts_template(), %{
+      name: name,
+      username: name,
+      payload_html: payload_html
+    })
     |> case do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, reason}
@@ -403,15 +399,11 @@ defimpl Sanbase.Alert, for: Any do
 
     name = Sanbase.Accounts.User.get_name(user)
 
-    if System.get_env("MAILJET_API_KEY") do
-      Sanbase.Mailer.send_alert_email(user.email, %{name: name, payload_html: payload_html})
-    else
-      Sanbase.Email.Template.alerts_template()
-      |> Sanbase.MandrillApi.send(user.email, %{
-        payload: payload_html,
-        name: name
-      })
-    end
+    Sanbase.TemplateMailer.send(user.email, Sanbase.Email.Template.alerts_template(), %{
+      name: name,
+      username: name,
+      payload_html: payload_html
+    })
     |> case do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, %{reason: :email_send_fail, error: reason}}

@@ -4,10 +4,12 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
-  import Mockery
   import SanbaseWeb.Graphql.TestHelpers
+  import Mock
 
-  setup do
+  setup_with_mocks([
+    {Sanbase.TemplateMailer, [], [send: fn _, _, _ -> {:ok, :email_sent} end]}
+  ]) do
     user =
       %User{salt: User.generate_salt()}
       |> Repo.insert!()
@@ -18,8 +20,6 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
   end
 
   test "access is restricted when privacy policy is not accepted", %{conn: conn} do
-    mock(Sanbase.MandrillApi, :send, {:ok, %{}})
-
     new_email = "test@test.test"
 
     mutation = """
@@ -41,8 +41,6 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
   end
 
   test "access is regained after accepting the privacy policy", %{conn: conn} do
-    mock(Sanbase.MandrillApi, :send, {:ok, %{}})
-
     # First update the terms and conditions
     update_mutation = """
     mutation {
@@ -76,8 +74,6 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
   end
 
   test "can update only a single privacy policy", %{conn: conn} do
-    mock(Sanbase.MandrillApi, :send, {:ok, %{}})
-
     # Accept the privacy policy
     update_mutation1 = """
     mutation {

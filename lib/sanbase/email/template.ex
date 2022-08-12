@@ -1,6 +1,73 @@
 defmodule Sanbase.Email.Template do
+  @templates %{
+    "sanbase-sign-in-mail" => %{
+      id: 4_128_976,
+      subject: "Login link",
+      required_vars: [:login_link]
+    },
+    "sanbase-sign-up-mail" => %{
+      id: 4_127_535,
+      subject: "Confirm your registration",
+      required_vars: [:login_link]
+    },
+    "sanbase-post-registration-mail" => %{
+      id: 4_127_351,
+      subject: "Welcome to Sanbase",
+      required_vars: [:username]
+    },
+    "sanbase-verify-email-mail" => %{
+      id: 4_127_547,
+      subject: "Verify your email",
+      required_vars: [:verify_link]
+    },
+    "pro-started" => %{
+      id: 4_127_555,
+      subject: "Enjoy your upgrade!",
+      required_vars: [:subscription_type, :username, :subscription_duration]
+    },
+    "cancelled-subscription-mail" => %{
+      id: 4_127_563,
+      subject: "You’ve cancelled your subscription",
+      required_vars: [:subscription_type, :subscription_enddate]
+    },
+    "free-trial-started" => %{
+      id: 4_127_573,
+      subject: "Enjoy your free Sanbase trial!",
+      required_vars: [:subscription_type, :subscription_duration, :username]
+    },
+    "trial-end-mail" => %{
+      id: 4_127_582,
+      subject: "Your trial is ending and card will be charged!",
+      required_vars: [:subscription_type, :subscription_duration, :name]
+    },
+    "50-percent-discount-offer" => %{
+      id: 4_127_588,
+      subject: "Get your one-time 50% offer",
+      required_vars: [:name, :end_subscription_date]
+    },
+    "35-percent-discount-offer" => %{
+      id: 4_127_592,
+      subject: "Get your one-time 35% offer",
+      required_vars: [:name, :date]
+    },
+    "signal-mail" => %{
+      id: 4_127_602,
+      subject: "Sanbase alert!",
+      dynamic_subject: "Sanbase alert: {{username}}",
+      required_vars: [:username, :payload]
+    }
+    # "notification" => %{
+    #   id: 4127647,
+    #   subject: "Your Sanbase activity",
+    #   required_vars: []
+    # },
+  }
+
+  # 2nd edu Santiment Sanbase tips
+  # first edu: How to time Ethereum tops with just 3 indicators | Santiment Academy
+
   # Sign up / Sign in from app.santiment.net
-  @sanbase_login_templates %{login: "sanbase-welcome-back-mail", register: "sanbase-sign-up-mail"}
+  @sanbase_login_templates %{login: "sanbase-sign-in-mail", register: "sanbase-sign-up-mail"}
 
   # Sign up / Sign in from api.santiment.net
   @neuro_login_templates %{login: "neuro-sign-in", register: "neuro-sign-up"}
@@ -53,8 +120,8 @@ defmodule Sanbase.Email.Template do
   @comment_notification_template "notification"
 
   @verify_email_weekly_digest_template "verify_email_weekly_digest"
-  @monitoring_watchlist_template "monitoring_watchlist"
 
+  def templates, do: @templates
   def alerts_template, do: @alerts_template
   def sign_up_templates, do: @sign_up_templates
   def pro_subscription_stared_template, do: @pro_subscription_stared_template
@@ -66,7 +133,6 @@ defmodule Sanbase.Email.Template do
 
   def comment_notification_template, do: @comment_notification_template
   def verify_email_weekly_digest_template, do: @verify_email_weekly_digest_template
-  def monitoring_watchlist_template, do: @monitoring_watchlist_template
   def verification_email_template(), do: @verification_email_template
 
   def choose_login_template(origin_url, first_login?: true) when is_binary(origin_url) do

@@ -95,10 +95,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "@daily",
       task: {Sanbase.ExternalServices.Coinmarketcap.LogoFetcher, :run, []}
     ],
-    send_weekly_monitor_watchlist_digest: [
-      schedule: "@weekly",
-      task: {Sanbase.UserList.Monitor, :run, []}
-    ],
     sync_users_to_intercom: [
       schedule: "00 01 * * *",
       task: {Sanbase.Intercom, :sync_users, []}

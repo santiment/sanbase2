@@ -1,9 +1,9 @@
 defmodule Sanbase.Mailer do
   use Oban.Worker, queue: :email_queue
-  use Swoosh.Mailer, otp_app: :sanbase
+
+  require Logger
 
   import Sanbase.Email.Template
-  import Swoosh.Email
 
   alias Sanbase.Accounts.{User, UserSettings}
   alias Sanbase.Billing.{Subscription, Product}
@@ -28,95 +28,11 @@ defmodule Sanbase.Mailer do
     # the rest of the emails in this case.
     with email when is_binary(email) <- user.email,
          true <- can_send?(user, template) do
-      Sanbase.MandrillApi.send(template, user.email, vars, opts)
+      Sanbase.TemplateMailer.send(user.email, template, vars)
     else
       _ -> :ok
     end
   end
-
-  def send_sign_in_email(rcpt_email, login_link) do
-    sender_email = "support@santiment.net"
-    subject = "Login link"
-
-    body = """
-    Welcome back!
-
-    Santiment doesn't make you remember yet another password. Just click the link below and you’re in.
-
-    #{login_link}
-    """
-
-    new()
-    |> to(rcpt_email)
-    |> from({"Santiment", sender_email})
-    |> subject(subject)
-    |> text_body(body)
-    |> Sanbase.Mailer.deliver()
-  end
-
-  def send_sign_up_email(rcpt_email, login_link) do
-    sender_email = "support@santiment.net"
-    subject = "Login link"
-
-    body = """
-    Thanks for signing-up!
-
-    We’re excited you’ve joined us!
-
-    As a little necessary step, please confirm your registration below.
-
-    #{login_link}
-    """
-
-    new()
-    |> to(rcpt_email)
-    |> from({"Santiment", sender_email})
-    |> subject(subject)
-    |> text_body(body)
-    |> Sanbase.Mailer.deliver()
-  end
-
-  def send_verify_email(rcpt_email, verify_link) do
-    sender_email = "support@santiment.net"
-    subject = "Verify your email"
-
-    body = """
-    Confirm your email
-
-    Please verify that you are the owner of this email in order to use it with your Sanbase account.
-
-    #{verify_link}
-
-    Thank you for trusting Santiment!
-    """
-
-    new()
-    |> to(rcpt_email)
-    |> from({"Santiment", sender_email})
-    |> subject(subject)
-    |> text_body(body)
-    |> Sanbase.Mailer.deliver()
-  end
-
-  def send_alert_email(rcpt_email, args) do
-    sender_email = "support@santiment.net"
-    subject = "Signal alert!"
-
-    body = """
-    <h3>Hey, #{args.name}</h3>
-
-    #{args.payload_html}
-    """
-
-    new()
-    |> to(rcpt_email)
-    |> from({"Santiment", sender_email})
-    |> subject(subject)
-    |> html_body(body)
-    |> Sanbase.Mailer.deliver()
-  end
-
-  def send_alert_email(_, _), do: {:ok, :sent}
 
   # helpers
 

@@ -252,7 +252,7 @@ config :kaffe,
     offset_reset_policy: :reset_to_latest
   ]
 
-config :sanbase, Sanbase.Mailer,
+config :sanbase, Sanbase.TemplateMailer,
   adapter: Swoosh.Adapters.Mailjet,
   api_key: {:system, "MAILJET_API_KEY"},
   secret: {:system, "MAILJET_API_SECRET"}

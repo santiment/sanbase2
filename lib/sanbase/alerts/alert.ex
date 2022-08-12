@@ -280,7 +280,7 @@ defimpl Sanbase.Alert, for: Any do
     Sanbase.TemplateMailer.send(user.email, Sanbase.Email.Template.alerts_template(), %{
       name: name,
       username: name,
-      payload_html: payload_html
+      payload: payload_html
     })
     |> case do
       {:ok, _} -> :ok
@@ -402,7 +402,7 @@ defimpl Sanbase.Alert, for: Any do
     Sanbase.TemplateMailer.send(user.email, Sanbase.Email.Template.alerts_template(), %{
       name: name,
       username: name,
-      payload_html: payload_html
+      payload: payload_html
     })
     |> case do
       {:ok, _} -> :ok

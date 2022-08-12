@@ -22,7 +22,7 @@ defmodule Sanbase.EmailsTest do
      [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
     {StripeApi, [:passthrough],
      [fetch_default_card: fn _ -> {:ok, %{default_source: "123"}} end]},
-    {Sanbase.MandrillApi, [], [send: fn _, _, _, _ -> {:ok, :email_sent} end]}
+    {Sanbase.TemplateMailer, [], [send: fn _, _, _ -> {:ok, :email_sent} end]}
   ]) do
     not_registered_user = insert(:user, email: "example@santiment.net", is_registered: false)
     user = insert(:user)
@@ -40,7 +40,10 @@ defmodule Sanbase.EmailsTest do
 
       args = %{
         user_id: context.not_registered_user.id,
-        vars: %{name: context.not_registered_user.username}
+        vars: %{
+          name: context.not_registered_user.username,
+          username: context.not_registered_user.username
+        }
       }
 
       assert_enqueued(
@@ -90,12 +93,18 @@ defmodule Sanbase.EmailsTest do
 
       args = %{user_id: context.user.id}
 
-      vars1 = %{name: context.user.username, subscription_type: "Sanbase PRO"}
+      vars1 = %{
+        name: context.user.username,
+        username: context.user.username,
+        subscription_type: "Sanbase PRO"
+      }
+
       args1 = Map.merge(args, %{template: trial_started_template(), vars: vars1})
       assert_enqueued([worker: Sanbase.Mailer, args: args1], 500)
 
       vars2 = %{
         name: context.user.username,
+        username: context.user.username,
         subscription_type: "Sanbase PRO",
         subscription_duration: "monthly"
       }
@@ -107,7 +116,12 @@ defmodule Sanbase.EmailsTest do
         100
       )
 
-      vars3 = %{name: context.user.username, expire_at: days_after(14) |> EmailJobs.format_date()}
+      vars3 = %{
+        name: context.user.username,
+        username: context.user.username,
+        end_subscription_date: days_after(14) |> EmailJobs.format_date()
+      }
+
       args3 = Map.merge(args, %{template: during_trial_annual_discount_template(), vars: vars3})
 
       assert_enqueued(
@@ -115,7 +129,12 @@ defmodule Sanbase.EmailsTest do
         100
       )
 
-      vars4 = %{name: context.user.username, expire_at: days_after(30) |> EmailJobs.format_date()}
+      vars4 = %{
+        name: context.user.username,
+        username: context.user.username,
+        date: days_after(30) |> EmailJobs.format_date()
+      }
+
       args4 = Map.merge(args, %{template: after_trial_annual_discount_template(), vars: vars4})
 
       assert_enqueued(
@@ -134,6 +153,7 @@ defmodule Sanbase.EmailsTest do
         template: pro_subscription_stared_template(),
         vars: %{
           name: context.user.username,
+          username: context.user.username,
           subscription_type: "Sanbase PRO",
           subscription_duration: "month"
         }
@@ -151,7 +171,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => sign_up_templates()[:welcome_email]
                })
 
-      assert_called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
     test "do not send welcome email when user has no email" do
@@ -171,7 +191,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => sign_up_templates()[:first_education_email]
                })
 
-      assert_called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
     test "send 2nd edu email", context do
@@ -181,7 +201,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => sign_up_templates()[:second_education_email]
                })
 
-      assert_called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
     test "do not send edu emails if user opted out", context do
@@ -193,7 +213,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => sign_up_templates()[:first_education_email]
                })
 
-      refute called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
     test "send trial started", context do
@@ -205,7 +225,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => trial_started_template()
                })
 
-      assert_called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
     test "send trial end", context do
@@ -217,7 +237,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => end_of_trial_template()
                })
 
-      assert_called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
     test "do not send trial started", context do
@@ -227,7 +247,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => trial_started_template()
                })
 
-      refute called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
     test "do not send trial end when scheduled for cancellation", context do
@@ -243,7 +263,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => end_of_trial_template()
                })
 
-      refute called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
     test "send discount 50% email", context do
@@ -259,7 +279,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => during_trial_annual_discount_template()
                })
 
-      assert_called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
     test "send discount 35% email", context do
@@ -275,7 +295,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => after_trial_annual_discount_template()
                })
 
-      assert_called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
     test "do not send discount 50% email", context do
@@ -285,7 +305,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => during_trial_annual_discount_template()
                })
 
-      refute called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
     test "do not send discount 35% email", context do
@@ -295,7 +315,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => after_trial_annual_discount_template()
                })
 
-      refute called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
     test "do not send discount 35% email if more than 30 days passed", context do
@@ -311,7 +331,7 @@ defmodule Sanbase.EmailsTest do
                  "template" => after_trial_annual_discount_template()
                })
 
-      refute called(Sanbase.MandrillApi.send(:_, context.user.email, :_, :_))
+      refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
   end
 

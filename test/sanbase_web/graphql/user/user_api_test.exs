@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.UserApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mockery
+  import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
   import Sanbase.Factory
@@ -9,7 +9,9 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
-  setup do
+  setup_with_mocks([
+    {Sanbase.TemplateMailer, [], [send: fn _, _, _ -> {:ok, :email_sent} end]}
+  ]) do
     user = insert(:user)
 
     conn = setup_jwt_auth(build_conn(), user)
@@ -52,8 +54,6 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
   describe "Change email" do
     test "with non-existing, creates new email candidate", %{conn: conn, user: user} do
-      mock(Sanbase.MandrillApi, :send, {:ok, %{}})
-
       new_email = "new_test_email@santiment.net"
 
       mutation = """

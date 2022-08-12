@@ -427,10 +427,11 @@ defmodule Sanbase.Comments.Notification do
   end
 
   def send_email(email, params) do
-    Sanbase.Email.Template.comment_notification_template()
-    |> Sanbase.MandrillApi.send(email, params, %{
-      merge_language: "handlebars"
-    })
+    Sanbase.TemplateMailer.send(
+      email,
+      Sanbase.Email.Template.comment_notification_template(),
+      params
+    )
   end
 
   defp merge_events(map1, map2) do

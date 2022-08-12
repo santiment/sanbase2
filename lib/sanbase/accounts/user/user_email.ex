@@ -8,8 +8,6 @@ defmodule Sanbase.Accounts.User.Email do
 
   @token_valid_window_minutes 60
 
-  defp mandrill_api(), do: Mockery.Macro.mockable(Sanbase.MandrillApi)
-
   def find_by_email_candidate(email_candidate, email_candidate_token) do
     email_candidate = String.downcase(email_candidate)
 
@@ -126,37 +124,20 @@ defmodule Sanbase.Accounts.User.Email do
 
   def send_verify_email(user) do
     verify_link = SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
+    template = Sanbase.Email.Template.verification_email_template()
 
-    if System.get_env("MAILJET_API_KEY") do
-      Sanbase.Mailer.send_verify_email(user.email_candidate, verify_link)
-    else
-      mandrill_api().send(
-        Sanbase.Email.Template.verification_email_template(),
-        user.email_candidate,
-        %{VERIFY_LINK: verify_link},
-        %{subaccount: "login-emails"}
-      )
-    end
+    Sanbase.TemplateMailer.send(user.email, template, %{verify_link: verify_link})
   end
 
   defp do_send_login_email(user, origin_host_parts, args) do
     origin_url = "https://" <> Enum.join(origin_host_parts, ".")
 
-    if System.get_env("MAILJET_API_KEY") do
-      if user.first_login do
-        Sanbase.Mailer.send_sign_up_email(user.email, generate_login_link(user, origin_url, args))
-      else
-        Sanbase.Mailer.send_sign_in_email(user.email, generate_login_link(user, origin_url, args))
-      end
-    else
-      origin_url
-      |> Sanbase.Email.Template.choose_login_template(first_login?: user.first_login)
-      |> mandrill_api().send(
-        user.email,
-        %{LOGIN_LINK: generate_login_link(user, origin_url, args)},
-        %{subaccount: "login-emails"}
-      )
-    end
+    template =
+      Sanbase.Email.Template.choose_login_template(origin_url, first_login?: user.first_login)
+
+    Sanbase.TemplateMailer.send(user.email, template, %{
+      login_link: generate_login_link(user, origin_url, args)
+    })
   end
 
   defp generate_login_link(user, origin_url, args) do

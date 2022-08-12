@@ -67,7 +67,7 @@ defmodule Sanbase.Email.Template do
   # first edu: How to time Ethereum tops with just 3 indicators | Santiment Academy
 
   # Sign up / Sign in from app.santiment.net
-  @sanbase_login_templates %{login: "sanbase-welcome-back-mail", register: "sanbase-sign-up-mail"}
+  @sanbase_login_templates %{login: "sanbase-sign-in-mail", register: "sanbase-sign-up-mail"}
 
   # Sign up / Sign in from api.santiment.net
   @neuro_login_templates %{login: "neuro-sign-in", register: "neuro-sign-up"}
@@ -120,7 +120,6 @@ defmodule Sanbase.Email.Template do
   @comment_notification_template "notification"
 
   @verify_email_weekly_digest_template "verify_email_weekly_digest"
-  @monitoring_watchlist_template "monitoring_watchlist"
 
   def templates, do: @templates
   def alerts_template, do: @alerts_template
@@ -134,7 +133,6 @@ defmodule Sanbase.Email.Template do
 
   def comment_notification_template, do: @comment_notification_template
   def verify_email_weekly_digest_template, do: @verify_email_weekly_digest_template
-  def monitoring_watchlist_template, do: @monitoring_watchlist_template
   def verification_email_template(), do: @verification_email_template
 
   def choose_login_template(origin_url, first_login?: true) when is_binary(origin_url) do

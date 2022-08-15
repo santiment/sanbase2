@@ -10,6 +10,7 @@ defmodule Sanbase.TemplateMailer do
 
   def send(rcpt_email, template_slug, vars) do
     template = Sanbase.Email.Template.templates()[template_slug]
+    vars = process_vars(vars)
 
     if template do
       subject =
@@ -30,6 +31,16 @@ defmodule Sanbase.TemplateMailer do
     else
       Logger.info("Missing email template: #{template_slug}")
       :ok
+    end
+  end
+
+  # Fixme - it is only used migrate vars of already scheduled emails in the past
+  # After a couple of weeks it can be removed
+  defp process_vars(vars) do
+    if Map.has_key?(vars, :expire_at) do
+      Map.merge(vars, %{date: vars.expire_at, end_subscription_date: vars.expire_at})
+    else
+      vars
     end
   end
 end

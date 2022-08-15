@@ -20,6 +20,16 @@ defmodule Sanbase.Email.Template do
       subject: "Confirm your registration",
       required_vars: [:login_link]
     },
+    "neuro-sign-in" => %{
+      id: 4_131_877,
+      subject: "Login link",
+      required_vars: [:login_link]
+    },
+    "neuro-sign-up" => %{
+      id: 4_131_890,
+      subject: "Confirm your registration",
+      required_vars: [:login_link]
+    },
     "sanbase-post-registration-mail" => %{
       id: 4_127_351,
       subject: "Welcome to Sanbase",

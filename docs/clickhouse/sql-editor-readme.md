@@ -1,7 +1,7 @@
 # Overview
 
 This document introduces the reader to the basics of Clickhouse SQL and
-Santiment's database tables.
+Santiment's datasets.
 
 The available datasets contain two types of data:
 - Precomputed metrics - Using the raw data and preprocessing, pre-computed
@@ -10,23 +10,25 @@ The available datasets contain two types of data:
 
 ## Clickhouse Overview
 
+[Clickhouse](https://clickhouse.com/) is a true Column-Oriented Database Management System that, among
+other things, makes it extremely fast and suitable for storing and working with
+metrics and crypto-related data.
+
 Clickhouse SQL is identical to ANSI SQL in many ways with some distinctive
 features. It supports `SELECT`, `GROUP BY`, `JOIN`, `ORDER BY`, subqueries in
 `FROM`, `IN` operator and subqueries in `IN` operator, window functions, many
-aggregate functions, scalar subqueries, and so on.
-
-Clickhouse is a true Column-Oriented Database Management System that, among
-other things, makes it extremely fast and suitable for storing and working with
-metrics and crypto-related data expressed as time-series data.
+aggregate functions (avg, max, min, last, first, etc.), scalar subqueries, and so on.
 
 To provide the highest possible performance, some features are not present:
-- No support for foreign keys, but they are simulated in some of the
-  existing tables (holding pre-computed metrics mostly). There is `asset_id` column
-  and `asset_metadata` to which the `asset_id` refers. The lack of foreign key support
-  means that the database cannot guarantee referential integrity, so it is enforced
-  by application-level code. 
-- No full-fledged transactions. The SQL Editor has read-only access, and Clickhouse is used
-  mainly as append-only storage, so the lack of transactions does not cause any issues
+- No support for foreign keys, but they are simulated in some of the existing
+  tables (holding pre-computed metrics mostly). For example, there is `asset_id`
+  column in the `intraday_metrics` table, and `asset_metadata` table to which
+  the `asset_id` refers. The lack of foreign key support means that the database
+  cannot guarantee referential integrity, so it is enforced by application-level
+  code. 
+- No full-fledged transactions. The SQL Editor has read-only access, and
+  Clickhouse is used mainly as append-only storage, so the lack of transactions
+  does not cause any issues
   for this use case.
 
 Official Clickhouse SQL Reference: https://clickhouse.com/docs/en/sql-reference/
@@ -36,7 +38,7 @@ Some of the important pages that contain useful information:
 - https://clickhouse.com/docs/en/sql-reference/functions/
 - https://clickhouse.com/docs/en/sql-reference/operators/
 - https://clickhouse.com/docs/en/sql-reference/aggregate-functions/
-  
+
 ## Using pre-computed metrics
 
 The pre-computed metrics are located in the following tables:
@@ -56,6 +58,57 @@ All tables storing pre-computed data have a common set of columns.
   asset/metric pair.
 - `computed_at` - A `DateTime` column storing the date and time when the
   given row was computed.
+
+### The FINAL keyword
+
+> Note: This part is more technical
+
+Values in Clickhouse tables are not updated directly. Instead, in case there is a need to
+modify an existing row, the [MergeTree Table Engine](https://clickhouse.com/docs/en/engines/table-engines/mergetree-family/mergetree/) is used.
+In order to update an existing row, a new row with the same primary key is
+inserted. At some unspecified point in time, Clickhouse will merge all rows with
+the same primary key into one. Until that merge happens, all rows will exist and
+will appear in selects.
+
+Example: There is one value per day for an asset-metric pair in the
+`daily_metrics_v2` table. The value is recomputed every hour and a new row with
+the same primary key but different `value` and `computed_at` is inserted.
+
+In order to read the data as if it is already merged, you need to add the
+`FINAL` keyword after the table name: 
+```sql
+SELECT dt, value
+FROM daily_metrics_v2 FINAL
+WHERE asset_id = get_asset_id('bitcoin') AND  metric_id = get_metric_id('daily_active_addresses')
+ORDER BY dt DESC
+LIMIT 2
+```
+
+This `FINAL` keyword is not free - it slightly reduces the performance. In case performance is seeked, the same goal can be
+achieved with standard SQL by using `GROUP BY` the primary key and aggregate functions. This approach has smaller performance penalty at the cost of code readability and maintainability.
+```sql
+SELECT dt, argMax(value, computed_at)
+FROM daily_metrics_v2
+WHERE asset_id = get_asset_id('bitcoin') AND  metric_id = get_metric_id('daily_active_addresses')
+GROUP BY dt, asset_id, metric_id
+ORDER BY dt DESC
+LIMIT 2
+```
+
+### The PREWHERE clause
+
+In addition to the standard [WHERE](https://clickhouse.com/docs/en/sql-reference/statements/select/where) clause, Clickhouse also supports [PREWHERE](https://clickhouse.com/docs/en/sql-reference/statements/select/prewhere/).
+This is an optimization to apply filtering more efficiently. The effect is that,
+at first only the columns necessary for executing the filtering expression are
+read.
+
+In case `FINAL` keyword is not used, `WHERE` is automatically transformed into
+`PREWHERE`. In case `FINAL` keyword is used, `WHERE` is not automatically
+transformed into `PREWHERE`. Such transformation in the latter case can lead to
+different results in case columns that are not part of the primary key are used
+in the filtering.
+
+Do not use `PREWHERE` unless you are sure what you are doing.
 
 ### Fetch data for asset bitcoin and metric **daily_active_addresses**
 
@@ -85,9 +138,9 @@ queries - the `asset_id` and `metric_id` filtering. For this reason, predefined 
 SELECT asset_id, metric_id, dt, value
 FROM daily_metrics_v2
 WHERE
-    asset_id = get_asset_id('bitcoin') AND
-    metric_id = get_metric_id('daily_active_addresses') AND
-    dt >= toDateTime('2020-01-01 00:00:00')
+  asset_id = get_asset_id('bitcoin') AND
+  metric_id = get_metric_id('daily_active_addresses') AND
+  dt >= toDateTime('2020-01-01 00:00:00')
 LIMIT 2
 ```
 

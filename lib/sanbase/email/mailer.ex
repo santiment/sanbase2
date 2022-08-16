@@ -8,7 +8,7 @@ defmodule Sanbase.Mailer do
   alias Sanbase.Accounts.{User, UserSettings}
   alias Sanbase.Billing.{Subscription, Product}
 
-  @edu_templates ~w(first_edu_email_v2 second_edu_email_v2)
+  @edu_templates ~w(first-edu-email second-edu-email)
   @during_trial_annual_discount_template during_trial_annual_discount_template()
   @after_trial_annual_discount_template after_trial_annual_discount_template()
   @end_of_trial_template end_of_trial_template()
@@ -38,7 +38,7 @@ defmodule Sanbase.Mailer do
 
   defp can_send?(user, template, params \\ %{})
 
-  defp can_send?(user, template, _params) when template in [:trial_suggestion] do
+  defp can_send?(user, template, _params) when template in ["trial-suggestion"] do
     not Subscription.user_has_sanbase_pro?(user.id)
   end
 

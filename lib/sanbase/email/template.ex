@@ -75,16 +75,33 @@ defmodule Sanbase.Email.Template do
       subject: "Sanbase alert!",
       dynamic_subject: "Sanbase alert: {{username}}",
       required_vars: [:username, :payload]
+    },
+    "first-edu-email" => %{
+      id: 4_132_905,
+      subject: "How to time Ethereum tops with just 3 indicators | Santiment Academy",
+      required_vars: []
+    },
+    "second-edu-email" => %{
+      id: 4_132_860,
+      subject: "Sanbase tips",
+      required_vars: [:name]
+    },
+    "trial-suggestion" => %{
+      id: 4_132_855,
+      subject: "Start your free trial today",
+      required_vars: []
+    },
+    "slip-away-users" => %{
+      id: 4_132_877,
+      subject: "Explore the power of our customisable charts",
+      required_vars: [:name]
+    },
+    "notification" => %{
+      id: 4_127_647,
+      subject: "Your Sanbase activity",
+      required_vars: []
     }
-    # "notification" => %{
-    #   id: 4127647,
-    #   subject: "Your Sanbase activity",
-    #   required_vars: []
-    # },
   }
-
-  # 2nd edu Santiment Sanbase tips
-  # first edu: How to time Ethereum tops with just 3 indicators | Santiment Academy
 
   # Sign up / Sign in from app.santiment.net
   @sanbase_login_templates %{login: "sanbase-sign-in-mail", register: "sanbase-sign-up-mail"}
@@ -106,11 +123,11 @@ defmodule Sanbase.Email.Template do
     # immediately after sign up
     welcome_email: "sanbase-post-registration-mail",
     # on the 4th day
-    first_education_email: "first_edu_email_v2",
+    first_education_email: "first-edu-email",
     # on the 6th day
-    trial_suggestion: "trial_suggestion",
+    trial_suggestion: "trial-suggestion",
     # on the 7th day
-    second_education_email: "second_edu_email_v2"
+    second_education_email: "second-edu-email"
   }
 
   # Send when Sanbase pro subscription starts

@@ -109,11 +109,11 @@ defmodule Sanbase.Comments.Notification do
     end)
   end
 
-  defp maybe_update_comments(comments) do
+  def maybe_update_comments(comments) do
     comments
     |> Enum.map(fn
       %{type: "reply"} = comment -> Map.put(comment, :reply_to_text, "reply")
-      comment -> comment
+      comment -> Map.put(comment, :reply_to_text, false)
     end)
   end
 
@@ -160,7 +160,7 @@ defmodule Sanbase.Comments.Notification do
 
         case length(usernames) do
           num when num > 3 -> Map.put(result, :rest, num - 3)
-          _ -> Map.put(result, :rest, 0)
+          _ -> Map.put(result, :rest, false)
         end
       end)
 

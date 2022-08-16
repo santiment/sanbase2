@@ -91,7 +91,7 @@ defmodule Sanbase.Comments.NotificationTest do
                  entity: "insight",
                  entity_id: insight2.id,
                  link: "http://localhost:4000/read/#{insight2.id}",
-                 rest: 0,
+                 rest: false,
                  title: insight2.title,
                  usernames: "@#{user5.username}",
                  likes_count: 1

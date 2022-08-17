@@ -26,6 +26,13 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
       arg(:plan, :plans_enum)
       arg(:has_incomplete_data, :boolean, default_value: nil)
 
+      @desc ~s"""
+      Accepts PCRE (Perl Compatible Regular Expressions) format
+
+      Example: { getAvailableMetrics(nameRegexFilter: "^mean_age_[\\d]+") }
+      """
+      arg(:name_regex_filter, :string, default_value: nil)
+
       cache_resolve(&MetricResolver.get_available_metrics/3, ttl: 300)
     end
 
@@ -33,6 +40,13 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
       meta(access: :free)
 
       arg(:selector, :metric_target_selector_input_object)
+
+      @desc ~s"""
+      Accepts PCRE (Perl Compatible Regular Expressions) format
+
+      Example: { getAvailableMetrics(nameRegexFilter: "^mean_age_[\\d]+") }
+      """
+      arg(:name_regex_filter, :string, default_value: nil)
 
       cache_resolve(&MetricResolver.get_available_metrics_for_selector/3, ttl: 300)
     end

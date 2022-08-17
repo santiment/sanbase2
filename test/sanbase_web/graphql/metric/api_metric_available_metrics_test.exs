@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.ApiMetricAvailableMetricsSelectorTest do
+defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
@@ -13,6 +13,23 @@ defmodule SanbaseWeb.Graphql.ApiMetricAvailableMetricsSelectorTest do
     [conn: conn]
   end
 
+  test "get available metrics with regex filter", context do
+    metrics = get_available_metrics(context.conn, %{name_regex_filter: "^mean_age_[\\d]+"})
+    metrics = Enum.sort(metrics)
+
+    expected =
+      Enum.sort([
+        "mean_age_180d",
+        "mean_age_2y",
+        "mean_age_5y",
+        "mean_age_365d",
+        "mean_age_3y",
+        "mean_age_90d"
+      ])
+
+    assert metrics == expected
+  end
+
   test "available metrics with selector slug", context do
     available_metrics = Sanbase.Metric.available_metrics()
 
@@ -21,7 +38,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAvailableMetricsSelectorTest do
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_metrics_for_selector/1, {:ok, metrics})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result = get_available_metrics(context.conn, %{slug: "santiment"})
+      result = get_available_metrics_for_selector(context.conn, %{slug: "santiment"})
 
       assert result == metrics
     end)
@@ -35,18 +52,28 @@ defmodule SanbaseWeb.Graphql.ApiMetricAvailableMetricsSelectorTest do
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Metric.available_metrics_for_selector/1, {:ok, metrics})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result = get_available_metrics(context.conn, %{contract_address: "0x1"})
+      result = get_available_metrics_for_selector(context.conn, %{contract_address: "0x1"})
 
       assert result == metrics
     end)
   end
 
   test "available metrics with selector address", context do
-    result = get_available_metrics(context.conn, %{address: "0x1"})
+    result = get_available_metrics_for_selector(context.conn, %{address: "0x1"})
     assert "nft_collection_max_price_usd" in result
   end
 
-  def get_available_metrics(conn, selector) do
+  def get_available_metrics(conn, args) do
+    query = """
+    {
+      getAvailableMetrics(#{map_to_args(args)})
+    }
+    """
+
+    execute_query(conn, query, "getAvailableMetrics")
+  end
+
+  def get_available_metrics_for_selector(conn, selector) do
     query = """
     {
       getAvailableMetricsForSelector(selector:#{map_to_input_object_str(selector)})

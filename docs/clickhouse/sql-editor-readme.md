@@ -116,7 +116,7 @@ The following example shows how to fetch rows for Bitcoin's
 `daily_active_addresses` metric:
 ```SQL
 SELECT asset_id, metric_id, dt, value
-FROM daily_metrics_v2
+FROM daily_metrics_v2 FINAL
 WHERE
     asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = 'bitcoin' LIMIT 1) AND
     metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'daily_active_addresses' LIMIT 1) AND
@@ -136,7 +136,7 @@ queries - the `asset_id` and `metric_id` filtering. For this reason, predefined 
 
 ```SQL
 SELECT asset_id, metric_id, dt, value
-FROM daily_metrics_v2
+FROM daily_metrics_v2 FINAL
 WHERE
   asset_id = get_asset_id('bitcoin') AND
   metric_id = get_metric_id('daily_active_addresses') AND
@@ -157,7 +157,7 @@ SELECT
     dictGetString('asset_metadata_dict', 'name', asset_id) AS asset,
     dictGetString('metric_metadata_dict', 'name', metric_id) AS metric,
     value
-FROM daily_metrics_v2
+FROM daily_metrics_v2 FINAL
 WHERE
     asset_id = get_asset_id('bitcoin') AND
     metric_id = get_metric_id('daily_active_addresses') AND
@@ -181,7 +181,7 @@ SELECT
     get_asset_name(asset_id) AS asset,
     get_metric_name(metric_id) AS metric,
     value
-FROM daily_metrics_v2
+FROM daily_metrics_v2 FINAL
 WHERE
     asset_id = get_asset_id('bitcoin') AND
     metric_id = get_metric_id('daily_active_addresses') AND
@@ -198,10 +198,10 @@ asset and a single metric, their corresponding id columns can be aggregated with
 ```SQL
 SELECT
     toStartOfMonth(dt) AS month,
-    get_asset_name(ANY(asset_id)) AS asset,
-    get_metric_name(ANY(metric_id)) AS metric,
-    FLOOR(AVG(value)) AS monthly_avg_value
-FROM daily_metrics_v2
+    get_asset_name(any(asset_id)) AS asset,
+    get_metric_name(any(metric_id)) AS metric,
+    floor(avg(value)) AS monthly_avg_value
+FROM daily_metrics_v2 FINAL
 WHERE
     asset_id = get_asset_id('bitcoin') AND
     metric_id = get_metric_id('daily_active_addresses') AND
@@ -240,15 +240,19 @@ we can use them to compute the MVRV (and that's how we do it for the official
 MVRV metric!). Depending on the load on the database, the query duration can
 vary. At the moment of writing this, running the query takes 0.13 seconds.
 
+In the query `anyIf` is used as there is filtering by `asset_id` and `metric_id`,
+so there is only one value per metric for each `dt`. The example after that discusses
+how to handle more complex `GROUP BY` clauses.
+
 ```sql
 SELECT
   dt,
   get_asset_name(any(asset_id)) AS asset,
-  argMaxIf(value, (dt, computed_at), metric_id=get_metric_id('price_usd')) AS nominator,
-  argMaxIf(value, (dt, computed_at), metric_id=get_metric_id('mean_realized_price_usd_intraday_20y')) AS denominator,
+  anyIf(value, metric_id=get_metric_id('price_usd')) AS nominator,
+  anyIf(value, metric_id=get_metric_id('mean_realized_price_usd_intraday_20y')) AS denominator,
   nominator / denominator AS mvrv_usd_ratio,
-  FLOOR((mvrv_usd_ratio - 1) * 100, 2) AS mvrv_usd_percent
-FROM intraday_metrics
+  floor((mvrv_usd_ratio - 1) * 100, 2) AS mvrv_usd_percent
+FROM intraday_metrics FINAL
 WHERE
   asset_id = get_asset_id('bitcoin') AND
   metric_id IN (get_metric_id('price_usd'), get_metric_id('mean_realized_price_usd_intraday_20y')) AND
@@ -274,7 +278,8 @@ LIMIT 10
 ```
 
 To return only some of the columns, the query can be provided as a FROM subquery. This does not induce any
-performence degradation:
+performence degradation. This example also shows how the [WITH Clause](https://clickhouse.com/docs/en/sql-reference/statements/select/with/)
+can be used to avoid string literals repetition.
 
 ```sql
 WITH
@@ -283,14 +288,14 @@ WITH
 SELECT
     dt, 
     price_usd / realized_price_usd AS mvrv_usd_ratio,
-    FLOOR((mvrv_usd_ratio - 1) * 100, 2) AS mvrv_usd_percent
+    floor((mvrv_usd_ratio - 1) * 100, 2) AS mvrv_usd_percent
 FROM (
   SELECT
     dt,
     get_asset_name(any(asset_id)) AS asset,
-    argMaxIf(value, (dt, computed_at), metric_id=price_usd_metric_id) AS price_usd,
-    argMaxIf(value, (dt, computed_at), metric_id=realized_price_usd_metric_id) AS realized_price_usd
-  FROM intraday_metrics
+    anyIf(value, metric_id=price_usd_metric_id) AS price_usd,
+    anyIf(value, metric_id=realized_price_usd_metric_id) AS realized_price_usd
+  FROM intraday_metrics FINAL
   WHERE
     asset_id = get_asset_id('bitcoin') AND
     metric_id IN (price_usd_metric_id, realized_price_usd_metric_id) AND
@@ -301,27 +306,240 @@ ORDER BY dt ASC
 LIMIT 10
 ```
 
+The next query demonstrates what needs to be done if there is a need to
+aggregate the datetime instead of getting a value for each `dt`:
+
+```sql
+WITH
+    get_metric_id('price_usd') AS price_usd_metric_id,
+    get_metric_id('mean_realized_price_usd_intraday_20y') AS realized_price_usd_metric_id
+SELECT
+    month, 
+    price_usd / realized_price_usd AS mvrv_usd_ratio,
+    floor((mvrv_usd_ratio - 1) * 100, 2) AS mvrv_usd_percent
+FROM (
+  SELECT
+    toStartOfMonth(dt) AS month,
+    get_asset_name(any(asset_id)) AS asset,
+    argMaxIf(value, dt, metric_id=price_usd_metric_id) AS price_usd,
+    argMaxIf(value, dt, metric_id=realized_price_usd_metric_id) AS realized_price_usd
+  FROM intraday_metrics FINAL
+  WHERE
+    asset_id = get_asset_id('bitcoin') AND
+    metric_id IN (price_usd_metric_id, realized_price_usd_metric_id) AND
+    dt >= toDateTime('2022-01-01 00:00:00')
+  GROUP BY month
+)
+ORDER BY month ASC
+LIMIT 10
+```
+
 The following row needs some explanation:
 ```sql
-argMaxIf(value, (dt, computed_at), metric_id=get_metric_id('price_usd')) AS price_usd,
+argMaxIf(value, dt, metric_id=get_metric_id('price_usd')) AS price_usd,
 ```
 
 This function call has three parameters:
 - `value` - This is the column that is returned
-- `(dt, computed_at)` - This is a tuple, consisting of two columns. In the given
-  group (as per `GROUP BY`) get the value that has the latest `dt` and if there
-  are more than one such value - get the one with the latest `computed_at`.
+- `dt` - This is the column that `max` is performed upon. Of all columns matching the filter, the one with the max `dt` is returned.
 - `metric_id=get_metric_id('price_usd')` - This a boolean expression. Look only
   at the rows for which the expression evaluates to true.
 
-> Note: In Clickhouse values are not directly updated. If a value needs to be
-> updated, a new record with the same key is inserted (if the table engine is of
-> MergeTree type) and at some point Clickhouse merges both rows into one. The
-> daily metrics are computed every hour, so for the current day there could be
-> multiple rows with the same date. In order to get the last one, getting the
-> one with the biggest `computed_at` is required.
+If the `FINAL` keyword is not used, taking the row with biggest `computed_at` among those
+with the same `dt` can be achieved by using a tuple as a second argument:
+
+```sql
+argMaxIf(value, (dt, computed_at), metric_id=get_metric_id('price_usd')) AS price_usd,
+```
 
 ## Using raw data
 
-### Examples for address balance
+Get the UNI balance changes for an address
 
+### Example for top transfers
+
+Find the 5 biggest ETH transactions to the graveyard address 0x0000000000000000000000000000000000000000
+
+> There are some duplicated tables with different `ORDER BY`. In the case of transfer tables there are
+> tables with the `_to` suffix. This indicates that the `to` address is to the front of the `ORDER BY`
+> key. This table has bigger performance when only filtering of `to` address is applied.
+
+```sql
+SELECT
+    dt,
+    from,
+    transactionHash,
+    value / pow(10, 18) -- transform from gwei to ETH
+FROM eth_transfers_to FINAL
+WHERE to = '0x0000000000000000000000000000000000000000'
+ORDER BY value DESC
+LIMIT 5
+```
+
+```sql
+┌──────────────────dt─┬─from───────────────────────────────────────┬─transactionHash────────────────────────────────────────────────────┬─divide(value, pow(10, 18))─┐
+│ 2015-08-08 11:01:14 │ 0x3f98e477a361f777da14611a7e419a75fd238b6b │ 0x242a15349ad0a7070afb73df92e8e569fd196c88c7f589a467f24e6028a07c69 │                       2000 │
+│ 2016-07-28 19:39:05 │ 0xaa1a6e3e6ef20068f7f8d8c835d2d22fd5116444 │ 0x1c96608bda6ce4be0d0f30b3a5b3a9d9c94930291a168a0dbddfe9be24ac70d1 │                       1493 │
+│ 2015-08-13 17:50:09 │ 0xf5437e158090b2a2d68f82b54a5864b95dd6dbea │ 0x88db76f50553d3d9d61eaf7480a92b1d68db08d69e688fd9b457571cc22ab2b0 │                       1000 │
+│ 2021-09-08 03:30:47 │ 0x517bb391cb3a6d879762eb655e48a478498c3698 │ 0x429bfa5fdd1bf8117d6707914b6300ccf08ec3383d38a10ddf37247e18d90557 │              515.001801432 │
+│ 2015-08-15 06:52:11 │ 0x20134cbff88bfadc466b52eceaa79857891d831e │ 0xe218f7abd6b557e01376c57bcdf7f5d8e94e0760306b1d9eb37e1a8ddc51e6ab │                        400 │
+└─────────────────────┴────────────────────────────────────────────┴────────────────────────────────────────────────────────────────────┴────────────────────────────┘
+```
+
+### Example for address balance
+
+Select the UNI balance of address at the beginning of each month.
+
+For performance reasons the table has a non-intuitive design. The balances of an address
+are stored in a single field of type `AggregateFunction(groupArray, Tuple(DateTime, Float64))`.
+When the `groupArrayMerge` function is called on that field, it essentially turns into
+`Array<Tuple(DateTime, Float64)>`
+
+The [arrayJoin](https://clickhouse.com/docs/en/sql-reference/functions/array-join/) is a Clickhouse-specific function that is useful in many
+scenarios. Normal functions do not change a set of rows, but just change the
+values in each row (map). Aggregate functions compress a set of rows (fold or
+reduce). The arrayJoin function takes each row and generates a set of rows
+(unfold).
+
+In this scenario `arrayJoin` is used to unfold the array of tuples into rows where each row has a datetime and value.
+
+```sql
+SELECT
+  toStartOfMonth(dt) AS datetime,
+  toFloat64(argMax(value, dt)) / pow(10, 18) AS value
+FROM (
+  SELECT
+    arrayJoin(groupArrayMerge(values)) AS values_merged,
+    values_merged.1 AS dt,
+    values_merged.2 AS value
+  FROM balances_aggregated
+  WHERE
+    address = '0x1a9c8182c09f50c8318d769245bea52c32be35bc' AND
+    blockchain = 'ethereum' AND
+    asset_ref_id = get_asset_ref_id('uniswap')
+  GROUP BY address, blockchain, asset_ref_id
+  HAVING dt >= toDateTime('2021-01-01 00:00:00') AND dt < toDateTime('2022-08-01 00:00:00')
+)
+GROUP BY datetime
+```
+
+Note that not every month has a balance. This is because during these months no transfers happened and balance records
+are produced only when the balance changes.
+
+```sql
+┌───datetime─┬──────────────value─┐
+│ 2021-01-01 │   54854034.6123795 │
+│ 2021-02-01 │   75792689.3561644 │
+│ 2021-04-01 │ 105258204.83054289 │
+│ 2021-05-01 │ 113312234.63774733 │
+│ 2021-06-01 │ 123442268.88432267 │
+│ 2021-07-01 │ 134441434.15575847 │
+│ 2021-08-01 │  158560087.2506342 │
+│ 2021-09-01 │ 173403155.20471838 │
+│ 2021-11-01 │ 173403155.20471838 │
+│ 2021-12-01 │ 173403155.20471838 │
+│ 2022-02-01 │  227551085.1894977 │
+│ 2022-04-01 │  227040881.1894977 │
+│ 2022-05-01 │ 254925338.09589037 │
+│ 2022-06-01 │  268638940.6453577 │
+│ 2022-07-01 │  280393165.7214612 │
+└────────────┴────────────────────┘
+```
+
+## Example for Development Activity
+
+The `github_v2` table contains [Github Events](https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types) data.
+Using these events one can compute better development activity metrics compared to using just commits counts, as described in [this article](https://medium.com/santiment/tracking-github-activity-of-crypto-projects-introducing-a-better-approach-9fb1af3f1c32)
+
+To compute the development activity of an organization:
+
+```sql
+WITH ('IssueCommentEvent',
+      'IssuesEvent',
+      'ForkEvent',
+      'CommitCommentEvent',
+      'FollowEvent',
+      'ForkEvent',
+      'DownloadEvent',
+      'WatchEvent',
+      'ProjectCardEvent',
+      'ProjectColumnEvent',
+      'ProjectEvent') AS non_dev_related_event_types
+SELECT
+  toStartOfMonth(dt) AS month,
+  count(*) AS events
+FROM (
+  SELECT event, dt
+  FROM github_v2 FINAL
+  WHERE
+    owner = 'santiment' AND
+    dt >= toDateTime('2021-01-01 00:00:00') AND
+    dt < toDateTime('2021-12-31 23:59:59') AND
+    event NOT IN non_dev_related_event_types -- these events are related more with comments/issues, not developing
+)
+GROUP BY month
+```
+
+```
+┌──────month─┬─events─┐
+│ 2021-01-01 │   1600 │
+│ 2021-02-01 │   1815 │
+│ 2021-03-01 │   1709 │
+│ 2021-04-01 │   1541 │
+│ 2021-05-01 │   1139 │
+│ 2021-06-01 │   1211 │
+│ 2021-07-01 │   1213 │
+│ 2021-08-01 │   1058 │
+│ 2021-09-01 │   1156 │
+│ 2021-10-01 │    269 │
+│ 2021-11-01 │   1079 │
+│ 2021-12-01 │    760 │
+└────────────┴────────┘
+```
+
+To count all the people that have contributed to the development activity of an organization in a given
+time period:
+
+```sql
+WITH ('IssueCommentEvent',
+      'IssuesEvent',
+      'ForkEvent',
+      'CommitCommentEvent',
+      'FollowEvent',
+      'ForkEvent',
+      'DownloadEvent',
+      'WatchEvent',
+      'ProjectCardEvent',
+      'ProjectColumnEvent',
+      'ProjectEvent') AS non_dev_related_event_types
+SELECT
+  toStartOfMonth(dt) AS month,
+  uniqExact(actor) AS contributors
+FROM (
+  SELECT actor, dt
+  FROM github_v2 FINAL
+  WHERE
+    owner = 'santiment' AND
+    dt >= toDateTime('2021-01-01 00:00:00') AND
+    dt < toDateTime('2021-12-31 23:59:59') AND
+    event NOT IN non_dev_related_event_types -- these events are related more with comments/issues, not developing
+)
+GROUP BY month
+```
+
+```
+┌──────month─┬─contributors─┐
+│ 2021-01-01 │           18 │
+│ 2021-02-01 │           17 │
+│ 2021-03-01 │           20 │
+│ 2021-04-01 │           22 │
+│ 2021-05-01 │           23 │
+│ 2021-06-01 │           19 │
+│ 2021-07-01 │           21 │
+│ 2021-08-01 │           20 │
+│ 2021-09-01 │           20 │
+│ 2021-10-01 │           19 │
+│ 2021-11-01 │           19 │
+│ 2021-12-01 │           19 │
+└────────────┴──────────────┘
+```

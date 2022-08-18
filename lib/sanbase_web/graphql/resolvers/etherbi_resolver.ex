@@ -72,10 +72,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :token_velocity)
   end
 
-  def exchange_wallets(_root, %{slug: slug}, _resolution) do
-    ExchangeAddress.exchange_addresses(slug)
-  end
-
   # Private functions
   defp token_age_in_days(token_age_consumed, trx_volume)
        when token_age_consumed <= 0.1 or trx_volume <= 0.1 do

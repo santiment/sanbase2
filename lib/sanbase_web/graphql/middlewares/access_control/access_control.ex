@@ -40,8 +40,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   @freely_available_slugs ["santiment"]
   @minimal_datetime_param ~U[2009-01-01 00:00:00Z]
-  @extension_metrics AccessChecker.extension_metrics()
-  @extension_metric_product_map GraphqlSchema.extension_metric_product_map()
 
   # Apply restrictions based on the subscription plan and query made. The check
   # is split into two main categories:
@@ -72,7 +70,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp check_has_access(resolution, opts) do
     resolution
     |> apply_if_not_resolved(&check_plan_has_access/1)
-    |> apply_if_not_resolved(&check_extension_needed/1)
     |> apply_if_not_resolved(&check_from_to_params_sanity/1)
     |> apply_if_not_resolved(&maybe_apply_restrictions(&1, opts))
     |> apply_if_not_resolved(&check_from_to_both_outside/1)
@@ -179,26 +176,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         )
     end
   end
-
-  # Some specific queries/metrics are available only when a special extension is
-  # present.
-  defp check_extension_needed(
-         %Resolution{context: %{__query_argument_atom_name__: query}} = resolution
-       )
-       when query in @extension_metrics do
-    with %Sanbase.Accounts.User{} = user <- resolution.context[:auth][:current_user],
-         [_ | _] = product_ids <- Subscription.user_subscriptions_product_ids(user),
-         true <- Map.get(@extension_metric_product_map, query) in product_ids do
-      # if query is in the extension metrics, the call only succeeds if it's an
-      # authenticated call made by a user that has the extension subscription
-      resolution
-    else
-      _ ->
-        Resolution.put_result(resolution, {:error, :unauthorized})
-    end
-  end
-
-  defp check_extension_needed(resolution), do: resolution
 
   # If the query is marked as having free realtime and historical data
   # do not restrict anything

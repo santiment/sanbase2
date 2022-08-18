@@ -549,16 +549,6 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_exchange_wallets_extension_factory() do
-    %Plan{
-      id: 51,
-      name: "EXTENSION",
-      amount: 0,
-      currency: "USD",
-      interval: "month"
-    }
-  end
-
   def subscription_essential_factory() do
     %Subscription{
       stripe_id: rand_str(),
@@ -622,14 +612,6 @@ defmodule Sanbase.Factory do
   def subscription_pro_custom_factory() do
     %Subscription{
       plan_id: 24,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
-      status: "active"
-    }
-  end
-
-  def subscription_exchange_wallets_extension_factory() do
-    %Subscription{
-      plan_id: 51,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }

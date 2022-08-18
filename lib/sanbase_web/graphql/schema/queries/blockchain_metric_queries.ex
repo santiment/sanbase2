@@ -370,19 +370,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
       cache_resolve(&ClickhouseResolver.daily_active_deposits/3)
     end
 
-    @desc """
-    Fetch a list of all exchange wallets on a given blockchain.
-    This query requires you to have a plan extension or basic authentication.
-    """
-    field :exchange_wallets, list_of(:wallet) do
-      meta(access: :extension, product: Product.product_exchange_wallets())
-
-      arg(:slug, non_null(:string))
-
-      middleware(AccessControl)
-      cache_resolve(&EtherbiResolver.exchange_wallets/3)
-    end
-
     @desc "List all exchanges"
     field :all_exchanges, list_of(:string) do
       meta(access: :free)

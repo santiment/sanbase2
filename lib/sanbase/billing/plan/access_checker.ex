@@ -51,9 +51,6 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
 
-  @extension_metrics GraphqlSchema.get_all_with_access_level(:extension)
-  def extension_metrics(), do: @extension_metrics
-
   @free_query_or_argument GraphqlSchema.get_all_with_access_level(:free)
   @free_query_or_argument_mapset MapSet.new(@free_query_or_argument)
   def free_query_or_argument_mapset(), do: @free_query_or_argument_mapset
@@ -113,7 +110,6 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       "PRO" -> plan not in ["FREE", "BASIC"]
       "PREMIUM" -> plan not in ["FREE", "BASIC", "PRO"]
       "CUSTOM" -> plan == "CUSTOM"
-      # extensions plans can be with other plan. They're handled separately
       _ -> true
     end
   end

@@ -16,32 +16,6 @@ defmodule Sanbase.Billing.GraphqlSchema do
   @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
   @fields @query_type.fields |> Map.keys()
 
-  @doc ~s"""
-  Return a map of {query, product_id} key-value pairs. The key is a query that
-  needs an extension plan to be accessed and the value is the product_id that
-  is needed for that access. If a user has a subscription plan with that product_id
-  he/she will have access to that query
-  """
-  @spec extension_metric_product_map :: %{required(atom()) => Product.product_id()}
-  def extension_metric_product_map() do
-    @fields
-    |> Enum.filter(fn field ->
-      Map.get(@query_type.fields, field) |> Absinthe.Type.meta(:access) == :extension
-    end)
-    |> Enum.map(fn field ->
-      # The `product` key value is something like `Product.exchange_wallets_product`
-      # so the value is its AST instead of the actual value because of how
-      # the graphql schema is being built compile time. It is preferable to have
-      # more complicated code here instead of having to make the call at compile
-      # time, save it into module attribute and use that instead
-      product_ast = Map.get(@query_type.fields, field) |> Absinthe.Type.meta(:product)
-      {{_, _, [module, func]}, _, _} = product_ast
-      product_id = apply(module, func, [])
-      {{:query, field}, product_id}
-    end)
-    |> Map.new()
-  end
-
   def min_plan_map() do
     # Metadata looks like this:
     # meta(access: :restricted, min_plan: [sanapi: "PRO", sanbase: "FREE"])

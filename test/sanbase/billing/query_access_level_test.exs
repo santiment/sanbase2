@@ -209,18 +209,5 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
       assert forbidden_queries == expected_forbidden_queries
     end
-
-    test "extension needed queries from the schema" do
-      # Forbidden queries are acessible only by basic authorization
-      pro_queries =
-        Sanbase.Billing.GraphqlSchema.get_queries_with_access_level(:extension)
-        |> Enum.sort()
-
-      expected_pro_queries =
-        [:exchange_wallets]
-        |> Enum.sort()
-
-      assert pro_queries == expected_pro_queries
-    end
   end
 end

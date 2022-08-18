@@ -1267,15 +1267,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
            |> Enum.to_list() == []
   end
 
-  test "extension needed metrics", %{metrics_access_map: access_map} do
-    # Forbidden queries are acessible only by basic authorization
-    extension_metrics =
-      Sanbase.Billing.GraphqlSchema.get_with_access_level(access_map, :extension)
-      |> Enum.sort()
-
-    assert extension_metrics == []
-  end
-
   test "forbidden metrics", %{metrics_access_map: access_map} do
     forbidden_metrics =
       Sanbase.Billing.GraphqlSchema.get_with_access_level(access_map, :forbidden)

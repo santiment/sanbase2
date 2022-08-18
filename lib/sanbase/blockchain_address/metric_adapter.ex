@@ -24,7 +24,7 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
 
   @free_metrics Enum.filter(@access_map, fn {_, level} -> level == :free end)
                 |> Enum.map(&elem(&1, 0))
-  @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :free end)
+  @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
                       |> Enum.map(&elem(&1, 0))
 
   @required_selectors Enum.into(@metrics, %{}, &{&1, [[:blockchain_address], [:slug]]})

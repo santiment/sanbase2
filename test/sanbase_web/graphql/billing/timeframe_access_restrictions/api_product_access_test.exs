@@ -241,11 +241,12 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert error_message ==
                """
                The metric #{metric} is not accessible with the currently used
-               Sanapi Basic subscription. Please upgrade to Sanapi Pro subscription.
+               SANAPI BASIC subscription. Please upgrade to SANAPI PRO subscription
+               or a Custom Plan that has access to it.
 
                If you have a subscription for one product but attempt to fetch data using
-               another product, this error will still be shown. The data on Sanbase cannot
-               be fetched with a Sanapi subscription and vice versa.
+               another product, this error will still be shown. The data on SANBASE cannot
+               be fetched with a SANAPI subscription and vice versa.
                """
     end
 

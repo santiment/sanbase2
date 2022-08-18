@@ -94,7 +94,7 @@ defmodule Sanbase.Alert.Trigger do
     |> validate_change(:icon_url, &validate_url/2)
   end
 
-  defp validate_url(_changeset, url) do
+  defp validate_url(:icon_url, url) do
     case Sanbase.Validation.valid_url?(url) do
       :ok -> []
       {:error, reason} -> [icon_url: reason]

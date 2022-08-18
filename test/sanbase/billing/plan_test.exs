@@ -31,8 +31,8 @@ defmodule Sanbase.Billing.PlanTest do
     test "with plan without stripe_id - creates plan in stripe and updates local plan", context do
       with_mock StripeApi,
         create_plan: fn _ -> StripeApiTestResponse.create_plan_resp() end do
-        product = context.plans.product
-        product |> Product.changeset(%{stripe_id: "stripe_id"}) |> Repo.update!()
+        product_api = context.product_api
+        product_api |> Product.changeset(%{stripe_id: "stripe_id"}) |> Repo.update!()
         {:ok, plan} = Plan.maybe_create_plan_in_stripe(context.plans.plan_pro)
         assert plan.stripe_id != nil
       end

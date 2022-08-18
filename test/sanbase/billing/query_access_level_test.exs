@@ -5,7 +5,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
   describe "subscription meta" do
     test "free queries defined in the schema" do
       free_queries =
-        Sanbase.Billing.GraphqlSchema.get_queries_with_access_level(:free)
+        Sanbase.Billing.ApiInfo.get_queries_with_access_level(:free)
         |> Enum.sort()
 
       expected_free_queries =
@@ -158,7 +158,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
     test "restricted queries defined in the schema" do
       basic_queries =
-        Sanbase.Billing.GraphqlSchema.get_queries_with_access_level(:restricted)
+        Sanbase.Billing.ApiInfo.get_queries_with_access_level(:restricted)
         |> Enum.sort()
 
       expected_basic_queries =
@@ -205,7 +205,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
     test "forbidden queries from the schema" do
       # Forbidden queries are acessible only by basic authorization
       forbidden_queries =
-        Sanbase.Billing.GraphqlSchema.get_queries_with_access_level(:forbidden)
+        Sanbase.Billing.ApiInfo.get_queries_with_access_level(:forbidden)
         |> Enum.sort()
 
       expected_forbidden_queries = []

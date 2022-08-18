@@ -310,21 +310,21 @@ defmodule Sanbase.Accounts.User do
     |> String.trim()
   end
 
-  defp validate_name_change(_, name) do
+  defp validate_name_change(:name, name) do
     case __MODULE__.Name.valid_name?(name) do
       true -> []
       {:error, error} -> [name: error]
     end
   end
 
-  defp validate_username_change(_, username) do
+  defp validate_username_change(:username, username) do
     case __MODULE__.Name.valid_username?(username) do
       true -> []
       {:error, error} -> [username: error]
     end
   end
 
-  defp validate_email_candidate_change(_, email_candidate) do
+  defp validate_email_candidate_change(:email_candidate, email_candidate) do
     if Repo.get_by(User, email: email_candidate) do
       [email: "Email has already been taken"]
     else
@@ -332,7 +332,7 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
-  defp validate_url_change(_, url) do
+  defp validate_url_change(:avatar_url, url) do
     case Sanbase.Validation.valid_url?(url) do
       :ok -> []
       {:error, msg} -> [avatar_url: msg]

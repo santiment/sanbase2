@@ -664,16 +664,16 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Checks if historical data is allowed for a given `metric`
   """
-  @spec is_historical_data_allowed?(metric) :: boolean
-  def is_historical_data_allowed?(metric) do
+  @spec is_historical_data_freely_available?(metric) :: boolean
+  def is_historical_data_freely_available?(metric) do
     get_in(@access_map, [metric, "historical"]) == "FREE"
   end
 
   @doc ~s"""
   Checks if realtime data is allowed for a given `metric`
   """
-  @spec is_realtime_data_allowed?(metric) :: boolean
-  def is_realtime_data_allowed?(metric) do
+  @spec is_realtime_data_freely_available?(metric) :: boolean
+  def is_realtime_data_freely_available?(metric) do
     get_in(@access_map, [metric, "realtime"]) == "FREE"
   end
 

@@ -9,6 +9,7 @@ defmodule Sanbase.Billing.Plan do
   import Ecto.Query
   import Ecto.Changeset
 
+  alias __MODULE__.CustomPlan
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Subscription}
 
@@ -27,15 +28,16 @@ defmodule Sanbase.Billing.Plan do
     # interval is one of `month` or `year`
     field(:interval, :string)
     field(:stripe_id, :string)
-
     # there might be still customers on this plan, but new subscriptions should be disabled.
-    field(:is_deprecated, :boolean, default: false)
-
+    field(:is_deprecated, :boolean)
     # plans that customers can't subscribe on their own
-    field(:is_private, :boolean, default: false)
-
+    field(:is_private, :boolean)
     # order first by `order` field, then by id
-    field(:order, :integer, default: 0)
+    field(:order, :integer)
+
+    # if plan is custom, then the restrictions for it are read from the restrictions field
+    field(:has_custom_restrictions, :boolean)
+    embeds_one(:restrictions, CustomPlan.Restrictions, on_replace: :update)
 
     belongs_to(:product, Product)
     has_many(:subscriptions, Subscription, on_delete: :delete_all)
@@ -43,7 +45,40 @@ defmodule Sanbase.Billing.Plan do
 
   def changeset(%__MODULE__{} = plan, attrs \\ %{}) do
     plan
-    |> cast(attrs, [:amount, :name, :stripe_id, :is_deprecated, :is_private, :order])
+    |> cast(attrs, [
+      :name,
+      :product_id,
+      :amount,
+      :currency,
+      :interval,
+      :stripe_id,
+      :is_deprecated,
+      :is_private,
+      :order,
+      :has_custom_restrictions
+    ])
+    |> cast_embed(:restrictions, required: false, with: &CustomPlan.Restrictions.changeset/2)
+    |> unique_constraint(:id, name: :plans_pkey)
+  end
+
+  def create_custom_api_plan(args) do
+    args = %{
+      name: Map.fetch!(args, :name),
+      product_id: Map.fetch!(args, :product_id),
+      amount: Map.fetch!(args, :amount),
+      currency: Map.fetch!(args, :currency),
+      interval: Map.fetch!(args, :interval),
+      stripe_id: Map.fetch!(args, :stripe_id),
+      is_deprecated: false,
+      is_private: true,
+      order: Map.get(args, :order, 0),
+      has_custom_restrictions: true,
+      restrictions: Map.fetch!(args, :restrictions)
+    }
+
+    %__MODULE__{}
+    |> changeset(args)
+    |> Sanbase.Repo.insert()
   end
 
   def by_ids(plan_ids) when is_list(plan_ids) do
@@ -55,13 +90,14 @@ defmodule Sanbase.Billing.Plan do
     %__MODULE__{name: "FREE"}
   end
 
-  @plan_same_name ["FREE", "BASIC", "PRO", "PRO_PLUS", "PREMIUM", "CUSTOM", "EXTENSION"]
+  @same_name_plans ["FREE", "BASIC", "PRO", "PRO_PLUS", "PREMIUM", "EXTENSION"]
+  @enterprise_plans ["CUSTOM", "ENTERPRISE", "ENTERPRISE_BASIC", "ENTERPRISE_PLUS"]
   def plan_name(%__MODULE__{} = plan) do
-    case plan do
-      %{name: name} when name in @plan_same_name -> name
-      %{name: "ESSENTIAL"} -> "BASIC"
-      %{name: "ENTERPRISE" <> _rest} -> "CUSTOM"
-      %{name: "CUSTOM_" <> _ = name} -> name
+    case plan.name do
+      name when name in @same_name_plans -> name
+      name when name in @enterprise_plans -> "CUSTOM"
+      "ESSENTIAL" -> "BASIC"
+      "CUSTOM_" <> _ = name -> name
     end
   end
 

@@ -1,19 +1,29 @@
-defmodule Sanbase.Billing.GraphqlSchema do
+defmodule Sanbase.Billing.ApiInfo do
   @moduledoc ~s"""
-  Contains functions that help examining the GraphQL schema.
-  It allows you to work easily with access logic of queries.
-  """
 
-  require SanbaseWeb.Graphql.Schema
+  """
 
   # NOTE: In case of compile time error for reasons like wrong import_types and
   # similar, the error will be not include the right place where it errored. In this
-  # case replace the @query type with the commented one - it has high chances for the
+  # case replace the @query_type with the commented one - it has high chances for the
   # proper error location to be revealed
   # @query_type %{fields: %{}}
   @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
   @fields @query_type.fields |> Map.keys()
 
+  @type query_or_argument_tuple ::
+          {:query, Atom.t()} | {:metric, String.t()} | {:signal, String.t()}
+
+  @typedoc """
+  Key is one of "SANAPI" or "SANBASE". Value is one of "FREE", "PRO", etc.
+  """
+  @type product_min_plan_map :: %{required(String.t()) => String.t()}
+
+  @doc ~s"""
+  Return a map where the key is a tuple containing query, metric or signal and the value
+  is the min plan in which the metric is available.
+  """
+  @spec min_plan_map() :: %{query_or_argument_tuple => product_min_plan_map}
   def min_plan_map() do
     # Metadata looks like this:
     # meta(access: :restricted, min_plan: [sanapi: "PRO", sanbase: "FREE"])
@@ -39,12 +49,6 @@ defmodule Sanbase.Billing.GraphqlSchema do
       Enum.all?(field_value_pairs, fn {field, value} ->
         Map.get(@query_type.fields, f) |> Absinthe.Type.meta(field) == value
       end)
-    end)
-  end
-
-  def get_query_meta_field_list(field) do
-    Enum.map(@fields, fn f ->
-      {f, Map.get(@query_type.fields, f) |> Absinthe.Type.meta(field)}
     end)
   end
 
@@ -91,6 +95,12 @@ defmodule Sanbase.Billing.GraphqlSchema do
   end
 
   # Private functions
+  defp get_query_meta_field_list(field) do
+    Enum.map(@fields, fn f ->
+      {f, Map.get(@query_type.fields, f) |> Absinthe.Type.meta(field)}
+    end)
+  end
+
   defp get_query_min_plan_map() do
     get_query_meta_field_list(:min_plan)
     |> Enum.into(%{}, fn

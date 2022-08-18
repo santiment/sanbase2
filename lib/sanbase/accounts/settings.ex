@@ -84,9 +84,9 @@ defmodule Sanbase.Accounts.Settings do
     settings.alerts_fired[today_str][channel] |> Sanbase.Math.to_integer() || 0
   end
 
-  defp validate_favorite_metrics(_, nil), do: []
+  defp validate_favorite_metrics(_field_name, nil), do: []
 
-  defp validate_favorite_metrics(_, metrics) do
+  defp validate_favorite_metrics(_fiel_name, metrics) do
     metrics
     |> Enum.find_value([], fn metric ->
       case Sanbase.Metric.has_metric?(metric) do

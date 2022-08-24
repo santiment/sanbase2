@@ -56,6 +56,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
     do: Metric.available_slugs(metric)
 
+  def get_available_projects(_root, _args, %{source: %{metric: metric}}) do
+    with {:ok, slugs} <- Metric.available_slugs(metric) do
+      {:ok, Sanbase.Model.Project.List.by_slugs(slugs)}
+    end
+  end
+
   def get_human_readable_name(_root, _args, %{source: %{metric: metric}}),
     do: Metric.human_readable_name(metric)
 

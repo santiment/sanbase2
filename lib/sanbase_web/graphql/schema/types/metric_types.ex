@@ -299,8 +299,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     the metric.
     """
     field :available_slugs, list_of(:string) do
-      arg(:selector, :aggregated_timeseries_data_selector_input_object)
       cache_resolve(&MetricResolver.get_available_slugs/3, ttl: 300)
+    end
+
+    field :available_projects, list_of(:project) do
+      cache_resolve(&MetricResolver.get_available_projects/3, ttl: 300)
     end
 
     @desc ~s"""

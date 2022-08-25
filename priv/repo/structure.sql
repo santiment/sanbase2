@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.2
--- Dumped by pg_dump version 14.2
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -7152,7 +7152,7 @@ ALTER TABLE ONLY public.user_api_key_tokens
 --
 
 ALTER TABLE ONLY public.user_entity_interactions
-    ADD CONSTRAINT user_entity_interactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT user_entity_interactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -7788,3 +7788,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220630123257);
 INSERT INTO public."schema_migrations" (version) VALUES (20220712122954);
 INSERT INTO public."schema_migrations" (version) VALUES (20220718125615);
 INSERT INTO public."schema_migrations" (version) VALUES (20220727072726);
+INSERT INTO public."schema_migrations" (version) VALUES (20220825071308);

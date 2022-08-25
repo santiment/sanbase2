@@ -326,7 +326,7 @@ defmodule Sanbase.Comments.Notification do
       entity: "chart layout",
       type: event_type,
       comment_text: comment.content,
-      link: deduce_entity_link(cc_comment.chart_configuration, :timeline_event),
+      link: deduce_entity_link(cc_comment.chart_configuration, :chart_configuration),
       title: cc_comment.chart_configuration.title || "",
       username: get_name(comment.user),
       avatar_url: comment.user.avatar_url || @default_avatar

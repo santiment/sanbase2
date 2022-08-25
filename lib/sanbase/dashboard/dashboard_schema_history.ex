@@ -83,13 +83,19 @@ defmodule Sanbase.Dashboard.History do
     end
   end
 
+  @doc ~s"""
+  Get the list of changes in most-recent order first, similar to git log
+  """
   def get_history_list(dashboard_id, opts) do
     {limit, offset} = opts_to_limit_offset(opts)
 
     query =
       from(dh in __MODULE__,
         where: dh.dashboard_id == ^dashboard_id,
-        order_by: [desc: dh.inserted_at],
+        # Ordering just by inserted_at can return wrong order
+        # in case 2+ records are stored in the same second
+        # This occurus often in tests
+        order_by: [desc: dh.inserted_at, desc: dh.id],
         limit: ^limit,
         offset: ^offset
       )

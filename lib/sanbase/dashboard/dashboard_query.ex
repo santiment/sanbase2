@@ -1,7 +1,8 @@
 defmodule Sanbase.Dashboard.Query do
   alias Sanbase.Dashboard.Query
 
-  @spec run(String.t(), Map.t(), String.t()) :: {:ok, Query.Result.t()} | {:error, String.t()}
+  @spec run(String.t(), Map.t(), String.t()) ::
+          {:ok, Query.Result.t()} | {:error, String.t()}
   @doc ~s"""
   Compute the SQL defined in the panel by executing it against ClickHouse.
 
@@ -76,9 +77,9 @@ defmodule Sanbase.Dashboard.Query do
   end
 
   def valid_sql_query?(sql) do
-    case Map.has_key?(sql, :query) and is_binary(sql[:query]) do
-      true -> Sanbase.Dashboard.SqlValidation.validate(sql[:query])
-      false -> {:error, "sql query must be a binary string"}
+    case Map.has_key?(sql, :query) and is_binary(sql[:query]) and String.length(sql[:query]) > 0 do
+      true -> true
+      false -> {:error, "sql query must be a non-emmpty binary string"}
     end
   end
 

@@ -90,6 +90,8 @@ defmodule Sanbase.Dashboard.Query do
   end
 
   defp transform_parameters_to_args(query, parameters) do
+    parameters = take_used_parameters_subset(query, parameters)
+
     # Transform the named parameters to positional parameters that are
     # understood by the ClickhouseRepo
     param_names = Map.keys(parameters)
@@ -106,6 +108,19 @@ defmodule Sanbase.Dashboard.Query do
       end)
 
     {query, args}
+  end
+
+  # Take only those parameters which are seen in the query.
+  # This is useful as the SQL Editor allows you to run a subsection
+  # of the query by highlighting it. Instead of doing the filtration of
+  # the parameters used in this section, this check is done on the backend
+  # The paramters are transformed into positional parameters, so a mismatch
+  # between the number of used an provided parameters resuls in an error
+  defp take_used_parameters_subset(query, parameters) do
+    Enum.filter(parameters, fn {key, _value} ->
+      String.contains?(query, "{{#{key}}}")
+    end)
+    |> Map.new()
   end
 
   # This is passed as the transform function to the ClickhouseRepo function

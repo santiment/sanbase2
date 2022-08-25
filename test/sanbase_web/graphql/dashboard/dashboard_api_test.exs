@@ -668,14 +668,14 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
 
       assert [
                %{
-                 "hash" => ^hash1,
-                 "insertedAt" => _,
-                 "message" => "Store initial version of dashboard schema"
-               },
-               %{
                  "hash" => ^hash2,
                  "insertedAt" => _,
                  "message" => "Store second version"
+               },
+               %{
+                 "hash" => ^hash1,
+                 "insertedAt" => _,
+                 "message" => "Store initial version of dashboard schema"
                }
              ] = history_list
 

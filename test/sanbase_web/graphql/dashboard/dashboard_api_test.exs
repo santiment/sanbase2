@@ -119,36 +119,6 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
       assert is_binary(binary_id)
     end
 
-    test "create panel - error invalid query", context do
-      dashboard_id =
-        execute_dashboard_mutation(context.conn, :create_dashboard)
-        |> get_in(["data", "createDashboard", "id"])
-
-      error_msg =
-        execute_dashboard_panel_schema_mutation(
-          context.conn,
-          :create_dashboard_panel,
-          default_dashboard_panel_args()
-          |> Map.put(:dashboard_id, dashboard_id)
-          |> put_in([:panel, :sql, :query], "SELECT * FROM system.query_log")
-        )
-        |> get_in(["errors", Access.at(0), "message"])
-
-      assert error_msg == "{\"sql\":[\"system tables are not allowed\"]}"
-
-      error_msg =
-        execute_dashboard_panel_schema_mutation(
-          context.conn,
-          :create_dashboard_panel,
-          default_dashboard_panel_args()
-          |> Map.put(:dashboard_id, dashboard_id)
-          |> put_in([:panel, :sql, :query], "SELECT * FROM non_existing")
-        )
-        |> get_in(["errors", Access.at(0), "message"])
-
-      assert error_msg == "{\"sql\":[\"table non_existing is not allowed or does not exist\"]}"
-    end
-
     test "update panel", context do
       dashboard_id =
         execute_dashboard_mutation(context.conn, :create_dashboard)

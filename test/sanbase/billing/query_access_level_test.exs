@@ -52,6 +52,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :eth_spent_by_erc20_projects,
           :eth_spent_over_time_by_all_projects,
           :eth_spent_over_time_by_erc20_projects,
+          :exchange_wallets,
           :featured_chart_configurations,
           :featured_insights,
           :featured_screeners,

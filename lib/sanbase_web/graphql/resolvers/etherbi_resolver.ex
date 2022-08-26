@@ -72,6 +72,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :token_velocity)
   end
 
+  # TODO: Remove this. It is brought temporary while the bigdata team works on it
+  def exchange_wallets(_root, %{slug: slug} = args, _resolution) do
+    limit = Map.get(args, :limit, 1000)
+    ExchangeAddress.exchange_addresses(slug, limit)
+  end
+
   # Private functions
   defp token_age_in_days(token_age_consumed, trx_volume)
        when token_age_consumed <= 0.1 or trx_volume <= 0.1 do

@@ -170,7 +170,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
     with true <- can_run_computation?(user.id),
          true <- Dashboard.Query.valid_sql?(args),
-         {:ok, query_result} <- Dashboard.Query.run(args.query, args.parameters, san_query_id) do
+         {:ok, query_result} <-
+           Dashboard.Query.run(args.query, args.parameters, san_query_id, user.id) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Dashboard.QueryExecution.store_execution(user.id, query_result)
       end)

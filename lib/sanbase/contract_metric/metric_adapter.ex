@@ -107,6 +107,7 @@ defmodule Sanbase.Contract.MetricAdapter do
        default_aggregation: :count,
        available_aggregations: @aggregations,
        available_selectors: [:contract_address],
+       required_selectors: [:contract_address],
        data_type: :timeseries,
        complexity_weight: @default_complexity_weight
      }}

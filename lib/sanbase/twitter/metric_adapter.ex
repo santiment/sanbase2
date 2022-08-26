@@ -98,6 +98,7 @@ defmodule Sanbase.Twitter.MetricAdapter do
        default_aggregation: :last,
        available_aggregations: @aggregations,
        available_selectors: [:slug],
+       required_selectors: [:slug],
        data_type: :timeseries,
        complexity_weight: @default_complexity_weight
      }}

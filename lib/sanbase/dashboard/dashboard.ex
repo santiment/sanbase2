@@ -145,12 +145,7 @@ defmodule Sanbase.Dashboard do
   def compute_and_store_panel(dashboard_id, panel_id, querying_user_id) do
     with {:ok, dashboard} <- Dashboard.Schema.by_id(dashboard_id),
          {:ok, query_result} <- do_compute_panel(dashboard, panel_id, querying_user_id),
-         {:ok, _} <-
-           Dashboard.Cache.update_panel_cache(
-             dashboard_id,
-             panel_id,
-             query_result
-           ) do
+         {:ok, _} <- Dashboard.Cache.update_panel_cache(dashboard_id, panel_id, query_result) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Dashboard.QueryExecution.store_execution(querying_user_id, query_result)
       end)

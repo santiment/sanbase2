@@ -31,8 +31,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   alias Absinthe.Resolution
 
   alias Sanbase.Billing.{
-    Subscription,
-    GraphqlSchema,
     Plan,
     Plan.AccessChecker,
     Product

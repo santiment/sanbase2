@@ -20,10 +20,10 @@ defmodule Sanbase.Dashboard.Schema do
   alias Sanbase.Dashboard.Panel
 
   @type schema_args :: %{
-          name: String.t(),
-          description: String.t(),
-          is_public: boolean(),
-          user_id: non_neg_integer()
+          optional(:name) => String.t(),
+          optional(:description) => String.t(),
+          optional(:is_public) => boolean(),
+          optional(:user_id) => non_neg_integer()
         }
 
   @type t :: %__MODULE__{

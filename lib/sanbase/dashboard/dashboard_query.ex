@@ -1,7 +1,7 @@
 defmodule Sanbase.Dashboard.Query do
   alias Sanbase.Dashboard.Query
 
-  @spec run(String.t(), Map.t(), String.t()) ::
+  @spec run(String.t(), Map.t(), String.t(), non_neg_integer()) ::
           {:ok, Query.Result.t()} | {:error, String.t()}
   @doc ~s"""
   Compute the SQL defined in the panel by executing it against ClickHouse.
@@ -9,7 +9,7 @@ defmodule Sanbase.Dashboard.Query do
   The SQL query and arguments are taken from the panel and are executed.
   The result is transformed by converting the Date and NaiveDateTime types to DateTime.
   """
-  def run(query, parameters, san_query_id) do
+  def run(query, parameters, san_query_id, querying_user_id) do
     query_start_time = DateTime.utc_now()
 
     # Use the pool defined by the ReadOnly repo. This is used only here
@@ -19,6 +19,7 @@ defmodule Sanbase.Dashboard.Query do
     # this process only.
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
 
+    query = extend_query_with_user_id_comment(query, querying_user_id)
     {query, args} = transform_parameters_to_args(query, parameters)
 
     case Sanbase.ClickhouseRepo.query_transform_with_metadata(
@@ -78,7 +79,7 @@ defmodule Sanbase.Dashboard.Query do
 
   def valid_sql_query?(sql) do
     case Map.has_key?(sql, :query) and is_binary(sql[:query]) and String.length(sql[:query]) > 0 do
-      true -> true
+      true -> :ok
       false -> {:error, "sql query must be a non-emmpty binary string"}
     end
   end
@@ -109,6 +110,10 @@ defmodule Sanbase.Dashboard.Query do
       end)
 
     {query, args}
+  end
+
+  defp extend_query_with_user_id_comment(query, user_id) do
+    "-- __sanbase_user_id_running_the_query__ #{user_id}\n" <> query
   end
 
   # Take only those parameters which are seen in the query.

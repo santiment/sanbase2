@@ -6,8 +6,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
   alias SanbaseWeb.Graphql.Resolvers.{EtherbiResolver, ClickhouseResolver, ExchangeResolver}
 
   alias SanbaseWeb.Graphql.Complexity
-  alias Sanbase.Billing.Product
-  alias SanbaseWeb.Graphql.Middlewares.AccessControl
+  alias SanbaseWeb.Graphql.Middlewares.{AccessControl, BasicAuth}
 
   object :blockchain_metric_queries do
     # STANDART PLAN
@@ -408,6 +407,16 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.eth_fees_distribution/3)
+    end
+
+    # TODO: Remove this. It is brought only temporary
+    field :exchange_wallets, list_of(:wallet) do
+      meta(access: :free)
+      arg(:slug, non_null(:string))
+      arg(:limit, :integer, default_value: 1000)
+
+      middleware(BasicAuth)
+      cache_resolve(&EtherbiResolver.exchange_wallets/3)
     end
   end
 end

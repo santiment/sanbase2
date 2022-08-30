@@ -140,6 +140,14 @@ defmodule Sanbase.StripeApi do
 
   def delete_default_card(_), do: {:error, "Customer has no default card"}
 
+  def add_credit(customer_id, amount, trx_id) do
+    Stripe.CustomerBalanceTransaction.create(customer_id, %{
+      amount: amount,
+      currency: "USD",
+      description: "https://etherscan.io/tx/#{trx_id}"
+    })
+  end
+
   # Helpers
 
   defp get_subscription_first_item_id(stripe_id) do

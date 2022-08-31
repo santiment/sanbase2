@@ -51,6 +51,7 @@ defmodule Sanbase.Dashboard.Schema do
     field(:is_public, :boolean, default: false)
     field(:is_hidden, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)
+    field(:views, :integer, virtual: true, default: 0)
 
     # Temporary add JSON field for tests. Will be removed before
     # final version is released for public use

@@ -32,6 +32,7 @@ defmodule Sanbase.Entity do
   alias Sanbase.UserList
   alias Sanbase.Dashboard
   alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Accounts.Interaction
 
   # The list of supported entitiy types. In order to add a new entity type, the
   # following steps must be taken:
@@ -209,6 +210,38 @@ defmodule Sanbase.Entity do
     query
     |> limit(^limit)
     |> offset(^offset)
+  end
+
+  def extend_with_views_count(result) do
+    concat_entities =
+      Enum.map(result, fn elem ->
+        [{type, entity}] = Map.to_list(elem)
+        "#{Interaction.deduce_entity_column_name(type)}#{entity.id}"
+      end)
+
+    query = """
+    WITH concat_entities AS (select concat(entity_type, entity_id) AS entity, interaction_type FROM user_entity_interactions)
+    SELECT entity, count(interaction_type)
+    FROM concat_entities
+    WHERE entity IN (#{concat_entities |> Enum.map(fn elem -> "'#{elem}'" end) |> Enum.join(",")}) AND interaction_type = 'view'
+    GROUP BY entity;
+    """
+
+    query_res = Sanbase.Repo.query!(query)
+
+    entity_count_map =
+      query_res.rows
+      |> Enum.into(%{}, fn [entity, count] ->
+        {entity, count}
+      end)
+
+    Enum.map(result, fn elem ->
+      [{type, entity}] = Map.to_list(elem)
+      key = "#{Interaction.deduce_entity_column_name(type)}#{entity.id}"
+
+      entity = %{entity | views: entity_count_map[key] || 0}
+      [{type, entity}] |> Enum.into(%{})
+    end)
   end
 
   # Private functions

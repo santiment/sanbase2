@@ -21,6 +21,7 @@ defmodule Sanbase.Chart.Configuration do
     field(:queries, :map, default: %{})
     field(:drawings, :map, default: %{})
     field(:options, :map, default: %{})
+    field(:views, :integer, virtual: true, default: 0)
 
     has_one(:featured_item, Sanbase.FeaturedItem,
       on_delete: :delete_all,

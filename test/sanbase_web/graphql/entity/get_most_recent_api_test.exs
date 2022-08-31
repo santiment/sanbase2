@@ -233,6 +233,13 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     conf2 = insert(:chart_configuration, is_public: true, inserted_at: seconds_ago(35))
     screener = insert(:screener, is_public: true, inserted_at: seconds_ago(30))
 
+    insert(:intercation,
+      user: build(:user),
+      entity_id: screener.id,
+      entity_type: "watchlist",
+      interaction_type: "view"
+    )
+
     project_watchlist =
       insert(:watchlist,
         type: :project,
@@ -315,6 +322,53 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
 
     assert Enum.at(data, 0)["insight"]["id"] == insight2.id
     assert Enum.at(data, 1)["chartConfiguration"]["id"] == conf1.id
+  end
+
+  describe "views count" do
+    test "moderator can see views count" do
+      moderator_user = insert(:user)
+      role = insert(:role_san_moderator)
+      {:ok, _} = Sanbase.Accounts.UserRole.create(moderator_user.id, role.id)
+      Sanbase.Cache.clear_all()
+
+      moderator_conn = setup_jwt_auth(build_conn(), moderator_user)
+
+      screener = insert(:screener, is_public: true, inserted_at: seconds_ago(30))
+
+      insert(:intercation,
+        user: build(:user),
+        entity_id: screener.id,
+        entity_type: "watchlist",
+        interaction_type: "view"
+      )
+
+      data_moderator = get_most_recent(moderator_conn, [:screener])["data"]
+
+      assert Enum.at(data_moderator, 0)["screener"]["id"] |> String.to_integer() ==
+               screener.id
+
+      assert Enum.at(data_moderator, 0)["screener"]["views"] == 1
+    end
+
+    test "non moderator user cannot see views count", context do
+      Sanbase.Cache.clear_all()
+
+      screener = insert(:screener, is_public: true, inserted_at: seconds_ago(30))
+
+      insert(:intercation,
+        user: build(:user),
+        entity_id: screener.id,
+        entity_type: "watchlist",
+        interaction_type: "view"
+      )
+
+      data = get_most_recent(context.conn, [:screener])["data"]
+
+      assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() ==
+               screener.id
+
+      assert Enum.at(data, 0)["screener"]["views"] == 0
+    end
   end
 
   test "get most recent with projects' slugs filter", context do
@@ -682,7 +736,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
           dashboard{ id }
           insight{ id }
           projectWatchlist{ id }
-          screener{ id }
+          screener{ id views }
           userTrigger{ trigger{ id } }
         }
       }

@@ -25,6 +25,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     opts = get_opts(args, resolution)
 
     Sanbase.Entity.get_most_voted(types, opts)
+    |> maybe_extend_with_views_count(opts)
     |> maybe_apply_function(&handle_result/1)
   end
 
@@ -56,6 +57,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     opts = get_opts(args, resolution)
 
     Sanbase.Entity.get_most_recent(types, opts)
+    |> maybe_extend_with_views_count(opts)
     |> maybe_apply_function(&handle_result/1)
   end
 
@@ -96,6 +98,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     opts = get_opts(args, resolution)
 
     Sanbase.Entity.get_most_used(types, opts)
+    |> maybe_extend_with_views_count(opts)
     |> maybe_apply_function(&handle_result/1)
   end
 
@@ -175,6 +178,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     is_moderator = Map.get(resolution.context, :is_moderator)
     Keyword.put(opts, :is_moderator, is_moderator)
   end
+
+  defp maybe_extend_with_views_count({:ok, result}, opts) do
+    case Keyword.get(opts, :is_moderator, false) do
+      true -> {:ok, Sanbase.Entity.extend_with_views_count(result)}
+      false -> {:ok, result}
+    end
+  end
+
+  defp maybe_extend_with_views_count(result, _opts), do: result
 
   defp maybe_do_not_cache(args) do
     # Do not cache the queries that fetch the users' own data as they differ

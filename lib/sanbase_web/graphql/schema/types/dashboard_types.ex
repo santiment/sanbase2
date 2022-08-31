@@ -227,6 +227,7 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     @desc "Temporary field. Will be removed"
     field(:temp_json, non_null(:json))
     field(:panels, list_of(:panel_schema))
+    field(:views, :integer)
 
     field :user, non_null(:public_user) do
       resolve(&UserResolver.user_no_preloads/3)

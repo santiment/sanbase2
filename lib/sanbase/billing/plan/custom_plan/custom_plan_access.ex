@@ -18,7 +18,7 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Access do
   end
 
   def realtime_data_cut_off_in_days(plan_name, _product_code, _query) do
-    get_data(plan_name).restrictions.historical_data_in_days
+    get_data(plan_name).restrictions.realtime_data_cut_off_in_days
   end
 
   def plan_has_access?(plan_name, _product_code, query_or_argument) do

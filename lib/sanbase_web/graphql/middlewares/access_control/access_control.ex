@@ -162,12 +162,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
           resolution,
           {:error,
            """
-           The #{argument} #{argument_name} is not accessible with the currently used
-           #{product_code} #{plan_name} subscription. Please upgrade to #{product_code} #{min_plan} subscription
+           The #{argument} #{argument_name} is not accessible with the currently used \
+           #{product_code} #{plan_name} subscription. Please upgrade to #{product_code} #{min_plan} subscription \
            or a Custom Plan that has access to it.
 
-           If you have a subscription for one product but attempt to fetch data using
-           another product, this error will still be shown. The data on SANBASE cannot
+           If you have a subscription for one product but attempt to fetch data using \
+           another product, this error will still be shown. The data on SANBASE cannot \
            be fetched with a SANAPI subscription and vice versa.
            """}
         )

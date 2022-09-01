@@ -554,6 +554,14 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def subscription_factory() do
+    %Subscription{
+      stripe_id: rand_str(),
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
+    }
+  end
+
   def subscription_essential_factory() do
     %Subscription{
       stripe_id: rand_str(),

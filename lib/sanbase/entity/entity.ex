@@ -212,10 +212,10 @@ defmodule Sanbase.Entity do
     |> offset(^offset)
   end
 
-  def extend_with_views_count(result) do
+  def extend_with_views_count(type_entity_list) do
     entity_type_id_conditions =
-      Enum.reduce(result, false, fn elem, dynamic_query ->
-        [{type, %{id: entity_id}}] = Map.to_list(elem)
+      Enum.reduce(type_entity_list, false, fn type_entity, dynamic_query ->
+        [{type, %{id: entity_id}}] = Map.to_list(type_entity)
         type = Interaction.deduce_entity_column_name(type)
 
         dynamic(
@@ -237,15 +237,14 @@ defmodule Sanbase.Entity do
     entity_count_map =
       Sanbase.Repo.all(query)
       |> Enum.into(%{}, fn [entity_id, entity_type, count] ->
-        {"#{entity_type}#{entity_id}", count}
+        {{entity_type, entity_id}, count}
       end)
 
-    Enum.map(result, fn elem ->
-      [{type, entity}] = Map.to_list(elem)
-      key = "#{Interaction.deduce_entity_column_name(type)}#{entity.id}"
-
+    Enum.map(type_entity_list, fn type_entity ->
+      [{type, entity}] = Map.to_list(type_entity)
+      key = {Interaction.deduce_entity_column_name(type), entity.id}
       entity = %{entity | views: entity_count_map[key] || 0}
-      [{type, entity}] |> Enum.into(%{})
+      %{type => entity}
     end)
   end
 

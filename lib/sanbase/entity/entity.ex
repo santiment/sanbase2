@@ -213,26 +213,31 @@ defmodule Sanbase.Entity do
   end
 
   def extend_with_views_count(result) do
-    concat_entities =
-      Enum.map(result, fn elem ->
-        [{type, entity}] = Map.to_list(elem)
-        "#{Interaction.deduce_entity_column_name(type)}#{entity.id}"
+    entity_type_id_conditions =
+      Enum.reduce(result, false, fn elem, dynamic_query ->
+        [{type, %{id: entity_id}}] = Map.to_list(elem)
+        type = Interaction.deduce_entity_column_name(type)
+
+        dynamic(
+          [row],
+          ^dynamic_query or (row.entity_type == ^type and row.entity_id == ^entity_id)
+        )
       end)
 
-    query = """
-    WITH concat_entities AS (select concat(entity_type, entity_id) AS entity, interaction_type FROM user_entity_interactions)
-    SELECT entity, count(interaction_type)
-    FROM concat_entities
-    WHERE entity IN (#{concat_entities |> Enum.map(fn elem -> "'#{elem}'" end) |> Enum.join(",")}) AND interaction_type = 'view'
-    GROUP BY entity;
-    """
+    entity_type_id_conditions =
+      dynamic([row], row.interaction_type == "view" and ^entity_type_id_conditions)
 
-    query_res = Sanbase.Repo.query!(query)
+    query =
+      from(row in Interaction,
+        where: ^entity_type_id_conditions,
+        select: [row.entity_id, row.entity_type, fragment("COUNT(*)")],
+        group_by: [row.entity_id, row.entity_type]
+      )
 
     entity_count_map =
-      query_res.rows
-      |> Enum.into(%{}, fn [entity, count] ->
-        {entity, count}
+      Sanbase.Repo.all(query)
+      |> Enum.into(%{}, fn [entity_id, entity_type, count] ->
+        {"#{entity_type}#{entity_id}", count}
       end)
 
     Enum.map(result, fn elem ->

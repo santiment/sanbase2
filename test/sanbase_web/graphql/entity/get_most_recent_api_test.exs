@@ -334,11 +334,19 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
       moderator_conn = setup_jwt_auth(build_conn(), moderator_user)
 
       screener = insert(:screener, is_public: true, inserted_at: seconds_ago(30))
+      conf = insert(:chart_configuration, is_public: true, inserted_at: seconds_ago(45))
 
       insert(:intercation,
         user: build(:user),
         entity_id: screener.id,
         entity_type: "watchlist",
+        interaction_type: "view"
+      )
+
+      insert(:intercation,
+        user: build(:user),
+        entity_id: conf.id,
+        entity_type: "chart_configuration",
         interaction_type: "view"
       )
 

@@ -29,6 +29,11 @@ defmodule Sanbase.Factory do
   alias Sanbase.BlockchainAddress
   alias Sanbase.SheetsTemplate
   alias Sanbase.Webinar
+  alias Sanbase.Accounts.Interaction
+
+  def intercation_factory do
+    %Interaction{}
+  end
 
   def user_factory() do
     %User{

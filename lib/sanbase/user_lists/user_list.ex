@@ -42,6 +42,7 @@ defmodule Sanbase.UserList do
     field(:is_screener, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)
     field(:is_hidden, :boolean, default: false)
+    field(:views, :integer, virtual: true, default: 0)
 
     belongs_to(:user, User)
     belongs_to(:table_configuration, Sanbase.TableConfiguration)

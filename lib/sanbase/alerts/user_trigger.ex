@@ -32,6 +32,7 @@ defmodule Sanbase.Alert.UserTrigger do
   schema "user_triggers" do
     field(:is_deleted, :boolean, default: false)
     field(:is_hidden, :boolean, default: false)
+    field(:views, :integer, virtual: true, default: 0)
 
     belongs_to(:user, User)
     embeds_one(:trigger, Trigger, on_replace: :update)

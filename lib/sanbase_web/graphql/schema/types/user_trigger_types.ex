@@ -25,6 +25,8 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
     field :votes, :vote do
       resolve(&VoteResolver.votes/3)
     end
+
+    field(:views, :integer)
   end
 
   object :trigger do

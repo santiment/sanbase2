@@ -124,6 +124,27 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
     end
 
     @desc ~s"""
+    Verifies that the email change is valid. This mutation does the actual email change.
+    """
+    field :email_change_verify, :login do
+      arg(:email_candidate, non_null(:string))
+      arg(:token, non_null(:string))
+
+      resolve(&AuthResolver.email_change_verify/2)
+    end
+
+    @desc ~s"""
+    Initiate the email change process. This mutation will send an email that contains
+    a link that needs to be followed to complete the email change.
+    """
+    field :change_email, :email_login_request do
+      arg(:email, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&AuthResolver.change_email/3)
+    end
+
+    @desc ~s"""
     Delete the current session without revoking the refresh token.
     """
     field :logout, :logout do

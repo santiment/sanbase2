@@ -658,7 +658,15 @@ defmodule Sanbase.Entity do
 
   # Which of the provided by the API opts are passed to the entity modules.
 
-  @passed_opts [:filter, :cursor, :user_ids, :is_featured_data_only, :is_moderator]
+  @passed_opts [
+    :filter,
+    :cursor,
+    :user_ids,
+    :is_featured_data_only,
+    :is_moderator,
+    :min_title_length,
+    :min_description_length
+  ]
 
   defp entity_ids_query(:insight, opts) do
     # `ordered?: false` is important otherwise the default order will be applied

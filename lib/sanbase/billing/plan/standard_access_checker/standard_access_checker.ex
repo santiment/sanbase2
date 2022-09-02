@@ -61,7 +61,6 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
   @free_query_or_argument_mapset MapSet.new(@free_query_or_argument)
 
   @restricted_query_or_argument ApiInfo.get_all_with_access_level(:restricted)
-  @restricted_query_or_argument_mapset MapSet.new(@restricted_query_or_argument)
 
   @all_query_or_argument @free_query_or_argument ++ @restricted_query_or_argument
 

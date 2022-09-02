@@ -344,10 +344,9 @@ defmodule Sanbase.ApiCallLimit do
         false
 
       "sanapi_custom_" <> _ ->
-        "sanapi_" <> plan_name = plan
-        plan_name = String.upcase(plan_name)
+        [product_code, plan_name] = plan |> String.upcase() |> String.split(plan, parts: 2)
 
-        case Sanbase.Billing.Plan.CustomPlan.Access.api_call_limits(plan_name) do
+        case Sanbase.Billing.Plan.CustomPlan.Access.api_call_limits(plan_name, product_code) do
           %{"has_limits" => false} -> false
           _ -> true
         end
@@ -376,7 +375,7 @@ defmodule Sanbase.ApiCallLimit do
         plan_name = String.upcase(plan_name)
 
         %{"month" => month, "hour" => hour, "minute" => minute} =
-          Sanbase.Billing.Plan.CustomPlan.Access.api_call_limits(plan_name)
+          Sanbase.Billing.Plan.CustomPlan.Access.api_call_limits(plan_name, "SANAPI")
 
         %{month: month, hour: hour, minute: minute}
 

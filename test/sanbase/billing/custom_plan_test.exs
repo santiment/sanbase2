@@ -29,7 +29,11 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
       resolved_queries: resolved_queries,
       resolved_signals: resolved_signals,
       restrictions: _restrictions
-    } = Sanbase.Billing.Plan.CustomPlan.Loader.get_data(plan.name)
+    } =
+      Sanbase.Billing.Plan.CustomPlan.Loader.get_data(
+        plan.name,
+        Sanbase.Billing.Product.code_by_id(plan.product_id)
+      )
 
     assert "price_usd" in resolved_metrics
     assert "active_addresses_24h" in resolved_metrics
@@ -57,7 +61,11 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
              "month" => 3_000_000,
              "hour" => 100_000,
              "minute" => 1000
-           } == Sanbase.Billing.Plan.CustomPlan.Access.api_call_limits(plan.name)
+           } ==
+             Sanbase.Billing.Plan.CustomPlan.Access.api_call_limits(
+               plan.name,
+               Sanbase.Billing.Product.code_by_id(plan.product_id)
+             )
   end
 
   test "custom plan access is cut to some metrics", context do

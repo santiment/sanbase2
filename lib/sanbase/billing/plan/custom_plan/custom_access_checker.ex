@@ -10,7 +10,8 @@ defmodule Sanbase.Billing.Plan.CustomAccessChecker do
 
   def is_restricted?(plan_name, product_code, query_or_argument) do
     # metrics/queries/signals have free/restricted access base
-    restricted_access_as_plan = CustomPlan.Access.restricted_access_as_plan(plan_name)
+    restricted_access_as_plan =
+      CustomPlan.Access.restricted_access_as_plan(plan_name, product_code)
 
     Sanbase.Billing.Plan.StandardAccessChecker.is_restricted?(
       restricted_access_as_plan,
@@ -28,7 +29,8 @@ defmodule Sanbase.Billing.Plan.CustomAccessChecker do
   end
 
   def is_historical_data_freely_available?(plan_name, product_code, query_or_argument) do
-    restricted_access_as_plan = CustomPlan.Access.restricted_access_as_plan(plan_name)
+    restricted_access_as_plan =
+      CustomPlan.Access.restricted_access_as_plan(plan_name, product_code)
 
     Sanbase.Billing.Plan.StandardAccessChecker.is_historical_data_freely_available?(
       restricted_access_as_plan,
@@ -38,7 +40,8 @@ defmodule Sanbase.Billing.Plan.CustomAccessChecker do
   end
 
   def is_realtime_data_freely_available?(plan_name, product_code, query_or_argument) do
-    restricted_access_as_plan = CustomPlan.Access.restricted_access_as_plan(plan_name)
+    restricted_access_as_plan =
+      CustomPlan.Access.restricted_access_as_plan(plan_name, product_code)
 
     Sanbase.Billing.Plan.StandardAccessChecker.is_realtime_data_freely_available?(
       restricted_access_as_plan,

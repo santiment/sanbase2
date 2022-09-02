@@ -8,17 +8,15 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
   alias Sanbase.Billing.{Plan, Plan.CustomPlan}
   alias Sanbase.Billing.ApiInfo
 
-  @product_api_id Sanbase.Billing.Product.product_api()
-
   @doc ~s"""
   The plans restrictions are chcked on every request, so they need to have
   constant access. Once the restrictions are stored for a plan, they are not
   updated.
   """
-  def get_data(plan_name) do
-    case :persistent_term.get({__MODULE__, plan_name}, :plan_not_stored) do
+  def get_data(plan_name, product_code) do
+    case :persistent_term.get({__MODULE__, plan_name, product_code}, :plan_not_stored) do
       :plan_not_stored ->
-        {:ok, %Plan{restrictions: restrictions}} = get_plan(plan_name)
+        {:ok, %Plan{restrictions: restrictions}} = get_plan(plan_name, product_code)
 
         data = %{
           restrictions: restrictions,
@@ -27,7 +25,7 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
           resolved_signals: resolve_signals(restrictions)
         }
 
-        :ok = put_data({__MODULE__, plan_name}, data)
+        :ok = put_data(plan_name, product_code, data)
 
         data
 
@@ -39,13 +37,13 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
   def put_plans_in_persistent_term() do
     plans =
       from(p in Plan,
-        where: p.product_id == ^@product_api_id and p.has_custom_restrictions == true
+        where: p.has_custom_restrictions == true
       )
       |> Sanbase.Repo.all()
       # There are montly and yearly plans, both should have the same plan
-      |> Enum.uniq_by(& &1.name)
+      |> Enum.uniq_by(&{&1.name, &1.product_id})
 
-    for %{name: plan_name, restrictions: restrictions} <- plans do
+    for %{name: plan_name, restrictions: restrictions, product_id: product_id} <- plans do
       data = %{
         restrictions: restrictions,
         resolved_metrics: resolve_metrics(restrictions),
@@ -53,15 +51,19 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
         resolved_signals: resolve_signals(restrictions)
       }
 
-      put_data(plan_name, data)
+      product_code = Sanbase.Billing.Product.code_by_id(product_id)
+
+      put_data(plan_name, product_code, data)
     end
   end
 
-  defp get_plan("CUSTOM_" <> _ = plan_name) do
+  defp get_plan("CUSTOM_" <> _ = plan_name, product_code) do
+    product_id = Sanbase.Billing.Product.id_by_code(product_code)
+
     plan =
       from(p in Plan,
         where:
-          p.name == ^plan_name and p.product_id == ^@product_api_id and
+          p.name == ^plan_name and p.product_id == ^product_id and
             p.has_custom_restrictions == true,
         # There are montly and yearly plans, both should have the same plan
         limit: 1
@@ -74,7 +76,7 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
     end
   end
 
-  defp put_data(plan_name, data) do
+  defp put_data(plan_name, product_code, data) do
     :persistent_term.put({__MODULE__, plan_name}, data)
   end
 

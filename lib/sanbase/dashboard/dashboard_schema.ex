@@ -101,6 +101,8 @@ defmodule Sanbase.Dashboard.Schema do
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :dashboard_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> Sanbase.Entity.Query.maybe_filter_min_title_length(opts, :name)
+    |> Sanbase.Entity.Query.maybe_filter_min_description_length(opts, :description)
     |> select([ul], ul.id)
   end
 

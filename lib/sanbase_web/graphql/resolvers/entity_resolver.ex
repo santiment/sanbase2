@@ -147,6 +147,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     |> maybe_add_user_option(:current_user_voted_for_only, args, resolution)
     |> maybe_add_value_option(:user_role_data_only, args)
     |> maybe_add_value_option(:is_featured_data_only, args)
+    |> maybe_add_value_option(:min_title_length, args)
+    |> maybe_add_value_option(:min_description_length, args)
     |> add_is_moderator_option(resolution)
   end
 

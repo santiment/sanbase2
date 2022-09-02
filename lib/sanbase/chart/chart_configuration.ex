@@ -101,6 +101,8 @@ defmodule Sanbase.Chart.Configuration do
     base_query()
     |> maybe_apply_projects_filter(opts)
     |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
+    |> Sanbase.Entity.Query.maybe_filter_min_title_length(opts, :title)
+    |> Sanbase.Entity.Query.maybe_filter_min_description_length(opts, :description)
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :chart_configuration_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)

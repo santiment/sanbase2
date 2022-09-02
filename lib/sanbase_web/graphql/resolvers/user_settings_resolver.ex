@@ -41,6 +41,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
     |> handle_toggle_result()
   end
 
+  # Private functions
+
   defp handle_toggle_result(result) do
     case result do
       {:ok, us} ->

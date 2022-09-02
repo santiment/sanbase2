@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
         save_image_content(arg)
       end)
 
-    save_image_meta_data(image_data)
+    :ok = save_image_meta_data(image_data)
 
     {:ok, image_data}
   end

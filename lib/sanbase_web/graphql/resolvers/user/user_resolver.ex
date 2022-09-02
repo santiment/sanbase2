@@ -108,44 +108,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     {:ok, %{count: length(followers), users: followers}}
   end
 
-  def change_email(_root, %{email: email_candidate}, %{
-        context: %{auth: %{auth_method: :user_token, current_user: user}}
-      }) do
-    with {:ok, user} <- User.update_email_candidate(user, email_candidate),
-         {:ok, _user} <- User.send_verify_email(user) do
-      {:ok, %{success: true}}
-    else
-      {:error, changeset} ->
-        message = "Can't change current user's email to #{email_candidate}"
-        Logger.warn(message)
-        {:error, message: message, details: changeset_errors(changeset)}
-    end
-  end
-
-  def email_change_verify(
-        %{token: email_candidate_token, email_candidate: email_candidate},
-        %{context: %{device_data: device_data}}
-      ) do
-    with {:ok, user} <- User.find_by_email_candidate(email_candidate, email_candidate_token),
-         true <- User.email_candidate_token_valid?(user, email_candidate_token),
-         {:ok, jwt_tokens} <-
-           SanbaseWeb.Guardian.get_jwt_tokens(user,
-             platform: device_data.platform,
-             client: device_data.client
-           ),
-         {:ok, user} <- User.update_email_from_email_candidate(user) do
-      {:ok,
-       %{
-         user: user,
-         token: jwt_tokens.access_token,
-         access_token: jwt_tokens.access_token,
-         refresh_token: jwt_tokens.refresh_token
-       }}
-    else
-      _ -> {:error, message: "Login failed"}
-    end
-  end
-
   def change_name(_root, %{name: new_name}, %{context: %{auth: %{current_user: user}}}) do
     case User.change_name(user, new_name) do
       {:ok, user} ->

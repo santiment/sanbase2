@@ -105,7 +105,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       """
 
       error_msg = execute_mutation_with_error(conn, mutation)
-      assert error_msg == "Login failed"
+      assert error_msg == "Email change verify failed"
     end
 
     test "trying to verify email_candidate with a valid email_candidate_token", %{conn: conn} do
@@ -166,7 +166,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       """
 
       error_msg = execute_mutation_with_error(conn, mutation)
-      assert error_msg == "Login failed"
+      assert error_msg == "Email change verify failed"
     end
 
     test "trying to verify email_candidate again with a valid token after one validation", %{
@@ -208,7 +208,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
         ]
       } = result
 
-      assert message == "Login failed"
+      assert message == "Email change verify failed"
     end
   end
 

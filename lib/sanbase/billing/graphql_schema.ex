@@ -4,8 +4,6 @@ defmodule Sanbase.Billing.GraphqlSchema do
   It allows you to work easily with access logic of queries.
   """
 
-  alias Sanbase.Billing.Product
-
   require SanbaseWeb.Graphql.Schema
 
   # NOTE: In case of compile time error for reasons like wrong import_types and

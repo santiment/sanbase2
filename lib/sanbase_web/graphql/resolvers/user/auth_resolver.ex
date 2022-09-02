@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts.{User, EthAccount, EmailLoginAttempt}
@@ -145,6 +144,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
           auth: %{auth_method: :user_token, current_user: user}
         }
       }) do
+    remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
+
     with :ok <- EmailLoginAttempt.has_allowed_login_attempts(user, remote_ip),
          {:ok, user} <- User.update_email_candidate(user, email_candidate),
          {:ok, _user} <- User.send_verify_email(user),

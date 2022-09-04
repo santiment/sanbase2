@@ -150,6 +150,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     |> maybe_add_value_option(:min_title_length, args)
     |> maybe_add_value_option(:min_description_length, args)
     |> add_is_moderator_option(resolution)
+    |> temp_maybe_rewrite_min_length_args(args)
+  end
+
+  # TODO: Frontend needs to be put filter in `New` tab and backend
+  # needs to set these to default 0
+  defp temp_maybe_rewrite_min_length_args(opts, args) do
+    case Map.get(args, :current_user_data_only, false) do
+      true ->
+        opts
+        |> Keyword.put(:min_title_length, 0)
+        |> Keyword.put(:min_description_length, 0)
+
+      false ->
+        opts
+    end
   end
 
   defp maybe_add_user_id_option(opts, resolution) do

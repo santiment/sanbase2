@@ -109,8 +109,10 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
   end
 
   def fetch_user_by_address(address) do
-    user_id = EthAccount.by_address(address).user_id
-    Sanbase.Accounts.get_user(user_id)
+    case EthAccount.by_address(address) do
+      nil -> {:error, "No registered user with address: #{address}"}
+      eth_account -> Sanbase.Accounts.get_user(eth_account.user_id)
+    end
   end
 
   def add_credit_to_stripe(user, amount, burn_trx) do

@@ -99,12 +99,9 @@ defmodule Sanbase.EventBus.EventValidation do
   def valid?(%{
         event_type: :create_stripe_customer,
         user_id: user_id,
-        stripe_customer_id: customer_id,
-        card_token: card_token
+        stripe_customer_id: customer_id
       }),
-      do:
-        valid_integer_id?(user_id) and valid_string_id?(customer_id) and
-          (is_nil(card_token) or is_binary(card_token))
+      do: valid_integer_id?(user_id) and valid_string_id?(customer_id)
 
   def valid?(%{
         event_type: event_type,

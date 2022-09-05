@@ -2672,6 +2672,43 @@ ALTER SEQUENCE public.roles_id_seq OWNED BY public.roles.id;
 
 
 --
+-- Name: san_burn_credit_transactions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.san_burn_credit_transactions (
+    id bigint NOT NULL,
+    address character varying(255),
+    trx_hash character varying(255),
+    san_amount double precision,
+    san_price double precision,
+    credit_amount double precision,
+    trx_datetime timestamp(0) without time zone,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: san_burn_credit_transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.san_burn_credit_transactions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: san_burn_credit_transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.san_burn_credit_transactions_id_seq OWNED BY public.san_burn_credit_transactions.id;
+
+
+--
 -- Name: schedule_rescrape_prices; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4280,6 +4317,13 @@ ALTER TABLE ONLY public.roles ALTER COLUMN id SET DEFAULT nextval('public.roles_
 
 
 --
+-- Name: san_burn_credit_transactions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.san_burn_credit_transactions ALTER COLUMN id SET DEFAULT nextval('public.san_burn_credit_transactions_id_seq'::regclass);
+
+
+--
 -- Name: schedule_rescrape_prices id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5036,6 +5080,14 @@ ALTER TABLE ONLY public.reports
 
 ALTER TABLE ONLY public.roles
     ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: san_burn_credit_transactions san_burn_credit_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.san_burn_credit_transactions
+    ADD CONSTRAINT san_burn_credit_transactions_pkey PRIMARY KEY (id);
 
 
 --
@@ -5929,6 +5981,13 @@ CREATE UNIQUE INDEX project_transparency_statuses_name_index ON public.project_t
 --
 
 CREATE UNIQUE INDEX promo_coupons_email_index ON public.promo_coupons USING btree (email);
+
+
+--
+-- Name: san_burn_credit_transactions_trx_hash_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX san_burn_credit_transactions_trx_hash_index ON public.san_burn_credit_transactions USING btree (trx_hash);
 
 
 --
@@ -6956,6 +7015,14 @@ ALTER TABLE ONLY public.promo_trials
 
 
 --
+-- Name: san_burn_credit_transactions san_burn_credit_transactions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.san_burn_credit_transactions
+    ADD CONSTRAINT san_burn_credit_transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: schedule_rescrape_prices schedule_rescrape_prices_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7789,3 +7856,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220712122954);
 INSERT INTO public."schema_migrations" (version) VALUES (20220718125615);
 INSERT INTO public."schema_migrations" (version) VALUES (20220727072726);
 INSERT INTO public."schema_migrations" (version) VALUES (20220825071308);
+INSERT INTO public."schema_migrations" (version) VALUES (20220830115029);

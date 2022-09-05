@@ -8,16 +8,13 @@ defmodule Sanbase.Billing.EventEmitter do
 
   def handle_event({:error, _}, _event_type, _args), do: :ok
 
-  def handle_event({:ok, stripe_customer}, event_type, %{
-        user: user,
-        card_token: card_token
-      })
+  def handle_event({:ok, stripe_customer}, event_type, %{user: user} = params)
       when event_type in [:create_stripe_customer, :update_stripe_customer] do
     %{
       event_type: event_type,
       user_id: user.id,
       stripe_customer_id: stripe_customer.id,
-      card_token: card_token
+      card_token: params[:card_token]
     }
     |> notify()
   end

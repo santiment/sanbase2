@@ -73,6 +73,28 @@ defmodule Sanbase.Entity.Query do
     end
   end
 
+  def maybe_filter_min_title_length(query, opts, column) do
+    case Keyword.get(opts, :min_title_length) do
+      len when is_integer(len) and len > 0 ->
+        query
+        |> where([elem], fragment("LENGTH(?)", field(elem, ^column)) >= ^len)
+
+      _ ->
+        query
+    end
+  end
+
+  def maybe_filter_min_description_length(query, opts, column) do
+    case Keyword.get(opts, :min_description_length) do
+      len when is_integer(len) and len > 0 ->
+        query
+        |> where([elem], fragment("LENGTH(?)", field(elem, ^column)) >= ^len)
+
+      _ ->
+        query
+    end
+  end
+
   defmacro entity_id_selection() do
     quote do
       fragment("""

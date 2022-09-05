@@ -55,6 +55,7 @@ defmodule Sanbase.Insight.Post do
     field(:is_pulse, :boolean, default: false)
     field(:is_paywall_required, :boolean, default: false)
     field(:prediction, :string, default: "unspecified")
+    field(:views, :integer, virtual: true, default: 0)
 
     # Chart events are insights connected to specific chart configuration and datetime
     field(:is_chart_event, :boolean, default: false)

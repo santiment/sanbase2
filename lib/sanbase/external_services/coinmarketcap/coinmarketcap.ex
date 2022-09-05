@@ -226,7 +226,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   defp maybe_restart_lost_scrape(srp) do
     case project_rescrape_registry_entry(srp.project) do
-      [{:running, _pid}] ->
+      [{_pid, :running}] ->
         :ok
 
       [] ->

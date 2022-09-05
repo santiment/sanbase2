@@ -64,27 +64,6 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
   end
 
   object :user_mutations do
-    @desc ~s"""
-    Verifies that the email change is valid. This mutation does the actual email change.
-    """
-    field :email_change_verify, :login do
-      arg(:email_candidate, non_null(:string))
-      arg(:token, non_null(:string))
-
-      resolve(&UserResolver.email_change_verify/2)
-    end
-
-    @desc ~s"""
-    Initiate the email change process. This mutation will send an email that contains
-    a link that needs to be followed to complete the email change.
-    """
-    field :change_email, :email_login_request do
-      arg(:email, non_null(:string))
-
-      middleware(JWTAuth)
-      resolve(&UserResolver.change_email/3)
-    end
-
     field :change_username, :user do
       arg(:username, non_null(:string))
 

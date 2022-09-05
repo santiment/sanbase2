@@ -48,8 +48,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
         {:ok, metrics}
 
-      {:error, error} ->
-        {:error, error}
+      {:nocache, {:ok, metrics}} ->
+        metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
+        {:nocache, {:ok, metrics}}
     end
   end
 

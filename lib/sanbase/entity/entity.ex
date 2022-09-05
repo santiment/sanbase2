@@ -32,6 +32,7 @@ defmodule Sanbase.Entity do
   alias Sanbase.UserList
   alias Sanbase.Dashboard
   alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Accounts.Interaction
 
   # The list of supported entitiy types. In order to add a new entity type, the
   # following steps must be taken:
@@ -209,6 +210,42 @@ defmodule Sanbase.Entity do
     query
     |> limit(^limit)
     |> offset(^offset)
+  end
+
+  def extend_with_views_count(type_entity_list) do
+    entity_type_id_conditions =
+      Enum.reduce(type_entity_list, false, fn type_entity, dynamic_query ->
+        [{type, %{id: entity_id}}] = Map.to_list(type_entity)
+        type = Interaction.deduce_entity_column_name(type)
+
+        dynamic(
+          [row],
+          ^dynamic_query or (row.entity_type == ^type and row.entity_id == ^entity_id)
+        )
+      end)
+
+    entity_type_id_conditions =
+      dynamic([row], row.interaction_type == "view" and ^entity_type_id_conditions)
+
+    query =
+      from(row in Interaction,
+        where: ^entity_type_id_conditions,
+        select: [row.entity_id, row.entity_type, fragment("COUNT(*)")],
+        group_by: [row.entity_id, row.entity_type]
+      )
+
+    entity_count_map =
+      Sanbase.Repo.all(query)
+      |> Enum.into(%{}, fn [entity_id, entity_type, count] ->
+        {{entity_type, entity_id}, count}
+      end)
+
+    Enum.map(type_entity_list, fn type_entity ->
+      [{type, entity}] = Map.to_list(type_entity)
+      key = {Interaction.deduce_entity_column_name(type), entity.id}
+      entity = %{entity | views: entity_count_map[key] || 0}
+      %{type => entity}
+    end)
   end
 
   # Private functions
@@ -621,7 +658,15 @@ defmodule Sanbase.Entity do
 
   # Which of the provided by the API opts are passed to the entity modules.
 
-  @passed_opts [:filter, :cursor, :user_ids, :is_featured_data_only, :is_moderator]
+  @passed_opts [
+    :filter,
+    :cursor,
+    :user_ids,
+    :is_featured_data_only,
+    :is_moderator,
+    :min_title_length,
+    :min_description_length
+  ]
 
   defp entity_ids_query(:insight, opts) do
     # `ordered?: false` is important otherwise the default order will be applied

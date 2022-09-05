@@ -17,6 +17,49 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     Timex.shift(DateTime.utc_now(), seconds: -seconds)
   end
 
+  test "get most recent with min title and description length", %{conn: conn} do
+    _ =
+      insert(:screener,
+        is_public: true,
+        inserted_at: seconds_ago(45),
+        name: "Title",
+        description: "D"
+      )
+
+    _ =
+      insert(:screener,
+        is_public: true,
+        inserted_at: seconds_ago(40),
+        name: "T",
+        description: "Description"
+      )
+
+    screener =
+      insert(:screener,
+        is_public: true,
+        inserted_at: seconds_ago(35),
+        name: "Title",
+        description: "Description"
+      )
+
+    result = get_most_recent(conn, :screener, min_title_length: 3, min_description_length: 3)
+
+    data = result["data"]
+    stats = result["stats"]
+
+    assert %{
+             "totalEntitiesCount" => 1,
+             "currentPage" => 1,
+             "totalPagesCount" => 1,
+             "currentPageSize" => 10
+           } = stats
+
+    assert length(data) == 1
+
+    assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() ==
+             screener.id
+  end
+
   test "get most recent insights", %{conn: conn} do
     insight1 = insert(:published_post, inserted_at: seconds_ago(30))
     _unpublished = insert(:post, inserted_at: seconds_ago(25))
@@ -233,6 +276,13 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
     conf2 = insert(:chart_configuration, is_public: true, inserted_at: seconds_ago(35))
     screener = insert(:screener, is_public: true, inserted_at: seconds_ago(30))
 
+    insert(:intercation,
+      user: build(:user),
+      entity_id: screener.id,
+      entity_type: "watchlist",
+      interaction_type: "view"
+    )
+
     project_watchlist =
       insert(:watchlist,
         type: :project,
@@ -315,6 +365,61 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
 
     assert Enum.at(data, 0)["insight"]["id"] == insight2.id
     assert Enum.at(data, 1)["chartConfiguration"]["id"] == conf1.id
+  end
+
+  describe "views count" do
+    test "moderator can see views count" do
+      moderator_user = insert(:user)
+      role = insert(:role_san_moderator)
+      {:ok, _} = Sanbase.Accounts.UserRole.create(moderator_user.id, role.id)
+      Sanbase.Cache.clear_all()
+
+      moderator_conn = setup_jwt_auth(build_conn(), moderator_user)
+
+      screener = insert(:screener, is_public: true, inserted_at: seconds_ago(30))
+      conf = insert(:chart_configuration, is_public: true, inserted_at: seconds_ago(45))
+
+      insert(:intercation,
+        user: build(:user),
+        entity_id: screener.id,
+        entity_type: "watchlist",
+        interaction_type: "view"
+      )
+
+      insert(:intercation,
+        user: build(:user),
+        entity_id: conf.id,
+        entity_type: "chart_configuration",
+        interaction_type: "view"
+      )
+
+      data_moderator = get_most_recent(moderator_conn, [:screener])["data"]
+
+      assert Enum.at(data_moderator, 0)["screener"]["id"] |> String.to_integer() ==
+               screener.id
+
+      assert Enum.at(data_moderator, 0)["screener"]["views"] == 1
+    end
+
+    test "non moderator user cannot see views count", context do
+      Sanbase.Cache.clear_all()
+
+      screener = insert(:screener, is_public: true, inserted_at: seconds_ago(30))
+
+      insert(:intercation,
+        user: build(:user),
+        entity_id: screener.id,
+        entity_type: "watchlist",
+        interaction_type: "view"
+      )
+
+      data = get_most_recent(context.conn, [:screener])["data"]
+
+      assert Enum.at(data, 0)["screener"]["id"] |> String.to_integer() ==
+               screener.id
+
+      assert Enum.at(data, 0)["screener"]["views"] == 0
+    end
   end
 
   test "get most recent with projects' slugs filter", context do
@@ -665,6 +770,8 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
       |> Keyword.put_new(:page, 1)
       |> Keyword.put_new(:page_size, 10)
       |> Keyword.put_new(:types, List.wrap(entity_or_entities))
+      |> Keyword.put_new(:min_title_length, 0)
+      |> Keyword.put_new(:min_description_length, 0)
 
     args =
       case Map.new(opts) do
@@ -682,7 +789,7 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
           dashboard{ id }
           insight{ id }
           projectWatchlist{ id }
-          screener{ id }
+          screener{ id views }
           userTrigger{ trigger{ id } }
         }
       }

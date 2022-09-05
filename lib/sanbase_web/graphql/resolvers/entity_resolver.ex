@@ -25,6 +25,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     opts = get_opts(args, resolution)
 
     Sanbase.Entity.get_most_voted(types, opts)
+    |> maybe_extend_with_views_count(opts)
     |> maybe_apply_function(&handle_result/1)
   end
 
@@ -56,6 +57,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     opts = get_opts(args, resolution)
 
     Sanbase.Entity.get_most_recent(types, opts)
+    |> maybe_extend_with_views_count(opts)
     |> maybe_apply_function(&handle_result/1)
   end
 
@@ -96,6 +98,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     opts = get_opts(args, resolution)
 
     Sanbase.Entity.get_most_used(types, opts)
+    |> maybe_extend_with_views_count(opts)
     |> maybe_apply_function(&handle_result/1)
   end
 
@@ -144,7 +147,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     |> maybe_add_user_option(:current_user_voted_for_only, args, resolution)
     |> maybe_add_value_option(:user_role_data_only, args)
     |> maybe_add_value_option(:is_featured_data_only, args)
+    |> maybe_add_value_option(:min_title_length, args)
+    |> maybe_add_value_option(:min_description_length, args)
     |> add_is_moderator_option(resolution)
+    |> temp_maybe_rewrite_min_length_args(args)
+  end
+
+  # TODO: Frontend needs to be put filter in `New` tab and backend
+  # needs to set these to default 0
+  defp temp_maybe_rewrite_min_length_args(opts, args) do
+    case Map.get(args, :current_user_data_only, false) do
+      true ->
+        opts
+        |> Keyword.put(:min_title_length, 0)
+        |> Keyword.put(:min_description_length, 0)
+
+      false ->
+        opts
+    end
   end
 
   defp maybe_add_user_id_option(opts, resolution) do
@@ -175,6 +195,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     is_moderator = Map.get(resolution.context, :is_moderator)
     Keyword.put(opts, :is_moderator, is_moderator)
   end
+
+  defp maybe_extend_with_views_count({:ok, result}, opts) do
+    case Keyword.get(opts, :is_moderator, false) do
+      true -> {:ok, Sanbase.Entity.extend_with_views_count(result)}
+      false -> {:ok, result}
+    end
+  end
+
+  defp maybe_extend_with_views_count(result, _opts), do: result
 
   defp maybe_do_not_cache(args) do
     # Do not cache the queries that fetch the users' own data as they differ

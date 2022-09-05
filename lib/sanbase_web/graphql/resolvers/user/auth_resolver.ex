@@ -136,6 +136,51 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     end
   end
 
+  # Use the same rate limit as logins to track amount of emails send
+  # for email change
+  def change_email(_root, %{email: email_candidate}, %{
+        context: %{
+          remote_ip: remote_ip,
+          auth: %{auth_method: :user_token, current_user: user}
+        }
+      }) do
+    remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
+
+    with :ok <- EmailLoginAttempt.has_allowed_login_attempts(user, remote_ip),
+         {:ok, user} <- User.update_email_candidate(user, email_candidate),
+         {:ok, _user} <- User.send_verify_email(user),
+         {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip) do
+      {:ok, %{success: true}}
+    else
+      {:error, _} ->
+        {:error, message: "Can't change current user's email to #{email_candidate}"}
+    end
+  end
+
+  def email_change_verify(
+        %{token: email_candidate_token, email_candidate: email_candidate},
+        %{context: %{device_data: device_data}}
+      ) do
+    with {:ok, user} <- User.find_by_email_candidate(email_candidate, email_candidate_token),
+         true <- User.email_candidate_token_valid?(user, email_candidate_token),
+         {:ok, jwt_tokens} <-
+           SanbaseWeb.Guardian.get_jwt_tokens(user,
+             platform: device_data.platform,
+             client: device_data.client
+           ),
+         {:ok, user} <- User.update_email_from_email_candidate(user) do
+      {:ok,
+       %{
+         user: user,
+         token: jwt_tokens.access_token,
+         access_token: jwt_tokens.access_token,
+         refresh_token: jwt_tokens.refresh_token
+       }}
+    else
+      _ -> {:error, message: "Email change verify failed"}
+    end
+  end
+
   defp allowed_origin?(["santiment", "net"] = _hosted_parts), do: true
   defp allowed_origin?([_origin_app, "santiment", "net"] = _hosted_parts), do: true
   defp allowed_origin?(_hosted_parts), do: {:error, "Origin header is not supported."}

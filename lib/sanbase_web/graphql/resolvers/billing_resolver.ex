@@ -229,7 +229,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
          true <- customer.balance < 0 do
       -(customer.balance / 100)
     else
-      0.00
+      _ -> 0.00
     end
   end
 

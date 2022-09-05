@@ -11,8 +11,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
 
     Cache.wrap(
       fn ->
-        restrictions = Sanbase.Billing.Plan.Restrictions.get_all(plan, product_id)
-        {:ok, restrictions}
+        {:ok, Sanbase.Billing.Plan.Restrictions.get_all(plan, product_id)}
       end,
       {:get_access_restrictions, plan, product_id}
     ).()

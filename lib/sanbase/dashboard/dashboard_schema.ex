@@ -20,10 +20,10 @@ defmodule Sanbase.Dashboard.Schema do
   alias Sanbase.Dashboard.Panel
 
   @type schema_args :: %{
-          name: String.t(),
-          description: String.t(),
-          is_public: boolean(),
-          user_id: non_neg_integer()
+          optional(:name) => String.t(),
+          optional(:description) => String.t(),
+          optional(:is_public) => boolean(),
+          optional(:user_id) => non_neg_integer()
         }
 
   @type t :: %__MODULE__{
@@ -51,6 +51,7 @@ defmodule Sanbase.Dashboard.Schema do
     field(:is_public, :boolean, default: false)
     field(:is_hidden, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)
+    field(:views, :integer, virtual: true, default: 0)
 
     # Temporary add JSON field for tests. Will be removed before
     # final version is released for public use
@@ -100,6 +101,8 @@ defmodule Sanbase.Dashboard.Schema do
     |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :dashboard_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> Sanbase.Entity.Query.maybe_filter_min_title_length(opts, :name)
+    |> Sanbase.Entity.Query.maybe_filter_min_description_length(opts, :description)
     |> select([ul], ul.id)
   end
 

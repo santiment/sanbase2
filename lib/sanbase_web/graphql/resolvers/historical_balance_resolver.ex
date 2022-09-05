@@ -11,7 +11,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   def assets_held_by_address(_root, args, _resolution) do
     selector = args_to_address_selector(args)
 
-    case HistoricalBalance.assets_held_by_address(selector) do
+    case HistoricalBalance.assets_held_by_address(selector,
+           show_assets_with_zero_balance: args.show_assets_with_zero_balance
+         ) do
       {:ok, result} ->
         {:ok, result}
 

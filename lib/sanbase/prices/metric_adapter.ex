@@ -82,6 +82,7 @@ defmodule Sanbase.Price.MetricAdapter do
        default_aggregation: @default_aggregation,
        available_aggregations: @aggregations,
        available_selectors: [:slug],
+       required_selectors: [:slug],
        data_type: :timeseries,
        complexity_weight: @default_complexity_weight
      }}

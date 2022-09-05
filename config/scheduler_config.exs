@@ -165,7 +165,7 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "0 18 * * *",
       task: {Sanbase.Comments.Notification, :notify_users, []}
     ],
-    comments_notification: [
+    san_burn_credit_transaction: [
       schedule: "@hourly",
       task: {Sanbase.Billing.Subscription.SanBurnCreditTransaction, :run, []}
     ]

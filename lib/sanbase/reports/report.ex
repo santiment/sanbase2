@@ -16,7 +16,7 @@ defmodule Sanbase.Report do
 
   @type get_reports_opts :: %{
           required(:is_logged_in) => boolean(),
-          optional(:plan_name) => atom()
+          optional(:plan_name) => String.t()
         }
 
   schema "reports" do

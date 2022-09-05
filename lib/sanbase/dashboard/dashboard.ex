@@ -120,7 +120,7 @@ defmodule Sanbase.Dashboard do
           {:ok, Dashboard.Query.Result.t()} | {:error, String.t()}
   def compute_panel(dashboard_id, panel_id, querying_user_id) do
     with {:ok, dashboard} <- Dashboard.Schema.by_id(dashboard_id),
-         {:ok, query_result} <- do_compute_panel(dashboard, panel_id) do
+         {:ok, query_result} <- do_compute_panel(dashboard, panel_id, querying_user_id) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Dashboard.QueryExecution.store_execution(querying_user_id, query_result)
       end)
@@ -144,13 +144,8 @@ defmodule Sanbase.Dashboard do
           {:ok, Dashboard.Cache.t()} | {:error, any()}
   def compute_and_store_panel(dashboard_id, panel_id, querying_user_id) do
     with {:ok, dashboard} <- Dashboard.Schema.by_id(dashboard_id),
-         {:ok, query_result} <- do_compute_panel(dashboard, panel_id),
-         {:ok, _} <-
-           Dashboard.Cache.update_panel_cache(
-             dashboard_id,
-             panel_id,
-             query_result
-           ) do
+         {:ok, query_result} <- do_compute_panel(dashboard, panel_id, querying_user_id),
+         {:ok, _} <- Dashboard.Cache.update_panel_cache(dashboard_id, panel_id, query_result) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Dashboard.QueryExecution.store_execution(querying_user_id, query_result)
       end)
@@ -184,10 +179,10 @@ defmodule Sanbase.Dashboard do
   end
 
   # Compute the dashboard by computing every panel in it.
-  defp do_compute_panel(%Dashboard.Schema{} = dashboard, panel_id) do
+  defp do_compute_panel(%Dashboard.Schema{} = dashboard, panel_id, querying_user_id) do
     case Enum.find(dashboard.panels, &(&1.id == panel_id)) do
       nil -> {:error, "Dashboard panel with id #{panel_id} does not exist"}
-      panel -> Sanbase.Dashboard.Panel.compute(panel)
+      panel -> Sanbase.Dashboard.Panel.compute(panel, querying_user_id)
     end
   end
 end

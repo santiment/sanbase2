@@ -18,7 +18,7 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Price.last_record_before/2, {:ok, data})
     |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.StripeApi.add_credit/3, :ok)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.StripeApi.add_credit/3, {:ok, %{}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       SanBurnCreditTransaction.run()
       [burn_trx] = SanBurnCreditTransaction.all()

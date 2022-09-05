@@ -56,6 +56,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:is_chart_event, :boolean)
     field(:chart_event_datetime, :datetime)
     field(:chart_configuration_for_event, :chart_configuration)
+    field(:views, :integer)
 
     field :comments_count, :integer do
       resolve(&InsightResolver.comments_count/3)

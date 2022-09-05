@@ -314,6 +314,8 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
         |> Keyword.put_new(:page, 1)
         |> Keyword.put_new(:page_size, 10)
         |> Keyword.put_new(:types, List.wrap(entity_or_entities))
+        |> Keyword.put_new(:min_title_length, 0)
+        |> Keyword.put_new(:min_description_length, 0)
 
       query = """
       {

@@ -2672,10 +2672,10 @@ ALTER SEQUENCE public.roles_id_seq OWNED BY public.roles.id;
 
 
 --
--- Name: san_burn_credit_trx; Type: TABLE; Schema: public; Owner: -
+-- Name: san_burn_credit_transactions; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.san_burn_credit_trx (
+CREATE TABLE public.san_burn_credit_transactions (
     id bigint NOT NULL,
     address character varying(255),
     trx_hash character varying(255),
@@ -2690,10 +2690,10 @@ CREATE TABLE public.san_burn_credit_trx (
 
 
 --
--- Name: san_burn_credit_trx_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: san_burn_credit_transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.san_burn_credit_trx_id_seq
+CREATE SEQUENCE public.san_burn_credit_transactions_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -2702,10 +2702,10 @@ CREATE SEQUENCE public.san_burn_credit_trx_id_seq
 
 
 --
--- Name: san_burn_credit_trx_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: san_burn_credit_transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.san_burn_credit_trx_id_seq OWNED BY public.san_burn_credit_trx.id;
+ALTER SEQUENCE public.san_burn_credit_transactions_id_seq OWNED BY public.san_burn_credit_transactions.id;
 
 
 --
@@ -4317,10 +4317,10 @@ ALTER TABLE ONLY public.roles ALTER COLUMN id SET DEFAULT nextval('public.roles_
 
 
 --
--- Name: san_burn_credit_trx id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: san_burn_credit_transactions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.san_burn_credit_trx ALTER COLUMN id SET DEFAULT nextval('public.san_burn_credit_trx_id_seq'::regclass);
+ALTER TABLE ONLY public.san_burn_credit_transactions ALTER COLUMN id SET DEFAULT nextval('public.san_burn_credit_transactions_id_seq'::regclass);
 
 
 --
@@ -5083,11 +5083,11 @@ ALTER TABLE ONLY public.roles
 
 
 --
--- Name: san_burn_credit_trx san_burn_credit_trx_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: san_burn_credit_transactions san_burn_credit_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.san_burn_credit_trx
-    ADD CONSTRAINT san_burn_credit_trx_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.san_burn_credit_transactions
+    ADD CONSTRAINT san_burn_credit_transactions_pkey PRIMARY KEY (id);
 
 
 --
@@ -5984,10 +5984,10 @@ CREATE UNIQUE INDEX promo_coupons_email_index ON public.promo_coupons USING btre
 
 
 --
--- Name: san_burn_credit_trx_trx_hash_index; Type: INDEX; Schema: public; Owner: -
+-- Name: san_burn_credit_transactions_trx_hash_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX san_burn_credit_trx_trx_hash_index ON public.san_burn_credit_trx USING btree (trx_hash);
+CREATE INDEX san_burn_credit_transactions_trx_hash_index ON public.san_burn_credit_transactions USING btree (trx_hash);
 
 
 --
@@ -7015,11 +7015,11 @@ ALTER TABLE ONLY public.promo_trials
 
 
 --
--- Name: san_burn_credit_trx san_burn_credit_trx_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: san_burn_credit_transactions san_burn_credit_transactions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.san_burn_credit_trx
-    ADD CONSTRAINT san_burn_credit_trx_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+ALTER TABLE ONLY public.san_burn_credit_transactions
+    ADD CONSTRAINT san_burn_credit_transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --

@@ -71,5 +71,6 @@ config :ex_admin,
     SanbaseWeb.ExAdmin.Exchanges.MarketPairMapping,
     SanbaseWeb.ExAdmin.Intercom.UserAttributes,
     SanbaseWeb.ExAdmin.Intercom.UserEvent,
-    SanbaseWeb.ExAdmin.Report
+    SanbaseWeb.ExAdmin.Report,
+    SanbaseWeb.ExAdmin.Billing.SanBurnCreditTransaction
   ]

@@ -1,19 +1,21 @@
-defmodule Sanbase.Billing.Subscription.SanBurnCreditTrx do
+defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
   use Ecto.Schema
+
+  require Logger
 
   import Ecto.Changeset
   import Ecto.Query
 
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Accounts.EthAccount
-  alias Sanbase.Account.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
   @san_contract "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
   @san_burn_address "0x000000000000000000000000000000000000dead"
   @san_burn_coeff 2
 
-  schema "san_burn_credit_trx" do
+  schema "san_burn_credit_transactions" do
     field(:address, :string)
     field(:trx_hash, :string)
     field(:san_amount, :float)
@@ -45,6 +47,10 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTrx do
     |> Repo.insert()
   end
 
+  def exist?(trx_hash) do
+    not is_nil(Repo.get_by(__MODULE__, trx_hash: trx_hash))
+  end
+
   def all do
     Repo.all(__MODULE__)
   end
@@ -52,9 +58,15 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTrx do
   def run do
     {:ok, burn_trxs} = fetch_burn_trxs()
 
+    do_run(burn_trxs)
+  end
+
+  def do_run(burn_trxs) do
     burn_trxs
     |> Enum.each(fn burn_trx ->
-      save(burn_trx)
+      if not exist?(burn_trx.trx_hash) do
+        save(burn_trx)
+      end
     end)
   end
 
@@ -73,22 +85,22 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTrx do
 
   def save(burn_trx) do
     san_price = fetch_san_pice(burn_trx.trx_datetime)
+    credit_amount = round(burn_trx.san_amount * san_price * @san_burn_coeff)
 
-    credit_amount = burn_trx.san_amount * san_price * @san_burn_coeff
+    with {:ok, user} <- fetch_user_by_address(burn_trx.address),
+         {:ok, _} <- add_credit_to_stripe(user, credit_amount, burn_trx) do
+      params =
+        %{
+          user_id: user.id,
+          credit_amount: credit_amount,
+          san_price: san_price
+        }
+        |> Map.merge(burn_trx)
 
-    {:ok, user} = fetch_user_by_address(burn_trx.address)
-
-    add_credit_to_stripe(user, credit_amount, burn_trx)
-
-    params =
-      %{
-        user_id: user.id,
-        credit_amount: credit_amount,
-        san_price: san_price
-      }
-      |> Map.merge(burn_trx)
-
-    create(params)
+      create(params)
+    else
+      error -> Logger.error("Save burn transaction error: #{inspect(error)}")
+    end
   end
 
   def fetch_san_pice(datetime) do
@@ -104,14 +116,15 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTrx do
   def add_credit_to_stripe(user, amount, burn_trx) do
     {:ok, user} = Sanbase.Billing.create_or_update_stripe_customer(user)
 
-    Sanbase.StripeApi.add_credit(user.stripe_customer_id, amount, burn_trx.trx_hash)
+    # Negative amount means to credit user balance. Value is in cents
+    Sanbase.StripeApi.add_credit(user.stripe_customer_id, -amount * 100, burn_trx.trx_hash)
   end
 
   def fetch_san_burns_query() do
     query = """
     SELECT dt, from, value / pow(10, 18), transactionHash
     FROM erc20_transfers_to
-    WHERE dt > now() - INTERVAL 100 DAY and contract = ?1 and to = ?2
+    WHERE dt > now() - INTERVAL 1 DAY and contract = ?1 and to = ?2
     """
 
     {query, [@san_contract, @san_burn_address]}

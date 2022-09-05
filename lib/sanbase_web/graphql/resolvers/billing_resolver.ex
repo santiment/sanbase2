@@ -224,6 +224,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     {:ok, Billing.eligible_for_sanbase_trial?(user.id)}
   end
 
+  def san_credit_balance(%User{} = user, _args, _resolution) do
+    with {:ok, customer} <- Sanbase.StripeApi.retrieve_customer(user),
+         true <- customer.balance < 0 do
+      -(customer.balance / 100)
+    else
+      0.00
+    end
+  end
+
   def check_annual_discount_eligibility(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do

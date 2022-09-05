@@ -1,8 +1,8 @@
-defmodule Sanbase.Repo.Migrations.AddSanBurnCreditTrxs do
+defmodule Sanbase.Repo.Migrations.AddSanBurnCreditTransactions do
   use Ecto.Migration
 
   def change do
-    create table(:san_burn_credit_trx) do
+    create table(:san_burn_credit_transactions) do
       add(:address, :string)
       add(:trx_hash, :string)
       add(:san_amount, :float)
@@ -14,6 +14,6 @@ defmodule Sanbase.Repo.Migrations.AddSanBurnCreditTrxs do
       timestamps()
     end
 
-    create(index(:san_burn_credit_trx, :trx_hash))
+    create(index(:san_burn_credit_transactions, :trx_hash))
   end
 end

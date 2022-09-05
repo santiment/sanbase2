@@ -1,8 +1,8 @@
-defmodule Sanbase.Billing.SanBurnCreditTrxTest do
+defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
   use Sanbase.DataCase, async: false
   import Sanbase.Factory
 
-  alias Sanbase.Billing.Subscription.SanBurnCreditTrx
+  alias Sanbase.Billing.Subscription.SanBurnCreditTransaction
   alias Sanbase.Accounts.EthAccount
 
   test "1" do
@@ -20,8 +20,8 @@ defmodule Sanbase.Billing.SanBurnCreditTrxTest do
     |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
     |> Sanbase.Mock.prepare_mock2(&Sanbase.StripeApi.add_credit/3, :ok)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      SanBurnCreditTrx.run()
-      [burn_trx] = SanBurnCreditTrx.all()
+      SanBurnCreditTransaction.run()
+      [burn_trx] = SanBurnCreditTransaction.all()
 
       result =
         Map.from_struct(burn_trx)

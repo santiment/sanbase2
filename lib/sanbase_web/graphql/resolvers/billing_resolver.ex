@@ -227,9 +227,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def san_credit_balance(%User{} = user, _args, _resolution) do
     with {:ok, customer} <- Sanbase.StripeApi.retrieve_customer(user),
          true <- customer.balance < 0 do
-      -(customer.balance / 100)
+      {:ok, -(customer.balance / 100)}
     else
-      _ -> 0.00
+      _ -> {:ok, 0.00}
     end
   end
 

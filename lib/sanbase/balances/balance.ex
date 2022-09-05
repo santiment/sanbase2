@@ -170,11 +170,11 @@ defmodule Sanbase.Balance do
   such asset return the slug and current balance. If some project is not
   in Santiment's database it is not shown.
   """
-  @spec assets_held_by_address(address) ::
+  @spec assets_held_by_address(address, Keyword.t()) ::
           {:ok, list(%{slug: slug, balance: number()})} | {:error, String.t()}
-  def assets_held_by_address(address) do
+  def assets_held_by_address(address, opts \\ []) do
     address = Sanbase.BlockchainAddress.to_internal_format(address)
-    {query, args} = assets_held_by_address_query(address)
+    {query, args} = assets_held_by_address_query(address, opts)
 
     hidden_projects_slugs = hidden_projects_slugs()
 

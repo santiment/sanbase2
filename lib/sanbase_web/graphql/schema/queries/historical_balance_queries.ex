@@ -16,6 +16,7 @@ defmodule SanbaseWeb.Graphql.Schema.HistoricalBalanceQueries do
 
       arg(:selector, :address_selector_input_object)
       arg(:address, :string)
+      arg(:show_assets_with_zero_balance, :boolean, default_value: false)
 
       cache_resolve(&HistoricalBalanceResolver.assets_held_by_address/3)
     end

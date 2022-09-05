@@ -28,7 +28,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
 
   test "clickhouse returns list of results", context do
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Balance.assets_held_by_address/1,
+      &Sanbase.Balance.assets_held_by_address/2,
       {:ok,
        [
          %{balance: 1000.0, slug: context.eth_project.slug},
@@ -48,7 +48,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
   end
 
   test "clickhouse returns no results", _context do
-    Sanbase.Mock.prepare_mock2(&Sanbase.Balance.assets_held_by_address/1, {:ok, []})
+    Sanbase.Mock.prepare_mock2(&Sanbase.Balance.assets_held_by_address/2, {:ok, []})
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert HistoricalBalance.assets_held_by_address(%{address: "0x123", infrastructure: "BTC"}) ==
                {:ok, []}
@@ -57,7 +57,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
 
   test "clickhouse returns error", _context do
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Balance.assets_held_by_address/1,
+      &Sanbase.Balance.assets_held_by_address/2,
       {:error, "Something went wrong"}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->

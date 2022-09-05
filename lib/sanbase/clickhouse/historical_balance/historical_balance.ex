@@ -58,13 +58,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   This can be combined with the historical balance query to see the historical
   balance of all currently owned assets
   """
-  @spec assets_held_by_address(map()) ::
+  @spec assets_held_by_address(map(), Keyword.t()) ::
           {:ok, list(map())} | {:error, String.t()}
-  def assets_held_by_address(%{infrastructure: infr, address: address}) do
+  def assets_held_by_address(%{infrastructure: infr, address: address}, opts \\ []) do
     case selector_to_args(%{infrastructure: infr}) do
       %{blockchain: blockchain}
       when balances_aggregated_blockchain?(blockchain) ->
-        Sanbase.Balance.assets_held_by_address(address)
+        Sanbase.Balance.assets_held_by_address(address, opts)
 
       %{module: module} ->
         module.assets_held_by_address(address)

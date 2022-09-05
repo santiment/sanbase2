@@ -478,7 +478,7 @@ defmodule Sanbase.Balance.SqlQuery do
     {query, args}
   end
 
-  def assets_held_by_address_query(address) do
+  def assets_held_by_address_query(address, opts \\ []) do
     query = """
     SELECT
       name,
@@ -500,7 +500,7 @@ defmodule Sanbase.Balance.SqlQuery do
       FROM asset_metadata FINAL
     ) USING (asset_ref_id)
     GROUP BY address, asset_ref_id, name, decimals
-    HAVING balance > 0
+    #{if Keyword.get(opts, :show_assets_with_zero_balance, false), do: "", else: "HAVING balance > 0"}
     """
 
     args = [address]

@@ -68,7 +68,7 @@ defmodule Sanbase.Billing.Plan do
       amount: Map.fetch!(args, :amount),
       currency: Map.fetch!(args, :currency),
       interval: Map.fetch!(args, :interval),
-      stripe_id: Map.fetch!(args, :stripe_id),
+      stripe_id: Map.get(args, :stripe_id),
       is_deprecated: false,
       is_private: true,
       order: Map.get(args, :order, 0),
@@ -79,6 +79,17 @@ defmodule Sanbase.Billing.Plan do
     %__MODULE__{}
     |> changeset(args)
     |> Sanbase.Repo.insert()
+  end
+
+  def list_custom_plans() do
+    plans =
+      from(
+        p in __MODULE__,
+        where: p.has_custom_restrictions == true
+      )
+      |> Repo.all()
+
+    {:ok, plans}
   end
 
   def by_ids(plan_ids) when is_list(plan_ids) do

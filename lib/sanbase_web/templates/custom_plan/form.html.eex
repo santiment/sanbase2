@@ -1,4 +1,4 @@
-<div class="shadow-xl p-10 bg-white max-w-xl rounded mb-4">
+<div class="shadow-xl p-10 bg-white max-w-5xl rounded mb-4">
 <%= form_for @changeset, @action, [multipart: true], fn f -> %>
   <%= if @changeset.action do %>
     <div class="text-white px-6 py-4 border-0 rounded relative mb-4 bg-red-500">
@@ -6,47 +6,78 @@
     </div>
   <% end %>
 
+  <div class="mb-4 relative"> <h2> General Plan fields </h2> </div>
+
   <div class="mb-4 relative">
     <%= text_input f, :name, id: "name", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-    <label for="name" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Name</label>
+    <label for="name" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Name (Custom plans must start with `CUSTOM_`)</label>
     <%= error_tag f, :name %>
   </div>
 
   <div class="mb-4 relative">
     <%= textarea f, :amount, id: "amount", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-    <label for="amount" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Amount</label>
+    <label for="amount" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Amount (in cents; $49 is 4900) </label>
+    <%= error_tag f, :amount %>
   </div>
 
   <div class="mb-4 relative">
-    <%= text_input f, :currency, id: "currency", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-    <label for="currency">Currency</label>
+    <%= textarea f, :currency, id: "currency", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
+    <label for="currency" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Currency (Most of the times this is just USD)</label>
+    <%= error_tag f,:currency %>
+    <%= error_tag f, :currency %>
   </div>
 
   <div class="mb-4 relative">
-    <%= text_input f, :url, id: "url", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-    <label for="url" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Url</label>
-    <%= error_tag f, :url %>
+    <%= textarea f, :interval, id: "interval", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
+    <label for="interval" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Interval (`month` or `year`)</label>
+    <%= error_tag f,:interval %>
+  </div>
+
+  <div class="mb-4 relative"> <h2> Custom Plan restrictions' fields </h2> </div>
+
+  <div class="mb-4 relative">
+    <%= textarea f, :metric_access, id: "metric_access", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
+    <label for="metric_access" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Metric Access (JSON field like  {"accessible": "all", "not_accessible": ["daily_active_addresses"], "not_accessible_patterns": ["mvrv_usd"]} )</label>
+    <%= error_tag f, :metric_access %>
   </div>
 
   <div class="mb-4 relative">
-    <%= text_input f, :image_url, id: "image_url", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-    <label for="image_url" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Preview Image Url</label>
-    <%= error_tag f, :image_url %>
+    <%= textarea f, :query_access, id: "query_access", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
+    <label for="query_access" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Query Access (JSON field like  {"accessible": "all", "not_accessible": ["history_price"], "not_accessible_patterns": ["mvrv"]} )</label>
+    <%= error_tag f, :query_access %>
   </div>
 
   <div class="mb-4 relative">
-    <%= text_input f, :start_time, id: "start_time", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-    <label for="start_time" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Start Time (ex. format 2021-01-23 23:50:07)</label>
-    <%= error_tag f, :start_time %>
+    <%= textarea f, :signal_access, id: "signal_access", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
+    <label for="signal_access" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Signal Access (JSON field like  {"accessible": "all", "not_accessible": [], "not_accessible_patterns": []} )</label>
+    <%= error_tag f, :signal_access %>
   </div>
 
   <div class="mb-4 relative">
-    <%= text_input f, :end_time, id: "end_time", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
-    <label for="end_time" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">End Time (ex. format 2021-01-23 23:50:07)</label>
-    <%= error_tag f, :end_time %>
+    <%= textarea f, :api_call_limits, id: "api_call_limits", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
+    <label for="api_call_limits" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Api Call Limits (JSON field like  {"month": 3000000, "hour": 100000, "minute": 3000} )</label>
+    <%= error_tag f, :api_call_limits %>
+  </div>
+
+
+  <div class="mb-4 relative">
+    <%= textarea f, :historical_data_in_days, id: "historical_data_in_days", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
+    <label for="historical_data_in_days" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Historical Data In Days (An non-negative integer or empty if no restrictions are applied)</label>
+    <%= error_tag f, :historical_data_in_days %>
+  </div>
+
+  <div class="mb-4 relative">
+    <%= textarea f, :realtime_data_cut_off_in_days, id: "realtime_data_cut_off_in_days", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
+    <label for="realtime_data_cut_off_in_days" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Realtime Data Cut Off In Days (An non-negative integer or empty if no restrictions are applied)</label>
+    <%= error_tag f, :realtime_data_cut_off_in_days %>
+  </div>
+
+  <div class="mb-4 relative">
+    <%= textarea f, :restricted_access_as_plan, id: "restricted_access_as_plan", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600" %>
+    <label for="restricted_access_as_plan" class="label absolute mb-0 -mt-2 pt-4 pl-3 leading-tighter text-gray-400 text-base mt-2 cursor-text">Restricted Access As Plan (One of: FREE, BASIC, PRO, PREMIUM)</label>
+    <%= error_tag f, :restricted_access_as_plan %>
   </div>
 
   <%= submit "Save", class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded" %>
-
 <% end %>
 </div>

@@ -327,6 +327,15 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
+  def get_subscriptions_for_plan(plan_id) do
+    __MODULE__
+    |> Query.all_active_and_trialing_subscriptions()
+    |> Query.filter_plan_id(plan_id)
+    |> Query.order_by()
+    |> Query.preload(@preload_fields)
+    |> Repo.all()
+  end
+
   def get_direct_sanbase_pro_user_ids() do
     __MODULE__
     |> Query.all_active_and_trialing_subscriptions()

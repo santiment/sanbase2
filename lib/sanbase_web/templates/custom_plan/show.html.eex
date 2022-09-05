@@ -1,24 +1,18 @@
-<h1 class="text-4xl font-black mb-4">Show Webinar</h1>
+<h1 class="text-4xl font-black mb-4">Show Custom Plan</h1>
 
 <table class="table-auto border-collapse w-full mb-4">
   <tbody>
-    <tr><td class="border px-4 py-2">ID</td> <td class="border px-4 py-2"><%= @webinar.id %></td></tr>
-    <tr><td class="border px-4 py-2">Title</td> <td class="border px-4 py-2"><%= @webinar.title %></td></tr>
-    <tr><td class="border px-4 py-2">Description</td> <td class="border px-4 py-2"><%= @webinar.description %></td></tr>
-    <tr><td class="border px-4 py-2">URL</td> <td class="border px-4 py-2"><%= @webinar.url %></td></tr>
-    <tr><td class="border px-4 py-2">URL</td> <td class="border px-4 py-2"><%= @webinar.image_url %></td></tr>
-    <tr><td class="border px-4 py-2">PRO?</td> <td class="border px-4 py-2"><%= @webinar.is_pro %></td></tr>
-    <tr><td class="border px-4 py-2">Start time</td> <td class="border px-4 py-2"><%= @webinar.start_time %></td></tr>
-    <tr><td class="border px-4 py-2">End time</td> <td class="border px-4 py-2"><%= @webinar.end_time %></td></tr>
-    <tr><td class="border px-4 py-2">Inserted at</td> <td class="border px-4 py-2"><%= @webinar.inserted_at %></td></tr>
+    <tr><td class="border px-4 py-2">ID</td> <td class="border px-4 py-2"><%= @custom_plan.id %></td></tr>
+    <tr><td class="border px-4 py-2">Name</td> <td class="border px-4 py-2"><%= @custom_plan.name %></td></tr>
+    <tr><td class="border px-4 py-2">API Call Limits</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.api_call_limits) %></td></tr>
   </tbody>
 </table>
 
-<span><%= link "Edit", to: Routes.webinar_path(@conn, :edit, @webinar), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"%></span>
-<span><%= link "Back", to: Routes.webinar_path(@conn, :index), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded" %></span>
+<span><%= link "Edit", to: Routes.custom_plan_path(@conn, :edit, @custom_plan), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"%></span>
+<span><%= link "Back", to: Routes.custom_plan_path(@conn, :index), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded" %></span>
 
 
-<h1 class="text-4xl font-black mb-4">Users on this webinar</h1>
+<h1 class="text-4xl font-black mb-4">Users on this custom_plan</h1>
 <table class="table-auto border-collapse w-full mb-4">
   <thead>
     <tr class="rounded-lg text-sm font-medium text-gray-700 text-left" style="font-size: 0.9674rem">
@@ -28,7 +22,7 @@
     </tr>
   </thead>
   <tbody class="text-sm font-normal text-gray-700">
-    <%= for user <- @webinar_users do %>
+    <%= for user <- @custom_plan_users do %>
       <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
         <td class="border px-4 py-2"><%= link user.id, to: Routes.admin_resource_path(@conn, :show, :users, user.id), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"%></td>
         <td class="border px-4 py-2"><%= user.email %></td>

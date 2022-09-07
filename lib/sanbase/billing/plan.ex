@@ -81,6 +81,12 @@ defmodule Sanbase.Billing.Plan do
     |> Sanbase.Repo.insert()
   end
 
+  def update_plan(plan, params) do
+    plan
+    |> changeset(params)
+    |> Repo.update()
+  end
+
   def list_custom_plans() do
     plans =
       from(
@@ -161,11 +167,5 @@ defmodule Sanbase.Billing.Plan do
   def maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan)
       when is_binary(stripe_id) do
     {:ok, plan}
-  end
-
-  defp update_plan(plan, params) do
-    plan
-    |> changeset(params)
-    |> Repo.update()
   end
 end

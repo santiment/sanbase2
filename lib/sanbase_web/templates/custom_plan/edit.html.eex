@@ -1,4 +1,4 @@
-<h1 class="text-4xl font-black mb-4">Edit custom_plan</h1>
+<h1 class="text-4xl font-black mb-4">Edit Custom Plan</h1>
 
 <%= render "edit_form.html", Map.put(assigns, :action, Routes.custom_plan_path(@conn, :update, @custom_plan)) %>
 

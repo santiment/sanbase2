@@ -5,6 +5,11 @@
     <tr><td class="border px-4 py-2">ID</td> <td class="border px-4 py-2"><%= @custom_plan.id %></td></tr>
     <tr><td class="border px-4 py-2">Name</td> <td class="border px-4 py-2"><%= @custom_plan.name %></td></tr>
     <tr><td class="border px-4 py-2">API Call Limits</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.api_call_limits) %></td></tr>
+    <tr><td class="border px-4 py-2">Metric Access</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.metric_access) %></td></tr>
+    <tr><td class="border px-4 py-2">Query Access</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.query_access) %></td></tr>
+    <tr><td class="border px-4 py-2">Signal Access</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.signal_access) %></td></tr>
+    <tr><td class="border px-4 py-2">Accessible Historical Days</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.historical_data_in_days) %></td></tr>
+    <tr><td class="border px-4 py-2">Restricted Realtime Days</td> <td class="border px-4 py-2"><%= Jason.encode!(@custom_plan.restrictions.realtime_data_cut_off_in_days) %></td></tr>
   </tbody>
 </table>
 

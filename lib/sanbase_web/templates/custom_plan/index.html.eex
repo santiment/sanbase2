@@ -9,7 +9,8 @@
       <th class="px-4 py-2">Metric Access</th>
       <th class="px-4 py-2">Query Access</th>
       <th class="px-4 py-2">Signal Access</th>
-      <th class="px-4 py-2">Restrictions</th>
+      <th class="px-4 py-2">Historical Days</th>
+      <th class="px-4 py-2">Realtime Days</th>
       <th class="px-4 py-2">Restrictions As Plan</th>
       <th class="px-4 py-2">Actions</th>
     </tr>
@@ -23,12 +24,12 @@
         <td class="border px-4 py-2"><%= Jason.encode!(custom_plan.restrictions.metric_access) %></td>
         <td class="border px-4 py-2"><%= Jason.encode!(custom_plan.restrictions.query_access) %></td>
         <td class="border px-4 py-2"><%= Jason.encode!(custom_plan.restrictions.signal_access) %></td>
-        <td class="border px-4 py-2"><%= "Historical: #{custom_plan.restrictions.historical_data_in_days}, Realtime: #{custom_plan.restrictions.realtime_data_cut_off_in_days}" %></td>
+        <td class="border px-4 py-2"><%= custom_plan.restrictions.historical_data_in_days %></td>
+        <td class="border px-4 py-2"><%= custom_plan.restrictions.realtime_data_cut_off_in_days %></td>
         <td class="border px-4 py-2"><%= custom_plan.restrictions.restricted_access_as_plan %></td>
         <td class="border px-4 py-2">
           <span><%= link "Show", to: Routes.custom_plan_path(@conn, :show, custom_plan) %></span> |
           <span><%= link "Edit", to: Routes.custom_plan_path(@conn, :edit, custom_plan) %></span> |
-          <span><%= link "Delete", to: Routes.custom_plan_path(@conn, :delete, custom_plan), method: :delete, data: [confirm: "Are you sure?"] %></span>
         </td>
       </tr>
     <% end %>

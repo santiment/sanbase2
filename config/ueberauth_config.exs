@@ -1,4 +1,4 @@
-import Mix.Config
+import Config
 
 config :sanbase, SanbaseWeb.Guardian,
   issuer: "santiment",

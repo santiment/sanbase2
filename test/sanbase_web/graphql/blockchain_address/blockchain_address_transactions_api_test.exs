@@ -130,7 +130,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressTransactionsApiTest do
       %{
         "fromAddress" => %{
           "address" => "0x876eabf441b2ee5b5b0554fd502a8e0600950cfa",
-          "labels" => ''
+          "labels" => []
         },
         "toAddress" => %{
           "address" => "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",

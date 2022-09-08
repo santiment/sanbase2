@@ -12,9 +12,8 @@ defmodule Sanbase.Mixfile do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      test_coverage: [
-        tool: ExCoveralls
-      ],
+      releases: releases(),
+      test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.html": :test
@@ -40,7 +39,7 @@ defmodule Sanbase.Mixfile do
         :os_mon,
         :event_bus
       ],
-      included_applications: [:oauther, :brod, :kaffe, :ueberauth_twitter]
+      included_applications: [:kaffe, :ueberauth_twitter]
     ]
   end
 
@@ -49,6 +48,15 @@ defmodule Sanbase.Mixfile do
   # local_dev/ dir is used for local development and is excluded from source control
   defp elixirc_paths(:dev), do: ["lib", "local_dev", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp releases() do
+    [
+      sanbase: [
+        include_executables_for: [:unix],
+        reboot_system_after_config: true
+      ]
+    ]
+  end
 
   defp deps() do
     [
@@ -71,7 +79,6 @@ defmodule Sanbase.Mixfile do
       {:db_connection, "~> 2.2", override: true},
       {:decimal, "~> 2.0", override: true},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
-      {:distillery, "~> 2.0", runtime: false},
       {:earmark, "~> 1.2"},
       {:ecto_enum, "~> 1.4"},
       {:ecto_psql_extras, "~> 0.3"},

@@ -19,6 +19,11 @@ defmodule SanbaseWeb.CustomPlanController do
 
     case Plan.create_custom_api_plan(args) do
       {:ok, custom_plan} ->
+        _ =
+          custom_plan
+          |> Sanbase.Repo.preload(:product)
+          |> Plan.maybe_create_plan_in_stripe()
+
         conn
         |> put_flash(:info, "Custom Plan created successfully.")
         |> redirect(to: Routes.custom_plan_path(conn, :show, custom_plan))

@@ -56,4 +56,4 @@ WORKDIR /app
 
 COPY --from=code_builder /app/_build/prod/rel/sanbase .
 
-CMD bin/sanbase foreground
+CMD bin/sanbase start

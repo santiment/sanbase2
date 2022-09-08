@@ -42,7 +42,8 @@ RUN mix format --check-formatted
 
 RUN mix compile
 RUN mix phx.digest
-RUN mix distillery.release
+COPY rel rel
+RUN mix release
 
 # Release image
 FROM elixir:1.13.3-slim
@@ -54,7 +55,5 @@ RUN apt-get update -y && apt-get install -y bash imagemagick
 WORKDIR /app
 
 COPY --from=code_builder /app/_build/prod/rel/sanbase .
-
-ENV REPLACE_OS_VARS=true
 
 CMD bin/sanbase foreground

@@ -58,8 +58,6 @@ defined but only through their context modules and public interfaces.
   Provides a nice way to combine fetcihng data from the DB for multiple entries
   with a single query.
 
-- `Distillery` - For building releases.
-
 - In total around ~80 libraries are used.
 
 ## Structure Overview

@@ -39,7 +39,7 @@ defmodule Sanbase.Mixfile do
         :os_mon,
         :event_bus
       ],
-      included_applications: [:kaffe, :ueberauth_twitter]
+      included_applications: [:kaffe, :brod, :ueberauth_twitter]
     ]
   end
 
@@ -63,6 +63,7 @@ defmodule Sanbase.Mixfile do
       {:absinthe_phoenix, "~> 2.0"},
       {:absinthe_plug, "~> 1.5"},
       {:absinthe, "~> 1.5"},
+      {:brod, "~> 3.8", runtime: false},
       {:browser, "~> 0.4.4"},
       {:cachex, "~> 3.4"},
       {:cidr, "~> 1.1"},
@@ -113,7 +114,7 @@ defmodule Sanbase.Mixfile do
       {:inch_ex, github: "rrrene/inch_ex", only: [:dev, :test]},
       {:inflex, "~> 2.0", override: true},
       {:jason, "~> 1.2"},
-      {:kaffe, github: "santiment/kaffe", override: true},
+      {:kaffe, github: "santiment/kaffe", branch: "remove-brod-as-applications", override: true},
       {:kafka_protocol,
        github: "santiment/kafka_protocol", branch: "working-version", override: true},
       {:libcluster, "~> 3.0"},

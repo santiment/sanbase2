@@ -42,8 +42,7 @@ RUN mix format --check-formatted
 
 RUN mix compile
 RUN mix phx.digest
-COPY rel rel
-RUN mix release
+RUN mix distillery.release
 
 # Release image
 FROM elixir:1.13.3-slim

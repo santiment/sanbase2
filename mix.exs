@@ -12,7 +12,6 @@ defmodule Sanbase.Mixfile do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      releases: releases(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
@@ -49,21 +48,11 @@ defmodule Sanbase.Mixfile do
   defp elixirc_paths(:dev), do: ["lib", "local_dev", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
-  defp releases() do
-    [
-      sanbase: [
-        include_executables_for: [:unix],
-        reboot_system_after_config: true
-      ]
-    ]
-  end
-
   defp deps() do
     [
       {:absinthe_phoenix, "~> 2.0"},
       {:absinthe_plug, "~> 1.5"},
       {:absinthe, "~> 1.5"},
-      {:brod, "~> 3.8", runtime: false},
       {:browser, "~> 0.4.4"},
       {:cachex, "~> 3.4"},
       {:cidr, "~> 1.1"},

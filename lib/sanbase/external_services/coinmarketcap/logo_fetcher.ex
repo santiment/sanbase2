@@ -82,12 +82,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
       latest_cmc_data ->
         {:ok, file_hash} = FileHash.calculate(filepath)
 
-        case latest_cmc_data.logo_hash do
-          ^file_hash ->
+        case {latest_cmc_data.logo_hash, project.logo_url} do
+          {^file_hash, nil} ->
+            Logger.info("#{@log_tag} Logo for project: #{project.slug} has changed.")
+            true
+
+          {^file_hash, _} ->
             Logger.info("#{@log_tag} Logo for project: #{project.slug} has not changed.")
             false
 
-          _ ->
+          {_, _} ->
             latest_cmc_data
             |> LatestCoinmarketcapData.changeset(%{
               logo_hash: file_hash,

@@ -55,4 +55,6 @@ WORKDIR /app
 
 COPY --from=code_builder /app/_build/prod/rel/sanbase .
 
-CMD bin/sanbase start
+ENV REPLACE_OS_VARS=true
+
+CMD bin/sanbase foreground

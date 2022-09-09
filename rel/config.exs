@@ -1,3 +1,12 @@
+use Distillery.Releases.Config,
+  # This sets the default release built by `mix release`
+  default_release: :sanbase,
+  # This sets the default environment used by `mix release`
+  default_environment: Mix.env()
+
+# For a full list of config options for both releases
+# and environments, visit https://hexdocs.pm/distillery/configuration.html
+
 # Import all plugins from `rel/plugins`
 # They can then be used by adding `plugin MyPlugin` to
 # either an environment, or release definition, where

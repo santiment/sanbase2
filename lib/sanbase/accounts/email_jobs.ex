@@ -48,6 +48,18 @@ defmodule Sanbase.Accounts.EmailJobs do
     Sanbase.Repo.transaction(multi)
   end
 
+  def send_automatic_renewal_email(subscription, charge_date_unix) do
+    user = Sanbase.Accounts.User.by_id!(subscription.user_id)
+    name = Sanbase.Accounts.User.get_name(user)
+
+    Sanbase.TemplateMailer.send("tsvetozar.penov@gmail.com", "automatic_renewal", %{
+      name: name,
+      username: name,
+      subscription_type: subscription_type(subscription),
+      charge_date: DateTime.from_unix!(charge_date_unix) |> format_date()
+    })
+  end
+
   def send_trial_started_email(subscription) do
     user = Sanbase.Accounts.User.by_id!(subscription.user_id)
     name = Sanbase.Accounts.User.get_name(user)
@@ -143,6 +155,17 @@ defmodule Sanbase.Accounts.EmailJobs do
     Timex.format!(datetime, "{Mfull} {D}, {YYYY}")
   end
 
+  def subscription_type(subscription) do
+    plan_name =
+      case subscription.plan.name do
+        "PRO" -> "PRO"
+        "PRO_PLUS" -> "PRO+"
+        plan -> plan
+      end
+
+    "Sanbase #{plan_name}"
+  end
+
   # Private
 
   defp scheduled_email(email_type, templates, user, vars) do
@@ -162,16 +185,5 @@ defmodule Sanbase.Accounts.EmailJobs do
       },
       scheduled_at: scheduled_at
     )
-  end
-
-  defp subscription_type(subscription) do
-    plan_name =
-      case subscription.plan.name do
-        "PRO" -> "PRO"
-        "PRO_PLUS" -> "PRO+"
-        plan -> plan
-      end
-
-    "Sanbase #{plan_name}"
   end
 end

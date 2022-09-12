@@ -100,6 +100,11 @@ defmodule Sanbase.Email.Template do
       id: 4_127_647,
       subject: "Your Sanbase activity",
       required_vars: []
+    },
+    "automatic_renewal" => %{
+      id: 4_161_751,
+      subject: "Your subscription will renew soon",
+      required_vars: [:name, :subscription_type, :charge_date]
     }
   }
 
@@ -148,6 +153,8 @@ defmodule Sanbase.Email.Template do
   # Send once - 1 week before monthly Sanbase Pro ends
   @after_trial_annual_discount_template "35-percent-discount-offer"
 
+  @automatic_renewal "automatic_renewal"
+
   # Send after 2 weeks of inactivity.
   # FIXME- currently not send, inactivity should be defined
   # @slip_away_template "slip-away-users"
@@ -167,6 +174,7 @@ defmodule Sanbase.Email.Template do
   def trial_started_template, do: @trial_started_template
   def during_trial_annual_discount_template, do: @during_trial_annual_discount_template
   def after_trial_annual_discount_template, do: @after_trial_annual_discount_template
+  def automatic_renewal, do: @automatic_renewal
 
   def comment_notification_template, do: @comment_notification_template
   def verify_email_weekly_digest_template, do: @verify_email_weekly_digest_template

@@ -82,15 +82,13 @@ defmodule Sanbase.Billing.StripeEvent do
     handle_event_common(id, type, subscription_id)
   end
 
-  defp handle_event(
-         %{
-           "id" => id,
-           "type" => "invoice.upcoming",
-           "data" => %{
-             "object" => %{"subscription" => subscription_id, next_payment_attempt: charge_date}
-           }
-         } = stripe_event
-       ) do
+  defp handle_event(%{
+         "id" => id,
+         "type" => "invoice.upcoming",
+         "data" => %{
+           "object" => %{"subscription" => subscription_id, next_payment_attempt: charge_date}
+         }
+       }) do
     subscription = Subscription.by_stripe_id(subscription_id)
     Sanbase.Accounts.EmailJobs.send_automatic_renewal_email(subscription, charge_date)
     update(id, %{is_processed: true})

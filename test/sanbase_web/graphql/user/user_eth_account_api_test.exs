@@ -86,8 +86,9 @@ defmodule SanbaseWeb.Graphql.UserEthAccountApiTest do
     assert capture_log(fn ->
              result = add_eth_address(context.conn, @address)
              %{"errors" => [error]} = result
-             assert error["message"] == "Could not add an ethereum address."
-           end) =~ ~s/[address: {"has already been taken"/
+             assert error["message"] =~ "Could not add an ethereum address"
+             assert error["message"] =~ ~s/{\"address\":[\"has already been taken\"]}/
+           end)
   end
 
   # Helper functions

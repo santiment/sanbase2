@@ -143,6 +143,22 @@ defmodule Sanbase.DateTimeUtils do
     datetime
   end
 
+  @supported_interval_functions Sanbase.Metric.SqlQuery.Helper.supported_interval_functions()
+  @interval_function_to_equal_interval Sanbase.Metric.SqlQuery.Helper.interval_function_to_equal_interval()
+
+  def maybe_str_to_sec(interval) do
+    case interval in @supported_interval_functions do
+      true -> interval
+      false -> str_to_sec(interval)
+    end
+  end
+
+  # If interval_function is 'toStartOfWeek', 'toStartOfMonth', etc.
+  def str_to_sec(interval_function) when interval_function in @supported_interval_functions do
+    Map.get(@interval_function_to_equal_interval, interval_function)
+    |> str_to_sec()
+  end
+
   def str_to_sec(interval) do
     {int_interval, duration_index} =
       case Integer.parse(interval) do

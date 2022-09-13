@@ -1,5 +1,30 @@
 defmodule Sanbase.Metric.SqlQuery.Helper do
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :count, :ohlc]
+  @supported_interval_functions [
+    "toStartOfDay",
+    "toStartOfWeek",
+    "toStartOfMonth",
+    "toStartOfQuarter",
+    "toStartOfYear",
+    "toMonday",
+    "toStartOfHour"
+  ]
+
+  @interval_function_to_equal_interval %{
+    "toStartOfDay" => "1d",
+    "toStartOfWeek" => "7d",
+    "toStartOfMonth" => "30d",
+    "toStartOfQuarter" => "90d",
+    "toStartOfYear" => "365d",
+    "toMonday" => "7d",
+    "toStartOfHour" => "1h"
+  }
+
+  # when computing graphql complexity the function need to be transformed to the
+  # equivalent interval so it can be computed
+  def interval_function_to_equal_interval(), do: @interval_function_to_equal_interval
+
+  def supported_interval_functions(), do: @supported_interval_functions
 
   @type operator ::
           :inside_channel
@@ -15,6 +40,20 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
 
   def aggregations(), do: @aggregations
 
+  def to_unix_timestamp(
+        <<digit::utf8, _::binary>> = _interval,
+        dt_column,
+        interval_arg_position
+      )
+      when digit in ?0..?9 do
+    "toUnixTimestamp(intDiv(toUInt32(#{dt_column}), ?#{interval_arg_position}) * ?#{interval_arg_position})"
+  end
+
+  def to_unix_timestamp(function, dt_column, interval_arg_position)
+      when function in @supported_interval_functions do
+    "if(?#{interval_arg_position} = ?#{interval_arg_position}, toUnixTimestamp(toDateTime(#{function}(#{dt_column}))), null)"
+  end
+
   def aggregation(:ohlc, value_column, dt_column) do
     """
     argMin(#{value_column}, #{dt_column}) AS open,
@@ -24,11 +63,20 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     """
   end
 
-  def aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"
-  def aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"
-  def aggregation(:count, value_column, _dt_column), do: "coalesce(count(#{value_column}), 0)"
-  def aggregation(:sum, value_column, _dt_column), do: "sumKahan(#{value_column})"
-  def aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
+  def aggregation(:last, value_column, dt_column),
+    do: "argMax(#{value_column}, #{dt_column})"
+
+  def aggregation(:first, value_column, dt_column),
+    do: "argMin(#{value_column}, #{dt_column})"
+
+  def aggregation(:count, value_column, _dt_column),
+    do: "coalesce(count(#{value_column}), 0)"
+
+  def aggregation(:sum, value_column, _dt_column),
+    do: "sumKahan(#{value_column})"
+
+  def aggregation(aggr, value_column, _dt_column),
+    do: "#{aggr}(#{value_column})"
 
   def generate_comparison_string(column, :inside_channel, value),
     do: generate_comparison_string(column, :inside_channel_inclusive, value)
@@ -108,6 +156,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
 
   def label_id_by_label_fqn_filter(label_fqn, opts) when is_binary(label_fqn) do
     arg_position = Keyword.fetch!(opts, :argument_position)
+
     "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple(?#{arg_position}))"
   end
 
@@ -123,11 +172,13 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
 
   def label_id_by_label_key_filter(label_key, opts) when is_binary(label_key) do
     arg_position = Keyword.fetch!(opts, :argument_position)
+
     "label_id IN (SELECT label_id FROM label_metadata PREWHERE key = ?#{arg_position})"
   end
 
   def label_id_by_label_key_filter(label_keys, opts) when is_list(label_keys) do
     arg_position = Keyword.fetch!(opts, :argument_position)
+
     "label_id IN (SELECT label_id FROM label_metadata PREWHERE key IN (?#{arg_position}))"
   end
 
@@ -175,9 +226,12 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     {str, args}
   end
 
-  defp do_additional_filters(:label_fqn, [value | _] = list, args) when is_binary(value) do
+  defp do_additional_filters(:label_fqn, [value | _] = list, args)
+       when is_binary(value) do
     pos = length(args) + 1
+
     str = "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple(?#{pos}))"
+
     args = args ++ [list]
     {str, args}
   end
@@ -191,7 +245,8 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     {str, args}
   end
 
-  defp do_additional_filters(column, [value | _] = list, args) when is_number(value) do
+  defp do_additional_filters(column, [value | _] = list, args)
+       when is_number(value) do
     pos = length(args) + 1
     str = "#{column} IN (?#{pos})"
     args = args ++ [list]

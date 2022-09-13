@@ -10,10 +10,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
   use Ecto.Schema
 
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
+  import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
 
   import Sanbase.Metric.SqlQuery.Helper,
     only: [
+      to_unix_timestamp: 3,
       aggregation: 3,
       generate_comparison_string: 3,
       asset_id_filter: 2,
@@ -39,7 +40,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     asset_filter_value = asset_filter_value(selector)
 
     args = [
-      str_to_sec(interval),
+      maybe_str_to_sec(interval),
       Map.get(@name_to_metric_map, metric),
       dt_to_unix(:from, from),
       dt_to_unix(:to, to)
@@ -51,7 +52,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     query = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
+      #{to_unix_timestamp(interval, "dt", 1)} AS t,
       #{aggregation(aggregation, "value", "dt")}
     FROM(
       SELECT
@@ -84,7 +85,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         filters
       ) do
     args = [
-      str_to_sec(interval),
+      maybe_str_to_sec(interval),
       Map.get(@name_to_metric_map, metric),
       dt_to_unix(:from, from),
       dt_to_unix(:to, to),
@@ -95,7 +96,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     query = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
+      #{to_unix_timestamp(interval, "dt", 1)} AS t,
       dictGetString('asset_metadata_dict', 'name', asset_id) AS slug,
       #{aggregation(aggregation, "value2", "dt")} AS value
     FROM(

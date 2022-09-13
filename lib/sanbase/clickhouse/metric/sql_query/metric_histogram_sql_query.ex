@@ -306,6 +306,71 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     {query, args}
   end
 
+  def histogram_data_query(
+        "eth2_staking_pools",
+        "ethereum",
+        from,
+        to,
+        _interval,
+        limit
+      ) do
+    query = """
+    SELECT
+      label,
+      round(sum(locked_sum) / 32) AS value
+    FROM
+    (
+      SELECT
+        address,
+        SUM(amount) AS locked_sum
+      FROM (
+        SELECT distinct *
+        FROM eth2_staking_transfers_v2 FINAL
+        WHERE dt < toDateTime(?2)
+        #{if from, do: "AND dt >= toDateTime(?3)"}
+      )
+      GROUP BY address
+    )
+    INNER JOIN
+    (
+      SELECT
+        address,
+        value AS label
+      FROM
+      (
+        SELECT
+          address,
+          label_id
+        FROM current_label_addresses
+        WHERE (blockchain = 'ethereum') AND (label_id IN (
+          SELECT label_id
+          FROM label_metadata
+          WHERE key = 'eth2_staking_address'
+        ))
+      )
+      INNER JOIN
+      (
+        SELECT
+          label_id,
+          value
+        FROM label_metadata
+        WHERE key = 'eth2_staking_address'
+      ) USING (label_id)
+    ) USING address
+    GROUP BY label
+    ORDER BY value desc
+    LIMIT ?1
+    """
+
+    args =
+      case from do
+        nil -> [limit, to |> DateTime.to_unix()]
+        _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
+      end
+
+    {query, args}
+  end
+
   # Generic
   def histogram_data_query(metric, slug, from, to, interval, limit) do
     query = """

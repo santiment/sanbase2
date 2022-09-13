@@ -159,5 +159,24 @@
     "table": "eth2_staking_transfers_v2",
     "has_incomplete_data": false,
     "data_type": "histogram"
+  },
+  {
+    "human_readable_name": "ETH2 Staking Pools",
+    "name": "eth2_staking_pools",
+    "metric": "eth2_staking_pools",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "eth2_staking_transfers_v2",
+    "has_incomplete_data": false,
+    "data_type": "histogram"
   }
 ]

@@ -1,15 +1,16 @@
 defmodule Sanbase.SocialData.SocialDominance do
   import Sanbase.Utils.ErrorHandling
 
-  alias Sanbase.SocialData.SocialHelper
-
-  require Mockery.Macro
-  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
-
   require Sanbase.Utils.Config, as: Config
   require SanbaseWeb.Graphql.Schema
+  require Mockery.Macro
+
+  alias Sanbase.SocialData.SocialHelper
+  alias Sanbase.SocialData
 
   @recv_timeout 15_000
+  @hours_back_ensure_has_data 3
+  @trending_words_size 10
 
   def social_dominance(selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
@@ -61,6 +62,30 @@ defmodule Sanbase.SocialData.SocialDominance do
     end
   end
 
+  def social_dominance_trending_words() do
+    to = Timex.now()
+    from = Timex.shift(to, hours: -@hours_back_ensure_has_data)
+    interval = "1h"
+    source = :total
+
+    with {:ok, trending_words} <-
+           SocialData.TrendingWords.get_currently_trending_words(@trending_words_size),
+         words <- Enum.map(trending_words, & &1.word),
+         {:ok, words_volume} <-
+           SocialData.social_volume(%{words: words}, from, to, interval, source),
+         {:ok, total_volume} <- SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
+      words_mentions_sum =
+        Enum.map(words_volume, &List.last(&1).mentions_count)
+        |> Enum.sum()
+
+      total_mentions = List.last(total_volume).mentions_count
+
+      dominance = Sanbase.Math.percent_of(words_mentions_sum, total_mentions) || 0.0
+
+      {:ok, dominance}
+    end
+  end
+
   defp social_dominance_request(%{slug: slug}, from, to, interval, source) do
     url = "#{metrics_hub_url()}/social_dominance"
 
@@ -94,4 +119,6 @@ defmodule Sanbase.SocialData.SocialDominance do
   defp metrics_hub_url() do
     Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
+
+  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 end

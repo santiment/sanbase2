@@ -10,7 +10,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   @eth2_string_label_float_value_metrics [
     "eth2_staked_amount_per_label",
     "eth2_staked_address_count_per_label",
-    "eth2_unlabeled_staker_inflow_sources"
+    "eth2_unlabeled_staker_inflow_sources",
+    "eth2_staking_address"
   ]
 
   @eth2_string_address_string_label_float_value_metrics [

@@ -420,6 +420,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "eth2_staked_address_count_per_label",
         "eth2_unlabeled_staker_inflow_sources",
         "eth2_top_stakers",
+        "eth2_staking_pools",
         "price_usd_change_1h",
         "price_eth_change_1d",
         "price_eth_change_7d",

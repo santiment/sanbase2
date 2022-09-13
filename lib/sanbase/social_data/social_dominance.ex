@@ -1,13 +1,12 @@
 defmodule Sanbase.SocialData.SocialDominance do
   import Sanbase.Utils.ErrorHandling
 
-  alias Sanbase.SocialData.SocialHelper
-
-  require Mockery.Macro
-  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
-
   require Sanbase.Utils.Config, as: Config
   require SanbaseWeb.Graphql.Schema
+  require Mockery.Macro
+
+  alias Sanbase.SocialData.SocialHelper
+  alias Sanbase.SocialData
 
   @recv_timeout 15_000
   @hours_back_ensure_has_data 3
@@ -64,24 +63,20 @@ defmodule Sanbase.SocialData.SocialDominance do
   end
 
   def social_dominance_trending_words() do
-    now = Timex.now()
-    from = Timex.shift(now, hours: -@hours_back_ensure_has_data)
-    to = now
+    to = Timex.now()
+    from = Timex.shift(to, hours: -@hours_back_ensure_has_data)
     interval = "1h"
     source = :total
 
     with {:ok, trending_words} <-
-           Sanbase.SocialData.TrendingWords.get_currently_trending_words(@trending_words_size),
+           SocialData.TrendingWords.get_currently_trending_words(@trending_words_size),
          words <- Enum.map(trending_words, & &1.word),
          {:ok, words_volume} <-
-           Sanbase.SocialData.social_volume(%{words: words}, from, to, interval, source),
-         {:ok, total_volume} <-
-           Sanbase.SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
+           SocialData.social_volume(%{words: words}, from, to, interval, source),
+         {:ok, total_volume} <- SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
       words_mentions_sum =
-        words_volume
-        |> Enum.reduce(0.0, fn word, acc ->
-          acc + List.last(word.timeseries_data).mentions_count
-        end)
+        Enum.map(words_volume, &List.last(&1).mentions_count)
+        |> Enum.sum()
 
       total_mentions = List.last(total_volume).mentions_count
 
@@ -124,4 +119,6 @@ defmodule Sanbase.SocialData.SocialDominance do
   defp metrics_hub_url() do
     Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
+
+  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 end

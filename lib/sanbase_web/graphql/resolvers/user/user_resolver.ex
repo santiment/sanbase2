@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   require Logger
 
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1, changeset_errors_string: 1]
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
   alias Sanbase.InternalServices.Ethauth
@@ -161,12 +161,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
          {:ok, _} <- User.add_eth_account(user, address) do
       {:ok, user}
     else
-      {:error, reason} ->
-        Logger.warn(
-          "Could not add an ethereum address for user #{user.id}. Reason: #{inspect(reason)}"
-        )
+      {:error, changeset} ->
+        error_msg =
+          "Could not add an ethereum address for user #{user.id}. Reason: #{changeset_errors_string(changeset)}"
 
-        {:error, "Could not add an ethereum address."}
+        Logger.warn(error_msg)
+        {:error, error_msg}
     end
   end
 

@@ -30,9 +30,16 @@ defmodule SanbaseWeb.Graphql.CustomTypes.Interval do
     parse(&decode/1)
   end
 
+  @supported_interval_functions Sanbase.Metric.SqlQuery.Helper.supported_interval_functions()
+
   @spec decode(Absinthe.Blueprint.Input.String.t()) :: {:ok, term()} | :error
   @spec decode(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
   defp decode(%Absinthe.Blueprint.Input.String{value: ""}), do: {:ok, ""}
+
+  defp decode(%Absinthe.Blueprint.Input.String{value: value})
+       when value in @supported_interval_functions do
+    {:ok, value}
+  end
 
   defp decode(%Absinthe.Blueprint.Input.String{value: value}) do
     case Sanbase.DateTimeUtils.valid_compound_duration?(value) do

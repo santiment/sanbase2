@@ -332,5 +332,11 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       middleware(AccessControl, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.social_gainers_losers_status/3)
     end
+
+    field :social_dominance_trending_words, :float do
+      meta(access: :free)
+
+      cache_resolve(&SocialDataResolver.social_dominance_trending_words/3)
+    end
   end
 end

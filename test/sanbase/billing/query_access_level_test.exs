@@ -132,6 +132,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :recent_transfers,
           :show_promoter,
           :signals_historical_activity,
+          :social_dominance_trending_words,
           :social_volume_projects,
           :subcomments,
           :table_configuration,

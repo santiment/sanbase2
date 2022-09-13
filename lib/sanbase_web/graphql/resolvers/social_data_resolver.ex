@@ -163,4 +163,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :dominance)
   end
+
+  def social_dominance_trending_words(_, _, _) do
+    Sanbase.SocialData.SocialDominance.social_dominance_trending_words()
+  end
 end

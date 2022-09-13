@@ -10,6 +10,8 @@ defmodule Sanbase.SocialData.SocialDominance do
   require SanbaseWeb.Graphql.Schema
 
   @recv_timeout 15_000
+  @hours_back_ensure_has_data 3
+  @trending_words_size 10
 
   def social_dominance(selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
@@ -58,6 +60,34 @@ defmodule Sanbase.SocialData.SocialDominance do
         error_result(
           "Cannot fetch social dominance data for project with slug #{inspect(slug)}}: #{HTTPoison.Error.message(error)}"
         )
+    end
+  end
+
+  def social_dominance_trending_words() do
+    now = Timex.now()
+    from = Timex.shift(now, hours: -@hours_back_ensure_has_data)
+    to = now
+    interval = "1h"
+    source = :total
+
+    with {:ok, trending_words} <-
+           Sanbase.SocialData.TrendingWords.get_currently_trending_words(@trending_words_size),
+         words <- Enum.map(trending_words, & &1.word),
+         {:ok, words_volume} <-
+           Sanbase.SocialData.social_volume(%{words: words}, from, to, interval, source),
+         {:ok, total_volume} <-
+           Sanbase.SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
+      words_mentions_sum =
+        words_volume
+        |> Enum.reduce(0.0, fn word, acc ->
+          acc + List.last(word.timeseries_data).mentions_count
+        end)
+
+      total_mentions = List.last(total_volume).mentions_count
+
+      dominance = Sanbase.Math.percent_of(words_mentions_sum, total_mentions) || 0.0
+
+      {:ok, dominance}
     end
   end
 

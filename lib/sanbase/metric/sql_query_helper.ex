@@ -46,7 +46,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
         interval_arg_position
       )
       when digit in ?0..?9 do
-    "toUnixTimestamp(intDiv(toUInt32(#{dt_column}), ?#{interval_arg_position}) * ?#{interval_arg_position})"
+    "toUnixTimestamp(intDiv(toUInt32(toDateTime(#{dt_column})), ?#{interval_arg_position}) * ?#{interval_arg_position})"
   end
 
   def to_unix_timestamp(function, dt_column, interval_arg_position)

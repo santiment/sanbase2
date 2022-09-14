@@ -68,7 +68,7 @@ defmodule Sanbase.SocialData.SocialDominance do
     interval = "1h"
     source = :total
 
-    with {:ok, trending_words} <-
+    with {:ok, trending_words} when length(trending_words) > 0 <-
            SocialData.TrendingWords.get_currently_trending_words(@trending_words_size),
          words <- Enum.map(trending_words, & &1.word),
          {:ok, words_volume} <-
@@ -83,6 +83,9 @@ defmodule Sanbase.SocialData.SocialDominance do
       dominance = Sanbase.Math.percent_of(words_mentions_sum, total_mentions) || 0.0
 
       {:ok, dominance}
+    else
+      {:ok, []} -> {:ok, nil}
+      error -> {:ok, nil}
     end
   end
 

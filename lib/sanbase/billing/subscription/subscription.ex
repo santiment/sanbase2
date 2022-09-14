@@ -337,12 +337,16 @@ defmodule Sanbase.Billing.Subscription do
 
   def is_trialing_sanbase_pro?(subscription) do
     subscription = Repo.preload(subscription, :plan)
-    subscription.status == :trialing and subscription.plan.name in ["PRO", "PRO_PLUS"]
+
+    subscription.plan.product_id == @product_sanbase and subscription.status == :trialing and
+      subscription.plan.name in ["PRO", "PRO_PLUS"]
   end
 
   def is_active_sanbase_pro?(subscription) do
     subscription = Repo.preload(subscription, :plan)
-    subscription.status == :active and subscription.plan.name in ["PRO", "PRO_PLUS"]
+
+    subscription.plan.product_id == @product_sanbase and subscription.status == :active and
+      subscription.plan.name in ["PRO", "PRO_PLUS"]
   end
 
   def user_has_sanbase_pro?(user_id) do

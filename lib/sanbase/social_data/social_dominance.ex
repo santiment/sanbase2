@@ -75,7 +75,7 @@ defmodule Sanbase.SocialData.SocialDominance do
            SocialData.social_volume(%{words: words}, from, to, interval, source),
          {:ok, total_volume} <- SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
       words_mentions_sum =
-        Enum.map(words_volume, &List.last(&1).mentions_count)
+        Enum.map(words_volume, &List.last(&1.timeseries_data).mentions_count)
         |> Enum.sum()
 
       total_mentions = List.last(total_volume).mentions_count

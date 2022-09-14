@@ -161,6 +161,14 @@ defmodule Sanbase.EmailsTest do
 
       assert_enqueued([worker: Sanbase.Mailer, args: args], 100)
     end
+
+    test "on API PRO subscription started", context do
+      query = subscribe_mutation(context.plans.plan_pro.id)
+
+      execute_mutation(context.conn, query)
+
+      assert [] = all_enqueued(worker: Sanbase.Mailer)
+    end
   end
 
   describe "performing email jobs" do

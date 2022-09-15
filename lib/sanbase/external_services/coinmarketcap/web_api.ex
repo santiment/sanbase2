@@ -69,7 +69,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         end
 
       error ->
-        Logger.warn("[CMC] Error fetching first datetime for #{id}. Reason: #{inspect(error)}")
+        Logger.warning("[CMC] Error fetching first datetime for #{id}. Reason: #{inspect(error)}")
         {:error, "[CMC] Error fetching first datetime for #{id}"}
     end
   end

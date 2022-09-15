@@ -447,7 +447,7 @@ defmodule Sanbase.Alert.UserTrigger do
       :ok
     else
       {:load_in_struct?, {:error, error}} ->
-        Logger.warn("UserTrigger struct is not valid. Reason: #{inspect(error)}")
+        Logger.warning("UserTrigger struct is not valid. Reason: #{inspect(error)}")
         {:error, error}
 
       {:valid?, false} ->
@@ -458,12 +458,12 @@ defmodule Sanbase.Alert.UserTrigger do
           errors
           |> Enum.map(fn {_, _, _, error} -> error end)
 
-        Logger.warn("UserTrigger struct is not valid. Reason: #{inspect(errors_text)}")
+        Logger.warning("UserTrigger struct is not valid. Reason: #{inspect(errors_text)}")
 
         {:error, errors_text}
 
       {:map_from_struct, {:error, error}} ->
-        Logger.warn("UserTrigger struct is not valid. Reason: #{inspect(error)}")
+        Logger.warning("UserTrigger struct is not valid. Reason: #{inspect(error)}")
 
       {:error, error} ->
         {:error, error}

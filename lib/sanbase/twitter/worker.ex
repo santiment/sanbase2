@@ -84,12 +84,15 @@ defmodule Sanbase.Twitter.Worker do
         nil
 
       e in ExTwitter.ConnectionError ->
-        Logger.warn("Connection error while trying to fetch twitter user data: #{e.reason}")
+        Logger.warning("Connection error while trying to fetch twitter user data: #{e.reason}")
         fetch_twitter_user_data(twitter_name)
         nil
 
       e in ExTwitter.Error ->
-        Logger.warn("Error trying to fetch twitter user data for #{twitter_name}: #{e.message}")
+        Logger.warning(
+          "Error trying to fetch twitter user data for #{twitter_name}: #{e.message}"
+        )
+
         nil
 
       _ ->
@@ -109,7 +112,7 @@ defmodule Sanbase.Twitter.Worker do
   end
 
   defp fetch_and_store(args) do
-    Logger.warn("Invalid parameters while fetching twitter data: " <> inspect(args))
+    Logger.warning("Invalid parameters while fetching twitter data: " <> inspect(args))
   end
 
   defp export_to_kafka(twitter_handle, %ExTwitter.Model.User{followers_count: followers_count}) do

@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
         {:ok, san_balance || 0}
 
       {:error, error} ->
-        Logger.warn("Error getting a user's san balance. Reason: #{inspect(error)}")
+        Logger.warning("Error getting a user's san balance. Reason: #{inspect(error)}")
         {:nocache, {:ok, 0.0}}
     end
   end
@@ -165,7 +165,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
         error_msg =
           "Could not add an ethereum address for user #{user.id}. Reason: #{changeset_errors_string(changeset)}"
 
-        Logger.warn(error_msg)
+        Logger.warning(error_msg)
         {:error, error_msg}
     end
   end

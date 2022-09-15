@@ -81,7 +81,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
       {:ok, eth_balance * eth_price_usd}
     else
       error ->
-        Logger.warn(
+        Logger.warning(
           "Cannot calculate USD balance for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 

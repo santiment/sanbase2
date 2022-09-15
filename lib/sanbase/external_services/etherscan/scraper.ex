@@ -23,12 +23,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
         body
 
       {:ok, %Tesla.Env{status: status}} ->
-        Logger.warn("Invalid response from etherscan for address #{address}. Status: #{status}")
+        Logger.warning(
+          "Invalid response from etherscan for address #{address}. Status: #{status}"
+        )
 
         nil
 
       {:error, error} ->
-        Logger.warn(
+        Logger.warning(
           "Error response from etherscan for address #{address}. Reason: #{inspect(error)}"
         )
 
@@ -42,12 +44,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
         body
 
       {:ok, %Tesla.Env{status: status}} ->
-        Logger.warn("Invalid response from etherscan for #{token_name}. Status: #{status}")
+        Logger.warning("Invalid response from etherscan for #{token_name}. Status: #{status}")
 
         nil
 
       {:error, error} ->
-        Logger.warn("Error response from etherscan for #{token_name}. Reason: #{inspect(error)}")
+        Logger.warning(
+          "Error response from etherscan for #{token_name}. Reason: #{inspect(error)}"
+        )
 
         nil
     end

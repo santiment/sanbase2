@@ -59,7 +59,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
         error_msg =
           "[CMC] Failed fetching cryptocurrency info for: #{projects_count} projects. Status: #{status}"
 
-        Logger.warn(error_msg)
+        Logger.warning(error_msg)
         {:error, error_msg}
 
       invalid_slugs when is_list(invalid_slugs) ->

@@ -121,7 +121,7 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
   end
 
   def handle_info(msg, state) do
-    Logger.warn("[CryptocompareWS] Unhandled message received: #{inspect(msg)}")
+    Logger.warning("[CryptocompareWS] Unhandled message received: #{inspect(msg)}")
     {:ok, state}
   end
 
@@ -181,7 +181,7 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
   end
 
   def handle_frame(%{"MESSAGE" => "FORCE_DISCONNECT"} = msg, _frame, state) do
-    Logger.warn("""
+    Logger.warning("""
     [CryptocompareWS] Received FORCE_DISCONNET for socket #{state.socket_id}. Reason: #{msg["INFO"]}
     """)
 

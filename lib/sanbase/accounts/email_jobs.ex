@@ -52,12 +52,14 @@ defmodule Sanbase.Accounts.EmailJobs do
     user = Sanbase.Accounts.User.by_id!(subscription.user_id)
     name = Sanbase.Accounts.User.get_name(user)
 
-    Sanbase.TemplateMailer.send("tsvetozar.penov@gmail.com", "automatic_renewal", %{
+    vars = %{
       name: name,
       username: name,
       subscription_type: subscription_type(subscription),
       charge_date: DateTime.from_unix!(charge_date_unix) |> format_date()
-    })
+    }
+
+    add_email_job(455, automatic_renewal_template(), vars)
   end
 
   def send_trial_started_email(subscription) do

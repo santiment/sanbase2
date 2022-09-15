@@ -121,7 +121,7 @@ defmodule Sanbase.Telegram do
         {:error, error_msg}
 
       error ->
-        Logger.warn("Telegram message not sent. Reason: #{inspect(error)}")
+        Logger.warning("Telegram message not sent. Reason: #{inspect(error)}")
         {:error, "Telegram message not sent."}
     end
   end

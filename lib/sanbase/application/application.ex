@@ -98,7 +98,7 @@ defmodule Sanbase.Application do
         Logger.info("Starting Alerts Sanbase.")
 
       unknown ->
-        Logger.warn("Unkwnown type #{inspect(unknown)}. Starting a default web container.")
+        Logger.warning("Unkwnown type #{inspect(unknown)}. Starting a default web container.")
         Logger.info("Starting Web Sanbase.")
     end
   end

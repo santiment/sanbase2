@@ -348,6 +348,17 @@ defmodule Sanbase.EmailsTest do
     mutation {
       emailLoginVerify(email: "#{user.email}", token: "#{user.email_token}") {
         token
+        user {
+          primaryUserSanbaseSubscription{
+            status
+            plan{
+              name
+              product {
+                name
+              }
+            }
+          }
+        }
       }
     }
     """

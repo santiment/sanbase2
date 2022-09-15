@@ -17,7 +17,7 @@ defmodule Sanbase.Repo.Migrations.ClearProjectsRunIcoImport do
     #
     #   SanbaseWorkers.DataMigrations.ClearProjectsRunIcoImport.perform_async([])
     # else
-    #   Logger.warn("FAKTORY_HOST variable missing. Skipping ICO import.")
+    #   Logger.warning("FAKTORY_HOST variable missing. Skipping ICO import.")
     # end
   end
 

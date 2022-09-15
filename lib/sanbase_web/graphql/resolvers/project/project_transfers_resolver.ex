@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
         {:ok, []}
 
       error ->
-        Logger.warn("Cannot fetch top token transfers for project with slug #{slug}. \
+        Logger.warning("Cannot fetch top token transfers for project with slug #{slug}. \
           Reason: #{inspect(error)}")
 
         {:nocache, {:ok, []}}
@@ -165,7 +165,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
       {:ok, transfers}
     else
       error ->
-        Logger.warn(
+        Logger.warning(
           "Cannot fetch top ETH transfers for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
@@ -187,7 +187,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
       {:ok, transfers}
     else
       error ->
-        Logger.warn(
+        Logger.warning(
           "Cannot fetch top ETH transfers for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
@@ -219,7 +219,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
         {:ok, nil}
 
       {:error, error} ->
-        Logger.warn(
+        Logger.warning(
           "Cannot calculate ETH spent for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
@@ -251,7 +251,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
         {:ok, []}
 
       error ->
-        Logger.warn(
+        Logger.warning(
           "Cannot calculate ETH spent over time for for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 

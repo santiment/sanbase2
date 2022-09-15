@@ -27,7 +27,7 @@ defmodule Sanbase.Utils.ErrorHandling do
 
   def warn_result(message, query_name \\ "query") do
     log_id = UUID.uuid4()
-    Logger.warn("[#{log_id}] #{message}")
+    Logger.warning("[#{log_id}] #{message}")
     {:error, "[#{log_id}] Error executing #{query_name}. See logs for details."}
   end
 
@@ -57,7 +57,7 @@ defmodule Sanbase.Utils.ErrorHandling do
     error_msg_with_reason = error_msg <> ", Reason: #{inspect(message)}"
 
     # TODO: Maybe remove this warning
-    Logger.warn(error_msg_with_reason)
+    Logger.warning(error_msg_with_reason)
 
     case Keyword.get(opts, :propagate_reason, true) do
       true -> error_msg_with_reason

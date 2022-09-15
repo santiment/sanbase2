@@ -68,11 +68,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
        }}
     else
       {:error, reason} ->
-        Logger.warn("Login failed: #{reason}")
+        Logger.warning("Login failed: #{reason}")
         {:error, message: "Login failed"}
 
       _ ->
-        Logger.warn("Login failed: invalid signature")
+        Logger.warning("Login failed: invalid signature")
         {:error, message: "Login failed"}
     end
   end

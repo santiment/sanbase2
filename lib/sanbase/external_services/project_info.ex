@@ -178,7 +178,9 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
         :ok
 
       {:error, changeset} ->
-        Logger.warn("Cannot insert tag on project creation. Reason: #{inspect(changeset.errors)}")
+        Logger.warning(
+          "Cannot insert tag on project creation. Reason: #{inspect(changeset.errors)}"
+        )
     end
   end
 
@@ -235,7 +237,10 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
         %ProjectInfo{project_info | contract_abi: abi}
 
       {:error, error} ->
-        Logger.warn("Can't get the ABI for address #{main_contract_address}: #{inspect(error)}")
+        Logger.warning(
+          "Can't get the ABI for address #{main_contract_address}: #{inspect(error)}"
+        )
+
         project_info
     end
   end

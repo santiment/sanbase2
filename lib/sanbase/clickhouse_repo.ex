@@ -103,7 +103,7 @@ defmodule Sanbase.ClickhouseRepo do
     log_id = UUID.uuid4()
     error = extract_error_from_stacktrace(stacktrace) || Exception.message(e)
 
-    Logger.warn("""
+    Logger.warning("""
     [#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error}
 
     Stacktrace:
@@ -116,7 +116,7 @@ defmodule Sanbase.ClickhouseRepo do
   defp log_and_return_error(error_str, function_executed) do
     log_id = UUID.uuid4()
 
-    Logger.warn(
+    Logger.warning(
       "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_str}"
     )
 

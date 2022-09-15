@@ -86,7 +86,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
       {:ok, %Tesla.Env{status: status}} ->
         error = "Failed fetching top #{projects_number} projects' information. Status: #{status}"
 
-        Logger.warn(error)
+        Logger.warning(error)
         {:error, error}
 
       {:error, error} ->

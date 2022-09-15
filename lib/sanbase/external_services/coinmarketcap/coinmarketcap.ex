@@ -131,7 +131,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   def handle_info(msg, state) do
-    Logger.warn("[CMC] Unknown message received in #{__MODULE__}: #{msg}")
+    Logger.warning("[CMC] Unknown message received in #{__MODULE__}: #{msg}")
     {:noreply, state}
   end
 
@@ -284,7 +284,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
         _ ->
           err_msg = "[CMC] Cannot fetch the last price datetime for project #{project.slug}"
 
-          Logger.warn(err_msg)
+          Logger.warning(err_msg)
           {:error, err_msg}
       end
     else
@@ -334,7 +334,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
       _ ->
         err_msg = "[CMC] Cannot fetch the last price datetime for TOTAL_MARKET"
-        Logger.warn(err_msg)
+        Logger.warning(err_msg)
         {:error, err_msg}
     end
   end

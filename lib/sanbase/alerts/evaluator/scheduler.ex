@@ -459,7 +459,9 @@ defmodule Sanbase.Alert.Scheduler do
     end
 
     Enum.each(errors, fn error ->
-      Logger.warn("[#{info_map.run_uuid}] Cannot send a #{type} alert. Reason: #{inspect(error)}")
+      Logger.warning(
+        "[#{info_map.run_uuid}] Cannot send a #{type} alert. Reason: #{inspect(error)}"
+      )
     end)
 
     errors_to_count_map =

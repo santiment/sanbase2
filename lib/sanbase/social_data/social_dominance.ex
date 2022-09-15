@@ -62,6 +62,35 @@ defmodule Sanbase.SocialData.SocialDominance do
     end
   end
 
+  def social_dominance_words(words) do
+    to = Timex.now()
+    from = Timex.shift(to, hours: -@hours_back_ensure_has_data)
+    interval = "1h"
+    source = :total
+
+    with {:ok, words_volume} <-
+           SocialData.social_volume(%{words: words}, from, to, interval, source),
+         {:ok, total_volume} <- SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
+      words_volume_map =
+        words_volume
+        |> Enum.into(%{}, fn w -> {w.word, List.last(w.timeseries_data).mentions_count} end)
+
+      total_mentions = List.last(total_volume).mentions_count
+
+      words_dominance_map =
+        words_volume_map
+        |> Enum.map(fn {word, mentions} ->
+          %{
+            word: word,
+            social_dominance: Sanbase.Math.percent_of(mentions, total_mentions) || 0.0
+          }
+        end)
+    else
+      {:ok, []} -> {:ok, nil}
+      error -> {:ok, nil}
+    end
+  end
+
   def social_dominance_trending_words() do
     to = Timex.now()
     from = Timex.shift(to, hours: -@hours_back_ensure_has_data)

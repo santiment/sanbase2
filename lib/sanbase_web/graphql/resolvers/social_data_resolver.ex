@@ -98,6 +98,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     SocialData.social_volume(selector, from, to, interval, :total)
   end
 
+  def words_social_dominance(
+        _root,
+        %{selector: %{words: words}},
+        _resolution
+      ) do
+    SocialData.SocialDominance.words_social_dominance(words)
+  end
+
   def words_context(
         _root,
         %{selector: %{word: word}, source: source, size: size, from: from, to: to},

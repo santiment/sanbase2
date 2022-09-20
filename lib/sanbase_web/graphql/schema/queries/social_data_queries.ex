@@ -200,6 +200,14 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       cache_resolve(&SocialDataResolver.words_social_volume/3, ttl: 600, max_ttl_offset: 240)
     end
 
+    field :words_social_dominance, list_of(:words_social_dominance) do
+      meta(access: :free)
+
+      arg(:selector, :word_selector_input_object)
+
+      cache_resolve(&SocialDataResolver.words_social_dominance/3, ttl: 600, max_ttl_offset: 240)
+    end
+
     @desc ~s"""
     Returns a list of mentions count for a given project and time interval.
 

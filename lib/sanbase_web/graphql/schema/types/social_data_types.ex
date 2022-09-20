@@ -115,6 +115,11 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:timeseries_data, list_of(:social_volume))
   end
 
+  object :words_social_dominance do
+    field(:word, non_null(:string))
+    field(:social_dominance, non_null(:float))
+  end
+
   object :top_social_gainers_losers do
     field(:datetime, non_null(:datetime))
     field(:projects, list_of(:projects_change))

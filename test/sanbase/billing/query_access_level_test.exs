@@ -148,7 +148,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :usd_value_address_change,
           :user_list,
           :watchlist,
-          :watchlist_by_slug
+          :watchlist_by_slug,
+          :words_social_dominance
         ]
         |> Enum.sort()
 

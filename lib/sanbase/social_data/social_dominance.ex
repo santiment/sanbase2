@@ -62,7 +62,8 @@ defmodule Sanbase.SocialData.SocialDominance do
     end
   end
 
-  def social_dominance_words(words) do
+  def words_social_dominance(word_or_words) do
+    words = List.wrap(word_or_words)
     to = Timex.now()
     from = Timex.shift(to, hours: -@hours_back_ensure_has_data)
     interval = "1h"
@@ -77,7 +78,7 @@ defmodule Sanbase.SocialData.SocialDominance do
 
       total_mentions = List.last(total_volume).mentions_count
 
-      words_dominance_map =
+      words_dominance =
         words_volume_map
         |> Enum.map(fn {word, mentions} ->
           %{
@@ -85,6 +86,8 @@ defmodule Sanbase.SocialData.SocialDominance do
             social_dominance: Sanbase.Math.percent_of(mentions, total_mentions) || 0.0
           }
         end)
+
+      {:ok, words_dominance}
     else
       {:ok, []} -> {:ok, nil}
       error -> {:ok, nil}

@@ -579,28 +579,15 @@ defmodule Sanbase.Entity do
     # `where: vote.user_id == ^user_id` in the query as this will not properly
     # count all votes but only the votes cast by the user. This will make it
     # impossible to sort by most voted first then.
-    result =
-      from(v in Sanbase.Vote,
-        where: v.user_id == ^user_id,
-        distinct: true,
-        select: %{
-          entity_id: entity_id_selection(),
-          entity_type: entity_type_selection()
-        }
-      )
-      |> Sanbase.Repo.all()
+    result = get_entity_votes_for_user(user_id)
 
-    ids =
-      result
-      |> Enum.reduce(%{}, fn %{entity_id: id, entity_type: type}, acc ->
-        Map.update(acc, type, [id], &[id | &1])
-      end)
+    ids_map = Enum.group_by(result, & &1.entity_type, & &1.entity_id)
 
-    post_ids = ids["insight"] || []
-    watchlist_ids = ids["watchlist"] || []
-    chart_configuration_ids = ids["chart_configuration"] || []
-    user_trigger_ids = ids["user_trigger"] || []
-    dashboard_ids = ids["dashboard"] || []
+    post_ids = ids_map["insight"] || []
+    watchlist_ids = ids_map["watchlist"] || []
+    chart_configuration_ids = ids_map["chart_configuration"] || []
+    user_trigger_ids = ids_map["user_trigger"] || []
+    dashboard_ids = ids_map["dashboard"] || []
 
     from(v in query,
       where:
@@ -788,6 +775,18 @@ defmodule Sanbase.Entity do
 
   defp deduce_entity_creation_time_field(:insight), do: {:published_at, :inserted_at}
   defp deduce_entity_creation_time_field(_), do: {:inserted_at, :inserted_at}
+
+  defp get_entity_votes_for_user(user_id) do
+    from(v in Sanbase.Vote,
+      where: v.user_id == ^user_id,
+      distinct: true,
+      select: %{
+        entity_id: entity_id_selection(),
+        entity_type: entity_type_selection()
+      }
+    )
+    |> Sanbase.Repo.all()
+  end
 
   defp update_opts(opts) do
     opts =

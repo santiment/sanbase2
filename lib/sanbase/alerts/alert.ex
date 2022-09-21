@@ -328,26 +328,22 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  defp send_or_limit(channel, trigger, limit, send_alert_fun)
+  defp send_or_limit(channel, %{user: user, trigger: trigger}, limit, send_alert_fun)
        when is_function(send_alert_fun, 2) do
-    %{
-      user: user,
-      trigger: %{settings: %{payload: payload_map}}
-    } = trigger
+    send_fun = fn {identifier, payload}, list ->
+      elem = {identifier, send_alert_fun.(identifier, payload)}
+      [elem | list]
+    end
 
-    {result, remaining_to_send} =
-      payload_map
-      |> Enum.reduce({[], limit}, fn
-        {identifier, _payload}, {list, 0 = _remaining} ->
-          elem = {identifier, limits_reached_error_tuple(user, trigger, channel)}
-          {[elem | list], _remaining = 0}
+    limit_fun = fn {identifier, _payload}, list ->
+      elem = {identifier, limits_reached_error_tuple(user, trigger, channel)}
+      [elem | list]
+    end
 
-        {identifier, payload}, {list, remaining} ->
-          elem = {identifier, send_alert_fun.(identifier, payload)}
-          {[elem | list], remaining - 1}
-      end)
+    {:ok, %{result: result, remaining_limit: remaining_limit}} =
+      Sanbase.EnumUtils.reduce_limited_times(trigger.settings.payload, limit, send_fun, limit_fun)
 
-    if remaining_to_send == 0 and limit != 0 do
+    if remaining_limit == 0 and limit != 0 do
       # The limit has been reached during this call
       send_limit_reached_notification(channel, user)
     end

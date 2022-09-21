@@ -90,7 +90,7 @@ defmodule Sanbase.SocialData.SocialDominance do
       {:ok, words_dominance}
     else
       {:ok, []} -> {:ok, nil}
-      error -> {:ok, nil}
+      _error -> {:ok, nil}
     end
   end
 
@@ -100,7 +100,7 @@ defmodule Sanbase.SocialData.SocialDominance do
     interval = "1h"
     source = :total
 
-    with {:ok, trending_words} when length(trending_words) > 0 <-
+    with {:ok, trending_words} when trending_words != [] <-
            SocialData.TrendingWords.get_currently_trending_words(@trending_words_size),
          words <- Enum.map(trending_words, & &1.word),
          {:ok, words_volume} <-
@@ -117,7 +117,7 @@ defmodule Sanbase.SocialData.SocialDominance do
       {:ok, dominance}
     else
       {:ok, []} -> {:ok, nil}
-      error -> {:ok, nil}
+      _error -> {:ok, nil}
     end
   end
 

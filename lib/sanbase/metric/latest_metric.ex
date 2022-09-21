@@ -91,8 +91,8 @@ defmodule Sanbase.Metric.LatestMetric do
        when table in ["intraday_metrics", "daily_metrics_v2"] do
     query = """
     SELECT
-      dictGetString('asset_metadata_dict', 'name', asset_id) AS slug,
-      metric_id,
+      get_asset_name(asset_id) AS slug,
+      get_metric_name(metric_id) AS metric,
       argMax(value, dt) AS value,
       toUnixTimestamp(max(toDateTime(dt))) AS max_dt,
       toUnixTimestamp(argMax(computed_at, dt)) AS computed_at
@@ -109,11 +109,7 @@ defmodule Sanbase.Metric.LatestMetric do
         #{metric_id_filter(metrics, argument_position: 1)} AND
         #{asset_id_filter(%{slug: slugs}, argument_position: 2)}
     )
-    INNER JOIN (
-      SELECT asset_id, name
-      FROM asset_metadata FINAL
-    ) USING (asset_id)
-    GROUP BY asset_id,metric_id, name
+    GROUP BY asset_id, metric_id
     """
 
     args = [Enum.map(metrics, &Map.get(@name_to_metric_map, &1)), slugs]

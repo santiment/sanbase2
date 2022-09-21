@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.LinkedUserResolver do
     Subscription.get_user_subscription(user.id, Product.product_sanbase())
   end
 
-  def primary_user_sanbase_subscription(%User{} = user, args, resolution) do
+  def primary_user_sanbase_subscription(%User{} = user, _args, _resolution) do
     Subscription.get_user_subscription(user.id, Product.product_sanbase())
   end
 

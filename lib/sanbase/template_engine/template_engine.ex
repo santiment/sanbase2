@@ -53,15 +53,21 @@ defmodule Sanbase.TemplateEngine do
   # Numbers below 1000 are not changed
   # Numbers between 1000 and 1000000 are delimited: 999,523.00, 123,529.12
   # Number bigger than 1000000 are made human readable: 1.54 Million, 85.00 Billion
+  defguard is_number_outside_range_inclusive(num, low, high)
+           when is_number(num) and (num >= high or num <= low)
+
+  defguard is_number_inside_range_exclusive(num, low, high)
+           when is_number(num) and (num > low and num < high)
+
   defp human_readable(data) do
     case data do
-      num when is_number(num) and (num >= 1_000_000 or num <= -1_000_000) ->
+      num when is_number_outside_range_inclusive(num, -1_000_000, 1_000_000) ->
         Number.Human.number_to_human(num)
 
-      num when is_number(num) and (num >= 1000 or num <= -1000) ->
+      num when is_number_outside_range_inclusive(num, -1000, 1000) ->
         Number.Delimit.number_to_delimited(num)
 
-      num when is_number(num) and (num > -1 and num < 1) ->
+      num when is_number_inside_range_exclusive(num, -1, 1) ->
         Number.Delimit.number_to_delimited(num, precision: 8)
 
       num when is_float(num) ->

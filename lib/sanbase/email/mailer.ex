@@ -18,7 +18,6 @@ defmodule Sanbase.Mailer do
   def perform(%Oban.Job{args: %{"user_id" => user_id, "template" => template} = args}) do
     user = User.by_id!(user_id)
     vars = args["vars"] || %{}
-    opts = args["opts"] || %{}
 
     # If the user does not have an email or opted out of
     # receiving educational emails just mark the job as finished.

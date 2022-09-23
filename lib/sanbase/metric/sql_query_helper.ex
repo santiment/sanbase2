@@ -119,7 +119,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   def asset_id_filter(%{slug: slug}, opts) when is_binary(slug) do
     arg_position = Keyword.fetch!(opts, :argument_position)
 
-    "asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{arg_position} LIMIT 1 )"
+    "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{arg_position} LIMIT 1 )"
   end
 
   def asset_id_filter(%{slug: slugs}, opts) when is_list(slugs) do
@@ -132,7 +132,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
       when is_binary(contract_address) do
     arg_position = Keyword.fetch!(opts, :argument_position)
 
-    "asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE has(contract_addresses, ?#{arg_position}) LIMIT 1 )"
+    "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE has(contract_addresses, ?#{arg_position}) LIMIT 1 )"
   end
 
   def asset_id_filter(_, opts) do

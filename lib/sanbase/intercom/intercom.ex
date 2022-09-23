@@ -15,17 +15,39 @@ defmodule Sanbase.Intercom do
   alias Sanbase.Intercom.UserAttributes
   alias Sanbase.Accounts.EthAccount
   alias Sanbase.Repo
+  alias Sanbase.ClickhouseRepo
 
   @intercom_url "https://api.intercom.io/users"
   @user_events_url "https://api.intercom.io/events?type=user"
   @users_page_size 100
 
+  def sync_sanbase_to_intercom do
+    Logger.info("Start sync_sanbase_to_intercom to Intercom")
+
+    # Skip if api key not present in env. (Run only on production)
+    all_users_stats = all_users_stats()
+
+    if has_intercom_api_key?() do
+      1..user_pages()
+      |> Stream.flat_map(fn page ->
+        users_by_page(page, @users_page_size)
+      end)
+      |> fetch_and_send_stats(all_users_stats)
+
+      Logger.info("Finish sync_sanbase_to_intercom to Intercom")
+    else
+      :ok
+    end
+  end
+
   def sync_intercom_to_kafka do
     if has_intercom_api_key?() do
       Logger.info("Start sync_intercom_to_kafka")
 
-      from(u in User, order_by: [asc: u.id], select: u.id)
-      |> Repo.all()
+      remaining_user_ids = fetch_all_db_user_ids() -- fetch_all_synced_user_ids()
+      Logger.info("Start sync_intercom_to_kafka remaining_user_ids=#{length(remaining_user_ids)}")
+
+      remaining_user_ids
       |> Enum.each(fn user_id ->
         try do
           attributes = get_user(user_id)
@@ -88,23 +110,24 @@ defmodule Sanbase.Intercom do
     }
   end
 
-  def sync_users do
-    Logger.info("Start sync_users to Intercom")
+  def fetch_all_db_user_ids() do
+    from(u in User, order_by: [asc: u.id], select: u.id)
+    |> Repo.all()
+  end
 
-    # Skip if api key not present in env. (Run only on production)
-    all_users_stats = all_users_stats()
+  def fetch_all_synced_user_ids() do
+    query = """
+    SELECT user_id
+    FROM sanbase_user_intercom_attributes
+    WHERE toStartOfDay(dt) = ?1
+    ORDER BY user_id ASC
+    """
 
-    if has_intercom_api_key?() do
-      1..user_pages()
-      |> Stream.flat_map(fn page ->
-        users_by_page(page, @users_page_size)
-      end)
-      |> fetch_and_send_stats(all_users_stats)
+    today = DateTime.to_date(DateTime.utc_now()) |> to_string
 
-      Logger.info("Finish sync_users to Intercom")
-    else
-      :ok
-    end
+    {:ok, user_ids} = ClickhouseRepo.query_transform(query, [today], fn [user_id] -> user_id end)
+
+    user_ids
   end
 
   defp all_users_count() do
@@ -287,7 +310,7 @@ defmodule Sanbase.Intercom do
       rescue
         e ->
           Logger.error(
-            "Error sync_users to Intercom (fetch_stats_for_user) for user: #{user.id}, error: #{inspect(e)}"
+            "Error sync_sanbase_to_intercom to Intercom (fetch_stats_for_user) for user: #{user.id}, error: #{inspect(e)}"
           )
 
           reraise e, __STACKTRACE__
@@ -299,7 +322,7 @@ defmodule Sanbase.Intercom do
       rescue
         e ->
           Logger.error(
-            "Error sync_users to Intercom (send_user_stats_to_intercom) for user: #{user_stats.user_id}, error: #{inspect(e)}"
+            "Error sync_sanbase_to_intercom to Intercom (send_user_stats_to_intercom) for user: #{user_stats.user_id}, error: #{inspect(e)}"
           )
       end
     end)

@@ -86,11 +86,18 @@ defmodule Sanbase.Billing.StripeEvent do
          "id" => id,
          "type" => "invoice.upcoming",
          "data" => %{
-           "object" => %{"subscription" => subscription_id, next_payment_attempt: charge_date}
+           "object" => %{
+             "subscription" => subscription_id,
+             "next_payment_attempt" => charge_date,
+             "amount_due" => amount_due
+           }
          }
        }) do
-    subscription = Subscription.by_stripe_id(subscription_id)
-    Sanbase.Accounts.EmailJobs.send_automatic_renewal_email(subscription, charge_date)
+    if amount_due > 0 do
+      subscription = Subscription.by_stripe_id(subscription_id)
+      Sanbase.Accounts.EmailJobs.send_automatic_renewal_email(subscription, charge_date)
+    end
+
     update(id, %{is_processed: true})
   end
 

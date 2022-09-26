@@ -153,7 +153,7 @@ defmodule Sanbase.Email.Template do
   # Send once - 1 week before monthly Sanbase Pro ends
   @after_trial_annual_discount_template "35-percent-discount-offer"
 
-  @automatic_renewal "automatic_renewal"
+  @automatic_renewal_template "automatic_renewal"
 
   # Send after 2 weeks of inactivity.
   # FIXME- currently not send, inactivity should be defined
@@ -174,7 +174,7 @@ defmodule Sanbase.Email.Template do
   def trial_started_template, do: @trial_started_template
   def during_trial_annual_discount_template, do: @during_trial_annual_discount_template
   def after_trial_annual_discount_template, do: @after_trial_annual_discount_template
-  def automatic_renewal, do: @automatic_renewal
+  def automatic_renewal_template, do: @automatic_renewal_template
 
   def comment_notification_template, do: @comment_notification_template
   def verify_email_weekly_digest_template, do: @verify_email_weekly_digest_template

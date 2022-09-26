@@ -36,7 +36,7 @@ defmodule Sanbase.Billing.Invoices.Download do
             recv_timeout: 20_000
           )
 
-        filename = label <> extract_filename(response)
+        filename = extract_filename(response)
         filedata = Map.get(response, :body)
         {to_charlist(filename), filedata}
       end)
@@ -50,8 +50,7 @@ defmodule Sanbase.Billing.Invoices.Download do
 
   def extract_filename(response) do
     header =
-      response[:headers]
-      |> Map.fetch!(:headers)
+      response.headers
       |> Enum.into(%{})
       |> Map.get("Content-Disposition")
 

@@ -98,7 +98,7 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "00 03 * * *",
       task: {Sanbase.Intercom, :sync_intercom_to_kafka, []}
     ],
-    sync_intercom_to_kafka: [
+    sync_intercom_to_kafka_on_reboot: [
       schedule: "@reboot",
       task: {Sanbase.Intercom, :sync_intercom_to_kafka, []}
     ],

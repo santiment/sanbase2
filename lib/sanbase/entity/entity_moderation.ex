@@ -4,17 +4,17 @@ defmodule Sanbase.Entity.Moderation do
   """
   import Ecto.Query
 
-  def set_deleted(entity_type, entity_id) do
-    set_boolean_field(entity_type, entity_id, :is_deleted, true)
+  def set_deleted(entity_type, entity_id, flag) do
+    set_boolean_field(entity_type, entity_id, :is_deleted, flag)
   end
 
-  def set_hidden(entity_type, entity_id) do
-    set_boolean_field(entity_type, entity_id, :is_hidden, true)
+  def set_hidden(entity_type, entity_id, flag) do
+    set_boolean_field(entity_type, entity_id, :is_hidden, flag)
   end
 
-  def set_featured(entity_type, entity_id) do
+  def set_featured(entity_type, entity_id, flag) do
     with {:ok, entity} <- Sanbase.Entity.by_id(entity_type, entity_id),
-         :ok <- Sanbase.FeaturedItem.update_item(entity, true) do
+         :ok <- Sanbase.FeaturedItem.update_item(entity, flag) do
       {:ok, true}
     end
   end

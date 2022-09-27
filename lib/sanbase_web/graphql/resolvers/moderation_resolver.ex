@@ -1,19 +1,27 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ModerationResolver do
+  alias Sanbase.Entity.Moderation
+
   def moderate_delete(_root, %{entity_type: type, entity_id: id}, %{
         context: %{is_moderator: true}
       }) do
-    Sanbase.Entity.Moderation.set_deleted(type, id)
+    Moderation.set_deleted(type, id)
   end
 
   def moderate_hide(_root, %{entity_type: type, entity_id: id}, %{
         context: %{is_moderator: true}
       }) do
-    Sanbase.Entity.Moderation.set_hidden(type, id)
+    Moderation.set_hidden(type, id)
+  end
+
+  def moderate_featured(_root, %{entity_type: type, entity_id: id}, %{
+        context: %{is_moderator: true}
+      }) do
+    Moderation.set_featured(type, id)
   end
 
   def unpublish_insight(_root, %{insight_id: insight_id}, %{
         context: %{is_moderator: true}
       }) do
-    Sanbase.Entity.Moderation.unpublish_insight(insight_id)
+    Moderation.unpublish_insight(insight_id)
   end
 end

@@ -12,6 +12,13 @@ defmodule Sanbase.Entity.Moderation do
     set_boolean_field(entity_type, entity_id, :is_hidden, true)
   end
 
+  def set_featured(entity_type, entity_id) do
+    with {:ok, entity} <- Sanbase.Entity.by_id(entity_type, entity_id),
+         :ok <- Sanbase.FeaturedItem.update_item(entity, true) do
+      {:ok, true}
+    end
+  end
+
   def unpublish_insight(insight_id) do
     case Sanbase.Insight.Post.unpublish(insight_id) do
       {:ok, _} -> {:ok, true}

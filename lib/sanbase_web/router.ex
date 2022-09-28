@@ -57,6 +57,7 @@ defmodule SanbaseWeb.Router do
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
 
+    get("/", CustomAdminController, :index)
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)
     resources("/reports", ReportController)

@@ -1,0 +1,13 @@
+<h1 class="text-4xl font-black mb-4">Custom Admin</h1>
+
+<table class="table-auto border-collapse w-full mb-4">
+  <tbody class="text-sm font-normal text-gray-700">
+    <%= for {name, path} <- @routes do %>
+    <tr>
+      <td class="border px-4 py-2">
+        <%= link name, to: path %></span>
+      </td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>

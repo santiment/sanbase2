@@ -371,6 +371,81 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     {query, args}
   end
 
+  def histogram_data_query(
+        "eth2_staking_pools_usd",
+        "ethereum",
+        from,
+        to,
+        _interval,
+        limit
+      ) do
+    query = """
+    SELECT
+      label AS metric,
+      round(sum(locked_sum)) AS value
+    FROM
+    (
+      SELECT
+        address,
+        value AS label
+      FROM
+      (
+        SELECT
+            address,
+            label_id
+        FROM current_label_addresses
+        WHERE (blockchain = 'ethereum') AND (label_id IN (
+            SELECT label_id
+            FROM label_metadata
+            WHERE key = 'eth2_staking_address'
+        ))
+      )
+      INNER JOIN
+      (
+        SELECT
+            label_id,
+            value
+        FROM label_metadata
+        WHERE key = 'eth2_staking_address'
+      ) USING (label_id)
+    )
+    INNER JOIN
+    (
+      SELECT address, SUM(amount * priceUsd) AS locked_sum
+      FROM
+      (
+        SELECT distinct *
+        FROM eth2_staking_transfers_v2 FINAL
+        WHERE
+          dt < toDateTime(?2)
+          #{if from, do: "AND dt >= toDateTime(?3)"}
+      ) AS transfers
+      INNER JOIN
+      (
+        SELECT
+          dt,
+          value AS priceUsd
+        FROM intraday_metrics
+        FINAL
+        WHERE metric_id = get_metric_id('price_usd') AND asset_id = get_asset_id('ethereum')
+      ) AS prices
+      ON toStartOfFiveMinute(transfers.dt) = prices.dt
+      GROUP BY address
+    ) USING address
+    GROUP BY metric
+    ORDER BY value desc
+    LIMIT ?1
+    """
+
+    args =
+      case from do
+        nil -> [limit, to |> DateTime.to_unix()]
+        _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
+      end
+
+    {query, args}
+  end
+
   # Generic
   def histogram_data_query(metric, slug, from, to, interval, limit) do
     query = """

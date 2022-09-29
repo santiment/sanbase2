@@ -157,7 +157,7 @@ defmodule Sanbase.Price do
       ClickhouseRepo.query_transform(
         query,
         args,
-        fn [timestamp, price_usd, price_btc, marketcap_usd, volume_usd, has_changed] ->
+        fn [timestamp, price_usd, price_btc, marketcap_usd, volume_usd] ->
           %{
             datetime: DateTime.from_unix!(timestamp),
             price_usd: price_usd,
@@ -165,12 +165,10 @@ defmodule Sanbase.Price do
             marketcap_usd: marketcap_usd,
             marketcap: marketcap_usd,
             volume_usd: volume_usd,
-            volume: volume_usd,
-            has_changed: has_changed
+            volume: volume_usd
           }
         end
       )
-      |> remove_missing_values()
     end
   end
 
@@ -482,18 +480,16 @@ defmodule Sanbase.Price do
       ClickhouseRepo.query_transform(
         query,
         args,
-        fn [timestamp, open, high, low, close, has_changed] ->
+        fn [timestamp, open, high, low, close] ->
           %{
             datetime: DateTime.from_unix!(timestamp),
             open_price_usd: open,
             high_price_usd: high,
             close_price_usd: close,
-            low_price_usd: low,
-            has_changed: has_changed
+            low_price_usd: low
           }
         end
       )
-      |> remove_missing_values()
     end
   end
 

@@ -52,7 +52,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     query = """
     SELECT
-      #{to_unix_timestamp(interval, "dt", 1)} AS t,
+      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS t,
       #{aggregation(aggregation, "value", "dt")}
     FROM(
       SELECT
@@ -96,7 +96,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     query = """
     SELECT
-      #{to_unix_timestamp(interval, "dt", 1)} AS t,
+      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS t,
       dictGetString('asset_metadata_dict', 'name', asset_id) AS slug,
       #{aggregation(aggregation, "value2", "dt")} AS value
     FROM(

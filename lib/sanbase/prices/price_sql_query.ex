@@ -1,68 +1,68 @@
 defmodule Sanbase.Price.SqlQuery do
   @table "asset_prices_v3"
 
-  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comparison_string: 3]
+  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, maybe_str_to_sec: 1]
+
+  import Sanbase.Metric.SqlQuery.Helper,
+    only: [
+      to_unix_timestamp: 3,
+      aggregation: 3,
+      generate_comparison_string: 3,
+      dt_to_unix: 2
+    ]
 
   def timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation) do
-    {from, to, interval, span} = timerange_parameters(from, to, interval)
-
     query = """
-    SELECT time, SUM(price_usd), SUM(price_btc), SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
-    FROM (
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
-        toFloat64(0) AS price_usd,
-        toFloat64(0) AS price_btc,
-        toFloat64(0) AS marketcap_usd,
-        toFloat64(0) AS volume_usd,
-        toUInt32(0) AS has_changed
-      FROM numbers(?2)
-
-      UNION ALL
-
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
-        #{aggregation(aggregation, "price_usd", "dt")} AS price_usd,
-        #{aggregation(aggregation, "price_btc", "dt")} AS price_btc,
-        #{aggregation(aggregation, "marketcap_usd", "dt")} AS marketcap_usd,
-        #{aggregation(aggregation, "volume_usd", "dt")} AS volume_usd,
-        toUInt32(1) AS has_changed
-      FROM #{@table}
-      PREWHERE
-        #{slug_filter(slug_or_slugs, argument_position: 3)} AND
-        source = cast(?4, 'LowCardinality(String)') AND
-        dt >= toDateTime(?5) AND
-        dt < toDateTime(?6)
-      GROUP BY slug, time
-    )
-    GROUP BY time
-    ORDER BY time
+    SELECT
+      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS time,
+      #{aggregation(aggregation, "price_usd", "dt")} AS price_usd,
+      #{aggregation(aggregation, "price_btc", "dt")} AS price_btc,
+      #{aggregation(aggregation, "marketcap_usd", "dt")} AS marketcap_usd,
+      #{aggregation(aggregation, "volume_usd", "dt")} AS volume_usd
+    FROM #{@table}
+    PREWHERE
+      #{slug_filter(slug_or_slugs, argument_position: 2)} AND
+      source = cast(?3, 'LowCardinality(String)') AND
+      dt >= toDateTime(?4) AND
+      dt < toDateTime(?)
+    GROUP BY slug, time
+    ORDER BY time ASC
     """
 
-    args = [interval, span, slug_or_slugs, source, from, to]
+    args = [
+      maybe_str_to_sec(interval),
+      slug_or_slugs,
+      source,
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to)
+    ]
 
     {query, args}
   end
 
   def timeseries_metric_data_query(slug_or_slugs, metric, from, to, interval, source, aggregation) do
-    {from, to, interval, span} = timerange_parameters(from, to, interval)
-
     query = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS time,
       #{aggregation(aggregation, "#{metric}", "dt")}
     FROM #{@table}
     PREWHERE
-      #{slug_filter(slug_or_slugs, argument_position: 3)} AND
+      #{slug_filter(slug_or_slugs, argument_position: 2)} AND
       NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND #{metric} > 0 AND
-      source = cast(?4, 'LowCardinality(String)') AND
-      dt >= toDateTime(?5) AND
-      dt < toDateTime(?6)
+      source = cast(?3, 'LowCardinality(String)') AND
+      dt >= toDateTime(?4) AND
+      dt < toDateTime(?5)
     GROUP BY time
     ORDER BY time
     """
 
-    args = [interval, span, slug_or_slugs, source, from, to]
+    args = [
+      maybe_str_to_sec(interval),
+      slug_or_slugs,
+      source,
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to)
+    ]
 
     {query, args}
   end
@@ -76,24 +76,28 @@ defmodule Sanbase.Price.SqlQuery do
         source,
         aggregation
       ) do
-    {from, to, interval, span} = timerange_parameters(from, to, interval)
-
     query = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS time,
       slug,
       #{aggregation(aggregation, "#{metric}", "dt")}
     FROM #{@table} FINAL
     PREWHERE
-      #{slug_filter(slug_or_slugs, argument_position: 3)} AND
-      source = cast(?4, 'LowCardinality(String)') AND
-      dt >= toDateTime(?5) AND
-      dt < toDateTime(?6)
+      #{slug_filter(slug_or_slugs, argument_position: 2)} AND
+      source = cast(?3, 'LowCardinality(String)') AND
+      dt >= toDateTime(?4) AND
+      dt < toDateTime(?5)
     GROUP BY time, slug
     ORDER BY time
     """
 
-    args = [interval, span, slug_or_slugs, source, from, to]
+    args = [
+      maybe_str_to_sec(interval),
+      slug_or_slugs,
+      source,
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to)
+    ]
 
     {query, args}
   end
@@ -317,80 +321,58 @@ defmodule Sanbase.Price.SqlQuery do
   end
 
   def timeseries_ohlc_data_query(slug, from, to, interval, source) do
-    {from, to, interval, span} = timerange_parameters(from, to, interval)
-
     query = """
     SELECT
-      time, SUM(open_price), SUM(high_price), SUM(close_price), SUM(low_price), toUInt32(SUM(has_changed))
-    FROM (
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
-        toFloat64(0) AS open_price,
-        toFloat64(0) AS high_price,
-        toFloat64(0) AS close_price,
-        toFloat64(0) AS low_price,
-        toUInt32(0) AS has_changed
-      FROM numbers(?2)
-
-      UNION ALL
-
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        argMin(price_usd, dt) AS open_price,
-        max(price_usd) AS high_price,
-        min(price_usd) AS low_price,
-        argMax(price_usd, dt) AS close_price,
-        toUInt32(1) AS has_changed
-      FROM #{@table}
-      PREWHERE
-        slug = cast(?3, 'LowCardinality(String)') AND
-        source = cast(?4, 'LowCardinality(String)') AND
-        dt >= toDateTime(?5) AND
-        dt < toDateTime(?6)
-        GROUP BY time
-    )
+      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS time,
+      argMin(price_usd, dt) AS open_price,
+      max(price_usd) AS high_price,
+      min(price_usd) AS low_price,
+      argMax(price_usd, dt) AS close_price
+    FROM #{@table}
+    PREWHERE
+      slug = cast(?2, 'LowCardinality(String)') AND
+      source = cast(?3, 'LowCardinality(String)') AND
+      dt >= toDateTime(?4) AND
+      dt < toDateTime(?5)
     GROUP BY time
-    ORDER BY time
+    ORDER BY time ASC
     """
 
-    args = [interval, span, slug, source, from, to]
+    args = [
+      maybe_str_to_sec(interval),
+      slug,
+      source,
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to)
+    ]
 
     {query, args}
   end
 
   def combined_marketcap_and_volume_query(slugs, from, to, interval, source) do
-    {from, to, interval, span} = timerange_parameters(from, to, interval)
-
     query = """
-    SELECT time,SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
-    FROM (
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
-        toFloat64(0) AS marketcap_usd,
-        toFloat64(0) AS volume_usd,
-        toUInt32(0) AS has_changed
-      FROM numbers(?2)
-
-      UNION ALL
-
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
-        argMax(marketcap_usd, dt) AS marketcap_usd,
-        argMax(volume_usd, dt) AS volume_usd,
-        toUInt32(1) AS has_changed
-      FROM #{@table}
-      PREWHERE
-        slug IN (?3) AND
-        source = ?4 AND
-        dt >= toDateTime(?5) AND
-        dt < toDateTime(?6)
-      GROUP BY time, slug
-    )
-    GROUP BY time
-    ORDER BY time
+    SELECT
+      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS time,
+      argMax(marketcap_usd, dt) AS marketcap_usd,
+      argMax(volume_usd, dt) AS volume_usd,
+      toUInt32(1) AS has_changed
+    FROM #{@table}
+    PREWHERE
+      slug IN (?2) AND
+      source = ?3 AND
+      dt >= toDateTime(?4) AND
+      dt < toDateTime(?5)
+    GROUP BY time, slug
+    ORDER BY time, slug ASC
     """
 
-    args = [interval, span, slugs, source, from, to]
+    args = [
+      maybe_str_to_sec(interval),
+      slugs,
+      source,
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to)
+    ]
 
     {query, args}
   end
@@ -488,7 +470,10 @@ defmodule Sanbase.Price.SqlQuery do
 
   def latest_prices_per_slug_query(slugs, limit_per_slug) do
     query = """
-    SELECT slug, arrayReverse(groupArray(price_usd)) AS last_prices_usd,  arrayReverse(groupArray(price_btc)) AS last_prices_btc
+    SELECT
+      slug,
+      arrayReverse(groupArray(price_usd)) AS last_prices_usd,
+      arrayReverse(groupArray(price_btc)) AS last_prices_btc
     FROM (
       SELECT slug, price_usd, price_btc
       FROM asset_prices_v3
@@ -510,20 +495,17 @@ defmodule Sanbase.Price.SqlQuery do
   defp timerange_parameters(from, to, interval \\ nil)
 
   defp timerange_parameters(from, to, nil) do
-    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-
-    {from_unix, to_unix}
+    {dt_to_unix(:from, from), dt_to_unix(:to, to)}
   end
 
   defp timerange_parameters(from, to, interval) do
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    from_unix = dt_to_unix(:from, from)
+    to_unix = dt_to_unix(:to, to)
+    interval_sec = str_to_sec(interval)
+    interval = maybe_str_to_sec(interval)
     span = div(to_unix - from_unix, interval_sec) |> max(1)
 
-    {from_unix, to_unix, interval_sec, span}
+    {from_unix, to_unix, interval, span}
   end
 
   defp slug_filter(slug, opts) when is_binary(slug) do

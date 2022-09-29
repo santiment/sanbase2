@@ -43,15 +43,19 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   def to_unix_timestamp(
         <<digit::utf8, _::binary>> = _interval,
         dt_column,
-        interval_arg_position
+        opts
       )
       when digit in ?0..?9 do
-    "toUnixTimestamp(intDiv(toUInt32(toDateTime(#{dt_column})), ?#{interval_arg_position}) * ?#{interval_arg_position})"
+    arg_pos = Keyword.fetch!(opts, :argument_position)
+
+    "toUnixTimestamp(intDiv(toUInt32(toDateTime(#{dt_column})), ?#{arg_pos}) * ?#{arg_pos})"
   end
 
-  def to_unix_timestamp(function, dt_column, interval_arg_position)
+  def to_unix_timestamp(function, dt_column, opts)
       when function in @supported_interval_functions do
-    "if(?#{interval_arg_position} = ?#{interval_arg_position}, toUnixTimestamp(toDateTime(#{function}(#{dt_column}))), null)"
+    arg_pos = Keyword.fetch!(opts, :argument_position)
+
+    "if(?#{arg_pos} = ?#{arg_pos}, toUnixTimestamp(toDateTime(#{function}(#{dt_column}))), null)"
   end
 
   def aggregation(:ohlc, value_column, dt_column) do

@@ -339,4 +339,107 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       |> get_in(["data", "getMostRecent"])
     end
   end
+
+  describe "set featured" do
+    test "insight", %{moderator_conn: moderator_conn} do
+      insight = insert(:published_post)
+
+      featured_insights = fn ->
+        query = "{ featuredInsights{ id } }"
+
+        moderator_conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+        |> get_in(["data", "featuredInsights"])
+      end
+
+      assert featured_insights.() == []
+
+      assert moderate_featured(moderator_conn, :insight, insight.id) == true
+
+      SanbaseWeb.Graphql.Cache.clear_all()
+
+      assert featured_insights.() == [%{"id" => insight.id}]
+    end
+
+    test "watchlist", %{moderator_conn: moderator_conn} do
+      watchlist = insert(:watchlist, is_public: true, type: :project)
+
+      featured_watchlists = fn ->
+        query = "{ featuredWatchlists(type: PROJECT){ id } }"
+
+        moderator_conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+        |> get_in(["data", "featuredWatchlists"])
+      end
+
+      assert featured_watchlists.() == []
+
+      assert moderate_featured(moderator_conn, :project_watchlist, watchlist.id) == true
+
+      SanbaseWeb.Graphql.Cache.clear_all()
+
+      assert featured_watchlists.() == [%{"id" => "#{watchlist.id}"}]
+    end
+
+    test "chart configuration", %{moderator_conn: moderator_conn} do
+      config = insert(:chart_configuration, is_public: true)
+
+      featured_configs = fn ->
+        query = "{ featuredChartConfigurations{ id } }"
+
+        moderator_conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+        |> get_in(["data", "featuredChartConfigurations"])
+      end
+
+      assert featured_configs.() == []
+
+      assert moderate_featured(moderator_conn, :chart_configuration, config.id) == true
+
+      SanbaseWeb.Graphql.Cache.clear_all()
+
+      assert featured_configs.() == [%{"id" => config.id}]
+    end
+
+    test "user trigger", %{moderator_conn: moderator_conn} do
+      user_trigger = insert(:user_trigger, is_public: true)
+
+      featured_triggers = fn ->
+        query = "{ featuredUserTriggers{ trigger{ id } } }"
+
+        moderator_conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+        |> get_in(["data", "featuredUserTriggers"])
+      end
+
+      assert featured_triggers.() == []
+
+      assert moderate_featured(moderator_conn, :user_trigger, user_trigger.id) == true
+
+      SanbaseWeb.Graphql.Cache.clear_all()
+
+      assert featured_triggers.() == [%{"trigger" => %{"id" => user_trigger.id}}]
+    end
+
+    defp moderate_featured(conn, entity_type, entity_id) do
+      args_str =
+        %{entity_type: entity_type, entity_id: entity_id, flag: true}
+        |> map_to_args()
+
+      mutation = """
+      mutation{
+        moderateFeatured(#{args_str})
+      }
+      """
+
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
+      |> get_in(["data", "moderateFeatured"])
+    end
+  end
 end

@@ -194,6 +194,11 @@ defmodule Sanbase.Entity do
   def deduce_entity_module(:chart_configuration), do: Chart.Configuration
   def deduce_entity_module(:dashboard), do: Dashboard.Schema
 
+  def by_id(entity_type, entity_id) do
+    module = deduce_entity_module(entity_type)
+    apply(module, :by_id, [entity_id, []])
+  end
+
   @doc ~s"""
   Apply the pagination options from `opts` to `query`.
 

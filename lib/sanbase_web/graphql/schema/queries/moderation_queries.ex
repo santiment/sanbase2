@@ -11,9 +11,22 @@ defmodule SanbaseWeb.Graphql.Schema.ModerationQueries do
   end
 
   object :moderation_mutations do
+    field :moderate_featured, :boolean do
+      arg(:entity_id, non_null(:integer))
+      arg(:entity_type, non_null(:entity_type))
+
+      arg(:flag, :boolean, default_value: true)
+
+      middleware(JWTModeratorAuth)
+
+      resolve(&ModerationResolver.moderate_featured/3)
+    end
+
     field :moderate_hide, :boolean do
       arg(:entity_id, non_null(:integer))
       arg(:entity_type, non_null(:entity_type))
+
+      arg(:flag, :boolean, default_value: true)
 
       middleware(JWTModeratorAuth)
 
@@ -23,6 +36,8 @@ defmodule SanbaseWeb.Graphql.Schema.ModerationQueries do
     field :moderate_delete, :boolean do
       arg(:entity_type, non_null(:entity_type))
       arg(:entity_id, non_null(:integer))
+
+      arg(:flag, :boolean, default_value: true)
 
       middleware(JWTModeratorAuth)
 

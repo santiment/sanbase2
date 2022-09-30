@@ -450,7 +450,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
   end
 
   def histogram_data_query(
-        "eth2_staking_pools_over_time_usd",
+        "eth2_staking_pools_validators_count_over_time",
         "ethereum",
         from,
         to,
@@ -469,9 +469,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
       FROM (
         SELECT
           dt,
-          if (label = 'unknown', 'others', label) AS label,
+          label,
           value
-        FROM  (
+        FROM (
           SELECT
             label,
             dt,

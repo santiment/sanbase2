@@ -200,8 +200,8 @@
   },
   {
     "human_readable_name": "ETH2 Staking Pools Over Time in USD",
-    "name": "eth2_staking_pools_over_time_usd",
-    "metric": "eth2_staking_pools_over_time_usd",
+    "name": "eth2_staking_pools_validators_count_over_time",
+    "metric": "eth2_staking_pools_validators_count_over_time",
     "version": "2019-01-01",
     "access": "free",
     "selectors": [

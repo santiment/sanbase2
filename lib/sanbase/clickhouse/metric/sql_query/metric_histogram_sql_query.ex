@@ -381,9 +381,34 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
       ) do
     query = """
     SELECT
-      label AS metric,
+      label,
       round(sum(locked_sum)) AS value
     FROM
+    (
+      SELECT
+        address,
+        SUM(amount * priceUsd) AS locked_sum
+      FROM
+      (
+        SELECT distinct *
+        FROM eth2_staking_transfers_v2 FINAL
+        WHERE
+          dt < toDateTime(?2)
+          #{if from, do: "AND dt >= toDateTime(?3)"}
+      ) AS transfers
+      INNER JOIN
+      (
+        SELECT
+          dt,
+          value AS priceUsd
+        FROM intraday_metrics
+        FINAL
+        WHERE metric_id = get_metric_id('price_usd') AND asset_id = get_asset_id('ethereum')
+      ) AS prices
+      ON toStartOfFiveMinute(transfers.dt) = prices.dt
+      GROUP BY address
+    )
+    INNER JOIN
     (
       SELECT
         address,
@@ -408,31 +433,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         FROM label_metadata
         WHERE key = 'eth2_staking_address'
       ) USING (label_id)
-    )
-    INNER JOIN
-    (
-      SELECT address, SUM(amount * priceUsd) AS locked_sum
-      FROM
-      (
-        SELECT distinct *
-        FROM eth2_staking_transfers_v2 FINAL
-        WHERE
-          dt < toDateTime(?2)
-          #{if from, do: "AND dt >= toDateTime(?3)"}
-      ) AS transfers
-      INNER JOIN
-      (
-        SELECT
-          dt,
-          value AS priceUsd
-        FROM intraday_metrics
-        FINAL
-        WHERE metric_id = get_metric_id('price_usd') AND asset_id = get_asset_id('ethereum')
-      ) AS prices
-      ON toStartOfFiveMinute(transfers.dt) = prices.dt
-      GROUP BY address
     ) USING address
-    GROUP BY metric
+    GROUP BY label
     ORDER BY value desc
     LIMIT ?1
     """

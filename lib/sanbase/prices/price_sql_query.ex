@@ -24,7 +24,7 @@ defmodule Sanbase.Price.SqlQuery do
       #{slug_filter(slug_or_slugs, argument_position: 2)} AND
       source = cast(?3, 'LowCardinality(String)') AND
       dt >= toDateTime(?4) AND
-      dt < toDateTime(?)
+      dt < toDateTime(?5)
     GROUP BY slug, time
     ORDER BY time ASC
     """

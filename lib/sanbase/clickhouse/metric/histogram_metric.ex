@@ -15,6 +15,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     "eth2_staking_pools_usd"
   ]
 
+  @eth2_datetime_staking_pools_integer_valuation_list [
+    "eth2_staking_pools_validators_count_over_time"
+  ]
+
   @eth2_string_address_string_label_float_value_metrics [
     "eth2_top_stakers"
   ]
@@ -88,6 +92,25 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
         address: address,
         label: label,
         value: Sanbase.Math.to_float(amount)
+      }
+    end)
+  end
+
+  def histogram_data(
+        metric,
+        %{slug: "ethereum" = slug},
+        from,
+        to,
+        interval,
+        limit
+      )
+      when metric in @eth2_datetime_staking_pools_integer_valuation_list do
+    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+
+    ClickhouseRepo.query_transform(query, args, fn [timestamp, value] ->
+      %{
+        datetime: DateTime.from_unix!(timestamp),
+        value: Enum.map(value, fn [pool, int] -> %{staking_pool: pool, valuation: int} end)
       }
     end)
   end

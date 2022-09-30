@@ -422,6 +422,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "eth2_top_stakers",
         "eth2_staking_pools",
         "eth2_staking_pools_usd",
+        "eth2_staking_pools_validators_count_over_time",
         "price_usd_change_1h",
         "price_eth_change_1d",
         "price_eth_change_7d",

@@ -193,7 +193,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:valuation, :integer)
   end
 
-  object :eth2_staking_pools_over_time do
+  object :eth2_staking_pools_validators_count_over_time do
     field(:datetime, :datetime)
     field(:value, list_of(:staking_pool_integer_valuation))
   end
@@ -219,8 +219,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:data, list_of(:string_address_string_label_float_value))
   end
 
-  object :eth2_staking_pools_over_time_list do
-    field(:data, list_of(:eth2_staking_pools_over_time))
+  object :eth2_staking_pools_validators_count_over_time_list do
+    field(:data, list_of(:eth2_staking_pools_validators_count_over_time))
   end
 
   union :value_list do
@@ -233,7 +233,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       :datetime_range_float_value_list,
       :string_address_float_value_list,
       :string_label_float_value_list,
-      :eth2_staking_pools_over_time_list,
+      :eth2_staking_pools_validators_count_over_time_list,
       :string_address_string_label_float_value_list
     ])
 
@@ -261,7 +261,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
       %{data: [%{datetime: %DateTime{}, value: [%{staking_pool: pool, valuation: v} | _]} | _]}, _
       when is_binary(pool) and is_number(v) ->
-        :eth2_staking_pools_over_time_list
+        :eth2_staking_pools_validators_count_over_time_list
 
       %{data: [%{label: label, value: value} | _]}, _
       when is_binary(label) and is_number(value) ->

@@ -339,6 +339,7 @@ defmodule Sanbase.Metric do
           interval,
           limit
         )
+        |> IO.inspect(label: "342", limit: :infinity)
     end
   end
 

@@ -1,5 +1,6 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
+  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, maybe_str_to_sec: 1]
+  import Sanbase.Metric.SqlQuery.Helper, only: [to_unix_timestamp: 3, dt_to_unix: 2]
 
   alias Sanbase.Clickhouse.MetricAdapter.FileHandler
 
@@ -444,6 +445,106 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         nil -> [limit, to |> DateTime.to_unix()]
         _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
       end
+
+    {query, args}
+  end
+
+  def histogram_data_query(
+        "eth2_staking_pools_over_time_usd",
+        "ethereum",
+        from,
+        to,
+        interval,
+        _limit
+      ) do
+    query = """
+    SELECT
+      t,
+      groupArr
+    FROM
+    (
+      SELECT
+        #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS t,
+        groupArray((label, value)) AS groupArr
+      FROM (
+        SELECT
+          dt,
+          if (label = 'unknown', 'others', label) AS label,
+          value
+        FROM  (
+          SELECT
+            label,
+            dt,
+            SUM(value) OVER (PARTITION BY label ORDER BY dt) AS value
+          FROM (
+          SELECT
+            label,
+            dt,
+            round(sum(sum_value / 32)) AS value
+          FROM (
+            SELECT
+              label,
+              dt,
+            sum(sum_value) AS sum_value
+            FROM (
+              SELECT
+                address,
+                toDate(dt) as dt,
+                sum(amount) AS sum_value
+              FROM eth2_staking_transfers_v2 FINAL
+              -- ETH2 staking started on 2020-11-03
+              WHERE dt >= toDateTime(?2) AND dt < toDateTime(?3)
+              GROUP BY address, dt
+            ) AS transfers
+            INNER JOIN
+            (
+              SELECT
+                address,
+                value AS label
+              FROM
+              (
+                  SELECT address, label_id
+                  FROM current_label_addresses
+                  WHERE (blockchain = 'ethereum') AND (label_id IN (
+                  SELECT label_id
+                  FROM label_metadata
+                  WHERE key = 'eth2_staking_address'
+                  ))
+              )
+              INNER JOIN
+              (
+                SELECT label_id, value
+                FROM label_metadata
+                WHERE key = 'eth2_staking_address'
+              ) USING (label_id)
+            ) USING (address)
+            GROUP BY label, dt
+
+            UNION ALL
+
+            SELECT
+              DISTINCT value AS label,
+              arrayJoin(arrayMap( x -> toDate(x), timeSlots(toDateTime('2020-11-03 00:00:00'), toUInt32(toDateTime(?3) - toIntervalDay(1) - toDateTime('2020-11-03 00:00:00')), toUInt32(?1)))) AS dt,
+              0 AS sum_value
+            FROM label_metadata FINAL
+            WHERE key = 'eth2_staking_address'
+          )
+          GROUP BY label, dt
+          )
+        )
+        WHERE dt >= toDateTime(?2) AND dt < toDateTime(?3)
+
+      )
+      GROUP BY dt
+      ORDER BY dt DESC
+    )
+    """
+
+    args = [
+      str_to_sec(interval),
+      dt_to_unix(:from, from),
+      dt_to_unix(:to, to)
+    ]
 
     {query, args}
   end

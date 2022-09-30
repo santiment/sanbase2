@@ -188,6 +188,16 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:value, :float)
   end
 
+  object :staking_pool_integer_valuation do
+    field(:staking_pool, :string)
+    field(:valuation, :integer)
+  end
+
+  object :eth2_staking_pools_over_time do
+    field(:datetime, :datetime)
+    field(:value, list_of(:staking_pool_integer_valuation))
+  end
+
   # List objects
   object :string_address_float_value_list do
     field(:data, list_of(:string_address_float_value))
@@ -209,6 +219,10 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:data, list_of(:string_address_string_label_float_value))
   end
 
+  object :eth2_staking_pools_over_time_list do
+    field(:data, list_of(:eth2_staking_pools_over_time))
+  end
+
   union :value_list do
     description("Type Parameterized Array")
 
@@ -219,6 +233,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       :datetime_range_float_value_list,
       :string_address_float_value_list,
       :string_label_float_value_list,
+      :eth2_staking_pools_over_time_list,
       :string_address_string_label_float_value_list
     ])
 
@@ -243,6 +258,10 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       %{data: [%{address: address, value: value} | _]}, _
       when is_binary(address) and is_number(value) ->
         :string_address_float_value_list
+
+      %{data: [%{datetime: %DateTime{}, value: [%{staking_pool: pool, valuation: v} | _]} | _]}, _
+      when is_binary(pool) and is_number(v) ->
+        :eth2_staking_pools_over_time_list
 
       %{data: [%{label: label, value: value} | _]}, _
       when is_binary(label) and is_number(value) ->

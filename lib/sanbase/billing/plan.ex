@@ -18,7 +18,9 @@ defmodule Sanbase.Billing.Plan do
 
   def plans(), do: @plans
   def plans_order(), do: @plans_order
-  def sort_plans(plans), do: Enum.sort_by(plans, fn plan -> Keyword.get(@plans_order, plan) end)
+
+  def sort_plans(plans),
+    do: Enum.sort_by(plans, fn plan -> Keyword.get(@plans_order, plan) end)
 
   schema "plans" do
     field(:name, :string)
@@ -28,8 +30,9 @@ defmodule Sanbase.Billing.Plan do
     # interval is one of `month` or `year`
     field(:interval, :string)
     field(:stripe_id, :string)
+
     # there might be still customers on this plan, but new subscriptions should be disabled.
-    field(:is_deprecated, :boolean)
+    field(:is_deprecated, :boolean, default: false)
     # plans that customers can't subscribe on their own
     field(:is_private, :boolean)
     # order first by `order` field, then by id
@@ -57,7 +60,10 @@ defmodule Sanbase.Billing.Plan do
       :order,
       :has_custom_restrictions
     ])
-    |> cast_embed(:restrictions, required: false, with: &CustomPlan.Restrictions.changeset/2)
+    |> cast_embed(:restrictions,
+      required: false,
+      with: &CustomPlan.Restrictions.changeset/2
+    )
     |> unique_constraint(:id, name: :plans_pkey)
   end
 
@@ -78,6 +84,8 @@ defmodule Sanbase.Billing.Plan do
 
     %__MODULE__{}
     |> changeset(args)
+    |> validate_change(:name, &validate_custom_api_plan_name/2)
+    |> validate_change(:product_id, &validate_product_is_api/2)
     |> Sanbase.Repo.insert()
   end
 
@@ -108,7 +116,12 @@ defmodule Sanbase.Billing.Plan do
   end
 
   @same_name_plans ["FREE", "BASIC", "PRO", "PRO_PLUS", "PREMIUM", "EXTENSION"]
-  @enterprise_plans ["CUSTOM", "ENTERPRISE", "ENTERPRISE_BASIC", "ENTERPRISE_PLUS"]
+  @enterprise_plans [
+    "CUSTOM",
+    "ENTERPRISE",
+    "ENTERPRISE_BASIC",
+    "ENTERPRISE_PLUS"
+  ]
   def plan_name(%__MODULE__{} = plan) do
     case plan.name do
       name when name in @same_name_plans -> name
@@ -167,5 +180,25 @@ defmodule Sanbase.Billing.Plan do
   def maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan)
       when is_binary(stripe_id) do
     {:ok, plan}
+  end
+
+  defp validate_product_is_api(:product_id, product_id) do
+    case product_id == Product.product_api() do
+      true -> []
+      false -> [product_id: "Custom plans can be created only for SANAPI product"]
+    end
+  end
+
+  defp validate_custom_api_plan_name(:name, name) do
+    case String.starts_with?(name, "CUSTOM_") and name == String.upcase(name) do
+      true ->
+        []
+
+      false ->
+        [
+          name:
+            "Custom plan name must start with 'CUSTOM_' and contain only upcase letters and digits"
+        ]
+    end
   end
 end

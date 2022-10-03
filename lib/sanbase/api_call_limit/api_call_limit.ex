@@ -73,9 +73,13 @@ defmodule Sanbase.ApiCallLimit do
 
     plan = user_to_plan(user)
 
+    # Some users have don't have limits regardless of their plan
+    # In case the user has limits - check the plan
     has_limits =
-      user_has_limits?(user) and
-        plan not in @plans_without_limits
+      case user_has_limits?(user) do
+        false -> false
+        true -> plan_has_limits?(plan)
+      end
 
     changeset =
       acl
@@ -274,12 +278,9 @@ defmodule Sanbase.ApiCallLimit do
 
     keys = get_time_str_keys()
 
-    api_calls_limits = %{
-      month: @limits_per_month[plan],
-      hour: @limits_per_hour[plan],
-      minute: @limits_per_minute[plan]
-    }
+    api_calls_limits = plan_to_api_call_limits(plan)
 
+    # The api calls made in the specified period
     api_calls = %{
       month: Map.get(api_calls, keys.month_str, 0),
       hour: Map.get(api_calls, keys.hour_str, 0),
@@ -337,6 +338,24 @@ defmodule Sanbase.ApiCallLimit do
     |> Repo.update()
   end
 
+  defp plan_has_limits?(plan) do
+    case plan do
+      plan when plan in @plans_without_limits ->
+        false
+
+      "sanapi_custom_" <> _ ->
+        [product_code, plan_name] = plan |> String.upcase() |> String.split(plan, parts: 2)
+
+        case Sanbase.Billing.Plan.CustomPlan.Access.api_call_limits(plan_name, product_code) do
+          %{"has_limits" => false} -> false
+          _ -> true
+        end
+
+      _ ->
+        true
+    end
+  end
+
   defp user_has_limits?(%User{is_superuser: true}), do: false
 
   defp user_has_limits?(%User{email: email}) when is_binary(email),
@@ -347,5 +366,25 @@ defmodule Sanbase.ApiCallLimit do
   defp remote_ip_has_limits?(remote_ip) do
     not (Sanbase.Utils.IP.is_san_cluster_ip?(remote_ip) or
            Sanbase.Utils.IP.is_localhost?(remote_ip))
+  end
+
+  defp plan_to_api_call_limits(plan) do
+    case plan do
+      "sanapi_custom_" <> _ ->
+        "sanapi_" <> plan_name = plan
+        plan_name = String.upcase(plan_name)
+
+        %{"month" => month, "hour" => hour, "minute" => minute} =
+          Sanbase.Billing.Plan.CustomPlan.Access.api_call_limits(plan_name, "SANAPI")
+
+        %{month: month, hour: hour, minute: minute}
+
+      _ ->
+        %{
+          month: @limits_per_month[plan],
+          hour: @limits_per_hour[plan],
+          minute: @limits_per_minute[plan]
+        }
+    end
   end
 end

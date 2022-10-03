@@ -9,6 +9,7 @@ defmodule Sanbase.Billing.Plan do
   import Ecto.Query
   import Ecto.Changeset
 
+  alias __MODULE__.CustomPlan
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Subscription}
 
@@ -17,7 +18,9 @@ defmodule Sanbase.Billing.Plan do
 
   def plans(), do: @plans
   def plans_order(), do: @plans_order
-  def sort_plans(plans), do: Enum.sort_by(plans, fn plan -> Keyword.get(@plans_order, plan) end)
+
+  def sort_plans(plans),
+    do: Enum.sort_by(plans, fn plan -> Keyword.get(@plans_order, plan) end)
 
   schema "plans" do
     field(:name, :string)
@@ -30,12 +33,14 @@ defmodule Sanbase.Billing.Plan do
 
     # there might be still customers on this plan, but new subscriptions should be disabled.
     field(:is_deprecated, :boolean, default: false)
-
     # plans that customers can't subscribe on their own
-    field(:is_private, :boolean, default: false)
-
+    field(:is_private, :boolean)
     # order first by `order` field, then by id
-    field(:order, :integer, default: 0)
+    field(:order, :integer)
+
+    # if plan is custom, then the restrictions for it are read from the restrictions field
+    field(:has_custom_restrictions, :boolean)
+    embeds_one(:restrictions, CustomPlan.Restrictions, on_replace: :update)
 
     belongs_to(:product, Product)
     has_many(:subscriptions, Subscription, on_delete: :delete_all)
@@ -43,7 +48,62 @@ defmodule Sanbase.Billing.Plan do
 
   def changeset(%__MODULE__{} = plan, attrs \\ %{}) do
     plan
-    |> cast(attrs, [:amount, :name, :stripe_id, :is_deprecated, :is_private, :order])
+    |> cast(attrs, [
+      :name,
+      :product_id,
+      :amount,
+      :currency,
+      :interval,
+      :stripe_id,
+      :is_deprecated,
+      :is_private,
+      :order,
+      :has_custom_restrictions
+    ])
+    |> cast_embed(:restrictions,
+      required: false,
+      with: &CustomPlan.Restrictions.changeset/2
+    )
+    |> unique_constraint(:id, name: :plans_pkey)
+  end
+
+  def create_custom_api_plan(args) do
+    args = %{
+      name: Map.fetch!(args, :name),
+      product_id: Map.fetch!(args, :product_id),
+      amount: Map.fetch!(args, :amount),
+      currency: Map.fetch!(args, :currency),
+      interval: Map.fetch!(args, :interval),
+      stripe_id: Map.get(args, :stripe_id),
+      is_deprecated: false,
+      is_private: true,
+      order: Map.get(args, :order, 0),
+      has_custom_restrictions: true,
+      restrictions: Map.fetch!(args, :restrictions)
+    }
+
+    %__MODULE__{}
+    |> changeset(args)
+    |> validate_change(:name, &validate_custom_api_plan_name/2)
+    |> validate_change(:product_id, &validate_product_is_api/2)
+    |> Sanbase.Repo.insert()
+  end
+
+  def update_plan(plan, params) do
+    plan
+    |> changeset(params)
+    |> Repo.update()
+  end
+
+  def list_custom_plans() do
+    plans =
+      from(
+        p in __MODULE__,
+        where: p.has_custom_restrictions == true
+      )
+      |> Repo.all()
+
+    {:ok, plans}
   end
 
   def by_ids(plan_ids) when is_list(plan_ids) do
@@ -55,13 +115,19 @@ defmodule Sanbase.Billing.Plan do
     %__MODULE__{name: "FREE"}
   end
 
-  @plan_same_name ["FREE", "BASIC", "PRO", "PRO_PLUS", "PREMIUM", "CUSTOM", "EXTENSION"]
+  @same_name_plans ["FREE", "BASIC", "PRO", "PRO_PLUS", "PREMIUM", "EXTENSION"]
+  @enterprise_plans [
+    "CUSTOM",
+    "ENTERPRISE",
+    "ENTERPRISE_BASIC",
+    "ENTERPRISE_PLUS"
+  ]
   def plan_name(%__MODULE__{} = plan) do
-    case plan do
-      %{name: name} when name in @plan_same_name -> name
-      %{name: "ESSENTIAL"} -> "BASIC"
-      %{name: "ENTERPRISE" <> _rest} -> "CUSTOM"
-      %{name: "CUSTOM_" <> _ = name} -> name
+    case plan.name do
+      name when name in @same_name_plans -> name
+      name when name in @enterprise_plans -> "CUSTOM"
+      "ESSENTIAL" -> "BASIC"
+      "CUSTOM_" <> _ = name -> name
     end
   end
 
@@ -116,9 +182,23 @@ defmodule Sanbase.Billing.Plan do
     {:ok, plan}
   end
 
-  defp update_plan(plan, params) do
-    plan
-    |> changeset(params)
-    |> Repo.update()
+  defp validate_product_is_api(:product_id, product_id) do
+    case product_id == Product.product_api() do
+      true -> []
+      false -> [product_id: "Custom plans can be created only for SANAPI product"]
+    end
+  end
+
+  defp validate_custom_api_plan_name(:name, name) do
+    case String.starts_with?(name, "CUSTOM_") and name == String.upcase(name) do
+      true ->
+        []
+
+      false ->
+        [
+          name:
+            "Custom plan name must start with 'CUSTOM_' and contain only upcase letters and digits"
+        ]
+    end
   end
 end

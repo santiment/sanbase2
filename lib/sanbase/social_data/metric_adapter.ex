@@ -69,17 +69,17 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @min_plan_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, "FREE") end)
 
   # restriction related - the restriction is atom :free or :restricted
-  @social_volume_metrics_access_map @social_volume_timeseries_metrics
-                                    |> Enum.into(
-                                      %{},
-                                      &{&1, %{"historical" => :restricted, "realtime" => :free}}
-                                    )
+  @social_volume_metric_access_map @social_volume_timeseries_metrics
+                                   |> Enum.into(
+                                     %{},
+                                     &{&1, %{"historical" => :restricted, "realtime" => :free}}
+                                   )
 
   @access_map (@metrics -- @social_volume_timeseries_metrics)
               |> Enum.reduce(%{}, fn metric, acc ->
                 Map.put(acc, metric, :restricted)
               end)
-              |> Map.merge(@social_volume_metrics_access_map)
+              |> Map.merge(@social_volume_metric_access_map)
 
   @required_selectors Enum.into(@metrics, %{}, &{&1, []})
                       |> Map.put("social_active_users", [[:source]])

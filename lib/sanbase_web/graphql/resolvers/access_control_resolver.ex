@@ -3,17 +3,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
   alias SanbaseWeb.Graphql.Cache
 
   def get_access_restrictions(_root, args, %{context: context}) do
-    plan = Map.get(args, :plan) || context[:auth][:plan] || "FREE"
-    plan = plan |> to_string() |> String.upcase()
+    plan_name = Map.get(args, :plan) || context[:auth][:plan] || "FREE"
+    plan_name = plan_name |> to_string() |> String.upcase()
 
     product_id =
       Product.id_by_code(Map.get(args, :product)) || context[:product_id] || Product.product_api()
 
+    product_code = Product.code_by_id(product_id)
+
     Cache.wrap(
       fn ->
-        {:ok, Sanbase.Billing.Plan.Restrictions.get_all(plan, product_id)}
+        restrictions = Sanbase.Billing.Plan.Restrictions.get_all(plan_name, product_code)
+        {:ok, restrictions}
       end,
-      {:get_access_restrictions, plan, product_id}
+      {:get_access_restrictions, plan_name, product_code}
     ).()
   end
 

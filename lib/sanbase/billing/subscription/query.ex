@@ -43,6 +43,10 @@ defmodule Sanbase.Billing.Subscription.Query do
     from(q in query, where: q.user_id == ^user_id)
   end
 
+  def filter_plan_id(query, plan_id) do
+    from(q in query, where: q.plan_id == ^plan_id)
+  end
+
   def filter_product_id(query, product_id) do
     from(s in query, join: p in assoc(s, :plan), where: p.product_id == ^product_id)
   end

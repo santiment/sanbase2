@@ -33,7 +33,7 @@ defmodule Sanbase.SocialData.PopularSearchTerm do
 
   # Private functions
 
-  defp validate_selector_type(_changeset, selector_type) do
+  defp validate_selector_type(:selector_type, selector_type) do
     case selector_type in ["text", "slug"] do
       true ->
         []

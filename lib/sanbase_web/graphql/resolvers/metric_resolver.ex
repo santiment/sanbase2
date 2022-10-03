@@ -25,10 +25,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  def get_available_metrics(_root, %{product: product, plan: plan} = args, _resolution) do
-    product = product |> Atom.to_string() |> String.upcase()
-    plan = plan |> to_string() |> String.upcase()
-    metrics = AccessChecker.get_available_metrics_for_plan(product, plan)
+  def get_available_metrics(_root, %{plan: plan, product: product} = args, _resolution) do
+    product_code = product |> Atom.to_string() |> String.upcase()
+    plan_name = plan |> to_string() |> String.upcase()
+    metrics = AccessChecker.get_available_metrics_for_plan(plan_name, product_code)
 
     metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
     metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
@@ -67,11 +67,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     do: Metric.human_readable_name(metric)
 
   def get_metadata(%{}, _args, %{source: %{metric: metric}} = resolution) do
-    %{context: %{product_id: product_id, auth: %{plan: plan}}} = resolution
+    %{context: %{product_id: product_id, auth: %{plan: plan_name}}} = resolution
+
+    product_code = Sanbase.Billing.Product.code_by_id(product_id)
 
     case Metric.metadata(metric) do
       {:ok, metadata} ->
-        access_restrictions = Restrictions.get({:metric, metric}, plan, product_id)
+        access_restrictions = Restrictions.get({:metric, metric}, plan_name, product_code)
 
         {:ok, Map.merge(access_restrictions, metadata)}
 

@@ -13,7 +13,9 @@ defmodule Sanbase.Billing.TestSeed do
         product_sandata = insert(:product_sandata)
 
         data = %{
-          product: product_api,
+          product_api: product_api,
+          product_sanbase: product_sanbase,
+          product_sandata: product_sandata,
           plan_free: insert(:plan_free, product: product_api),
           plan_essential: insert(:plan_essential, product: product_api),
           plan_pro: insert(:plan_pro, product: product_api),

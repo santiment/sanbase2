@@ -82,9 +82,9 @@ defmodule Sanbase.UserList do
     |> unique_constraint(:slug)
   end
 
-  defp validate_function(_changeset, nil), do: []
+  defp validate_function(:function, nil), do: []
 
-  defp validate_function(_changeset, function) do
+  defp validate_function(:function, function) do
     {:ok, function} = function |> WatchlistFunction.cast()
 
     case WatchlistFunction.valid_function?(function) do

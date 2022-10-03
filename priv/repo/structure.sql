@@ -1975,7 +1975,9 @@ CREATE TABLE public.plans (
     stripe_id character varying(255),
     is_deprecated boolean DEFAULT false,
     "order" integer DEFAULT 0,
-    is_private boolean DEFAULT false
+    is_private boolean DEFAULT false,
+    has_custom_restrictions boolean DEFAULT false NOT NULL,
+    restrictions jsonb
 );
 
 
@@ -7855,5 +7857,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220630123257);
 INSERT INTO public."schema_migrations" (version) VALUES (20220712122954);
 INSERT INTO public."schema_migrations" (version) VALUES (20220718125615);
 INSERT INTO public."schema_migrations" (version) VALUES (20220727072726);
+INSERT INTO public."schema_migrations" (version) VALUES (20220804105452);
 INSERT INTO public."schema_migrations" (version) VALUES (20220825071308);
 INSERT INTO public."schema_migrations" (version) VALUES (20220830115029);

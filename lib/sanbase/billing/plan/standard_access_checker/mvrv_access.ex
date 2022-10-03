@@ -1,4 +1,4 @@
-defmodule Sanbase.Billing.Plan.CustomAccess do
+defmodule Sanbase.Billing.Plan.MVRVAccess do
   @moduledoc ~s"""
   Provide per-query custom access configuration.
 

@@ -70,7 +70,7 @@ defmodule Sanbase.Dashboard.Query do
     end
   end
 
-  def changeset_valid_sql?(_changeset, sql) do
+  def changeset_valid_sql?(:sql, sql) do
     case valid_sql?(sql) do
       true -> []
       {:error, error} -> [sql: error]

@@ -60,7 +60,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
       auth_method: :none,
       subscription: @free_subscription,
       plan: Subscription.plan_name(@free_subscription)
-    }
+    },
+    product_id: :will_be_filled_by_anon_user_auth_struct_function
   }
   def init(opts), do: opts
 

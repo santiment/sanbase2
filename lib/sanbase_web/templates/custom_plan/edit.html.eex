@@ -1,0 +1,5 @@
+<h1 class="text-4xl font-black mb-4">Edit Custom Plan</h1>
+
+<%= render "edit_form.html", Map.put(assigns, :action, Routes.custom_plan_path(@conn, :update, @custom_plan)) %>
+
+<span><%= link "Back", to: Routes.custom_plan_path(@conn, :index), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded", type: "button" %></span>

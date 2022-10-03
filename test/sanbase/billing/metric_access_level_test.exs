@@ -2,9 +2,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
   use ExUnit.Case, async: true
 
   setup do
-    metrics_access_map = Sanbase.Metric.access_map()
+    metric_access_map = Sanbase.Metric.access_map()
 
-    %{metrics_access_map: metrics_access_map}
+    %{metric_access_map: metric_access_map}
   end
 
   test "incomplete metrics" do
@@ -347,9 +347,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
     assert incomplete_metrics == expected
   end
 
-  test "free metrics", %{metrics_access_map: access_map} do
+  test "free metrics", %{metric_access_map: access_map} do
     free_metrics =
-      Sanbase.Billing.GraphqlSchema.get_with_access_level(access_map, :free)
+      Sanbase.Billing.ApiInfo.get_with_access_level(access_map, :free)
       |> Enum.sort()
 
     expected_free_metrics =
@@ -436,9 +436,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
     assert free_metrics == expected_free_metrics
   end
 
-  test "restricted metrics", %{metrics_access_map: access_map} do
+  test "restricted metrics", %{metric_access_map: access_map} do
     restricted_metrics =
-      Sanbase.Billing.GraphqlSchema.get_with_access_level(access_map, :restricted)
+      Sanbase.Billing.ApiInfo.get_with_access_level(access_map, :restricted)
       |> Enum.sort()
 
     expected_restricted_metrics =
@@ -1270,9 +1270,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
            |> Enum.to_list() == []
   end
 
-  test "forbidden metrics", %{metrics_access_map: access_map} do
+  test "forbidden metrics", %{metric_access_map: access_map} do
     forbidden_metrics =
-      Sanbase.Billing.GraphqlSchema.get_with_access_level(access_map, :forbidden)
+      Sanbase.Billing.ApiInfo.get_with_access_level(access_map, :forbidden)
       |> Enum.sort()
 
     expected_forbidden_metrics =
@@ -1283,7 +1283,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
   end
 
   test "metrics with free realtime and restricted historical data", %{
-    metrics_access_map: access_map
+    metric_access_map: access_map
   } do
     result =
       access_map
@@ -1311,7 +1311,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
   end
 
   test "metrics with restricted realtime and free historical data", %{
-    metrics_access_map: access_map
+    metric_access_map: access_map
   } do
     result =
       access_map

@@ -79,13 +79,13 @@ defmodule Sanbase.Billing.SubscriptionTest do
 
   describe "#is_restricted?" do
     test "network_growth and daily_active_deposits are restricted" do
-      assert AccessChecker.is_restricted?({:query, :network_growth})
-      assert AccessChecker.is_restricted?({:query, :daily_active_deposits})
+      assert AccessChecker.is_restricted?("FREE", "SANAPI", {:query, :network_growth})
+      assert AccessChecker.is_restricted?("FREE", "SANAPI", {:query, :daily_active_deposits})
     end
 
     test "all_projects and history_price are not restricted" do
-      refute AccessChecker.is_restricted?({:query, :all_projects})
-      refute AccessChecker.is_restricted?({:query, :history_price})
+      refute AccessChecker.is_restricted?("FREE", "SANAPI", {:query, :all_projects})
+      refute AccessChecker.is_restricted?("FREE", "SANAPI", {:query, :history_price})
     end
   end
 
@@ -116,12 +116,16 @@ defmodule Sanbase.Billing.SubscriptionTest do
     test "when there is subscription - return it", context do
       insert(:subscription_essential, user: context.user)
 
-      current_subscription = Subscription.current_subscription(context.user, context.product.id)
+      current_subscription =
+        Subscription.current_subscription(context.user, context.product_api.id)
+
       assert current_subscription.plan.id == context.plans.plan_essential.id
     end
 
     test "when there isn't - return nil", context do
-      current_subscription = Subscription.current_subscription(context.user, context.product.id)
+      current_subscription =
+        Subscription.current_subscription(context.user, context.product_api.id)
+
       assert current_subscription == nil
     end
 
@@ -132,7 +136,9 @@ defmodule Sanbase.Billing.SubscriptionTest do
         status: "canceled"
       )
 
-      current_subscription = Subscription.current_subscription(context.user, context.product.id)
+      current_subscription =
+        Subscription.current_subscription(context.user, context.product_api.id)
+
       assert current_subscription == nil
     end
   end

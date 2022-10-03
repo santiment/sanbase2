@@ -350,29 +350,36 @@ defmodule Sanbase.Price.SqlQuery do
   end
 
   def combined_marketcap_and_volume_query(slugs, from, to, interval, source) do
+    {from, to, interval, span} = timerange_parameters(from, to, interval)
+
     query = """
-    SELECT
-      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS time,
-      argMax(marketcap_usd, dt) AS marketcap_usd,
-      argMax(volume_usd, dt) AS volume_usd,
-      toUInt32(1) AS has_changed
-    FROM #{@table}
-    PREWHERE
-      slug IN (?2) AND
-      source = ?3 AND
-      dt >= toDateTime(?4) AND
-      dt < toDateTime(?5)
-    GROUP BY time, slug
-    ORDER BY time, slug ASC
+    SELECT time,SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
+    FROM (
+      SELECT
+        toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
+        toFloat64(0) AS marketcap_usd,
+        toFloat64(0) AS volume_usd,
+        toUInt32(0) AS has_changed
+      FROM numbers(?2)
+      UNION ALL
+      SELECT
+        toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+        argMax(marketcap_usd, dt) AS marketcap_usd,
+        argMax(volume_usd, dt) AS volume_usd,
+        toUInt32(1) AS has_changed
+      FROM #{@table}
+      PREWHERE
+        slug IN (?3) AND
+        source = ?4 AND
+        dt >= toDateTime(?5) AND
+        dt < toDateTime(?6)
+      GROUP BY time, slug
+    )
+    GROUP BY time
+    ORDER BY time
     """
 
-    args = [
-      maybe_str_to_sec(interval),
-      slugs,
-      source,
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to)
-    ]
+    args = [interval, span, slugs, source, from, to]
 
     {query, args}
   end

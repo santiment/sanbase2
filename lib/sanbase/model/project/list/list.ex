@@ -417,6 +417,7 @@ defmodule Sanbase.Model.Project.List do
   def by_slugs(slugs, opts) when is_list(slugs) do
     projects_query(opts)
     |> where([p], p.slug in ^slugs)
+    |> maybe_order_by_slugs_list(ordered_slugs: slugs)
     |> Repo.all()
   end
 

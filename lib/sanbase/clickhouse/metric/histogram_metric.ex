@@ -16,7 +16,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   ]
 
   @eth2_datetime_staking_pools_integer_valuation_list [
-    "eth2_staking_pools_validators_count_over_time"
+    "eth2_staking_pools_validators_count_over_time",
+    "eth2_staking_pools_validators_count_over_time_delta"
   ]
 
   @eth2_string_address_string_label_float_value_metrics [

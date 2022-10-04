@@ -475,7 +475,19 @@ defmodule Sanbase.Metric do
       module when is_atom(module) ->
         module = maybe_change_module(module, metric, %{}, opts)
 
-        module.available_slugs(metric)
+        case module.available_slugs(metric) do
+          {:ok, slugs} ->
+            supported_slugs = Sanbase.Model.Project.List.projects_slugs()
+
+            slugs =
+              MapSet.intersection(MapSet.new(slugs), MapSet.new(supported_slugs))
+              |> Enum.to_list()
+
+            {:ok, slugs}
+
+          error ->
+            error
+        end
     end
   end
 

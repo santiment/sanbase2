@@ -210,6 +210,26 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
+  def by_search_text(search_text) do
+    search_text = "%" <> search_text <> "%"
+
+    from(u in __MODULE__,
+      where: like(u.email, ^search_text),
+      or_where: like(u.username, ^search_text),
+      or_where: like(u.name, ^search_text)
+    )
+    |> Repo.all()
+  end
+
+  def all_users() do
+    from(
+      u in __MODULE__,
+      order_by: [desc: u.id],
+      limit: 10
+    )
+    |> Repo.all()
+  end
+
   def by_id(user_ids) when is_list(user_ids) do
     users =
       from(

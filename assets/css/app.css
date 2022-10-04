@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+.show {
+  @apply px-6 py-4 text-lg text-gray-700 border-b
+}
+
 .input {
   transition: border 0.2s ease-in-out;
   min-width: 280px

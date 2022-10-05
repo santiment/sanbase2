@@ -5,11 +5,14 @@ defmodule SanbaseWeb.CustomAdminController do
 
   def index(conn, _params) do
     render(conn, "index.html",
-      routes: %{
-        "Webinars" => Routes.webinar_path(conn, :index),
-        "Sheets templates" => Routes.sheets_template_path(conn, :index),
-        "Reports" => Routes.report_path(conn, :index)
-      }
+      search_value: "",
+      routes: [
+        {"Users", Routes.user_path(conn, :index)},
+        {"Webinars", Routes.webinar_path(conn, :index)},
+        {"Sheets templates", Routes.sheets_template_path(conn, :index)},
+        {"Reports", Routes.report_path(conn, :index)},
+        {"Custom plans", Routes.custom_plan_path(conn, :index)}
+      ]
     )
   end
 end

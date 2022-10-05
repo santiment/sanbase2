@@ -49,7 +49,6 @@ alias Sanbase.{
   DateTimeUtils,
   ApplicationUtils,
   Parallel,
-  MandrillApi,
   Price
 }
 

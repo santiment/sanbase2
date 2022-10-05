@@ -46,7 +46,6 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    Sanbase.Email.MailchimpApi.subscribe(:monthly_newsletter, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
@@ -57,7 +56,6 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    Sanbase.Email.MailchimpApi.unsubscribe(:monthly_newsletter, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
@@ -68,7 +66,6 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    Sanbase.Email.MailchimpApi.subscribe(:bi_weekly, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
@@ -79,7 +76,6 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
          state
        ) do
     email = Sanbase.Accounts.get_user!(user_id).email
-    Sanbase.Email.MailchimpApi.unsubscribe(:bi_weekly, email)
     EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end

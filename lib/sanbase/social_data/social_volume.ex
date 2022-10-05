@@ -38,7 +38,7 @@ defmodule Sanbase.SocialData.SocialVolume do
   def social_volume(%{words: words} = selector, from, to, interval, source, opts)
       when is_list(words) do
     social_volume_list_request(selector, from, to, interval, source, opts)
-    |> handle_list_response(selector)
+    |> handle_words_social_volume_response(selector)
   end
 
   def social_volume(selector, from, to, interval, source, opts) do
@@ -66,13 +66,14 @@ defmodule Sanbase.SocialData.SocialVolume do
     end
   end
 
-  defp handle_list_response(response, selector) do
+  defp handle_words_social_volume_response(response, %{words: words} = selector) do
     case response do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         body
         |> Jason.decode!()
         |> Map.fetch!("data")
-        |> Enum.map(fn {word, timeseries} ->
+        |> maybe_format_response(words)
+        |> Enum.map(fn {word, %{} = timeseries} ->
           %{
             word: word,
             timeseries_data: social_volume_result(timeseries)
@@ -90,6 +91,38 @@ defmodule Sanbase.SocialData.SocialVolume do
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  defp maybe_format_response(data, words) do
+    # Metricshub returns different format when a single word is provided.
+    # Unify both responses so the result is handled easily
+    # When more than 1 word is returned, the result is map where the word
+    # is the key.
+    # %{
+    #   "data" => %{
+    #     "bitcoin" => %{
+    #       "2022-10-05T00:00:00Z" => 1401
+    #     },
+    #     "ethereum" => %{
+    #       "2022-10-04T12:00:00Z" => 576,
+    #     }
+    #   }
+    # }
+    #
+    # When only 1 word is used, there is no word as key.
+    # %{
+    #   "data" => %{
+    #     "2022-10-05T00:00:00Z" => 1399
+    #   }
+    # }
+    case Map.values(data) |> List.first() do
+      %{} ->
+        data
+
+      _ ->
+        [word] = words
+        %{word => data}
     end
   end
 

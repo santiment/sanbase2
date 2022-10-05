@@ -190,6 +190,44 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Active Addresses for the last 30 days",
+    "name": "active_addresses_30d",
+    "metric": "active_addresses_30d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Active Addresses for the last 7 days",
+    "name": "active_addresses_7d",
+    "metric": "active_addresses_7d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Active Addresses for the last 24 hours",
     "name": "active_addresses_24h",
     "metric": "active_addresses_24h",

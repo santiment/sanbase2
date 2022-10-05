@@ -354,6 +354,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
 
     expected_free_metrics =
       [
+        "active_addresses_30d",
+        "active_addresses_7d",
         "active_addresses_24h",
         "active_addresses_1h",
         "circulation",

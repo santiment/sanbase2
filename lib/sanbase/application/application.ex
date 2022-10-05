@@ -54,8 +54,6 @@ defmodule Sanbase.Application do
 
     Sanbase.EventBus.init()
 
-    Application.put_env(:mailchimp, :api_key, System.get_env("MAILCHIMP_API_KEY"))
-
     # Container specific init
     case container_type do
       "all" ->

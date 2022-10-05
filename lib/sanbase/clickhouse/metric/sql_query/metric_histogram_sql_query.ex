@@ -458,6 +458,59 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         _limit
       ) do
     query = """
+    WITH (
+      SELECT
+        groupArray(label) as labels
+      FROM
+      (
+        SELECT
+          label,
+          sum(locked_sum) AS value
+        FROM
+        (
+          SELECT
+              address,
+              value AS label
+          FROM
+          (
+              SELECT
+                  address,
+                  label_id
+              FROM current_label_addresses
+              WHERE (blockchain = 'ethereum') AND (label_id IN (
+                  SELECT label_id
+                  FROM label_metadata
+                  WHERE key = 'eth2_staking_address'
+              ))
+          )
+          INNER JOIN
+          (
+              SELECT
+                  label_id,
+                  value
+              FROM label_metadata
+              WHERE key = 'eth2_staking_address'
+          ) USING (label_id)
+        )
+        INNER JOIN
+        (
+          SELECT
+              address,
+              SUM(amount) AS locked_sum
+          FROM
+          (
+              SELECT DISTINCT *
+              FROM eth2_staking_transfers_v2
+              FINAL
+              WHERE dt < toDateTime(?3)
+          )
+          GROUP BY address
+        ) USING (address)
+        GROUP BY label
+        ORDER BY value DESC
+        LIMIT ?1
+      )
+    ) AS top10Stakers
     SELECT
       t,
       groupArr
@@ -511,7 +564,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
               (
                 SELECT label_id, value
                 FROM label_metadata
-                WHERE key = 'eth2_staking_address'
+                WHERE key = 'eth2_staking_address' AND has(top10Stakers, value)
               ) USING (label_id)
             ) USING (address)
             GROUP BY label, dt
@@ -523,7 +576,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
               arrayJoin(arrayMap( x -> toDate(x), timeSlots(toDateTime('2020-11-03 00:00:00'), toUInt32(toDateTime(?3) - toIntervalDay(1) - toDateTime('2020-11-03 00:00:00')), toUInt32(?1)))) AS dt,
               0 AS sum_value
             FROM label_metadata FINAL
-            WHERE key = 'eth2_staking_address'
+            WHERE key = 'eth2_staking_address' AND has(top10Stakers, value)
           )
           GROUP BY label, dt
           )
@@ -565,45 +618,32 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         SELECT dt, label, value
         FROM
         (
-          SELECT label, dt, round(sum(sum_value / 32)) AS value
+          SELECT label, dt, round(sum(sum_value / 32)) AS value, rank() OVER (PARTITION BY dt ORDER BY value DESC) AS rank
           FROM (
-            SELECT label, dt, sum(sum_value) AS sum_value
+            SELECT address, toDate(dt) AS dt, sum(amount) AS sum_value
+            FROM eth2_staking_transfers_v2 FINAL
+            WHERE dt >= toDateTime(?2) AND dt < toDateTime(?3)
+            GROUP BY address, dt
+          ) AS transfers
+          INNER JOIN
+          (
+            SELECT address, value AS label
             FROM
             (
-              SELECT address, toDate(dt) AS dt, sum(amount) AS sum_value
-              FROM eth2_staking_transfers_v2 FINAL
-              WHERE dt >= toDateTime(?2) AND dt < toDateTime(?3)
-              GROUP BY address, dt
-            ) AS transfers
+              SELECT address, label_id
+              FROM current_label_addresses
+              WHERE (blockchain = 'ethereum') AND (label_id IN ( SELECT label_id FROM label_metadata WHERE key = 'eth2_staking_address' ) )
+            )
             INNER JOIN
             (
-              SELECT address, value AS label
-              FROM
-              (
-                SELECT address, label_id
-                FROM current_label_addresses
-                WHERE (blockchain = 'ethereum') AND (label_id IN ( SELECT label_id FROM label_metadata WHERE key = 'eth2_staking_address' ) )
-              )
-              INNER JOIN
-              (
-                SELECT label_id, value
-                FROM label_metadata
-                WHERE key = 'eth2_staking_address'
-              ) USING (label_id)
-            ) USING (address)
-            GROUP BY label, dt
-
-            UNION ALL
-
-            SELECT
-              DISTINCT value AS label,
-              arrayJoin(arrayMap( x -> toDate(x), timeSlots(toDateTime(?2), toUInt32(toDateTime(?3) - toIntervalDay(1) - toDateTime(?2)), toUInt32(?1)))) AS dt,
-              0 AS sum_value
-            FROM label_metadata FINAL
-            WHERE key = 'eth2_staking_address'
-          )
+              SELECT label_id, value
+              FROM label_metadata
+              WHERE key = 'eth2_staking_address'
+            ) USING (label_id)
+          ) USING (address)
           GROUP BY label, dt
         )
+        WHERE rank <= ?1
       )
       GROUP BY dt
       ORDER BY dt ASC

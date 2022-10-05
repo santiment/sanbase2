@@ -58,10 +58,6 @@ defmodule Sanbase.Email.NewsletterToken do
     Sanbase.TemplateMailer.send(email, template, %{verify_link: verify_link})
   end
 
-  def subscribe_to_newsletter(email) do
-    Sanbase.Email.MailchimpApi.add_email_to_mailchimp(email)
-  end
-
   # helpers
   defp check_and_mark_valid_token(nil), do: {:error, :invalid_token}
 

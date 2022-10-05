@@ -12,13 +12,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.EmailResolver do
   end
 
   def subscribe_email_newsletter(_root, %{token: token, email: email, type: _type}, _resolution) do
-    with {:ok, _} <- NewsletterToken.verify_token(email, token),
-         :ok <- NewsletterToken.subscribe_to_newsletter(email) do
+    with {:ok, _} <- NewsletterToken.verify_token(email, token) do
       {:ok, true}
     else
       {:error, :invalid_token} -> {:error, "Verification token is not valid"}
       {:error, :token_expired} -> {:error, "Verification token expired"}
-      {:error, _reason} -> {:error, "Email address #{email} is already subscribed."}
     end
   end
 end

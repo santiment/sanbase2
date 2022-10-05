@@ -167,10 +167,6 @@ config :ex_aws,
 
 config :sanbase, Sanbase.Cryptocompare, api_key: {:system, "CRYPTOCOMPARE_API_KEY"}
 
-config :sanbase, Sanbase.MandrillApi,
-  apikey: {:system, "MANDRILL_APIKEY"},
-  from_email: {:system, "MANDRILL_FROM_EMAIL", "admin@santiment.net"}
-
 config :sanbase, Sanbase.TechIndicators, url: {:system, "TECH_INDICATORS_URL"}
 
 config :sanbase, Sanbase.SocialData,
@@ -217,8 +213,6 @@ config :sanbase, Sanbase.GrafanaApi,
   grafana_pass: {:system, "GRAFANA_PASS"}
 
 config :sanbase, Sanbase.Intercom, api_key: {:system, "INTERCOM_API_KEY"}
-
-config :sanbase, Sanbase.Email.MailchimpApi, api_key: {:system, "MAILCHIMP_API_KEY"}
 
 config :sanbase, Sanbase.Promoters.FirstPromoterApi,
   api_id: {:system, "FIRST_PROMOTER_API_ID"},

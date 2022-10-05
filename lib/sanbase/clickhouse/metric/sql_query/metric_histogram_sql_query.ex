@@ -503,13 +503,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
                 value AS label
               FROM
               (
-                  SELECT address, label_id
-                  FROM current_label_addresses
-                  WHERE (blockchain = 'ethereum') AND (label_id IN (
-                  SELECT label_id
-                  FROM label_metadata
-                  WHERE key = 'eth2_staking_address'
-                  ))
+                SELECT address, label_id
+                FROM current_label_addresses
+                WHERE (blockchain = 'ethereum') AND (label_id IN ( SELECT label_id FROM label_metadata WHERE key = 'eth2_staking_address' ))
               )
               INNER JOIN
               (
@@ -533,10 +529,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
           )
         )
         WHERE dt >= toDateTime(?2) AND dt < toDateTime(?3)
-
       )
       GROUP BY dt
-      ORDER BY dt DESC
+      ORDER BY dt ASC
     )
     """
 
@@ -611,7 +606,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         )
       )
       GROUP BY dt
-      ORDER BY dt DESC
+      ORDER BY dt ASC
     )
     """
 

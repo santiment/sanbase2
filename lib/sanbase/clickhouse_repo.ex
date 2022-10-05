@@ -76,7 +76,7 @@ defmodule Sanbase.ClickhouseRepo do
 
     case __MODULE__.query(sanitized_query, ordered_params) do
       {:ok, result} -> {:ok, Enum.reduce(result.rows, init, reducer)}
-      {:error, error} -> log_and_return_error(inspect(error), "query_reduce/4")
+      {:error, error} -> log_and_return_error(error, "query_reduce/4")
     end
   rescue
     e ->
@@ -93,7 +93,7 @@ defmodule Sanbase.ClickhouseRepo do
         {:ok, result}
 
       {:error, error} ->
-        log_and_return_error(inspect(error), "query_transform/3")
+        log_and_return_error(error, "query_transform/3")
     end
   end
 
@@ -113,8 +113,10 @@ defmodule Sanbase.ClickhouseRepo do
     {:error, "[#{log_id}] #{if propagate_error, do: error, else: @error_message}"}
   end
 
-  defp log_and_return_error(error_str, function_executed) do
+  defp log_and_return_error(error, function_executed) do
     log_id = UUID.uuid4()
+
+    error_str = extract_error_from_error(error)
 
     Logger.warning(
       "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_str}"
@@ -175,11 +177,24 @@ defmodule Sanbase.ClickhouseRepo do
       end)
 
     case line_with_exception do
-      nil ->
-        nil
+      nil -> nil
+      line -> transform_error_string(line)
+    end
+  end
 
-      line ->
-        error = String.split(line, "DB::Exception: ") |> List.last()
+  defp extract_error_from_error(%Clickhousex.Error{message: message}) do
+    transform_error_string(message)
+  end
+
+  defp extract_error_from_error(error), do: error
+
+  defp transform_error_string(error_str) do
+    case String.split(error_str, "DB::Exception: ") do
+      [error_str] ->
+        error_str
+
+      [_ | _] = split_error ->
+        error = List.last(split_error)
 
         [error_msg, error_code, _version_str] =
           Regex.split(~r|\([A-Z_]+\)|, error, include_captures: true, trim: true)

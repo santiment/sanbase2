@@ -40,7 +40,7 @@ defmodule Sanbase.ClickhouseRepo do
     end
   rescue
     e ->
-      log_and_return_error(e, "query_transform/3", __STACKTRACE__)
+      log_and_return_error_from_exception(e, "query_transform/3", __STACKTRACE__)
   end
 
   @doc ~s"""
@@ -49,7 +49,7 @@ defmodule Sanbase.ClickhouseRepo do
   the query id, column names and a short summary of the used resources
   """
   def query_transform_with_metadata(query, args, transform_fn) do
-    case execute_query_transform(query, args) do
+    case execute_query_transform(query, args, propagate_error: true) do
       {:ok, result} ->
         {:ok,
          %{
@@ -65,7 +65,7 @@ defmodule Sanbase.ClickhouseRepo do
     end
   rescue
     e ->
-      log_and_return_error(e, "query_transform_with_metadata/3", __STACKTRACE__,
+      log_and_return_error_from_exception(e, "query_transform_with_metadata/3", __STACKTRACE__,
         propagate_error: true
       )
   end
@@ -80,11 +80,10 @@ defmodule Sanbase.ClickhouseRepo do
     end
   rescue
     e ->
-      log_and_return_error(e, "query_reduce/4", __STACKTRACE__)
+      log_and_return_error_from_exception(e, "query_reduce/4", __STACKTRACE__)
   end
 
-  @error_message "Cannot execute database query. If issue persists please contact Santiment Support."
-  defp execute_query_transform(query, args) do
+  defp execute_query_transform(query, args, opts \\ []) do
     ordered_params = order_params(query, args)
     sanitized_query = sanitize_query(query)
 
@@ -93,36 +92,43 @@ defmodule Sanbase.ClickhouseRepo do
         {:ok, result}
 
       {:error, error} ->
-        log_and_return_error(error, "query_transform/3")
+        log_and_return_error(error, "query_transform/3", opts)
     end
   end
 
-  defp log_and_return_error(%{} = e, function_executed, stacktrace, opts \\ []) do
+  @masked_error_message "Cannot execute database query. If issue persists please contact Santiment Support."
+  defp log_and_return_error_from_exception(
+         %{} = exception,
+         function_executed,
+         stacktrace,
+         opts \\ []
+       ) do
     propagate_error = Keyword.get(opts, :propagate_error, false)
 
     log_id = UUID.uuid4()
-    error = extract_error_from_stacktrace(stacktrace) || Exception.message(e)
+    error_message = extract_error_from_stacktrace(stacktrace) || Exception.message(exception)
 
     Logger.warning("""
-    [#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error}
+    [#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_message}
 
     Stacktrace:
     #{Exception.format_stacktrace()}
     """)
 
-    {:error, "[#{log_id}] #{if propagate_error, do: error, else: @error_message}"}
+    {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
   end
 
-  defp log_and_return_error(error, function_executed) do
+  defp log_and_return_error(error, function_executed, opts \\ []) do
+    propagate_error = Keyword.get(opts, :propagate_error, false)
     log_id = UUID.uuid4()
 
-    error_str = extract_error_from_error(error)
+    error_message = extract_error_from_error(error)
 
     Logger.warning(
-      "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_str}"
+      "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_message}"
     )
 
-    {:error, "[#{log_id}] #{@error_message}"}
+    {:error, "[#{log_id}] #{if propagate_error, do: error_message, else: @masked_error_message}"}
   end
 
   @doc ~s"""

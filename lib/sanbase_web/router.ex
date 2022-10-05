@@ -101,6 +101,24 @@ defmodule SanbaseWeb.Router do
       log_level: :info,
       before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
     )
+
+    forward(
+      "/graphiql_advanced",
+      # Use own version of the plug with fixed XSS vulnerability
+      Absinthe.Plug.GraphiQL,
+      json_codec: Jason,
+      schema: SanbaseWeb.Graphql.Schema,
+      socket: SanbaseWeb.UserSocket,
+      document_providers: [
+        SanbaseWeb.Graphql.DocumentProvider,
+        Absinthe.Plug.DocumentProvider.Default
+      ],
+      analyze_complexity: true,
+      max_complexity: 50_000,
+      interface: :advanced,
+      log_level: :info,
+      before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
+    )
   end
 
   scope "/", SanbaseWeb do

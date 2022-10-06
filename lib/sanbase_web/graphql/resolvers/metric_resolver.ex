@@ -18,11 +18,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   @datapoints 300
 
-  def get_metric(_root, %{metric: metric}, _resolution) do
+  def get_metric(_root, %{metric: metric} = args, _resolution) do
     with true <- Metric.is_not_deprecated?(metric),
          true <- Metric.has_metric?(metric) do
+      maybe_enable_clickhouse_sql_storage(args)
       {:ok, %{metric: metric}}
     end
+  end
+
+  # If the `store_executed_clickhouse_sql` flag is true, put a value
+  # in the process dictionary that will indicate to the ClickhouseRepo
+  # module that the executed queries need to be stored in the process
+  # dictionary.
+  defp maybe_enable_clickhouse_sql_storage(args) do
+    if Map.get(args, :store_executed_clickhouse_sql, false),
+      do: Process.put(:__store_executed_clickhouse_sql__, true)
+  end
+
+  # Return the list of executed Clickhouse SQL queries.
+  # The list is not empty if `store_executed_clickhouse_sql` flag is true
+  # and there are executed SQL queries. If the flag is set to false or there were
+  # no SQL queries executed because (not requested or served from cache)
+  def get_executed_clickhouse_sql(_root, _args, _resolution) do
+    {:ok, Process.get(:__executed_clickhouse_sql_list__, []) |> Enum.reverse()}
   end
 
   def get_available_metrics(_root, %{plan: plan, product: product} = args, _resolution) do

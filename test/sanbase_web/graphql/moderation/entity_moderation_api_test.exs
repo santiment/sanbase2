@@ -274,18 +274,12 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       SanbaseWeb.Graphql.Cache.clear_all()
 
       assert %{
-               "data" => [
-                 %{
-                   "userTrigger" => %{
-                     "trigger" => %{"id" => ^user_trigger_id, "isHidden" => true}
-                   }
-                 }
-               ],
+               "data" => [],
                "stats" => %{
                  "currentPage" => 1,
                  "currentPageSize" => 10,
-                 "totalEntitiesCount" => 1,
-                 "totalPagesCount" => 1
+                 "totalEntitiesCount" => 0,
+                 "totalPagesCount" => 0
                }
              } = get_most_recent(moderator_conn, :user_trigger)
 

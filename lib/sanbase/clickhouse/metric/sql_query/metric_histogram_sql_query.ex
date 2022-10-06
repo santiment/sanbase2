@@ -455,7 +455,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         from,
         to,
         interval,
-        _limit
+        limit
       ) do
     query = """
     WITH (
@@ -508,9 +508,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         ) USING (address)
         GROUP BY label
         ORDER BY value DESC
-        LIMIT ?1
+        LIMIT ?4
       )
-    ) AS top10Stakers
+    ) AS topStakers
     SELECT
       t,
       groupArr
@@ -564,7 +564,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
               (
                 SELECT label_id, value
                 FROM label_metadata
-                WHERE key = 'eth2_staking_address' AND has(top10Stakers, value)
+                WHERE key = 'eth2_staking_address' AND has(topStakers, value)
               ) USING (label_id)
             ) USING (address)
             GROUP BY label, dt
@@ -576,7 +576,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
               arrayJoin(arrayMap( x -> toDate(x), timeSlots(toDateTime('2020-11-03 00:00:00'), toUInt32(toDateTime(?3) - toIntervalDay(1) - toDateTime('2020-11-03 00:00:00')), toUInt32(?1)))) AS dt,
               0 AS sum_value
             FROM label_metadata FINAL
-            WHERE key = 'eth2_staking_address' AND has(top10Stakers, value)
+            WHERE key = 'eth2_staking_address' AND has(topStakers, value)
           )
           GROUP BY label, dt
           )
@@ -591,7 +591,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     args = [
       str_to_sec(interval),
       dt_to_unix(:from, from),
-      dt_to_unix(:to, to)
+      dt_to_unix(:to, to),
+      limit
     ]
 
     {query, args}

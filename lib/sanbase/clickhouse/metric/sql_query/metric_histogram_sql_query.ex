@@ -604,7 +604,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         from,
         to,
         interval,
-        _limit
+        limit
       ) do
     query = """
     SELECT
@@ -644,7 +644,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
           ) USING (address)
           GROUP BY label, dt
         )
-        WHERE rank <= ?1
+        WHERE rank <= ?4
       )
       GROUP BY dt
       ORDER BY dt ASC
@@ -654,7 +654,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     args = [
       str_to_sec(interval),
       dt_to_unix(:from, from),
-      dt_to_unix(:to, to)
+      dt_to_unix(:to, to),
+      limit
     ]
 
     {query, args}

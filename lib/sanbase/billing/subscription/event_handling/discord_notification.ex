@@ -43,6 +43,30 @@ defmodule Sanbase.Billing.DiscordNotification do
     do_send_to_discord(message, "Stripe Charge", webhook: "failed_payments")
   end
 
+  def handle_event(
+        :payment_action_required,
+        %{
+          data: %{
+            amount: amount,
+            stripe_event_id: stripe_event_id,
+            extra_in_memory_data: %{stripe_event: stripe_event}
+          }
+        }
+      )
+      when amount > 1 do
+    formatted_amount = format_cents_amount(amount)
+    customer = stripe_event["data"]["object"]["customer"]
+    customer = "https://dashboard.stripe.com/customers/#{customer}"
+
+    message = """
+    ⛔ A payment for #{formatted_amount} requires action.
+    Customer: #{customer}
+    Event: https://dashboard.stripe.com/events/#{stripe_event_id}
+    """
+
+    do_send_to_discord(message, "Stripe Payment", webhook: "bug_report")
+  end
+
   def handle_event(:cancel_subscription, %{
         data: %{extra_in_memory_data: %{subscription: subscription}}
       }) do
@@ -96,10 +120,10 @@ defmodule Sanbase.Billing.DiscordNotification do
     payload = [message] |> Discord.encode!(publish_user())
 
     webhook_url =
-      if Keyword.get(opts, :webhook, "payments") == "payments" do
-        payments_webhook_url()
-      else
-        failed_payments_webhook_url()
+      case Keyword.get(opts, :webhook, "payments") do
+        "payments" -> payments_webhook_url()
+        "failed_payments" -> failed_payments_webhook_url()
+        "bug_report" -> bug_report_webhook_url()
       end
 
     Discord.send_notification(webhook_url, title, payload)
@@ -238,5 +262,9 @@ defmodule Sanbase.Billing.DiscordNotification do
 
   defp payments_webhook_url(), do: Config.get(:payments_webhook_url)
   defp failed_payments_webhook_url(), do: Config.get(:failed_payments_webhook_url)
+
+  defp bug_report_webhook_url(),
+    do: Config.get(:bug_report_webhook_url) || failed_payments_webhook_url()
+
   defp publish_user(), do: Config.get(:publish_user)
 end

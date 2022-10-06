@@ -35,7 +35,7 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     :renew_subscription
   ]
 
-  @payment_events [:payment_success, :payment_fail, :charge_fail]
+  @payment_events [:payment_success, :payment_fail, :charge_fail, :payment_action_required]
 
   @handler_types [
     :update_api_call_limit_table,

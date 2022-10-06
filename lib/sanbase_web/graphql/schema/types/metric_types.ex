@@ -627,5 +627,37 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field :metadata, :metric_metadata do
       cache_resolve(&MetricResolver.get_metadata/3)
     end
+
+    @desc ~s"""
+    Get a list of all Clickhouse SQL queries executed in this
+    getMetric API call.
+
+    In order to get the executed SQL one needs to:
+    - Add `storeExecutedClickhouseSql: true` flag to getMetric
+    - Request the `executedClickhouseSql` field, placed at the end
+
+    Example call:
+
+      {
+        getMetric(metric: "daily_active_addresses", storeExecutedClickhouseSql: true) {
+          timeseriesData(
+            # Reduce the caching duration for this call and execute a few times if needed. If the API call
+            # has been cached, no SQL is executed and the result is empty.
+            cachingParams: {baseTtl: 1, maxTtlOffset: 1}
+            slug: "ethereum"
+            from: "2022-09-02T08:00:00Z"
+            to: "2022-10-02T08:00:00Z"
+            interval: "12h") {
+              datetime
+              value
+          }
+          # The call needs to be placed at the end as the fields are executed in order
+          executedClickhouseSql
+        }
+      }
+    """
+    field :executed_clickhouse_sql, list_of(:string) do
+      resolve(&MetricResolver.get_executed_clickhouse_sql/3)
+    end
   end
 end

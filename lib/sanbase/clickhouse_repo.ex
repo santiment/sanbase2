@@ -74,6 +74,8 @@ defmodule Sanbase.ClickhouseRepo do
     ordered_params = order_params(query, args)
     sanitized_query = sanitize_query(query)
 
+    maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
+
     case __MODULE__.query(sanitized_query, ordered_params) do
       {:ok, result} -> {:ok, Enum.reduce(result.rows, init, reducer)}
       {:error, error} -> log_and_return_error(error, "query_reduce/4")
@@ -86,6 +88,8 @@ defmodule Sanbase.ClickhouseRepo do
   defp execute_query_transform(query, args, opts \\ []) do
     ordered_params = order_params(query, args)
     sanitized_query = sanitize_query(query)
+
+    maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
 
     case __MODULE__.query(sanitized_query, ordered_params) do
       {:ok, result} ->
@@ -207,5 +211,29 @@ defmodule Sanbase.ClickhouseRepo do
 
         "#{error_code} #{error_msg}" |> String.trim()
     end
+  end
+
+  # If the `__store_executed_clickhouse_sql__` flag is set to true
+  # from the MetricResolver module, store the executed SQL query
+  # after interpolating the paramters in it.
+  defp maybe_store_executed_clickhouse_sql(query, params) do
+    if Process.get(:__store_executed_clickhouse_sql__, false) do
+      list = Process.get(:__executed_clickhouse_sql_list__, [])
+
+      # Interpolate the paramters inside the query so it is easy to copy-paste
+      interpolated_query =
+        Clickhousex.Codec.Values.encode(
+          %Clickhousex.Query{param_count: length(params)},
+          query,
+          params
+        )
+        |> to_string()
+
+      Process.put(:__executed_clickhouse_sql_list__, [interpolated_query | list])
+
+      :ok
+    end
+  rescue
+    _ -> :ok
   end
 end

@@ -15,7 +15,6 @@ defmodule SanbaseWeb.UserController do
         {user_id, ""} -> search_by_id(user_id)
         _ -> search_by_text(String.downcase(search_text))
       end
-      |> IO.inspect()
 
     render(conn, "index.html", users: users)
   end
@@ -33,7 +32,7 @@ defmodule SanbaseWeb.UserController do
   def reset_api_call_limits(conn, %{"id" => id}) do
     {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
 
-    Sanbase.ApiCallLimit.update_usage_db(:user, user, 0) |> IO.inspect()
+    Sanbase.ApiCallLimit.update_usage_db(:user, user, 0)
 
     render(conn, "show.html",
       user: user,

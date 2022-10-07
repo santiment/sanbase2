@@ -617,8 +617,18 @@ defmodule Sanbase.Entity do
       entity_module = deduce_entity_module(type)
 
       {:ok, data} = entity_module.by_ids(ids, [])
-      Enum.map(data, fn e -> %{type => e} end)
+
+      Enum.map(data, fn entity ->
+        %{type => transform_entity(entity)}
+      end)
     end)
+  end
+
+  defp transform_entity(entity) do
+    # Populate the `is_featured` boolean value from the `featured_item` assoc
+    is_featured = if entity.featured_item, do: true, else: false
+
+    %{entity | is_featured: is_featured}
   end
 
   defp rewrite_keys(list) do

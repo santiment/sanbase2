@@ -29,6 +29,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationTypes do
     field(:description, :string)
     field(:is_public, non_null(:boolean))
     field(:is_hidden, non_null(:boolean))
+    field(:is_featured, :boolean)
     field(:metrics, list_of(:string))
     field(:metrics_json, :json)
     field(:anomalies, list_of(:string))

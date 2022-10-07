@@ -42,7 +42,6 @@ defmodule Sanbase.UserList do
     field(:is_screener, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)
     field(:is_hidden, :boolean, default: false)
-    field(:views, :integer, virtual: true, default: 0)
 
     belongs_to(:user, User)
     belongs_to(:table_configuration, Sanbase.TableConfiguration)
@@ -54,6 +53,10 @@ defmodule Sanbase.UserList do
 
     has_many(:list_items, ListItem, on_delete: :delete_all, on_replace: :delete)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
+
+    # Virtual fields
+    field(:views, :integer, virtual: true, default: 0)
+    field(:is_featured, :boolean, virtual: true)
 
     timestamps()
   end
@@ -115,10 +118,13 @@ defmodule Sanbase.UserList do
   def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
-  def by_ids(ids, _opts) when is_list(ids) do
+  def by_ids(ids, opts) when is_list(ids) do
+    preload = Keyword.get(opts, :preload, [:featured_item])
+
     result =
       from(ul in base_query(),
         where: ul.id in ^ids,
+        preload: ^preload,
         order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
       )
       |> Repo.all()

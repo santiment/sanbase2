@@ -73,6 +73,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:description, :string)
     field(:is_public, non_null(:boolean))
     field(:is_hidden, non_null(:boolean))
+    field(:is_featured, :boolean)
     field(:is_screener, non_null(:boolean))
     field(:color, :color_enum)
     field(:function, :json)

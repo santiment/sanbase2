@@ -21,7 +21,6 @@ defmodule Sanbase.Chart.Configuration do
     field(:queries, :map, default: %{})
     field(:drawings, :map, default: %{})
     field(:options, :map, default: %{})
-    field(:views, :integer, virtual: true, default: 0)
 
     has_one(:featured_item, Sanbase.FeaturedItem,
       on_delete: :delete_all,
@@ -43,6 +42,10 @@ defmodule Sanbase.Chart.Configuration do
       foreign_key: :chart_configuration_for_event_id,
       where: [is_chart_event: true]
     )
+
+    # Virtual fields
+    field(:views, :integer, virtual: true, default: 0)
+    field(:is_featured, :boolean, virtual: true)
 
     timestamps()
   end
@@ -82,7 +85,7 @@ defmodule Sanbase.Chart.Configuration do
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(config_ids, opts) do
-    preload = Keyword.get(opts, :preload, [:chart_events])
+    preload = Keyword.get(opts, :preload, [:chart_events, :featured_item])
 
     result =
       from(

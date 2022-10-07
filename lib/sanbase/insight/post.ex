@@ -55,7 +55,6 @@ defmodule Sanbase.Insight.Post do
     field(:is_pulse, :boolean, default: false)
     field(:is_paywall_required, :boolean, default: false)
     field(:prediction, :string, default: "unspecified")
-    field(:views, :integer, virtual: true, default: 0)
 
     # Chart events are insights connected to specific chart configuration and datetime
     field(:is_chart_event, :boolean, default: false)
@@ -85,6 +84,11 @@ defmodule Sanbase.Insight.Post do
     )
 
     field(:published_at, :naive_datetime)
+
+    # Virtual fields
+    field(:views, :integer, virtual: true, default: 0)
+    field(:is_featured, :boolean, virtual: true)
+
     timestamps()
   end
 
@@ -262,10 +266,13 @@ defmodule Sanbase.Insight.Post do
   def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
-  def by_ids(post_ids, _opts) when is_list(post_ids) do
+  def by_ids(post_ids, opts) when is_list(post_ids) do
+    preload = Keyword.get(opts, :preload, [:featured_item])
+
     result =
       from(p in base_query(),
         where: p.id in ^post_ids,
+        preload: ^preload,
         order_by: fragment("array_position(?, ?::int)", ^post_ids, p.id)
       )
       |> Repo.all()

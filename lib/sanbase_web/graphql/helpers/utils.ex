@@ -74,6 +74,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
           |> Map.put(:tags, tags)
           |> Map.put(:id, ut.id)
           |> Map.put(:is_hidden, ut.is_hidden)
+          |> Map.put(:is_featured, ut.is_featured)
     }
   end
 

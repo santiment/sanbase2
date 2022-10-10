@@ -90,7 +90,7 @@ defmodule Sanbase.Mixfile do
       {:jose, "~> 1.11"},
       {:erlex, "~> 0.2.6", override: true},
       {:ethereumex, "~> 0.9"},
-      {:event_bus, "~> 1.6.0"},
+      {:event_bus, "~> 1.7.0"},
       {:ex_abi, "~> 0.5.4"},
       {:ex_admin, github: "santiment/ex_admin"},
       {:ex_aws_s3, "~> 2.0"},

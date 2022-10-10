@@ -101,8 +101,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data_per_slug(_metric, %{slug: []}, _from, _to, _interval, _opts), do: {:ok, []}
-
   def timeseries_data_per_slug(metric, %{slug: slug}, from, to, interval, opts) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
     filters = get_filters(metric, opts)

@@ -8,6 +8,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Metric.Transform
+  import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
   alias Sanbase.SocialData.SocialHelper
   alias Sanbase.Model.Project
@@ -171,6 +172,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def timeseries_data_per_slug(metric, _from, _to, _operator, _threshold, _opts) do
+    not_implemented_function_for_metric_error("timeseries_data_per_slug", metric)
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, selector, from, to, opts)
       when metric in @social_volume_timeseries_metrics or
              metric in @community_messages_count_timeseries_metrics do
@@ -216,13 +222,13 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _opts) do
-    {:error, "Slugs filtering is not implemented for Social Data."}
+  def slugs_by_filter(metric, _from, _to, _operator, _threshold, _opts) do
+    not_implemented_function_for_metric_error("slugs_by_filter", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(_metric, _from, _to, _direction, _opts) do
-    {:error, "Slugs ordering is not implemented for Social Data."}
+  def slugs_order(metric, _from, _to, _direction, _opts) do
+    not_implemented_function_for_metric_error("metric", metric)
   end
 
   @impl Sanbase.Metric.Behaviour

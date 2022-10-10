@@ -1,7 +1,9 @@
 defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
+
   import Sanbase.Metric.Transform
   import Sanbase.Metric.Utils
+  import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.Github
@@ -89,10 +91,8 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data_per_slug(metric, selector, from, to, interval, opts \\ [])
-
-  def timeseries_data_per_slug(_metric, _selector, _from, _to, _interval, _opts) do
-    {:error, "not_implemented"}
+  def timeseries_data_per_slug(metric, _selector, _from, _to, _interval, _opts) do
+    not_implemented_function_for_metric_error("timeseries_data_per_slug", metric)
   end
 
   @impl Sanbase.Metric.Behaviour

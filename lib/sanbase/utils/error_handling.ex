@@ -19,6 +19,10 @@ defmodule Sanbase.Utils.ErrorHandling do
     |> Jason.encode!()
   end
 
+  def not_implemented_function_for_metric_error(function, metric) do
+    {:error, "The #{function} function is not implemented for #{metric}"}
+  end
+
   def error_result(message, query_name \\ "query") do
     log_id = UUID.uuid4()
     Logger.error("[#{log_id}] #{message}")

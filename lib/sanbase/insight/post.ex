@@ -376,7 +376,6 @@ defmodule Sanbase.Insight.Post do
 
       {:error, error} ->
         error_message = "Cannot publish insight with id #{post_id}"
-        Logger.error("#{error_message}. Reason: #{inspect(error)}")
         {:error, error_message}
     end
   end

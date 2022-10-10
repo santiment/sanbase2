@@ -2,10 +2,17 @@ defmodule Sanbase.Project.AvailableQueriesTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
+  import Sanbase.TestHelpers
 
   alias Sanbase.Model.Project.AvailableQueries
 
   @slug_metrics ["socialGainersLosersStatus"] |> Enum.sort()
+
+  setup_all_with_mocks([
+    {Sanbase.ClickhouseRepo, [:passthrough], [query: fn _, _ -> {:ok, %{rows: []}} end]}
+  ]) do
+    []
+  end
 
   test "ethereum has specific metrics" do
     project =
@@ -34,21 +41,6 @@ defmodule Sanbase.Project.AvailableQueriesTest do
     assert "gasUsed" not in available_queries
     assert "allExchanges" in available_queries
     assert "exchangeWallets" in available_queries
-  end
-
-  test "project with slug only" do
-    # Override default values
-    project =
-      insert(:project, %{
-        slug: "santiment",
-        github_organizations: [],
-        infrastructure: nil,
-        contract_addresses: [],
-        twitter_link: nil,
-        eth_addresses: []
-      })
-
-    assert AvailableQueries.get(project) == @slug_metrics
   end
 
   test "project with slug, github, infrastructure, contract and eth addresses" do

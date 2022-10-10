@@ -102,199 +102,208 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
   end
 
   test "update blockchain address watchlist", %{user: user, conn: conn} do
-    {:ok, watchlist} =
-      UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      {:ok, watchlist} =
+        UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})
 
-    update_name = "My updated list"
-    update_description = "My updated description"
+      update_name = "My updated list"
+      update_description = "My updated description"
 
-    query = """
-    mutation {
-      updateWatchlist(
-        id: #{watchlist.id}
-        name: "#{update_name}"
-        description: "#{update_description}"
-        color: BLACK
-        listItems: [{blockchainAddress: {address: "0x123a", infrastructure: "ETH", notes: "note", labels: ["Trader", "DEX"]}}]
-        isMonitored: true
-      ) {
-        name
-        description
-        color
-        isPublic
-        isMonitored
-        user { id }
-        listItems {
-          blockchainAddress { address notes labels { name } }
+      query = """
+      mutation {
+        updateWatchlist(
+          id: #{watchlist.id}
+          name: "#{update_name}"
+          description: "#{update_description}"
+          color: BLACK
+          listItems: [{blockchainAddress: {address: "0x123a", infrastructure: "ETH", notes: "note", labels: ["Trader", "DEX"]}}]
+          isMonitored: true
+        ) {
+          name
+          description
+          color
+          isPublic
+          isMonitored
+          user { id }
+          listItems {
+            blockchainAddress { address notes labels { name } }
+          }
         }
       }
-    }
-    """
+      """
 
-    watchlist1 =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
-      |> json_response(200)
-      |> get_in(["data", "updateWatchlist"])
+      watchlist1 =
+        conn
+        |> post("/graphql", mutation_skeleton(query))
+        |> json_response(200)
+        |> get_in(["data", "updateWatchlist"])
 
-    assert watchlist1["name"] == update_name
-    assert watchlist1["description"] == update_description
-    assert watchlist1["color"] == "BLACK"
-    assert watchlist1["isPublic"] == false
-    assert watchlist1["isMonitored"] == true
+      assert watchlist1["name"] == update_name
+      assert watchlist1["description"] == update_description
+      assert watchlist1["color"] == "BLACK"
+      assert watchlist1["isPublic"] == false
+      assert watchlist1["isMonitored"] == true
 
-    assert watchlist1["listItems"] == [
-             %{
-               "blockchainAddress" => %{
-                 "address" => "0x123a",
-                 "notes" => "note",
-                 "labels" => [%{"name" => "DEX"}, %{"name" => "Trader"}]
+      assert watchlist1["listItems"] == [
+               %{
+                 "blockchainAddress" => %{
+                   "address" => "0x123a",
+                   "notes" => "note",
+                   "labels" => [%{"name" => "DEX"}, %{"name" => "Trader"}]
+                 }
                }
-             }
-           ]
+             ]
 
-    query = """
-    mutation {
-      updateWatchlist(
-        id: #{watchlist.id}
-        name: "#{update_name}"
-        description: "#{update_description}"
-        color: BLACK
-        listItems: [{blockchainAddress: {address: "0x123a", infrastructure: "ETH", notes: "note2", labels: ["Trader", "DEX"]}}]
-        isMonitored: true
-      ) {
-        name
-        description
-        color
-        isPublic
-        isMonitored
-        user { id }
-        listItems {
-          blockchainAddress { address notes labels { name } }
+      query = """
+      mutation {
+        updateWatchlist(
+          id: #{watchlist.id}
+          name: "#{update_name}"
+          description: "#{update_description}"
+          color: BLACK
+          listItems: [{blockchainAddress: {address: "0x123a", infrastructure: "ETH", notes: "note2", labels: ["Trader", "DEX"]}}]
+          isMonitored: true
+        ) {
+          name
+          description
+          color
+          isPublic
+          isMonitored
+          user { id }
+          listItems {
+            blockchainAddress { address notes labels { name } }
+          }
         }
       }
-    }
-    """
+      """
 
-    watchlist2 =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
-      |> json_response(200)
-      |> get_in(["data", "updateWatchlist"])
+      watchlist2 =
+        conn
+        |> post("/graphql", mutation_skeleton(query))
+        |> json_response(200)
+        |> get_in(["data", "updateWatchlist"])
 
-    assert watchlist2["name"] == update_name
-    assert watchlist2["description"] == update_description
-    assert watchlist2["color"] == "BLACK"
-    assert watchlist2["isPublic"] == false
-    assert watchlist2["isMonitored"] == true
+      assert watchlist2["name"] == update_name
+      assert watchlist2["description"] == update_description
+      assert watchlist2["color"] == "BLACK"
+      assert watchlist2["isPublic"] == false
+      assert watchlist2["isMonitored"] == true
 
-    assert watchlist2["listItems"] == [
-             %{
-               "blockchainAddress" => %{
-                 "address" => "0x123a",
-                 "notes" => "note2",
-                 "labels" => [%{"name" => "DEX"}, %{"name" => "Trader"}]
+      assert watchlist2["listItems"] == [
+               %{
+                 "blockchainAddress" => %{
+                   "address" => "0x123a",
+                   "notes" => "note2",
+                   "labels" => [%{"name" => "DEX"}, %{"name" => "Trader"}]
+                 }
                }
-             }
-           ]
+             ]
+    end)
   end
 
   test "update blockchain address watchlist - remove list items", %{user: user, conn: conn} do
-    {:ok, watchlist} =
-      UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      {:ok, watchlist} =
+        UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})
 
-    first_update = """
-    mutation {
-      updateWatchlist(
-        id: #{watchlist.id},
-        listItems: [{blockchainAddress: {address: "0x123a", infrastructure: "ETH"}}]
-      ) {
-        listItems {
-          blockchainAddress {
-            address
-            labels { name }
+      first_update = """
+      mutation {
+        updateWatchlist(
+          id: #{watchlist.id},
+          listItems: [{blockchainAddress: {address: "0x123a", infrastructure: "ETH"}}]
+        ) {
+          listItems {
+            blockchainAddress {
+              address
+              labels { name }
+            }
           }
         }
       }
-    }
-    """
+      """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(first_update))
-      |> json_response(200)
+      result =
+        conn
+        |> post("/graphql", mutation_skeleton(first_update))
+        |> json_response(200)
 
-    updated_watchlist = result["data"]["updateWatchlist"]
+      updated_watchlist = result["data"]["updateWatchlist"]
 
-    assert updated_watchlist["listItems"] == [
-             %{
-               "blockchainAddress" => %{
-                 "address" => "0x123a",
-                 "labels" => []
+      assert updated_watchlist["listItems"] == [
+               %{
+                 "blockchainAddress" => %{
+                   "address" => "0x123a",
+                   "labels" => []
+                 }
                }
-             }
-           ]
+             ]
 
-    second_update = """
-    mutation {
-      updateWatchlist(
-        id: #{watchlist.id},
-        listItems: []
-      ) {
-        listItems {
-          blockchainAddress {
-            address
+      second_update = """
+      mutation {
+        updateWatchlist(
+          id: #{watchlist.id},
+          listItems: []
+        ) {
+          listItems {
+            blockchainAddress {
+              address
+            }
           }
         }
       }
-    }
-    """
+      """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(second_update))
+      result =
+        conn
+        |> post("/graphql", mutation_skeleton(second_update))
 
-    updated_watchlist2 = json_response(result, 200)["data"]["updateWatchlist"]
-    assert updated_watchlist2["listItems"] == []
+      updated_watchlist2 = json_response(result, 200)["data"]["updateWatchlist"]
+      assert updated_watchlist2["listItems"] == []
+    end)
   end
 
   test "update blockchain address watchlist - without list items", %{user: user, conn: conn} do
-    {:ok, watchlist} =
-      UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      {:ok, watchlist} =
+        UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})
 
-    update_name = "My updated list"
+      update_name = "My updated list"
 
-    query = """
-    mutation {
-      updateWatchlist(
-        id: #{watchlist.id},
-        name: "#{update_name}",
-        color: BLACK,
-      ) {
-        name,
-        color,
-        is_public,
-        user {
-          id
-        },
-        listItems {
-          blockchainAddress {
-            address
+      query = """
+      mutation {
+        updateWatchlist(
+          id: #{watchlist.id},
+          name: "#{update_name}",
+          color: BLACK,
+        ) {
+          name,
+          color,
+          is_public,
+          user {
+            id
+          },
+          listItems {
+            blockchainAddress {
+              address
+            }
           }
         }
       }
-    }
-    """
+      """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
+      result =
+        conn
+        |> post("/graphql", mutation_skeleton(query))
 
-    updated_watchlist = json_response(result, 200)["data"]["updateWatchlist"]
-    assert updated_watchlist["name"] == update_name
-    assert updated_watchlist["color"] == "BLACK"
-    assert updated_watchlist["is_public"] == false
-    assert updated_watchlist["listItems"] == []
+      updated_watchlist = json_response(result, 200)["data"]["updateWatchlist"]
+      assert updated_watchlist["name"] == update_name
+      assert updated_watchlist["color"] == "BLACK"
+      assert updated_watchlist["is_public"] == false
+      assert updated_watchlist["listItems"] == []
+    end)
   end
 
   test "cannot update not own watchlist", %{user2: user2, conn: conn} do

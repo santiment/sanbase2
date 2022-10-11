@@ -1,5 +1,5 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, maybe_str_to_sec: 1]
+  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Metric.SqlQuery.Helper, only: [to_unix_timestamp: 3, dt_to_unix: 2]
 
   alias Sanbase.Clickhouse.MetricAdapter.FileHandler

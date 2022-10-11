@@ -210,6 +210,19 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
+  def by_id(user_ids) when is_list(user_ids) do
+    users =
+      from(
+        u in __MODULE__,
+        where: u.id in ^user_ids,
+        order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id),
+        preload: [:eth_accounts, :user_settings]
+      )
+      |> Repo.all()
+
+    {:ok, users}
+  end
+
   def by_search_text(search_text) do
     search_text = "%" <> search_text <> "%"
 
@@ -228,19 +241,6 @@ defmodule Sanbase.Accounts.User do
       limit: 10
     )
     |> Repo.all()
-  end
-
-  def by_id(user_ids) when is_list(user_ids) do
-    users =
-      from(
-        u in __MODULE__,
-        where: u.id in ^user_ids,
-        order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id),
-        preload: [:eth_accounts, :user_settings]
-      )
-      |> Repo.all()
-
-    {:ok, users}
   end
 
   def by_email(email) when is_binary(email) do

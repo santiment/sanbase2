@@ -4,8 +4,8 @@ defmodule SanbaseWeb.UserController do
   alias Sanbase.Accounts.User
   alias SanbaseWeb.Router.Helpers, as: Routes
 
-  def index(conn, users) do
-    users = users || User.all_users()
+  def index(conn, _params) do
+    users = User.all_users()
     render(conn, "index.html", users: users)
   end
 
@@ -133,11 +133,10 @@ defmodule SanbaseWeb.UserController do
   end
 
   defp string_fields(module) do
-    fields =
-      module
-      |> fields()
+    module
+    |> fields()
 
     # |> Enum.filter(fn field -> module.__schema__(:type, field) in [:string, :naive_datetime, :utc_datetime] end)
-    # [:id] ++ fields
+    # |> List.insert_at(0, [:id])
   end
 end

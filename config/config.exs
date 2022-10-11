@@ -4,6 +4,10 @@ import Config
 # Disable the autoupdate until it is fixed
 config :tzdata, :autoupdate, :disabled
 
+config :event_bus,
+  # Otherwise the `Base62` is reported as undefined
+  id_generator: EventBus.Util.Base62
+
 # General application configuration
 config :sanbase,
   env: Mix.env(),

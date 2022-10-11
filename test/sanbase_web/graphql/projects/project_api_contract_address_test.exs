@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjectApiContractAddressTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase, async: true
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
@@ -25,7 +25,17 @@ defmodule SanbaseWeb.Graphql.ProjectApiContractAddressTest do
       }
     } = get_projects_contract_addresses(conn)
 
-    result = Enum.sort_by(result, & &1["slug"])
+    sorter = fn list ->
+      list
+      |> Enum.sort_by(& &1["slug"])
+      |> Enum.map(fn project ->
+        contracts = project["contractAddresses"] |> Enum.sort_by(& &1["address"])
+
+        Map.put(project, "contractAddresses", contracts)
+      end)
+    end
+
+    result = sorter.(result)
 
     expected_result =
       Enum.map([p1, p2, p3], fn project ->
@@ -42,7 +52,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiContractAddressTest do
             end)
         }
       end)
-      |> Enum.sort_by(& &1["slug"])
+      |> sorter.()
 
     assert result == expected_result
   end

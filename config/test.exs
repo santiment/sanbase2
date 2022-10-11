@@ -34,6 +34,7 @@ config :tesla, adapter: Tesla.Mock
 config :tesla, Tesla.Middleware.Logger, debug: false
 
 config :sanbase, Sanbase.KafkaExporter,
+  can_send_after_interval: 0,
   supervisor: Sanbase.InMemoryKafka.Supervisor,
   producer: Sanbase.InMemoryKafka.Producer
 

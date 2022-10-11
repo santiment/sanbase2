@@ -2,6 +2,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Utils.Transform
+  import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
   alias Sanbase.Transfers.Erc20Transfers
 
@@ -44,33 +45,25 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(_metric, _selector, _from, _to, _interval, _opts) do
-    {:error, "Timeseries data is not implemented for uniswap metrics."}
+  def timeseries_data(metric, _selector, _from, _to, _interval, _opts) do
+    not_implemented_function_for_metric_error("timeseries_data_per_slug", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def histogram_data("uniswap_top_claimers", %{slug: "uniswap"}, from, to, _interval, limit) do
-    query = """
-    SELECT
-      to AS address,
-      amount AS value
-    FROM (
-      SELECT
-        to,
-        SUM(value)/1e18 AS amount
-      FROM #{address_ordered_table()} FINAL
-      PREWHERE
-        assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = 'uniswap' LIMIT 1) AND
-        from = '0x090d4613473dee047c3f2706764f49e0821d256e' AND
-        dt >= toDateTime(?1) AND
-        dt < toDateTime(?2)
-      GROUP BY to
-      ORDER BY amount DESC
-      LIMIT ?3
-    )
-    """
+  def timeseries_data_per_slug(metric, _selector, _from, _to, _interval, _opts) do
+    not_implemented_function_for_metric_error("timeseries_data_per_slug", metric)
+  end
 
-    args = [from |> DateTime.to_unix(), to |> DateTime.to_unix(), limit]
+  @impl Sanbase.Metric.Behaviour
+  def histogram_data(
+        "uniswap_top_claimers" = metric,
+        %{slug: "uniswap"} = selector,
+        from,
+        to,
+        interval,
+        limit
+      ) do
+    {query, args} = histogram_data_query(metric, selector, from, to, interval, limit)
 
     Sanbase.ClickhouseRepo.query_transform(query, args, fn [address, value] ->
       %{address: address, value: value}
@@ -80,18 +73,18 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data(_metric, _selector, _from, _to, _opts) do
-    {:error, "Aggregated timeseries data is not implemented for uniswap metrics."}
+  def aggregated_timeseries_data(metric, _selector, _from, _to, _opts) do
+    not_implemented_function_for_metric_error("aggregated_timeseries_data", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _opts) do
-    {:error, "Slugs filtering is not implemented for uniswap metrics."}
+  def slugs_by_filter(metric, _from, _to, _operator, _threshold, _opts) do
+    not_implemented_function_for_metric_error("slugs_by_filter", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(_metric, _from, _to, _direction, _opts) do
-    {:error, "Slugs ordering is not implemented for uniswap metrics."}
+  def slugs_order(metric, _from, _to, _direction, _opts) do
+    not_implemented_function_for_metric_error("slugs_order", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -197,4 +190,37 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   end
 
   defp maybe_add_balances({:error, error}, _from, _to), do: {:error, error}
+
+  defp histogram_data_query(
+         "uniswap_top_claimers",
+         %{slug: "uniswap"},
+         from,
+         to,
+         _interval,
+         limit
+       ) do
+    query = """
+    SELECT
+      to AS address,
+      amount AS value
+    FROM (
+      SELECT
+        to,
+        SUM(value)/1e18 AS amount
+      FROM #{address_ordered_table()} FINAL
+      PREWHERE
+        assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = 'uniswap' LIMIT 1) AND
+        from = '0x090d4613473dee047c3f2706764f49e0821d256e' AND
+        dt >= toDateTime(?1) AND
+        dt < toDateTime(?2)
+      GROUP BY to
+      ORDER BY amount DESC
+      LIMIT ?3
+    )
+    """
+
+    args = [from |> DateTime.to_unix(), to |> DateTime.to_unix(), limit]
+
+    {query, args}
+  end
 end

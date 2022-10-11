@@ -1,5 +1,8 @@
 defmodule Sanbase.Twitter.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
+
+  import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
+
   alias Sanbase.Model.Project
 
   @aggregations [:last]
@@ -51,25 +54,23 @@ defmodule Sanbase.Twitter.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data_per_slug(metric, selector, from, to, interval, opts \\ [])
-
-  def timeseries_data_per_slug("twitter_followers", _selector, _from, _to, _interval, _opts) do
-    {:error, "not_implemented"}
+  def timeseries_data_per_slug(metric, _selector, _from, _to, _interval, _opts) do
+    not_implemented_function_for_metric_error("timeseries_data_per_slug", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data("twitter_followers", %{slug: _slug}, _from, _to, _opts) do
-    {:error, "not_implemented"}
+  def aggregated_timeseries_data(metric, _selector, _from, _to, _opts) do
+    not_implemented_function_for_metric_error("aggregated_timeseries_data", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _opts) do
-    {:error, "Slugs filtering is not implemented for twitter data."}
+  def slugs_by_filter(metric, _from, _to, _operator, _threshold, _opts) do
+    not_implemented_function_for_metric_error("slugs_by_filter", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(_metric, _from, _to, _direction, _opts) do
-    {:error, "Slugs ordering is not implemented for twitter data."}
+  def slugs_order(metric, _from, _to, _direction, _opts) do
+    not_implemented_function_for_metric_error("slugs_order", metric)
   end
 
   @impl Sanbase.Metric.Behaviour

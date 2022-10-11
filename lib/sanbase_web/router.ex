@@ -67,6 +67,8 @@ defmodule SanbaseWeb.Router do
     resources("/webinars", WebinarController)
     resources("/custom_plans", CustomPlanController)
     resources("/users", UserController)
+    resources("/generic", GenericController)
+    post("/generic/search", GenericController, :search)
   end
 
   scope "/" do

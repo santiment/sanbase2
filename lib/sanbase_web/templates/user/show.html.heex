@@ -19,6 +19,13 @@
   <span><%= link "Edit", to: Routes.user_path(@conn, :edit, @user), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"%></span>
   <span><%= link "Back", to: Routes.user_path(@conn, :index), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded" %></span>
 
+
+
+  <%= for table <- @has_many do %>
+    <SanbaseWeb.TableComponent.table model={table.model} rows={table.rows} fields={table.fields} funcs={table.funcs} />
+  <% end %>
+
+
   <%= for bt <- @belongs_to do %>
     <div class="mt-4">
       <h3 class="text-3xl font-medium text-gray-700"><%= bt.name %></h3>
@@ -36,9 +43,4 @@
     </div>
   <% end %>
 
-
-
-  <%= for table <- @has_many do %>
-    <SanbaseWeb.TableComponent.table model={table.model} rows={table.rows} fields={table.fields} funcs={table.funcs} />
-  <% end %>
 </div>

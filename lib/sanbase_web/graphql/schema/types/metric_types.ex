@@ -368,6 +368,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     """
     field(:data_type, :metric_data_type)
 
+    field(:is_timebound, :boolean)
+
     field(:is_accessible, :boolean)
 
     field(:is_restricted, :boolean)

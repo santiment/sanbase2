@@ -109,6 +109,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
        available_selectors: [:slug],
        required_selectors: [:slug],
        data_type: :timeseries,
+       is_timebound: false,
        complexity_weight: @default_complexity_weight
      }}
   end

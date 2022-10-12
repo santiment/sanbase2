@@ -86,6 +86,7 @@ defmodule Sanbase.Signal.SignalAdapter do
        available_aggregations: @aggregations,
        available_selectors: Map.get(@selectors_map, signal),
        data_type: Map.get(@data_type_map, signal),
+       is_timebound: false,
        complexity_weight: 0.3
      }}
   end

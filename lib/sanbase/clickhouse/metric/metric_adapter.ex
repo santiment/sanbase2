@@ -38,6 +38,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @required_selectors_map FileHandler.required_selectors_map()
   @metric_to_names_map FileHandler.metric_to_names_map()
   @deprecated_metrics_map FileHandler.deprecated_metrics_map()
+  @timebound_flag_map FileHandler.timebound_flag_map()
   @default_complexity_weight 0.3
 
   @incomplete_metrics Enum.filter(@incomplete_data_map, &(elem(&1, 1) == true))
@@ -182,6 +183,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
        available_selectors: Map.get(@selectors_map, metric),
        required_selectors: Map.get(@required_selectors_map, metric, []),
        data_type: Map.get(@metrics_data_type_map, metric),
+       is_timebound: Map.get(@timebound_flag_map, metric),
        complexity_weight: @default_complexity_weight
      }}
   end

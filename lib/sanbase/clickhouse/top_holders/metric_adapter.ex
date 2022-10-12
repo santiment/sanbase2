@@ -130,6 +130,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
        available_selectors: [:slug, :holders_count],
        required_selectors: [:slug],
        data_type: data_type,
+       is_timebound: false,
        complexity_weight: @default_complexity_weight
      }}
   end

@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.Cache do
             cache_modify_middleware: 3,
             cache_key: 2,
             convert_values: 2,
-            generate_additional_args: 1}
+            generate_source_args: 1}
 
   def child_spec(opts) do
     CacheProvider.child_spec(opts)
@@ -137,9 +137,16 @@ defmodule SanbaseWeb.Graphql.Cache do
         # in order to properly cache timeseries data in the query
         # {getMetric(metric: "nvt") {timeseriesData(...)}}
         # the key must include `metric` from the parent's args
-        args_from_source = generate_additional_args(resolution.source)
+        args_from_source = generate_source_args(resolution.source)
 
-        cache_key = cache_key({name, additional_args, args_from_source}, args, opts)
+        # If the `include_subscription_in_key: true` option is present, include
+        # the current product and plan as part of the cache key. This is useful
+        # when the result depends on the subscription of the user. This includes
+        # getting restrictions for metrics and other such things.
+        args_from_subscription = generate_subscription_args(resolution.context, opts)
+
+        cache_key =
+          cache_key({name, additional_args, args_from_source, args_from_subscription}, args, opts)
 
         # In some edge-cases the caching can be disabled for some reason. In one
         # particular case for all_projects_by_function the caching is disabled
@@ -158,12 +165,22 @@ defmodule SanbaseWeb.Graphql.Cache do
     end
   end
 
-  defp generate_additional_args(data) do
-    case data do
+  defp generate_subscription_args(context, opts) do
+    case Keyword.get(opts, :include_subscription_in_key, false) do
+      false ->
+        []
+
+      true ->
+        [plan: get_in(context, [:auth, :plan]), product_id: get_in(context, [:product_id])]
+    end
+  end
+
+  defp generate_source_args(source) do
+    case source do
       %{id: id} -> id
       %{slug: slug} -> slug
       %{word: word} -> word
-      _ -> data
+      _ -> source
     end
   end
 

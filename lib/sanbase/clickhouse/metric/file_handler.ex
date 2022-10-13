@@ -62,15 +62,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     end
 
     def expand_timebound_metrics(metrics_json_pre_timebound_expand) do
+      put_timebound = fn list, bool -> list |> Enum.map(&Map.put(&1, "is_timebound", bool)) end
+
       Enum.flat_map(
         metrics_json_pre_timebound_expand,
         fn metric ->
           case Map.get(metric, "timebound") do
             nil ->
-              [metric]
+              [metric] |> put_timebound.(false)
 
             timebound_values ->
               resolve_timebound_metrics(metric, timebound_values)
+              |> put_timebound.(true)
           end
         end
       )
@@ -235,6 +238,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)
 
+  @timebound_flag_map @metrics_json |> Map.new(&{&1["name"], &1["is_timebound"]})
+
   case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
     [] ->
       :ok
@@ -263,6 +268,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   def required_selectors_map(), do: @required_selectors_map
   def metrics_label_map(), do: @metrics_label_map
   def deprecated_metrics_map(), do: @deprecated_metrics_map
+  def timebound_flag_map(), do: @timebound_flag_map
 
   def metrics_with_access(level) when level in [:free, :restricted] do
     @access_map

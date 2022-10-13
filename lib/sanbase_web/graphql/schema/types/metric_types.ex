@@ -368,6 +368,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     """
     field(:data_type, :metric_data_type)
 
+    field(:is_timebound, :boolean)
+
     field(:is_accessible, :boolean)
 
     field(:is_restricted, :boolean)
@@ -625,7 +627,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     end
 
     field :metadata, :metric_metadata do
-      cache_resolve(&MetricResolver.get_metadata/3)
+      cache_resolve(&MetricResolver.get_metadata/3, include_subscription_in_key: true)
     end
 
     @desc ~s"""

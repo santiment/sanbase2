@@ -2,6 +2,7 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2, rename_map_keys: 2]
+  import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
   alias Sanbase.Balance
   alias Sanbase.Model.Project
@@ -129,6 +130,7 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
        available_selectors: [:blockchain_address, :slug],
        required_selectors: Map.get(@required_selectors, metric, []),
        data_type: :timeseries,
+       is_timebound: false,
        complexity_weight: @default_complexity_weight
      }}
   end
@@ -178,8 +180,13 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def timeseries_data_per_slug(metric, _selector, _from, _to, _interval, _opts) do
+    not_implemented_function_for_metric_error("timeseries_data_per_slug", metric)
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, _selector, _from, _to, _opts) do
-    not_implemented_error("aggregated timeseries data", metric)
+    not_implemented_function_for_metric_error("aggregated_timeseries_data", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -189,16 +196,11 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def addresses_by_filter(metric, _selector, _operator, _threshold, _opts) do
-    not_implemented_error("addresses_by_filter", metric)
+    not_implemented_function_for_metric_error("addresses_by_filter", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
   def addresses_order(metric, _selector, _direction, _opts) do
-    not_implemented_error("addresses_order", metric)
-  end
-
-  # Private functions
-  defp not_implemented_error(function, metric) do
-    {:error, "The #{function} function is not implemented for #{metric}"}
+    not_implemented_function_for_metric_error("addresses_order", metric)
   end
 end

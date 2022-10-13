@@ -103,6 +103,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
           dataType
           metric
           humanReadableName
+          isTimebound
           isRestricted
           restrictedFrom
           restrictedTo

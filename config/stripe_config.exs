@@ -12,5 +12,6 @@ config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook,
 config :sanbase, Sanbase.Billing.DiscordNotification,
   payments_webhook_url: {:system, "STRIPE_PAYMENT_DISCORD_WEBHOOK"},
   failed_payments_webhook_url: {:system, "STRIPE_FAILED_PAYMENT_DISCORD_WEBHOOK"},
-  bug_report_webhook_url: {:system, "BUG_REPORT_DISCORD_WEBHOOK"},
+  payment_action_required_webhook_url:
+    {:system, "STRIPE_PAYMENT_ACTION_REQUIRED_DISCORD_WEBHOOK"},
   publish_user: {:system, "STRIPE_PAYMENT_DISCORD_PUBLISH_USER", "Stripe Payments Bot"}

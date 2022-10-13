@@ -64,7 +64,7 @@ defmodule Sanbase.Billing.DiscordNotification do
     Event: https://dashboard.stripe.com/events/#{stripe_event_id}
     """
 
-    do_send_to_discord(message, "Stripe Payment", webhook: "bug_report")
+    do_send_to_discord(message, "Stripe Payment", webhook: "payment-action-required")
   end
 
   def handle_event(:cancel_subscription, %{
@@ -123,7 +123,7 @@ defmodule Sanbase.Billing.DiscordNotification do
       case Keyword.get(opts, :webhook, "payments") do
         "payments" -> payments_webhook_url()
         "failed_payments" -> failed_payments_webhook_url()
-        "bug_report" -> bug_report_webhook_url()
+        "payment-action-required" -> payment_action_required_webhook_url()
       end
 
     Discord.send_notification(webhook_url, title, payload)
@@ -263,8 +263,8 @@ defmodule Sanbase.Billing.DiscordNotification do
   defp payments_webhook_url(), do: Config.get(:payments_webhook_url)
   defp failed_payments_webhook_url(), do: Config.get(:failed_payments_webhook_url)
 
-  defp bug_report_webhook_url(),
-    do: Config.get(:bug_report_webhook_url) || failed_payments_webhook_url()
+  defp payment_action_required_webhook_url(),
+    do: Config.get(:payment_action_required_webhook_url) || failed_payments_webhook_url()
 
   defp publish_user(), do: Config.get(:publish_user)
 end

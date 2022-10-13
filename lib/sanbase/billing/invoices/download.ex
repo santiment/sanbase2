@@ -24,7 +24,7 @@ defmodule Sanbase.Billing.Invoices.Download do
     invoices =
       invoices
       |> Enum.map(fn inv ->
-        label = if inv.starting_balance == 0, do: "fiat", else: "crypto"
+        # label = if inv.starting_balance == 0, do: "fiat", else: "crypto"
         url = inv.invoice_pdf
         IO.puts("#{year}_#{month} fetching url: #{url}")
 

@@ -109,6 +109,7 @@ defmodule Sanbase.Contract.MetricAdapter do
        available_selectors: [:contract_address],
        required_selectors: [:contract_address],
        data_type: :timeseries,
+       is_timebound: false,
        complexity_weight: @default_complexity_weight
      }}
   end

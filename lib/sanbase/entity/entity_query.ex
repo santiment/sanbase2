@@ -56,8 +56,11 @@ defmodule Sanbase.Entity.Query do
 
   @spec maybe_filter_is_hidden(Ecto.Query.t(), Sanbase.Entity.opts()) :: Ecto.Query.t()
   def maybe_filter_is_hidden(query, opts) do
-    default_value =
-      if Keyword.get(opts, :is_moderator), do: :hidden_and_not_hidden, else: :only_not_hidden
+    default_value = Keyword.get(opts, :show_hidden_option, :only_not_hidden)
+
+    # Use this when we introduce a special tab that will be seen by moderators
+    # and will be used to undo these actions
+    # default_value = if Keyword.get(opts, :is_moderator), do: :hidden_and_not_hidden, else: :only_not_hidden
 
     case Keyword.get(opts, :show_hidden_entities, default_value) do
       :only_not_hidden ->

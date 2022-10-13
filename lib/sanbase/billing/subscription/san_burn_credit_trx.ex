@@ -4,7 +4,6 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
   require Logger
 
   import Ecto.Changeset
-  import Ecto.Query
 
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Accounts.EthAccount

@@ -15,7 +15,12 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
     conn = setup_jwt_auth(build_conn(), user)
     moderator_conn = setup_jwt_auth(build_conn(), moderator_user)
 
-    %{conn: conn, moderator_conn: moderator_conn, user: user, moderator_user: moderator_user}
+    %{
+      conn: conn,
+      moderator_conn: moderator_conn,
+      user: user,
+      moderator_user: moderator_user
+    }
   end
 
   describe "set deleted" do
@@ -243,7 +248,9 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
              } = get_most_recent(conn, :insight)
     end
 
-    test "moderators can still see hidden content", %{moderator_conn: moderator_conn} do
+    test "moderators can still see hidden content", %{
+      moderator_conn: moderator_conn
+    } do
       # The hidden content is visible to moderators, so hidding it results only
       # in setting the `is_hidden` flag to `true`
 
@@ -256,7 +263,10 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
                "data" => [
                  %{
                    "userTrigger" => %{
-                     "trigger" => %{"id" => ^user_trigger_id, "isHidden" => false}
+                     "trigger" => %{
+                       "id" => ^user_trigger_id,
+                       "isHidden" => false
+                     }
                    }
                  }
                ],
@@ -274,18 +284,12 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       SanbaseWeb.Graphql.Cache.clear_all()
 
       assert %{
-               "data" => [
-                 %{
-                   "userTrigger" => %{
-                     "trigger" => %{"id" => ^user_trigger_id, "isHidden" => true}
-                   }
-                 }
-               ],
+               "data" => [],
                "stats" => %{
                  "currentPage" => 1,
                  "currentPageSize" => 10,
-                 "totalEntitiesCount" => 1,
-                 "totalPagesCount" => 1
+                 "totalEntitiesCount" => 0,
+                 "totalPagesCount" => 0
                }
              } = get_most_recent(moderator_conn, :user_trigger)
 
@@ -307,42 +311,12 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       |> post("/graphql", mutation_skeleton(mutation))
       |> json_response(200)
     end
-
-    defp get_most_recent(conn, entity_or_entities, opts \\ []) do
-      opts =
-        opts
-        |> Keyword.put_new(:page, 1)
-        |> Keyword.put_new(:page_size, 10)
-        |> Keyword.put_new(:types, List.wrap(entity_or_entities))
-        |> Keyword.put_new(:min_title_length, 0)
-        |> Keyword.put_new(:min_description_length, 0)
-
-      query = """
-      {
-        getMostRecent(#{map_to_args(Map.new(opts))}){
-          stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
-          data {
-            insight{ id isHidden }
-            projectWatchlist{ id isHidden }
-            addressWatchlist{ id isHidden }
-            screener{ id isHidden }
-            chartConfiguration{ id isHidden }
-            userTrigger{ trigger{ id isHidden } }
-          }
-        }
-      }
-      """
-
-      conn
-      |> post("/graphql", query_skeleton(query))
-      |> json_response(200)
-      |> get_in(["data", "getMostRecent"])
-    end
   end
 
   describe "set featured" do
     test "insight", %{moderator_conn: moderator_conn} do
       insight = insert(:published_post)
+      insight_id = insight.id
 
       featured_insights = fn ->
         query = "{ featuredInsights{ id } }"
@@ -355,15 +329,28 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
 
       assert featured_insights.() == []
 
+      assert %{
+               "data" => [
+                 %{"insight" => %{"id" => ^insight_id, "isFeatured" => false}}
+               ]
+             } = get_most_recent(moderator_conn, :insight)
+
       assert moderate_featured(moderator_conn, :insight, insight.id) == true
 
       SanbaseWeb.Graphql.Cache.clear_all()
+
+      assert %{
+               "data" => [
+                 %{"insight" => %{"id" => ^insight_id, "isFeatured" => true}}
+               ]
+             } = get_most_recent(moderator_conn, :insight)
 
       assert featured_insights.() == [%{"id" => insight.id}]
     end
 
     test "watchlist", %{moderator_conn: moderator_conn} do
       watchlist = insert(:watchlist, is_public: true, type: :project)
+      watchlist_id = watchlist.id |> to_string()
 
       featured_watchlists = fn ->
         query = "{ featuredWatchlists(type: PROJECT){ id } }"
@@ -376,15 +363,39 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
 
       assert featured_watchlists.() == []
 
-      assert moderate_featured(moderator_conn, :project_watchlist, watchlist.id) == true
+      assert %{
+               "data" => [
+                 %{
+                   "projectWatchlist" => %{
+                     "id" => ^watchlist_id,
+                     "isFeatured" => false
+                   }
+                 }
+               ]
+             } = get_most_recent(moderator_conn, :project_watchlist)
+
+      assert moderate_featured(moderator_conn, :project_watchlist, watchlist.id) ==
+               true
 
       SanbaseWeb.Graphql.Cache.clear_all()
+
+      assert %{
+               "data" => [
+                 %{
+                   "projectWatchlist" => %{
+                     "id" => ^watchlist_id,
+                     "isFeatured" => true
+                   }
+                 }
+               ]
+             } = get_most_recent(moderator_conn, :project_watchlist)
 
       assert featured_watchlists.() == [%{"id" => "#{watchlist.id}"}]
     end
 
     test "chart configuration", %{moderator_conn: moderator_conn} do
       config = insert(:chart_configuration, is_public: true)
+      config_id = config.id
 
       featured_configs = fn ->
         query = "{ featuredChartConfigurations{ id } }"
@@ -397,15 +408,39 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
 
       assert featured_configs.() == []
 
-      assert moderate_featured(moderator_conn, :chart_configuration, config.id) == true
+      assert %{
+               "data" => [
+                 %{
+                   "chartConfiguration" => %{
+                     "id" => ^config_id,
+                     "isFeatured" => false
+                   }
+                 }
+               ]
+             } = get_most_recent(moderator_conn, :chart_configuration)
+
+      assert moderate_featured(moderator_conn, :chart_configuration, config.id) ==
+               true
 
       SanbaseWeb.Graphql.Cache.clear_all()
+
+      assert %{
+               "data" => [
+                 %{
+                   "chartConfiguration" => %{
+                     "id" => ^config_id,
+                     "isFeatured" => true
+                   }
+                 }
+               ]
+             } = get_most_recent(moderator_conn, :chart_configuration)
 
       assert featured_configs.() == [%{"id" => config.id}]
     end
 
     test "user trigger", %{moderator_conn: moderator_conn} do
       user_trigger = insert(:user_trigger, is_public: true)
+      user_trigger_id = user_trigger.id
 
       featured_triggers = fn ->
         query = "{ featuredUserTriggers{ trigger{ id } } }"
@@ -418,11 +453,40 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
 
       assert featured_triggers.() == []
 
-      assert moderate_featured(moderator_conn, :user_trigger, user_trigger.id) == true
+      assert %{
+               "data" => [
+                 %{
+                   "userTrigger" => %{
+                     "trigger" => %{
+                       "id" => ^user_trigger_id,
+                       "isFeatured" => false
+                     }
+                   }
+                 }
+               ]
+             } = get_most_recent(moderator_conn, :user_trigger)
+
+      assert moderate_featured(moderator_conn, :user_trigger, user_trigger.id) ==
+               true
 
       SanbaseWeb.Graphql.Cache.clear_all()
 
-      assert featured_triggers.() == [%{"trigger" => %{"id" => user_trigger.id}}]
+      assert %{
+               "data" => [
+                 %{
+                   "userTrigger" => %{
+                     "trigger" => %{
+                       "id" => ^user_trigger_id,
+                       "isFeatured" => true
+                     }
+                   }
+                 }
+               ]
+             } = get_most_recent(moderator_conn, :user_trigger)
+
+      assert featured_triggers.() == [
+               %{"trigger" => %{"id" => user_trigger.id}}
+             ]
     end
 
     defp moderate_featured(conn, entity_type, entity_id) do
@@ -441,5 +505,36 @@ defmodule SanbaseWeb.Graphql.EntityModerationApiTest do
       |> json_response(200)
       |> get_in(["data", "moderateFeatured"])
     end
+  end
+
+  defp get_most_recent(conn, entity_or_entities, opts \\ []) do
+    opts =
+      opts
+      |> Keyword.put_new(:page, 1)
+      |> Keyword.put_new(:page_size, 10)
+      |> Keyword.put_new(:types, List.wrap(entity_or_entities))
+      |> Keyword.put_new(:min_title_length, 0)
+      |> Keyword.put_new(:min_description_length, 0)
+
+    query = """
+    {
+      getMostRecent(#{map_to_args(Map.new(opts))}){
+        stats { currentPage currentPageSize totalPagesCount totalEntitiesCount }
+        data {
+          insight{ id isHidden isFeatured }
+          projectWatchlist{ id isHidden isFeatured }
+          addressWatchlist{ id isHidden isFeatured }
+          screener{ id isHidden isFeatured }
+          chartConfiguration{ id isHidden isFeatured }
+          userTrigger{ trigger{ id isHidden isFeatured } }
+        }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", "getMostRecent"])
   end
 end

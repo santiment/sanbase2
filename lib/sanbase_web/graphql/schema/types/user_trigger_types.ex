@@ -47,6 +47,7 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
     field(:is_active, non_null(:boolean))
     field(:is_repeating, non_null(:boolean))
     field(:is_frozen, non_null(:boolean))
+    field(:is_featured, :boolean)
   end
 
   object :alerts_stats do

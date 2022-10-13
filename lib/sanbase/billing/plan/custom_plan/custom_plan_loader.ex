@@ -77,7 +77,7 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
   end
 
   defp put_data(plan_name, product_code, data) do
-    :persistent_term.put({__MODULE__, plan_name}, data)
+    :persistent_term.put({__MODULE__, plan_name, product_code}, data)
   end
 
   defp resolve_metrics(%CustomPlan.Restrictions{} = restrictions) do

@@ -4,7 +4,7 @@ defmodule SanbaseWeb.UserController do
   alias Sanbase.Accounts.User
   alias SanbaseWeb.Router.Helpers, as: Routes
 
-  def index(conn, users) do
+  def index(conn, _params) do
     users = User.all_users()
     render(conn, "index.html", users: users)
   end
@@ -15,7 +15,6 @@ defmodule SanbaseWeb.UserController do
         {user_id, ""} -> search_by_id(user_id)
         _ -> search_by_text(String.downcase(search_text))
       end
-      |> IO.inspect()
 
     render(conn, "index.html", users: users)
   end
@@ -26,20 +25,58 @@ defmodule SanbaseWeb.UserController do
     render(conn, "show.html",
       user: user,
       string_fields: string_fields(User),
-      belongs_to: belongs_to(user)
+      belongs_to: belongs_to(user),
+      has_many: has_many(user)
     )
   end
 
   def reset_api_call_limits(conn, %{"id" => id}) do
     {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
 
-    Sanbase.ApiCallLimit.update_usage_db(:user, user, 0) |> IO.inspect()
+    Sanbase.ApiCallLimit.update_usage_db(:user, user, 0)
 
-    render(conn, "show.html",
-      user: user,
-      string_fields: string_fields(User),
-      belongs_to: belongs_to(user)
-    )
+    show(conn, %{"id" => user.id})
+  end
+
+  def has_many(user) do
+    user =
+      user |> Sanbase.Repo.preload([:eth_accounts, :posts, subscriptions: [plan: [:product]]])
+
+    [
+      %{
+        model: "Subscriptions",
+        rows: user.subscriptions,
+        fields: [:id, :plan, :status],
+        funcs: %{
+          plan: fn s -> s.plan.product.name <> "/" <> s.plan.name end
+        }
+      },
+      %{
+        model: "Eth Accounts",
+        rows: user.eth_accounts,
+        fields: [:id, :address, :san_balance],
+        funcs: %{
+          plan: fn eth_account ->
+            case Sanbase.Accounts.EthAccount.san_balance(eth_account) do
+              :error -> 0.0
+              san_balance -> san_balance
+            end
+          end
+        }
+      },
+      %{
+        model: "Last 10 Published Insights",
+        rows: Sanbase.Insight.Post.user_public_insights(user.id, page: 1, page_size: 10),
+        fields: [:id, :title],
+        funcs: %{}
+      },
+      %{
+        model: "Apikey tokens",
+        rows: Sanbase.Accounts.UserApikeyToken.user_tokens_structs(user) |> elem(1),
+        fields: [:id, :token],
+        funcs: %{}
+      }
+    ]
   end
 
   def belongs_to(user) do
@@ -96,11 +133,10 @@ defmodule SanbaseWeb.UserController do
   end
 
   defp string_fields(module) do
-    fields =
-      module
-      |> fields()
+    module
+    |> fields()
 
     # |> Enum.filter(fn field -> module.__schema__(:type, field) in [:string, :naive_datetime, :utc_datetime] end)
-    # [:id] ++ fields
+    # |> List.insert_at(0, [:id])
   end
 end

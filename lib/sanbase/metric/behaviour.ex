@@ -244,7 +244,6 @@ defmodule Sanbase.Metric.Behaviour do
   @optional_callbacks [
     histogram_data: 6,
     table_data: 5,
-    timeseries_data_per_slug: 6,
     deprecated_metrics_map: 0,
     # If the adapter is working with assets, the following 2 callbacks are implemented
     slugs_by_filter: 6,

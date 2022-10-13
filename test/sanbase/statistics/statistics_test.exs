@@ -5,7 +5,7 @@ defmodule Sanbase.StatisticsTest do
   import Sanbase.TestHelpers
 
   setup_all_with_mocks([
-    {Sanbase.ClickhouseRepo, [:passthrough], [query: fn _, _ -> {:ok, %{rows: [10]}} end]}
+    {Sanbase.Clickhouse.ApiCallData, [:passthrough], [active_users_count: fn _, _ -> 10 end]}
   ]) do
     []
   end
@@ -64,19 +64,14 @@ defmodule Sanbase.StatisticsTest do
   end
 
   test "active users statistics" do
-    rows = [3]
+    statistics = Sanbase.Statistics.get_all()
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      statistics = Sanbase.Statistics.get_all()
-
-      assert {"active_users",
-              %{
-                "active_users_in_last_12h" => 3,
-                "active_users_in_last_24h" => 3,
-                "active_users_in_last_7d" => 3,
-                "active_users_in_last_30d" => 3
-              }} in statistics
-    end)
+    assert {"active_users",
+            %{
+              "active_users_in_last_12h" => 10,
+              "active_users_in_last_24h" => 10,
+              "active_users_in_last_7d" => 10,
+              "active_users_in_last_30d" => 10
+            }} in statistics
   end
 end

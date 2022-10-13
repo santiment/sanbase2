@@ -51,15 +51,23 @@ defmodule Sanbase.Dashboard.Schema do
     field(:is_public, :boolean, default: false)
     field(:is_hidden, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)
-    field(:views, :integer, virtual: true, default: 0)
 
     # Temporary add JSON field for tests. Will be removed before
     # final version is released for public use
     field(:temp_json, :map)
 
+    has_one(:featured_item, Sanbase.FeaturedItem,
+      on_delete: :delete_all,
+      foreign_key: :dashboard_id
+    )
+
     belongs_to(:user, User)
 
     embeds_many(:panels, Panel, on_replace: :delete)
+
+    # Virtual fields
+    field(:views, :integer, virtual: true, default: 0)
+    field(:is_featured, :boolean, virtual: true)
 
     timestamps()
   end
@@ -80,10 +88,13 @@ defmodule Sanbase.Dashboard.Schema do
   def by_id!(dashboard_id, opts \\ []), do: by_id(dashboard_id, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
-  def by_ids(ids, _opts) when is_list(ids) do
+  def by_ids(ids, opts) when is_list(ids) do
+    preload = Keyword.get(opts, :preload, [:featured_item])
+
     result =
       from(ul in base_query(),
         where: ul.id in ^ids,
+        preload: ^preload,
         order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
       )
       |> Repo.all()

@@ -32,7 +32,6 @@ defmodule Sanbase.Alert.UserTrigger do
   schema "user_triggers" do
     field(:is_deleted, :boolean, default: false)
     field(:is_hidden, :boolean, default: false)
-    field(:views, :integer, virtual: true, default: 0)
 
     belongs_to(:user, User)
     embeds_one(:trigger, Trigger, on_replace: :update)
@@ -48,6 +47,10 @@ defmodule Sanbase.Alert.UserTrigger do
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
     has_many(:alerts_historical_activity, HistoricalActivity, on_delete: :delete_all)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
+
+    # Virtual fields
+    field(:views, :integer, virtual: true, default: 0)
+    field(:is_featured, :boolean, virtual: true)
 
     timestamps()
   end
@@ -102,10 +105,13 @@ defmodule Sanbase.Alert.UserTrigger do
   def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
-  def by_ids(ids, _opts) when is_list(ids) do
+  def by_ids(ids, opts) when is_list(ids) do
+    preload = Keyword.get(opts, :preload, [:featured_item, :tags])
+
     result =
       from(ul in base_query(),
         where: ul.id in ^ids,
+        preload: ^preload,
         order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
       )
       |> Repo.all()
@@ -410,7 +416,7 @@ defmodule Sanbase.Alert.UserTrigger do
     from(
       ut in base_query(),
       where: ut.id == ^trigger_id and trigger_is_public(),
-      preload: [:tags]
+      preload: [:featured_item, :tags]
     )
   end
 
@@ -418,12 +424,12 @@ defmodule Sanbase.Alert.UserTrigger do
     from(
       ut in base_query(),
       where: ut.id == ^trigger_id and (trigger_is_public() or ut.user_id == ^user_id),
-      preload: [:tags]
+      preload: [:featured_item, :tags]
     )
   end
 
   defp user_triggers_for(user_id) do
-    from(ut in base_query(), where: ut.user_id == ^user_id, preload: [:tags])
+    from(ut in base_query(), where: ut.user_id == ^user_id, preload: [:featured_item, :tags])
     |> Repo.all()
     |> Enum.map(&trigger_in_struct/1)
   end
@@ -431,7 +437,7 @@ defmodule Sanbase.Alert.UserTrigger do
   defp public_user_triggers_for(user_id) do
     from(ut in base_query(),
       where: ut.user_id == ^user_id and trigger_is_public(),
-      preload: [:tags]
+      preload: [:featured_item, :tags]
     )
     |> Repo.all()
     |> Enum.map(&trigger_in_struct/1)

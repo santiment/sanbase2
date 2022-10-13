@@ -6,6 +6,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   import Sanbase.Clickhouse.TopHolders.SqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+  import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
   alias Sanbase.Model.Project
 
@@ -96,18 +97,23 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data(_, %{slug: _slug}, _from, _to, _opts) do
-    {:error, "Aggregated timeseries data is not implemented for Top Holders."}
+  def timeseries_data_per_slug(metric, _selector, _from, _to, _interval, _opts) do
+    not_implemented_function_for_metric_error("timeseries_data_per_slug", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _opts) do
-    {:error, "Slugs filtering is not implemented for Top Holders."}
+  def aggregated_timeseries_data(metric, %{slug: _slug}, _from, _to, _opts) do
+    not_implemented_function_for_metric_error("aggregated_timeseries_data", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(_metric, _from, _to, _direction, _opts) do
-    {:error, "Slugs ordering is not implemented for Top Holders."}
+  def slugs_by_filter(metric, _from, _to, _operator, _threshold, _opts) do
+    not_implemented_function_for_metric_error("slugs_by_filter", metric)
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def slugs_order(metric, _from, _to, _direction, _opts) do
+    not_implemented_function_for_metric_error("slugs_order", metric)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -124,6 +130,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
        available_selectors: [:slug, :holders_count],
        required_selectors: [:slug],
        data_type: data_type,
+       is_timebound: false,
        complexity_weight: @default_complexity_weight
      }}
   end

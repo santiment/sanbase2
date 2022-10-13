@@ -218,7 +218,7 @@ defmodule Sanbase.StripeApiTestResponse do
        quantity: 1,
        start_date: 1_558_185_786,
        status: status,
-       tax_percent: nil,
+       tax_rate: nil,
        trial_end: trial_end,
        trial_start: nil
      }}

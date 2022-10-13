@@ -436,7 +436,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
           "start": 1563889630,
           "start_date": 1563889630,
           "status": "active",
-          "tax_percent": null,
+          "tax_rate": null,
           "trial_end": null,
           "trial_start": null
         }
@@ -669,7 +669,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
           "subscription": "#{@stripe_id}",
           "subtotal": 0,
           "tax": null,
-          "tax_percent": null,
+          "tax_rate": null,
           "webhooks_delivered_at": null
         }
       }
@@ -828,7 +828,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
           "subscription": "#{@stripe_id}",
           "subtotal": 11900,
           "tax": null,
-          "tax_percent": null,
+          "tax_rate": null,
           "total": 9520,
           "total_tax_amounts": [
           ],

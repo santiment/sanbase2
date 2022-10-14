@@ -51,11 +51,11 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
         rank IS NOT NULL AND rank > 0
       GROUP BY dt, address
       ORDER BY dt, value DESC
+      LIMIT ?3 BY dt
     )
     #{include_labels_str}
     GROUP BY dt
     ORDER BY dt
-    LIMIT ?3 BY dt
     """
 
     {query, args}

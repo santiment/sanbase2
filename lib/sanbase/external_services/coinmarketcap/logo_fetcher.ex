@@ -17,11 +17,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   def run() do
     projects = Project.List.projects_with_source("coinmarketcap", include_hidden: true)
 
-    local_projects_map =
-      projects
-      |> Enum.map(fn %{slug: slug} = project -> {slug, project} end)
-      |> Map.new()
-
     Logger.info("#{@log_tag} Started fetching logos from coinmarketcap.")
 
     Temp.track!()
@@ -31,9 +26,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     |> Enum.chunk_every(100)
     |> Enum.each(fn projects ->
       {:ok, remote_projects} = CryptocurrencyInfo.fetch_data(projects)
+      logo_map = remote_projects |> Enum.into(%{}, fn ci -> {ci.slug, ci.logo} end)
 
-      Enum.each(remote_projects, fn remote_project ->
-        update_project_logos(remote_project, local_projects_map, dir_path)
+      Enum.each(projects, fn project ->
+        update_project_logos(project, logo_map, dir_path)
       end)
     end)
 
@@ -42,33 +38,35 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     Logger.info("#{@log_tag} Finished fetching logos from coinmarketcap.")
   end
 
-  defp update_project_logos(remote_project, local_projects_map, dir_path) do
-    url = remote_project.logo
-    slug = remote_project.slug
-    file_extension = Path.extname(url |> String.downcase())
-    filename = slug <> file_extension
+  # run for single project
+  def run(slug) do
+    project = Project.by_slug(slug)
 
-    case Map.get(local_projects_map, slug) do
-      %Project{} = project ->
-        with {:ok, local_filepath} <- download(url, dir_path, filename),
-             {_, true} <- {:logo_has_changed?, logo_changed?(project, local_filepath)},
-             {:ok, local_filepath} <- resize_image(local_filepath, dir_path, filename),
-             {:ok, uploaded_filepath} <- upload(local_filepath),
-             {:ok, _} <-
-               update_local_project(project, %{
-                 logo_url: uploaded_filepath
-               }) do
-          Logger.info("#{@log_tag} Successfully updated logos for project: #{project.slug}")
-        else
-          {:logo_has_changed?, false} ->
-            :ok
+    Logger.info("#{@log_tag} Started fetching logos from coinmarketcap.")
+    Temp.track!()
+    dir_path = Temp.mkdir!("logotemp")
 
-          error ->
-            error
-        end
+    {:ok, remote_projects} = CryptocurrencyInfo.fetch_data([project])
+    logo_map = remote_projects |> Enum.into(%{}, fn ci -> {ci.slug, ci.logo} end)
+    update_project_logos(project, logo_map, dir_path)
 
-      _ ->
-        :ok
+    Temp.cleanup()
+  end
+
+  defp update_project_logos(project, logo_map, dir_path) do
+    with coinmarketcap_id when not is_nil(coinmarketcap_id) <- Project.coinmarketcap_id(project),
+         url when not is_nil(url) <- Map.get(logo_map, coinmarketcap_id),
+         file_extension <- Path.extname(url |> String.downcase()),
+         filename <- coinmarketcap_id <> file_extension,
+         {:ok, local_filepath} <- download(url, dir_path, filename),
+         true <- logo_changed?(project, local_filepath),
+         {:ok, local_filepath} <- resize_image(local_filepath, dir_path, filename),
+         {:ok, uploaded_filepath} <- upload(local_filepath),
+         {:ok, _} <-
+           update_local_project(project, %{
+             logo_url: uploaded_filepath
+           }) do
+      Logger.info("#{@log_tag} Successfully updated logos for project: #{project.slug}")
     end
   end
 
@@ -109,10 +107,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   defp resize_image(source_filepath, dest_dir_path, filename) do
     dest_filepath = dest_dir_path <> "/" <> filename
 
-    Mogrify.open(source_filepath)
-    |> Mogrify.resize("#{@size}x#{@size}")
-    |> Mogrify.custom("type", "PaletteAlpha")
-    |> Mogrify.save(path: dest_filepath)
+    try do
+      Mogrify.open(source_filepath)
+      |> Mogrify.resize("#{@size}x#{@size}")
+      |> Mogrify.custom("type", "PaletteAlpha")
+      |> Mogrify.save(path: dest_filepath)
+    rescue
+      e ->
+        Logger.info("#{@log_tag} exception: #{inspect(e)}")
+        {:error, inspect(e)}
+    end
 
     {:ok, dest_filepath}
   end

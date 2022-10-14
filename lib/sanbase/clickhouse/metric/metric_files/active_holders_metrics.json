@@ -1,198 +1,25 @@
 [
   {
-    "human_readable_name": "Amount Of Active Holders With Balance Between 0 and 0.001",
-    "name": "active_holders_distribution_0_to_0.001",
-    "metric": "active_holders_distribution_1e_3",
+    "human_readable_name": "Amount Of Active Holders With Balance Between {{low}} and {{high}}",
+    "name": "active_holders_distribution_{{low}}_to_{{high}}",
+    "metric": "active_holders_distribution_{{db_metric}}",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Between 0.001 and 0.01",
-    "name": "active_holders_distribution_0.001_to_0.01",
-    "metric": "active_holders_distribution_1e_2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Between 0.01 and 0.1",
-    "name": "active_holders_distribution_0.01_to_0.1",
-    "metric": "active_holders_distribution_1e_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Between 0.1 and 1",
-    "name": "active_holders_distribution_0.1_to_1",
-    "metric": "active_holders_distribution_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Between 1 and 10",
-    "name": "active_holders_distribution_1_to_10",
-    "metric": "active_holders_distribution_1e1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Between 10 and 100",
-    "name": "active_holders_distribution_10_to_100",
-    "metric": "active_holders_distribution_1e2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Between 100 and 1k",
-    "name": "active_holders_distribution_100_to_1k",
-    "metric": "active_holders_distribution_1e3",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Between 1k and 10k",
-    "name": "active_holders_distribution_1k_to_10k",
-    "metric": "active_holders_distribution_1e4",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Between 10k and 100k",
-    "name": "active_holders_distribution_10k_to_100k",
-    "metric": "active_holders_distribution_1e5",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Between 100k and 1M",
-    "name": "active_holders_distribution_100k_to_1M",
-    "metric": "active_holders_distribution_1e6",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Between 1M and 10M",
-    "name": "active_holders_distribution_1M_to_10M",
-    "metric": "active_holders_distribution_1e7",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Over 10M",
-    "name": "active_holders_distribution_10M_to_inf",
-    "metric": "active_holders_distribution_inf",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
+    "parameters": [
+      { "low": "0", "high": "0.001", "db_metric": "1e_3" },
+      { "low": "0.001", "high": "0.01", "db_metric": "1e_2" },
+      { "low": "0.01", "high": "0.1", "db_metric": "1e_1" },
+      { "low": "0.1", "high": "1", "db_metric": "1" },
+      { "low": "1", "high": "10", "db_metric": "1e1" },
+      { "low": "10", "high": "100", "db_metric": "1e2" },
+      { "low": "100", "high": "1k", "db_metric": "1e3" },
+      { "low": "1k", "high": "10k", "db_metric": "1e4" },
+      { "low": "10k", "high": "100k", "db_metric": "1e5" },
+      { "low": "100k", "high": "1M", "db_metric": "1e6" },
+      { "low": "1M", "high": "10M", "db_metric": "1e7" },
+      { "low": "10M", "high": "inf", "db_metric": "inf" }
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -221,12 +48,26 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Between 0 and 0.001",
-    "name": "active_holders_distribution_combined_balance_0_to_0.001",
-    "metric": "active_holders_distribution_amount_1e_3",
+    "human_readable_name": "Combined Balance Of Active Holders With Balance Between {{low}} and {{high}}",
+    "name": "active_holders_distribution_combined_balance_{{low}}_to_{{high}}",
+    "metric": "active_holders_distribution_amount_{{db_metric}}",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
+    "parameters": [
+      { "low": "0", "high": "0.001", "db_metric": "1e_3" },
+      { "low": "0.001", "high": "0.01", "db_metric": "1e_2" },
+      { "low": "0.01", "high": "0.1", "db_metric": "1e_1" },
+      { "low": "0.1", "high": "1", "db_metric": "1" },
+      { "low": "1", "high": "10", "db_metric": "1e1" },
+      { "low": "10", "high": "100", "db_metric": "1e2" },
+      { "low": "100", "high": "1k", "db_metric": "1e3" },
+      { "low": "1k", "high": "10k", "db_metric": "1e4" },
+      { "low": "10k", "high": "100k", "db_metric": "1e5" },
+      { "low": "100k", "high": "1M", "db_metric": "1e6" },
+      { "low": "1M", "high": "10M", "db_metric": "1e7" },
+      { "low": "10M", "high": "inf", "db_metric": "inf" }
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -237,193 +78,7 @@
     "has_incomplete_data": true,
     "data_type": "timeseries"
   },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Between 0.001 and 0.01",
-    "name": "active_holders_distribution_combined_balance_0.001_to_0.01",
-    "metric": "active_holders_distribution_amount_1e_2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Between 0.01 and 0.1",
-    "name": "active_holders_distribution_combined_balance_0.01_to_0.1",
-    "metric": "active_holders_distribution_amount_1e_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Between 0.1 and 1",
-    "name": "active_holders_distribution_combined_balance_0.1_to_1",
-    "metric": "active_holders_distribution_amount_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Between 1 and 10",
-    "name": "active_holders_distribution_combined_balance_1_to_10",
-    "metric": "active_holders_distribution_amount_1e1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Between 10 and 100",
-    "name": "active_holders_distribution_combined_balance_10_to_100",
-    "metric": "active_holders_distribution_amount_1e2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Between 100 and 1k",
-    "name": "active_holders_distribution_combined_balance_100_to_1k",
-    "metric": "active_holders_distribution_amount_1e3",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Between 1k and 10k",
-    "name": "active_holders_distribution_combined_balance_1k_to_10k",
-    "metric": "active_holders_distribution_amount_1e4",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Between 10k and 100k",
-    "name": "active_holders_distribution_combined_balance_10k_to_100k",
-    "metric": "active_holders_distribution_amount_1e5",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Between 100k and 1M",
-    "name": "active_holders_distribution_combined_balance_100k_to_1M",
-    "metric": "active_holders_distribution_amount_1e6",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Between 1M and 10M",
-    "name": "active_holders_distribution_combined_balance_1M_to_10M",
-    "metric": "active_holders_distribution_amount_1e7",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance 10M",
-    "name": "active_holders_distribution_combined_balance_10M_to_inf",
-    "metric": "active_holders_distribution_amount_inf",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
+
   {
     "human_readable_name": "Combined Balance Of Active Holders Total",
     "name": "active_holders_distribution_combined_balance_total",
@@ -442,12 +97,48 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Amount Of Active Holders With Balance Over 1",
-    "name": "active_holders_distribution_over_1",
-    "metric": "active_holders_distribution_more_than_1",
+    "human_readable_name": "Amount Of Active Holders With Balance Over {{threshold}}",
+    "name": "active_holders_distribution_over_{{threshold}}",
+    "metric": "active_holders_distribution_more_than_{{db_metric}}",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
+    "parameters": [
+      { "threshold": "1", "db_metric": "1" },
+      { "threshold": "10", "db_metric": "1e1" },
+      { "threshold": "100", "db_metric": "1e2" },
+      { "threshold": "1k", "db_metric": "1e3" },
+      { "threshold": "10k", "db_metric": "1e4" },
+      { "threshold": "100k", "db_metric": "1e5" },
+      { "threshold": "1M", "db_metric": "1e6" }
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
+  {
+    "human_readable_name": "Combined Balance Of Active Holders With Balance Over {{threshold}}",
+    "name": "active_holders_distribution_combined_balance_over_{{threshold}}",
+    "metric": "active_holders_distribution_amount_more_than_{{db_metric}}",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "parameters": [
+      { "threshold": "1", "db_metric": "1" },
+      { "threshold": "10", "db_metric": "1e1" },
+      { "threshold": "100", "db_metric": "1e2" },
+      { "threshold": "1k", "db_metric": "1e3" },
+      { "threshold": "10k", "db_metric": "1e4" },
+      { "threshold": "100k", "db_metric": "1e5" },
+      { "threshold": "1M", "db_metric": "1e6" }
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -459,12 +150,26 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Amount Of Active Holders With Balance Over 10",
-    "name": "active_holders_distribution_over_10",
-    "metric": "active_holders_distribution_more_than_1e1",
+    "human_readable_name": "Percent Of Active Holders With Balance Between {{low}} and {{high}}",
+    "name": "percent_of_active_holders_distribution_{{low}}_to_{{high}}",
+    "metric": "percent_of_active_holders_distribution_{{db_metric}}",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
+    "parameters": [
+      { "low": "0", "high": "0.001", "db_metric": "1e_3" },
+      { "low": "0.001", "high": "0.01", "db_metric": "1e_2" },
+      { "low": "0.01", "high": "0.1", "db_metric": "1e_1" },
+      { "low": "0.1", "high": "1", "db_metric": "1" },
+      { "low": "1", "high": "10", "db_metric": "1e1" },
+      { "low": "10", "high": "100", "db_metric": "1e2" },
+      { "low": "100", "high": "1k", "db_metric": "1e3" },
+      { "low": "1k", "high": "10k", "db_metric": "1e4" },
+      { "low": "10k", "high": "100k", "db_metric": "1e5" },
+      { "low": "100k", "high": "1M", "db_metric": "1e6" },
+      { "low": "1M", "high": "10M", "db_metric": "1e7" },
+      { "low": "10M", "high": "inf", "db_metric": "inf" }
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -476,607 +181,26 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Amount Of Active Holders With Balance Over 100",
-    "name": "active_holders_distribution_over_100",
-    "metric": "active_holders_distribution_more_than_1e2",
+    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between {{low}} and {{high}}",
+    "name": "percent_of_active_holders_distribution_combined_balance_{{low}}_to_{{high}}",
+    "metric": "percent_of_active_holders_distribution_amount_{{db_metric}}",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Over 1k",
-    "name": "active_holders_distribution_over_1k",
-    "metric": "active_holders_distribution_more_than_1e3",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Over 10k",
-    "name": "active_holders_distribution_over_10k",
-    "metric": "active_holders_distribution_more_than_1e4",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Over 100k",
-    "name": "active_holders_distribution_over_100k",
-    "metric": "active_holders_distribution_more_than_1e5",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Active Holders With Balance Over 1M",
-    "name": "active_holders_distribution_over_1M",
-    "metric": "active_holders_distribution_more_than_1e6",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Over 1",
-    "name": "active_holders_distribution_combined_balance_over_1",
-    "metric": "active_holders_distribution_amount_more_than_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Over 10",
-    "name": "active_holders_distribution_combined_balance_over_10",
-    "metric": "active_holders_distribution_amount_more_than_1e1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Over 100",
-    "name": "active_holders_distribution_combined_balance_over_100",
-    "metric": "active_holders_distribution_amount_more_than_1e2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Over 1k",
-    "name": "active_holders_distribution_combined_balance_over_1k",
-    "metric": "active_holders_distribution_amount_more_than_1e3",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Over 10k",
-    "name": "active_holders_distribution_combined_balance_over_10k",
-    "metric": "active_holders_distribution_amount_more_than_1e4",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Over 100k",
-    "name": "active_holders_distribution_combined_balance_over_100k",
-    "metric": "active_holders_distribution_amount_more_than_1e5",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Active Holders With Balance Over 1M",
-    "name": "active_holders_distribution_combined_balance_over_1M",
-    "metric": "active_holders_distribution_amount_more_than_1e6",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Active Holders With Balance Between 0 and 0.001",
-    "name": "percent_of_active_holders_distribution_0_to_0.001",
-    "metric": "percent_of_active_holders_distribution_1e_3",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Active Holders With Balance Between 0.001 and 0.01",
-    "name": "percent_of_active_holders_distribution_0.001_to_0.01",
-    "metric": "percent_of_active_holders_distribution_1e_2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Active Holders With Balance Between 0.01 and 0.1",
-    "name": "percent_of_active_holders_distribution_0.01_to_0.1",
-    "metric": "percent_of_active_holders_distribution_1e_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Active Holders With Balance Between 0.1 and 1",
-    "name": "percent_of_active_holders_distribution_0.1_to_1",
-    "metric": "percent_of_active_holders_distribution_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Active Holders With Balance Between 1 and 10",
-    "name": "percent_of_active_holders_distribution_1_to_10",
-    "metric": "percent_of_active_holders_distribution_1e1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Active Holders With Balance Between 10 and 100",
-    "name": "percent_of_active_holders_distribution_10_to_100",
-    "metric": "percent_of_active_holders_distribution_1e2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Active Holders With Balance Between 100 and 1k",
-    "name": "percent_of_active_holders_distribution_100_to_1k",
-    "metric": "percent_of_active_holders_distribution_1e3",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Active Holders With Balance Between 1k and 10k",
-    "name": "percent_of_active_holders_distribution_1k_to_10k",
-    "metric": "percent_of_active_holders_distribution_1e4",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Active Holders With Balance Between 10k and 100k",
-    "name": "percent_of_active_holders_distribution_10k_to_100k",
-    "metric": "percent_of_active_holders_distribution_1e5",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Active Holders With Balance Between 100k and 1M",
-    "name": "percent_of_active_holders_distribution_100k_to_1M",
-    "metric": "percent_of_active_holders_distribution_1e6",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Active Holders With Balance Between 1M and 10M",
-    "name": "percent_of_active_holders_distribution_1M_to_10M",
-    "metric": "percent_of_active_holders_distribution_1e7",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Active Holders With Balance Over 10M",
-    "name": "percent_of_active_holders_distribution_10M_to_inf",
-    "metric": "percent_of_active_holders_distribution_inf",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between 0 and 0.001",
-    "name": "percent_of_active_holders_distribution_combined_balance_0_to_0.001",
-    "metric": "percent_of_active_holders_distribution_amount_1e_3",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between 0.001 and 0.01",
-    "name": "percent_of_active_holders_distribution_combined_balance_0.001_to_0.01",
-    "metric": "percent_of_active_holders_distribution_amount_1e_2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between 0.01 and 0.1",
-    "name": "percent_of_active_holders_distribution_combined_balance_0.01_to_0.1",
-    "metric": "percent_of_active_holders_distribution_amount_1e_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between 0.1 and 1",
-    "name": "percent_of_active_holders_distribution_combined_balance_0.1_to_1",
-    "metric": "percent_of_active_holders_distribution_amount_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between 1 and 10",
-    "name": "percent_of_active_holders_distribution_combined_balance_1_to_10",
-    "metric": "percent_of_active_holders_distribution_amount_1e1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between 10 and 100",
-    "name": "percent_of_active_holders_distribution_combined_balance_10_to_100",
-    "metric": "percent_of_active_holders_distribution_amount_1e2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between 100 and 1k",
-    "name": "percent_of_active_holders_distribution_combined_balance_100_to_1k",
-    "metric": "percent_of_active_holders_distribution_amount_1e3",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between 1k and 10k",
-    "name": "percent_of_active_holders_distribution_combined_balance_1k_to_10k",
-    "metric": "percent_of_active_holders_distribution_amount_1e4",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between 10k and 100k",
-    "name": "percent_of_active_holders_distribution_combined_balance_10k_to_100k",
-    "metric": "percent_of_active_holders_distribution_amount_1e5",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between 100k and 1M",
-    "name": "percent_of_active_holders_distribution_combined_balance_100k_to_1M",
-    "metric": "percent_of_active_holders_distribution_amount_1e6",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between 1M and 10M",
-    "name": "percent_of_active_holders_distribution_combined_balance_1M_to_10M",
-    "metric": "percent_of_active_holders_distribution_amount_1e7",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Over 10M",
-    "name": "percent_of_active_holders_distribution_combined_balance_10M_to_inf",
-    "metric": "percent_of_active_holders_distribution_amount_inf",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
+    "parameters": [
+      { "low": "0", "high": "0.001", "db_metric": "1e_3" },
+      { "low": "0.001", "high": "0.01", "db_metric": "1e_2" },
+      { "low": "0.01", "high": "0.1", "db_metric": "1e_1" },
+      { "low": "0.1", "high": "1", "db_metric": "1" },
+      { "low": "1", "high": "10", "db_metric": "1e1" },
+      { "low": "10", "high": "100", "db_metric": "1e2" },
+      { "low": "100", "high": "1k", "db_metric": "1e3" },
+      { "low": "1k", "high": "10k", "db_metric": "1e4" },
+      { "low": "10k", "high": "100k", "db_metric": "1e5" },
+      { "low": "100k", "high": "1M", "db_metric": "1e6" },
+      { "low": "1M", "high": "10M", "db_metric": "1e7" },
+      { "low": "10M", "high": "inf", "db_metric": "inf" }
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"

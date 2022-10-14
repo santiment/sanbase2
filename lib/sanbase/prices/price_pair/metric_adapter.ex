@@ -5,7 +5,7 @@ defmodule Sanbase.PricePair.MetricAdapter do
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :ohlc]
   @default_aggregation :last
 
-  @timeseries_metrics ["price_usd", "price_usdt", "price_btc"]
+  @timeseries_metrics ["price_usd", "price_eth", "price_usdt", "price_btc"]
   @histogram_metrics []
   @table_metrics []
 
@@ -109,6 +109,7 @@ defmodule Sanbase.PricePair.MetricAdapter do
       "price_usd" -> {:ok, "Price in USD"}
       "price_btc" -> {:ok, "Price in BTC"}
       "price_usdt" -> {:ok, "Price in USDT"}
+      "price_eth" -> {:ok, "Price in ETH"}
     end
   end
 
@@ -145,7 +146,8 @@ defmodule Sanbase.PricePair.MetricAdapter do
         metrics =
           if("BTC" in quote_assets, do: ["price_btc"], else: []) ++
             if("USD" in quote_assets, do: ["price_usd"], else: []) ++
-            if("USDT" in quote_assets, do: ["price_usdt"], else: [])
+            if("USDT" in quote_assets, do: ["price_usdt"], else: []) ++
+            if("ETH" in quote_assets, do: ["price_eth"], else: [])
 
         {:ok, metrics}
 
@@ -193,4 +195,5 @@ defmodule Sanbase.PricePair.MetricAdapter do
   defp metric_to_quote_asset("price_btc"), do: "BTC"
   defp metric_to_quote_asset("price_usd"), do: "USD"
   defp metric_to_quote_asset("price_usdt"), do: "USDT"
+  defp metric_to_quote_asset("price_eth"), do: "ETH"
 end

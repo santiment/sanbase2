@@ -54,7 +54,8 @@ defmodule Sanbase.Billing.EventEmitter do
     |> notify()
   end
 
-  def handle_event({:ok, stripe_event}, :charge_fail = event_type, %{} = args) do
+  def handle_event({:ok, stripe_event}, event_type, %{} = args)
+      when event_type in [:charge_fail, :payment_action_required] do
     object = stripe_event["data"]["object"]
 
     %{

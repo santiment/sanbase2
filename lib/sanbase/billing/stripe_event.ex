@@ -69,6 +69,8 @@ defmodule Sanbase.Billing.StripeEvent do
 
   defp to_event_type("invoice.payment_succeeded"), do: :payment_success
   defp to_event_type("invoice.payment_failed"), do: :payment_fail
+  defp to_event_type("charge.failed"), do: :charge_fail
+  defp to_event_type("invoice.payment_action_required"), do: :payment_action_required
 
   defp handle_event(
          %{
@@ -101,8 +103,9 @@ defmodule Sanbase.Billing.StripeEvent do
     update(id, %{is_processed: true})
   end
 
-  defp handle_event(%{"id" => id, "type" => "charge.failed"} = stripe_event) do
-    emit_event({:ok, stripe_event}, :charge_fail, %{})
+  defp handle_event(%{"id" => id, "type" => type} = stripe_event)
+       when type in ["invoice.payment_action_required", "charge.failed"] do
+    emit_event({:ok, stripe_event}, to_event_type(type), %{})
 
     update(id, %{is_processed: true})
   end

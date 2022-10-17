@@ -61,22 +61,45 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
       end)
     end
 
-    def expand_timebound_metrics(metrics_json_pre_timebound_expand) do
+    def expand_patterns(metrics_json) do
+      metrics_json
+      |> expand_timebound_metrics()
+      |> expand_parameters_metrics()
+    end
+
+    def expand_parameters_metrics(metrics_json) do
+      Enum.flat_map(metrics_json, fn metric_map ->
+        case Map.get(metric_map, "parameters") do
+          nil ->
+            [metric_map]
+
+          parameters_list ->
+            %{"name" => name, "human_readable_name" => human_name, "metric" => metric} =
+              metric_map
+
+            Enum.map(parameters_list, fn parameters ->
+              metric_map
+              |> Map.put("name", TemplateEngine.run(name, parameters))
+              |> Map.put("metric", TemplateEngine.run(metric, parameters))
+              |> Map.put("human_readable_name", TemplateEngine.run(human_name, parameters))
+            end)
+        end
+      end)
+    end
+
+    def expand_timebound_metrics(metrics_json) do
       put_timebound = fn list, bool -> list |> Enum.map(&Map.put(&1, "is_timebound", bool)) end
 
-      Enum.flat_map(
-        metrics_json_pre_timebound_expand,
-        fn metric ->
-          case Map.get(metric, "timebound") do
-            nil ->
-              [metric] |> put_timebound.(false)
+      Enum.flat_map(metrics_json, fn metric ->
+        case Map.get(metric, "timebound") do
+          nil ->
+            [metric] |> put_timebound.(false)
 
-            timebound_values ->
-              resolve_timebound_metrics(metric, timebound_values)
-              |> put_timebound.(true)
-          end
+          timebound_values ->
+            resolve_timebound_metrics(metric, timebound_values)
+            |> put_timebound.(true)
         end
-      )
+      end)
     end
 
     def atomize_access_level_value(access) when is_binary(access),
@@ -138,6 +161,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @external_resource path_to.("table_structured_metrics.json")
   @external_resource path_to.("uniswap_metrics.json")
   @external_resource path_to.("labeled_holders_distribution_metrics.json")
+  @external_resource path_to.("active_holders_metrics.json")
 
   @metrics_json_pre_alias_expand Enum.reduce(@external_resource, [], fn file, acc ->
                                    (File.read!(file) |> Jason.decode!()) ++ acc
@@ -158,17 +182,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     """)
   end)
 
-  @metrics_json_pre_timebound_expand Enum.flat_map(
-                                       @metrics_json_pre_alias_expand,
-                                       fn metric ->
-                                         Map.get(metric, "aliases", [])
-                                         |> Helper.resolve_metric_aliases(metric)
-                                       end
-                                     )
+  @metrics_json_pre_expand_patterns Enum.flat_map(
+                                      @metrics_json_pre_alias_expand,
+                                      fn metric ->
+                                        Map.get(metric, "aliases", [])
+                                        |> Helper.resolve_metric_aliases(metric)
+                                      end
+                                    )
 
-  @metrics_json_including_deprecated Helper.expand_timebound_metrics(
-                                       @metrics_json_pre_timebound_expand
-                                     )
+  @metrics_json_including_deprecated Helper.expand_patterns(@metrics_json_pre_expand_patterns)
+
   @metrics_json Enum.reject(
                   @metrics_json_including_deprecated,
                   &(not is_nil(&1["deprecated_since"]))

@@ -1,0 +1,214 @@
+[
+  {
+    "human_readable_name": "Amount Of Active Holders With Balance Between {{low}} and {{high}}",
+    "name": "active_holders_distribution_{{low}}_to_{{high}}",
+    "metric": "active_holders_distribution_{{db_metric}}",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "parameters": [
+      { "low": "0", "high": "0.001", "db_metric": "1e_3" },
+      { "low": "0.001", "high": "0.01", "db_metric": "1e_2" },
+      { "low": "0.01", "high": "0.1", "db_metric": "1e_1" },
+      { "low": "0.1", "high": "1", "db_metric": "1" },
+      { "low": "1", "high": "10", "db_metric": "1e1" },
+      { "low": "10", "high": "100", "db_metric": "1e2" },
+      { "low": "100", "high": "1k", "db_metric": "1e3" },
+      { "low": "1k", "high": "10k", "db_metric": "1e4" },
+      { "low": "10k", "high": "100k", "db_metric": "1e5" },
+      { "low": "100k", "high": "1M", "db_metric": "1e6" },
+      { "low": "1M", "high": "10M", "db_metric": "1e7" },
+      { "low": "10M", "high": "inf", "db_metric": "inf" }
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Amount Of Active Holders Total",
+    "name": "active_holders_distribution_total",
+    "metric": "active_holders_distribution_all",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Combined Balance Of Active Holders With Balance Between {{low}} and {{high}}",
+    "name": "active_holders_distribution_combined_balance_{{low}}_to_{{high}}",
+    "metric": "active_holders_distribution_amount_{{db_metric}}",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "parameters": [
+      { "low": "0", "high": "0.001", "db_metric": "1e_3" },
+      { "low": "0.001", "high": "0.01", "db_metric": "1e_2" },
+      { "low": "0.01", "high": "0.1", "db_metric": "1e_1" },
+      { "low": "0.1", "high": "1", "db_metric": "1" },
+      { "low": "1", "high": "10", "db_metric": "1e1" },
+      { "low": "10", "high": "100", "db_metric": "1e2" },
+      { "low": "100", "high": "1k", "db_metric": "1e3" },
+      { "low": "1k", "high": "10k", "db_metric": "1e4" },
+      { "low": "10k", "high": "100k", "db_metric": "1e5" },
+      { "low": "100k", "high": "1M", "db_metric": "1e6" },
+      { "low": "1M", "high": "10M", "db_metric": "1e7" },
+      { "low": "10M", "high": "inf", "db_metric": "inf" }
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
+  {
+    "human_readable_name": "Combined Balance Of Active Holders Total",
+    "name": "active_holders_distribution_combined_balance_total",
+    "metric": "active_holders_distribution_amount_all",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Amount Of Active Holders With Balance Over {{threshold}}",
+    "name": "active_holders_distribution_over_{{threshold}}",
+    "metric": "active_holders_distribution_more_than_{{db_metric}}",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "parameters": [
+      { "threshold": "1", "db_metric": "1" },
+      { "threshold": "10", "db_metric": "1e1" },
+      { "threshold": "100", "db_metric": "1e2" },
+      { "threshold": "1k", "db_metric": "1e3" },
+      { "threshold": "10k", "db_metric": "1e4" },
+      { "threshold": "100k", "db_metric": "1e5" },
+      { "threshold": "1M", "db_metric": "1e6" }
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
+  {
+    "human_readable_name": "Combined Balance Of Active Holders With Balance Over {{threshold}}",
+    "name": "active_holders_distribution_combined_balance_over_{{threshold}}",
+    "metric": "active_holders_distribution_amount_more_than_{{db_metric}}",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "parameters": [
+      { "threshold": "1", "db_metric": "1" },
+      { "threshold": "10", "db_metric": "1e1" },
+      { "threshold": "100", "db_metric": "1e2" },
+      { "threshold": "1k", "db_metric": "1e3" },
+      { "threshold": "10k", "db_metric": "1e4" },
+      { "threshold": "100k", "db_metric": "1e5" },
+      { "threshold": "1M", "db_metric": "1e6" }
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Percent Of Active Holders With Balance Between {{low}} and {{high}}",
+    "name": "percent_of_active_holders_distribution_{{low}}_to_{{high}}",
+    "metric": "percent_of_active_holders_distribution_{{db_metric}}",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "parameters": [
+      { "low": "0", "high": "0.001", "db_metric": "1e_3" },
+      { "low": "0.001", "high": "0.01", "db_metric": "1e_2" },
+      { "low": "0.01", "high": "0.1", "db_metric": "1e_1" },
+      { "low": "0.1", "high": "1", "db_metric": "1" },
+      { "low": "1", "high": "10", "db_metric": "1e1" },
+      { "low": "10", "high": "100", "db_metric": "1e2" },
+      { "low": "100", "high": "1k", "db_metric": "1e3" },
+      { "low": "1k", "high": "10k", "db_metric": "1e4" },
+      { "low": "10k", "high": "100k", "db_metric": "1e5" },
+      { "low": "100k", "high": "1M", "db_metric": "1e6" },
+      { "low": "1M", "high": "10M", "db_metric": "1e7" },
+      { "low": "10M", "high": "inf", "db_metric": "inf" }
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Percent Of Combined Balance Of Active Holders With Balance Between {{low}} and {{high}}",
+    "name": "percent_of_active_holders_distribution_combined_balance_{{low}}_to_{{high}}",
+    "metric": "percent_of_active_holders_distribution_amount_{{db_metric}}",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "parameters": [
+      { "low": "0", "high": "0.001", "db_metric": "1e_3" },
+      { "low": "0.001", "high": "0.01", "db_metric": "1e_2" },
+      { "low": "0.01", "high": "0.1", "db_metric": "1e_1" },
+      { "low": "0.1", "high": "1", "db_metric": "1" },
+      { "low": "1", "high": "10", "db_metric": "1e1" },
+      { "low": "10", "high": "100", "db_metric": "1e2" },
+      { "low": "100", "high": "1k", "db_metric": "1e3" },
+      { "low": "1k", "high": "10k", "db_metric": "1e4" },
+      { "low": "10k", "high": "100k", "db_metric": "1e5" },
+      { "low": "100k", "high": "1M", "db_metric": "1e6" },
+      { "low": "1M", "high": "10M", "db_metric": "1e7" },
+      { "low": "10M", "high": "inf", "db_metric": "inf" }
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
+]

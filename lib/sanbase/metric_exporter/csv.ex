@@ -77,6 +77,35 @@ defmodule Sanbase.MetricExporter.CSV do
       ],
       interval: "1d"
     },
+    active_supply_distribution_1d: %{
+      metrics: [
+        "percent_of_active_holders_distribution_0_to_0.001",
+        "percent_of_active_holders_distribution_0.001_to_0.01",
+        "percent_of_active_holders_distribution_0.01_to_0.1",
+        "percent_of_active_holders_distribution_0.1_to_1",
+        "percent_of_active_holders_distribution_1_to_10",
+        "percent_of_active_holders_distribution_10_to_100",
+        "percent_of_active_holders_distribution_100_to_1k",
+        "percent_of_active_holders_distribution_1k_to_10k",
+        "percent_of_active_holders_distribution_10k_to_100k",
+        "percent_of_active_holders_distribution_100k_to_1M",
+        "percent_of_active_holders_distribution_1M_to_10M",
+        "percent_of_active_holders_distribution_10M_to_inf",
+        "percent_of_active_holders_distribution_combined_balance_0_to_0.001",
+        "percent_of_active_holders_distribution_combined_balance_0.001_to_0.01",
+        "percent_of_active_holders_distribution_combined_balance_0.01_to_0.1",
+        "percent_of_active_holders_distribution_combined_balance_0.1_to_1",
+        "percent_of_active_holders_distribution_combined_balance_1_to_10",
+        "percent_of_active_holders_distribution_combined_balance_10_to_100",
+        "percent_of_active_holders_distribution_combined_balance_100_to_1k",
+        "percent_of_active_holders_distribution_combined_balance_1k_to_10k",
+        "percent_of_active_holders_distribution_combined_balance_10k_to_100k",
+        "percent_of_active_holders_distribution_combined_balance_100k_to_1M",
+        "percent_of_active_holders_distribution_combined_balance_1M_to_10M",
+        "percent_of_active_holders_distribution_combined_balance_10M_to_inf"
+      ],
+      interval: "1d"
+    },
     network_activity_1d: %{
       metrics: [
         "circulation",

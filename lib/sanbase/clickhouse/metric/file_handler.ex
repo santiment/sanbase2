@@ -261,7 +261,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)
 
-  @timebound_flag_map @metrics_json |> Map.new(&{&1["name"], &1["is_timebound"]})
+  @timebound_flag_map @metrics_json
+                      |> Map.new(fn metric ->
+                        {metric["name"], Map.get(metric, "is_timebound", false)}
+                      end)
 
   case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
     [] ->

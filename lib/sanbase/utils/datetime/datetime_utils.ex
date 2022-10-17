@@ -174,6 +174,7 @@ defmodule Sanbase.DateTimeUtils do
       "h" -> int_interval * 60 * 60
       "d" -> int_interval * 24 * 60 * 60
       "w" -> int_interval * 7 * 24 * 60 * 60
+      "y" -> int_interval * 365 * 24 * 60 * 60
     end
   end
 
@@ -197,7 +198,7 @@ defmodule Sanbase.DateTimeUtils do
       "w" -> "#{int_interval} week"
       "y" -> "#{int_interval} year"
     end
-    |> maybe_append_s(int_interval)
+    |> maybe_pluralize_interval(int_interval)
   end
 
   def valid_compound_duration?(value) do
@@ -241,16 +242,11 @@ defmodule Sanbase.DateTimeUtils do
 
   def time_from_8601!(%Time{} = time), do: time
 
-  def valid_interval_string?(interval_string) when not is_binary(interval_string) do
-    {:error, "The provided string #{interval_string} is not a valid string interval"}
-  end
-
-  def valid_interval_string?(interval_string) when is_binary(interval_string) do
-    if Regex.match?(~r/^\d+[smhdw]{1}$/, interval_string) do
-      true
-    else
-      {:error, "The provided string #{interval_string} is not a valid string interval"}
-    end
+  def valid_interval?(interval) do
+    _ = str_to_sec(interval)
+    true
+  rescue
+    _ -> false
   end
 
   @doc ~s"""
@@ -283,6 +279,6 @@ defmodule Sanbase.DateTimeUtils do
   end
 
   # Private
-  defp maybe_append_s(str, 1), do: str
-  defp maybe_append_s(str, _), do: str <> "s"
+  defp maybe_pluralize_interval(str, 1), do: str
+  defp maybe_pluralize_interval(str, _), do: str <> "s"
 end

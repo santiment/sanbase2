@@ -13,7 +13,7 @@ defmodule Sanbase.Alert.OperationText.KV do
     kv = %{
       value: transform_fun.(value),
       previous: transform_fun.(previous),
-      human_readable: [:value, :previous]
+      __human_readable__: [:value, :previous]
     }
 
     {template, kv}
@@ -24,7 +24,7 @@ defmodule Sanbase.Alert.OperationText.KV do
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template = "Now: #{special_symbol}{{value}}"
-    kv = %{value: transform_fun.(value), human_readable: [:value]}
+    kv = %{value: transform_fun.(value), __human_readable__: [:value]}
     {template, kv}
   end
 
@@ -61,7 +61,7 @@ defmodule Sanbase.Alert.OperationText.KV do
     kv = %{
       op_key => transform_fun.(op_value),
       value: transform_fun.(value),
-      human_readable: [op_key, :value]
+      __human_readable__: [op_key, :value]
     }
 
     {template, kv}
@@ -89,7 +89,7 @@ defmodule Sanbase.Alert.OperationText.KV do
       lower: transform_fun.(lower),
       upper: transform_fun.(upper),
       value: transform_fun.(value),
-      human_readable: [:lower, :upper, :value]
+      __human_readable__: [:lower, :upper, :value]
     }
 
     {template, kv}
@@ -117,7 +117,7 @@ defmodule Sanbase.Alert.OperationText.KV do
       lower: transform_fun.(lower),
       upper: transform_fun.(upper),
       value: transform_fun.(value),
-      human_readable: [:lower, :upper, :value]
+      __human_readable__: [:lower, :upper, :value]
     }
 
     {template, kv}
@@ -182,7 +182,7 @@ defmodule Sanbase.Alert.OperationText.KV do
     kv = %{
       amount_change_up: transform_fun.(amount_change),
       amount_change_up_required: transform_fun.(amount_up),
-      human_readable: [:amount_change_up, :amount_change_up_required]
+      __human_readable__: [:amount_change_up, :amount_change_up_required]
     }
 
     {template, kv}
@@ -205,7 +205,7 @@ defmodule Sanbase.Alert.OperationText.KV do
     kv = %{
       amount_down_change: transform_fun.(amount_change) |> abs(),
       amount_down_change_required: transform_fun.(amount_down),
-      human_readable: [:amount_down_change, :amount_down_change_required]
+      __human_readable__: [:amount_down_change, :amount_down_change_required]
     }
 
     {template, kv}

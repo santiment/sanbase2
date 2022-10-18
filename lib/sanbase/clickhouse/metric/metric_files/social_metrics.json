@@ -717,7 +717,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Social Volume Twitter Nft",
+    "human_readable_name": "Social Volume Twitter NFT",
     "name": "social_volume_twitter_nft",
     "metric": "social_volume_twitter_nft",
     "version": "2020-07-31",
@@ -800,7 +800,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Social Dominance Twitter Nft",
+    "human_readable_name": "Social Dominance Twitter NFT",
     "name": "social_dominance_twitter_nft",
     "metric": "social_dominance_twitter_nft",
     "version": "2020-07-31",
@@ -880,7 +880,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Twitter Nft",
+    "human_readable_name": "Sentiment Volume Consumed Twitter NFT",
     "name": "sentiment_volume_consumed_twitter_nft",
     "metric": "sentiment_volume_consumed_twitter_nft",
     "version": "2020-07-31",
@@ -960,7 +960,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Positive Twitter Nft",
+    "human_readable_name": "Sentiment Positive Twitter NFT",
     "name": "sentiment_positive_twitter_nft",
     "metric": "sentiment_positive_twitter_nft",
     "version": "2020-07-31",
@@ -1040,7 +1040,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Negative Twitter Nft",
+    "human_readable_name": "Sentiment Negative Twitter NFT",
     "name": "sentiment_negative_twitter_nft",
     "metric": "sentiment_negative_twitter_nft",
     "version": "2020-07-31",
@@ -1120,7 +1120,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Twitter Nft",
+    "human_readable_name": "Sentiment Balance Twitter NFT",
     "name": "sentiment_balance_twitter_nft",
     "metric": "sentiment_balance_twitter_nft",
     "version": "2020-07-31",
@@ -1653,7 +1653,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "1h Moving Average Of Social Dominance Twitter Nft",
+    "human_readable_name": "1h Moving Average Of Social Dominance Twitter NFT",
     "name": "social_dominance_twitter_nft_1h_moving_average",
     "metric": "social_dominance_twitter_nft_1h",
     "version": "2019-01-01",
@@ -1672,7 +1672,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "24h Moving Average Of Social Dominance Twitter Nft",
+    "human_readable_name": "24h Moving Average Of Social Dominance Twitter NFT",
     "name": "social_dominance_twitter_nft_24h_moving_average",
     "metric": "social_dominance_twitter_nft_24h",
     "version": "2019-01-01",

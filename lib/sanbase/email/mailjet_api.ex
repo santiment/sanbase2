@@ -1,4 +1,17 @@
 defmodule Sanbase.Email.MailjetApi do
+  env = Application.compile_env(:sanbase, :env)
+  @module if env == :test, do: Sanbase.Email.MailjetApiTest, else: Sanbase.Email.MailjetApiImpl
+
+  def subscribe(list_atom, email_or_emails), do: @module.subscribe(list_atom, email_or_emails)
+  def unsubscribe(list_atom, email_or_emails), do: @module.unsubscribe(list_atom, email_or_emails)
+end
+
+defmodule Sanbase.Email.MailjetApiTest do
+  def subscribe(_, _), do: :ok
+  def unsubscribe(_, _), do: :ok
+end
+
+defmodule Sanbase.Email.MailjetApiImpl do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
@@ -19,7 +32,9 @@ defmodule Sanbase.Email.MailjetApi do
     subscribe_unsubscribe(list_atom, email_or_emails, :unsubscribe)
   end
 
-  def subscribe_unsubscribe(list_atom, email_or_emails, action) do
+  # private
+
+  defp subscribe_unsubscribe(list_atom, email_or_emails, action) do
     action_map = %{subscribe: "addnoforce", unsubscribe: "remove"}
 
     contacts =
@@ -35,7 +50,7 @@ defmodule Sanbase.Email.MailjetApi do
     |> manage_subscription(@mailjet_lists[list_atom], action)
   end
 
-  def manage_subscription(body_json, list_id, action) do
+  defp manage_subscription(body_json, list_id, action) do
     HTTPoison.post(
       @base_url() <> "contactslist/#{list_id}/managemanycontacts",
       body_json,
@@ -62,7 +77,7 @@ defmodule Sanbase.Email.MailjetApi do
     end
   end
 
-  def basic_auth do
+  defp basic_auth do
     Base.encode64(
       Config.module_get!(Sanbase.TemplateMailer, :api_key) <>
         ":" <> Config.module_get!(Sanbase.TemplateMailer, :secret)

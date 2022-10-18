@@ -25,6 +25,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_volume_bitcointalk",
     "social_volume_twitter_crypto",
     "social_volume_twitter_news",
+    "social_volume_twitter_nft",
     "social_volume_youtube_videos",
     "social_volume_total",
     "nft_social_volume"
@@ -42,6 +43,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_dominance_reddit",
     "social_dominance_twitter_crypto",
     "social_dominance_twitter_news",
+    "social_dominance_twitter_nft",
     "social_dominance_youtube_videos",
     "social_dominance_total"
   ]

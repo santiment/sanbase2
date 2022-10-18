@@ -9,6 +9,7 @@ defmodule Sanbase.SocialData.SocialHelper do
     :bitcointalk,
     :twitter_crypto,
     :twitter_news,
+    :twitter_nft,
     :youtube_videos
   ]
 

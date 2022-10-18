@@ -717,6 +717,29 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Social Volume Twitter Nft",
+    "name": "social_volume_twitter_nft",
+    "metric": "social_volume_twitter_nft",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Social Dominance Twitter",
     "name": "social_dominance_twitter",
     "metric": "social_dominance_twitter_v2",
@@ -760,6 +783,26 @@
     "human_readable_name": "Social Dominance Twitter News",
     "name": "social_dominance_twitter_news",
     "metric": "social_dominance_twitter_news",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Social Dominance Twitter Nft",
+    "name": "social_dominance_twitter_nft",
+    "metric": "social_dominance_twitter_nft",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
@@ -837,6 +880,26 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Sentiment Volume Consumed Twitter Nft",
+    "name": "sentiment_volume_consumed_twitter_nft",
+    "metric": "sentiment_volume_consumed_twitter_nft",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Sentiment Positive Twitter",
     "name": "sentiment_positive_twitter",
     "metric": "sentiment_positive_twitter",
@@ -897,6 +960,26 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Sentiment Positive Twitter Nft",
+    "name": "sentiment_positive_twitter_nft",
+    "metric": "sentiment_positive_twitter_nft",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Sentiment Negative Twitter",
     "name": "sentiment_negative_twitter",
     "metric": "sentiment_negative_twitter",
@@ -940,6 +1023,106 @@
     "human_readable_name": "Sentiment Negative Twitter News",
     "name": "sentiment_negative_twitter_news",
     "metric": "sentiment_negative_twitter_news",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Negative Twitter Nft",
+    "name": "sentiment_negative_twitter_nft",
+    "metric": "sentiment_negative_twitter_nft",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Twitter",
+    "name": "sentiment_balance_twitter",
+    "metric": "sentiment_balance_twitter",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Twitter Crypto",
+    "name": "sentiment_balance_twitter_crypto",
+    "metric": "sentiment_balance_twitter_crypto",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Twitter News",
+    "name": "sentiment_balance_twitter_news",
+    "metric": "sentiment_balance_twitter_news",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Twitter Nft",
+    "name": "sentiment_balance_twitter_nft",
+    "metric": "sentiment_balance_twitter_nft",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
@@ -1043,66 +1226,6 @@
     "human_readable_name": "Sentiment Negative Youtube",
     "name": "sentiment_negative_youtube_videos",
     "metric": "sentiment_negative_youtube_videos",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Balance Twitter",
-    "name": "sentiment_balance_twitter",
-    "metric": "sentiment_balance_twitter",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Balance Twitter Crypto",
-    "name": "sentiment_balance_twitter_crypto",
-    "metric": "sentiment_balance_twitter_crypto",
-    "version": "2020-07-31",
-    "access": "restricted",
-    "selectors": [
-      "slug",
-      "text"
-    ],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Balance Twitter News",
-    "name": "sentiment_balance_twitter_news",
-    "metric": "sentiment_balance_twitter_news",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
@@ -1514,6 +1637,44 @@
     "human_readable_name": "24h Moving Average Of Social Dominance Twitter News",
     "name": "social_dominance_twitter_news_24h_moving_average",
     "metric": "social_dominance_twitter_news_24h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "1h Moving Average Of Social Dominance Twitter Nft",
+    "name": "social_dominance_twitter_nft_1h_moving_average",
+    "metric": "social_dominance_twitter_nft_1h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "24h Moving Average Of Social Dominance Twitter Nft",
+    "name": "social_dominance_twitter_nft_24h_moving_average",
+    "metric": "social_dominance_twitter_nft_24h",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [

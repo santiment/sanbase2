@@ -1948,29 +1948,27 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins not older than 1 day",
-    "name": "realized_cap_hodl_waves_0d_to_1d",
-    "metric": "realized_cap_hodl_waves_0d_to_1d",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between {{low:human_readable} and {{high:human_readable}}",
+    "name": "realized_cap_hodl_waves_{{low}}_to_{{high}}",
+    "metric": "realized_cap_hodl_waves_{{db_metric}}",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins between 1 and 7 days old",
-    "name": "realized_cap_hodl_waves_1d_to_7d",
-    "metric": "realized_cap_hodl_waves_1d_to_7d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
+    "parameters": [
+      { "low": "0d", "high": "1d", "db_metric": "0d_to_1d" },
+      { "low": "1d", "high": "7d", "db_metric": "1d_to_7d" },
+      { "low": "7d", "high": "30d", "db_metric": "7d_to_30d" },
+      { "low": "30d", "high": "60d", "db_metric": "30d_to_60d" },
+      { "low": "60d", "high": "90d", "db_metric": "60d_to_90d" },
+      { "low": "90d", "high": "180d", "db_metric": "90d_to_180d" },
+      { "low": "180d", "high": "365d", "db_metric": "180d_to_365d" },
+      { "low": "365d", "high": "2y", "db_metric": "365d_to_2y" },
+      { "low": "2y", "high": "3y", "db_metric": "2y_to_3y" },
+      { "low": "3y", "high": "5y", "db_metric": "3y_to_5y" },
+      { "low": "5y", "high": "7y", "db_metric": "5y_to_7y" },
+      { "low": "7y", "high": "10y", "db_metric": "7y_to_10y" },
+      { "low": "10y", "high": "20y", "db_metric": "10y_to_20y" }
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1981,176 +1979,7 @@
     "has_incomplete_data": true,
     "data_type": "timeseries"
   },
-  {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins between 7 and 30 days old",
-    "name": "realized_cap_hodl_waves_7d_to_30d",
-    "metric": "realized_cap_hodl_waves_7d_to_30d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins between 30 and 60 days old",
-    "name": "realized_cap_hodl_waves_30d_to_60d",
-    "metric": "realized_cap_hodl_waves_30d_to_60d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins between 60 and 90 days old",
-    "name": "realized_cap_hodl_waves_60d_to_90d",
-    "metric": "realized_cap_hodl_waves_60d_to_90d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins between 90 and 180 days old",
-    "name": "realized_cap_hodl_waves_90d_to_180d",
-    "metric": "realized_cap_hodl_waves_90d_to_180d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins between 180 and 365 days old",
-    "name": "realized_cap_hodl_waves_180d_to_365d",
-    "metric": "realized_cap_hodl_waves_180d_to_365d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins between 1 and 2 years old",
-    "name": "realized_cap_hodl_waves_365d_to_2y",
-    "metric": "realized_cap_hodl_waves_365d_to_2y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins between 2 and 3 years old",
-    "name": "realized_cap_hodl_waves_2y_to_3y",
-    "metric": "realized_cap_hodl_waves_2y_to_3y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins between 3 and 5 years old",
-    "name": "realized_cap_hodl_waves_3y_to_5y",
-    "metric": "realized_cap_hodl_waves_3y_to_5y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins between 5 and 10 years old",
-    "name": "realized_cap_hodl_waves_5y_to_10y",
-    "metric": "realized_cap_hodl_waves_5y_to_10y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins between 10 and 20 years old",
-    "name": "realized_cap_hodl_waves_10y_to_20y",
-    "metric": "realized_cap_hodl_waves_10y_to_20y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
+
   {
     "human_readable_name": "Minimum daily price of nft collections in eth",
     "name": "nft_collection_min_price",

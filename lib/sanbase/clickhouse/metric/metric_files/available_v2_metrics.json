@@ -187,46 +187,17 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Active Addresses for the last 7 days",
-    "name": "active_addresses_7d",
-    "metric": "active_addresses_7d",
+    "human_readable_name": "Active Addresses for the last {{sliding_window:human_readable}}",
+    "name": "active_addresses_{{sliding_window}}",
+    "metric": "active_addresses_{{sliding_window}}",
     "version": "2019-01-01",
     "access": "free",
     "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Active Addresses for the last 24 hours",
-    "name": "active_addresses_24h",
-    "metric": "active_addresses_24h",
-    "version": "2019-01-01",
-    "access": "free",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Active Addresses for the last 1 hour",
-    "name": "active_addresses_1h",
-    "metric": "active_addresses_1h",
-    "version": "2019-01-01",
-    "access": "free",
-    "selectors": ["slug"],
+    "parameters": [
+      { "sliding_window": "1h" },
+      { "sliding_window": "24h" },
+      { "sliding_window": "7d" }
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -447,114 +418,22 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Circulation for coins that have not moved in the past 10 years",
-    "name": "dormant_circulation_10y",
-    "metric": "dormant_circulation_10y",
+    "human_readable_name": "Circulation for coins that have not moved in the past {{timebound:human_readable}}",
+    "name": "dormant_circulation_{{timebound}}",
+    "metric": "dormant_circulation_{{timebound}}",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that have not moved in the past 5 years",
-    "name": "dormant_circulation_5y",
-    "metric": "dormant_circulation_5y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that have not moved in the past 3 years",
-    "name": "dormant_circulation_3y",
-    "metric": "dormant_circulation_3y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that have not moved in the past 2 years",
-    "name": "dormant_circulation_2y",
-    "metric": "dormant_circulation_2y",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that have not moved in the past 1 year",
-    "name": "dormant_circulation_365d",
-    "metric": "dormant_circulation_365d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that have not moved in the past 180 days",
-    "name": "dormant_circulation_180d",
-    "metric": "dormant_circulation_180d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Circulation for coins that have not moved in the past 90 days",
-    "name": "dormant_circulation_90d",
-    "metric": "dormant_circulation_90d",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
+    "parameters": [
+      { "timebound": "90d" },
+      { "timebound": "180d" },
+      { "timebound": "365d" },
+      { "timebound": "2y" },
+      { "timebound": "3y" },
+      { "timebound": "5y" },
+      { "timebound": "10y" }
+    ],
+    "is_timebound": true,
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1935,7 +1814,7 @@
       { "low": "3y", "high": "5y", "db_metric": "3y_to_5y" },
       { "low": "5y", "high": "7y", "db_metric": "5y_to_7y" },
       { "low": "7y", "high": "10y", "db_metric": "7y_to_10y" },
-      { "low": "10y", "high": "inf", "db_metric": "10y_to_inf" }
+      { "low": "10y", "high": "20y", "db_metric": "10y_to_inf" }
     ],
     "min_plan": {
       "SANAPI": "free",

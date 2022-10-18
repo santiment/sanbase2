@@ -16,7 +16,7 @@ defmodule Sanbase.Alert.OperationText do
 
   def merge_kvs(%{} = kv_left, %{} = kv_right) do
     Map.merge(kv_left, kv_right, fn
-      :human_readable, left, right -> Enum.uniq(left ++ right)
+      :__human_readable__, left, right -> Enum.uniq(left ++ right)
       _, _left, right -> right
     end)
   end

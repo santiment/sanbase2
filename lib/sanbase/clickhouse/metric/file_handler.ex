@@ -39,31 +39,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
       [metric | duplicates]
     end
 
-    def resolve_timebound_metrics(metric_map, timebound_values) do
-      %{
-        "name" => name,
-        "metric" => metric,
-        "human_readable_name" => human_readable_name
-      } = metric_map
-
-      timebound_values
-      |> Enum.map(fn timebound ->
-        %{
-          metric_map
-          | "name" => TemplateEngine.run(name, %{timebound: timebound}),
-            "metric" => TemplateEngine.run(metric, %{timebound: timebound}),
-            "human_readable_name" =>
-              TemplateEngine.run(
-                human_readable_name,
-                %{timebound_human_readable: interval_to_str(timebound)}
-              )
-        }
-      end)
-    end
-
     def expand_patterns(metrics_json) do
       metrics_json
-      |> expand_timebound_metrics()
       |> expand_parameters_metrics()
     end
 
@@ -77,27 +54,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
             %{"name" => name, "human_readable_name" => human_name, "metric" => metric} =
               metric_map
 
+            aliases = Map.get(metric_map, "aliases", [])
+
             Enum.map(parameters_list, fn parameters ->
               metric_map
               |> Map.put("name", TemplateEngine.run(name, parameters))
               |> Map.put("metric", TemplateEngine.run(metric, parameters))
               |> Map.put("human_readable_name", TemplateEngine.run(human_name, parameters))
+              |> Map.put("aliases", Enum.map(aliases, &TemplateEngine.run(&1, parameters)))
             end)
-        end
-      end)
-    end
-
-    def expand_timebound_metrics(metrics_json) do
-      put_timebound = fn list, bool -> list |> Enum.map(&Map.put(&1, "is_timebound", bool)) end
-
-      Enum.flat_map(metrics_json, fn metric ->
-        case Map.get(metric, "timebound") do
-          nil ->
-            [metric] |> put_timebound.(false)
-
-          timebound_values ->
-            resolve_timebound_metrics(metric, timebound_values)
-            |> put_timebound.(true)
         end
       end)
     end
@@ -261,7 +226,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)
 
-  @timebound_flag_map @metrics_json |> Map.new(&{&1["name"], &1["is_timebound"]})
+  @timebound_flag_map @metrics_json
+                      |> Map.new(fn metric ->
+                        {metric["name"], Map.get(metric, "is_timebound", false)}
+                      end)
 
   case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
     [] ->

@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     {StripeApi, [:passthrough], [delete_default_card: fn _ -> :ok end]},
     {Sanbase.StripeApi, [:passthrough],
      [
-       update_subscription_item_by_id: fn _, _ ->
+       upgrade_downgrade: fn _, _ ->
          StripeApiTestResponse.update_subscription_resp()
        end
      ]},
@@ -339,7 +339,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
     test "when retrieving subscription from Stripe fails - returns generic error", context do
       with_mock StripeApi, [],
-        update_subscription_item_by_id: fn _, _ ->
+        upgrade_downgrade: fn _, _ ->
           {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
         end do
         subscription = insert(:subscription_essential, user: context.user, stripe_id: "stripe_id")
@@ -355,7 +355,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
     test "when updating subscription in Stripe fails - returns generic error", context do
       with_mock Sanbase.StripeApi, [],
-        update_subscription_item_by_id: fn _, _ ->
+        upgrade_downgrade: fn _, _ ->
           {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
         end do
         subscription = insert(:subscription_essential, user: context.user, stripe_id: "stripe_id")

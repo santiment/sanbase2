@@ -80,7 +80,7 @@ defmodule SanbaseWeb.UserController do
   end
 
   def belongs_to(user) do
-    {:ok, acl} = Sanbase.ApiCallLimit.get_quota_db(:user, user)
+    {_, acl} = Sanbase.ApiCallLimit.get_quota_db(:user, user)
 
     api_calls_count =
       case Sanbase.Clickhouse.ApiCallData.api_call_count(

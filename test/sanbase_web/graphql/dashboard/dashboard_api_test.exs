@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.DashboardApiTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -243,6 +244,36 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
 
         updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
         assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
+      end)
+    end
+
+    test "compute a panel with overriden parameters", context do
+      dashboard =
+        execute_dashboard_mutation(context.conn, :create_dashboard)
+        |> get_in(["data", "createDashboard"])
+
+      panel =
+        execute_dashboard_panel_schema_mutation(
+          context.conn,
+          :create_dashboard_panel,
+          default_dashboard_panel_args() |> Map.put(:dashboard_id, dashboard["id"])
+        )
+        |> get_in(["data", "createDashboardPanel"])
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, mocked_clickhouse_result()}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        _result =
+          execute_dashboard_panel_cache_mutation(context.conn, :compute_dashboard_panel, %{
+            dashboard_id: dashboard["id"],
+            panel_id: panel["id"],
+            parameters: Jason.encode!(%{"slug" => "ethereum"})
+          })
+
+        # Check that the slug is overriden from bitcoin to ethereum
+        assert_called(Sanbase.ClickhouseRepo.query(:_, ["ethereum", 20]))
       end)
     end
 

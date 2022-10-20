@@ -102,10 +102,20 @@ defmodule Sanbase.Dashboard.Panel do
   The SQL query and arguments are taken from the panel and are executed.
   The result is transformed by converting the Date and NaiveDateTime types to DateTime.
   """
-  @spec compute(t(), non_neg_integer()) :: {:ok, Query.Result.t()} | {:error, String.t()}
-  def compute(%__MODULE__{} = panel, querying_user_id) do
+  @spec compute(t(), non_neg_integer(), Keyword.t()) ::
+          {:ok, Query.Result.t()} | {:error, String.t()}
+  def compute(%__MODULE__{} = panel, querying_user_id, opts) do
     %{sql: %{"query" => query, "parameters" => parameters, "san_query_id" => san_query_id}} =
       panel
+
+    # If the opts contain parameters, override the default parameters during computing.
+    # It allows for only some parameters to be provided. They will override the existing
+    # ones and the rest will remain the same.
+    parameters =
+      case Keyword.get(opts, :parameters) do
+        nil -> parameters
+        overridden_parameters -> Map.merge(parameters, overridden_parameters)
+      end
 
     Query.run(query, parameters, san_query_id, querying_user_id)
   end

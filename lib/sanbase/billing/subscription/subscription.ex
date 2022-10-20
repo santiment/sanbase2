@@ -157,8 +157,7 @@ defmodule Sanbase.Billing.Subscription do
   Stripe docs: https://stripe.com/docs/billing/subscriptions/upgrading-downgrading#switching
   """
   def update_subscription(%__MODULE__{} = db_subscription, plan) do
-    with {:ok, stripe_subscription} <-
-           StripeApi.update_subscription_item_by_id(db_subscription, plan),
+    with {:ok, stripe_subscription} <- StripeApi.upgrade_downgrade(db_subscription, plan),
          {:ok, db_subscription} <-
            sync_subscription_with_stripe(stripe_subscription, db_subscription),
          db_subscription <- default_preload(db_subscription, force: true) do

@@ -8,6 +8,8 @@ defmodule Sanbase.Billing.Subscription.ProPlus do
   @basic_api_plans [101, 103]
   @free_basic_api_plan 101
 
+  def basic_api_plans, do: @basic_api_plans
+
   def create_free_basic_api do
     users_eligible_for_free_basic_plan()
     |> Enum.each(fn user_id ->

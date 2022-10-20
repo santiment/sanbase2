@@ -3,7 +3,7 @@ defmodule Sanbase.StripeApi do
   Module wrapping communication with Stripe.
   """
 
-  alias Sanbase.Billing.{Product, Plan}
+  alias Sanbase.Billing.{Product, Plan, Subscription}
   alias Sanbase.Accounts.User
 
   @type subscription_item :: %{plan: String.t()}
@@ -80,16 +80,19 @@ defmodule Sanbase.StripeApi do
     Stripe.Subscription.delete(stripe_id)
   end
 
-  def update_subscription_item_by_id(db_subscription, plan) do
-    # Note: StripeApi.update_subscription/2 will generate dialyzer error
-    # because the spec is wrong.
-    # More info here: https://github.com/code-corps/stripity_stripe/pull/499
-    with {:ok, item_id} <- get_subscription_first_item_id(db_subscription.stripe_id),
-         {:ok, stripe_subscription} <-
-           update_subscription(db_subscription.stripe_id, %{
-             items: [%{id: item_id, plan: plan.stripe_id}]
-           }) do
+  def upgrade_downgrade(db_subscription, plan) do
+    with {:ok, params} <- get_upgrade_downgrade_subscription_params(db_subscription, plan),
+         # Remove coupon for free basic API subscription
+         {:ok, params} <- maybe_remove_coupon(params, db_subscription, plan),
+         {:ok, stripe_subscription} <- update_subscription(db_subscription.stripe_id, params) do
       {:ok, stripe_subscription}
+    end
+  end
+
+  def get_upgrade_downgrade_subscription_params(db_subscription, plan) do
+    with {:ok, item_id} <- get_subscription_first_item_id(db_subscription.stripe_id) do
+      params = %{items: [%{id: item_id, plan: plan.stripe_id}]}
+      {:ok, params}
     end
   end
 
@@ -149,6 +152,27 @@ defmodule Sanbase.StripeApi do
   end
 
   # Helpers
+
+  defp maybe_remove_coupon(params, db_subscription, plan) do
+    with {:ok, stripe_subscription} <- retrieve_subscription(db_subscription.stripe_id) do
+      percent_off =
+        get_in(stripe_subscription, [
+          Access.key!(:discount),
+          Access.key!(:coupon),
+          Access.key!(:percent_off)
+        ])
+
+      is_basic_plan? = fn plan_id ->
+        plan_id in Sanbase.Billing.Subscription.ProPlus.basic_api_plans()
+      end
+
+      if is_basic_plan?.(db_subscription.plan_id) and percent_off == 100.0 do
+        {:ok, Map.merge(params, :coupon, nil)}
+      else
+        {:ok, params}
+      end
+    end
+  end
 
   defp get_subscription_first_item_id(stripe_id) do
     stripe_id

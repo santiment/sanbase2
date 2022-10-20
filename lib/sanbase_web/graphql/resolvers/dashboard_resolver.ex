@@ -72,10 +72,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
   def compute_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
     %{dashboard_id: dashboard_id, panel_id: panel_id} = args
+    parameters = Map.get(args, :parameters, nil)
+    opts = [parameters: parameters]
 
     with true <- can_view_dashboard?(dashboard_id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_panel(dashboard_id, panel_id, user.id)
+      Dashboard.compute_panel(dashboard_id, panel_id, user.id, opts)
     end
   end
 

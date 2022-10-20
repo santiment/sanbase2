@@ -298,6 +298,11 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
       arg(:dashboard_id, non_null(:integer))
       arg(:panel_id, non_null(:string))
 
+      @desc ~s"""
+      Docs about this arg
+      """
+      arg(:parameters, :json, default_value: nil)
+
       middleware(JWTAuth)
 
       resolve(&DashboardResolver.compute_dashboard_panel/3)

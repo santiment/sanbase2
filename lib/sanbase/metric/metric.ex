@@ -795,8 +795,15 @@ defmodule Sanbase.Metric do
   defp maybe_change_module(module, metric, selector, opts)
        when metric in @price_pair_metrics do
     case Keyword.get(opts, :source) || Map.get(selector, :source) do
-      "cryptocompare" -> Sanbase.PricePair.MetricAdapter
-      _ -> module
+      "cryptocompare" ->
+        Sanbase.PricePair.MetricAdapter
+
+      # NOTE: Temporary. This will be reworked and handled in a generic way
+      source when metric == "price_eth" and source != "cryptocompare" ->
+        Sanbase.Clickhouse.MetricAdapter
+
+      _ ->
+        module
     end
   end
 

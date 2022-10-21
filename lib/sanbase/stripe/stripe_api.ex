@@ -167,7 +167,7 @@ defmodule Sanbase.StripeApi do
       end
 
       if is_basic_plan?.(db_subscription.plan_id) and percent_off == 100.0 do
-        {:ok, Map.merge(params, :coupon, nil)}
+        {:ok, Map.put(params, :coupon, nil)}
       else
         {:ok, params}
       end

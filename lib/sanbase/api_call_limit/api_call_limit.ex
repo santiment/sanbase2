@@ -137,6 +137,13 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
+  def reset(%User{} = user) do
+    Repo.get_by(__MODULE__, user_id: user.id)
+    |> Repo.delete()
+
+    create(:user, user)
+  end
+
   # Private functions
 
   defp create(type, entity, count \\ 0)

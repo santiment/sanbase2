@@ -33,7 +33,7 @@ defmodule SanbaseWeb.UserController do
   def reset_api_call_limits(conn, %{"id" => id}) do
     {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
 
-    Sanbase.ApiCallLimit.update_usage_db(:user, user, 0)
+    Sanbase.ApiCallLimit.reset(user)
 
     show(conn, %{"id" => user.id})
   end
@@ -80,7 +80,7 @@ defmodule SanbaseWeb.UserController do
   end
 
   def belongs_to(user) do
-    {:ok, acl} = Sanbase.ApiCallLimit.get_quota_db(:user, user)
+    {_, acl} = Sanbase.ApiCallLimit.get_quota_db(:user, user)
 
     api_calls_count =
       case Sanbase.Clickhouse.ApiCallData.api_call_count(

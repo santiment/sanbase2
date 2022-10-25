@@ -535,7 +535,7 @@
   {
     "human_readable_name": "Age Consumed Change ({{interval}})",
     "name": "age_destroyed_change_{{interval}}",
-    "metric": "stack_age_consumed_5min_chang{{interval}}1d",
+    "metric": "stack_age_consumed_5min_change_{{interval}}",
     "aliases": ["age_consumed_change_{{interval}}"],
     "version": "2019-01-01",
     "access": "restricted",

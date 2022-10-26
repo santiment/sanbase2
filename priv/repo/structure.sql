@@ -2609,6 +2609,39 @@ ALTER SEQUENCE public.promo_trials_id_seq OWNED BY public.promo_trials.id;
 
 
 --
+-- Name: pumpkins; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.pumpkins (
+    id bigint NOT NULL,
+    collected integer DEFAULT 0,
+    coupon character varying(255),
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: pumpkins_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.pumpkins_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: pumpkins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.pumpkins_id_seq OWNED BY public.pumpkins.id;
+
+
+--
 -- Name: reports; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4305,6 +4338,13 @@ ALTER TABLE ONLY public.promo_trials ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
+-- Name: pumpkins id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pumpkins ALTER COLUMN id SET DEFAULT nextval('public.pumpkins_id_seq'::regclass);
+
+
+--
 -- Name: reports id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5066,6 +5106,14 @@ ALTER TABLE ONLY public.promo_coupons
 
 ALTER TABLE ONLY public.promo_trials
     ADD CONSTRAINT promo_trials_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pumpkins pumpkins_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pumpkins
+    ADD CONSTRAINT pumpkins_pkey PRIMARY KEY (id);
 
 
 --
@@ -5983,6 +6031,13 @@ CREATE UNIQUE INDEX project_transparency_statuses_name_index ON public.project_t
 --
 
 CREATE UNIQUE INDEX promo_coupons_email_index ON public.promo_coupons USING btree (email);
+
+
+--
+-- Name: pumpkins_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX pumpkins_user_id_index ON public.pumpkins USING btree (user_id);
 
 
 --
@@ -7017,6 +7072,14 @@ ALTER TABLE ONLY public.promo_trials
 
 
 --
+-- Name: pumpkins pumpkins_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pumpkins
+    ADD CONSTRAINT pumpkins_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: san_burn_credit_transactions san_burn_credit_transactions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7860,3 +7923,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220727072726);
 INSERT INTO public."schema_migrations" (version) VALUES (20220804105452);
 INSERT INTO public."schema_migrations" (version) VALUES (20220825071308);
 INSERT INTO public."schema_migrations" (version) VALUES (20220830115029);
+INSERT INTO public."schema_migrations" (version) VALUES (20221025154013);

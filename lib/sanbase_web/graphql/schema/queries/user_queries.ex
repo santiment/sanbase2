@@ -10,7 +10,8 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     TelegramResolver,
     UserFollowerResolver,
     UserResolver,
-    UserSettingsResolver
+    UserSettingsResolver,
+    PumpkinResolver
   }
 
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
@@ -60,6 +61,12 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:plan, :plans_enum)
 
       resolve(&AccessControlResolver.get_access_restrictions/3)
+    end
+
+    field :get_pumpkins_count, :integer do
+      meta(access: :free)
+      middleware(JWTAuth)
+      resolve(&PumpkinResolver.get_pumpkins_count/3)
     end
   end
 
@@ -200,6 +207,17 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
       middleware(JWTAuth)
       resolve(&UserResolver.change_avatar/3)
+    end
+
+    field :update_pumpkins, :boolean do
+      arg(:count, :integer)
+      middleware(JWTAuth)
+      resolve(&PumpkinResolver.update_pumpkins/3)
+    end
+
+    field :create_pumpkin_code, :string do
+      middleware(JWTAuth)
+      resolve(&PumpkinResolver.create_pumpkin_code/3)
     end
   end
 end

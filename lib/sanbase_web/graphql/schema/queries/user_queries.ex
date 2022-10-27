@@ -63,10 +63,10 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       resolve(&AccessControlResolver.get_access_restrictions/3)
     end
 
-    field :get_pumpkins_count, :integer do
+    field :get_pumpkins, list_of(:string) do
       meta(access: :free)
       middleware(JWTAuth)
-      resolve(&PumpkinResolver.get_pumpkins_count/3)
+      resolve(&PumpkinResolver.get_pumpkins/3)
     end
   end
 
@@ -210,7 +210,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     end
 
     field :update_pumpkins, :boolean do
-      arg(:count, :integer)
+      arg(:page, :string)
       middleware(JWTAuth)
       resolve(&PumpkinResolver.update_pumpkins/3)
     end

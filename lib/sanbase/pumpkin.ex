@@ -14,6 +14,7 @@ defmodule Sanbase.Pumpkin do
   schema "pumpkins" do
     field(:collected, :integer, default: 0)
     field(:coupon, :string)
+    field(:pages, {:array, :string}, default: [])
 
     belongs_to(:user, User)
 
@@ -23,7 +24,7 @@ defmodule Sanbase.Pumpkin do
   @doc false
   def changeset(pumpkin, attrs) do
     pumpkin
-    |> cast(attrs, [:collected, :coupon, :user_id])
+    |> cast(attrs, [:collected, :coupon, :user_id, :pages])
     |> validate_required([:user_id])
   end
 
@@ -31,24 +32,25 @@ defmodule Sanbase.Pumpkin do
     Repo.get_by(__MODULE__, user_id: user_id)
   end
 
-  def get_pumpkins_count(user_id) do
+  def get_pumpkins(user_id) do
     by_user(user_id)
     |> case do
-      %__MODULE__{collected: collected} -> {:ok, collected}
-      nil -> {:ok, 0}
+      %__MODULE__{collected: collected, pages: pages} -> {:ok, pages}
+      nil -> {:ok, []}
     end
   end
 
-  def update_pumpkins(user_id, collected) do
+  def update_pumpkins(user_id, page) do
     by_user(user_id)
     |> case do
-      %__MODULE__{collected: prev_collected} = pumpkin ->
-        sum_collected = Enum.min([@pumpkins_count, prev_collected + collected])
-        do_update(pumpkin, %{collected: sum_collected})
+      %__MODULE__{pages: pages} = pumpkin ->
+        if page not in pages do
+          pages = Enum.uniq(pages ++ [page])
+          do_update(pumpkin, %{collected: length(pages), pages: pages})
+        end
 
       nil ->
-        sum_collected = Enum.min([@pumpkins_count, collected])
-        do_create(%__MODULE__{}, %{user_id: user_id, collected: sum_collected})
+        do_create(%__MODULE__{}, %{user_id: user_id, collected: 1, pages: [page]})
     end
   end
 
@@ -65,7 +67,7 @@ defmodule Sanbase.Pumpkin do
   end
 
   def create_pumpkin_code(user_id) do
-    with %__MODULE__{collected: collected} = pumpkin when collected == 3 <- by_user(user_id),
+    with %__MODULE__{collected: collected} = pumpkin when collected >= 3 <- by_user(user_id),
          {:ok, %{"id" => coupon}} <- create_stripe_coupon_v2() do
       do_update(pumpkin, %{coupon: coupon})
       {:ok, coupon}

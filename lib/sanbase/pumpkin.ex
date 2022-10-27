@@ -6,6 +6,7 @@ defmodule Sanbase.Pumpkin do
 
   alias Sanbase.Accounts.Users
   alias Sanbase.Repo
+  alias Sanbase.Billing.Product
 
   @percent_off 54
   @pumpkins_count 3
@@ -65,11 +66,11 @@ defmodule Sanbase.Pumpkin do
 
   def create_pumpkin_code(user_id) do
     with %__MODULE__{collected: collected} = pumpkin when collected == 3 <- by_user(user_id),
-         {:ok, %Stripe.Coupon{id: coupon}} <- create_stripe_coupon() do
+         {:ok, %{"id" => coupon}} <- create_stripe_coupon_v2() do
       do_update(pumpkin, %{coupon: coupon})
       {:ok, coupon}
     else
-      {:error, %Stripe.Error{}} -> {:error, "Could not create coupon."}
+      {:error, _} -> {:error, "Could not create coupon."}
       _ -> {:error, "Could not create coupon. Not all pumpkins collected"}
     end
   end
@@ -84,12 +85,15 @@ defmodule Sanbase.Pumpkin do
     })
   end
 
+  # Make a raw call skipping Stripity lib since it does not support `applies_to` param
   def create_stripe_coupon_v2 do
     %{
-      percent_off: @percent_off,
-      duration: "once",
-      redeem_by: DateTime.to_unix(~U[2022-11-05 23:59:59.999999Z]),
-      name: "Halloween Sanbase Discount"
+      "percent_off" => @percent_off,
+      "duration" => "forever",
+      "redeem_by" => DateTime.to_unix(~U[2022-11-05 23:59:59.999999Z]),
+      "name" => "Halloween Sanbase Discount",
+      "max_redemptions" => 1,
+      "applies_to[products][]" => Product.by_id(Product.product_sanbase()).stripe_id
     }
     |> do_create_coupon()
   end
@@ -103,7 +107,7 @@ defmodule Sanbase.Pumpkin do
     |> case do
       {:ok, %HTTPoison.Response{status_code: status_code} = response}
       when status_code >= 200 and status_code < 300 ->
-        Jason.decode!(response.body)
+        {:ok, Jason.decode!(response.body)}
 
       {:ok, %HTTPoison.Response{} = response} ->
         {:error, response.body}

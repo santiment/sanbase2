@@ -2618,7 +2618,8 @@ CREATE TABLE public.pumpkins (
     coupon character varying(255),
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    pages character varying(255)[] DEFAULT ARRAY[]::character varying[]
 );
 
 
@@ -7924,3 +7925,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220804105452);
 INSERT INTO public."schema_migrations" (version) VALUES (20220825071308);
 INSERT INTO public."schema_migrations" (version) VALUES (20220830115029);
 INSERT INTO public."schema_migrations" (version) VALUES (20221025154013);
+INSERT INTO public."schema_migrations" (version) VALUES (20221027125500);

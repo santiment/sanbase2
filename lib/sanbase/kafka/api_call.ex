@@ -19,14 +19,29 @@ defmodule Sanbase.Kafka.ApiCall do
 
   @type json_kv_tuple :: {String.t(), String.t()}
 
+  @spec json_kv_tuple_no_hash_collision(api_call_data | [api_call_data]) :: [json_kv_tuple]
+  @doc ~s"""
+  Returns a list of tuples of json encoded strings representing key and value to be
+  saved in kafka. The key is the hash of the element, adding an index value to create different
+  keys for the same elements. This can happen when batching requests in a single graphql document.
+  """
+  def json_kv_tuple_no_hash_collision(api_call_data) do
+    api_call_data
+    |> List.wrap()
+    |> Enum.with_index()
+    |> Enum.map(fn {elem, index} ->
+      {Sanbase.Cache.hash({elem, index}), Jason.encode!(elem)}
+    end)
+  end
+
   @spec json_kv_tuple(api_call_data | [api_call_data]) :: [json_kv_tuple]
   @doc ~s"""
   Returns a list of tuples of json encoded strings representing key and value to be
-  saved in kafka. Key here is "" since it is required by Kaffe producer but we are not using it.
+  saved in kafka.
   """
   def json_kv_tuple(api_call_data) do
     api_call_data
     |> List.wrap()
-    |> Enum.map(&{Sanbase.Cache.hash(api_call_data), Jason.encode!(&1)})
+    |> Enum.map(&{Sanbase.Cache.hash(&1), Jason.encode!(&1)})
   end
 end

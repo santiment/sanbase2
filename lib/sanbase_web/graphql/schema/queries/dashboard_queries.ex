@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
-  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Middlewares.{UserAuth, JWTAuth}
 
   object :dashboard_queries do
     @desc ~s"""
@@ -397,6 +397,8 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     field :compute_raw_clickhouse_query, :query_result do
       arg(:query, non_null(:string))
       arg(:parameters, non_null(:json))
+
+      middleware(UserAuth)
 
       cache_resolve(&DashboardResolver.compute_raw_clickhouse_query/3,
         ttl: 10,

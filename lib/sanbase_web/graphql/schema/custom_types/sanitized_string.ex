@@ -29,6 +29,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.SanitizedString do
     string = HtmlSanitizeEx.Scrubber.scrub(string, Sanbase.Utils.HtmlSubsetScrubber)
     # Bring back the blockquotes
     Regex.replace(~r/^REPLACED_BLOCKQUOTE/m, string, "> ")
+    Regex.replace(~r/javascript/i, string, "")
   end
 
   defp serialize_sanitized_html_subset_string(nil), do: {:ok, nil}

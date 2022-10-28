@@ -398,8 +398,6 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
       arg(:query, non_null(:string))
       arg(:parameters, non_null(:json))
 
-      middleware(JWTAuth)
-
       cache_resolve(&DashboardResolver.compute_raw_clickhouse_query/3,
         ttl: 10,
         max_ttl_offset: 10

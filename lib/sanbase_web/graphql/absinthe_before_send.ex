@@ -179,11 +179,19 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       Map.get(blueprint.execution.context, :__get_query_name_arg__, []) ++
         Enum.reject(queries, &(&1 == "getMetric" or &1 == "getSignal"))
 
-    id =
-      Logger.metadata() |> Keyword.get(:request_id) ||
-        "gen_" <> (:crypto.strong_rand_bytes(16) |> Base.encode64())
-
     Enum.map(queries, fn query ->
+      # All ids in the batch need to be different so there's at least one field
+      # that is different for all api calls, otherwise they can be squashed into
+      # a single row when ingested in Clickhouse
+      id =
+        case Logger.metadata() |> Keyword.get(:request_id) do
+          nil ->
+            "gen_" <> (:crypto.strong_rand_bytes(16) |> Base.encode64())
+
+          request_id ->
+            request_id <> "_" <> (:crypto.strong_rand_bytes(6) |> Base.encode64())
+        end
+
       %{
         timestamp: div(now, 1_000_000_000),
         id: id,

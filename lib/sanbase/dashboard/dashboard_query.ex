@@ -19,7 +19,8 @@ defmodule Sanbase.Dashboard.Query do
     # this process only.
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
 
-    query = extend_query_with_user_id_comment(query, querying_user_id)
+    query = extend_query(query, querying_user_id)
+
     {query, args} = transform_parameters_to_args(query, parameters)
 
     case Sanbase.ClickhouseRepo.query_transform_with_metadata(
@@ -110,6 +111,22 @@ defmodule Sanbase.Dashboard.Query do
       end)
 
     {query, args}
+  end
+
+  defp extend_query(query, user_id) do
+    query
+    |> extend_query_with_prod_marker()
+    |> extend_query_with_user_id_comment(user_id)
+  end
+
+  defp extend_query_with_prod_marker(query) do
+    case Application.get_env(:sanbase, :env) do
+      :prod ->
+        "-- __query_ran_from_prod_marker__ \n" <> query
+
+      _ ->
+        query
+    end
   end
 
   defp extend_query_with_user_id_comment(query, user_id) do

@@ -91,7 +91,7 @@ defmodule Sanbase.Pumpkin do
   def create_stripe_coupon_v2 do
     %{
       "percent_off" => @percent_off,
-      "duration" => "forever",
+      "duration" => "once",
       "redeem_by" => DateTime.to_unix(~U[2022-11-05 23:59:59.999999Z]),
       "name" => "Halloween Sanbase Discount",
       "max_redemptions" => 1,

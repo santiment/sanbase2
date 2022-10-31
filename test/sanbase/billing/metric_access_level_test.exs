@@ -90,7 +90,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "dev_activity_change_30d",
         "price_usd_5m",
         "holders_labeled_distribution_combined_balance_1_to_10",
-        "whale_transaction_count_100k_usd_to_inf_change_7d",
         "holders_labeled_negative_distribution_0.1_to_1",
         "holders_distribution_100k_to_1M",
         "holders_distribution_combined_balance_100k_to_1M",
@@ -163,7 +162,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "holders_distribution_combined_balance_over_1",
         "percent_of_holders_distribution_10_to_100",
         "percent_of_spent_coins_age_band_60d_to_90d",
-        "whale_transaction_count_1m_usd_to_inf_change_7d",
         "mcd_collat_ratio_weth",
         "percent_of_holders_distribution_combined_balance_100_to_1k",
         "mean_realized_price_usd_10y",
@@ -231,7 +229,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "holders_labeled_negative_distribution_combined_balance_10_to_100",
         "spent_coins_age_band_0d_to_1d",
         "holders_labeled_negative_distribution_1_to_10",
-        "whale_transaction_count_1m_usd_to_inf_change_30d",
         "percent_of_holders_distribution_combined_balance_0.1_to_1",
         "circulation_usd_180d_change_7d",
         "nft_collection_trades_count",
@@ -261,7 +258,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "nft_collection_min_price",
         "transaction_volume_in_profit",
         "transaction_volume_in_loss",
-        "whale_transaction_count_100k_usd_to_inf_change_30d",
         "percent_of_spent_coins_age_band_90d_to_180d",
         "holders_distribution_combined_balance_1k_to_10k",
         "nft_whale_trade_volume_usd",
@@ -298,7 +294,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "holders_labeled_negative_distribution_combined_balance_0.1_to_1",
         "spent_coins_age_band_365d_to_2y",
         "spent_coins_age_band_5y_to_7y",
-        "whale_transaction_count_1m_usd_to_inf_change_1d",
         "holders_labeled_negative_distribution_combined_balance_0.01_to_0.1",
         "holders_distribution_100_to_1k",
         "percent_of_spent_coins_age_band_7d_to_30d",
@@ -317,7 +312,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "holders_distribution_over_1",
         "rank",
         "sentiment_volume_consumed_total_change_30d",
-        "whale_transaction_count_100k_usd_to_inf_change_1d",
         "nft_trades_count",
         "mcd_dsr",
         "defi_total_value_locked_usd",
@@ -407,7 +401,13 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       ]
       |> Enum.sort()
 
-    assert incomplete_metrics == expected
+    missing_expected_incomplete = expected -- incomplete_metrics
+    unexpected_incomplete_metrics = incomplete_metrics -- expected
+
+    # Asserting on the difference generates much more short and clear
+    # error messages
+    assert missing_expected_incomplete == []
+    assert unexpected_incomplete_metrics
   end
 
   test "free metrics", %{metric_access_map: access_map} do

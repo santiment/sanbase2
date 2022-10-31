@@ -1624,7 +1624,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "sum",
+    "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1646,7 +1646,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "sum",
+    "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
@@ -1668,7 +1668,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "sum",
+    "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,

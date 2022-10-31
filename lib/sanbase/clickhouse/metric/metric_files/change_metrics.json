@@ -656,23 +656,6 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Exchange Inflow in USD",
-    "name": "exchange_inflow_usd",
-    "metric": "exchange_inflow_usd",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
     "human_readable_name": "Exchange Inflow in USD Change ({{interval}})",
     "name": "exchange_inflow_usd_change_{{interval}}",
     "metric": "exchange_inflow_usd_change_{{interval}}",
@@ -689,23 +672,6 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Exchange Outflow in USD",
-    "name": "exchange_outflow_usd",
-    "metric": "exchange_outflow_usd",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1649,7 +1615,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -1671,7 +1637,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {

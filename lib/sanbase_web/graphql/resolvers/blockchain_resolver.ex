@@ -10,7 +10,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
     "matic-network",
     "cardano",
     "avalanche",
-    "optimism"
+    "optimism",
+    "arbitrum"
   ]
 
   def available_blockchains_metadata(_root, _argsargs, _resolution) do
@@ -204,6 +205,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       slug: "optimism",
       infrastructure: "Optimism",
       created_on: ~U[2021-11-11 00:00:00Z],
+      has_exchange_metrics: false,
+      has_miners_metrics: false,
+      has_label_metrics: false,
+      has_top_holders_metrics: false,
+      has_onchain_financial_metrics: true,
+      has_pure_onchain_metrics: true,
+      has_balance_metrics: true
+    }
+    |> add_complex_fields()
+  end
+
+  defp blockchain_data("arbitrum") do
+    %{
+      blockchain: "arbitrum",
+      name: "Arbitrum",
+      slug: "arbitrum",
+      infrastructure: "Arbitrum",
+      created_on: ~U[2021-08-31 00:00:00Z],
       has_exchange_metrics: false,
       has_miners_metrics: false,
       has_label_metrics: false,

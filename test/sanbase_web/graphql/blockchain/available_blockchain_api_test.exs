@@ -127,6 +127,17 @@ defmodule SanbaseWeb.Graphql.AvailableBlockchainApiTest do
                "hasTopHoldersMetrics" => false,
                "infrastructure" => "Optimism",
                "slug" => "optimism"
+             },
+             %{
+               "blockchain" => "arbitrum",
+               "hasBalanceMetrics" => true,
+               "hasExchangeMetrics" => false,
+               "hasMinersMetrics" => false,
+               "hasOnchainFinancialMetrics" => true,
+               "hasPureOnchainMetrics" => true,
+               "hasTopHoldersMetrics" => false,
+               "infrastructure" => "Arbitrum",
+               "slug" => "arbitrum"
              }
            ]
   end

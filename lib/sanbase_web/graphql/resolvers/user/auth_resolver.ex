@@ -92,6 +92,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
          {:ok, user} <- User.update_email_token(user, args[:consent]),
          {:ok, _user} <- User.send_login_email(user, origin_host_parts, args),
          {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip) do
+      emit_event({:ok, user}, :send_email_login_link, _event_args = %{})
+
       {:ok, %{success: true, first_login: user.first_login}}
     else
       {:error, :too_many_login_attempts} ->

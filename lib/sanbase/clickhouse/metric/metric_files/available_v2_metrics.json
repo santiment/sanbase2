@@ -170,23 +170,6 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Active Addresses for the last 30 days",
-    "name": "active_addresses_30d",
-    "metric": "active_addresses_30d",
-    "version": "2019-01-01",
-    "access": "free",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
     "human_readable_name": "Active Addresses for the last {{sliding_window:human_readable}}",
     "name": "active_addresses_{{sliding_window}}",
     "metric": "active_addresses_{{sliding_window}}",
@@ -196,7 +179,8 @@
     "parameters": [
       { "sliding_window": "1h" },
       { "sliding_window": "24h" },
-      { "sliding_window": "7d" }
+      { "sliding_window": "7d" },
+      { "sliding_window": "30d" }
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1655,8 +1639,7 @@
       { "low": "365d", "high": "2y", "db_metric": "365d_to_2y" },
       { "low": "2y", "high": "3y", "db_metric": "2y_to_3y" },
       { "low": "3y", "high": "5y", "db_metric": "3y_to_5y" },
-      { "low": "5y", "high": "7y", "db_metric": "5y_to_7y" },
-      { "low": "7y", "high": "10y", "db_metric": "7y_to_10y" },
+      { "low": "5y", "high": "10y", "db_metric": "5y_to_10y" },
       { "low": "10y", "high": "20y", "db_metric": "10y_to_20y" }
     ],
     "min_plan": {

@@ -39,8 +39,10 @@ defmodule SanbaseWeb.DataController do
     data =
       Sanbase.Accounts.Statistics.santiment_team_users()
       |> Enum.map(fn user ->
+        discord_id = Map.get(email_to_discord_id_map, user.email, nil)
+
         user_json =
-          %{id: user.id, email: user.email, username: user.username}
+          %{id: user.id, email: user.email, username: user.username, discord_id: discord_id}
           |> Jason.encode!()
 
         [user_json, "\n"]
@@ -114,6 +116,21 @@ defmodule SanbaseWeb.DataController do
     case Project.contract_info(project) do
       {:ok, contract, decimals} -> {contract, decimals}
       _ -> {"", 0}
+    end
+  end
+
+  defp get_email_to_discord_id_map() do
+    # Mounted as ConfigMap during deployment of the web pods
+    path = "/mnt/santiment_team_members_discord_data.json"
+
+    case File.read(path) do
+      {:ok, content} ->
+        content
+        |> Jason.decode!()
+        |> Map.new(fn %{"email" => email, "discord_id" => discord_id} -> {email, discord_id} end)
+
+      _ ->
+        %{}
     end
   end
 

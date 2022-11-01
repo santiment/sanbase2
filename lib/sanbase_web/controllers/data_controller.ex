@@ -1,20 +1,53 @@
-defmodule SanbaseWeb.ProjectDataController do
+defmodule SanbaseWeb.DataController do
   use SanbaseWeb, :controller
 
   alias Sanbase.Model.Project
   alias Sanbase.Model.Project.SocialVolumeQuery
   require Logger
 
-  def data(conn, _params) do
+  # In order to access the data, the endpoint needs to know the secret.
+  # The path is https://api.santiment.net/santiment_team_members/the_real_secret
+  # This contains information about users, so it cannot be publicly freely available
+  def santiment_team_members(conn, %{"secret" => secret}) do
+    case santiment_team_members_secret() == secret do
+      true ->
+        {:ok, data} = get_santiment_team_members()
+
+        conn
+        |> put_resp_header("content-type", "application/json; charset=utf-8")
+        |> Plug.Conn.send_resp(200, data)
+
+      false ->
+        conn
+        |> send_resp(403, "Unauthorized")
+        |> halt()
+    end
+  end
+
+  def projects_data(conn, _params) do
     cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
-    {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_data/0)
+    {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_projects_data/0)
 
     conn
     |> put_resp_header("content-type", "application/json; charset=utf-8")
     |> Plug.Conn.send_resp(200, data)
   end
 
-  defp get_data() do
+  defp get_santiment_team_members() do
+    data =
+      Sanbase.Accounts.Statistics.santiment_team_users()
+      |> Enum.map(fn user ->
+        user_json =
+          %{id: user.id, email: user.email, username: user.username}
+          |> Jason.encode!()
+
+        [user_json, "\n"]
+      end)
+
+    {:ok, data}
+  end
+
+  defp get_projects_data() do
     data =
       Project.List.projects(
         preload?: true,
@@ -81,4 +114,8 @@ defmodule SanbaseWeb.ProjectDataController do
       _ -> {"", 0}
     end
   end
+
+  # On stage/prod the env var is set and is different from the default one.
+  defp santiment_team_members_secret(),
+    do: System.get_env("SANTIMENT_TEAM_MEMBERS_ENDPOINT_SECRET") || "random_secret"
 end

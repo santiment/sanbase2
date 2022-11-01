@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.ProjectDataControllerTest do
+defmodule SanbaseWeb.DataControllerTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory

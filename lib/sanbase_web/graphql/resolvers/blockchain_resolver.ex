@@ -222,7 +222,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
       name: "Arbitrum",
       slug: "arbitrum",
       infrastructure: "Arbitrum",
-      created_on: ~U[2021-08-31 00:00:00Z],
+      created_on: ~U[2021-05-30 00:00:00Z],
       has_exchange_metrics: false,
       has_miners_metrics: false,
       has_label_metrics: false,

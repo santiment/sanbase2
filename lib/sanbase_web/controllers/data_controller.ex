@@ -34,6 +34,8 @@ defmodule SanbaseWeb.DataController do
   end
 
   defp get_santiment_team_members() do
+    email_to_discord_id_map = get_email_to_discord_id_map()
+
     data =
       Sanbase.Accounts.Statistics.santiment_team_users()
       |> Enum.map(fn user ->

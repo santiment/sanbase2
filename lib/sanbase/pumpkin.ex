@@ -67,13 +67,37 @@ defmodule Sanbase.Pumpkin do
   end
 
   def create_pumpkin_code(user_id) do
-    with %__MODULE__{collected: collected} = pumpkin when collected >= 3 <- by_user(user_id),
+    with %__MODULE__{} = pumpkin <- by_user(user_id),
+         :ok <- can_create_coupon(pumpkin),
          {:ok, %{"id" => coupon}} <- create_stripe_coupon_v2() do
       do_update(pumpkin, %{coupon: coupon})
       {:ok, coupon}
     else
+      {:error, :eexist, coupon} -> {:ok, coupon}
+      {:error, :enocollected, msg} -> {:error, msg}
       {:error, _} -> {:error, "Could not create coupon."}
       _ -> {:error, "Could not create coupon. Not all pumpkins collected"}
+    end
+  end
+
+  def get_pumpkin_code(user_id) do
+    by_user(user_id)
+    |> case do
+      nil -> {:ok, nil}
+      %__MODULE__{coupon: coupon} -> {:ok, coupon}
+    end
+  end
+
+  def can_create_coupon(%__MODULE__{collected: collected, coupon: coupon}) do
+    cond do
+      collected < 3 ->
+        {:error, :enocollected, "Could not create coupon. Not all pumpkins collected"}
+
+      not is_nil(coupon) ->
+        {:error, :eexist, coupon}
+
+      true ->
+        :ok
     end
   end
 

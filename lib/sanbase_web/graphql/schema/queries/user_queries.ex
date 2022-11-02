@@ -68,6 +68,12 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       middleware(JWTAuth)
       resolve(&PumpkinResolver.get_pumpkins/3)
     end
+
+    field :get_pumpkin_code, :string do
+      meta(access: :free)
+      middleware(JWTAuth)
+      resolve(&PumpkinResolver.get_pumpkin_code/3)
+    end
   end
 
   object :user_mutations do

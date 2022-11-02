@@ -96,6 +96,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_nft_trades,
           :get_primary_user,
           :get_pumpkins,
+          :get_pumpkin_code,
           :get_raw_signals,
           :get_reports_by_tags,
           :get_reports,

@@ -39,10 +39,15 @@ defmodule SanbaseWeb.DataController do
     data =
       Sanbase.Accounts.Statistics.santiment_team_users()
       |> Enum.map(fn user ->
-        discord_id = Map.get(email_to_discord_id_map, user.email, nil)
+        discord_id = Map.get(email_to_discord_id_map, user.email)
 
         user_json =
-          %{id: user.id, email: user.email, username: user.username, discord_id: discord_id}
+          %{
+            id: user.id,
+            email: user.email || "",
+            username: user.username || "",
+            discord_id: discord_id || ""
+          }
           |> Jason.encode!()
 
         [user_json, "\n"]
@@ -127,7 +132,9 @@ defmodule SanbaseWeb.DataController do
       {:ok, content} ->
         content
         |> Jason.decode!()
-        |> Map.new(fn %{"email" => email, "discord_id" => discord_id} -> {email, discord_id} end)
+        |> Map.new(fn %{"email" => email, "discord_id" => discord_id} ->
+          {email, discord_id}
+        end)
 
       _ ->
         %{}
@@ -136,5 +143,7 @@ defmodule SanbaseWeb.DataController do
 
   # On stage/prod the env var is set and is different from the default one.
   defp santiment_team_members_secret(),
-    do: System.get_env("SANTIMENT_TEAM_MEMBERS_ENDPOINT_SECRET") || "random_secret"
+    do:
+      System.get_env("SANTIMENT_TEAM_MEMBERS_ENDPOINT_SECRET") ||
+        "random_secret"
 end

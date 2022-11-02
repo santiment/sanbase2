@@ -62,17 +62,23 @@ defmodule Sanbase.Price.PricePairSql do
       UNION ALL
 
       SELECT
-        dictGetString('cryptocompare_to_san_asset_mapping', 'slug', tuple(base_asset)) AS slug,
+        -- the cryptocompare_to_san_asset_mapping dict cannot handle multiple assets
+        -- having the same cryptocompare slug. Use JOIN instead
+        slug,
         #{aggregation(aggregation, "price", "dt")} AS value,
         toUInt32(1) AS has_changed
-
       FROM #{@table}
-        PREWHERE
-          #{slug_filter_map(slugs, argument_position: 1)} AND
-          quote_asset = ?2 AND
-          dt >= toDateTime(?3) AND
-          dt < toDateTime(?4) AND
-          source = ?5
+      INNER JOIN (
+        SELECT base_asset, slug
+        FROM san_to_cryptocompare_asset_mapping
+        WHERE slug IN (?1)
+      ) USING (base_asset)
+      PREWHERE
+        #{slug_filter_map(slugs, argument_position: 1)} AND
+        quote_asset = ?2 AND
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4) AND
+        source = ?5
       GROUP BY slug
     )
     GROUP BY slug

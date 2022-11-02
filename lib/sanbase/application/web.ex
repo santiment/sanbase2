@@ -5,7 +5,7 @@ defmodule Sanbase.Application.Web do
   def init() do
     # Overwrite kaffe consumer group with a new name
     Sanbase.Kafka.Consumer.init()
-
+    Sanbase.Nostrum.init()
     :ok
   end
 
@@ -59,6 +59,21 @@ defmodule Sanbase.Application.Web do
           }
         end,
         fn -> Sanbase.Kafka.Consumer.enabled?() end
+      ),
+      # put :nostrum in included_applications and start the app manually here only if it has picked up
+      # credentials from env var
+      start_if(
+        fn ->
+          %{
+            id: Nostrum.Application,
+            start: {Nostrum.Application, :start, [:normal, []]}
+          }
+        end,
+        fn -> Sanbase.Nostrum.enabled?() end
+      ),
+      start_if(
+        fn -> Sanbase.DiscordConsumer end,
+        fn -> Sanbase.Nostrum.enabled?() end
       )
     ]
 

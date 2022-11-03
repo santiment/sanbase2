@@ -38,22 +38,24 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     query = """
     SELECT dt, SUM(value) AS value
     FROM (
-      SELECT
-        #{aggregation(params.aggregation, "value", "dt")} / #{decimals} AS value,
-        toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS dt,
-        address
-      FROM #{params.table} FINAL
-      #{table_to_where_keyword(params.table)}
-        #{exclude_labels_str}
-        contract = ?2 AND
-        dt >= toDateTime(?4) AND
-        dt < toDateTime(?5) AND
-        rank IS NOT NULL AND rank > 0
-      GROUP BY dt, address
-      ORDER BY dt, value DESC
+      SELECT * FROM (
+        SELECT
+          #{aggregation(params.aggregation, "value", "dt")} / #{decimals} AS value,
+          toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS dt,
+          address
+        FROM #{params.table} FINAL
+        #{table_to_where_keyword(params.table)}
+          #{exclude_labels_str}
+          contract = ?2 AND
+          dt >= toDateTime(?4) AND
+          dt < toDateTime(?5) AND
+          rank IS NOT NULL AND rank > 0
+        GROUP BY dt, address
+        ORDER BY dt, value DESC
+      )
+      #{include_labels_str}
       LIMIT ?3 BY dt
     )
-    #{include_labels_str}
     GROUP BY dt
     ORDER BY dt
     """
@@ -67,18 +69,20 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     query = """
     SELECT dt, SUM(value)
     FROM (
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS dt,
-        #{aggregation(params.aggregation, "value", "dt")} / #{decimals} AS value
-      FROM #{params.table} FINAL
-      #{table_to_where_keyword(params.table)}
-        contract = ?2 AND
-        rank <= ?3 AND
-        dt >= toDateTime(?4) AND
-        dt < toDateTime(?5) AND
-        rank IS NOT NULL AND rank > 0
-      GROUP BY dt, address
-      ORDER BY dt, value desc
+      SELECT * FROM (
+        SELECT
+          toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS dt,
+          #{aggregation(params.aggregation, "value", "dt")} / #{decimals} AS value
+        FROM #{params.table} FINAL
+        #{table_to_where_keyword(params.table)}
+          contract = ?2 AND
+          rank <= ?3 AND
+          dt >= toDateTime(?4) AND
+          dt < toDateTime(?5) AND
+          rank IS NOT NULL AND rank > 0
+        GROUP BY dt, address
+        ORDER BY dt, value desc
+      )
       LIMIT ?3 BY dt
     )
     GROUP BY dt

@@ -15,20 +15,38 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
     aggregations = Metric.available_aggregations()
 
     aggregations =
-      aggregations |> Enum.map(fn aggr -> aggr |> Atom.to_string() |> String.upcase() end)
+      aggregations
+      |> Enum.map(fn aggr -> aggr |> Atom.to_string() |> String.upcase() end)
 
     for metric <- metrics do
       %{"data" => %{"getMetric" => %{"metadata" => metadata}}} = get_metric_metadata(conn, metric)
+
       assert metadata["metric"] == metric
 
       assert match?(
-               %{"metric" => _, "defaultAggregation" => _, "minInterval" => _, "dataType" => _},
+               %{
+                 "metric" => _,
+                 "defaultAggregation" => _,
+                 "minInterval" => _,
+                 "dataType" => _
+               },
                metadata
              )
 
       assert metadata["humanReadableName"] |> is_binary()
       assert metadata["defaultAggregation"] in aggregations
-      assert metadata["minInterval"] in ["1s", "1m", "5m", "15m", "1h", "6h", "8h", "1d"]
+
+      assert metadata["minInterval"] in [
+               "1s",
+               "1m",
+               "5m",
+               "15m",
+               "1h",
+               "6h",
+               "8h",
+               "1d"
+             ]
+
       assert metadata["dataType"] in ["TIMESERIES", "HISTOGRAM", "TABLE"]
       assert metadata["isRestricted"] in [true, false]
 
@@ -64,13 +82,15 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
       assert is_nil(metadata["restrictedFrom"]) or
                match?(
                  %DateTime{},
-                 metadata["restrictedFrom"] |> Sanbase.DateTimeUtils.from_iso8601!()
+                 metadata["restrictedFrom"]
+                 |> Sanbase.DateTimeUtils.from_iso8601!()
                )
 
       assert is_nil(metadata["restrictedTo"]) or
                match?(
                  %DateTime{},
-                 metadata["restrictedTo"] |> Sanbase.DateTimeUtils.from_iso8601!()
+                 metadata["restrictedTo"]
+                 |> Sanbase.DateTimeUtils.from_iso8601!()
                )
     end
   end
@@ -87,8 +107,29 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
         ]
       } = get_metric_metadata(conn, metric)
 
-      assert error_message == "The metric '#{metric}' is not supported or is mistyped."
+      assert error_message ==
+               "The metric '#{metric}' is not supported or is mistyped."
     end
+  end
+
+  test "get internal_metric for clickhouse metrics", %{conn: conn} do
+    internal_metric =
+      get_metric_metadata(conn, "age_consumed")
+      |> get_in(["data", "getMetric", "metadata", "internalMetric"])
+
+    assert internal_metric == "stack_age_consumed_5min"
+
+    internal_metric =
+      get_metric_metadata(conn, "dev_activity_1d")
+      |> get_in(["data", "getMetric", "metadata", "internalMetric"])
+
+    assert internal_metric == "dev_activity"
+
+    internal_metric =
+      get_metric_metadata(conn, "daily_active_addresses")
+      |> get_in(["data", "getMetric", "metadata", "internalMetric"])
+
+    assert internal_metric == "daily_active_addresses"
   end
 
   defp get_metric_metadata(conn, metric) do
@@ -102,6 +143,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
           availableSelectors
           dataType
           metric
+          internalMetric
           humanReadableName
           isTimebound
           isRestricted

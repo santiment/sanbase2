@@ -123,6 +123,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     {:ok,
      %{
        metric: metric,
+       internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "1d",
        default_aggregation: @default_aggregation,

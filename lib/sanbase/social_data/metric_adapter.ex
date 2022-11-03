@@ -318,6 +318,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     {:ok,
      %{
        metric: metric,
+       internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "5m",
        default_aggregation: :sum,

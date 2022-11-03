@@ -26,6 +26,7 @@ defmodule Sanbase.Metric.Behaviour do
 
   @type metadata :: %{
           metric: metric,
+          internal_metric: metric,
           min_interval: interval(),
           default_aggregation: atom(),
           available_aggregations: list(atom()),

@@ -193,6 +193,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     {:ok,
      %{
        metric: metric,
+       internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "1m",
        default_aggregation: :sum,

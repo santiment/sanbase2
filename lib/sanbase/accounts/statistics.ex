@@ -3,7 +3,7 @@ defmodule Sanbase.Accounts.Statistics do
 
   alias Sanbase.Repo
   alias Sanbase.Math
-  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.{Role, UserRole, User}
   alias Sanbase.UserList
 
   def tokens_staked() do
@@ -25,6 +25,20 @@ defmodule Sanbase.Accounts.Statistics do
       "users_with_over_1000_san" => Enum.count(san_balances, fn balance -> balance >= 1000 end),
       "users_with_over_200_san" => Enum.count(san_balances, fn balance -> balance >= 200 end)
     }
+  end
+
+  @spec santiment_team_users() :: list(%User{})
+  def santiment_team_users() do
+    santiment_role_user_ids = Sanbase.Accounts.Role.san_team_ids()
+
+    # Get all users whose email ends with @santiment.net or they have the santiment role.
+    # There are cases where santiment members use accounts with other email domains
+    from(u in User,
+      where:
+        (like(u.email, "%@santiment.net") or u.id in ^santiment_role_user_ids) and
+          u.is_registered == true
+    )
+    |> Repo.all()
   end
 
   @doc ~s"""

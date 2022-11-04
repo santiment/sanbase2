@@ -251,7 +251,7 @@ config :sanbase, Sanbase.TemplateMailer,
   secret: {:system, "MAILJET_API_SECRET"}
 
 config :nostrum,
-  token: System.get_env("DISCORD_BOT_QUERY_TOKEN"),
+  token: {:system, "DISCORD_BOT_QUERY_TOKEN"},
   gateway_intents: [
     :guild_messages,
     :message_content

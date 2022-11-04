@@ -102,6 +102,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
     {:ok,
      %{
        metric: metric,
+       internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: "1h",
        default_aggregation: :sum,

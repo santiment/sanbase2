@@ -16,4 +16,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PumpkinResolver do
   def create_pumpkin_code(_root, _, %{context: %{auth: %{current_user: user}}}) do
     Pumpkin.create_pumpkin_code(user.id)
   end
+
+  def get_pumpkin_code(_root, _, %{context: %{auth: %{current_user: user}}}) do
+    Pumpkin.get_pumpkin_code(user.id)
+  end
 end

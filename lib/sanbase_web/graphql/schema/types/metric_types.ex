@@ -285,9 +285,17 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   object :metric_metadata do
     @desc ~s"""
-    The name of the metric the metadata is about
+    The public name of the metric. The public name is the name that is used
+    to refer to the metric in the API.
     """
     field(:metric, non_null(:string))
+
+    @desc ~s"""
+    The internal name of the metric. The internal name is the name that is used
+    to refer to the metric internally, in the databases, etc. The public and internal
+    name can differ.
+    """
+    field(:internal_metric, non_null(:string))
 
     @desc ~s"""
     The metrics that have this flag set to true have their

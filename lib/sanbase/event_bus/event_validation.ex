@@ -31,6 +31,9 @@ defmodule Sanbase.EventBus.EventValidation do
   def valid?(%{event_type: :login_user, user_id: id, login_origin: login_origin}),
     do: valid_integer_id?(id) and is_atom(login_origin)
 
+  def valid?(%{event_type: :send_email_login_link, user_id: id}),
+    do: valid_integer_id?(id)
+
   def valid?(%{event_type: :create_user, user_id: id}), do: valid_integer_id?(id)
 
   #############################################################################

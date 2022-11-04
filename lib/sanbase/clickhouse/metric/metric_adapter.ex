@@ -37,6 +37,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @selectors_map FileHandler.selectors_map()
   @required_selectors_map FileHandler.required_selectors_map()
   @metric_to_names_map FileHandler.metric_to_names_map()
+  @name_to_metric_map FileHandler.name_to_metric_map()
   @deprecated_metrics_map FileHandler.deprecated_metrics_map()
   @timebound_flag_map FileHandler.timebound_flag_map()
   @default_complexity_weight 0.3
@@ -176,6 +177,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     {:ok,
      %{
        metric: metric,
+       internal_metric: Map.get(@name_to_metric_map, metric, metric),
        has_incomplete_data: has_incomplete_data?(metric),
        min_interval: min_interval,
        default_aggregation: default_aggregation,

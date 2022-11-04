@@ -33,15 +33,19 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     assert UserSettings.settings_for(user, force: true) |> Map.get(:favorite_metrics) == favorites
   end
 
-  test "change favorite metrics with invalid value", %{user: user, conn: conn} do
-    favorites = ["price_eth", "nvt", "asdfqwerty"]
+  test "favorite metrics support random non existing metrics", %{user: user, conn: conn} do
+    favorites = ["price_eth", "nvt", "non-existing-metric"]
 
     query = change_favorite_metrics_query(favorites)
     result = conn |> execute(query, "updateUserSettings")
 
-    assert result["favoriteMetrics"] == nil
+    assert result["favoriteMetrics"] == ["price_eth", "nvt", "non-existing-metric"]
 
-    assert UserSettings.settings_for(user, force: true) |> Map.get(:favorite_metrics) == []
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:favorite_metrics) == [
+             "price_eth",
+             "nvt",
+             "non-existing-metric"
+           ]
   end
 
   test "toggle beta mode", %{user: user, conn: conn} do

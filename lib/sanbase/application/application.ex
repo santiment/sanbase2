@@ -75,6 +75,9 @@ defmodule Sanbase.Application do
       "scrapers" ->
         Sanbase.Application.Scrapers.init()
 
+      "queries" ->
+        Sanbase.Application.Queries.init()
+
       _ ->
         Sanbase.Application.Web.init()
     end
@@ -94,6 +97,9 @@ defmodule Sanbase.Application do
       "scrapers" ->
         Logger.info("Starting Scrapers Sanbase.")
 
+      "queries" ->
+        Logger.info("Starting Queries Sanbase.")
+
       type when type in ["alerts", "signals"] ->
         Logger.info("Starting Alerts Sanbase.")
 
@@ -110,8 +116,12 @@ defmodule Sanbase.Application do
         {scrapers_children, _} = Sanbase.Application.Scrapers.children()
         {alerts_children, _} = Sanbase.Application.Alerts.children()
         {admin_children, _} = Sanbase.Application.Admin.children()
+        {queries_children, _} = Sanbase.Application.Admin.children()
 
-        children = web_children ++ scrapers_children ++ alerts_children ++ admin_children
+        children =
+          web_children ++
+            scrapers_children ++ alerts_children ++ admin_children ++ queries_children
+
         children = children |> Enum.uniq()
 
         opts = [
@@ -131,6 +141,9 @@ defmodule Sanbase.Application do
 
       "scrapers" ->
         Sanbase.Application.Scrapers.children()
+
+      "queries" ->
+        Sanbase.Application.Queries.children()
 
       type when type in ["alerts", "signals"] ->
         Sanbase.Application.Alerts.children()

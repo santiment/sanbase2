@@ -45,7 +45,7 @@ defmodule Sanbase.Alert.ResultBuilder.Transformer do
         %{previous: previous, current: current, previous_list: previous_list} =
           decompose_list(values, value_key)
 
-        previous_average = Sanbase.Math.average(previous_list, precision: 2)
+        previous_average = Sanbase.Math.mean(previous_list, precision: 2)
 
         Data.new(%{
           identifier: identifier,

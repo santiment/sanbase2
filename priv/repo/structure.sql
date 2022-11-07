@@ -858,10 +858,10 @@ ALTER SEQUENCE public.dashboards_id_seq OWNED BY public.dashboards.id;
 
 
 --
--- Name: discord_dashboard; Type: TABLE; Schema: public; Owner: -
+-- Name: discord_dashboards; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.discord_dashboard (
+CREATE TABLE public.discord_dashboards (
     id bigint NOT NULL,
     panel_id character varying(255),
     name character varying(255),
@@ -877,10 +877,10 @@ CREATE TABLE public.discord_dashboard (
 
 
 --
--- Name: discord_dashboard_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: discord_dashboards_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.discord_dashboard_id_seq
+CREATE SEQUENCE public.discord_dashboards_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -889,10 +889,10 @@ CREATE SEQUENCE public.discord_dashboard_id_seq
 
 
 --
--- Name: discord_dashboard_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: discord_dashboards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.discord_dashboard_id_seq OWNED BY public.discord_dashboard.id;
+ALTER SEQUENCE public.discord_dashboards_id_seq OWNED BY public.discord_dashboards.id;
 
 
 --
@@ -4083,10 +4083,10 @@ ALTER TABLE ONLY public.dashboards_history ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
--- Name: discord_dashboard id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: discord_dashboards id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.discord_dashboard ALTER COLUMN id SET DEFAULT nextval('public.discord_dashboard_id_seq'::regclass);
+ALTER TABLE ONLY public.discord_dashboards ALTER COLUMN id SET DEFAULT nextval('public.discord_dashboards_id_seq'::regclass);
 
 
 --
@@ -4795,11 +4795,11 @@ ALTER TABLE ONLY public.dashboards
 
 
 --
--- Name: discord_dashboard discord_dashboard_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: discord_dashboards discord_dashboards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.discord_dashboard
-    ADD CONSTRAINT discord_dashboard_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.discord_dashboards
+    ADD CONSTRAINT discord_dashboards_pkey PRIMARY KEY (id);
 
 
 --
@@ -5661,17 +5661,17 @@ CREATE INDEX dashboards_history_hash_index ON public.dashboards_history USING bt
 
 
 --
--- Name: discord_dashboard_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: discord_dashboards_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX discord_dashboard_dashboard_id_index ON public.discord_dashboard USING btree (dashboard_id);
+CREATE INDEX discord_dashboards_dashboard_id_index ON public.discord_dashboards USING btree (dashboard_id);
 
 
 --
--- Name: discord_dashboard_user_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: discord_dashboards_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX discord_dashboard_user_id_index ON public.discord_dashboard USING btree (user_id);
+CREATE INDEX discord_dashboards_user_id_index ON public.discord_dashboards USING btree (user_id);
 
 
 --
@@ -6756,19 +6756,19 @@ ALTER TABLE ONLY public.dashboards
 
 
 --
--- Name: discord_dashboard discord_dashboard_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: discord_dashboards discord_dashboards_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.discord_dashboard
-    ADD CONSTRAINT discord_dashboard_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id);
+ALTER TABLE ONLY public.discord_dashboards
+    ADD CONSTRAINT discord_dashboards_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id);
 
 
 --
--- Name: discord_dashboard discord_dashboard_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: discord_dashboards discord_dashboards_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.discord_dashboard
-    ADD CONSTRAINT discord_dashboard_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+ALTER TABLE ONLY public.discord_dashboards
+    ADD CONSTRAINT discord_dashboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --

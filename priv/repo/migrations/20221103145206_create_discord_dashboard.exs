@@ -2,7 +2,7 @@ defmodule Sanbase.Repo.Migrations.CreateDiscordDashboard do
   use Ecto.Migration
 
   def change do
-    create table(:discord_dashboard) do
+    create table(:discord_dashboards) do
       add(:panel_id, :string)
       add(:name, :string)
       add(:discord_user, :string)
@@ -15,7 +15,7 @@ defmodule Sanbase.Repo.Migrations.CreateDiscordDashboard do
       timestamps()
     end
 
-    create(index(:discord_dashboard, [:user_id]))
-    create(index(:discord_dashboard, [:dashboard_id]))
+    create(index(:discord_dashboards, [:user_id]))
+    create(index(:discord_dashboards, [:dashboard_id]))
   end
 end

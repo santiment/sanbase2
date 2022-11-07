@@ -7,7 +7,7 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
 
-  schema "discord_dashboard" do
+  schema "discord_dashboards" do
     field(:channel, :string)
     field(:discord_user, :string)
     field(:guild, :string)

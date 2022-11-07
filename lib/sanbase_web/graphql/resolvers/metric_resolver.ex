@@ -390,7 +390,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp maybe_enrich_with_labels(_metric, data), do: {:ok, data}
 
   defp calibrate_transform_params(%{type: type}, from, _to, _interval)
-       when type in ["none", "cumulative_sum"] do
+       when type in ["none", "cumulative_sum", "z_score"] do
     {:ok, from}
   end
 
@@ -424,6 +424,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          data
        ) do
     Sanbase.Math.simple_moving_average(data, base, value_key: :value)
+  end
+
+  defp apply_transform(
+         %{type: "z_score"},
+         data
+       ) do
+    numbers_list = Enum.map(data, & &1.value)
+
+    case Sanbase.Math.zscore(numbers_list) do
+      {:error, error} ->
+        {:error, error}
+
+      z_score_series ->
+        result =
+          Enum.zip_with(data, z_score_series, fn point, z_score ->
+            Map.put(point, :value, z_score)
+          end)
+
+        {:ok, result}
+    end
   end
 
   defp apply_transform(%{type: type}, data)

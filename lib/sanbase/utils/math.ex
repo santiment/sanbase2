@@ -3,6 +3,8 @@ defmodule Sanbase.Math do
 
   @epsilon 1.0e-6
 
+  defguard float_eq?(l, r) when abs(l - r) <= @epsilon
+
   def round_float(f) when is_float(f) and (f >= 1 or f <= -1), do: Float.round(f, 2)
   def round_float(f) when is_float(f) and f >= 0 and f <= @epsilon, do: 0.0
   def round_float(f) when is_float(f) and f < 0 and f >= -@epsilon, do: 0.0
@@ -207,12 +209,42 @@ defmodule Sanbase.Math do
     end)
   end
 
-  def average(list, opts \\ [])
-  def average([], _), do: 0
+  @doc ~s"""
+  Compute the mean of the numbers in the list. The float precision is 2 by default.
+  Provide :precision option to change that.
 
-  def average(values, opts),
+  ## Examples
+    iex> Sanbase.Math.mean([1,2,3,4,5,6,7,8,9,10])
+    5.5
+
+    iex> Sanbase.Math.mean([5])
+    5.0
+
+    iex> Sanbase.Math.mean([])
+    0.0
+  """
+  def mean(list, opts \\ [])
+  def mean([], _), do: 0.0
+
+  def mean(values, opts),
     do: Float.round(Enum.sum(values) / length(values), Keyword.get(opts, :precision, 2))
 
+  @doc ~s"""
+  Compute the median of the numbers in the list
+
+  ## Examples
+    iex> Sanbase.Math.median([1,2,3,4,5,6,7,8,9,10])
+    5.5
+
+    iex> Sanbase.Math.median([1,2,3,4,5,6,7,8,9])
+    5
+
+    iex> Sanbase.Math.median([5, 1, 12])
+    5
+
+    iex> Sanbase.Math.median([])
+    nil
+  """
   def median([]), do: nil
 
   def median(list) when is_list(list) do
@@ -221,7 +253,7 @@ defmodule Sanbase.Math do
     midpoint =
       (length(list) / 2)
       |> Float.floor()
-      |> round
+      |> trunc()
 
     {l1, l2} = list |> Enum.split(midpoint)
 
@@ -234,14 +266,107 @@ defmodule Sanbase.Math do
       false ->
         [m1 | _] = l2
         m2 = List.last(l1)
-        average([m1, m2])
+        mean([m1, m2])
+    end
+  end
+
+  @doc ~s"""
+  Compute the population variance of the numbers in the list. The list is expected
+  to contain the whole dataset, not just a sample from it.
+
+  The variance tells you the degree of spread in the data. It judges how far
+  from the mean is each value, weighted by the distance.
+
+  ## Examples
+    iex> Sanbase.Math.variance([1,2,3,4,5,6,7,8,9,10])
+    8.25
+
+    iex> Sanbase.Math.variance([-1,-2,-3,4,5,6,7,8,9])
+    18.22
+
+    iex> Sanbase.Math.variance([5, 5, 5])
+    0.0
+
+    iex> Sanbase.Math.variance([])
+    nil
+  """
+  def variance(list, opts \\ [])
+  def variance([], _opts), do: nil
+
+  def variance(list, opts) when is_list(list) do
+    mean = mean(list, opts)
+
+    list
+    |> Enum.map(fn val -> (mean - val) * (mean - val) end)
+    |> mean(opts)
+  end
+
+  @doc ~s"""
+  Compute the standard deviation of the numbers in the list.
+  The standard deviation is the square root of the variance. It is used often
+  as it is in the same unit as the raw data.
+
+  ## Examples
+    iex> Sanbase.Math.stdev([1,2,3,4,5,6,7,8,9,10])
+    2.87
+
+    iex> Sanbase.Math.stdev([-1,-2,-3,4,5,6,7,8,9])
+    4.26
+
+    iex> Sanbase.Math.stdev([5, 5, 5])
+    0.0
+
+    iex> Sanbase.Math.stdev([])
+    nil
+  """
+  def stdev(list, opts \\ [])
+  def stdev([], _opts), do: nil
+
+  def stdev(list, opts) when is_list(list) do
+    list
+    |> variance()
+    |> :math.sqrt()
+    |> Float.floor(Keyword.get(opts, :precision, 2))
+  end
+
+  @doc ~s"""
+  Compute the Z score over the list of numbers. Returns error if the
+  numbers have standard deviation of 0 as Z score is computed only on
+  data with a probablistic distribution (not all numbers are equal)
+
+  ## Examples
+    iex> Sanbase.Math.zscore([1,2,3,4,5,6,7,8,9,10])
+    [-1.57, -1.22, -0.88, -0.53, -0.18, 0.17, 0.52, 0.87, 1.21, 1.56]
+
+    iex> Sanbase.Math.zscore([-1,-2,-3,4,5,6,7,8,9])
+    [-1.1, -1.34, -1.57, 0.07, 0.31, 0.54, 0.78, 1.01, 1.25]
+
+    iex> Sanbase.Math.zscore([5.0e10, 5, 5])
+    [1.41, -0.71, -0.71]
+
+    iex> Sanbase.Math.zscore([5, 5, 5])
+    {:error, "Cannot compute zscore on constant timeseries."}
+
+    iex> Sanbase.Math.zscore([])
+    nil
+  """
+  def zscore(list, opts \\ [])
+  def zscore([], _opts), do: nil
+
+  def zscore(list, opts) when is_list(list) do
+    with mean <- mean(list),
+         stdev when stdev != nil and not float_eq?(stdev, 0.0) <- stdev(list) do
+      precision = Keyword.get(opts, :precision, 2)
+      Enum.map(list, fn val -> ((val - mean) / stdev) |> Float.floor(precision) end)
+    else
+      _ -> {:error, "Cannot compute zscore on constant timeseries."}
     end
   end
 
   def simple_moving_average(values, period) do
     values
     |> Enum.chunk_every(period, 1, :discard)
-    |> Enum.map(&average/1)
+    |> Enum.map(&mean/1)
   end
 
   def simple_moving_average(list, period, opts) do
@@ -255,7 +380,7 @@ defmodule Sanbase.Math do
         values = Enum.map(elems, & &1[value_key])
 
         %{
-          value_key => average(values),
+          value_key => mean(values),
           :datetime => datetime
         }
       end)

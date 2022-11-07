@@ -39,7 +39,7 @@ defmodule Sanbase.Mixfile do
         :os_mon,
         :event_bus
       ],
-      included_applications: [:kaffe, :brod, :ueberauth_twitter]
+      included_applications: [:kaffe, :brod, :ueberauth_twitter, :nostrum]
     ]
   end
 
@@ -166,7 +166,11 @@ defmodule Sanbase.Mixfile do
       {:waffle, "~> 1.1"},
       {:websockex, "~> 0.4.3"},
       {:kaffy, github: "santiment/kaffy"},
-      {:swoosh, "~> 1.7"}
+      {:swoosh, "~> 1.7"},
+      {:nostrum, github: "Kraigie/nostrum"},
+      {:gun, "~> 2.0", hex: :remedy_gun, override: true},
+      {:cowlib, "~> 2.11", hex: :remedy_cowlib, override: true},
+      {:table_rex, "~> 3.1"}
     ]
   end
 

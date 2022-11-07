@@ -250,6 +250,13 @@ config :sanbase, Sanbase.TemplateMailer,
   api_key: {:system, "MAILJET_API_KEY"},
   secret: {:system, "MAILJET_API_SECRET"}
 
+config :nostrum,
+  token: {:system, "DISCORD_BOT_QUERY_TOKEN"},
+  gateway_intents: [
+    :guild_messages,
+    :message_content
+  ]
+
 # Import configs
 import_config "ueberauth_config.exs"
 import_config "ex_admin_config.exs"

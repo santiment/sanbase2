@@ -858,6 +858,44 @@ ALTER SEQUENCE public.dashboards_id_seq OWNED BY public.dashboards.id;
 
 
 --
+-- Name: discord_dashboards; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.discord_dashboards (
+    id bigint NOT NULL,
+    panel_id character varying(255),
+    name character varying(255),
+    discord_user character varying(255),
+    channel character varying(255),
+    guild character varying(255),
+    user_id bigint,
+    dashboard_id bigint,
+    pinned boolean DEFAULT false,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: discord_dashboards_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.discord_dashboards_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: discord_dashboards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.discord_dashboards_id_seq OWNED BY public.discord_dashboards.id;
+
+
+--
 -- Name: email_login_attempts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4045,6 +4083,13 @@ ALTER TABLE ONLY public.dashboards_history ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
+-- Name: discord_dashboards id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.discord_dashboards ALTER COLUMN id SET DEFAULT nextval('public.discord_dashboards_id_seq'::regclass);
+
+
+--
 -- Name: email_login_attempts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4747,6 +4792,14 @@ ALTER TABLE ONLY public.dashboards_history
 
 ALTER TABLE ONLY public.dashboards
     ADD CONSTRAINT dashboards_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: discord_dashboards discord_dashboards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.discord_dashboards
+    ADD CONSTRAINT discord_dashboards_pkey PRIMARY KEY (id);
 
 
 --
@@ -5605,6 +5658,20 @@ CREATE INDEX dashboards_history_dashboard_id_index ON public.dashboards_history 
 --
 
 CREATE INDEX dashboards_history_hash_index ON public.dashboards_history USING btree (hash);
+
+
+--
+-- Name: discord_dashboards_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX discord_dashboards_dashboard_id_index ON public.discord_dashboards USING btree (dashboard_id);
+
+
+--
+-- Name: discord_dashboards_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX discord_dashboards_user_id_index ON public.discord_dashboards USING btree (user_id);
 
 
 --
@@ -6686,6 +6753,22 @@ ALTER TABLE ONLY public.dashboards_history
 
 ALTER TABLE ONLY public.dashboards
     ADD CONSTRAINT dashboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: discord_dashboards discord_dashboards_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.discord_dashboards
+    ADD CONSTRAINT discord_dashboards_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id);
+
+
+--
+-- Name: discord_dashboards discord_dashboards_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.discord_dashboards
+    ADD CONSTRAINT discord_dashboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -7926,3 +8009,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220825071308);
 INSERT INTO public."schema_migrations" (version) VALUES (20220830115029);
 INSERT INTO public."schema_migrations" (version) VALUES (20221025154013);
 INSERT INTO public."schema_migrations" (version) VALUES (20221027125500);
+INSERT INTO public."schema_migrations" (version) VALUES (20221103145206);

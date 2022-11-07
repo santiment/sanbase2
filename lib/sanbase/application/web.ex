@@ -5,7 +5,6 @@ defmodule Sanbase.Application.Web do
   def init() do
     # Overwrite kaffe consumer group with a new name
     Sanbase.Kafka.Consumer.init()
-
     :ok
   end
 

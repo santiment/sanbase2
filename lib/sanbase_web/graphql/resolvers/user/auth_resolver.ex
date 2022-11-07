@@ -154,8 +154,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
          {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip) do
       {:ok, %{success: true}}
     else
-      {:error, _} ->
-        {:error, message: "Can't change current user's email to #{email_candidate}"}
+      {:error, error} ->
+        error_msg = "Can't change current user's email to #{email_candidate}"
+        Logger.info(error_msg <> ". Reason: #{inspect(error)}")
+        {:error, message: error_msg}
     end
   end
 

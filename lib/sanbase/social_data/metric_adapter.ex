@@ -210,7 +210,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
           {:ok, result} ->
             value =
               Enum.map(result, & &1.value)
-              |> Sanbase.Math.average()
+              |> Sanbase.Math.mean()
 
             {:ok, %{value: value}}
 

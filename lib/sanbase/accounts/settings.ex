@@ -66,7 +66,6 @@ defmodule Sanbase.Accounts.Settings do
       :is_subscribed_comments_emails,
       :is_subscribed_likes_emails
     ])
-    |> validate_change(:favorite_metrics, &validate_favorite_metrics/2)
   end
 
   def get_alerts_limit_per_day(%__MODULE__{} = settings, channel) do
@@ -82,20 +81,5 @@ defmodule Sanbase.Accounts.Settings do
   def get_alerts_fired_today(%__MODULE__{} = settings, channel) do
     today_str = Date.utc_today() |> to_string()
     settings.alerts_fired[today_str][channel] |> Sanbase.Math.to_integer() || 0
-  end
-
-  defp validate_favorite_metrics(_field_name, nil), do: []
-
-  defp validate_favorite_metrics(_fiel_name, metrics) do
-    metrics
-    |> Enum.find_value([], fn metric ->
-      case Sanbase.Metric.has_metric?(metric) do
-        true ->
-          false
-
-        {:error, error} ->
-          [favorite_metrics: "Invalid metric found in the favorite metrics list. #{error}"]
-      end
-    end)
   end
 end

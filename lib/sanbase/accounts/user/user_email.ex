@@ -126,7 +126,7 @@ defmodule Sanbase.Accounts.User.Email do
     verify_link = SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
     template = Sanbase.Email.Template.verification_email_template()
 
-    Sanbase.TemplateMailer.send(user.email, template, %{verify_link: verify_link})
+    Sanbase.TemplateMailer.send(user.email_candidate, template, %{verify_link: verify_link})
   end
 
   defp do_send_login_email(user, origin_host_parts, args) do

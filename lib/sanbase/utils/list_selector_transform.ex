@@ -25,6 +25,7 @@ defmodule Sanbase.Utils.ListSelector.Transform do
     get_in(args, [:selector, :order_by])
     |> transform_from_to()
     |> update_dynamic_datetimes()
+    |> maybe_shift_from_to()
     |> atomize_values()
   end
 
@@ -121,4 +122,19 @@ defmodule Sanbase.Utils.ListSelector.Transform do
   end
 
   def update_dynamic_datetimes(filter), do: filter
+
+  def maybe_shift_from_to(%{include_incomplete_data: true} = args), do: args
+
+  def maybe_shift_from_to(args) do
+    # If the metric has incomplete data and `to` is
+    with {:ok, %{has_incomplete_data: true}} <- Sanbase.Metric.metadata(args["metric"]),
+         start_of_day = DateTime.utc_now() |> Timex.to_start_of_day(),
+         comp when comp != :lt <- DateTime.compare(args.to, start_of_day) do
+      shifted_to = start_of_day |> Timex.shift(microseconds: -1)
+      from = maybe_shift_from(args.from)
+      %{args | to: shifted_to}
+    else
+      _ -> args
+    end
+  end
 end

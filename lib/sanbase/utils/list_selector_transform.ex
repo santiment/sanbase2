@@ -22,10 +22,11 @@ defmodule Sanbase.Utils.ListSelector.Transform do
   end
 
   def args_to_order_by(args) do
-    get_in(args, [:selector, :order_by])
+    args
+    |> get_in([:selector, :order_by])
     |> transform_from_to()
     |> update_dynamic_datetimes()
-    |> maybe_shift_from_to()
+    |> maybe_shift_to_datetime()
     |> atomize_values()
   end
 
@@ -66,7 +67,7 @@ defmodule Sanbase.Utils.ListSelector.Transform do
     do: {:error, "Cannot use dynamic 'from' without dynamic 'to'"}
 
   def transform_from_to(%{to: "utc_now" <> _}),
-    do: {:error, "Cannot use dynamic 'from' without dynamic 'from'"}
+    do: {:error, "Cannot use dynamic 'to' without dynamic 'from'"}
 
   def transform_from_to(%{from: from, to: to} = map) when is_binary(from) and is_binary(to) do
     %{
@@ -94,13 +95,13 @@ defmodule Sanbase.Utils.ListSelector.Transform do
     end
   end
 
-  def update_dynamic_datetimes(%{} = map) do
-    dynamic_from = Map.get(map, :dynamic_from)
-    dynamic_to = Map.get(map, :dynamic_to)
+  def update_dynamic_datetimes(%{} = args) do
+    dynamic_from = Map.get(args, :dynamic_from)
+    dynamic_to = Map.get(args, :dynamic_to)
 
     case {dynamic_from, dynamic_to} do
       {nil, nil} ->
-        map
+        args
 
       {nil, _} ->
         {:error, "Cannot use 'dynamic_to' without 'dynamic_from'."}
@@ -115,7 +116,7 @@ defmodule Sanbase.Utils.ListSelector.Transform do
         from = Timex.shift(now, seconds: -str_to_sec(dynamic_from))
         to = Timex.shift(now, seconds: -shift_to_by)
 
-        map
+        args
         |> Map.put(:from, from |> round_datetime(rounding: :up))
         |> Map.put(:to, to |> round_datetime(rounding: :up))
     end
@@ -123,18 +124,18 @@ defmodule Sanbase.Utils.ListSelector.Transform do
 
   def update_dynamic_datetimes(filter), do: filter
 
-  def maybe_shift_from_to(%{include_incomplete_data: true} = args), do: args
+  def maybe_shift_to_datetime(%{include_incomplete_data: true} = args), do: args
 
-  def maybe_shift_from_to(args) do
-    # If the metric has incomplete data and `to` is
-    with {:ok, %{has_incomplete_data: true}} <- Sanbase.Metric.metadata(args["metric"]),
-         start_of_day = DateTime.utc_now() |> Timex.to_start_of_day(),
-         comp when comp != :lt <- DateTime.compare(args.to, start_of_day) do
+  def maybe_shift_to_datetime(%{to: to, metric: metric} = args) do
+    with {:ok, %{has_incomplete_data: true}} <- Sanbase.Metric.metadata(metric),
+         start_of_day = DateTime.utc_now() |> Timex.beginning_of_day(),
+         comp when comp != :lt <- DateTime.compare(to, start_of_day) do
       shifted_to = start_of_day |> Timex.shift(microseconds: -1)
-      from = maybe_shift_from(args.from)
       %{args | to: shifted_to}
     else
       _ -> args
     end
   end
+
+  def maybe_shift_to_datetime(args), do: args
 end

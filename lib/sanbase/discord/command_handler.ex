@@ -21,6 +21,7 @@ defmodule Sanbase.Discord.CommandHandler do
     help
     run
     pin
+    unpin
     run-n-pin
     list
     listall
@@ -51,13 +52,14 @@ defmodule Sanbase.Discord.CommandHandler do
         "`#{@prefix} run YOUR-QUERY-NAME-HERE`\n\\`\\`\\`sql\nYOUR-SQL-QUERY-HERE\n\\`\\`\\`\n"
       )
       |> put_field("2. Pin query", "`#{@prefix} pin QUERY-ID`")
+      |> put_field("3. Unpin query", "`#{@prefix} unpin QUERY-ID`")
       |> put_field(
-        "3. Run query",
+        "4. Run query",
         "`#{@prefix} run-n-pin YOUR-QUERY-NAME-HERE`\n\\`\\`\\`sql\nYOUR-SQL-QUERY-HERE\n\\`\\`\\`\n"
       )
-      |> put_field("4. List all pinned queries to this channel", "`#{@prefix} list`")
-      |> put_field("5. List all globally pinned queries for the server", "`#{@prefix} listall`")
-      |> put_field("6. Show the sql of query", "`#{@prefix} show QUERY-ID`")
+      |> put_field("5. List all pinned queries to this channel", "`#{@prefix} list`")
+      |> put_field("6. List all globally pinned queries for the server", "`#{@prefix} listall`")
+      |> put_field("7. Show the sql of query", "`#{@prefix} show QUERY-ID`")
 
     Api.create_message(msg.channel_id, content: "", embeds: [embed])
   end
@@ -98,6 +100,21 @@ defmodule Sanbase.Discord.CommandHandler do
     with {:ok, panel_id} <- try_extracting_panel_id(msg.content),
          {:ok, _} <- DiscordDashboard.pin(panel_id) do
       Api.create_message(msg.channel_id, content: "Query `#{panel_id}` is pinned")
+    else
+      _ ->
+        Api.create_message(msg.channel_id,
+          content:
+            "Invalid query identificator. Query identificator looks like this: `355d2aec-dad9-4016-8312-70d7d22a9175`"
+        )
+    end
+  end
+
+  def exec_command("unpin", msg, opts) do
+    with {:ok, panel_id} <- try_extracting_panel_id(msg.content),
+         {:ok, _} <- DiscordDashboard.unpin(panel_id) do
+      Api.create_message(msg.channel_id,
+        content: "Query `#{panel_id}` is removed from pinned queries"
+      )
     else
       _ ->
         Api.create_message(msg.channel_id,

@@ -48,15 +48,15 @@ defmodule Sanbase.Discord.CommandHandler do
       |> put_description("Commands usage:\n")
       |> put_field(
         "1. Run query",
-        "#{@prefix} run YOUR-QUERY-NAME-HERE\n\\`\\`\\`sql\nYOUR-SQL-QUERY-HERE\n\\`\\`\\`\n"
+        "`#{@prefix} run YOUR-QUERY-NAME-HERE`\n\\`\\`\\`sql\nYOUR-SQL-QUERY-HERE\n\\`\\`\\`\n"
       )
       |> put_field("2. Pin query", "`#{@prefix} pin QUERY-ID`")
       |> put_field(
         "3. Run query",
-        "#{@prefix} run-n-pin YOUR-QUERY-NAME-HERE\n\\`\\`\\`sql\nYOUR-SQL-QUERY-HERE\n\\`\\`\\`\n"
+        "`#{@prefix} run-n-pin YOUR-QUERY-NAME-HERE`\n\\`\\`\\`sql\nYOUR-SQL-QUERY-HERE\n\\`\\`\\`\n"
       )
       |> put_field("4. List all pinned queries to this channel", "`#{@prefix} list`")
-      |> put_field("5. List all globally pinned queries for the server", "#{@prefix} listall")
+      |> put_field("5. List all globally pinned queries for the server", "`#{@prefix} listall`")
       |> put_field("6. Show the sql of query", "`#{@prefix} show QUERY-ID`")
 
     Api.create_message(msg.channel_id, content: "", embeds: [embed])
@@ -65,12 +65,24 @@ defmodule Sanbase.Discord.CommandHandler do
   def exec_command("run", msg, opts \\ []) do
     pinned = Keyword.get(opts, :pinned, false)
 
-    with {:ok, name} <- try_extracting_name(msg.content),
-         {:ok, sql, args} <- try_extracting_sql(msg.content),
+    with {:ok, sql, args} <- try_extracting_sql(msg.content),
+         {:ok, name} <- try_extracting_name(msg.content) |> IO.inspect(),
          {:ok, result, panel_id} <- compute_and_save(name, sql, args, msg, pinned: pinned) do
       table = format_table(name, result, panel_id)
       Api.create_message(msg.channel_id, content: table)
     else
+      :sql_parse_error ->
+        error_msg = """
+        Malformed sql query supplied.
+        Please provide the sql query in this format.
+        \\`\\`\\`sql
+        YOUR-SQL-QUERY-HERE
+        \\`\\`\\`
+        """
+
+        Api.create_message(msg.channel_id, content: error_msg)
+        exec_command("help", msg)
+
       {:execution_error, reason} ->
         content = """
         ```
@@ -85,9 +97,13 @@ defmodule Sanbase.Discord.CommandHandler do
   def exec_command("pin", msg, opts) do
     with {:ok, panel_id} <- try_extracting_panel_id(msg.content),
          {:ok, _} <- DiscordDashboard.pin(panel_id) do
-      Api.create_message(msg.channel_id, content: "#{panel_id} is pinned")
+      Api.create_message(msg.channel_id, content: "Query `#{panel_id}` is pinned")
     else
-      _ -> Api.create_message(msg.channel_id, content: "Invalid query identificator")
+      _ ->
+        Api.create_message(msg.channel_id,
+          content:
+            "Invalid query identificator. Query identificator looks like this: `355d2aec-dad9-4016-8312-70d7d22a9175`"
+        )
     end
   end
 
@@ -102,6 +118,7 @@ defmodule Sanbase.Discord.CommandHandler do
              to_string(msg.guild_id)
            ) do
       text = Enum.map(pinned, fn p -> "#{p.name}: `#{p.panel_id}`" end) |> Enum.join("\n")
+      text = "Pinned queries for this channel:\n#{text}"
       Api.create_message(msg.channel_id, content: text)
     else
       _ ->
@@ -115,6 +132,7 @@ defmodule Sanbase.Discord.CommandHandler do
     with pinned when is_list(pinned) and pinned != [] <-
            DiscordDashboard.list_pinned_global(to_string(msg.guild_id)) do
       text = Enum.map(pinned, fn p -> "#{p.name}: `#{p.panel_id}`" end) |> Enum.join("\n")
+      text = "Pinned queries for this server:\n#{text}"
       Api.create_message(msg.channel_id, content: text)
     else
       _ ->
@@ -128,7 +146,8 @@ defmodule Sanbase.Discord.CommandHandler do
       panel = List.first(dd.dashboard.panels)
 
       content = """
-      #{panel.name}: `#{panel.id}`
+      Query #{panel.name}: `#{panel.id}`
+
       ```sql
 
       #{panel.sql["query"]}
@@ -163,14 +182,18 @@ defmodule Sanbase.Discord.CommandHandler do
   def try_extracting_name(content) do
     case Regex.run(~r/#{@prefix}\s+#{@cmd_regex}\s+(.*)#{@sql_start_regex}/sm, content) do
       [_, name] -> {:ok, String.trim(name)}
-      _ -> :error
+      _ -> {:ok, gen_query_name()}
+    end
+    |> case do
+      {:ok, ""} -> {:ok, gen_query_name()}
+      other -> other
     end
   end
 
   def try_extracting_sql(content) do
     case Regex.run(~r/#{@sql_start_regex}(.*)#{@sql_end_regex}/sm, content) do
-      [_, sql] -> {:ok, sql, []}
-      _ -> :error
+      [_, sql] -> {:ok, String.trim(sql, ";"), []}
+      _ -> :sql_parse_error
     end
   end
 
@@ -205,6 +228,10 @@ defmodule Sanbase.Discord.CommandHandler do
       {:ok, result, panel_id} -> {:ok, result, panel_id}
       {:error, reason} -> {:execution_error, reason}
     end
+  end
+
+  defp gen_query_name() do
+    "anon_query_" <> (UUID.uuid4() |> String.split("-") |> Enum.at(0))
   end
 
   defp max_rows(rows, columns) do

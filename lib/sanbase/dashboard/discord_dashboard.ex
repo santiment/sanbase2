@@ -55,6 +55,14 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
     end
   end
 
+  def unpin(panel_id) do
+    by_panel_id(panel_id)
+    |> case do
+      dashboard -> do_update(dashboard, %{pinned: false})
+      nil -> {:error, :not_found}
+    end
+  end
+
   def by_panel_id(panel_id) do
     from(d in __MODULE__, where: d.panel_id == ^panel_id, preload: [:dashboard])
     |> Repo.one()

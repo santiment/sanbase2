@@ -214,6 +214,14 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
+  def format_table(name, %{rows: []}, panel_id) do
+    """
+    #{name}: `#{panel_id}`
+
+    `No rows returned after query execution!`
+    """
+  end
+
   def format_table(name, response, panel_id) do
     max_rows = response.rows |> Enum.take(1) |> max_rows(response.columns)
     rows = response.rows |> Enum.take(max_rows - 1)

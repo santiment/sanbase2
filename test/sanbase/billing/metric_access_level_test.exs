@@ -436,7 +436,15 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "transaction_volume_change_7d",
         "transaction_volume_usd_change_1d",
         "transaction_volume_usd_change_30d",
-        "transaction_volume_usd_change_7d"
+        "transaction_volume_usd_change_7d",
+        "aavev2_action_deposits",
+        "aavev2_action_liquidations",
+        "aavev2_action_new_debt",
+        "aavev2_action_repayments",
+        "aavev2_action_deposits_usd",
+        "aavev2_action_liquidations_usd",
+        "aavev2_action_new_debt_usd",
+        "aavev2_action_repayments_usd"
       ]
       |> Enum.sort()
 
@@ -1421,7 +1429,16 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_volume_consumed_total_change_30d",
         # contract metrics
         "contract_interacting_addresses_count",
-        "contract_transactions_count"
+        "contract_transactions_count",
+        # Aave v2 metrics
+        "aavev2_action_deposits",
+        "aavev2_action_liquidations",
+        "aavev2_action_new_debt",
+        "aavev2_action_repayments",
+        "aavev2_action_deposits_usd",
+        "aavev2_action_liquidations_usd",
+        "aavev2_action_new_debt_usd",
+        "aavev2_action_repayments_usd"
       ]
       |> Enum.sort()
 

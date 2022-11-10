@@ -436,15 +436,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "transaction_volume_change_7d",
         "transaction_volume_usd_change_1d",
         "transaction_volume_usd_change_30d",
-        "transaction_volume_usd_change_7d",
-        "aave_v2_action_deposits",
-        "aave_v2_action_liquidations",
-        "aave_v2_action_new_debt",
-        "aave_v2_action_repayments",
-        "aave_v2_action_deposits_usd",
-        "aave_v2_action_liquidations_usd",
-        "aave_v2_action_new_debt_usd",
-        "aave_v2_action_repayments_usd"
+        "transaction_volume_usd_change_7d"
       ]
       |> Enum.sort()
 

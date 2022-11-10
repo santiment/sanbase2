@@ -1421,7 +1421,16 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_volume_consumed_total_change_30d",
         # contract metrics
         "contract_interacting_addresses_count",
-        "contract_transactions_count"
+        "contract_transactions_count",
+        # Aave v2 metrics
+        "aave_v2_action_deposits",
+        "aave_v2_action_liquidations",
+        "aave_v2_action_new_debt",
+        "aave_v2_action_repayments",
+        "aave_v2_action_deposits_usd",
+        "aave_v2_action_liquidations_usd",
+        "aave_v2_action_new_debt_usd",
+        "aave_v2_action_repayments_usd"
       ]
       |> Enum.sort()
 

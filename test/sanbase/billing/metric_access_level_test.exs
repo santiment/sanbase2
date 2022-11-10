@@ -437,14 +437,14 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "transaction_volume_usd_change_1d",
         "transaction_volume_usd_change_30d",
         "transaction_volume_usd_change_7d",
-        "aavev2_action_deposits",
-        "aavev2_action_liquidations",
-        "aavev2_action_new_debt",
-        "aavev2_action_repayments",
-        "aavev2_action_deposits_usd",
-        "aavev2_action_liquidations_usd",
-        "aavev2_action_new_debt_usd",
-        "aavev2_action_repayments_usd"
+        "aave_v2_action_deposits",
+        "aave_v2_action_liquidations",
+        "aave_v2_action_new_debt",
+        "aave_v2_action_repayments",
+        "aave_v2_action_deposits_usd",
+        "aave_v2_action_liquidations_usd",
+        "aave_v2_action_new_debt_usd",
+        "aave_v2_action_repayments_usd"
       ]
       |> Enum.sort()
 
@@ -1431,14 +1431,14 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "contract_interacting_addresses_count",
         "contract_transactions_count",
         # Aave v2 metrics
-        "aavev2_action_deposits",
-        "aavev2_action_liquidations",
-        "aavev2_action_new_debt",
-        "aavev2_action_repayments",
-        "aavev2_action_deposits_usd",
-        "aavev2_action_liquidations_usd",
-        "aavev2_action_new_debt_usd",
-        "aavev2_action_repayments_usd"
+        "aave_v2_action_deposits",
+        "aave_v2_action_liquidations",
+        "aave_v2_action_new_debt",
+        "aave_v2_action_repayments",
+        "aave_v2_action_deposits_usd",
+        "aave_v2_action_liquidations_usd",
+        "aave_v2_action_new_debt_usd",
+        "aave_v2_action_repayments_usd"
       ]
       |> Enum.sort()
 

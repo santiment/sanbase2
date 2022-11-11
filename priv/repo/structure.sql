@@ -872,7 +872,10 @@ CREATE TABLE public.discord_dashboards (
     dashboard_id bigint,
     pinned boolean DEFAULT false,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    discord_user_id character varying(255),
+    discord_user_handle character varying(255),
+    discord_message_id character varying(255)
 );
 
 
@@ -8010,3 +8013,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220830115029);
 INSERT INTO public."schema_migrations" (version) VALUES (20221025154013);
 INSERT INTO public."schema_migrations" (version) VALUES (20221027125500);
 INSERT INTO public."schema_migrations" (version) VALUES (20221103145206);
+INSERT INTO public."schema_migrations" (version) VALUES (20221110142211);

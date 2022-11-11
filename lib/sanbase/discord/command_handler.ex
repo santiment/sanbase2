@@ -85,6 +85,15 @@ defmodule Sanbase.Discord.CommandHandler do
     sql = text_input_map["sqlquery"]
     sql_args = []
 
+    response = %{
+      type: 4,
+      data: %{
+        content: "Your query is running ..."
+      }
+    }
+
+    Nostrum.Api.create_interaction_response(interaction, response)
+
     with {:ok, result, panel_id} <- compute_and_save(name, sql, sql_args, args) do
       table = format_table(name, result, panel_id)
 
@@ -100,15 +109,10 @@ defmodule Sanbase.Discord.CommandHandler do
         ActionRow.action_row()
         |> ActionRow.append(Button.button(label: "Pin 📌", custom_id: "pin" <> panel_id))
 
-      response = %{
-        type: 4,
-        data: %{
-          content: content,
-          components: [ar]
-        }
-      }
-
-      Nostrum.Api.create_interaction_response(interaction, response)
+      Api.create_message(interaction.channel_id,
+        content: content,
+        components: [ar]
+      )
     end
   end
 

@@ -1430,7 +1430,32 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "aave_v2_action_deposits_usd",
         "aave_v2_action_liquidations_usd",
         "aave_v2_action_new_debt_usd",
-        "aave_v2_action_repayments_usd"
+        "aave_v2_action_repayments_usd",
+        "aave_v2_total_deposits_usd",
+        "aave_v2_total_liquidations_usd",
+        "aave_v2_total_new_debt_usd",
+        "aave_v2_total_repayments_usd",
+        "aave_v2_total_supplied",
+        "aave_v2_total_supplied_usd",
+        "aave_v2_total_borrowed",
+        "aave_v2_total_borrowed_usd",
+        # Compound metrics
+        "compound_action_deposits",
+        "compound_action_liquidations",
+        "compound_action_new_debt",
+        "compound_action_repayments",
+        "compound_action_deposits_usd",
+        "compound_action_liquidations_usd",
+        "compound_action_new_debt_usd",
+        "compound_action_repayments_usd",
+        "compound_total_deposits_usd",
+        "compound_total_liquidations_usd",
+        "compound_total_new_debt_usd",
+        "compound_total_repayments_usd",
+        "compound_total_supplied",
+        "compound_total_supplied_usd",
+        "compound_total_borrowed",
+        "compound_total_borrowed_usd"
       ]
       |> Enum.sort()
 

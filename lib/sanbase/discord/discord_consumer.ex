@@ -27,6 +27,11 @@ defmodule Sanbase.DiscordConsumer do
       })
 
       Nostrum.Api.create_guild_application_command(guild_id, %{
+        name: "list",
+        description: "List pinned sql queries"
+      })
+
+      Nostrum.Api.create_guild_application_command(guild_id, %{
         name: "help",
         description: "How to run sql query"
       })
@@ -51,6 +56,14 @@ defmodule Sanbase.DiscordConsumer do
 
   def handle_event({
         :INTERACTION_CREATE,
+        %Interaction{data: %ApplicationCommandInteractionData{name: "list"}} = interaction,
+        _ws_state
+      }) do
+    CommandHandler.handle_interaction("list", interaction)
+  end
+
+  def handle_event({
+        :INTERACTION_CREATE,
         %Interaction{data: %ApplicationCommandInteractionData{custom_id: "run_sql_modal"}} =
           interaction,
         _ws_state
@@ -67,9 +80,27 @@ defmodule Sanbase.DiscordConsumer do
     CommandHandler.handle_interaction("pin", interaction, panel_id)
   end
 
+  def handle_event({
+        :INTERACTION_CREATE,
+        %Interaction{data: %ApplicationCommandInteractionData{custom_id: "unpin" <> panel_id}} =
+          interaction,
+        _ws_state
+      }) do
+    CommandHandler.handle_interaction("unpin", interaction, panel_id)
+  end
+
+  def handle_event({
+        :INTERACTION_CREATE,
+        %Interaction{data: %ApplicationCommandInteractionData{custom_id: "show" <> panel_id}} =
+          interaction,
+        _ws_state
+      }) do
+    CommandHandler.handle_interaction("show", interaction, panel_id)
+  end
+
   # Default event handler, if you don't include this, your consumer WILL crash if
   # you don't have a method definition for each event type.
-  def handle_event(event) do
+  def handle_event(_event) do
     :noop
   end
 end

@@ -2,11 +2,9 @@ defmodule Sanbase.Discord.CommandHandler do
   import Nostrum.Struct.Embed
 
   alias Nostrum.Api
-  alias Nostrum.Struct.Interaction
   alias Nostrum.Struct.Embed
 
   alias Sanbase.Accounts.User
-  alias Sanbase.Dashboard
   alias Sanbase.Dashboard.DiscordDashboard
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Component.{ActionRow, TextInput}
@@ -24,7 +22,6 @@ defmodule Sanbase.Discord.CommandHandler do
     run
     pin
     unpin
-    run-n-pin
     list
     listall
     show
@@ -53,7 +50,7 @@ defmodule Sanbase.Discord.CommandHandler do
         custom_id: "run_sql_modal",
         title: "Run sql query",
         min_length: 1,
-        max_length: 6000,
+        max_length: 4000,
         components: [ar1, ar2]
       }
     }
@@ -62,6 +59,11 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   def handle_interaction("run", interaction) do
+    Nostrum.Api.create_interaction_response(
+      interaction,
+      interaction_message_response("Your query is running ...")
+    )
+
     components = interaction.data.components
 
     text_input_map =
@@ -81,67 +83,131 @@ defmodule Sanbase.Discord.CommandHandler do
       pinned: false
     }
 
-    name = text_input_map["dashname"]
+    name =
+      case text_input_map["dashname"] do
+        "" -> gen_query_name()
+        nil -> gen_query_name()
+        name -> name
+      end
+
     sql = text_input_map["sqlquery"]
     sql_args = []
-
-    response = %{
-      type: 4,
-      data: %{
-        content: "Your query is running ..."
-      }
-    }
-
-    Nostrum.Api.create_interaction_response(interaction, response)
 
     with {:ok, result, panel_id} <- compute_and_save(name, sql, sql_args, args) do
       table = format_table(name, result, panel_id)
 
-      content = """
+      sql = """
       ```sql
       #{sql}
       ```
-
-      #{table}
       """
 
-      ar =
-        ActionRow.action_row()
-        |> ActionRow.append(Button.button(label: "Pin 📌", custom_id: "pin" <> panel_id))
+      pin_button = Button.button(label: "Pin 📌", custom_id: "pin" <> panel_id)
+      unpin_button = Button.button(label: "Unpin 📌", custom_id: "unpin" <> panel_id, style: 4)
+
+      action_row =
+        ActionRow.action_row() |> ActionRow.append(pin_button) |> ActionRow.append(unpin_button)
+
+      Api.create_message(interaction.channel_id, content: sql)
 
       Api.create_message(interaction.channel_id,
-        content: content,
-        components: [ar]
+        content: table,
+        components: [action_row]
       )
+    else
+      {:execution_error, reason} ->
+        content = """
+        ```
+        #{String.slice(reason, 0, @max_size)}
+        ```
+        """
+
+        Api.create_message(interaction.channel_id, content: content)
+    end
+  end
+
+  def handle_interaction("list", interaction) do
+    with pinned when is_list(pinned) and pinned != [] <-
+           DiscordDashboard.list_pinned_channel(
+             to_string(interaction.channel_id),
+             to_string(interaction.guild_id)
+           ) do
+      Nostrum.Api.create_interaction_response(
+        interaction,
+        interaction_message_response("List of pinned queries")
+      )
+
+      pinned
+      |> Enum.with_index()
+      |> Enum.each(fn {p, idx} ->
+        show_button = Button.button(label: "Show 📜", custom_id: "show" <> p.panel_id)
+        unpin_button = Button.button(label: "Unpin 📌", custom_id: "unpin" <> p.panel_id, style: 4)
+
+        action_row =
+          ActionRow.action_row()
+          |> ActionRow.append(show_button)
+          |> ActionRow.append(unpin_button)
+
+        text = "#{idx + 1}. #{p.name}"
+        Api.create_message(interaction.channel_id, content: text, components: [action_row])
+      end)
+    else
+      _ ->
+        response = interaction_message_response("There are no pinned queries for this channel.")
+        Nostrum.Api.create_interaction_response(interaction, response)
     end
   end
 
   def handle_interaction("help", interaction) do
     help_content = """
-    * `/help`:
-    * `/query`: Execute a SQL query
+    `/help`:
+    `/query`: Execute a SQL query
+    `/list`: List pinned queries
     """
 
-    response = %{
-      type: 4,
-      data: %{
-        content: help_content
-      }
-    }
-
-    Nostrum.Api.create_interaction_response(interaction, response)
+    Nostrum.Api.create_interaction_response(
+      interaction,
+      interaction_message_response(help_content)
+    )
   end
 
   def handle_interaction("pin", interaction, panel_id) do
     with {:ok, _} <- DiscordDashboard.pin(panel_id) do
-      response = %{
-        type: 4,
-        data: %{
-          content: "Query is pinned"
-        }
-      }
+      Nostrum.Api.create_interaction_response(
+        interaction,
+        interaction_message_response("Query is pinned")
+      )
+    end
+  end
 
+  def handle_interaction("unpin", interaction, panel_id) do
+    with {:ok, _} <- DiscordDashboard.unpin(panel_id) do
+      Nostrum.Api.create_interaction_response(
+        interaction,
+        interaction_message_response("Query is removed from pinned")
+      )
+    end
+  end
+
+  def handle_interaction("show", interaction, panel_id) do
+    with %DiscordDashboard{} = dd <- DiscordDashboard.by_panel_id(panel_id) do
+      panel = List.first(dd.dashboard.panels)
+
+      content = """
+      Query #{panel.name}: `#{panel.id}`
+
+      ```sql
+
+      #{panel.sql["query"]}
+      ```
+      """
+
+      response = interaction_message_response(content)
       Nostrum.Api.create_interaction_response(interaction, response)
+    else
+      _ ->
+        response = interaction_message_response("There is no query with this identificator")
+        Nostrum.Api.create_interaction_response(interaction, response)
     end
   end
 
@@ -177,9 +243,7 @@ defmodule Sanbase.Discord.CommandHandler do
     Api.create_message(msg.channel_id, content: "", embeds: [embed])
   end
 
-  def exec_command("run", msg, opts \\ []) do
-    pinned = Keyword.get(opts, :pinned, false)
-
+  def exec_command("run", msg) do
     args = %{
       discord_user: to_string(msg.author.id),
       channel: to_string(msg.channel_id),
@@ -187,7 +251,7 @@ defmodule Sanbase.Discord.CommandHandler do
       discord_user_id: to_string(msg.author.id),
       discord_user_handle: msg.author.username <> msg.author.discriminator,
       discord_message_id: to_string(msg.id),
-      pinned: pinned
+      pinned: false
     }
 
     with {:ok, sql, sql_args} <- try_extracting_sql(msg.content),
@@ -228,7 +292,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def exec_command("pin", msg, opts) do
+  def exec_command("pin", msg) do
     with {:ok, panel_id} <- try_extracting_panel_id(msg.content),
          {:ok, _} <- DiscordDashboard.pin(panel_id) do
       Api.create_message(msg.channel_id,
@@ -243,7 +307,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def exec_command("unpin", msg, opts) do
+  def exec_command("unpin", msg) do
     with {:ok, panel_id} <- try_extracting_panel_id(msg.content),
          {:ok, _} <- DiscordDashboard.unpin(panel_id) do
       Api.create_message(msg.channel_id,
@@ -258,11 +322,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def exec_command("run-n-pin", msg, opts) do
-    exec_command("run", msg, pinned: true)
-  end
-
-  def exec_command("list", msg, opts) do
+  def exec_command("list", msg) do
     with pinned when is_list(pinned) and pinned != [] <-
            DiscordDashboard.list_pinned_channel(
              to_string(msg.channel_id),
@@ -279,7 +339,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def exec_command("listall", msg, opts) do
+  def exec_command("listall", msg) do
     with pinned when is_list(pinned) and pinned != [] <-
            DiscordDashboard.list_pinned_global(to_string(msg.guild_id)) do
       text = Enum.map(pinned, fn p -> "#{p.name}: `#{p.panel_id}`" end) |> Enum.join("\n")
@@ -291,7 +351,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def exec_command("show", msg, opts) do
+  def exec_command("show", msg) do
     with {:ok, panel_id} <- try_extracting_panel_id(msg.content),
          %DiscordDashboard{} = dd <- DiscordDashboard.by_panel_id(panel_id) do
       panel = List.first(dd.dashboard.panels)
@@ -312,7 +372,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def exec_command(:invalid_command, msg, opts) do
+  def exec_command(:invalid_command, msg) do
     Api.create_message(msg.channel_id, content: "Invalid command entered")
   end
 
@@ -357,7 +417,7 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   def format_table(name, response, panel_id) do
-    max_rows = response.rows |> Enum.take(1) |> max_rows(response.columns)
+    max_rows = response.rows |> Enum.take(1) |> max_rows()
     rows = response.rows |> Enum.take(max_rows - 1)
     table = TableRex.quick_render!(rows, response.columns)
 
@@ -372,7 +432,7 @@ defmodule Sanbase.Discord.CommandHandler do
     """
   end
 
-  def compute_and_save(name, query, query_params, args) do
+  def compute_and_save(name, query, _query_params, args) do
     sanbase_bot_user_id = Sanbase.Repo.get_by(User, email: User.sanbase_bot_email()).id
     args = Map.put(args, :name, name)
 
@@ -387,11 +447,20 @@ defmodule Sanbase.Discord.CommandHandler do
     "anon_query_" <> (UUID.uuid4() |> String.split("-") |> Enum.at(0))
   end
 
-  defp max_rows(rows, columns) do
+  defp max_rows(rows) do
     row_length =
       TableRex.quick_render!(rows)
       |> String.length()
 
     div(@max_size, row_length)
+  end
+
+  def interaction_message_response(content) do
+    %{
+      type: 4,
+      data: %{
+        content: content
+      }
+    }
   end
 end

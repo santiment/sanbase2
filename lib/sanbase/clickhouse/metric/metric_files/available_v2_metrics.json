@@ -2114,5 +2114,413 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Aave v2 total deposits in USD",
+    "name": "aave_v2_total_deposits_usd",
+    "metric": "aavev2_total_deposits_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Aave v2 total liquidations in USD",
+    "name": "aave_v2_total_liquidations_usd",
+    "metric": "aavev2_total_liquidations_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Aave v2 total new debt in USD",
+    "name": "aave_v2_total_new_debt_usd",
+    "metric": "aavev2_total_new_debt_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Aave v2 total repayments in USD",
+    "name": "aave_v2_total_repayments_usd",
+    "metric": "aavev2_total_repayments_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Aave v2 total supplied",
+    "name": "aave_v2_total_supplied",
+    "metric": "aavev2_total_supplied",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Aave v2 total supplied in USD",
+    "name": "aave_v2_total_supplied_usd",
+    "metric": "aavev2_total_supplied_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Aave v2 total borrowed",
+    "name": "aave_v2_total_borrowed",
+    "metric": "aavev2_total_borrowed",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Aave v2 total borrowed in USD",
+    "name": "aave_v2_total_borrowed_usd",
+    "metric": "aavev2_total_borrowed_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound deposits",
+    "name": "compound_action_deposits",
+    "metric": "compound_action_deposits",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound liquidations",
+    "name": "compound_action_liquidations",
+    "metric": "compound_action_liquidations",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound new debt",
+    "name": "compound_action_new_debt",
+    "metric": "compound_action_new_debt",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound repayments",
+    "name": "compound_action_repayments",
+    "metric": "compound_action_repayments",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound deposits in USD",
+    "name": "compound_action_deposits_usd",
+    "metric": "compound_action_deposits_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound liquidations in USD",
+    "name": "compound_action_liquidations_usd",
+    "metric": "compound_action_liquidations_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound new debt in USD",
+    "name": "compound_action_new_debt_usd",
+    "metric": "compound_action_new_debt_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound repayments in USD",
+    "name": "compound_action_repayments_usd",
+    "metric": "compound_action_repayments_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound total deposits in USD",
+    "name": "compound_total_deposits_usd",
+    "metric": "compound_total_deposits_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound total liquidations in USD",
+    "name": "compound_total_liquidations_usd",
+    "metric": "compound_total_liquidations_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound total new debt in USD",
+    "name": "compound_total_new_debt_usd",
+    "metric": "compound_total_new_debt_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound total repayments in USD",
+    "name": "compound_total_repayments_usd",
+    "metric": "compound_total_repayments_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound total supplied",
+    "name": "compound_total_supplied",
+    "metric": "compound_total_supplied",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound total supplied in USD",
+    "name": "compound_total_supplied_usd",
+    "metric": "compound_total_supplied_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound total borrowed",
+    "name": "compound_total_borrowed",
+    "metric": "compound_total_borrowed",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound total borrowed in USD",
+    "name": "compound_total_borrowed_usd",
+    "metric": "compound_total_borrowed_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
   }
 ]

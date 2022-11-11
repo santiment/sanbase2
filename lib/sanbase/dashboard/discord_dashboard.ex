@@ -14,6 +14,9 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
     field(:name, :string)
     field(:panel_id, :string)
     field(:pinned, :boolean, default: false)
+    field(:discord_user_id, :string)
+    field(:discord_user_handle, :string)
+    field(:discord_message_id, :string)
 
     belongs_to(:user, User)
     belongs_to(:dashboard, Dashboard.Schema)
@@ -31,10 +34,11 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
       :guild,
       :pinned,
       :user_id,
-      :dashboard_id
+      :dashboard_id,
+      :discord_user_id,
+      :discord_user_handle,
+      :discord_message_id
     ])
-
-    # |> validate_required([:panel_id, :name, :discord_user, :channel, :guild])
   end
 
   def list_pinned_channel(channel, guild) do
@@ -47,10 +51,18 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
     |> Repo.all()
   end
 
+  def pin_by_msg_id(message_id) do
+    by_discord_message_id(message_id)
+    |> case do
+      %__MODULE__{} = dashboard -> do_update(dashboard, %{pinned: true})
+      nil -> {:error, :not_found}
+    end
+  end
+
   def pin(panel_id) do
     by_panel_id(panel_id)
     |> case do
-      dashboard -> do_update(dashboard, %{pinned: true})
+      %__MODULE__{} = dashboard -> do_update(dashboard, %{pinned: true})
       nil -> {:error, :not_found}
     end
   end
@@ -58,13 +70,26 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
   def unpin(panel_id) do
     by_panel_id(panel_id)
     |> case do
-      dashboard -> do_update(dashboard, %{pinned: false})
+      %__MODULE__{} = dashboard -> do_update(dashboard, %{pinned: false})
+      nil -> {:error, :not_found}
+    end
+  end
+
+  def update_message_id(panel_id, message_id) do
+    by_panel_id(panel_id)
+    |> case do
+      %__MODULE__{} = dashboard -> do_update(dashboard, %{discord_message_id: message_id})
       nil -> {:error, :not_found}
     end
   end
 
   def by_panel_id(panel_id) do
     from(d in __MODULE__, where: d.panel_id == ^panel_id, preload: [:dashboard])
+    |> Repo.one()
+  end
+
+  def by_discord_message_id(message_id) do
+    from(d in __MODULE__, where: d.discord_message_id == ^message_id, preload: [:dashboard])
     |> Repo.one()
   end
 
@@ -81,9 +106,7 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
   end
 
   def create(user_id, query, params) do
-    args =
-      Map.take(params, [:name, :discord_user, :channel, :guild, :pinned])
-      |> Map.put(:user_id, user_id)
+    args = Map.put(params, :user_id, user_id)
 
     with {:ok, dashboard} <- Dashboard.create(%{name: params.name}, user_id),
          {:ok, %{panel: panel}} <-

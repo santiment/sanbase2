@@ -17,15 +17,20 @@ defmodule Sanbase.DiscordConsumer do
   end
 
   def handle_event({:READY, data, _ws_state}) do
-    Nostrum.Api.create_guild_application_command(852_836_083_381_174_282, %{
-      name: "query",
-      description: "Run SQL query"
-    })
+    guild_ids = data.guilds |> Enum.map(& &1.id)
 
-    Nostrum.Api.create_guild_application_command(852_836_083_381_174_282, %{
-      name: "help",
-      description: "How to run sql query"
-    })
+    guild_ids
+    |> Enum.each(fn guild_id ->
+      Nostrum.Api.create_guild_application_command(guild_id, %{
+        name: "query",
+        description: "Run SQL query"
+      })
+
+      Nostrum.Api.create_guild_application_command(guild_id, %{
+        name: "help",
+        description: "How to run sql query"
+      })
+    end)
   end
 
   def handle_event({

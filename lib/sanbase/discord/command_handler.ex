@@ -102,17 +102,11 @@ defmodule Sanbase.Discord.CommandHandler do
       ```
       """
 
-      pin_button = Button.button(label: "Pin 📌", custom_id: "pin" <> panel_id)
-      unpin_button = Button.button(label: "Unpin 📌", custom_id: "unpin" <> panel_id, style: 4)
-
-      action_row =
-        ActionRow.action_row() |> ActionRow.append(pin_button) |> ActionRow.append(unpin_button)
-
       Api.create_message(interaction.channel_id, content: sql)
 
       Api.create_message(interaction.channel_id,
         content: table,
-        components: [action_row]
+        components: [action_row(panel_id)]
       )
     else
       {:execution_error, reason} ->
@@ -140,16 +134,12 @@ defmodule Sanbase.Discord.CommandHandler do
       pinned
       |> Enum.with_index()
       |> Enum.each(fn {p, idx} ->
-        show_button = Button.button(label: "Show 📜", custom_id: "show" <> p.panel_id)
-        unpin_button = Button.button(label: "Unpin 📌", custom_id: "unpin" <> p.panel_id, style: 4)
-
-        action_row =
-          ActionRow.action_row()
-          |> ActionRow.append(show_button)
-          |> ActionRow.append(unpin_button)
-
         text = "#{idx + 1}. #{p.name}"
-        Api.create_message(interaction.channel_id, content: text, components: [action_row])
+
+        Api.create_message(interaction.channel_id,
+          content: text,
+          components: [action_row(p.panel_id)]
+        )
       end)
     else
       _ ->
@@ -169,6 +159,42 @@ defmodule Sanbase.Discord.CommandHandler do
       interaction,
       interaction_message_response(help_content)
     )
+  end
+
+  def handle_interaction("rerun", interaction, panel_id) do
+    Nostrum.Api.create_interaction_response(
+      interaction,
+      interaction_message_response("Your query is running ...")
+    )
+
+    sanbase_bot_user_id = Sanbase.Repo.get_by(User, email: User.sanbase_bot_email()).id
+
+    with {:ok, result, dd} <- DiscordDashboard.execute(sanbase_bot_user_id, panel_id) do
+      panel = List.first(dd.dashboard.panels)
+      table = format_table(panel.name, result, panel_id)
+
+      sql = """
+      ```sql
+      #{panel.sql["query"]}
+      ```
+      """
+
+      Api.create_message(interaction.channel_id, content: sql)
+
+      Api.create_message(interaction.channel_id,
+        content: table,
+        components: [action_row(panel_id)]
+      )
+    else
+      {:execution_error, reason} ->
+        content = """
+        ```
+        #{String.slice(reason, 0, @max_size)}
+        ```
+        """
+
+        Api.create_message(interaction.channel_id, content: content)
+    end
   end
 
   def handle_interaction("pin", interaction, panel_id) do
@@ -259,13 +285,9 @@ defmodule Sanbase.Discord.CommandHandler do
          {:ok, result, panel_id} <- compute_and_save(name, sql, sql_args, args) do
       table = format_table(name, result, panel_id)
 
-      ar =
-        ActionRow.action_row()
-        |> ActionRow.append(Button.button(label: "Pin 📌", custom_id: "pin" <> panel_id))
-
       Api.create_message(msg.channel_id,
         content: table,
-        components: [ar],
+        components: [action_row(panel_id)],
         message_reference: %{message_id: msg.id}
       )
     else
@@ -331,16 +353,8 @@ defmodule Sanbase.Discord.CommandHandler do
       pinned
       |> Enum.with_index()
       |> Enum.each(fn {p, idx} ->
-        show_button = Button.button(label: "Show 📜", custom_id: "show" <> p.panel_id)
-        unpin_button = Button.button(label: "Unpin 📌", custom_id: "unpin" <> p.panel_id, style: 4)
-
-        action_row =
-          ActionRow.action_row()
-          |> ActionRow.append(show_button)
-          |> ActionRow.append(unpin_button)
-
         text = "#{idx + 1}. #{p.name}"
-        Api.create_message(msg.channel_id, content: text, components: [action_row])
+        Api.create_message(msg.channel_id, content: text, components: [action_row(p.panel_id)])
       end)
     else
       _ ->
@@ -473,5 +487,22 @@ defmodule Sanbase.Discord.CommandHandler do
         content: content
       }
     }
+  end
+
+  def action_row(panel_id) do
+    dd = DiscordDashboard.by_panel_id(panel_id)
+    run_button = Button.button(label: "Run 🚀", custom_id: "rerun" <> panel_id)
+    show_button = Button.button(label: "Show 📜", custom_id: "show" <> panel_id, style: 2)
+
+    pin_unpin_button =
+      case dd.pinned do
+        true -> Button.button(label: "Unpin 📌", custom_id: "unpin" <> panel_id, style: 4)
+        false -> Button.button(label: "Pin 📌", custom_id: "pin" <> panel_id)
+      end
+
+    ActionRow.action_row()
+    |> ActionRow.append(run_button)
+    |> ActionRow.append(show_button)
+    |> ActionRow.append(pin_unpin_button)
   end
 end

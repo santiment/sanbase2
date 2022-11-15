@@ -111,6 +111,16 @@ defmodule Sanbase.DiscordConsumer do
     |> handle_response("show" <> panel_id, interaction)
   end
 
+  def handle_event({
+        :INTERACTION_CREATE,
+        %Interaction{data: %ApplicationCommandInteractionData{custom_id: "rerun" <> panel_id}} =
+          interaction,
+        _ws_state
+      }) do
+    CommandHandler.handle_interaction("rerun", interaction, panel_id)
+    |> handle_response("rerun" <> panel_id, interaction)
+  end
+
   # Default event handler, if you don't include this, your consumer WILL crash if
   # you don't have a method definition for each event type.
   def handle_event(_event) do

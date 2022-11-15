@@ -42,7 +42,10 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
   end
 
   def list_pinned_channel(channel, guild) do
-    from(d in __MODULE__, where: d.pinned == true and d.channel == ^channel and d.guild == ^guild)
+    from(d in __MODULE__,
+      where: d.pinned == true and d.channel == ^channel and d.guild == ^guild,
+      order_by: [asc: d.id]
+    )
     |> Repo.all()
   end
 
@@ -103,6 +106,16 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
     %__MODULE__{}
     |> changeset(params)
     |> Repo.insert()
+  end
+
+  def execute(user_id, panel_id) do
+    with %__MODULE__{dashboard_id: dashboard_id} = dd <- by_panel_id(panel_id),
+         {:ok, result} <-
+           Dashboard.compute_panel(dashboard_id, panel_id, user_id, parameters: nil) do
+      {:ok, result, dd}
+    else
+      _ -> {:error, "Can't execute this query"}
+    end
   end
 
   def create(user_id, query, params) do

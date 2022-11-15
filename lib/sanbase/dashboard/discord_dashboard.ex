@@ -114,7 +114,7 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
              name: params.name,
              sql: %{parameters: %{}, query: query}
            }),
-         {:ok, %__MODULE__{} = discord_dashboard} <-
+         {:ok, %__MODULE__{}} <-
            do_create(Map.merge(args, %{dashboard_id: dashboard.id, panel_id: panel.id})),
          {:ok, result} <-
            Dashboard.compute_panel(dashboard.id, panel.id, user_id, parameters: nil) do

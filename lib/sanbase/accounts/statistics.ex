@@ -3,7 +3,7 @@ defmodule Sanbase.Accounts.Statistics do
 
   alias Sanbase.Repo
   alias Sanbase.Math
-  alias Sanbase.Accounts.{Role, UserRole, User}
+  alias Sanbase.Accounts.User
   alias Sanbase.UserList
 
   def tokens_staked() do

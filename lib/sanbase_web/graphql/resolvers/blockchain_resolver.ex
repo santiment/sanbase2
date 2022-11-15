@@ -1,21 +1,8 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
-  @blockchains [
-    "ethereum",
-    "bitcoin",
-    "bitcoin-cash",
-    "litecoin",
-    "ripple",
-    "binance-coin",
-    "dogecoin",
-    "matic-network",
-    "cardano",
-    "avalanche",
-    "optimism",
-    "arbitrum"
-  ]
-
   def available_blockchains_metadata(_root, _argsargs, _resolution) do
-    {:ok, Enum.map(@blockchains, &blockchain_data/1)}
+    blockchains = Sanbase.BlockchainAddress.available_blockchains()
+
+    {:ok, Enum.map(blockchains, &blockchain_data/1)}
   end
 
   defp blockchain_data("ethereum") do

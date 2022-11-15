@@ -19,7 +19,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
     Logger.info("#{@log_tag} Started fetching logos from coinmarketcap.")
 
-    Temp.track!()
     dir_path = Temp.mkdir!("logos")
 
     projects
@@ -33,7 +32,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
       end)
     end)
 
-    Temp.cleanup()
+    File.rm_rf!(dir_path)
 
     Logger.info("#{@log_tag} Finished fetching logos from coinmarketcap.")
   end
@@ -43,14 +42,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     project = Project.by_slug(slug)
 
     Logger.info("#{@log_tag} Started fetching logos from coinmarketcap.")
-    Temp.track!()
     dir_path = Temp.mkdir!("logotemp")
 
     {:ok, remote_projects} = CryptocurrencyInfo.fetch_data([project])
     logo_map = remote_projects |> Enum.into(%{}, fn ci -> {ci.slug, ci.logo} end)
     update_project_logos(project, logo_map, dir_path)
 
-    Temp.cleanup()
+    File.rm_rf!(dir_path)
   end
 
   defp update_project_logos(project, logo_map, dir_path) do

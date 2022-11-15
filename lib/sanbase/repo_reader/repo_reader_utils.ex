@@ -62,11 +62,16 @@ defmodule Sanbase.RepoReader.Utils do
         data_file_path = Path.join([directory, "data.json"])
 
         with {:ok, file_content} <- File.read(data_file_path),
-             {:ok, data} <- Jason.decode(file_content) do
-          {dir, data}
+             {:ok, data} <- Jason.decode(file_content),
+             {:ok, slug} when is_binary(slug) <- get_slug(data) do
+          {slug, data}
         else
           {:error, error} ->
-            Logger.warn("Error reading/decoding a #{@repository} file in directory: #{dir}")
+            Logger.warn("""
+            Error reading/decoding a #{@repository} file in directory: #{dir}.
+            Reason: #{inspect(error)}
+            """)
+
             nil
         end
       end)
@@ -94,5 +99,14 @@ defmodule Sanbase.RepoReader.Utils do
       directory
     end)
     |> Enum.uniq()
+  end
+
+  # Private functions
+
+  defp get_slug(data) do
+    case data do
+      %{"general" => %{"slug" => slug}} when is_binary(slug) -> {:ok, slug}
+      _ -> {:error, "No slug found or it is not a string"}
+    end
   end
 end

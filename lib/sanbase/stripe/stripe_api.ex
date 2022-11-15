@@ -3,7 +3,7 @@ defmodule Sanbase.StripeApi do
   Module wrapping communication with Stripe.
   """
 
-  alias Sanbase.Billing.{Product, Plan, Subscription}
+  alias Sanbase.Billing.{Product, Plan}
   alias Sanbase.Accounts.User
 
   @type subscription_item :: %{plan: String.t()}
@@ -153,7 +153,7 @@ defmodule Sanbase.StripeApi do
 
   # Helpers
 
-  defp maybe_remove_coupon(params, db_subscription, plan) do
+  defp maybe_remove_coupon(params, db_subscription, _plan) do
     with {:ok, stripe_subscription} <- retrieve_subscription(db_subscription.stripe_id) do
       percent_off =
         get_in(stripe_subscription, [

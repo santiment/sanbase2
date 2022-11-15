@@ -87,8 +87,8 @@ defmodule Sanbase.DiscordConsumer do
           interaction,
         _ws_state
       }) do
-    CommandHandler.handle_interaction("pin" <> panel_id, interaction)
-    |> handle_response("pin" <> panel_id, interaction, panel_id)
+    CommandHandler.handle_interaction("pin", interaction, panel_id)
+    |> handle_response("pin" <> panel_id, interaction)
   end
 
   def handle_event({
@@ -98,7 +98,7 @@ defmodule Sanbase.DiscordConsumer do
         _ws_state
       }) do
     CommandHandler.handle_interaction("unpin", interaction, panel_id)
-    |> handle_response("unpin" <> panel_id, interaction, panel_id)
+    |> handle_response("unpin" <> panel_id, interaction)
   end
 
   def handle_event({
@@ -108,7 +108,7 @@ defmodule Sanbase.DiscordConsumer do
         _ws_state
       }) do
     CommandHandler.handle_interaction("show", interaction, panel_id)
-    |> handle_response("show" <> panel_id, interaction, panel_id)
+    |> handle_response("show" <> panel_id, interaction)
   end
 
   # Default event handler, if you don't include this, your consumer WILL crash if
@@ -134,7 +134,7 @@ defmodule Sanbase.DiscordConsumer do
     end
   end
 
-  def handle_response(response, command, interaction, panel_id \\ nil) do
+  def handle_response(response, command, interaction) do
     params = %{
       channel: to_string(interaction.channel_id),
       guild: to_string(interaction.guild_id),

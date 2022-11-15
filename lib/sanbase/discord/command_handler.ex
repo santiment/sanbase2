@@ -90,7 +90,7 @@ defmodule Sanbase.Discord.CommandHandler do
         name -> name
       end
 
-    sql = text_input_map["sqlquery"]
+    sql = text_input_map["sqlquery"] |> String.trim(";")
     sql_args = []
 
     with {:ok, result, panel_id} <- compute_and_save(name, sql, sql_args, args) do

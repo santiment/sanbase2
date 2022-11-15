@@ -129,6 +129,9 @@ defmodule Sanbase.DiscordConsumer do
       {:ok, _} ->
         Logger.info("MSG COMMAND SUCCESS #{msg.content} #{inspect(params)}")
 
+      :ok ->
+        Logger.info("MSG COMMAND SUCCESS #{msg.content} #{inspect(params)}")
+
       {:error, error} ->
         Logger.error("MSG COMMAND ERROR #{msg.content} #{inspect(params)} #{inspect(error)}")
     end
@@ -143,6 +146,9 @@ defmodule Sanbase.DiscordConsumer do
     }
 
     case response do
+      :ok ->
+        Logger.info("COMMAND SUCCESS #{command} #{inspect(params)}")
+
       {:ok} ->
         Logger.info("COMMAND SUCCESS #{command} #{inspect(params)}")
 

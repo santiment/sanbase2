@@ -328,9 +328,20 @@ defmodule Sanbase.Discord.CommandHandler do
              to_string(msg.channel_id),
              to_string(msg.guild_id)
            ) do
-      text = Enum.map(pinned, fn p -> "#{p.name}: `#{p.panel_id}`" end) |> Enum.join("\n")
-      text = "Pinned queries for this channel:\n#{text}"
-      Api.create_message(msg.channel_id, content: text)
+      pinned
+      |> Enum.with_index()
+      |> Enum.each(fn {p, idx} ->
+        show_button = Button.button(label: "Show 📜", custom_id: "show" <> p.panel_id)
+        unpin_button = Button.button(label: "Unpin 📌", custom_id: "unpin" <> p.panel_id, style: 4)
+
+        action_row =
+          ActionRow.action_row()
+          |> ActionRow.append(show_button)
+          |> ActionRow.append(unpin_button)
+
+        text = "#{idx + 1}. #{p.name}"
+        Api.create_message(msg.channel_id, content: text, components: [action_row])
+      end)
     else
       _ ->
         Api.create_message(msg.channel_id,

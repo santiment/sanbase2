@@ -55,7 +55,7 @@ defmodule Sanbase.RepoReader.Utils do
         String.starts_with?(dir, ".") or dir not in directories_to_read
       end)
 
-    projects_map =
+    list =
       directories
       |> Enum.map(fn dir ->
         directory = Path.join([projects_path, dir])
@@ -64,7 +64,7 @@ defmodule Sanbase.RepoReader.Utils do
         with {:ok, file_content} <- File.read(data_file_path),
              {:ok, data} <- Jason.decode(file_content),
              {:ok, slug} when is_binary(slug) <- get_slug(data) do
-          {slug, data}
+          {:ok, slug, data}
         else
           {:error, error} ->
             Logger.warn("""
@@ -72,13 +72,25 @@ defmodule Sanbase.RepoReader.Utils do
             Reason: #{inspect(error)}
             """)
 
-            nil
+            {:error, dir, error}
         end
       end)
-      |> Enum.reject(&is_nil/1)
-      |> Map.new()
 
-    {:ok, projects_map}
+    errors_and_oks = Enum.group_by(list, fn {res, _, _} -> res end, fn {_res, l, r} -> {l, r} end)
+
+    case errors_and_oks do
+      %{error: [_ | _] = errors} ->
+        error_msg =
+          Enum.map(errors, fn {dir, error} ->
+            ["Found error in directory #{dir}: #{inspect(error)}"]
+          end)
+          |> Enum.join("\n")
+
+        {:error, error_msg}
+
+      %{ok: slug_data_pairs} ->
+        {:ok, Map.new(slug_data_pairs)}
+    end
   end
 
   @doc ~s"""

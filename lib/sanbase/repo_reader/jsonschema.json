@@ -43,7 +43,7 @@
               "blockchain": { "type": "string" },
               "token_standard": { "type": "string" },
               "decimals": { "type": "integer", "minimum": 0, "maximum": 18 },
-              "address": { "type": "string", "minLength": 3, "maxLength": 40 },
+              "address": { "type": "string", "minLength": 3, "maxLength": 42 },
               "description": { "type": "string" }
             },
             "required": ["address", "decimals", "blockchain"]

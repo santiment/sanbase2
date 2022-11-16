@@ -19,6 +19,8 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   level: :warn
 
+config :sanbase, Sanbase.RepoReader, projects_data_endpoint_secret: "no_secret"
+
 config :sanbase, Sanbase.ApiCallLimit,
   quota_size: 10,
   quota_size_max_offset: 10

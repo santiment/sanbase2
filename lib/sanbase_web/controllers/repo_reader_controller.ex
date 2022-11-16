@@ -3,6 +3,8 @@ defmodule SanbaseWeb.RepoReaderController do
 
   alias Sanbase.Model.Project
   alias Sanbase.Model.Project.SocialVolumeQuery
+
+  require Sanbase.Utils.Config, as: Config
   require Logger
 
   def validator_webhook(conn, %{"secret" => secret} = params) do
@@ -20,7 +22,7 @@ defmodule SanbaseWeb.RepoReaderController do
           {:error, errors} ->
             conn
             |> put_resp_header("content-type", "application/json; charset=utf-8")
-            |> Plug.Conn.send_resp(400, %{errors: inspect(errors)} |> Jason.encode!())
+            |> Plug.Conn.send_resp(400, %{error: inspect(errors)} |> Jason.encode!())
         end
 
       false ->
@@ -56,5 +58,5 @@ defmodule SanbaseWeb.RepoReaderController do
 
   # On stage/prod the env var is set and is different from the default one.
   defp endpoint_secret(),
-    do: System.get_env("PROJECTS_DATA_ENDPOINT_SECRET") || "random_secret"
+    do: Config.module_get(Sanbase.RepoReader, :projects_data_endpoint_secret)
 end

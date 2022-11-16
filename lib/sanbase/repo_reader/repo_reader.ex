@@ -35,10 +35,7 @@ defmodule Sanbase.RepoReader do
 
     File.rm_rf!(path)
 
-    case result do
-      {:ok, _} -> :ok
-      error -> error
-    end
+    result
   end
 
   @doc ~s"""
@@ -60,7 +57,7 @@ defmodule Sanbase.RepoReader do
 
     case result do
       {:ok, _} -> :ok
-      error -> error
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -68,7 +65,7 @@ defmodule Sanbase.RepoReader do
 
   defp do_update_projects(path, changed_directories) do
     with {:ok, %Repository{} = repo} <- clone_repo(path),
-         {:ok, projects_map} = read_files(repo, directories_to_read: changed_directories) do
+         {:ok, projects_map} <- read_files(repo, directories_to_read: changed_directories) do
       slugs = Map.keys(projects_map)
       projects = Sanbase.Model.Project.List.by_slugs(slugs)
 
@@ -78,7 +75,7 @@ defmodule Sanbase.RepoReader do
 
   defp do_validate_changes(path, branch, changed_directories) do
     with {:ok, %Repository{} = repo} <- clone_repo(path, branch: branch),
-         {:ok, projects_map} = read_files(repo, directories_to_read: changed_directories),
+         {:ok, projects_map} <- read_files(repo, directories_to_read: changed_directories),
          :ok <- Validator.validate(projects_map) do
       :ok
     end

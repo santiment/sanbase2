@@ -17,12 +17,14 @@ defmodule SanbaseWeb.RepoReaderController do
           :ok ->
             conn
             |> put_resp_header("content-type", "application/json; charset=utf-8")
-            |> Plug.Conn.send_resp(200, %{result: :ok} |> Jason.encode!())
+            |> put_status(200)
+            |> json(%{result: "OK"})
 
-          {:error, errors} ->
+          {:error, error} ->
             conn
             |> put_resp_header("content-type", "application/json; charset=utf-8")
-            |> Plug.Conn.send_resp(400, %{error: inspect(errors)} |> Jason.encode!())
+            |> put_status(400)
+            |> json(%{error: error})
         end
 
       false ->
@@ -41,12 +43,14 @@ defmodule SanbaseWeb.RepoReaderController do
           :ok ->
             conn
             |> put_resp_header("content-type", "application/json; charset=utf-8")
-            |> Plug.Conn.send_resp(200, %{result: :ok} |> Jason.encode!())
+            |> put_status(200)
+            |> json(%{result: "OK"})
 
-          {:error, errors} ->
+          {:error, error} ->
             conn
             |> put_resp_header("content-type", "application/json; charset=utf-8")
-            |> Plug.Conn.send_resp(400, %{errors: inspect(errors)} |> Jason.encode!())
+            |> put_status(400)
+            |> json(%{error: error})
         end
 
       false ->

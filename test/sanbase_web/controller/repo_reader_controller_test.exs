@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.DataControllerTest do
+defmodule SanbaseWeb.RepoReaderControllerTest do
   use SanbaseWeb.ConnCase, async: false
 
   require Sanbase.Utils.Config, as: Config

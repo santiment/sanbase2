@@ -25,13 +25,13 @@ defmodule Sanbase.Model.Project.GithubOrganization do
     |> validate_required([:organization])
   end
 
-  def add_github_organization(%Project{} = project, name) do
-    changeset(%__MODULE__{}, %{name: name, project_id: project.id})
+  def add_github_organization(%Project{} = project, organization) do
+    changeset(%__MODULE__{}, %{organization: organization, project_id: project.id})
     |> Repo.insert()
   end
 
-  def add_github_organization(project_id, name) do
-    changeset(%__MODULE__{}, %{name: name, project_id: project_id})
+  def add_github_organization(project_id, organization) do
+    changeset(%__MODULE__{}, %{organization: organization, project_id: project_id})
     |> Repo.insert()
   end
 

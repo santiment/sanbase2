@@ -55,10 +55,7 @@ defmodule Sanbase.RepoReader do
 
     File.rm_rf!(path)
 
-    case result do
-      {:ok, _} -> :ok
-      {:error, error} -> {:error, error}
-    end
+    result
   end
 
   # Private functions
@@ -67,6 +64,7 @@ defmodule Sanbase.RepoReader do
     with {:ok, %Repository{} = repo} <- clone_repo(path),
          {:ok, projects_map} <- read_files(repo, directories_to_read: changed_directories) do
       slugs = Map.keys(projects_map)
+
       projects = Sanbase.Model.Project.List.by_slugs(slugs)
 
       update_projects_data(projects, projects_map)
@@ -86,7 +84,8 @@ defmodule Sanbase.RepoReader do
       data = Map.get(projects_map, project.slug)
 
       with :ok <- update_social_data(project, data),
-           :ok <- update_development_data(project, data) do
+           :ok <- update_development_data(project, data),
+           :ok <- update_contracts_data(project, data) do
         {:cont, :ok}
       else
         {:error, _} = error_tuple -> {:halt, error_tuple}
@@ -125,6 +124,27 @@ defmodule Sanbase.RepoReader do
     (organizations -- existing_organizations)
     |> Enum.reduce_while(:ok, fn org, _acc ->
       case Project.GithubOrganization.add_github_organization(project, org) do
+        {:ok, _} -> {:cont, :ok}
+        {:error, _} = error_tuple -> {:halt, error_tuple}
+      end
+    end)
+  end
+
+  defp update_contracts_data(project, data) do
+    contracts = data["blockchain"]["contracts"] || []
+
+    contracts
+    |> Enum.reduce_while(:ok, fn contract_map, _acc ->
+      address = contract_map["address"] |> Sanbase.BlockchainAddress.to_internal_format()
+
+      args = %{
+        address: contract_map["address"] |> Sanbase.BlockchainAddress.to_internal_format(),
+        decimals: contract_map["decimals"],
+        label: contract_map["label"],
+        description: contract_map["description"]
+      }
+
+      case Project.ContractAddress.add_contract(project, args) do
         {:ok, _} -> {:cont, :ok}
         {:error, _} = error_tuple -> {:halt, error_tuple}
       end

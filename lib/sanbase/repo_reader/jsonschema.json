@@ -40,10 +40,12 @@
           "items": {
             "type": "object",
             "properties": {
+              "address": { "type": "string", "minLength": 3, "maxLength": 42 },
+              "decimals": { "type": "integer", "minimum": 0, "maximum": 18 },
+              "label": { "type": "string" },
+              "description": { "type": "string" },
               "blockchain": { "type": "string" },
               "token_standard": { "type": "string" },
-              "decimals": { "type": "integer", "minimum": 0, "maximum": 18 },
-              "address": { "type": "string", "minLength": 3, "maxLength": 42 },
               "description": { "type": "string" }
             },
             "required": ["address", "decimals", "blockchain"]

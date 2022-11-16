@@ -67,7 +67,7 @@ defmodule Sanbase.RepoReader.Utils do
           {:ok, slug, data}
         else
           {:error, error} ->
-            Logger.warn("""
+            Logger.warning("""
             Error reading/decoding a #{@repository} file in directory: #{dir}.
             Reason: #{inspect(error)}
             """)

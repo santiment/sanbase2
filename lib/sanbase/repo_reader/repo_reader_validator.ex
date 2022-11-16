@@ -6,15 +6,6 @@ defmodule Sanbase.RepoReader.Validator do
               |> Jason.decode!()
               |> ExJsonSchema.Schema.resolve()
 
-  @social_channels [
-    "discord",
-    "twitter",
-    "slack",
-    "telegram",
-    "reddit",
-    "bitcointalk",
-    "blog"
-  ]
   @custom_validations ["social", "contracts"]
 
   def schema(), do: @jsonschema

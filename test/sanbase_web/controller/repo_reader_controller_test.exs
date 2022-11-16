@@ -1,87 +1,146 @@
 defmodule SanbaseWeb.DataControllerTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Sanbase.Factory
-
   require Sanbase.Utils.Config, as: Config
 
   setup do
-    p1 = insert(:random_erc20_project)
-    p2 = insert(:random_erc20_project)
-    p3 = insert(:random_erc20_project)
-
     secret = Config.module_get(Sanbase.RepoReader, :projects_data_endpoint_secret)
     {:ok, path} = Temp.mkdir("projects_data")
     on_exit(fn -> File.rm_rf!(path) end)
-    %{p1: p1, p2: p2, p3: p3, path: path, secret: secret}
+    %{path: path, secret: secret}
   end
 
-  test "validator webhook - correct", context do
-    Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
-      clone_repo_mock(context.path, Path.join(__DIR__, "data_correct.json"))
-    end)
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      context.conn
-      |> post("/projects_data_validator_webhook/#{context.secret}", %{
-        "branch" => "some_branch",
-        "changed_files" => "projects/santiment/data.json"
+  describe "validation" do
+    test "validator webhook - correct", context do
+      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
+        clone_repo_mock(context.path, Path.join(__DIR__, "data_correct.json"))
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        context.conn
+        |> post("/projects_data_validator_webhook/#{context.secret}", %{
+          "branch" => "some_branch",
+          "changed_files" => "projects/santiment/data.json"
+        })
+        |> json_response(200)
+      end)
+    end
+
+    @tag capture_log: true
+    test "validator webhook - missing slug", context do
+      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
+        clone_repo_mock(context.path, Path.join(__DIR__, "data_missing_slug.json"))
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert %{"error" => error} =
+                 context.conn
+                 |> post("/projects_data_validator_webhook/#{context.secret}", %{
+                   "branch" => "some_branch",
+                   "changed_files" => "projects/santiment/data.json"
+                 })
+                 |> json_response(400)
+
+        assert error =~ "in directory santiment"
+        assert error =~ "No slug found or it is not a string"
+      end)
+    end
+
+    test "validator webhook - wrong decimals type", context do
+      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
+        clone_repo_mock(context.path, Path.join(__DIR__, "data_wrong_type.json"))
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert %{"error" => error} =
+                 context.conn
+                 |> post("/projects_data_validator_webhook/#{context.secret}", %{
+                   "branch" => "some_branch",
+                   "changed_files" => "projects/santiment/data.json"
+                 })
+                 |> json_response(400)
+
+        assert error =~ "Type mismatch. Expected Integer but got String"
+        assert error =~ "#/blockchain/contracts/0/decimals"
+      end)
+    end
+
+    test "validator webhook - invalid url", context do
+      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
+        clone_repo_mock(context.path, Path.join(__DIR__, "data_invalid_url.json"))
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert %{"error" => error} =
+                 context.conn
+                 |> post("/projects_data_validator_webhook/#{context.secret}", %{
+                   "branch" => "some_branch",
+                   "changed_files" => "projects/santiment/data.json"
+                 })
+                 |> json_response(400)
+
+        assert error =~ "The discord URL discord.com/santiment is invalid"
+      end)
+    end
+  end
+
+  describe "update" do
+    alias Sanbase.Model.Project
+
+    test "reader webhook", context do
+      # Empty project. The factory adds some default values
+      {:ok, _} =
+        Project.changeset(%Project{}, %{ticker: "SAN", name: "Santiment", slug: "santiment"})
+        |> Sanbase.Repo.insert()
+
+      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
+        clone_repo_mock(context.path, Path.join(__DIR__, "data_correct.json"))
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        context.conn
+        |> post("/projects_data_reader_webhook/#{context.secret}", %{
+          "changed_files" => "projects/santiment/data.json"
+        })
+        |> json_response(200)
+      end)
+
+      project =
+        Project.by_slug("santiment", only_preload: [:github_organizations, :contract_addresses])
+
+      assert project.twitter_link == "https://twitter.com/santimentfeed"
+      assert project.discord_link == "https://discord.com/santiment"
+      assert project.github_organizations |> hd() |> Map.get(:organization) == "santiment"
+
+      assert project.contract_addresses |> hd() |> Map.get(:address) ==
+               "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
+
+      assert project.contract_addresses |> hd() |> Map.get(:decimals) == 18
+    end
+
+    test "reader webhook - update existing contract", context do
+      # Empty project. The factory adds some default values
+      {:ok, project} =
+        Project.changeset(%Project{}, %{ticker: "SAN", name: "Santiment", slug: "santiment"})
+        |> Sanbase.Repo.insert()
+
+      Project.ContractAddress.add_contract(project, %{
+        address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
       })
-      |> json_response(200)
-    end)
-  end
 
-  @tag capture_log: true
-  test "validator webhook - missing slug", context do
-    Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
-      clone_repo_mock(context.path, Path.join(__DIR__, "data_missing_slug.json"))
-    end)
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      assert %{"error" => error} =
-               context.conn
-               |> post("/projects_data_validator_webhook/#{context.secret}", %{
-                 "branch" => "some_branch",
-                 "changed_files" => "projects/santiment/data.json"
-               })
-               |> json_response(400)
+      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
+        clone_repo_mock(context.path, Path.join(__DIR__, "data_correct.json"))
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        context.conn
+        |> post("/projects_data_reader_webhook/#{context.secret}", %{
+          "changed_files" => "projects/santiment/data.json"
+        })
+        |> json_response(200)
+      end)
 
-      assert error =~ "in directory santiment"
-      assert error =~ "No slug found or it is not a string"
-    end)
-  end
+      project = Project.by_slug("santiment", only_preload: [:contract_addresses])
 
-  test "validator webhook - wrong decimals type", context do
-    Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
-      clone_repo_mock(context.path, Path.join(__DIR__, "data_wrong_type.json"))
-    end)
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      assert %{"error" => error} =
-               context.conn
-               |> post("/projects_data_validator_webhook/#{context.secret}", %{
-                 "branch" => "some_branch",
-                 "changed_files" => "projects/santiment/data.json"
-               })
-               |> json_response(400)
+      assert project.contract_addresses |> hd() |> Map.get(:address) ==
+               "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
 
-      assert error =~ "Type mismatch. Expected Integer but got String"
-      assert error =~ "#/blockchain/contracts/0/decimals"
-    end)
-  end
-
-  test "validator webhook - invalid url", context do
-    Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
-      clone_repo_mock(context.path, Path.join(__DIR__, "data_invalid_url.json"))
-    end)
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      assert %{"error" => error} =
-               context.conn
-               |> post("/projects_data_validator_webhook/#{context.secret}", %{
-                 "branch" => "some_branch",
-                 "changed_files" => "projects/santiment/data.json"
-               })
-               |> json_response(400)
-
-      assert error =~ "The discord URL discord.com/santiment is invalid"
-    end)
+      assert project.contract_addresses |> hd() |> Map.get(:decimals) == 18
+    end
   end
 
   defp clone_repo_mock(destination, source_file) do

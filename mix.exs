@@ -95,6 +95,7 @@ defmodule Sanbase.Mixfile do
       {:ex_admin, github: "santiment/ex_admin"},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_aws, "~> 2.0"},
+      {:ex_json_schema, "~> 0.9.2"},
       {:ex_keccak, "~> 0.4"},
       {:ex_machina, "~> 2.2", only: [:dev, :test]},
       {:ex_unit_notifier, "~> 1.0", only: :test},

@@ -44,7 +44,10 @@ defmodule Sanbase.Model.Project.ContractAddress do
 
     %__MODULE__{}
     |> changeset(map)
-    |> Sanbase.Repo.insert(on_conflict: :nothing)
+    |> Sanbase.Repo.insert(
+      on_conflict: [set: [label: map.label, decimals: map.decimals]],
+      conflict_target: [:address, :project_id]
+    )
   end
 
   def list_to_main_contract_address(list) when is_list(list) do

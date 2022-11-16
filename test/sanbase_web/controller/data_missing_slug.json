@@ -1,0 +1,24 @@
+{
+  "general": {
+    "name": "Santiment",
+    "description": "Crypto analysis",
+    "logo": "santiment.svg"
+  },
+  "social": {
+    "discord": "https://discord.com/santiment",
+    "twitter": "https://twitter.com/santimentfeed"
+  },
+  "development": {
+    "github_organizations": ["santiment"]
+  },
+  "blockchain": {
+    "contracts": [
+      {
+        "blockchain": "ethereum",
+        "type": "ERC20",
+        "address": "0x7C5A0CE9267ED19B22F8cae653F198e3E8daf098",
+        "decimals": 18
+      }
+    ]
+  }
+}

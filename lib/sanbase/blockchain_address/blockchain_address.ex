@@ -6,12 +6,28 @@ defmodule Sanbase.BlockchainAddress do
 
   alias Sanbase.Model.Infrastructure
 
+  @blockchains [
+    "ethereum",
+    "bitcoin",
+    "bitcoin-cash",
+    "litecoin",
+    "ripple",
+    "binance-coin",
+    "dogecoin",
+    "matic-network",
+    "cardano",
+    "avalanche",
+    "optimism",
+    "arbitrum"
+  ]
   schema "blockchain_addresses" do
     field(:address, :string)
     field(:notes, :string)
 
     belongs_to(:infrastructure, Infrastructure)
   end
+
+  def available_blockchains(), do: @blockchains
 
   def changeset(%__MODULE__{} = addr, attrs \\ %{}) do
     addr

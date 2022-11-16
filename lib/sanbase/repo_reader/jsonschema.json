@@ -1,0 +1,57 @@
+{
+  "type": "object",
+  "properties": {
+    "general": {
+      "type": "object",
+      "properties": {
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "ticker": { "type": "string" },
+        "market_segments": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["slug"]
+    },
+    "social": {
+      "type": "object",
+      "properties": {
+        "twitter": { "type": "string" },
+        "slack": { "type": "string" },
+        "telegram": { "type": "string" },
+        "discord": { "type": "string" },
+        "blog": { "type": "string" },
+        "reddit": { "type": "string" },
+        "bitcointalk": { "type": "string" }
+      }
+    },
+    "development": {
+      "type": "object",
+      "properties": {
+        "github_organizations": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "blockchain": {
+      "type": "object",
+      "properties": {
+        "contracts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "address": { "type": "string", "minLength": 3, "maxLength": 42 },
+              "decimals": { "type": "integer", "minimum": 0, "maximum": 18 },
+              "label": { "type": "string" },
+              "description": { "type": "string" },
+              "blockchain": { "type": "string" },
+              "token_standard": { "type": "string" },
+              "description": { "type": "string" }
+            },
+            "required": ["address", "decimals", "blockchain"]
+          }
+        }
+      }
+    }
+  }
+}

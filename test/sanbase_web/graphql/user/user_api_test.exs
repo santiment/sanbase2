@@ -65,7 +65,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       """
 
       result = execute_mutation(conn, mutation, "changeEmail")
-
+      assert_called(Sanbase.TemplateMailer.send(new_email, :_, :_))
       assert result["success"] == true
       assert Repo.get(User, user.id).email_candidate == new_email
     end

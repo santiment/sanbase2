@@ -32,9 +32,22 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
 
   describe "get reports" do
     setup do
-      not_published = insert(:report, is_published: false)
-      free_report = insert(:report, is_pro: false, is_published: true)
-      pro_report = insert(:report, is_pro: true, is_published: true)
+      now = Timex.now()
+      not_published = insert(:report, is_published: false, inserted_at: now)
+
+      free_report =
+        insert(:report,
+          is_pro: false,
+          is_published: true,
+          inserted_at: Timex.shift(now, seconds: -5)
+        )
+
+      pro_report =
+        insert(:report,
+          is_pro: true,
+          is_published: true,
+          inserted_at: Timex.shift(now, seconds: -10)
+        )
 
       free_user = insert(:user)
       free_conn = setup_jwt_auth(build_conn(), free_user)

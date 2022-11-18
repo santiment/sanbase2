@@ -7,6 +7,68 @@ defmodule Sanbase.DiscordConsumer do
   alias Nostrum.Struct.Interaction
   alias Nostrum.Struct.ApplicationCommandInteractionData
 
+  @env Application.compile_env(:sanbase, :env)
+  @commands [
+    %{
+      name: "help",
+      description: "How to run sql query"
+    },
+    %{
+      name: "query",
+      description: "Run SQL query"
+    },
+    %{
+      name: "list",
+      description: "List pinned sql queries"
+    }
+  ]
+
+  @dev_commands [
+    %{
+      name: "auth",
+      description: "Authenticate"
+    },
+    %{
+      name: "admin-role",
+      description: "Add/Change admin role",
+      options: [
+        %{
+          # ApplicationCommandType::ROLE
+          type: 8,
+          name: "role",
+          description: "role",
+          required: true
+        }
+      ]
+    },
+    %{
+      name: "create-admin",
+      description: "Create admin",
+      options: [
+        %{
+          # ApplicationCommandType::USER
+          type: 6,
+          name: "user",
+          description: "user",
+          required: true
+        }
+      ]
+    },
+    %{
+      name: "remove-admin",
+      description: "Remove admin",
+      options: [
+        %{
+          # ApplicationCommandType::USER
+          type: 6,
+          name: "user",
+          description: "user",
+          required: true
+        }
+      ]
+    }
+  ]
+
   def start_link do
     Consumer.start_link(__MODULE__)
   end
@@ -27,52 +89,9 @@ defmodule Sanbase.DiscordConsumer do
   end
 
   def handle_event({:READY, data, _ws_state}) do
-    commands = [
-      %{
-        name: "help",
-        description: "How to run sql query"
-      },
-      %{
-        name: "query",
-        description: "Run SQL query"
-      },
-      %{
-        name: "list",
-        description: "List pinned sql queries"
-      },
-      %{
-        name: "auth",
-        description: "Authenticate"
-      },
-      %{
-        name: "create-admin",
-        description: "Create admin",
-        options: [
-          %{
-            # ApplicationCommandType::USER
-            type: 6,
-            name: "user",
-            description: "user",
-            required: true
-          }
-        ]
-      },
-      %{
-        name: "remove-admin",
-        description: "Remove admin",
-        options: [
-          %{
-            # ApplicationCommandType::USER
-            type: 6,
-            name: "user",
-            description: "user",
-            required: true
-          }
-        ]
-      }
-    ]
+    commands = if @env == :prod, do: @commands, else: @commands ++ @dev_commands
 
-    Nostrum.Api.bulk_overwrite_global_application_commands(commands) |> IO.inspect()
+    Nostrum.Api.bulk_overwrite_global_application_commands(commands)
   end
 
   def handle_event({

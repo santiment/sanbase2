@@ -15,6 +15,8 @@ defmodule Sanbase.Discord.CommandHandler do
   @sql_start_regex "```sql"
   @sql_end_regex "```"
 
+  @mock_role_id 1
+
   @max_size 1800
 
   @commands ~w(
@@ -166,7 +168,6 @@ defmodule Sanbase.Discord.CommandHandler do
       interaction,
       interaction_message_response("Sent you a DM with instructions")
     )
-    |> IO.inspect()
 
     {:ok, channel} = Api.create_dm(interaction.user.id)
 
@@ -179,9 +180,8 @@ defmodule Sanbase.Discord.CommandHandler do
     Api.add_guild_member_role(
       interaction.guild_id,
       options_map["user"],
-      1_042_799_647_682_461_698
+      @mock_role_id
     )
-    |> IO.inspect()
 
     roles = Api.get_guild_member!(interaction.guild_id, options_map["user"]).roles
 
@@ -197,9 +197,8 @@ defmodule Sanbase.Discord.CommandHandler do
     Api.remove_guild_member_role(
       interaction.guild_id,
       options_map["user"],
-      1_042_799_647_682_461_698
+      @mock_role_id
     )
-    |> IO.inspect()
 
     roles = Api.get_guild_member!(interaction.guild_id, options_map["user"]).roles
 

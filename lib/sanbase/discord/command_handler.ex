@@ -27,8 +27,8 @@ defmodule Sanbase.Discord.CommandHandler do
     show
   )
 
-  def is_command?(msg) do
-    String.starts_with?(msg.content, @prefix)
+  def is_command?(content) do
+    String.starts_with?(content, @prefix)
   end
 
   def handle_interaction("show_modal", interaction) do
@@ -150,14 +150,62 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def handle_interaction("help", interaction) do
     help_content = """
-    `/help`:
-    `/query`: Execute a SQL query
-    `/list`: List pinned queries
+    `/query` - Execute a SQL query
+    `/list`  - List pinned queries
+    `/help`  - List available commands
     """
 
     Nostrum.Api.create_interaction_response(
       interaction,
       interaction_message_response(help_content)
+    )
+  end
+
+  def handle_interaction("auth", interaction) do
+    Nostrum.Api.create_interaction_response(
+      interaction,
+      interaction_message_response("Sent you a DM with instructions")
+    )
+    |> IO.inspect()
+
+    {:ok, channel} = Api.create_dm(interaction.user.id)
+
+    Api.create_message(channel.id, content: "Test bot DMs")
+  end
+
+  def handle_interaction("create-admin", interaction) do
+    options_map = Enum.into(interaction.data.options, %{}, fn o -> {o.name, o.value} end)
+
+    Api.add_guild_member_role(
+      interaction.guild_id,
+      options_map["user"],
+      1_042_799_647_682_461_698
+    )
+    |> IO.inspect()
+
+    roles = Api.get_guild_member!(interaction.guild_id, options_map["user"]).roles
+
+    Nostrum.Api.create_interaction_response(
+      interaction,
+      interaction_message_response("New admin created")
+    )
+  end
+
+  def handle_interaction("remove-admin", interaction) do
+    options_map = Enum.into(interaction.data.options, %{}, fn o -> {o.name, o.value} end)
+
+    Api.remove_guild_member_role(
+      interaction.guild_id,
+      options_map["user"],
+      1_042_799_647_682_461_698
+    )
+    |> IO.inspect()
+
+    roles = Api.get_guild_member!(interaction.guild_id, options_map["user"]).roles
+
+    Nostrum.Api.create_interaction_response(
+      interaction,
+      interaction_message_response("Admin removed")
     )
   end
 
@@ -237,17 +285,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def handle_command(msg) do
-    with {:ok, command} <- try_extracting_command(msg.content) do
-      exec_command(command, msg)
-    else
-      {:error, :invalid_command} ->
-        exec_command(:invalid_command, msg)
-        exec_command("help", msg)
-    end
-  end
-
-  def exec_command("help", msg) do
+  def handle_command("help", msg) do
     embed =
       %Embed{}
       |> put_title("Help")
@@ -269,7 +307,7 @@ defmodule Sanbase.Discord.CommandHandler do
     Api.create_message(msg.channel_id, content: "", embeds: [embed])
   end
 
-  def exec_command("run", msg) do
+  def handle_command("run", msg) do
     args = %{
       discord_user: to_string(msg.author.id),
       channel: to_string(msg.channel_id),
@@ -301,7 +339,7 @@ defmodule Sanbase.Discord.CommandHandler do
         """
 
         Api.create_message(msg.channel_id, content: error_msg)
-        exec_command("help", msg)
+        handle_command("help", msg)
 
       {:execution_error, reason} ->
         content = """
@@ -314,7 +352,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def exec_command("pin", msg) do
+  def handle_command("pin", msg) do
     with {:ok, panel_id} <- try_extracting_panel_id(msg.content),
          {:ok, _} <- DiscordDashboard.pin(panel_id) do
       Api.create_message(msg.channel_id,
@@ -329,7 +367,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def exec_command("unpin", msg) do
+  def handle_command("unpin", msg) do
     with {:ok, panel_id} <- try_extracting_panel_id(msg.content),
          {:ok, _} <- DiscordDashboard.unpin(panel_id) do
       Api.create_message(msg.channel_id,
@@ -344,7 +382,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def exec_command("list", msg) do
+  def handle_command("list", msg) do
     with pinned when is_list(pinned) and pinned != [] <-
            DiscordDashboard.list_pinned_channel(
              to_string(msg.channel_id),
@@ -364,7 +402,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def exec_command("listall", msg) do
+  def handle_command("listall", msg) do
     with pinned when is_list(pinned) and pinned != [] <-
            DiscordDashboard.list_pinned_global(to_string(msg.guild_id)) do
       text = Enum.map(pinned, fn p -> "#{p.name}: `#{p.panel_id}`" end) |> Enum.join("\n")
@@ -376,7 +414,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def exec_command("show", msg) do
+  def handle_command("show", msg) do
     with {:ok, panel_id} <- try_extracting_panel_id(msg.content),
          %DiscordDashboard{} = dd <- DiscordDashboard.by_panel_id(panel_id) do
       panel = List.first(dd.dashboard.panels)
@@ -397,7 +435,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def exec_command(:invalid_command, msg) do
+  def handle_command(:invalid_command, msg) do
     Api.create_message(msg.channel_id, content: "Invalid command entered")
   end
 
@@ -491,13 +529,13 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def action_row(panel_id) do
     dd = DiscordDashboard.by_panel_id(panel_id)
-    run_button = Button.button(label: "Run 🚀", custom_id: "rerun" <> panel_id)
+    run_button = Button.button(label: "Run 🚀", custom_id: "rerun" <> panel_id, style: 3)
     show_button = Button.button(label: "Show 📜", custom_id: "show" <> panel_id, style: 2)
 
     pin_unpin_button =
       case dd.pinned do
-        true -> Button.button(label: "Unpin 📌", custom_id: "unpin" <> panel_id, style: 4)
-        false -> Button.button(label: "Pin 📌", custom_id: "pin" <> panel_id)
+        true -> Button.button(label: "Unpin X", custom_id: "unpin" <> panel_id, style: 4)
+        false -> Button.button(label: "Pin 📌", custom_id: "pin" <> panel_id, style: 1)
       end
 
     ActionRow.action_row()

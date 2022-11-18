@@ -256,6 +256,8 @@ config :sanbase, Sanbase.TemplateMailer,
 config :nostrum,
   token: {:system, "DISCORD_BOT_QUERY_TOKEN"},
   gateway_intents: [
+    :guild_members,
+    :direct_messages,
     :guild_messages,
     :message_content
   ]

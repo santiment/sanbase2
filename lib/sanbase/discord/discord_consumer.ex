@@ -7,41 +7,91 @@ defmodule Sanbase.DiscordConsumer do
   alias Nostrum.Struct.Interaction
   alias Nostrum.Struct.ApplicationCommandInteractionData
 
+  @env Application.compile_env(:sanbase, :env)
+  @commands [
+    %{
+      name: "help",
+      description: "How to run sql query"
+    },
+    %{
+      name: "query",
+      description: "Run SQL query"
+    },
+    %{
+      name: "list",
+      description: "List pinned sql queries"
+    }
+  ]
+
+  @dev_commands [
+    %{
+      name: "auth",
+      description: "Authenticate"
+    },
+    %{
+      name: "admin-role",
+      description: "Add/Change admin role",
+      options: [
+        %{
+          # ApplicationCommandType::ROLE
+          type: 8,
+          name: "role",
+          description: "role",
+          required: true
+        }
+      ]
+    },
+    %{
+      name: "create-admin",
+      description: "Create admin",
+      options: [
+        %{
+          # ApplicationCommandType::USER
+          type: 6,
+          name: "user",
+          description: "user",
+          required: true
+        }
+      ]
+    },
+    %{
+      name: "remove-admin",
+      description: "Remove admin",
+      options: [
+        %{
+          # ApplicationCommandType::USER
+          type: 6,
+          name: "user",
+          description: "user",
+          required: true
+        }
+      ]
+    }
+  ]
+
   def start_link do
     Consumer.start_link(__MODULE__)
   end
 
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
-    case CommandHandler.is_command?(msg) do
-      true ->
-        CommandHandler.handle_command(msg)
-        |> handle_msg_response(msg)
+    with true <- CommandHandler.is_command?(msg.content),
+         {:ok, command} <- CommandHandler.try_extracting_command(msg.content) do
+      CommandHandler.handle_command(command, msg)
+      |> handle_msg_response(command, msg)
+    else
+      {:error, :invalid_command} ->
+        CommandHandler.handle_command(:invalid_command, msg)
+        CommandHandler.handle_command("help", msg)
 
-      _ ->
+      false ->
         :ignore
     end
   end
 
   def handle_event({:READY, data, _ws_state}) do
-    guild_ids = data.guilds |> Enum.map(& &1.id)
+    commands = if @env == :prod, do: @commands, else: @commands ++ @dev_commands
 
-    guild_ids
-    |> Enum.each(fn guild_id ->
-      Nostrum.Api.create_guild_application_command(guild_id, %{
-        name: "query",
-        description: "Run SQL query"
-      })
-
-      Nostrum.Api.create_guild_application_command(guild_id, %{
-        name: "list",
-        description: "List pinned sql queries"
-      })
-
-      Nostrum.Api.create_guild_application_command(guild_id, %{
-        name: "help",
-        description: "How to run sql query"
-      })
-    end)
+    Nostrum.Api.bulk_overwrite_global_application_commands(commands)
   end
 
   def handle_event({
@@ -60,6 +110,35 @@ defmodule Sanbase.DiscordConsumer do
       }) do
     CommandHandler.handle_interaction("help", interaction)
     |> handle_response("help", interaction)
+  end
+
+  def handle_event({
+        :INTERACTION_CREATE,
+        %Interaction{data: %ApplicationCommandInteractionData{name: "auth"}} = interaction,
+        _ws_state
+      }) do
+    CommandHandler.handle_interaction("auth", interaction)
+    |> handle_response("auth", interaction)
+  end
+
+  def handle_event({
+        :INTERACTION_CREATE,
+        %Interaction{data: %ApplicationCommandInteractionData{name: "create-admin"}} =
+          interaction,
+        _ws_state
+      }) do
+    CommandHandler.handle_interaction("create-admin", interaction)
+    |> handle_response("create-admin", interaction)
+  end
+
+  def handle_event({
+        :INTERACTION_CREATE,
+        %Interaction{data: %ApplicationCommandInteractionData{name: "remove-admin"}} =
+          interaction,
+        _ws_state
+      }) do
+    CommandHandler.handle_interaction("remove-admin", interaction)
+    |> handle_response("remove-admin", interaction)
   end
 
   def handle_event({
@@ -127,7 +206,7 @@ defmodule Sanbase.DiscordConsumer do
     :noop
   end
 
-  def handle_msg_response(response, msg) do
+  def handle_msg_response(response, command, msg) do
     params = %{
       channel: to_string(msg.channel_id),
       guild: to_string(msg.guild_id),
@@ -137,13 +216,15 @@ defmodule Sanbase.DiscordConsumer do
 
     case response do
       {:ok, _} ->
-        Logger.info("MSG COMMAND SUCCESS #{msg.content} #{inspect(params)}")
+        Logger.info("MSG COMMAND SUCCESS #{command} #{msg.content} #{inspect(params)}")
 
       :ok ->
-        Logger.info("MSG COMMAND SUCCESS #{msg.content} #{inspect(params)}")
+        Logger.info("MSG COMMAND SUCCESS #{command} #{msg.content} #{inspect(params)}")
 
       {:error, error} ->
-        Logger.error("MSG COMMAND ERROR #{msg.content} #{inspect(params)} #{inspect(error)}")
+        Logger.error(
+          "MSG COMMAND ERROR #{command} #{msg.content} #{inspect(params)} #{inspect(error)}"
+        )
     end
   end
 

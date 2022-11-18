@@ -48,21 +48,14 @@ defmodule Sanbase.Intercom do
       Logger.info("Start sync_intercom_to_kafka remaining_user_ids=#{length(remaining_user_ids)}")
 
       remaining_user_ids
-      |> Enum.each(fn user_id ->
-        try do
-          attributes = get_user(user_id)
-
-          if attributes do
-            %{user_id: user_id, properties: attributes, inserted_at: Timex.now()}
-            |> UserAttributes.persist_kafka_sync()
-          end
-        rescue
-          e ->
-            Logger.error(
-              "Error sync_intercom_to_kafka for user: #{user_id}, error: #{inspect(e)}"
-            )
+      |> Enum.chunk_every(200)
+      |> Enum.map(fn user_id ->
+        if attributes = get_user(user_id) do
+          %{user_id: user_id, properties: attributes, inserted_at: Timex.now()}
         end
       end)
+      |> Enum.map(fn list -> Enum.reject(list, &is_nil/1) end)
+      |> Enum.map(&UserAttributes.persist_kafka_sync/1)
 
       Logger.info("Finish sync_intercom_to_kafka")
     else

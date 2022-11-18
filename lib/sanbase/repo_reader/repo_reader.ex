@@ -29,13 +29,19 @@ defmodule Sanbase.RepoReader do
   def validate_changes(branch, changed_files_list) do
     path = Temp.mkdir!(@repository)
 
-    changed_directories = files_to_directories(changed_files_list)
+    try do
+      changed_directories = files_to_directories(changed_files_list)
 
-    result = do_validate_changes(path, branch, changed_directories)
+      result = do_validate_changes(path, branch, changed_directories)
 
-    File.rm_rf!(path)
+      File.rm_rf!(path)
 
-    result
+      result
+    rescue
+      error ->
+        File.rm_rf!(path)
+        {:error, Exception.message(error)}
+    end
   end
 
   @doc ~s"""
@@ -49,13 +55,18 @@ defmodule Sanbase.RepoReader do
   def update_projects(changed_files_list) do
     path = Temp.mkdir!(@repository)
 
-    changed_directories = files_to_directories(changed_files_list)
+    try do
+      changed_directories = files_to_directories(changed_files_list)
 
-    result = do_update_projects(path, changed_directories)
+      result = do_update_projects(path, changed_directories)
 
-    File.rm_rf!(path)
-
-    result
+      File.rm_rf!(path)
+      result
+    rescue
+      error ->
+        File.rm_rf!(path)
+        {:error, Exception.message(error)}
+    end
   end
 
   # Private functions

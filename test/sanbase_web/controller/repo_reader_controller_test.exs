@@ -11,6 +11,40 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
   end
 
   describe "validation" do
+    test "validator webhook with exception", context do
+      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
+        raise("Some exception")
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert %{"error" => error} =
+                 context.conn
+                 |> post("/projects_data_validator_webhook/#{context.secret}", %{
+                   "branch" => "some_branch",
+                   "changed_files" => "projects/santiment/data.json"
+                 })
+                 |> json_response(400)
+
+        assert error =~ "Some exception"
+      end)
+    end
+
+    test "validator webhook with match error", context do
+      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
+        {:error, "Some unexpected error"}
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert %{"error" => error} =
+                 context.conn
+                 |> post("/projects_data_validator_webhook/#{context.secret}", %{
+                   "branch" => "some_branch",
+                   "changed_files" => "projects/santiment/data.json"
+                 })
+                 |> json_response(400)
+
+        assert error =~ "Some unexpected error"
+      end)
+    end
+
     test "validator webhook - correct", context do
       Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
         clone_repo_mock(context.path, Path.join(__DIR__, "data_correct.json"))
@@ -82,6 +116,40 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
 
   describe "update" do
     alias Sanbase.Model.Project
+
+    test "reader webhook with exception", context do
+      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _ ->
+        raise("Some exception")
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert %{"error" => error} =
+                 context.conn
+                 |> post("/projects_data_reader_webhook/#{context.secret}", %{
+                   "branch" => "some_branch",
+                   "changed_files" => "projects/santiment/data.json"
+                 })
+                 |> json_response(400)
+
+        assert error =~ "Some exception"
+      end)
+    end
+
+    test "reader webhook with match error", context do
+      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _ ->
+        {:error, "Some unexpected error"}
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert %{"error" => error} =
+                 context.conn
+                 |> post("/projects_data_reader_webhook/#{context.secret}", %{
+                   "branch" => "some_branch",
+                   "changed_files" => "projects/santiment/data.json"
+                 })
+                 |> json_response(400)
+
+        assert error =~ "Some unexpected error"
+      end)
+    end
 
     test "reader webhook", context do
       # Empty project. The factory adds some default values

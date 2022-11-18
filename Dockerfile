@@ -49,7 +49,7 @@ FROM elixir:1.13.3-slim
 
 ENV MIX_ENV prod
 
-RUN apt-get update -y && apt-get install -y bash imagemagick
+RUN apt-get update -y && apt-get install -y bash imagemagick git
 
 WORKDIR /app
 

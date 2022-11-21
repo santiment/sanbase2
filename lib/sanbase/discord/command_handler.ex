@@ -33,7 +33,7 @@ defmodule Sanbase.Discord.CommandHandler do
     String.starts_with?(content, @prefix)
   end
 
-  def handle_interaction("show_modal", interaction) do
+  def handle_interaction("query", interaction) do
     name_input = TextInput.text_input("Dashboard name", "dashname", placeholder: "Dashboard name")
 
     sql_input =
@@ -49,7 +49,7 @@ defmodule Sanbase.Discord.CommandHandler do
     response = %{
       type: 9,
       data: %{
-        custom_id: "run_sql_modal",
+        custom_id: "run",
         title: "Run sql query",
         min_length: 1,
         max_length: 4000,
@@ -528,13 +528,13 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def action_row(panel_id) do
     dd = DiscordDashboard.by_panel_id(panel_id)
-    run_button = Button.button(label: "Run 🚀", custom_id: "rerun" <> panel_id, style: 3)
-    show_button = Button.button(label: "Show 📜", custom_id: "show" <> panel_id, style: 2)
+    run_button = Button.button(label: "Run 🚀", custom_id: "rerun" <> "_" <> panel_id, style: 3)
+    show_button = Button.button(label: "Show 📜", custom_id: "show" <> "_" <> panel_id, style: 2)
 
     pin_unpin_button =
       case dd.pinned do
-        true -> Button.button(label: "Unpin X", custom_id: "unpin" <> panel_id, style: 4)
-        false -> Button.button(label: "Pin 📌", custom_id: "pin" <> panel_id, style: 1)
+        true -> Button.button(label: "Unpin X", custom_id: "unpin" <> "_" <> panel_id, style: 4)
+        false -> Button.button(label: "Pin 📌", custom_id: "pin" <> "_" <> panel_id, style: 1)
       end
 
     ActionRow.action_row()

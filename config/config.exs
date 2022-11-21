@@ -172,6 +172,10 @@ config :ex_aws,
   secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],
   region: "eu-central-1"
 
+config :sanbase, Sanbase.PresignedS3Url.S3,
+  access_key_id: {:system, "AWS_USER_DATASETS_ACCESS_KEY_ID"},
+  secret_access_key: {:system, "AWS_USER_DATASETS_SECRET_ACCESS_KEY"}
+
 config :sanbase, Sanbase.Cryptocompare, api_key: {:system, "CRYPTOCOMPARE_API_KEY"}
 
 config :sanbase, Sanbase.TechIndicators, url: {:system, "TECH_INDICATORS_URL"}

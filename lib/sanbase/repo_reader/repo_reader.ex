@@ -146,8 +146,6 @@ defmodule Sanbase.RepoReader do
 
     contracts
     |> Enum.reduce_while(:ok, fn contract_map, _acc ->
-      address = contract_map["address"] |> Sanbase.BlockchainAddress.to_internal_format()
-
       args = %{
         address: contract_map["address"] |> Sanbase.BlockchainAddress.to_internal_format(),
         decimals: contract_map["decimals"],

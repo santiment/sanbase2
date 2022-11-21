@@ -88,7 +88,7 @@ defmodule Sanbase.DiscordConsumer do
     end
   end
 
-  def handle_event({:READY, data, _ws_state}) do
+  def handle_event({:READY, _data, _ws_state}) do
     commands = if @env == :prod, do: @commands, else: @commands ++ @dev_commands
 
     Nostrum.Api.bulk_overwrite_global_application_commands(commands)

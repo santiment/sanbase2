@@ -4,8 +4,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   require Sanbase.Break, as: Break
 
   defmodule Helper do
-    import Sanbase.DateTimeUtils, only: [interval_to_str: 1]
-
     alias Sanbase.TemplateEngine
 
     def name_to_field_map(map, field, opts \\ []) do

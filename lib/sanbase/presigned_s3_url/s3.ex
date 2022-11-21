@@ -1,6 +1,11 @@
 defmodule Sanbase.PresignedS3Url.S3 do
   require Sanbase.Utils.Config, as: Config
 
+  @doc ~s"""
+  Generate a presigned S3 URL to share a S3 object in the given bucket.
+  """
+  @spec generate_presigned_url(String.t(), String.t(), non_neg_integer()) ::
+          {:ok, binary()} | {:error, binary()}
   def generate_presigned_url(bucket, object, expires_in) do
     config =
       ExAws.Config.new(:s3, Application.get_all_env(:ex_aws))

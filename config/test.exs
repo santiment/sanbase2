@@ -14,6 +14,15 @@ config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4001],
   server: true
 
+config :ex_aws,
+  access_key_id: "test_id",
+  secret_access_key: "test_secret",
+  region: "eu-central-1"
+
+config :sanbase, Sanbase.PresignedS3Url.S3,
+  access_key_id: "test_id",
+  secret_access_key: "test_secret"
+
 # Print only warnings and errors during test. Do not log JSON in tests.
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

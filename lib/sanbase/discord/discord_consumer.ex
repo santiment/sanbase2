@@ -96,108 +96,28 @@ defmodule Sanbase.DiscordConsumer do
 
   def handle_event({
         :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{name: "query"}} = interaction,
+        %Interaction{data: %ApplicationCommandInteractionData{name: command}} = interaction,
         _ws_state
-      }) do
-    CommandHandler.handle_interaction("show_modal", interaction)
-    |> handle_response("show_modal", interaction)
+      })
+      when command in ["query", "help", "auth", "create-admin", "remove-admin", "list", "run"] do
+    CommandHandler.handle_interaction(command, interaction)
+    |> handle_response(command, interaction)
   end
 
   def handle_event({
         :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{name: "help"}} = interaction,
-        _ws_state
-      }) do
-    CommandHandler.handle_interaction("help", interaction)
-    |> handle_response("help", interaction)
-  end
-
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{name: "auth"}} = interaction,
-        _ws_state
-      }) do
-    CommandHandler.handle_interaction("auth", interaction)
-    |> handle_response("auth", interaction)
-  end
-
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{name: "create-admin"}} =
+        %Interaction{data: %ApplicationCommandInteractionData{custom_id: custom_id}} =
           interaction,
         _ws_state
       }) do
-    CommandHandler.handle_interaction("create-admin", interaction)
-    |> handle_response("create-admin", interaction)
-  end
+    [command, panel_id] = String.split(custom_id, "_")
 
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{name: "remove-admin"}} =
-          interaction,
-        _ws_state
-      }) do
-    CommandHandler.handle_interaction("remove-admin", interaction)
-    |> handle_response("remove-admin", interaction)
-  end
-
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{name: "list"}} = interaction,
-        _ws_state
-      }) do
-    CommandHandler.handle_interaction("list", interaction)
-    |> handle_response("list", interaction)
-  end
-
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{custom_id: "run_sql_modal"}} =
-          interaction,
-        _ws_state
-      }) do
-    CommandHandler.handle_interaction("run", interaction)
-    |> handle_response("run", interaction)
-  end
-
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{custom_id: "pin" <> panel_id}} =
-          interaction,
-        _ws_state
-      }) do
-    CommandHandler.handle_interaction("pin", interaction, panel_id)
-    |> handle_response("pin" <> panel_id, interaction)
-  end
-
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{custom_id: "unpin" <> panel_id}} =
-          interaction,
-        _ws_state
-      }) do
-    CommandHandler.handle_interaction("unpin", interaction, panel_id)
-    |> handle_response("unpin" <> panel_id, interaction)
-  end
-
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{custom_id: "show" <> panel_id}} =
-          interaction,
-        _ws_state
-      }) do
-    CommandHandler.handle_interaction("show", interaction, panel_id)
-    |> handle_response("show" <> panel_id, interaction)
-  end
-
-  def handle_event({
-        :INTERACTION_CREATE,
-        %Interaction{data: %ApplicationCommandInteractionData{custom_id: "rerun" <> panel_id}} =
-          interaction,
-        _ws_state
-      }) do
-    CommandHandler.handle_interaction("rerun", interaction, panel_id)
-    |> handle_response("rerun" <> panel_id, interaction)
+    if command in ["rerun", "pin", "unpin", "show"] do
+      CommandHandler.handle_interaction(command, interaction, panel_id)
+      |> handle_response({command, panel_id}, interaction)
+    else
+      :noop
+    end
   end
 
   # Default event handler, if you don't include this, your consumer WILL crash if
@@ -228,7 +148,17 @@ defmodule Sanbase.DiscordConsumer do
     end
   end
 
-  def handle_response(response, command, interaction) do
+  def retry({command, panel_id}, interaction) do
+    CommandHandler.handle_interaction(command, interaction, panel_id)
+    |> handle_response(command, interaction, retry: false)
+  end
+
+  def retry(command, interaction) do
+    CommandHandler.handle_interaction(command, interaction)
+    |> handle_response(command, interaction, retry: false)
+  end
+
+  def handle_response(response, command, interaction, opts \\ []) do
     params = %{
       channel: to_string(interaction.channel_id),
       guild: to_string(interaction.guild_id),
@@ -245,6 +175,13 @@ defmodule Sanbase.DiscordConsumer do
 
       {:ok, _} ->
         Logger.info("COMMAND SUCCESS #{command} #{inspect(params)}")
+
+      {:error, {:stream_error, :closed} = error} ->
+        Logger.error("COMMAND ERROR #{command} #{inspect(params)} #{inspect(error)}")
+
+        if Keyword.get(opts, :retry, true) do
+          retry(command, interaction)
+        end
 
       {:error, error} ->
         Logger.error("COMMAND ERROR #{command} #{inspect(params)} #{inspect(error)}")

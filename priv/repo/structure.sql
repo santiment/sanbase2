@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 14.2
+-- Dumped by pg_dump version 14.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2238,6 +2238,41 @@ ALTER SEQUENCE public.posts_tags_id_seq OWNED BY public.posts_tags.id;
 
 
 --
+-- Name: presigned_s3_urls; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.presigned_s3_urls (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    bucket character varying(255) NOT NULL,
+    object character varying(255) NOT NULL,
+    presigned_url text NOT NULL,
+    expires_at timestamp(0) without time zone NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: presigned_s3_urls_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.presigned_s3_urls_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: presigned_s3_urls_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.presigned_s3_urls_id_seq OWNED BY public.presigned_s3_urls.id;
+
+
+--
 -- Name: price_migration_tmp; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4303,6 +4338,13 @@ ALTER TABLE ONLY public.posts_tags ALTER COLUMN id SET DEFAULT nextval('public.p
 
 
 --
+-- Name: presigned_s3_urls id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.presigned_s3_urls ALTER COLUMN id SET DEFAULT nextval('public.presigned_s3_urls_id_seq'::regclass);
+
+
+--
 -- Name: price_migration_tmp id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5067,6 +5109,14 @@ ALTER TABLE ONLY public.posts_projects
 
 ALTER TABLE ONLY public.posts_tags
     ADD CONSTRAINT posts_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: presigned_s3_urls presigned_s3_urls_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.presigned_s3_urls
+    ADD CONSTRAINT presigned_s3_urls_pkey PRIMARY KEY (id);
 
 
 --
@@ -5990,6 +6040,13 @@ CREATE UNIQUE INDEX posts_projects_post_id_project_id_index ON public.posts_proj
 --
 
 CREATE INDEX posts_tags_post_id_index ON public.posts_tags USING btree (post_id);
+
+
+--
+-- Name: presigned_s3_urls_user_id_bucket_object_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX presigned_s3_urls_user_id_bucket_object_index ON public.presigned_s3_urls USING btree (user_id, bucket, object);
 
 
 --
@@ -7079,6 +7136,14 @@ ALTER TABLE ONLY public.posts
 
 
 --
+-- Name: presigned_s3_urls presigned_s3_urls_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.presigned_s3_urls
+    ADD CONSTRAINT presigned_s3_urls_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: processed_github_archives processed_github_archives_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8014,3 +8079,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20221025154013);
 INSERT INTO public."schema_migrations" (version) VALUES (20221027125500);
 INSERT INTO public."schema_migrations" (version) VALUES (20221103145206);
 INSERT INTO public."schema_migrations" (version) VALUES (20221110142211);
+INSERT INTO public."schema_migrations" (version) VALUES (20221118110940);

@@ -190,7 +190,9 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
             request_id <> "_" <> (:crypto.strong_rand_bytes(6) |> Base.encode64())
         end
 
-      {query, selector} = get_query_and_selector(query)
+      {query, selector} =
+        get_query_and_selector(query)
+        |> IO.inspect()
 
       %{
         timestamp: div(now, 1_000_000_000),

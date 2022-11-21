@@ -57,7 +57,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
     end)
   end
 
+  # In some cases users can provide lists of slugs that have 50-100-200 slugs inside
+  # This would take a lot of resources to store, so it's redacted.
   defp argument_data_to_selector(%{selector: selector}), do: selector
+  defp argument_data_to_selector(%{slug: slugs}) when length(slugs) <= 5, do: %{slug: slugs}
+  defp argument_data_to_selector(%{slug: [_ | _]}), do: %{slug: "<long_slugs_list>"}
   defp argument_data_to_selector(%{slug: slug}), do: %{slug: slug}
   defp argument_data_to_selector(_), do: nil
 end

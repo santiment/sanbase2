@@ -18,7 +18,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
 
   defp do_call(:get_metric, %{context: context} = resolution) do
     %{arguments: %{metric: metric}} = resolution
-    elem = {:get_metric, metric}
+    selectors = get_selectors(resolution)
+    elem = {:get_metric, metric, selectors}
 
     %Resolution{
       resolution
@@ -28,7 +29,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
 
   defp do_call(:get_signal, %{context: context} = resolution) do
     %{arguments: %{signal: signal}} = resolution
-    elem = {:get_signal, signal}
+    selectors = get_selectors(resolution)
+    elem = {:get_signal, signal, selectors}
 
     %Resolution{
       resolution
@@ -36,5 +38,26 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
     }
   end
 
-  defp do_call(_, resolution), do: resolution
+  defp do_call(query_field, resolution) do
+    resolution
+  end
+
+  @fields_with_selector ["timeseriesData", "timeseriesDataPerSlug", "aggregatedTimeseriesData"]
+  defp get_selectors(resolution) do
+    resolution.definition.selections
+    |> Enum.map(fn %{name: name} = field ->
+      selector =
+        case Inflex.camelize(name, :lower) do
+          name when name in @fields_with_selector ->
+            argument_data_to_selector(field.argument_data)
+
+          name ->
+            nil
+        end
+    end)
+  end
+
+  defp argument_data_to_selector(%{selector: selector}), do: selector
+  defp argument_data_to_selector(%{slug: slug}), do: %{slug: slug}
+  defp argument_data_to_selector(_), do: nil
 end

@@ -1,9 +1,6 @@
 defmodule SanbaseWeb.RepoReaderController do
   use SanbaseWeb, :controller
 
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.Project.SocialVolumeQuery
-
   require Sanbase.Utils.Config, as: Config
   require Logger
 

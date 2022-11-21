@@ -2,7 +2,6 @@ defmodule SanbaseWeb.UserController do
   use SanbaseWeb, :controller
 
   alias Sanbase.Accounts.User
-  alias SanbaseWeb.Router.Helpers, as: Routes
 
   def index(conn, _params) do
     users = User.all_users()

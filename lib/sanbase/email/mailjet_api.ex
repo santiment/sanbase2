@@ -52,7 +52,7 @@ defmodule Sanbase.Email.MailjetApiImpl do
 
   defp manage_subscription(body_json, list_id, action) do
     HTTPoison.post(
-      @base_url() <> "contactslist/#{list_id}/managemanycontacts",
+      @base_url <> "contactslist/#{list_id}/managemanycontacts",
       body_json,
       headers()
     )

@@ -99,9 +99,18 @@ defmodule Sanbase.DiscordConsumer do
         %Interaction{data: %ApplicationCommandInteractionData{name: command}} = interaction,
         _ws_state
       })
-      when command in ["query", "help", "auth", "create-admin", "remove-admin", "list", "run"] do
+      when command in ["query", "help", "auth", "create-admin", "remove-admin", "list"] do
     CommandHandler.handle_interaction(command, interaction)
     |> handle_response(command, interaction)
+  end
+
+  def handle_event({
+        :INTERACTION_CREATE,
+        %Interaction{data: %ApplicationCommandInteractionData{custom_id: "run"}} = interaction,
+        _ws_state
+      }) do
+    CommandHandler.handle_interaction("run", interaction)
+    |> handle_response("run", interaction)
   end
 
   def handle_event({
@@ -166,25 +175,27 @@ defmodule Sanbase.DiscordConsumer do
       discord_user_handle: interaction.user.username <> interaction.user.discriminator
     }
 
+    command_insp = inspect(command)
+
     case response do
       :ok ->
-        Logger.info("COMMAND SUCCESS #{command} #{inspect(params)}")
+        Logger.info("COMMAND SUCCESS #{command_insp} #{inspect(params)}")
 
       {:ok} ->
-        Logger.info("COMMAND SUCCESS #{command} #{inspect(params)}")
+        Logger.info("COMMAND SUCCESS #{command_insp} #{inspect(params)}")
 
       {:ok, _} ->
-        Logger.info("COMMAND SUCCESS #{command} #{inspect(params)}")
+        Logger.info("COMMAND SUCCESS #{command_insp} #{inspect(params)}")
 
       {:error, {:stream_error, :closed} = error} ->
-        Logger.error("COMMAND ERROR #{command} #{inspect(params)} #{inspect(error)}")
+        Logger.error("COMMAND ERROR #{command_insp} #{inspect(params)} #{inspect(error)}")
 
         if Keyword.get(opts, :retry, true) do
           retry(command, interaction)
         end
 
       {:error, error} ->
-        Logger.error("COMMAND ERROR #{command} #{inspect(params)} #{inspect(error)}")
+        Logger.error("COMMAND ERROR #{command_insp} #{inspect(params)} #{inspect(error)}")
     end
   end
 end

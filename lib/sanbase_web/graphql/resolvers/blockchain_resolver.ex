@@ -1,8 +1,11 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
   def available_blockchains_metadata(_root, _argsargs, _resolution) do
-    blockchains = Sanbase.BlockchainAddress.available_blockchains()
+    data =
+      Sanbase.BlockchainAddress.available_blockchains()
+      |> Enum.map(&blockchain_data/1)
+      |> Enum.reject(&is_nil/1)
 
-    {:ok, Enum.map(blockchains, &blockchain_data/1)}
+    {:ok, data}
   end
 
   defp blockchain_data("ethereum") do
@@ -220,6 +223,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
     }
     |> add_complex_fields()
   end
+
+  defp blockchain_data(_), do: nil
 
   defp add_complex_fields(%{} = map) do
     map

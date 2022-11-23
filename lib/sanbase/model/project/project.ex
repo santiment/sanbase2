@@ -162,6 +162,8 @@ defmodule Sanbase.Model.Project do
       "POLYGON" -> "polygon"
       "ARBITRUM" -> "arbitrum"
       "OPTIMISIM" -> "optimism"
+      "AVALANCHE" -> "avalanche"
+      "CARDANO" -> "cardano"
       _ -> nil
     end
   end

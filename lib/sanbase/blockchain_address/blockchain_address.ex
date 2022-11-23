@@ -18,7 +18,9 @@ defmodule Sanbase.BlockchainAddress do
     "cardano",
     "avalanche",
     "optimism",
-    "arbitrum"
+    "arbitrum",
+    "bnb-smart-chain",
+    "bnb-beacon-chain"
   ]
   schema "blockchain_addresses" do
     field(:address, :string)

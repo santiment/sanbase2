@@ -68,7 +68,7 @@ defmodule Sanbase.RepoReader.Validator do
   defp validate_url(url, type) do
     uri = URI.parse(url)
 
-    case uri.scheme != nil and uri.host =~ "." do
+    case uri.scheme != nil and is_binary(uri.host) and uri.host =~ "." do
       true ->
         :ok
 

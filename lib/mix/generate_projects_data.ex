@@ -56,6 +56,7 @@ defmodule Sanbase.Mix.GenerateProjectsData do
         website: map[:website]
       ]
       |> remove_nils()
+      |> remove_wrong_social_values()
       |> Jason.OrderedObject.new()
 
     social =
@@ -82,6 +83,7 @@ defmodule Sanbase.Mix.GenerateProjectsData do
     contracts =
       (Map.get(map, :contract_addresses) || [])
       |> List.wrap()
+      |> Enum.reject(&is_custom_contract/1)
       |> Enum.map(fn contract ->
         [
           address: contract.address,
@@ -109,5 +111,32 @@ defmodule Sanbase.Mix.GenerateProjectsData do
 
   defp remove_nils(keyword) do
     Enum.reject(keyword, fn {_k, v} -> v == nil end)
+  end
+
+  defp is_custom_contract(map) do
+    case Map.get(map, :address) do
+      nil -> true
+      # Some projects have internal custom contracts like `ETH` that are not meaningful
+      # to the outside world.
+      address -> String.length(address) <= 10
+    end
+  end
+
+  # In some cases the discord field holds a slack link and vice versa. Drop them
+  # if this is the case
+  defp remove_wrong_social_values(kv) do
+    kv =
+      case Keyword.get(kv, :discord) do
+        nil -> kv
+        discord -> if discord =~ "slack.", do: Keyword.delete(kv, :discord), else: kv
+      end
+
+    kv =
+      case Keyword.get(kv, :slack) do
+        nil -> kv
+        slack -> if slack =~ "discord.", do: Keyword.delete(kv, :slack), else: kv
+      end
+
+    kv
   end
 end

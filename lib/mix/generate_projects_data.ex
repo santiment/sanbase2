@@ -57,7 +57,6 @@ defmodule Sanbase.Mix.GenerateProjectsData do
         website: map[:website]
       ]
       |> remove_nils()
-      |> remove_wrong_social_values()
       |> Jason.OrderedObject.new()
 
     social =
@@ -70,6 +69,7 @@ defmodule Sanbase.Mix.GenerateProjectsData do
         blog: map[:blog]
       ]
       |> remove_nils()
+      |> remove_wrong_social_values()
       |> Jason.OrderedObject.new()
 
     orgs =

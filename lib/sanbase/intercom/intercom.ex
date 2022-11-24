@@ -47,15 +47,26 @@ defmodule Sanbase.Intercom do
       remaining_user_ids = fetch_all_db_user_ids() -- fetch_all_synced_user_ids()
       Logger.info("Start sync_intercom_to_kafka remaining_user_ids=#{length(remaining_user_ids)}")
 
+      now = DateTime.utc_now()
+
       remaining_user_ids
       |> Enum.chunk_every(200)
-      |> Enum.map(fn user_id ->
-        if attributes = get_user(user_id) do
-          %{user_id: user_id, properties: attributes, inserted_at: Timex.now()}
+      |> Sanbase.Parallel.map(fn list ->
+        Enum.map(list, fn user_id ->
+          if attributes = get_user(user_id) do
+            %{user_id: user_id, properties: attributes, inserted_at: now}
+          end
+        end)
+        |> Enum.reject(&is_nil/1)
+      end)
+      |> Enum.map(fn list ->
+        try do
+          UserAttributes.persist_kafka_sync(list)
+        rescue
+          e ->
+            Logger.error("Error sync_intercom_to_kafka. Reason: #{Exception.message(e)}")
         end
       end)
-      |> Enum.map(fn list -> Enum.reject(list, &is_nil/1) end)
-      |> Enum.map(&UserAttributes.persist_kafka_sync/1)
 
       Logger.info("Finish sync_intercom_to_kafka")
     else

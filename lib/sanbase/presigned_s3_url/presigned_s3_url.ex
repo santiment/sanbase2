@@ -15,7 +15,7 @@ defmodule Sanbase.PresignedS3Url do
   alias __MODULE__.S3
 
   @bucket "api-users-datasets"
-  @expires_in 86400
+  @expires_in 86_400
 
   schema "presigned_s3_urls" do
     belongs_to(:user, Sanbase.Accounts.User)

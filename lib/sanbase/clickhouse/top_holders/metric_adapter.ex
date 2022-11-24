@@ -65,29 +65,11 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def broken_data(_metric, _selector, _from, _to), do: {:ok, []}
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(
-        metric,
-        %{slug: slug} = selector,
-        from,
-        to,
-        interval,
-        opts
-      ) do
+  def timeseries_data(metric, %{slug: slug} = selector, from, to, interval, opts) do
     with {:ok, contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
-         true <- chain_supported?(infr, slug, metric) do
-      params = %{
-        contract: contract,
-        blockchain: Map.get(@infrastructure_to_blockchain, infr),
-        table: Map.get(@infrastructure_to_table, infr),
-        count: Map.get(selector, :holders_count, @default_holders_count),
-        from: from,
-        to: to,
-        interval: interval,
-        decimals: decimals,
-        aggregation: Keyword.get(opts, :aggregation, nil) || :last,
-        include_labels: Keyword.get(opts, :additional_filters, [])[:label]
-      }
-
+         true <- chain_supported?(infr, slug, metric),
+         {:ok, params} <-
+           timeseries_data_params(selector, contract, infr, from, to, interval, decimals, opts) do
       {query, args} = timeseries_data_query(metric, params)
 
       ClickhouseRepo.query_transform(query, args, fn [timestamp, value] ->
@@ -178,9 +160,9 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
          {:ok, infr} <- Project.infrastructure_real_code(project) do
       if infr in @supported_infrastructures and Project.has_contract_address?(project) do
         # Until we have Binance exchange addresses remove exchange metrics for it.
-        case infr in ["BNB", "BEP2"] do
-          true -> {:ok, @metrics |> Enum.reject(&String.contains?(&1, "exchange"))}
-          false -> {:ok, @metrics}
+        case infr in ["ETH"] do
+          true -> {:ok, @metrics}
+          false -> {:ok, @metrics |> Enum.reject(&String.contains?(&1, "exchange"))}
         end
       else
         {:ok, []}
@@ -270,5 +252,22 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   defp chain_supported?(_infr, slug, metric) do
     {:error, "The metric #{metric} is not supported for #{slug}"}
+  end
+
+  defp timeseries_data_params(selector, contract, infr, from, to, interval, decimals, opts) do
+    params = %{
+      contract: contract,
+      blockchain: Map.get(@infrastructure_to_blockchain, infr),
+      table: Map.get(@infrastructure_to_table, infr),
+      count: Map.get(selector, :holders_count, @default_holders_count),
+      from: from,
+      to: to,
+      interval: interval,
+      decimals: decimals,
+      aggregation: Keyword.get(opts, :aggregation, nil) || :last,
+      include_labels: Keyword.get(opts, :additional_filters, [])[:label]
+    }
+
+    {:ok, params}
   end
 end

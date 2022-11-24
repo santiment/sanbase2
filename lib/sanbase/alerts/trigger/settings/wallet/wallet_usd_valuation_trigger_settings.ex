@@ -95,8 +95,7 @@ defmodule Sanbase.Alert.Trigger.WalletUsdValuationTriggerSettings do
           """)
       end
     end)
-    |> Enum.reject(&match?({:error, _}, &1))
-    |> Enum.reject(&match?({:ok, []}, &1))
+    |> Enum.reject(&(match?({:error, _}, &1) or match?({:ok, []}, &1)))
   end
 
   defp get_timeseries_params(%{time_window: time_window}) do

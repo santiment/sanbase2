@@ -100,8 +100,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
           """)
       end
     end)
-    |> Enum.reject(&match?({:error, _}, &1))
-    |> Enum.reject(&match?({:ok, []}, &1))
+    |> Enum.reject(&(match?({:error, _}, &1) or match?({:ok, []}, &1)))
   end
 
   defp assets_held(selector) do

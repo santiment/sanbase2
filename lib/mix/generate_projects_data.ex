@@ -5,8 +5,11 @@ defmodule Sanbase.Mix.GenerateProjectsData do
 
   require Jason.Helpers
 
+  @min_marketcap 100_000_000
+
   def run(path) do
     get_projects_data()
+    |> Enum.filter(&include_project?/1)
     |> Enum.map(&encode/1)
     |> export_json(path)
   end
@@ -17,6 +20,7 @@ defmodule Sanbase.Mix.GenerateProjectsData do
       left_join: contract in assoc(p, :contract_addresses),
       left_join: github in assoc(p, :github_organizations),
       left_join: infrastructure in assoc(p, :infrastructure),
+      left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
       select: %{
         slug: p.slug,
         name: p.name,
@@ -31,7 +35,8 @@ defmodule Sanbase.Mix.GenerateProjectsData do
         reddit: p.reddit_link,
         blog: p.blog_link,
         github_organizations: github,
-        contract_addresses: contract
+        contract_addresses: contract,
+        latest_cmc: latest_cmc
       }
     )
     |> Sanbase.Repo.all()
@@ -99,7 +104,7 @@ defmodule Sanbase.Mix.GenerateProjectsData do
         ]
         |> remove_nils()
       end)
-      |> Enum.reject(&contract_has_missing_data/1)
+      |> Enum.reject(&contract_missing_or_invalid_data/1)
       |> Enum.map(&Jason.OrderedObject.new/1)
 
     json =
@@ -127,8 +132,11 @@ defmodule Sanbase.Mix.GenerateProjectsData do
     Enum.reject(keyword, fn {_k, v} -> v == nil end)
   end
 
-  defp contract_has_missing_data(map) do
-    if is_binary(map[:address]) and is_integer(map[:decimals]) and is_binary(map[:blockchain]) do
+  defp contract_missing_or_invalid_data(map) do
+    available_blockchains = Sanbase.BlockchainAddress.available_blockchains()
+
+    if is_binary(map[:address]) and is_integer(map[:decimals]) and is_binary(map[:blockchain]) and
+         map[:blockchain] in available_blockchains do
       false
     else
       true
@@ -161,5 +169,22 @@ defmodule Sanbase.Mix.GenerateProjectsData do
       end
 
     kv
+  end
+
+  # Include santiment and projects with mcap over $#{@min_marketcap}
+  defp include_project?(%{slug: "santiment"}), do: true
+
+  defp include_project?(map) do
+    case map.latest_cmc do
+      %{update_time: %NaiveDateTime{} = update_time, market_cap_usd: marketcap_usd} ->
+        # Do not check projects that have not been updated in long time
+        dt = NaiveDateTime.utc_now() |> Timex.shift(days: -7)
+
+        NaiveDateTime.compare(update_time, dt) == :gt and
+          Decimal.to_float(marketcap_usd) >= @min_marketcap
+
+      _ ->
+        false
+    end
   end
 end

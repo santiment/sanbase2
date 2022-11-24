@@ -35,19 +35,9 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
       now = Timex.now()
       not_published = insert(:report, is_published: false, inserted_at: now)
 
-      free_report =
-        insert(:report,
-          is_pro: false,
-          is_published: true,
-          inserted_at: Timex.shift(now, seconds: -5)
-        )
-
-      pro_report =
-        insert(:report,
-          is_pro: true,
-          is_published: true,
-          inserted_at: Timex.shift(now, seconds: -10)
-        )
+      seconds_ago = NaiveDateTime.utc_now() |> Timex.shift(seconds: -5)
+      free_report = insert(:report, is_pro: false, is_published: true, inserted_at: seconds_ago)
+      pro_report = insert(:report, is_pro: true, is_published: true)
 
       free_user = insert(:user)
       free_conn = setup_jwt_auth(build_conn(), free_user)
@@ -74,8 +64,8 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
       res = get_reports(build_conn())
 
       assert Enum.map(res["data"]["getReports"], & &1["name"]) == [
-               context.free_report.name,
-               context.pro_report.name
+               context.pro_report.name,
+               context.free_report.name
              ]
 
       assert Enum.map(res["data"]["getReports"], & &1["url"]) == [nil, nil]
@@ -86,24 +76,24 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
       res = get_reports(context.free_conn)
 
       assert Enum.map(res["data"]["getReports"], & &1["name"]) == [
-               context.free_report.name,
-               context.pro_report.name
+               context.pro_report.name,
+               context.free_report.name
              ]
 
-      assert Enum.map(res["data"]["getReports"], & &1["url"]) == [context.free_report.url, nil]
+      assert Enum.map(res["data"]["getReports"], & &1["url"]) == [nil, context.free_report.url]
     end
 
     test "with basic sanbase user list all published reports", context do
       res = get_reports(context.basic_conn)
 
       assert Enum.map(res["data"]["getReports"], & &1["name"]) == [
-               context.free_report.name,
-               context.pro_report.name
+               context.pro_report.name,
+               context.free_report.name
              ]
 
       assert Enum.map(res["data"]["getReports"], & &1["url"]) == [
-               context.free_report.url,
-               context.pro_report.url
+               context.pro_report.url,
+               context.free_report.url
              ]
     end
 
@@ -111,21 +101,30 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
       res = get_reports(context.pro_conn)
 
       assert Enum.map(res["data"]["getReports"], & &1["name"]) == [
-               context.free_report.name,
-               context.pro_report.name
+               context.pro_report.name,
+               context.free_report.name
              ]
 
       assert Enum.map(res["data"]["getReports"], & &1["url"]) == [
-               context.free_report.url,
-               context.pro_report.url
+               context.pro_report.url,
+               context.free_report.url
              ]
     end
   end
 
   describe "get reports by tags" do
     setup do
+      seconds_ago = NaiveDateTime.utc_now() |> Timex.shift(seconds: -5)
       insert(:report, is_pro: false, is_published: true)
-      r1 = insert(:report, is_pro: false, is_published: true, tags: ~w(t1 t2))
+
+      r1 =
+        insert(:report,
+          is_pro: false,
+          is_published: true,
+          tags: ~w(t1 t2),
+          inserted_at: seconds_ago
+        )
+
       r2 = insert(:report, is_pro: false, is_published: true, tags: ~w(t3 t4))
       insert(:report, is_pro: false, is_published: true, tags: ~w(t5 t6))
 
@@ -140,8 +139,8 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
       res = get_reports_by_tags(context.conn, ["t2", "t3"])
 
       assert Enum.map(res["data"]["getReportsByTags"], & &1["url"]) == [
-               context.r1.url,
-               context.r2.url
+               context.r2.url,
+               context.r1.url
              ]
     end
   end

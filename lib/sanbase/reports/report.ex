@@ -115,12 +115,12 @@ defmodule Sanbase.Report do
   defp get_by_tags_query(query, tags) do
     from(r in query,
       where: fragment("select ? && ?", r.tags, ^tags),
-      order_by: [desc: r.inserted_at]
+      order_by: [desc: r.inserted_at, desc: r.id]
     )
   end
 
   defp get_published_reports_query(query) do
-    from(r in query, where: r.is_published == true, order_by: [desc: r.inserted_at])
+    from(r in query, where: r.is_published == true, order_by: [desc: r.inserted_at, desc: r.id])
   end
 
   defp show_only_preview_fields?(reports, %{is_logged_in: false}) do

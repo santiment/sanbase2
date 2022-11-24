@@ -5,18 +5,27 @@ defmodule Sanbase.Mix.GenerateProjectsData do
 
   require Jason.Helpers
 
+  @min_marketcap 100_000_000
+
   def run(path) do
+    IO.puts("Start generating and exporting projects data in json files")
+
     get_projects_data()
+    |> Enum.filter(&include_project?/1)
+    |> tap(fn list -> IO.puts("Fetched #{length(list)} projects. Start encoding...") end)
     |> Enum.map(&encode/1)
+    |> tap(fn list -> IO.puts("Encoded #{length(list)} projects. Start exporting...") end)
     |> export_json(path)
+    |> tap(fn :ok -> IO.puts("Finished exporting projects to #{path}") end)
   end
 
   def get_projects_data() do
     from(p in Project,
-      where: not is_nil(p.slug),
+      where: not is_nil(p.slug) and p.is_hidden == false,
       left_join: contract in assoc(p, :contract_addresses),
       left_join: github in assoc(p, :github_organizations),
       left_join: infrastructure in assoc(p, :infrastructure),
+      left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
       select: %{
         slug: p.slug,
         name: p.name,
@@ -31,7 +40,8 @@ defmodule Sanbase.Mix.GenerateProjectsData do
         reddit: p.reddit_link,
         blog: p.blog_link,
         github_organizations: github,
-        contract_addresses: contract
+        contract_addresses: contract,
+        latest_cmc: latest_cmc
       }
     )
     |> Sanbase.Repo.all()
@@ -99,7 +109,7 @@ defmodule Sanbase.Mix.GenerateProjectsData do
         ]
         |> remove_nils()
       end)
-      |> Enum.reject(&contract_has_missing_data/1)
+      |> Enum.reject(&contract_missing_or_invalid_data/1)
       |> Enum.map(&Jason.OrderedObject.new/1)
 
     json =
@@ -127,8 +137,11 @@ defmodule Sanbase.Mix.GenerateProjectsData do
     Enum.reject(keyword, fn {_k, v} -> v == nil end)
   end
 
-  defp contract_has_missing_data(map) do
-    if is_binary(map[:address]) and is_integer(map[:decimals]) and is_binary(map[:blockchain]) do
+  defp contract_missing_or_invalid_data(map) do
+    available_blockchains = Sanbase.BlockchainAddress.available_blockchains()
+
+    if is_binary(map[:address]) and is_integer(map[:decimals]) and is_binary(map[:blockchain]) and
+         map[:blockchain] in available_blockchains do
       false
     else
       true
@@ -161,5 +174,35 @@ defmodule Sanbase.Mix.GenerateProjectsData do
       end
 
     kv
+  end
+
+  # Include santiment and projects with mcap over $#{@min_marketcap}
+  defp include_project?(%{slug: "santiment"}), do: true
+
+  defp include_project?(map) do
+    has_enough_marketcap? =
+      case map.latest_cmc do
+        %{update_time: %NaiveDateTime{} = update_time, market_cap_usd: marketcap_usd} ->
+          # Do not check projects that have not been updated in long time
+          dt = NaiveDateTime.utc_now() |> Timex.shift(days: -7)
+
+          NaiveDateTime.compare(update_time, dt) == :gt and
+            Decimal.to_float(marketcap_usd) >= @min_marketcap
+
+        _ ->
+          false
+      end
+
+    has_data? =
+      not is_nil(map.twitter) or
+        not is_nil(map.discord) or
+        not is_nil(map.slack) or
+        not is_nil(map.telegram) or
+        not is_nil(map.reddit) or
+        not is_nil(map.blog) or
+        (not is_nil(map.github_organizations) and map.github_organizations != []) or
+        (not is_nil(map.contract_addresses) and map.contract_addresses != [])
+
+    has_data? and has_enough_marketcap?
   end
 end

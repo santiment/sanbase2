@@ -114,7 +114,7 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
            Dashboard.compute_panel(dashboard_id, panel_id, user_id, parameters: nil) do
       {:ok, result, dd}
     else
-      _ -> {:error, "Can't execute this query"}
+      {:error, reason} -> {:execution_error, reason}
     end
   end
 

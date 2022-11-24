@@ -11,15 +11,15 @@ defmodule Sanbase.DiscordConsumer do
   @commands [
     %{
       name: "help",
-      description: "How to run sql query"
+      description: "Show help info and commands"
     },
     %{
       name: "query",
-      description: "Run SQL query"
+      description: "Run new query"
     },
     %{
       name: "list",
-      description: "List pinned sql queries"
+      description: "List pinned queries"
     }
   ]
 
@@ -75,12 +75,12 @@ defmodule Sanbase.DiscordConsumer do
 
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
     with true <- CommandHandler.is_command?(msg.content),
-         {:ok, command} <- CommandHandler.try_extracting_command(msg.content) do
-      CommandHandler.handle_command(command, msg)
-      |> handle_msg_response(command, msg)
+         {:ok, name, sql} <- CommandHandler.parse_message_command(msg.content) do
+      CommandHandler.handle_command("run", name, sql, msg)
+      |> handle_msg_response("run", msg)
     else
       {:error, :invalid_command} ->
-        CommandHandler.handle_command(:invalid_command, msg)
+        CommandHandler.handle_command("invalid_command", msg)
         CommandHandler.handle_command("help", msg)
 
       false ->

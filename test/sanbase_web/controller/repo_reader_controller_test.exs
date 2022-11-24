@@ -172,7 +172,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
         Project.by_slug("santiment", only_preload: [:github_organizations, :contract_addresses])
 
       assert project.twitter_link == "https://twitter.com/santimentfeed"
-      assert project.discord_link == "https://discord.com/santiment"
+      assert project.discord_link == "https://discord.gg/MPH2uP5"
       assert project.github_organizations |> hd() |> Map.get(:organization) == "santiment"
 
       assert project.contract_addresses |> hd() |> Map.get(:address) ==

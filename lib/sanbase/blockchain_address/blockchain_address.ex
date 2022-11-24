@@ -20,8 +20,16 @@ defmodule Sanbase.BlockchainAddress do
     "optimism",
     "arbitrum",
     "bnb-smart-chain",
-    "bnb-beacon-chain"
+    "bnb-beacon-chain",
+    "polygon"
   ]
+
+  @ethereum_regex ~r/^0x([A-Fa-f0-9]{40})$/
+  @bitcoin_regex ~r/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/
+
+  def ethereum_regex(), do: @ethereum_regex
+  def bitcoin_regex(), do: @bitcoin_regex
+
   schema "blockchain_addresses" do
     field(:address, :string)
     field(:notes, :string)
@@ -82,10 +90,10 @@ defmodule Sanbase.BlockchainAddress do
 
   def to_infrastructure(address) do
     cond do
-      Regex.match?(~r/^0x([A-Fa-f0-9]{40})$/, address) ->
+      Regex.match?(@ethereum_regex, address) ->
         "ETH"
 
-      Regex.match?(~r/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/, address) ->
+      Regex.match?(@bitcoin_regex, address) ->
         "BTC"
 
       Regex.match?(~r/^r[0-9a-zA-Z]]{23,33}$/, address) and

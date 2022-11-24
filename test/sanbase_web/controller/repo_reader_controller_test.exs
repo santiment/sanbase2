@@ -118,7 +118,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
     alias Sanbase.Model.Project
 
     test "reader webhook with exception", context do
-      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _ ->
+      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
         raise("Some exception")
       end)
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -135,7 +135,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
     end
 
     test "reader webhook with match error", context do
-      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _ ->
+      Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->
         {:error, "Some unexpected error"}
       end)
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -172,7 +172,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
         Project.by_slug("santiment", only_preload: [:github_organizations, :contract_addresses])
 
       assert project.twitter_link == "https://twitter.com/santimentfeed"
-      assert project.discord_link == "https://discord.gg/MPH2uP5"
+      assert project.discord_link == "https://discord.com/santiment"
       assert project.github_organizations |> hd() |> Map.get(:organization) == "santiment"
 
       assert project.contract_addresses |> hd() |> Map.get(:address) ==

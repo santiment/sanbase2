@@ -11,7 +11,7 @@ defmodule Sanbase.RepoReader do
   alias __MODULE__.{Repository, Validator}
 
   import __MODULE__.Utils,
-    only: [clone_repo: 1, clone_repo: 2, read_files: 2, files_to_directories: 1]
+    only: [clone_repo: 2, read_files: 2, files_to_directories: 1]
 
   require Logger
 
@@ -72,7 +72,7 @@ defmodule Sanbase.RepoReader do
   # Private functions
 
   defp do_update_projects(path, changed_directories) do
-    with {:ok, %Repository{} = repo} <- clone_repo(path),
+    with {:ok, %Repository{} = repo} <- clone_repo(path, branch: "main"),
          {:ok, projects_map} <- read_files(repo, directories_to_read: changed_directories) do
       slugs = Map.keys(projects_map)
 

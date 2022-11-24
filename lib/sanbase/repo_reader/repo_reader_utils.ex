@@ -11,10 +11,10 @@ defmodule Sanbase.RepoReader.Utils do
   the files in the specified path
   """
   @spec clone_repo(String.t(), Keyword.t()) :: {:ok, Repository.t()} | {:error, String.t()}
-  def clone_repo(path, opts \\ []) do
+  def clone_repo(path, opts) do
     Logger.info("Cloning reposistory #{@repository}...")
 
-    branch = Keyword.get(opts, :branch, "main")
+    branch = Keyword.fetch!(opts, :branch)
 
     case System.cmd("git", ["clone", "--branch", branch, @repository_url, path],
            stderr_to_stdout: true

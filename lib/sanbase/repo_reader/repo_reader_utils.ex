@@ -6,6 +6,9 @@ defmodule Sanbase.RepoReader.Utils do
   @repository "projects_data"
   @repository_url "https://github.com/santiment/#{@repository}.git"
 
+  def repository(), do: @repository
+  def repository_url(), do: @repository_url
+
   @doc ~s"""
   Clone the repository as specified by the module attribute and store
   the files in the specified path

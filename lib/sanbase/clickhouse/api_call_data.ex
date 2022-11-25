@@ -91,16 +91,12 @@ defmodule Sanbase.Clickhouse.ApiCallData do
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn [user_id, metric, count], acc ->
       Map.update(acc, user_id, %{}, fn previous ->
+        elem = %{metric: metric, count: count}
         count_all = (previous[:count] || 0) + count
 
-        metric_count_map = %{metric: metric, count: count}
-
-        current =
-          Map.update(previous, :metrics, [metric_count_map], fn metrics ->
-            [metric_count_map | metrics]
-          end)
-
-        Map.put(current, :count, count_all)
+        previous
+        |> Map.update(:metrics, [elem], &[elem | &1])
+        |> Map.put(:count, count_all)
       end)
     end)
     |> maybe_apply_function(fn result ->

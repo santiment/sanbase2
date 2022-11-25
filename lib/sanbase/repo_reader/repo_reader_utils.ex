@@ -40,42 +40,11 @@ defmodule Sanbase.RepoReader.Utils do
   def read_files(%Repository{path: path}, opts) do
     projects_path = Path.join([path, "projects"])
 
-    {:ok, directories} =
-      projects_path
-      |> File.ls()
+    directories = get_directories(projects_path, opts)
 
-    directories_to_read =
-      Keyword.fetch!(opts, :directories_to_read)
-      |> MapSet.new()
-
-    directories =
-      directories
-      |> Enum.reject(fn dir ->
-        # Remove directories like .git. Read only the changed files
-        String.starts_with?(dir, ".") or dir not in directories_to_read
-      end)
-
-    list =
-      directories
-      |> Enum.map(fn dir ->
-        directory = Path.join([projects_path, dir])
-        data_file_path = Path.join([directory, "data.json"])
-
-        with {:ok, file_content} <- File.read(data_file_path),
-             {:ok, data} <- Jason.decode(file_content),
-             {:ok, slug} when is_binary(slug) <- get_slug(data) do
-          {:ok, slug, data}
-        else
-          {:error, error} ->
-            Logger.warning("""
-            Error reading/decoding a #{@repository} file in directory: #{dir}.
-            Reason: #{inspect(error)}
-            """)
-
-            {:error, dir, error}
-        end
-      end)
-
+    list = get_ok_error_file_data_tuples_list(projects_path, directories)
+    # The list contains tuples {:ok, slug, data} and {:error, dir, error}.
+    # Group by the first element and return error if there are any errors
     errors_and_oks = Enum.group_by(list, fn {res, _, _} -> res end, fn {_res, l, r} -> {l, r} end)
 
     case errors_and_oks do
@@ -89,6 +58,7 @@ defmodule Sanbase.RepoReader.Utils do
         {:error, error_msg}
 
       %{ok: slug_data_pairs} ->
+        # the value is the list of {slug, data} tuples
         {:ok, Map.new(slug_data_pairs)}
     end
   end
@@ -115,10 +85,46 @@ defmodule Sanbase.RepoReader.Utils do
 
   # Private functions
 
+  defp get_directories(path, opts) do
+    {:ok, directories} = File.ls(path)
+
+    directories_to_read =
+      Keyword.fetch!(opts, :directories_to_read)
+      |> MapSet.new()
+
+    directories
+    |> Enum.reject(fn dir ->
+      # Remove directories like .git. Read only the changed files
+      String.starts_with?(dir, ".") or dir not in directories_to_read
+    end)
+  end
+
   defp get_slug(data) do
     case data do
       %{"general" => %{"slug" => slug}} when is_binary(slug) -> {:ok, slug}
       _ -> {:error, "No slug found or it is not a string"}
     end
+  end
+
+  defp get_ok_error_file_data_tuples_list(path, directories) do
+    directories
+    |> Enum.map(fn dir ->
+      directory = Path.join([path, dir])
+      data_file_path = Path.join([directory, "data.json"])
+
+      with {:ok, file_content} <- File.read(data_file_path),
+           {:ok, data} <- Jason.decode(file_content),
+           {:ok, slug} when is_binary(slug) <- get_slug(data) do
+        {:ok, slug, data}
+      else
+        {:error, error} ->
+          Logger.warning("""
+          Error reading/decoding a #{@repository} file in directory: #{dir}.
+          Reason: #{inspect(error)}
+          """)
+
+          {:error, dir, error}
+      end
+    end)
   end
 end

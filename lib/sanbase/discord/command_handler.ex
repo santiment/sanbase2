@@ -129,8 +129,6 @@ defmodule Sanbase.Discord.CommandHandler do
       @mock_role_id
     )
 
-    roles = Api.get_guild_member!(interaction.guild_id, options_map["user"]).roles
-
     Nostrum.Api.create_interaction_response(
       interaction,
       interaction_message_response("New admin created")
@@ -145,8 +143,6 @@ defmodule Sanbase.Discord.CommandHandler do
       options_map["user"],
       @mock_role_id
     )
-
-    roles = Api.get_guild_member!(interaction.guild_id, options_map["user"]).roles
 
     Nostrum.Api.create_interaction_response(
       interaction,
@@ -253,18 +249,13 @@ defmodule Sanbase.Discord.CommandHandler do
     )
   end
 
+  # Example valid invocations
+  #   "!q `select now()`"
+  #   "!q test query1 `select now()`"
+  #   "!q test query2 ```\nselect now()\n```"
+  #   "!q\n```\nselect now()\n```"
+  #   "!q what's the time\n```sql\nselect now()\n```"
   def parse_message_command(content) do
-    """
-    Example valid invocations
-    [
-      "!q `select now()`",
-      "!q test query1 `select now()`",
-      "!q test query2 ```\nselect now()\n```",
-      "!q\n```\nselect now()\n```",
-      "!q what's the time\n```sql\nselect now()\n```"
-    ]
-    """
-
     regexes = [
       ~r/!q([^`]*)`([^`]+)`/,
       ~r/!q([^`]*)```sql([^`]*)```$/ms,
@@ -296,7 +287,6 @@ defmodule Sanbase.Discord.CommandHandler do
     max_rows = response.rows |> Enum.take(1) |> max_rows()
     rows = response.rows |> Enum.take(max_rows - 1)
     table = TableRex.quick_render!(rows, response.columns)
-    String.length(table)
 
     """
     #{name}: <@#{discord_user}>

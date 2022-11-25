@@ -1,12 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PresignedS3UrlResolver do
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
-  import Absinthe.Resolution.Helpers
-
   alias Sanbase.PresignedS3Url
 
   require Logger
 
-  def get_presigned_s3_url(_root, %{object: object} = args, %{
+  def get_presigned_s3_url(_root, %{object: object}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
     case PresignedS3Url.get_presigned_s3_url(current_user.id, object) do

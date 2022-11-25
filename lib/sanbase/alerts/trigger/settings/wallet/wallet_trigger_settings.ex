@@ -100,8 +100,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
           {:ok, []}
       end
     end)
-    |> Enum.reject(&match?({:error, _}, &1))
-    |> Enum.reject(&match?({:ok, []}, &1))
+    |> Enum.reject(&(match?({:error, _}, &1) or match?({:ok, []}, &1)))
   end
 
   def get_data(

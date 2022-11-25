@@ -1,6 +1,7 @@
-defmodule Sanbase.Model.Project.Roi do
+defmodule Sanbase.Project.Roi do
   alias Sanbase.Repo
-  alias Sanbase.Model.{Project, Ico}
+  alias Sanbase.Project
+  alias Sanbase.Model.Ico
 
   @doc ~S"""
   ROI = current_price*(ico1_tokens + ico2_tokens + ...)/(ico1_tokens*ico1_initial_price + ico2_tokens*ico2_initial_price + ...)

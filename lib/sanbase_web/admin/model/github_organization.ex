@@ -1,14 +1,14 @@
-defmodule SanbaseWeb.ExAdmin.Model.Project.GithubOrganization do
+defmodule SanbaseWeb.ExAdmin.Project.GithubOrganization do
   use ExAdmin.Register
 
-  register_resource Sanbase.Model.Project.GithubOrganization do
+  register_resource Sanbase.Project.GithubOrganization do
     form org do
       inputs do
         input(
           org,
           :project,
           collection:
-            from(p in Sanbase.Model.Project, order_by: p.name)
+            from(p in Sanbase.Project, order_by: p.name)
             |> Sanbase.Repo.all()
         )
 

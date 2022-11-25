@@ -1,10 +1,10 @@
-defmodule Sanbase.Model.ProjectEthAddress do
+defmodule Sanbase.ProjectEthAddress do
   use Ecto.Schema
 
   import Ecto.Changeset
 
   alias __MODULE__
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   require Logger
 

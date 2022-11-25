@@ -27,7 +27,7 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
   import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
 
   alias __MODULE__
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Alert.Type
   alias Sanbase.Cache
   alias Sanbase.Signal

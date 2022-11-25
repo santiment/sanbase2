@@ -177,7 +177,7 @@ defmodule Sanbase.MetricExporter.CSV do
   }
 
   def slugs() do
-    Sanbase.Model.Project.List.projects_slugs(
+    Sanbase.Project.List.projects_slugs(
       order_by_rank: true,
       has_pagination?: true,
       pagination: %{page: 1, page_size: 200}

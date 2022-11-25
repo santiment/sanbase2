@@ -7,7 +7,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, PriceScrapingProgress}
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   @rate_limiting_server :graph_coinmarketcap_rate_limiter
   plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: @rate_limiting_server)

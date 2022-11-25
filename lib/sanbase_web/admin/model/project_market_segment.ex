@@ -1,9 +1,10 @@
-defmodule SanbaseWeb.ExAdmin.Model.ProjectMarketSegment do
+defmodule SanbaseWeb.ExAdmin.ProjectMarketSegment do
   use ExAdmin.Register
 
-  alias Sanbase.Model.{Project, MarketSegment}
+  alias Sanbase.Project
+  alias Sanbase.ModelMarketSegment
 
-  register_resource Sanbase.Model.Project.ProjectMarketSegment do
+  register_resource Sanbase.Project.ProjectMarketSegment do
     show market_segment do
       attributes_table(all: true)
     end

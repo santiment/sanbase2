@@ -1,8 +1,8 @@
 defmodule Sanbase.Repo.Migrations.AddDataToProjectEthAddress do
   use Ecto.Migration
   require Logger
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.ProjectEthAddress
+  alias Sanbase.Project
+  alias Sanbase.ProjectEthAddress
   alias Sanbase.Repo
 
   def make_eth_address({name, address}) do

@@ -1,8 +1,8 @@
-defmodule Sanbase.Model.Project.SocialVolumeQuery do
+defmodule Sanbase.Project.SocialVolumeQuery do
   use Ecto.Schema
 
   import Ecto.Changeset
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   schema "project_social_volume_query" do
     field(:query, :string)
@@ -42,8 +42,8 @@ defmodule Sanbase.Model.Project.SocialVolumeQuery do
   end
 end
 
-defimpl String.Chars, for: Sanbase.Model.Project.SocialVolumeQuery do
-  import Sanbase.Model.Project.SocialVolumeQuery, only: [default_query: 1]
+defimpl String.Chars, for: Sanbase.Project.SocialVolumeQuery do
+  import Sanbase.Project.SocialVolumeQuery, only: [default_query: 1]
 
   def to_string(%{query: nil, project: project}) do
     default_query(project)

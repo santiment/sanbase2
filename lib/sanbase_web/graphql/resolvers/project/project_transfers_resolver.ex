@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransfersResolver do
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
   alias Sanbase.Transfers
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Utils.BlockchainAddressUtils
   alias SanbaseWeb.Graphql.{Cache, SanbaseDataloader}
   alias Sanbase.Clickhouse.{Label, HistoricalBalance.EthSpent}

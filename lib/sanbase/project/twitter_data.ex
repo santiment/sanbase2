@@ -1,5 +1,5 @@
-defmodule Sanbase.Model.Project.TwitterData do
-  alias Sanbase.Model.Project
+defmodule Sanbase.Project.TwitterData do
+  alias Sanbase.Project
 
   def twitter_handle(%Project{twitter_link: nil} = project),
     do: {:error, "Missing twitter link for #{Project.describe(project)}"}

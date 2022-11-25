@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.DataController do
   use SanbaseWeb, :controller
 
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.Project.SocialVolumeQuery
+  alias Sanbase.Project
+  alias Sanbase.Project.SocialVolumeQuery
   require Logger
 
   # In order to access the data, the endpoint needs to know the secret.

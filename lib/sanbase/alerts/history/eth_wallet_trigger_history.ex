@@ -6,7 +6,7 @@ defmodule Sanbase.Alert.History.EthWalletTriggerHistory do
 
   import Sanbase.Alert.OperationEvaluation
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Clickhouse.HistoricalBalance
   alias Sanbase.Alert.Trigger.EthWalletTriggerSettings
 

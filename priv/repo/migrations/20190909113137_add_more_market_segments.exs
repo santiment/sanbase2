@@ -3,7 +3,8 @@ defmodule Sanbase.Repo.Migrations.AddMoreMarketSegments do
 
   import Ecto.Query
 
-  alias Sanbase.Model.{Project, MarketSegment}
+  alias Sanbase.Project
+  alias Sanbase.Model.MarketSegment
 
   def up do
     setup()

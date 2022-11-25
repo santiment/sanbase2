@@ -13,7 +13,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
   alias Sanbase.Repo
   alias Sanbase.DateTimeUtils
-  alias Sanbase.Model.{LatestCoinmarketcapData, Project}
+  alias Sanbase.Project
+  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.ExternalServices.Coinmarketcap.{Ticker, PricePoint}
   alias Sanbase.Price.Validator
   @prices_exporter :prices_exporter

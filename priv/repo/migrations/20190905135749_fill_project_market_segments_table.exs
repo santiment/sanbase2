@@ -1,7 +1,7 @@
 defmodule Sanbase.Repo.Migrations.FillProjectMarketSegmentsTable do
   use Ecto.Migration
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   def up do
     setup()

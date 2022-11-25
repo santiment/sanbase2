@@ -4,8 +4,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   require Logger
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
-
-  alias Sanbase.Model.{Project, LatestCoinmarketcapData}
+  alias Sanbase.Project
+  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Repo
   alias Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo
   alias Sanbase.FileStore

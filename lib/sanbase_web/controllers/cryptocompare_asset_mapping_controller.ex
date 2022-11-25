@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.CryptocompareAssetMappingController do
   use SanbaseWeb, :controller
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   require Logger
 
   def data(conn, _params) do

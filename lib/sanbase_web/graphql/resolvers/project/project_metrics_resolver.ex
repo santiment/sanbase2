@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   import SanbaseWeb.Graphql.Helpers.Utils
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Metric
   alias Sanbase.Cache.RehydratingCache
   alias SanbaseWeb.Graphql.SanbaseDataloader

@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.ImportProjectDescriptions do
 
   import Ecto.Query
   alias Sanbase.Repo
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   def up do
     Path.expand("cmc_name_list.csv", __DIR__)

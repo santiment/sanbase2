@@ -477,7 +477,7 @@ defmodule Sanbase.Metric do
 
         case module.available_slugs(metric) do
           {:ok, slugs} ->
-            supported_slugs = Sanbase.Model.Project.List.projects_slugs()
+            supported_slugs = Sanbase.Project.List.projects_slugs()
 
             slugs =
               MapSet.intersection(MapSet.new(slugs), MapSet.new(supported_slugs))

@@ -10,7 +10,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   require Logger
 
   alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   alias Sanbase.ExternalServices.Coinmarketcap.{
     WebApi,

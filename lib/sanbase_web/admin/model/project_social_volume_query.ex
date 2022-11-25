@@ -1,6 +1,6 @@
-defmodule SanbaseWeb.ExAdmin.Model.Project.SocialVolumeQuery do
+defmodule SanbaseWeb.ExAdmin.Project.SocialVolumeQuery do
   use ExAdmin.Register
 
-  register_resource Sanbase.Model.Project.SocialVolumeQuery do
+  register_resource Sanbase.Project.SocialVolumeQuery do
   end
 end

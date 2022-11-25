@@ -10,7 +10,7 @@ defmodule Sanbase.Alert.History.WalletTriggerHistory do
     import Sanbase.DateTimeUtils, only: [str_to_days: 1]
 
     alias Sanbase.Alert.History.ResultBuilder
-    alias Sanbase.Model.Project
+    alias Sanbase.Project
 
     @historical_days_from 180
     @historical_days_interval "1d"

@@ -191,7 +191,7 @@ defmodule Sanbase.PricePair do
     case Keyword.get(opts, :source) || @default_source do
       "cryptocompare" ->
         slugs =
-          Sanbase.Model.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+          Sanbase.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
           |> Enum.map(&elem(&1, 1))
 
         {:ok, slugs}

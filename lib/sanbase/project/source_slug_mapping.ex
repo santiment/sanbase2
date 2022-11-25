@@ -1,11 +1,11 @@
-defmodule Sanbase.Model.Project.SourceSlugMapping do
+defmodule Sanbase.Project.SourceSlugMapping do
   use Ecto.Schema
 
   import Ecto.Query
   import Ecto.Changeset
 
   alias Sanbase.Repo
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   @table "source_slug_mappings"
 

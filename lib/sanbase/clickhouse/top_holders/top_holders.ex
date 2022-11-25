@@ -7,7 +7,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
 
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Clickhouse.Label
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   import Sanbase.Metric.SqlQuery.Helper
   import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]

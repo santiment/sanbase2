@@ -147,7 +147,7 @@ defmodule Sanbase.Chart.Configuration.SharedAccessToken do
 
   # Returns a list of %{metric: _, slug: _} maps where every element shows
   # which metric and asset is shown on the chart.
-  defp list_to_individual_entries(list, %Sanbase.Model.Project{slug: project_slug}) do
+  defp list_to_individual_entries(list, %Sanbase.Project{slug: project_slug}) do
     # The strings we split by are how the frontend combines multiple metrics
     # or metric of another asset (not the chart configuration's one) into a
     # single string.

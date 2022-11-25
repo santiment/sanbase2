@@ -13,7 +13,7 @@ defmodule Sanbase.WatchlistFunction do
           optional(:all_included_blockchain_addresses) => list(String.t())
         }
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.BlockchainAddress
 
   @impl Ecto.Type

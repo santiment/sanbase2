@@ -11,7 +11,7 @@ defmodule Sanbase.Notifications.Notification do
   alias __MODULE__
 
   alias Sanbase.Notifications.Type
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Repo
 
   @table "notifications"

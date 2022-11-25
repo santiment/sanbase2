@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval, only: [calibrate: 6]
 
   alias Sanbase.Price
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   @total_market "TOTAL_MARKET"
   @total_erc20 "TOTAL_ERC20"

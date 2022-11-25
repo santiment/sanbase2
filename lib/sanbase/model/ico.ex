@@ -6,7 +6,7 @@ defmodule Sanbase.Model.Ico do
 
   alias Sanbase.Repo
   alias Sanbase.Model.Ico
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Model.Currency
   alias Sanbase.Model.IcoCurrency
 

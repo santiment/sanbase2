@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   test "projects by function for traded on exchanges", context do
     [p1, p2, p3, p4] = projects = for _ <- 1..4, do: insert(:random_project)

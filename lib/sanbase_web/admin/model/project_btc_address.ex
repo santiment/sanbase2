@@ -1,12 +1,12 @@
-defmodule SanbaseWeb.ExAdmin.Model.ProjectBtcAddress do
+defmodule SanbaseWeb.ExAdmin.ProjectBtcAddress do
   use ExAdmin.Register
 
   import Ecto.Query, warn: false
 
-  alias Sanbase.Model.ProjectBtcAddress
-  alias Sanbase.Model.Project
+  alias Sanbase.ProjectBtcAddress
+  alias Sanbase.Project
 
-  register_resource Sanbase.Model.ProjectBtcAddress do
+  register_resource Sanbase.ProjectBtcAddress do
     form address do
       inputs do
         input(address, :address)

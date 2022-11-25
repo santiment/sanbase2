@@ -10,7 +10,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
 
   alias __MODULE__
   alias Sanbase.Repo
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.DateTimeUtils
 
   schema "schedule_rescrape_prices" do

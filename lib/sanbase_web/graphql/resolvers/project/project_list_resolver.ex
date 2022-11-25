@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
   require Logger
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   @spec all_projects(any, map, any) :: {:ok, any}
   def all_projects(_parent, args, _resolution) do

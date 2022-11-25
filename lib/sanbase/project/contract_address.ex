@@ -1,9 +1,9 @@
-defmodule Sanbase.Model.Project.ContractAddress do
+defmodule Sanbase.Project.ContractAddress do
   use Ecto.Schema
 
   import Ecto.Changeset
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   schema "contract_addresses" do
     field(:address, :string)

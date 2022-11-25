@@ -1,5 +1,5 @@
 defmodule Sanbase.Mix.Helper.ScheduleRescrapeHelpers do
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.ExternalServices.Coinmarketcap.{ScheduleRescrapePrice, PriceScrapingProgress}
 
   def run(from, to, opts \\ []) do

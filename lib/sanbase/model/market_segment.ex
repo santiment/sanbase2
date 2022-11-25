@@ -2,7 +2,7 @@ defmodule Sanbase.Model.MarketSegment do
   use Ecto.Schema
   import Ecto.Changeset
   alias Sanbase.Model.MarketSegment
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   schema "market_segments" do
     field(:name, :string)

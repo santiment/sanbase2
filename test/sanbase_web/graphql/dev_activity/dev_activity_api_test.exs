@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Clickhouse.Github
 
   setup do

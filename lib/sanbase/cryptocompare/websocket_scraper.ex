@@ -302,7 +302,7 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
 
   defp get_slug_data_map() do
     result =
-      Sanbase.Model.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+      Sanbase.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
       |> Map.new()
 
     {:ok, result}

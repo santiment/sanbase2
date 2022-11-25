@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     TwitterResolver
   }
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl

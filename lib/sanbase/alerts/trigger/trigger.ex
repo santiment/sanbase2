@@ -193,8 +193,8 @@ defmodule Sanbase.Alert.Trigger do
 
     projects =
       case combinator do
-        "and" -> Sanbase.Model.Project.List.by_market_segment_all_of(market_segments)
-        "or" -> Sanbase.Model.Project.List.by_market_segment_any_of(market_segments)
+        "and" -> Sanbase.Project.List.by_market_segment_all_of(market_segments)
+        "or" -> Sanbase.Project.List.by_market_segment_any_of(market_segments)
       end
 
     Enum.map(projects, & &1.slug)

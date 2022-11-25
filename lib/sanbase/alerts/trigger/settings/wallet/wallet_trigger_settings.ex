@@ -16,7 +16,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
   import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
 
   alias __MODULE__
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Alert.Type
 
   @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}

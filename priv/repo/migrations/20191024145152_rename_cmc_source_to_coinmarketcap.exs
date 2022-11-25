@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.RenameCmcSourceToCoinmarketcap do
 
   import Ecto.Query
 
-  alias Sanbase.Model.Project.SourceSlugMapping
+  alias Sanbase.Project.SourceSlugMapping
 
   def up do
     setup()

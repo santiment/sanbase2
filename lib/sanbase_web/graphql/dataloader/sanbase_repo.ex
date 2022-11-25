@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.SanbaseRepo do
   alias Sanbase.Repo
-  alias Sanbase.Model.{ProjectBtcAddress, Project}
+  alias Sanbase.Project
+  alias Sanbase.ProjectBtcAddress
   alias Sanbase.Insight.Post
   alias Sanbase.Timeline.TimelineEvent
 

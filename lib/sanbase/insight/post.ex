@@ -12,7 +12,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Tag
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Insight.{Post, PostImage}
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Metric.MetricPostgresData

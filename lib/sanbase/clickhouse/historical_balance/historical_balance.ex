@@ -7,7 +7,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.BlockchainAddress
   alias Sanbase.Clickhouse.HistoricalBalance.XrpBalance
 

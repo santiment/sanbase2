@@ -7,7 +7,7 @@ defmodule Sanbase.Balance do
     only: [maybe_update_first_balance: 2, maybe_fill_gaps_last_seen_balance: 1]
 
   alias Sanbase.ClickhouseRepo
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   @type slug :: String.t()
   @type address :: String.t()
@@ -545,7 +545,7 @@ defmodule Sanbase.Balance do
   defp hidden_projects_slugs() do
     {:ok, hidden_projects_slugs} =
       Sanbase.Cache.get_or_store(:hidden_projects_slugs, fn ->
-        mapset = Sanbase.Model.Project.List.hidden_projects_slugs() |> MapSet.new()
+        mapset = Sanbase.Project.List.hidden_projects_slugs() |> MapSet.new()
 
         {:ok, mapset}
       end)

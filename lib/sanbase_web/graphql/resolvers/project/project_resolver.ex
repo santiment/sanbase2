@@ -5,10 +5,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Async
 
-  alias Sanbase.Model.{
-    Project,
-    LatestCoinmarketcapData
-  }
+  alias Sanbase.Project
+  alias Sanbase.Model.LatestCoinmarketcapData
 
   alias Sanbase.Insight.Post
   alias SanbaseWeb.Graphql.Cache
@@ -434,7 +432,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  @spec related_posts(Sanbase.Model.Project.t(), any, any) :: any
+  @spec related_posts(Sanbase.Project.t(), any, any) :: any
   def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) when is_nil(ticker),
     do: {:ok, []}
 

@@ -25,14 +25,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
         _ -> []
       end
 
-    with {:ok, selector} <- Sanbase.Model.Project.Selector.args_to_selector(args),
+    with {:ok, selector} <- Sanbase.Project.Selector.args_to_selector(args),
          {:ok, result} <- Exchanges.ExchangeMetric.top_exchanges_by_balance(selector, limit, opts) do
       {:ok, result}
     end
     |> maybe_handle_graphql_error(fn error ->
       handle_graphql_error(
         "Top Exchanges By Balance",
-        Sanbase.Model.Project.Selector.args_to_raw_selector(args),
+        Sanbase.Project.Selector.args_to_raw_selector(args),
         error
       )
     end)

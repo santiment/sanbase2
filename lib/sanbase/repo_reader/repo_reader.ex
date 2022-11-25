@@ -7,7 +7,7 @@ defmodule Sanbase.RepoReader do
   action.
   """
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias __MODULE__.{Repository, Validator}
 
   import __MODULE__.Utils,
@@ -76,7 +76,7 @@ defmodule Sanbase.RepoReader do
          {:ok, projects_map} <- read_files(repo, directories_to_read: changed_directories) do
       slugs = Map.keys(projects_map)
 
-      projects = Sanbase.Model.Project.List.by_slugs(slugs)
+      projects = Project.List.by_slugs(slugs)
 
       update_projects_data(projects, projects_map)
     end

@@ -3,7 +3,7 @@ defmodule :"Elixir.Sanbase.Repo.Migrations.Fix-project-logos" do
 
   import Ecto.Query
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Repo
 
   def up do

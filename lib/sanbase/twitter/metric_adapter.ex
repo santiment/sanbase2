@@ -3,7 +3,7 @@ defmodule Sanbase.Twitter.MetricAdapter do
 
   import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   @aggregations [:last]
 

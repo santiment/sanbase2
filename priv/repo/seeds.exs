@@ -8,9 +8,9 @@
 #     Sanbase.Repo.insert(%Sanbase.SomeSchema{})
 #
 
-alias Sanbase.Model.Project
-alias Sanbase.Model.ProjectEthAddress
-alias Sanbase.Model.ProjectBtcAddress
+alias Sanbase.Project
+alias Sanbase.ProjectEthAddress
+alias Sanbase.ProjectBtcAddress
 alias Sanbase.Model.Infrastructure
 alias Sanbase.Repo
 alias Sanbase.Accounts.{User, EthAccount}

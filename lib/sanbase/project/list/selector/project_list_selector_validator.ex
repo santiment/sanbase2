@@ -1,6 +1,6 @@
-defmodule Sanbase.Model.Project.ListSelector.Validator do
+defmodule Sanbase.Project.ListSelector.Validator do
   alias Sanbase.Utils.ListSelector.Validator
-  alias Sanbase.Model.Project.ListSelector.Transform
+  alias Sanbase.Project.ListSelector.Transform
 
   def valid_selector?(args) do
     args = Sanbase.MapUtils.atomize_keys(args)

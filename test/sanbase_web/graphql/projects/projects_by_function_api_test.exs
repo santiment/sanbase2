@@ -192,7 +192,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
       execute_query(context.conn, query(function))
       |> get_in(["data", "allProjectsByFunction", "projects"])
 
-    projects_count = Sanbase.Model.Project.List.projects_count()
+    projects_count = Sanbase.Project.List.projects_count()
     assert length(result) == projects_count
   end
 
@@ -219,7 +219,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
       execute_query(context.conn, query(function))
       |> get_in(["data", "allProjectsByFunction", "projects"])
 
-    projects_count = Sanbase.Model.Project.List.erc20_projects_count()
+    projects_count = Sanbase.Project.List.erc20_projects_count()
     assert length(result) == projects_count
   end
 

@@ -1,4 +1,4 @@
-defmodule Sanbase.Model.Project do
+defmodule Sanbase.Project do
   use Ecto.Schema
 
   import Ecto.Query
@@ -6,10 +6,9 @@ defmodule Sanbase.Model.Project do
 
   alias __MODULE__
   alias Sanbase.Repo
+  alias Sanbase.{ProjectEthAddress, ProjectBtcAddress}
 
   alias Sanbase.Model.{
-    ProjectEthAddress,
-    ProjectBtcAddress,
     Ico,
     Currency,
     MarketSegment,
@@ -238,7 +237,7 @@ defmodule Sanbase.Model.Project do
 
   def ticker_by_slug(slug) when is_binary(slug) do
     from(
-      p in Sanbase.Model.Project,
+      p in Sanbase.Project,
       where: p.slug == ^slug and not is_nil(p.ticker),
       select: p.ticker
     )
@@ -260,7 +259,7 @@ defmodule Sanbase.Model.Project do
 
   def tickers_by_slug_list(slugs_list) when is_list(slugs_list) do
     from(
-      p in Sanbase.Model.Project,
+      p in Sanbase.Project,
       where: p.slug in ^slugs_list and not is_nil(p.ticker),
       select: {p.ticker, p.slug}
     )

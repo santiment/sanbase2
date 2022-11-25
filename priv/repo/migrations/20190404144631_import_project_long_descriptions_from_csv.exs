@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.ImportProjectLongDescriptionsFromCSV do
 
   import Ecto.Query
   alias Sanbase.Repo
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   def up() do
     Path.expand("project_long_desc.csv", __DIR__)

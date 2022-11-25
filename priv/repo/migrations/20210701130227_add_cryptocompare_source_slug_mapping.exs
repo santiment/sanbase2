@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.AddCryptocompareSourceSlugMapping do
 
   import Ecto.Query
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   def up do
     setup()

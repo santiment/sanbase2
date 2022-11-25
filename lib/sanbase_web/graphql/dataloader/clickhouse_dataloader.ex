@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   alias Sanbase.Clickhouse
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Metric
 
   def data(), do: Dataloader.KV.new(&query/2)

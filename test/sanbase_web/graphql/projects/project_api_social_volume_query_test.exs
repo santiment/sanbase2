@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiSocialVolumeQueryTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   test "default social volume for projects without predefined one", %{conn: conn} do
     p1 = insert(:random_erc20_project)

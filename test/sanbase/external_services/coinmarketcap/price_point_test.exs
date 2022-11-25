@@ -2,7 +2,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
   use Sanbase.DataCase, async: false
 
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   @total_market_slug "TOTAL_MARKET"
 

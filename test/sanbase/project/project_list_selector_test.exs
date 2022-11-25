@@ -1,9 +1,9 @@
-defmodule Sanbase.Model.ProjectListSelectorTest do
+defmodule Sanbase.ProjectListSelectorTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
 
-  alias Sanbase.Model.Project.ListSelector
+  alias Sanbase.Project.ListSelector
 
   describe "validation caughts errors" do
     test "invalid filters_combinator" do

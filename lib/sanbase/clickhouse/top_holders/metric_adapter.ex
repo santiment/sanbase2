@@ -8,7 +8,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
   import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   alias Sanbase.ClickhouseRepo
 

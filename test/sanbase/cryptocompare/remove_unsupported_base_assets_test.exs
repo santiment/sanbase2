@@ -4,7 +4,7 @@ defmodule Sanbase.Cryptocompare.RemoveUnsupportedBaseAssetsTest do
 
   import Sanbase.Factory
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   setup do
     [p1, p2, p3, p4] = projects = for _ <- 1..4, do: insert(:random_erc20_project)

@@ -115,7 +115,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
   end
 
   describe "update" do
-    alias Sanbase.Model.Project
+    alias Sanbase.Project
 
     test "reader webhook with exception", context do
       Sanbase.Mock.prepare_mock(Sanbase.RepoReader.Utils, :clone_repo, fn _, _ ->

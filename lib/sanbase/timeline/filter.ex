@@ -107,7 +107,7 @@ defmodule Sanbase.Timeline.Filter do
 
   defp get_slugs_and_tickers_by_asset_list(assets) do
     project_slugs_and_tickers =
-      from(p in Sanbase.Model.Project, where: p.id in ^assets, select: [p.slug, p.ticker])
+      from(p in Sanbase.Project, where: p.id in ^assets, select: [p.slug, p.ticker])
       |> Repo.all()
 
     slugs = project_slugs_and_tickers |> Enum.map(fn [slug, _] -> slug end)

@@ -1,3 +1,9 @@
+alias Sanbase.{
+  Project,
+  ProjectEthAddress,
+  LatestBtcWalletData
+}
+
 alias Sanbase.Model.{
   Infrastructure,
   MarketSegment,
@@ -6,10 +12,7 @@ alias Sanbase.Model.{
   ProjectBtcAddress,
   Currency,
   Ico,
-  IcoCurrency,
-  ProjectEthAddress,
-  Project,
-  LatestBtcWalletData
+  IcoCurrency
 }
 
 alias Sanbase.Accounts.{
@@ -34,13 +37,11 @@ alias Sanbase.Insight.{
 alias Sanbase.UserList
 alias Sanbase.UserList.ListItem
 
-
 alias Sanbase.Transfers.{
   EthTransfers,
   Erc20Transfers,
   BtcTransfers
 }
-
 
 alias Sanbase.{
   Repo,
@@ -64,7 +65,6 @@ alias Sanbase.ExternalServices.Coinmarketcap.{
   TickerFetcher,
   Ticker
 }
-
 
 alias Sanbase.ExternalServices.Etherscan.Requests, as: EtherscanRequests
 alias Sanbase.ExternalServices.Etherscan.Scraper, as: EtherscanScraper

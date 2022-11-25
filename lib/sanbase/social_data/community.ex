@@ -3,7 +3,7 @@ defmodule Sanbase.SocialData.Community do
 
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)

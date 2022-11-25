@@ -6,11 +6,9 @@ defmodule Sanbase.Factory do
   alias Sanbase.Accounts.{User, UserSettings, Role, UserRole, EmailLoginAttempt}
   alias Sanbase.Insight.Post
   alias Sanbase.Comment
+  alias Sanbase.{Project, ProjectEthAddress, ProjectBtcAddress}
 
   alias Sanbase.Model.{
-    Project,
-    ProjectEthAddress,
-    ProjectBtcAddress,
     Infrastructure,
     MarketSegment,
     LatestCoinmarketcapData,

@@ -1,5 +1,5 @@
 defmodule Sanbase.Alert.Validation.Slug do
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   @doc ~s"""
   Check if there is a project with the same slug as the provided one.

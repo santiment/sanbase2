@@ -9,7 +9,7 @@ defmodule Sanbase.Intercom do
   require Logger
 
   alias Sanbase.Accounts.{User, Statistics}
-  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Billing.{Subscription, Product, Plan}
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Intercom.UserAttributes
@@ -19,7 +19,12 @@ defmodule Sanbase.Intercom do
 
   @intercom_url "https://api.intercom.io/users"
   @user_events_url "https://api.intercom.io/events?type=user"
+  @contacts_url "https://api.intercom.io/contacts"
   @users_page_size 100
+
+  def user_stats(user) do
+    fetch_stats_for_user(user, all_users_stats())
+  end
 
   def sync_sanbase_to_intercom do
     Logger.info("Start sync_sanbase_to_intercom to Intercom")
@@ -82,7 +87,7 @@ defmodule Sanbase.Intercom do
       |> Jason.encode!()
 
     HTTPoison.post!(
-      "https://api.intercom.io/contacts/search",
+      "#{@contacts_url}/search",
       body,
       intercom_headers() ++ [{"Intercom-Version", "2.5"}]
     )
@@ -92,9 +97,34 @@ defmodule Sanbase.Intercom do
     |> List.first()
   end
 
+  def update_user(intercom_id, params) do
+    body_json = Jason.encode!(params)
+
+    HTTPoison.put!(
+      "#{@contacts_url}/#{intercom_id}",
+      body_json,
+      intercom_headers() ++ [{"Intercom-Version", "2.5"}]
+    )
+    |> Map.get(:body)
+    |> Jason.decode!()
+  end
+
+  def get_many_users() do
+    body =
+      HTTPoison.get!(
+        "#{@contacts_url}?per_page=1",
+        intercom_headers() ++ [{"Intercom-Version", "2.5"}]
+      )
+      |> Map.get(:body)
+      |> Jason.decode!()
+
+    # data = body["data"]
+    # starting_after = body["pages"]["starting_after"]
+  end
+
   def all_users_stats do
     %{
-      customer_payment_type_map: customer_payment_type_map(),
+      paid_users: paid_users(),
       triggers_map: Statistics.resource_user_count_map(Sanbase.Alert.UserTrigger),
       insights_map: Statistics.resource_user_count_map(Sanbase.Insight.Post),
       watchlists_map: Statistics.resource_user_count_map(Sanbase.UserList),
@@ -102,11 +132,7 @@ defmodule Sanbase.Intercom do
       users_used_api_list: ApiCallData.users_used_api(),
       users_used_sansheets_list: ApiCallData.users_used_sansheets(),
       api_calls_per_user_count: ApiCallData.api_calls_count_per_user(),
-      user_active_subscriptions_map: Subscription.Stats.user_active_subscriptions_map(),
-      users_with_monitored_watchlist:
-        Sanbase.UserLists.Statistics.users_with_monitored_watchlist()
-        |> Enum.map(fn {%{id: user_id}, count} -> {user_id, count} end)
-        |> Enum.into(%{})
+      all_user_subscriptions_map: Subscription.Stats.all_user_subscriptions_map()
     }
   end
 
@@ -152,81 +178,86 @@ defmodule Sanbase.Intercom do
 
   # helpers
 
-  defp fetch_stats_for_user(
-         %User{
-           id: id,
-           email: email,
-           username: username,
-           san_balance: san_balance,
-           eth_accounts: eth_accounts,
-           stripe_customer_id: stripe_customer_id,
-           inserted_at: inserted_at
-         } = user,
-         %{
-           triggers_map: triggers_map,
-           insights_map: insights_map,
-           watchlists_map: watchlists_map,
-           screeners_map: screeners_map,
-           users_used_api_list: users_used_api_list,
-           users_used_sansheets_list: users_used_sansheets_list,
-           api_calls_per_user_count: api_calls_per_user_count,
-           users_with_monitored_watchlist: users_with_monitored_watchlist,
-           customer_payment_type_map: customer_payment_type_map,
-           user_active_subscriptions_map: user_active_subscriptions_map
-         }
-       ) do
-    {sanbase_subscription_current_status, sanbase_trial_created_at} =
-      fetch_sanbase_subscription_data(stripe_customer_id)
-
-    user_paid_after_trial =
-      sanbase_trial_created_at && sanbase_subscription_current_status == "active"
-
-    address_balance_map =
-      eth_accounts
-      |> Enum.map(fn eth_account ->
-        case EthAccount.san_balance(eth_account) do
-          :error -> "#{eth_account.address}=0.0"
-          balance -> "#{eth_account.address}=#{Sanbase.Math.to_float(balance)}"
-        end
-      end)
-      |> Enum.join(" | ")
-
-    signed_up_at =
-      case user.is_registered do
-        true -> DateTime.from_naive!(inserted_at, "Etc/UTC") |> DateTime.to_unix()
-        false -> 0
-      end
+  defp fetch_stats_for_user(%User{id: id} = user, data) do
+    user_paid_with = if id in data.paid_users, do: "fiat", else: "not_paid"
+    subs_data = sanbase_subs_data(data.all_user_subscriptions_map[id])
 
     stats = %{
       user_id: id,
-      email: email,
-      name: username,
-      signed_up_at: signed_up_at,
+      email: user.email,
+      name: user.username,
+      signed_up_at: signed_up_at(user),
       custom_attributes:
         %{
-          all_watchlists_count: Map.get(watchlists_map, id, 0),
-          all_triggers_count: Map.get(triggers_map, id, 0),
-          all_insights_count: Map.get(insights_map, id, 0),
-          all_screeners_count: Map.get(screeners_map, id, 0),
-          staked_san_tokens: Sanbase.Math.to_float(san_balance),
-          address_balance_map: address_balance_map,
-          sanbase_subscription_current_status: sanbase_subscription_current_status,
-          sanbase_trial_created_at: sanbase_trial_created_at,
-          user_paid_after_trial: user_paid_after_trial,
-          user_paid_with: Map.get(customer_payment_type_map, stripe_customer_id, "not_paid"),
-          used_sanapi: id in users_used_api_list,
-          used_sansheets: id in users_used_sansheets_list,
-          api_calls_count: Map.get(api_calls_per_user_count, id, 0),
-          weekly_report_watchlist_count: Map.get(users_with_monitored_watchlist, id, 0),
-          active_subscriptions: Map.get(user_active_subscriptions_map, id, "")
+          all_watchlists_count: Map.get(data.watchlists_map, id, 0),
+          all_triggers_count: Map.get(data.triggers_map, id, 0),
+          all_insights_count: Map.get(data.insights_map, id, 0),
+          all_screeners_count: Map.get(data.screeners_map, id, 0),
+          staked_san_tokens: Sanbase.Math.to_float(user.san_balance),
+          address_balance_map: address_balance_map(user.eth_accounts),
+          used_sanapi: id in data.users_used_api_list,
+          used_sansheets: id in data.users_used_sansheets_list,
+          api_calls_count: Map.get(data.api_calls_per_user_count, id, 0),
+          weekly_report_watchlist_count: 0,
+          sanbase_subscription_current_status: subs_data.sanbase_subscription_current_status,
+          sanbase_trial_created_at: subs_data.sanbase_trial_created_at,
+          user_paid_after_trial: subs_data.user_paid_after_trial,
+          active_subscriptions: subs_data.active_subscriptions,
+          user_paid_with: user_paid_with
         }
         |> Map.merge(triggers_type_count(user))
     }
 
     # email must be dropped if nil so user still can be created in Intercom if doesn't exist
-    stats = if email, do: stats, else: Map.delete(stats, :email)
+    stats = if user.email, do: stats, else: Map.delete(stats, :email)
 
     stats
+  end
+
+  def sanbase_subs_data(user_sub_data) do
+    sanbase_subscription_current_status =
+      Enum.filter(user_sub_data, &(&1.product == 2))
+      |> Enum.max_by(& &1.id, fn -> %{} end)
+      |> Map.get(:status, nil)
+
+    sanbase_trial_created_at =
+      Enum.filter(user_sub_data, &(&1.product == 2))
+      |> Enum.min_by(& &1.id, fn -> %{} end)
+      |> case do
+        %{trial_end: trial_end} when not is_nil(trial_end) -> Timex.shift(trial_end, days: -14)
+        %{} -> nil
+      end
+
+    user_paid_after_trial =
+      sanbase_trial_created_at && sanbase_subscription_current_status == "active"
+
+    active_subscriptions =
+      Enum.map(user_sub_data, &Plan.plan_full_name(&1.plan)) |> Enum.join(", ")
+
+    %{
+      sanbase_subscription_current_status: sanbase_subscription_current_status,
+      sanbase_trial_created_at: sanbase_trial_created_at,
+      user_paid_after_trial: user_paid_after_trial,
+      active_subscriptions: active_subscriptions
+    }
+  end
+
+  defp address_balance_map(eth_accounts) do
+    eth_accounts
+    |> Enum.map(fn eth_account ->
+      case EthAccount.san_balance(eth_account) do
+        :error -> "#{eth_account.address}=0.0"
+        balance -> "#{eth_account.address}=#{Sanbase.Math.to_float(balance)}"
+      end
+    end)
+    |> Enum.join(" | ")
+  end
+
+  def signed_up_at(user) do
+    case user.is_registered do
+      true -> DateTime.from_naive!(user.inserted_at, "Etc/UTC") |> DateTime.to_unix()
+      false -> 0
+    end
   end
 
   defp triggers_type_count(user) do
@@ -235,29 +266,6 @@ defmodule Sanbase.Intercom do
     |> Enum.group_by(fn ut -> ut.trigger.settings.type end)
     |> Enum.map(fn {type, list} -> {"trigger_" <> type, length(list)} end)
     |> Enum.into(%{})
-  end
-
-  defp fetch_sanbase_subscription_data(nil) do
-    {nil, nil}
-  end
-
-  defp fetch_sanbase_subscription_data(stripe_customer_id) do
-    sanbase_product_stripe_id = Product.by_id(Product.product_sanbase()).stripe_id
-
-    Stripe.Customer.retrieve(stripe_customer_id)
-    |> case do
-      {:ok, %{subscriptions: %{object: "list", data: data}}} when is_list(data) ->
-        data
-        |> Enum.filter(&(&1.plan.product == sanbase_product_stripe_id))
-        |> Enum.max_by(& &1.created, fn -> nil end)
-        |> case do
-          nil -> {nil, nil}
-          subscription -> {subscription.status, format_dt(subscription.trial_start)}
-        end
-
-      _ ->
-        {nil, nil}
-    end
   end
 
   defp send_user_stats_to_intercom(stats) do
@@ -374,54 +382,22 @@ defmodule Sanbase.Intercom do
     end
   end
 
-  # %{"cus_HQ1vCgehxitRJU" => "fiat" | "san", ...}
-  def customer_payment_type_map() do
-    do_list([], nil)
-    |> filter_only_payments()
-    |> classify_payments_by_type()
-  end
+  def paid_users do
+    query = """
+    SELECT distinct(user_id)
+    FROM (
+      SELECT dt, user_id, toString(JSONExtractRaw(data, 'status')) AS status,
+      FROM sanbase_stripe_transactions
+      WHERE status = '"succeeded"'
+    )
+    GROUP BY user_id;
+    """
 
-  defp filter_only_payments(invoices) do
-    invoices
-    |> Enum.filter(&(&1.status == "paid" && &1.total > 0))
-    |> Enum.dedup_by(fn %{customer: customer} -> customer end)
-  end
-
-  def classify_payments_by_type(invoices) do
-    Enum.reduce(invoices, %{}, fn invoice, acc ->
-      cond do
-        invoice.starting_balance == 0 ->
-          Map.put(acc, invoice.customer, "fiat")
-
-        invoice.total == abs(invoice.starting_balance) ->
-          Map.put(acc, invoice.customer, "san/crypto")
-
-        true ->
-          acc
-      end
-    end)
-  end
-
-  def do_list([], nil) do
-    list = list_invoices(%{limit: 100})
-    do_list(list, Enum.at(list, -1) |> Map.get(:id))
-  end
-
-  def do_list(acc, next) do
-    case list_invoices(%{limit: 100, starting_after: next}) do
-      [] -> acc
-      list -> do_list(acc ++ list, Enum.at(list, -1) |> Map.get(:id))
+    Sanbase.ClickhouseRepo.query_transform(query, [], fn [user_id] -> user_id end)
+    |> case do
+      {:ok, result} -> result
+      {:error, _} -> []
     end
-  end
-
-  defp list_invoices(params) do
-    Stripe.Invoice.list(params)
-    |> elem(1)
-    |> Map.get(:data, [])
-    |> Enum.map(fn invoice ->
-      Map.split(invoice, [:id, :customer, :total, :starting_balance, :status, :created])
-      |> elem(0)
-    end)
   end
 
   defp format_dt(unix_timestmap) when is_integer(unix_timestmap) do

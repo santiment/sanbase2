@@ -11,12 +11,17 @@ defmodule Sanbase.RepoReader do
   alias __MODULE__.{Repository, Validator}
 
   import __MODULE__.Utils,
-    only: [clone_repo: 2, read_files: 2, files_to_directories: 1]
+    only: [
+      clone_repo: 2,
+      read_files: 2,
+      files_to_directories: 1,
+      repository: 0,
+      repository_url: 0
+    ]
 
   require Logger
-
-  @repository "projects_data"
-  @repository_url "https://github.com/santiment/#{@repository}.git"
+  @repository repository()
+  @repository_url repository_url()
 
   @doc ~s"""
   Validate the changes in a PR opened in #{@repository_url}

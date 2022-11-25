@@ -11,7 +11,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
   alias Sanbase.SocialData.SocialHelper
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   @aggregations [:sum]
 

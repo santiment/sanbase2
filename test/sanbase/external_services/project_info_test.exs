@@ -5,7 +5,8 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   import Sanbase.Factory
 
   alias Sanbase.ExternalServices.ProjectInfo
-  alias Sanbase.Model.{Project, Ico}
+  alias Sanbase.Project
+  alias Sanbase.Model.Ico
   alias Sanbase.Repo
   alias Sanbase.Tag
 

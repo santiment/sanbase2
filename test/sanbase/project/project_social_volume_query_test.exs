@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiSocialVolumeQuery do
 
   import Sanbase.Factory
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   test "default query contains lowercased project name, slug and ticker" do
     p1 = insert(:random_erc20_project)

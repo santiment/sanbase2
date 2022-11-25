@@ -4,7 +4,7 @@ defmodule Sanbase.Market do
   import Ecto.Query
 
   alias Sanbase.Repo
-  alias Sanbase.Model.{Project, Project.SourceSlugMapping}
+  alias Sanbase.{Project, Project.SourceSlugMapping}
 
   schema "asset_exchange_pairs" do
     field(:base_asset, :string)

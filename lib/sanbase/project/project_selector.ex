@@ -1,4 +1,4 @@
-defmodule Sanbase.Model.Project.Selector do
+defmodule Sanbase.Project.Selector do
   @moduledoc """
   Module that is used for transforming selector from user-facing facing to the
   internal format.
@@ -66,7 +66,7 @@ defmodule Sanbase.Model.Project.Selector do
 
   defp transform_selector(%{market_segments: market_segments} = selector) do
     slugs =
-      Sanbase.Model.Project.List.by_market_segment_all_of(market_segments)
+      Sanbase.Project.List.by_market_segment_all_of(market_segments)
       |> Enum.map(& &1.slug)
 
     {:ok, Map.put(selector, :slug, slugs)}
@@ -74,7 +74,7 @@ defmodule Sanbase.Model.Project.Selector do
 
   defp transform_selector(%{contract_address: contract_address} = selector) do
     slugs =
-      Sanbase.Model.Project.List.by_contracts(List.wrap(contract_address))
+      Sanbase.Project.List.by_contracts(List.wrap(contract_address))
       |> Enum.map(& &1.slug)
 
     {:ok, Map.put(selector, :slug, slugs)}

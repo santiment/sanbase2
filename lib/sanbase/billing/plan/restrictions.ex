@@ -54,7 +54,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     signals = Sanbase.Signal.available_signals() |> Enum.map(&{:signal, &1})
 
     queries =
-      Sanbase.Model.Project.AvailableQueries.all_atom_names()
+      Sanbase.Project.AvailableQueries.all_atom_names()
       |> Enum.map(&{:query, &1})
 
     # elements are {:metric, <string>} or {:query, <atom>} or {:signal, <string>}

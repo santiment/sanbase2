@@ -6,7 +6,7 @@ defmodule Sanbase.SocialData.SocialVolume do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.SocialData.SocialHelper
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Clickhouse.NftTrade
 
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)

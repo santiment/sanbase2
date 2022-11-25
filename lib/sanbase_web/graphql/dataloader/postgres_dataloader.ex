@@ -172,7 +172,7 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:project_by_slug, slugs) do
     slugs
     |> Enum.to_list()
-    |> Sanbase.Model.Project.List.by_slugs()
+    |> Sanbase.Project.List.by_slugs()
     |> Enum.into(%{}, fn %{slug: slug} = project -> {slug, project} end)
   end
 

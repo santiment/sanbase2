@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.ExAdmin.Model.Infrastructure do
   use ExAdmin.Register
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   register_resource Sanbase.Model.Infrastructure do
     show infr do

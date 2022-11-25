@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   import SanbaseWeb.Graphql.Helpers.Async
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   def twitter_data(_root, %{slug: slug}, _resolution) do
     calculate_twitter_data(slug)

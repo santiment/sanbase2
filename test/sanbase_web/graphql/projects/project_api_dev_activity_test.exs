@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiDevActivityTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Clickhouse.Github
 
   setup do

@@ -176,7 +176,7 @@ defmodule Sanbase.Clickhouse.Label do
   def slug_to_blockchain(nil), do: "ethereum"
 
   def slug_to_blockchain(slug),
-    do: Sanbase.Model.Project.slug_to_blockchain(slug)
+    do: Sanbase.Project.slug_to_blockchain(slug)
 
   def addresses_by_label_fqns_query(label_fqns, nil = _blockchain) do
     query = """

@@ -5,7 +5,7 @@ defmodule Sanbase.UserList.ListItem do
 
   alias Sanbase.Repo
   alias Sanbase.UserList
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
 
   schema "list_items" do

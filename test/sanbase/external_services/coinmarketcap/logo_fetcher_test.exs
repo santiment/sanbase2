@@ -6,8 +6,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
   import ExUnit.CaptureLog
 
   alias Sanbase.Repo
+  alias Sanbase.Project
   alias Sanbase.ExternalServices.Coinmarketcap.LogoFetcher
-  alias Sanbase.Model.{Project, LatestCoinmarketcapData}
+  alias Sanbase.Model.LatestCoinmarketcapData
 
   require Sanbase.Utils.Config, as: Config
 

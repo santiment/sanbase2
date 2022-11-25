@@ -1,8 +1,9 @@
-defmodule Sanbase.Model.Project.FundsRaised do
+defmodule Sanbase.Project.FundsRaised do
   import Ecto.Query
 
   alias Sanbase.Repo
-  alias Sanbase.Model.{Project, Ico, IcoCurrency, Currency}
+  alias Sanbase.Project
+  alias Sanbase.Model.{Ico, IcoCurrency, Currency}
 
   def ico_price(%Project{} = project) do
     ico_with_max_price =
@@ -24,7 +25,7 @@ defmodule Sanbase.Model.Project.FundsRaised do
     end
   end
 
-  @spec initial_ico(Sanbase.Model.Project.t()) :: %Ico{} | nil
+  @spec initial_ico(Sanbase.Project.t()) :: %Ico{} | nil
   def initial_ico(%Project{id: id}) do
     Ico
     |> where([i], i.project_id == ^id)

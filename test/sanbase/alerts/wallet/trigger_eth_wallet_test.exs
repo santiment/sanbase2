@@ -4,7 +4,7 @@ defmodule Sanbase.Alert.EthWalletTriggerTest do
   import Mock
   import Sanbase.Factory
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   alias Sanbase.Alert.{
     UserTrigger,

@@ -7,6 +7,6 @@ defmodule Sanbase.DirectAvailableSlugs do
 
   @impl Sanbase.AvailableSlugs.Behaviour
   def valid_slug?(slug) do
-    Sanbase.Model.Project.id_by_slug(slug) != nil
+    Sanbase.Project.id_by_slug(slug) != nil
   end
 end

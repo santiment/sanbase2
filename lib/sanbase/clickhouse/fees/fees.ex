@@ -1,7 +1,7 @@
 defmodule Sanbase.Clickhouse.Fees do
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.ClickhouseRepo
 
   def eth_fees_distribution(from, to, limit) do

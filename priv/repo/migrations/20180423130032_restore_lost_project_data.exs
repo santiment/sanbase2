@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.RestoreLostProjectData do
 
   import Ecto.Query
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Repo
 
   require Logger

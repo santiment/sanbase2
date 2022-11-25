@@ -14,7 +14,7 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
 
   alias __MODULE__
   alias Sanbase.Alert.Type
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   @trigger_type "screener_signal"
   @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}

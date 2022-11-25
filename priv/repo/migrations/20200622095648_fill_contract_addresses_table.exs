@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.FillContractAddressesTable do
 
   import Ecto.Query
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   def up do
     setup()

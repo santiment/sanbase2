@@ -1,7 +1,8 @@
-defmodule Sanbase.Model.ProjectBtcAddress do
+defmodule Sanbase.ProjectBtcAddress do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Sanbase.Model.{ProjectBtcAddress, Project, LatestBtcWalletData}
+
+  alias Sanbase.{Project, ProjectBtcAddress, LatestBtcWalletData}
 
   schema "project_btc_address" do
     field(:address, :string)

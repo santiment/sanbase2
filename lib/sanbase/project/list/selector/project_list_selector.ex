@@ -1,10 +1,10 @@
-defmodule Sanbase.Model.Project.ListSelector do
+defmodule Sanbase.Project.ListSelector do
   @moduledoc ~s"""
   Module that resolved a selector object to a list of projects.
 
 
   """
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Utils.ListSelector.Transform
 
   # Important note:

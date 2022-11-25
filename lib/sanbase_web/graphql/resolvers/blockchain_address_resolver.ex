@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
 
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
-  import Sanbase.Model.Project, only: [infrastructure_to_blockchain: 1]
+  import Sanbase.Project, only: [infrastructure_to_blockchain: 1]
 
   import Sanbase.Utils.ErrorHandling,
     only: [
@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   alias Sanbase.Utils.BlockchainAddressUtils
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Clickhouse.Label
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Transfers
 
   @recent_transactions_type_map %{

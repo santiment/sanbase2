@@ -6,7 +6,7 @@ defmodule Sanbase.Price.Validator.Node do
   use GenServer
   @max_prices 6
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Price
 
   require Sanbase.Utils.Config, as: Config

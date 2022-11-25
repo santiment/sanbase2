@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
 
   alias Sanbase.Accounts.User
   alias Sanbase.UserList
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.SocialData.TrendingWords
 
   alias SanbaseWeb.Graphql.Helpers.Utils

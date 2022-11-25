@@ -1,5 +1,5 @@
 defmodule Sanbase.Cryptocompare.CCCAGGPairData do
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   require Logger
 

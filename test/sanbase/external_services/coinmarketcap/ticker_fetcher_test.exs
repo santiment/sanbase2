@@ -5,7 +5,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
 
   alias Sanbase.ExternalServices.Coinmarketcap.TickerFetcher
   alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   @topic "asset_prices"
 

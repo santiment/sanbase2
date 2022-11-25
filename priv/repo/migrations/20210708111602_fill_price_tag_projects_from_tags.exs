@@ -14,7 +14,7 @@ defmodule Sanbase.Repo.Migrations.FillPriceTagProjectsFromTags do
     first_tags = posts |> Enum.map(fn %{tags: [first_tag | _]} -> first_tag.name end)
 
     ticker_to_project_map =
-      Sanbase.Model.Project.List.by_field(first_tags, :ticker)
+      Sanbase.Project.List.by_field(first_tags, :ticker)
       |> Map.new(fn %{ticker: ticker} = project -> {ticker, project} end)
 
     posts
@@ -25,7 +25,7 @@ defmodule Sanbase.Repo.Migrations.FillPriceTagProjectsFromTags do
         first_tag = List.first(post.tags) |> Map.get(:name)
 
         case Map.get(ticker_to_project_map, first_tag) do
-          %Sanbase.Model.Project{} = project ->
+          %Sanbase.Project{} = project ->
             changeset =
               post
               |> Sanbase.Insight.Post.update_changeset(%{price_chart_project_id: project.id})

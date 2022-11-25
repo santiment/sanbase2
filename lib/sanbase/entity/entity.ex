@@ -807,7 +807,7 @@ defmodule Sanbase.Entity do
     opts =
       case Keyword.get(opts, :filter) do
         %{slugs: slugs} = filter ->
-          ids = Sanbase.Model.Project.List.ids_by_slugs(slugs, [])
+          ids = Sanbase.Project.List.ids_by_slugs(slugs, [])
           filter = Map.put(filter, :project_ids, ids)
           Keyword.put(opts, :filter, filter)
 

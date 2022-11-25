@@ -39,7 +39,8 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.InternalServices.{EthNode, Ethauth}
   alias Sanbase.Repo
-  alias Sanbase.Model.{Project, Ico}
+  alias Sanbase.Project
+  alias Sanbase.Model.Ico
   alias Sanbase.Tag
 
   require Logger

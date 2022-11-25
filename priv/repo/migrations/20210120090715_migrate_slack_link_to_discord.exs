@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.MigrateSlackLinkToDiscord do
 
   import Ecto.Changeset
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Repo
 
   def up do

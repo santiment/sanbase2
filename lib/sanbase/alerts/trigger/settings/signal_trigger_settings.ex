@@ -11,7 +11,7 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
   import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
 
   alias __MODULE__
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Alert.Type
   alias Sanbase.Cache
   alias Sanbase.Signal
@@ -90,9 +90,21 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
 
     Cache.get_or_store(cache_key, fn ->
       with {:ok, %{^slug => value1}} <-
-             Signal.aggregated_timeseries_data(signal, selector, first_start, first_end, []),
+             Signal.aggregated_timeseries_data(
+               signal,
+               selector,
+               first_start,
+               first_end,
+               []
+             ),
            {:ok, %{^slug => value2}} <-
-             Signal.aggregated_timeseries_data(signal, selector, second_start, second_end, []) do
+             Signal.aggregated_timeseries_data(
+               signal,
+               selector,
+               second_start,
+               second_end,
+               []
+             ) do
         [
           %{datetime: first_start, value: value1},
           %{datetime: second_start, value: value2}

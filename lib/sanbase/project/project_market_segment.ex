@@ -1,9 +1,9 @@
-defmodule Sanbase.Model.Project.ProjectMarketSegment do
+defmodule Sanbase.Project.ProjectMarketSegment do
   use Ecto.Schema
 
   import Ecto.Changeset
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Model.MarketSegment
 
   schema "project_market_segments" do

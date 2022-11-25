@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
 
   import SanbaseWeb.Graphql.Helpers.{Utils, CalibrateInterval}
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
-  import Sanbase.Model.Project.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
+  import Sanbase.Project.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
 
   import Sanbase.Utils.ErrorHandling,
     only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]

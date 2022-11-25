@@ -74,7 +74,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
   defimpl Sanbase.Alert.Settings, for: TrendingWordsTriggerSettings do
     @default_explanation "A coin's appearance in trending words may suggest an increased risk of local tops and short-term price correction."
 
-    alias Sanbase.Model.Project
+    alias Sanbase.Project
 
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 

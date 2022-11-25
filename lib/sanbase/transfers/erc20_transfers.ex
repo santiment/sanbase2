@@ -6,7 +6,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   import Sanbase.Utils.Transform
 
   alias Sanbase.ClickhouseRepo
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   require Sanbase.Utils.Config, as: Config
   defp dt_ordered_table(), do: Config.get(:dt_ordered_table)

@@ -1,7 +1,7 @@
-defmodule Sanbase.Model.ProjectListTest do
+defmodule Sanbase.ProjectListTest do
   use Sanbase.DataCase, async: false
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   import Sanbase.Factory
   import ExUnit.CaptureLog
@@ -238,6 +238,6 @@ defmodule Sanbase.Model.ProjectListTest do
     )
     |> Sanbase.Repo.insert_or_update()
 
-    Sanbase.Repo.get!(Sanbase.Model.Project, project.id)
+    Sanbase.Repo.get!(Sanbase.Project, project.id)
   end
 end

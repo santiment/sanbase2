@@ -1,4 +1,4 @@
-defmodule Sanbase.Model.Project.GithubOrganization do
+defmodule Sanbase.Project.GithubOrganization do
   @moduledoc ~s"""
   Module for managing the "github_organziations" postgres table
 
@@ -12,7 +12,7 @@ defmodule Sanbase.Model.Project.GithubOrganization do
   import Ecto.Query
 
   alias Sanbase.Repo
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   schema "github_organizations" do
     field(:organization, :string)

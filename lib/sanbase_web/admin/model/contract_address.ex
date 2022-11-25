@@ -1,9 +1,9 @@
-defmodule SanbaseWeb.ExAdmin.Model.Project.ContractAddress do
+defmodule SanbaseWeb.ExAdmin.Project.ContractAddress do
   use ExAdmin.Register
 
   import Ecto.Query
 
-  register_resource Sanbase.Model.Project.ContractAddress do
+  register_resource Sanbase.Project.ContractAddress do
     controller do
       after_filter(:set_defaults, only: [:new])
     end

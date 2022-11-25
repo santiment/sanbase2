@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   import Sanbase.Utils.ErrorHandling,
     only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]
 
-  import Sanbase.Model.Project.Selector,
+  import Sanbase.Project.Selector,
     only: [args_to_selector: 1, args_to_raw_selector: 1]
 
   import SanbaseWeb.Graphql.Helpers.Utils
@@ -77,7 +77,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def get_available_projects(_root, _args, %{source: %{metric: metric}}) do
     with {:ok, slugs} <- Metric.available_slugs(metric) do
-      {:ok, Sanbase.Model.Project.List.by_slugs(slugs)}
+      {:ok, Sanbase.Project.List.by_slugs(slugs)}
     end
   end
 

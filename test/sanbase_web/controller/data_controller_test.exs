@@ -3,7 +3,7 @@ defmodule SanbaseWeb.DataControllerTest do
 
   import Sanbase.Factory
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Repo
   alias Sanbase.Model.LatestCoinmarketcapData
 

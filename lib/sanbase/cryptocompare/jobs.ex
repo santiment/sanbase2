@@ -1,5 +1,5 @@
 defmodule Sanbase.Cryptocompare.Jobs do
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   # Execute the function until the moved rows are 0 or up to 100 iterations.
   # The iterations are needed to avoid an infinite loop. If there is a task that

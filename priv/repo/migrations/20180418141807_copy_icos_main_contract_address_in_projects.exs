@@ -3,7 +3,8 @@ defmodule Sanbase.Repo.Migrations.CopyIcosMainContractAddressInProjects do
 
   import Ecto.Query
 
-  alias Sanbase.Model.{Ico, Project}
+  alias Sanbase.Project
+  alias Sanbase.Model.Ico
   alias Sanbase.Repo
 
   def change do

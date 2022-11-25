@@ -55,7 +55,7 @@ defmodule Sanbase.AvailableSlugs do
 
     slugs =
       @non_project_slugs ++
-        Sanbase.Model.Project.List.projects_slugs(include_hidden: true)
+        Sanbase.Project.List.projects_slugs(include_hidden: true)
 
     ets_slugs = :ets.tab2list(ets_table) |> Enum.map(&elem(&1, 0))
     slugs_to_remove = ets_slugs -- slugs

@@ -13,7 +13,7 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressLabelChange do
   end
 
   def label_changes(address, infrastructure, from, to) do
-    blockchain = Sanbase.Model.Project.infrastructure_to_blockchain(infrastructure)
+    blockchain = Sanbase.Project.infrastructure_to_blockchain(infrastructure)
     address = Sanbase.BlockchainAddress.to_internal_format(address)
 
     {query, args} = label_changes_query(address, blockchain, from, to)

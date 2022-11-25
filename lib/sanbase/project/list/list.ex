@@ -1,4 +1,4 @@
-defmodule Sanbase.Model.Project.List do
+defmodule Sanbase.Project.List do
   @preloads [
     :eth_addresses,
     :latest_coinmarketcap_data,
@@ -29,7 +29,7 @@ defmodule Sanbase.Model.Project.List do
 
   alias Sanbase.Repo
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   defguard is_valid_volume(volume) when is_number(volume) and volume >= 0
 

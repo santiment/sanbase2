@@ -17,7 +17,7 @@ defmodule Sanbase.Price do
       exec_timeseries_data_query: 2
     ]
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.ClickhouseRepo
 
   @default_source "coinmarketcap"
@@ -551,7 +551,7 @@ defmodule Sanbase.Price do
   def available_slugs(opts) do
     with {:ok, source} <- opts_to_source(opts) do
       slugs =
-        Sanbase.Model.Project.List.projects_with_source(source)
+        Sanbase.Project.List.projects_with_source(source)
         |> Enum.map(& &1.slug)
 
       {:ok, slugs}

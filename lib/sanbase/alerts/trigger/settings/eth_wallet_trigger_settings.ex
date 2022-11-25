@@ -19,7 +19,7 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
 
   alias __MODULE__
   alias Sanbase.Alert.Type
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Clickhouse.HistoricalBalance
 
   @trigger_type "eth_wallet"

@@ -6,7 +6,7 @@ defmodule Sanbase.Twitter.FollowersWorkerTest do
   import Sanbase.DateTimeUtils, only: [generate_dates_inclusive: 2, date_to_datetime: 1]
 
   alias Sanbase.Twitter
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   setup do
     Sanbase.InMemoryKafka.Producer.clear_state()

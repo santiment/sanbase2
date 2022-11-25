@@ -1,4 +1,4 @@
-defmodule Sanbase.Model.Project.ListSelector.Transform do
+defmodule Sanbase.Project.ListSelector.Transform do
   import Sanbase.DateTimeUtils
 
   def args_to_filters_combinator(args) do

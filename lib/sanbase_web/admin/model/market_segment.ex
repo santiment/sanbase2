@@ -20,13 +20,13 @@ defmodule SanbaseWeb.ExAdmin.Model.MarketSegment do
   def projects_with_market_segment(ms) do
     project_ids =
       from(
-        ms in Sanbase.Model.Project.ProjectMarketSegment,
+        ms in Sanbase.Project.ProjectMarketSegment,
         where: ms.market_segment_id == ^ms.id,
         select: ms.project_id
       )
       |> Sanbase.Repo.all()
 
-    from(p in Sanbase.Model.Project, where: p.id in ^project_ids)
+    from(p in Sanbase.Project, where: p.id in ^project_ids)
     |> Sanbase.Repo.all()
   end
 end

@@ -1,5 +1,5 @@
 defmodule Sanbase.Transfers do
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   alias Sanbase.Transfers.{EthTransfers, Erc20Transfers, BtcTransfers}
 

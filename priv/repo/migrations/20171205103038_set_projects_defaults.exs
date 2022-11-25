@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.SetProjectsDefaults do
   import Ecto.Query, warn: false
 
   alias Sanbase.Repo
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Model.Infrastructure
 
   def change do

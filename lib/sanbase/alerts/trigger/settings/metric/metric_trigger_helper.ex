@@ -195,7 +195,7 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
 
   defp template_kv(values, settings) do
     %{identifier: slug} = values
-    project = Sanbase.Model.Project.by_slug(slug)
+    project = Sanbase.Project.by_slug(slug)
 
     opts =
       if String.contains?(settings.metric, "price_usd"),

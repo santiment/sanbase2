@@ -133,7 +133,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
   end
 
   defp get_project_id_from_args(%{project_slug: slug}) do
-    {:ok, Sanbase.Model.Project.id_by_slug(slug)}
+    {:ok, Sanbase.Project.id_by_slug(slug)}
   end
 
   defp get_project_id_from_args(_), do: {:ok, nil}

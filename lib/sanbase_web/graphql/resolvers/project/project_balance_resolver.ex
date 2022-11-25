@@ -3,10 +3,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
 
   import Absinthe.Resolution.Helpers
 
-  alias Sanbase.Model.{
-    Project,
-    ProjectEthAddress
-  }
+  alias Sanbase.Project
+  alias Sanbase.ProjectEthAddress
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
 

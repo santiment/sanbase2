@@ -5,7 +5,7 @@ defmodule SanbaseWeb.ExAdmin.Model.Ico do
 
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Currency
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   register_resource Sanbase.Model.Ico do
     query do

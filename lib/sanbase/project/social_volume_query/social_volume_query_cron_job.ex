@@ -1,6 +1,6 @@
-defmodule Sanbase.Model.Project.SocialVolumeQuery.CronJob do
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.Project.SocialVolumeQuery
+defmodule Sanbase.Project.SocialVolumeQuery.CronJob do
+  alias Sanbase.Project
+  alias Sanbase.Project.SocialVolumeQuery
 
   def run() do
     project_id_to_autogen_query_map = project_id_to_autogen_query_map()

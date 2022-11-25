@@ -1,7 +1,7 @@
 defmodule Sanbase.Repo.Migrations.LowercaseProjectAddresses do
   use Ecto.Migration
 
-  alias Sanbase.Model.{ProjectEthAddress, ProjectBtcAddress}
+  alias Sanbase.{ProjectEthAddress, ProjectBtcAddress}
   alias Sanbase.Repo
 
   def change do

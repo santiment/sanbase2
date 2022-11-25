@@ -1,5 +1,5 @@
 defmodule Sanbase.Mix.GenerateProjectsData do
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   import Ecto.Query
   import Sanbase.BlockchainAddress, only: [ethereum_regex: 0, bitcoin_regex: 0]
 

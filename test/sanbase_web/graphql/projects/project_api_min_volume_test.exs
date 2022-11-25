@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   alias Sanbase.Repo
   alias Sanbase.Model.LatestCoinmarketcapData

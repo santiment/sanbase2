@@ -1,6 +1,6 @@
 defmodule Sanbase.Repo.Migrations.FillSocialVolumeQueryTable do
   use Ecto.Migration
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   def up do
     setup()

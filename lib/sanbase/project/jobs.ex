@@ -1,10 +1,10 @@
-defmodule Sanbase.Model.Project.Jobs do
-  alias Sanbase.Model.Project
+defmodule Sanbase.Project.Jobs do
+  alias Sanbase.Project
 
   require Logger
 
   def fill_coinmarketcap_id() do
-    Logger.info("Run Sanbase.Model.Project.Jobs fill_coinmarketcap_id job")
+    Logger.info("Run Sanbase.Project.Jobs fill_coinmarketcap_id job")
 
     projects = Project.List.projects()
 

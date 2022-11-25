@@ -1,6 +1,6 @@
 defmodule Sanbase.SocialData.SocialHelper do
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.Project.SocialVolumeQuery
+  alias Sanbase.Project
+  alias Sanbase.Project.SocialVolumeQuery
 
   @sources [
     :telegram,

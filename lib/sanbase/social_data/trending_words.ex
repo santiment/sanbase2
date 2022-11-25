@@ -292,7 +292,7 @@ defmodule Sanbase.SocialData.TrendingWords do
       ]
       |> to_string()
 
-    ticker = Sanbase.Model.Project.ticker_by_slug(slug)
+    ticker = Sanbase.Project.ticker_by_slug(slug)
 
     args = args ++ [ticker <> "_" <> slug]
     {query, args}

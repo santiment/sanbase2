@@ -66,7 +66,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
 
   def nft_collection_by_contract(contract, infrastructure \\ "ETH") do
     contract = Sanbase.BlockchainAddress.to_internal_format(contract)
-    blockchain = Sanbase.Model.Project.infrastructure_to_blockchain(infrastructure)
+    blockchain = Sanbase.Project.infrastructure_to_blockchain(infrastructure)
 
     {query, args} = fetch_label_query(contract, blockchain, "value")
 
@@ -78,7 +78,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
 
   def nft_search_text_by_contract(contract, infrastructure \\ "ETH") do
     contract = Sanbase.BlockchainAddress.to_internal_format(contract)
-    blockchain = Sanbase.Model.Project.infrastructure_to_blockchain(infrastructure)
+    blockchain = Sanbase.Project.infrastructure_to_blockchain(infrastructure)
 
     {query, args} = fetch_label_query(contract, blockchain, "search_text")
 

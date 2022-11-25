@@ -1,15 +1,15 @@
-defmodule SanbaseWeb.ExAdmin.Model.Project do
+defmodule SanbaseWeb.ExAdmin.Project do
   use ExAdmin.Register
 
   import Ecto.Query, warn: false
 
   alias Sanbase.Tag
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Model.Infrastructure
 
   alias Sanbase.Repo
 
-  register_resource Sanbase.Model.Project do
+  register_resource Sanbase.Project do
     filter([
       :name,
       :ticker,

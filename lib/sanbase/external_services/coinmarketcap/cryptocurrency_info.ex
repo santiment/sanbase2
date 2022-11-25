@@ -1,7 +1,7 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
   use Tesla
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.ExternalServices.Coinmarketcap
 
   require Logger

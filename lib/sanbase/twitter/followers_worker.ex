@@ -14,7 +14,7 @@ defmodule Sanbase.Twitter.FollowersWorker do
 
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   def queue(), do: :twitter_followers_migration_queue
 

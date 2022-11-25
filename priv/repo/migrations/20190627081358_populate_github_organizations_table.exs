@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.PopulateGithubOrganizationsTable do
   import Ecto.Query
 
   alias Sanbase.Repo
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   def up do
     Application.ensure_all_started(:tzdata)

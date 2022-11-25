@@ -14,7 +14,7 @@ defmodule Sanbase.Twitter.Worker do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.Repo
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.ExternalServices.RateLimiting.Server
 
   @default_update_interval 1000 * 60 * 60 * 6

@@ -5,7 +5,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   import Sanbase.Metric.Utils
   import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Clickhouse.Github
 
   @aggregations [:sum]

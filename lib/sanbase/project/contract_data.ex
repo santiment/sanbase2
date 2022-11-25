@@ -1,8 +1,8 @@
-defmodule Sanbase.Model.Project.ContractData do
+defmodule Sanbase.Project.ContractData do
   import Ecto.Query
 
   alias Sanbase.Repo
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
 
   @special_cases %{
     "ethereum" => %{contract_address: "ETH", decimals: 18},

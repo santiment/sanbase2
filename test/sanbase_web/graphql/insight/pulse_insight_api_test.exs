@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
   alias Sanbase.Tag
   alias Sanbase.Vote
   alias Sanbase.Insight.Post
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias Sanbase.Repo
 
   setup do

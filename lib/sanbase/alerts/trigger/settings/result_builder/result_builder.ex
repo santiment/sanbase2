@@ -176,7 +176,7 @@ defmodule Sanbase.Alert.ResultBuilder do
   @spec build_enter_exit_projects_str(list(String.t()), list(String.t())) :: String.t()
   def build_enter_exit_projects_str(added_slugs, removed_slugs) do
     projects_map =
-      Sanbase.Model.Project.List.by_slugs(added_slugs ++ removed_slugs, preload?: false)
+      Sanbase.Project.List.by_slugs(added_slugs ++ removed_slugs, preload?: false)
       |> Enum.into(%{}, fn %{slug: slug} = project -> {slug, project} end)
 
     newcomers = slugs_to_projects_string_list(added_slugs, projects_map)
@@ -195,6 +195,6 @@ defmodule Sanbase.Alert.ResultBuilder do
     slugs
     |> Enum.map(&Map.get(projects_map, &1))
     |> Enum.reject(&is_nil/1)
-    |> Enum.map(&"[##{&1.ticker} | #{&1.name}](#{Sanbase.Model.Project.sanbase_link(&1)})")
+    |> Enum.map(&"[##{&1.ticker} | #{&1.name}](#{Sanbase.Project.sanbase_link(&1)})")
   end
 end

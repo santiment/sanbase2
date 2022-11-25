@@ -1,9 +1,9 @@
-defmodule Sanbase.Model.Project.AvailableQueries do
+defmodule Sanbase.Project.AvailableQueries do
   @moduledoc ~s"""
   Module for determining what metrics are available for a given project
   """
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   require SanbaseWeb.Graphql.Schema
 
   @doc ~s"""
@@ -29,7 +29,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
   bitcoin addresses, icos, presence in the list of project with social metrics,
   etc.
   """
-  @spec get(Sanbase.Model.Project.t()) :: [String.t()]
+  @spec get(Sanbase.Project.t()) :: [String.t()]
   def get(%Project{} = project) do
     project = project |> Sanbase.Repo.preload([:eth_addresses, :infrastructure])
 

@@ -1,5 +1,5 @@
-defmodule Sanbase.Model.Project.Description do
-  alias Sanbase.Model.Project
+defmodule Sanbase.Project.Description do
+  alias Sanbase.Project
 
   @spec describe(%Project{}) :: String.t()
   def describe(%Project{slug: cmc_id}) when not is_nil(cmc_id) do

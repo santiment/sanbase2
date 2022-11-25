@@ -77,7 +77,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
     {:ok, assets} =
       Sanbase.Cache.get_or_store(cache_key, fn ->
         data =
-          Sanbase.Model.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+          Sanbase.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
           |> Enum.map(&elem(&1, 0))
 
         {:ok, data}

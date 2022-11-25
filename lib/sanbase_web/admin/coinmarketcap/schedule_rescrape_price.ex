@@ -10,7 +10,7 @@ defmodule SanbaseWeb.ExAdmin.ScheduleRescrapePrice do
         input(
           srp,
           :project,
-          collection: from(p in Sanbase.Model.Project, order_by: p.name) |> Sanbase.Repo.all()
+          collection: from(p in Sanbase.Project, order_by: p.name) |> Sanbase.Repo.all()
         )
       end
     end

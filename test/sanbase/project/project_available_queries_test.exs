@@ -4,7 +4,7 @@ defmodule Sanbase.Project.AvailableQueriesTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers
 
-  alias Sanbase.Model.Project.AvailableQueries
+  alias Sanbase.Project.AvailableQueries
 
   @slug_metrics ["socialGainersLosersStatus"] |> Enum.sort()
 

@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   import Sanbase.DateTimeUtils, only: [round_datetime: 1]
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Project
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 

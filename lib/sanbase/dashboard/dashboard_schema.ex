@@ -76,9 +76,20 @@ defmodule Sanbase.Dashboard.Schema do
   @update_fields [:name, :description, :is_public, :temp_json]
 
   @impl Sanbase.Entity.Behaviour
-  @spec by_id(non_neg_integer()) :: {:ok, t()} | {:error, String.t()}
-  def by_id(dashboard_id, _opts \\ []) do
-    case Repo.get(__MODULE__, dashboard_id) do
+  @spec by_id(non_neg_integer(), Keyword.t()) :: {:ok, t()} | {:error, String.t()}
+  def by_id(dashboard_id, opts \\ []) do
+    query =
+      from(d in __MODULE__,
+        where: d.id == ^dashboard_id
+      )
+
+    query =
+      case Keyword.get(opts, :lock_for_update, false) do
+        false -> query
+        true -> query |> lock("FOR UPDATE")
+      end
+
+    case Repo.one(query) do
       %__MODULE__{} = dashboard -> {:ok, dashboard}
       nil -> {:error, "Dashboard does not exist"}
     end
@@ -195,7 +206,7 @@ defmodule Sanbase.Dashboard.Schema do
   """
   @spec update(dashboard_id(), schema_args()) :: {:ok, t()} | {:error, Changeset.t()}
   def update(dashboard_id, args) do
-    {:ok, dashboard} = by_id(dashboard_id)
+    {:ok, dashboard} = by_id(dashboard_id, lock_for_update: true)
 
     dashboard
     |> cast(args, @update_fields)
@@ -216,13 +227,15 @@ defmodule Sanbase.Dashboard.Schema do
   @spec create_panel(non_neg_integer(), Panel.panel_args() | Panel.t()) ::
           {:ok, panel_dashboad_map()} | {:error, Changeset.t()}
   def create_panel(dashboard_id, %Panel{} = panel) do
-    {:ok, dashboard} = by_id(dashboard_id)
+    {:ok, dashboard} = by_id(dashboard_id, lock_for_update: true)
 
     dashboard
     |> change()
     |> put_embed(:panels, dashboard.panels ++ [panel])
     |> Repo.update()
     |> maybe_apply_function(fn dashboard ->
+      panel = Enum.find(dashboard.panels, &(&1.id == panel.id))
+
       %{panel: panel, dashboard: dashboard}
     end)
   end
@@ -243,7 +256,7 @@ defmodule Sanbase.Dashboard.Schema do
   @spec remove_panel(non_neg_integer(), non_neg_integer()) ::
           {:ok, panel_dashboad_map()} | {:error, Changeset.t()}
   def remove_panel(dashboard_id, panel_id) do
-    with {:ok, dashboard} <- by_id(dashboard_id),
+    with {:ok, dashboard} <- by_id(dashboard_id, lock_for_update: true),
          {[panel], panels_left} <- Enum.split_with(dashboard.panels, &(&1.id == panel_id)) do
       dashboard
       |> change()
@@ -264,7 +277,7 @@ defmodule Sanbase.Dashboard.Schema do
   @spec update_panel(non_neg_integer(), non_neg_integer(), Panel.panel_args()) ::
           {:ok, panel_dashboad_map()} | {:error, :dashboard_panel_does_not_exist}
   def update_panel(dashboard_id, panel_id, panel_args) do
-    {:ok, dashboard} = by_id(dashboard_id)
+    {:ok, dashboard} = by_id(dashboard_id, lock_for_update: true)
 
     case Enum.find(dashboard.panels, &(&1.id == panel_id)) do
       nil ->

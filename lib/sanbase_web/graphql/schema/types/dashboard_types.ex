@@ -87,14 +87,26 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   end
 
   @desc ~s"""
-  Input object for a panel definition (schema).
+  Input object for a panel definition (schema) for creation.
 
-  This object is used to create a new panel or to
-  update an existing panel's definition.
+  This object is used to create a new panel. It has the name and sql
+  as non_null.
   """
   input_object :panel_schema_input_object do
     field(:name, non_null(:string))
     field(:sql, non_null(:panel_sql_input_object))
+    field(:description, :string)
+    field(:settings, :json)
+  end
+
+  @desc ~s"""
+  Input object for a panel definition (schema) for update.
+
+  This object is used to update panel, so none of the fields is non_null
+  """
+  input_object :panel_schema_input_object_for_update do
+    field(:name, :string)
+    field(:sql, :panel_sql_input_object)
     field(:description, :string)
     field(:settings, :json)
   end

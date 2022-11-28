@@ -151,11 +151,13 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
 
       assert %{
                "id" => panel["id"],
+               "name" => "New name",
                "dashboardId" => dashboard_id,
                "sql" => %{
                  "parameters" => %{"limit" => 20},
                  "query" => "SELECT * FROM intraday_metrics LIMIT {{limit}}"
-               }
+               },
+               "settings" => nil
              } == updated_panel
     end
 
@@ -190,6 +192,82 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         |> get_in(["data", "getDashboardSchema"])
 
       assert dashboard["panels"] == []
+    end
+
+    test "concurrent actions - create panels", context do
+      dashboard =
+        execute_dashboard_mutation(context.conn, :create_dashboard)
+        |> get_in(["data", "createDashboard"])
+
+      # Create 20 panels concurrently
+      panels =
+        Sanbase.Parallel.map(
+          1..20,
+          fn _ ->
+            execute_dashboard_panel_schema_mutation(
+              context.conn,
+              :create_dashboard_panel,
+              default_dashboard_panel_args() |> Map.put(:dashboard_id, dashboard["id"])
+            )
+            |> get_in(["data", "createDashboardPanel"])
+          end,
+          max_concurrency: 10,
+          ordered: false
+        )
+
+      assert length(panels) == 20
+      assert Enum.all?(panels, &is_binary(&1["id"]))
+
+      updated_dashboard =
+        get_dashboard_schema(context.conn, dashboard["id"])
+        |> get_in(["data", "getDashboardSchema"])
+
+      # Test that each of the panels created panels is properly stored in the
+      # dashboard and returned in the subsequent query
+      Enum.each(panels, fn %{"id" => panel_id} ->
+        assert Enum.find(updated_dashboard["panels"], fn %{"id" => id} -> id == panel_id end)
+      end)
+    end
+
+    test "concurrent actions - update panels", context do
+      dashboard =
+        execute_dashboard_mutation(context.conn, :create_dashboard)
+        |> get_in(["data", "createDashboard"])
+
+      panels =
+        for _ <- 1..2 do
+          execute_dashboard_panel_schema_mutation(
+            context.conn,
+            :create_dashboard_panel,
+            default_dashboard_panel_args() |> Map.put(:dashboard_id, dashboard["id"])
+          )
+          |> get_in(["data", "createDashboardPanel"])
+        end
+
+      # Update all 20 panels concurrently
+      updated_panels =
+        Sanbase.Parallel.map(panels, fn panel ->
+          execute_dashboard_panel_schema_mutation(context.conn, :update_dashboard_panel, %{
+            dashboard_id: dashboard["id"],
+            panel_id: panel["id"],
+            panel: %{
+              map_as_input_object: true,
+              name: "New name",
+              settings: %{layout: [1, 2, 5, 10]}
+            }
+          })
+          |> get_in(["data", "updateDashboardPanel"])
+        end)
+
+      updated_dashboard =
+        get_dashboard_schema(context.conn, dashboard["id"])
+        |> get_in(["data", "getDashboardSchema"])
+
+      Enum.each(updated_panels, fn %{"id" => panel_id, "settings" => settings, "name" => name} ->
+        assert Enum.find(updated_dashboard["panels"], fn %{"id" => id} -> id == panel_id end)
+        assert name == "New name"
+        assert settings == %{"layout" => [1, 2, 5, 10]}
+      end)
     end
   end
 
@@ -890,7 +968,9 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
     mutation {
       #{mutation_name}(#{map_to_args(args)}){
         id
+        name
         dashboardId
+        settings
         sql {
           query
           parameters
@@ -966,7 +1046,11 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         name
         description
         isPublic
-        panels { id sql { query parameters } }
+        panels {
+          id
+          settings
+          sql { query parameters }
+        }
         votes {
           totalVotes
         }

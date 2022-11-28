@@ -35,7 +35,7 @@ defmodule Sanbase.Dashboard.Panel.Cache do
       id: panel_id,
       dashboard_id: dashboard_id,
       columns: result.columns,
-      column_types: result.columns,
+      column_types: result.column_types,
       rows: result.rows,
       compressed_rows: result.compressed_rows,
       updated_at: DateTime.utc_now(),

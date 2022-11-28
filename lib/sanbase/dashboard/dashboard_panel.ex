@@ -52,7 +52,7 @@ defmodule Sanbase.Dashboard.Panel do
   """
   @spec new(panel_args()) :: {:ok, t()} | {:error, any()}
   def new(args) do
-    handle_panel(%__MODULE__{}, args, check_required: true)
+    handle_panel(%__MODULE__{}, args, check_required: true, put_id: true)
   end
 
   @doc ~s"""
@@ -63,26 +63,22 @@ defmodule Sanbase.Dashboard.Panel do
   """
   @spec update(t(), panel_args) :: {:ok, t()} | {:error, any()}
   def update(%__MODULE__{} = panel, args) do
-    handle_panel(panel, args, check_required: false)
+    handle_panel(panel, args, check_required: false, put_id: false)
   end
 
   defp handle_panel(%__MODULE__{} = panel, args, opts) do
-    # Add a panel id if it's missing. This is done during creation.
-    # The id is put in the panel struct and does not go through the changeset.
-    # The ID is preserved by doing `Map.merge(panel, args)` after validating the
-    # chagneset
-    panel =
-      case panel.id do
-        nil -> %{panel | id: UUID.uuid4()}
-        _ -> panel
+    args =
+      case Keyword.get(opts, :put_id) do
+        true ->
+          args
+          |> put_in([:sql, :san_query_id], UUID.uuid4())
+          |> put_in([:id], UUID.uuid4())
+
+        false ->
+          args
       end
 
-    # Add a san_query_id if it's missing
-    args =
-      case get_in(args, [Access.key(:sql), Access.key("san_query_id")]) do
-        nil -> put_in(args, [Access.key(:sql), Access.key("san_query_id")], UUID.uuid4())
-        _ -> args
-      end
+    args = Enum.reject(args, fn {_k, v} -> is_nil(v) end) |> Map.new()
 
     changeset = changeset(panel, args)
 
@@ -95,6 +91,7 @@ defmodule Sanbase.Dashboard.Panel do
     case changeset.valid? do
       true ->
         struct = Map.merge(panel, args)
+
         {:ok, struct}
 
       false ->

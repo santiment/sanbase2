@@ -227,15 +227,23 @@ defmodule Sanbase.Dashboard.Schema do
   @spec create_panel(non_neg_integer(), Panel.panel_args() | Panel.t()) ::
           {:ok, panel_dashboad_map()} | {:error, Changeset.t()}
   def create_panel(dashboard_id, %Panel{} = panel) do
-    {:ok, dashboard} = by_id(dashboard_id, lock_for_update: true)
-
-    dashboard
-    |> change()
-    |> put_embed(:panels, dashboard.panels ++ [panel])
-    |> Repo.update()
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard, fn _, _ ->
+      by_id(dashboard_id, lock_for_update: true)
+    end)
+    |> Ecto.Multi.run(:create_panel, fn _, %{get_dashboard: dashboard} ->
+      dashboard
+      |> change()
+      |> put_embed(:panels, dashboard.panels ++ [panel])
+      |> Repo.update()
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{create_panel: dashboard}} -> {:ok, dashboard}
+      {:error, _failed_op, error, _changes} -> {:error, error}
+    end
     |> maybe_apply_function(fn dashboard ->
       panel = Enum.find(dashboard.panels, &(&1.id == panel.id))
-
       %{panel: panel, dashboard: dashboard}
     end)
   end
@@ -256,17 +264,35 @@ defmodule Sanbase.Dashboard.Schema do
   @spec remove_panel(non_neg_integer(), non_neg_integer()) ::
           {:ok, panel_dashboad_map()} | {:error, Changeset.t()}
   def remove_panel(dashboard_id, panel_id) do
-    with {:ok, dashboard} <- by_id(dashboard_id, lock_for_update: true),
-         {[panel], panels_left} <- Enum.split_with(dashboard.panels, &(&1.id == panel_id)) do
-      dashboard
-      |> change()
-      |> put_embed(:panels, panels_left)
-      |> Repo.update()
-      |> maybe_apply_function(fn dashboard ->
-        %{panel: panel, dashboard: dashboard}
-      end)
-    else
-      _ -> {:error, "Failed removing a panel"}
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard, fn _, _ ->
+      by_id(dashboard_id, lock_for_update: true)
+    end)
+    |> Ecto.Multi.run(:remove_panel, fn _, %{get_dashboard: dashboard} ->
+      case Enum.split_with(dashboard.panels, &(&1.id == panel_id)) do
+        {[panel], panels_left} ->
+          result =
+            dashboard
+            |> change()
+            |> put_embed(:panels, panels_left)
+            |> Repo.update()
+
+          case result do
+            {:error, error} ->
+              {:error, error}
+
+            {:ok, dashboard} ->
+              {:ok, %{dashboard: dashboard, panel: panel}}
+          end
+
+        _ ->
+          {:error, "Failed removing a panel"}
+      end
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{remove_panel: %{panel: _, dashboard: _} = result}} -> {:ok, result}
+      {:error, _failed_op, error, _changes} -> {:error, error}
     end
   end
 
@@ -277,7 +303,7 @@ defmodule Sanbase.Dashboard.Schema do
   @spec update_panel(non_neg_integer(), non_neg_integer(), Panel.panel_args()) ::
           {:ok, panel_dashboad_map()} | {:error, :dashboard_panel_does_not_exist}
   def update_panel(dashboard_id, panel_id, panel_args) do
-    {:ok, dashboard} = by_id(dashboard_id, lock_for_update: true)
+    {:ok, dashboard} = by_id(dashboard_id)
 
     case Enum.find(dashboard.panels, &(&1.id == panel_id)) do
       nil ->

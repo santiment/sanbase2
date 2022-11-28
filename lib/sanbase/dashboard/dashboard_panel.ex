@@ -67,16 +67,20 @@ defmodule Sanbase.Dashboard.Panel do
   end
 
   defp handle_panel(%__MODULE__{} = panel, args, opts) do
-    # Put ids if they are missing
-    args =
-      case get_in(args, [Access.key(:sql), Access.key(:san_query_id)]) do
-        nil -> put_in(args, [Access.key(:sql), Access.key(:san_query_id)], UUID.uuid4())
-        _ -> args
+    # Add a panel id if it's missing. This is done during creation.
+    # The id is put in the panel struct and does not go through the changeset.
+    # The ID is preserved by doing `Map.merge(panel, args)` after validating the
+    # chagneset
+    panel =
+      case panel.id do
+        nil -> %{panel | id: UUID.uuid4()}
+        _ -> panel
       end
 
+    # Add a san_query_id if it's missing
     args =
-      case get_in(args, [Access.key(:id)]) do
-        nil -> put_in(args, [Access.key(:id)], UUID.uuid4())
+      case get_in(args, [Access.key(:sql), Access.key("san_query_id")]) do
+        nil -> put_in(args, [Access.key(:sql), Access.key("san_query_id")], UUID.uuid4())
         _ -> args
       end
 
@@ -108,7 +112,7 @@ defmodule Sanbase.Dashboard.Panel do
           {:ok, Query.Result.t()} | {:error, String.t()}
   def compute(%__MODULE__{} = panel, querying_user_id, opts) do
     %{sql: %{"query" => query, "parameters" => parameters}} = panel
-    san_query_id = get_in(panel, [Access.key(:sql), "san_query_id"])
+    san_query_id = get_in(panel, [Access.key(:sql), "san_query_id"]) || "<unknown>"
 
     # If the opts contain parameters, override the default parameters during computing.
     # It allows for only some parameters to be provided. They will override the existing

@@ -9,6 +9,7 @@ defmodule Sanbase.Dashboard.Cache do
   """
   use Ecto.Schema
 
+  import Ecto.Query
   import Ecto.Changeset
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
@@ -45,9 +46,20 @@ defmodule Sanbase.Dashboard.Cache do
   @doc ~s"""
   Fetch the cache for the given dashboard
   """
-  @spec by_dashboard_id(non_neg_integer()) :: {:ok, t()} | {:error, any()}
-  def by_dashboard_id(dashboard_id) do
-    case Repo.get_by(__MODULE__, dashboard_id: dashboard_id) do
+  @spec by_dashboard_id(non_neg_integer(), Keyword.t()) :: {:ok, t()} | {:error, any()}
+  def by_dashboard_id(dashboard_id, opts \\ []) do
+    query =
+      from(d in __MODULE__,
+        where: d.dashboard_id == ^dashboard_id
+      )
+
+    query =
+      case Keyword.get(opts, :lock_for_update, false) do
+        false -> query
+        true -> query |> lock("FOR UPDATE")
+      end
+
+    case Repo.one(query) do
       nil -> new(dashboard_id)
       %__MODULE__{} = cache -> {:ok, cache}
     end
@@ -93,7 +105,7 @@ defmodule Sanbase.Dashboard.Cache do
           {:ok, t()} | {:error, any()}
   def update_panel_cache(dashboard_id, panel_id, query_result) do
     with true <- query_result_size_allowed?(query_result),
-         {:ok, cache} <- by_dashboard_id(dashboard_id) do
+         {:ok, cache} <- by_dashboard_id(dashboard_id, lock_for_update: true) do
       panel_cache =
         Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
         |> Map.from_struct()
@@ -114,7 +126,7 @@ defmodule Sanbase.Dashboard.Cache do
   @spec remove_panel_cache(non_neg_integer(), String.t()) ::
           {:ok, t()} | {:error, any()}
   def remove_panel_cache(dashboard_id, panel_id) do
-    {:ok, cache} = by_dashboard_id(dashboard_id)
+    {:ok, cache} = by_dashboard_id(dashboard_id, lock_for_update: true)
     panels = Enum.reject(cache.panels, &(&1.id == panel_id))
 
     cache

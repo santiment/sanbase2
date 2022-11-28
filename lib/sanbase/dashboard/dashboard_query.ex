@@ -31,7 +31,7 @@ defmodule Sanbase.Dashboard.Query do
       {:ok, map} ->
         {:ok,
          %Query.Result{
-           san_query_id: san_query_id || "<unknown>",
+           san_query_id: san_query_id,
            clickhouse_query_id: map.query_id,
            summary: map.summary,
            rows: map.rows,

@@ -86,7 +86,7 @@ defmodule Sanbase.Intercom do
 
           new_data =
             Enum.map(data, fn %{user_id: user_id, dt: dt, attributes: attributes} ->
-              if attributes["custom_attributes"]["used_api"] == nil do
+              if attributes["custom_attributes"]["used_sanapi"] == nil do
                 if users_map[user_id] do
                   stats = fetch_stats_for_user(users_map[user_id], all_stats)
                   custom_attributes = stats["custom_attributes"]
@@ -188,6 +188,22 @@ defmodule Sanbase.Intercom do
   def fetch_all_db_user_ids() do
     from(u in User, order_by: [asc: u.id], select: u.id)
     |> Repo.all()
+  end
+
+  def fetch_ch_data_user(user_id, date) do
+    query = """
+    SELECT dt, user_id, attributes
+    FROM sanbase_user_intercom_attributes
+    WHERE (toStartOfDay(dt) = ?1) AND user_id = ?2
+    """
+
+    ClickhouseRepo.query_transform(query, [date, user_id], fn [dt, user_id, attributes] ->
+      %{
+        dt: dt,
+        user_id: user_id,
+        attributes: Jason.decode!(attributes)
+      }
+    end)
   end
 
   def fetch_ch_data(datetime, limit, offset) do

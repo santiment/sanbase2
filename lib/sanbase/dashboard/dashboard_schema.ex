@@ -13,7 +13,8 @@ defmodule Sanbase.Dashboard.Schema do
 
   import Ecto.Query
   import Ecto.Changeset
-  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2, to_bang: 1]
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
@@ -76,7 +77,8 @@ defmodule Sanbase.Dashboard.Schema do
   @update_fields [:name, :description, :is_public, :temp_json]
 
   @impl Sanbase.Entity.Behaviour
-  @spec by_id(non_neg_integer(), Keyword.t()) :: {:ok, t()} | {:error, String.t()}
+  @spec by_id(non_neg_integer(), Keyword.t()) ::
+          {:ok, t()} | {:error, String.t()}
   def by_id(dashboard_id, opts \\ []) do
     query =
       from(d in __MODULE__,
@@ -96,7 +98,8 @@ defmodule Sanbase.Dashboard.Schema do
   end
 
   @impl Sanbase.Entity.Behaviour
-  def by_id!(dashboard_id, opts \\ []), do: by_id(dashboard_id, opts) |> to_bang()
+  def by_id!(dashboard_id, opts \\ []),
+    do: by_id(dashboard_id, opts) |> to_bang()
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(ids, opts) when is_list(ids) do
@@ -124,7 +127,10 @@ defmodule Sanbase.Dashboard.Schema do
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
     |> Sanbase.Entity.Query.maybe_filter_min_title_length(opts, :name)
-    |> Sanbase.Entity.Query.maybe_filter_min_description_length(opts, :description)
+    |> Sanbase.Entity.Query.maybe_filter_min_description_length(
+      opts,
+      :description
+    )
     |> select([ul], ul.id)
   end
 
@@ -172,7 +178,8 @@ defmodule Sanbase.Dashboard.Schema do
   end
 
   @spec get_is_public_and_owner(non_neg_integer()) ::
-          {:ok, %{user_id: non_neg_integer(), is_public: boolean()}} | {:error, String.t()}
+          {:ok, %{user_id: non_neg_integer(), is_public: boolean()}}
+          | {:error, String.t()}
   def get_is_public_and_owner(dashboard_id) do
     result =
       from(d in __MODULE__,
@@ -204,7 +211,8 @@ defmodule Sanbase.Dashboard.Schema do
   All fields except the panels and the user_id can be updated.
   In order to update a panel use the update_panel/3 function
   """
-  @spec update(dashboard_id(), schema_args()) :: {:ok, t()} | {:error, Changeset.t()}
+  @spec update(dashboard_id(), schema_args()) ::
+          {:ok, t()} | {:error, Changeset.t()}
   def update(dashboard_id, args) do
     {:ok, dashboard} = by_id(dashboard_id, lock_for_update: true)
 
@@ -228,24 +236,15 @@ defmodule Sanbase.Dashboard.Schema do
           {:ok, panel_dashboad_map()} | {:error, Changeset.t()}
   def create_panel(dashboard_id, %Panel{} = panel) do
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:get_dashboard, fn _, _ ->
-      by_id(dashboard_id, lock_for_update: true)
-    end)
+    |> Ecto.Multi.run(:get_dashboard, fn _, _ -> by_id(dashboard_id, lock_for_update: true) end)
     |> Ecto.Multi.run(:create_panel, fn _, %{get_dashboard: dashboard} ->
       dashboard
       |> change()
-      |> put_embed(:panels, dashboard.panels ++ [panel])
+      |> put_embed(:panels, [panel] ++ dashboard.panels)
       |> Repo.update()
     end)
     |> Repo.transaction()
-    |> case do
-      {:ok, %{create_panel: dashboard}} -> {:ok, dashboard}
-      {:error, _failed_op, error, _changes} -> {:error, error}
-    end
-    |> maybe_apply_function(fn dashboard ->
-      panel = Enum.find(dashboard.panels, &(&1.id == panel.id))
-      %{panel: panel, dashboard: dashboard}
-    end)
+    |> handle_panel_action_transaction_result(:create_panel, panel.id)
   end
 
   def create_panel(dashboard_id, panel_args) when is_map(panel_args) do
@@ -254,7 +253,7 @@ defmodule Sanbase.Dashboard.Schema do
         create_panel(dashboard_id, panel)
 
       {:error, changeset} ->
-        {:error, Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)}
+        {:error, changeset_errors_string(changeset)}
     end
   end
 
@@ -265,35 +264,22 @@ defmodule Sanbase.Dashboard.Schema do
           {:ok, panel_dashboad_map()} | {:error, Changeset.t()}
   def remove_panel(dashboard_id, panel_id) do
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:get_dashboard, fn _, _ ->
-      by_id(dashboard_id, lock_for_update: true)
-    end)
+    |> Ecto.Multi.run(:get_dashboard, fn _, _ -> by_id(dashboard_id, lock_for_update: true) end)
     |> Ecto.Multi.run(:remove_panel, fn _, %{get_dashboard: dashboard} ->
-      case Enum.split_with(dashboard.panels, &(&1.id == panel_id)) do
-        {[panel], panels_left} ->
-          result =
-            dashboard
-            |> change()
-            |> put_embed(:panels, panels_left)
-            |> Repo.update()
+      with {[panel], panels} <- Enum.split_with(dashboard.panels, &(&1.id == panel_id)),
+           %Ecto.Changeset{} = changeset <- dashboard |> change() |> put_embed(:panels, panels),
+           {:ok, dashboard} <- Repo.update(changeset) do
+        {:ok, %{dashboard: dashboard, panel: panel}}
+      else
+        {[], _panels} ->
+          {:error, "Dashboard #{dashboard_id} does not have a panel panel with id #{panel_id}."}
 
-          case result do
-            {:error, error} ->
-              {:error, error}
-
-            {:ok, dashboard} ->
-              {:ok, %{dashboard: dashboard, panel: panel}}
-          end
-
-        _ ->
-          {:error, "Failed removing a panel"}
+        {:error, error} ->
+          {:error, error}
       end
     end)
     |> Repo.transaction()
-    |> case do
-      {:ok, %{remove_panel: %{panel: _, dashboard: _} = result}} -> {:ok, result}
-      {:error, _failed_op, error, _changes} -> {:error, error}
-    end
+    |> handle_panel_action_transaction_result(:remove_panel, panel_id)
   end
 
   @doc ~s"""
@@ -301,34 +287,55 @@ defmodule Sanbase.Dashboard.Schema do
   This operation preserves the panel id.
   """
   @spec update_panel(non_neg_integer(), non_neg_integer(), Panel.panel_args()) ::
-          {:ok, panel_dashboad_map()} | {:error, :dashboard_panel_does_not_exist}
+          {:ok, panel_dashboad_map()}
+          | {:error, :dashboard_panel_does_not_exist}
   def update_panel(dashboard_id, panel_id, panel_args) do
-    {:ok, dashboard} = by_id(dashboard_id)
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard, fn _, _ -> by_id(dashboard_id, lock_for_update: true) end)
+    |> Ecto.Multi.run(:update_panel, fn _, %{get_dashboard: dashboard} ->
+      with {[panel], panels} <- Enum.split_with(dashboard.panels, &(&1.id == panel_id)),
+           {:ok, updated_panel} <- Panel.update(panel, panel_args, as_changeset: true) do
+        dashboard
+        |> change()
+        |> put_embed(:panels, [updated_panel] ++ panels)
+        |> Repo.update()
+      else
+        {[], _panels} ->
+          {:error, "Dashboard #{dashboard_id} does not have a panel panel with id #{panel_id}."}
 
-    case Enum.find(dashboard.panels, &(&1.id == panel_id)) do
-      nil ->
-        {:error, :dashboard_panel_does_not_exist}
-
-      panel ->
-        {:ok, panel} = Panel.update(panel, panel_args)
-
-        # Atomically remove and add the panel to simulate update.
-        # Either both succeed or neither of them does. This guards against
-        # removing the panel and failing to add it back.
-        Ecto.Multi.new()
-        |> Ecto.Multi.run(:remove_panel, fn _, _ -> remove_panel(dashboard_id, panel_id) end)
-        |> Ecto.Multi.run(:create_panel, fn _, _ -> create_panel(dashboard_id, panel) end)
-        |> Repo.transaction()
-        |> case do
-          {:ok, %{create_panel: result}} -> {:ok, result}
-          {:error, _failed_op, error, _changes} -> {:error, error}
-        end
-    end
+        {:error, error} ->
+          {:error, error}
+      end
+    end)
+    |> Repo.transaction()
+    |> handle_panel_action_transaction_result(:update_panel, panel_id)
   end
 
   # Private functions
 
   defp base_query() do
     from(conf in __MODULE__, where: conf.is_deleted != true)
+  end
+
+  defp handle_panel_action_transaction_result(result, action, panel_id)
+       when action in [:create_panel, :update_panel, :remove_panel] do
+    case result do
+      # In case of :remove_panel, the result already contains the panel and dashboard.
+      # This is because the panel cannot be found with Enum.find as it's already
+      # removed from the panels list.
+      {:ok, %{^action => %{dashboard: _, panel: _} = result}} ->
+        {:ok, result}
+
+      {:ok, %{^action => %__MODULE__{} = dashboard}} ->
+        panel = Enum.find(dashboard.panels, &(&1.id == panel_id))
+
+        {:ok, %{dashboard: dashboard, panel: panel}}
+
+      {:error, _failed_op, %Ecto.Changeset{} = changeset, _changes} ->
+        {:error, changeset_errors_string(changeset)}
+
+      {:error, _failed_op, error, _changes} ->
+        {:error, error}
+    end
   end
 end

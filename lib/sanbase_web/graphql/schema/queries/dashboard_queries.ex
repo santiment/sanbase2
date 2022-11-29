@@ -351,13 +351,11 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
             queryEndTime: "2022-06-14T12:08:10Z"
             queryStartTime: "2022-06-14T12:08:10Z"
             rows: "[[2503,250,\"2008-12-10T00:00:00Z\",0.0,\"2020-02-28T15:18:42Z\"],[2503,250,\"2008-12-10T00:05:00Z\",0.0,\"2020-02-28T15:18:42Z\"]]"
-            sanQueryId: "b90cdcc6-4f66-4e58-9dec-d2ee2794bead"
             summary: "{\"read_bytes\":\"0\",\"read_rows\":\"0\",\"total_rows_to_read\":\"0\",\"written_bytes\":\"0\",\"written_rows\":\"0\"}"
         }
       ){
         id
         clickhouseQueryId
-        sanQueryId
         dashboardId
         columns
         rows

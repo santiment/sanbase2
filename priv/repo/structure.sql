@@ -555,7 +555,6 @@ CREATE TABLE public.clickhouse_query_executions (
     credits_cost integer NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    san_query_id character varying(255) NOT NULL,
     query_start_time timestamp(0) without time zone NOT NULL,
     query_end_time timestamp(0) without time zone NOT NULL
 );
@@ -8080,3 +8079,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20221027125500);
 INSERT INTO public."schema_migrations" (version) VALUES (20221103145206);
 INSERT INTO public."schema_migrations" (version) VALUES (20221110142211);
 INSERT INTO public."schema_migrations" (version) VALUES (20221118110940);
+INSERT INTO public."schema_migrations" (version) VALUES (20221129102156);

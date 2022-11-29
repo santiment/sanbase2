@@ -10,7 +10,6 @@ defmodule Sanbase.Dashboard.Panel do
   alias Sanbase.Dashboard.Query
 
   @type sql :: %{
-          san_query_id: String.t(),
           query: String.t(),
           parameters: list(String.t() | DateTime.t() | List.t() | number() | boolean())
         }
@@ -50,9 +49,10 @@ defmodule Sanbase.Dashboard.Panel do
   The struct exists only in memory and should manually be put
   inside a dashboard
   """
-  @spec new(panel_args()) :: {:ok, t()} | {:error, any()}
-  def new(args) do
-    handle_panel(%__MODULE__{}, args, check_required: true, put_id: true)
+  @spec new(panel_args(), Keyword.t()) :: {:ok, t()} | {:ok, Ecto.Changeset.t()} | {:error, any()}
+  def new(args, opts \\ []) do
+    opts = [check_required: true, put_id: true, as_changeset: false] |> Keyword.merge(opts)
+    handle_panel(%__MODULE__{}, args, opts)
   end
 
   @doc ~s"""
@@ -61,21 +61,18 @@ defmodule Sanbase.Dashboard.Panel do
   This method is usually used with Dashboard.Schema.update_panel/3 so
   the changes are persisted in the database
   """
-  @spec update(t(), panel_args) :: {:ok, t()} | {:error, any()}
-  def update(%__MODULE__{} = panel, args) do
-    handle_panel(panel, args, check_required: false, put_id: false)
+  @spec update(t(), panel_args, Keyword.t()) ::
+          {:ok, t()} | {:ok, Ecto.Changeset.t()} | {:error, any()}
+  def update(%__MODULE__{} = panel, args, opts \\ []) do
+    opts = [check_required: false, put_id: false, as_changeset: true] |> Keyword.merge(opts)
+    handle_panel(panel, args, opts)
   end
 
   defp handle_panel(%__MODULE__{} = panel, args, opts) do
     args =
       case Keyword.get(opts, :put_id) do
-        true ->
-          args
-          |> put_in([:sql, :san_query_id], UUID.uuid4())
-          |> put_in([:id], UUID.uuid4())
-
-        false ->
-          args
+        true -> put_in(args, [:id], UUID.uuid4())
+        false -> args
       end
 
     args = Enum.reject(args, fn {_k, v} -> is_nil(v) end) |> Map.new()
@@ -90,9 +87,12 @@ defmodule Sanbase.Dashboard.Panel do
 
     case changeset.valid? do
       true ->
-        struct = Map.merge(panel, args)
-
-        {:ok, struct}
+        # In case of panel update, in order for `put_embed` to be able to detect
+        # that an existing panel is being updated, it needs to be added as a changeset
+        case Keyword.get(opts, :as_changeset, false) do
+          true -> {:ok, changeset}
+          false -> {:ok, Map.merge(panel, args)}
+        end
 
       false ->
         {:error, changeset}
@@ -109,7 +109,6 @@ defmodule Sanbase.Dashboard.Panel do
           {:ok, Query.Result.t()} | {:error, String.t()}
   def compute(%__MODULE__{} = panel, querying_user_id, opts) do
     %{sql: %{"query" => query, "parameters" => parameters}} = panel
-    san_query_id = get_in(panel, [Access.key(:sql), "san_query_id"]) || "<unknown>"
 
     # If the opts contain parameters, override the default parameters during computing.
     # It allows for only some parameters to be provided. They will override the existing
@@ -120,6 +119,6 @@ defmodule Sanbase.Dashboard.Panel do
         overridden_parameters -> Map.merge(parameters, overridden_parameters)
       end
 
-    Query.run(query, parameters, san_query_id, querying_user_id)
+    Query.run(query, parameters, querying_user_id)
   end
 end

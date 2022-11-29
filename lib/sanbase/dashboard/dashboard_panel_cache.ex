@@ -1,7 +1,6 @@
 defmodule Sanbase.Dashboard.Panel.Cache do
   @type t :: %__MODULE__{
           id: String.t(),
-          san_query_id: String.t(),
           clickhouse_query_id: String.t(),
           dashboard_id: non_neg_integer(),
           columns: list(String.t()),
@@ -15,7 +14,6 @@ defmodule Sanbase.Dashboard.Panel.Cache do
         }
 
   defstruct id: nil,
-            san_query_id: nil,
             clickhouse_query_id: nil,
             dashboard_id: nil,
             columns: nil,
@@ -41,7 +39,6 @@ defmodule Sanbase.Dashboard.Panel.Cache do
       updated_at: DateTime.utc_now(),
       query_start_time: result.query_start_time,
       query_end_time: result.query_end_time,
-      san_query_id: result.san_query_id,
       clickhouse_query_id: result.clickhouse_query_id,
       summary: result.summary
     }

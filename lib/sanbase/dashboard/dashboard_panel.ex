@@ -52,7 +52,7 @@ defmodule Sanbase.Dashboard.Panel do
   """
   @spec new(panel_args()) :: {:ok, t()} | {:error, any()}
   def new(args) do
-    handle_panel(%__MODULE__{}, args, check_required: true, put_ids: true)
+    handle_panel(%__MODULE__{}, args, check_required: true, put_id: true)
   end
 
   @doc ~s"""
@@ -63,12 +63,12 @@ defmodule Sanbase.Dashboard.Panel do
   """
   @spec update(t(), panel_args) :: {:ok, t()} | {:error, any()}
   def update(%__MODULE__{} = panel, args) do
-    handle_panel(panel, args, check_required: false, put_ids: false)
+    handle_panel(panel, args, check_required: false, put_id: false)
   end
 
   defp handle_panel(%__MODULE__{} = panel, args, opts) do
     args =
-      case Keyword.get(opts, :put_ids) do
+      case Keyword.get(opts, :put_id) do
         true ->
           args
           |> put_in([:sql, :san_query_id], UUID.uuid4())
@@ -77,6 +77,8 @@ defmodule Sanbase.Dashboard.Panel do
         false ->
           args
       end
+
+    args = Enum.reject(args, fn {_k, v} -> is_nil(v) end) |> Map.new()
 
     changeset = changeset(panel, args)
 
@@ -89,6 +91,7 @@ defmodule Sanbase.Dashboard.Panel do
     case changeset.valid? do
       true ->
         struct = Map.merge(panel, args)
+
         {:ok, struct}
 
       false ->
@@ -105,8 +108,8 @@ defmodule Sanbase.Dashboard.Panel do
   @spec compute(t(), non_neg_integer(), Keyword.t()) ::
           {:ok, Query.Result.t()} | {:error, String.t()}
   def compute(%__MODULE__{} = panel, querying_user_id, opts) do
-    %{sql: %{"query" => query, "parameters" => parameters, "san_query_id" => san_query_id}} =
-      panel
+    %{sql: %{"query" => query, "parameters" => parameters}} = panel
+    san_query_id = get_in(panel, [Access.key(:sql), "san_query_id"]) || "<unknown>"
 
     # If the opts contain parameters, override the default parameters during computing.
     # It allows for only some parameters to be provided. They will override the existing

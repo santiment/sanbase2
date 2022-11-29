@@ -5,13 +5,22 @@ defmodule Sanbase.Comment do
   A comment is represented by its:
   - author
   - content
-  - subcomments & subcomments_count
-  - parent_id - The id of the comment to which this comment is a direct subcomment.
-    The parent of the subcomment in the tree this comment is part of (if not nil)
-  - root_parent_id - The top-level comment id in the chain of subcomments.
-    The root of the tree this comment is part of (if not nil)
+  - Relationship to other comments in a tree hierarchy:
+    - parent_id - The id of the comment to which this comment is a direct subcomment.
+      The parent of the subcomment in the tree this comment is part of (if not nil)
+    - root_parent_id - The top-level comment id in the chain of subcomments.
+      The root of the tree this comment is part of (if not nil)
+    - subcomments_count
   - timestamp fields
 
+  The comment itself does not belong to any entity (post, chart configuration, etc.).
+  The comments live independently of all these entities - join_through tables are
+  used to build a relationship between entities and comments. One such example table
+  is `post_comments_mapping` which maps comments to posts. Comments of an entity
+  can be viewed as a collection of comment trees - the "top-level" comments are those
+  without parent_id/root_parent_id, which can be ordered by `inserted_at`. Every
+  subcomment in such a tree has parent_id and root_parent_id, where the root_parent_id
+  is the said top-level comment
 
   The EntityComment module is used to interact with comments and is
   invisible to the outside world

@@ -2,7 +2,7 @@ defmodule SanbaseWeb.ExAdmin.ProjectMarketSegment do
   use ExAdmin.Register
 
   alias Sanbase.Project
-  alias Sanbase.ModelMarketSegment
+  alias Sanbase.Model.MarketSegment
 
   register_resource Sanbase.Project.ProjectMarketSegment do
     show market_segment do

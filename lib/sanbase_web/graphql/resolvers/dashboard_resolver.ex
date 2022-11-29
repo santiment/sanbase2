@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   def update_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with true <- is_dashboard_owner?(args.id, user.id),
          {:ok, dashboard_schema} <- Dashboard.update(args.id, args) do
-      {:ok, atomize_panel_sql_keys(dashboard_schema)}
+      {:ok, atomize_dashboard_panels_sql_keys(dashboard_schema)}
     end
   end
 
@@ -48,7 +48,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   def create_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with true <- is_dashboard_owner?(args.dashboard_id, user.id),
          {:ok, %{} = result} <- Dashboard.create_panel(args.dashboard_id, args.panel) do
-      {:ok, result.panel |> Map.put(:dashboard_id, result.dashboard.id)}
+      panel = result.panel |> Map.put(:dashboard_id, result.dashboard.id)
+      {:ok, atomize_panel_sql_keys(panel)}
     end
   end
 
@@ -57,7 +58,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
     with true <- is_dashboard_owner?(dashboard_id, user.id),
          {:ok, %{} = result} <- Dashboard.remove_panel(dashboard_id, panel_id) do
-      {:ok, result.panel |> Map.put(:dashboard_id, dashboard_id)}
+      panel = result.panel |> Map.put(:dashboard_id, result.dashboard.id)
+      {:ok, atomize_panel_sql_keys(panel)}
     end
   end
 
@@ -66,7 +68,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
     with true <- is_dashboard_owner?(dashboard_id, user.id),
          {:ok, %{} = result} <- Dashboard.update_panel(dashboard_id, panel_id, panel) do
-      {:ok, result.panel |> Map.put(:dashboard_id, dashboard_id)}
+      panel = result.panel |> Map.put(:dashboard_id, result.dashboard.id)
+      {:ok, atomize_panel_sql_keys(panel)}
     end
   end
 
@@ -140,7 +143,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
     with true <- can_view_dashboard?(args.id, user_id_or_nil),
          {:ok, dashboard_schema} <- Dashboard.load_schema(args.id) do
-      {:ok, atomize_panel_sql_keys(dashboard_schema)}
+      {:ok, atomize_dashboard_panels_sql_keys(dashboard_schema)}
     end
   end
 
@@ -192,7 +195,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   def get_dashboard_schema_history(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with true <- is_dashboard_owner?(args.id, user.id),
          {:ok, dashboard_schema_history} <- Dashboard.History.get_history(args.id, args.hash) do
-      {:ok, atomize_panel_sql_keys(dashboard_schema_history)}
+      {:ok, atomize_dashboard_panels_sql_keys(dashboard_schema_history)}
     end
   end
 
@@ -241,19 +244,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
-  defp atomize_panel_sql_keys(struct) do
-    panels =
-      Enum.map(struct.panels, fn
-        %{sql: %{} = sql} = panel ->
-          atomized_sql = Map.new(sql, fn {k, v} -> {String.to_existing_atom(k), v} end)
-
-          %{panel | sql: atomized_sql}
-
-        panel ->
-          panel
-      end)
+  defp atomize_dashboard_panels_sql_keys(struct) do
+    panels = Enum.map(struct.panels, &atomize_panel_sql_keys/1)
 
     struct
     |> Map.put(:panels, panels)
+  end
+
+  defp atomize_panel_sql_keys(panel) do
+    case panel do
+      %{sql: %{} = sql} ->
+        atomized_sql =
+          Map.new(sql, fn
+            {k, v} when is_binary(k) -> {String.to_existing_atom(k), v}
+            {k, v} -> {k, v}
+          end)
+
+        %{panel | sql: atomized_sql}
+
+      panel ->
+        panel
+    end
   end
 end

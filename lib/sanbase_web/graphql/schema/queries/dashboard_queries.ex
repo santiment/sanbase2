@@ -264,7 +264,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     field :update_dashboard_panel, :panel_schema do
       arg(:dashboard_id, non_null(:integer))
       arg(:panel_id, non_null(:string))
-      arg(:panel, non_null(:panel_schema_input_object))
+      arg(:panel, non_null(:panel_schema_input_object_for_update))
 
       middleware(JWTAuth)
 

@@ -48,22 +48,25 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     |> maybe_extract_value_from_tuple()
   end
 
-  def users_used_api() do
-    {query, args} = users_used_api_query()
+  def users_used_api(opts \\ []) do
+    until = Keyword.get(opts, :until, Timex.now())
+    {query, args} = users_used_api_query(until)
 
     ClickhouseRepo.query_transform(query, args, fn [value] -> value end)
     |> maybe_extract_value_from_tuple()
   end
 
-  def users_used_sansheets() do
-    {query, args} = users_used_sansheets_query()
+  def users_used_sansheets(opts \\ []) do
+    until = Keyword.get(opts, :until, Timex.now())
+    {query, args} = users_used_sansheets_query(until)
 
     ClickhouseRepo.query_transform(query, args, fn [value] -> value end)
     |> maybe_extract_value_from_tuple()
   end
 
-  def api_calls_count_per_user() do
-    {query, args} = api_calls_count_per_user_query()
+  def api_calls_count_per_user(opts \\ []) do
+    until = Keyword.get(opts, :until, Timex.now())
+    {query, args} = api_calls_count_per_user_query(until)
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn [user_id, count], acc ->
       Map.put(acc, user_id, count)
@@ -196,45 +199,49 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     {query, args}
   end
 
-  defp users_used_api_query() do
+  defp users_used_api_query(until) do
     query = """
     SELECT
       distinct(user_id)
     FROM
       #{@table}
     PREWHERE
+      dt <= toDateTime(?1) AND
       auth_method = 'apikey' AND
       user_id != 0
     """
 
-    {query, []}
+    {query, [until]}
   end
 
-  defp users_used_sansheets_query() do
+  defp users_used_sansheets_query(until) do
     query = """
     SELECT
       distinct(user_id)
     FROM
       #{@table}
     PREWHERE
+      dt <= toDateTime(?1) AND
       user_agent LIKE '%Google-Apps-Script%' AND
       user_id != 0
     """
 
-    {query, []}
+    {query, [until]}
   end
 
-  defp api_calls_count_per_user_query() do
+  defp api_calls_count_per_user_query(until) do
     query = """
     SELECT
       user_id, count(*) as count
     FROM
       #{@table}
-    PREWHERE auth_method = 'apikey' AND user_id != 0
+    PREWHERE
+    dt <= toDateTime(?1) AND
+    auth_method = 'apikey' AND user_id != 0
     GROUP BY user_id
     ORDER BY count desc
     """
 
-    {query, []}
+    {query, [until]}
   end
 end

@@ -88,16 +88,6 @@ defmodule Sanbase.Accounts.UserSettings do
     {:ok, result}
   end
 
-  def sync_paid_with() do
-    Sanbase.Intercom.customer_payment_type_map()
-    |> Enum.into(%{}, fn {customer_id, paid_with} ->
-      {Repo.one(from(u in User, where: u.stripe_customer_id == ^customer_id, select: u.id)),
-       paid_with}
-    end)
-    |> Enum.reject(fn {user_id, _v} -> is_nil(user_id) end)
-    |> Enum.each(fn {user_id, paid_with} -> update_paid_with(user_id, paid_with) end)
-  end
-
   def update_settings(user, %{is_subscribed_biweekly_report: true} = params) do
     case Subscription.current_subscription_plan(user.id, Product.product_sanbase()) do
       pro when pro in ["PRO", "PRO_PLUS"] -> settings_update(user.id, params)
@@ -115,10 +105,6 @@ defmodule Sanbase.Accounts.UserSettings do
 
   def toggle_notification_channel(%User{id: user_id}, params) do
     settings_update(user_id, params)
-  end
-
-  def update_paid_with(user_id, paid_with) do
-    settings_update(user_id, %{paid_with: paid_with})
   end
 
   def set_telegram_chat_id(user_id, chat_id) do

@@ -37,10 +37,10 @@ defmodule Sanbase.Intercom.UserAttributes do
     |> Repo.all()
   end
 
-  def persist_kafka_sync(user_attributes) do
-    [user_attributes]
+  def persist_kafka_async(user_attributes) do
+    user_attributes
     |> to_json_kv_tuple()
-    |> Sanbase.KafkaExporter.send_data_to_topic_from_current_process(@topic)
+    |> Sanbase.KafkaExporter.persist_async(:sanbase_user_intercom_attributes)
   end
 
   # helpers
@@ -53,7 +53,7 @@ defmodule Sanbase.Intercom.UserAttributes do
 
       data = %{
         user_id: user_id,
-        attributes: Map.drop(attributes, ["email", "name", "phone", "avatar"]) |> Jason.encode!(),
+        attributes: Map.drop(attributes, ["email", "name", "phone", "avatar"]),
         timestamp: timestamp
       }
 

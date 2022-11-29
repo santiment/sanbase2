@@ -26,6 +26,22 @@ defmodule Sanbase.Billing.Subscription.Stats do
     end)
   end
 
+  def all_user_subscriptions_map do
+    Repo.all(Subscription)
+    |> Repo.preload(:plan)
+    |> Enum.map(fn s ->
+      %{
+        user_id: s.user_id,
+        id: s.id,
+        plan: s.plan,
+        product: s.plan.product_id,
+        status: s.status,
+        trial_end: s.trial_end
+      }
+    end)
+    |> Enum.group_by(& &1.user_id)
+  end
+
   def duplicate_sanbase_subscriptions() do
     from(
       s in Subscription,

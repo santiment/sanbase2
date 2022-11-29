@@ -19,7 +19,8 @@ defmodule Sanbase.Intercom do
   @user_events_url "https://api.intercom.io/events?type=user"
   @contacts_url "https://api.intercom.io/contacts"
 
-  @batch_size 150
+  @batch_size 100
+  @max_retries 5
 
   def intercom_to_kafka(all_stats \\ nil) do
     Logger.info("[intercom_to_kafka] Start")
@@ -68,6 +69,54 @@ defmodule Sanbase.Intercom do
     Logger.info("[intercom_to_kafka] Finish")
   end
 
+  def fix_old_data(from, to) do
+    Logger.info("[fix_old_data] Start")
+
+    for date <- Sanbase.DateTimeUtils.generate_dates_inclusive(from, to) do
+      Logger.info("[fix_old_data] Start #{date}")
+      datetime = Sanbase.DateTimeUtils.date_to_datetime(date)
+      all_stats = all_users_stats(datetime)
+
+      for offset <- 0..25 do
+        {:ok, data} = fetch_ch_data(datetime, 1000, offset)
+
+        if data != [] do
+          user_ids = data |> Enum.map(& &1[:user_id])
+          users_map = fetch_users_db(user_ids) |> Enum.into(%{}, fn u -> {u.id, u} end)
+
+          new_data =
+            Enum.map(data, fn %{user_id: user_id, dt: dt, attributes: attributes} ->
+              if attributes["custom_attributes"]["used_api"] == nil do
+                if users_map[user_id] do
+                  stats = fetch_stats_for_user(users_map[user_id], all_stats)
+                  custom_attributes = stats["custom_attributes"]
+                  attributes = Map.put(attributes, "custom_attributes", custom_attributes)
+
+                  %{
+                    user_id: user_id,
+                    properties: attributes,
+                    inserted_at: DateTime.from_naive!(dt, "Etc/UTC")
+                  }
+                else
+                  nil
+                end
+              else
+                nil
+              end
+            end)
+            |> Enum.reject(&is_nil/1)
+
+          Logger.info("[fix_old_data] date=#{date} rows to save: #{length(new_data)}")
+          persist_kafka_async(new_data)
+        end
+      end
+
+      Logger.info("[fix_old_data] Finish #{date}")
+    end
+
+    Logger.info("[fix_old_data] Finish")
+  end
+
   def save_contacts_to_intercom(contacts) do
     contacts
     |> Enum.each(fn contact ->
@@ -113,6 +162,7 @@ defmodule Sanbase.Intercom do
       insights_map: Statistics.resource_user_count_map(Sanbase.Insight.Post),
       watchlists_map: Statistics.resource_user_count_map(Sanbase.UserList),
       screeners_map: Statistics.user_screeners_count_map(),
+      user_triggers_type_count: Statistics.user_triggers_type_count(),
       users_used_api_list: ApiCallData.users_used_api(),
       users_used_sansheets_list: ApiCallData.users_used_sansheets(),
       api_calls_per_user_count: ApiCallData.api_calls_count_per_user(),
@@ -120,9 +170,47 @@ defmodule Sanbase.Intercom do
     }
   end
 
+  def all_users_stats(until) do
+    %{
+      paid_users: paid_users(),
+      triggers_map: Statistics.resource_user_count_map(Sanbase.Alert.UserTrigger),
+      insights_map: Statistics.resource_user_count_map(Sanbase.Insight.Post),
+      watchlists_map: Statistics.resource_user_count_map(Sanbase.UserList),
+      screeners_map: Statistics.user_screeners_count_map(),
+      user_triggers_type_count: Statistics.user_triggers_type_count(),
+      users_used_api_list: ApiCallData.users_used_api(until: until),
+      users_used_sansheets_list: ApiCallData.users_used_sansheets(until: until),
+      api_calls_per_user_count: ApiCallData.api_calls_count_per_user(until: until),
+      all_user_subscriptions_map: Subscription.Stats.all_user_subscriptions_map()
+    }
+  end
+
   def fetch_all_db_user_ids() do
     from(u in User, order_by: [asc: u.id], select: u.id)
     |> Repo.all()
+  end
+
+  def fetch_ch_data(datetime, limit, offset) do
+    date = DateTime.to_date(datetime) |> Date.to_string()
+
+    offset = offset * limit
+
+    query = """
+    SELECT dt, user_id, attributes
+    FROM sanbase_user_intercom_attributes
+    WHERE (toStartOfDay(dt) = ?1) AND user_id >= 87180
+    ORDER BY user_id ASC
+    LIMIT ?2
+    OFFSET ?3
+    """
+
+    ClickhouseRepo.query_transform(query, [date, limit, offset], fn [dt, user_id, attributes] ->
+      %{
+        dt: dt,
+        user_id: user_id,
+        attributes: Jason.decode!(attributes)
+      }
+    end)
   end
 
   def fetch_all_synced_user_ids() do
@@ -159,14 +247,15 @@ defmodule Sanbase.Intercom do
         try do
           process_batch_fn.(contacts)
         rescue
-          e -> Logger.error("[intercom_to_kafka] error: #{inspect(e)}")
+          e ->
+            Logger.error("[intercom_to_kafka] error: #{inspect(e)}")
         end
 
         fetch_contacts(Map.put(args, :starting_after, next), process_batch_fn)
     end
   end
 
-  defp do_fetch(args) do
+  defp do_fetch(args, attempt \\ 0) do
     params = URI.encode_query(args)
     url = "#{@contacts_url}?#{params}"
 
@@ -183,6 +272,15 @@ defmodule Sanbase.Intercom do
         )
 
         {body["pages"]["next"]["starting_after"], body["data"]}
+
+      {:error, %HTTPoison.Error{reason: :timeout} = response} ->
+        Logger.error("[intercom_to_kafka] #{inspect(response)}")
+        Logger.error("[intercom_to_kafka] retrying ... attempt: #{attempt + 1}")
+
+        if attempt <= @max_retries do
+          Process.sleep(1000)
+          do_fetch(args, attempt + 1)
+        end
 
       {:error, response} ->
         Logger.error("[intercom_to_kafka] #{inspect(response)}")
@@ -238,7 +336,7 @@ defmodule Sanbase.Intercom do
           active_subscriptions: subs_data.active_subscriptions,
           user_paid_with: user_paid_with
         }
-        |> Map.merge(triggers_type_count(user))
+        |> Map.merge(triggers_type_count(data.user_triggers_type_count[id]))
     }
 
     # email must be dropped if nil so user still can be created in Intercom if doesn't exist
@@ -313,12 +411,11 @@ defmodule Sanbase.Intercom do
     end
   end
 
-  defp triggers_type_count(user) do
-    user.id
-    |> UserTrigger.triggers_for()
-    |> Enum.group_by(fn ut -> ut.trigger.settings.type end)
-    |> Enum.map(fn {type, list} -> {"trigger_" <> type, length(list)} end)
-    |> Enum.into(%{})
+  defp triggers_type_count(nil), do: %{}
+
+  defp triggers_type_count(signals) do
+    signals
+    |> Enum.into(%{}, fn [_, type, count] -> {"trigger_" <> type, count} end)
   end
 
   def fetch_users_db(user_ids) do

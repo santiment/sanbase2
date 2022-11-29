@@ -106,6 +106,19 @@ defmodule Sanbase.Accounts.Statistics do
     )
   end
 
+  def user_triggers_type_count do
+    query = """
+    SELECT user_id, trigger->'settings'->'type' as type, count(*) as cnt
+    FROM user_triggers
+    WHERE is_deleted = 'f' and is_hidden = 'f'
+    GROUP BY user_id, type
+    """
+
+    Repo.query!(query)
+    |> Map.get(:rows)
+    |> Enum.group_by(fn [user_id, type, count] -> user_id end)
+  end
+
   def users_with_monitored_watchlist_and_email() do
     from(u in User,
       join: ul in UserList,

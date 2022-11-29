@@ -157,7 +157,15 @@ defmodule Sanbase.Dashboard.Cache do
 
     panel_cache
     |> Map.delete("compressed_rows")
-    |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
+    |> Map.new(fn {k, v} ->
+      # Ignore old, no longer existing keys like san_query_id
+      try do
+        {String.to_existing_atom(k), v}
+      rescue
+        _ -> {nil, nil}
+      end
+    end)
+    |> Map.delete(nil)
     |> Map.put(:rows, rows)
     |> Map.put(:updated_at, updated_at)
     |> Map.put(:id, panel_cache["id"])

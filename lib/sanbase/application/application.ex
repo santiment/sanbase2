@@ -194,6 +194,21 @@ defmodule Sanbase.Application do
         fn -> container_type in ["all", "web"] end
       ),
 
+      # sanbase_user_intercom_attributes exporter is started only in `scrapers` and `all` pods.
+      start_if(
+        fn ->
+          Sanbase.KafkaExporter.child_spec(
+            id: :sanbase_user_intercom_attributes,
+            name: :sanbase_user_intercom_attributes,
+            topic: "sanbase_user_intercom_attributes",
+            buffering_max_messages: 5_000,
+            can_send_after_interval: 250,
+            kafka_flush_timeout: 1000
+          )
+        end,
+        fn -> container_type in ["all", "scrapers"] end
+      ),
+
       # Prices exporter is started only in `scrapers` and `all` pods.
       start_if(
         fn ->

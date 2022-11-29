@@ -9,73 +9,73 @@ defmodule Sanbase.Intercom do
   require Logger
 
   alias Sanbase.Accounts.{User, Statistics}
-  alias Sanbase.Billing.{Subscription, Product, Plan}
+  alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Clickhouse.ApiCallData
-  alias Sanbase.Intercom.UserAttributes
   alias Sanbase.Accounts.EthAccount
   alias Sanbase.Repo
   alias Sanbase.ClickhouseRepo
 
-  @intercom_url "https://api.intercom.io/users"
   @user_events_url "https://api.intercom.io/events?type=user"
   @contacts_url "https://api.intercom.io/contacts"
-  @users_page_size 100
 
-  def user_stats(user) do
-    fetch_stats_for_user(user, all_users_stats())
-  end
+  @batch_size 150
 
-  def sync_sanbase_to_intercom do
-    Logger.info("Start sync_sanbase_to_intercom to Intercom")
+  def intercom_to_kafka(all_stats \\ nil) do
+    Logger.info("[intercom_to_kafka] Start")
+    all_stats = all_stats || all_users_stats()
 
-    # Skip if api key not present in env. (Run only on production)
-    all_users_stats = all_users_stats()
+    process_batch_fn = fn contacts ->
+      contacts =
+        contacts
+        |> Enum.reject(fn c ->
+          is_nil(c["external_id"]) or not Regex.match?(~r/^\d+$/, c["external_id"])
+        end)
 
-    if has_intercom_api_key?() do
-      1..user_pages()
-      |> Stream.flat_map(fn page ->
-        users_by_page(page, @users_page_size)
-      end)
-      |> fetch_and_send_stats(all_users_stats)
+      user_ids = contacts |> Enum.map(& &1["external_id"])
+      users_map = fetch_users_db(user_ids) |> Enum.into(%{}, fn u -> {to_string(u.id), u} end)
 
-      Logger.info("Finish sync_sanbase_to_intercom to Intercom")
-    else
-      :ok
-    end
-  end
+      updated_contacts =
+        contacts
+        |> Enum.map(fn contact ->
+          user_id = contact["external_id"]
 
-  def sync_intercom_to_kafka do
-    if has_intercom_api_key?() do
-      Logger.info("Start sync_intercom_to_kafka")
-
-      remaining_user_ids = fetch_all_db_user_ids() -- fetch_all_synced_user_ids()
-      Logger.info("Start sync_intercom_to_kafka remaining_user_ids=#{length(remaining_user_ids)}")
-
-      remaining_user_ids
-      |> Enum.each(fn user_id ->
-        try do
-          attributes = get_user(user_id)
-
-          if attributes do
-            %{user_id: user_id, properties: attributes, inserted_at: Timex.now()}
-            |> UserAttributes.persist_kafka_sync()
+          if users_map[user_id] do
+            stats = fetch_stats_for_user(users_map[user_id], all_stats)
+            Map.merge(contact, stats)
+          else
+            contact
           end
-        rescue
-          e ->
-            Logger.error(
-              "Error sync_intercom_to_kafka for user: #{user_id}, error: #{inspect(e)}"
-            )
-        end
-      end)
+        end)
 
-      Logger.info("Finish sync_intercom_to_kafka")
+      # save in kafka
+      Enum.map(updated_contacts, fn contact ->
+        %{
+          user_id: contact["external_id"],
+          properties: contact,
+          inserted_at: Timex.beginning_of_day(Timex.now())
+        }
+      end)
+      |> persist_kafka_async()
+    end
+
+    if has_intercom_api_key?() do
+      fetch_contacts(%{per_page: @batch_size}, process_batch_fn)
     else
       :ok
     end
+
+    Logger.info("[intercom_to_kafka] Finish")
   end
 
-  def get_user(user_id) do
+  def save_contacts_to_intercom(contacts) do
+    contacts
+    |> Enum.each(fn contact ->
+      update_contact(contact["id"], contact)
+    end)
+  end
+
+  def get_contact_by_user_id(user_id) do
     body =
       %{
         query: %{
@@ -86,40 +86,24 @@ defmodule Sanbase.Intercom do
       }
       |> Jason.encode!()
 
-    HTTPoison.post!(
-      "#{@contacts_url}/search",
-      body,
-      intercom_headers() ++ [{"Intercom-Version", "2.5"}]
-    )
+    HTTPoison.post!("#{@contacts_url}/search", body, intercom_headers())
     |> Map.get(:body)
     |> Jason.decode!()
     |> Map.get("data")
     |> List.first()
   end
 
-  def update_user(intercom_id, params) do
+  def update_contact(intercom_id, params) do
     body_json = Jason.encode!(params)
 
-    HTTPoison.put!(
-      "#{@contacts_url}/#{intercom_id}",
-      body_json,
-      intercom_headers() ++ [{"Intercom-Version", "2.5"}]
-    )
-    |> Map.get(:body)
-    |> Jason.decode!()
+    HTTPoison.put!("#{@contacts_url}/#{intercom_id}", body_json, intercom_headers())
   end
 
-  def get_many_users() do
-    body =
-      HTTPoison.get!(
-        "#{@contacts_url}?per_page=1",
-        intercom_headers() ++ [{"Intercom-Version", "2.5"}]
-      )
-      |> Map.get(:body)
-      |> Jason.decode!()
+  def get_events_for_user(user_id, since \\ nil) do
+    url = "#{@user_events_url}&user_id=#{user_id}"
+    url = if since, do: "#{url}&since=#{since}", else: url
 
-    # data = body["data"]
-    # starting_after = body["pages"]["starting_after"]
+    fetch_all_events(url)
   end
 
   def all_users_stats do
@@ -156,21 +140,6 @@ defmodule Sanbase.Intercom do
     user_ids
   end
 
-  defp all_users_count() do
-    Repo.one(from(u in User, select: count(u.id)))
-  end
-
-  def get_events_for_user(user_id, since \\ nil) do
-    url = "#{@user_events_url}&user_id=#{user_id}"
-    url = if since, do: "#{url}&since=#{since}", else: url
-
-    fetch_all_events(url)
-  end
-
-  def intercom_api_key() do
-    Config.get(:api_key)
-  end
-
   def has_intercom_api_key?() do
     apikey = intercom_api_key()
     is_binary(apikey) and apikey != ""
@@ -178,22 +147,86 @@ defmodule Sanbase.Intercom do
 
   # helpers
 
+  defp fetch_contacts(args, process_batch_fn) do
+    case do_fetch(args) do
+      {_, []} ->
+        :ok
+
+      {nil, _contacts} ->
+        :ok
+
+      {next, contacts} ->
+        try do
+          process_batch_fn.(contacts)
+        rescue
+          e -> Logger.error("[intercom_to_kafka] error: #{inspect(e)}")
+        end
+
+        fetch_contacts(Map.put(args, :starting_after, next), process_batch_fn)
+    end
+  end
+
+  defp do_fetch(args) do
+    params = URI.encode_query(args)
+    url = "#{@contacts_url}?#{params}"
+
+    HTTPoison.get(url, intercom_headers())
+    |> case do
+      {:ok, response} ->
+        body =
+          response
+          |> Map.get(:body)
+          |> Jason.decode!()
+
+        Logger.info(
+          "[intercom_to_kafka] page=#{body["pages"]["page"]} from total_pages: #{body["pages"]["total_pages"]} | progress=#{round(body["pages"]["page"] / body["pages"]["total_pages"] * 100)}%"
+        )
+
+        {body["pages"]["next"]["starting_after"], body["data"]}
+
+      {:error, response} ->
+        Logger.error("[intercom_to_kafka] #{inspect(response)}")
+    end
+  end
+
+  def persist_kafka_async(user_attributes) do
+    user_attributes
+    |> to_json_kv_tuple()
+    |> Sanbase.KafkaExporter.persist_async(:sanbase_user_intercom_attributes)
+  end
+
+  defp to_json_kv_tuple(user_attributes) do
+    user_attributes
+    |> Enum.map(fn %{user_id: user_id, properties: attributes, inserted_at: timestamp} ->
+      timestamp = DateTime.to_unix(timestamp)
+      key = "#{user_id}_#{timestamp}"
+
+      data = %{
+        user_id: user_id,
+        attributes: Map.drop(attributes, ["email", "name", "phone", "avatar"]) |> Jason.encode!(),
+        timestamp: timestamp
+      }
+
+      {key, Jason.encode!(data)}
+    end)
+  end
+
   defp fetch_stats_for_user(%User{id: id} = user, data) do
     user_paid_with = if id in data.paid_users, do: "fiat", else: "not_paid"
     subs_data = sanbase_subs_data(data.all_user_subscriptions_map[id])
 
     stats = %{
-      user_id: id,
-      email: user.email,
-      name: user.username,
-      signed_up_at: signed_up_at(user),
-      custom_attributes:
+      "user_id" => id,
+      "email" => user.email,
+      "name" => user.username,
+      "signed_up_at" => signed_up_at(user),
+      "custom_attributes" =>
         %{
           all_watchlists_count: Map.get(data.watchlists_map, id, 0),
           all_triggers_count: Map.get(data.triggers_map, id, 0),
           all_insights_count: Map.get(data.insights_map, id, 0),
           all_screeners_count: Map.get(data.screeners_map, id, 0),
-          staked_san_tokens: Sanbase.Math.to_float(user.san_balance),
+          staked_san_tokens: san_balance(user),
           address_balance_map: address_balance_map(user.eth_accounts),
           used_sanapi: id in data.users_used_api_list,
           used_sansheets: id in data.users_used_sansheets_list,
@@ -214,6 +247,23 @@ defmodule Sanbase.Intercom do
     stats
   end
 
+  def san_balance(user) do
+    if user.eth_accounts != [] do
+      Sanbase.Math.to_float(user.san_balance)
+    else
+      0.0
+    end
+  end
+
+  def sanbase_subs_data(nil) do
+    %{
+      sanbase_subscription_current_status: nil,
+      sanbase_trial_created_at: nil,
+      user_paid_after_trial: false,
+      active_subscriptions: ""
+    }
+  end
+
   def sanbase_subs_data(user_sub_data) do
     sanbase_subscription_current_status =
       Enum.filter(user_sub_data, &(&1.product == 2))
@@ -232,7 +282,10 @@ defmodule Sanbase.Intercom do
       sanbase_trial_created_at && sanbase_subscription_current_status == "active"
 
     active_subscriptions =
-      Enum.map(user_sub_data, &Plan.plan_full_name(&1.plan)) |> Enum.join(", ")
+      user_sub_data
+      |> Enum.filter(&(&1.status in [:active, :past_due]))
+      |> Enum.map(&Plan.plan_full_name(&1.plan))
+      |> Enum.join(", ")
 
     %{
       sanbase_subscription_current_status: sanbase_subscription_current_status,
@@ -268,83 +321,9 @@ defmodule Sanbase.Intercom do
     |> Enum.into(%{})
   end
 
-  defp send_user_stats_to_intercom(stats) do
-    stats_json = Jason.encode!(stats)
-
-    HTTPoison.post(@intercom_url, stats_json, intercom_headers())
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        Logger.info("Stats sent for user: #{stats.user_id}}")
-        stats = merge_intercom_attributes(stats, body)
-        UserAttributes.save(%{user_id: stats.user_id, properties: stats})
-        :ok
-
-      {:ok, %HTTPoison.Response{} = response} ->
-        Logger.error(
-          "Error sending to intercom stats: #{inspect(stats)}. Response: #{inspect(response)}"
-        )
-
-      {:error, reason} ->
-        Logger.error(
-          "Error sending to intercom stats: #{inspect(stats)}. Reason: #{inspect(reason)}"
-        )
-    end
-  end
-
-  defp user_pages() do
-    (all_users_count() / @users_page_size)
-    |> Float.ceil()
-    |> round()
-  end
-
-  defp users_by_page(page, page_size) do
-    {limit, offset} =
-      Sanbase.Utils.Transform.opts_to_limit_offset(page: page, page_size: page_size)
-
-    from(u in User,
-      order_by: u.id,
-      limit: ^limit,
-      offset: ^offset,
-      preload: [:eth_accounts]
-    )
+  def fetch_users_db(user_ids) do
+    from(u in User, where: u.id in ^user_ids, preload: [:eth_accounts])
     |> Repo.all()
-  end
-
-  defp fetch_and_send_stats(users, all_users_stats) do
-    users
-    |> Stream.map(fn user ->
-      try do
-        fetch_stats_for_user(user, all_users_stats)
-      rescue
-        e ->
-          Logger.error(
-            "Error sync_sanbase_to_intercom to Intercom (fetch_stats_for_user) for user: #{user.id}, error: #{inspect(e)}"
-          )
-
-          reraise e, __STACKTRACE__
-      end
-    end)
-    |> Enum.each(fn user_stats ->
-      try do
-        send_user_stats_to_intercom(user_stats)
-      rescue
-        e ->
-          Logger.error(
-            "Error sync_sanbase_to_intercom to Intercom (send_user_stats_to_intercom) for user: #{user_stats.user_id}, error: #{inspect(e)}"
-          )
-      end
-    end)
-  end
-
-  defp merge_intercom_attributes(stats, intercom_resp) do
-    res = Jason.decode!(intercom_resp)
-    app_version = get_in(res, ["custom_attributes", "app_version"])
-
-    if app_version do
-      put_in(stats, [:custom_attributes, :app_version], app_version)
-    else
-      stats
-    end
   end
 
   defp fetch_all_events(url, all_events \\ []) do
@@ -386,11 +365,11 @@ defmodule Sanbase.Intercom do
     query = """
     SELECT distinct(user_id)
     FROM (
-      SELECT dt, user_id, toString(JSONExtractRaw(data, 'status')) AS status,
+      SELECT dt, user_id, toString(JSONExtractRaw(data, 'status')) AS status
       FROM sanbase_stripe_transactions
       WHERE status = '"succeeded"'
     )
-    GROUP BY user_id;
+    GROUP BY user_id
     """
 
     Sanbase.ClickhouseRepo.query_transform(query, [], fn [user_id] -> user_id end)
@@ -400,18 +379,16 @@ defmodule Sanbase.Intercom do
     end
   end
 
-  defp format_dt(unix_timestmap) when is_integer(unix_timestmap) do
-    DateTime.from_unix!(unix_timestmap)
-    |> DateTime.to_iso8601()
-  end
-
-  defp format_dt(nil), do: nil
-
   defp intercom_headers() do
     [
       {"Content-Type", "application/json"},
       {"Accept", "application/json"},
-      {"Authorization", "Bearer #{intercom_api_key()}"}
+      {"Authorization", "Bearer #{intercom_api_key()}"},
+      {"Intercom-Version", "2.5"}
     ]
+  end
+
+  defp intercom_api_key() do
+    Config.get(:api_key)
   end
 end

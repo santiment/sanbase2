@@ -90,25 +90,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "@daily",
       task: {Sanbase.ExternalServices.Coinmarketcap.LogoFetcher, :run, []}
     ],
-    sync_users_to_intercom: [
-      schedule: "00 01 * * *",
-      task: {Sanbase.Intercom, :sync_sanbase_to_intercom, []}
-    ],
-    sync_intercom_to_kafka: [
-      schedule: "00 03 * * *",
-      task: {Sanbase.Intercom, :sync_intercom_to_kafka, []}
-    ],
-    sync_intercom_to_kafka_on_reboot: [
-      schedule: "@reboot",
-      task: {Sanbase.Intercom, :sync_intercom_to_kafka, []}
-    ],
     sync_events_from_intercom: [
       schedule: "00 10 * * *",
       task: {Sanbase.Intercom.UserEvent, :sync_events_from_intercom, []}
-    ],
-    sync_paid_with: [
-      schedule: "20 * * * *",
-      task: {Sanbase.Accounts.UserSettings, :sync_paid_with, []}
     ],
     sync_subscribed_users_with_changed_email: [
       schedule: "20 * * * *",

@@ -116,6 +116,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     event_args = %{login_origin: :email}
 
     with {:ok, user} <- User.find_or_insert_by(:email, email),
+         is_registered <- user.is_registered,
          true <- User.email_token_valid?(user, token),
          {:ok, %{} = jwt_tokens_map} <-
            SanbaseWeb.Guardian.get_jwt_tokens(user,
@@ -128,7 +129,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
       {:ok,
        %{
-         user: user,
+         # When we reach this, the user has already been created by the
+         # emailLogin GraphQL query, so `first_login` will be false. It is indeed
+         # the first login if the user has not been labeled as registered (before
+         # calling mark_as_registered). Subsequent logins will have this field
+         # set to true, so this will make the first_login equal false
+         user: %{user | first_login: not is_registered},
          token: jwt_tokens_map.access_token,
          access_token: jwt_tokens_map.access_token,
          refresh_token: jwt_tokens_map.refresh_token

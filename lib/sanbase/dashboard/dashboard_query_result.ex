@@ -4,7 +4,6 @@ defmodule Sanbase.Dashboard.Query.Result do
   """
 
   @type t :: %__MODULE__{
-          san_query_id: String.t(),
           clickhouse_query_id: String.t(),
           summary: Map.t(),
           rows: list(String.t() | number() | boolean() | DateTime.t()),
@@ -15,8 +14,7 @@ defmodule Sanbase.Dashboard.Query.Result do
           query_end_time: DateTime.t()
         }
 
-  defstruct san_query_id: nil,
-            clickhouse_query_id: nil,
+  defstruct clickhouse_query_id: nil,
             summary: nil,
             rows: nil,
             compressed_rows: nil,

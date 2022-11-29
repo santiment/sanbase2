@@ -26,7 +26,6 @@ defmodule Sanbase.Dashboard.QueryExecution do
 
   @type t :: %__MODULE__{
           user_id: user_id(),
-          san_query_id: String.t(),
           execution_details: execution_details(),
           credits_cost: credits_cost(),
           inserted_at: NaiveDateTime.t(),
@@ -37,7 +36,6 @@ defmodule Sanbase.Dashboard.QueryExecution do
     belongs_to(:user, User)
 
     field(:clickhouse_query_id, :string)
-    field(:san_query_id, :string)
     field(:execution_details, :map)
     field(:credits_cost, :integer)
 
@@ -71,7 +69,6 @@ defmodule Sanbase.Dashboard.QueryExecution do
 
   @fields [
     :user_id,
-    :san_query_id,
     :clickhouse_query_id,
     :execution_details,
     :credits_cost,
@@ -107,7 +104,6 @@ defmodule Sanbase.Dashboard.QueryExecution do
     args =
       query_result
       |> Map.take([
-        :san_query_id,
         :clickhouse_query_id,
         :query_start_time,
         :query_end_time

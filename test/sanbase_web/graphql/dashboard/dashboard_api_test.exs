@@ -161,7 +161,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
              } == updated_panel
     end
 
-    test "delete panel", context do
+    test "remove panel", context do
       dashboard =
         execute_dashboard_mutation(context.conn, :create_dashboard)
         |> get_in(["data", "createDashboard"])
@@ -512,7 +512,6 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
               panel_id: panel["id"],
               panel: %{
                 map_as_input_object: true,
-                san_query_id: result["sanQueryId"],
                 clickhouse_query_id: result["clickhouseQueryId"],
                 columns: result["columns"],
                 column_types: result["columnTypes"],
@@ -527,7 +526,6 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
 
         dashboard_id = dashboard["id"]
         panel_id = panel["id"]
-        san_query_id = result["sanQueryId"]
         query_start_time = result["queryStartTime"]
         query_end_time = result["queryEndTime"]
 
@@ -542,7 +540,6 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                    [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
                    [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
                  ],
-                 "sanQueryId" => ^san_query_id,
                  "summary" => %{
                    "read_bytes" => "0",
                    "read_rows" => "0",
@@ -992,7 +989,6 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
       #{mutation_name}(#{map_to_args(args)}){
         id
         clickhouseQueryId
-        sanQueryId
         dashboardId
         columns
         columnTypes

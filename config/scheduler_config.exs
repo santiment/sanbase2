@@ -110,6 +110,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "30 00 * * *",
       task: {Sanbase.Billing.StripeSync, :run, []}
     ],
+    intercom_to_kafka: [
+      schedule: "30 01 * * *",
+      task: {Sanbase.Intercom, :intercom_to_kafka, []}
+    ],
     sync_coinmarketcap_projects: [
       # When a new project gets a coinmarketcap string slug associated with it,
       # it is not until the first scrape which includes it, that it also gets the

@@ -171,12 +171,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   end
 
   def compute_raw_clickhouse_query(_root, args, %{context: %{auth: %{current_user: user}}}) do
-    san_query_id = UUID.uuid4()
-
     with true <- can_run_computation?(user.id),
          true <- Dashboard.Query.valid_sql?(args),
          {:ok, query_result} <-
-           Dashboard.Query.run(args.query, args.parameters, san_query_id, user.id) do
+           Dashboard.Query.run(args.query, args.parameters, user.id) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Dashboard.QueryExecution.store_execution(user.id, query_result)
       end)

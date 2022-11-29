@@ -76,7 +76,6 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   object used when providing that panel result is this.
   """
   input_object :computed_panel_schema_input_object do
-    field(:san_query_id, non_null(:string))
     field(:clickhouse_query_id, non_null(:string))
     field(:columns, non_null(list_of(:string)))
     field(:column_types, non_null(list_of(:string)))
@@ -160,7 +159,6 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   The result of executing a raw Clickhouse SQL query.
   """
   object :query_result do
-    field(:san_query_id, non_null(:string))
     field(:clickhouse_query_id, non_null(:string))
     field(:summary, non_null(:json))
     field(:rows, non_null(:json))
@@ -215,7 +213,6 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   object :panel_cache do
     field(:id, non_null(:string))
     field(:dashboard_id, non_null(:integer))
-    field(:san_query_id, non_null(:string))
     field(:clickhouse_query_id, non_null(:string))
     field(:columns, non_null(list_of(:string)))
     field(:column_types, non_null(list_of(:string)))

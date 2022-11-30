@@ -534,7 +534,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "price_eth_change_30d",
         "price_btc_change_1d",
         "price_btc_change_7d",
-        "price_btc_change_30d"
+        "price_btc_change_30d",
+        "price_volatility_1d",
+        "price_volatility_1w",
+        "price_volatility_2w",
+        "price_volatility_4w"
       ]
       |> Enum.sort()
 

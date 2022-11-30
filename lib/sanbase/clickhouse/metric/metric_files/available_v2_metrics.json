@@ -2522,5 +2522,28 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Price volatility for the last {{sliding_window:human_readable}}",
+    "name": "price_volatility_{{sliding_window}}",
+    "metric": "price_volatility_{{sliding_window}}",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "parameters": [
+      { "sliding_window": "1d" },
+      { "sliding_window": "1w" },
+      { "sliding_window": "2w" },
+      { "sliding_window": "4w" }
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
   }
 ]

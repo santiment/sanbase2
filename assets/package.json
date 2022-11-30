@@ -27,6 +27,6 @@
     "tailwindcss": "^1.4.6",
     "uglifyjs-webpack-plugin": "^1.2.4",
     "webpack": "4.4.0",
-    "webpack-cli": "^2.0.10"
+    "webpack-cli": "^2.1.5"
   }
 }

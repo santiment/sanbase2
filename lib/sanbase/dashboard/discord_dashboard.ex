@@ -121,12 +121,10 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
   def create(user_id, query, params) do
     args = Map.put(params, :user_id, user_id)
 
+    create_panel_args = %{name: params.name, sql: %{parameters: %{}, query: query}}
+
     with {:ok, dashboard} <- Dashboard.create(%{name: params.name}, user_id),
-         {:ok, %{panel: panel}} <-
-           Dashboard.create_panel(dashboard.id, %{
-             name: params.name,
-             sql: %{parameters: %{}, query: query}
-           }),
+         {:ok, %{panel: panel}} <- Dashboard.create_panel(dashboard.id, create_panel_args),
          {:ok, %__MODULE__{}} <-
            do_create(Map.merge(args, %{dashboard_id: dashboard.id, panel_id: panel.id})),
          {:ok, result} <-

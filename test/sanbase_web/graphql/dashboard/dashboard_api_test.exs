@@ -302,6 +302,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                  "data" => %{
                    "computeDashboardPanel" => %{
                      "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                     "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
                      "dashboardId" => ^dashboard_id,
                      "id" => _,
                      "rows" => [
@@ -355,12 +356,22 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
       end)
     end
 
-    test "compute and store a panel", context do
+    test "compute and store panels", context do
       dashboard =
         execute_dashboard_mutation(context.conn, :create_dashboard)
         |> get_in(["data", "createDashboard"])
 
-      panel =
+      # Test with more than 1 panel so it makes sure that existing cache is
+      # kept intact
+      panel1 =
+        execute_dashboard_panel_schema_mutation(
+          context.conn,
+          :create_dashboard_panel,
+          default_dashboard_panel_args() |> Map.put(:dashboard_id, dashboard["id"])
+        )
+        |> get_in(["data", "createDashboardPanel"])
+
+      panel2 =
         execute_dashboard_panel_schema_mutation(
           context.conn,
           :create_dashboard_panel,
@@ -373,13 +384,22 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         {:ok, mocked_clickhouse_result()}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
+        execute_dashboard_panel_cache_mutation(
+          context.conn,
+          :compute_and_store_dashboard_panel,
+          %{
+            dashboard_id: dashboard["id"],
+            panel_id: panel1["id"]
+          }
+        )
+
         result =
           execute_dashboard_panel_cache_mutation(
             context.conn,
             :compute_and_store_dashboard_panel,
             %{
               dashboard_id: dashboard["id"],
-              panel_id: panel["id"]
+              panel_id: panel2["id"]
             }
           )
           |> get_in(["data", "computeAndStoreDashboardPanel"])
@@ -388,6 +408,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
 
         assert %{
                  "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                 "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
                  "dashboardId" => ^dashboard_id,
                  "id" => id,
                  "rows" => [
@@ -418,37 +439,41 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
 
       dashboard_id = dashboard["id"]
 
-      assert %{
-               "panels" => [
-                 %{
-                   "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
-                   "dashboardId" => ^dashboard_id,
-                   "id" => id,
-                   "rows" => [
-                     [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
-                     [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
-                   ],
-                   "summary" => %{
-                     "read_bytes" => "0",
-                     "read_rows" => "0",
-                     "total_rows_to_read" => "0",
-                     "written_bytes" => "0",
-                     "written_rows" => "0"
-                   },
-                   "updatedAt" => updated_at
-                 }
-               ]
-             } = dashboard_cache
+      assert %{"panels" => panels} = dashboard_cache
+      assert length(panels) == 2
 
-      assert is_binary(id) and String.length(id) == 36
-      updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
-      assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
+      for panel_id <- [panel1["id"], panel2["id"]] do
+        assert Enum.any?(
+                 panels,
+                 &match?(
+                   %{
+                     "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+                     "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                     "dashboardId" => ^dashboard_id,
+                     "id" => ^panel_id,
+                     "rows" => [
+                       [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                       [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                     ],
+                     "summary" => %{
+                       "read_bytes" => "0",
+                       "read_rows" => "0",
+                       "total_rows_to_read" => "0",
+                       "written_bytes" => "0",
+                       "written_rows" => "0"
+                     },
+                     "updatedAt" => _
+                   },
+                   &1
+                 )
+               )
+      end
 
       # Get a single dashboard panel cache
-      panel_id = panel["id"]
+      panel2_id = panel2["id"]
 
-      panel_cache =
-        get_dashboard_panel_cache(context.conn, dashboard_id, panel_id)
+      panel2_cache =
+        get_dashboard_panel_cache(context.conn, dashboard_id, panel2_id)
         |> get_in(["data", "getDashboardPanelCache"])
 
       assert %{
@@ -467,7 +492,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                  "written_rows" => "0"
                },
                "updatedAt" => updated_at
-             } = panel_cache
+             } = panel2_cache
 
       assert is_binary(id) and String.length(id) == 36
       updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)

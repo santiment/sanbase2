@@ -63,7 +63,7 @@ defmodule Sanbase.Dashboard.Cache do
       nil -> new(dashboard_id)
       %__MODULE__{} = cache -> {:ok, cache}
     end
-    |> maybe_apply_function(&transform_loaded_dashboard_cache/1)
+    |> maybe_apply_function(&transform_loaded_dashboard_cache(&1, opts))
   end
 
   def by_dashboard_and_panel_id(dashboard_id, panel_id) do
@@ -105,7 +105,14 @@ defmodule Sanbase.Dashboard.Cache do
           {:ok, t()} | {:error, any()}
   def update_panel_cache(dashboard_id, panel_id, query_result) do
     with true <- query_result_size_allowed?(query_result),
-         {:ok, cache} <- by_dashboard_id(dashboard_id, lock_for_update: true) do
+         {:ok, cache} <-
+           by_dashboard_id(dashboard_id,
+             # Do not transform the loaded panel cache. Transforming it would
+             # convert `compressed_rows` to `rows`, which will be written back and break
+             # the code
+             transform_loaded_panel_cache: false,
+             lock_for_update: true
+           ) do
       panel_cache =
         Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
         |> Map.from_struct()
@@ -136,11 +143,18 @@ defmodule Sanbase.Dashboard.Cache do
 
   # Private functions
 
-  defp transform_loaded_dashboard_cache(%__MODULE__{} = cache) do
+  defp transform_loaded_dashboard_cache(%__MODULE__{} = cache, opts) do
+    flag = Keyword.get(opts, :transform_loaded_panel_cache, true)
+
     panels =
       cache.panels
       |> Map.new(fn {panel_id, panel_cache} ->
-        panel_cache = transform_loaded_panel_cache(panel_cache)
+        panel_cache =
+          case flag do
+            true -> transform_loaded_panel_cache(panel_cache)
+            false -> panel_cache
+          end
+
         {panel_id, panel_cache}
       end)
 

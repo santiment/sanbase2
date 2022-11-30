@@ -22,16 +22,15 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
         insert(:user, email: "example@santiment.net")
         |> User.update_email_token()
 
-      mutation = email_login_verify_mutation(user)
-
       result =
         conn
-        |> post("/graphql", mutation_skeleton(mutation))
+        |> post("/graphql", mutation_skeleton(email_login_verify_mutation(user)))
 
       login_data = result |> json_response(200) |> get_in(["data", "emailLoginVerify"])
       {:ok, user} = User.by_email(user.email)
 
       assert login_data["token"] != nil
+      assert login_data["user"]["firstLogin"] == true
       assert login_data["user"]["email"] == user.email
 
       assert login_data["token"] == result.private.plug_session["auth_token"]
@@ -42,6 +41,17 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
                2,
                :seconds
              )
+
+      # Second login has firstLogin == false
+      {:ok, user} = user |> User.update_email_token()
+
+      login_data =
+        conn
+        |> post("/graphql", mutation_skeleton(email_login_verify_mutation(user)))
+        |> json_response(200)
+        |> get_in(["data", "emailLoginVerify"])
+
+      assert login_data["user"]["firstLogin"] == false
     end
 
     test "with a valid email token, succeeds login after more than 5 minutes" do
@@ -303,6 +313,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       emailLoginVerify(email: "#{user.email}", token: "#{user.email_token}") {
         user {
           email
+          firstLogin
           settings {
             newsletterSubscription
           }

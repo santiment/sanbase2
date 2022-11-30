@@ -39,7 +39,7 @@ defmodule Sanbase.Kafka.Consumer do
 
   defp topics do
     # string like: "topic1, topic2 ..."
-    Config.get(:metrics_stream_topic)
+    Config.module_get(__MODULE__, :metrics_stream_topic)
     |> String.split(",", trim: true)
     |> Enum.map(&String.trim/1)
   end
@@ -62,5 +62,5 @@ defmodule Sanbase.Kafka.Consumer do
     Enum.zip(kafka_urls, kafka_ports)
   end
 
-  defp consumer_group_basename(), do: Config.get(:consumer_group_basename)
+  defp consumer_group_basename(), do: Config.module_get(__MODULE__, :consumer_group_basename)
 end

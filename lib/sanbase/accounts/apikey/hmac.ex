@@ -35,7 +35,7 @@ defmodule Sanbase.Accounts.Hmac do
     compromise the security as the real secret is the secret key and not the user token.
   """
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
   require Logger
 
   @rand_bytes_length 32
@@ -81,5 +81,5 @@ defmodule Sanbase.Accounts.Hmac do
 
   # Private functions
 
-  defp secret_key(), do: Config.get(:secret_key)
+  defp secret_key(), do: Config.module_get(__MODULE__, :secret_key)
 end

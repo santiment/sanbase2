@@ -1,5 +1,5 @@
 defmodule Sanbase.Cryptocompare.Markets.Scraper do
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   def run() do
     get_data()

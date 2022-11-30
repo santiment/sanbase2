@@ -32,7 +32,7 @@ defmodule Sanbase.Twitter.FollowersScheduler do
     {:ok, %{}}
   end
 
-  def enabled?(), do: Config.get(:enabled?) |> String.to_existing_atom()
+  def enabled?(), do: Config.module_get(__MODULE__, :enabled?) |> String.to_existing_atom()
 
   def add_jobs() do
     {:ok, slugs} = Twitter.MetricAdapter.available_slugs()

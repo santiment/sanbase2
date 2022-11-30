@@ -5,7 +5,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
   alias Sanbase.ExternalServices.Coinmarketcap
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   defstruct [:slug, :logo]
 

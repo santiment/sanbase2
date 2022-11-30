@@ -1,7 +1,7 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfoTest do
   use Sanbase.DataCase
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   import Sanbase.Factory
   import Tesla.Mock

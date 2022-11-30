@@ -1,12 +1,14 @@
 defmodule Sanbase.SocialData.SocialDominance do
   import Sanbase.Utils.ErrorHandling
 
-  require Sanbase.Utils.Config, as: Config
-  require SanbaseWeb.Graphql.Schema
+  alias Sanbase.SocialData.SocialHelper
+
   require Mockery.Macro
 
-  alias Sanbase.SocialData.SocialHelper
+  alias Sanbase.Utils.Config
   alias Sanbase.SocialData
+
+  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 15_000
   @hours_back_ensure_has_data 3
@@ -19,9 +21,8 @@ defmodule Sanbase.SocialData.SocialDominance do
 
   def social_dominance(%{text: text}, from, to, interval, source) do
     with {:ok, text_volume} <-
-           Sanbase.SocialData.social_volume(%{text: text}, from, to, interval, source),
-         {:ok, total_volume} <-
-           Sanbase.SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
+           SocialData.social_volume(%{text: text}, from, to, interval, source),
+         {:ok, total_volume} <- SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
       # If `text_volume` is empty replace it with 0 mentions, so the end result
       # will be with all dominance = 0
       text_volume_map =
@@ -152,8 +153,6 @@ defmodule Sanbase.SocialData.SocialDominance do
   end
 
   defp metrics_hub_url() do
-    Config.module_get(Sanbase.SocialData, :metricshub_url)
+    Config.module_get(SocialData, :metricshub_url)
   end
-
-  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 end

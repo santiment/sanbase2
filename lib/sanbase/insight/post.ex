@@ -19,7 +19,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Chart.Configuration
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   @preloads [:user, :images, :tags, :chart_configuration_for_event]
   # state
@@ -153,9 +153,9 @@ defmodule Sanbase.Insight.Post do
 
   def can_create?(user_id) do
     limits = %{
-      day: Config.get(:creation_limit_day, 20),
-      hour: Config.get(:creation_limit_hour, 10),
-      minute: Config.get(:creation_limit_minute, 3)
+      day: Config.module_get(__MODULE__, :creation_limit_day, 20),
+      hour: Config.module_get(__MODULE__, :creation_limit_hour, 10),
+      minute: Config.module_get(__MODULE__, :creation_limit_minute, 3)
     }
 
     Sanbase.Ecto.Common.can_create?(__MODULE__, user_id,

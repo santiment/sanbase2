@@ -10,7 +10,7 @@ defmodule Mix.Tasks.DatabaseSafety do
   """
 
   use Mix.Task
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   @impl Mix.Task
   def run(_args) do

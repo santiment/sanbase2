@@ -3,7 +3,7 @@ defmodule Sanbase.Cryptocompare.Supervisor do
 
   import Sanbase.ApplicationUtils
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   alias Sanbase.Cryptocompare.{WebsocketScraper, HistoricalScheduler}
 

@@ -3,7 +3,7 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   require Logger
   require Mockery.Macro
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   alias Sanbase.SocialData.SocialHelper
   alias Sanbase.Project

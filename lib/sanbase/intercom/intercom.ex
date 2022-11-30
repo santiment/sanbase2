@@ -5,16 +5,15 @@ defmodule Sanbase.Intercom do
 
   import Ecto.Query
 
-  require Sanbase.Utils.Config, as: Config
-  require Logger
-
+  alias Sanbase.Utils.Config
   alias Sanbase.Accounts.{User, Statistics}
   alias Sanbase.Billing.{Subscription, Plan}
-  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Accounts.EthAccount
   alias Sanbase.Repo
   alias Sanbase.ClickhouseRepo
+
+  require Logger
 
   @user_events_url "https://api.intercom.io/events?type=user"
   @contacts_url "https://api.intercom.io/contacts"
@@ -502,6 +501,6 @@ defmodule Sanbase.Intercom do
   end
 
   defp intercom_api_key() do
-    Config.get(:api_key)
+    Config.module_get(__MODULE__, :api_key)
   end
 end

@@ -1,7 +1,7 @@
 defmodule Sanbase.Clickhouse.Research.Uniswap do
   alias Sanbase.ClickhouseRepo
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   alias Sanbase.Transfers.Erc20Transfers
   defp address_ordered_table(), do: Config.module_get(Erc20Transfers, :address_ordered_table)

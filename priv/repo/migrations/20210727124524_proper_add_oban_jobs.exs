@@ -1,7 +1,7 @@
 defmodule Sanbase.Repo.Migrations.ProperAddObanJobs do
   use Ecto.Migration
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   def up do
     Oban.Migrations.up(prefix: get_prefix())

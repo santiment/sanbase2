@@ -2,7 +2,7 @@ defmodule Sanbase.SocialData.Sentiment do
   import Sanbase.Utils.ErrorHandling
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   alias Sanbase.SocialData.SocialHelper
 

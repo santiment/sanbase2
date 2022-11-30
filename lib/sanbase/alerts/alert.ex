@@ -4,9 +4,9 @@ end
 
 defimpl Sanbase.Alert, for: Any do
   alias Sanbase.Accounts.{UserSettings, Settings, User}
+  alias Sanbase.Utils.Config
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
 
   @default_alerts_limit_per_day Settings.default_alerts_limit_per_day()
 

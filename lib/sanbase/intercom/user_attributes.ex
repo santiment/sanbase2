@@ -5,8 +5,6 @@ defmodule Sanbase.Intercom.UserAttributes do
 
   alias Sanbase.Repo
 
-  @topic "sanbase_user_intercom_attributes"
-
   schema "user_intercom_attributes" do
     field(:properties, :map)
 

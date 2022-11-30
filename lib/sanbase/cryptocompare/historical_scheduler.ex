@@ -18,7 +18,7 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   alias Sanbase.Cryptocompare.HistoricalWorker
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   @oban_conf_name :oban_scrapers
   @unique_peroid 60 * 86_400
@@ -44,7 +44,7 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
     {:ok, %{}}
   end
 
-  def enabled?(), do: Config.get(:enabled?) |> String.to_existing_atom()
+  def enabled?(), do: Config.module_get(__MODULE__, :enabled?) |> String.to_existing_atom()
 
   def add_jobs(base_asset, quote_asset, from, to) do
     start_time = DateTime.utc_now()

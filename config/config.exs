@@ -183,9 +183,6 @@ config :sanbase, Sanbase.TechIndicators, url: {:system, "TECH_INDICATORS_URL"}
 config :sanbase, Sanbase.SocialData,
   metricshub_url: {:system, "METRICS_HUB_URL", "http://metrics-hub-server"}
 
-config :sanbase, Sanbase.SocialData.TrendingWords,
-  trending_words_table: {:system, "TRENDING_WORDS_TABLE", "trending_words_v4_top_500"}
-
 config :waffle,
   storage: Waffle.Storage.S3,
   # To support AWS regions other than US Standard

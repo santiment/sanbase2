@@ -6,7 +6,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
 
   alias Sanbase.Transfers.Erc20Transfers
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   @aggregations [:sum]
 

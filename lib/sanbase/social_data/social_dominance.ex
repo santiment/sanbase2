@@ -155,6 +155,4 @@ defmodule Sanbase.SocialData.SocialDominance do
   defp metrics_hub_url() do
     Config.module_get(SocialData, :metricshub_url)
   end
-
-  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 end

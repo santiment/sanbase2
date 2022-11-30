@@ -8,7 +8,6 @@ defmodule Sanbase.Intercom do
   alias Sanbase.Utils.Config
   alias Sanbase.Accounts.{User, Statistics}
   alias Sanbase.Billing.{Subscription, Plan}
-  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Accounts.EthAccount
   alias Sanbase.Repo

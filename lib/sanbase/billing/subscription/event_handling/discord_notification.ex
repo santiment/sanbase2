@@ -267,7 +267,9 @@ defmodule Sanbase.Billing.DiscordNotification do
     do: Config.module_get(__MODULE__, :failed_payments_webhook_url)
 
   defp payment_action_required_webhook_url(),
-    do: Config.get(:payment_action_required_webhook_url) || failed_payments_webhook_url()
+    do:
+      Config.module_get(__MODULE__, :payment_action_required_webhook_url) ||
+        failed_payments_webhook_url()
 
   defp publish_user(),
     do: Config.module_get(__MODULE__, :publish_user)

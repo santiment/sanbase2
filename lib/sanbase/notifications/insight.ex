@@ -1,12 +1,12 @@
 defmodule Sanbase.Notifications.Insight do
   require Mockery.Macro
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
   require Logger
 
   alias Sanbase.Insight.Post
 
   def publish_in_discord(post) do
-    case Config.get(:enabled, "true") |> String.to_existing_atom() do
+    case Config.module_get(__MODULE__, :enabled, "true") |> String.to_existing_atom() do
       true -> do_publish_in_discord(post)
       false -> :ok
     end
@@ -51,11 +51,11 @@ defmodule Sanbase.Notifications.Insight do
   end
 
   defp discord_webhook_url do
-    Config.get(:webhook_url)
+    Config.module_get(__MODULE__, :webhook_url)
   end
 
   defp insights_discord_publish_user do
-    Config.get(:insights_discord_publish_user)
+    Config.module_get(__MODULE__, :insights_discord_publish_user)
   end
 
   defp posts_url(id), do: "#{insights_url()}/read/#{id}"

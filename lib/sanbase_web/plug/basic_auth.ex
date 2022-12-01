@@ -6,14 +6,14 @@ defmodule SanbaseWeb.Plug.BasicAuth do
 
   @behaviour Plug
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   def init(opts), do: opts
 
   def call(conn, _) do
     Plug.BasicAuth.basic_auth(conn,
-      username: Config.get(:username),
-      password: Config.get(:password)
+      username: Config.module_get(__MODULE__, :username),
+      password: Config.module_get(__MODULE__, :password)
     )
   end
 end

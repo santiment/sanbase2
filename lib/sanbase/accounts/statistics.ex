@@ -116,7 +116,7 @@ defmodule Sanbase.Accounts.Statistics do
 
     Repo.query!(query)
     |> Map.get(:rows)
-    |> Enum.group_by(fn [user_id, type, count] -> user_id end)
+    |> Enum.group_by(fn [user_id, _type, _count] -> user_id end)
   end
 
   def users_with_monitored_watchlist_and_email() do

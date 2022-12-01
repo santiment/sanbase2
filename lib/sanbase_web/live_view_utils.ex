@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.LiveViewUtils do
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   def session_options(opts) do
     opts

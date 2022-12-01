@@ -5,15 +5,15 @@ defmodule SanbaseWeb.Plug.SessionPlug do
 
   @behaviour Plug
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   def init(opts), do: opts
 
   def call(conn, opts) do
     runtime_opts =
       opts
-      |> Keyword.put(:domain, Config.get(:domain))
-      |> Keyword.put(:key, Config.get(:session_key))
+      |> Keyword.put(:domain, Config.module_get(__MODULE__, :domain))
+      |> Keyword.put(:key, Config.module_get(__MODULE__, :session_key))
       |> Plug.Session.init()
 
     Plug.Session.call(conn, runtime_opts)

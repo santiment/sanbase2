@@ -8,7 +8,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   """
   use GenServer, restart: :permanent, shutdown: 5_000
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
   require Logger
 
   alias Sanbase.Repo
@@ -24,10 +24,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   end
 
   def init(:ok) do
-    if Config.get(:sync_enabled, false) do
+    if Config.module_get(__MODULE__, :sync_enabled, false) do
       Process.send(self(), :sync, [:noconnect])
 
-      update_interval = Config.get(:update_interval) |> String.to_integer()
+      update_interval = Config.module_get(__MODULE__, :update_interval) |> String.to_integer()
 
       Logger.info(
         "[CMC] Starting TickerFetcher scraper. It will query coinmarketcap every #{update_interval} seconds."
@@ -198,6 +198,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   end
 
   defp top_projects_to_follow() do
-    Config.get(:top_projects_to_follow, "25") |> String.to_integer()
+    Config.module_get(__MODULE__, :top_projects_to_follow, "25") |> String.to_integer()
   end
 end

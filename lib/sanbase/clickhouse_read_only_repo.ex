@@ -29,7 +29,7 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
 
   def init(_, opts) do
     pool_size =
-      Config.get(:pool_size)
+      Config.module_get(__MODULE__, :pool_size)
       |> Sanbase.Math.to_integer()
 
     opts =

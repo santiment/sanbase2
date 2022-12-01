@@ -4,7 +4,7 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
   """
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   alias Sanbase.Accounts.User
 
@@ -103,7 +103,7 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
 
   defp headers() do
     [
-      {"x-api-key", "#{Config.get(:api_key)}"}
+      {"x-api-key", "#{Config.module_get(__MODULE__, :api_key)}"}
     ]
   end
 

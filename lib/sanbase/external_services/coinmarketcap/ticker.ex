@@ -37,7 +37,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, TickerFetcher}
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   plug(Sanbase.ExternalServices.RateLimiting.Middleware,
     name: :api_coinmarketcap_rate_limiter

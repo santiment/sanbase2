@@ -1,7 +1,7 @@
 defmodule Sanbase.SocialData.Community do
   import Sanbase.Utils.ErrorHandling
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   alias Sanbase.Project
 

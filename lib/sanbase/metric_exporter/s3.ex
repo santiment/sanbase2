@@ -3,7 +3,7 @@ defmodule Sanbase.MetricExporter.S3 do
 
   require Sanbase.Utils.Config, as: Config
 
-  def bucket, do: Config.get(:bucket)
+  def bucket, do: Config.module_get(__MODULE__, :bucket)
 
   def s3_object_headers(_version, {file, _scope}) do
     [content_type: MIME.from_path(file.file_name)]

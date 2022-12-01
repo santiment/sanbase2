@@ -1,5 +1,5 @@
 defmodule Sanbase.GrafanaApi do
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
   require Mockery.Macro
   require Logger
 
@@ -135,11 +135,12 @@ defmodule Sanbase.GrafanaApi do
 
   defp http_client(), do: HTTPoison
 
-  defp base_url, do: Config.get(:grafana_base_url)
+  defp base_url, do: Config.module_get(__MODULE__, :grafana_base_url)
 
   defp basic_auth_header() do
     credentials =
-      (Config.get(:grafana_user) <> ":" <> Config.get(:grafana_pass))
+      (Config.module_get(__MODULE__, :grafana_user) <>
+         ":" <> Config.module_get(__MODULE__, :grafana_pass))
       |> Base.encode64()
 
     {"Authorization", "Basic #{credentials}"}

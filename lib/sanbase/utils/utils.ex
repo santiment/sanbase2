@@ -1,5 +1,5 @@
 defmodule Sanbase.Utils do
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   @prod_db_patterns ["amazonaws"]
   def prod_db?() do

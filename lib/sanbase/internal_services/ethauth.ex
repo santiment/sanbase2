@@ -1,8 +1,9 @@
 defmodule Sanbase.InternalServices.Ethauth do
   use Tesla
 
+  alias Sanbase.Utils.Config
+
   require Logger
-  require Sanbase.Utils.Config, as: Config
 
   @san_token_decimals 1_000_000_000_000_000_000
   @tesla_opts [adapter: [recv_timeout: 15_000]]
@@ -87,7 +88,7 @@ defmodule Sanbase.InternalServices.Ethauth do
   end
 
   defp client() do
-    ethauth_url = Config.get(:url)
+    ethauth_url = Config.module_get(__MODULE__, :url)
 
     Tesla.client([
       Sanbase.ExternalServices.ErrorCatcher.Middleware,

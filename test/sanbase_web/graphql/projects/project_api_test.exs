@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.ProjectApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers

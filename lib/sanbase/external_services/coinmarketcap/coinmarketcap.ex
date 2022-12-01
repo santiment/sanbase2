@@ -6,7 +6,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   """
   use GenServer, restart: :permanent, shutdown: 5_000
 
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
   require Logger
 
   alias Sanbase.Model.LatestCoinmarketcapData
@@ -29,7 +29,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   def init(_arg) do
-    if Config.get(:sync_enabled, false) do
+    if Config.module_get(__MODULE__, :sync_enabled, false) do
       Process.send(self(), :rescrape_prices, [])
 
       # Give `:rescrape_prices` some time to schedule different `last_updated` times
@@ -37,7 +37,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       Process.send_after(self(), :fetch_prices, 20_000)
       Process.send_after(self(), :fetch_missing_info, 25_000)
 
-      update_interval = Config.get(:update_interval)
+      update_interval = Config.module_get(__MODULE__, :update_interval)
 
       # Scrape total market and prices often. Scrape the missing info rarely.
       # There are many projects for which the missing info is not available. The

@@ -21,7 +21,7 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
   alias Sanbase.Cryptocompare.PriceOnlyPoint, as: CryptocompareAssetPricesOnlyPoint
 
   require Logger
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Utils.Config
 
   # giving it a name makes sure only one instance of the scraper is alive at a time
   @name :cryptocompare_websocket_scraper
@@ -67,7 +67,7 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
     )
   end
 
-  def enabled?(), do: Config.get(:enabled?) |> String.to_existing_atom()
+  def enabled?(), do: Config.module_get(__MODULE__, :enabled?) |> String.to_existing_atom()
 
   def terminate(reason, state) do
     base_error_msg = "[CryptocompareWS] Terminate the websocket connection #{state[:socket_id]}."

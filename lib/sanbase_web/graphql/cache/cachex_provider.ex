@@ -2,8 +2,6 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
   @behaviour SanbaseWeb.Graphql.CacheProvider
   @default_ttl_seconds 300
 
-  @max_lock_acquired_time_ms 60_000
-
   import Cachex.Spec
 
   @compile inline: [
@@ -97,62 +95,95 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
     end
   end
 
-  # defp execute_cache_miss_function(cache, key, func, cache_modify_middleware) do
-  #   Cachex.transaction!(cache, [key], fn cache ->
-  #     case Cachex.get(cache, true_key(key)) do
-  #       {:ok, {:stored, value}} ->
-  #         value
-
-  #       _ ->
-  #         handle_execute_cache_miss_function(
-  #           cache,
-  #           key,
-  #           _result = func.(),
-  #           cache_modify_middleware
-  #         )
-  #     end
-  #   end)
-  # end
-
-  defp execute_cache_miss_function(cache, key, func, cache_modify_middleware) do
-    # This is the only place where we need to have the transactional get_or_store
-    # mechanism. Cachex.fetch! is running in multiple processes, which causes issues
-    # when testing. Cachex.transaction has a non-configurable timeout. We actually
-    # can achieve the required behavior by manually getting and realeasing the lock.
-    # The transactional guarantees are not needed.
-    cache_record = Cachex.Services.Overseer.ensure(cache)
-
-    # Start a process that will handle the unlock in case this process terminates
-    # without releasing the lock. The process is not linked to the current one so
-    # it can continue to live and do its job even if this process terminates.
-    {:ok, unlocker_pid} =
-      __MODULE__.Unlocker.start(max_lock_acquired_time_ms: @max_lock_acquired_time_ms)
-
-    unlock_fun = fn -> Cachex.Services.Locksmith.unlock(cache_record, [true_key(key)]) end
-
-    try do
-      true = obtain_lock(cache_record, [true_key(key)])
-      _ = GenServer.cast(unlocker_pid, {:unlock_after, unlock_fun})
-
-      case Cachex.get(cache, true_key(key)) do
-        {:ok, {:stored, value}} ->
-          # First check if the result has not been stored while waiting for the lock.
-          value
-
-        _ ->
-          handle_execute_cache_miss_function(
+  case Application.compile_env(:sanbase, :env) do
+    env when env in [:prod, :dev, :test] ->
+      defp execute_cache_miss_function(cache, key, func, cache_modify_middleware) do
+        {_, result} =
+          Cachex.fetch(
             cache,
-            key,
-            _result = func.(),
-            cache_modify_middleware
+            true_key(key),
+            fn ->
+              result = func.()
+              handle_fetch_function_result(cache, key, result, cache_modify_middleware)
+            end,
+            ttl: key_to_ttl_ms(key)
           )
+
+        result
       end
-    after
-      true = unlock_fun.()
-      # We expect the process to unlock only in case we don't reach here for some reason.
-      # If we're here we can kill the process. If the process has already unlocked
-      _ = GenServer.cast(unlocker_pid, :stop)
-    end
+
+      defp key_to_ttl_ms({_key, ttl}) when is_integer(ttl), do: ttl * 1000
+      defp key_to_ttl_ms(_), do: @default_ttl_seconds * 1000
+
+      # This is executed from inside the Cachex.fetch/4 function. It is required to
+      # return {:ignore, result} or {:commit, result} indicating whether or not the
+      # result should be stored in the cache. Delegate the actual caching to
+      # the cache_item/3 function which uses Cachex.put internally, so the TTL can
+      # be controlled
+      defp handle_fetch_function_result(cache, key, result, cache_modify_middleware) do
+        case result do
+          {:middleware, _, _} = tuple ->
+            # Execute the same function with the new result. When the result is an
+            # :ok | :error | :nocache tuple it will be handled
+            middleware_result = cache_modify_middleware.(cache, key, tuple)
+            handle_fetch_function_result(cache, key, middleware_result, cache_modify_middleware)
+
+          {:nocache, value} ->
+            Process.put(:has_nocache_field, true)
+            {:ignore, value}
+
+          {:error, _} = error ->
+            {:ignore, error}
+
+          value ->
+            cache_item(cache, key, value)
+            {:ignore, value}
+        end
+      end
+
+    _ ->
+      @max_lock_acquired_time_ms 60_000
+
+      defp execute_cache_miss_function(cache, key, func, cache_modify_middleware) do
+        # This is the only place where we need to have the transactional get_or_store
+        # mechanism. Cachex.fetch! is running in multiple processes, which causes issues
+        # when testing. Cachex.transaction has a non-configurable timeout. We actually
+        # can achieve the required behavior by manually getting and realeasing the lock.
+        # The transactional guarantees are not needed.
+        cache_record = Cachex.Services.Overseer.ensure(cache)
+
+        # Start a process that will handle the unlock in case this process terminates
+        # without releasing the lock. The process is not linked to the current one so
+        # it can continue to live and do its job even if this process terminates.
+        {:ok, unlocker_pid} =
+          __MODULE__.Unlocker.start(max_lock_acquired_time_ms: @max_lock_acquired_time_ms)
+
+        unlock_fun = fn -> Cachex.Services.Locksmith.unlock(cache_record, [true_key(key)]) end
+
+        try do
+          true = obtain_lock(cache_record, [true_key(key)])
+          _ = GenServer.cast(unlocker_pid, {:unlock_after, unlock_fun})
+
+          case Cachex.get(cache, true_key(key)) do
+            {:ok, {:stored, value}} ->
+              # First check if the result has not been stored while waiting for the lock.
+              value
+
+            _ ->
+              handle_execute_cache_miss_function(
+                cache,
+                key,
+                _result = func.(),
+                cache_modify_middleware
+              )
+          end
+        after
+          true = unlock_fun.()
+          # We expect the process to unlock only in case we don't reach here for some reason.
+          # If we're here we can kill the process. If the process has already unlocked
+          _ = GenServer.cast(unlocker_pid, :stop)
+        end
+      end
   end
 
   defp obtain_lock(cache_record, keys, attempt \\ 0)
@@ -207,58 +238,4 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
 
   defp true_key({key, ttl}) when is_integer(ttl), do: key
   defp true_key(key), do: key
-
-  # Cachex.fetch spawns processes which fails ecto sandbox tests
-  # defp key_to_ttl_ms({_key, ttl}) when is_integer(ttl), do: ttl * 1000
-  # defp key_to_ttl_ms(_), do: @default_ttl_seconds * 1000
-  # @impl SanbaseWeb.Graphql.CacheProvider
-  # def get_or_store(cache, key, func, cache_modify_middleware) do
-  #   {_, result} =
-  #     Cachex.fetch(
-  #       cache,
-  #       true_key(key),
-  #       fn ->
-  #         result = func.()
-
-  #         handle_fetch_function_result(
-  #           cache,
-  #           key,
-  #           result,
-  #           cache_modify_middleware
-  #         )
-  #       end,
-  #       ttl: key_to_ttl_ms(key)
-  #     )
-
-  #   result
-  # end
-  # This is executed from inside the Cachex.fetch/4 function. It is required to
-  # return {:ignore, result} or {:commit, result} indicating whether or not the
-  # result should be stored in the cache
-  # defp handle_fetch_function_result(cache, key, result, cache_modify_middleware) do
-  #   case result do
-  #     {:middleware, _, _} = tuple ->
-  #       # Execute the same function with the new result. When the result is an
-  #       # :ok | :error | :nocache tuple it will be handled
-  #       middleware_result = cache_modify_middleware.(cache, key, tuple)
-
-  #       handle_fetch_function_result(
-  #         cache,
-  #         key,
-  #         middleware_result,
-  #         cache_modify_middleware
-  #       )
-
-  #     {:nocache, value} ->
-  #       Process.put(:has_nocache_field, true)
-  #       {:ignore, value}
-
-  #     {:error, _} = error ->
-  #       {:ignore, error}
-
-  #     value ->
-  #       cache_item(cache, key, value)
-  #       {:ignore, value}
-  #   end
-  # end
 end

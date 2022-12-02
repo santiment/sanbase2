@@ -3,16 +3,10 @@ defprotocol Sanbase.Alert do
 end
 
 defimpl Sanbase.Alert, for: Any do
-  alias Sanbase.Accounts.{UserSettings, Settings, User}
+  alias Sanbase.Accounts.{UserSettings, User}
   alias Sanbase.Utils.Config
 
   require Logger
-
-  @default_alerts_limit_per_day Settings.default_alerts_limit_per_day()
-
-  @channels Map.keys(@default_alerts_limit_per_day)
-
-  def default_alerts_limit_per_day(), do: @default_alerts_limit_per_day
 
   @doc ~s"""
   Send a triggered alert to the configured notification channels.

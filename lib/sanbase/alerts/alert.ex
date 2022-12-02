@@ -3,7 +3,7 @@ defprotocol Sanbase.Alert do
 end
 
 defimpl Sanbase.Alert, for: Any do
-  alias Sanbase.Accounts.{UserSettings, User}
+  alias Sanbase.Accounts.{UserSettings, Settings, User}
   alias Sanbase.Utils.Config
 
   require Logger
@@ -363,8 +363,10 @@ defimpl Sanbase.Alert, for: Any do
 
     alerts_fired_today = Map.get(alerts_fired, map_key, %{})
 
+    channels = Settings.alert_channels()
+
     alerts_fired_today_updated =
-      Enum.into(@channels, %{}, fn channel ->
+      Enum.into(channels, %{}, fn channel ->
         count = Map.get(alerts_fired_today, channel, 0) + Map.get(alerts_fired_now, channel, 0)
 
         {channel, count}

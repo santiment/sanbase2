@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
   alias Sanbase.Report
   alias Sanbase.Billing.{Subscription, Product}
 
-  @product_sanbase Product.product_sanbase()
-
   def upload_report(_root, %{report: report} = args, _resolution) do
     {params, _} = Map.split(args, [:name, :description])
 
@@ -16,7 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
   end
 
   def get_reports(_root, _args, %{context: %{auth: %{current_user: user}}}) do
-    plan = Subscription.current_subscription_plan(user.id, @product_sanbase)
+    plan = Subscription.current_subscription_plan(user.id, Product.product_sanbase())
 
     reports = Report.get_published_reports(%{is_logged_in: true, plan_name: plan})
 
@@ -28,7 +26,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
   end
 
   def get_reports_by_tags(_root, %{tags: tags}, %{context: %{auth: %{current_user: user}}}) do
-    plan = Subscription.current_subscription_plan(user.id, @product_sanbase)
+    plan = Subscription.current_subscription_plan(user.id, Product.product_sanbase())
 
     reports = Report.get_by_tags(tags, %{is_logged_in: true, plan_name: plan})
 

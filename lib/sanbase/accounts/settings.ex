@@ -11,6 +11,7 @@ defmodule Sanbase.Accounts.Settings do
   }
 
   def default_alerts_limit_per_day(), do: @default_alerts_limit_per_day
+  def alert_channels(), do: Map.keys(@default_alerts_limit_per_day)
 
   embedded_schema do
     field(:hide_privacy_data, :boolean, default: true)

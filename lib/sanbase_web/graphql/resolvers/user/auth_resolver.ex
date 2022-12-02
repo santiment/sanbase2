@@ -35,8 +35,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   end
 
   def revoke_all_refresh_tokens(_root, _args, %{context: %{auth: %{current_user: user}}}) do
-    :ok
-
     case SanbaseWeb.Guardian.Token.revoke_all_with_user_id(user.id) do
       :ok -> {:ok, true}
       _ -> {:error, false}

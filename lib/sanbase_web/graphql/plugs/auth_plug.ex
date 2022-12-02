@@ -54,6 +54,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
   @product_id_api Product.product_api()
   @product_id_sanbase Product.product_sanbase()
   @free_subscription Subscription.free_subscription()
+
   @anon_user_auth_struct %AuthStruct{
     permissions: User.Permissions.no_permissions(),
     auth: %{

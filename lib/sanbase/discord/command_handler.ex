@@ -7,6 +7,7 @@ defmodule Sanbase.Discord.CommandHandler do
   alias Sanbase.Dashboard.DiscordDashboard
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Component.{ActionRow, TextInput}
+  alias Sanbase.Utils.Config
 
   @prefix "!q"
   @mock_role_id 1
@@ -49,12 +50,13 @@ defmodule Sanbase.Discord.CommandHandler do
     {name, sql} = parse_modal_component(interaction)
     args = get_additional_info(interaction)
 
-    with {:ok, exec_result, panel_id} <- compute_and_save(name, sql, [], args) do
+    with {:ok, exec_result, dashboard, panel_id} <- compute_and_save(name, sql, [], args) do
       content = format_table(name, exec_result, to_string(interaction.user.id))
       components = [action_row(panel_id)]
+      embeds = create_chart_embed(exec_result, dashboard, panel_id)
 
-      edit_interaction_response(interaction, content, components)
-      |> maybe_add_stats?(interaction, exec_result, content, components)
+      edit_interaction_response(interaction, content, components, embeds)
+      |> maybe_add_stats?(interaction, exec_result, content, components, embeds)
     else
       {:execution_error, reason} ->
         content = sql_execution_error(reason, interaction.user.id, name)
@@ -153,13 +155,15 @@ defmodule Sanbase.Discord.CommandHandler do
   def handle_interaction("rerun", interaction, panel_id) do
     interaction_ack(interaction)
 
-    with {:ok, execution_result, dd} <- DiscordDashboard.execute(sanbase_bot_id(), panel_id) do
-      panel = List.first(dd.dashboard.panels)
+    with {:ok, execution_result, dashboard, dashboard_id} <-
+           DiscordDashboard.execute(sanbase_bot_id(), panel_id) do
+      panel = List.first(dashboard.panels)
       content = format_table(panel.name, execution_result, to_string(interaction.user.id))
       components = [action_row(panel_id)]
+      embeds = create_chart_embed(execution_result, dashboard, panel_id)
 
-      edit_interaction_response(interaction, content, components)
-      |> maybe_add_stats?(interaction, execution_result, content, components)
+      edit_interaction_response(interaction, content, components, embeds)
+      |> maybe_add_stats?(interaction, execution_result, content, components, embeds)
     else
       {:execution_error, reason} ->
         content =
@@ -208,12 +212,17 @@ defmodule Sanbase.Discord.CommandHandler do
 
     args = get_additional_info_msg(msg)
 
-    with {:ok, exec_result, panel_id} <- compute_and_save(name, sql, [], args) do
+    with {:ok, exec_result, dd, panel_id} <- compute_and_save(name, sql, [], args) do
       content = format_table(name, exec_result, to_string(msg.author.id))
       components = [action_row(panel_id)]
+      embeds = create_chart_embed(exec_result, dd, panel_id)
 
-      Api.edit_message(msg.channel_id, loading_msg.id, content: content, components: components)
-      |> maybe_add_stats?(msg, exec_result, content, components)
+      Api.edit_message(msg.channel_id, loading_msg.id,
+        content: content,
+        components: components,
+        embeds: embeds
+      )
+      |> maybe_add_stats?(msg, exec_result, content, components, embeds)
     else
       {:execution_error, reason} ->
         content = sql_execution_error(reason, msg.author.id, name)
@@ -313,7 +322,7 @@ defmodule Sanbase.Discord.CommandHandler do
 
     DiscordDashboard.create(sanbase_bot_id(), query, args)
     |> case do
-      {:ok, result, panel_id} -> {:ok, result, panel_id}
+      {:ok, result, dd, panel_id} -> {:ok, result, dd, panel_id}
       {:error, reason} -> {:execution_error, reason}
     end
   end
@@ -361,6 +370,14 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def edit_interaction_response(interaction, content, components) do
     Nostrum.Api.edit_interaction_response(interaction, %{content: content, components: components})
+  end
+
+  def edit_interaction_response(interaction, content, components, embeds) do
+    Nostrum.Api.edit_interaction_response(interaction, %{
+      content: content,
+      components: components,
+      embeds: embeds
+    })
   end
 
   defp parse_modal_component(interaction) do
@@ -414,7 +431,8 @@ defmodule Sanbase.Discord.CommandHandler do
          %Nostrum.Struct.Interaction{} = interaction,
          exec_result,
          content,
-         components
+         components,
+         embeds
        ) do
     Sanbase.Dashboard.QueryExecution.get_execution_stats(
       sanbase_bot_id(),
@@ -424,7 +442,7 @@ defmodule Sanbase.Discord.CommandHandler do
       {:ok, qe} ->
         stats = get_execution_summary(qe)
 
-        edit_interaction_response(interaction, content <> stats, components)
+        edit_interaction_response(interaction, content <> stats, components, embeds)
 
       _ ->
         prev_response
@@ -436,7 +454,8 @@ defmodule Sanbase.Discord.CommandHandler do
          %Nostrum.Struct.Message{},
          exec_result,
          content,
-         components
+         components,
+         embeds
        ) do
     Sanbase.Dashboard.QueryExecution.get_execution_stats(
       sanbase_bot_id(),
@@ -448,7 +467,8 @@ defmodule Sanbase.Discord.CommandHandler do
 
         Nostrum.Api.edit_message(prev_message.channel_id, prev_message.id,
           content: content <> stats,
-          components: components
+          components: components,
+          embeds: embeds
         )
 
       _ ->
@@ -480,6 +500,75 @@ defmodule Sanbase.Discord.CommandHandler do
     |> ActionRow.append(run_button)
     |> ActionRow.append(show_button)
     |> ActionRow.append(pin_unpin_button)
+  end
+
+  def create_chart_embed(exec_result, dd, panel_id) do
+    dt_idx =
+      Enum.find_index(exec_result.column_types, fn c ->
+        c in ~w(Date DateTime Date32 DateTime64)
+      end)
+
+    if not is_nil(dt_idx) and length(exec_result.column_types) > 1 do
+      dt_column = Enum.at(exec_result.columns, dt_idx)
+
+      data_columns =
+        exec_result.columns
+        |> Enum.with_index()
+        |> Enum.reject(fn {_, idx} -> idx == dt_idx end)
+        |> Enum.map(fn {c, _} -> c end)
+
+      map =
+        data_columns
+        |> Enum.with_index()
+        |> Enum.into(%{}, fn {_, idx} -> {to_string(idx), %{node: "bar"}} end)
+
+      settings =
+        %{
+          wm: data_columns,
+          ws: map
+        }
+        |> Jason.encode!()
+        |> URI.encode()
+
+      chart =
+        "https://#{img_prefix_url()}/chart/dashboard/#{dd.id}/#{panel_id}?settings=#{settings}"
+
+      HTTPoison.get(chart)
+      |> case do
+        {:ok, response} ->
+          if is_image?(response) do
+            %Embed{}
+            |> put_title(dd.name)
+            |> put_url(chart)
+            |> put_image(chart)
+            |> List.wrap()
+          else
+            []
+          end
+
+        _ ->
+          []
+      end
+    else
+      []
+    end
+  end
+
+  def img_prefix_url() do
+    case Config.module_get(Sanbase, :deployment_env) do
+      "stage" -> "preview-stage.santiment.net"
+      "dev" -> "preview-stage.santiment.net"
+      _ -> "preview.santiment.net"
+    end
+  end
+
+  def is_image?(response) do
+    content_type =
+      response.headers
+      |> Enum.into(%{})
+      |> Map.get("Content-Type")
+
+    content_type == "image/jpeg"
   end
 
   defp sanbase_bot_id() do

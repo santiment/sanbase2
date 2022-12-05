@@ -50,11 +50,11 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
     not is_nil(Repo.get_by(__MODULE__, trx_hash: trx_hash))
   end
 
-  def all do
+  def all() do
     Repo.all(__MODULE__)
   end
 
-  def run do
+  def run() do
     {:ok, burn_trxs} = fetch_burn_trxs()
 
     do_run(burn_trxs)
@@ -72,9 +72,9 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
   def fetch_burn_trxs do
     {query, args} = fetch_san_burns_query()
 
-    ClickhouseRepo.query_transform(query, args, fn [dt, address, value, trx_id] ->
+    ClickhouseRepo.query_transform(query, args, fn [timestamp, address, value, trx_id] ->
       %{
-        trx_datetime: dt,
+        trx_datetime: DateTime.from_unix!(timestamp),
         address: address,
         san_amount: value,
         trx_hash: trx_id
@@ -123,9 +123,12 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
 
   def fetch_san_burns_query() do
     query = """
-    SELECT dt, from, value / pow(10, 18), transactionHash
+    SELECT toUnixTimestamp(dt), from, value / pow(10, 18), transactionHash
     FROM erc20_transfers_to
-    WHERE dt > now() - INTERVAL 1 DAY and contract = ?1 and to = ?2
+    WHERE
+      dt > now() - INTERVAL 1 DAY AND
+      contract = ?1 AND
+      to = ?2
     """
 
     {query, [@san_contract, @san_burn_address]}

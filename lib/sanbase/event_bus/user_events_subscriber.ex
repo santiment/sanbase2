@@ -26,7 +26,11 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
     {:noreply, new_state}
   end
 
-  defp handle_event(%{data: %{event_type: :register_user, user_id: user_id}}, event_shadow, state) do
+  defp handle_event(
+         %{data: %{event_type: :register_user, user_id: user_id} = data},
+         event_shadow,
+         state
+       ) do
     {:ok, _} = Sanbase.Accounts.EmailJobs.schedule_emails_after_sign_up(user_id)
 
     email = Sanbase.Accounts.get_user!(user_id).email

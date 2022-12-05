@@ -44,9 +44,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   def eth_login(
         _root,
         %{signature: signature, address: address, message_hash: message_hash} = args,
-        %{context: %{device_data: device_data}}
+        %{context: %{device_data: device_data, origin_url: origin_url}}
       ) do
-    event_args = %{login_origin: :eth_login}
+    event_args = %{login_origin: :eth_login, origin_url: origin_url}
 
     with true <- address_message_hash(address) == message_hash,
          true <- Ethauth.is_valid_signature?(address, signature),
@@ -92,7 +92,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
          {:ok, user} <- User.update_email_token(user, args[:consent]),
          {:ok, _user} <- User.send_login_email(user, origin_host_parts, args),
          {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip) do
-      emit_event({:ok, user}, :send_email_login_link, _event_args = %{})
+      emit_event({:ok, user}, :send_email_login_link, %{origin_url: origin_url})
 
       {:ok, %{success: true, first_login: user.first_login}}
     else
@@ -112,8 +112,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     end
   end
 
-  def email_login_verify(%{token: token, email: email}, %{context: %{device_data: device_data}}) do
-    event_args = %{login_origin: :email}
+  def email_login_verify(%{token: token, email: email}, %{
+        context: %{device_data: device_data, origin_url: origin_url}
+      }) do
+    event_args = %{login_origin: :email, origin_url: origin_url}
 
     with {:ok, user} <- User.find_or_insert_by(:email, email),
          is_registered <- user.is_registered,

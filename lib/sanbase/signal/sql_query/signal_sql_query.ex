@@ -15,8 +15,6 @@ defmodule Sanbase.Signal.SqlQuery do
 
   alias Sanbase.Signal.FileHandler
 
-  @name_to_signal_map FileHandler.name_to_signal_map()
-
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
     field(:value, :float)
@@ -58,7 +56,7 @@ defmodule Sanbase.Signal.SqlQuery do
     """
 
     args = [
-      Map.get(@name_to_signal_map, signal)
+      Map.get(FileHandler.name_to_signal_map(), signal)
     ]
 
     {query, args}
@@ -74,7 +72,7 @@ defmodule Sanbase.Signal.SqlQuery do
     """
 
     args = [
-      Map.get(@name_to_signal_map, signal),
+      Map.get(FileHandler.name_to_signal_map(), signal),
       slug
     ]
 
@@ -136,7 +134,7 @@ defmodule Sanbase.Signal.SqlQuery do
     args = [
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
-      Map.get(@name_to_signal_map, signal),
+      Map.get(FileHandler.name_to_signal_map(), signal),
       slug_or_slugs
     ]
 
@@ -171,7 +169,7 @@ defmodule Sanbase.Signal.SqlQuery do
       str_to_sec(interval),
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
-      Map.get(@name_to_signal_map, signal),
+      Map.get(FileHandler.name_to_signal_map(), signal),
       slug_or_slugs
     ]
 
@@ -204,7 +202,7 @@ defmodule Sanbase.Signal.SqlQuery do
     """
 
     args = [
-      Map.get(@name_to_signal_map, signal),
+      Map.get(FileHandler.name_to_signal_map(), signal),
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
       slug_or_slugs

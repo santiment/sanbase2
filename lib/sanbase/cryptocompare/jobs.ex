@@ -5,7 +5,6 @@ defmodule Sanbase.Cryptocompare.Jobs do
   # The iterations are needed to avoid an infinite loop. If there is a task that
   # finishes one job every second we risk to always return 1 row and never finish
   # the job.
-  @queue Sanbase.Cryptocompare.HistoricalScheduler.queue() |> to_string()
 
   def move_finished_jobs(opts \\ []) do
     iterations = Keyword.get(opts, :iterations, 200)
@@ -14,7 +13,7 @@ defmodule Sanbase.Cryptocompare.Jobs do
     count =
       1..iterations
       |> Enum.reduce_while(0, fn _, rows_count_acc ->
-        case do_move_completed_jobs(@queue, limit) do
+        case do_move_completed_jobs(queue(), limit) do
           {:ok, 0} -> {:halt, rows_count_acc}
           {:ok, rows_count} -> {:cont, rows_count + rows_count_acc}
         end
@@ -24,7 +23,7 @@ defmodule Sanbase.Cryptocompare.Jobs do
   end
 
   def remove_oban_jobs_unsupported_assets() do
-    {:ok, oban_jobs_base_assets} = get_oban_jobs_base_assets(@queue)
+    {:ok, oban_jobs_base_assets} = get_oban_jobs_base_assets(queue())
 
     supported_base_assets =
       Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
@@ -33,7 +32,7 @@ defmodule Sanbase.Cryptocompare.Jobs do
     unsupported_base_assets = oban_jobs_base_assets -- supported_base_assets
 
     Enum.map(unsupported_base_assets, fn base_asset ->
-      {:ok, _} = delete_not_completed_base_asset_jobs(@queue, base_asset)
+      {:ok, _} = delete_not_completed_base_asset_jobs(queue(), base_asset)
     end)
   end
 
@@ -76,4 +75,6 @@ defmodule Sanbase.Cryptocompare.Jobs do
 
     {:ok, %{num_rows: num_rows, base_asset: base_asset}}
   end
+
+  defp queue(), do: Sanbase.Cryptocompare.HistoricalScheduler.queue() |> to_string()
 end

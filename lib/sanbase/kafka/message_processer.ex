@@ -1,5 +1,6 @@
 defmodule Sanbase.Kafka.MessageProcessor do
-  @name_to_metric_map Sanbase.Clickhouse.MetricAdapter.FileHandler.name_to_metric_map()
+  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
+
   def handle_messages(messages) do
     Enum.each(messages, &handle_message/1)
   end
@@ -13,7 +14,7 @@ defmodule Sanbase.Kafka.MessageProcessor do
       |> Map.put("received_at", DateTime.utc_now())
       |> Map.update!("emited_at", &DateTime.from_unix!/1)
       |> Map.update!("metadata", &Jason.decode!/1)
-      |> Map.update!("metric", &(Map.get(@name_to_metric_map, &1) || &1))
+      |> Map.update!("metric", &(FileHandler.name_to_metric(&1) || &1))
     end)
     |> handle_metric_message()
   end

@@ -8,11 +8,6 @@ defmodule Sanbase.Metric.LatestMetric do
 
   alias Sanbase.Clickhouse.MetricAdapter.FileHandler
 
-  @name_to_metric_map FileHandler.name_to_metric_map()
-  @metric_to_names_map FileHandler.metric_to_names_map()
-  @table_map FileHandler.table_map()
-  @asset_prices_table Sanbase.Price.table()
-
   def latest_metrics_data(metrics, %{slug: slug_or_slugs}) do
     slugs = List.wrap(slug_or_slugs)
 
@@ -25,11 +20,11 @@ defmodule Sanbase.Metric.LatestMetric do
       get_data("daily_metrics_v2", metric_table_groups["daily_metrics_v2"] || [], slugs)
 
     {:ok, price_result} =
-      get_data(@asset_prices_table, metric_table_groups[@asset_prices_table] || [], slugs)
+      get_data(Sanbase.Price.table(), metric_table_groups[Sanbase.Price.table()] || [], slugs)
 
     # For now support only price_usd and price_btc and take them from the asset price pairs table
     {:ok, price_pairs_result} =
-      get_data(@asset_prices_table, metric_table_groups["asset_price_pairs_only"] || [], slugs,
+      get_data(Sanbase.Price.table(), metric_table_groups["asset_price_pairs_only"] || [], slugs,
         source: "cryptocompare",
         metric_name_suffix: "|cryptocompare"
       )
@@ -48,10 +43,10 @@ defmodule Sanbase.Metric.LatestMetric do
   defp get_metric_table_pair(metric) do
     case String.split(metric, "|") do
       [metric] when metric in ["price_usd", "price_btc", "volume_usd", "marketcap_usd"] ->
-        {metric, @asset_prices_table}
+        {metric, Sanbase.Price.table()}
 
       [metric] ->
-        {metric, Map.get(@table_map, metric)}
+        {metric, Map.get(FileHandler.table_map(), metric)}
 
       [metric, "cryptocompare"] ->
         {metric, "asset_price_pairs_only"}
@@ -81,7 +76,7 @@ defmodule Sanbase.Metric.LatestMetric do
   end
 
   defp get_metric_name(table, metric) when table in ["intraday_metrics", "daily_metrics_v2"] do
-    name = Map.get(@metric_to_names_map, metric, []) |> List.first()
+    name = Map.get(FileHandler.metric_to_names_map(), metric, []) |> List.first()
     name || metric
   end
 
@@ -112,11 +107,11 @@ defmodule Sanbase.Metric.LatestMetric do
     GROUP BY asset_id, metric_id
     """
 
-    args = [Enum.map(metrics, &Map.get(@name_to_metric_map, &1)), slugs]
+    args = [Enum.map(metrics, &Map.get(FileHandler.name_to_metric_map(), &1)), slugs]
     {query, args}
   end
 
-  defp get_data_query(@asset_prices_table, metrics, slugs, opts) do
+  defp get_data_query("asset_prices_v3", metrics, slugs, opts) do
     source = Keyword.get(opts, :source, "coinmarketcap")
     metric_name_suffix = Keyword.get(opts, :metric_name_suffix, "")
 

@@ -40,8 +40,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
              remote_ip: 1
            ]
 
-  @product_id_api Sanbase.Billing.Product.product_api()
-
   @cached_queries [
     "allProjects",
     "allErc20Projects",
@@ -81,7 +79,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
          conn,
          %{
            rate_limiting_enabled: true,
-           product_id: @product_id_api,
+           product_code: "SANAPI",
            auth: %{current_user: user, auth_method: auth_method}
          },
          count
@@ -94,7 +92,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
          conn,
          %{
            rate_limiting_enabled: true,
-           product_id: @product_id_api,
+           product_code: "SANAPI",
            remote_ip: remote_ip
          } = context,
          count

@@ -272,4 +272,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     |> Enum.filter(fn {_metric, data_type} -> data_type == type end)
     |> Enum.map(&elem(&1, 0))
   end
+
+  def name_to_metric(name), do: Map.get(@name_to_metric_map, name)
 end

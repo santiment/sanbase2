@@ -46,6 +46,8 @@ defmodule Sanbase.Dashboard.Schema do
 
   @type dashboard_id :: non_neg_integer()
 
+  :ok
+
   schema "dashboards" do
     field(:name, :string)
     field(:description, :string)

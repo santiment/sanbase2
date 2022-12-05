@@ -12,7 +12,8 @@ defmodule Sanbase.Billing.SanBurnCreditTransactionTest do
         stripe_customer_id: "s1"
       )
 
-    rows = [[~N[2022-05-23 05:43:40], "0x1", 1000, "0x123"]]
+    timestamp = ~U[2022-05-23 05:43:40Z] |> DateTime.to_unix()
+    rows = [[timestamp, "0x1", 1000, "0x123"]]
 
     data = %{price_usd: 4, price_btc: 0.03, marketcap: 100, volume: 100}
 

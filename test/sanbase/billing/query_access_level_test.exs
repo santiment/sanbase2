@@ -96,6 +96,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_nft_trades,
           :get_presigned_s3_url,
           :get_primary_user,
+          :get_questionnaire,
+          :get_questionnaire_user_answers,
           :get_raw_signals,
           :get_reports_by_tags,
           :get_reports,

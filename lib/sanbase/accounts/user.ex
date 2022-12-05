@@ -161,32 +161,57 @@ defmodule Sanbase.Accounts.User do
     |> unique_constraint(:twitter_id)
   end
 
-  defdelegate can_receive_telegram_alert?(user), to: __MODULE__.Alert
-  defdelegate can_receive_email_alert?(user), to: __MODULE__.Alert
-  defdelegate can_receive_webhook_alert?(user, webhook_url), to: __MODULE__.Alert
+  def can_receive_telegram_alert?(user), do: __MODULE__.Alert.can_receive_telegram_alert?(user)
+  def can_receive_email_alert?(user), do: __MODULE__.Alert.can_receive_email_alert?(user)
+
+  def can_receive_webhook_alert?(user, webhook_url),
+    do: __MODULE__.Alert.can_receive_webhook_alert?(user, webhook_url)
 
   # Email functions
-  defdelegate find_by_email_candidate(candidate, token), to: __MODULE__.Email
-  defdelegate update_email_token(user, consent \\ nil), to: __MODULE__.Email
-  defdelegate update_email_candidate(user, candidate), to: __MODULE__.Email
-  defdelegate mark_email_token_as_validated(user), to: __MODULE__.Email
-  defdelegate update_email_from_email_candidate(user), to: __MODULE__.Email
-  defdelegate email_token_valid?(user, token), to: __MODULE__.Email
-  defdelegate email_candidate_token_valid?(user, candidate_token), to: __MODULE__.Email
-  defdelegate send_login_email(user, origin_url, args \\ %{}), to: __MODULE__.Email
-  defdelegate send_verify_email(user), to: __MODULE__.Email
+  def find_by_email_candidate(candidate, token),
+    do: __MODULE__.Email.find_by_email_candidate(candidate, token)
+
+  def update_email_token(user, consent \\ nil),
+    do: __MODULE__.Email.update_email_token(user, consent)
+
+  def update_email_candidate(user, candidate),
+    do: __MODULE__.Email.update_email_candidate(user, candidate)
+
+  def mark_email_token_as_validated(user),
+    do: __MODULE__.Email.mark_email_token_as_validated(user)
+
+  def update_email_from_email_candidate(user),
+    do: __MODULE__.Email.update_email_from_email_candidate(user)
+
+  def email_token_valid?(user, token), do: __MODULE__.Email.email_token_valid?(user, token)
+
+  def email_candidate_token_valid?(user, candidate_token),
+    do: __MODULE__.Email.email_candidate_token_valid?(user, candidate_token)
+
+  def send_login_email(user, origin_url, args \\ %{}),
+    do: __MODULE__.Email.send_login_email(user, origin_url, args)
+
+  def send_verify_email(user), do: __MODULE__.Email.send_verify_email(user)
 
   # San Balance functions
-  defdelegate san_balance_cache_stale?(user), to: __MODULE__.SanBalance
-  defdelegate update_san_balance_changeset(user), to: __MODULE__.SanBalance
-  defdelegate san_balance(user), to: __MODULE__.SanBalance
-  defdelegate san_balance!(user), to: __MODULE__.SanBalance
-  defdelegate san_balance_or_zero(user), to: __MODULE__.SanBalance
+  def san_balance_cache_stale?(user), do: __MODULE__.SanBalance.san_balance_cache_stale?(user)
+
+  def update_san_balance_changeset(user),
+    do: __MODULE__.SanBalance.update_san_balance_changeset(user)
+
+  def san_balance(user), do: __MODULE__.SanBalance.san_balance(user)
+  def san_balance!(user), do: __MODULE__.SanBalance.san_balance!(user)
+  def san_balance_or_zero(user), do: __MODULE__.SanBalance.san_balance_or_zero(user)
 
   # Uniswap San Staking functions
-  defdelegate fetch_all_uniswap_staked_users(), to: __MODULE__.UniswapStaking
-  defdelegate update_all_uniswap_san_staked_users(), to: __MODULE__.UniswapStaking
-  defdelegate fetch_uniswap_san_staked_user(user), to: __MODULE__.UniswapStaking
+  def fetch_all_uniswap_staked_users(),
+    do: __MODULE__.UniswapStaking.fetch_all_uniswap_staked_users()
+
+  def update_all_uniswap_san_staked_users(),
+    do: __MODULE__.UniswapStaking.update_all_uniswap_san_staked_users()
+
+  def fetch_uniswap_san_staked_user(user),
+    do: __MODULE__.UniswapStaking.fetch_uniswap_san_staked_user(user)
 
   def create(attrs) do
     %__MODULE__{}

@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.AuthPlug.AuthStruct do
-  defstruct permissions: nil, auth: nil, product_id: nil, new_access_token: nil
+  defstruct permissions: nil, auth: nil, product_id: nil, product_code: nil, new_access_token: nil
 end
 
 defmodule SanbaseWeb.Graphql.AuthPlug do
@@ -62,7 +62,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
       subscription: @free_subscription,
       plan: Subscription.plan_name(@free_subscription)
     },
-    product_id: :will_be_filled_by_anon_user_auth_struct_function
+    product_id: :will_be_filled_by_anon_user_auth_struct_function,
+    product_code: :will_be_filled_by_anon_user_auth_struct_function
   }
   def init(opts), do: opts
 
@@ -198,7 +199,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
             subscription: subscription,
             plan: Subscription.plan_name(subscription)
           },
-          product_id: @product_id_sanbase
+          product_id: @product_id_sanbase,
+          product_code: "SANBASE"
         }
         |> Map.merge(Map.take(map, [:new_access_token]))
 
@@ -225,7 +227,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
           subscription: subscription,
           plan: Subscription.plan_name(subscription)
         },
-        product_id: @product_id_sanbase
+        product_id: @product_id_sanbase,
+        product_code: "SANBASE"
       }
       |> Map.merge(Map.take(map, [:new_access_token]))
     else
@@ -249,7 +252,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
           subscription: nil,
           plan: nil
         },
-        product_id: @product_id_api
+        product_id: @product_id_api,
+        product_code: "SANAPI"
       }
     else
       {:has_header?, _} ->
@@ -284,7 +288,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
           subscription: subscription,
           plan: Subscription.plan_name(subscription)
         },
-        product_id: product_id
+        product_id: product_id,
+        product_code: Product.code_by_id(product_id)
       }
     else
       {:has_header?, _} ->
@@ -303,7 +308,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
       |> Map.get(:origin_host)
       |> get_no_auth_product_id()
 
-    Map.put(@anon_user_auth_struct, :product_id, product_id)
+    @anon_user_auth_struct
+    |> Map.merge(%{product_id: product_id, product_code: Product.code_by_id(product_id)})
   end
 
   defp bearer_authenticate(conn, token) do

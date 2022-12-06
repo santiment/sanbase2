@@ -59,7 +59,7 @@ defmodule Sanbase.Accounts.EmailJobs do
       charge_date: DateTime.from_unix!(charge_date_unix) |> format_date()
     }
 
-    add_email_job(455, automatic_renewal_template(), vars)
+    add_email_job(subscription.user_id, automatic_renewal_template(), vars)
   end
 
   def send_trial_started_email(subscription) do

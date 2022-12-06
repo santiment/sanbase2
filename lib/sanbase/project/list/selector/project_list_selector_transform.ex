@@ -55,7 +55,10 @@ defmodule Sanbase.Project.ListSelector.Transform do
     %{
       map
       | from:
-          if(is_binary(from), do: from_iso8601!(from) |> round_datetime(rounding: :up), else: from),
+          if(is_binary(from),
+            do: from_iso8601!(from) |> round_datetime(rounding: :up),
+            else: from
+          ),
         to: if(is_binary(to), do: from_iso8601!(to) |> round_datetime(rounding: :up), else: to)
     }
   end

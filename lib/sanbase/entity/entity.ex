@@ -357,7 +357,9 @@ defmodule Sanbase.Entity do
       case Keyword.get(opts, :current_user_voted_for_only) do
         user_id when is_integer(user_id) ->
           query
-          |> order_by([_v], desc: fragment("MAX(updated_at) FILTER (WHERE user_id = ?)", ^user_id))
+          |> order_by([_v],
+            desc: fragment("MAX(updated_at) FILTER (WHERE user_id = ?)", ^user_id)
+          )
 
         _ ->
           query

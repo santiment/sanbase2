@@ -89,8 +89,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     with true <- allowed_origin?(origin_host_parts),
          {:ok, user} <- User.find_or_insert_by(:email, email, %{username: args[:username]}),
          :ok <- EmailLoginAttempt.has_allowed_login_attempts(user, remote_ip),
-         {:ok, user} <- User.update_email_token(user, args[:consent]),
-         {:ok, _user} <- User.send_login_email(user, origin_host_parts, args),
+         {:ok, user} <- User.Email.update_email_token(user, args[:consent]),
+         {:ok, _user} <- User.Email.send_login_email(user, origin_host_parts, args),
          {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip) do
       emit_event({:ok, user}, :send_email_login_link, %{origin_url: origin_url})
 
@@ -119,13 +119,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
     with {:ok, user} <- User.find_or_insert_by(:email, email),
          is_registered <- user.is_registered,
-         true <- User.email_token_valid?(user, token),
+         true <- User.Email.email_token_valid?(user, token),
          {:ok, %{} = jwt_tokens_map} <-
            SanbaseWeb.Guardian.get_jwt_tokens(user,
              platform: device_data.platform,
              client: device_data.client
            ),
-         {:ok, user} <- User.mark_email_token_as_validated(user),
+         {:ok, user} <- User.Email.mark_email_token_as_validated(user),
          {:ok, user} <- User.mark_as_registered(user, event_args) do
       emit_event({:ok, user}, :login_user, event_args)
 
@@ -157,8 +157,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
 
     with :ok <- EmailLoginAttempt.has_allowed_login_attempts(user, remote_ip),
-         {:ok, user} <- User.update_email_candidate(user, email_candidate),
-         {:ok, _user} <- User.send_verify_email(user),
+         {:ok, user} <- User.Email.update_email_candidate(user, email_candidate),
+         {:ok, _user} <- User.Email.send_verify_email(user),
          {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip) do
       {:ok, %{success: true}}
     else
@@ -173,14 +173,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
         %{token: email_candidate_token, email_candidate: email_candidate},
         %{context: %{device_data: device_data}}
       ) do
-    with {:ok, user} <- User.find_by_email_candidate(email_candidate, email_candidate_token),
-         true <- User.email_candidate_token_valid?(user, email_candidate_token),
+    with {:ok, user} <-
+           User.Email.find_by_email_candidate(email_candidate, email_candidate_token),
+         true <- User.Email.email_candidate_token_valid?(user, email_candidate_token),
          {:ok, jwt_tokens} <-
            SanbaseWeb.Guardian.get_jwt_tokens(user,
              platform: device_data.platform,
              client: device_data.client
            ),
-         {:ok, user} <- User.update_email_from_email_candidate(user) do
+         {:ok, user} <- User.Email.update_email_from_email_candidate(user) do
       {:ok,
        %{
          user: user,

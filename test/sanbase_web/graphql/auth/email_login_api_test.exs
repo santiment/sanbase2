@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
     test "with a valid email token, succeeds login", %{conn: conn} do
       {:ok, user} =
         insert(:user, email: "example@santiment.net")
-        |> User.update_email_token()
+        |> User.Email.update_email_token()
 
       result =
         conn
@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
              )
 
       # Second login has firstLogin == false
-      {:ok, user} = user |> User.update_email_token()
+      {:ok, user} = user |> User.Email.update_email_token()
 
       login_data =
         conn
@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
     test "with a valid email token, succeeds login after more than 5 minutes" do
       {:ok, user} =
         insert(:user, email: "example@santiment.net")
-        |> User.update_email_token()
+        |> User.Email.update_email_token()
 
       mutation = email_login_verify_mutation(user)
 
@@ -108,7 +108,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
     test "with a valid email token after more than 1 day, fail to login", %{conn: conn} do
       {:ok, user} =
         insert(:user, email: "example@santiment.net")
-        |> User.update_email_token()
+        |> User.Email.update_email_token()
 
       generated_at = Timex.shift(Timex.now(), days: -2) |> NaiveDateTime.truncate(:second)
 
@@ -126,7 +126,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
     test "with a valid email token after one validation, fail to login again", %{conn: conn} do
       {:ok, user} =
         insert(:user, email: "example@santiment.net")
-        |> User.update_email_token()
+        |> User.Email.update_email_token()
 
       naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
@@ -148,7 +148,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
          %{conn: conn} do
       {:ok, user} =
         insert(:user, email: "example@santiment.net")
-        |> User.update_email_token()
+        |> User.Email.update_email_token()
 
       naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 

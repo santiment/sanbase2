@@ -158,7 +158,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
         %{context: %{auth: %{auth_method: :user_token, current_user: user}}}
       ) do
     with true <- Ethauth.is_valid_signature?(address, signature),
-         {:ok, _} <- User.add_eth_account(user, address) do
+         {:ok, _} <- Sanbase.Accounts.add_eth_account(user, address) do
       {:ok, user}
     else
       {:error, changeset} ->
@@ -173,7 +173,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   def remove_user_eth_address(_root, %{address: address}, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do
-    case User.remove_eth_account(user, address) do
+    case Sanbase.Accounts.remove_eth_account(user, address) do
       true ->
         {:ok, user}
 

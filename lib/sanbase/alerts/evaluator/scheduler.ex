@@ -10,6 +10,7 @@ defmodule Sanbase.Alert.Scheduler do
   > Log stats messages
   """
 
+  alias Sanbase.Accounts.User
   alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
   alias Sanbase.Alert.Evaluator
   alias Sanbase.Alert
@@ -32,7 +33,7 @@ defmodule Sanbase.Alert.Scheduler do
   """
 
   def run_alert(module) do
-    case module in Sanbase.Alert.List.get() do
+    case module in Alert.List.get() do
       true ->
         run(module.type())
 
@@ -232,13 +233,13 @@ defmodule Sanbase.Alert.Scheduler do
         channels != [] and
           Enum.any?(channels, fn
             "email" ->
-              Sanbase.Accounts.User.can_receive_email_alert?(user)
+              User.Alert.can_receive_email_alert?(user)
 
             "telegram" ->
-              Sanbase.Accounts.User.can_receive_telegram_alert?(user)
+              User.Alert.can_receive_telegram_alert?(user)
 
             %{"webhook" => webhook_url} ->
-              Sanbase.Accounts.User.can_receive_webhook_alert?(user, webhook_url)
+              User.Alert.can_receive_webhook_alert?(user, webhook_url)
 
             "web_push" ->
               # web push cannot be received currently. So if the other channels

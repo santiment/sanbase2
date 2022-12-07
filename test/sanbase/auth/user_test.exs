@@ -129,7 +129,7 @@ defmodule Sanbase.Accounts.UserTest do
   test "san balance cache is stale when the cache is never updated" do
     user = insert(:user, %{san_balance: nil, san_balance_updated_at: nil})
 
-    assert User.san_balance_cache_stale?(user)
+    assert User.SanBalance.san_balance_cache_stale?(user)
   end
 
   test "san balance cache is stale when the san balance was updated 10 min ago" do
@@ -139,7 +139,7 @@ defmodule Sanbase.Accounts.UserTest do
         privacy_policy_accepted: true
       )
 
-    assert User.san_balance_cache_stale?(user)
+    assert User.SanBalance.san_balance_cache_stale?(user)
   end
 
   test "san balance cache is not stale when the san balance was updated 5 min ago" do
@@ -149,7 +149,7 @@ defmodule Sanbase.Accounts.UserTest do
         privacy_policy_accepted: true
       )
 
-    refute User.san_balance_cache_stale?(user)
+    refute User.SanBalance.san_balance_cache_stale?(user)
   end
 
   test "update_san_balance_changeset is returning a changeset with updated san balance" do
@@ -162,7 +162,7 @@ defmodule Sanbase.Accounts.UserTest do
         san_balance_updated_at: ~N[2020-01-01 00:00:00]
       )
 
-    changeset = User.update_san_balance_changeset(user)
+    changeset = User.SanBalance.update_san_balance_changeset(user)
 
     assert changeset.changes[:san_balance] == 5.0
 
@@ -174,7 +174,7 @@ defmodule Sanbase.Accounts.UserTest do
            )
   end
 
-  test "san_balance! returns cached result when EthAccount.san_balance fails" do
+  test "san_balance returns cached result when EthAccount.san_balance fails" do
     mock(Sanbase.InternalServices.Ethauth, :san_balance, {:error, "foo"})
 
     user =
@@ -185,11 +185,11 @@ defmodule Sanbase.Accounts.UserTest do
       )
 
     capture_log(fn ->
-      assert User.san_balance!(user) == 100.0
+      assert User.san_balance(user) == {:ok, 100.0}
     end)
   end
 
-  test "san_balance! does not update the balance if the balance cache is not stale" do
+  test "san_balance does not update the balance if the balance cache is not stale" do
     user =
       insert(:user,
         san_balance_updated_at: Timex.now(),
@@ -197,10 +197,10 @@ defmodule Sanbase.Accounts.UserTest do
         privacy_policy_accepted: true
       )
 
-    assert User.san_balance!(user) == 5.0
+    assert User.san_balance(user) == {:ok, 5.0}
   end
 
-  test "san_balance! updates the balance if the balance cache is stale" do
+  test "san_balance updates the balance if the balance cache is stale" do
     user =
       insert(:user,
         san_balance_updated_at: Timex.shift(Timex.now(), minutes: -10),
@@ -212,7 +212,7 @@ defmodule Sanbase.Accounts.UserTest do
 
     user = User.by_id!(user.id) |> Repo.preload(:eth_accounts)
 
-    assert User.san_balance!(user) == 10.0
+    assert User.san_balance(user) == {:ok, 10.0}
 
     user = User.by_id!(user.id) |> Repo.preload(:eth_accounts)
 
@@ -224,7 +224,7 @@ defmodule Sanbase.Accounts.UserTest do
            )
   end
 
-  test "san_balance! returns test_san_balance if present" do
+  test "san_balance returns test_san_balance if present" do
     user =
       insert(:user,
         san_balance: Decimal.new(10),
@@ -232,10 +232,10 @@ defmodule Sanbase.Accounts.UserTest do
         san_balance_updated_at: Timex.shift(Timex.now(), minutes: -2)
       )
 
-    assert User.san_balance!(user) == 20.0
+    assert User.san_balance(user) == {:ok, 20.0}
   end
 
-  test "san_balance! returns cached san_balance if test_san_balance not present" do
+  test "san_balance returns cached san_balance if test_san_balance not present" do
     user =
       insert(:user,
         san_balance: Decimal.new(10),
@@ -243,7 +243,7 @@ defmodule Sanbase.Accounts.UserTest do
         privacy_policy_accepted: true
       )
 
-    assert User.san_balance!(user) == 10.0
+    assert User.san_balance(user) == {:ok, 10.0}
   end
 
   describe "#find_or_insert_by_email" do
@@ -281,7 +281,7 @@ defmodule Sanbase.Accounts.UserTest do
   test "update_email_token updates the email_token and the email_token_generated_at" do
     {:ok, user} =
       insert(:user, privacy_policy_accepted: true)
-      |> User.update_email_token()
+      |> User.Email.update_email_token()
 
     assert user.email_token != nil
 
@@ -296,7 +296,7 @@ defmodule Sanbase.Accounts.UserTest do
   test "mark_email_token_as_validated updates the email_token_validated_at" do
     {:ok, user} =
       insert(:user)
-      |> User.mark_email_token_as_validated()
+      |> User.Email.mark_email_token_as_validated()
 
     assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
@@ -308,7 +308,7 @@ defmodule Sanbase.Accounts.UserTest do
 
   test "email_token_valid? validates the token properly" do
     user = build(:user, email_token: "test_token")
-    refute User.email_token_valid?(user, "wrong_token")
+    refute User.Email.email_token_valid?(user, "wrong_token")
 
     user =
       build(:user,
@@ -316,7 +316,7 @@ defmodule Sanbase.Accounts.UserTest do
         email_token_generated_at: Timex.shift(Timex.now(), days: -2)
       )
 
-    refute User.email_token_valid?(user, "test_token")
+    refute User.Email.email_token_valid?(user, "test_token")
 
     user =
       build(:user,
@@ -325,7 +325,7 @@ defmodule Sanbase.Accounts.UserTest do
         email_token_validated_at: Timex.shift(Timex.now(), minutes: -20)
       )
 
-    refute User.email_token_valid?(user, "test_token")
+    refute User.Email.email_token_valid?(user, "test_token")
 
     user =
       build(:user,
@@ -333,11 +333,11 @@ defmodule Sanbase.Accounts.UserTest do
         email_token_generated_at: Timex.now()
       )
 
-    assert User.email_token_valid?(user, "test_token")
+    assert User.Email.email_token_valid?(user, "test_token")
   end
 
   test "find_by_email_candidate when the user does not exist" do
-    {:error, message} = User.find_by_email_candidate("test@example.com", "some token")
+    {:error, message} = User.Email.find_by_email_candidate("test@example.com", "some token")
 
     assert message == "Can't find user with email candidate test@example.com"
   end
@@ -348,10 +348,10 @@ defmodule Sanbase.Accounts.UserTest do
         email: "test@example.com",
         privacy_policy_accepted: true
       )
-      |> User.update_email_candidate("test+foo@santiment.net")
+      |> User.Email.update_email_candidate("test+foo@santiment.net")
 
     {:ok, user} =
-      User.find_by_email_candidate(
+      User.Email.find_by_email_candidate(
         existing_user.email_candidate,
         existing_user.email_candidate_token
       )
@@ -365,17 +365,17 @@ defmodule Sanbase.Accounts.UserTest do
       email: "test_first@example.com",
       privacy_policy_accepted: true
     )
-    |> User.update_email_candidate("test+foo@santiment.net")
+    |> User.Email.update_email_candidate("test+foo@santiment.net")
 
     {:ok, existing_user} =
       insert(:user,
         email: "test@example.com",
         privacy_policy_accepted: true
       )
-      |> User.update_email_candidate("test+foo@santiment.net")
+      |> User.Email.update_email_candidate("test+foo@santiment.net")
 
     {:ok, user} =
-      User.find_by_email_candidate(
+      User.Email.find_by_email_candidate(
         existing_user.email_candidate,
         existing_user.email_candidate_token
       )
@@ -388,7 +388,7 @@ defmodule Sanbase.Accounts.UserTest do
     user = insert(:user, privacy_policy_accepted: true)
 
     email_candidate = "test+foo@santiment.net"
-    {:ok, user} = User.update_email_candidate(user, email_candidate)
+    {:ok, user} = User.Email.update_email_candidate(user, email_candidate)
 
     assert user.email_candidate == email_candidate
     assert user.email_candidate_token != nil
@@ -410,9 +410,9 @@ defmodule Sanbase.Accounts.UserTest do
         email: "test@example.com",
         privacy_policy_accepted: true
       )
-      |> User.update_email_candidate(email_candidate)
+      |> User.Email.update_email_candidate(email_candidate)
 
-    {:ok, user} = User.update_email_from_email_candidate(user)
+    {:ok, user} = User.Email.update_email_from_email_candidate(user)
 
     assert user.email == email_candidate
     assert user.email_candidate == nil
@@ -427,7 +427,7 @@ defmodule Sanbase.Accounts.UserTest do
 
   test "email_candidate_token_valid? validates the email_candidate_token properly" do
     user = build(:user, email_candidate_token: "test_token")
-    refute User.email_candidate_token_valid?(user, "wrong_token")
+    refute User.Email.email_candidate_token_valid?(user, "wrong_token")
 
     user =
       build(:user,
@@ -435,7 +435,7 @@ defmodule Sanbase.Accounts.UserTest do
         email_candidate_token_generated_at: Timex.shift(Timex.now(), days: -2)
       )
 
-    refute User.email_candidate_token_valid?(user, "test_token")
+    refute User.Email.email_candidate_token_valid?(user, "test_token")
 
     user =
       build(:user,
@@ -444,7 +444,7 @@ defmodule Sanbase.Accounts.UserTest do
         email_candidate_token_validated_at: Timex.shift(Timex.now(), minutes: -20)
       )
 
-    refute User.email_candidate_token_valid?(user, "test_token")
+    refute User.Email.email_candidate_token_valid?(user, "test_token")
 
     user =
       build(:user,
@@ -452,7 +452,7 @@ defmodule Sanbase.Accounts.UserTest do
         email_candidate_token_generated_at: Timex.now()
       )
 
-    assert User.email_candidate_token_valid?(user, "test_token")
+    assert User.Email.email_candidate_token_valid?(user, "test_token")
   end
 
   test "return error on insert/update username with non ascii" do

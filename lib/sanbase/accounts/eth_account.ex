@@ -38,6 +38,19 @@ defmodule Sanbase.Accounts.EthAccount do
     Repo.get_by(__MODULE__, address: address)
   end
 
+  def by_user(user_id) do
+    from(ea in __MODULE__, where: ea.user_id == ^user_id)
+    |> Repo.all()
+  end
+
+  def delete_user_address(user_id, address) do
+    from(
+      ea in __MODULE__,
+      where: ea.user_id == ^user_id and ea.address == ^address
+    )
+    |> Repo.delete_all()
+  end
+
   def wallets_by_user(user_id) do
     from(e in __MODULE__, where: e.user_id == ^user_id, select: e.address)
     |> Repo.all()

@@ -68,52 +68,23 @@ defmodule Sanbase.Intercom do
     Logger.info("[intercom_to_kafka] Finish")
   end
 
-  def fix_old_data(from, to) do
-    Logger.info("[fix_old_data] Start")
+  def sync_newly_registered_to_intercom() do
+    since = Timex.shift(Timex.now(), hours: -30)
 
-    for date <- Sanbase.DateTimeUtils.generate_dates_inclusive(from, to) do
-      Logger.info("[fix_old_data] Start #{date}")
-      datetime = Sanbase.DateTimeUtils.date_to_datetime(date)
-      all_stats = all_users_stats(datetime)
-
-      for offset <- 0..25 do
-        {:ok, data} = fetch_ch_data(datetime, 1000, offset)
-
-        if data != [] do
-          user_ids = data |> Enum.map(& &1[:user_id])
-          users_map = fetch_users_db(user_ids) |> Enum.into(%{}, fn u -> {u.id, u} end)
-
-          new_data =
-            Enum.map(data, fn %{user_id: user_id, dt: dt, attributes: attributes} ->
-              if attributes["custom_attributes"]["used_sanapi"] == nil do
-                if users_map[user_id] do
-                  stats = fetch_stats_for_user(users_map[user_id], all_stats)
-                  custom_attributes = stats["custom_attributes"]
-                  attributes = Map.put(attributes, "custom_attributes", custom_attributes)
-
-                  %{
-                    user_id: user_id,
-                    properties: attributes,
-                    inserted_at: DateTime.from_naive!(dt, "Etc/UTC")
-                  }
-                else
-                  nil
-                end
-              else
-                nil
-              end
-            end)
-            |> Enum.reject(&is_nil/1)
-
-          Logger.info("[fix_old_data] date=#{date} rows to save: #{length(new_data)}")
-          persist_kafka_async(new_data)
-        end
-      end
-
-      Logger.info("[fix_old_data] Finish #{date}")
+    if has_intercom_api_key?() do
+      sync_newly_registered_to_intercom(since)
     end
 
-    Logger.info("[fix_old_data] Finish")
+    :ok
+  end
+
+  def sync_newly_registered_to_intercom(dt) do
+    fetch_new_registrations_since(dt)
+    |> Enum.each(fn user_id ->
+      if is_nil(get_contact_by_user_id(user_id)) do
+        create_contact(user_id)
+      end
+    end)
   end
 
   def save_contacts_to_intercom(contacts) do
@@ -121,6 +92,22 @@ defmodule Sanbase.Intercom do
     |> Enum.each(fn contact ->
       update_contact(contact["id"], contact)
     end)
+  end
+
+  def fetch_new_registrations_since(dt) do
+    from(u in User, where: u.is_registered and u.inserted_at > ^dt, select: u.id)
+    |> Repo.all()
+  end
+
+  def create_contact(user_id) do
+    body =
+      %{
+        role: "user",
+        external_id: user_id
+      }
+      |> Jason.encode!()
+
+    HTTPoison.post(@contacts_url, body, intercom_headers())
   end
 
   def get_contact_by_user_id(user_id) do
@@ -134,11 +121,13 @@ defmodule Sanbase.Intercom do
       }
       |> Jason.encode!()
 
-    HTTPoison.post!("#{@contacts_url}/search", body, intercom_headers())
-    |> Map.get(:body)
-    |> Jason.decode!()
-    |> Map.get("data")
-    |> List.first()
+    with {:ok, response} <- HTTPoison.post("#{@contacts_url}/search", body, intercom_headers()) do
+      response
+      |> Map.get(:body)
+      |> Jason.decode!()
+      |> Map.get("data")
+      |> List.first()
+    end
   end
 
   def update_contact(intercom_id, params) do

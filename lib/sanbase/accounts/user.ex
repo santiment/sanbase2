@@ -24,7 +24,6 @@ defmodule Sanbase.Accounts.User do
   alias Sanbase.Billing.Subscription
 
   @salt_length 64
-  @email_token_length 64
 
   # Fallback username and email for Insights owned by deleted user accounts
   @anonymous_user_username "anonymous"
@@ -116,10 +115,6 @@ defmodule Sanbase.Accounts.User do
 
   def generate_salt() do
     :crypto.strong_rand_bytes(@salt_length) |> Base.url_encode64() |> binary_part(0, @salt_length)
-  end
-
-  def generate_email_token() do
-    :crypto.strong_rand_bytes(@email_token_length) |> Base.url_encode64()
   end
 
   def changeset(%User{} = user, attrs \\ %{}) do

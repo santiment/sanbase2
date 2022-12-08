@@ -28,7 +28,7 @@ defmodule Sanbase.Accounts.UserTest do
       Sanbase.Telegram.UserToken.generate(user.id)
 
       # Eth Account
-      Sanbase.Accounts.EthAccount.create(%{user_id: user.id, address: "0x01"})
+      Sanbase.Accounts.EthAccount.create(user.id, "0x01")
 
       # Subscription
       insert(:subscription_pro_sanbase, user: user, status: "trialing")

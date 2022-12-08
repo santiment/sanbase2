@@ -47,14 +47,6 @@ defmodule Sanbase.Accounts.User.SanBalance do
     end
   end
 
-  @spec san_balance!(%User{}) :: float | nil | no_return
-  def san_balance!(%User{} = user) do
-    case san_balance(user) do
-      {:ok, san_balance} -> san_balance
-      {:error, error} -> raise(error)
-    end
-  end
-
   @spec san_balance_or_zero(%User{}) :: float
   def san_balance_or_zero(%User{} = user) do
     case san_balance(user) do

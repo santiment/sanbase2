@@ -28,18 +28,37 @@ defmodule Sanbase.Accounts.EthAccount do
     |> unique_constraint(:address)
   end
 
-  def create(attrs) do
+  def create(user_id, address) do
     %__MODULE__{}
-    |> changeset(attrs)
+    |> changeset(%{user_id: user_id, address: address})
     |> Repo.insert()
+  end
+
+  @doc ~s"""
+  An EthAccount can be removed only if there is another mean to login - an email address
+  or another ethereum address set. If the address that is being removed is the only
+  address and there is no email, the user account will be lost as there won't be
+  any way to log in
+  """
+  @spec remove(non_neg_integer, String.t()) :: true | {:error, String.t()}
+  def remove(user_id, address) do
+    if can_remove_eth_account?(user_id, address) do
+      case delete_user_address(user_id, address) do
+        {1, _} -> true
+        {0, _} -> {:error, "Address #{address} does not exist or is not owned by user #{user_id}"}
+      end
+    else
+      {:error,
+       "Cannot remove ethereum address #{address}. There must be an email or other ethereum address set."}
+    end
   end
 
   def by_address(address) do
     Repo.get_by(__MODULE__, address: address)
   end
 
-  def wallets_by_user(user_id) do
-    from(e in __MODULE__, where: e.user_id == ^user_id, select: e.address)
+  def all_by_user(user_id) do
+    from(ea in __MODULE__, where: ea.user_id == ^user_id)
     |> Repo.all()
   end
 
@@ -96,5 +115,26 @@ defmodule Sanbase.Accounts.EthAccount do
     # Convert the LP tokens to the actual value of SAN tokens
     address_share = address_staked_tokens / data_map.total_supply
     address_share * data_map.reserves
+  end
+
+  defp delete_user_address(user_id, address) do
+    from(
+      ea in __MODULE__,
+      where: ea.user_id == ^user_id and ea.address == ^address
+    )
+    |> Repo.delete_all()
+  end
+
+  defp can_remove_eth_account?(user_id, address) do
+    {:ok, %User{email: email}} = User.by_id(user_id)
+
+    count_other_accounts =
+      all_by_user(user_id)
+      |> Enum.map(& &1.address)
+      |> Enum.reject(&(&1 == address))
+      |> Enum.uniq()
+      |> Enum.count()
+
+    count_other_accounts > 0 or not is_nil(email)
   end
 end

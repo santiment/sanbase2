@@ -13,23 +13,17 @@ defmodule Sanbase.Accounts do
     end
   end
 
+  @doc ~s"""
+  Create a new user with an ETH address. The address is created and linked in the
+  ETH Accounts, but also set as the username.
+  """
+  @spec create_user_with_eth_address(String.t()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def create_user_with_eth_address(address) when is_binary(address) do
     multi_result =
       Ecto.Multi.new()
-      |> Ecto.Multi.insert(
-        :add_user,
-        User.changeset(%User{}, %{
-          username: address,
-          salt: User.generate_salt(),
-          first_login: true
-        })
-      )
-      |> Ecto.Multi.run(:add_eth_account, fn _repo, %{add_user: %User{id: id}} ->
-        eth_account =
-          EthAccount.changeset(%EthAccount{}, %{user_id: id, address: address})
-          |> Sanbase.Repo.insert()
-
-        {:ok, eth_account}
+      |> Ecto.Multi.run(:add_user, fn _, _ -> User.create(%{username: address}) end)
+      |> Ecto.Multi.run(:add_eth_account, fn _repo, %{add_user: %User{} = user} ->
+        EthAccount.create(user.id, address)
       end)
       |> Repo.transaction()
 

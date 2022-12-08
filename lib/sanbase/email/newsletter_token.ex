@@ -3,6 +3,7 @@ defmodule Sanbase.Email.NewsletterToken do
   import Ecto.Changeset
 
   alias Sanbase.Repo
+  alias Sanbase.Accounts.User.Email
 
   @email_token_length 64
   # Email verification links will be valid 24 hours
@@ -33,7 +34,7 @@ defmodule Sanbase.Email.NewsletterToken do
     %__MODULE__{}
     |> change(
       email: email,
-      token: generate_email_token(),
+      token: Email.generate_email_token(),
       email_token_generated_at: DateTime.utc_now() |> DateTime.truncate(:second),
       email_token_validated_at: nil
     )
@@ -82,9 +83,5 @@ defmodule Sanbase.Email.NewsletterToken do
     SanbaseWeb.Endpoint.frontend_url() <>
       "/subscribe_email?" <>
       URI.encode_query(token: token, email: email, type: type)
-  end
-
-  defp generate_email_token do
-    :crypto.strong_rand_bytes(@email_token_length) |> Base.url_encode64()
   end
 end

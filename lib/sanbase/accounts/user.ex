@@ -4,6 +4,7 @@ defmodule Sanbase.Accounts.User do
   import Ecto.Changeset
   import Ecto.Query
   import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
+  import __MODULE__.Validation
 
   alias Sanbase.Accounts.{
     User,
@@ -23,7 +24,6 @@ defmodule Sanbase.Accounts.User do
   alias Sanbase.Billing.Subscription
 
   @salt_length 64
-  @email_token_length 64
 
   # Fallback username and email for Insights owned by deleted user accounts
   @anonymous_user_username "anonymous"
@@ -46,10 +46,11 @@ defmodule Sanbase.Accounts.User do
 
   schema "users" do
     field(:email, :string)
-    field(:email_candidate, :string)
-    field(:name, :string)
     field(:username, :string)
+    field(:name, :string)
+    field(:stripe_customer_id, :string)
     field(:salt, :string)
+    field(:email_candidate, :string)
     field(:san_balance, :decimal)
     field(:san_balance_updated_at, :naive_datetime)
     field(:email_token, :string)
@@ -60,7 +61,6 @@ defmodule Sanbase.Accounts.User do
     field(:email_candidate_token_validated_at, :naive_datetime)
     field(:consent_id, :string)
     field(:test_san_balance, :decimal)
-    field(:stripe_customer_id, :string)
     field(:first_login, :boolean, default: false, virtual: true)
     field(:avatar_url, :string)
     field(:is_registered, :boolean, default: false)
@@ -117,10 +117,6 @@ defmodule Sanbase.Accounts.User do
     :crypto.strong_rand_bytes(@salt_length) |> Base.url_encode64() |> binary_part(0, @salt_length)
   end
 
-  def generate_email_token() do
-    :crypto.strong_rand_bytes(@email_token_length) |> Base.url_encode64()
-  end
-
   def changeset(%User{} = user, attrs \\ %{}) do
     attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
 
@@ -161,59 +157,13 @@ defmodule Sanbase.Accounts.User do
     |> unique_constraint(:twitter_id)
   end
 
-  def can_receive_telegram_alert?(user), do: __MODULE__.Alert.can_receive_telegram_alert?(user)
-  def can_receive_email_alert?(user), do: __MODULE__.Alert.can_receive_email_alert?(user)
-
-  def can_receive_webhook_alert?(user, webhook_url),
-    do: __MODULE__.Alert.can_receive_webhook_alert?(user, webhook_url)
-
-  # Email functions
-  def find_by_email_candidate(candidate, token),
-    do: __MODULE__.Email.find_by_email_candidate(candidate, token)
-
-  def update_email_token(user, consent \\ nil),
-    do: __MODULE__.Email.update_email_token(user, consent)
-
-  def update_email_candidate(user, candidate),
-    do: __MODULE__.Email.update_email_candidate(user, candidate)
-
-  def mark_email_token_as_validated(user),
-    do: __MODULE__.Email.mark_email_token_as_validated(user)
-
-  def update_email_from_email_candidate(user),
-    do: __MODULE__.Email.update_email_from_email_candidate(user)
-
-  def email_token_valid?(user, token), do: __MODULE__.Email.email_token_valid?(user, token)
-
-  def email_candidate_token_valid?(user, candidate_token),
-    do: __MODULE__.Email.email_candidate_token_valid?(user, candidate_token)
-
-  def send_login_email(user, origin_url, args \\ %{}),
-    do: __MODULE__.Email.send_login_email(user, origin_url, args)
-
-  def send_verify_email(user), do: __MODULE__.Email.send_verify_email(user)
-
-  # San Balance functions
-  def san_balance_cache_stale?(user), do: __MODULE__.SanBalance.san_balance_cache_stale?(user)
-
-  def update_san_balance_changeset(user),
-    do: __MODULE__.SanBalance.update_san_balance_changeset(user)
-
   def san_balance(user), do: __MODULE__.SanBalance.san_balance(user)
-  def san_balance!(user), do: __MODULE__.SanBalance.san_balance!(user)
   def san_balance_or_zero(user), do: __MODULE__.SanBalance.san_balance_or_zero(user)
 
-  # Uniswap San Staking functions
-  def fetch_all_uniswap_staked_users(),
-    do: __MODULE__.UniswapStaking.fetch_all_uniswap_staked_users()
-
-  def update_all_uniswap_san_staked_users(),
-    do: __MODULE__.UniswapStaking.update_all_uniswap_san_staked_users()
-
-  def fetch_uniswap_san_staked_user(user),
-    do: __MODULE__.UniswapStaking.fetch_uniswap_san_staked_user(user)
-
   def create(attrs) do
+    attrs = if attrs[:salt], do: attrs, else: Map.put(attrs, :salt, generate_salt())
+    attrs = Map.put(attrs, :first_login, true)
+
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()
@@ -329,60 +279,6 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
-  def ascii_string_or_nil?(nil), do: true
-
-  def ascii_string_or_nil?(username) do
-    username
-    |> String.to_charlist()
-    |> List.ascii_printable?()
-  end
-
-  defp normalize_user_identificator(changeset, _field, nil), do: changeset
-
-  defp normalize_user_identificator(changeset, field, value) do
-    put_change(changeset, field, normalize_user_identificator(field, value))
-  end
-
-  defp normalize_user_identificator(:username, value) do
-    value
-    |> String.trim()
-  end
-
-  defp normalize_user_identificator(_field, value) do
-    value
-    |> String.downcase()
-    |> String.trim()
-  end
-
-  defp validate_name_change(:name, name) do
-    case __MODULE__.Name.valid_name?(name) do
-      true -> []
-      {:error, error} -> [name: error]
-    end
-  end
-
-  defp validate_username_change(:username, username) do
-    case __MODULE__.Name.valid_username?(username) do
-      true -> []
-      {:error, error} -> [username: error]
-    end
-  end
-
-  defp validate_email_candidate_change(:email_candidate, email_candidate) do
-    if Repo.get_by(User, email: email_candidate) do
-      [email: "Email has already been taken"]
-    else
-      []
-    end
-  end
-
-  defp validate_url_change(:avatar_url, url) do
-    case Sanbase.Validation.valid_url?(url) do
-      :ok -> []
-      {:error, msg} -> [avatar_url: msg]
-    end
-  end
-
   def change_name(%__MODULE__{name: name} = user, name), do: {:ok, user}
 
   def change_name(%__MODULE__{} = user, name) do
@@ -399,36 +295,6 @@ defmodule Sanbase.Accounts.User do
     |> changeset(%{username: username})
     |> Repo.update()
     |> emit_event(:update_username, %{old_username: user.username, new_username: username})
-  end
-
-  @spec add_eth_account(%User{}, String.t()) :: {:ok, %User{}} | {:error, Ecto.Changeset.t()}
-  def add_eth_account(%User{id: user_id}, address) do
-    EthAccount.changeset(%EthAccount{}, %{user_id: user_id, address: address})
-    |> Repo.insert()
-  end
-
-  @doc ~s"""
-  An EthAccount can be removed only if there is another mean to login - an email address
-  or another ethereum address set. If the address that is being removed is the only
-  address and there is no email, the user account will be lost as there won't be
-  any way to log in
-  """
-  @spec remove_eth_account(%User{}, String.t()) :: true | {:error, String.t()}
-  def remove_eth_account(%User{id: user_id} = user, address) do
-    if can_remove_eth_account?(user, address) do
-      from(
-        ea in EthAccount,
-        where: ea.user_id == ^user_id and ea.address == ^address
-      )
-      |> Repo.delete_all()
-      |> case do
-        {1, _} -> true
-        {0, _} -> {:error, "Address #{address} does not exist or is not owned by user #{user_id}"}
-      end
-    else
-      {:error,
-       "Cannot remove ethereum address #{address}. There must be an email or other ethereum address set."}
-    end
   end
 
   def anonymous_user_username, do: @anonymous_user_username
@@ -497,17 +363,5 @@ defmodule Sanbase.Accounts.User do
     |> User.changeset(%{is_registered: true})
     |> Repo.update()
     |> emit_event(:register_user, args)
-  end
-
-  # Helpers
-
-  defp can_remove_eth_account?(%User{id: user_id, email: email}, address) do
-    count_other_accounts =
-      from(ea in EthAccount,
-        where: ea.user_id == ^user_id and ea.address != ^address
-      )
-      |> Repo.aggregate(:count, :id)
-
-    count_other_accounts > 0 or not is_nil(email)
   end
 end

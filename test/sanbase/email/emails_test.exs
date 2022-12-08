@@ -34,7 +34,7 @@ defmodule Sanbase.EmailsTest do
 
   describe "schedule emails" do
     test "on user registration", context do
-      {:ok, user} = context.not_registered_user |> User.update_email_token()
+      {:ok, user} = context.not_registered_user |> User.Email.update_email_token()
 
       execute_mutation(build_conn(), email_login_verify_mutation(user))
 

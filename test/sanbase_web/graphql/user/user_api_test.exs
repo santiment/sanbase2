@@ -111,7 +111,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     test "trying to verify email_candidate with a valid email_candidate_token", %{conn: conn} do
       {:ok, user} =
         insert(:user, email: "example@santiment.net")
-        |> User.update_email_candidate("example+foo@santiment.net")
+        |> User.Email.update_email_candidate("example+foo@santiment.net")
 
       mutation = """
       mutation {
@@ -144,7 +144,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     } do
       {:ok, user} =
         insert(:user, email: "example@santiment.net")
-        |> User.update_email_candidate("example+foo@santiment.net")
+        |> User.Email.update_email_candidate("example+foo@santiment.net")
 
       generated_at =
         Timex.shift(NaiveDateTime.utc_now(), days: -2) |> NaiveDateTime.truncate(:second)
@@ -179,7 +179,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
           privacy_policy_accepted: true
         }
         |> Repo.insert!()
-        |> User.update_email_candidate("example+foo@santiment.net")
+        |> User.Email.update_email_candidate("example+foo@santiment.net")
 
       query = """
       mutation {

@@ -95,13 +95,12 @@ defmodule SanbaseWeb.AccountsController do
       _ ->
         # If there is not user with that twitter_id then fetch or create a user with that email
         # and put the twitter_id.
-        with {:ok, user} <-
-               User.find_or_insert_by(:email, email, %{
-                 is_registered: true,
-                 login_origin: :twitter
-               }),
+        args = %{is_registered: true, login_origin: :twitter}
+
+        with {:ok, user} <- User.find_or_insert_by(:email, email, args),
+             is_registered <- user.is_registered,
              {:ok, user} <- User.update_field(user, :twitter_id, twitter_id) do
-          {:ok, user}
+          {:ok, %{user | first_login: not is_registered}}
         end
     end
   end

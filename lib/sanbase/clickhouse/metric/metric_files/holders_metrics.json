@@ -187,8 +187,42 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Amount Of Holders With Balance Over 10M",
-    "name": "holders_distribution_10M_to_inf",
+    "human_readable_name": "Amount Of Holders With Balance Between 10M and 100M",
+    "name": "holders_distribution_10M_to_100M",
+    "metric": "holders_distribution_1e8",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Amount Of Holders With Balance Between 100M and 1B",
+    "name": "holders_distribution_100M_to_1B",
+    "metric": "holders_distribution_1e9",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Amount Of Holders With Balance Over 1B",
+    "name": "holders_distribution_1B_to_inf",
     "metric": "holders_distribution_inf",
     "version": "2019-01-01",
     "access": "restricted",
@@ -408,8 +442,42 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Combined Balance Of Holders With Balance 10M",
-    "name": "holders_distribution_combined_balance_10M_to_inf",
+    "human_readable_name": "Combined Balance Of Holders With Balance Between 10M and 100M",
+    "name": "holders_distribution_combined_balance_10M_to_100M",
+    "metric": "holders_distribution_amount_1e8",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Combined Balance Of Holders With Balance Between 100M and 1B",
+    "name": "holders_distribution_combined_balance_100M_to_1B",
+    "metric": "holders_distribution_amount_1e9",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Combined Balance Of Holders With Balance 1B",
+    "name": "holders_distribution_combined_balance_1B_to_inf",
     "metric": "holders_distribution_amount_inf",
     "version": "2019-01-01",
     "access": "restricted",
@@ -867,8 +935,42 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Percent Of Holders With Balance Over 10M",
-    "name": "percent_of_holders_distribution_10M_to_inf",
+    "human_readable_name": "Percent Of Holders With Balance Between 10M and 100M",
+    "name": "percent_of_holders_distribution_10M_to_100M",
+    "metric": "percent_of_holders_distribution_1e8",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Percent Of Holders With Balance Between 100M and 1B",
+    "name": "percent_of_holders_distribution_100M_to_1B",
+    "metric": "percent_of_holders_distribution_1e9",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Percent Of Holders With Balance Over 1B",
+    "name": "percent_of_holders_distribution_1B_to_inf",
     "metric": "percent_of_holders_distribution_inf",
     "version": "2019-01-01",
     "access": "restricted",
@@ -1071,8 +1173,42 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Percent Of Combined Balance Of Holders With Balance Over 10M",
-    "name": "percent_of_holders_distribution_combined_balance_10M_to_inf",
+    "human_readable_name": "Percent Of Combined Balance Of Holders With Balance Between 10M and 100M",
+    "name": "percent_of_holders_distribution_combined_balance_10M_to_100M",
+    "metric": "percent_of_holders_distribution_amount_1e8",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Percent Of Combined Balance Of Holders With Balance Between 100M and 1B",
+    "name": "percent_of_holders_distribution_combined_balance_100M_to_1B",
+    "metric": "percent_of_holders_distribution_amount_1e9",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Percent Of Combined Balance Of Holders With Balance Over 1B",
+    "name": "percent_of_holders_distribution_combined_balance_1B_to_inf",
     "metric": "percent_of_holders_distribution_amount_inf",
     "version": "2019-01-01",
     "access": "restricted",

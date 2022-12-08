@@ -253,9 +253,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
       %{sql: %{} = sql} ->
         atomized_sql =
           Map.new(sql, fn
-            {k, v} when is_binary(k) -> {String.to_existing_atom(k), v}
-            {k, v} -> {k, v}
+            {k, v} when is_binary(k) ->
+              # Ignore old, no longer existing keys like san_query_id
+              try do
+                {String.to_existing_atom(k), v}
+              rescue
+                _ -> {nil, nil}
+              end
+
+            {k, v} ->
+              {k, v}
           end)
+          |> Map.delete(nil)
 
         %{panel | sql: atomized_sql}
 

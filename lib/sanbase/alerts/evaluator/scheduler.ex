@@ -10,8 +10,7 @@ defmodule Sanbase.Alert.Scheduler do
   > Log stats messages
   """
 
-  @alert_modules Sanbase.Alert.List.get()
-
+  alias Sanbase.Accounts.User
   alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
   alias Sanbase.Alert.Evaluator
   alias Sanbase.Alert
@@ -32,11 +31,16 @@ defmodule Sanbase.Alert.Scheduler do
       or just look at the events on the sanbase feed.
     4. Update the alerts and users records appropriately.
   """
-  def run_alert(module)
 
-  for module <- @alert_modules do
-    def run_alert(unquote(module)) do
-      unquote(module).type() |> run()
+  def run_alert(module) do
+    case module in Alert.List.get() do
+      true ->
+        run(module.type())
+
+      false ->
+        raise(
+          "Module #{inspect(module)} is not in the modules list defined in Sanbase.Alert.List"
+        )
     end
   end
 
@@ -229,13 +233,13 @@ defmodule Sanbase.Alert.Scheduler do
         channels != [] and
           Enum.any?(channels, fn
             "email" ->
-              Sanbase.Accounts.User.can_receive_email_alert?(user)
+              User.Alert.can_receive_email_alert?(user)
 
             "telegram" ->
-              Sanbase.Accounts.User.can_receive_telegram_alert?(user)
+              User.Alert.can_receive_telegram_alert?(user)
 
             %{"webhook" => webhook_url} ->
-              Sanbase.Accounts.User.can_receive_webhook_alert?(user, webhook_url)
+              User.Alert.can_receive_webhook_alert?(user, webhook_url)
 
             "web_push" ->
               # web push cannot be received currently. So if the other channels

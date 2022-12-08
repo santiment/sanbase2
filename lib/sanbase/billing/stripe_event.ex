@@ -97,7 +97,10 @@ defmodule Sanbase.Billing.StripeEvent do
        }) do
     if amount_due > 0 do
       subscription = Subscription.by_stripe_id(subscription_id)
-      Sanbase.Accounts.EmailJobs.send_automatic_renewal_email(subscription, charge_date)
+      # only active Sanbase subscriptions
+      if subscription.status == :active and subscription.plan.product_id == 2 do
+        Sanbase.Accounts.EmailJobs.send_automatic_renewal_email(subscription, charge_date)
+      end
     end
 
     update(id, %{is_processed: true})

@@ -20,7 +20,7 @@ defmodule Sanbase.Mixfile do
       source_url: "https://github.com/santiment/sanbase2/",
       homepage_url: "https://app.santiment.net/projects",
       # Supress errors that should not be shown
-      xref: [exclude: [Oban]],
+      xref: [exclude: [Oban, ExAdmin]],
       dialyzer: [
         plt_ignore_apps: [:ex_admin, :stripity_stripe]
       ]
@@ -45,7 +45,18 @@ defmodule Sanbase.Mixfile do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
 
   # local_dev/ dir is used for local development and is excluded from source control
-  defp elixirc_paths(:dev), do: ["lib", "local_dev", "test/support"]
+  defp elixirc_paths(:dev) do
+    case System.get_env("ENABLE_EXADMIN_DASHBOARDS", "false") do
+      "true" ->
+        ["lib", "local_dev", "test/support"]
+
+      "false" ->
+        web_without_admin = Path.wildcard("lib/sanbase_web/*") -- ["lib/sanbase_web/admin"]
+
+        ["lib/sanbase", "lib/mix", "lib/sheets_templates"] ++ web_without_admin
+    end
+  end
+
   defp elixirc_paths(_), do: ["lib"]
 
   defp deps() do

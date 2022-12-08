@@ -65,7 +65,8 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   @spec eligible_for_liquidity_subscription?(non_neg_integer()) :: boolean()
   def eligible_for_liquidity_subscription?(user_id) do
     !user_has_active_sanbase_subscriptions?(user_id) and
-      User.fetch_uniswap_san_staked_user(user_id) >= @san_stake_required_liquidity_sub
+      User.UniswapStaking.fetch_uniswap_san_staked_user(user_id) >=
+        @san_stake_required_liquidity_sub
   end
 
   @doc """
@@ -107,7 +108,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   # Helpers
 
   defp user_ids_with_enough_staked() do
-    User.fetch_all_uniswap_staked_users()
+    User.UniswapStaking.fetch_all_uniswap_staked_users()
     |> Enum.filter(&(&1.san_staked >= @san_stake_required_liquidity_sub))
     |> Enum.map(& &1.user_id)
   end

@@ -8,12 +8,6 @@ defimpl Sanbase.Alert, for: Any do
 
   require Logger
 
-  @default_alerts_limit_per_day Settings.default_alerts_limit_per_day()
-
-  @channels Map.keys(@default_alerts_limit_per_day)
-
-  def default_alerts_limit_per_day(), do: @default_alerts_limit_per_day
-
   @doc ~s"""
   Send a triggered alert to the configured notification channels.
 
@@ -369,8 +363,10 @@ defimpl Sanbase.Alert, for: Any do
 
     alerts_fired_today = Map.get(alerts_fired, map_key, %{})
 
+    channels = Settings.alert_channels()
+
     alerts_fired_today_updated =
-      Enum.into(@channels, %{}, fn channel ->
+      Enum.into(channels, %{}, fn channel ->
         count = Map.get(alerts_fired_today, channel, 0) + Map.get(alerts_fired_now, channel, 0)
 
         {channel, count}

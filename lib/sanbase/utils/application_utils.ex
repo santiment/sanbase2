@@ -33,7 +33,7 @@ defmodule Sanbase.ApplicationUtils do
   Example: Start a worker only if an ENV var is present
     start_if(fn -> {MySupervisor, []} end, fn -> System.get_env("ENV_VAR") end)
   """
-  @spec start_if((-> any), (-> boolean)) :: nil | any
+  @spec start_if((() -> any), (() -> boolean)) :: nil | any
   def start_if(expr, condition) when is_function(condition, 0) and is_function(expr, 0) do
     if condition.() do
       expr.()

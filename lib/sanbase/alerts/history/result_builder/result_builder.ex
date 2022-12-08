@@ -2,15 +2,12 @@ defmodule Sanbase.Alert.History.ResultBuilder do
   import Sanbase.Alert.OperationEvaluation
   import Sanbase.Alert.History.ResultBuilder.Transformer
 
-  @trigger_modules Sanbase.Alert.List.get()
-
   def build(
         data,
-        %trigger_module{} = settings,
+        %_trigger_module{} = settings,
         cooldown,
         opts \\ []
-      )
-      when trigger_module in @trigger_modules do
+      ) do
     %{operation: operation, time_window: time_window} = settings
     cooldown_sec = Sanbase.DateTimeUtils.str_to_sec(cooldown)
 

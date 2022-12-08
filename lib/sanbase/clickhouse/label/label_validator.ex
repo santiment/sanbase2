@@ -26,6 +26,14 @@ defmodule Sanbase.Clickhouse.Label.Validator do
     end
   end
 
+  defp ascii_string_or_nil(nil), do: nil
+
+  defp ascii_string_or_nil(binary) when is_binary(binary) do
+    binary
+    |> String.to_charlist()
+    |> List.ascii_printable?()
+  end
+
   defp valid_key_value?(key_value, label_fqn) do
     case String.split(key_value, "->") do
       [key, value] ->

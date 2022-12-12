@@ -763,7 +763,7 @@ CREATE TABLE public.dashboards (
     updated_at timestamp without time zone NOT NULL,
     is_deleted boolean DEFAULT false,
     is_hidden boolean DEFAULT false,
-    temp_json jsonb DEFAULT '{}'::jsonb
+    parameters jsonb DEFAULT '{}'::jsonb
 );
 
 
@@ -814,7 +814,8 @@ CREATE TABLE public.dashboards_history (
     message text,
     hash text,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    parameters jsonb DEFAULT '{}'::jsonb
 );
 
 
@@ -8080,3 +8081,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20221103145206);
 INSERT INTO public."schema_migrations" (version) VALUES (20221110142211);
 INSERT INTO public."schema_migrations" (version) VALUES (20221118110940);
 INSERT INTO public."schema_migrations" (version) VALUES (20221129102156);
+INSERT INTO public."schema_migrations" (version) VALUES (20221212124926);
+INSERT INTO public."schema_migrations" (version) VALUES (20221213105305);

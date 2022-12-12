@@ -154,18 +154,20 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     usually has a topic it is about and the panels in it show
     different types of information about that topic.
 
-    The dashboard is created with its name, description and public
+    The dashboard is created with its name, description, parameters and public
     status. Public dashboards are visible to all users.
 
     In order to manipulate the panels of the dashboard, refer to the
     createDashboardPanel/updateDashboardPanel/removeDashboardPanel
     mutations.
+
+    Dashboard holds the global parameters that are shared by all panels.
     """
     field :create_dashboard, :dashboard_schema do
       arg(:name, non_null(:string))
       arg(:description, :string)
       arg(:is_public, :boolean)
-      arg(:temp_json, :json)
+      arg(:parameters, :json)
 
       middleware(JWTAuth)
 
@@ -173,7 +175,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     end
 
     @desc ~s"""
-    Update the name, description or public status of a dashboard.
+    Update the name, description, parameters or public status of a dashboard.
 
     In order to manipulate the panels of the dashboard, refer to the
     createDashboardPanel/updateDashboardPanel/removeDashboardPanel
@@ -185,7 +187,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
       arg(:name, :string)
       arg(:description, :string)
       arg(:is_public, :boolean)
-      arg(:temp_json, :json)
+      arg(:parameters, :json)
 
       middleware(JWTAuth)
 
@@ -211,7 +213,10 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     Add a panel to a dashboard.
 
     A panel is an entity that contains a Clickhouse SQL query,
-    parameters of that query and information how to visualize it.
+    and optionally parameters of that query and information how to visualize it.
+
+    The panel inherits the dashboard parameters when it is being computed, so a
+    panel can define only the SQL query and no parameters.
 
     The panel's SQL must be valid Clickhouse SQL. It can access only
     some of the tables in the database. The system tables are not accessible.
@@ -297,11 +302,6 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     field :compute_dashboard_panel, :panel_cache do
       arg(:dashboard_id, non_null(:integer))
       arg(:panel_id, non_null(:string))
-
-      @desc ~s"""
-      Docs about this arg
-      """
-      arg(:parameters, :json, default_value: nil)
 
       middleware(JWTAuth)
 

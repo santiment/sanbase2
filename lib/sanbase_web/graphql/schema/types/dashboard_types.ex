@@ -233,9 +233,8 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:name, non_null(:string))
     field(:description, :string)
     field(:is_public, non_null(:boolean))
-    @desc "Temporary field. Will be removed"
-    field(:temp_json, non_null(:json))
     field(:panels, list_of(:panel_schema))
+    field(:parameters, non_null(:json))
     field(:views, :integer)
 
     field :user, non_null(:public_user) do
@@ -288,6 +287,7 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:description, :string)
     field(:is_public, non_null(:boolean))
     field(:panels, list_of(:panel_schema))
+    field(:parameters, non_null(:json))
     field(:inserted_at, :datetime)
   end
 

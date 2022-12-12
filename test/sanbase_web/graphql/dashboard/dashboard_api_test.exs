@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.DashboardApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -42,7 +41,8 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         execute_dashboard_mutation(context.conn, :create_dashboard, %{
           name: "MyDashboard",
           description: "some text",
-          is_public: true
+          is_public: true,
+          parameters: %{"slug" => "bitcoin"}
         })
         |> get_in(["data", "createDashboard"])
 
@@ -52,6 +52,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                "name" => "MyDashboard",
                "description" => "some text",
                "panels" => [],
+               "parameters" => %{"slug" => "bitcoin"},
                "user" => %{"id" => ^user_id}
              } = result
     end
@@ -66,7 +67,8 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
           id: dashboard_id,
           name: "MyDashboard - update",
           description: "some text - update",
-          is_public: false
+          is_public: false,
+          parameters: %{slug: "ethereum"}
         })
         |> get_in(["data", "updateDashboard"])
 
@@ -77,6 +79,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                "name" => "MyDashboard - update",
                "description" => "some text - update",
                "panels" => [],
+               "parameters" => %{"slug" => "ethereum"},
                "user" => %{"id" => ^user_id}
              } = result
     end
@@ -111,7 +114,8 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                "id" => binary_id,
                "dashboardId" => ^dashboard_id,
                "sql" => %{
-                 "parameters" => %{"limit" => 20, "slug" => "bitcoin"},
+                 # The `slug` parameter` is inherited from the dashboard
+                 "parameters" => %{"limit" => 20},
                  "query" =>
                    "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT {{limit}})"
                }
@@ -323,36 +327,6 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
 
         updated_at = Sanbase.DateTimeUtils.from_iso8601!(updated_at)
         assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
-      end)
-    end
-
-    test "compute a panel with overriden parameters", context do
-      dashboard =
-        execute_dashboard_mutation(context.conn, :create_dashboard)
-        |> get_in(["data", "createDashboard"])
-
-      panel =
-        execute_dashboard_panel_schema_mutation(
-          context.conn,
-          :create_dashboard_panel,
-          default_dashboard_panel_args() |> Map.put(:dashboard_id, dashboard["id"])
-        )
-        |> get_in(["data", "createDashboardPanel"])
-
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, mocked_clickhouse_result()}
-      )
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        _result =
-          execute_dashboard_panel_cache_mutation(context.conn, :compute_dashboard_panel, %{
-            dashboard_id: dashboard["id"],
-            panel_id: panel["id"],
-            parameters: Jason.encode!(%{"slug" => "ethereum"})
-          })
-
-        # Check that the slug is overriden from bitcoin to ethereum
-        assert_called(Sanbase.ClickhouseRepo.query(:_, ["ethereum", 20]))
       end)
     end
 
@@ -805,10 +779,11 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                "isPublic" => true,
                "message" => "Store second version",
                "name" => "MyDashboard",
+               "parameters" => %{"slug" => "bitcoin"},
                "panels" => [
                  %{
                    "sql" => %{
-                     "parameters" => %{"limit" => 20, "slug" => "bitcoin"},
+                     "parameters" => %{"limit" => 20},
                      "query" =>
                        "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT {{limit}})"
                    }
@@ -1037,7 +1012,8 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         %{
           name: "MyDashboard",
           description: "some text",
-          is_public: true
+          is_public: true,
+          parameters: %{slug: "bitcoin"}
         }
 
     mutation_name = mutation |> Inflex.camelize(:lower)
@@ -1050,6 +1026,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         description
         user{ id }
         panels { id }
+        parameters
       }
     }
     """
@@ -1067,6 +1044,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         name
         description
         isPublic
+        parameters
         panels {
           id
           settings
@@ -1150,7 +1128,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         description
         isPublic
         panels { sql { query parameters } }
-
+        parameters
         message
         hash
         insertedAt
@@ -1172,7 +1150,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
           map_as_input_object: true,
           query:
             "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT {{limit}})",
-          parameters: Jason.encode!(%{"slug" => "bitcoin", "limit" => 20})
+          parameters: Jason.encode!(%{"limit" => 20})
         }
       }
     }

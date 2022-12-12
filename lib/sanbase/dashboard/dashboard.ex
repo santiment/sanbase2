@@ -116,11 +116,11 @@ defmodule Sanbase.Dashboard do
   @doc ~s"""
   Trigger computation of a single panel of the dashboard
   """
-  @spec compute_panel(dashboard_id(), panel_id(), user_id(), Keyword.t()) ::
+  @spec compute_panel(dashboard_id(), panel_id(), user_id()) ::
           {:ok, Dashboard.Query.Result.t()} | {:error, String.t()}
-  def compute_panel(dashboard_id, panel_id, querying_user_id, opts) do
+  def compute_panel(dashboard_id, panel_id, querying_user_id) do
     with {:ok, dashboard} <- Dashboard.Schema.by_id(dashboard_id),
-         {:ok, query_result} <- do_compute_panel(dashboard, panel_id, querying_user_id, opts) do
+         {:ok, query_result} <- do_compute_panel(dashboard, panel_id, querying_user_id) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Dashboard.QueryExecution.store_execution(querying_user_id, query_result)
       end)
@@ -179,10 +179,13 @@ defmodule Sanbase.Dashboard do
   end
 
   # Compute the dashboard by computing every panel in it.
-  defp do_compute_panel(%Dashboard.Schema{} = dashboard, panel_id, querying_user_id, opts \\ []) do
+  defp do_compute_panel(%Dashboard.Schema{} = dashboard, panel_id, querying_user_id) do
     case Enum.find(dashboard.panels, &(&1.id == panel_id)) do
-      nil -> {:error, "Dashboard panel with id #{panel_id} does not exist"}
-      panel -> Sanbase.Dashboard.Panel.compute(panel, querying_user_id, opts)
+      nil ->
+        {:error, "Dashboard #{dashboard.id} does not have a panel with id #{panel_id}"}
+
+      panel ->
+        Sanbase.Dashboard.Panel.compute(panel, dashboard, querying_user_id)
     end
   end
 end

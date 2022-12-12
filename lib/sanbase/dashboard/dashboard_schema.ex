@@ -32,11 +32,11 @@ defmodule Sanbase.Dashboard.Schema do
           name: String.t(),
           description: String.t(),
           is_public: boolean(),
+          parameters: Map.t(),
           panels: list(Panel.t()),
           inserted_at: NaiveDateTime.t(),
           updated_at: NaiveDateTime.t(),
-          user: %User{},
-          temp_json: Map.t()
+          user: %User{}
         }
 
   @type panel_dashboad_map :: %{
@@ -46,18 +46,13 @@ defmodule Sanbase.Dashboard.Schema do
 
   @type dashboard_id :: non_neg_integer()
 
-  :ok
-
   schema "dashboards" do
     field(:name, :string)
     field(:description, :string)
     field(:is_public, :boolean, default: false)
     field(:is_hidden, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)
-
-    # Temporary add JSON field for tests. Will be removed before
-    # final version is released for public use
-    field(:temp_json, :map)
+    field(:parameters, :map, default: %{})
 
     has_one(:featured_item, Sanbase.FeaturedItem,
       on_delete: :delete_all,
@@ -75,8 +70,8 @@ defmodule Sanbase.Dashboard.Schema do
     timestamps()
   end
 
-  @create_fields [:name, :description, :is_public, :user_id, :temp_json]
-  @update_fields [:name, :description, :is_public, :temp_json]
+  @create_fields [:name, :description, :is_public, :parameters, :user_id]
+  @update_fields @create_fields -- [:user_id]
 
   @impl Sanbase.Entity.Behaviour
   @spec by_id(non_neg_integer(), Keyword.t()) ::

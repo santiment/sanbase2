@@ -47,8 +47,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   def create_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with true <- is_dashboard_owner?(args.dashboard_id, user.id),
          {:ok, %{} = result} <- Dashboard.create_panel(args.dashboard_id, args.panel) do
-      panel = result.panel |> Map.put(:dashboard_id, result.dashboard.id)
-      {:ok, atomize_panel_sql_keys(panel)}
+      {:ok, result_to_panel(result)}
     end
   end
 
@@ -57,8 +56,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
     with true <- is_dashboard_owner?(dashboard_id, user.id),
          {:ok, %{} = result} <- Dashboard.remove_panel(dashboard_id, panel_id) do
-      panel = result.panel |> Map.put(:dashboard_id, result.dashboard.id)
-      {:ok, atomize_panel_sql_keys(panel)}
+      {:ok, result_to_panel(result)}
     end
   end
 
@@ -67,19 +65,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
     with true <- is_dashboard_owner?(dashboard_id, user.id),
          {:ok, %{} = result} <- Dashboard.update_panel(dashboard_id, panel_id, panel) do
-      panel = result.panel |> Map.put(:dashboard_id, result.dashboard.id)
-      {:ok, atomize_panel_sql_keys(panel)}
+      {:ok, result_to_panel(result)}
     end
   end
 
   def compute_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
     %{dashboard_id: dashboard_id, panel_id: panel_id} = args
-    parameters = Map.get(args, :parameters, nil)
-    opts = [parameters: parameters]
 
     with true <- can_view_dashboard?(dashboard_id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_panel(dashboard_id, panel_id, user.id, opts)
+      Dashboard.compute_panel(dashboard_id, panel_id, user.id)
     end
   end
 
@@ -213,6 +208,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   end
 
   # Private functions
+
+  defp result_to_panel(%{panel: panel, dashboard: dashboard}) do
+    panel
+    |> Map.put(:dashboard_id, dashboard.id)
+    |> Map.put(:dashboard_parameters, dashboard.parameters)
+    |> atomize_panel_sql_keys()
+  end
 
   defp can_view_dashboard?(id, user_id) do
     # Users can see their own dashboard and other people's public dashboards

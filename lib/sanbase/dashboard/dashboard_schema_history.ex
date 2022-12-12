@@ -23,6 +23,7 @@ defmodule Sanbase.Dashboard.History do
           description: String.t(),
           is_public: boolean(),
           panels: list(Dashboard.Panel.t()),
+          parameters: Map.t(),
           inserted_at: NaiveDateTime.t(),
           updated_at: NaiveDateTime.t(),
           #
@@ -37,6 +38,7 @@ defmodule Sanbase.Dashboard.History do
     field(:name, :string)
     field(:description, :string)
     field(:is_public, :boolean, default: false)
+    field(:parameters, :map)
 
     embeds_many(:panels, Dashboard.Panel, on_replace: :delete)
 
@@ -50,7 +52,7 @@ defmodule Sanbase.Dashboard.History do
 
   def changeset(%__MODULE__{} = history, attrs) do
     history
-    |> cast(attrs, [:name, :description, :is_public, :message, :dashboard_id, :hash])
+    |> cast(attrs, [:name, :description, :is_public, :parameters, :message, :dashboard_id, :hash])
     |> put_embed(:panels, attrs.panels)
   end
 

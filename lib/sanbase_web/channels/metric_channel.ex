@@ -127,9 +127,9 @@ defmodule SanbaseWeb.MetricChannel do
   end
 
   defp user_has_access?(nil, metrics_group) do
-    cond do
-      metrics_group == "price" -> true
-      true -> false
+    case metrics_group do
+      "price" -> true
+      _ -> false
     end
   end
 

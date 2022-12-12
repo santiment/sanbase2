@@ -115,22 +115,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, opts) do
     slugs = slug_or_slugs |> List.wrap()
-    projects_list = Project.List.by_slugs(slugs, preload?: true, preload: [:github_organizations])
+    projects = Project.List.by_slugs(slugs, preload?: true, preload: [:github_organizations])
 
-    org_to_slug_map =
-      Enum.flat_map(projects_list, fn project ->
-        Enum.map(project.github_organizations, fn org ->
-          {String.downcase(org.organization), project.slug}
-        end)
-      end)
-      |> Map.new()
-
-    organizations =
-      projects_list
-      |> Enum.map(&Project.github_organizations/1)
-      |> Enum.filter(&match?({:ok, _}, &1))
-      |> Enum.map(&elem(&1, 1))
-      |> List.flatten()
+    org_to_slug_map = github_organization_to_slug_map(projects)
+    organizations = github_organizatoins_of_projects(projects)
 
     case aggregated_timeseries_data(metric, %{organizations: organizations}, from, to, opts) do
       {:ok, map} ->
@@ -145,6 +133,23 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  defp github_organizatoins_of_projects(projects) do
+    projects
+    |> Enum.map(&Project.github_organizations/1)
+    |> Enum.filter(&match?({:ok, _}, &1))
+    |> Enum.map(&elem(&1, 1))
+    |> List.flatten()
+  end
+
+  defp github_organization_to_slug_map(projects) do
+    projects
+    |> Enum.flat_map(fn project ->
+      project.github_organizations
+      |> Enum.map(fn org -> {String.downcase(org.organization), project.slug} end)
+    end)
+    |> Map.new()
   end
 
   @impl Sanbase.Metric.Behaviour

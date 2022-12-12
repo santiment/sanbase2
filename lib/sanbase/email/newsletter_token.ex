@@ -5,7 +5,6 @@ defmodule Sanbase.Email.NewsletterToken do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User.Email
 
-  @email_token_length 64
   # Email verification links will be valid 24 hours
   @login_email_valid_minutes 24 * 60
 

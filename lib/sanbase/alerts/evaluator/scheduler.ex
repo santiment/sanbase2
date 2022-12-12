@@ -398,28 +398,20 @@ defmodule Sanbase.Alert.Scheduler do
     user_triggers
     |> Enum.map(fn
       %UserTrigger{
-        id: id,
-        user_id: user_id,
         trigger: %{
-          settings: %{
-            triggered?: true,
-            payload: payload,
-            template_kv: template_kv
-          },
+          settings: %{triggered?: true} = settings,
           last_triggered: last_triggered
         }
-      }
+      } = ut
       when is_non_empty_map(last_triggered) ->
         identifier_kv_map =
-          template_kv
-          |> Enum.into(%{}, fn {identifier, {_template, kv}} ->
-            {identifier, kv}
-          end)
+          settings.template_kv
+          |> Enum.into(%{}, fn {identifier, {_, kv}} -> {identifier, kv} end)
 
         %{
-          user_trigger_id: id,
-          user_id: user_id,
-          payload: payload,
+          user_trigger_id: ut.id,
+          user_id: ut.user_id,
+          payload: settings.payload,
           triggered_at: max_last_triggered(last_triggered) |> DateTime.to_naive(),
           data: %{user_trigger_data: identifier_kv_map}
         }

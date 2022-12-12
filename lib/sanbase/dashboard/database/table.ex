@@ -55,6 +55,7 @@ defmodule Sanbase.Dashboard.Database.Table do
     path = Config.module_get(Sanbase.Dashboard, :mounted_file_path)
 
     case File.read(path) do
+      # credo:disable-for-next-line
       {:ok, contents} -> contents |> Jason.decode!(strict: true, keys: :atoms)
       {:error, :enoent} -> {:error, "Tables file does not exist in the mounted file location"}
     end

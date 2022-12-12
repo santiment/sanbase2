@@ -14,6 +14,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     > premium
     > custom
   """
+  # Disable too many dependencies errors
+  # credo:disable-for-this-file
   use Absinthe.Schema
 
   alias SanbaseWeb.Graphql

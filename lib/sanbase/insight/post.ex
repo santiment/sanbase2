@@ -360,19 +360,19 @@ defmodule Sanbase.Insight.Post do
     post_id = Sanbase.Math.to_integer(post_id)
 
     with {:ok, post} <- by_id(post_id, preload?: false),
-         {_, %Post{user_id: ^user_id}} <- {:own_post?, post},
-         {_, %Post{ready_state: @draft}} <- {:draft?, post},
+         %Post{user_id: ^user_id} <- post,
+         %Post{ready_state: @draft} <- post,
          {:ok, post} <- publish_post(post) do
       emit_event({:ok, post}, :publish_insight, %{})
       post = post |> Repo.preload(@preloads)
 
       {:ok, post}
     else
-      {:draft?, _} ->
-        {:error, "Cannot publish already published insight with id: #{post_id}"}
-
-      {:own_post?, _} ->
+      %Post{user_id: id} when id != user_id ->
         {:error, "Cannot publish not own insight with id: #{post_id}"}
+
+      %Post{ready_state: ready_state} when ready_state != @draft ->
+        {:error, "Cannot publish already published insight with id: #{post_id}"}
 
       {:error, error} ->
         error_message = "Cannot publish insight with id #{post_id}"
@@ -385,14 +385,14 @@ defmodule Sanbase.Insight.Post do
     post_id = Sanbase.Math.to_integer(post_id)
 
     with {:ok, post} <- by_id(post_id, preload?: false),
-         {_, %Post{ready_state: @published}} <- {:published?, post},
+         %Post{ready_state: @published} <- post,
          {:ok, post} <- unpublish_post(post) do
       emit_event({:ok, post}, :unpublish_insight, %{})
       post = post |> Repo.preload(@preloads)
 
       {:ok, post}
     else
-      {:published?, _} ->
+      %Post{ready_state: ready_state} when ready_state != @published ->
         {:error, "Cannot unpublish a draft insight with id: #{post_id}"}
 
       {:error, error} ->

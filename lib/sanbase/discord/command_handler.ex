@@ -155,7 +155,7 @@ defmodule Sanbase.Discord.CommandHandler do
   def handle_interaction("rerun", interaction, panel_id) do
     interaction_ack(interaction)
 
-    with {:ok, execution_result, dashboard, dashboard_id} <-
+    with {:ok, execution_result, dashboard, _dashboard_id} <-
            DiscordDashboard.execute(sanbase_bot_id(), panel_id) do
       panel = List.first(dashboard.panels)
       content = format_table(panel.name, execution_result, to_string(interaction.user.id))
@@ -509,8 +509,6 @@ defmodule Sanbase.Discord.CommandHandler do
       end)
 
     if not is_nil(dt_idx) and length(exec_result.column_types) > 1 do
-      dt_column = Enum.at(exec_result.columns, dt_idx)
-
       data_columns =
         exec_result.columns
         |> Enum.with_index()

@@ -20,15 +20,15 @@ defmodule Sanbase.Clickhouse.Label.Validator do
   end
 
   defp valid_owner?(owner, label_fqn) do
-    case is_binary(owner) and Sanbase.Accounts.User.ascii_string_or_nil?(owner) do
+    case is_binary(owner) and ascii_string_or_nil?(owner) do
       true -> true
       false -> {:error, error_msg(:owner, owner, label_fqn)}
     end
   end
 
-  defp ascii_string_or_nil(nil), do: nil
+  defp ascii_string_or_nil?(nil), do: false
 
-  defp ascii_string_or_nil(binary) when is_binary(binary) do
+  defp ascii_string_or_nil?(binary) when is_binary(binary) do
     binary
     |> String.to_charlist()
     |> List.ascii_printable?()

@@ -109,11 +109,10 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
       fn {changeset, offset}, multi ->
         # notes is an optional field. It should be replaced only if it is in the changeset
         notes_change = if Map.has_key?(changeset.changes, :notes), do: [:notes], else: []
-        replace = notes_change ++ [:user_id, :blockchain_address_id]
 
         multi
         |> Ecto.Multi.insert(offset, changeset,
-          on_conflict: {:replace, replace},
+          on_conflict: {:replace, notes_change ++ [:user_id, :blockchain_address_id]},
           conflict_target: [:user_id, :blockchain_address_id],
           returning: true
         )

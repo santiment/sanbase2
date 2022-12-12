@@ -37,16 +37,16 @@ defmodule Sanbase.WatchlistFunction do
   def valid_function?(fun, opts \\ [])
 
   def valid_function?(%__MODULE__{name: "address_selector", args: args} = fun, opts) do
-    args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
+    args = Map.new(args, fn {k, v} -> {Inflex.underscore(k), v} end)
 
-    with {selector, empty_map} when map_size(empty_map) == 0 <-
+    with {selector, unsupported_keys} when map_size(unsupported_keys) == 0 <-
            Map.split(args, @address_selector_fields),
          true <- BlockchainAddress.ListSelector.valid_selector?(%{selector: selector}) do
       maybe_check_evaluates(fun, opts)
     else
-      {%{}, %{} = unsupported_keys_map} when map_size(unsupported_keys_map) > 0 ->
+      {_, %{} = unsupported_keys} when map_size(unsupported_keys) > 0 ->
         {:error,
-         "Dynamic watchlist 'address_selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys_map))}"}
+         "Dynamic watchlist 'address_selector' has unsupported fields: #{inspect(Map.keys(unsupported_keys))}"}
 
       {:error, error} ->
         {:error, error}

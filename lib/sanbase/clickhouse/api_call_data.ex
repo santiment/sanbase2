@@ -93,13 +93,8 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     {query, args} = api_metric_distribution_per_user_query()
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn [user_id, metric, count], acc ->
-      Map.update(acc, user_id, %{}, fn previous ->
-        elem = %{metric: metric, count: count}
-        count_all = (previous[:count] || 0) + count
-
-        previous
-        |> Map.update(:metrics, [elem], &[elem | &1])
-        |> Map.put(:count, count_all)
+      Map.update(acc, user_id, %{}, fn map ->
+        update_api_distribution_user_map(map, metric, count)
       end)
     end)
     |> maybe_apply_function(fn result ->
@@ -108,6 +103,15 @@ defmodule Sanbase.Clickhouse.ApiCallData do
       |> Enum.map(fn {user_id, map} -> Map.put(map, :user_id, user_id) end)
     end)
     |> maybe_extract_value_from_tuple()
+  end
+
+  defp update_api_distribution_user_map(map, metric, count) do
+    elem = %{metric: metric, count: count}
+    count_all = (map[:count] || 0) + count
+
+    map
+    |> Map.update(:metrics, [elem], &[elem | &1])
+    |> Map.put(:count, count_all)
   end
 
   defp api_metric_distribution_per_user_query() do

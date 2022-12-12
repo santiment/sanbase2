@@ -27,7 +27,7 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
   end
 
   defp handle_event(
-         %{data: %{event_type: :register_user, user_id: user_id} = data},
+         %{data: %{event_type: :register_user, user_id: user_id}},
          event_shadow,
          state
        ) do

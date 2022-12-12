@@ -115,7 +115,7 @@ defmodule Sanbase.Accounts.Statistics do
     """
 
     Repo.query!(query)
-    |> Map.get(:rows)
+    |> Map.fetch!(:rows)
     |> Enum.group_by(fn [user_id, _type, _count] -> user_id end)
   end
 

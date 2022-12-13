@@ -515,10 +515,26 @@ defmodule Sanbase.Discord.CommandHandler do
         |> Enum.reject(fn {_, idx} -> idx == dt_idx end)
         |> Enum.map(fn {c, _} -> c end)
 
+      chart_type = fn column_name ->
+        result = String.split(column_name, "_")
+
+        if length(result) > 1 do
+          case List.last(result) do
+            "bar" -> "bar"
+            "line" -> "line"
+            "area" -> "area"
+            "fline" -> "filledLine"
+            _ -> "bar"
+          end
+        else
+          "bar"
+        end
+      end
+
       map =
         data_columns
         |> Enum.with_index()
-        |> Enum.into(%{}, fn {_, idx} -> {to_string(idx), %{node: "bar"}} end)
+        |> Enum.into(%{}, fn {name, idx} -> {to_string(idx), %{node: chart_type.(name)}} end)
 
       settings =
         %{

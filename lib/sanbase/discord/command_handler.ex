@@ -51,12 +51,14 @@ defmodule Sanbase.Discord.CommandHandler do
     args = get_additional_info(interaction)
 
     with {:ok, exec_result, dashboard, panel_id} <- compute_and_save(name, sql, [], args) do
-      content = format_table(name, exec_result, to_string(interaction.user.id))
       components = [action_row(panel_id)]
       embeds = create_chart_embed(exec_result, dashboard, panel_id)
 
-      edit_interaction_response(interaction, content, components, embeds)
-      |> maybe_add_stats?(interaction, exec_result, content, components, embeds)
+      edit_response_with_data(exec_result, interaction, %{
+        embeds: embeds,
+        components: components,
+        name: name
+      })
     else
       {:execution_error, reason} ->
         content = sql_execution_error(reason, interaction.user.id, name)
@@ -155,15 +157,17 @@ defmodule Sanbase.Discord.CommandHandler do
   def handle_interaction("rerun", interaction, panel_id) do
     interaction_ack(interaction)
 
-    with {:ok, execution_result, dashboard, _dashboard_id} <-
+    with {:ok, exec_result, dashboard, _dashboard_id} <-
            DiscordDashboard.execute(sanbase_bot_id(), panel_id) do
       panel = List.first(dashboard.panels)
-      content = format_table(panel.name, execution_result, to_string(interaction.user.id))
       components = [action_row(panel_id)]
-      embeds = create_chart_embed(execution_result, dashboard, panel_id)
+      embeds = create_chart_embed(exec_result, dashboard, panel_id)
 
-      edit_interaction_response(interaction, content, components, embeds)
-      |> maybe_add_stats?(interaction, execution_result, content, components, embeds)
+      edit_response_with_data(exec_result, interaction, %{
+        embeds: embeds,
+        components: components,
+        name: panel.name
+      })
     else
       {:execution_error, reason} ->
         content =
@@ -213,16 +217,15 @@ defmodule Sanbase.Discord.CommandHandler do
     args = get_additional_info_msg(msg)
 
     with {:ok, exec_result, dd, panel_id} <- compute_and_save(name, sql, [], args) do
-      content = format_table(name, exec_result, to_string(msg.author.id))
       components = [action_row(panel_id)]
       embeds = create_chart_embed(exec_result, dd, panel_id)
 
-      Api.edit_message(msg.channel_id, loading_msg.id,
-        content: content,
+      edit_response_with_data(exec_result, msg, %{
+        old_msg_id: loading_msg.id,
+        embeds: embeds,
         components: components,
-        embeds: embeds
-      )
-      |> maybe_add_stats?(msg, exec_result, content, components, embeds)
+        name: name
+      })
     else
       {:execution_error, reason} ->
         content = sql_execution_error(reason, msg.author.id, name)
@@ -284,6 +287,12 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
+  def header(name, discord_user) do
+    """
+    #{name}: <@#{discord_user}>
+    """
+  end
+
   def format_table(name, %{rows: []}, discord_user) do
     """
     #{name}: <@#{discord_user}>
@@ -328,6 +337,69 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   # Private
+
+  defp edit_response_with_data(
+         exec_result,
+         %Nostrum.Struct.Message{} = msg,
+         %{old_msg_id: old_msg_id, embeds: [], components: components, name: name}
+       ) do
+    content = format_table(name, exec_result, to_string(msg.author.id))
+
+    Api.edit_message(msg.channel_id, old_msg_id, content: content, components: components)
+    |> maybe_add_stats?(msg, exec_result, content, components, [])
+  end
+
+  defp edit_response_with_data(
+         exec_result,
+         %Nostrum.Struct.Message{} = msg,
+         %{old_msg_id: old_msg_id, embeds: embeds, components: components, name: name}
+       ) do
+    file = %{
+      name: "#{name}.csv",
+      body: to_csv(exec_result)
+    }
+
+    content = header(name, to_string(msg.author.id))
+
+    Api.edit_message(msg.channel_id, old_msg_id,
+      content: content,
+      components: components,
+      embeds: embeds,
+      files: [file]
+    )
+  end
+
+  defp edit_response_with_data(
+         exec_result,
+         %Nostrum.Struct.Interaction{} = interaction,
+         %{embeds: [], components: components, name: name}
+       ) do
+    content = format_table(name, exec_result, to_string(interaction.user.id))
+
+    edit_interaction_response(interaction, content, components, [])
+    |> maybe_add_stats?(interaction, exec_result, content, components, [])
+  end
+
+  defp edit_response_with_data(
+         exec_result,
+         %Nostrum.Struct.Interaction{} = interaction,
+         %{embeds: embeds, components: components, name: name}
+       ) do
+    file = %{
+      name: "#{name}.csv",
+      body: to_csv(exec_result)
+    }
+
+    content = header(name, to_string(interaction.user.id))
+
+    Nostrum.Api.edit_interaction_response(interaction, %{
+      content: content,
+      components: components,
+      embeds: embeds,
+      files: [file]
+    })
+  end
+
   defp gen_query_name() do
     "anon_query_" <> (UUID.uuid4() |> String.split("-") |> Enum.at(0))
   end
@@ -566,6 +638,10 @@ defmodule Sanbase.Discord.CommandHandler do
     else
       []
     end
+  end
+
+  def to_csv(exec_result) do
+    NimbleCSV.RFC4180.dump_to_iodata([exec_result.columns | exec_result.rows])
   end
 
   def img_prefix_url() do

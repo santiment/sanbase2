@@ -49,7 +49,7 @@ defmodule Sanbase.AvailableSlugs do
     {:noreply, refill_slugs(state)}
   end
 
-  @non_project_slugs ["gold", "s-and-p-500", "crude-oil"]
+  @non_project_slugs ["gold", "s-and-p-500", "crude-oil", "dxy"]
   defp refill_slugs(state) do
     %{ets_table: ets_table} = state
 

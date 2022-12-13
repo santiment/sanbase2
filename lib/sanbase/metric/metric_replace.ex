@@ -1,9 +1,9 @@
 defmodule Sanbase.Metric.MetricReplace do
-  @slugs_with_changed_metric ["gold", "s-and-p-500", "crude-oil"]
+  @slugs_with_changed_metric ["gold", "s-and-p-500", "crude-oil", "dxy"]
 
-  def maybe_replace_metric("price_usd", %{slug: "gold"}), do: "price_usd_5m"
-  def maybe_replace_metric("price_usd", %{slug: "s-and-p-500"}), do: "price_usd_5m"
-  def maybe_replace_metric("price_usd", %{slug: "crude-oil"}), do: "price_usd_5m"
+  def maybe_replace_metric("price_usd", %{slug: slug}) when slug in @slugs_with_changed_metric,
+    do: "price_usd_5m"
+
   def maybe_replace_metric(metric, _selector) when is_binary(metric), do: metric
 
   def maybe_replace_metrics(metrics_list, %{slug: slug} = selector)

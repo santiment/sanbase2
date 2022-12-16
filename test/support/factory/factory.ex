@@ -39,6 +39,19 @@ defmodule Sanbase.Factory do
       email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@santiment.net",
       salt: User.generate_salt(),
       privacy_policy_accepted: true,
+      registration_state: %{"state" => "finished"},
+      san_balance: Decimal.new(0),
+      san_balance_updated_at: Timex.now()
+    }
+  end
+
+  def user_registration_not_finished_factory() do
+    %User{
+      username: :crypto.strong_rand_bytes(16) |> Base.encode16(),
+      email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@santiment.net",
+      salt: User.generate_salt(),
+      privacy_policy_accepted: true,
+      registration_state: %{"state" => "init"},
       san_balance: Decimal.new(0),
       san_balance_updated_at: Timex.now()
     }
@@ -57,7 +70,8 @@ defmodule Sanbase.Factory do
     %User{
       salt: User.generate_salt(),
       username: User.anonymous_user_username(),
-      email: User.anonymous_user_email()
+      email: User.anonymous_user_email(),
+      registration_state: %{"state" => "finished"}
     }
   end
 
@@ -66,7 +80,8 @@ defmodule Sanbase.Factory do
       salt: User.generate_salt(),
       san_balance: Decimal.new(20_000),
       san_balance_updated_at: Timex.now(),
-      privacy_policy_accepted: true
+      privacy_policy_accepted: true,
+      registration_state: %{"state" => "finished"}
     }
   end
 

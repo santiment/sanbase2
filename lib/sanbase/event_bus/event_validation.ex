@@ -21,7 +21,7 @@ defmodule Sanbase.EventBus.EventValidation do
     do: valid_integer_id?(id) and is_binary(email)
 
   def valid?(%{event_type: :register_user, user_id: id, login_origin: login_origin}),
-    do: valid_integer_id?(id) and is_atom(login_origin)
+    do: valid_integer_id?(id) and (is_atom(login_origin) or is_binary(login_origin))
 
   def valid?(%{event_type: event_type, user_id: user_id, follower_id: follower_id})
       when event_type in [:follow_user, :unfollow_user] do
@@ -29,7 +29,7 @@ defmodule Sanbase.EventBus.EventValidation do
   end
 
   def valid?(%{event_type: :login_user, user_id: id, login_origin: login_origin}),
-    do: valid_integer_id?(id) and is_atom(login_origin)
+    do: valid_integer_id?(id) and (is_atom(login_origin) or is_binary(login_origin))
 
   def valid?(%{event_type: :send_email_login_link, user_id: id}),
     do: valid_integer_id?(id)

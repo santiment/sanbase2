@@ -4,6 +4,7 @@ defmodule Sanbase.Intercom do
   """
 
   import Ecto.Query
+  import Sanbase.Accounts.User.Ecto, only: [is_registered: 0]
 
   alias Sanbase.Utils.Config
   alias Sanbase.Accounts.{User, Statistics}
@@ -95,7 +96,7 @@ defmodule Sanbase.Intercom do
   end
 
   def fetch_new_registrations_since(dt) do
-    from(u in User, where: u.is_registered and u.inserted_at > ^dt, select: u.id)
+    from(u in User, where: is_registered() and u.inserted_at > ^dt, select: u.id)
     |> Repo.all()
   end
 
@@ -409,7 +410,7 @@ defmodule Sanbase.Intercom do
   end
 
   def signed_up_at(user) do
-    case user.is_registered do
+    case User.RegistrationState.is_registered(user) do
       true -> DateTime.from_naive!(user.inserted_at, "Etc/UTC") |> DateTime.to_unix()
       false -> 0
     end

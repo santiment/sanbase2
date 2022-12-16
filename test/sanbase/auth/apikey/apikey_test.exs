@@ -9,9 +9,7 @@ defmodule Sanbase.Accounts.ApiKeyTest do
   setup do
     {:ok, user} = User.find_or_insert_by(:email, "as819asdnmaso1011@santiment.net")
 
-    %{
-      user: user
-    }
+    %{user: user}
   end
 
   test "masking apikey" do

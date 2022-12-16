@@ -11,12 +11,12 @@ defmodule Sanbase.Accounts.EventEmitter do
     |> notify()
   end
 
-  def handle_event({:ok, user}, :register_user, %{login_origin: _} = args) do
+  def handle_event({:ok, user}, :register_user, %{} = args) do
     Map.merge(%{event_type: :register_user, user_id: user.id}, args)
     |> notify()
   end
 
-  def handle_event({:ok, user}, :login_user, %{login_origin: _} = args) do
+  def handle_event({:ok, user}, :login_user, %{} = args) do
     Map.merge(%{event_type: :login_user, user_id: user.id}, args)
     |> notify()
   end
@@ -56,7 +56,7 @@ defmodule Sanbase.Accounts.EventEmitter do
     |> notify()
   end
 
-  def handle_event({:ok, user_follower}, event_type, _extra_args)
+  def handle_event({:ok, user_follower}, event_type, _args)
       when event_type in [:follow_user, :unfollow_user] do
     %{
       event_type: event_type,

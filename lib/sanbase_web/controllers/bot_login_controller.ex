@@ -18,11 +18,7 @@ defmodule SanbaseWeb.BotLoginController do
   defp send_response(user, conn) do
     device_data = SanbaseWeb.Guardian.device_data(conn)
 
-    {:ok, jwt_tokens} =
-      SanbaseWeb.Guardian.get_jwt_tokens(user,
-        platform: device_data.platform,
-        client: device_data.platform
-      )
+    {:ok, jwt_tokens} = SanbaseWeb.Guardian.get_jwt_tokens(user, device_data)
 
     conn
     |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens)

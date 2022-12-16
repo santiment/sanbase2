@@ -69,9 +69,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   end
 
   def current_user(_root, _args, %{
-        context: %{auth: %{current_user: user}}
+        context: %{origin_url: origin_url, auth: %{current_user: user}}
       }) do
-    {:ok, user}
+    case User.RegistrationState.login_to_finish_registration?(user) do
+      false ->
+        {:ok, user}
+
+      true ->
+        case User.RegistrationState.login_to_finish_registration?(user) do
+          false ->
+            {:ok, user}
+
+          true ->
+            # This happens when the user has been created via Google/Twitter OAuth
+            # In such case the /auth/google or /auth/twitter endpoint does not return a
+            # user (like in emailLoginVerify) and the first_login: true will be put
+            # in the first `currentUser` call.
+            case Sanbase.Accounts.forward_registration(user, "login", %{origin_url: origin_url}) do
+              # :keep_state indicates that the change did not update because it has
+              # been already changed by a concurrent request in the same or on
+              # another node. :evolve state shows that this is the process that
+              # updated the state, so this is the true first login
+              {:ok, :evolve_state, user} -> {:ok, %{user | first_login: true}}
+              {:ok, :keep_state, user} -> {:ok, user}
+              {:eror, error} -> {:error, error}
+            end
+        end
+    end
   end
 
   def current_user(_root, _args, _context), do: {:ok, nil}

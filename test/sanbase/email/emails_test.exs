@@ -24,7 +24,8 @@ defmodule Sanbase.EmailsTest do
      [fetch_default_card: fn _ -> {:ok, %{default_source: "123"}} end]},
     {Sanbase.TemplateMailer, [], [send: fn _, _, _ -> {:ok, :email_sent} end]}
   ]) do
-    not_registered_user = insert(:user, email: "example@santiment.net", is_registered: false)
+    not_registered_user = insert(:user_registration_not_finished, email: "example@santiment.net")
+
     user = insert(:user)
 
     conn = setup_jwt_auth(build_conn(), user)

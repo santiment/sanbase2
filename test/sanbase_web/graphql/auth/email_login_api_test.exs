@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
   describe "Email login verify" do
     test "with a valid email token, succeeds login", %{conn: conn} do
       {:ok, user} =
-        insert(:user, email: "example@santiment.net")
+        insert(:user_registration_not_finished, email: "example@santiment.net")
         |> User.Email.update_email_token()
 
       result =
@@ -208,7 +208,6 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
       assert {:ok, %User{}} = User.by_email("john@example.com")
       assert result["success"]
-      assert result["firstLogin"]
     end
 
     test "emailLogin returns true if the login email was sent successfully", context do
@@ -220,7 +219,6 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
 
       assert {:ok, %User{}} = User.by_email("john@example.com")
       assert result["success"]
-      assert result["firstLogin"]
     end
 
     test "succeeds if the user has attempted to login 5 times", context do

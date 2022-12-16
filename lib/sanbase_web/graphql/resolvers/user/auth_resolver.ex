@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.InternalServices.Ethauth
+  alias Sanbase.Accounts
   alias Sanbase.Accounts.{User, EthAccount, EmailLoginAttempt}
 
   require Logger
@@ -51,12 +52,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     with true <- address_message_hash(address) == message_hash,
          true <- Ethauth.is_valid_signature?(address, signature),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
-         {:ok, %{} = jwt_tokens_map} <-
-           SanbaseWeb.Guardian.get_jwt_tokens(user,
-             platform: device_data.platform,
-             client: device_data.client
-           ),
-         {:ok, user} <- User.mark_as_registered(user, event_args) do
+         is_first_login <- User.RegistrationState.is_first_login(user, "eth_login"),
+         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data),
+         {:ok, _, user} <- Sanbase.Accounts.forward_registration(user, "eth_login", event_args) do
+      user = %{user | first_login: is_first_login}
       emit_event({:ok, user}, :login_user, event_args)
 
       {:ok,
@@ -77,7 +76,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     end
   end
 
-  def email_login(%{email: email} = args, %{
+  def send_email_login_email(%{email: email} = args, %{
         context: %{
           origin_url: origin_url,
           origin_host_parts: origin_host_parts,
@@ -91,10 +90,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
          :ok <- EmailLoginAttempt.has_allowed_login_attempts(user, remote_ip),
          {:ok, user} <- User.Email.update_email_token(user, args[:consent]),
          {:ok, _user} <- User.Email.send_login_email(user, origin_host_parts, args),
-         {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip) do
+         {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip),
+         {:ok, _, user} <-
+           Accounts.forward_registration(user, "send_login_email", %{"origin_url" => origin_url}) do
       emit_event({:ok, user}, :send_email_login_link, %{origin_url: origin_url})
 
-      {:ok, %{success: true, first_login: user.first_login}}
+      {:ok, %{success: true}}
     else
       {:error, :too_many_login_attempts} ->
         Logger.info(
@@ -104,7 +105,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
         {:error, message: "Too many login attempts, try again after a few minutes"}
 
       error ->
-        Logger.info(
+        Logger.error(
           "Login failed: unknown error #{inspect(error)}. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"
         )
 
@@ -115,28 +116,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
   def email_login_verify(%{token: token, email: email}, %{
         context: %{device_data: device_data, origin_url: origin_url}
       }) do
-    event_args = %{login_origin: :email, origin_url: origin_url}
+    args = %{login_origin: :email, origin_url: origin_url}
 
     with {:ok, user} <- User.find_or_insert_by(:email, email),
-         is_registered <- user.is_registered,
+         is_first_login <- User.RegistrationState.is_first_login(user, "email_login_verify"),
          true <- User.Email.email_token_valid?(user, token),
-         {:ok, %{} = jwt_tokens_map} <-
-           SanbaseWeb.Guardian.get_jwt_tokens(user,
-             platform: device_data.platform,
-             client: device_data.client
-           ),
+         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data),
          {:ok, user} <- User.Email.mark_email_token_as_validated(user),
-         {:ok, user} <- User.mark_as_registered(user, event_args) do
-      emit_event({:ok, user}, :login_user, event_args)
+         {:ok, _, user} <- Accounts.forward_registration(user, "email_login_verify", args) do
+      user = %{user | first_login: is_first_login}
+      emit_event({:ok, user}, :login_user, args)
 
       {:ok,
        %{
-         # When we reach this, the user has already been created by the
-         # emailLogin GraphQL query, so `first_login` will be false. It is indeed
-         # the first login if the user has not been labeled as registered (before
-         # calling mark_as_registered). Subsequent logins will have this field
-         # set to true, so this will make the first_login equal false
-         user: %{user | first_login: not is_registered},
+         user: user,
          token: jwt_tokens_map.access_token,
          access_token: jwt_tokens_map.access_token,
          refresh_token: jwt_tokens_map.refresh_token
@@ -176,11 +169,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     with {:ok, user} <-
            User.Email.find_by_email_candidate(email_candidate, email_candidate_token),
          true <- User.Email.email_candidate_token_valid?(user, email_candidate_token),
-         {:ok, jwt_tokens} <-
-           SanbaseWeb.Guardian.get_jwt_tokens(user,
-             platform: device_data.platform,
-             client: device_data.client
-           ),
+         {:ok, jwt_tokens} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data),
          {:ok, user} <- User.Email.update_email_from_email_candidate(user) do
       {:ok,
        %{
@@ -203,7 +192,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     # for the first time. Create a User and create an EthAccount linked with
     # the user. The username is automatically set to the address but is not
     # used for logging in after that.
-    Sanbase.Accounts.create_user_with_eth_address(address)
+    Accounts.create_user_with_eth_address(address)
   end
 
   defp fetch_user(_args, %EthAccount{user_id: user_id}) do

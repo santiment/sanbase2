@@ -109,7 +109,7 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
       arg(:consent, :string)
       arg(:subscribe_to_weekly_newsletter, :boolean)
 
-      resolve(&AuthResolver.email_login/2)
+      resolve(&AuthResolver.send_email_login_email/2)
     end
 
     @desc ~s"""

@@ -261,7 +261,7 @@ defmodule Sanbase.Accounts.UserTest do
           email: "test@example.com",
           username: "cersei",
           privacy_policy_accepted: true,
-          is_registered: true
+          registration_state: %{"state" => "finished"}
         )
 
       Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)

@@ -3666,7 +3666,8 @@ CREATE TABLE public.users (
     is_registered boolean DEFAULT false,
     is_superuser boolean DEFAULT false,
     twitter_id character varying(255) DEFAULT NULL::character varying,
-    name character varying(255)
+    name character varying(255),
+    registration_state jsonb DEFAULT '{"state": "init"}'::jsonb
 );
 
 
@@ -8083,3 +8084,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20221118110940);
 INSERT INTO public."schema_migrations" (version) VALUES (20221129102156);
 INSERT INTO public."schema_migrations" (version) VALUES (20221212124926);
 INSERT INTO public."schema_migrations" (version) VALUES (20221213105305);
+INSERT INTO public."schema_migrations" (version) VALUES (20221215103058);
+INSERT INTO public."schema_migrations" (version) VALUES (20221216095648);

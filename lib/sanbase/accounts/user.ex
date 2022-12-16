@@ -64,6 +64,7 @@ defmodule Sanbase.Accounts.User do
     field(:first_login, :boolean, default: false, virtual: true)
     field(:avatar_url, :string)
     field(:is_registered, :boolean, default: false)
+    field(:registration_state, :map, default: %{"state" => "init"})
     field(:is_superuser, :boolean, default: false)
     field(:twitter_id, :string)
 
@@ -177,14 +178,24 @@ defmodule Sanbase.Accounts.User do
     end
   end
 
-  def by_id(user_id) when is_integer(user_id) do
-    case Sanbase.Repo.get(User, user_id) do
+  def by_id(user_id, opts \\ [])
+
+  def by_id(user_id, opts) when is_integer(user_id) do
+    query = from(u in __MODULE__, where: u.id == ^user_id)
+
+    query =
+      case Keyword.get(opts, :lock_for_update, false) do
+        false -> query
+        true -> query |> lock("FOR UPDATE")
+      end
+
+    case Sanbase.Repo.one(query) do
       nil -> {:error, "Cannot fetch the user with id #{user_id}"}
       %__MODULE__{} = user -> {:ok, user}
     end
   end
 
-  def by_id(user_ids) when is_list(user_ids) do
+  def by_id(user_ids, _opts) when is_list(user_ids) do
     users =
       from(
         u in __MODULE__,
@@ -262,6 +273,9 @@ defmodule Sanbase.Accounts.User do
 
   def find_or_insert_by(field, value, attrs \\ %{})
       when field in [:email, :username, :twitter_id] do
+    # When this function is used to create a new user during login/singup process
+    # it **must** be followed by calling `Sanbase.Accounts.forward_registration/2`
+    # so the registration progress can evolve in the proper direction
     value = normalize_user_identificator(field, value)
 
     case Repo.get_by(User, [{field, value}]) do
@@ -349,19 +363,5 @@ defmodule Sanbase.Accounts.User do
       distinct: true
     )
     |> Repo.all()
-  end
-
-  @doc """
-  Mark user as registered.
-  It is used from all channels for sign up - email, metamask, google, twitter.
-  If user is already registered it does nothing but returning the user object.
-  """
-  def mark_as_registered(%User{is_registered: true} = user, _args), do: {:ok, user}
-
-  def mark_as_registered(%User{is_registered: false} = user, %{login_origin: _} = args) do
-    user
-    |> User.changeset(%{is_registered: true})
-    |> Repo.update()
-    |> emit_event(:register_user, args)
   end
 end

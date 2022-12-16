@@ -57,9 +57,9 @@ defmodule SanbaseWeb.Guardian do
     |> Plug.Conn.put_session(:refresh_token, jwt_tokens_map.refresh_token)
   end
 
-  def get_jwt_tokens(%User{} = user, opts \\ []) do
-    platform = Keyword.get(opts, :platform, :unknown)
-    client = Keyword.get(opts, :client, :unknown)
+  def get_jwt_tokens(%User{} = user, args \\ %{}) do
+    platform = Map.get(args, :platform, :unknown)
+    client = Map.get(args, :client, :unknown)
 
     with {:ok, access_token, _claims} <-
            encode_and_sign(

@@ -1,6 +1,6 @@
 defmodule Sanbase.Accounts.Statistics do
   import Ecto.Query
-
+  import Sanbase.Accounts.User.Ecto, only: [is_registered: 0]
   alias Sanbase.Repo
   alias Sanbase.Math
   alias Sanbase.Accounts.User
@@ -36,7 +36,7 @@ defmodule Sanbase.Accounts.Statistics do
     from(u in User,
       where:
         (like(u.email, "%@santiment.net") or u.id in ^santiment_role_user_ids) and
-          u.is_registered == true
+          is_registered()
     )
     |> Repo.all()
   end

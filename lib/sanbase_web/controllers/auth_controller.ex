@@ -9,6 +9,7 @@ defmodule SanbaseWeb.AccountsController do
 
   plug(Ueberauth)
 
+  alias Sanbase.Accounts
   alias Sanbase.Accounts.User
 
   def delete(conn, _params) do
@@ -26,17 +27,13 @@ defmodule SanbaseWeb.AccountsController do
     redirect_urls = get_redirect_urls(params)
     device_data = SanbaseWeb.Guardian.device_data(conn)
     email = auth.info.email
-    origin_url = Plug.Conn.get_req_header(conn, "host")
+    origin_url = Plug.Conn.get_req_header(conn, "host") |> List.first()
     args = %{login_origin: :google, origin_url: origin_url}
 
-    with true <- is_binary(email),
+    with true <- is_binary(email) and byte_size(email) > 0,
          {:ok, user} <- User.find_or_insert_by(:email, email, args),
-         {:ok, %{} = jwt_tokens_map} <-
-           SanbaseWeb.Guardian.get_jwt_tokens(user,
-             platform: device_data.platform,
-             client: device_data.client
-           ),
-         {:ok, _} <- User.mark_as_registered(user, args) do
+         {:ok, _, user} <- Accounts.forward_registration(user, "google_oauth", args),
+         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
       emit_event({:ok, user}, :login_user, args)
 
       conn
@@ -55,16 +52,12 @@ defmodule SanbaseWeb.AccountsController do
 
     twitter_id = auth.uid
     email = auth.info.email
-    origin_url = Plug.Conn.get_req_header(conn, "host")
+    origin_url = Plug.Conn.get_req_header(conn, "host") |> List.first()
     args = %{login_origin: :twitter, origin_url: origin_url}
 
     with {:ok, user} <- twitter_login(email, twitter_id),
-         {:ok, %{} = jwt_tokens_map} <-
-           SanbaseWeb.Guardian.get_jwt_tokens(user,
-             platform: device_data.platform,
-             client: device_data.client
-           ),
-         {:ok, _} <- User.mark_as_registered(user, args) do
+         {:ok, _, user} <- Accounts.forward_registration(user, "twitter_oauth", args),
+         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
       emit_event({:ok, user}, :login_user, args)
 
       conn
@@ -95,18 +88,17 @@ defmodule SanbaseWeb.AccountsController do
       _ ->
         # If there is not user with that twitter_id then fetch or create a user with that email
         # and put the twitter_id.
-        args = %{is_registered: true, login_origin: :twitter}
+        args = %{login_origin: :twitter}
 
         with {:ok, user} <- User.find_or_insert_by(:email, email, args),
-             is_registered <- user.is_registered,
              {:ok, user} <- User.update_field(user, :twitter_id, twitter_id) do
-          {:ok, %{user | first_login: not is_registered}}
+          {:ok, user}
         end
     end
   end
 
   defp twitter_login(_email, twitter_id) do
-    User.find_or_insert_by(:twitter_id, twitter_id, %{is_registered: true, login_origin: :twitter})
+    User.find_or_insert_by(:twitter_id, twitter_id, %{login_origin: :twitter})
   end
 
   defp get_redirect_urls(%{"san_redirects_state" => state}) do

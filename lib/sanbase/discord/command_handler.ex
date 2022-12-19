@@ -106,7 +106,8 @@ defmodule Sanbase.Discord.CommandHandler do
       type: 4,
       data: %{
         content: "",
-        embeds: [embed]
+        embeds: [embed],
+        flags: 64
       }
     }
 
@@ -205,14 +206,19 @@ defmodule Sanbase.Discord.CommandHandler do
       ```
       """
 
-      interaction_msg(interaction, content)
+      interaction_msg(interaction, content, %{flags: 64})
     else
       _ -> interaction_msg(interaction, "Query is removed from our database")
     end
   end
 
   def handle_command("run", name, sql, msg) do
-    {:ok, loading_msg} = Api.create_message(msg.channel_id, content: "Your query is running ...")
+    {:ok, loading_msg} =
+      Api.create_message(
+        msg.channel_id,
+        content: "Your query is running ...",
+        message_reference: %{message_id: msg.id}
+      )
 
     args = get_additional_info_msg(msg)
 
@@ -413,27 +419,19 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   defp interaction_ack(interaction) do
-    Nostrum.Api.create_interaction_response(interaction, %{type: 5})
+    Nostrum.Api.create_interaction_response(interaction, %{type: 5, data: %{flags: 64}})
   end
 
-  defp interaction_msg(interaction, content) do
-    data = %{
-      type: 4,
-      data: %{
-        content: content
-      }
-    }
-
-    Nostrum.Api.create_interaction_response(interaction, data)
+  defp interaction_msg(interaction, content, opts \\ %{}) do
+    Nostrum.Api.create_interaction_response(
+      interaction,
+      interaction_message_response(content, opts)
+    )
   end
 
-  defp interaction_message_response(content) do
-    %{
-      type: 4,
-      data: %{
-        content: content
-      }
-    }
+  defp interaction_message_response(content, opts \\ %{}) do
+    data = %{content: content} |> Map.merge(opts)
+    %{type: 4, data: data}
   end
 
   def edit_interaction_response(interaction, content) do

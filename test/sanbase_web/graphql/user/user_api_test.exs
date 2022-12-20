@@ -19,6 +19,52 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     {:ok, conn: conn, user: user}
   end
 
+  describe "firstLogin" do
+    test "firstLogin when state is waiting for login to finish registration" do
+      user = insert(:user_registration_not_finished)
+      conn = setup_jwt_auth(build_conn(), user)
+
+      # Check that after the state is in `waiting_for_login_to_finish`, which is
+      # achieved by google/twitter oauth actions, the registration process is
+      # finished when the `firstLogin` field is queried. This is so the frontend
+      # does not need to introduce any locks and waits to make sure the request
+      # that checks for firstLogin executes first and before any other currentUser
+      # request.
+      {:ok, :evolve_state, _user} =
+        Sanbase.Accounts.forward_registration(user, "google_oauth", %{
+          login_origin: :google,
+          origin_url: "localhost"
+        })
+
+      user_id =
+        conn
+        |> post("/graphql", query_skeleton("{ currentUser{ id } }"))
+        |> json_response(200)
+        |> get_in(["data", "currentUser", "id"])
+
+      assert user.id == String.to_integer(user_id)
+
+      # firstLogin is set to true and the registration is finished only
+      # when `firstLogin` field is requested for the first time.
+
+      first_login =
+        conn
+        |> post("/graphql", query_skeleton("{ currentUser{ firstLogin } }"))
+        |> json_response(200)
+        |> get_in(["data", "currentUser", "firstLogin"])
+
+      assert first_login == true
+
+      first_login =
+        conn
+        |> post("/graphql", query_skeleton("{ currentUser{ firstLogin } }"))
+        |> json_response(200)
+        |> get_in(["data", "currentUser", "firstLogin"])
+
+      assert first_login == false
+    end
+  end
+
   describe "Current user" do
     test "default san_balance is 0.0", %{conn: conn} do
       query = """

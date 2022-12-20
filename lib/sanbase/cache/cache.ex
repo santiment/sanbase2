@@ -13,7 +13,7 @@ defmodule Sanbase.Cache do
          name: Keyword.fetch!(opts, :name),
          ttl_check_interval: Keyword.get(opts, :ttl_check_interval, :timer.seconds(5)),
          global_ttl: Keyword.get(opts, :global_ttl, :timer.minutes(5)),
-         acquire_lock_timeout: Keyword.get(opts, :aquire_lock_timeout, 60_000)
+         acquire_lock_timeout: Keyword.get(opts, :acquire_lock_timeout, 60_000)
        ]},
       id: Keyword.fetch!(opts, :id)
     )

@@ -40,14 +40,7 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
 
       defp export_api_call_data(conn, kind, reason) do
         remote_ip = conn.remote_ip |> Sanbase.Utils.IP.ip_tuple_to_string()
-
-        status_code =
-          if is_map(reason) do
-            Map.get(reason, :status_code) || Map.get(reason, :plug_status, 500)
-          else
-            500
-          end
-
+        status_code = get_status_code(reason)
         user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
 
         id =
@@ -70,6 +63,13 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
         }
         |> Sanbase.Kafka.ApiCall.json_kv_tuple()
         |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
+      end
+
+      defp get_status_code(reason) do
+        case reason do
+          %{} -> Map.get(reason, :status_code) || Map.get(reason, :plug_status, 500)
+          _ -> 500
+        end
       end
     end
   end

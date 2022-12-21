@@ -65,10 +65,7 @@ defmodule Sanbase.SocialData.SocialDominance do
 
   def words_social_dominance(word_or_words) do
     words = List.wrap(word_or_words)
-    to = Timex.now()
-    from = Timex.shift(to, hours: -@hours_back_ensure_has_data)
-    interval = "1h"
-    source = :total
+    %{from: from, to: to, interval: interval, source: source} = words_social_dominance_args()
 
     with {:ok, words_volume} <-
            SocialData.social_volume(%{words: words}, from, to, interval, source),
@@ -93,6 +90,17 @@ defmodule Sanbase.SocialData.SocialDominance do
       {:ok, []} -> {:ok, nil}
       _error -> {:ok, nil}
     end
+  end
+
+  defp words_social_dominance_args() do
+    now = DateTime.utc_now()
+
+    %{
+      to: now,
+      from: Timex.shift(to, hours: -@hours_back_ensure_has_data),
+      interval: "1h",
+      source: :total
+    }
   end
 
   def social_dominance_trending_words() do

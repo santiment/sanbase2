@@ -1,5 +1,6 @@
 if Code.ensure_loaded?(Neuron) do
   defmodule Sanbase.Mix.CryptocompareSlugMapping do
+    # credo:disable-for-this-file
     def run() do
       map = cryptocompare_santiment_asset_mapping()
 
@@ -29,9 +30,8 @@ if Code.ensure_loaded?(Neuron) do
         )
       end)
 
-      IO.puts("\n\n")
-
       IO.puts("""
+      \n\n
       #{length(knowns)} Santiment assets with known cryptocompare asset:
       ---------------------------------------------------------------
       """)

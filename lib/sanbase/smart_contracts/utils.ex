@@ -69,7 +69,10 @@ defmodule Sanbase.SmartContracts.Utils do
       # Strip `0x` prefix
       |> String.slice(2..-1)
       |> Base.decode16!(case: :lower)
-      |> ABI.TypeDecoder.decode_raw(return_types)
+      |> case do
+        "" -> :error
+        response -> ABI.TypeDecoder.decode_raw(response, return_types)
+      end
     end
   end
 

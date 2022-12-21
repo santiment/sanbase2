@@ -19,7 +19,7 @@ defmodule Sanbase.Dashboard.Query do
     # this process only.
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
 
-    query = extend_query(query, querying_user_id)
+    query = preprocess_query(query, querying_user_id)
 
     {query, args} = transform_parameters_to_args(query, parameters)
 
@@ -112,10 +112,11 @@ defmodule Sanbase.Dashboard.Query do
     {query, args}
   end
 
-  defp extend_query(query, user_id) do
+  defp preprocess_query(query, user_id) do
     query
     |> extend_query_with_prod_marker()
     |> extend_query_with_user_id_comment(user_id)
+    |> remove_trailing_semicolon()
   end
 
   defp extend_query_with_prod_marker(query) do
@@ -130,6 +131,15 @@ defmodule Sanbase.Dashboard.Query do
 
   defp extend_query_with_user_id_comment(query, user_id) do
     "-- __sanbase_user_id_running_the_query__ #{user_id}\n" <> query
+  end
+
+  defp remove_trailing_semicolon(query) do
+    # When the query goes to the clickhouse driver, it gets extended with
+    # `FORMAT JSONCompact`. If the query has a trailing `;`, this results
+    # in a malformed query
+    query
+    |> String.trim_trailing()
+    |> String.trim_trailing(";")
   end
 
   # Take only those parameters which are seen in the query.

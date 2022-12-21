@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1, changeset_errors_string: 1]
   import Absinthe.Resolution.Helpers, except: [async: 1]
-
+  import SanbaseWeb.Graphql.Helpers.Utils, only: [requested_fields: 1]
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts.{User, UserFollower}
   alias SanbaseWeb.Graphql.SanbaseDataloader
@@ -68,10 +68,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     Sanbase.Clickhouse.ApiCallData.api_call_count(user.id, from, to, auth_method)
   end
 
-  def current_user(_root, _args, %{
-        context: %{origin_url: origin_url, auth: %{current_user: user}}
-      }) do
-    case User.RegistrationState.login_to_finish_registration?(user) do
+  def current_user(
+        _root,
+        _args,
+        %{context: %{origin_url: origin_url, auth: %{current_user: user}}} = resolution
+      ) do
+    first_login_requested? = "firstLogin" in requested_fields(resolution)
+
+    # Appart from finishing the registration process, this code will also set the
+    # firstLogin: true, which is **very** important for the analytics, as the frontend
+    # uses it to emit events.
+    # The frontend can execute some other currentUser queries that do not request this field
+    # before executing any request that does include this field.
+    # In such cases these queries could actually trigger the firstLogin: true
+    # and any other query that actually asks for it will see false.
+    # Fix this by finishing the registration process and putting firstLogin: true
+    # only when the `firstLogin` field is requested.
+    case first_login_requested? and User.RegistrationState.login_to_finish_registration?(user) do
       false ->
         {:ok, user}
 

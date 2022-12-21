@@ -1,7 +1,7 @@
 defmodule Sanbase.Repo.Migrations.LowercaseProjectAddresses do
   use Ecto.Migration
 
-  alias Sanbase.{ProjectEthAddress, ProjectBtcAddress}
+  alias Sanbase.ProjectEthAddress
   alias Sanbase.Repo
 
   def change do
@@ -14,15 +14,6 @@ defmodule Sanbase.Repo.Migrations.LowercaseProjectAddresses do
     |> Enum.map(fn %ProjectEthAddress{address: address} = eth_addr ->
       eth_addr
       |> ProjectEthAddress.changeset(%{address: String.downcase(address)})
-    end)
-    |> Enum.map(&Repo.update/1)
-  end
-
-  def migrate_btc() do
-    Repo.all(ProjectBtcAddress)
-    |> Enum.map(fn %ProjectBtcAddress{address: address} = eth_addr ->
-      eth_addr
-      |> ProjectBtcAddress.changeset(%{address: String.downcase(address)})
     end)
     |> Enum.map(&Repo.update/1)
   end

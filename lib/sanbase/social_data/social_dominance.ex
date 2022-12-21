@@ -45,8 +45,7 @@ defmodule Sanbase.SocialData.SocialDominance do
   end
 
   def social_dominance(%{slug: slug}, from, to, interval, source) do
-    social_dominance_request(%{slug: slug}, from, to, interval, source)
-    |> case do
+    case social_dominance_request(%{slug: slug}, from, to, interval, source) do
       {:ok, %{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
         social_dominance_result(result)
@@ -65,7 +64,7 @@ defmodule Sanbase.SocialData.SocialDominance do
 
   def words_social_dominance(word_or_words) do
     words = List.wrap(word_or_words)
-    %{from: from, to: to, interval: interval, source: source} = words_social_dominance_args()
+    %{from: from, to: to, interval: interval, source: source} = social_dominance_args()
 
     with {:ok, words_volume} <-
            SocialData.social_volume(%{words: words}, from, to, interval, source),
@@ -92,22 +91,8 @@ defmodule Sanbase.SocialData.SocialDominance do
     end
   end
 
-  defp words_social_dominance_args() do
-    now = DateTime.utc_now()
-
-    %{
-      to: now,
-      from: Timex.shift(to, hours: -@hours_back_ensure_has_data),
-      interval: "1h",
-      source: :total
-    }
-  end
-
   def social_dominance_trending_words() do
-    to = Timex.now()
-    from = Timex.shift(to, hours: -@hours_back_ensure_has_data)
-    interval = "1h"
-    source = :total
+    %{from: from, to: to, interval: interval, source: source} = social_dominance_args()
 
     with {:ok, trending_words} when trending_words != [] <-
            SocialData.TrendingWords.get_currently_trending_words(@trending_words_size),
@@ -158,6 +143,17 @@ defmodule Sanbase.SocialData.SocialDominance do
       |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
 
     {:ok, result}
+  end
+
+  defp social_dominance_args() do
+    now = DateTime.utc_now()
+
+    %{
+      to: now,
+      from: Timex.shift(now, hours: -@hours_back_ensure_has_data),
+      interval: "1h",
+      source: :total
+    }
   end
 
   defp metrics_hub_url() do

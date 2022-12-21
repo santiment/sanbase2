@@ -275,9 +275,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
         get_req_header(conn, "user-agent")
         |> get_apikey_product_id()
 
-      subscription =
-        Subscription.current_subscription(current_user, product_id) ||
-          @free_subscription
+      subscription = current_subscription(current_user, product_id)
 
       %AuthStruct{
         permissions: User.Permissions.permissions(current_user),
@@ -292,14 +290,17 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
         product_code: Product.code_by_id(product_id)
       }
     else
-      {:has_header?, _} ->
-        # There is authentication header, but it does not start with Bearer
-
-        :try_next
-
-      error ->
-        error
+      # There is an authentication header, but it does not start with `Bearer`
+      {:has_header?, _} -> :try_next
+      error -> error
     end
+  end
+
+  # Private functions
+
+  defp current_subscription(user_id, product_id) do
+    Subscription.current_subscription(user_id, product_id) ||
+      @free_subscription
   end
 
   defp anon_user_auth_struct(conn) do

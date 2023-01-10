@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Router do
+  # credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
   use SanbaseWeb, :router
 
   pipeline :admin_pod_only do

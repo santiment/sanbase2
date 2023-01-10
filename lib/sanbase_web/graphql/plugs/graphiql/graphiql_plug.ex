@@ -1,4 +1,6 @@
 defmodule SanbaseWeb.Graphql.GraphiqlPlug do
+  # credo:disable-for-this-file
+
   @moduledoc """
   Provides a GraphiQL interface.
 

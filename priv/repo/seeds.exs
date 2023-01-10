@@ -10,7 +10,6 @@
 
 alias Sanbase.Project
 alias Sanbase.ProjectEthAddress
-alias Sanbase.ProjectBtcAddress
 alias Sanbase.Model.Infrastructure
 alias Sanbase.Repo
 alias Sanbase.Accounts.{User, EthAccount}
@@ -38,18 +37,6 @@ make_project = fn {name, ticker, logo_url, slug, infrastructure_code, contract, 
     main_contract_address: contract,
     token_decimals: token_decimals
   }
-end
-
-make_btc_address = fn {name, address} ->
-  project = Repo.get_by(Project, name: name)
-
-  [
-    %ProjectBtcAddress{}
-    |> ProjectBtcAddress.changeset(%{
-      address: address,
-      project_id: project.id
-    })
-  ]
 end
 
 make_eth_address = fn {name, address} ->
@@ -166,13 +153,6 @@ end
   {"Musiconomi", "0xc7CD9d874F93F2409F39A95987b3E3C738313925"}
 ]
 |> Enum.flat_map(make_eth_address)
-|> Enum.each(insert_on_conflict_nothing)
-
-[
-  {"Encrypgen", "13MoQt2n9cHNzbpt8PfeVYp2cehgzRgj6v"},
-  {"Encrypgen", "16bv1XAqh1YadAWHgDWgxKuhhns7T2EywG"}
-]
-|> Enum.flat_map(make_btc_address)
 |> Enum.each(insert_on_conflict_nothing)
 
 defmodule InsertUser do

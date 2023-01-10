@@ -1559,37 +1559,6 @@ ALTER SEQUENCE public.infrastructures_id_seq OWNED BY public.infrastructures.id;
 
 
 --
--- Name: latest_btc_wallet_data; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.latest_btc_wallet_data (
-    id bigint NOT NULL,
-    address public.citext NOT NULL,
-    satoshi_balance numeric NOT NULL,
-    update_time timestamp without time zone NOT NULL
-);
-
-
---
--- Name: latest_btc_wallet_data_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.latest_btc_wallet_data_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: latest_btc_wallet_data_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.latest_btc_wallet_data_id_seq OWNED BY public.latest_btc_wallet_data.id;
-
-
---
 -- Name: latest_coinmarketcap_data; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2441,38 +2410,6 @@ CREATE TABLE public.project (
     telegram_chat_id integer,
     discord_link character varying(255)
 );
-
-
---
--- Name: project_btc_address; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.project_btc_address (
-    id bigint NOT NULL,
-    address public.citext NOT NULL,
-    project_id bigint NOT NULL,
-    source text,
-    comments text
-);
-
-
---
--- Name: project_btc_address_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.project_btc_address_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: project_btc_address_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.project_btc_address_id_seq OWNED BY public.project_btc_address.id;
 
 
 --
@@ -4199,13 +4136,6 @@ ALTER TABLE ONLY public.infrastructures ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
--- Name: latest_btc_wallet_data id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.latest_btc_wallet_data ALTER COLUMN id SET DEFAULT nextval('public.latest_btc_wallet_data_id_seq'::regclass);
-
-
---
 -- Name: latest_coinmarketcap_data id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4378,13 +4308,6 @@ ALTER TABLE ONLY public.products ALTER COLUMN id SET DEFAULT nextval('public.pro
 --
 
 ALTER TABLE ONLY public.project ALTER COLUMN id SET DEFAULT nextval('public.project_id_seq'::regclass);
-
-
---
--- Name: project_btc_address id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.project_btc_address ALTER COLUMN id SET DEFAULT nextval('public.project_btc_address_id_seq'::regclass);
 
 
 --
@@ -4945,14 +4868,6 @@ ALTER TABLE ONLY public.infrastructures
 
 
 --
--- Name: latest_btc_wallet_data latest_btc_wallet_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.latest_btc_wallet_data
-    ADD CONSTRAINT latest_btc_wallet_data_pkey PRIMARY KEY (id);
-
-
---
 -- Name: latest_coinmarketcap_data latest_coinmarketcap_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5150,14 +5065,6 @@ ALTER TABLE ONLY public.processed_github_archives
 
 ALTER TABLE ONLY public.products
     ADD CONSTRAINT products_pkey PRIMARY KEY (id);
-
-
---
--- Name: project_btc_address project_btc_address_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.project_btc_address
-    ADD CONSTRAINT project_btc_address_pkey PRIMARY KEY (id);
 
 
 --
@@ -5876,13 +5783,6 @@ CREATE UNIQUE INDEX infrastructures_code_index ON public.infrastructures USING b
 
 
 --
--- Name: latest_btc_wallet_data_address_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX latest_btc_wallet_data_address_index ON public.latest_btc_wallet_data USING btree (address);
-
-
---
 -- Name: latest_coinmarketcap_data_coinmarketcap_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6076,20 +5976,6 @@ CREATE UNIQUE INDEX products_code_index ON public.products USING btree (code);
 --
 
 CREATE UNIQUE INDEX products_stripe_id_index ON public.products USING btree (stripe_id);
-
-
---
--- Name: project_btc_address_address_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX project_btc_address_address_index ON public.project_btc_address USING btree (address);
-
-
---
--- Name: project_btc_address_project_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX project_btc_address_project_id_index ON public.project_btc_address USING btree (project_id);
 
 
 --
@@ -7153,14 +7039,6 @@ ALTER TABLE ONLY public.processed_github_archives
 
 
 --
--- Name: project_btc_address project_btc_address_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.project_btc_address
-    ADD CONSTRAINT project_btc_address_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
-
-
---
 -- Name: project_eth_address project_eth_address_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8086,3 +7964,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20221212124926);
 INSERT INTO public."schema_migrations" (version) VALUES (20221213105305);
 INSERT INTO public."schema_migrations" (version) VALUES (20221215103058);
 INSERT INTO public."schema_migrations" (version) VALUES (20221216095648);
+INSERT INTO public."schema_migrations" (version) VALUES (20221221113902);

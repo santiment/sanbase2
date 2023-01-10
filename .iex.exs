@@ -1,7 +1,6 @@
 alias Sanbase.{
   Project,
-  ProjectEthAddress,
-  LatestBtcWalletData
+  ProjectEthAddress
 }
 
 alias Sanbase.Model.{
@@ -9,7 +8,7 @@ alias Sanbase.Model.{
   MarketSegment,
   LatestCoinmarketcapData,
   ModelUtils,
-  ProjectBtcAddress,
+
   Currency,
   Ico,
   IcoCurrency

@@ -1,4 +1,5 @@
 defmodule Sanbase.ExternalServices.Etherscan.Scraper do
+  # credo:disable-for-this-file
   use Tesla
 
   alias Decimal, as: D

@@ -12,6 +12,7 @@ defmodule Sanbase.Discord.CommandHandler do
   @prefix "!q"
   @mock_role_id 1
   @max_size 1800
+  @ephemeral_message_flags 64
 
   def is_command?(content) do
     String.starts_with?(content, @prefix)
@@ -182,15 +183,19 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   def handle_interaction("pin", interaction, panel_id) do
-    with {:ok, dd} <- DiscordDashboard.pin(panel_id) do
+    with true <- can_manage_channel?(interaction),
+         {:ok, dd} <- DiscordDashboard.pin(panel_id) do
       interaction_msg(interaction, "<@#{interaction.user.id}> pinned #{dd.name}")
     end
+    |> handle_pin_unpin_error("pin", interaction)
   end
 
   def handle_interaction("unpin", interaction, panel_id) do
-    with {:ok, dd} <- DiscordDashboard.unpin(panel_id) do
+    with true <- can_manage_channel?(interaction),
+         {:ok, dd} <- DiscordDashboard.unpin(panel_id) do
       interaction_msg(interaction, "<@#{interaction.user.id}> unpinned #{dd.name}")
     end
+    |> handle_pin_unpin_error("unpin", interaction)
   end
 
   def handle_interaction("show", interaction, panel_id) do
@@ -416,24 +421,16 @@ defmodule Sanbase.Discord.CommandHandler do
     Nostrum.Api.create_interaction_response(interaction, %{type: 5})
   end
 
-  defp interaction_msg(interaction, content) do
-    data = %{
-      type: 4,
-      data: %{
-        content: content
-      }
-    }
-
-    Nostrum.Api.create_interaction_response(interaction, data)
+  defp interaction_msg(interaction, content, opts \\ %{}) do
+    Nostrum.Api.create_interaction_response(
+      interaction,
+      interaction_message_response(content, opts)
+    )
   end
 
-  defp interaction_message_response(content) do
-    %{
-      type: 4,
-      data: %{
-        content: content
-      }
-    }
+  defp interaction_message_response(content, opts \\ %{}) do
+    data = %{content: content} |> Map.merge(opts)
+    %{type: 4, data: data}
   end
 
   def edit_interaction_response(interaction, content) do
@@ -663,5 +660,32 @@ defmodule Sanbase.Discord.CommandHandler do
 
   defp sanbase_bot_id() do
     Sanbase.Repo.get_by(User, email: User.sanbase_bot_email()).id
+  end
+
+  def can_manage_channel?(%Nostrum.Struct.Interaction{
+        user: %{id: discord_user_id},
+        guild_id: guild_id,
+        channel_id: channel_id
+      }) do
+    with {:ok, guild} <- Nostrum.Cache.GuildCache.get(guild_id),
+         {:ok, member} <- Nostrum.Api.get_guild_member(guild_id, discord_user_id) do
+      :manage_channels in Nostrum.Struct.Guild.Member.guild_channel_permissions(
+        member,
+        guild,
+        discord_user_id
+      )
+    end
+  end
+
+  def handle_pin_unpin_error(false, action, interaction) do
+    interaction_msg(
+      interaction,
+      "You don't have enough permissions to #{action} queries, <@#{interaction.user.id}>",
+      %{flags: @ephemeral_message_flags}
+    )
+  end
+
+  def handle_pin_unpin_error(result, action, interaction) do
+    result
   end
 end

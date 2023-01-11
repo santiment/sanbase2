@@ -209,6 +209,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&BillingResolver.san_credit_balance/3)
     end
 
+    field :has_valid_sanbase_nft, :boolean do
+      resolve(&SanbaseNftResolver.has_valid_sanbase_nft/3)
+    end
+
     @desc ~s"""
     Timeseries data of api calls count per interval in a given time range.
     """

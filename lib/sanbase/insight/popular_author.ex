@@ -10,37 +10,45 @@ defmodule Sanbase.Insight.PopularAuthor do
   """
   def get(size \\ 10) do
     user_id_to_post_ids_map = Post.Stats.user_id_to_post_ids()
-    user_id_to_followers_count_map = UserFollower.user_id_to_followers_count()
-    user_id_to_total_votes_map = user_id_to_total_votes_map(user_id_to_post_ids_map)
-    user_id_to_total_comments_map = user_id_to_total_comments_map(user_id_to_post_ids_map)
+
+    user_id_stats_map = %{
+      to_post_ids_map: user_id_to_post_ids_map,
+      to_followers_count_map: UserFollower.user_id_to_followers_count(),
+      to_total_votes_map: user_id_to_total_votes_map(user_id_to_post_ids_map),
+      to_total_comments_map: user_id_to_total_comments_map(user_id_to_post_ids_map)
+    }
 
     # Popular insight authors are authors that have at least one post.
     # Map over the user to votes map as this is the list of only those users
     # who have created an insight. A small
-    user_popularity_score =
-      Enum.map(user_id_to_total_votes_map, fn {user_id, total_votes} ->
-        followers_count = Map.get(user_id_to_followers_count_map, user_id, 0)
-        insights_count = Map.get(user_id_to_post_ids_map, user_id, []) |> length()
-        comments_count = Map.get(user_id_to_total_comments_map, user_id, 0)
-
-        popularity_score =
-          total_votes * 3 +
-            comments_count * 4 +
-            followers_count * 5 +
-            Enum.min([5, insights_count])
+    user_ids =
+      Enum.map(user_id_stats_map.to_total_votes_map, fn {user_id, _total_votes} ->
+        popularity_score = compute_author_popularity_score(user_id, user_id_stats_map)
 
         {user_id, popularity_score}
       end)
       |> Enum.reject(fn {_user_id, score} -> score == 0 end)
       |> Enum.sort_by(fn {_user_id, score} -> score end, :desc)
       |> Enum.take(size)
+      |> Enum.map(fn {user_id, _score} -> user_id end)
 
-    user_ids = Enum.map(user_popularity_score, fn {user_id, _score} -> user_id end)
-
+    # User.by_ids/1 preserves the order of the users as specified in the user_ids list
     User.by_id(user_ids)
   end
 
   # Private functions
+
+  defp compute_author_popularity_score(user_id, %{} = user_id_stats_map) do
+    followers_count = Map.get(user_id_stats_map.to_followers_count_map, user_id, 0)
+    insights_count = Map.get(user_id_stats_map.to_post_ids_map, user_id, []) |> length()
+    comments_count = Map.get(user_id_stats_map.to_total_comments_map, user_id, 0)
+    total_votes = Map.get(user_id_stats_map.to_total_votes_map, user_id, 0)
+
+    total_votes * 3 +
+      comments_count * 4 +
+      followers_count * 5 +
+      Enum.min([5, insights_count])
+  end
 
   defp user_id_to_total_votes_map(user_id_to_post_ids_map) do
     post_id_to_votes_map = Vote.post_id_to_votes()

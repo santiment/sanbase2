@@ -460,13 +460,13 @@ defmodule Sanbase.Entity do
       |> Keyword.put(:include_public_entities, true)
       |> Keyword.put(:include_current_user_entities, true)
 
-    user_id = Keyword.fetch!(opts, :current_user_id)
-    query = Sanbase.Accounts.Interaction.get_user_most_used_query(user_id, entities, opts)
+    query =
+      Keyword.fetch!(opts, :current_user_id)
+      |> Sanbase.Accounts.Interaction.get_user_most_used_query(entities, opts)
 
     where_clause_query =
       Enum.reduce(entities, nil, fn type, query_acc ->
         entity_ids_query = entity_ids_query(type, opts)
-
         entity_type_name = Sanbase.Accounts.Interaction.deduce_entity_column_name(type)
 
         case query_acc do
@@ -485,11 +485,7 @@ defmodule Sanbase.Entity do
         end
       end)
 
-    query =
-      query
-      |> where(^where_clause_query)
-
-    query
+    query |> where(^where_clause_query)
   end
 
   defp most_recent_base_query(entities, opts) when is_list(entities) and entities != [] do
@@ -532,8 +528,7 @@ defmodule Sanbase.Entity do
             entity_query
 
           query_acc ->
-            query_acc
-            |> union(^entity_query)
+            query_acc |> union(^entity_query)
         end
       end)
 

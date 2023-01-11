@@ -43,31 +43,25 @@ defmodule Sanbase.InternalServices.EthNode do
   end
 
   def get_eth_balance(addresses) when is_list(addresses) do
-    Logger.info("[EthNode] Get eth balance for a list of #{length(addresses)} addresses.")
+    Logger.info("[EthNode] Get ETH balance for a list of #{length(addresses)} addresses.")
 
-    addresses = Enum.zip(Stream.iterate(1, &(&1 + 1)), addresses)
+    addresses = Enum.with_index(addresses, 1)
 
-    batch =
-      for {id, address} <- addresses do
-        json_rpc_call("eth_getBalance", [address, "latest"], id)
-      end
-
-    {:ok, %Tesla.Env{status: 200, body: body}} =
-      post(client(), "/", batch, opts: [adapter: [recv_timeout: 25_000]])
-
-    case body do
-      "" ->
+    case get_eth_balance_batch_call(addresses) do
+      {:ok, %Tesla.Env{status: 200, body: ""}} ->
         %{}
 
-      body ->
-        addresses_map = Map.new(addresses)
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
+        id_to_address_map = Map.new(addresses, fn {addr, index} -> {index, addr} end)
 
         body
-        |> Enum.map(fn %{"id" => id, "result" => "0x" <> result} ->
-          {balance, ""} = Integer.parse(result, 16)
-          {Map.get(addresses_map, id), balance / @eth_decimals}
+        |> Enum.map(fn %{"id" => id, "result" => hex_balance} ->
+          {Map.get(id_to_address_map, id), hex_to_eth_balance(hex_balance)}
         end)
         |> Map.new()
+
+      _ ->
+        {:error, "Failed getting ETH balance for a list of addresses"}
     end
   end
 
@@ -76,9 +70,8 @@ defmodule Sanbase.InternalServices.EthNode do
 
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
            execute_json_rpc_call("eth_getBalance", [address, "latest"]),
-         "0x" <> number <- body["result"],
-         {balance, ""} <- Integer.parse(number, 16) do
-      {:ok, balance / @eth_decimals}
+         hex_balance <- body["result"] do
+      {:ok, hex_to_eth_balance(hex_balance)}
     else
       {:ok, %Tesla.Env{status: status, body: body}} ->
         {:error,
@@ -93,6 +86,20 @@ defmodule Sanbase.InternalServices.EthNode do
   end
 
   # Private functions
+
+  defp hex_to_eth_balance("0x" <> hex_balance) do
+    {balance, ""} = Integer.parse(hex_balance, 16)
+    balance / @eth_decimals
+  end
+
+  defp get_eth_balance_batch_call(addresses) do
+    batch =
+      for {address, index} <- addresses do
+        json_rpc_call("eth_getBalance", [address, "latest"], index)
+      end
+
+    post(client(), "/", batch, opts: [adapter: [recv_timeout: 25_000]])
+  end
 
   defp client() do
     parity_url = Config.module_get(__MODULE__, :url)

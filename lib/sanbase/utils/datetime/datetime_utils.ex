@@ -159,6 +159,7 @@ defmodule Sanbase.DateTimeUtils do
     |> str_to_sec()
   end
 
+  # credo:disable-for-next-line
   def str_to_sec(interval) do
     {int_interval, duration_index} =
       case Integer.parse(interval) do

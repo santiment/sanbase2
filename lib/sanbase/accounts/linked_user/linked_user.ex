@@ -39,11 +39,7 @@ defmodule Sanbase.Accounts.LinkedUser do
       {:ok, count_secondaries(primary_user_id)}
     end)
     |> Ecto.Multi.run(:max_secondary_users_count, fn _repo, _changes ->
-      case Sanbase.Billing.Subscription.user_sanbase_plan(primary_user_id) do
-        nil -> {:error, "The user does not have a Sanbase plan."}
-        "PRO" -> {:ok, @pro_max_secondary_users}
-        "PRO_PLUS" -> {:ok, @pro_plus_max_secondary_users}
-      end
+      get_max_secondary_users(primary_user_id)
     end)
     |> Ecto.Multi.run(:add_linked_users, fn _repo, changes ->
       case changes.secondary_users_count < changes.max_secondary_users_count do
@@ -52,7 +48,7 @@ defmodule Sanbase.Accounts.LinkedUser do
 
         false ->
           {:error,
-           "The maximum number of linked secondary users of #{changes.secondary_users_count} has been reached."}
+           "The maximum number of linked secondary users of #{changes.max_secondary_users_count} has been reached."}
       end
     end)
     |> Sanbase.Repo.transaction()
@@ -63,14 +59,14 @@ defmodule Sanbase.Accounts.LinkedUser do
   end
 
   def delete(primary_user_id, secondary_user_id) do
-    lu =
+    linked_user =
       Sanbase.Repo.get_by(__MODULE__,
         primary_user_id: primary_user_id,
         secondary_user_id: secondary_user_id
       )
 
-    case lu do
-      %__MODULE__{} = lu -> Sanbase.Repo.delete(lu)
+    case linked_user do
+      %__MODULE__{} -> Sanbase.Repo.delete(linked_user)
       nil -> {:error, "Users are not linked"}
     end
   end
@@ -129,6 +125,16 @@ defmodule Sanbase.Accounts.LinkedUser do
       |> Sanbase.Repo.delete_all()
 
     :ok
+  end
+
+  # private functions
+
+  defp get_max_secondary_users(user_id) do
+    case Sanbase.Billing.Subscription.user_sanbase_plan(user_id) do
+      nil -> {:error, "The user does not have a Sanbase plan."}
+      "PRO" -> {:ok, @pro_max_secondary_users}
+      "PRO_PLUS" -> {:ok, @pro_plus_max_secondary_users}
+    end
   end
 
   defp count_secondaries(primary_user_id) do

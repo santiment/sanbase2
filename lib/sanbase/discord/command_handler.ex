@@ -688,7 +688,7 @@ defmodule Sanbase.Discord.CommandHandler do
       :manage_channels in Nostrum.Struct.Guild.Member.guild_channel_permissions(
         member,
         guild,
-        discord_user_id
+        channel_id
       )
     end
   end
@@ -701,7 +701,7 @@ defmodule Sanbase.Discord.CommandHandler do
     )
   end
 
-  defp handle_pin_unpin_error(result, action, interaction) do
+  defp handle_pin_unpin_error(result, _action, _interaction) do
     result
   end
 end

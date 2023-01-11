@@ -693,7 +693,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  defp handle_pin_unpin_error(false, _action, _interaction) do
+  defp handle_pin_unpin_error(false, action, interaction) do
     interaction_msg(
       interaction,
       "You don't have enough permissions to #{action} queries, <@#{interaction.user.id}>",
@@ -701,7 +701,7 @@ defmodule Sanbase.Discord.CommandHandler do
     )
   end
 
-  defp handle_pin_unpin_error(result, action, interaction) do
+  defp handle_pin_unpin_error(result, _action, _interaction) do
     result
   end
 end

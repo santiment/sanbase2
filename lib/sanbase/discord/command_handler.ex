@@ -688,12 +688,12 @@ defmodule Sanbase.Discord.CommandHandler do
       :manage_channels in Nostrum.Struct.Guild.Member.guild_channel_permissions(
         member,
         guild,
-        discord_user_id
+        channel_id
       )
     end
   end
 
-  defp handle_pin_unpin_error(false, action, interaction) do
+  defp handle_pin_unpin_error(false, _action, _interaction) do
     interaction_msg(
       interaction,
       "You don't have enough permissions to #{action} queries, <@#{interaction.user.id}>",

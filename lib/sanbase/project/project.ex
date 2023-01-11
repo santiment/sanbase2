@@ -6,7 +6,7 @@ defmodule Sanbase.Project do
 
   alias __MODULE__
   alias Sanbase.Repo
-  alias Sanbase.{ProjectEthAddress, ProjectBtcAddress}
+  alias Sanbase.ProjectEthAddress
 
   alias Sanbase.Model.{
     Ico,
@@ -50,7 +50,6 @@ defmodule Sanbase.Project do
 
     has_one(:social_volume_query, Project.SocialVolumeQuery)
 
-    has_many(:btc_addresses, ProjectBtcAddress)
     has_many(:chart_configurations, Sanbase.Chart.Configuration, on_delete: :delete_all)
     has_many(:contract_addresses, Project.ContractAddress)
     has_many(:eth_addresses, ProjectEthAddress)

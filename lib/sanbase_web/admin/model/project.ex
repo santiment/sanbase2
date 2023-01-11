@@ -102,20 +102,6 @@ defmodule SanbaseWeb.ExAdmin.Project do
         end
       end
 
-      panel "BTC Addresses" do
-        markup_contents do
-          a ".btn .btn-primary",
-            href: "/admin/project_btc_addresses/new?project_id=" <> to_string(project.id) do
-            "New BTC Address"
-          end
-        end
-
-        table_for project.btc_addresses do
-          column(:id, link: true)
-          column(:address)
-        end
-      end
-
       panel "ICO Events" do
         markup_contents do
           a ".btn .btn-primary", href: "/admin/icos/new?project_id=" <> to_string(project.id) do

@@ -6,7 +6,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.Accounts.{User, UserSettings, Role, UserRole, EmailLoginAttempt}
   alias Sanbase.Insight.Post
   alias Sanbase.Comment
-  alias Sanbase.{Project, ProjectEthAddress, ProjectBtcAddress}
+  alias Sanbase.{Project, ProjectEthAddress}
 
   alias Sanbase.Model.{
     Infrastructure,
@@ -338,14 +338,6 @@ defmodule Sanbase.Factory do
   def project_eth_address_factory() do
     %ProjectEthAddress{
       address: "0x" <> (:crypto.strong_rand_bytes(16) |> Base.encode16()),
-      source: "",
-      comments: ""
-    }
-  end
-
-  def project_btc_address_factory() do
-    %ProjectBtcAddress{
-      address: :crypto.strong_rand_bytes(16) |> Base.encode16(),
       source: "",
       comments: ""
     }

@@ -49,9 +49,7 @@ defmodule SanbaseWeb.AccountsController do
   def callback(%{assigns: %{ueberauth_auth: %{provider: :twitter} = auth}} = conn, params) do
     redirect_urls = get_redirect_urls(params)
     device_data = SanbaseWeb.Guardian.device_data(conn)
-
-    twitter_id = auth.uid
-    email = auth.info.email
+    %{uid: twitter_id, info: %{email: email}} = auth
     origin_url = Plug.Conn.get_req_header(conn, "host") |> List.first()
     args = %{login_origin: :twitter, origin_url: origin_url}
 

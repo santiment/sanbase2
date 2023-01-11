@@ -314,9 +314,9 @@ defmodule Sanbase.Dashboard.Schema do
     from(conf in __MODULE__, where: conf.is_deleted != true)
   end
 
-  defp handle_panel_action_transaction_result(result, action, panel_id)
+  defp handle_panel_action_transaction_result(result_tuple, action, panel_id)
        when action in [:create_panel, :update_panel, :remove_panel] do
-    case result do
+    case result_tuple do
       # In case of :remove_panel, the result already contains the panel and dashboard.
       # This is because the panel cannot be found with Enum.find as it's already
       # removed from the panels list.
@@ -325,7 +325,6 @@ defmodule Sanbase.Dashboard.Schema do
 
       {:ok, %{^action => %__MODULE__{} = dashboard}} ->
         panel = Enum.find(dashboard.panels, &(&1.id == panel_id))
-
         {:ok, %{dashboard: dashboard, panel: panel}}
 
       {:error, _failed_op, %Ecto.Changeset{} = changeset, _changes} ->

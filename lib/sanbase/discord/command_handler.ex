@@ -12,6 +12,7 @@ defmodule Sanbase.Discord.CommandHandler do
   @prefix "!q"
   @mock_role_id 1
   @max_size 1800
+  @ephemeral_message_flags 64
 
   def is_command?(content) do
     String.starts_with?(content, @prefix)
@@ -106,7 +107,8 @@ defmodule Sanbase.Discord.CommandHandler do
       type: 4,
       data: %{
         content: "",
-        embeds: [embed]
+        embeds: [embed],
+        flags: @ephemeral_message_flags
       }
     }
 
@@ -182,15 +184,19 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   def handle_interaction("pin", interaction, panel_id) do
-    with {:ok, dd} <- DiscordDashboard.pin(panel_id) do
+    with true <- can_manage_channel?(interaction),
+         {:ok, dd} <- DiscordDashboard.pin(panel_id) do
       interaction_msg(interaction, "<@#{interaction.user.id}> pinned #{dd.name}")
     end
+    |> handle_pin_unpin_error("pin", interaction)
   end
 
   def handle_interaction("unpin", interaction, panel_id) do
-    with {:ok, dd} <- DiscordDashboard.unpin(panel_id) do
+    with true <- can_manage_channel?(interaction),
+         {:ok, dd} <- DiscordDashboard.unpin(panel_id) do
       interaction_msg(interaction, "<@#{interaction.user.id}> unpinned #{dd.name}")
     end
+    |> handle_pin_unpin_error("unpin", interaction)
   end
 
   def handle_interaction("show", interaction, panel_id) do
@@ -205,14 +211,22 @@ defmodule Sanbase.Discord.CommandHandler do
       ```
       """
 
-      interaction_msg(interaction, content)
+      interaction_msg(interaction, content, %{flags: @ephemeral_message_flags})
     else
-      _ -> interaction_msg(interaction, "Query is removed from our database")
+      _ ->
+        interaction_msg(interaction, "Query is removed from our database", %{
+          flags: @ephemeral_message_flags
+        })
     end
   end
 
   def handle_command("run", name, sql, msg) do
-    {:ok, loading_msg} = Api.create_message(msg.channel_id, content: "Your query is running ...")
+    {:ok, loading_msg} =
+      Api.create_message(
+        msg.channel_id,
+        content: "Your query is running ...",
+        message_reference: %{message_id: msg.id}
+      )
 
     args = get_additional_info_msg(msg)
 
@@ -252,12 +266,16 @@ defmodule Sanbase.Discord.CommandHandler do
     \\`\\`\\`
     """
 
-    Nostrum.Api.create_message(msg.channel_id, content: content)
+    Nostrum.Api.create_message(msg.channel_id,
+      content: content,
+      message_reference: %{message_id: msg.id}
+    )
   end
 
   def handle_command("invalid_command", msg) do
     Nostrum.Api.create_message(msg.channel_id,
-      content: "<:bangbang:1045078993604452465> Invalid command entered!"
+      content: "<:bangbang:1045078993604452465> Invalid command entered!",
+      message_reference: %{message_id: msg.id}
     )
   end
 
@@ -413,38 +431,33 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   defp interaction_ack(interaction) do
-    Nostrum.Api.create_interaction_response(interaction, %{type: 5})
+    Nostrum.Api.create_interaction_response(interaction, %{
+      type: 5,
+      data: %{flags: @ephemeral_message_flags}
+    })
   end
 
-  defp interaction_msg(interaction, content) do
-    data = %{
-      type: 4,
-      data: %{
-        content: content
-      }
-    }
-
-    Nostrum.Api.create_interaction_response(interaction, data)
+  defp interaction_msg(interaction, content, opts \\ %{}) do
+    Nostrum.Api.create_interaction_response(
+      interaction,
+      interaction_message_response(content, opts)
+    )
   end
 
-  defp interaction_message_response(content) do
-    %{
-      type: 4,
-      data: %{
-        content: content
-      }
-    }
+  defp interaction_message_response(content, opts \\ %{}) do
+    data = %{content: content} |> Map.merge(opts)
+    %{type: 4, data: data}
   end
 
   def edit_interaction_response(interaction, content) do
     Nostrum.Api.edit_interaction_response(interaction, %{content: content})
   end
 
-  def edit_interaction_response(interaction, content, components) do
+  defp edit_interaction_response(interaction, content, components) do
     Nostrum.Api.edit_interaction_response(interaction, %{content: content, components: components})
   end
 
-  def edit_interaction_response(interaction, content, components, embeds) do
+  defp edit_interaction_response(interaction, content, components, embeds) do
     Nostrum.Api.edit_interaction_response(interaction, %{
       content: content,
       components: components,
@@ -574,7 +587,7 @@ defmodule Sanbase.Discord.CommandHandler do
     |> ActionRow.append(pin_unpin_button)
   end
 
-  def create_chart_embed(exec_result, dd, panel_id) do
+  defp create_chart_embed(exec_result, dd, panel_id) do
     dt_idx =
       Enum.find_index(exec_result.column_types, fn c ->
         c in ~w(Date DateTime Date32 DateTime64)
@@ -640,11 +653,11 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def to_csv(exec_result) do
+  defp to_csv(exec_result) do
     NimbleCSV.RFC4180.dump_to_iodata([exec_result.columns | exec_result.rows])
   end
 
-  def img_prefix_url() do
+  defp img_prefix_url() do
     case Config.module_get(Sanbase, :deployment_env) do
       "stage" -> "preview-stage.santiment.net"
       "dev" -> "preview-stage.santiment.net"
@@ -652,7 +665,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def is_image?(response) do
+  defp is_image?(response) do
     content_type =
       response.headers
       |> Enum.into(%{})
@@ -663,5 +676,32 @@ defmodule Sanbase.Discord.CommandHandler do
 
   defp sanbase_bot_id() do
     Sanbase.Repo.get_by(User, email: User.sanbase_bot_email()).id
+  end
+
+  defp can_manage_channel?(%Nostrum.Struct.Interaction{
+         user: %{id: discord_user_id},
+         guild_id: guild_id,
+         channel_id: channel_id
+       }) do
+    with {:ok, guild} <- Nostrum.Cache.GuildCache.get(guild_id),
+         {:ok, member} <- Nostrum.Api.get_guild_member(guild_id, discord_user_id) do
+      :manage_channels in Nostrum.Struct.Guild.Member.guild_channel_permissions(
+        member,
+        guild,
+        discord_user_id
+      )
+    end
+  end
+
+  defp handle_pin_unpin_error(false, action, interaction) do
+    interaction_msg(
+      interaction,
+      "You don't have enough permissions to #{action} queries, <@#{interaction.user.id}>",
+      %{flags: @ephemeral_message_flags}
+    )
+  end
+
+  defp handle_pin_unpin_error(result, action, interaction) do
+    result
   end
 end

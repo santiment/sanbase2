@@ -17,7 +17,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     UserListResolver,
     UserResolver,
     UserSettingsResolver,
-    UserTriggerResolver
+    UserTriggerResolver,
+    SanbaseNftResolver
   }
 
   enum :user_role do

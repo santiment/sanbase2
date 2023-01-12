@@ -2,6 +2,10 @@ defmodule Sanbase.SmartContracts.SanbaseNft do
   import Sanbase.SmartContracts.Utils,
     only: [call_contract: 4, format_address: 1]
 
+  require Logger
+
+  alias Sanbase.Utils.Config
+
   @contract "0x7f985e8ad29438907a2cc8ff3d526d9a1693442c"
   @json_file "sanbase_nft_abi.json"
   @external_resource json_file = Path.join(__DIR__, @json_file)
@@ -50,11 +54,45 @@ defmodule Sanbase.SmartContracts.SanbaseNft do
   end
 
   def execute(function_name, args) do
-    call_contract(
-      @contract,
-      function_abi(function_name),
-      args,
-      function_abi(function_name).returns
-    )
+    contract_call = fn ->
+      call_contract(
+        @contract,
+        function_abi(function_name),
+        args,
+        function_abi(function_name).returns
+      )
+    end
+
+    maybe_replace_goerly(contract_call)
+  end
+
+  defp maybe_replace_goerly(func) do
+    maybe_put_goerly_url()
+
+    try do
+      func.()
+    rescue
+      e ->
+        Logger.error("Error occurred while executing smart contract call: #{inspect(e)}")
+        {:error, "Error occurred while executing smart contract call."}
+    after
+      maybe_put_eth_mainnet_url()
+    end
+  end
+
+  defp maybe_put_goerly_url() do
+    if is_dev_or_stage?() do
+      Application.put_env(:ethereumex, :url, System.get_env("GOERLY_URL"))
+    end
+  end
+
+  defp maybe_put_eth_mainnet_url() do
+    if is_dev_or_stage?() do
+      Application.put_env(:ethereumex, :url, System.get_env("PARITY_URL"))
+    end
+  end
+
+  defp is_dev_or_stage?() do
+    Config.module_get(Sanbase, :deployment_env) in ["dev", "stage"]
   end
 end

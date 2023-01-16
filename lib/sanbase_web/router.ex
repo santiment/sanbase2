@@ -42,9 +42,9 @@ defmodule SanbaseWeb.Router do
   scope "/auth", SanbaseWeb do
     pipe_through(:browser)
 
-    get("/delete", AccountsController, :delete)
-    get("/:provider", AccountsController, :request)
-    get("/:provider/callback", AccountsController, :callback)
+    get("/delete", AuthController, :delete)
+    get("/:provider", AuthController, :request)
+    get("/:provider/callback", AuthController, :callback)
   end
 
   scope "/admin", ExAdmin do

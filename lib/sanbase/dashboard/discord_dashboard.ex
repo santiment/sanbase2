@@ -111,7 +111,7 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
   def execute(user_id, panel_id) do
     with %__MODULE__{dashboard_id: dashboard_id} = dd <- by_panel_id(panel_id),
          {:ok, result} <-
-           Dashboard.compute_and_store_panel(dashboard_id, panel_id, user_id) do
+           Dashboard.compute_and_store_panel(dashboard_id, panel_id, query_metadata(dd, user_id)) do
       {:ok, result, dd.dashboard, dashboard_id}
     else
       {:error, reason} -> {:execution_error, reason}
@@ -125,11 +125,20 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
 
     with {:ok, dashboard} <- Dashboard.create(%{name: params.name, is_public: true}, user_id),
          {:ok, %{panel: panel}} <- Dashboard.create_panel(dashboard.id, create_panel_args),
-         {:ok, %__MODULE__{}} <-
+         {:ok, %__MODULE__{} = dd} <-
            do_create(Map.merge(args, %{dashboard_id: dashboard.id, panel_id: panel.id})),
          {:ok, result} <-
-           Dashboard.compute_and_store_panel(dashboard.id, panel.id, user_id) do
+           Dashboard.compute_and_store_panel(dashboard.id, panel.id, query_metadata(dd, user_id)) do
       {:ok, result, dashboard, panel.id}
     end
+  end
+
+  defp query_metadata(dd, user_id) do
+    %{
+      sanbase_user_id: user_id,
+      discord_guild: dd.guild,
+      discord_channel: dd.channel,
+      discord_user: dd.discord_user_handle
+    }
   end
 end

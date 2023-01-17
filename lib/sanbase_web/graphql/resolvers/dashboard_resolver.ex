@@ -74,7 +74,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
     with true <- can_view_dashboard?(dashboard_id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_panel(dashboard_id, panel_id, user.id)
+      Dashboard.compute_panel(dashboard_id, panel_id, %{sanbase_user_id: user.id})
     end
   end
 
@@ -83,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     # storing requires edit access, not just view access
     with true <- is_dashboard_owner?(dashboard_id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_and_store_panel(dashboard_id, panel_id, user.id)
+      Dashboard.compute_and_store_panel(dashboard_id, panel_id, %{sanbase_user_id: user.id})
     end
   end
 
@@ -168,7 +168,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     with true <- can_run_computation?(user.id),
          true <- Dashboard.Query.valid_sql?(args),
          {:ok, query_result} <-
-           Dashboard.Query.run(args.query, args.parameters, user.id) do
+           Dashboard.Query.run(args.query, args.parameters, %{sanbase_user_id: user.id}) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Dashboard.QueryExecution.store_execution(user.id, query_result)
       end)

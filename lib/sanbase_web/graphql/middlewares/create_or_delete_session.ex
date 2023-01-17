@@ -12,7 +12,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.CreateOrDeleteSession do
     Map.update!(resolution, :context, fn context ->
       context
       |> Map.put(:create_session, true)
-      |> Map.put(:auth_token, access_token)
       |> Map.put(:access_token, access_token)
       |> Map.put(:refresh_token, refresh_token)
     end)

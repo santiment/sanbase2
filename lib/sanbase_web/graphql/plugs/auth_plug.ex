@@ -120,7 +120,6 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
 
       access_token ->
         conn
-        |> put_session(:auth_token, access_token)
         |> put_session(:access_token, access_token)
     end
   end
@@ -176,11 +175,8 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
     end
   end
 
-  # TODO: After these changes, the session will now also contain `access_token`
-  # insted of only `auth_token`, which is better named and should be used. This
-  # is a process of authentication, not authentication
   def jwt_access_token_authentication(%Plug.Conn{} = conn) do
-    access_token = get_session(conn, :access_token) || get_session(conn, :auth_token)
+    access_token = get_session(conn, :access_token)
 
     case access_token && bearer_authenticate(conn, access_token) do
       {:ok, %{current_user: current_user} = map} ->

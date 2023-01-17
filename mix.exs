@@ -44,16 +44,15 @@ defmodule Sanbase.Mixfile do
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
 
-  # local_dev/ dir is used for local development and is excluded from source control
-  defp elixirc_paths(:dev) do
+  defp elixirc_paths(mix_env) when mix_env in [:dev, :test] do
     case System.get_env("ENABLE_EXADMIN_DASHBOARDS", "false") do
       "true" ->
-        ["lib", "local_dev", "test/support"]
+        ["lib", "test/support"]
 
       "false" ->
         web_without_admin = Path.wildcard("lib/sanbase_web/*") -- ["lib/sanbase_web/admin"]
 
-        ["lib/sanbase", "lib/mix", "lib/sheets_templates"] ++ web_without_admin
+        ["lib/sanbase", "test/support", "lib/mix", "lib/sheets_templates"] ++ web_without_admin
     end
   end
 

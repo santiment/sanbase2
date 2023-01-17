@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
 
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
@@ -23,8 +22,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
       contract: "ETH",
       token_decimals: 18,
       interval: "1d",
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-03T00:00:00Z"),
+      from: ~U[2019-01-01 00:00:00Z],
+      to: ~U[2019-01-03 00:00:00Z],
       number_of_holders: 10
     ]
   end
@@ -38,13 +37,13 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
              in_exchanges: 7.6,
              outside_exchanges: 5.2,
              in_top_holders_total: 12.8,
-             datetime: from_iso8601!("2019-01-01T00:00:00Z")
+             datetime: ~U[2019-01-01 00:00:00Z]
            },
            %{
              in_exchanges: 7.1,
              outside_exchanges: 5.1,
              in_top_holders_total: 12.2,
-             datetime: from_iso8601!("2019-01-02T00:00:00Z")
+             datetime: ~U[2019-01-02 00:00:00Z]
            }
          ]}
       end do

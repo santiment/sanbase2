@@ -2,7 +2,6 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
   use Sanbase.DataCase
 
   import Sanbase.Factory
-  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
   alias Sanbase.SocialData.TrendingWords
 
@@ -10,39 +9,33 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
   setup do
     [
-      dt1_str: "2019-01-01T00:00:00Z",
-      dt2_str: "2019-01-02T00:00:00Z",
-      dt3_str: "2019-01-03T00:00:00Z"
+      dt1: ~U[2019-01-01 00:00:00Z],
+      dt2: ~U[2019-01-02 00:00:00Z],
+      dt3: ~U[2019-01-03 00:00:00Z]
     ]
   end
 
   describe "get trending words for time interval" do
     test "clickhouse returns data", context do
-      %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
-      rows = trending_words_rows(dt1_str, dt2_str, dt3_str)
+      %{dt1: dt1, dt2: dt2, dt3: dt3} = context
+      rows = trending_words_rows(dt1, dt2, dt3)
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
-          TrendingWords.get_trending_words(
-            from_iso8601!(dt1_str),
-            from_iso8601!(dt3_str),
-            "1d",
-            2
-          )
+        result = TrendingWords.get_trending_words(dt1, dt3, "1d", 2)
 
         assert result ==
                  {:ok,
                   %{
-                    from_iso8601!(dt1_str) => [
+                    dt1 => [
                       %{score: 5, word: "ethereum"},
                       %{score: 10, word: "bitcoin"}
                     ],
-                    from_iso8601!(dt2_str) => [
+                    dt2 => [
                       %{score: 70, word: "boom"},
                       %{score: 2, word: "san"}
                     ],
-                    from_iso8601!(dt3_str) => [
+                    dt3 => [
                       %{score: 2, word: "xrp"},
                       %{score: 1, word: "eth"}
                     ]
@@ -51,17 +44,11 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     end
 
     test "clickhouse returns error", context do
-      %{dt1_str: dt1_str, dt3_str: dt3_str} = context
+      %{dt1: dt1, dt3: dt3} = context
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        {:error, error} =
-          TrendingWords.get_trending_words(
-            from_iso8601!(dt1_str),
-            from_iso8601!(dt3_str),
-            "1d",
-            2
-          )
+        {:error, error} = TrendingWords.get_trending_words(dt1, dt3, "1d", 2)
 
         assert error =~ "Cannot execute database query."
       end)
@@ -70,8 +57,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
   describe "get currently trending words" do
     test "clickhouse returns data", context do
-      %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
-      rows = trending_words_rows(dt1_str, dt2_str, dt3_str)
+      %{dt1: dt1, dt2: dt2, dt3: dt3} = context
+      rows = trending_words_rows(dt1, dt2, dt3)
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -93,42 +80,28 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
   describe "get word trending history stats" do
     test "clickhouse returns data", context do
-      %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
-      rows = word_trending_history_rows(dt1_str, dt2_str, dt3_str)
+      %{dt1: dt1, dt2: dt2, dt3: dt3} = context
+      rows = word_trending_history_rows(dt1, dt2, dt3)
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
-          TrendingWords.get_word_trending_history(
-            "word",
-            from_iso8601!(dt1_str),
-            from_iso8601!(dt3_str),
-            "1d",
-            10
-          )
+        result = TrendingWords.get_word_trending_history("word", dt1, dt3, "1d", 10)
 
         assert result ==
                  {:ok,
                   [
-                    %{datetime: from_iso8601!(dt1_str), position: 10},
-                    %{datetime: from_iso8601!(dt2_str), position: 1}
+                    %{datetime: dt1, position: 10},
+                    %{datetime: dt2, position: 1}
                   ]}
       end)
     end
 
     test "clickhouse returns error", context do
-      %{dt1_str: dt1_str, dt2_str: dt2_str} = context
+      %{dt1: dt1, dt2: dt2} = context
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        {:error, error} =
-          TrendingWords.get_word_trending_history(
-            "word",
-            from_iso8601!(dt1_str),
-            from_iso8601!(dt2_str),
-            "1h",
-            10
-          )
+        {:error, error} = TrendingWords.get_word_trending_history("word", dt1, dt2, "1h", 10)
 
         assert error =~ "Cannot execute database query."
       end)
@@ -137,75 +110,62 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
   describe "get project trending history stats" do
     test "clickhouse returns data", context do
-      %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
+      %{dt1: dt1, dt2: dt2, dt3: dt3} = context
 
       project = insert(:random_project)
-      rows = project_trending_history_rows(dt1_str, dt2_str, dt3_str)
+      rows = project_trending_history_rows(dt1, dt2, dt3)
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
-          TrendingWords.get_project_trending_history(
-            project.slug,
-            from_iso8601!(dt1_str),
-            from_iso8601!(dt3_str),
-            "1d",
-            10
-          )
+        result = TrendingWords.get_project_trending_history(project.slug, dt1, dt3, "1d", 10)
 
         assert result ==
                  {:ok,
                   [
-                    %{datetime: from_iso8601!(dt1_str), position: 5},
-                    %{datetime: from_iso8601!(dt3_str), position: 10}
+                    %{datetime: dt1, position: 5},
+                    %{datetime: dt3, position: 10}
                   ]}
       end)
     end
 
     test "clickhouse returns error", context do
-      %{dt1_str: dt1_str, dt2_str: dt2_str} = context
+      %{dt1: dt1, dt2: dt2} = context
       project = insert(:random_project)
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:error, error} =
-          TrendingWords.get_project_trending_history(
-            project.slug,
-            from_iso8601!(dt1_str),
-            from_iso8601!(dt2_str),
-            "1h",
-            10
-          )
+          TrendingWords.get_project_trending_history(project.slug, dt1, dt2, "1h", 10)
 
         assert error =~ "Cannot execute database query."
       end)
     end
   end
 
-  defp word_trending_history_rows(dt1_str, dt2_str, dt3_str) do
+  defp word_trending_history_rows(dt1, dt2, dt3) do
     [
-      [from_iso8601_to_unix!(dt1_str), 10],
-      [from_iso8601_to_unix!(dt2_str), 1],
-      [from_iso8601_to_unix!(dt3_str), 0]
+      [DateTime.to_unix(dt1), 10],
+      [DateTime.to_unix(dt2), 1],
+      [DateTime.to_unix(dt3), 0]
     ]
   end
 
-  defp project_trending_history_rows(dt1_str, dt2_str, dt3_str) do
+  defp project_trending_history_rows(dt1, dt2, dt3) do
     [
-      [from_iso8601_to_unix!(dt1_str), 5],
-      [from_iso8601_to_unix!(dt2_str), 0],
-      [from_iso8601_to_unix!(dt3_str), 10]
+      [DateTime.to_unix(dt1), 5],
+      [DateTime.to_unix(dt2), 0],
+      [DateTime.to_unix(dt3), 10]
     ]
   end
 
-  defp trending_words_rows(dt1_str, dt2_str, dt3_str) do
+  defp trending_words_rows(dt1, dt2, dt3) do
     [
-      [from_iso8601_to_unix!(dt1_str), "bitcoin", nil, 10],
-      [from_iso8601_to_unix!(dt1_str), "ethereum", nil, 5],
-      [from_iso8601_to_unix!(dt2_str), "san", nil, 2],
-      [from_iso8601_to_unix!(dt2_str), "boom", nil, 70],
-      [from_iso8601_to_unix!(dt3_str), "eth", nil, 1],
-      [from_iso8601_to_unix!(dt3_str), "xrp", nil, 2]
+      [DateTime.to_unix(dt1), "bitcoin", nil, 10],
+      [DateTime.to_unix(dt1), "ethereum", nil, 5],
+      [DateTime.to_unix(dt2), "san", nil, 2],
+      [DateTime.to_unix(dt2), "boom", nil, 70],
+      [DateTime.to_unix(dt3), "eth", nil, 1],
+      [DateTime.to_unix(dt3), "xrp", nil, 2]
     ]
   end
 end

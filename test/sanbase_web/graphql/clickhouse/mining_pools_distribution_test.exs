@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
 
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
@@ -18,8 +17,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
     [
       conn: conn,
       slug: "ethereum",
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-03T00:00:00Z"),
+      from: ~U[2019-01-01 00:00:00Z],
+      to: ~U[2019-01-03 00:00:00Z],
       interval: "1d"
     ]
   end
@@ -47,13 +46,13 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
              top3: 0.1,
              top10: 0.4,
              other: 0.5,
-             datetime: from_iso8601!("2019-01-01T00:00:00Z")
+             datetime: ~U[2019-01-01 00:00:00Z]
            },
            %{
              top3: 0.2,
              top10: 0.3,
              other: 0.5,
-             datetime: from_iso8601!("2019-01-02T00:00:00Z")
+             datetime: ~U[2019-01-02 00:00:00Z]
            }
          ]}
       end do

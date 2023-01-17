@@ -72,7 +72,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
         %{
           score: 3725.6617392595313,
           source: :telegram,
-          datetime: DateTimeUtils.from_iso8601!("2019-01-10T08:00:00Z")
+          datetime: ~U[2019-01-10T08:00:00Z]
         }
       ]
 
@@ -127,7 +127,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
 
       success_response = [
         %{
-          datetime: DateTimeUtils.from_iso8601!("2019-03-15T13:00:00Z"),
+          datetime: ~U[2019-03-15 13:00:00Z],
           projects: [
             %{
               change: 137.13186813186815,
@@ -202,7 +202,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       success_response = [
         %{
           change: 12.709016393442624,
-          datetime: DateTimeUtils.from_iso8601!("2019-03-15T15:00:00Z"),
+          datetime: ~U[2019-03-15 15:00:00Z],
           status: :gainer
         }
       ]

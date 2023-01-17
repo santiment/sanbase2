@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
   import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   setup do
     user = insert(:user)
@@ -13,24 +12,24 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
   end
 
   test "api call data module returns data", context do
-    dt1_str = "2019-01-01T00:00:00Z"
-    dt2_str = "2019-01-02T00:00:00Z"
-    dt3_str = "2019-01-03T00:00:00Z"
+    dt1 = ~U[2019-01-01 00:00:00Z]
+    dt2 = ~U[2019-01-02 00:00:00Z]
+    dt3 = ~U[2019-01-03 00:00:00Z]
 
     with_mock Sanbase.Clickhouse.ApiCallData,
       api_call_history: fn _, _, _, _, _ ->
         {:ok,
          [
-           %{datetime: from_iso8601!(dt1_str), api_calls_count: 400},
-           %{datetime: from_iso8601!(dt2_str), api_calls_count: 100},
-           %{datetime: from_iso8601!(dt3_str), api_calls_count: 200}
+           %{datetime: dt1, api_calls_count: 400},
+           %{datetime: dt2, api_calls_count: 100},
+           %{datetime: dt3, api_calls_count: 200}
          ]}
       end do
       result =
         fetch_user_api_calls_count(
           context.conn,
-          from_iso8601!(dt1_str),
-          from_iso8601!(dt3_str),
+          dt1,
+          dt3,
           "1d"
         )
 
@@ -60,8 +59,8 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
   end
 
   test "api call data module returns empty list", context do
-    dt1_str = "2019-01-01T00:00:00Z"
-    dt2_str = "2019-01-03T00:00:00Z"
+    dt1 = ~U[2019-01-01 00:00:00Z]
+    dt2 = ~U[2019-01-03 00:00:00Z]
 
     with_mock Sanbase.Clickhouse.ApiCallData,
       api_call_history: fn _, _, _, _, _ ->
@@ -70,8 +69,8 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
       result =
         fetch_user_api_calls_count(
           context.conn,
-          from_iso8601!(dt1_str),
-          from_iso8601!(dt2_str),
+          dt1,
+          dt2,
           "1d"
         )
 
@@ -88,8 +87,8 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
   end
 
   test "api call data module returns error", context do
-    dt1_str = "2019-01-01T00:00:00Z"
-    dt2_str = "2019-01-03T00:00:00Z"
+    dt1 = ~U[2019-01-01 00:00:00Z]
+    dt2 = ~U[2019-01-03 00:00:00Z]
 
     with_mock Sanbase.Clickhouse.ApiCallData,
       api_call_history: fn _, _, _, _, _ ->
@@ -98,8 +97,8 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
       result =
         fetch_user_api_calls_count(
           context.conn,
-          from_iso8601!(dt1_str),
-          from_iso8601!(dt2_str),
+          dt1,
+          dt2,
           "1d"
         )
 

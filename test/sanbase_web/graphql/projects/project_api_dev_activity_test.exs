@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiDevActivityTest do
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   alias Sanbase.Project
   alias Sanbase.Clickhouse.Github
 
@@ -21,9 +20,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiDevActivityTest do
         github_organizations: []
       })
 
-    dt1 = "2019-01-01T00:00:00Z" |> from_iso8601!()
-    dt2 = "2019-01-02T00:00:00Z" |> from_iso8601!()
-    dt3 = "2019-01-03T00:00:00Z" |> from_iso8601!()
+    dt1 = ~U[2019-01-01 00:00:00Z]
+    dt2 = ~U[2019-01-02 00:00:00Z]
+    dt3 = ~U[2019-01-03 00:00:00Z]
 
     [project1: project1, project2: project2, project3: project3, dt1: dt1, dt2: dt2, dt3: dt3]
   end

@@ -33,7 +33,8 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       assert login_data["user"]["firstLogin"] == true
       assert login_data["user"]["email"] == user.email
 
-      assert login_data["token"] == result.private.plug_session["auth_token"]
+      assert login_data["token"] == result.private.plug_session["access_token"]
+
       # Assert that now() and validated_at do not differ by more than 2 seconds
       assert Sanbase.TestUtils.datetime_close_to(
                Timex.now(),

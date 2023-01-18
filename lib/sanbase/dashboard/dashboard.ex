@@ -116,13 +116,13 @@ defmodule Sanbase.Dashboard do
   @doc ~s"""
   Trigger computation of a single panel of the dashboard
   """
-  @spec compute_panel(dashboard_id(), panel_id(), user_id()) ::
+  @spec compute_panel(dashboard_id(), panel_id(), map()) ::
           {:ok, Dashboard.Query.Result.t()} | {:error, String.t()}
-  def compute_panel(dashboard_id, panel_id, querying_user_id) do
+  def compute_panel(dashboard_id, panel_id, query_metadata) do
     with {:ok, dashboard} <- Dashboard.Schema.by_id(dashboard_id),
-         {:ok, query_result} <- do_compute_panel(dashboard, panel_id, querying_user_id) do
+         {:ok, query_result} <- do_compute_panel(dashboard, panel_id, query_metadata) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-        Dashboard.QueryExecution.store_execution(querying_user_id, query_result)
+        Dashboard.QueryExecution.store_execution(query_metadata.sanbase_user_id, query_result)
       end)
 
       {:ok,
@@ -140,14 +140,14 @@ defmodule Sanbase.Dashboard do
   This function should be called by the dashboard owner as it will change
   this dashboard's cache.
   """
-  @spec compute_and_store_panel(dashboard_id(), panel_id(), user_id()) ::
+  @spec compute_and_store_panel(dashboard_id(), panel_id(), map()) ::
           {:ok, Dashboard.Cache.t()} | {:error, any()}
-  def compute_and_store_panel(dashboard_id, panel_id, querying_user_id) do
+  def compute_and_store_panel(dashboard_id, panel_id, query_metadata) do
     with {:ok, dashboard} <- Dashboard.Schema.by_id(dashboard_id),
-         {:ok, query_result} <- do_compute_panel(dashboard, panel_id, querying_user_id),
+         {:ok, query_result} <- do_compute_panel(dashboard, panel_id, query_metadata),
          {:ok, _} <- Dashboard.Cache.update_panel_cache(dashboard_id, panel_id, query_result) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-        Dashboard.QueryExecution.store_execution(querying_user_id, query_result)
+        Dashboard.QueryExecution.store_execution(query_metadata.sanbase_user_id, query_result)
       end)
 
       panel_cache =
@@ -179,13 +179,13 @@ defmodule Sanbase.Dashboard do
   end
 
   # Compute the dashboard by computing every panel in it.
-  defp do_compute_panel(%Dashboard.Schema{} = dashboard, panel_id, querying_user_id) do
+  defp do_compute_panel(%Dashboard.Schema{} = dashboard, panel_id, query_metadata) do
     case Enum.find(dashboard.panels, &(&1.id == panel_id)) do
       nil ->
         {:error, "Dashboard #{dashboard.id} does not have a panel with id #{panel_id}"}
 
       panel ->
-        Sanbase.Dashboard.Panel.compute(panel, dashboard, querying_user_id)
+        Sanbase.Dashboard.Panel.compute(panel, dashboard, query_metadata)
     end
   end
 end

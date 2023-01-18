@@ -105,12 +105,12 @@ defmodule Sanbase.Dashboard.Panel do
   The SQL query and arguments are taken from the panel and are executed.
   The result is transformed by converting the Date and NaiveDateTime types to DateTime.
   """
-  @spec compute(t(), Dashboard.Schema.t(), non_neg_integer()) ::
+  @spec compute(t(), Dashboard.Schema.t(), map()) ::
           {:ok, Query.Result.t()} | {:error, String.t()}
-  def compute(%__MODULE__{} = panel, dashboard, querying_user_id) do
+  def compute(%__MODULE__{} = panel, dashboard, query_metadata) do
     %{sql: %{"query" => query, "parameters" => parameters}} = panel
     parameters = Map.merge(parameters, dashboard.parameters)
 
-    Query.run(query, parameters, querying_user_id)
+    Query.run(query, parameters, query_metadata)
   end
 end

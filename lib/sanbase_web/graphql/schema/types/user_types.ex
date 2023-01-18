@@ -210,8 +210,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&BillingResolver.san_credit_balance/3)
     end
 
-    field :has_valid_sanbase_nft, :boolean do
-      resolve(&SanbaseNftResolver.has_valid_sanbase_nft/3)
+    field :sanbase_nft, :sanbase_nft do
+      resolve(&SanbaseNftResolver.sanbase_nft/3)
     end
 
     @desc ~s"""
@@ -278,6 +278,17 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   object :api_call_data do
     field(:datetime, non_null(:datetime))
     field(:api_calls_count, non_null(:integer))
+  end
+
+  object :sanbase_nft do
+    field(:has_valid_nft, non_null(:boolean))
+    field(:nft_count, non_null(:integer))
+    field(:nft_data, non_null(list_of(:nft_data)))
+  end
+
+  object :nft_data do
+    field(:address, :string)
+    field(:token_ids, list_of(:integer))
   end
 
   @desc ~s"""

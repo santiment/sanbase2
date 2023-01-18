@@ -1,3 +1,37 @@
+defmodule Sanbase.SmartContracts.SanbaseNftInterface do
+  def nft_subscriptions(user) do
+    user = Sanbase.Repo.preload(user, :eth_accounts)
+
+    nft_data =
+      user.eth_accounts
+      |> Enum.map(fn ea ->
+        address = String.downcase(ea.address)
+
+        %{
+          address: address,
+          token_ids: Sanbase.SmartContracts.SanbaseNft.nft_subscriptions_data(address)
+        }
+      end)
+
+    %{
+      nft_data: nft_data,
+      has_valid_nft: has_valid_nft?(nft_data),
+      nft_count: nft_count(nft_data)
+    }
+  end
+
+  defp has_valid_nft?(data) do
+    data
+    |> Enum.filter(fn %{token_ids: token_ids} -> length(token_ids) > 0 end)
+    |> Enum.any?()
+  end
+
+  defp nft_count(data) do
+    data
+    |> Enum.reduce(0, fn %{token_ids: token_ids}, acc -> acc + length(token_ids) end)
+  end
+end
+
 defmodule Sanbase.SmartContracts.SanbaseNft do
   import Sanbase.SmartContracts.Utils,
     only: [call_contract: 4, format_address: 1]
@@ -14,7 +48,7 @@ defmodule Sanbase.SmartContracts.SanbaseNft do
   # test address with subscriptions: 0x89c276d6e0fda36d7796af0d27a08176cc0f1976
   def abi(), do: @abi
 
-  def has_valid_nft_subscription?(address) do
+  def nft_subscriptions_data(address) do
     now_unix = Timex.now() |> DateTime.to_unix()
     tokens_count = balance_of(address)
 
@@ -27,12 +61,17 @@ defmodule Sanbase.SmartContracts.SanbaseNft do
       |> Enum.filter(fn token_id ->
         execute("isValid", [token_id])
       end)
-      |> Enum.map(fn token_id ->
-        execute("getExpiration", [token_id]) |> List.first()
+      |> Enum.filter(fn token_id ->
+        exp_unix = execute("getExpiration", [token_id]) |> List.first()
+
+        if exp_unix != nil and exp_unix > now_unix do
+          true
+        else
+          false
+        end
       end)
-      |> Enum.any?(fn exp_unix -> exp_unix > now_unix end)
     else
-      false
+      []
     end
   end
 

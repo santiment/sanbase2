@@ -67,15 +67,6 @@ defmodule Sanbase.EmailsTest do
       assert_enqueued(
         [
           worker: Sanbase.Mailer,
-          args: Map.put(args, :template, sign_up_templates()[:trial_suggestion]),
-          scheduled_at: {days_after(6), delta: 10}
-        ],
-        500
-      )
-
-      assert_enqueued(
-        [
-          worker: Sanbase.Mailer,
           args: Map.put(args, :template, sign_up_templates()[:second_education_email]),
           scheduled_at: {days_after(7), delta: 10}
         ],

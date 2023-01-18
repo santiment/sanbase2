@@ -17,7 +17,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     UserListResolver,
     UserResolver,
     UserSettingsResolver,
-    UserTriggerResolver
+    UserTriggerResolver,
+    SanbaseNftResolver
   }
 
   enum :user_role do
@@ -207,6 +208,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
     field :san_credit_balance, :float do
       resolve(&BillingResolver.san_credit_balance/3)
+    end
+
+    field :has_valid_sanbase_nft, :boolean do
+      resolve(&SanbaseNftResolver.has_valid_sanbase_nft/3)
     end
 
     @desc ~s"""

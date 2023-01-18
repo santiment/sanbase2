@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
   alias Sanbase.Accounts.Apikey
 
@@ -66,8 +65,8 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
      {
       transactionVolume(
         slug: "santiment",
-        from: "#{from_iso8601!("2008-12-31T23:59:59Z")}",
-        to: "#{from_iso8601!("2009-01-02T00:00:00Z")}"
+        from: "#{~U[2008-12-31 23:59:59Z]}",
+        to: "#{~U[2009-01-02 00:00:00Z]}"
         interval: "1d") {
           datetime
           transactionVolume
@@ -90,8 +89,8 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
      {
       transactionVolume(
         slug: "santiment",
-        from: "#{from_iso8601!("2008-12-30T23:59:59Z")}",
-        to: "#{from_iso8601!("2008-12-31T23:59:59Z")}"
+        from: "#{~U[2008-12-30 23:59:59Z]}",
+        to: "#{~U[2008-12-31 23:59:59Z]}"
         interval: "1d") {
           datetime
           transactionVolume
@@ -120,13 +119,13 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
         "Mozilla/5.0 (compatible; Google-Apps-Script)"
       )
 
-    from = from_iso8601!("2019-01-01T00:00:00Z")
-    to = from_iso8601!("2019-01-02T00:00:00Z")
+    from = ~U[2019-01-01T00:00:00Z]
+    to = ~U[2019-01-02T00:00:00Z]
 
     result = %{
       rows: [
-        [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 100],
-        [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 150]
+        [DateTime.to_unix(from), 100],
+        [DateTime.to_unix(to), 150]
       ]
     }
 
@@ -170,13 +169,13 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
         "Mozilla/5.0 (compatible; Google-Apps-Script)"
       )
 
-    from = from_iso8601!("2019-01-01T00:00:00Z")
-    to = from_iso8601!("2019-01-02T00:00:00Z")
+    from = ~U[2019-01-01 00:00:00Z]
+    to = ~U[2019-01-02 00:00:00Z]
 
     result = %{
       rows: [
-        [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 100],
-        [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 150]
+        [DateTime.to_unix(from), 100],
+        [DateTime.to_unix(to), 150]
       ]
     }
 

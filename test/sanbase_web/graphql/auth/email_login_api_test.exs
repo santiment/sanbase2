@@ -33,7 +33,8 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       assert login_data["user"]["firstLogin"] == true
       assert login_data["user"]["email"] == user.email
 
-      assert login_data["token"] == result.private.plug_session["auth_token"]
+      assert login_data["token"] == result.private.plug_session["access_token"]
+
       # Assert that now() and validated_at do not differ by more than 2 seconds
       assert Sanbase.TestUtils.datetime_close_to(
                Timex.now(),
@@ -151,12 +152,13 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
         |> User.Email.update_email_token()
 
       naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+      naive_20m_ago = Timex.shift(naive_now, minutes: -20) |> NaiveDateTime.truncate(:second)
 
       user =
         user
         |> Ecto.Changeset.change(
           email_token_generated_at: naive_now,
-          email_token_validated_at: Timex.shift(naive_now, minutes: -20)
+          email_token_validated_at: naive_20m_ago
         )
         |> Repo.update!()
 

@@ -138,4 +138,10 @@ defmodule SanbaseWeb.UserController do
     # |> Enum.filter(fn field -> module.__schema__(:type, field) in [:string, :naive_datetime, :utc_datetime] end)
     # |> List.insert_at(0, [:id])
   end
+
+  defimpl String.Chars, for: Map do
+    def to_string(map) do
+      inspect(map)
+    end
+  end
 end

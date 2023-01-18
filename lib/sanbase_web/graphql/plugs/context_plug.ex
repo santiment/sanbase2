@@ -60,7 +60,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   defp conn_to_jwt_tokens(conn) do
     %{
-      access_token: get_session(conn, :access_token) || get_session(conn, :auth_token),
+      access_token: get_session(conn, :access_token),
       refresh_token: get_session(conn, :refresh_token)
     }
   end

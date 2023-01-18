@@ -2,7 +2,6 @@ defmodule Sanbase.Alert.EthWalletTriggerHistoryTest do
   use Sanbase.DataCase, async: false
 
   import Mock
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Alert.UserTrigger
 
@@ -41,29 +40,29 @@ defmodule Sanbase.Alert.EthWalletTriggerHistoryTest do
       historical_balance: fn _, _, _, _, _ ->
         {:ok,
          [
-           %{datetime: from_iso8601!("2019-01-01T00:00:00Z"), balance: 100},
-           %{datetime: from_iso8601!("2019-01-01T01:00:00Z"), balance: 100},
-           %{datetime: from_iso8601!("2019-01-01T02:00:00Z"), balance: 50},
-           %{datetime: from_iso8601!("2019-01-01T03:00:00Z"), balance: 50},
-           %{datetime: from_iso8601!("2019-01-01T04:00:00Z"), balance: 50},
-           %{datetime: from_iso8601!("2019-01-01T05:00:00Z"), balance: 50},
-           %{datetime: from_iso8601!("2019-01-01T06:00:00Z"), balance: 20},
-           %{datetime: from_iso8601!("2019-01-01T07:00:00Z"), balance: 20},
-           %{datetime: from_iso8601!("2019-01-01T08:00:00Z"), balance: 10}
+           %{datetime: ~U[2019-01-01 00:00:00Z], balance: 100},
+           %{datetime: ~U[2019-01-01 01:00:00Z], balance: 100},
+           %{datetime: ~U[2019-01-01 02:00:00Z], balance: 50},
+           %{datetime: ~U[2019-01-01 03:00:00Z], balance: 50},
+           %{datetime: ~U[2019-01-01 04:00:00Z], balance: 50},
+           %{datetime: ~U[2019-01-01 05:00:00Z], balance: 50},
+           %{datetime: ~U[2019-01-01 06:00:00Z], balance: 20},
+           %{datetime: ~U[2019-01-01 07:00:00Z], balance: 20},
+           %{datetime: ~U[2019-01-01 08:00:00Z], balance: 10}
          ]}
       end do
       expected_result =
         {:ok,
          [
-           %{balance: 100, datetime: from_iso8601!("2019-01-01T00:00:00Z"), triggered?: false},
-           %{balance: 100, datetime: from_iso8601!("2019-01-01T01:00:00Z"), triggered?: false},
-           %{balance: 50, datetime: from_iso8601!("2019-01-01T02:00:00Z"), triggered?: true},
-           %{balance: 50, datetime: from_iso8601!("2019-01-01T03:00:00Z"), triggered?: false},
-           %{balance: 50, datetime: from_iso8601!("2019-01-01T04:00:00Z"), triggered?: false},
-           %{balance: 50, datetime: from_iso8601!("2019-01-01T05:00:00Z"), triggered?: false},
-           %{balance: 20, datetime: from_iso8601!("2019-01-01T06:00:00Z"), triggered?: true},
-           %{balance: 20, datetime: from_iso8601!("2019-01-01T07:00:00Z"), triggered?: false},
-           %{balance: 10, datetime: from_iso8601!("2019-01-01T08:00:00Z"), triggered?: true}
+           %{balance: 100, datetime: ~U[2019-01-01 00:00:00Z], triggered?: false},
+           %{balance: 100, datetime: ~U[2019-01-01 01:00:00Z], triggered?: false},
+           %{balance: 50, datetime: ~U[2019-01-01 02:00:00Z], triggered?: true},
+           %{balance: 50, datetime: ~U[2019-01-01 03:00:00Z], triggered?: false},
+           %{balance: 50, datetime: ~U[2019-01-01 04:00:00Z], triggered?: false},
+           %{balance: 50, datetime: ~U[2019-01-01 05:00:00Z], triggered?: false},
+           %{balance: 20, datetime: ~U[2019-01-01 06:00:00Z], triggered?: true},
+           %{balance: 20, datetime: ~U[2019-01-01 07:00:00Z], triggered?: false},
+           %{balance: 10, datetime: ~U[2019-01-01 08:00:00Z], triggered?: true}
          ]}
 
       assert UserTrigger.historical_trigger_points(%{
@@ -78,29 +77,29 @@ defmodule Sanbase.Alert.EthWalletTriggerHistoryTest do
       historical_balance: fn _, _, _, _, _ ->
         {:ok,
          [
-           %{datetime: from_iso8601!("2019-01-01T00:00:00Z"), balance: 100},
-           %{datetime: from_iso8601!("2019-01-01T01:00:00Z"), balance: 100},
-           %{datetime: from_iso8601!("2019-01-01T02:00:00Z"), balance: 50},
-           %{datetime: from_iso8601!("2019-01-01T03:00:00Z"), balance: 50},
-           %{datetime: from_iso8601!("2019-01-01T04:00:00Z"), balance: 50},
-           %{datetime: from_iso8601!("2019-01-01T05:00:00Z"), balance: 50},
-           %{datetime: from_iso8601!("2019-01-01T06:00:00Z"), balance: 20},
-           %{datetime: from_iso8601!("2019-01-01T07:00:00Z"), balance: 20},
-           %{datetime: from_iso8601!("2019-01-01T08:00:00Z"), balance: 10}
+           %{datetime: ~U[2019-01-01 00:00:00Z], balance: 100},
+           %{datetime: ~U[2019-01-01 01:00:00Z], balance: 100},
+           %{datetime: ~U[2019-01-01 02:00:00Z], balance: 50},
+           %{datetime: ~U[2019-01-01 03:00:00Z], balance: 50},
+           %{datetime: ~U[2019-01-01 04:00:00Z], balance: 50},
+           %{datetime: ~U[2019-01-01 05:00:00Z], balance: 50},
+           %{datetime: ~U[2019-01-01 06:00:00Z], balance: 20},
+           %{datetime: ~U[2019-01-01 07:00:00Z], balance: 20},
+           %{datetime: ~U[2019-01-01 08:00:00Z], balance: 10}
          ]}
       end do
       expected_result =
         {:ok,
          [
-           %{balance: 100, datetime: from_iso8601!("2019-01-01T00:00:00Z"), triggered?: false},
-           %{balance: 100, datetime: from_iso8601!("2019-01-01T01:00:00Z"), triggered?: false},
-           %{balance: 50, datetime: from_iso8601!("2019-01-01T02:00:00Z"), triggered?: true},
-           %{balance: 50, datetime: from_iso8601!("2019-01-01T03:00:00Z"), triggered?: false},
-           %{balance: 50, datetime: from_iso8601!("2019-01-01T04:00:00Z"), triggered?: false},
-           %{balance: 50, datetime: from_iso8601!("2019-01-01T05:00:00Z"), triggered?: false},
-           %{balance: 20, datetime: from_iso8601!("2019-01-01T06:00:00Z"), triggered?: false},
-           %{balance: 20, datetime: from_iso8601!("2019-01-01T07:00:00Z"), triggered?: false},
-           %{balance: 10, datetime: from_iso8601!("2019-01-01T08:00:00Z"), triggered?: false}
+           %{balance: 100, datetime: ~U[2019-01-01 00:00:00Z], triggered?: false},
+           %{balance: 100, datetime: ~U[2019-01-01 01:00:00Z], triggered?: false},
+           %{balance: 50, datetime: ~U[2019-01-01 02:00:00Z], triggered?: true},
+           %{balance: 50, datetime: ~U[2019-01-01 03:00:00Z], triggered?: false},
+           %{balance: 50, datetime: ~U[2019-01-01 04:00:00Z], triggered?: false},
+           %{balance: 50, datetime: ~U[2019-01-01 05:00:00Z], triggered?: false},
+           %{balance: 20, datetime: ~U[2019-01-01 06:00:00Z], triggered?: false},
+           %{balance: 20, datetime: ~U[2019-01-01 07:00:00Z], triggered?: false},
+           %{balance: 10, datetime: ~U[2019-01-01 08:00:00Z], triggered?: false}
          ]}
 
       assert UserTrigger.historical_trigger_points(%{
@@ -115,29 +114,29 @@ defmodule Sanbase.Alert.EthWalletTriggerHistoryTest do
       historical_balance: fn _, _, _, _, _ ->
         {:ok,
          [
-           %{datetime: from_iso8601!("2019-01-01T00:00:00Z"), balance: 100},
-           %{datetime: from_iso8601!("2019-01-01T01:00:00Z"), balance: 1000},
-           %{datetime: from_iso8601!("2019-01-01T02:00:00Z"), balance: 2000},
-           %{datetime: from_iso8601!("2019-01-01T03:00:00Z"), balance: 2000},
-           %{datetime: from_iso8601!("2019-01-01T04:00:00Z"), balance: 2000},
-           %{datetime: from_iso8601!("2019-01-01T05:00:00Z"), balance: 2000},
-           %{datetime: from_iso8601!("2019-01-01T06:00:00Z"), balance: 2500},
-           %{datetime: from_iso8601!("2019-01-01T07:00:00Z"), balance: 2500},
-           %{datetime: from_iso8601!("2019-01-01T08:00:00Z"), balance: 2500}
+           %{datetime: ~U[2019-01-01 00:00:00Z], balance: 100},
+           %{datetime: ~U[2019-01-01 01:00:00Z], balance: 1000},
+           %{datetime: ~U[2019-01-01 02:00:00Z], balance: 2000},
+           %{datetime: ~U[2019-01-01 03:00:00Z], balance: 2000},
+           %{datetime: ~U[2019-01-01 04:00:00Z], balance: 2000},
+           %{datetime: ~U[2019-01-01 05:00:00Z], balance: 2000},
+           %{datetime: ~U[2019-01-01 06:00:00Z], balance: 2500},
+           %{datetime: ~U[2019-01-01 07:00:00Z], balance: 2500},
+           %{datetime: ~U[2019-01-01 08:00:00Z], balance: 2500}
          ]}
       end do
       expected_result =
         {:ok,
          [
-           %{balance: 100, datetime: from_iso8601!("2019-01-01T00:00:00Z"), triggered?: false},
-           %{balance: 1000, datetime: from_iso8601!("2019-01-01T01:00:00Z"), triggered?: true},
-           %{balance: 2000, datetime: from_iso8601!("2019-01-01T02:00:00Z"), triggered?: true},
-           %{balance: 2000, datetime: from_iso8601!("2019-01-01T03:00:00Z"), triggered?: false},
-           %{balance: 2000, datetime: from_iso8601!("2019-01-01T04:00:00Z"), triggered?: false},
-           %{balance: 2000, datetime: from_iso8601!("2019-01-01T05:00:00Z"), triggered?: false},
-           %{balance: 2500, datetime: from_iso8601!("2019-01-01T06:00:00Z"), triggered?: true},
-           %{balance: 2500, datetime: from_iso8601!("2019-01-01T07:00:00Z"), triggered?: false},
-           %{balance: 2500, datetime: from_iso8601!("2019-01-01T08:00:00Z"), triggered?: false}
+           %{balance: 100, datetime: ~U[2019-01-01 00:00:00Z], triggered?: false},
+           %{balance: 1000, datetime: ~U[2019-01-01 01:00:00Z], triggered?: true},
+           %{balance: 2000, datetime: ~U[2019-01-01 02:00:00Z], triggered?: true},
+           %{balance: 2000, datetime: ~U[2019-01-01 03:00:00Z], triggered?: false},
+           %{balance: 2000, datetime: ~U[2019-01-01 04:00:00Z], triggered?: false},
+           %{balance: 2000, datetime: ~U[2019-01-01 05:00:00Z], triggered?: false},
+           %{balance: 2500, datetime: ~U[2019-01-01 06:00:00Z], triggered?: true},
+           %{balance: 2500, datetime: ~U[2019-01-01 07:00:00Z], triggered?: false},
+           %{balance: 2500, datetime: ~U[2019-01-01 08:00:00Z], triggered?: false}
          ]}
 
       assert UserTrigger.historical_trigger_points(%{
@@ -152,29 +151,29 @@ defmodule Sanbase.Alert.EthWalletTriggerHistoryTest do
       historical_balance: fn _, _, _, _, _ ->
         {:ok,
          [
-           %{datetime: from_iso8601!("2019-01-01T00:00:00Z"), balance: 100},
-           %{datetime: from_iso8601!("2019-01-01T01:00:00Z"), balance: 1000},
-           %{datetime: from_iso8601!("2019-01-01T02:00:00Z"), balance: 2000},
-           %{datetime: from_iso8601!("2019-01-01T03:00:00Z"), balance: 2000},
-           %{datetime: from_iso8601!("2019-01-01T04:00:00Z"), balance: 2000},
-           %{datetime: from_iso8601!("2019-01-01T05:00:00Z"), balance: 2000},
-           %{datetime: from_iso8601!("2019-01-01T06:00:00Z"), balance: 2500},
-           %{datetime: from_iso8601!("2019-01-01T07:00:00Z"), balance: 2500},
-           %{datetime: from_iso8601!("2019-01-01T08:00:00Z"), balance: 2500}
+           %{datetime: ~U[2019-01-01 00:00:00Z], balance: 100},
+           %{datetime: ~U[2019-01-01 01:00:00Z], balance: 1000},
+           %{datetime: ~U[2019-01-01 02:00:00Z], balance: 2000},
+           %{datetime: ~U[2019-01-01 03:00:00Z], balance: 2000},
+           %{datetime: ~U[2019-01-01 04:00:00Z], balance: 2000},
+           %{datetime: ~U[2019-01-01 05:00:00Z], balance: 2000},
+           %{datetime: ~U[2019-01-01 06:00:00Z], balance: 2500},
+           %{datetime: ~U[2019-01-01 07:00:00Z], balance: 2500},
+           %{datetime: ~U[2019-01-01 08:00:00Z], balance: 2500}
          ]}
       end do
       expected_result =
         {:ok,
          [
-           %{balance: 100, datetime: from_iso8601!("2019-01-01T00:00:00Z"), triggered?: false},
-           %{balance: 1000, datetime: from_iso8601!("2019-01-01T01:00:00Z"), triggered?: true},
-           %{balance: 2000, datetime: from_iso8601!("2019-01-01T02:00:00Z"), triggered?: false},
-           %{balance: 2000, datetime: from_iso8601!("2019-01-01T03:00:00Z"), triggered?: false},
-           %{balance: 2000, datetime: from_iso8601!("2019-01-01T04:00:00Z"), triggered?: false},
-           %{balance: 2000, datetime: from_iso8601!("2019-01-01T05:00:00Z"), triggered?: false},
-           %{balance: 2500, datetime: from_iso8601!("2019-01-01T06:00:00Z"), triggered?: false},
-           %{balance: 2500, datetime: from_iso8601!("2019-01-01T07:00:00Z"), triggered?: false},
-           %{balance: 2500, datetime: from_iso8601!("2019-01-01T08:00:00Z"), triggered?: false}
+           %{balance: 100, datetime: ~U[2019-01-01 00:00:00Z], triggered?: false},
+           %{balance: 1000, datetime: ~U[2019-01-01 01:00:00Z], triggered?: true},
+           %{balance: 2000, datetime: ~U[2019-01-01 02:00:00Z], triggered?: false},
+           %{balance: 2000, datetime: ~U[2019-01-01 03:00:00Z], triggered?: false},
+           %{balance: 2000, datetime: ~U[2019-01-01 04:00:00Z], triggered?: false},
+           %{balance: 2000, datetime: ~U[2019-01-01 05:00:00Z], triggered?: false},
+           %{balance: 2500, datetime: ~U[2019-01-01 06:00:00Z], triggered?: false},
+           %{balance: 2500, datetime: ~U[2019-01-01 07:00:00Z], triggered?: false},
+           %{balance: 2500, datetime: ~U[2019-01-01 08:00:00Z], triggered?: false}
          ]}
 
       assert UserTrigger.historical_trigger_points(%{

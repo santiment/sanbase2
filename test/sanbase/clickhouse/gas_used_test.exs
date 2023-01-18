@@ -1,7 +1,6 @@
 defmodule Sanbase.Clickhouse.GasUsedTest do
   use Sanbase.DataCase
   import Sanbase.Factory
-  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
   alias Sanbase.Clickhouse.GasUsed
 
@@ -10,17 +9,17 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
 
     [
       slug: project.slug,
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-03T00:00:00Z"),
+      from: ~U[2019-01-01 00:00:00Z],
+      to: ~U[2019-01-03 00:00:00Z],
       interval: "1d"
     ]
   end
 
   test "when requested interval fits the values interval", context do
     rows = [
-      [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 101],
-      [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 102],
-      [from_iso8601_to_unix!("2019-01-03T00:00:00Z"), 103]
+      [DateTime.to_unix(~U[2019-01-01 00:00:00Z]), 101],
+      [DateTime.to_unix(~U[2019-01-02 00:00:00Z]), 102],
+      [DateTime.to_unix(~U[2019-01-03 00:00:00Z]), 103]
     ]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
@@ -33,17 +32,17 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
                   %{
                     eth_gas_used: 101,
                     gas_used: 101,
-                    datetime: from_iso8601!("2019-01-01T00:00:00Z")
+                    datetime: ~U[2019-01-01 00:00:00Z]
                   },
                   %{
                     eth_gas_used: 102,
                     gas_used: 102,
-                    datetime: from_iso8601!("2019-01-02T00:00:00Z")
+                    datetime: ~U[2019-01-02 00:00:00Z]
                   },
                   %{
                     eth_gas_used: 103,
                     gas_used: 103,
-                    datetime: from_iso8601!("2019-01-03T00:00:00Z")
+                    datetime: ~U[2019-01-03 00:00:00Z]
                   }
                 ]}
     end)
@@ -51,10 +50,10 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
 
   test "when requested interval is not full", context do
     rows = [
-      [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 101],
-      [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 102],
-      [from_iso8601_to_unix!("2019-01-03T00:00:00Z"), 103],
-      [from_iso8601_to_unix!("2019-01-04T00:00:00Z"), 104]
+      [DateTime.to_unix(~U[2019-01-01 00:00:00Z]), 101],
+      [DateTime.to_unix(~U[2019-01-02 00:00:00Z]), 102],
+      [DateTime.to_unix(~U[2019-01-03 00:00:00Z]), 103],
+      [DateTime.to_unix(~U[2019-01-04 00:00:00Z]), 104]
     ]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
@@ -67,22 +66,22 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
                   %{
                     eth_gas_used: 101,
                     gas_used: 101,
-                    datetime: from_iso8601!("2019-01-01T00:00:00Z")
+                    datetime: ~U[2019-01-01 00:00:00Z]
                   },
                   %{
                     eth_gas_used: 102,
                     gas_used: 102,
-                    datetime: from_iso8601!("2019-01-02T00:00:00Z")
+                    datetime: ~U[2019-01-02 00:00:00Z]
                   },
                   %{
                     eth_gas_used: 103,
                     gas_used: 103,
-                    datetime: from_iso8601!("2019-01-03T00:00:00Z")
+                    datetime: ~U[2019-01-03 00:00:00Z]
                   },
                   %{
                     eth_gas_used: 104,
                     gas_used: 104,
-                    datetime: from_iso8601!("2019-01-04T00:00:00Z")
+                    datetime: ~U[2019-01-04 00:00:00Z]
                   }
                 ]}
     end)

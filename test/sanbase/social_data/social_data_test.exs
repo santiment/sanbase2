@@ -52,7 +52,7 @@ defmodule Sanbase.SocialDataTest do
           "hour" => 8.0,
           "score" => 3725.6617392595313,
           "source" => "telegram",
-          "timestamp" => 1_547_078_400
+          "timestamp" => DateTime.to_unix(~U[2019-01-10 00:00:00Z])
         }
       ]
       |> Jason.encode!()
@@ -60,32 +60,31 @@ defmodule Sanbase.SocialDataTest do
     mock(
       HTTPoison,
       :get,
-      {:ok,
-       %HTTPoison.Response{
-         body: body,
-         status_code: 200
-       }}
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}}
     )
 
     # As the HTTP call is mocked these arguemnts do no have much effect,
     # though you should try to put the real ones that are used
+    assert {:ok, result} =
+             SocialData.word_trend_score(
+               "trx",
+               :telegram,
+               ~U[2019-01-10 00:00:00Z],
+               ~U[2019-01-11 00:00:00Z]
+             )
+
+    # Avoid error with truncated microseconds
     result =
-      SocialData.word_trend_score(
-        "trx",
-        :telegram,
-        DateTime.from_unix!(1_547_046_000),
-        DateTime.from_unix!(1_547_111_478)
-      )
+      Enum.map(result, fn map -> Map.update!(map, :datetime, &DateTime.truncate(&1, :second)) end)
 
     assert result ==
-             {:ok,
-              [
-                %{
-                  score: 3725.6617392595313,
-                  source: :telegram,
-                  datetime: Sanbase.DateTimeUtils.from_iso8601!("2019-01-10T08:00:00Z")
-                }
-              ]}
+             [
+               %{
+                 score: 3725.6617392595313,
+                 source: :telegram,
+                 datetime: ~U[2019-01-10 08:00:00Z]
+               }
+             ]
   end
 
   test "successfully fetch top social gainers losers", _context do

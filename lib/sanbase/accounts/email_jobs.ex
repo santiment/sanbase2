@@ -33,14 +33,6 @@ defmodule Sanbase.Accounts.EmailJobs do
       Oban.insert(
         @oban_conf_name,
         multi,
-        :trial_suggestion_job,
-        scheduled_email(:trial_suggestion, templates, user, vars)
-      )
-
-    multi =
-      Oban.insert(
-        @oban_conf_name,
-        multi,
         :second_education_email_job,
         scheduled_email(:second_education_email, templates, user, vars)
       )
@@ -175,7 +167,6 @@ defmodule Sanbase.Accounts.EmailJobs do
       case email_type do
         :welcome_email -> nil
         :first_education_email -> days_after(4)
-        :trial_suggestion -> days_after(6)
         :second_education_email -> days_after(7)
       end
 

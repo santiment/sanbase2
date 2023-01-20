@@ -1,6 +1,7 @@
 defmodule Sanbase.Billing.Subscription.Timeseries do
   use Ecto.Schema
   import Ecto.Changeset
+
   alias Sanbase.Repo
 
   schema "subscription_timeseries" do

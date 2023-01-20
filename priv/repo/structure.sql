@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.2
--- Dumped by pg_dump version 14.2
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -3087,6 +3087,38 @@ CREATE TABLE public.stripe_events (
 
 
 --
+-- Name: subscription_timeseries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.subscription_timeseries (
+    id bigint NOT NULL,
+    subscriptions jsonb[],
+    stats jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: subscription_timeseries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.subscription_timeseries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: subscription_timeseries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.subscription_timeseries_id_seq OWNED BY public.subscription_timeseries.id;
+
+
+--
 -- Name: subscriptions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4444,6 +4476,13 @@ ALTER TABLE ONLY public.source_slug_mappings ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: subscription_timeseries id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscription_timeseries ALTER COLUMN id SET DEFAULT nextval('public.subscription_timeseries_id_seq'::regclass);
+
+
+--
 -- Name: subscriptions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5241,6 +5280,14 @@ ALTER TABLE ONLY public.source_slug_mappings
 
 ALTER TABLE ONLY public.stripe_events
     ADD CONSTRAINT stripe_events_pkey PRIMARY KEY (event_id);
+
+
+--
+-- Name: subscription_timeseries subscription_timeseries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscription_timeseries
+    ADD CONSTRAINT subscription_timeseries_pkey PRIMARY KEY (id);
 
 
 --
@@ -7965,3 +8012,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20221213105305);
 INSERT INTO public."schema_migrations" (version) VALUES (20221215103058);
 INSERT INTO public."schema_migrations" (version) VALUES (20221216095648);
 INSERT INTO public."schema_migrations" (version) VALUES (20221221113902);
+INSERT INTO public."schema_migrations" (version) VALUES (20230120101611);

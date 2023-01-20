@@ -158,5 +158,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     san_burn_credit_transaction: [
       schedule: "@hourly",
       task: {Sanbase.Billing.Subscription.SanBurnCreditTransaction, :run, []}
+    ],
+    sync_subscription_timeseries_stripe: [
+      schedule: "10 01 * * *",
+      task: {Sanbase.Billing.Subscription.Timeseries, :run, []}
     ]
   ]

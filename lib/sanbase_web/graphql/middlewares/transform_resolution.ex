@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
     }
   end
 
-  defp do_call(query_field, resolution) do
+  defp do_call(_query_field, resolution) do
     resolution
   end
 
@@ -46,15 +46,15 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
   defp get_selectors(resolution) do
     resolution.definition.selections
     |> Enum.map(fn %{name: name} = field ->
-      selector =
-        case Inflex.camelize(name, :lower) do
-          name when name in @fields_with_selector ->
-            argument_data_to_selector(field.argument_data)
+      case Inflex.camelize(name, :lower) do
+        name when name in @fields_with_selector ->
+          argument_data_to_selector(field.argument_data)
 
-          name ->
-            nil
-        end
+        _ ->
+          nil
+      end
     end)
+    |> Enum.reject(&is_nil/1)
   end
 
   # In some cases users can provide lists of slugs that have 50-100-200 slugs inside

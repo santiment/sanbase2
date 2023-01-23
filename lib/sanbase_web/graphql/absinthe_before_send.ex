@@ -190,15 +190,13 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
             request_id <> "_" <> (:crypto.strong_rand_bytes(6) |> Base.encode64())
         end
 
-      {query, selector} =
-        get_query_and_selector(query)
-        |> IO.inspect()
+      {query, selector} = get_query_and_selector(query)
 
       %{
         timestamp: div(now, 1_000_000_000),
         id: id,
         query: query,
-        selector: selector,
+        selector: Jason.encode!(selector),
         status_code: 200,
         has_graphql_errors: has_graphql_errors?(blueprint),
         user_id: user_id,

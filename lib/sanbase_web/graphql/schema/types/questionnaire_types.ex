@@ -20,13 +20,14 @@ defmodule SanbaseWeb.Graphql.QuestionnaireTypes do
 
   object :questionnaire_answer do
     field(:uuid, non_null(:string))
+    field(:question, non_null(:questionnaire_question))
     field(:answer, non_null(:json))
   end
 
   object :questionnaire_user_answer do
     field(:uuid, non_null(:string))
-    field(:question, :questionnaire_question)
-    field(:answer, non_null(:string))
+    field(:question, non_null(:questionnaire_question))
+    field(:answer, non_null(:json))
   end
 
   object :questionnaire do

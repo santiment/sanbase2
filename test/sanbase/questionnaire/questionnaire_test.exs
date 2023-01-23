@@ -151,32 +151,19 @@ defmodule Sanbase.QuestionnaireTest do
         Questionnaire.create_answer(question.uuid, user.id, %{
           answer: %{"open_text_answer" => "Good"}
         })
-        |> IO.inspect()
-
-      Process.sleep(1000)
 
       {:ok, answer2} =
         Questionnaire.create_answer(question.uuid, user.id, %{
           answer: %{"open_text_answer" => "Good 2"}
         })
-        |> IO.inspect()
-
-      Process.sleep(1000)
-
-      {:ok, answer3} =
-        Questionnaire.create_answer(question.uuid, user.id, %{
-          answer: %{"open_text_answer" => "Good 3"}
-        })
-        |> IO.inspect()
 
       {:ok, user_answers} = Questionnaire.user_answers(questionnaire.uuid, user.id)
 
       assert length(user_answers) == 1
       [answer] = user_answers
 
-      # assert answer1.uuid == answer2.uuid
-      # assert answer2.uuid == answer3.uuid
-      assert answer.answer == %{"open_text_answer" => "Good 3"}
+      assert answer1.uuid == answer2.uuid
+      assert answer.answer == %{"open_text_answer" => "Good 2"}
     end
 
     test "update", context do
@@ -200,7 +187,17 @@ defmodule Sanbase.QuestionnaireTest do
       assert answer.answer == %{"open_text_answer" => "Updated good."}
     end
 
-    test "delete" do
+    test "delete", context do
+      %{user: user, questionnaire: questionnaire, question: question} = context
+
+      {:ok, answer} =
+        Questionnaire.create_answer(question.uuid, user.id, %{
+          answer: %{"open_text_answer" => "Good"}
+        })
+
+      {:ok, _} = Questionnaire.delete_answer(answer.uuid, user.id)
+
+      assert {:ok, []} == Questionnaire.user_answers(questionnaire.uuid, user.id)
     end
   end
 

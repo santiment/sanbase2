@@ -10,6 +10,8 @@ defmodule SanbaseWeb.AuthController do
   alias Sanbase.Accounts
   alias Sanbase.Accounts.User
 
+  require Logger
+
   @providers %{
     "google" => Application.compile_env(:ueberauth, [Ueberauth, :providers, :google]),
     "twitter" => Application.compile_env(:ueberauth, [Ueberauth, :providers, :twitter])
@@ -24,11 +26,8 @@ defmodule SanbaseWeb.AuthController do
     referer_url = Plug.Conn.get_req_header(conn, "referer") |> List.first()
     referer_url = referer_url || SanbaseWeb.Endpoint.website_url()
 
-    success_redirect_url =
-      params["success_redirect_url"] || referer_url || SanbaseWeb.Endpoint.website_url()
-
-    fail_redirect_url =
-      params["fail_redirect_url"] || referer_url || SanbaseWeb.Endpoint.website_url()
+    success_redirect_url = get_redirect_url(params, "success_redirect_url", referer_url)
+    fail_redirect_url = get_redirect_url(params, "fail_redirect_url", referer_url)
 
     origin_url =
       referer_url |> URI.parse() |> Map.merge(%{fragment: nil, path: nil}) |> URI.to_string()
@@ -136,5 +135,40 @@ defmodule SanbaseWeb.AuthController do
 
   defp twitter_login(_email, twitter_id) do
     User.find_or_insert_by(:twitter_id, twitter_id, %{login_origin: :twitter})
+  end
+
+  defp get_redirect_url(params, url_key, referer_url) do
+    url = params[url_key] || referer_url || SanbaseWeb.Endpoint.website_url()
+
+    # In case the provided redirect URL is not valid, simply redirect to sanbase
+    case validate_redirect_url(url) do
+      true -> url
+      _ -> SanbaseWeb.Endpoint.website_url()
+    end
+  end
+
+  @valid_subomains ["app", "insights", "api", "sheets", "local"]
+  @valid_redirect_hosts @valid_subomains
+                        |> Enum.flat_map(&[&1, &1 <> "-stage"])
+                        |> Enum.map(&(&1 <> ".santiment.net"))
+                        |> List.insert_at(0, "santiment.net")
+
+  case Application.compile_env(:sanbase, :env) do
+    :prod ->
+      :ok
+
+    env when env in [:dev, :test] ->
+      @valid_redirect_hosts ["localhost" | @valid_redirect_hosts]
+  end
+
+  defp validate_redirect_url(url) do
+    case URI.parse(url) do
+      %URI{host: host} when host in @valid_redirect_hosts ->
+        true
+
+      _ ->
+        Logger.warning("Attempt to redirect to an unsupported endpoint after login: #{url}")
+        {:error, "Invalid redirect URL"}
+    end
   end
 end

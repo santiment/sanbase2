@@ -2,7 +2,7 @@ defmodule Sanbase.Price.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
   alias Sanbase.Price
 
-  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :ohlc]
+  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :ohlc, :count]
   @default_aggregation :last
 
   @timeseries_metrics ["price_usd", "price_btc", "volume_usd", "marketcap_usd"]

@@ -74,7 +74,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     do: "argMin(#{value_column}, #{dt_column})"
 
   def aggregation(:count, value_column, _dt_column),
-    do: "coalesce(count(#{value_column}), 0)"
+    do: "coalesce(toFloat64(count(#{value_column})), 0.0)"
 
   def aggregation(:sum, value_column, _dt_column),
     do: "sumKahan(#{value_column})"

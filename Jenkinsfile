@@ -37,7 +37,7 @@ slaveTemplates.dockerTemplate { label ->
           sh "docker kill test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID}"
         }
 
-        if (env.BRANCH_NAME == 'master') {
+        if (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'update-elixir') {
           withCredentials([
             string(
               credentialsId: 'SECRET_KEY_BASE',

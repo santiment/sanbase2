@@ -33,7 +33,7 @@ defmodule Sanbase.Questionnaire do
   schema "questionnaires" do
     field(:name, :string)
     field(:description, :string)
-
+    field(:is_deleted, :boolean, default: false)
     has_many(:questions, Question, references: :uuid)
 
     field(:ends_at, :utc_datetime)
@@ -48,7 +48,7 @@ defmodule Sanbase.Questionnaire do
   def by_uuid(questionnaire_uuid) do
     query =
       from(q in __MODULE__,
-        where: q.uuid == ^questionnaire_uuid,
+        where: q.uuid == ^questionnaire_uuid and q.is_deleted != true,
         preload: [:questions]
       )
 
@@ -78,14 +78,14 @@ defmodule Sanbase.Questionnaire do
   @spec update(questionnaire_uuid, map) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(questionnaire_uuid, params) do
-    case Sanbase.Repo.get(__MODULE__, questionnaire_uuid) do
-      nil ->
-        {:error, "Questionnaire with uuid #{questionnaire_uuid} does not exist"}
-
-      %__MODULE__{} = questionnaire ->
+    case by_uuid(questionnaire_uuid) do
+      {:ok, %__MODULE__{} = questionnaire} ->
         questionnaire
         |> cast(params, [:name, :description, :ends_at])
         |> Sanbase.Repo.update()
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -94,12 +94,12 @@ defmodule Sanbase.Questionnaire do
   """
   @spec delete(questionnaire_uuid) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(questionnaire_uuid) do
-    case Sanbase.Repo.get(__MODULE__, questionnaire_uuid) do
-      nil ->
-        {:error, "Questionnaire with uuid #{questionnaire_uuid} does not exist"}
-
-      %__MODULE__{} = questionnaire ->
+    case by_uuid(questionnaire_uuid) do
+      {:ok, %__MODULE__{} = questionnaire} ->
         Sanbase.Repo.delete(questionnaire)
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

@@ -2709,7 +2709,8 @@ CREATE TABLE public.questionnaires (
     description text,
     ends_at timestamp(0) without time zone,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    is_deleted boolean DEFAULT false
 );
 
 
@@ -8129,3 +8130,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20221221113902);
 INSERT INTO public."schema_migrations" (version) VALUES (20230113134151);
 INSERT INTO public."schema_migrations" (version) VALUES (20230114134332);
 INSERT INTO public."schema_migrations" (version) VALUES (20230120101611);
+INSERT INTO public."schema_migrations" (version) VALUES (20230124105934);

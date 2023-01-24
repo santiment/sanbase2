@@ -41,7 +41,7 @@ defmodule SanbaseWeb.Graphql.QuestionnaireTypes do
   Input object for a questionnaire params
   """
   input_object :questionnaire_params_input_object do
-    field(:name, non_null(:string))
+    field(:name, :string)
     field(:description, :string)
     field(:ends_at, :datetime)
   end
@@ -50,8 +50,8 @@ defmodule SanbaseWeb.Graphql.QuestionnaireTypes do
   Input object for a questionnaire questions params
   """
   input_object :questionnaire_question_params_input_object do
-    field(:question, non_null(:string))
-    field(:type, non_null(:question_type))
+    field(:question, :string)
+    field(:type, :question_type)
     field(:order, :integer)
     field(:answer_options, :json)
     field(:has_extra_open_text_answer, :boolean, default_value: false)

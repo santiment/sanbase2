@@ -1,7 +1,11 @@
 defmodule SanbaseWeb.Graphql.Resolvers.QuestionnaireResolver do
   alias Sanbase.Questionnaire
 
-  def get_questionnaire(_root, %{questionnaire_uuid: questionnaire_uuid}, _resolution) do
+  def get_questionnaire(
+        _root,
+        %{questionnaire_uuid: questionnaire_uuid},
+        _resolution
+      ) do
     Questionnaire.by_uuid(questionnaire_uuid)
   end
 
@@ -14,7 +18,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.QuestionnaireResolver do
   end
 
   def create_questionnaire(_root, %{params: params}, _resolution) do
-    Questionnaire.create(params)
+    case Questionnaire.create(params) do
+      # So the questions association is preloaded
+      {:ok, questionnaire} -> Questionnaire.by_uuid(questionnaire.uuid)
+      {:error, error} -> {:error, error}
+    end
   end
 
   def update_questionnaire(
@@ -22,7 +30,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.QuestionnaireResolver do
         %{questionnaire_uuid: questionnaire_uuid, params: params},
         _resolution
       ) do
-    Questionnaire.update(questionnaire_uuid, params)
+    case Questionnaire.update(questionnaire_uuid, params) do
+      # So the questions association is preloaded
+      {:ok, questionnaire} -> Questionnaire.by_uuid(questionnaire.uuid)
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def delete_questionnaire(
+        _root,
+        %{questionnaire_uuid: questionnaire_uuid},
+        _resolution
+      ) do
+    # Return the first fetched struct so the returned result can have
+    # all the questions preloaded
+    with {:ok, questionnaire} <- Questionnaire.by_uuid(questionnaire_uuid),
+         {:ok, _} <- Questionnaire.delete(questionnaire_uuid) do
+      {:ok, questionnaire}
+    end
   end
 
   def create_question(
@@ -36,8 +61,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.QuestionnaireResolver do
     end
   end
 
-  def update_question(_root, %{question_uuid: question_uuid, params: params}, _resolution) do
+  def update_question(
+        _root,
+        %{question_uuid: question_uuid, params: params},
+        _resolution
+      ) do
     case Questionnaire.update_question(question_uuid, params) do
+      {:ok, question} -> Questionnaire.by_uuid(question.questionnaire_uuid)
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def delete_question(_root, %{question_uuid: question_uuid}, _resolution) do
+    case Questionnaire.delete_question(question_uuid) do
       {:ok, question} -> Questionnaire.by_uuid(question.questionnaire_uuid)
       {:error, error} -> {:error, error}
     end

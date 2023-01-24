@@ -16,7 +16,8 @@ defmodule Sanbase.Questionnaire.Validation do
     This is for consistency. It can be done as a `single_select` type, but the answers
     and casing can vary between questions.
   """
-  @spec validate_question_answers_options(Atom.t(), Map.t()) :: true | {:error, String.t()}
+  @spec validate_question_answers_options(Atom.t(), Map.t()) ::
+          true | {:error, String.t()}
   def validate_question_answers_options(type, answers_map)
       when type in [:single_select, :multi_select] do
     with true <- answers_are_map?(answers_map),
@@ -49,31 +50,49 @@ defmodule Sanbase.Questionnaire.Validation do
   @doc ~s"""
   Check the that question is non-empty string with at least 4 characters
   """
-  @spec validate_question_text(Atom.t(), String.t()) :: true | {:error, String.t()}
+  @spec validate_question_text(Atom.t(), String.t()) ::
+          true | {:error, String.t()}
   def validate_question_text(_type, question) do
     case is_binary(question) and String.length(String.trim(question)) >= 4 do
-      true -> true
-      false -> {:error, "The question must be a string with at least 4 characters"}
+      true ->
+        true
+
+      false ->
+        {:error, "The question must be a string with at least 4 characters"}
     end
   end
 
   def validate_user_provided_answer(answer, type)
       when type in [:single_select, :multiple_select] do
     cond do
-      Map.has_key?(answer, "open_text_answer") and is_binary(answer["open_text_answer"]) ->
+      Map.has_key?(answer, "open_text_answer") and
+          is_binary(answer["open_text_answer"]) ->
         true
 
-      Map.has_key?(answer, "open_number_answer") and is_number(answer["open_number_answer"]) ->
+      Map.has_key?(answer, "open_number_answer") and
+          is_number(answer["open_number_answer"]) ->
         true
 
-      Map.has_key?(answer, "answer_selection") ->
+      Map.has_key?(answer, "answer_selection") and type == :single_select ->
         case answer["answer_selection"] |> Integer.parse() do
           {_, ""} ->
             true
 
           _ ->
             {:error,
-             "If the answer is a selection of given options, it must be a number represented as string"}
+             "If the answer is a single selection of given options, it must be a number represented as string"}
+        end
+
+      Map.has_key?(answer, "answer_selection") and type == :multi_select ->
+        is_integer = fn val -> match?({_, ""}, Integer.parse(val)) end
+
+        case Enum.all?(answer["answer_selection"], is_integer) do
+          true ->
+            true
+
+          false ->
+            {:error,
+             "If the answer is a multi selection of given options, it must be a list of numbers represented as strings"}
         end
 
       true ->
@@ -86,7 +105,8 @@ defmodule Sanbase.Questionnaire.Validation do
   end
 
   def validate_user_provided_answer(answer, :open_text) do
-    case Map.has_key?(answer, "open_text_answer") and is_binary(answer["open_text_answer"]) do
+    case Map.has_key?(answer, "open_text_answer") and
+           is_binary(answer["open_text_answer"]) do
       true ->
         true
 
@@ -97,7 +117,8 @@ defmodule Sanbase.Questionnaire.Validation do
   end
 
   def validate_user_provided_answer(answer, :open_number) do
-    case Map.has_key?(answer, "open_number_answer") and is_binary(answer["open_number_answer"]) do
+    case Map.has_key?(answer, "open_number_answer") and
+           is_binary(answer["open_number_answer"]) do
       true ->
         true
 
@@ -108,7 +129,8 @@ defmodule Sanbase.Questionnaire.Validation do
   end
 
   def validate_user_provided_answer(answer, :boolean) do
-    case Map.has_key?(answer, "answer_selection") and answer["answer_selection"] in ["1", "2"] do
+    case Map.has_key?(answer, "answer_selection") and
+           answer["answer_selection"] in ["1", "2"] do
       true ->
         true
 
@@ -133,8 +155,11 @@ defmodule Sanbase.Questionnaire.Validation do
 
   defp has_more_than_one_answer?(%{} = answers_map) do
     case map_size(answers_map) do
-      value when value >= 2 -> true
-      _ -> {:error, "Questions with select options must have at least 2 answer choices."}
+      value when value >= 2 ->
+        true
+
+      _ ->
+        {:error, "Questions with select options must have at least 2 answer choices."}
     end
   end
 
@@ -143,8 +168,11 @@ defmodule Sanbase.Questionnaire.Validation do
 
     Enum.reduce_while(keys, true, fn key, _acc ->
       case Integer.parse(key) do
-        {_num, ""} -> {:cont, true}
-        _ -> {:halt, {:error, "The key of the answer is not a number. Got #{inspect(key)}"}}
+        {_num, ""} ->
+          {:cont, true}
+
+        _ ->
+          {:halt, {:error, "The key of the answer is not a number. Got #{inspect(key)}"}}
       end
     end)
   end
@@ -162,9 +190,14 @@ defmodule Sanbase.Questionnaire.Validation do
   defp all_values_are_not_empty?(answers_map) do
     Enum.reduce_while(answers_map, true, fn {_key, value}, _acc ->
       cond do
-        not is_binary(value) -> {:halt, {:error, "All answers must be strings"}}
-        String.trim(value) == "" -> {:halt, {:error, "All answers must be non-empty strings"}}
-        true -> {:cont, true}
+        not is_binary(value) ->
+          {:halt, {:error, "All answers must be strings"}}
+
+        String.trim(value) == "" ->
+          {:halt, {:error, "All answers must be non-empty strings"}}
+
+        true ->
+          {:cont, true}
       end
     end)
   end

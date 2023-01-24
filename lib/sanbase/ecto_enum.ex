@@ -1,5 +1,13 @@
 import EctoEnum
 
+defenum(QuestionType, :question_type, [
+  "multi_select",
+  "single_select",
+  "dropdown_select",
+  "open_text",
+  "open_number"
+])
+
 defenum(SubscriptionType, :subscription_type, [
   "fiat",
   "liquidity",

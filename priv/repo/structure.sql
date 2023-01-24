@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 14.2
+-- Dumped by pg_dump version 14.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -67,6 +67,19 @@ CREATE TYPE public.oban_job_state AS ENUM (
     'completed',
     'discarded',
     'cancelled'
+);
+
+
+--
+-- Name: question_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.question_type AS ENUM (
+    'single_select',
+    'multi_select',
+    'open_text',
+    'open_number',
+    'boolean'
 );
 
 
@@ -2656,6 +2669,52 @@ ALTER SEQUENCE public.pumpkins_id_seq OWNED BY public.pumpkins.id;
 
 
 --
+-- Name: questionnaire_answers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.questionnaire_answers (
+    uuid uuid NOT NULL,
+    user_id bigint NOT NULL,
+    question_uuid uuid NOT NULL,
+    answer jsonb NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: questionnaire_questions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.questionnaire_questions (
+    uuid uuid NOT NULL,
+    questionnaire_uuid uuid,
+    "order" integer NOT NULL,
+    question character varying(255) NOT NULL,
+    type public.question_type DEFAULT 'open_text'::public.question_type NOT NULL,
+    answer_options jsonb DEFAULT '{}'::jsonb NOT NULL,
+    has_extra_open_text_answer boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: questionnaires; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.questionnaires (
+    uuid uuid NOT NULL,
+    name character varying(255) NOT NULL,
+    description text,
+    ends_at timestamp(0) without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    is_deleted boolean DEFAULT false
+);
+
+
+--
 -- Name: reports; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5171,6 +5230,30 @@ ALTER TABLE ONLY public.pumpkins
 
 
 --
+-- Name: questionnaire_answers questionnaire_answers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.questionnaire_answers
+    ADD CONSTRAINT questionnaire_answers_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: questionnaire_questions questionnaire_questions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.questionnaire_questions
+    ADD CONSTRAINT questionnaire_questions_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: questionnaires questionnaires_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.questionnaires
+    ADD CONSTRAINT questionnaires_pkey PRIMARY KEY (uuid);
+
+
+--
 -- Name: reports reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6100,6 +6183,13 @@ CREATE UNIQUE INDEX promo_coupons_email_index ON public.promo_coupons USING btre
 --
 
 CREATE INDEX pumpkins_user_id_index ON public.pumpkins USING btree (user_id);
+
+
+--
+-- Name: questionnaire_answers_question_uuid_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX questionnaire_answers_question_uuid_user_id_index ON public.questionnaire_answers USING btree (question_uuid, user_id);
 
 
 --
@@ -7158,6 +7248,30 @@ ALTER TABLE ONLY public.pumpkins
 
 
 --
+-- Name: questionnaire_answers questionnaire_answers_question_uuid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.questionnaire_answers
+    ADD CONSTRAINT questionnaire_answers_question_uuid_fkey FOREIGN KEY (question_uuid) REFERENCES public.questionnaire_questions(uuid);
+
+
+--
+-- Name: questionnaire_answers questionnaire_answers_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.questionnaire_answers
+    ADD CONSTRAINT questionnaire_answers_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: questionnaire_questions questionnaire_questions_questionnaire_uuid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.questionnaire_questions
+    ADD CONSTRAINT questionnaire_questions_questionnaire_uuid_fkey FOREIGN KEY (questionnaire_uuid) REFERENCES public.questionnaires(uuid);
+
+
+--
 -- Name: san_burn_credit_transactions san_burn_credit_transactions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8007,9 +8121,13 @@ INSERT INTO public."schema_migrations" (version) VALUES (20221103145206);
 INSERT INTO public."schema_migrations" (version) VALUES (20221110142211);
 INSERT INTO public."schema_migrations" (version) VALUES (20221118110940);
 INSERT INTO public."schema_migrations" (version) VALUES (20221129102156);
+INSERT INTO public."schema_migrations" (version) VALUES (20221205134151);
 INSERT INTO public."schema_migrations" (version) VALUES (20221212124926);
 INSERT INTO public."schema_migrations" (version) VALUES (20221213105305);
 INSERT INTO public."schema_migrations" (version) VALUES (20221215103058);
 INSERT INTO public."schema_migrations" (version) VALUES (20221216095648);
 INSERT INTO public."schema_migrations" (version) VALUES (20221221113902);
+INSERT INTO public."schema_migrations" (version) VALUES (20230113134151);
+INSERT INTO public."schema_migrations" (version) VALUES (20230114134332);
 INSERT INTO public."schema_migrations" (version) VALUES (20230120101611);
+INSERT INTO public."schema_migrations" (version) VALUES (20230124105934);

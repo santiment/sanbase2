@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   @compile inline: [
              cache_result: 2,
-             construct_query_name: 1,
+             get_query_and_selector: 1,
              export_api_call_data: 3,
              extract_caller_data: 1,
              get_cache_key: 1,
@@ -190,10 +190,13 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
             request_id <> "_" <> (:crypto.strong_rand_bytes(6) |> Base.encode64())
         end
 
+      {query, selector} = get_query_and_selector(query)
+
       %{
         timestamp: div(now, 1_000_000_000),
         id: id,
-        query: query |> construct_query_name(),
+        query: query,
+        selector: Jason.encode!(selector),
         status_code: 200,
         has_graphql_errors: has_graphql_errors?(blueprint),
         user_id: user_id,
@@ -209,9 +212,13 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
   end
 
-  defp construct_query_name({:get_metric, metric}), do: "getMetric|#{metric}"
-  defp construct_query_name({:get_signal, signal}), do: "getSignal|#{signal}"
-  defp construct_query_name(query), do: query
+  defp get_query_and_selector({:get_metric, metric, selector}),
+    do: {"getMetric|#{metric}", selector}
+
+  defp get_query_and_selector({:get_signal, signal, selector}),
+    do: {"getSignal|#{signal}", selector}
+
+  defp get_query_and_selector(query), do: {query, nil}
 
   defp remote_ip(blueprint) do
     blueprint.execution.context.remote_ip |> IP.ip_tuple_to_string()

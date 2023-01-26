@@ -56,6 +56,13 @@ defmodule Sanbase.Project.List do
     |> Repo.all()
   end
 
+  @doc ~s"""
+  Return the slugs of all projects that are marked as hidden
+
+  When a project is marked as hidden it won't be included in any generated list
+  (all projects, all slugs from a filter, etc.), but direct calls that use it
+  will still succeed.
+  """
   def hidden_projects_slugs() do
     from(p in Project,
       where: p.is_hidden == true,
@@ -180,6 +187,20 @@ defmodule Sanbase.Project.List do
     |> preload([:source_slug_mappings])
     |> Repo.all()
     |> Enum.filter(fn project -> source in Enum.map(project.source_slug_mappings, & &1.source) end)
+  end
+
+  @doc ~s"""
+  Returns all projects with a full ecosystem path that matches the given pattern.
+  The full ecosystem path is a path enumeration of the ecosystem of the project
+  appended to the full ecosystem path of the ecosystem.
+
+  Example: Arbitrum is built on top of Ethereum, so Arbitrums' full ecosystem path
+  is `/Ethereum/Arbitrum/`
+  """
+  def projects_by_ecosystem_full_path_pattern(pattern, opts \\ []) do
+    projects_query(opts)
+    |> filter_ecosystem_full_path_pattern(pattern)
+    |> Repo.all()
   end
 
   def projects_count(opts \\ [])
@@ -627,6 +648,13 @@ defmodule Sanbase.Project.List do
         # bindings can be used
         query
     end
+  end
+
+  defp filter_ecosystem_full_path_pattern(query, pattern) do
+    from(
+      p in query,
+      where: like(p.ecosystem_full_path, ^pattern)
+    )
   end
 
   defp maybe_order_by_rank_above_volume(query, opts) do

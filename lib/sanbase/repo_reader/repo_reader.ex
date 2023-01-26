@@ -99,7 +99,8 @@ defmodule Sanbase.RepoReader do
     Enum.reduce_while(projects, :ok, fn project, _acc ->
       data = Map.get(projects_map, project.slug)
 
-      with :ok <- update_social_data(project, data),
+      with :ok <- update_general_data(project, data),
+           :ok <- update_social_data(project, data),
            :ok <- update_development_data(project, data),
            :ok <- update_contracts_data(project, data) do
         {:cont, :ok}
@@ -107,6 +108,28 @@ defmodule Sanbase.RepoReader do
         {:error, _} = error_tuple -> {:halt, error_tuple}
       end
     end)
+  end
+
+  defp update_general_data(project, data) do
+    general = data["general"]
+
+    result =
+      Project.changeset(
+        project,
+        %{
+          name: general["name"],
+          ticker: general["ticker"],
+          description: general["description"],
+          ecosystem: general["ecosystem"],
+          website: general["website"]
+        }
+      )
+      |> Sanbase.Repo.update()
+
+    case result do
+      {:ok, _} -> :ok
+      error -> error
+    end
   end
 
   defp update_social_data(project, data) do

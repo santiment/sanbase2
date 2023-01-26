@@ -48,6 +48,9 @@ defmodule Sanbase.Project do
     field(:website_link, :string)
     field(:whitepaper_link, :string)
 
+    field(:ecosystem, :string)
+    field(:ecosystem_full_path, :string)
+
     has_one(:social_volume_query, Project.SocialVolumeQuery)
 
     has_many(:chart_configurations, Sanbase.Chart.Configuration, on_delete: :delete_all)
@@ -88,6 +91,8 @@ defmodule Sanbase.Project do
       :coinmarketcap_id,
       :dark_logo_url,
       :description,
+      :ecosystem,
+      :ecosystem_full_path,
       :email,
       :facebook_link,
       :github_link,

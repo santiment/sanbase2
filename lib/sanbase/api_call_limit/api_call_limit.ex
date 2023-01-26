@@ -351,7 +351,7 @@ defmodule Sanbase.ApiCallLimit do
         false
 
       "sanapi_custom_" <> _ ->
-        [product_code, plan_name] = plan |> String.upcase() |> String.split(plan, parts: 2)
+        [product_code, plan_name] = plan |> String.upcase() |> String.split("_", parts: 2)
 
         case Sanbase.Billing.Plan.CustomPlan.Access.api_call_limits(plan_name, product_code) do
           %{"has_limits" => false} -> false

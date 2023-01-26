@@ -21,7 +21,8 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
         user_id: user_id,
         plan_id: @san_stake_free_plan,
         status: "active",
-        current_period_end: Timex.shift(Timex.now(), days: 30)
+        current_period_end: Timex.shift(Timex.now(), days: 30),
+        type: :liquidity
       },
       event_args: %{type: :liquidity_subscription}
     )
@@ -36,7 +37,6 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
 
   @doc """
   Subscriptions present only in Sanbase but not in Stripe
-  They don't have `stripe_id`
   """
   @spec list_liquidity_subscriptions() :: list(%Subscription{})
   def list_liquidity_subscriptions() do

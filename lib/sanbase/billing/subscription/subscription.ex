@@ -39,6 +39,7 @@ defmodule Sanbase.Billing.Subscription do
     field(:cancel_at_period_end, :boolean, default: false)
     field(:status, SubscriptionStatusEnum)
     field(:trial_end, :utc_datetime)
+    field(:type, SubscriptionType)
 
     belongs_to(:user, User)
     belongs_to(:plan, Plan)
@@ -58,7 +59,8 @@ defmodule Sanbase.Billing.Subscription do
       :trial_end,
       :cancel_at_period_end,
       :status,
-      :inserted_at
+      :inserted_at,
+      :type
     ])
     |> foreign_key_constraint(:plan_id, name: :subscriptions_plan_id_fkey)
   end

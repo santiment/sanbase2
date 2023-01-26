@@ -226,6 +226,9 @@ defmodule Sanbase.EventBus.EventValidation do
   defp valid_subscription_stripe_id?(%{type: :liquidity_subscription, stripe_subscription_id: id}),
     do: is_nil(id) or valid_string_id?(id)
 
+  defp valid_subscription_stripe_id?(%{type: :nft_subscription, stripe_subscription_id: id}),
+    do: is_nil(id) or valid_string_id?(id)
+
   defp valid_subscription_stripe_id?(%{stripe_subscription_id: id}),
     do: valid_string_id?(id)
 end

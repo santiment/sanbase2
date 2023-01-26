@@ -1,28 +1,47 @@
-defmodule Sanbase.SmartContracts.SanbaseNftInterface do
-  def nft_subscriptions(user) do
+defmodule Sanbase.SmartContracts.SanbaseNFTInterface do
+  alias Sanbase.Accounts.User
+
+  def nft_subscriptions(%User{} = user) do
     user = Sanbase.Repo.preload(user, :eth_accounts)
 
     nft_data =
       user.eth_accounts
       |> Enum.map(fn ea ->
         address = String.downcase(ea.address)
+        data = Sanbase.SmartContracts.SanbaseNFT.nft_subscriptions_data(address)
 
         %{
           address: address,
-          token_ids: Sanbase.SmartContracts.SanbaseNft.nft_subscriptions_data(address)
+          token_ids: data.valid,
+          expired_token_ids: data.expired
         }
       end)
 
     %{
       nft_data: nft_data,
       has_valid_nft: has_valid_nft?(nft_data),
-      nft_count: nft_count(nft_data)
+      nft_count: nft_count(nft_data),
+      has_expired_nft: has_expired_nft?(nft_data)
     }
+  end
+
+  def nft_subscriptions(user_id) when is_integer(user_id) do
+    User.by_id(user_id)
+    |> case do
+      {:ok, user} -> nft_subscriptions(user)
+      {:error, _} -> %{nft_data: %{}, has_valid_nft: false, nft_count: 0, has_expired_nft: false}
+    end
   end
 
   defp has_valid_nft?(data) do
     data
     |> Enum.filter(fn %{token_ids: token_ids} -> length(token_ids) > 0 end)
+    |> Enum.any?()
+  end
+
+  defp has_expired_nft?(data) do
+    data
+    |> Enum.filter(fn %{expired_token_ids: token_ids} -> length(token_ids) > 0 end)
     |> Enum.any?()
   end
 
@@ -32,9 +51,9 @@ defmodule Sanbase.SmartContracts.SanbaseNftInterface do
   end
 end
 
-defmodule Sanbase.SmartContracts.SanbaseNft do
+defmodule Sanbase.SmartContracts.SanbaseNFT do
   import Sanbase.SmartContracts.Utils,
-    only: [call_contract: 4, format_address: 1]
+    only: [call_contract: 4, call_contract_batch: 5, format_address: 1]
 
   require Logger
 
@@ -49,30 +68,32 @@ defmodule Sanbase.SmartContracts.SanbaseNft do
   def abi(), do: @abi
 
   def nft_subscriptions_data(address) do
-    now_unix = Timex.now() |> DateTime.to_unix()
     tokens_count = balance_of(address)
 
     if tokens_count > 0 do
-      0..(tokens_count - 1)
-      |> Enum.map(fn idx ->
-        address = format_address(address)
-        execute("tokenOfOwnerByIndex", [address, idx]) |> List.first()
-      end)
-      |> Enum.filter(fn token_id ->
-        execute("isValid", [token_id])
-      end)
-      |> Enum.filter(fn token_id ->
-        exp_unix = execute("getExpiration", [token_id]) |> List.first()
+      token_ids =
+        0..(tokens_count - 1)
+        |> Enum.map(fn idx ->
+          address = format_address(address)
+          execute("tokenOfOwnerByIndex", [address, idx]) |> List.first()
+        end)
 
-        if exp_unix != nil and exp_unix > now_unix do
-          true
-        else
-          false
-        end
-      end)
+      valid_token_ids = Enum.filter(token_ids, fn token_id -> execute("isValid", [token_id]) end)
+      expired_token_ids = token_ids -- valid_token_ids
+      %{valid: valid_token_ids, expired: expired_token_ids}
     else
-      []
+      %{valid: [], expired: []}
     end
+  end
+
+  def balances_of(addresses) do
+    addresses_args = Enum.map(addresses, &format_address/1) |> Enum.map(&List.wrap/1)
+
+    execute_batch("balanceOf", addresses_args)
+    |> Enum.map(fn
+      [balance] -> balance
+      _ -> 0
+    end)
   end
 
   def balance_of(address) do
@@ -99,6 +120,20 @@ defmodule Sanbase.SmartContracts.SanbaseNft do
         function_abi(function_name),
         args,
         function_abi(function_name).returns
+      )
+    end
+
+    maybe_replace_goerly(contract_call)
+  end
+
+  def execute_batch(function_name, args) do
+    contract_call = fn ->
+      call_contract_batch(
+        @contract,
+        function_abi(function_name),
+        args,
+        function_abi(function_name).returns,
+        transform_args_list_fun: fn list -> list ++ ["latest"] end
       )
     end
 

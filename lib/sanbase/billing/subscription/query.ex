@@ -36,7 +36,11 @@ defmodule Sanbase.Billing.Subscription.Query do
   end
 
   def liquidity_subscriptions(query) do
-    from(q in query, where: is_nil(q.stripe_id))
+    from(q in query, where: q.type == :liquidity)
+  end
+
+  def nft_subscriptions(query) do
+    from(q in query, where: q.type == :burning_nft)
   end
 
   def filter_user(query, user_id) do

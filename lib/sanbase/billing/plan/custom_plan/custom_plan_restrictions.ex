@@ -25,10 +25,12 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Restrictions do
     :signal_access
   ]
 
+  @required_fields @fields -- [:historical_data_in_days, :realtime_data_cut_off_in_days]
+
   def changeset(%__MODULE__{} = plan, attrs) do
     plan
     |> cast(attrs, @fields)
-    |> validate_required(@fields)
+    |> validate_required(@required_fields)
     |> validate_change(:api_call_limits, &validate_api_calls/2)
     |> validate_change(:metric_access, &validate_access_map/2)
     |> validate_change(:query_access, &validate_access_map/2)

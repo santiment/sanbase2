@@ -128,6 +128,7 @@ defmodule Sanbase.Intercom.UserEvent do
   defp to_json_kv_tuple(events) do
     events
     |> Enum.map(fn %{
+                     anonymous_user_id: anonymous_user_id,
                      user_id: user_id,
                      event_name: event_name,
                      metadata: metadata,
@@ -137,6 +138,7 @@ defmodule Sanbase.Intercom.UserEvent do
       key = "#{user_id}_#{timestamp}"
 
       data = %{
+        anonymous_user_id: anonymous_user_id,
         user_id: user_id,
         event_name: event_name,
         metadata: Jason.encode!(metadata),

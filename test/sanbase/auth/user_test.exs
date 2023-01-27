@@ -107,16 +107,19 @@ defmodule Sanbase.Accounts.UserTest do
       Sanbase.Intercom.UserAttributes.save(%{user_id: user.id, properties: %{}})
 
       # User intercom or other events
-      Sanbase.Intercom.UserEvent.create([
-        %{
-          user_id: user.id,
-          event_name: "test",
-          metadata: %{},
-          created_at: Timex.now() |> DateTime.truncate(:second),
-          inserted_at: Timex.now() |> DateTime.truncate(:second),
-          updated_at: Timex.now() |> DateTime.truncate(:second)
-        }
-      ])
+      Sanbase.Intercom.UserEvent.create(
+        [
+          %{
+            user_id: user.id,
+            event_name: "test",
+            metadata: %{},
+            created_at: Timex.now() |> DateTime.truncate(:second),
+            inserted_at: Timex.now() |> DateTime.truncate(:second),
+            updated_at: Timex.now() |> DateTime.truncate(:second)
+          }
+        ],
+        _is_authentiicated = true
+      )
 
       insert(:email_login_attempt, user: user)
       insert(:short_url, user: user)

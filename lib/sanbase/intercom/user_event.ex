@@ -28,11 +28,17 @@ defmodule Sanbase.Intercom.UserEvent do
     |> validate_required([:user_id, :event_name, :created_at])
   end
 
-  def create([]), do: :ok
+  def create([], _is_authenticated), do: :ok
 
-  def create(events) when is_list(events) do
-    persist_in_kafka_async(events)
-    Repo.insert_all(__MODULE__, events, on_conflict: :nothing)
+  def create(events, is_authenticated) when is_list(events) do
+    _task = persist_in_kafka_async(events)
+
+    if is_authenticated do
+      events = Enum.map(events, &Map.delete(&1, :anonymous_user_id))
+      Repo.insert_all(__MODULE__, events, on_conflict: :nothing)
+    end
+
+    :ok
   end
 
   def get_last_intercom_event_timestamp(user_id) do
@@ -99,7 +105,7 @@ defmodule Sanbase.Intercom.UserEvent do
         updated_at: Timex.now() |> DateTime.truncate(:second)
       }
     end)
-    |> create()
+    |> create(_is_authenticated = true)
   end
 
   defp persist_in_kafka_async(events) do

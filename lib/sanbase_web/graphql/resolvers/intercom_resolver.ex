@@ -27,13 +27,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
     {:ok, ApiCallData.api_metric_distribution_per_user()}
   end
 
-  def track_events(_, %{events: events}, resolution) do
+  def track_events(_, %{events: events} = params, resolution) do
     if valid_events?(events) do
       events =
         events
         |> Enum.map(fn %{"event_name" => event_name, "created_at" => created_at} = event ->
           %{user_id: user_id, anonymous_user_id: anonymous_user_id} =
-            get_identification_fields(resolution, event)
+            get_identification_fields(resolution, params)
 
           %{
             event_name: event_name,
@@ -59,12 +59,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
   # Get the user_id and anonymous_user_id. They cannot be NULL as primary key
   # fields in Clickhouse cannot be NULL. use 0 and empty string when these fields
   # need to not be filled
-  defp get_identification_fields(%{context: %{auth: %{current_user: user}}}, _events) do
+  defp get_identification_fields(%{context: %{auth: %{current_user: user}}}, _params) do
     %{user_id: user.id, anonymous_user_id: ""}
   end
 
-  defp get_identification_fields(_resolution, events) do
-    %{user_id: 0, anonymous_user_id: events["anonymous_user_id"] || ""}
+  defp get_identification_fields(_resolution, params) do
+    case params do
+      %{anonymous_user_id: anonymous_user_id} when byte_size(anonymous_user_id) >= 28 ->
+        %{user_id: 0, anonymous_user_id: anonymous_user_id}
+
+      _ ->
+        {:error,
+         "Not authenticated requests to trackEvents must include `anonymous_user_id` field which is at least 28 characters long"}
+    end
   end
 
   defp valid_events?(events) do

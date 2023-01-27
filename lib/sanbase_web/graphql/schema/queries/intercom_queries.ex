@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Schema.IntercomQueries do
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Middlewares.{BasicAuth, JWTAuth}
+  alias SanbaseWeb.Graphql.Middlewares.{BasicAuth, SanbaseProductOrigin}
   alias SanbaseWeb.Graphql.Resolvers.IntercomResolver
 
   object :intercom_queries do
@@ -60,7 +60,10 @@ defmodule SanbaseWeb.Graphql.Schema.IntercomQueries do
     field :track_events, :boolean do
       arg(:events, :json)
 
-      middleware(JWTAuth)
+      # Do not allow this mutation to be called from scritps, sanpy, etc.
+      # Allow only requests coming from Sanbase. It allows both
+      # authenticated and non-authenticated requests.
+      middleware(SanbaseProductOrigin)
 
       resolve(&IntercomResolver.track_events/3)
     end

@@ -28,13 +28,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
   end
 
   def track_events(_, %{events: events} = params, resolution) do
+    %{user_id: user_id, anonymous_user_id: anonymous_user_id} =
+      get_identification_fields(resolution, params)
+
     if valid_events?(events) do
       events =
         events
         |> Enum.map(fn %{"event_name" => event_name, "created_at" => created_at} = event ->
-          %{user_id: user_id, anonymous_user_id: anonymous_user_id} =
-            get_identification_fields(resolution, params)
-
           %{
             event_name: event_name,
             created_at: from_iso8601!(created_at) |> DateTime.truncate(:second),
@@ -46,7 +46,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
           }
         end)
 
-      UserEvent.create(events)
+      is_authenticated = user_id != 0
+
+      UserEvent.create(events, is_authenticated)
 
       {:ok, true}
     else

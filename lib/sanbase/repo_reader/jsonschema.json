@@ -7,6 +7,7 @@
         "slug": { "type": "string" },
         "description": { "type": "string" },
         "ticker": { "type": "string" },
+        "ecosystem": { "type": "string" },
         "market_segments": { "type": "array", "items": { "type": "string" } }
       },
       "required": ["slug"]

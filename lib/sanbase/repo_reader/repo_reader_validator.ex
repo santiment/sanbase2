@@ -6,7 +6,7 @@ defmodule Sanbase.RepoReader.Validator do
               |> Jason.decode!()
               |> ExJsonSchema.Schema.resolve()
 
-  @custom_validations ["social", "contracts"]
+  @custom_validations ["social", "contracts", "general[ticker]", "general[name]"]
 
   def schema(), do: @jsonschema
 
@@ -52,15 +52,50 @@ defmodule Sanbase.RepoReader.Validator do
     end)
   end
 
-  defp custom_validate("contracts", %{
-         "blockchain" => %{"contracts" => contracts}
-       }) do
+  defp custom_validate("contracts", %{"blockchain" => %{"contracts" => contracts}}) do
     Enum.reduce_while(contracts, :ok, fn contract_map, _acc ->
       case validate_contract_map(contract_map) do
         :ok -> {:cont, :ok}
         {:error, error} -> {:halt, {:error, "Invalid contract map: #{error}"}}
       end
     end)
+  end
+
+  defp custom_validate("general[name]", %{"general" => %{"name" => name}}) do
+    cond do
+      not is_binary(name) or String.length(name) < 2 ->
+        {:error, "The name must be a string of length 2 or more"}
+
+      String.at(name, 0) != String.at(name, 0) |> String.upcase() ->
+        {:error, "The name must start with a capital letter or a number"}
+
+      not ((String.at(name, 0) >= "A" and String.at(name, 0) <= "Z") or
+               (String.at(name, 0) >= "0" and String.at(name, 0) <= "9")) ->
+        {:error, "The name must start with a capital letter or a number"}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp custom_validate("general[ticker]", %{"general" => %{"ticker" => ticker}}) do
+    cond do
+      not String.match?(ticker, ~r/^[[:alnum:]]+$/) ->
+        {:error, "The ticker must contain only alphanumeric characters"}
+
+      String.upcase(ticker) != ticker ->
+        {:error, "All letters in the ticker must be uppercased"}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp custom_validate("general[ecosystem]", %{"general" => %{"ecosystem" => ecosystem}}) do
+    case Sanbase.AvailableSlugs.valid_slug?(ecosystem) do
+      true -> :ok
+      false -> {:error, "The ecosystem must be an existing slug"}
+    end
   end
 
   defp custom_validate(_, _), do: :ok

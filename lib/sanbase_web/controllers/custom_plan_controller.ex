@@ -97,4 +97,10 @@ defmodule SanbaseWeb.CustomPlanController do
 
     args
   end
+
+  defimpl String.Chars, for: Map do
+    def to_string(map) do
+      inspect(map)
+    end
+  end
 end

@@ -2421,7 +2421,9 @@ CREATE TABLE public.project (
     is_hidden boolean DEFAULT false,
     dark_logo_url character varying(255),
     telegram_chat_id integer,
-    discord_link character varying(255)
+    discord_link character varying(255),
+    ecosystem character varying(255),
+    ecosystem_full_path character varying(255)
 );
 
 
@@ -8123,6 +8125,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20221118110940);
 INSERT INTO public."schema_migrations" (version) VALUES (20221129102156);
 INSERT INTO public."schema_migrations" (version) VALUES (20221212124926);
 INSERT INTO public."schema_migrations" (version) VALUES (20221213105305);
+INSERT INTO public."schema_migrations" (version) VALUES (20221214090723);
 INSERT INTO public."schema_migrations" (version) VALUES (20221215103058);
 INSERT INTO public."schema_migrations" (version) VALUES (20221216095648);
 INSERT INTO public."schema_migrations" (version) VALUES (20221221113902);

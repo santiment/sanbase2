@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     UserResolver,
     UserSettingsResolver,
     UserTriggerResolver,
-    SanbaseNftResolver
+    SanbaseNFTResolver
   }
 
   enum :user_role do
@@ -211,7 +211,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :sanbase_nft, :sanbase_nft do
-      resolve(&SanbaseNftResolver.sanbase_nft/3)
+      resolve(&SanbaseNFTResolver.sanbase_nft/3)
     end
 
     @desc ~s"""
@@ -282,6 +282,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
   object :sanbase_nft do
     field(:has_valid_nft, non_null(:boolean))
+    field(:has_expired_nft, :boolean)
     field(:nft_count, non_null(:integer))
     field(:nft_data, non_null(list_of(:nft_data)))
   end
@@ -289,6 +290,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   object :nft_data do
     field(:address, :string)
     field(:token_ids, list_of(:integer))
+    field(:expired_token_ids, list_of(:integer))
   end
 
   @desc ~s"""

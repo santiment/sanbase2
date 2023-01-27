@@ -1,10 +1,10 @@
-defmodule SanbaseWeb.Graphql.SanbaseNftApiTest do
+defmodule SanbaseWeb.Graphql.SanbaseNFTApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.SmartContracts.SanbaseNft
+  alias Sanbase.SmartContracts.SanbaseNFT
   alias Sanbase.Accounts.EthAccount
 
   setup do
@@ -19,19 +19,20 @@ defmodule SanbaseWeb.Graphql.SanbaseNftApiTest do
   test "when there are nfts - return true", context do
     mock_fun =
       [
-        fn -> [] end,
-        fn -> [1, 3, 5] end
+        fn -> %{valid: [], expired: []} end,
+        fn -> %{valid: [1, 3, 5], expired: []} end
       ]
       |> Sanbase.Mock.wrap_consecutives(arity: 1)
 
     Sanbase.Mock.prepare_mock(
-      Sanbase.SmartContracts.SanbaseNft,
+      Sanbase.SmartContracts.SanbaseNFT,
       :nft_subscriptions_data,
       mock_fun
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = sanbase_nft(context.conn)
       assert result["sanbaseNft"]["hasValidNft"]
+      refute result["sanbaseNft"]["hasExpiredNft"]
       assert result["sanbaseNft"]["nftCount"] == 3
       assert %{"address" => "0x234", "tokenIds" => [1, 3, 5]} in result["sanbaseNft"]["nftData"]
     end)
@@ -40,18 +41,19 @@ defmodule SanbaseWeb.Graphql.SanbaseNftApiTest do
   test "when there are no nfts - return false", context do
     mock_fun =
       [
-        fn -> [] end
+        fn -> %{valid: [], expired: []} end
       ]
       |> Sanbase.Mock.wrap_consecutives(arity: 1)
 
     Sanbase.Mock.prepare_mock(
-      Sanbase.SmartContracts.SanbaseNft,
+      Sanbase.SmartContracts.SanbaseNFT,
       :nft_subscriptions_data,
       mock_fun
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = sanbase_nft(context.conn)
       refute result["sanbaseNft"]["hasValidNft"]
+      refute result["sanbaseNft"]["hasExpiredNft"]
       assert result["sanbaseNft"]["nftCount"] == 0
     end)
   end
@@ -62,6 +64,7 @@ defmodule SanbaseWeb.Graphql.SanbaseNftApiTest do
       currentUser {
         sanbaseNft {
           hasValidNft
+          hasExpiredNft
           nftCount
           nftData {
             address

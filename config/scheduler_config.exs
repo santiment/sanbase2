@@ -162,5 +162,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_subscription_timeseries_stripe: [
       schedule: "10 01 * * *",
       task: {Sanbase.Billing.Subscription.Timeseries, :run, []}
+    ],
+    sync_nft_subscriptions: [
+      schedule: "9-59/10 * * * *",
+      task: {Sanbase.Billing.Subscription.NFTSubscription, :run, []}
     ]
   ]

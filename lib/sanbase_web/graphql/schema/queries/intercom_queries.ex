@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.Schema.IntercomQueries do
   object :intercom_mutations do
     field :track_events, :boolean do
       arg(:anonymous_user_id, :string)
-      arg(:events, non_null(:json))
+      arg(:events, :json)
 
       # Do not allow this mutation to be called from scritps, sanpy, etc.
       # Allow only requests coming from Sanbase. It allows both

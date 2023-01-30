@@ -250,7 +250,7 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
       nil ->
         :ok
 
-      slug ->
+      [_ | _] = slugs ->
         # This works because before calling the export function, the point is
         # added to the last_points map. This implementation avoids any conditionals
         # that could be used to determine the current quote asset and fetch only
@@ -259,18 +259,21 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
         usd_point = Map.get(last_points, {"CCCAGG", point.base_asset, "USD"}, %{})
         btc_point = Map.get(last_points, {"CCCAGG", point.base_asset, "BTC"}, %{})
 
-        tuple =
-          %AssetPricesPoint{
-            slug: slug,
-            datetime: point.datetime,
-            price_usd: usd_point[:price],
-            price_btc: if(point.base_asset == "BTC", do: 1.0, else: btc_point[:price]),
-            volume_usd: usd_point[:volume_24h_to] |> Sanbase.Math.to_integer(),
-            marketcap_usd: nil
-          }
-          |> AssetPricesPoint.json_kv_tuple(slug, point.source)
+        tuples =
+          slugs
+          |> Enum.map(fn slug ->
+            %AssetPricesPoint{
+              slug: slug,
+              datetime: point.datetime,
+              price_usd: usd_point[:price],
+              price_btc: if(point.base_asset == "BTC", do: 1.0, else: btc_point[:price]),
+              volume_usd: usd_point[:volume_24h_to] |> Sanbase.Math.to_integer(),
+              marketcap_usd: nil
+            }
+            |> AssetPricesPoint.json_kv_tuple(slug, point.source)
+          end)
 
-        :ok = Sanbase.KafkaExporter.persist_async(tuple, @asset_prices_exporter)
+        :ok = Sanbase.KafkaExporter.persist_async(tuples, @asset_prices_exporter)
     end
   end
 
@@ -303,7 +306,9 @@ defmodule Sanbase.Cryptocompare.WebsocketScraper do
   defp get_slug_data_map() do
     result =
       Sanbase.Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
-      |> Map.new()
+      |> Enum.reduce(%{}, fn {cryptocompare_slug, san_slug}, acc ->
+        Map.update(acc, cryptocompare_slug, [san_slug], &[san_slug | &1])
+      end)
 
     {:ok, result}
   end

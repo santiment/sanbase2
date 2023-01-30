@@ -135,8 +135,14 @@ defmodule Sanbase.Dashboard.Query do
   end
 
   defp extend_with_metadata(query, query_metadata) do
-    query_metadata_json = Jason.encode!(query_metadata)
-    query <> "\n SETTINGS log_comment='#{query_metadata_json}'"
+    case Regex.match?(~r/\bSELECT\b/i, query) do
+      true ->
+        query_metadata_json = Jason.encode!(query_metadata)
+        query <> "\n SETTINGS log_comment='#{query_metadata_json}'"
+
+      false ->
+        query
+    end
   end
 
   defp remove_trailing_semicolon(query) do

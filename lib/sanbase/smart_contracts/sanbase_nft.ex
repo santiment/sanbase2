@@ -59,13 +59,22 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
 
   alias Sanbase.Utils.Config
 
-  @contract "0x7f985e8ad29438907a2cc8ff3d526d9a1693442c"
+  @contract_goerly "0x7f985e8ad29438907a2cc8ff3d526d9a1693442c"
+  @contract_mainnet "TBD"
+
   @json_file "sanbase_nft_abi.json"
   @external_resource json_file = Path.join(__DIR__, @json_file)
   @abi File.read!(json_file) |> Jason.decode!()
 
   # test address with subscriptions: 0x89c276d6e0fda36d7796af0d27a08176cc0f1976
   def abi(), do: @abi
+
+  def contract() do
+    case is_dev_or_stage?() do
+      true -> @contract_goerly
+      false -> @contract_mainnet
+    end
+  end
 
   def nft_subscriptions_data(address) do
     tokens_count = balance_of(address)
@@ -116,7 +125,7 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
   def execute(function_name, args) do
     contract_call = fn ->
       call_contract(
-        @contract,
+        contract(),
         function_abi(function_name),
         args,
         function_abi(function_name).returns
@@ -129,7 +138,7 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
   def execute_batch(function_name, args) do
     contract_call = fn ->
       call_contract_batch(
-        @contract,
+        contract(),
         function_abi(function_name),
         args,
         function_abi(function_name).returns,

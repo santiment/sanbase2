@@ -143,6 +143,36 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
       middleware(JWTAuth)
       resolve(&DashboardResolver.get_clickhouse_query_execution_stats/3)
     end
+
+    @desc ~s"""
+    Compute the raw Clickhouse SQL query defined by the arguments.
+
+    This mutation is used to execute some SQL outside the context of
+    dasbhoards and panels.
+
+    Example:
+
+    mutation{
+     computeRawClickhouseQuery(
+      query: "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}}) LIMIT {{limit}}"
+      parameters: "{\"slug\": \"bitcoin\", \"limit\": 1}"){
+        columns
+        rows
+      }
+    }
+    """
+    field :compute_raw_clickhouse_query, :query_result do
+      meta(access: :free)
+      arg(:query, non_null(:string))
+      arg(:parameters, non_null(:json))
+
+      middleware(UserAuth)
+
+      cache_resolve(&DashboardResolver.compute_raw_clickhouse_query/3,
+        ttl: 10,
+        max_ttl_offset: 10
+      )
+    end
   end
 
   object :dashboard_mutations do
@@ -375,24 +405,8 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
       resolve(&DashboardResolver.store_dashboard_panel/3)
     end
 
-    @desc ~s"""
-    Compute the raw Clickhouse SQL query defined by the arguments.
-
-    This mutation is used to execute some SQL outside the context of
-    dasbhoards and panels.
-
-    Example:
-
-    mutation{
-     computeRawClickhouseQuery(
-      query: "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}}) LIMIT {{limit}}"
-      parameters: "{\"slug\": \"bitcoin\", \"limit\": 1}"){
-        columns
-        rows
-      }
-    }
-    """
     field :compute_raw_clickhouse_query, :query_result do
+      deprecate("Use the query with the same name instead of a mutation")
       arg(:query, non_null(:string))
       arg(:parameters, non_null(:json))
 

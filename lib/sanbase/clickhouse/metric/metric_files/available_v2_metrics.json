@@ -2252,6 +2252,57 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Aave v2 supply APY",
+    "name": "aave_v2_supply_apy",
+    "metric": "aavev2_supply_apy",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Aave v2 stable borrow APY",
+    "name": "aave_v2_stable_borrow_apy",
+    "metric": "aavev2_stable_borrow_apy",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Aave v2 variable borrow APY",
+    "name": "aave_v2_variable_borrow_apy",
+    "metric": "aavev2_variable_borrow_apy",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Compound deposits",
     "name": "compound_action_deposits",
     "metric": "compound_action_deposits",

@@ -30,12 +30,12 @@ defmodule Sanbase.Questionnaire.Validation do
     end
   end
 
-  def validate_question_answers_option(type, _answers_map)
+  def validate_question_answers_options(type, _answers_map)
       when type in [:open_text, :open_number] do
     true
   end
 
-  def validate_question_answers_option(:boolean, answers_map) do
+  def validate_question_answers_options(:boolean, answers_map) do
     # Enforce that the boolean question answers option always have the same format
     # This will allow for easy
     case %{"1" => "true", "2" => "false"} == answers_map do

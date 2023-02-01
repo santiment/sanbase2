@@ -3,9 +3,9 @@ import EctoEnum
 defenum(QuestionType, :question_type, [
   "multi_select",
   "single_select",
-  "dropdown_select",
   "open_text",
-  "open_number"
+  "open_number",
+  "boolean"
 ])
 
 defenum(SubscriptionType, :subscription_type, [

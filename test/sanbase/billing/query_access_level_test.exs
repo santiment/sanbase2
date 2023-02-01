@@ -42,6 +42,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :check_annual_discount_eligibility,
           :comments_feed,
           :comments,
+          :compute_raw_clickhouse_query,
           :currencies_market_segments,
           :current_user,
           :daily_active_addresses,

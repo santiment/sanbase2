@@ -200,7 +200,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
        metric: metric,
        internal_metric: metric,
        has_incomplete_data: has_incomplete_data?(metric),
-       min_interval: "1m",
+       min_interval: "5m",
        default_aggregation: :sum,
        available_aggregations: @aggregations,
        available_selectors: [:slug],

@@ -276,7 +276,10 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def available_metrics(%{address: _address}), do: []
 
   def available_metrics(%{contract_address: contract_address}) do
-    Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address)
+    metrics = Sanbase.Metric.Utils.available_metrics_for_contract(__MODULE__, contract_address)
+
+    # The metric is available only for `source`, not for `slug`
+    metrics -- ["social_active_users"]
   end
 
   def available_metrics(%{slug: slug}) do
@@ -287,7 +290,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
           false -> @metrics -- @community_messages_count_timeseries_metrics
         end
 
-      {:ok, metrics}
+      # The metric is available only for `source`, not for `slug`
+      {:ok, metrics -- ["social_active_users"]}
     end
   end
 

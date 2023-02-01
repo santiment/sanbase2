@@ -93,6 +93,6 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
   end
 
   defp is_dev_or_stage?() do
-    Config.module_get(Sanbase, :deployment_env) in ["dev", "stage"]
+    Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) in ["dev", "stage"]
   end
 end

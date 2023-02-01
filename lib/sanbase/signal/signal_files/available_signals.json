@@ -6,7 +6,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -21,7 +21,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -36,7 +36,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -64,7 +64,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -79,7 +79,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -95,7 +95,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -110,7 +110,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -125,7 +125,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -140,7 +140,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -155,7 +155,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -170,7 +170,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -185,7 +185,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -200,7 +200,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -215,7 +215,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -230,7 +230,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -245,7 +245,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -260,7 +260,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -275,7 +275,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -290,7 +290,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -305,7 +305,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -320,7 +320,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -335,7 +335,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -356,7 +356,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {
@@ -377,7 +377,7 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "1m",
+    "min_interval": "5m",
     "table": "signals",
     "data_type": "timeseries",
     "min_plan": {

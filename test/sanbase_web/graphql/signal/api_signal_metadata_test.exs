@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalMetadataTest do
              )
 
       assert metadata["defaultAggregation"] in aggregations
-      assert metadata["minInterval"] in ["1m"]
+      assert metadata["minInterval"] in ["5m"]
       assert metadata["dataType"] in ["TIMESERIES"]
       assert length(metadata["availableAggregations"]) > 0
     end

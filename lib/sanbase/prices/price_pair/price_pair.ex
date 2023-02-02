@@ -4,7 +4,9 @@ defmodule Sanbase.PricePair do
   import Sanbase.Utils.Transform,
     only: [
       maybe_unwrap_ok_value: 1,
-      maybe_apply_function: 2
+      maybe_apply_function: 2,
+      maybe_sort: 3,
+      maybe_transform_datetime_data_tuple_to_map: 1
     ]
 
   import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 2]
@@ -91,12 +93,8 @@ defmodule Sanbase.PricePair do
       elem = %{slug: slug, value: value}
       Map.update(acc, datetime, [elem], &[elem | &1])
     end)
-    |> maybe_apply_function(fn list ->
-      Enum.map(list, fn {datetime, data} -> %{datetime: datetime, data: data} end)
-    end)
-    |> maybe_apply_function(fn list ->
-      Enum.sort_by(list, & &1.datetime, {:asc, DateTime})
-    end)
+    |> maybe_transform_datetime_data_tuple_to_map()
+    |> maybe_sort(:datetime, :asc)
   end
 
   @doc ~s"""

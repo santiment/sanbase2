@@ -16,6 +16,8 @@ defmodule Sanbase.Metric do
   import Sanbase.Metric.MetricReplace,
     only: [maybe_replace_metric: 2, maybe_replace_metrics: 2]
 
+  import Sanbase.Utils.Transform, only: [maybe_sort: 3, maybe_apply_function: 2]
+
   # Use only the types from the behaviour module
   alias Sanbase.Metric.Behaviour, as: Type
   alias Sanbase.Metric.Helper
@@ -200,10 +202,8 @@ defmodule Sanbase.Metric do
         end
 
         execute_if_aggregation_valid(fun, metric, aggregation)
-        |> Sanbase.Utils.Transform.maybe_apply_function(fn list ->
-          Enum.sort_by(list, & &1.datetime, {:asc, DateTime})
-        end)
-        |> Sanbase.Utils.Transform.maybe_apply_function(&sort_data_field_by_slug_asc/1)
+        |> maybe_sort(:datetime, :asc)
+        |> maybe_apply_function(&sort_data_field_by_slug_asc/1)
     end
   end
 

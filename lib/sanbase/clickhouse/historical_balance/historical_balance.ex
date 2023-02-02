@@ -5,7 +5,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   for many different database tables and schemas.
   """
 
-  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+  import Sanbase.Utils.Transform, only: [maybe_sort: 3]
 
   alias Sanbase.Project
   alias Sanbase.BlockchainAddress
@@ -72,9 +72,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
       {:error, error} ->
         {:error, error}
     end
-    |> maybe_apply_function(fn data ->
-      Enum.sort_by(data, &Map.get(&1, :balance), :desc)
-    end)
+    |> maybe_sort(:balance, :desc)
   end
 
   @doc ~s"""
@@ -98,9 +96,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
       {:error, error} ->
         {:error, error}
     end
-    |> maybe_apply_function(fn data ->
-      Enum.sort_by(data, &Map.get(&1, :usd_value_change), :desc)
-    end)
+    |> maybe_sort(:usd_value_change, :desc)
   end
 
   @doc ~s"""
@@ -124,9 +120,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
       {:error, error} ->
         {:error, error}
     end
-    |> maybe_apply_function(fn data ->
-      Enum.sort_by(data, &Map.get(&1, :current_usd_value), :desc)
-    end)
+    |> maybe_sort(:current_usd_value, :desc)
   end
 
   @doc ~s"""

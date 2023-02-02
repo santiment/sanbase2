@@ -1,7 +1,8 @@
 defmodule Sanbase.Balance do
   import __MODULE__.SqlQuery
 
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
+  import Sanbase.Utils.Transform,
+    only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, maybe_sort: 3]
 
   import Sanbase.Clickhouse.HistoricalBalance.Utils,
     only: [maybe_update_first_balance: 2, maybe_fill_gaps_last_seen_balance: 1]
@@ -239,7 +240,7 @@ defmodule Sanbase.Balance do
       end
     )
     |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
-    |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.current_usd_value, :desc) end)
+    |> maybe_sort(:current_usd_value, :desc)
   end
 
   @doc ~s"""

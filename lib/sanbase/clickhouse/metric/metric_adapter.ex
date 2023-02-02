@@ -10,7 +10,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   import Sanbase.Clickhouse.MetricAdapter.SqlQuery
   import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 2]
 
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
+  import Sanbase.Utils.Transform,
+    only: [
+      maybe_unwrap_ok_value: 1,
+      maybe_apply_function: 2,
+      maybe_transform_datetime_data_tuple_to_map: 1
+    ]
 
   alias __MODULE__.{HistogramMetric, FileHandler, TableMetric}
 
@@ -120,10 +125,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
         Map.update(acc, datetime, [elem], &[elem | &1])
       end
     )
-    |> maybe_apply_function(fn list ->
-      list
-      |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
-    end)
+    |> maybe_transform_datetime_data_tuple_to_map()
   end
 
   @impl Sanbase.Metric.Behaviour

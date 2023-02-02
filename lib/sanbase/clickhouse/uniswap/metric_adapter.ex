@@ -1,7 +1,7 @@
 defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
 
-  import Sanbase.Utils.Transform
+  import Sanbase.Utils.Transform, only: [maybe_sort: 3]
   import Sanbase.Utils.ErrorHandling, only: [not_implemented_function_for_metric_error: 2]
 
   alias Sanbase.Transfers.Erc20Transfers
@@ -69,7 +69,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
       %{address: address, value: value}
     end)
     |> maybe_add_balances(from, to)
-    |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.value, :desc) end)
+    |> maybe_sort(:value, :desc)
   end
 
   @impl Sanbase.Metric.Behaviour

@@ -85,7 +85,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
       }) do
     remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
 
-    with true <- allowed_origin?(origin_host_parts),
+    with true <- allowed_origin?(origin_host_parts, origin_url),
          {:ok, user} <- User.find_or_insert_by(:email, email, %{username: args[:username]}),
          :ok <- EmailLoginAttempt.has_allowed_login_attempts(user, remote_ip),
          {:ok, user} <- User.Email.update_email_token(user, args[:consent]),
@@ -183,9 +183,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
     end
   end
 
-  defp allowed_origin?(["santiment", "net"] = _hosted_parts), do: true
-  defp allowed_origin?([_origin_app, "santiment", "net"] = _hosted_parts), do: true
-  defp allowed_origin?(_hosted_parts), do: {:error, "Origin header is not supported."}
+  defp allowed_origin?(["santiment", "net"] = _hosted_parts, _origin_url), do: true
+  defp allowed_origin?([_origin_app, "santiment", "net"] = _hosted_parts, _origin_url), do: true
+
+  defp allowed_origin?(_hosted_parts, origin_url),
+    do: {:error, "Origin header #{origin_url} is not supported."}
 
   defp fetch_user(%{address: address}, nil) do
     # No EthAccount and no user logged in. This means that the address is used

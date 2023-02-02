@@ -152,7 +152,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
 
     Example:
 
-    mutation{
+    {
      computeRawClickhouseQuery(
       query: "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}}) LIMIT {{limit}}"
       parameters: "{\"slug\": \"bitcoin\", \"limit\": 1}"){

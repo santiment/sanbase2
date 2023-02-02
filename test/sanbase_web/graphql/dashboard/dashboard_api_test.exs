@@ -641,8 +641,8 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         map_as_input_object: true
       }
 
-      mutation = """
-      mutation{
+      query = """
+      {
         computeRawClickhouseQuery(#{map_to_args(args)}){
           columns
           columnTypes
@@ -660,7 +660,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           context.conn
-          |> post("/graphql", mutation_skeleton(mutation))
+          |> post("/graphql", query_skeleton(query))
           |> json_response(200)
           |> get_in(["data", "computeRawClickhouseQuery"])
 

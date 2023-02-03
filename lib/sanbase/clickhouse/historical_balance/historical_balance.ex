@@ -256,7 +256,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
       asset: Map.get(selector, :currency, "XRP"),
       currency: Map.get(selector, :currency, "XRP"),
       blockchain: BlockchainAddress.blockchain_from_infrastructure("XRP"),
-      slug: "ripple",
+      slug: "xrp",
       decimals: 0
     }
   end

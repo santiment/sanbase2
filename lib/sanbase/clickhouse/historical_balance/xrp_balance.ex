@@ -1,6 +1,6 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   @doc ~s"""
-  Module for working with historical Ripple balances.
+  Module for working with historical XRP balances.
   """
 
   @behaviour Sanbase.Clickhouse.HistoricalBalance.Behaviour
@@ -30,7 +30,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
     ClickhouseRepo.query_transform(query, args, fn [^address, value] ->
       %{
-        slug: "ripple",
+        slug: "xrp",
         balance: value
       }
     end)

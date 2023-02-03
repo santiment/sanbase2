@@ -1,6 +1,6 @@
 defmodule Sanbase.Clickhouse.ExchangeAddress do
   import Sanbase.Utils.Transform
-  @supported_blockchains ["bitcoin", "ethereum", "ripple"]
+  @supported_blockchains ["bitcoin", "ethereum", "xrp"]
 
   def supported_blockchains(), do: @supported_blockchains
 

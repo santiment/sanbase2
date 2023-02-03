@@ -260,7 +260,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
       case infrastructure do
         "ETH" -> %{asset: Map.get(selector, :slug, "ethereum"), target_blockchain: "Ethereum"}
         "BNB" -> %{asset: Map.get(selector, :slug, "binance-coin"), target_blockchain: "Binance"}
-        "XRP" -> %{asset: Map.get(selector, :currency, "XRP"), target_blockchain: "Ripple"}
+        "XRP" -> %{asset: Map.get(selector, :currency, "XRP"), target_blockchain: "XRP Ledger"}
         "BTC" -> %{asset: "bitcoin", target_blockchain: "Bitcoin"}
         "BCH" -> %{asset: "bitcoin-cash", target_blockchain: "Bitcoin Cash"}
         "LTC" -> %{asset: "litecoin", target_blockchain: "Litecoin"}

@@ -220,7 +220,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
       assert_receive({:telegram_to_self, message})
 
       assert message =~
-               "The address #{context.address}'s BTC balance on the Ripple blockchain has decreased by 100"
+               "The address #{context.address}'s BTC balance on the XRP Ledger blockchain has decreased by 100"
 
       assert message =~ "Was: 100\nNow: 0"
     end

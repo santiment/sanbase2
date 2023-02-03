@@ -11,7 +11,7 @@ defmodule Sanbase.BlockchainAddress do
     "bitcoin",
     "bitcoin-cash",
     "litecoin",
-    "ripple",
+    "xrp",
     "binance-coin",
     "dogecoin",
     "matic-network",
@@ -144,7 +144,7 @@ defmodule Sanbase.BlockchainAddress do
   def blockchain_from_infrastructure("LTC"), do: "litecoin"
   def blockchain_from_infrastructure("BNB"), do: "binance"
   def blockchain_from_infrastructure("BEP2"), do: "binance"
-  def blockchain_from_infrastructure("XRP"), do: "ripple"
+  def blockchain_from_infrastructure("XRP"), do: "xrp"
   def blockchain_from_infrastructure(_), do: :unsupported_blockchain
 
   def infrastructure_from_blockchain("ethereum"), do: "ETH"
@@ -152,5 +152,5 @@ defmodule Sanbase.BlockchainAddress do
   def infrastructure_from_blockchain("bitcoin-cash"), do: "BCH"
   def infrastructure_from_blockchain("litecoin"), do: "LTC"
   def infrastructure_from_blockchain("binance"), do: "BEP2"
-  def infrastructure_from_blockchain("ripple"), do: "XRP"
+  def infrastructure_from_blockchain("xrp"), do: "XRP"
 end

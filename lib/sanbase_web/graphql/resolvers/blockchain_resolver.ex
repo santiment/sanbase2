@@ -80,12 +80,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
     |> add_complex_fields()
   end
 
-  defp blockchain_data("ripple") do
+  defp blockchain_data("xrp") do
     %{
-      blockchain: "ripple",
-      name: "Ripple",
-      slug: "ripple",
-      infrastructure: "Ripple",
+      blockchain: "xrp",
+      name: "XRP Ledger",
+      slug: "xrp",
+      infrastructure: "XRP",
       created_on: ~U[2013-01-02 00:00:00Z],
       has_exchange_metrics: false,
       has_miners_metrics: false,

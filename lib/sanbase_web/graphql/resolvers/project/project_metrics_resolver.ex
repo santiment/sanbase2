@@ -16,6 +16,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   @refresh_time_max_offset 1800
 
   def available_metrics(%Project{slug: slug}, _args, _resolution) do
+    # TEMP 02.02.2023: Handle ripple -> xrp rename
+    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+
     query = :available_metrics
     cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
     fun = fn -> Metric.available_metrics_for_selector(%{slug: slug}) end
@@ -24,6 +27,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   end
 
   def available_timeseries_metrics(%Project{slug: slug}, _args, _resolution) do
+    # TEMP 02.02.2023: Handle ripple -> xrp rename
+    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+
     query = :available_timeseries_metrics
     cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
     fun = fn -> Metric.available_timeseries_metrics_for_slug(%{slug: slug}) end
@@ -32,6 +38,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   end
 
   def available_histogram_metrics(%Project{slug: slug}, _args, _resolution) do
+    # TEMP 02.02.2023: Handle ripple -> xrp rename
+    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+
     query = :available_histogram_metrics
     cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
     fun = fn -> Metric.available_histogram_metrics_for_slug(%{slug: slug}) end
@@ -39,6 +48,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   end
 
   def available_table_metrics(%Project{slug: slug}, _args, _resolution) do
+    # TEMP 02.02.2023: Handle ripple -> xrp rename
+    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+
     query = :available_table_metrics
     cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
     fun = fn -> Metric.available_table_metrics_for_slug(%{slug: slug}) end
@@ -50,6 +62,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         %{from: from, to: to, metric: metric} = args,
         %{context: %{loader: loader}}
       ) do
+    # TEMP 02.02.2023: Handle ripple -> xrp rename
+    {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
+
     with true <- Metric.has_metric?(metric),
          true <- Metric.is_not_deprecated?(metric),
          include_incomplete_data = Map.get(args, :include_incomplete_data, false),

@@ -156,7 +156,7 @@ defmodule Sanbase.Project do
     case String.upcase(infrastructure) do
       "ETH" -> "ethereum"
       "BTC" -> "bitcoin"
-      "XRP" -> "ripple"
+      "XRP" -> "xrp"
       "BCH" -> "bitcoin-cash"
       "LTC" -> "litecoin"
       "BNB" -> "binance-coin"

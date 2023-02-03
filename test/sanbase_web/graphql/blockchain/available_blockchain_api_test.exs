@@ -52,15 +52,15 @@ defmodule SanbaseWeb.Graphql.AvailableBlockchainApiTest do
                "slug" => "litecoin"
              },
              %{
-               "blockchain" => "ripple",
+               "blockchain" => "xrp",
                "hasBalanceMetrics" => true,
                "hasExchangeMetrics" => false,
                "hasMinersMetrics" => false,
                "hasOnchainFinancialMetrics" => true,
                "hasPureOnchainMetrics" => true,
                "hasTopHoldersMetrics" => false,
-               "infrastructure" => "Ripple",
-               "slug" => "ripple"
+               "infrastructure" => "XRP",
+               "slug" => "xrp"
              },
              %{
                "blockchain" => "binance-coin",

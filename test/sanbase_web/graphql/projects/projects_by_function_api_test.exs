@@ -54,12 +54,12 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
     p4 =
       insert(:project, %{
         ticker: "XRP",
-        slug: "ripple",
-        coinmarketcap_id: "ripple",
+        slug: "xrp",
+        coinmarketcap_id: "xrp",
         market_segments: [mineable]
       })
 
-    insert(:latest_cmc_data, %{coinmarketcap_id: "ripple", rank: 3, volume_usd: 1_000_000_000})
+    insert(:latest_cmc_data, %{coinmarketcap_id: "xrp", rank: 3, volume_usd: 1_000_000_000})
 
     insert(:random_erc20_project, %{
       ticker: "MKR",
@@ -268,7 +268,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
     assert projects == [
              %{"slug" => "bitcoin"},
              %{"slug" => "ethereum"},
-             %{"slug" => "ripple"}
+             %{"slug" => "xrp"}
            ]
   end
 
@@ -280,7 +280,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
     slugs = projects |> Enum.map(& &1["slug"])
     volumes = projects |> Enum.map(& &1["volumeUsd"])
 
-    assert slugs == ["bitcoin", "ethereum", "ripple", "tether"]
+    assert slugs == ["bitcoin", "ethereum", "xrp", "tether"]
     assert Enum.all?(volumes, &Kernel.>=(&1, 1_000_000_000))
   end
 

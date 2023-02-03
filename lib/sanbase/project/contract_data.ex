@@ -9,7 +9,7 @@ defmodule Sanbase.Project.ContractData do
     "bitcoin" => %{contract_address: "BTC", decimals: 8},
     "bitcoin-cash" => %{contract_address: "BCH", decimals: 8},
     "litecoin" => %{contract_address: "LTC", decimals: 8},
-    "ripple" => %{contract_address: "XRP", decimals: 0},
+    "xrp" => %{contract_address: "XRP", decimals: 0},
     "binance-coin" => %{contract_address: "BNB", decimals: 0}
   }
 

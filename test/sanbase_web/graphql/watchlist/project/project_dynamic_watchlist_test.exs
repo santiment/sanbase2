@@ -33,8 +33,8 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
     p4 = insert(:project, %{ticker: "BTC", slug: "bitcoin", market_segments: [mineable]})
     insert(:latest_cmc_data, %{coinmarketcap_id: "bitcoin", rank: 1, volume_usd: 15_000_000_000})
 
-    p5 = insert(:project, %{ticker: "XRP", slug: "ripple", market_segments: [mineable]})
-    insert(:latest_cmc_data, %{coinmarketcap_id: "ripple", rank: 3, volume_usd: 1_000_000_000})
+    p5 = insert(:project, %{ticker: "XRP", slug: "xrp", market_segments: [mineable]})
+    insert(:latest_cmc_data, %{coinmarketcap_id: "xrp", rank: 3, volume_usd: 1_000_000_000})
 
     p6 =
       insert(:project, %{
@@ -326,7 +326,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
     assert user_list["listItems"] == [
              %{"project" => %{"slug" => "bitcoin"}},
              %{"project" => %{"slug" => "ethereum"}},
-             %{"project" => %{"slug" => "ripple"}}
+             %{"project" => %{"slug" => "xrp"}}
            ]
   end
 
@@ -338,7 +338,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
     assert user_list["listItems"] == [
              %{"project" => %{"slug" => "bitcoin"}},
              %{"project" => %{"slug" => "ethereum"}},
-             %{"project" => %{"slug" => "ripple"}},
+             %{"project" => %{"slug" => "xrp"}},
              %{"project" => %{"slug" => "tether"}}
            ]
   end
@@ -361,7 +361,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
          [
            %{word: "SAN", score: 5},
            %{word: "bitcoin", score: 3},
-           %{word: "Ripple", score: 2},
+           %{word: "xrp", score: 2},
            %{word: "random_str", score: 1}
          ]}
       end
@@ -371,7 +371,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
       user_list = result["data"]["createWatchlist"]
       slugs = user_list["listItems"] |> Enum.map(fn %{"project" => %{"slug" => slug}} -> slug end)
 
-      assert slugs |> Enum.sort() == ["santiment", "bitcoin", "ripple"] |> Enum.sort()
+      assert slugs |> Enum.sort() == ["santiment", "bitcoin", "xrp"] |> Enum.sort()
     end
   end
 

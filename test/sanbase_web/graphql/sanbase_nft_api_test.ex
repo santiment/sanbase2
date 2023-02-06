@@ -19,8 +19,8 @@ defmodule SanbaseWeb.Graphql.SanbaseNFTApiTest do
   test "when there are nfts - return true", context do
     mock_fun =
       [
-        fn -> %{valid: [], expired: []} end,
-        fn -> %{valid: [1, 3, 5], expired: []} end
+        fn -> %{valid: [], non_valid: []} end,
+        fn -> %{valid: [1, 3, 5], non_valid: [2]} end
       ]
       |> Sanbase.Mock.wrap_consecutives(arity: 1)
 
@@ -32,16 +32,20 @@ defmodule SanbaseWeb.Graphql.SanbaseNFTApiTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = sanbase_nft(context.conn)
       assert result["sanbaseNft"]["hasValidNft"]
-      refute result["sanbaseNft"]["hasExpiredNft"]
+      assert result["sanbaseNft"]["hasNonValidNft"]
       assert result["sanbaseNft"]["nftCount"] == 3
-      assert %{"address" => "0x234", "tokenIds" => [1, 3, 5]} in result["sanbaseNft"]["nftData"]
+      assert result["sanbaseNft"]["nonValidNftCount"] == 1
+
+      assert %{"address" => "0x234", "tokenIds" => [1, 3, 5], "nonValidTokenIds" => [2]} in result[
+               "sanbaseNft"
+             ]["nftData"]
     end)
   end
 
   test "when there are no nfts - return false", context do
     mock_fun =
       [
-        fn -> %{valid: [], expired: []} end
+        fn -> %{valid: [], non_valid: []} end
       ]
       |> Sanbase.Mock.wrap_consecutives(arity: 1)
 
@@ -53,8 +57,9 @@ defmodule SanbaseWeb.Graphql.SanbaseNFTApiTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = sanbase_nft(context.conn)
       refute result["sanbaseNft"]["hasValidNft"]
-      refute result["sanbaseNft"]["hasExpiredNft"]
+      refute result["sanbaseNft"]["hasNonValidNft"]
       assert result["sanbaseNft"]["nftCount"] == 0
+      assert result["sanbaseNft"]["nonValidNftCount"] == 0
     end)
   end
 
@@ -64,12 +69,14 @@ defmodule SanbaseWeb.Graphql.SanbaseNFTApiTest do
       currentUser {
         sanbaseNft {
           hasValidNft
-          hasExpiredNft
-          nftCount
+          hasNonValidNft
           nftData {
             address
             tokenIds
+            nonValidTokenIds
           }
+          nftCount
+          nonValidNftCount
         }
       }
     }

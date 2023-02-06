@@ -25,7 +25,7 @@ defmodule Sanbase.Questionnaire.Question do
           questionnaire_uuid: String.t(),
           order: non_neg_integer(),
           question: String.t(),
-          type: :single_select | :multi_select | :open_text | :open_number | :boolean,
+          type: :single_select | :multiple_select | :open_text | :open_number | :boolean,
           answer_options: Map.t(),
           has_extra_open_text_answer: boolean(),
           inserted_at: NaiveDateTime.t(),

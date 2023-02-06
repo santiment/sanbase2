@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 14.2
+-- Dumped by pg_dump version 14.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -76,7 +76,7 @@ CREATE TYPE public.oban_job_state AS ENUM (
 
 CREATE TYPE public.question_type AS ENUM (
     'single_select',
-    'multi_select',
+    'multiple_select',
     'open_text',
     'open_number',
     'boolean'
@@ -8133,3 +8133,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230113134151);
 INSERT INTO public."schema_migrations" (version) VALUES (20230114134332);
 INSERT INTO public."schema_migrations" (version) VALUES (20230120101611);
 INSERT INTO public."schema_migrations" (version) VALUES (20230124105934);
+INSERT INTO public."schema_migrations" (version) VALUES (20230206085439);

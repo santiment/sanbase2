@@ -136,7 +136,7 @@
   { "cpc_symbol": "ION", "san_slug": "ion" },
   { "cpc_symbol": "VIDY", "san_slug": "vidy" },
   { "cpc_symbol": "ARAW", "san_slug": "araw" },
-  { "cpc_symbol": "XRP", "san_slug": "ripple" },
+  { "cpc_symbol": "XRP", "san_slug": "xrp" },
   { "cpc_symbol": "TENA", "san_slug": "tena" },
   { "cpc_symbol": "AEON", "san_slug": "aeon" },
   { "cpc_symbol": "NEXO", "san_slug": "nexo" },

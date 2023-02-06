@@ -211,6 +211,12 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
 
     {details_template, details_kv} = OperationText.details(:metric, settings)
 
+    {sanbase_link, short_url_id} =
+      case create_charts_link(settings.metric, project.slug) do
+        {:ok, short_url} -> {"#{base_url}/charts/#{short_url.short_url}", short_url.short_url}
+        _ -> {"https://app.santiment.net/charts?slug=#{project.slug}", nil}
+      end
+
     kv =
       %{
         type: settings.type,
@@ -218,7 +224,8 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
         project_name: project.name,
         project_slug: project.slug,
         project_ticker: project.ticker,
-        sanbase_project_link: "https://app.santiment.net/charts?slug=#{project.slug}",
+        sanbase_project_link: sanbase_link,
+        short_url_id: short_url_id,
         metric: settings.metric,
         metric_human_readable_name: human_readable_name,
         extra_explanation: settings.extra_explanation
@@ -240,6 +247,38 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
     {template, kv}
   end
 
+  def create_charts_link(metric, slug) do
+    now =
+      Timex.now()
+      |> round_datetime(second: 1200)
+      |> Timex.set(microsecond: {0, 0})
+
+    six_months_ago =
+      Timex.shift(now, months: -6)
+      |> Timex.set(microsecond: {0, 0})
+
+    now_iso = DateTime.to_iso8601(now)
+    six_months_ago_iso = DateTime.to_iso8601(six_months_ago)
+
+    settings_json = Jason.encode!(%{slug: slug, from: six_months_ago_iso, to: now_iso})
+
+    widgets_json =
+      Jason.encode!([
+        %{widget: "ChartWidget", wm: [metric], whm: [], wax: [0], wpax: [], wc: ["#26C953"]}
+      ])
+
+    url = URI.encode("/charts?settings=#{settings_json}&widgets=#{widgets_json}")
+    Sanbase.ShortUrl.create(%{full_url: url})
+  end
+
   defp maybe_add_extra_explanation(nil), do: ""
   defp maybe_add_extra_explanation(_), do: "\n🧐 {{extra_explanation}}\n"
+  defp is_prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
+
+  defp base_url do
+    case is_prod?() do
+      true -> "https://app.santiment.net"
+      false -> "https://app-stage.santiment.net"
+    end
+  end
 end

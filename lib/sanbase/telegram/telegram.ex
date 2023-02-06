@@ -113,8 +113,8 @@ defmodule Sanbase.Telegram do
       |> Jason.encode!()
 
     case post("sendMessage", content) do
-      {:ok, %Tesla.Env{status: 200}} ->
-        :ok
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
+        {:ok, body}
 
       {:ok, %Tesla.Env{status: 403}} ->
         user_data = if user, do: "User with id #{user.id}", else: "User"
@@ -129,6 +129,18 @@ defmodule Sanbase.Telegram do
         Logger.warning("Telegram message not sent. Reason: #{inspect(error)}")
         {:error, "Telegram message not sent."}
     end
+  end
+
+  def send_image(chat_id, image_url, reply_to_message_id) do
+    content =
+      %{
+        chat_id: chat_id,
+        photo: image_url,
+        reply_to_message_id: reply_to_message_id
+      }
+      |> Jason.encode!()
+
+    post("sendPhoto", content)
   end
 
   @doc ~s"""

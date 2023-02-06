@@ -140,7 +140,7 @@ defimpl Sanbase.Alert, for: Any do
       payload = transform_payload(payload, trigger.id, :telegram)
 
       Sanbase.Telegram.send_message(trigger.user, payload)
-      |> maybe_transform_telegram_response(trigger)
+      |> maybe_transform_telegram_response(trigger, telegram_chat_id)
     end
 
     send_or_limit("telegram", trigger, max_alerts_to_send, fun)
@@ -200,13 +200,32 @@ defimpl Sanbase.Alert, for: Any do
       payload = transform_payload(payload, trigger.id, :telegram_channel)
 
       Sanbase.Telegram.send_message_to_chat_id(channel, payload)
-      |> maybe_transform_telegram_response(trigger)
+      |> maybe_transform_telegram_response(trigger, channel)
     end
 
     send_or_limit("telegram_channel", trigger, max_alerts_to_send, fun)
   end
 
-  defp maybe_transform_telegram_response({:error, error}, trigger) do
+  # For daily and intraday metric signals add preview image of the chart for metric + asset
+  # The preview image should be a reply to the original alert message
+  # TODO spawn a separate process to send the image
+  defp maybe_transform_telegram_response(
+         {:ok, response},
+         %{trigger: %{settings: %{type: type}} = trigger},
+         channel
+       )
+       when type in ["metric_signal", "daily_metric_signal"] do
+    reply_to_message_id = Jason.decode!(response)["result"]["message_id"]
+    slug = trigger.settings.target.slug
+    template_kv = trigger.settings.template_kv
+    {_, kv} = template_kv[slug]
+
+    image_url = "#{preview_url()}/chart/#{kv.short_url_id}"
+
+    Sanbase.Telegram.send_image(channel, image_url, reply_to_message_id)
+  end
+
+  defp maybe_transform_telegram_response({:error, error}, trigger, _channel) do
     case String.contains?(error, "blocked the telegram bot") do
       true ->
         # In case the trigger does not have other channels but only telegram
@@ -222,7 +241,7 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  defp maybe_transform_telegram_response(response, _trigger), do: response
+  defp maybe_transform_telegram_response(response, _trigger, _channel), do: response
 
   defp deactivate_if_telegram_channel_only(trigger) do
     case trigger do
@@ -412,5 +431,14 @@ defimpl Sanbase.Alert, for: Any do
 
     If you’d like to raise your daily notification limit, you can do so anytime in your [Sanbase Account Settings](#{SanbaseWeb.Endpoint.user_account_url()}).
     """
+  end
+
+  defp is_prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
+
+  defp preview_url do
+    case is_prod?() do
+      true -> "https://preview.santiment.net"
+      false -> "https://preview-stage.santiment.net"
+    end
   end
 end

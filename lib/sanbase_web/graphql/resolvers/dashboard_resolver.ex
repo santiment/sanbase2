@@ -69,21 +69,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
-  def compute_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
+  def compute_dashboard_panel(
+        _root,
+        args,
+        %{context: %{auth: %{current_user: user}}} = resolution
+      ) do
     %{dashboard_id: dashboard_id, panel_id: panel_id} = args
 
     with true <- can_view_dashboard?(dashboard_id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_panel(dashboard_id, panel_id, %{sanbase_user_id: user.id})
+      Dashboard.compute_panel(dashboard_id, panel_id, get_query_metadata(resolution))
     end
   end
 
-  def compute_and_store_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
+  def compute_and_store_dashboard_panel(
+        _root,
+        args,
+        %{context: %{auth: %{current_user: user}}} = resolution
+      ) do
     %{dashboard_id: dashboard_id, panel_id: panel_id} = args
     # storing requires edit access, not just view access
     with true <- is_dashboard_owner?(dashboard_id, user.id),
          true <- can_run_computation?(user.id) do
-      Dashboard.compute_and_store_panel(dashboard_id, panel_id, %{sanbase_user_id: user.id})
+      Dashboard.compute_and_store_panel(dashboard_id, panel_id, get_query_metadata(resolution))
     end
   end
 
@@ -164,11 +172,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
-  def compute_raw_clickhouse_query(_root, args, %{context: %{auth: %{current_user: user}}}) do
+  def compute_raw_clickhouse_query(
+        _root,
+        args,
+        %{context: %{auth: %{current_user: user}}} = resolution
+      ) do
     with true <- can_run_computation?(user.id),
          true <- Dashboard.Query.valid_sql?(args),
          {:ok, query_result} <-
-           Dashboard.Query.run(args.query, args.parameters, %{sanbase_user_id: user.id}) do
+           Dashboard.Query.run(args.query, args.parameters, get_query_metadata(resolution)) do
       Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
         Dashboard.QueryExecution.store_execution(user.id, query_result)
       end)
@@ -273,5 +285,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
       panel ->
         panel
     end
+  end
+
+  defp get_query_metadata(%{context: %{product_code: product_code, auth: %{current_user: user}}}) do
+    %{sanbase_user_id: user.id, product: String.downcase(to_string(product_code))}
   end
 end

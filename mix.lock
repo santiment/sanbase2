@@ -12,7 +12,7 @@
   "chacha20": {:hex, :chacha20, "1.0.3", "26372176993172260968b36b4e7bc2e007e6b2b397ae08083e4836df67cdf03c", [:mix], [], "hexpm", "27f23b680e63f04b5bced77a9d8867033b381c091f92d544de0ad93accfb7cec"},
   "cidr": {:hex, :cidr, "1.1.0", "77ab79e3d694d6d315c2e7dea1c66710623488ab7595316d3e2987aebe0def25", [:mix], [], "hexpm", "155c26559b27be49a446e13a9e12bf50d62bf9231c548e7743263e75fa61dc91"},
   "clickhouse_ecto": {:git, "https://github.com/santiment/clickhouse_ecto.git", "9518142275534f040edb19c61646fc3aed889040", [branch: "migrate-ecto-3"]},
-  "clickhousex": {:git, "https://github.com/santiment/clickhousex.git", "41d0b49c719e97fd591996b9be16f2fcc377aef1", []},
+  "clickhousex": {:git, "https://github.com/santiment/clickhousex.git", "99efc2e78ee42aef846bb495b891df962ad7a70d", []},
   "combine": {:hex, :combine, "0.10.0", "eff8224eeb56498a2af13011d142c5e7997a80c8f5b97c499f84c841032e429f", [:mix], [], "hexpm", "1b1dbc1790073076580d0d1d64e42eae2366583e7aecd455d1215b0d16f2451b"},
   "con_cache": {:hex, :con_cache, "1.0.0", "6405e2bd5d5005334af72939432783562a8c35a196c2e63108fe10bb97b366e6", [:mix], [], "hexpm", "4d1f5cb1a67f3c1a468243dc98d10ac83af7f3e33b7e7c15999dc2c9bc0a551e"},
   "connection": {:hex, :connection, "1.1.0", "ff2a49c4b75b6fb3e674bfc5536451607270aac754ffd1bdfe175abe4a6d7a68", [:mix], [], "hexpm", "722c1eb0a418fbe91ba7bd59a47e28008a189d47e37e0e7bb85585a016b2869c"},

@@ -9,7 +9,7 @@ defmodule Sanbase.Dashboard.Query do
   The SQL query and arguments are taken from the panel and are executed.
   The result is transformed by converting the Date and NaiveDateTime types to DateTime.
   """
-  def run(query, parameters, query_metadata) do
+  def run(sql, parameters, query_metadata) do
     query_start_time = DateTime.utc_now()
 
     # Use the pool defined by the ReadOnly repo. This is used only here
@@ -19,15 +19,17 @@ defmodule Sanbase.Dashboard.Query do
     # this process only.
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
 
-    query = preprocess_query(query, query_metadata)
+    query_metadata = extend_query_metadata(query_metadata)
 
-    {query, args} = transform_parameters_to_args(query, parameters)
+    query =
+      Sanbase.Clickhouse.Query.new(sql, parameters,
+        settings: "log_comment='#{Jason.encode!(query_metadata)}'"
+      )
 
-    case Sanbase.ClickhouseRepo.query_transform_with_metadata(
-           query,
-           args,
-           &transform_result/1
-         ) do
+    %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
+    sql = extend_sql(sql, query_metadata)
+
+    case Sanbase.ClickhouseRepo.query_transform_with_metadata(sql, args, &transform_result/1) do
       {:ok, map} ->
         {:ok,
          %Query.Result{
@@ -63,9 +65,9 @@ defmodule Sanbase.Dashboard.Query do
     |> :erlang.binary_to_term()
   end
 
-  def valid_sql?(sql) do
-    with :ok <- valid_sql_query?(sql),
-         :ok <- valid_sql_parameters?(sql) do
+  def valid_sql?(args) do
+    with :ok <- valid_sql_query?(args),
+         :ok <- valid_sql_parameters?(args) do
       true
     end
   end
@@ -91,80 +93,32 @@ defmodule Sanbase.Dashboard.Query do
     end
   end
 
-  defp transform_parameters_to_args(query, parameters) do
-    parameters = take_used_parameters_subset(query, parameters)
-
-    # Transform the named parameters to positional parameters that are
-    # understood by the ClickhouseRepo
-    param_names = Map.keys(parameters)
-    param_name_positions = Enum.with_index(param_names, 1)
-    # Get the args in the same order as the param_names
-    args = Enum.map(param_names, &Map.get(parameters, &1))
-
-    query =
-      Enum.reduce(param_name_positions, query, fn {param_name, position}, query_acc ->
-        # Replace all occurences of {{<param_name>}} with ?<position>
-        # For example: WHERE address = {{address}} => WHERE address = ?1
-        kv = %{param_name => "?#{position}"}
-        Sanbase.TemplateEngine.run(query_acc, kv)
-      end)
-
-    {query, args}
-  end
-
-  defp preprocess_query(query, query_metadata) do
-    query
+  defp extend_sql(sql, query_metadata) do
+    sql
     |> extend_query_with_prod_marker()
     |> extend_query_with_user_id_comment(query_metadata.sanbase_user_id)
-    |> remove_trailing_semicolon()
-    |> extend_with_metadata(query_metadata)
   end
 
   defp extend_query_with_prod_marker(query) do
-    case Application.get_env(:sanbase, :env) do
-      :prod ->
-        "-- __query_ran_from_prod_marker__ \n" <> query
-
-      _ ->
-        query
+    case is_prod?() do
+      true -> "-- __query_ran_from_prod_marker__ \n" <> query
+      false -> query
     end
+  end
+
+  defp extend_query_metadata(%{} = query_metadata) do
+    case is_prod?() do
+      true -> Map.put(query_metadata, :query_ran_from_prod_marker, true)
+      false -> query_metadata
+    end
+  end
+
+  defp is_prod?() do
+    Application.get_env(:sanbase, :env) == :prod
   end
 
   defp extend_query_with_user_id_comment(query, user_id) do
     "-- __sanbase_user_id_running_the_query__ #{user_id}\n" <> query
-  end
-
-  defp extend_with_metadata(query, query_metadata) do
-    case Regex.match?(~r/\bSELECT\b/i, query) do
-      true ->
-        query_metadata_json = Jason.encode!(query_metadata)
-        query <> "\n SETTINGS log_comment='#{query_metadata_json}'"
-
-      false ->
-        query
-    end
-  end
-
-  defp remove_trailing_semicolon(query) do
-    # When the query goes to the clickhouse driver, it gets extended with
-    # `FORMAT JSONCompact`. If the query has a trailing `;`, this results
-    # in a malformed query
-    query
-    |> String.trim_trailing()
-    |> String.trim_trailing(";")
-  end
-
-  # Take only those parameters which are seen in the query.
-  # This is useful as the SQL Editor allows you to run a subsection
-  # of the query by highlighting it. Instead of doing the filtration of
-  # the parameters used in this section, this check is done on the backend
-  # The paramters are transformed into positional parameters, so a mismatch
-  # between the number of used an provided parameters resuls in an error
-  defp take_used_parameters_subset(query, parameters) do
-    Enum.filter(parameters, fn {key, _value} ->
-      String.contains?(query, "{{#{key}}}")
-    end)
-    |> Map.new()
   end
 
   # This is passed as the transform function to the ClickhouseRepo function

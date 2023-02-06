@@ -2690,7 +2690,7 @@ CREATE TABLE public.questionnaire_answers (
 
 CREATE TABLE public.questionnaire_questions (
     uuid uuid NOT NULL,
-    questionnaire_uuid uuid,
+    questionnaire_uuid uuid NOT NULL,
     "order" integer NOT NULL,
     question character varying(255) NOT NULL,
     type public.question_type DEFAULT 'open_text'::public.question_type NOT NULL,
@@ -7254,7 +7254,7 @@ ALTER TABLE ONLY public.pumpkins
 --
 
 ALTER TABLE ONLY public.questionnaire_answers
-    ADD CONSTRAINT questionnaire_answers_question_uuid_fkey FOREIGN KEY (question_uuid) REFERENCES public.questionnaire_questions(uuid);
+    ADD CONSTRAINT questionnaire_answers_question_uuid_fkey FOREIGN KEY (question_uuid) REFERENCES public.questionnaire_questions(uuid) ON DELETE CASCADE;
 
 
 --
@@ -7270,7 +7270,7 @@ ALTER TABLE ONLY public.questionnaire_answers
 --
 
 ALTER TABLE ONLY public.questionnaire_questions
-    ADD CONSTRAINT questionnaire_questions_questionnaire_uuid_fkey FOREIGN KEY (questionnaire_uuid) REFERENCES public.questionnaires(uuid);
+    ADD CONSTRAINT questionnaire_questions_questionnaire_uuid_fkey FOREIGN KEY (questionnaire_uuid) REFERENCES public.questionnaires(uuid) ON DELETE CASCADE;
 
 
 --
@@ -8134,3 +8134,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230114134332);
 INSERT INTO public."schema_migrations" (version) VALUES (20230120101611);
 INSERT INTO public."schema_migrations" (version) VALUES (20230124105934);
 INSERT INTO public."schema_migrations" (version) VALUES (20230206085439);
+INSERT INTO public."schema_migrations" (version) VALUES (20230206100629);

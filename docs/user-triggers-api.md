@@ -164,7 +164,7 @@ The following blockchains are supported, identified by `infrastructure`:
 - (BTC) Bitcoin
 - (BCH) Bitcoin Cash
 - (LTC) Litecoin
-- (XRP) Ripple
+- (XRP) XRP
 - (BNB or BEP2) Binance Chain
 
 When working with `infrastructure` BTC, BCH or LTC no additional parameter is needed
@@ -174,7 +174,7 @@ the token.
 When working with `infrastructure` XRP an additional `currency` parameter is needed.
 
 Valid `slug`s are the slugs of the projects on sanbase.
-Valid `currency`s are the specific names given on the ripple chain. In most of the cases
+Valid `currency`s are the specific names given on the XRP chain. In most of the cases
 these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `ETH`, etc.
 
 ```json
@@ -246,7 +246,7 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 ```
 
 ```json
-// The BTC currency balance on the ripple chain of the address px1234
+// The BTC currency balance on the XRP chain of the address px1234
 // has increased by 50% compared to 1 day ago and is above 1000
 {
   "type": "wallet_movement",
@@ -284,7 +284,7 @@ The following blockchains are supported, identified by `infrastructure`:
 - (BTC) Bitcoin
 - (BCH) Bitcoin Cash
 - (LTC) Litecoin
-- (XRP) Ripple
+- (XRP) XRP
 - (BNB or BEP2) Binance Chain
 
 When working with the alert, provide the `infrastructure` in the selector and the
@@ -316,7 +316,7 @@ The following blockchains are supported, identified by `infrastructure`:
 - (BTC) Bitcoin
 - (BCH) Bitcoin Cash
 - (LTC) Litecoin
-- (XRP) Ripple
+- (XRP) XRP
 - (BNB or BEP2) Binance Chain
 
 When working with the alert, provide the `infrastructure` in the selector and the

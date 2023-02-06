@@ -77,7 +77,7 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
   alias Sanbase.Utils.Config
 
   @contract_goerly "0x7f985e8ad29438907a2cc8ff3d526d9a1693442c"
-  @contract_mainnet "TBD"
+  @contract_mainnet "0x211E14C8cc67F9EF05cC84F80Dc036Ff2F548949"
 
   @json_file "sanbase_nft_abi.json"
   @external_resource json_file = Path.join(__DIR__, @json_file)

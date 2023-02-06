@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.CreateQuestionTypeEnum do
   def up do
     execute("""
     DO $$ BEGIN
-      CREATE TYPE #{schema()}.question_type AS ENUM ('single_select', 'multi_select', 'open_text', 'open_number', 'boolean');
+      CREATE TYPE #{schema()}.question_type AS ENUM ('single_select', 'multiple_select', 'open_text', 'open_number', 'boolean');
     EXCEPTION
       WHEN duplicate_object THEN null;
     END $$;

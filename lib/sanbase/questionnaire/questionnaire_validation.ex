@@ -19,7 +19,7 @@ defmodule Sanbase.Questionnaire.Validation do
   @spec validate_question_answers_options(Atom.t(), Map.t()) ::
           true | {:error, String.t()}
   def validate_question_answers_options(type, answers_map)
-      when type in [:single_select, :multi_select] do
+      when type in [:single_select, :multiple_select] do
     with true <- answers_are_map?(answers_map),
          true <- has_more_than_one_answer?(answers_map),
          true <- all_keys_are_integers?(answers_map),
@@ -83,7 +83,7 @@ defmodule Sanbase.Questionnaire.Validation do
              "If the answer is a single selection of given options, it must be a number represented as string"}
         end
 
-      Map.has_key?(answer, "answer_selection") and type == :multi_select ->
+      Map.has_key?(answer, "answer_selection") and type == :multiple_select ->
         is_integer = fn val -> match?({_, ""}, Integer.parse(val)) end
 
         case Enum.all?(answer["answer_selection"], is_integer) do

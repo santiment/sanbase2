@@ -10,11 +10,8 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
 
   # Run every 10 minutes
   def run do
-    # skip running on prod until we have mainnet contract deployed
-    if is_dev_or_stage?() do
-      maybe_create()
-      maybe_remove()
-    end
+    maybe_create()
+    maybe_remove()
   end
 
   def maybe_create do

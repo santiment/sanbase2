@@ -1,6 +1,7 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
   alias Sanbase.Metric
   alias Sanbase.ClickhouseRepo
@@ -23,6 +24,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   @eth2_string_address_string_label_float_value_metrics [
     "eth2_top_stakers"
   ]
+
+  @eth2_metrics @eth2_string_label_float_value_metrics ++
+                  @eth2_datetime_staking_pools_integer_valuation_list ++
+                  @eth2_string_address_string_label_float_value_metrics
 
   @spec histogram_data(String.t(), map(), DateTime.t(), DateTime.t(), String.t(), number()) ::
           {:ok, list(map())} | {:error, String.t()}
@@ -105,8 +110,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     end
   end
 
-  def first_datetime(metric, %{slug: slug}, opts)
-      when metric in def(last_datetime_computed_at(metric, selector, opts \\ []))
+  def first_datetime(metric, _selector, _opts)
+      when metric in @eth2_metrics do
+    {:ok, ~U[2020-11-03 16:44:26Z]}
+  end
+
+  def last_datetime_computed_at(metric, selector, opts \\ [])
 
   def last_datetime_computed_at(metric, %{slug: slug}, opts)
       when metric in @spent_coins_cost_histograms do
@@ -116,8 +125,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     end
   end
 
+  def last_datetime_computed_at(metric, _selector, _opts) when metric in @eth2_metrics do
+    {query, args} = {"SELECT toUnixTimestamp(max(dt)) FROM eth2_staking_transfers_v2", []}
+
+    ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
+      DateTime.from_unix!(timestamp)
+    end)
+    |> maybe_unwrap_ok_value()
+  end
+
   def available_slugs(metric) when metric in @spent_coins_cost_histograms do
-    {:ok, []}
+    Metric.available_slugs("price_usd")
+  end
+
+  def available_slugs(metric) when metric in @eth2_metrics do
+    {:ok, ["ethereum"]}
   end
 
   # Aggregate the separate prices into `buckets_count` number of evenly spaced buckets

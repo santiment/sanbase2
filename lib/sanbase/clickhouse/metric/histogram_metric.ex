@@ -58,14 +58,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     |> maybe_transform_into_buckets(slug, from, to, limit)
   end
 
-  def histogram_data(
-        metric,
-        %{slug: "ethereum" = slug},
-        from,
-        to,
-        interval,
-        limit
-      )
+  def histogram_data(metric, %{slug: "ethereum" = slug}, from, to, interval, limit)
       when metric in @eth2_string_label_float_value_metrics do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
@@ -77,14 +70,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     end)
   end
 
-  def histogram_data(
-        metric,
-        %{slug: "ethereum" = slug},
-        from,
-        to,
-        interval,
-        limit
-      )
+  def histogram_data(metric, %{slug: "ethereum" = slug}, from, to, interval, limit)
       when metric in @eth2_string_address_string_label_float_value_metrics do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
@@ -97,14 +83,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     end)
   end
 
-  def histogram_data(
-        metric,
-        %{slug: "ethereum" = slug},
-        from,
-        to,
-        interval,
-        limit
-      )
+  def histogram_data(metric, %{slug: "ethereum" = slug}, from, to, interval, limit)
       when metric in @eth2_datetime_staking_pools_integer_valuation_list do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
@@ -126,7 +105,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     end
   end
 
-  def last_datetime_computed_at(metric, selector, opts \\ [])
+  def first_datetime(metric, %{slug: slug}, opts)
+      when metric in def(last_datetime_computed_at(metric, selector, opts \\ []))
 
   def last_datetime_computed_at(metric, %{slug: slug}, opts)
       when metric in @spent_coins_cost_histograms do
@@ -134,6 +114,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
          {:ok, dt2} <- Metric.last_datetime_computed_at("age_distribution", %{slug: slug}, opts) do
       {:ok, Enum.min([dt1, dt2], DateTime)}
     end
+  end
+
+  def available_slugs(metric) when metric in @spent_coins_cost_histograms do
+    {:ok, []}
   end
 
   # Aggregate the separate prices into `buckets_count` number of evenly spaced buckets

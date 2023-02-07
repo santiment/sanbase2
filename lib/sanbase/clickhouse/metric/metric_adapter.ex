@@ -10,12 +10,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   import Sanbase.Clickhouse.MetricAdapter.SqlQuery
   import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 2]
 
-  import Sanbase.Utils.Transform,
-    only: [
-      maybe_unwrap_ok_value: 1,
-      maybe_apply_function: 2,
-      maybe_transform_datetime_data_tuple_to_map: 1
-    ]
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
   alias __MODULE__.{HistogramMetric, FileHandler, TableMetric}
 
@@ -125,7 +120,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
         Map.update(acc, datetime, [elem], &[elem | &1])
       end
     )
-    |> maybe_transform_datetime_data_tuple_to_map()
+    |> maybe_apply_function(fn list ->
+      list
+      |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
+    end)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -233,15 +231,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def available_slugs(), do: get_available_slugs()
 
   @impl Sanbase.Metric.Behaviour
+  def available_slugs(metric) when metric in @histogram_metrics_name_list,
+    do: HistogramMetric.available_slugs(metric)
+
   def available_slugs(metric), do: get_available_slugs(metric)
 
   @impl Sanbase.Metric.Behaviour
   def available_aggregations(), do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(metric, selector)
-      when metric in ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"],
-      do: HistogramMetric.first_datetime(metric, selector)
+  def first_datetime(metric, selector) when metric in @histogram_metrics_name_list,
+    do: HistogramMetric.first_datetime(metric, selector)
 
   def first_datetime(metric, selector) do
     {query, args} = first_datetime_query(metric, selector)
@@ -253,9 +253,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(metric, selector)
-      when metric in ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"],
-      do: HistogramMetric.last_datetime_computed_at(metric, selector)
+  def last_datetime_computed_at(metric, selector) when metric in @histogram_metrics_name_list,
+    do: HistogramMetric.last_datetime_computed_at(metric, selector)
 
   def last_datetime_computed_at(metric, selector) do
     {query, args} = last_datetime_computed_at_query(metric, selector)

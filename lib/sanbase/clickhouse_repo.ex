@@ -245,6 +245,19 @@ defmodule Sanbase.ClickhouseRepo do
         [error_msg, error_code, _version_str] =
           Regex.split(~r|\([A-Z_]+\)|, error, include_captures: true, trim: true)
 
+        error_msg =
+          case String.split(error_msg, "SETTINGS log_comment", parts: 2) do
+            [_] ->
+              error_msg
+
+            [stripped_error_msg, _] ->
+              # Exclude the SETTINGS fragment from the error response
+              # so it is not shown in the result. The SETTINGS fragment
+              # are appended by the preprocessing done in the backend
+              # and not by the user, who will see the error
+              stripped_error_msg
+          end
+
         "#{error_code} #{error_msg}" |> String.trim()
     end
   end

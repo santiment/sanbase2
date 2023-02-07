@@ -24,11 +24,7 @@ defmodule SanbaseWeb.Graphql.SanbaseNFTApiTest do
       ]
       |> Sanbase.Mock.wrap_consecutives(arity: 1)
 
-    Sanbase.Mock.prepare_mock(
-      Sanbase.SmartContracts.SanbaseNFT,
-      :nft_subscriptions_data,
-      mock_fun
-    )
+    Sanbase.Mock.prepare_mock(SanbaseNFT, :nft_subscriptions_data, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = sanbase_nft(context.conn)
       assert result["sanbaseNft"]["hasValidNft"]
@@ -49,11 +45,7 @@ defmodule SanbaseWeb.Graphql.SanbaseNFTApiTest do
       ]
       |> Sanbase.Mock.wrap_consecutives(arity: 1)
 
-    Sanbase.Mock.prepare_mock(
-      Sanbase.SmartContracts.SanbaseNFT,
-      :nft_subscriptions_data,
-      mock_fun
-    )
+    Sanbase.Mock.prepare_mock(SanbaseNFT, :nft_subscriptions_data, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = sanbase_nft(context.conn)
       refute result["sanbaseNft"]["hasValidNft"]

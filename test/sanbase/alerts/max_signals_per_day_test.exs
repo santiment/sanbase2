@@ -66,7 +66,7 @@ defmodule Sanbase.Alert.MaxAlertsPerDayTest do
     )
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
-      :ok
+      {:ok, "OK"}
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)

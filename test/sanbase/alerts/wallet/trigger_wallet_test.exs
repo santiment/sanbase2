@@ -89,7 +89,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
 
   test "signal setting cooldown works for wallet movement", context do
     with_mocks [
-      {Sanbase.Telegram, [:passthrough], send_message: fn _user, _text -> :ok end},
+      {Sanbase.Telegram, [:passthrough], send_message: fn _user, _text -> {:ok, "OK"} end},
       {HistoricalBalance, [:passthrough],
        balance_change: fn _, _, _, _ ->
          {:ok,
@@ -155,7 +155,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
       {Sanbase.Telegram, [:passthrough],
        send_message: fn _user, text ->
          send(test_pid, {:telegram_to_self, text})
-         :ok
+         {:ok, "OK"}
        end},
       {HistoricalBalance, [:passthrough],
        balance_change: fn _, _, _, _ ->

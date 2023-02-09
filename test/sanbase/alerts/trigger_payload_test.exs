@@ -40,7 +40,7 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
     Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
-      :ok
+      {:ok, "OK"}
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       Scheduler.run_alert(MetricTriggerSettings)
@@ -67,7 +67,7 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
     Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
-      :ok
+      {:ok, "OK"}
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       Scheduler.run_alert(MetricTriggerSettings)
@@ -94,7 +94,7 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
     Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
-      :ok
+      {:ok, "OK"}
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       Scheduler.run_alert(MetricTriggerSettings)
@@ -121,7 +121,7 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
     Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
-      :ok
+      {:ok, "OK"}
     end)
     |> Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, ~U[2021-01-10 15:00:00Z])
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -151,7 +151,10 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
       |> Sanbase.Mock.wrap_consecutives(arity: 4)
 
     Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
-    |> Sanbase.Mock.prepare_mock2(&HTTPoison.post/3, {:ok, %HTTPoison.Response{status_code: 200}})
+    |> Sanbase.Mock.prepare_mock2(
+      &HTTPoison.post/3,
+      {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       Scheduler.run_alert(MetricTriggerSettings)
 

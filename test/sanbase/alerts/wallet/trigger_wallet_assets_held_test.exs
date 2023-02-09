@@ -49,7 +49,7 @@ defmodule Sanbase.Alert.WalletAssetsHeldTriggerSettingsTest do
       ]
       |> Sanbase.Mock.wrap_consecutives(arity: 1)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
+    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, {:ok, "OK"})
     |> Sanbase.Mock.prepare_mock(HistoricalBalance, :assets_held_by_address, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       for _ <- 1..2 do

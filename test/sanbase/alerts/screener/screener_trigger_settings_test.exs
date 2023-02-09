@@ -71,7 +71,7 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
       |> Sanbase.Mock.wrap_consecutives(arity: 6)
 
     Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :slugs_by_filter, mock_fun)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, {:ok, "OK"})
     |> Sanbase.Mock.run_with_mocks(fn ->
       # After creation the post create processing adds p1, p2 and p3 to the state.
       # 0s cooldown so it can be re-run in order to test the behaviour when
@@ -120,7 +120,7 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
       |> Sanbase.Mock.wrap_consecutives(arity: 6)
 
     Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :slugs_by_filter, mock_fun)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, {:ok, "OK"})
     |> Sanbase.Mock.run_with_mocks(fn ->
       # After creation the post create processing adds p1, p2 and p3 to the state.
       # 0s cooldown so it can be re-run in order to test the behaviour when

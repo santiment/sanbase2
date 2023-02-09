@@ -324,7 +324,8 @@ defimpl Sanbase.Alert, for: Any do
       {sanbase_link, short_url_id} =
         case create_charts_link(user_trigger.trigger.settings.metric, slug) do
           {:ok, short_url} ->
-            {"#{base_url()}/charts/#{short_url.short_url}?utm_source=telegram&utm_medium=signals",
+            # frontend requires `__sCl` to be apended in order to resolve the short url
+            {"#{base_url()}/charts/#{short_url.short_url}__sCl?utm_source=telegram&utm_medium=signals",
              short_url.short_url}
 
           _ ->

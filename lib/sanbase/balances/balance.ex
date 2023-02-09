@@ -1,7 +1,8 @@
 defmodule Sanbase.Balance do
   import __MODULE__.SqlQuery
 
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
+  import Sanbase.Utils.Transform,
+    only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, maybe_sort: 3]
 
   import Sanbase.Clickhouse.HistoricalBalance.Utils,
     only: [maybe_update_first_balance: 2, maybe_fill_gaps_last_seen_balance: 1]
@@ -239,7 +240,7 @@ defmodule Sanbase.Balance do
       end
     )
     |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
-    |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.current_usd_value, :desc) end)
+    |> maybe_sort(:current_usd_value, :desc)
   end
 
   @doc ~s"""
@@ -342,15 +343,6 @@ defmodule Sanbase.Balance do
 
   def supported_infrastructures(),
     do: ["ETH", "BTC", "BCH", "LTC", "BNB", "BEP2", "XRP"]
-
-  def blockchain_from_infrastructure("ETH"), do: "ethereum"
-  def blockchain_from_infrastructure("BTC"), do: "bitcoin"
-  def blockchain_from_infrastructure("BCH"), do: "bitcoin-cash"
-  def blockchain_from_infrastructure("LTC"), do: "litecoin"
-  def blockchain_from_infrastructure("BNB"), do: "binance"
-  def blockchain_from_infrastructure("BEP2"), do: "binance"
-  def blockchain_from_infrastructure("XRP"), do: "ripple"
-  def blockchain_from_infrastructure(_), do: :unsupported_blockchain
 
   # Private functions
 
@@ -518,7 +510,7 @@ defmodule Sanbase.Balance do
   defp info_by_slug(slug) do
     case Project.contract_info_infrastructure_by_slug(slug) do
       {:ok, _contract, decimals, infr} ->
-        case blockchain_from_infrastructure(infr) do
+        case Sanbase.BlockchainAddress.blockchain_from_infrastructure(infr) do
           :unsupported_blockchain ->
             {:error,
              """

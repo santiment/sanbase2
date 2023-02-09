@@ -128,14 +128,15 @@ defmodule Sanbase.Intercom.UserEvent do
   defp to_json_kv_tuple(events) do
     events
     |> Enum.map(fn %{
-                     anonymous_user_id: anonymous_user_id,
                      user_id: user_id,
                      event_name: event_name,
                      metadata: metadata,
                      created_at: timestamp
-                   } ->
+                   } = event ->
       timestamp = DateTime.to_unix(timestamp)
       key = "#{user_id}_#{timestamp}"
+
+      anonymous_user_id = Map.get(event, :anonymous_user_id, "")
 
       data = %{
         anonymous_user_id: anonymous_user_id,

@@ -102,7 +102,7 @@ defmodule Sanbase.Factory.Helper do
     end
   end
 
-  def rand_address("ripple") do
+  def rand_address("xrp") do
     [
       "r9vbV3EHvXWjSkeQ6CAcYVPGeq7TuiXY2X",
       "rUrdFHbrEKWNQQ444zcTLrThjcnHCw2FPu",
@@ -179,7 +179,7 @@ defmodule Sanbase.Factory.Helper do
       %{
         type: "wallet_movement",
         selector: %{infrastructure: "XRP", currency: "BTC"},
-        target: %{address: rand_address("ripple")},
+        target: %{address: rand_address("xrp")},
         channel: "telegram",
         time_window: "1d",
         operation: %{amount_down: 50.0}

@@ -110,6 +110,7 @@ defmodule Sanbase.Accounts.UserTest do
       Sanbase.Intercom.UserEvent.create(
         [
           %{
+            anonymous_user_id: "",
             user_id: user.id,
             event_name: "test",
             metadata: %{},

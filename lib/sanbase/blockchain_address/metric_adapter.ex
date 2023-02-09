@@ -70,7 +70,8 @@ defmodule Sanbase.BlockchainAddress.MetricAdapter do
 
   def available_metrics(%{slug: slug}) do
     with {:ok, _, _, infrastructure} <- Project.contract_info_infrastructure_by_slug(slug),
-         <<_::binary>> <- BlockchainAddress.blockchain_from_infrastructure(infrastructure) do
+         blockchain when is_binary(blockchain) <-
+           BlockchainAddress.blockchain_from_infrastructure(infrastructure) do
       {:ok, @metrics}
     else
       _ -> {:ok, []}

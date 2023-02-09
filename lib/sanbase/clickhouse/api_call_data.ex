@@ -5,7 +5,12 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   """
 
   import Sanbase.Utils.Transform,
-    only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, maybe_extract_value_from_tuple: 1]
+    only: [
+      maybe_unwrap_ok_value: 1,
+      maybe_apply_function: 2,
+      maybe_sort: 3,
+      maybe_extract_value_from_tuple: 1
+    ]
 
   alias Sanbase.ClickhouseRepo
 
@@ -97,11 +102,10 @@ defmodule Sanbase.Clickhouse.ApiCallData do
         update_api_distribution_user_map(map, metric, count)
       end)
     end)
-    |> maybe_apply_function(fn result ->
-      result
-      |> Enum.sort_by(fn {_, map} -> map[:count] || 0 end, :desc)
-      |> Enum.map(fn {user_id, map} -> Map.put(map, :user_id, user_id) end)
-    end)
+    |> maybe_sort(:count, :desc)
+    |> maybe_apply_function(
+      &Enum.map(&1, fn {user_id, map} -> Map.put(map, :user_id, user_id) end)
+    )
     |> maybe_extract_value_from_tuple()
   end
 

@@ -33,6 +33,18 @@ defmodule Sanbase.ClickhouseRepo do
     {:ok, opts}
   end
 
+  @doc ~s"""
+  Execute a query and apply `transform_fn/1` on each row of the result.
+  """
+  @spec query_transform(Sanbase.Clickhouse.Query.t(), (list() -> list())) ::
+          {:ok, any()} | {:error, String.t()}
+  @spec query_transform(String.t(), list(), (list() -> list())) ::
+          {:ok, any()} | {:error, String.t()}
+  def query_transform(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
+    %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
+    query_transform(sql, args, transform_fn)
+  end
+
   def query_transform(query, args, transform_fn) do
     case execute_query_transform(query, args) do
       {:ok, result} -> {:ok, Enum.map(result.rows, transform_fn)}
@@ -48,6 +60,15 @@ defmodule Sanbase.ClickhouseRepo do
   Return a map with the transformed rows alongside some metadata -
   the query id, column names and a short summary of the used resources
   """
+  @spec query_transform_with_metadata(Sanbase.Clickhouse.Query.t(), (list() -> list())) ::
+          {:ok, Map.t()} | {:error, String.t()}
+  @spec query_transform_with_metadata(String.t(), list(), (list() -> list())) ::
+          {:ok, Map.t()} | {:error, String.t()}
+  def query_transform_with_metadata(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
+    %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
+    query_transform_with_metadata(sql, args, transform_fn)
+  end
+
   def query_transform_with_metadata(query, args, transform_fn) do
     case execute_query_transform(query, args, propagate_error: true) do
       {:ok, result} ->
@@ -68,6 +89,21 @@ defmodule Sanbase.ClickhouseRepo do
       log_and_return_error_from_exception(e, "query_transform_with_metadata/3", __STACKTRACE__,
         propagate_error: true
       )
+  end
+
+  @doc ~s"""
+  Execute a query and reduce all the rows, starting with `init` as initial accumulator
+  and using `reduce` for every row
+  """
+  @spec query_reduce(Sanbase.Clickhouse.Query.t(), acc, (list(), acc -> acc)) ::
+          {:ok, Map.t()} | {:error, String.t()}
+        when acc: any
+  @spec query_reduce(String.t(), list(), acc, (list(), acc -> acc)) ::
+          {:ok, Map.t()} | {:error, String.t()}
+        when acc: any
+  def query_reduce(%Sanbase.Clickhouse.Query{} = query, init, reducer) do
+    %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
+    query_reduce(sql, args, init, reducer)
   end
 
   def query_reduce(query, args, init, reducer) do
@@ -208,6 +244,19 @@ defmodule Sanbase.ClickhouseRepo do
 
         [error_msg, error_code, _version_str] =
           Regex.split(~r|\([A-Z_]+\)|, error, include_captures: true, trim: true)
+
+        error_msg =
+          case String.split(error_msg, "SETTINGS log_comment", parts: 2) do
+            [_] ->
+              error_msg
+
+            [stripped_error_msg, _] ->
+              # Exclude the SETTINGS fragment from the error response
+              # so it is not shown in the result. The SETTINGS fragment
+              # are appended by the preprocessing done in the backend
+              # and not by the user, who will see the error
+              stripped_error_msg
+          end
 
         "#{error_code} #{error_msg}" |> String.trim()
     end

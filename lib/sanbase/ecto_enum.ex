@@ -1,7 +1,7 @@
 import EctoEnum
 
 defenum(QuestionType, :question_type, [
-  "multi_select",
+  "multiple_select",
   "single_select",
   "open_text",
   "open_number",

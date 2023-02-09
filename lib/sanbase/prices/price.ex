@@ -7,6 +7,7 @@ defmodule Sanbase.Price do
     only: [
       maybe_unwrap_ok_value: 1,
       maybe_apply_function: 2,
+      maybe_transform_datetime_data_tuple_to_map: 1,
       wrap_ok: 1
     ]
 
@@ -246,10 +247,7 @@ defmodule Sanbase.Price do
         elem = %{slug: slug, value: value}
         Map.update(acc, datetime, [elem], &[elem | &1])
       end)
-      |> maybe_apply_function(fn list ->
-        list
-        |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
-      end)
+      |> maybe_transform_datetime_data_tuple_to_map()
     end
   end
 

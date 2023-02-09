@@ -152,11 +152,59 @@ defmodule Sanbase.Utils.Transform do
 
   def maybe_apply_function({:error, error}, _), do: {:error, error}
 
+  def maybe_transform_datetime_data_tuple_to_map(data) do
+    data
+    |> maybe_apply_function(fn list ->
+      list
+      |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
+    end)
+  end
+
+  @doc ~s"""
+  If the data is an ok tuple, sort it using the provided key and direction.
+  The function is specialized for datetime, so it uses the proper way to compare
+  datetimes.
+
+
+  ## Examples:
+    iex> Sanbase.Utils.Transform.maybe_sort(
+    ...>   {:ok, [%{datetime: ~U[2022-01-01 00:00:00Z]},%{datetime: ~U[2022-01-01 02:00:00Z]}]},
+    ...>   :datetime,
+    ...>   :desc
+    ...> )
+    {:ok, [%{datetime: ~U[2022-01-01 02:00:00Z]}, %{datetime: ~U[2022-01-01 00:00:00Z]}]}
+
+    iex> Sanbase.Utils.Transform.maybe_sort(
+    ...>   {:ok, [%{a: 1, value: 5}, %{a: 100, value: 4}, %{a: -1, value: 6}]},
+    ...>   :value,
+    ...>   :asc
+    ...> )
+    {:ok, [%{a: 100, value: 4}, %{a: 1, value: 5}, %{a: -1, value: 6}]}
+  """
+  def maybe_sort(data, :datetime, direction) when direction in [:asc, :desc] do
+    data
+    |> maybe_apply_function(fn list ->
+      Enum.sort_by(list, & &1.datetime, {direction, DateTime})
+    end)
+  end
+
+  def maybe_sort(data, key, direction) when direction in [:asc, :desc] do
+    data
+    |> maybe_apply_function(fn list ->
+      Enum.sort_by(list, & &1[key], direction)
+    end)
+  end
+
   @doc ~s"""
   Sums the values of all keys with the same datetime
 
   ## Examples:
-      iex> Sanbase.Utils.Transform.sum_by_datetime([%{datetime: ~U[2019-01-01 00:00:00Z], val: 2}, %{datetime: ~U[2019-01-01 00:00:00Z], val: 3}, %{datetime: ~U[2019-01-02 00:00:00Z], val: 2}], :val)
+      iex> Sanbase.Utils.Transform.sum_by_datetime([
+      ...>  %{datetime: ~U[2019-01-01 00:00:00Z], val: 2},
+      ...>  %{datetime: ~U[2019-01-01 00:00:00Z], val: 3},
+      ...>  %{datetime: ~U[2019-01-02 00:00:00Z], val: 2}],
+      ...>  :val
+      ...> )
       [%{datetime: ~U[2019-01-01 00:00:00Z], val: 5}, %{datetime: ~U[2019-01-02 00:00:00Z], val: 2}]
 
       iex> Sanbase.Utils.Transform.sum_by_datetime([], :key)

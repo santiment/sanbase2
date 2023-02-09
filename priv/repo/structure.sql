@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 14.2
+-- Dumped by pg_dump version 14.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -76,7 +76,7 @@ CREATE TYPE public.oban_job_state AS ENUM (
 
 CREATE TYPE public.question_type AS ENUM (
     'single_select',
-    'multi_select',
+    'multiple_select',
     'open_text',
     'open_number',
     'boolean'
@@ -2690,7 +2690,7 @@ CREATE TABLE public.questionnaire_answers (
 
 CREATE TABLE public.questionnaire_questions (
     uuid uuid NOT NULL,
-    questionnaire_uuid uuid,
+    questionnaire_uuid uuid NOT NULL,
     "order" integer NOT NULL,
     question character varying(255) NOT NULL,
     type public.question_type DEFAULT 'open_text'::public.question_type NOT NULL,
@@ -7254,7 +7254,7 @@ ALTER TABLE ONLY public.pumpkins
 --
 
 ALTER TABLE ONLY public.questionnaire_answers
-    ADD CONSTRAINT questionnaire_answers_question_uuid_fkey FOREIGN KEY (question_uuid) REFERENCES public.questionnaire_questions(uuid);
+    ADD CONSTRAINT questionnaire_answers_question_uuid_fkey FOREIGN KEY (question_uuid) REFERENCES public.questionnaire_questions(uuid) ON DELETE CASCADE;
 
 
 --
@@ -7270,7 +7270,7 @@ ALTER TABLE ONLY public.questionnaire_answers
 --
 
 ALTER TABLE ONLY public.questionnaire_questions
-    ADD CONSTRAINT questionnaire_questions_questionnaire_uuid_fkey FOREIGN KEY (questionnaire_uuid) REFERENCES public.questionnaires(uuid);
+    ADD CONSTRAINT questionnaire_questions_questionnaire_uuid_fkey FOREIGN KEY (questionnaire_uuid) REFERENCES public.questionnaires(uuid) ON DELETE CASCADE;
 
 
 --
@@ -8133,3 +8133,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230113134151);
 INSERT INTO public."schema_migrations" (version) VALUES (20230114134332);
 INSERT INTO public."schema_migrations" (version) VALUES (20230120101611);
 INSERT INTO public."schema_migrations" (version) VALUES (20230124105934);
+INSERT INTO public."schema_migrations" (version) VALUES (20230206085439);
+INSERT INTO public."schema_migrations" (version) VALUES (20230206100629);

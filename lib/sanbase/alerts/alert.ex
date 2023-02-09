@@ -198,34 +198,33 @@ defimpl Sanbase.Alert, for: Any do
        ) do
     fun = fn _identifier, payload ->
       payload = transform_payload(payload, trigger.id, :telegram_channel)
+      {payload, opts} = maybe_extend_payload_telegram_channel(payload, trigger, channel)
 
       Sanbase.Telegram.send_message_to_chat_id(channel, payload)
-      |> maybe_transform_telegram_response(trigger, channel)
+      |> maybe_transform_telegram_response(trigger, channel, opts)
     end
 
     send_or_limit("telegram_channel", trigger, max_alerts_to_send, fun)
   end
 
+  defp maybe_transform_telegram_response(_response, _trigger, _channel, _opts \\ [])
+
   # For daily and intraday metric signals add preview image of the chart for metric + asset
   # The preview image should be a reply to the original alert message
-  # TODO spawn a separate process to send the image
+  # only for Sanr signals telegram channel and one test channel
   defp maybe_transform_telegram_response(
          {:ok, response},
-         %{trigger: %{settings: %{type: type}} = trigger},
-         channel
+         %{trigger: %{settings: %{type: type}}},
+         channel,
+         opts
        )
-       when type in ["metric_signal", "daily_metric_signal"] do
-    reply_to_message_id = Jason.decode!(response)["result"]["message_id"]
-    slug = trigger.settings.target.slug
-    template_kv = trigger.settings.template_kv
-    {_, kv} = template_kv[slug]
-
-    image_url = "#{preview_url()}/chart/#{kv.short_url_id}"
-
-    Sanbase.Telegram.send_image(channel, image_url, reply_to_message_id)
+       when type in ["metric_signal", "daily_metric_signal"] and
+              channel in ["@test_san_bot86", "@sanr_signals"] do
+    send_preview_image(response, channel, opts)
+    :ok
   end
 
-  defp maybe_transform_telegram_response({:error, error}, trigger, _channel) do
+  defp maybe_transform_telegram_response({:error, error}, trigger, _channel, _opts) do
     case String.contains?(error, "blocked the telegram bot") do
       true ->
         # In case the trigger does not have other channels but only telegram
@@ -241,7 +240,34 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  defp maybe_transform_telegram_response(response, _trigger, _channel), do: response
+  defp maybe_transform_telegram_response({:ok, _}, _trigger, _channel, _opts), do: :ok
+
+  defp send_preview_image(response, channel, opts) do
+    short_url_id = Keyword.get(opts, :short_url_id)
+
+    if short_url_id do
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        reply_to_message_id = Jason.decode!(response)["result"]["message_id"]
+
+        image_url = "#{preview_url()}/chart/#{short_url_id}"
+
+        is_image? = fn response ->
+          response.headers |> Enum.into(%{}) |> Map.get("Content-Type") == "image/jpeg"
+        end
+
+        HTTPoison.get(image_url)
+        |> case do
+          {:ok, img_response} ->
+            if is_image?.(img_response) do
+              Sanbase.Telegram.send_image(channel, image_url, reply_to_message_id)
+            end
+
+          _ ->
+            :ok
+        end
+      end)
+    end
+  end
 
   defp deactivate_if_telegram_channel_only(trigger) do
     case trigger do
@@ -285,6 +311,41 @@ defimpl Sanbase.Alert, for: Any do
 
   defp maybe_add_alert_link(payload, _, :webhook), do: payload
   defp maybe_add_alert_link(payload, _trigger_id, :telegram_channel), do: payload
+
+  # extend Sanr signals telegram channel and one test channel
+  defp maybe_extend_payload_telegram_channel(payload, user_trigger, channel)
+       when channel in ["@test_san_bot86", "@sanr_signals"] do
+    template_kv = user_trigger.trigger.settings.template_kv
+    slugs = Map.keys(template_kv)
+
+    if length(slugs) > 0 do
+      slug = hd(slugs)
+
+      {sanbase_link, short_url_id} =
+        case create_charts_link(user_trigger.trigger.settings.metric, slug) do
+          {:ok, short_url} ->
+            {"#{base_url()}/charts/#{short_url.short_url}?utm_source=telegram&utm_medium=signals",
+             short_url.short_url}
+
+          _ ->
+            {"https://app.santiment.net/charts?slug=#{slug}?utm_source=telegram&utm_medium=signals",
+             nil}
+        end
+
+      payload = """
+      #{String.trim_trailing(payload)}
+
+      [View chart](#{sanbase_link})
+      [Note the decision](https://sanr.app/?utm_source=telegram&utm_medium=signals)
+      """
+
+      {payload, [short_url_id: short_url_id]}
+    else
+      {payload, []}
+    end
+  end
+
+  defp maybe_extend_payload_telegram_channel(payload, _, _), do: {payload, []}
 
   defp do_send_email(user, payload) do
     payload_html = Earmark.as_html!(payload, breaks: true, timeout: nil, mapper: &Enum.map/2)
@@ -440,5 +501,36 @@ defimpl Sanbase.Alert, for: Any do
       true -> "https://preview.santiment.net"
       false -> "https://preview-stage.santiment.net"
     end
+  end
+
+  defp base_url do
+    case is_prod?() do
+      true -> "https://app.santiment.net"
+      false -> "https://app-stage.santiment.net"
+    end
+  end
+
+  def create_charts_link(metric, slug) do
+    now =
+      Timex.shift(Timex.now(), minutes: 10)
+      |> Sanbase.DateTimeUtils.round_datetime(second: 600)
+      |> Timex.set(microsecond: {0, 0})
+
+    six_months_ago =
+      Timex.shift(now, months: -6)
+      |> Timex.set(microsecond: {0, 0})
+
+    now_iso = DateTime.to_iso8601(now)
+    six_months_ago_iso = DateTime.to_iso8601(six_months_ago)
+
+    settings_json = Jason.encode!(%{slug: slug, from: six_months_ago_iso, to: now_iso})
+
+    widgets_json =
+      Jason.encode!([
+        %{widget: "ChartWidget", wm: [metric], whm: [], wax: [0], wpax: [], wc: ["#26C953"]}
+      ])
+
+    url = URI.encode("/charts?settings=#{settings_json}&widgets=#{widgets_json}")
+    Sanbase.ShortUrl.create(%{full_url: url})
   end
 end

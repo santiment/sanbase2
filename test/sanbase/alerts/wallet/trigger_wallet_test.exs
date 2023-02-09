@@ -89,7 +89,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
 
   test "signal setting cooldown works for wallet movement", context do
     with_mocks [
-      {Sanbase.Telegram, [:passthrough], send_message: fn _user, _text -> :ok end},
+      {Sanbase.Telegram, [:passthrough], send_message: fn _user, _text -> {:ok, "OK"} end},
       {HistoricalBalance, [:passthrough],
        balance_change: fn _, _, _, _ ->
          {:ok,
@@ -155,7 +155,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
       {Sanbase.Telegram, [:passthrough],
        send_message: fn _user, text ->
          send(test_pid, {:telegram_to_self, text})
-         :ok
+         {:ok, "OK"}
        end},
       {HistoricalBalance, [:passthrough],
        balance_change: fn _, _, _, _ ->
@@ -220,7 +220,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
       assert_receive({:telegram_to_self, message})
 
       assert message =~
-               "The address #{context.address}'s BTC balance on the Ripple blockchain has decreased by 100"
+               "The address #{context.address}'s BTC balance on the XRP Ledger blockchain has decreased by 100"
 
       assert message =~ "Was: 100\nNow: 0"
     end

@@ -85,15 +85,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.QuestionnaireResolver do
     Questionnaire.create_answer(question_uuid, user.id, params)
   end
 
-  def update_answer(_root, %{question_uuid: question_uuid, params: params}, %{
+  def update_answer(_root, %{answer_uuid: answer_uuid, params: params}, %{
         context: %{auth: %{current_user: user}}
       }) do
-    Questionnaire.update_answer(question_uuid, user.id, params)
+    Questionnaire.update_answer(answer_uuid, user.id, params)
   end
 
-  def delete_answer(_root, %{question_uuid: question_uuid}, %{
+  def delete_answer(_root, %{answer_uuid: answer_uuid}, %{
         context: %{auth: %{current_user: user}}
       }) do
-    Questionnaire.delete_answer(question_uuid, user.id)
+    Questionnaire.delete_answer(answer_uuid, user.id)
   end
 end

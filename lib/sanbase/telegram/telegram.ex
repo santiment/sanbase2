@@ -101,7 +101,7 @@ defmodule Sanbase.Telegram do
   The chat_id is `-100<chat id>` when the channel is private
   """
   @spec send_message_to_chat_id(non_neg_integer(), message, nil | %User{}) ::
-          :ok | {:error, String.t()}
+          {:ok, any()} | {:error, String.t()}
   def send_message_to_chat_id(chat_id, text, user \\ nil) do
     content =
       %{

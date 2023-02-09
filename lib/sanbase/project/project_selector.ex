@@ -7,7 +7,10 @@ defmodule Sanbase.Project.Selector do
   require Application
 
   # This module exposes a single valid_slug?/1 function that returns true/false
-  @available_slugs_module Application.compile_env(:sanbase, :available_slugs_module)
+  @available_slugs_module Application.compile_env(
+                            :sanbase,
+                            :available_slugs_module
+                          )
 
   def args_to_raw_selector(%{slug: slug}), do: %{slug: slug}
   def args_to_raw_selector(%{slugs: slugs}), do: %{slug: slugs}
@@ -25,6 +28,8 @@ defmodule Sanbase.Project.Selector do
 
     with {:ok, selector} <- transform_selector(selector),
          {:ok, selector} <- maybe_ignore_slugs(selector),
+         # TEMP 02.02.2023: Handle ripple -> xrp rename
+         {:ok, selector} <- temp_replace_slugs(selector),
          true <- valid_selector?(selector) do
       {:ok, selector}
     end
@@ -45,7 +50,8 @@ defmodule Sanbase.Project.Selector do
 
   # The check will make one ETS call per slug. It will be executed only for small
   # list of slugs (less than 10 slugs)
-  defp valid_selector?(%{slug: slugs}) when is_list(slugs) and length(slugs) < 10 do
+  defp valid_selector?(%{slug: slugs})
+       when is_list(slugs) and length(slugs) < 10 do
     # If all of the slugs are valid return `true`. Return {:error, error} otherwise.
     slugs
     |> Enum.find_value(true, fn slug ->
@@ -118,4 +124,30 @@ defmodule Sanbase.Project.Selector do
   end
 
   defp maybe_ignore_slugs(selector), do: {:ok, selector}
+
+  defp temp_replace_slugs(selector) do
+    selector =
+      case selector do
+        %{slug: "ripple"} ->
+          Map.put(selector, :slug, "xrp")
+
+        %{slug: list} when is_list(list) ->
+          Map.update!(selector, :slug, &replace_in_list(&1, "ripple", "xrp"))
+
+        %{slugs: list} when is_list(list) ->
+          Map.update!(selector, :slugs, &replace_in_list(&1, "ripple", "xrp"))
+
+        _ ->
+          selector
+      end
+
+    {:ok, selector}
+  end
+
+  defp replace_in_list(list, old, new) do
+    Enum.map(list, fn
+      ^old -> new
+      val -> val
+    end)
+  end
 end

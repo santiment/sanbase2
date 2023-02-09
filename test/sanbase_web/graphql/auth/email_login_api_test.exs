@@ -191,10 +191,11 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       |> json_response(200)
     end
 
+    @tag capture_log: true
     test "emailLogin fails when origin is not santiment", context do
       error_msg =
         context.conn
-        |> Plug.Conn.put_req_header("origin", "https://app.santiemnt.net")
+        |> Plug.Conn.put_req_header("origin", "https://app.not-santiment.net")
         |> email_login(%{email: "john@example.com"})
         |> get_in(["errors", Access.at(0), "message"])
 

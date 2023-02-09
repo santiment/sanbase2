@@ -74,8 +74,15 @@ defmodule Sanbase.DiscordConsumer do
   end
 
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
-    with true <- CommandHandler.is_command?(msg.content),
-         {:ok, name, sql} <- CommandHandler.parse_message_command(msg.content) do
+    cond do
+      CommandHandler.is_command?(msg.content) -> do_handle_command(msg)
+      CommandHandler.is_ai_command?(msg.content) -> CommandHandler.handle_command("ai", msg)
+      true -> :ignore
+    end
+  end
+
+  def do_handle_command(msg) do
+    with {:ok, name, sql} <- CommandHandler.parse_message_command(msg.content) do
       CommandHandler.handle_command("run", name, sql, msg)
       |> handle_msg_response("run", msg)
     else

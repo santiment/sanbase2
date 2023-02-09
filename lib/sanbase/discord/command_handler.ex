@@ -10,12 +10,17 @@ defmodule Sanbase.Discord.CommandHandler do
   alias Sanbase.Utils.Config
 
   @prefix "!q"
+  @ai_prefix "!ai"
   @mock_role_id 1
   @max_size 1800
   @ephemeral_message_flags 64
 
   def is_command?(content) do
     String.starts_with?(content, @prefix)
+  end
+
+  def is_ai_command?(content) do
+    String.starts_with?(content, @ai_prefix)
   end
 
   def handle_interaction("query", interaction) do
@@ -243,6 +248,32 @@ defmodule Sanbase.Discord.CommandHandler do
     else
       {:execution_error, reason} ->
         content = sql_execution_error(reason, msg.author.id, name)
+        Api.edit_message(msg.channel_id, loading_msg.id, content: content)
+    end
+  end
+
+  def handle_command("ai", msg) do
+    {:ok, loading_msg} =
+      Api.create_message(
+        msg.channel_id,
+        content: ":robot: Thinking...",
+        message_reference: %{message_id: msg.id}
+      )
+
+    prompt = String.trim(msg.content, "!ai")
+
+    case Sanbase.OpenAI.complete(prompt) do
+      {:ok, response} ->
+        content = """
+        ```sql
+        #{response}
+        ```
+        """
+
+        Api.edit_message(msg.channel_id, loading_msg.id, content: content)
+
+      {:error, _} ->
+        content = "Can't generate sql query based on your prompt"
         Api.edit_message(msg.channel_id, loading_msg.id, content: content)
     end
   end

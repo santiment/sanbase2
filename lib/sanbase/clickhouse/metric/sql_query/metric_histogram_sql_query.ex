@@ -128,14 +128,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     {query, args}
   end
 
-  def histogram_data_query(
-        "eth2_staked_amount_per_label",
-        "ethereum",
-        from,
-        to,
-        _interval,
-        limit
-      ) do
+  def histogram_data_query("eth2_staked_amount_per_label", "ethereum", from, to, _interval, limit) do
     query = """
     SELECT
       label,

@@ -101,7 +101,7 @@ defmodule Sanbase.Telegram do
   The chat_id is `-100<chat id>` when the channel is private
   """
   @spec send_message_to_chat_id(non_neg_integer(), message, nil | %User{}) ::
-          :ok | {:error, String.t()}
+          {:ok, any()} | {:error, String.t()}
   def send_message_to_chat_id(chat_id, text, user \\ nil) do
     content =
       %{
@@ -113,8 +113,8 @@ defmodule Sanbase.Telegram do
       |> Jason.encode!()
 
     case post("sendMessage", content) do
-      {:ok, %Tesla.Env{status: 200}} ->
-        :ok
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
+        {:ok, body}
 
       {:ok, %Tesla.Env{status: 403}} ->
         user_data = if user, do: "User with id #{user.id}", else: "User"
@@ -129,6 +129,18 @@ defmodule Sanbase.Telegram do
         Logger.warning("Telegram message not sent. Reason: #{inspect(error)}")
         {:error, "Telegram message not sent."}
     end
+  end
+
+  def send_image(chat_id, image_url, reply_to_message_id) do
+    content =
+      %{
+        chat_id: chat_id,
+        photo: image_url,
+        reply_to_message_id: reply_to_message_id
+      }
+      |> Jason.encode!()
+
+    post("sendPhoto", content)
   end
 
   @doc ~s"""

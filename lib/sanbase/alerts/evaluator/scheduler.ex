@@ -296,7 +296,7 @@ defmodule Sanbase.Alert.Scheduler do
     |> Enum.unzip()
   end
 
-  defp send_triggers_sequentially(triggers) do
+  def send_triggers_sequentially(triggers) do
     triggers
     |> Enum.map(fn %UserTrigger{} = user_trigger ->
       case Alert.send(user_trigger) do

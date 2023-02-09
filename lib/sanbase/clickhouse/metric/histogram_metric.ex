@@ -1,6 +1,7 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
   alias Sanbase.Metric
   alias Sanbase.ClickhouseRepo
@@ -23,6 +24,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   @eth2_string_address_string_label_float_value_metrics [
     "eth2_top_stakers"
   ]
+
+  @eth2_metrics @eth2_string_label_float_value_metrics ++
+                  @eth2_datetime_staking_pools_integer_valuation_list ++
+                  @eth2_string_address_string_label_float_value_metrics
 
   @spec histogram_data(String.t(), map(), DateTime.t(), DateTime.t(), String.t(), number()) ::
           {:ok, list(map())} | {:error, String.t()}
@@ -58,14 +63,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     |> maybe_transform_into_buckets(slug, from, to, limit)
   end
 
-  def histogram_data(
-        metric,
-        %{slug: "ethereum" = slug},
-        from,
-        to,
-        interval,
-        limit
-      )
+  def histogram_data(metric, %{slug: "ethereum" = slug}, from, to, interval, limit)
       when metric in @eth2_string_label_float_value_metrics do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
@@ -77,14 +75,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     end)
   end
 
-  def histogram_data(
-        metric,
-        %{slug: "ethereum" = slug},
-        from,
-        to,
-        interval,
-        limit
-      )
+  def histogram_data(metric, %{slug: "ethereum" = slug}, from, to, interval, limit)
       when metric in @eth2_string_address_string_label_float_value_metrics do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
@@ -97,14 +88,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     end)
   end
 
-  def histogram_data(
-        metric,
-        %{slug: "ethereum" = slug},
-        from,
-        to,
-        interval,
-        limit
-      )
+  def histogram_data(metric, %{slug: "ethereum" = slug}, from, to, interval, limit)
       when metric in @eth2_datetime_staking_pools_integer_valuation_list do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
@@ -126,6 +110,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     end
   end
 
+  def first_datetime(metric, _selector, _opts)
+      when metric in @eth2_metrics do
+    {:ok, ~U[2020-11-03 16:44:26Z]}
+  end
+
   def last_datetime_computed_at(metric, selector, opts \\ [])
 
   def last_datetime_computed_at(metric, %{slug: slug}, opts)
@@ -134,6 +123,23 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
          {:ok, dt2} <- Metric.last_datetime_computed_at("age_distribution", %{slug: slug}, opts) do
       {:ok, Enum.min([dt1, dt2], DateTime)}
     end
+  end
+
+  def last_datetime_computed_at(metric, _selector, _opts) when metric in @eth2_metrics do
+    {query, args} = {"SELECT toUnixTimestamp(max(dt)) FROM eth2_staking_transfers_v2", []}
+
+    ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
+      DateTime.from_unix!(timestamp)
+    end)
+    |> maybe_unwrap_ok_value()
+  end
+
+  def available_slugs(metric) when metric in @spent_coins_cost_histograms do
+    Metric.available_slugs("price_usd")
+  end
+
+  def available_slugs(metric) when metric in @eth2_metrics do
+    {:ok, ["ethereum"]}
   end
 
   # Aggregate the separate prices into `buckets_count` number of evenly spaced buckets

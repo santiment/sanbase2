@@ -112,7 +112,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "operation" => %{"percent_up" => 300}
     }
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
+    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, {:ok, "OK"})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = create_trigger(conn, title: "Some title", settings: trigger_settings)
 
@@ -438,7 +438,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     }
     """
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
+    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, {:ok, "OK"})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         conn
@@ -463,7 +463,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
+    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, {:ok, "OK"})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         create_trigger(conn,
@@ -492,7 +492,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       ]
       |> Sanbase.Mock.wrap_consecutives(arity: 4)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
+    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, {:ok, "OK"})
     |> Sanbase.Mock.prepare_mock(
       Sanbase.Metric,
       :aggregated_timeseries_data,
@@ -533,7 +533,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       ]
       |> Sanbase.Mock.wrap_consecutives(arity: 4)
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
+    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, {:ok, "OK"})
     |> Sanbase.Mock.prepare_mock(
       Sanbase.Metric,
       :aggregated_timeseries_data,

@@ -48,7 +48,7 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
 
   test "cooldown works for wallet_usd_valuation", _context do
     with_mocks [
-      {Sanbase.Telegram, [:passthrough], send_message: fn _user, _text -> :ok end},
+      {Sanbase.Telegram, [:passthrough], send_message: fn _user, _text -> {:ok, "OK"} end},
       {HistoricalBalance, [:passthrough], usd_value_address_change: fn _, _ -> {:ok, data()} end}
     ] do
       log = capture_log(fn -> Scheduler.run_alert(WalletUsdValuationTriggerSettings) end)

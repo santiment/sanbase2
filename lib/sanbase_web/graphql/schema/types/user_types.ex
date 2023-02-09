@@ -282,15 +282,16 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
   object :sanbase_nft do
     field(:has_valid_nft, non_null(:boolean))
-    field(:has_expired_nft, :boolean)
-    field(:nft_count, non_null(:integer))
+    field(:has_non_valid_nft, :boolean)
     field(:nft_data, non_null(list_of(:nft_data)))
+    field(:nft_count, non_null(:integer))
+    field(:non_valid_nft_count, non_null(:integer))
   end
 
   object :nft_data do
     field(:address, :string)
     field(:token_ids, list_of(:integer))
-    field(:expired_token_ids, list_of(:integer))
+    field(:non_valid_token_ids, list_of(:integer))
   end
 
   @desc ~s"""

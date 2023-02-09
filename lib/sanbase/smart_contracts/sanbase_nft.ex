@@ -13,23 +13,33 @@ defmodule Sanbase.SmartContracts.SanbaseNFTInterface do
         %{
           address: address,
           token_ids: data.valid,
-          expired_token_ids: data.expired
+          non_valid_token_ids: data.non_valid
         }
       end)
 
     %{
       nft_data: nft_data,
       has_valid_nft: has_valid_nft?(nft_data),
+      has_non_valid_nft: has_non_valid_nft?(nft_data),
       nft_count: nft_count(nft_data),
-      has_expired_nft: has_expired_nft?(nft_data)
+      non_valid_nft_count: non_valid_nft_count(nft_data)
     }
   end
 
   def nft_subscriptions(user_id) when is_integer(user_id) do
     User.by_id(user_id)
     |> case do
-      {:ok, user} -> nft_subscriptions(user)
-      {:error, _} -> %{nft_data: %{}, has_valid_nft: false, nft_count: 0, has_expired_nft: false}
+      {:ok, user} ->
+        nft_subscriptions(user)
+
+      {:error, _} ->
+        %{
+          nft_data: %{},
+          has_valid_nft: false,
+          nft_count: 0,
+          non_valid_nft_count: 0,
+          has_non_valid_nft: false
+        }
     end
   end
 
@@ -39,15 +49,22 @@ defmodule Sanbase.SmartContracts.SanbaseNFTInterface do
     |> Enum.any?()
   end
 
-  defp has_expired_nft?(data) do
+  defp has_non_valid_nft?(data) do
     data
-    |> Enum.filter(fn %{expired_token_ids: token_ids} -> length(token_ids) > 0 end)
+    |> Enum.filter(fn %{non_valid_token_ids: token_ids} -> length(token_ids) > 0 end)
     |> Enum.any?()
   end
 
   defp nft_count(data) do
     data
     |> Enum.reduce(0, fn %{token_ids: token_ids}, acc -> acc + length(token_ids) end)
+  end
+
+  defp non_valid_nft_count(data) do
+    data
+    |> Enum.reduce(0, fn %{non_valid_token_ids: non_valid_token_ids}, acc ->
+      acc + length(non_valid_token_ids)
+    end)
   end
 end
 
@@ -60,7 +77,7 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
   alias Sanbase.Utils.Config
 
   @contract_goerly "0x7f985e8ad29438907a2cc8ff3d526d9a1693442c"
-  @contract_mainnet "TBD"
+  @contract_mainnet "0x211E14C8cc67F9EF05cC84F80Dc036Ff2F548949"
 
   @json_file "sanbase_nft_abi.json"
   @external_resource json_file = Path.join(__DIR__, @json_file)
@@ -88,10 +105,10 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
         end)
 
       valid_token_ids = Enum.filter(token_ids, fn token_id -> execute("isValid", [token_id]) end)
-      expired_token_ids = token_ids -- valid_token_ids
-      %{valid: valid_token_ids, expired: expired_token_ids}
+      non_valid_token_ids = token_ids -- valid_token_ids
+      %{valid: valid_token_ids, non_valid: non_valid_token_ids}
     else
-      %{valid: [], expired: []}
+      %{valid: [], non_valid: []}
     end
   end
 

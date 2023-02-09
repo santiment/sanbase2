@@ -184,7 +184,7 @@ A function that returns all projects with a given slug. The function is identifi
 {
   "name": "slugs",
   "args": {
-    "slugs": ["bitcoin", "ethereum", "ripple", "santiment", "maker"]
+    "slugs": ["bitcoin", "ethereum", "xrp", "santiment", "maker"]
   }
 }
 ```

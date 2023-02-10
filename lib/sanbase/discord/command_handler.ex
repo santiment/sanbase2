@@ -51,7 +51,7 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   def handle_interaction("run", interaction) do
-    interaction_ack(interaction)
+    interaction_ack_visible(interaction)
 
     {name, sql} = parse_modal_component(interaction)
     args = get_additional_info(interaction)
@@ -270,7 +270,10 @@ defmodule Sanbase.Discord.CommandHandler do
         ```
         """
 
-        Api.edit_message(msg.channel_id, loading_msg.id, content: content)
+        Api.edit_message(msg.channel_id, loading_msg.id,
+          content: content,
+          components: [ai_action_row()]
+        )
 
       {:error, _} ->
         content = "Can't generate sql query based on your prompt"
@@ -468,6 +471,10 @@ defmodule Sanbase.Discord.CommandHandler do
     })
   end
 
+  defp interaction_ack_visible(interaction) do
+    Nostrum.Api.create_interaction_response(interaction, %{type: 5})
+  end
+
   defp interaction_msg(interaction, content, opts \\ %{}) do
     Nostrum.Api.create_interaction_response(
       interaction,
@@ -497,25 +504,32 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   defp parse_modal_component(interaction) do
-    components = interaction.data.components
+    if interaction.message do
+      content = interaction.message.content
+      [_, sql] = Regex.run(~r/```sql([^`]*)```$/ms, content)
+      sql = String.trim(sql)
+      {gen_query_name(), sql}
+    else
+      components = interaction.data.components
 
-    text_input_map =
-      components
-      |> Enum.into(%{}, fn c ->
-        text_input_comp = List.first(c.components)
-        {text_input_comp.custom_id, text_input_comp.value}
-      end)
+      text_input_map =
+        components
+        |> Enum.into(%{}, fn c ->
+          text_input_comp = List.first(c.components)
+          {text_input_comp.custom_id, text_input_comp.value}
+        end)
 
-    name =
-      case text_input_map["dashname"] do
-        "" -> gen_query_name()
-        nil -> gen_query_name()
-        name -> name
-      end
+      name =
+        case text_input_map["dashname"] do
+          "" -> gen_query_name()
+          nil -> gen_query_name()
+          name -> name
+        end
 
-    sql = text_input_map["sqlquery"] |> String.trim(";")
+      sql = text_input_map["sqlquery"] |> String.trim(";")
 
-    {name, sql}
+      {name, sql}
+    end
   end
 
   defp get_additional_info(interaction) do
@@ -616,6 +630,13 @@ defmodule Sanbase.Discord.CommandHandler do
     |> ActionRow.append(run_button)
     |> ActionRow.append(show_button)
     |> ActionRow.append(pin_unpin_button)
+  end
+
+  defp ai_action_row do
+    run_button = Button.button(label: "Run 🚀", custom_id: "run", style: 3)
+
+    ActionRow.action_row()
+    |> ActionRow.append(run_button)
   end
 
   defp create_chart_embed(exec_result, dd, panel_id) do

@@ -104,7 +104,9 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
           execute("tokenOfOwnerByIndex", [address, idx]) |> List.first()
         end)
 
-      valid_token_ids = Enum.filter(token_ids, fn token_id -> execute("isValid", [token_id]) end)
+      valid_token_ids =
+        Enum.filter(token_ids, fn token_id -> execute("isValid", [token_id]) |> hd() end)
+
       non_valid_token_ids = token_ids -- valid_token_ids
       %{valid: valid_token_ids, non_valid: non_valid_token_ids}
     else

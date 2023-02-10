@@ -7,7 +7,7 @@ defmodule Sanbase.OpenAI do
 
   def complete(user_question) do
     result_format = "\nGenerate one clickhouse sql query that will:"
-    start = "SELECT"
+    start = ""
     prompt = "#{@context} #{result_format} #{user_question}\n\n #{start}"
 
     generate_query(prompt, start)

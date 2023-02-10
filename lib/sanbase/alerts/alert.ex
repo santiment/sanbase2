@@ -336,8 +336,8 @@ defimpl Sanbase.Alert, for: Any do
       payload = """
       #{String.trim_trailing(payload)}
 
-      [View chart](#{sanbase_link})
-      [Note the decision](https://sanr.app/?utm_source=telegram&utm_medium=signals)
+      [View chart on Sanbase](#{sanbase_link})
+      [Open signal on SanR](https://sanr.app/?utm_source=telegram&utm_medium=signals)
       """
 
       {payload, [short_url_id: short_url_id]}

@@ -90,7 +90,7 @@ defmodule Sanbase.Project.AvailableQueries do
   end
 
   @mineable_specific_queries ["exchangeWallets", "allExchanges"]
-  @ethereum_specific_queries ["miningPoolsDistribution", "minersBalance", "gasUsed"]
+  @ethereum_specific_queries ["gasUsed"]
   @bitcoin_specific_queries []
 
   defp blockchain_metric_queries(%Project{} = project) do

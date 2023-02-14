@@ -9,7 +9,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   alias Sanbase.Clickhouse.{
     GasUsed,
-    MiningPoolsDistribution,
     TopHolders
   }
 
@@ -77,20 +76,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       Map.put(resolution, :source, %{metric: "network_growth"})
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :new_addresses)
-  end
-
-  def mining_pools_distribution(
-        _root,
-        %{slug: slug, from: from, to: to, interval: interval},
-        _resolution
-      ) do
-    case MiningPoolsDistribution.distribution(slug, from, to, interval) do
-      {:ok, distribution} ->
-        {:ok, distribution}
-
-      {:error, error} ->
-        {:error, handle_graphql_error("Mining Pools Distribution", slug, error)}
-    end
   end
 
   def mvrv_ratio(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do

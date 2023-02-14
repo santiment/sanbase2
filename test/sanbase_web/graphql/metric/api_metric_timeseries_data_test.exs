@@ -233,11 +233,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregation = :avg
 
-    metrics =
-      Metric.available_timeseries_metrics()
-      |> Enum.shuffle()
-
-    # |> Enum.take(100)
+    metrics = Metric.available_timeseries_metrics() |> Enum.shuffle() |> Enum.take(100)
 
     Sanbase.Mock.prepare_mock2(
       &Metric.timeseries_data/6,

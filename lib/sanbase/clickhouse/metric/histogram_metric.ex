@@ -6,7 +6,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   alias Sanbase.Metric
   alias Sanbase.ClickhouseRepo
 
-  @spent_coins_cost_histograms ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"]
+  @spent_coins_cost_histograms [
+    "price_histogram",
+    "spent_coins_cost",
+    "all_spent_coins_cost"
+  ]
 
   @eth2_string_label_float_value_metrics [
     "eth2_staked_amount_per_label",
@@ -95,17 +99,37 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     ClickhouseRepo.query_transform(query, args, fn [timestamp, value] ->
       %{
         datetime: DateTime.from_unix!(timestamp),
-        value: Enum.map(value, fn [pool, int] -> %{staking_pool: pool, valuation: int} end)
+        value:
+          Enum.map(value, fn [pool, int] ->
+            %{staking_pool: pool, valuation: int}
+          end)
       }
     end)
   end
 
   def first_datetime(metric, selector, opts \\ [])
 
+  def first_datetime("age_distribution", selector, _opts) do
+    sql = """
+    SELECT min(dt)
+    FROM distribution_deltas_5min
+    WHERE asset_id = (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT 1)
+    """
+
+    params = %{selector: selector}
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+    |> ClickhouseRepo.query_transform(fn [timestamp] ->
+      DateTime.from_unix!(timestamp)
+    end)
+    |> maybe_unwrap_ok_value()
+  end
+
   def first_datetime(metric, %{slug: slug}, opts)
       when metric in @spent_coins_cost_histograms do
     with {:ok, dt1} <- Metric.first_datetime("price_usd", %{slug: slug}, opts),
-         {:ok, dt2} <- Metric.first_datetime("age_distribution", %{slug: slug}, opts) do
+         {:ok, dt2} <-
+           Metric.first_datetime("age_distribution", %{slug: slug}, opts) do
       {:ok, Enum.max([dt1, dt2], DateTime)}
     end
   end
@@ -117,15 +141,36 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   def last_datetime_computed_at(metric, selector, opts \\ [])
 
+  def last_datetime_computed_at("age_distribution", selector, _opts) do
+    sql = """
+    SELECT max(dt)
+    FROM distribution_deltas_5min
+    WHERE asset_id = (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT 1)
+    """
+
+    params = %{selector: selector}
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+    |> ClickhouseRepo.query_transform(fn [timestamp] -> DateTime.from_unix!(timestamp) end)
+    |> maybe_unwrap_ok_value()
+  end
+
   def last_datetime_computed_at(metric, %{slug: slug}, opts)
       when metric in @spent_coins_cost_histograms do
-    with {:ok, dt1} <- Metric.last_datetime_computed_at("price_usd", %{slug: slug}, opts),
-         {:ok, dt2} <- Metric.last_datetime_computed_at("age_distribution", %{slug: slug}, opts) do
+    with {:ok, dt1} <-
+           Metric.last_datetime_computed_at("price_usd", %{slug: slug}, opts),
+         {:ok, dt2} <-
+           Metric.last_datetime_computed_at(
+             "age_distribution",
+             %{slug: slug},
+             opts
+           ) do
       {:ok, Enum.min([dt1, dt2], DateTime)}
     end
   end
 
-  def last_datetime_computed_at(metric, _selector, _opts) when metric in @eth2_metrics do
+  def last_datetime_computed_at(metric, _selector, _opts)
+      when metric in @eth2_metrics do
     {query, args} = {"SELECT toUnixTimestamp(max(dt)) FROM eth2_staking_transfers_v2", []}
 
     ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
@@ -143,7 +188,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   end
 
   # Aggregate the separate prices into `buckets_count` number of evenly spaced buckets
-  defp maybe_transform_into_buckets({:ok, []}, _slug, _from, _to, _buckets_count), do: {:ok, []}
+  defp maybe_transform_into_buckets({:ok, []}, _slug, _from, _to, _buckets_count),
+    do: {:ok, []}
 
   defp maybe_transform_into_buckets({:ok, data}, slug, from, to, buckets_count) do
     # The bucket containing the avg price will get split in two
@@ -170,9 +216,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
     Enum.reduce(prices_list, ranges_map, fn %{price: price, value: value}, acc ->
       key = price_to_range(price, min, bucket_size)
-      Map.update(acc, key, 0.0, fn curr_amount -> Float.round(curr_amount + value, 2) end)
+
+      Map.update(acc, key, 0.0, fn curr_amount ->
+        Float.round(curr_amount + value, 2)
+      end)
     end)
-    |> split_bucket_containing_price(prices_list, price_break_range, price_break)
+    |> split_bucket_containing_price(
+      prices_list,
+      price_break_range,
+      price_break
+    )
     |> Enum.map(fn {range, amount} -> %{range: range, value: amount} end)
     |> Enum.sort_by(fn %{range: [range_start | _]} -> range_start end)
   end
@@ -225,7 +278,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   # Break a bucket with range [low, high] into 2 buckes [low, divider] and [divider, high]
   # putting the proper number of entities that fall into each of the 2 ranges
-  defp split_bucket_containing_price(bucketed_data, original_data, [low, high], divider) do
+  defp split_bucket_containing_price(
+         bucketed_data,
+         original_data,
+         [low, high],
+         divider
+       ) do
     {lower_half_amount, upper_half_amount} =
       original_data
       |> Enum.reduce({0.0, 0.0}, fn %{price: price, value: value}, {acc_lower, acc_upper} ->

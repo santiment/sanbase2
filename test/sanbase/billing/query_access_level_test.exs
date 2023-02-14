@@ -177,7 +177,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_word_trending_history,
           :get_trending_words,
           :miners_balance,
-          :mining_pools_distribution,
           :mvrv_ratio,
           :network_growth,
           :nvt_ratio,

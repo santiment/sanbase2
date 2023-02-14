@@ -135,7 +135,6 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   defp min_interval("query", query)
        when query in [
               "dailyActiveDeposits",
-              "miningPoolsDistribution",
               "historyTwitterData",
               "percentOfTokenSupplyOnExchanges"
             ],

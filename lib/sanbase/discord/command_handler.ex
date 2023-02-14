@@ -262,7 +262,10 @@ defmodule Sanbase.Discord.CommandHandler do
 
     prompt = String.trim(msg.content, "!ai")
 
-    case Sanbase.OpenAI.complete(prompt) do
+    case Sanbase.OpenAI.translate(
+           prompt,
+           to_string(msg.author.username <> msg.author.discriminator)
+         ) do
       {:ok, response} ->
         content = """
         ```sql
@@ -276,7 +279,7 @@ defmodule Sanbase.Discord.CommandHandler do
         )
 
       {:error, _} ->
-        content = "Can't generate sql query based on your prompt"
+        content = "Couldn't generate sql query based on your prompt"
         Api.edit_message(msg.channel_id, loading_msg.id, content: content)
     end
   end

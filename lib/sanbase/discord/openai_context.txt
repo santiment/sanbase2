@@ -1,60 +1,60 @@
-  using these table definitions:
-  CREATE TABLE default.daily_metrics_v2
-  (
-      `metric_id` UInt64,
-      `asset_id` UInt64,
-      `dt` Date,
-      `value` Float64,
-      `computed_at` DateTime
-  )
-  PARTITION BY metric_id
-  ORDER BY (asset_id, metric_id, dt)
+using these table definitions:
+CREATE TABLE daily_metrics_v2
+(
+`metric_id` UInt64,
+`asset_id` UInt64,
+`dt` Date,
+`value` Float64,
+`computed_at` DateTime
+)
+PARTITION BY metric_id
+ORDER BY (asset_id, metric_id, dt)
 
-  CREATE TABLE default.intraday_metrics
-  (
-      `asset_id` UInt64 CODEC(DoubleDelta, LZ4),
-      `metric_id` UInt64 CODEC(DoubleDelta, LZ4),
-      `dt` DateTime CODEC(DoubleDelta, LZ4),
-      `value` Float64,
-      `computed_at` DateTime
-  )
-  PARTITION BY toYYYYMM(dt)
-  ORDER BY (asset_id, metric_id, dt)
+CREATE TABLE intraday_metrics
+(
+`asset_id` UInt64 CODEC(DoubleDelta, LZ4),
+`metric_id` UInt64 CODEC(DoubleDelta, LZ4),
+`dt` DateTime CODEC(DoubleDelta, LZ4),
+`value` Float64,
+`computed_at` DateTime
+)
+PARTITION BY toYYYYMM(dt)
+ORDER BY (asset_id, metric_id, dt)
 
-  CREATE TABLE default.asset_prices_v3
-  (
-      `dt` DateTime,
-      `source` LowCardinality(String),
-      `slug` LowCardinality(String),
-      `price_usd` Float64,
-      `price_btc` Float64,
-      `marketcap_usd` Float64,
-      `volume_usd` Float64
-  )
-  PARTITION BY toYYYYMM(dt)
-  ORDER BY (slug, source, dt)
+CREATE TABLE asset_prices_v3
+(
+`dt` DateTime,
+`source` LowCardinality(String),
+`slug` LowCardinality(String),
+`price_usd` Float64,
+`price_btc` Float64,
+`marketcap_usd` Float64,
+`volume_usd` Float64
+)
+PARTITION BY toYYYYMM(dt)
+ORDER BY (slug, source, dt)
 
-  and functions that work like this:
+and functions that work like this:
 
-  asset_id = get_asset_id('name-of-asset'))
-  metric_id = get_metric_id('name-of-metric')
-  slug = get_asset_slug(asset_id)
-  metric = get_metric_name(metric_id)
+asset_id = get_asset_id(slug))
+metric_id = get_metric_id(name-of-metric)
+slug = get_asset_slug(asset_id)
+metric = get_metric_name(metric_id)
 
-  And a working clickhouse sql query for the task:
-  Generate clickhouse sql query that will fetch the price in usd and daily active addresses for bitcoin for the last 10 days
+And a working clickhouse sql query for the task:
+Generate clickhouse sql query that will fetch the price in usd and daily active addresses for bitcoin for the last 10 days
 
-  SELECT
-  toDate32(dt) AS date,
-  avg(price_usd) AS avg_price_usd,
-  max(value) AS daily_active_addresses
-  FROM asset_prices_v3
-  JOIN daily_metrics_v2
-  ON toDate32(asset_prices_v3.dt) = daily_metrics_v2.dt
-  WHERE asset_prices_v3.slug = 'bitcoin'
-  AND daily_metrics_v2.asset_id = get_asset_id('bitcoin')
-  AND daily_metrics_v2.metric_id = get_metric_id('daily_active_addresses')
-  AND toDate32(dt) < toDate32(today())
-  GROUP BY date
-  ORDER BY date DESC
-  LIMIT 10
+SELECT
+toDate32(dt) AS date,
+avg(price_usd) AS avg_price_usd,
+max(value) AS daily_active_addresses
+FROM asset_prices_v3
+JOIN daily_metrics_v2
+ON toDate32(asset_prices_v3.dt) = daily_metrics_v2.dt
+WHERE asset_prices_v3.slug = 'bitcoin'
+AND daily_metrics_v2.asset_id = get_asset_id('bitcoin')
+AND daily_metrics_v2.metric_id = get_metric_id('daily_active_addresses')
+AND toDate32(dt) < toDate32(today())
+GROUP BY date
+ORDER BY date DESC
+LIMIT 10

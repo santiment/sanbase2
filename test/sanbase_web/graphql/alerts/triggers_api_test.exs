@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     test "with proper args - creates it successfully", %{conn: conn} do
       Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
         send(self(), {:telegram_to_self, text})
-        :ok
+        {:ok, "OK"}
       end)
       |> Sanbase.Mock.run_with_mocks(fn ->
         trigger_settings = default_trigger_settings_string_keys()

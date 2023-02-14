@@ -89,7 +89,7 @@ defmodule Sanbase.Alert.WalletAssetsHeldTriggerSettingsTest do
 
     telegram_mock_fun = fn _user, text ->
       send(test_pid, {:telegram_to_self, text})
-      :ok
+      {:ok, "OK"}
     end
 
     Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, telegram_mock_fun)

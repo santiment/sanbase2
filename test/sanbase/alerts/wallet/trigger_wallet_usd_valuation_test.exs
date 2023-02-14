@@ -68,7 +68,7 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
       {Sanbase.Telegram, [:passthrough],
        send_message: fn _user, text ->
          send(test_pid, {:telegram_to_self, text})
-         :ok
+         {:ok, "OK"}
        end},
       {HistoricalBalance, [:passthrough], usd_value_address_change: fn _, _ -> {:ok, data()} end}
     ] do

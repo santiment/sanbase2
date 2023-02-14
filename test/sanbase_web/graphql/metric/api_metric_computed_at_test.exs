@@ -19,7 +19,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
     datetime = ~U[2020-01-01 12:45:40Z]
     clickhouse_response = {:ok, %{rows: [[datetime |> DateTime.to_unix()]]}}
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, clickhouse_response)
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.ClickhouseRepo.query/2,
+      clickhouse_response
+    )
     |> Sanbase.Mock.prepare_mock2(
       &Sanbase.Twitter.MetricAdapter.last_datetime_computed_at/2,
       {:ok, datetime}
@@ -48,7 +51,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
         ]
       } = get_last_datetime_computed_at(conn, metric, %{slug: project.slug})
 
-      assert error_message == "The metric '#{metric}' is not supported or is mistyped."
+      assert error_message ==
+               "The metric '#{metric}' is not supported or is mistyped."
     end
   end
 

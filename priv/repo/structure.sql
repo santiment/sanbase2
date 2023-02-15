@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.2
--- Dumped by pg_dump version 14.2
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -254,6 +254,39 @@ CREATE SEQUENCE public.active_widgets_id_seq
 --
 
 ALTER SEQUENCE public.active_widgets_id_seq OWNED BY public.active_widgets.id;
+
+
+--
+-- Name: ai_context; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_context (
+    id bigint NOT NULL,
+    discord_user character varying(255),
+    question text,
+    answer text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: ai_context_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ai_context_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ai_context_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ai_context_id_seq OWNED BY public.ai_context.id;
 
 
 --
@@ -4026,6 +4059,13 @@ ALTER TABLE ONLY public.active_widgets ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: ai_context id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_context ALTER COLUMN id SET DEFAULT nextval('public.ai_context_id_seq'::regclass);
+
+
+--
 -- Name: api_call_limits id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4717,6 +4757,14 @@ ALTER TABLE ONLY public.webinars ALTER COLUMN id SET DEFAULT nextval('public.web
 
 ALTER TABLE ONLY public.active_widgets
     ADD CONSTRAINT active_widgets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ai_context ai_context_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_context
+    ADD CONSTRAINT ai_context_pkey PRIMARY KEY (id);
 
 
 --
@@ -8135,3 +8183,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230120101611);
 INSERT INTO public."schema_migrations" (version) VALUES (20230124105934);
 INSERT INTO public."schema_migrations" (version) VALUES (20230206085439);
 INSERT INTO public."schema_migrations" (version) VALUES (20230206100629);
+INSERT INTO public."schema_migrations" (version) VALUES (20230210145707);

@@ -262,7 +262,7 @@ defmodule Sanbase.Discord.CommandHandler do
 
     prompt = String.trim(msg.content, "!ai")
 
-    case Sanbase.OpenAI.translate(
+    case Sanbase.OpenAI.complete(
            prompt,
            to_string(msg.author.username <> msg.author.discriminator)
          ) do

@@ -41,6 +41,61 @@ metric_id = get_metric_id(name-of-metric)
 slug = get_asset_slug(asset_id)
 metric = get_metric_name(metric_id)
 
+Example csv of name and ticker and corresponding slug
+name and ticker,slug
+Bitcoin with ticker BTC is ,bitcoin
+Ethereum with ticker ETH is ,ethereum
+Tether [on Ethereum] with ticker USDT is ,tether
+Tether [on Optimism] with ticker USDT is ,o-tether
+Tether [on Polygon] with ticker USDT is ,p-tether
+Tether [on Arbitrum] with ticker USDT is ,arb-tether
+Tether [on BNB] with ticker USDT is ,bnb-tether
+BNB with ticker BNB is ,binance-coin
+USD Coin [on Arbitrum] with ticker USDC is ,arb-usd-coin
+USD Coin [on Optimism] with ticker USDC is ,o-usd-coin
+USD Coin [on BNB] with ticker USDC is ,bnb-usd-coin
+USD Coin [on Ethereum] with ticker USDC is ,usd-coin
+USD Coin [on Polygon] with ticker USDC is ,p-usd-coin
+XRP with ticker XRP is ,xrp
+Binance USD [on BNB] with ticker BUSD is ,bnb-binance-usd
+Binance USD [on Ethereum] with ticker BUSD is ,binance-usd
+Cardano with ticker ADA is ,cardano
+Cardano [on BNB] with ticker ADA is ,bnb-cardano
+Dogecoin with ticker DOGE is ,dogecoin
+Polygon [on Ethereum] with ticker MATIC is ,matic-network
+Polygon [on Polygon] with ticker MATIC is ,p-matic-network
+Solana with ticker SOL is ,solana
+Polkadot with ticker DOT is ,polkadot-new
+SHIBA INU with ticker SHIB is ,shiba-inu
+Litecoin with ticker LTC is ,litecoin
+Avalanche with ticker AVAX is ,avalanche
+TRON with ticker TRX is ,tron
+Dai [on Optimism] with ticker DAI is ,o-multi-collateral-dai
+Dai [on BNB] with ticker DAI is ,bnb-multi-collateral-dai
+Dai [on Arbitrum] with ticker DAI is ,arb-multi-collateral-dai
+Dai [on Ethereum] with ticker DAI is ,multi-collateral-dai
+Dai [on Polygon] with ticker DAI is ,p-multi-collateral-dai
+Uniswap [on BNB] with ticker UNI is ,bnb-uniswap
+Uniswap [on Polygon] with ticker UNI is ,p-uniswap
+Uniswap [on Ethereum] with ticker UNI is ,uniswap
+
+
+Example metric and table mapping
+metric,table
+mvrv_usd_20y,daily_metrics_v2
+exchange_balance,intraday_metrics
+exchange_inflow,intraday_metrics
+exchange_token_supply,daily_metrics_v2
+price_usd,asset_prices_v3
+price_btc,asset_prices_v3
+marketcap_usd,asset_prices_v3
+volume_usd,asset_prices_v3
+social_volume,intraday_metrics
+transaction_volume_usd,daily_metrics_v2
+social_dominance_1h,intraday_metrics
+daily_active_addresses,daily_metrics_v2
+dev_activity,intraday_metrics
+
 And a working clickhouse sql query for the task:
 Generate clickhouse sql query that will fetch the price in usd and daily active addresses for bitcoin for the last 10 days
 

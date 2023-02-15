@@ -2723,7 +2723,7 @@ CREATE TABLE public.questionnaire_answers (
 
 CREATE TABLE public.questionnaire_questions (
     uuid uuid NOT NULL,
-    questionnaire_uuid uuid,
+    questionnaire_uuid uuid NOT NULL,
     "order" integer NOT NULL,
     question character varying(255) NOT NULL,
     type public.question_type DEFAULT 'open_text'::public.question_type NOT NULL,

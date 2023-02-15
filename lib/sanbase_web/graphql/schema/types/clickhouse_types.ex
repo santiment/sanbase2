@@ -25,13 +25,6 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:gas_used, :float)
   end
 
-  object :mining_pools_distribution do
-    field(:datetime, non_null(:datetime))
-    field(:top3, :float)
-    field(:top10, :float)
-    field(:other, :float)
-  end
-
   object :mvrv_ratio do
     field(:datetime, non_null(:datetime))
     field(:ratio, :float)

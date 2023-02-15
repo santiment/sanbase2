@@ -313,16 +313,21 @@ defimpl Sanbase.Alert, for: Any do
   defp maybe_add_alert_link(payload, _trigger_id, :telegram_channel), do: payload
 
   # extend Sanr signals telegram channel and one test channel
-  defp maybe_extend_payload_telegram_channel(payload, user_trigger, channel)
+  # when the alert is defined on a metric
+  defp maybe_extend_payload_telegram_channel(
+         payload,
+         %{trigger: %{settings: %{metric: metric} = settings}} = _user_trigger,
+         channel
+       )
        when channel in ["@test_san_bot86", "@sanr_signals"] do
-    template_kv = user_trigger.trigger.settings.template_kv
+    template_kv = settings.template_kv || %{}
     slugs = Map.keys(template_kv)
 
     if length(slugs) > 0 do
       slug = hd(slugs)
 
       {sanbase_link, short_url_id} =
-        case create_charts_link(user_trigger.trigger.settings.metric, slug) do
+        case create_charts_link(metric, slug) do
           {:ok, short_url} ->
             # frontend requires `__sCl` to be apended in order to resolve the short url
             {"#{base_url()}/charts/#{short_url.short_url}__sCl?utm_source=telegram&utm_medium=signals",
@@ -526,9 +531,11 @@ defimpl Sanbase.Alert, for: Any do
 
     settings_json = Jason.encode!(%{slug: slug, from: six_months_ago_iso, to: now_iso})
 
+    metrics = if metric == "price_usd", do: [metric], else: ["price_usd", metric]
+
     widgets_json =
       Jason.encode!([
-        %{widget: "ChartWidget", wm: [metric], whm: [], wax: [0], wpax: [], wc: ["#26C953"]}
+        %{widget: "ChartWidget", wm: metrics, whm: [], wax: [0], wpax: [], wc: ["#26C953"]}
       ])
 
     url = URI.encode("/charts?settings=#{settings_json}&widgets=#{widgets_json}")

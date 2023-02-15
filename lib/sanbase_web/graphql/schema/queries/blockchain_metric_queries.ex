@@ -379,24 +379,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
       cache_resolve(&ExchangeResolver.all_exchanges/3)
     end
 
-    @desc """
-    Returns distribution of miners between mining pools.
-    What part of the miners are using top3, top10 and all the other pools.
-    Currently only ETH is supported.
-    """
-    field :mining_pools_distribution, list_of(:mining_pools_distribution) do
-      meta(access: :restricted)
-
-      arg(:slug, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :interval, default_value: "1d")
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-      cache_resolve(&ClickhouseResolver.mining_pools_distribution/3)
-    end
-
     field :eth_fees_distribution, list_of(:fees_distribution) do
       meta(access: :free)
 

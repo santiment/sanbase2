@@ -48,7 +48,7 @@ defmodule Sanbase.OpenAI do
     fetch_recent_history(discord_user)
     |> Enum.reverse()
     |> Enum.reduce("", fn history, acc ->
-      acc = acc <> "#{history.question}\n#{history.answer}\n"
+      acc <> "#{history.question}\n#{history.answer}\n"
     end)
   end
 

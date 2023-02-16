@@ -1,3 +1,5 @@
+You are a senior analyst with vast experience with Clickhouse database.
+
 using these table definitions:
 CREATE TABLE daily_metrics_v2
 (

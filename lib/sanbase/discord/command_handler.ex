@@ -264,7 +264,7 @@ defmodule Sanbase.Discord.CommandHandler do
 
     case Sanbase.OpenAI.complete(
            prompt,
-           to_string(msg.author.username <> msg.author.discriminator)
+           msg.author.username <> msg.author.discriminator
          ) do
       {:ok, response} ->
         content = """
@@ -536,10 +536,13 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   defp get_additional_info(interaction) do
+    {guild_name, channel_name} = get_guild_channel(interaction.guild_id, interaction.channel_id)
+
     %{
-      discord_user: to_string(interaction.user.id),
       channel: to_string(interaction.channel_id),
       guild: to_string(interaction.guild_id),
+      channel_name: channel_name,
+      guild_name: guild_name,
       discord_user_id: to_string(interaction.user.id),
       discord_user_handle: interaction.user.username <> interaction.user.discriminator,
       discord_message_id: to_string(interaction.id),
@@ -548,10 +551,13 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   defp get_additional_info_msg(msg) do
+    {guild_name, channel_name} = get_guild_channel(msg.guild_id, msg.channel_id)
+
     %{
-      discord_user: to_string(msg.author.id),
       channel: to_string(msg.channel_id),
       guild: to_string(msg.guild_id),
+      channel_name: channel_name,
+      guild_name: guild_name,
       discord_user_id: to_string(msg.author.id),
       discord_user_handle: msg.author.username <> msg.author.discriminator,
       discord_message_id: to_string(msg.id),
@@ -745,6 +751,15 @@ defmodule Sanbase.Discord.CommandHandler do
         guild,
         channel_id
       )
+    end
+  end
+
+  defp get_guild_channel(guild_id, channel_id) do
+    with {:ok, guild} <- Nostrum.Cache.GuildCache.get(guild_id),
+         {:ok, channel} <- Nostrum.Cache.ChannelCache.get(channel_id) do
+      {guild.name, channel.name}
+    else
+      _ -> {nil, nil}
     end
   end
 

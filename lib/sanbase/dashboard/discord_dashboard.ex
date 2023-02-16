@@ -8,9 +8,10 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
   alias Sanbase.Accounts.User
 
   schema "discord_dashboards" do
-    field(:channel, :string)
-    field(:discord_user, :string)
     field(:guild, :string)
+    field(:channel, :string)
+    field(:guild_name, :string)
+    field(:channel_name, :string)
     field(:name, :string)
     field(:panel_id, :string)
     field(:pinned, :boolean, default: false)
@@ -29,9 +30,10 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
     |> cast(attrs, [
       :panel_id,
       :name,
-      :discord_user,
       :channel,
       :guild,
+      :channel_name,
+      :guild_name,
       :pinned,
       :user_id,
       :dashboard_id,
@@ -138,6 +140,8 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
       sanbase_user_id: user_id,
       discord_guild: dd.guild,
       discord_channel: dd.channel,
+      discord_guild_name: dd.guild,
+      discord_channel_name: dd.channel,
       discord_user: dd.discord_user_handle
     }
   end

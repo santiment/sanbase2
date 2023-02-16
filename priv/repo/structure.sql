@@ -911,7 +911,6 @@ CREATE TABLE public.discord_dashboards (
     id bigint NOT NULL,
     panel_id character varying(255),
     name character varying(255),
-    discord_user character varying(255),
     channel character varying(255),
     guild character varying(255),
     user_id bigint,
@@ -921,7 +920,9 @@ CREATE TABLE public.discord_dashboards (
     updated_at timestamp without time zone NOT NULL,
     discord_user_id character varying(255),
     discord_user_handle character varying(255),
-    discord_message_id character varying(255)
+    discord_message_id character varying(255),
+    channel_name character varying(255),
+    guild_name character varying(255)
 );
 
 
@@ -8184,3 +8185,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230124105934);
 INSERT INTO public."schema_migrations" (version) VALUES (20230206085439);
 INSERT INTO public."schema_migrations" (version) VALUES (20230206100629);
 INSERT INTO public."schema_migrations" (version) VALUES (20230210145707);
+INSERT INTO public."schema_migrations" (version) VALUES (20230216145219);

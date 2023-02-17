@@ -754,6 +754,9 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
+  defp get_guild_channel(nil, _), do: {nil, nil}
+  defp get_guild_channel(_, nil), do: {nil, nil}
+
   defp get_guild_channel(guild_id, channel_id) do
     with {:ok, guild} <- Nostrum.Cache.GuildCache.get(guild_id),
          {:ok, channel} <- Nostrum.Cache.ChannelCache.get(channel_id) do

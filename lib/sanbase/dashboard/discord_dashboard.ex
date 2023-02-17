@@ -140,8 +140,8 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
       sanbase_user_id: user_id,
       discord_guild: dd.guild,
       discord_channel: dd.channel,
-      discord_guild_name: dd.guild,
-      discord_channel_name: dd.channel,
+      discord_guild_name: dd.guild_name,
+      discord_channel_name: dd.channel_name,
       discord_user: dd.discord_user_handle
     }
   end

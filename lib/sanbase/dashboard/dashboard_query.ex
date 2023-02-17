@@ -19,7 +19,10 @@ defmodule Sanbase.Dashboard.Query do
     # this process only.
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
 
-    query_metadata = extend_query_metadata(query_metadata)
+    query_metadata =
+      query_metadata
+      |> extend_query_metadata()
+      |> escape_single_quotes()
 
     query =
       Sanbase.Clickhouse.Query.new(sql, parameters,
@@ -132,4 +135,14 @@ defmodule Sanbase.Dashboard.Query do
     do: DateTime.from_naive!(ndt, "Etc/UTC")
 
   defp handle_result_param(data), do: data
+
+  defp escape_single_quotes(map) do
+    Enum.map(map, fn {key, value} ->
+      case is_binary(value) do
+        true -> {key, String.replace(value, "'", "")}
+        false -> {key, value}
+      end
+    end)
+    |> Enum.into(%{})
+  end
 end

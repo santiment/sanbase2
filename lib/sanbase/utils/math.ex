@@ -374,7 +374,7 @@ defmodule Sanbase.Math do
   def simple_moving_average(values, period) do
     values
     |> Enum.chunk_every(period, 1, :discard)
-    |> Enum.map(&mean/1)
+    |> Enum.map(&mean(&1, precision: 6))
   end
 
   def simple_moving_average(list, period, opts) do

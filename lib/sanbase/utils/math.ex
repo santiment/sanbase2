@@ -226,8 +226,16 @@ defmodule Sanbase.Math do
   def mean(list, opts \\ [])
   def mean([], _), do: 0.0
 
-  def mean(values, opts),
-    do: Float.round(Enum.sum(values) / length(values), Keyword.get(opts, :precision, 2))
+  def mean(values, opts) do
+    mean = Enum.sum(values) / length(values)
+
+    # In case the precision is not provided, round the according
+    # to some predfined rules (use more precision for smaller numbers)
+    case Keyword.get(opts, :precision) do
+      nil -> mean |> round_float()
+      precision -> Float.round(mean, precision)
+    end
+  end
 
   @doc ~s"""
   Compute the median of the numbers in the list
@@ -366,7 +374,7 @@ defmodule Sanbase.Math do
   def simple_moving_average(values, period) do
     values
     |> Enum.chunk_every(period, 1, :discard)
-    |> Enum.map(&mean/1)
+    |> Enum.map(&mean(&1, precision: 6))
   end
 
   def simple_moving_average(list, period, opts) do

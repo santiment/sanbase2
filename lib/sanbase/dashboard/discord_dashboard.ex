@@ -147,6 +147,7 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
          discord_user_handle: discord_user_handle
        }) do
     %{
+      product: "discord-bot",
       sanbase_user_id: user_id,
       discord_guild: guild,
       discord_channel: channel,

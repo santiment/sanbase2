@@ -110,10 +110,14 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
     |> Repo.insert()
   end
 
-  def execute(user_id, panel_id) do
+  def execute(user_id, panel_id, discord_args) do
     with %__MODULE__{dashboard_id: dashboard_id} = dd <- by_panel_id(panel_id),
          {:ok, result} <-
-           Dashboard.compute_and_store_panel(dashboard_id, panel_id, query_metadata(dd, user_id)) do
+           Dashboard.compute_and_store_panel(
+             dashboard_id,
+             panel_id,
+             query_metadata(user_id, discord_args)
+           ) do
       {:ok, result, dd.dashboard, dashboard_id}
     else
       {:error, reason} -> {:execution_error, reason}
@@ -130,20 +134,26 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
          {:ok, %__MODULE__{} = dd} <-
            do_create(Map.merge(args, %{dashboard_id: dashboard.id, panel_id: panel.id})),
          {:ok, result} <-
-           Dashboard.compute_and_store_panel(dashboard.id, panel.id, query_metadata(dd, user_id)) do
+           Dashboard.compute_and_store_panel(dashboard.id, panel.id, query_metadata(user_id, dd)) do
       {:ok, result, dashboard, panel.id}
     end
   end
 
-  defp query_metadata(dd, user_id) do
+  defp query_metadata(user_id, %{
+         guild: guild,
+         channel: channel,
+         channel_name: channel_name,
+         guild_name: guild_name,
+         discord_user_handle: discord_user_handle
+       }) do
     %{
       product: "discord-bot",
       sanbase_user_id: user_id,
-      discord_guild: dd.guild,
-      discord_channel: dd.channel,
-      discord_guild_name: dd.guild_name,
-      discord_channel_name: dd.channel_name,
-      discord_user: dd.discord_user_handle
+      discord_guild: guild,
+      discord_channel: channel,
+      discord_guild_name: guild_name,
+      discord_channel_name: channel_name,
+      discord_user: discord_user_handle
     }
   end
 end

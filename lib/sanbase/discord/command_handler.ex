@@ -163,9 +163,10 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def handle_interaction("rerun", interaction, panel_id) do
     interaction_ack(interaction)
+    args = get_additional_info(interaction)
 
     with {:ok, exec_result, dashboard, _dashboard_id} <-
-           DiscordDashboard.execute(sanbase_bot_id(), panel_id) do
+           DiscordDashboard.execute(sanbase_bot_id(), panel_id, args) do
       panel = List.first(dashboard.panels)
       components = [action_row(panel_id)]
       embeds = create_chart_embed(exec_result, dashboard, panel_id)
@@ -262,7 +263,7 @@ defmodule Sanbase.Discord.CommandHandler do
 
     prompt = String.trim(msg.content, "!ai")
 
-    case Sanbase.OpenAI.complete(
+    case Sanbase.OpenAI.generate_sql(
            prompt,
            msg.author.username <> msg.author.discriminator
          ) do
@@ -626,7 +627,7 @@ defmodule Sanbase.Discord.CommandHandler do
 
   defp action_row(panel_id, dd \\ nil) do
     dd = dd || DiscordDashboard.by_panel_id(panel_id)
-    run_button = Button.button(label: "Rerun 🚀", custom_id: "rerun" <> "_" <> panel_id, style: 3)
+    run_button = Button.button(label: "Run 🚀", custom_id: "rerun" <> "_" <> panel_id, style: 3)
     show_button = Button.button(label: "Show 📜", custom_id: "show" <> "_" <> panel_id, style: 2)
 
     pin_unpin_button =

@@ -137,6 +137,7 @@ defmodule Sanbase.Dashboard.DiscordDashboard do
 
   defp query_metadata(dd, user_id) do
     %{
+      product: "discord-bot",
       sanbase_user_id: user_id,
       discord_guild: dd.guild,
       discord_channel: dd.channel,

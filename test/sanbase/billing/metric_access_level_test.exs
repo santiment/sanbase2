@@ -445,6 +445,16 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "transaction_volume_usd_change_1d",
         "transaction_volume_usd_change_30d",
         "transaction_volume_usd_change_7d"
+        "stakers_realized_value_usd_365d",
+        "stakers_realized_value_usd_2y",
+        "stakers_realized_value_usd_3y",
+        "stakers_realized_value_usd_5y",
+        "stakers_realized_value_usd_10y",
+        "stakers_mvrv_usd_365d",
+        "stakers_mvrv_usd_2y",
+        "stakers_mvrv_usd_3y",
+        "stakers_mvrv_usd_5y",
+        "stakers_mvrv_usd_10y"
       ]
       |> Enum.sort()
 
@@ -1478,7 +1488,18 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "compound_total_supplied",
         "compound_total_supplied_usd",
         "compound_total_borrowed",
-        "compound_total_borrowed_usd"
+        "compound_total_borrowed_usd",
+        # ETH 2.0 stakers MVRV metrics
+        "stakers_realized_value_usd_365d",
+        "stakers_realized_value_usd_2y",
+        "stakers_realized_value_usd_3y",
+        "stakers_realized_value_usd_5y",
+        "stakers_realized_value_usd_10y",
+        "stakers_mvrv_usd_365d",
+        "stakers_mvrv_usd_2y",
+        "stakers_mvrv_usd_3y",
+        "stakers_mvrv_usd_5y",
+        "stakers_mvrv_usd_10y"
       ]
       |> Enum.sort()
 

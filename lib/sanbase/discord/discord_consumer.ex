@@ -20,6 +20,26 @@ defmodule Sanbase.DiscordConsumer do
     %{
       name: "list",
       description: "List pinned queries"
+    },
+    %{
+      name: "chart",
+      description: "Create a Sanbase metric chart",
+      options: [
+        %{
+          type: 3,
+          name: "project",
+          description: "project",
+          required: true,
+          autocomplete: true
+        },
+        %{
+          type: 3,
+          name: "metric",
+          description: "metric",
+          required: true,
+          autocomplete: true
+        }
+      ]
     }
   ]
 
@@ -81,20 +101,6 @@ defmodule Sanbase.DiscordConsumer do
     end
   end
 
-  def do_handle_command(msg) do
-    with {:ok, name, sql} <- CommandHandler.parse_message_command(msg.content) do
-      CommandHandler.handle_command("run", name, sql, msg)
-      |> handle_msg_response("run", msg)
-    else
-      {:error, :invalid_command} ->
-        CommandHandler.handle_command("invalid_command", msg)
-        CommandHandler.handle_command("help", msg)
-
-      false ->
-        :ignore
-    end
-  end
-
   def handle_event({:READY, _data, _ws_state}) do
     commands = if @env == :prod, do: @commands, else: @commands ++ @dev_commands
 
@@ -106,7 +112,7 @@ defmodule Sanbase.DiscordConsumer do
         %Interaction{data: %ApplicationCommandInteractionData{name: command}} = interaction,
         _ws_state
       })
-      when command in ["query", "help", "auth", "create-admin", "remove-admin", "list"] do
+      when command in ["query", "help", "auth", "create-admin", "remove-admin", "list", "chart"] do
     CommandHandler.handle_interaction(command, interaction)
     |> handle_response(command, interaction)
   end
@@ -142,7 +148,7 @@ defmodule Sanbase.DiscordConsumer do
     :noop
   end
 
-  def handle_msg_response(response, command, msg) do
+  defp handle_msg_response(response, command, msg) do
     params = %{
       channel: to_string(msg.channel_id),
       guild: to_string(msg.guild_id),
@@ -164,17 +170,31 @@ defmodule Sanbase.DiscordConsumer do
     end
   end
 
-  def retry({command, panel_id}, interaction) do
+  defp do_handle_command(msg) do
+    with {:ok, name, sql} <- CommandHandler.parse_message_command(msg.content) do
+      CommandHandler.handle_command("run", name, sql, msg)
+      |> handle_msg_response("run", msg)
+    else
+      {:error, :invalid_command} ->
+        CommandHandler.handle_command("invalid_command", msg)
+        CommandHandler.handle_command("help", msg)
+
+      false ->
+        :ignore
+    end
+  end
+
+  defp retry({command, panel_id}, interaction) do
     CommandHandler.handle_interaction(command, interaction, panel_id)
     |> handle_response(command, interaction, retry: false)
   end
 
-  def retry(command, interaction) do
+  defp retry(command, interaction) do
     CommandHandler.handle_interaction(command, interaction)
     |> handle_response(command, interaction, retry: false)
   end
 
-  def handle_response(response, command, interaction, opts \\ []) do
+  defp handle_response(response, command, interaction, opts \\ []) do
     params = %{
       channel: to_string(interaction.channel_id),
       guild: to_string(interaction.guild_id),

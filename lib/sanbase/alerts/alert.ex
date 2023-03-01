@@ -342,6 +342,7 @@ defimpl Sanbase.Alert, for: Any do
       #{String.trim_trailing(payload)}
 
       [View chart on Sanbase](#{sanbase_link})
+      [What does this metric mean ?](#{Sanbase.Alert.Docs.academy_link(metric)})
       [Open signal on SanR](https://sanr.app/?utm_source=telegram&utm_medium=signals)
       """
 
@@ -516,7 +517,7 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  def create_charts_link(metric, slug) do
+  defp create_charts_link(metric, slug) do
     now =
       Timex.shift(Timex.now(), minutes: 10)
       |> Sanbase.DateTimeUtils.round_datetime(second: 600)

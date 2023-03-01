@@ -1,5 +1,6 @@
 defmodule Sanbase.Discord.CommandHandler do
   import Nostrum.Struct.Embed
+  import Ecto.Query
 
   alias Nostrum.Api
   alias Nostrum.Struct.Embed
@@ -48,6 +49,37 @@ defmodule Sanbase.Discord.CommandHandler do
     }
 
     Nostrum.Api.create_interaction_response(interaction, response)
+  end
+
+  def handle_interaction("chart", interaction) do
+    interaction_ack_visible(interaction)
+
+    focused_option =
+      interaction.data.options
+      |> Enum.filter(& &1.focused)
+      |> List.first()
+
+    options_map =
+      interaction.data.options |> Enum.into(%{}, fn option -> {option.name, option.value} end)
+
+    if focused_option do
+      case focused_option.name do
+        "project" ->
+          autocomplete_projects(interaction, focused_option.value)
+
+        "metric" ->
+          autocomplete_metrics(interaction, focused_option.value, options_map["project"])
+      end
+    else
+      embeds = create_charts_embeds(options_map["metric"], options_map["project"])
+
+      content =
+        if embeds,
+          do: "",
+          else: "Can't create chart for #{options_map["project"]}'s #{options_map["metric"]}"
+
+      edit_interaction_response(interaction, content, [], embeds)
+    end
   end
 
   def handle_interaction("run", interaction) do
@@ -163,9 +195,10 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def handle_interaction("rerun", interaction, panel_id) do
     interaction_ack(interaction)
+    args = get_additional_info(interaction)
 
     with {:ok, exec_result, dashboard, _dashboard_id} <-
-           DiscordDashboard.execute(sanbase_bot_id(), panel_id) do
+           DiscordDashboard.execute(sanbase_bot_id(), panel_id, args) do
       panel = List.first(dashboard.panels)
       components = [action_row(panel_id)]
       embeds = create_chart_embed(exec_result, dashboard, panel_id)
@@ -262,7 +295,7 @@ defmodule Sanbase.Discord.CommandHandler do
 
     prompt = String.trim(msg.content, "!ai")
 
-    case Sanbase.OpenAI.complete(
+    case Sanbase.OpenAI.generate_sql(
            prompt,
            msg.author.username <> msg.author.discriminator
          ) do
@@ -358,16 +391,23 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def format_table(name, response, discord_user) do
     max_rows = response.rows |> Enum.take(1) |> max_rows()
-    rows = response.rows |> Enum.take(max_rows - 1)
+
+    rows = response.rows |> Enum.take(max_rows)
     table = TableRex.quick_render!(rows, response.columns)
 
-    """
+    content = """
     #{name}: <@#{discord_user}>
 
     ```
     #{table}
     ```
     """
+
+    if String.length(content) > 2000 do
+      String.slice(content, 0, 1900) <> "\n```"
+    else
+      content
+    end
   end
 
   def get_execution_summary(qe) do
@@ -492,10 +532,6 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def edit_interaction_response(interaction, content) do
     Nostrum.Api.edit_interaction_response(interaction, %{content: content})
-  end
-
-  defp edit_interaction_response(interaction, content, components) do
-    Nostrum.Api.edit_interaction_response(interaction, %{content: content, components: components})
   end
 
   defp edit_interaction_response(interaction, content, components, embeds) do
@@ -626,7 +662,7 @@ defmodule Sanbase.Discord.CommandHandler do
 
   defp action_row(panel_id, dd \\ nil) do
     dd = dd || DiscordDashboard.by_panel_id(panel_id)
-    run_button = Button.button(label: "Rerun 🚀", custom_id: "rerun" <> "_" <> panel_id, style: 3)
+    run_button = Button.button(label: "Run 🚀", custom_id: "rerun" <> "_" <> panel_id, style: 3)
     show_button = Button.button(label: "Show 📜", custom_id: "show" <> "_" <> panel_id, style: 2)
 
     pin_unpin_button =
@@ -776,5 +812,128 @@ defmodule Sanbase.Discord.CommandHandler do
 
   defp handle_pin_unpin_error(result, _action, _interaction) do
     result
+  end
+
+  defp projects do
+    from(
+      p in Sanbase.Project,
+      left_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+      order_by: latest_cmc.rank,
+      select: %{slug: p.slug, name: p.name, ticker: p.ticker}
+    )
+    |> Sanbase.Repo.all()
+  end
+
+  defp create_charts_embeds(metric, slug) do
+    now =
+      Timex.shift(Timex.now(), minutes: 10)
+      |> Sanbase.DateTimeUtils.round_datetime(second: 600)
+      |> Timex.set(microsecond: {0, 0})
+
+    year_ago = Timex.shift(now, years: -1) |> Timex.set(microsecond: {0, 0})
+
+    now_iso = DateTime.to_iso8601(now)
+    year_ago_iso = DateTime.to_iso8601(year_ago)
+
+    settings_json = Jason.encode!(%{slug: slug, from: year_ago_iso, to: now_iso})
+
+    metrics = if metric == "price_usd", do: [metric], else: ["price_usd", metric]
+
+    widgets_json =
+      Jason.encode!([
+        %{widget: "ChartWidget", wm: metrics, whm: [], wax: [0], wpax: [], wc: ["#26C953"]}
+      ])
+
+    url = URI.encode("/charts?settings=#{settings_json}&widgets=#{widgets_json}")
+
+    {:ok, short_url} = Sanbase.ShortUrl.create(%{full_url: url})
+    chart = "https://#{img_prefix_url()}/chart/#{short_url.short_url}"
+
+    HTTPoison.get(chart)
+    |> case do
+      {:ok, response} ->
+        if is_image?(response) do
+          %Embed{}
+          |> put_title("#{metric} for #{slug}")
+          |> put_url(chart)
+          |> put_image(chart)
+          |> List.wrap()
+        else
+          []
+        end
+
+      _ ->
+        []
+    end
+  end
+
+  defp slugs() do
+    Sanbase.Cache.get_or_store(:discord_slugs, fn ->
+      Sanbase.Cache.get_or_store(:discord_assets, fn -> projects() end)
+      |> Enum.map(& &1.slug)
+    end)
+  end
+
+  defp autocomplete_projects(interaction, value) do
+    projects = Sanbase.Cache.get_or_store(:discord_assets, fn -> projects() end)
+    value = String.downcase(value)
+
+    choices =
+      projects
+      |> Enum.filter(fn project ->
+        (not is_nil(project.name) and String.starts_with?(String.downcase(project.name), value)) or
+          (not is_nil(project.ticker) and
+             String.starts_with?(String.downcase(project.ticker), value)) or
+          (not is_nil(project.slug) and String.starts_with?(String.downcase(project.slug), value))
+      end)
+      |> Enum.reject(&is_nil(&1.slug))
+      |> Enum.map(fn project ->
+        %{name: "#{project.ticker} | #{project.name}", value: project.slug}
+      end)
+      |> Enum.take(25)
+
+    response = %{
+      type: 8,
+      data: %{
+        choices: choices
+      }
+    }
+
+    Nostrum.Api.create_interaction_response(interaction, response)
+  end
+
+  defp autocomplete_metrics(interaction, value, slug) do
+    metrics =
+      if slug && slug in slugs() do
+        Sanbase.Cache.get_or_store("discord_metrics_" <> slug, fn ->
+          Sanbase.Metric.available_metrics_for_selector(%{slug: slug}) |> elem(1)
+        end)
+      else
+        Sanbase.Cache.get_or_store(:discord_metrics, fn -> Sanbase.Metric.available_metrics() end)
+      end
+
+    value = String.downcase(value)
+
+    metrics =
+      if String.length(value) <= 2 do
+        Enum.filter(metrics, fn metric -> String.starts_with?(metric, value) end)
+      else
+        Enum.filter(metrics, fn metric -> String.contains?(metric, value) end)
+      end
+
+    choices =
+      metrics
+      |> Enum.sort()
+      |> Enum.map(fn metric -> %{name: metric, value: metric} end)
+      |> Enum.take(25)
+
+    response = %{
+      type: 8,
+      data: %{
+        choices: choices
+      }
+    }
+
+    Nostrum.Api.create_interaction_response(interaction, response)
   end
 end

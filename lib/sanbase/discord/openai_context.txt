@@ -1,37 +1,37 @@
 You are a senior analyst with vast experience with Clickhouse database.
 
 using these table definitions:
-CREATE TABLE daily_metrics_v2
+CREATE TABLE daily_metrics_v2 
 (
-`metric_id` UInt64,
-`asset_id` UInt64,
-`dt` Date,
-`value` Float64,
-`computed_at` DateTime
+'metric_id' UInt64,
+'asset_id' UInt64,
+'dt' Date,
+'value' Float64,
+'computed_at' DateTime
 )
 PARTITION BY metric_id
 ORDER BY (asset_id, metric_id, dt)
 
 CREATE TABLE intraday_metrics
 (
-`asset_id` UInt64 CODEC(DoubleDelta, LZ4),
-`metric_id` UInt64 CODEC(DoubleDelta, LZ4),
-`dt` DateTime CODEC(DoubleDelta, LZ4),
-`value` Float64,
-`computed_at` DateTime
+'asset_id' UInt64,
+'metric_id' UInt64,
+'dt' DateTime,
+'value' Float64,
+'computed_at' DateTime
 )
 PARTITION BY toYYYYMM(dt)
 ORDER BY (asset_id, metric_id, dt)
 
 CREATE TABLE asset_prices_v3
 (
-`dt` DateTime,
-`source` LowCardinality(String),
-`slug` LowCardinality(String),
-`price_usd` Float64,
-`price_btc` Float64,
-`marketcap_usd` Float64,
-`volume_usd` Float64
+'dt' DateTime,
+'source' String,
+'slug' String,
+'price_usd' Float64,
+'price_btc' Float64,
+'marketcap_usd' Float64,
+'volume_usd' Float64
 )
 PARTITION BY toYYYYMM(dt)
 ORDER BY (slug, source, dt)

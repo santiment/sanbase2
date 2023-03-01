@@ -2596,5 +2596,55 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "ETH 2.0 stakers realized Value for coins that moved in the past {{timebound:human_readable}}",
+    "name": "eth2_stakers_realized_value_usd_{{timebound}}",
+    "metric": "stack_stakers_realized_cap_usd_{{timebound}}",
+    "parameters": [
+      { "timebound": "365d" },
+      { "timebound": "2y" },
+      { "timebound": "3y" },
+      { "timebound": "5y" },
+      { "timebound": "10y" }
+    ],
+    "is_timebound": true,
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "ETH 2.0 stakers MVRV for coins that moved in the past {{timebound:human_readable}}",
+    "name": "eth2_stakers_mvrv_usd_{{timebound}}",
+    "metric": "stakers_mvrv_usd_{{timebound}}",
+    "parameters": [
+      { "timebound": "365d" },
+      { "timebound": "2y" },
+      { "timebound": "3y" },
+      { "timebound": "5y" },
+      { "timebound": "10y" }
+    ],
+    "is_timebound": true,
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
   }
 ]

@@ -2599,7 +2599,7 @@
   },
   {
     "human_readable_name": "ETH 2.0 stakers realized Value for coins that moved in the past {{timebound:human_readable}}",
-    "name": "stakers_realized_value_usd_{{timebound}}",
+    "name": "eth2_stakers_realized_value_usd_{{timebound}}",
     "metric": "stack_stakers_realized_cap_usd_{{timebound}}",
     "parameters": [
       { "timebound": "365d" },
@@ -2624,7 +2624,7 @@
   },
   {
     "human_readable_name": "ETH 2.0 stakers MVRV for coins that moved in the past {{timebound:human_readable}}",
-    "name": "stakers_mvrv_usd_{{timebound}}",
+    "name": "eth2_stakers_mvrv_usd_{{timebound}}",
     "metric": "stakers_mvrv_usd_{{timebound}}",
     "parameters": [
       { "timebound": "365d" },

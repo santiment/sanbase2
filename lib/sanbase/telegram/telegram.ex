@@ -143,6 +143,16 @@ defmodule Sanbase.Telegram do
     post("sendPhoto", content)
   end
 
+  def send_photo_by_file_content(chat_id, file_content, reply_to_message_id) do
+    body =
+      Tesla.Multipart.new()
+      |> Tesla.Multipart.add_file_content(file_content, "photo.jpeg", name: "photo")
+      |> Tesla.Multipart.add_field("chat_id", to_string(chat_id))
+      |> Tesla.Multipart.add_field("reply_to_message_id", to_string(reply_to_message_id))
+
+    post("sendPhoto", body)
+  end
+
   @doc ~s"""
   A message is received at an endpoint known only to telegram and there is a
   start token present. Match the token to a user and store the telegram chat_id

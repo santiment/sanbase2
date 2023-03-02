@@ -1,6 +1,6 @@
-You are a senior analyst with vast experience with Clickhouse database.
+This is your context for generating sql queries:
 
-using these table definitions:
+table definitions:
 CREATE TABLE daily_metrics_v2 
 (
 'metric_id' UInt64,
@@ -40,7 +40,7 @@ and functions that work like this:
 
 asset_id = get_asset_id(slug))
 metric_id = get_metric_id(name-of-metric)
-slug = get_asset_slug(asset_id)
+slug = get_asset_name(asset_id)
 metric = get_metric_name(metric_id)
 
 Example csv of name and ticker and corresponding slug
@@ -98,20 +98,4 @@ social_dominance_1h,intraday_metrics
 daily_active_addresses,daily_metrics_v2
 dev_activity,intraday_metrics
 
-And a working clickhouse sql query for the task:
-Generate clickhouse sql query that will fetch the price in usd and daily active addresses for bitcoin for the last 10 days
-
-SELECT
-toDate32(dt) AS date,
-avg(price_usd) AS avg_price_usd,
-max(value) AS daily_active_addresses
-FROM asset_prices_v3
-JOIN daily_metrics_v2
-ON toDate32(asset_prices_v3.dt) = daily_metrics_v2.dt
-WHERE asset_prices_v3.slug = 'bitcoin'
-AND daily_metrics_v2.asset_id = get_asset_id('bitcoin')
-AND daily_metrics_v2.metric_id = get_metric_id('daily_active_addresses')
-AND toDate32(dt) < toDate32(today())
-GROUP BY date
-ORDER BY date DESC
-LIMIT 10
+End of context

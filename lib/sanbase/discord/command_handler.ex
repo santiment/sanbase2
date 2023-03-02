@@ -301,9 +301,7 @@ defmodule Sanbase.Discord.CommandHandler do
          ) do
       {:ok, response} ->
         content = """
-        ```sql
         #{response}
-        ```
         """
 
         Api.edit_message(msg.channel_id, loading_msg.id,

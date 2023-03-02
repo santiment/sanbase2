@@ -60,16 +60,8 @@ defmodule Sanbase.OpenAI do
         :fix_error -> "\nGenerate one clickhouse sql query that will fix this error:"
       end
 
-    user_input = String.replace(user_input, "`", "")
-    user_input = "USER_INPUT=`#{user_input}`"
     current_prompt = "#{result_format} #{user_input}\n"
     history_messages = fetch_history_context(discord_user)
-    start = "SELECT "
-
-    prompt = """
-    #{@context}
-    #{current_prompt}
-    """
 
     example = """
     ```sql
@@ -96,6 +88,7 @@ defmodule Sanbase.OpenAI do
         content: "You are a senior analyst with vast experience with Clickhouse database."
       },
       %{role: "user", content: "Always retrun sql queries between ```sql and ```"},
+      %{role: "user", content: @context},
       %{
         role: "user",
         content:
@@ -104,7 +97,7 @@ defmodule Sanbase.OpenAI do
       %{role: "assistant", content: example}
     ]
 
-    messages = history_messages ++ instructions ++ [%{role: "user", content: prompt}]
+    messages = history_messages ++ instructions ++ [%{role: "user", content: current_prompt}]
 
     case generate_query(messages) do
       {:ok, completion} ->

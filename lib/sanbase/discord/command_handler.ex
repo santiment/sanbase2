@@ -543,7 +543,7 @@ defmodule Sanbase.Discord.CommandHandler do
   defp parse_modal_component(interaction) do
     if interaction.message do
       content = interaction.message.content
-      [_, sql] = Regex.run(~r/```sql([^`]*)```$/ms, content)
+      [_, sql] = Regex.run(~r/```sql([^`]*)```/ms, content)
       sql = String.trim(sql)
       {gen_query_name(), sql}
     else

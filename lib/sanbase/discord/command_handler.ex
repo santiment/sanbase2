@@ -304,9 +304,15 @@ defmodule Sanbase.Discord.CommandHandler do
         #{response}
         """
 
+        components =
+          case Regex.run(~r/```sql([^`]*)```/ms, content) do
+            [_, _] -> [ai_action_row()]
+            nil -> []
+          end
+
         Api.edit_message(msg.channel_id, loading_msg.id,
           content: content,
-          components: [ai_action_row()]
+          components: components
         )
 
       {:error, _} ->

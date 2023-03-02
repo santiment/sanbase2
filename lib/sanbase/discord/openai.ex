@@ -97,7 +97,7 @@ defmodule Sanbase.OpenAI do
       %{role: "assistant", content: example}
     ]
 
-    messages = history_messages ++ instructions ++ [%{role: "user", content: current_prompt}]
+    messages = instructions ++ history_messages ++ [%{role: "user", content: current_prompt}]
 
     case generate_query(messages) do
       {:ok, completion} ->

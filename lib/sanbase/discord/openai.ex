@@ -87,7 +87,7 @@ defmodule Sanbase.OpenAI do
         role: "system",
         content: "You are a senior analyst with vast experience with Clickhouse database."
       },
-      %{role: "user", content: "Always retrun sql queries between ```sql and ```"},
+      %{role: "user", content: "Always return sql queries between ```sql and ```"},
       %{role: "user", content: @context},
       %{
         role: "user",

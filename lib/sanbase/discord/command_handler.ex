@@ -305,7 +305,7 @@ defmodule Sanbase.Discord.CommandHandler do
         """
 
         components =
-          case Regex.run(~r/```sql([^`]*)```/ms, content) do
+          case Regex.run(~r/```(?:sql)?([^`]*)```/ms, content) do
             [_, _] -> [ai_action_row()]
             nil -> []
           end
@@ -549,7 +549,7 @@ defmodule Sanbase.Discord.CommandHandler do
   defp parse_modal_component(interaction) do
     if interaction.message do
       content = interaction.message.content
-      [_, sql] = Regex.run(~r/```sql([^`]*)```/ms, content)
+      [_, sql] = Regex.run(~r/```(?:sql)?([^`]*)```/ms, content)
       sql = String.trim(sql)
       {gen_query_name(), sql}
     else

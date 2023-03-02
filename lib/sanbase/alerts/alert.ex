@@ -255,11 +255,15 @@ defimpl Sanbase.Alert, for: Any do
           response.headers |> Enum.into(%{}) |> Map.get("Content-Type") == "image/jpeg"
         end
 
-        HTTPoison.get(image_url)
+        HTTPoison.get(image_url, [basic_auth_header()], timeout: 15_000, recv_timeout: 15_000)
         |> case do
           {:ok, img_response} ->
             if is_image?.(img_response) do
-              Sanbase.Telegram.send_image(channel, image_url, reply_to_message_id)
+              Sanbase.Telegram.send_photo_by_file_content(
+                channel,
+                img_response.body,
+                reply_to_message_id
+              )
             end
 
           _ ->
@@ -327,7 +331,7 @@ defimpl Sanbase.Alert, for: Any do
       slug = hd(slugs)
 
       {sanbase_link, short_url_id} =
-        case create_charts_link(metric, slug) do
+        case Sanbase.Embed.create_charts_link(metric, slug) do
           {:ok, short_url} ->
             # frontend requires `__sCl` to be apended in order to resolve the short url
             {"#{base_url()}/charts/#{short_url.short_url}__sCl?utm_source=telegram&utm_medium=signals",
@@ -342,7 +346,7 @@ defimpl Sanbase.Alert, for: Any do
       #{String.trim_trailing(payload)}
 
       [View chart on Sanbase](#{sanbase_link})
-      [What does this metric mean ?](#{Sanbase.Alert.Docs.academy_link(metric)})
+      [What does this metric mean?](#{Sanbase.Alert.Docs.academy_link(metric)})
       [Open signal on SanR](https://sanr.app/?utm_source=telegram&utm_medium=signals)
       """
 
@@ -517,29 +521,12 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  defp create_charts_link(metric, slug) do
-    now =
-      Timex.shift(Timex.now(), minutes: 10)
-      |> Sanbase.DateTimeUtils.round_datetime(second: 600)
-      |> Timex.set(microsecond: {0, 0})
+  defp basic_auth_header() do
+    credentials =
+      (System.get_env("GRAPHQL_BASIC_AUTH_USERNAME") <>
+         ":" <> System.get_env("GRAPHQL_BASIC_AUTH_PASSWORD"))
+      |> Base.encode64()
 
-    six_months_ago =
-      Timex.shift(now, months: -6)
-      |> Timex.set(microsecond: {0, 0})
-
-    now_iso = DateTime.to_iso8601(now)
-    six_months_ago_iso = DateTime.to_iso8601(six_months_ago)
-
-    settings_json = Jason.encode!(%{slug: slug, from: six_months_ago_iso, to: now_iso})
-
-    metrics = if metric == "price_usd", do: [metric], else: ["price_usd", metric]
-
-    widgets_json =
-      Jason.encode!([
-        %{widget: "ChartWidget", wm: metrics, whm: [], wax: [0], wpax: [], wc: ["#26C953"]}
-      ])
-
-    url = URI.encode("/charts?settings=#{settings_json}&widgets=#{widgets_json}")
-    Sanbase.ShortUrl.create(%{full_url: url})
+    {"Authorization", "Basic #{credentials}"}
   end
 end

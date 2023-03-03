@@ -30,6 +30,12 @@ defmodule Sanbase.Billing.Subscription.Query do
     from(q in query, where: q.status in ["active", "past_due", "trialing"])
   end
 
+  def all_active_and_trialing_incomplete_subscriptions(query) do
+    from(q in query,
+      where: q.status in ["active", "past_due", "trialing", "incomplete", "incomplete_expired"]
+    )
+  end
+
   def all_active_and_trialing_subscriptions_for_plans(query, plans) when is_list(plans) do
     query = all_active_and_trialing_subscriptions(query)
     from(q in query, where: q.plan_id in ^plans)

@@ -296,6 +296,15 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.all()
   end
 
+  def user_subscriptions_plus_incomplete(%User{id: user_id}) do
+    __MODULE__
+    |> Query.filter_user(user_id)
+    |> Query.all_active_and_trialing_incomplete_subscriptions()
+    |> Query.join_plan_and_product()
+    |> Query.order_by()
+    |> Repo.all()
+  end
+
   def user_subscription_names(user) do
     user_subscriptions(user)
     |> Enum.map(fn %{plan: %{name: plan_name, product: %{name: product_name}}} ->

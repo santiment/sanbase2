@@ -47,9 +47,8 @@ defmodule Sanbase.Contract.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, %{contract_address: contract_address}, from, to, interval, _opts)
       when is_binary(contract_address) do
-    {query, args} = timeseries_data_query(metric, contract_address, from, to, interval)
-
-    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
+    timeseries_data_query(metric, contract_address, from, to, interval)
+    |> ClickhouseRepo.query_transform(fn [unix, value] ->
       %{
         datetime: DateTime.from_unix!(unix),
         value: value

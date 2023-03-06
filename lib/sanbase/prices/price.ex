@@ -15,7 +15,7 @@ defmodule Sanbase.Price do
     only: [
       maybe_nullify_values: 1,
       remove_missing_values: 1,
-      exec_timeseries_data_query: 2
+      exec_timeseries_data_query: 1
     ]
 
   alias Sanbase.Project
@@ -210,18 +210,16 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       aggregation = Keyword.get(opts, :aggregation) || :last
 
-      {query, args} =
-        timeseries_metric_data_query(
-          slug_or_slugs,
-          metric,
-          from,
-          to,
-          interval,
-          source,
-          aggregation
-        )
-
-      exec_timeseries_data_query(query, args)
+      timeseries_metric_data_query(
+        slug_or_slugs,
+        metric,
+        from,
+        to,
+        interval,
+        source,
+        aggregation
+      )
+      |> exec_timeseries_data_query()
     end
   end
 

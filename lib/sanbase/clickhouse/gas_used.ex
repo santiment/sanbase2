@@ -20,11 +20,10 @@ defmodule Sanbase.Clickhouse.GasUsed do
           String.t()
         ) :: {:ok, list(gas_used)} | {:error, String.t()}
   def gas_used("ethereum", from, to, interval) do
-    {query, args} = gas_used_query(from, to, interval)
+    query_struct = gas_used_query(from, to, interval)
 
     ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [dt, gas_used] ->
         %{
           datetime: DateTime.from_unix!(dt),
@@ -38,24 +37,24 @@ defmodule Sanbase.Clickhouse.GasUsed do
   def gas_used(_, _, _, _), do: {:error, "Currently only ethereum is supported!"}
 
   defp gas_used_query(from, to, interval) do
-    from_datetime_unix = DateTime.to_unix(from)
-    to_datetime_unix = DateTime.to_unix(to)
-    interval = DateTimeUtils.str_to_sec(interval)
-
-    query = """
+    sql = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS time,
       sum(gasUsed) AS gas_used
     FROM eth_blocks
     PREWHERE
-      dt >= toDateTime(?2) AND
-      dt < toDateTime(?3)
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
     GROUP BY time
     ORDER BY time ASC
     """
 
-    args = [interval, from_datetime_unix, to_datetime_unix]
+    params = %{
+      interval: DateTimeUtils.str_to_sec(interval),
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

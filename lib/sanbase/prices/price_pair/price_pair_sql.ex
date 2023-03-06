@@ -1,61 +1,99 @@
 defmodule Sanbase.Price.PricePairSql do
   @table "asset_price_pairs_only"
 
-  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comparison_string: 3]
+  import Sanbase.Metric.SqlQuery.Helper,
+    only: [aggregation: 3, generate_comparison_string: 3]
 
-  def timeseries_data_query(slug_or_slugs, quote_asset, from, to, interval, source, aggregation) do
+  def timeseries_data_query(
+        slug_or_slugs,
+        quote_asset,
+        from,
+        to,
+        interval,
+        source,
+        aggregation
+      ) do
     {from, to, interval, _span} = timerange_parameters(from, to, interval)
 
-    query = """
+    sql = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS time,
       #{aggregation(aggregation, "price", "dt")}
     FROM #{@table}
     PREWHERE
-      #{slug_filter_map(slug_or_slugs, argument_position: 2)} AND
-      quote_asset = ?3 AND
-      source = ?4 AND
-      dt >= toDateTime(?5) AND
-      dt < toDateTime(?6)
+      #{slug_filter_map(slug_or_slugs, argument_name: "selector")} AND
+      quote_asset = {{quote_asset}} AND
+      source = {{source}} AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
     GROUP BY time
     ORDER BY time
     """
 
-    args = [interval, slug_or_slugs, quote_asset, source, from, to]
+    params = %{
+      interval: interval,
+      selector: slug_or_slugs,
+      quote_asset: quote_asset,
+      source: source,
+      from: from,
+      to: to
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def timeseries_data_per_slug_query(slugs, quote_asset, from, to, interval, source, aggregation) do
+  def timeseries_data_per_slug_query(
+        slugs,
+        quote_asset,
+        from,
+        to,
+        interval,
+        source,
+        aggregation
+      ) do
     {from, to, interval, _span} = timerange_parameters(from, to, interval)
 
-    query = """
+    sql = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS time,
       dictGetString('cryptocompare_to_san_asset_mapping', 'slug', tuple(base_asset)) AS slug,
       #{aggregation(aggregation, "price", "dt")}
     FROM #{@table}
     PREWHERE
-      #{slug_filter_map(slugs, argument_position: 2)} AND
-      quote_asset = ?3 AND
-      source = ?4 AND
-      dt >= toDateTime(?5) AND
-      dt < toDateTime(?6)
+      #{slug_filter_map(slugs, argument_name: "selector")} AND
+      quote_asset = {{quote_asset}} AND
+      source = {{source}} AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
     GROUP BY time, slug
     ORDER BY time
     """
 
-    args = [interval, slugs, quote_asset, source, from, to]
+    params = %{
+      interval: interval,
+      selector: slugs,
+      quote_asset: quote_asset,
+      source: source,
+      from: from,
+      to: to
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def aggregated_timeseries_data_query(slugs, quote_asset, from, to, source, aggregation) do
-    query = """
+  def aggregated_timeseries_data_query(
+        slugs,
+        quote_asset,
+        from,
+        to,
+        source,
+        aggregation
+      ) do
+    sql = """
     SELECT slug, SUM(value), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([?1]) AS slug,
+        arrayJoin([{{slugs}}]) AS slug,
         toFloat64(0) AS value,
         toUInt32(0) AS has_changed
 
@@ -71,14 +109,14 @@ defmodule Sanbase.Price.PricePairSql do
       INNER JOIN (
         SELECT base_asset, slug
         FROM san_to_cryptocompare_asset_mapping
-        WHERE slug IN (?1)
+        WHERE slug IN ({{slugs}})
       ) USING (base_asset)
       PREWHERE
-        #{slug_filter_map(slugs, argument_position: 1)} AND
-        quote_asset = ?2 AND
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4) AND
-        source = ?5
+        #{slug_filter_map(slugs, argument_name: "slugs")} AND
+        quote_asset = {{quote_asset}} AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
+        source = {{source}}
       GROUP BY slug
     )
     GROUP BY slug
@@ -86,12 +124,26 @@ defmodule Sanbase.Price.PricePairSql do
 
     {from, to} = timerange_parameters(from, to)
 
-    args = [slugs, quote_asset, from, to, source]
+    params = %{
+      slugs: slugs,
+      quote_asset: quote_asset,
+      from: from,
+      to: to,
+      source: source
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def slugs_by_filter_query(quote_asset, from, to, source, operation, threshold, aggregation) do
+  def slugs_by_filter_query(
+        quote_asset,
+        from,
+        to,
+        source,
+        operation,
+        threshold,
+        aggregation
+      ) do
     {query, args} = filter_order_base_query(quote_asset, from, to, source, aggregation)
 
     query =

@@ -9,7 +9,7 @@ defmodule Sanbase.PricePair do
       maybe_transform_datetime_data_tuple_to_map: 1
     ]
 
-  import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 2]
+  import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 1]
 
   alias Sanbase.ClickhouseRepo
 
@@ -63,19 +63,17 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source) || @default_source
     aggregation = Keyword.get(opts, :aggregation) || :last
 
-    {query, args} =
-      timeseries_data_query(
-        slug_or_slugs,
-        quote_asset,
-        from,
-        to,
-        interval,
-        source,
-        aggregation
-      )
-
+    timeseries_data_query(
+      slug_or_slugs,
+      quote_asset,
+      from,
+      to,
+      interval,
+      source,
+      aggregation
+    )
     # Handle both cases where the aggregation is OHLC or it's not
-    exec_timeseries_data_query(query, args)
+    |> exec_timeseries_data_query()
   end
 
   def timeseries_data_per_slug([], _quote_asset, _from, _to, _interval, _opts), do: {:ok, []}

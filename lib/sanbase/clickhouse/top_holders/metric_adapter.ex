@@ -70,9 +70,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
          true <- chain_supported?(infr, slug, metric),
          {:ok, params} <-
            timeseries_data_params(selector, contract, infr, from, to, interval, decimals, opts) do
-      {query, args} = timeseries_data_query(metric, params)
-
-      ClickhouseRepo.query_transform(query, args, fn [timestamp, value] ->
+      timeseries_data_query(metric, params)
+      |> ClickhouseRepo.query_transform(fn [timestamp, value] ->
         %{datetime: DateTime.from_unix!(timestamp), value: value}
       end)
     end

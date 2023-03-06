@@ -175,11 +175,11 @@ defmodule Sanbase.Balance do
           {:ok, list(%{slug: slug, balance: number()})} | {:error, String.t()}
   def assets_held_by_address(address, opts \\ []) do
     address = Sanbase.BlockchainAddress.to_internal_format(address)
-    {query, args} = assets_held_by_address_query(address, opts)
 
     hidden_projects_slugs = hidden_projects_slugs()
 
-    ClickhouseRepo.query_transform(query, args, fn [slug, balance] ->
+    assets_held_by_address_query(address, opts)
+    |> ClickhouseRepo.query_transform(fn [slug, balance] ->
       %{
         slug: slug,
         balance: balance
@@ -190,12 +190,11 @@ defmodule Sanbase.Balance do
 
   def usd_value_address_change(address, datetime) do
     address = Sanbase.BlockchainAddress.to_internal_format(address)
-    {query, args} = usd_value_address_change_query(address, datetime)
+    query_struct = usd_value_address_change_query(address, datetime)
     hidden_projects_slugs = hidden_projects_slugs()
 
     ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [
            slug,
            previous_balance,
@@ -218,18 +217,19 @@ defmodule Sanbase.Balance do
         }
       end
     )
-    |> maybe_apply_function(fn data -> Enum.reject(data, &(&1.slug in hidden_projects_slugs)) end)
+    |> maybe_apply_function(fn data ->
+      Enum.reject(data, &(&1.slug in hidden_projects_slugs))
+    end)
     |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.usd_value_change, :desc) end)
   end
 
   def usd_value_held_by_address(address) do
     address = Sanbase.BlockchainAddress.to_internal_format(address)
-    {query, args} = usd_value_held_by_address_query(address)
+    query_struct = usd_value_held_by_address_query(address)
     hidden_projects_slugs = hidden_projects_slugs()
 
     ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [slug, current_balance, current_price_usd, current_usd_value] ->
         %{
           slug: slug,
@@ -256,17 +256,9 @@ defmodule Sanbase.Balance do
   def addresses_by_filter(slug, operator, threshold, opts) do
     with {:ok, {decimals, infr, _blockchain}} <- info_by_slug(slug),
          {:ok, table} <- realtime_balances_table(slug, infr) do
-      {query, args} =
-        addresses_by_filter_query(
-          slug,
-          decimals,
-          operator,
-          threshold,
-          table,
-          opts
-        )
+      query_struct = addresses_by_filter_query(slug, decimals, operator, threshold, table, opts)
 
-      ClickhouseRepo.query_transform(query, args, fn [address, balance] ->
+      ClickhouseRepo.query_transform(query_struct, fn [address, balance] ->
         %{
           address: address,
           balance: balance
@@ -284,10 +276,9 @@ defmodule Sanbase.Balance do
   def first_datetime(address, slug) do
     with {:ok, {_decimals, _infr, blockchain}} <- info_by_slug(slug) do
       address = Sanbase.BlockchainAddress.to_internal_format(address)
+      query_struct = first_datetime_query(address, slug, blockchain)
 
-      {query, args} = first_datetime_query(address, slug, blockchain)
-
-      ClickhouseRepo.query_transform(query, args, fn [unix] ->
+      ClickhouseRepo.query_transform(query_struct, fn [unix] ->
         DateTime.from_unix!(unix)
       end)
       |> maybe_unwrap_ok_value()
@@ -314,9 +305,9 @@ defmodule Sanbase.Balance do
   def current_balance_top_addresses(slug, opts) do
     with {:ok, {decimals, infrastructure, blockchain}} <- info_by_slug(slug),
          {:ok, table} <- realtime_balances_table(slug, infrastructure) do
-      {query, args} = top_addresses_query(slug, decimals, blockchain, table, opts)
+      query_struct = top_addresses_query(slug, decimals, blockchain, table, opts)
 
-      ClickhouseRepo.query_transform(query, args, fn [address, balance] ->
+      ClickhouseRepo.query_transform(query_struct, fn [address, balance] ->
         %{
           address: address,
           infrastructure: infrastructure,
@@ -347,9 +338,9 @@ defmodule Sanbase.Balance do
   # Private functions
 
   defp do_current_balance(addresses, slug, decimals, blockchain, table) do
-    {query, args} = current_balance_query(addresses, slug, decimals, blockchain, table)
+    query_struct = current_balance_query(addresses, slug, decimals, blockchain, table)
 
-    ClickhouseRepo.query_transform(query, args, fn [address, balance] ->
+    ClickhouseRepo.query_transform(query_struct, fn [address, balance] ->
       %{
         address: address,
         balance: balance
@@ -358,9 +349,9 @@ defmodule Sanbase.Balance do
   end
 
   defp do_balance_change(addresses, slug, decimals, blockchain, from, to) do
-    {query, args} = balance_change_query(addresses, slug, decimals, blockchain, from, to)
+    query_struct = balance_change_query(addresses, slug, decimals, blockchain, from, to)
 
-    ClickhouseRepo.query_transform(query, args, fn
+    ClickhouseRepo.query_transform(query_struct, fn
       [address, balance_start, balance_end, balance_change] ->
         %{
           address: address,
@@ -381,7 +372,7 @@ defmodule Sanbase.Balance do
          to,
          interval
        ) do
-    {query, args} =
+    query_struct =
       historical_balance_changes_query(
         addresses,
         slug,
@@ -392,7 +383,7 @@ defmodule Sanbase.Balance do
         interval
       )
 
-    ClickhouseRepo.query_transform(query, args, fn [unix, balance_change] ->
+    ClickhouseRepo.query_transform(query_struct, fn [unix, balance_change] ->
       %{
         datetime: DateTime.from_unix!(unix),
         balance_change_amount: balance_change
@@ -412,9 +403,9 @@ defmodule Sanbase.Balance do
       |> List.wrap()
       |> Sanbase.BlockchainAddress.to_internal_format()
 
-    {query, args} = last_balance_before_query(addresses, slug, decimals, blockchain, datetime)
+    query_struct = last_balance_before_query(addresses, slug, decimals, blockchain, datetime)
 
-    case ClickhouseRepo.query_transform(query, args, & &1) do
+    case ClickhouseRepo.query_transform(query_struct, & &1) do
       {:ok, list} ->
         # If an address does not own the given coin/token, it will be missing from the
         # result. Iterate it like this in order to fill the missing values with 0
@@ -437,18 +428,10 @@ defmodule Sanbase.Balance do
          to,
          interval
        ) do
-    {query, args} =
-      historical_balance_query(
-        address,
-        slug,
-        decimals,
-        blockchain,
-        from,
-        to,
-        interval
-      )
+    query_struct =
+      historical_balance_query(address, slug, decimals, blockchain, from, to, interval)
 
-    ClickhouseRepo.query_transform(query, args, fn [unix, value, has_changed] ->
+    ClickhouseRepo.query_transform(query_struct, fn [unix, value, has_changed] ->
       %{
         datetime: DateTime.from_unix!(unix),
         balance: value,
@@ -473,20 +456,11 @@ defmodule Sanbase.Balance do
          to,
          interval
        ) do
-    {query, args} =
-      historical_balance_ohlc_query(
-        address,
-        slug,
-        decimals,
-        blockchain,
-        from,
-        to,
-        interval
-      )
+    query_struct =
+      historical_balance_ohlc_query(address, slug, decimals, blockchain, from, to, interval)
 
     ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [unix, open, high, low, close, has_changed] ->
         %{
           datetime: DateTime.from_unix!(unix),

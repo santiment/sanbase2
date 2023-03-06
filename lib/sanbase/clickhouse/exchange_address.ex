@@ -7,9 +7,9 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   def exchange_names(blockchain, is_dex \\ nil)
 
   def exchange_names(blockchain, is_dex) when blockchain in @supported_blockchains do
-    {query, args} = exchange_names_query(blockchain, is_dex)
+    query_struct = exchange_names_query(blockchain, is_dex)
 
-    Sanbase.ClickhouseRepo.query_reduce(query, args, [], fn [owner], acc ->
+    Sanbase.ClickhouseRepo.query_reduce(query_struct, [], fn [owner], acc ->
       case is_binary(owner) and owner != "" do
         true -> [owner | acc]
         false -> acc
@@ -23,9 +23,9 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   def exchange_addresses(blockchain, limit \\ 1000)
 
   def exchange_addresses(blockchain, limit) when blockchain in @supported_blockchains do
-    {query, args} = exchange_addresses_query(blockchain, limit)
+    query_struct = exchange_addresses_query(blockchain, limit)
 
-    Sanbase.ClickhouseRepo.query_transform(query, args, fn [address, label, owner] ->
+    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [address, label, owner] ->
       %{
         address: address,
         is_dex: if(label == "decentralized_exchange", do: true, else: false),
@@ -40,9 +40,9 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
 
   def exchange_addresses_for_exchange(blockchain, owner, limit)
       when blockchain in @supported_blockchains do
-    {query, args} = exchange_addresses_for_exchange_query(blockchain, owner, limit)
+    query_struct = exchange_addresses_for_exchange_query(blockchain, owner, limit)
 
-    Sanbase.ClickhouseRepo.query_transform(query, args, fn [address] -> address end)
+    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [address] -> address end)
   end
 
   def exchange_addresses_for_exchange(blockchain, _owner, _limit),
@@ -66,13 +66,13 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
         false -> :cex
       end
 
-    query = """
+    sql = """
     SELECT DISTINCT lower(JSONExtractString(metadata, 'owner')) AS exchange
     FROM (
       SELECT argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
       FROM blockchain_address_labels
       PREWHERE
-        blockchain = ?1 AND
+        blockchain = {{blockchain}} AND
         #{exchange_type_filter(exchange_type)}
       GROUP BY blockchain, asset_id, label, address
       HAVING sign = 1
@@ -80,48 +80,57 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
     ORDER BY exchange
     """
 
-    args = [blockchain |> String.downcase()]
+    params = %{
+      blockchain: blockchain |> String.downcase()
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp exchange_addresses_query(blockchain, limit) do
-    query = """
+    sql = """
     SELECT DISTINCT(address), label, lower(JSONExtractString(metadata, 'owner')) AS owner
     FROM(
       SELECT address, label, argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
       FROM blockchain_address_labels
-      PREWHERE blockchain = ?1 AND #{exchange_type_filter(:both)}
+      PREWHERE blockchain = {{blockchain}} AND #{exchange_type_filter(:both)}
       GROUP BY blockchain, asset_id, label, address
       HAVING sign = 1
     )
-    LIMIT ?2
+    LIMIT {{limit}}
     """
 
-    args = [blockchain |> String.downcase(), limit]
+    params = %{
+      blockchain: blockchain |> String.downcase(),
+      limit: limit
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp exchange_addresses_for_exchange_query(blockchain, owner, limit) do
-    query = """
+    sql = """
     SELECT DISTINCT(address), label, lower(JSONExtractString(metadata, 'owner')) AS owner
     FROM(
       SELECT address, label, argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
       FROM blockchain_address_labels
       PREWHERE
-        blockchain = ?1 AND
-        lower(JSONExtractString(metadata, 'owner')) = ?2 AND
+        blockchain = {{blockchain}} AND
+        lower(JSONExtractString(metadata, 'owner')) = {{owner}} AND
         #{exchange_type_filter(:both)}
       GROUP BY blockchain, asset_id, label, address
       HAVING sign = 1
     )
-    LIMIT ?3
+    LIMIT {{limit}}
     """
 
-    args = [blockchain |> String.downcase(), owner |> String.downcase(), limit]
+    params = %{
+      blockchain: blockchain |> String.downcase(),
+      owner: owner,
+      limit: limit
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp exchange_type_filter(:both),

@@ -5,11 +5,10 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
 
   def top_exchanges_by_balance(%{slug: slug_or_slugs}, limit, opts \\ []) do
     filters = Keyword.get(opts, :additional_filters, [])
-    {query, args} = top_exchanges_by_balance_query(slug_or_slugs, limit, filters)
+    query_struct = top_exchanges_by_balance_query(slug_or_slugs, limit, filters)
 
     ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [owner, label, balance, change_1d, change_7d, change_30d, ts, days] ->
         %{
           owner: owner,
@@ -28,11 +27,11 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
   # Private functions
 
   defp top_exchanges_by_balance_query(slug_or_slugs, limit, filters) do
-    args = [slug_or_slugs, limit]
+    params = %{slug: slug_or_slugs, limit: limit}
 
-    {additional_filters_str, args} = additional_filters(filters, args, trailing_and: false)
+    {additional_filters_str, params} = additional_filters(filters, params, trailing_and: false)
 
-    query = """
+    sql = """
     SELECT
       owner,
       label2 as label,
@@ -77,7 +76,7 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
 
         ANY LEFT JOIN ( SELECT name AS metric_name, metric_id FROM metric_metadata FINAL ) USING metric_id
         PREWHERE
-          #{asset_id_filter(%{slug: slug_or_slugs}, argument_position: 1)} AND
+          #{asset_id_filter(%{slug: slug_or_slugs}, argument_name: "slug")} AND
           label IN ('deposit', 'centralized_exchange', 'decentralized_exchange') AND
           dt < now() AND
           dt != toDateTime('1970-01-01 00:00:00') AND
@@ -109,6 +108,6 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
     LIMIT ?2
     """
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

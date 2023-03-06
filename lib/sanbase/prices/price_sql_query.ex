@@ -12,7 +12,7 @@ defmodule Sanbase.Price.SqlQuery do
     ]
 
   def timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation) do
-    query = """
+    sql = """
     SELECT
       #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS time,
       #{aggregation(aggregation, "price_usd", "dt")} AS price_usd,
@@ -29,42 +29,42 @@ defmodule Sanbase.Price.SqlQuery do
     ORDER BY time ASC
     """
 
-    args = [
-      maybe_str_to_sec(interval),
-      slug_or_slugs,
-      source,
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to)
-    ]
+    params = %{
+      interval: maybe_str_to_sec(interval),
+      selector: slug_or_slugs,
+      source: source,
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def timeseries_metric_data_query(slug_or_slugs, metric, from, to, interval, source, aggregation) do
-    query = """
+    sql = """
     SELECT
-      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS time,
+      #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
       #{aggregation(aggregation, "#{metric}", "dt")}
     FROM #{@table}
     PREWHERE
-      #{slug_filter(slug_or_slugs, argument_position: 2)} AND
+      #{slug_filter(slug_or_slugs, argument_name: "selector")} AND
       NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND #{metric} > 0 AND
-      source = cast(?3, 'LowCardinality(String)') AND
-      dt >= toDateTime(?4) AND
-      dt < toDateTime(?5)
+      source = cast({{source}}, 'LowCardinality(String)') AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
     GROUP BY time
     ORDER BY time
     """
 
-    args = [
-      maybe_str_to_sec(interval),
-      slug_or_slugs,
-      source,
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to)
-    ]
+    params = %{
+      interval: maybe_str_to_sec(interval),
+      selector: slug_or_slugs,
+      source: source,
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def timeseries_metric_data_per_slug_query(
@@ -516,18 +516,18 @@ defmodule Sanbase.Price.SqlQuery do
   end
 
   defp slug_filter(slug, opts) when is_binary(slug) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
     """
-    slug = cast(?#{arg_position}, 'LowCardinality(String)')
+    slug = cast({{#{arg_name}}}, 'LowCardinality(String)')
     """
   end
 
   defp slug_filter(slugs, opts) when is_list(slugs) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
     """
-    slug IN (?#{arg_position})
+    slug IN ({{#{arg_name}}})
     """
   end
 end

@@ -47,6 +47,10 @@ defmodule Sanbase.Clickhouse.Query do
     }
   end
 
+  def put_sql(struct, sql) do
+    Map.put(struct, :sql, sql)
+  end
+
   @doc ~s"""
   Process the SQL query and named parameters and return
   - the SQL query string transformed to use positional parameters

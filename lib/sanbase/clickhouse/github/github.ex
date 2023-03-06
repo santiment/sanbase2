@@ -45,9 +45,9 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   def total_github_activity(organizations, from, to) do
-    {query, args} = total_github_activity_query(organizations, from, to)
+    query_struct = total_github_activity_query(organizations, from, to)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [organization, github_activity], acc ->
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [organization, github_activity], acc ->
       Map.put(acc, organization, github_activity |> Sanbase.Math.to_integer(0))
     end)
   end
@@ -78,9 +78,9 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   def total_dev_activity(organizations, from, to) do
-    {query, args} = total_dev_activity_query(organizations, from, to)
+    query_struct = total_dev_activity_query(organizations, from, to)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [organization, dev_activity], acc ->
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [organization, dev_activity], acc ->
       Map.put(acc, organization, dev_activity |> Sanbase.Math.to_integer(0))
     end)
   end
@@ -112,9 +112,9 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   def total_dev_activity_contributors_count(organizations, from, to) do
-    {query, args} = total_dev_activity_contributors_count_query(organizations, from, to)
+    query_struct = total_dev_activity_contributors_count_query(organizations, from, to)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [organization, dev_activity], acc ->
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [organization, dev_activity], acc ->
       Map.put(acc, organization, dev_activity |> Sanbase.Math.to_integer(0))
     end)
   end
@@ -145,9 +145,9 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   def total_github_activity_contributors_count(organizations, from, to) do
-    {query, args} = total_github_activity_contributors_count_query(organizations, from, to)
+    query_struct = total_github_activity_contributors_count_query(organizations, from, to)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [organization, dev_activity], acc ->
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [organization, dev_activity], acc ->
       Map.put(acc, organization, dev_activity |> Sanbase.Math.to_integer(0))
     end)
   end
@@ -242,18 +242,18 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   def first_datetime(organization_or_organizations) do
-    {query, args} = first_datetime_query(organization_or_organizations)
+    query_struct = first_datetime_query(organization_or_organizations)
 
-    ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
+    ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
       timestamp |> DateTime.from_unix!()
     end)
     |> maybe_unwrap_ok_value()
   end
 
   def last_datetime_computed_at(organization_or_organizations) do
-    {query, args} = last_datetime_computed_at_query(organization_or_organizations)
+    query_struct = last_datetime_computed_at_query(organization_or_organizations)
 
-    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+    ClickhouseRepo.query_transform(query_struct, fn [datetime] ->
       datetime |> DateTime.from_unix!()
     end)
     |> maybe_unwrap_ok_value()
@@ -309,9 +309,9 @@ defmodule Sanbase.Clickhouse.Github do
   # Private functions
 
   defp do_dev_activity_contributors_count(organizations, from, to, interval) do
-    {query, args} = dev_activity_contributors_count_query(organizations, from, to, interval)
+    query_struct = dev_activity_contributors_count_query(organizations, from, to, interval)
 
-    ClickhouseRepo.query_transform(query, args, fn [datetime, contributors] ->
+    ClickhouseRepo.query_transform(query_struct, fn [datetime, contributors] ->
       %{
         datetime: datetime |> DateTime.from_unix!(),
         contributors_count: contributors |> Sanbase.Math.to_integer(0)
@@ -320,9 +320,9 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   defp do_github_activity_contributors_count(organizations, from, to, interval) do
-    {query, args} = github_activity_contributors_count_query(organizations, from, to, interval)
+    query_struct = github_activity_contributors_count_query(organizations, from, to, interval)
 
-    ClickhouseRepo.query_transform(query, args, fn [datetime, contributors] ->
+    ClickhouseRepo.query_transform(query_struct, fn [datetime, contributors] ->
       %{
         datetime: datetime |> DateTime.from_unix!(),
         contributors_count: contributors |> Sanbase.Math.to_integer(0)
@@ -330,10 +330,10 @@ defmodule Sanbase.Clickhouse.Github do
     end)
   end
 
-  defp datetime_activity_execute({query, args}) do
-    ClickhouseRepo.query_transform(query, args, & &1)
+  defp datetime_activity_execute(query_struct) do
+    ClickhouseRepo.query_transform(query_struct, & &1)
 
-    ClickhouseRepo.query_transform(query, args, fn [datetime, value] ->
+    ClickhouseRepo.query_transform(query_struct, fn [datetime, value] ->
       %{
         datetime: datetime |> DateTime.from_unix!(),
         activity: value |> Sanbase.Math.to_integer(0)

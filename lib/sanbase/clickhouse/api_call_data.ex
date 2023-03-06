@@ -22,9 +22,9 @@ defmodule Sanbase.Clickhouse.ApiCallData do
           {:ok, list(%{datetime: DateTime.t(), api_calls_count: non_neg_integer()})}
           | {:error, String.t()}
   def api_call_history(user_id, from, to, interval, auth_method) do
-    {query, args} = api_call_history_query(user_id, from, to, interval, auth_method)
+    query_struct = api_call_history_query(user_id, from, to, interval, auth_method)
 
-    ClickhouseRepo.query_transform(query, args, fn [t, count] ->
+    ClickhouseRepo.query_transform(query_struct, fn [t, count] ->
       %{
         datetime: DateTime.from_unix!(t),
         api_calls_count: count
@@ -39,65 +39,59 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   @spec api_call_count(non_neg_integer(), DateTime.t(), DateTime.t(), Atom.t()) ::
           {:ok, number()} | {:error, String.t()}
   def api_call_count(user_id, from, to, auth_method \\ :all) do
-    {query, args} = api_call_count_query(user_id, from, to, auth_method)
+    query_struct = api_call_count_query(user_id, from, to, auth_method)
 
-    ClickhouseRepo.query_transform(query, args, fn [count] -> count end)
+    ClickhouseRepo.query_transform(query_struct, fn [count] -> count end)
     |> maybe_unwrap_ok_value()
   end
 
   def active_users_count(from, to) do
-    {query, args} = active_users_count_query(from, to)
+    query_struct = active_users_count_query(from, to)
 
-    ClickhouseRepo.query_transform(query, args, fn value -> value end)
+    ClickhouseRepo.query_transform(query_struct, fn value -> value end)
     |> maybe_unwrap_ok_value()
     |> maybe_extract_value_from_tuple()
   end
 
   def users_used_api(opts \\ []) do
     until = Keyword.get(opts, :until, Timex.now())
-    {query, args} = users_used_api_query(until)
+    query_struct = users_used_api_query(until)
 
-    ClickhouseRepo.query_transform(query, args, fn [value] -> value end)
+    ClickhouseRepo.query_transform(query_struct, fn [value] -> value end)
     |> maybe_extract_value_from_tuple()
   end
 
   def users_used_sansheets(opts \\ []) do
     until = Keyword.get(opts, :until, Timex.now())
-    {query, args} = users_used_sansheets_query(until)
+    query_struct = users_used_sansheets_query(until)
 
-    ClickhouseRepo.query_transform(query, args, fn [value] -> value end)
+    ClickhouseRepo.query_transform(query_struct, fn [value] -> value end)
     |> maybe_extract_value_from_tuple()
   end
 
   def api_calls_count_per_user(opts \\ []) do
     until = Keyword.get(opts, :until, Timex.now())
-    {query, args} = api_calls_count_per_user_query(until)
+    query_struct = api_calls_count_per_user_query(until)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [user_id, count], acc ->
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [user_id, count], acc ->
       Map.put(acc, user_id, count)
     end)
     |> maybe_extract_value_from_tuple()
   end
 
   def api_metric_distribution() do
-    query = """
-    SELECT query, count(*) as count
-    FROM api_call_data
-    PREWHERE auth_method = 'apikey' AND user_id != 0
-    GROUP BY query
-    ORDER BY count desc
-    """
+    query_struct = api_metric_distribution_query()
 
-    ClickhouseRepo.query_transform(query, [], fn [metric, count] ->
+    ClickhouseRepo.query_transform(query_struct, fn [metric, count] ->
       %{metric: metric, count: count}
     end)
     |> maybe_extract_value_from_tuple()
   end
 
   def api_metric_distribution_per_user() do
-    {query, args} = api_metric_distribution_per_user_query()
+    query_struct = api_metric_distribution_per_user_query()
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [user_id, metric, count], acc ->
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [user_id, metric, count], acc ->
       Map.update(acc, user_id, %{}, fn map ->
         update_api_distribution_user_map(map, metric, count)
       end)
@@ -119,7 +113,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   end
 
   defp api_metric_distribution_per_user_query() do
-    query = """
+    sql = """
     SELECT user_id, query, count(*) as count
     FROM api_call_data
     PREWHERE auth_method = 'apikey' AND user_id != 0
@@ -127,59 +121,57 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     ORDER BY count desc
     """
 
-    args = []
+    params = %{}
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp api_call_history_query(user_id, from, to, interval, auth_method) do
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
-
-    query = """
+    sql = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS t,
+      toUnixTimestamp(intDiv(toUInt32(dt), {{interval}}) * {{interval}}) AS t,
       toUInt32(count())
     FROM
       #{@table}
     PREWHERE
-      dt >= toDateTime(?2) AND
-      dt < toDateTime(?3) AND
-      user_id = ?4
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}}) AND
+      user_id = {{user_id}}
       #{maybe_filter_auth_method(auth_method)}
     GROUP BY t
     ORDER BY t
     """
 
-    args = [
-      interval_sec,
-      from,
-      to,
-      user_id
-    ]
+    params = %{
+      interval: Sanbase.DateTimeUtils.str_to_sec(interval),
+      from: from,
+      to: to,
+      user_id: user_id
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp api_call_count_query(user_id, from, to, auth_method) do
-    query = """
+    sql = """
     SELECT
       toUInt32(count())
     FROM
       #{@table}
     PREWHERE
-      dt >= toDateTime(?1) AND
-      dt < toDateTime(?2) AND
-      user_id = ?3
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}}) AND
+      user_id = {{user_id}}
       #{maybe_filter_auth_method(auth_method)}
     """
 
-    args = [
-      from,
-      to,
-      user_id
-    ]
+    params = %{
+      from: from,
+      to: to,
+      user_id: user_id
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp maybe_filter_auth_method(:all), do: ""
@@ -188,68 +180,81 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     "AND auth_method = '#{method}'"
   end
 
+  defp api_metric_distribution_query() do
+    sql = """
+    SELECT query, count(*) as count
+    FROM api_call_data
+    PREWHERE auth_method = 'apikey' AND user_id != 0
+    GROUP BY query
+    ORDER BY count desc
+    """
+
+    params = %{}
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
   defp active_users_count_query(from, to) do
-    query = """
+    sql = """
     SELECT
       uniqExact(user_id)
     FROM
       #{@table}
     PREWHERE
-      dt >= toDateTime(?1) AND
-      dt < toDateTime(?2)
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
     """
 
-    args = [
-      from,
-      to
-    ]
+    params = %{from: from, to: to}
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp users_used_api_query(until) do
-    query = """
+    sql = """
     SELECT
       distinct(user_id)
     FROM
       #{@table}
     PREWHERE
-      dt <= toDateTime(?1) AND
+      dt <= toDateTime({{datetime}}) AND
       auth_method = 'apikey' AND
       user_id != 0
     """
 
-    {query, [until]}
+    params = %{datetime: until}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp users_used_sansheets_query(until) do
-    query = """
+    sql = """
     SELECT
       distinct(user_id)
     FROM
       #{@table}
     PREWHERE
-      dt <= toDateTime(?1) AND
+      dt <= toDateTime({{datetime}}) AND
       user_agent LIKE '%Google-Apps-Script%' AND
       user_id != 0
     """
 
-    {query, [until]}
+    params = %{datetime: until}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp api_calls_count_per_user_query(until) do
-    query = """
+    sql = """
     SELECT
       user_id, count(*) as count
     FROM
       #{@table}
     PREWHERE
-    dt <= toDateTime(?1) AND
+    dt <= toDateTime({{datetime}}) AND
     auth_method = 'apikey' AND user_id != 0
     GROUP BY user_id
     ORDER BY count desc
     """
 
-    {query, [until]}
+    params = %{datetime: until}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

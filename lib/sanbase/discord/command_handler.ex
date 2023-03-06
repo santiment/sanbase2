@@ -71,14 +71,19 @@ defmodule Sanbase.Discord.CommandHandler do
           autocomplete_metrics(interaction, focused_option.value, options_map["project"])
       end
     else
-      embeds = create_charts_embeds(options_map["metric"], options_map["project"])
+      files = create_charts_embeds(options_map["metric"], options_map["project"])
 
-      content =
-        if embeds,
-          do: "",
-          else: "Can't create chart for #{options_map["project"]}'s #{options_map["metric"]}"
+      if files != [] do
+        content = "`#{options_map["project"]}`'s `#{options_map["metric"]}`"
 
-      edit_interaction_response(interaction, content, [], embeds)
+        Nostrum.Api.edit_interaction_response(interaction, %{
+          content: "",
+          files: files
+        })
+      else
+        content = "Can't create chart for #{options_map["project"]}'s #{options_map["metric"]}"
+        edit_interaction_response(interaction, content, [], [])
+      end
     end
   end
 
@@ -853,15 +858,11 @@ defmodule Sanbase.Discord.CommandHandler do
     {:ok, short_url} = Sanbase.ShortUrl.create(%{full_url: url})
     chart = "https://#{img_prefix_url()}/chart/#{short_url.short_url}"
 
-    HTTPoison.get(chart)
+    HTTPoison.get(chart, [basic_auth_header()])
     |> case do
       {:ok, response} ->
         if is_image?(response) do
-          %Embed{}
-          |> put_title("#{metric} for #{slug}")
-          |> put_url(chart)
-          |> put_image(chart)
-          |> List.wrap()
+          [%{body: response.body, name: "chart.jpeg"}]
         else
           []
         end
@@ -939,5 +940,14 @@ defmodule Sanbase.Discord.CommandHandler do
     }
 
     Nostrum.Api.create_interaction_response(interaction, response)
+  end
+
+  defp basic_auth_header() do
+    credentials =
+      (System.get_env("GRAPHQL_BASIC_AUTH_USERNAME") <>
+         ":" <> System.get_env("GRAPHQL_BASIC_AUTH_PASSWORD"))
+      |> Base.encode64()
+
+    {"Authorization", "Basic #{credentials}"}
   end
 end

@@ -396,8 +396,13 @@ defmodule Sanbase.Discord.CommandHandler do
   def format_table(name, response, discord_user) do
     max_rows = response.rows |> Enum.take(1) |> max_rows()
 
-    rows = response.rows |> Enum.take(max_rows)
-    table = TableRex.quick_render!(rows, response.columns)
+    table =
+      if max_rows == 0 and length(response.columns) == 1 do
+        String.slice(response.rows |> hd |> hd, 0, 1900)
+      else
+        rows = response.rows |> Enum.take(max_rows)
+        TableRex.quick_render!(rows, response.columns)
+      end
 
     content = """
     #{name}: <@#{discord_user}>

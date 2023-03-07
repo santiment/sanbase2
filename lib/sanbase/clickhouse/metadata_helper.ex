@@ -18,10 +18,10 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
     cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
-      query = "SELECT toUInt32(asset_id), name FROM asset_metadata"
-      args = []
+      query_struct =
+        Sanbase.Clickhouse.Query.new("SELECT toUInt32(asset_id), name FROM asset_metadata", %{})
 
-      ClickhouseRepo.query_reduce(query, args, %{}, fn [asset_id, slug], acc ->
+      ClickhouseRepo.query_reduce(query_struct, %{}, fn [asset_id, slug], acc ->
         Map.put(acc, slug, asset_id)
       end)
     end)
@@ -54,10 +54,10 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
   # Private functions
 
   defp get_metric_name_to_metric_id_map() do
-    query = "SELECT toUInt32(metric_id), name FROM metric_metadata"
-    args = []
+    query_struct =
+      Sanbase.Clickhouse.Query.new("SELECT toUInt32(metric_id), name FROM metric_metadata", %{})
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [metric_id, name], acc ->
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [metric_id, name], acc ->
       names = Map.get(@original_name_to_metric_name, name, [name])
 
       names

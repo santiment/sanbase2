@@ -18,19 +18,15 @@ defmodule Sanbase.Clickhouse.Label do
   @create_label_topic "label_changes"
 
   def list_all(:all = _blockchain) do
-    query = """
-    SELECT DISTINCT(label) FROM blockchain_address_labels
-    """
+    query_struct = all_labels_query()
 
-    Sanbase.ClickhouseRepo.query_transform(query, [], fn [label] -> label end)
+    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [label] -> label end)
   end
 
   def list_all(blockchain) do
-    query = """
-    SELECT DISTINCT(label) FROM blockchain_address_labels PREWHERE blockchain = ?1
-    """
+    query_struct = all_blockchain_labels_query(blockchain)
 
-    Sanbase.ClickhouseRepo.query_transform(query, [blockchain], fn [label] ->
+    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [label] ->
       label
     end)
   end
@@ -42,11 +38,10 @@ defmodule Sanbase.Clickhouse.Label do
 
     label_fqns = label_fqn_or_fqns |> List.wrap() |> Enum.map(&String.downcase/1)
 
-    {query, args} = addresses_by_label_fqns_query(label_fqns, blockchain)
+    query_struct = addresses_by_label_fqns_query(label_fqns, blockchain)
 
     Sanbase.ClickhouseRepo.query_reduce(
-      query,
-      args,
+      query_struct,
       %{},
       fn [address, blockchain, label_fqn], acc ->
         Map.update(acc, {address, blockchain}, [label_fqn], &[label_fqn | &1])
@@ -64,11 +59,10 @@ defmodule Sanbase.Clickhouse.Label do
 
     label_keys = label_key_or_keys |> List.wrap() |> Enum.map(&String.downcase/1)
 
-    {query, args} = addresses_by_label_keys_query(label_keys, blockchain)
+    query_struct = addresses_by_label_keys_query(label_keys, blockchain)
 
     Sanbase.ClickhouseRepo.query_reduce(
-      query,
-      args,
+      query_struct,
       %{},
       fn [address, blockchain, label_fqn], acc ->
         Map.update(acc, {address, blockchain}, [label_fqn], &[label_fqn | &1])
@@ -107,12 +101,11 @@ defmodule Sanbase.Clickhouse.Label do
   def add_labels(slug, maps) when is_list(maps) do
     addresses = get_list_of_addresses(maps)
     blockchain = slug_to_blockchain(slug)
-    {query, args} = addresses_labels_query(slug, blockchain, addresses)
+    query_struct = addresses_labels_query(slug, blockchain, addresses)
 
     result =
       Sanbase.ClickhouseRepo.query_reduce(
-        query,
-        args,
+        query_struct,
         %{},
         fn [address, label, metadata], acc ->
           label = %{name: label, metadata: metadata, origin: "santiment"}
@@ -130,11 +123,10 @@ defmodule Sanbase.Clickhouse.Label do
 
   def get_address_labels(slug, addresses) when is_list(addresses) do
     blockchain = slug_to_blockchain(slug)
-    {query, args} = addresses_labels_query(slug, blockchain, addresses)
+    query_struct = addresses_labels_query(slug, blockchain, addresses)
 
     Sanbase.ClickhouseRepo.query_reduce(
-      query,
-      args,
+      query_struct,
       %{},
       fn [address, label, metadata], acc ->
         label = %{name: label, metadata: metadata, origin: "santiment"}
@@ -172,95 +164,111 @@ defmodule Sanbase.Clickhouse.Label do
 
   # Private functions
 
-  # For backwards compatibility, if the slug is nil treat it as ethereum blockchain
-  def slug_to_blockchain(nil), do: "ethereum"
+  defp all_labels_query() do
+    sql = """
+    SELECT DISTINCT(label) FROM blockchain_address_labels
+    """
 
-  def slug_to_blockchain(slug),
+    params = %{}
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  defp all_blockchain_labels_query(blockchain) do
+    sql = """
+    SELECT DISTINCT(label)
+    FROM blockchain_address_labels
+    PREWHERE blockchain = {{blockchain}}
+    """
+
+    params = %{blockchain: blockchain}
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  # For backwards compatibility, if the slug is nil treat it as ethereum blockchain
+  defp slug_to_blockchain(nil), do: "ethereum"
+
+  defp slug_to_blockchain(slug),
     do: Sanbase.Project.slug_to_blockchain(slug)
 
   def addresses_by_label_fqns_query(label_fqns, nil = _blockchain) do
-    query = """
+    sql = """
     SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
-      #{label_id_by_label_fqn_filter(label_fqns, argument_position: 1)}
+      #{label_id_by_label_fqn_filter(label_fqns, argument_name: "label_fqns")}
     GROUP BY address, blockchain, label_id
     LIMIT 20000
     """
 
-    args = [label_fqns]
-    {query, args}
+    params = %{label_fqns: label_fqns}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def addresses_by_label_fqns_query(label_fqns, blockchain) do
-    query = """
+    sql = """
     SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
-      #{label_id_by_label_fqn_filter(label_fqns, argument_position: 1)} AND
-      blockchain = ?2
+      #{label_id_by_label_fqn_filter(label_fqns, argument_name: "label_fqns")} AND
+      blockchain = {{blockchain}}
     GROUP BY address, blockchain, label_id
     LIMIT 20000
     """
 
-    args = [label_fqns, blockchain]
-    {query, args}
+    params = %{label_fqns: label_fqns, blockchain: blockchain}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def addresses_by_label_keys_query(label_keys, nil = _blockchain) do
-    query = """
+    sql = """
     SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
-      #{label_id_by_label_key_filter(label_keys, argument_position: 1)}
+      #{label_id_by_label_key_filter(label_keys, argument_name: "label_keys")}
     GROUP BY address, blockchain, label_id
     LIMIT 20000
     """
 
-    args = [label_keys]
-    {query, args}
+    params = %{label_keys: label_keys}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def addresses_by_label_keys_query(label_keys, blockchain) do
-    query = """
+    sql = """
     SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
-      #{label_id_by_label_key_filter(label_keys, argument_position: 1)} AND
-      blockchain = ?2
+      #{label_id_by_label_key_filter(label_keys, argument_name: "label_keys")} AND
+      blockchain = {{blockchain}}
     GROUP BY address, blockchain, label_id
     LIMIT 20000
     """
 
-    args = [label_keys, blockchain]
-    {query, args}
+    params = %{label_keys: label_keys, blockchain: blockchain}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp addresses_labels_query(slug, "ethereum", addresses) do
-    query = create_addresses_labels_query(slug)
+    sql = create_addresses_labels_query(slug)
+    params = %{addresses: addresses, slug: slug}
 
-    args =
-      case slug do
-        nil -> [addresses]
-        _ -> [addresses, slug]
-      end
-
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp addresses_labels_query(_slug, blockchain, addresses) do
-    query = """
+    sql = """
     SELECT address, label, metadata
     FROM(
       SELECT address, label, argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
       FROM blockchain_address_labels
-      PREWHERE blockchain = ?1 AND address IN (?2)
+      PREWHERE blockchain = {{blockchain}} AND address IN ({{addresses}})
       GROUP BY blockchain, asset_id, label, address
       HAVING sign = 1
     )
     """
 
-    {query, [blockchain, addresses]}
+    params = %{blockchain: blockchain, addresses: addresses}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp get_list_of_addresses(maps) do
@@ -314,7 +322,7 @@ defmodule Sanbase.Clickhouse.Label do
                    label_raw='decentralized_exchange', 'DEX',
                    label_raw='withdrawal', 'CEX Trader',
                    label_raw='dex_trader', 'DEX Trader',
-                   #{whale_filter(slug, position: 2)}
+                   #{whale_filter(slug, argument_name: "slug")}
                    label_raw='deposit', 'CEX Deposit',
                    label_raw='defi', 'DeFi',
                    label_raw='deployer', 'Deployer',
@@ -357,14 +365,14 @@ defmodule Sanbase.Clickhouse.Label do
                 SELECT cityHash64(address) as address_hash,
                        address
                 FROM (
-                    SELECT lower(arrayJoin([?1])) as address
+                    SELECT lower(arrayJoin([{{addresses}}])) as address
                 )
             )
             USING address_hash
             PREWHERE address_hash IN (
                 SELECT cityHash64(address)
                 FROM (
-                    SELECT lower(arrayJoin([?1])) as address
+                    SELECT lower(arrayJoin([{{addresses}}])) as address
                 )
             )
         )
@@ -383,11 +391,11 @@ defmodule Sanbase.Clickhouse.Label do
   end
 
   defp whale_filter(slug, opts) when is_binary(slug) do
-    position = Keyword.fetch!(opts, :position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
     """
-    label_raw='whale' AND asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{position}), 'Whale',
-    label_raw='whale' AND asset_id != (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{position}), 'whale_wrong',
+    label_raw='whale' AND asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = {{#{arg_name}}}), 'Whale',
+    label_raw='whale' AND asset_id != (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = {{#{arg_name}}}), 'whale_wrong',
     """
   end
 

@@ -228,7 +228,8 @@ defmodule Sanbase.ClickhouseRepo do
     end
   end
 
-  defp extract_error_from_error(%Clickhousex.Error{message: message}) do
+  # %Clickhousex.Error{} is causing some errors
+  defp extract_error_from_error(%_{message: message}) do
     transform_error_string(message)
   end
 

@@ -61,9 +61,9 @@ defmodule Sanbase.Signal.SignalAdapter do
 
   @impl Sanbase.Signal.Behaviour
   def available_signals(%{slug: slug}) when is_binary(slug) do
-    {query, args} = available_signals_query(slug)
+    query_struct = available_signals_query(slug)
 
-    ClickhouseRepo.query_transform(query, args, fn [signal] ->
+    ClickhouseRepo.query_transform(query_struct, fn [signal] ->
       Map.get(@signal_to_name_map, signal)
     end)
     |> maybe_apply_function(fn list -> Enum.reject(list, &is_nil/1) end)
@@ -71,9 +71,9 @@ defmodule Sanbase.Signal.SignalAdapter do
 
   @impl Sanbase.Signal.Behaviour
   def available_slugs(signal) do
-    {query, args} = available_slugs_query(signal)
+    query_struct = available_slugs_query(signal)
 
-    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+    ClickhouseRepo.query_transform(query_struct, fn [slug] -> slug end)
   end
 
   @impl Sanbase.Signal.Behaviour
@@ -93,9 +93,9 @@ defmodule Sanbase.Signal.SignalAdapter do
 
   @impl Sanbase.Signal.Behaviour
   def first_datetime(signal, %{slug: slug}) when is_binary(slug) do
-    {query, args} = first_datetime_query(signal, slug)
+    query_struct = first_datetime_query(signal, slug)
 
-    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+    ClickhouseRepo.query_transform(query_struct, fn [datetime] ->
       DateTime.from_unix!(datetime)
     end)
     |> maybe_unwrap_ok_value()
@@ -103,9 +103,9 @@ defmodule Sanbase.Signal.SignalAdapter do
 
   @impl Sanbase.Signal.Behaviour
   def raw_data(signals, selector, from, to) do
-    {query, args} = raw_data_query(signals, from, to)
+    query_struct = raw_data_query(signals, from, to)
 
-    ClickhouseRepo.query_transform(query, args, fn [unix, signal, slug, value, metadata] ->
+    ClickhouseRepo.query_transform(query_struct, fn [unix, signal, slug, value, metadata] ->
       metadata =
         case Jason.decode(metadata) do
           {:ok, value} -> value
@@ -132,9 +132,9 @@ defmodule Sanbase.Signal.SignalAdapter do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, signal)
     slugs = slug_or_slugs |> List.wrap()
 
-    {query, args} = timeseries_data_query(signal, slugs, from, to, interval, aggregation)
+    query_struct = timeseries_data_query(signal, slugs, from, to, interval, aggregation)
 
-    ClickhouseRepo.query_transform(query, args, fn [unix, value, metadata] ->
+    ClickhouseRepo.query_transform(query_struct, fn [unix, value, metadata] ->
       metadata =
         metadata
         |> List.wrap()
@@ -163,9 +163,9 @@ defmodule Sanbase.Signal.SignalAdapter do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, signal)
     slugs = slug_or_slugs |> List.wrap()
 
-    {query, args} = aggregated_timeseries_data_query(signal, slugs, from, to, aggregation)
+    query_struct = aggregated_timeseries_data_query(signal, slugs, from, to, aggregation)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, value], acc ->
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [slug, value], acc ->
       Map.put(acc, slug, value)
     end)
   end

@@ -4,19 +4,18 @@ defmodule Sanbase.Clickhouse.NftTrade do
   alias Sanbase.ClickhouseRepo
 
   def get_trades_count(label_key, from, to) do
-    {query, args} = get_trades_count_query(label_key, from, to)
+    query_struct = get_trades_count_query(label_key, from, to)
 
-    ClickhouseRepo.query_transform(query, args, fn [count] -> count end)
+    ClickhouseRepo.query_transform(query_struct, fn [count] -> count end)
     |> maybe_unwrap_ok_value()
   end
 
   def get_trades(label_key, from, to, opts)
       when label_key in [:nft_influencer, :nft_whale] do
-    {query, args} = get_trades_query(label_key, from, to, opts)
+    query_struct = get_trades_query(label_key, from, to, opts)
 
     ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn list ->
         [
           ts,
@@ -68,9 +67,9 @@ defmodule Sanbase.Clickhouse.NftTrade do
     contract = Sanbase.BlockchainAddress.to_internal_format(contract)
     blockchain = Sanbase.Project.infrastructure_to_blockchain(infrastructure)
 
-    {query, args} = fetch_label_query(contract, blockchain, "value")
+    query_struct = fetch_label_query(contract, blockchain, "value")
 
-    case ClickhouseRepo.query_transform(query, args, fn [label] -> label end) do
+    case ClickhouseRepo.query_transform(query_struct, fn [label] -> label end) do
       {:ok, [label]} when not is_nil(label) -> label
       _ -> nil
     end
@@ -80,45 +79,49 @@ defmodule Sanbase.Clickhouse.NftTrade do
     contract = Sanbase.BlockchainAddress.to_internal_format(contract)
     blockchain = Sanbase.Project.infrastructure_to_blockchain(infrastructure)
 
-    {query, args} = fetch_label_query(contract, blockchain, "search_text")
+    query_struct = fetch_label_query(contract, blockchain, "search_text")
 
-    case ClickhouseRepo.query_transform(query, args, fn [search_term] -> search_term end) do
+    case ClickhouseRepo.query_transform(query_struct, fn [search_term] -> search_term end) do
       {:ok, [search_term]} when not is_nil(search_term) -> search_term
       _ -> nil
     end
   end
 
   defp fetch_label_query(contract, blockchain, field) do
-    query = """
+    sql = """
     SELECT dictGet('default.labels_dict', '#{field}', label_id)
     FROM
     (
         SELECT labels
         FROM default.current_labels
-        WHERE (blockchain = ?1) AND (address = lower(?2))
+        WHERE (blockchain = {{blockchain}}) AND (address = lower({{contract}}))
     )
     ARRAY JOIN labels AS label_id
     WHERE dictGet('default.labels_dict', 'key', label_id) = 'name'
     """
 
-    args = [blockchain, contract]
+    params = %{blockchain: blockchain, contract: contract}
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp get_trades_count_query(label_key, from, to) do
-    query = """
+    sql = """
     SELECT count(*)
     FROM (
       SELECT dt, log_index
-      FROM (#{label_key_dt_filtered_subquery(from_arg_position: 1, to_arg_position: 2, label_key_arg_position: 3)})
+      FROM (#{label_key_dt_filtered_subquery()})
       GROUP BY dt, log_index
     )
     """
 
-    args = [DateTime.to_unix(from), DateTime.to_unix(to), to_string(label_key)]
+    params = %{
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      label_key: to_string(label_key)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp get_trades_query(label_key, from, to, opts) do
@@ -134,7 +137,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
         :desc -> "DESC"
       end
 
-    query = """
+    inner_sql = """
     SELECT dt,
            log_index,
            argMax(buyer_address, computed_at) AS buyer_address,
@@ -148,7 +151,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
            argMax(asset_ref_id, computed_at) AS asset_ref_id,
            argMax(tx_hash, computed_at) as tx_hash,
            groupArray(type) AS type
-    FROM (#{label_key_dt_filtered_subquery(from_arg_position: 1, to_arg_position: 2, label_key_arg_position: 3)})
+    FROM (#{label_key_dt_filtered_subquery()})
     GROUP BY dt, log_index
     """
 
@@ -156,7 +159,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     # doesn't exists fills decimals with default value 0.
     # Since 0 is a valid value for decimals the check `isNull(name)` is used to check whether
     # right record in assets table exists. If it doesn't exists - replace the decimals with `18`.
-    query = """
+    sql = """
     SELECT
       dt,
       amount / pow(10, if(isNull(name), 18, decimals)) AS amount,
@@ -171,7 +174,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
       platform,
       type
 
-    FROM (#{query})
+    FROM (#{inner_sql})
 
     LEFT JOIN (
       SELECT asset_ref_id, name, decimals
@@ -179,32 +182,28 @@ defmodule Sanbase.Clickhouse.NftTrade do
     ) USING (asset_ref_id)
 
     ORDER BY #{order_key} #{direction}
-    LIMIT ?4 OFFSET ?5
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
     {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
 
-    args = [
-      DateTime.to_unix(from),
-      DateTime.to_unix(to),
-      to_string(label_key),
-      limit,
-      offset
-    ]
+    params = %{
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      label_key: to_string(label_key),
+      limit: limit,
+      offset: offset
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  defp label_key_dt_filtered_subquery(opts) do
-    label_key_arg_position = Keyword.fetch!(opts, :label_key_arg_position)
-    from_arg_position = Keyword.fetch!(opts, :from_arg_position)
-    to_arg_position = Keyword.fetch!(opts, :to_arg_position)
-
+  defp label_key_dt_filtered_subquery() do
     nft_influences_subquery = """
     (
       SELECT address
       FROM label_addresses
-      WHERE label_id in (SELECT label_id from label_metadata where key = ?#{label_key_arg_position})
+      WHERE label_id in (SELECT label_id from label_metadata where key = {{label_key}})
     )
     """
 
@@ -213,7 +212,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     FROM nft_trades nft
     JOIN #{nft_influences_subquery} lbl
     ON buyer_address = lbl.address
-    WHERE dt >= toDateTime(?#{from_arg_position}) and dt < toDateTime(?#{to_arg_position}) AND complete = 1
+    WHERE dt >= toDateTime({{from}}) and dt < toDateTime({{to}}) AND complete = 1
 
     UNION ALL
 
@@ -221,7 +220,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
     FROM nft_trades nft
     JOIN #{nft_influences_subquery} lbl
     ON seller_address = lbl.address
-    WHERE dt >= toDateTime(?#{from_arg_position}) and dt < toDateTime(?#{to_arg_position}) AND complete = 1
+    WHERE dt >= toDateTime({{from}}) and dt < toDateTime({{to}}) AND complete = 1
     """
 
     _joined_nft_contract_name = """

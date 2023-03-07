@@ -14,16 +14,17 @@ defmodule Sanbase.Dashboard.Autocomplete do
   end
 
   defp get_tables() do
-    query = """
+    sql = """
     SELECT name, engine, partition_key, sorting_key, primary_key
     FROM system.tables
     WHERE database = 'default'
     """
 
+    query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
+
     {:ok, result} =
       ClickhouseRepo.query_transform(
-        query,
-        [],
+        query_struct,
         fn [
              name,
              engine,
@@ -45,16 +46,17 @@ defmodule Sanbase.Dashboard.Autocomplete do
   end
 
   defp get_columns() do
-    query = """
+    sql = """
     SELECT table, name, type, is_in_partition_key, is_in_sorting_key, is_in_primary_key
     FROM system.columns
     WHERE database = 'default'
     """
 
+    query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
+
     {:ok, result} =
       ClickhouseRepo.query_transform(
-        query,
-        [],
+        query_struct,
         fn [
              table,
              name,
@@ -78,12 +80,13 @@ defmodule Sanbase.Dashboard.Autocomplete do
   end
 
   defp get_functions() do
-    query = """
+    sql = """
     SELECT name
     FROM system.functions
     """
 
-    {:ok, result} = ClickhouseRepo.query_transform(query, [], fn [name] -> %{name: name} end)
+    query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
+    {:ok, result} = ClickhouseRepo.query_transform(query_struct, fn [name] -> %{name: name} end)
     result
   end
 end

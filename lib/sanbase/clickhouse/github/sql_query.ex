@@ -204,7 +204,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       )
       GROUP BY owner
       """
-      |> wrap_aggregated_in_zero_filling_query(organizations_pos: 1)
+      |> wrap_aggregated_in_zero_filling_query()
 
     params = [
       organizations: organizations |> Enum.map(&String.downcase/1),
@@ -231,7 +231,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       )
       GROUP BY owner
       """
-      |> wrap_aggregated_in_zero_filling_query(organizations_pos: 1)
+      |> wrap_aggregated_in_zero_filling_query()
 
     params = %{
       organizations: organizations |> Enum.map(&String.downcase/1),

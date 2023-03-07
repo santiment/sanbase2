@@ -15,9 +15,9 @@ defmodule Sanbase.Twitter do
 
   def last_record(twitter_handle) do
     last_record_query(twitter_handle)
-    |> Sanbase.ClickhouseRepo.query_transform(fn [ts, value] ->
+    |> Sanbase.ClickhouseRepo.query_transform(fn [dt, value] ->
       %{
-        datetime: DateTime.from_unix!(ts),
+        datetime: DateTime.from_unix!(dt),
         followers_count: value
       }
     end)
@@ -41,19 +41,19 @@ defmodule Sanbase.Twitter do
   defp timeseries_data_query(twitter_handle, from, to, interval) do
     sql = """
       SELECT
-        toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+        toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS time,
         argMax(followers_count, dt) as followers_count
       FROM twitter_followers
       PREWHERE
-        twitter_handle = ?2 AND
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4)
+        twitter_handle = {{twitter_handle}} AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}})
       GROUP BY time
       ORDER BY time
     """
 
     params = %{
-      interva: Sanbase.DateTimeUtils.str_to_sec(interval),
+      interval: Sanbase.DateTimeUtils.str_to_sec(interval),
       twitter_handle: twitter_handle,
       from: from,
       to: to

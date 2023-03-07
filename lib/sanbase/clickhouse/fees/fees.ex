@@ -82,7 +82,7 @@ defmodule Sanbase.Clickhouse.Fees do
             (
                 SELECT transactionHash, any(value) AS value
                 FROM eth_transfers
-                PREWHERE dt >= toDateTime(?1) AND dt < toDateTime(?2) AND type = 'fee'
+                PREWHERE dt >= toDateTime({{from}}) AND dt < toDateTime({{to}}) AND type = 'fee'
                 GROUP BY from, type, to, dt, transactionHash, primaryKey
             )
             ANY LEFT JOIN

@@ -105,7 +105,7 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
     )
     GROUP BY label, owner
     ORDER BY balance DESC
-    LIMIT ?2
+    LIMIT {{limit}}
     """
 
     Sanbase.Clickhouse.Query.new(sql, params)

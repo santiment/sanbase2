@@ -71,14 +71,17 @@ defmodule Sanbase.Discord.CommandHandler do
           autocomplete_metrics(interaction, focused_option.value, options_map["project"])
       end
     else
-      embeds = create_charts_embeds(options_map["metric"], options_map["project"])
+      files = fetch_chart_files(options_map["metric"], options_map["project"])
 
-      content =
-        if embeds,
-          do: "",
-          else: "Can't create chart for #{options_map["project"]}'s #{options_map["metric"]}"
-
-      edit_interaction_response(interaction, content, [], embeds)
+      if files != [] do
+        Nostrum.Api.edit_interaction_response(interaction, %{
+          content: "",
+          files: files
+        })
+      else
+        content = "Can't create chart for #{options_map["project"]}'s #{options_map["metric"]}"
+        edit_interaction_response(interaction, content, [], [])
+      end
     end
   end
 
@@ -833,7 +836,7 @@ defmodule Sanbase.Discord.CommandHandler do
     |> Sanbase.Repo.all()
   end
 
-  defp create_charts_embeds(metric, slug) do
+  defp fetch_chart_files(metric, slug) do
     now =
       Timex.shift(Timex.now(), minutes: 10)
       |> Sanbase.DateTimeUtils.round_datetime(second: 600)
@@ -858,15 +861,11 @@ defmodule Sanbase.Discord.CommandHandler do
     {:ok, short_url} = Sanbase.ShortUrl.create(%{full_url: url})
     chart = "https://#{img_prefix_url()}/chart/#{short_url.short_url}"
 
-    HTTPoison.get(chart)
+    HTTPoison.get(chart, [basic_auth_header()])
     |> case do
       {:ok, response} ->
         if is_image?(response) do
-          %Embed{}
-          |> put_title("#{metric} for #{slug}")
-          |> put_url(chart)
-          |> put_image(chart)
-          |> List.wrap()
+          [%{body: response.body, name: "chart_#{short_url.short_url}.jpeg"}]
         else
           []
         end
@@ -944,5 +943,14 @@ defmodule Sanbase.Discord.CommandHandler do
     }
 
     Nostrum.Api.create_interaction_response(interaction, response)
+  end
+
+  defp basic_auth_header() do
+    credentials =
+      (System.get_env("GRAPHQL_BASIC_AUTH_USERNAME") <>
+         ":" <> System.get_env("GRAPHQL_BASIC_AUTH_PASSWORD"))
+      |> Base.encode64()
+
+    {"Authorization", "Basic #{credentials}"}
   end
 end

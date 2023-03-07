@@ -113,7 +113,7 @@ config :sanbase, Oban.Web,
   plugins: false,
   crontab: false
 
-config :sanbase, Sanbase.Cryptocompare.HistoricalScheduler,
+config :sanbase, Sanbase.Cryptocompare.Price.HistoricalScheduler,
   enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OHLCV_PRICES_SCHEDULER_ENABLED", "true"}
 
 # So the router can read it compile time

@@ -1,10 +1,10 @@
-defmodule Sanbase.Cryptocompare.HistoricalWorkerTest do
+defmodule Sanbase.Cryptocompare.HistoricalWorker.OHLCVPriceTest do
   use Sanbase.DataCase
   use Oban.Testing, repo: Sanbase.Repo
 
   import Sanbase.Factory
   import Sanbase.DateTimeUtils, only: [generate_dates_inclusive: 2]
-  import Sanbase.Cryptocompare.HistoricalDataStub, only: [http_call_data: 3]
+  import Sanbase.Cryptocompare.HistoricalDataStub, only: [ohlcv_price_data: 3]
 
   setup do
     Sanbase.InMemoryKafka.Producer.clear_state()
@@ -30,21 +30,21 @@ defmodule Sanbase.Cryptocompare.HistoricalWorkerTest do
     from = ~D[2021-01-01]
     to = ~D[2021-01-10]
 
-    Sanbase.Cryptocompare.HistoricalScheduler.add_jobs(base_asset, quote_asset, from, to)
+    Sanbase.Cryptocompare.Price.HistoricalScheduler.add_jobs(base_asset, quote_asset, from, to)
 
     Sanbase.Mock.prepare_mock(HTTPoison, :get, fn url, _header, _ops ->
       # return different timestamps for every date
       [_, date_str] = Regex.split(~r/\d{4}-\d{2}-\d{2}/, url, include_captures: true, trim: true)
 
-      http_call_data(base_asset, quote_asset, date_str)
+      ohlcv_price_data(base_asset, quote_asset, date_str)
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.Cryptocompare.HistoricalScheduler.resume()
+      Sanbase.Cryptocompare.Price.HistoricalScheduler.resume()
 
       # Assert that all the jobs are enqueued
       for date <- generate_dates_inclusive(from, to) do
         assert_enqueued(
-          worker: Sanbase.Cryptocompare.HistoricalWorker,
+          worker: Sanbase.Cryptocompare.Price.HistoricalWorker,
           args: %{
             base_asset: base_asset,
             quote_asset: quote_asset,
@@ -55,8 +55,8 @@ defmodule Sanbase.Cryptocompare.HistoricalWorkerTest do
 
       # Drain the queue, synchronously executing all the jobs in the current process
       assert %{success: 10, failure: 0} =
-               Oban.drain_queue(Sanbase.Cryptocompare.HistoricalScheduler.conf_name(),
-                 queue: Sanbase.Cryptocompare.HistoricalWorker.queue()
+               Oban.drain_queue(Sanbase.Cryptocompare.Price.HistoricalScheduler.conf_name(),
+                 queue: Sanbase.Cryptocompare.Price.HistoricalWorker.queue()
                )
 
       state = Sanbase.InMemoryKafka.Producer.get_state()
@@ -91,6 +91,6 @@ defmodule Sanbase.Cryptocompare.HistoricalWorkerTest do
     end)
 
     # Seems to fix some error
-    Sanbase.Cryptocompare.HistoricalScheduler.pause()
+    Sanbase.Cryptocompare.Price.HistoricalScheduler.pause()
   end
 end

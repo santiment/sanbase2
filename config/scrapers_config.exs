@@ -26,9 +26,13 @@ config :sanbase, Oban.Scrapers,
   repo: Sanbase.Repo,
   name: :oban_scrapers,
   queues: [
+    # Cryptocompare OHLCV price/volume queues
     cryptocompare_historical_jobs_queue: [limit: 25, paused: true],
     cryptocompare_historical_jobs_pause_resume_queue: 1,
     cryptocompare_historical_add_jobs_queue: 1,
+    # Cryptocompare open xrate queue
+    cryptocompare_open_interest_historical_jobs_queue: [limit: 10, paused: true],
+    # Twitter queues
     twitter_followers_migration_queue: [limit: 25, paused: true]
   ],
   plugins: [
@@ -37,15 +41,20 @@ config :sanbase, Oban.Scrapers,
     {Oban.Plugins.Cron,
      crontab: [
        {"0 3 * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,
-        args: %{type: "schedule_historical_jobs"}, max_attempts: 10}
+        args: %{type: "schedule_historical_price_jobs"}, max_attempts: 10},
+       {"0 1 * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,
+        args: %{type: "schedule_historical_open_interest, jobs"}, max_attempts: 10}
      ]}
   ]
 
-config :sanbase, Sanbase.Cryptocompare.WebsocketScraper,
+config :sanbase, Sanbase.Cryptocompare.Price.WebsocketScraper,
   enabled?: {:system, "CRYPTOCOMPARE_WEBSOCKET_PRICES_SCRAPER_ENABLED", "false"}
 
-config :sanbase, Sanbase.Cryptocompare.HistoricalScheduler,
+config :sanbase, Sanbase.Cryptocompare.Price.HistoricalScheduler,
   enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OHLCV_PRICES_SCHEDULER_ENABLED", "false"}
+
+config :sanbase, Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler,
+  enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OPEN_INTEREST_SCHEDULER_ENABLED", "false"}
 
 config :sanbase, Sanbase.Twitter.FollowersScheduler,
   enabled?: {:system, "TWITTER_FOLLOWERS_SCHEDULER_ENABLED", "false"}

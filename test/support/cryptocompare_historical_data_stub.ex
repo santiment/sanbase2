@@ -1,5 +1,5 @@
 defmodule Sanbase.Cryptocompare.HistoricalDataStub do
-  def http_call_data(base_asset, quote_asset, date) do
+  def ohlcv_price_data(base_asset, quote_asset, date) do
     date =
       case date do
         str when is_binary(str) -> Date.from_iso8601!(str)
@@ -35,6 +35,92 @@ defmodule Sanbase.Cryptocompare.HistoricalDataStub do
       body: body,
       headers: [
         {"Content-Type", "text/csv"},
+        {"X-RateLimit-Remaining-All",
+         "1220397, 9500;window=1, 9500;window=60, 9500;window=3600, 38673;window=86400, 1220397;window=2592000"}
+      ]
+    }
+
+    {:ok, http_response}
+  end
+
+  def open_interest_data(market, instrument, timestamp, limit) do
+    fragments =
+      Enum.map(0..(limit - 1), fn shift ->
+        """
+        {
+          "UNIT": "HOUR",
+          "TIMESTAMP": #{timestamp - shift * 3600},
+          "TYPE": "944",
+          "MARKET": "#{market}",
+          "INSTRUMENT": "ETHUSD_PERP",
+          "MAPPED_INSTRUMENT": "#{instrument}",
+          "INDEX_UNDERLYING": "ETH",
+          "QUOTE_CURRENCY": "USD",
+          "SETTLEMENT_CURRENCY": "ETH",
+          "CONTRACT_CURRENCY": "USD",
+          "OPEN_SETTLEMENT": 144118.03702499828,
+          "OPEN_MARK_PRICE": 1322.89,
+          "OPEN_QUOTE": 190652310,
+          "HIGH_SETTLEMENT": 144349.51318039416,
+          "HIGH_SETTLEMENT_MARK_PRICE": 1322.17072157,
+          "HIGH_MARK_PRICE": 1333.65720018,
+          "HIGH_MARK_PRICE_SETTLEMENT": 141520.45966124302,
+          "HIGH_QUOTE": 190854700,
+          "HIGH_QUOTE_MARK_PRICE": 1322.17072157,
+          "LOW_SETTLEMENT": 140745.47411301592,
+          "LOW_SETTLEMENT_MARK_PRICE": 1332.53698694,
+          "LOW_MARK_PRICE": 1320.5277073,
+          "LOW_MARK_PRICE_SETTLEMENT": 144019.95425666144,
+          "LOW_QUOTE": 187529820,
+          "LOW_QUOTE_MARK_PRICE": 1332.36945193,
+          "CLOSE_SETTLEMENT": 140817.31540725136,
+          "CLOSE_MARK_PRICE": 1332.98969276,
+          "CLOSE_QUOTE": 187708030,
+          "FIRST_MESSAGE_TIMESTAMP": 1665360014,
+          "FIRST_MESSAGE_SETTLEMENT": 144109.026449667,
+          "FIRST_MESSAGE_MARK_PRICE": 1322.89,
+          "FIRST_MESSAGE_QUOTE": 190640390,
+          "HIGH_MESSAGE_SETTLEMENT": 144349.51318039416,
+          "HIGH_MESSAGE_SETTLEMENT_MARK_PRICE": 1322.17072157,
+          "HIGH_MESSAGE_SETTLEMENT_TIMESTAMP": 1665360136,
+          "HIGH_MESSAGE_MARK_PRICE": 1333.65720018,
+          "HIGH_MESSAGE_MARK_PRICE_SETTLEMENT": 141520.45966124302,
+          "HIGH_MESSAGE_MARK_PRICE_TIMESTAMP": 1665362957,
+          "HIGH_MESSAGE_QUOTE": 190854700,
+          "HIGH_MESSAGE_QUOTE_MARK_PRICE": 1322.17072157,
+          "HIGH_MESSAGE_QUOTE_TIMESTAMP": 1665360136,
+          "LOW_MESSAGE_SETTLEMENT": 140745.47411301592,
+          "LOW_MESSAGE_SETTLEMENT_MARK_PRICE": 1332.53698694,
+          "LOW_MESSAGE_SETTLEMENT_TIMESTAMP": 1665363502,
+          "LOW_MESSAGE_MARK_PRICE": 1320.5277073,
+          "LOW_MESSAGE_MARK_PRICE_SETTLEMENT": 144019.95425666144,
+          "LOW_MESSAGE_MARK_PRICE_TIMESTAMP": 1665360557,
+          "LOW_MESSAGE_QUOTE": 187529820,
+          "LOW_MESSAGE_QUOTE_MARK_PRICE": 1332.36945193,
+          "LOW_MESSAGE_QUOTE_TIMESTAMP": 1665363482,
+          "LAST_MESSAGE_TIMESTAMP": 1665363588,
+          "LAST_MESSAGE_SETTLEMENT": 140817.31540725136,
+          "LAST_MESSAGE_MARK_PRICE": 1332.98969276,
+          "LAST_MESSAGE_QUOTE": 187708030,
+          "TOTAL_OPEN_INTEREST_UPDATES": 172
+        }
+        """
+      end)
+
+    json = """
+    {
+      "Data": [
+        #{Enum.join(fragments, ",\n")}
+      ],
+      "Err": {}
+    }
+    """
+
+    http_response = %HTTPoison.Response{
+      status_code: 200,
+      body: json,
+      headers: [
+        {"Content-Type", "application/json; charset=UTF-8"},
         {"X-RateLimit-Remaining-All",
          "1220397, 9500;window=1, 9500;window=60, 9500;window=3600, 38673;window=86400, 1220397;window=2592000"}
       ]

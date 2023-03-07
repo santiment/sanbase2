@@ -1,5 +1,7 @@
 defmodule Sanbase.Cryptocompare.Jobs do
   alias Sanbase.Project
+  alias Sanbase.Cryptocompare.Price
+  alias Sanbase.Cryptocompare.OpenInterest
 
   # Execute the function until the moved rows are 0 or up to 100 iterations.
   # The iterations are needed to avoid an infinite loop. If there is a task that
@@ -7,13 +9,23 @@ defmodule Sanbase.Cryptocompare.Jobs do
   # the job.
 
   def move_finished_jobs(opts \\ []) do
+    for queue <- [price_queue(), open_interest_queue()] do
+      do_move_finished_jobs(queue, opts)
+    end
+    |> Enum.reduce_while({:ok, 0}, fn
+      {:ok, count}, {:ok, acc} -> {:cont, {:ok, count + acc}}
+      {:error, error}, _ -> {:halt, {:error, error}}
+    end)
+  end
+
+  defp do_move_finished_jobs(queue, opts) do
     iterations = Keyword.get(opts, :iterations, 200)
     limit = Keyword.get(opts, :limit, 10_000)
 
     count =
       1..iterations
       |> Enum.reduce_while(0, fn _, rows_count_acc ->
-        case do_move_completed_jobs(queue(), limit) do
+        case do_move_completed_jobs(queue, limit) do
           {:ok, 0} -> {:halt, rows_count_acc}
           {:ok, rows_count} -> {:cont, rows_count + rows_count_acc}
         end
@@ -23,7 +35,7 @@ defmodule Sanbase.Cryptocompare.Jobs do
   end
 
   def remove_oban_jobs_unsupported_assets() do
-    {:ok, oban_jobs_base_assets} = get_oban_jobs_base_assets(queue())
+    {:ok, oban_jobs_base_assets} = get_oban_jobs_base_assets(price_queue())
 
     supported_base_assets =
       Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
@@ -32,7 +44,7 @@ defmodule Sanbase.Cryptocompare.Jobs do
     unsupported_base_assets = oban_jobs_base_assets -- supported_base_assets
 
     Enum.map(unsupported_base_assets, fn base_asset ->
-      {:ok, _} = delete_not_completed_base_asset_jobs(queue(), base_asset)
+      {:ok, _} = delete_not_completed_base_asset_jobs(price_queue(), base_asset)
     end)
   end
 
@@ -76,5 +88,6 @@ defmodule Sanbase.Cryptocompare.Jobs do
     {:ok, %{num_rows: num_rows, base_asset: base_asset}}
   end
 
-  defp queue(), do: Sanbase.Cryptocompare.HistoricalScheduler.queue() |> to_string()
+  defp price_queue(), do: Price.HistoricalScheduler.queue() |> to_string()
+  defp open_interest_queue(), do: OpenInterest.HistoricalScheduler.queue() |> to_string()
 end

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 14.7 (Homebrew)
+-- Dumped by pg_dump version 14.7 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -731,6 +731,40 @@ CREATE SEQUENCE public.contract_addresses_id_seq
 --
 
 ALTER SEQUENCE public.contract_addresses_id_seq OWNED BY public.contract_addresses.id;
+
+
+--
+-- Name: cryptocompare_exporter_progress; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.cryptocompare_exporter_progress (
+    id bigint NOT NULL,
+    key character varying(255) NOT NULL,
+    queue character varying(255) NOT NULL,
+    min_timestamp integer NOT NULL,
+    max_timestamp integer NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: cryptocompare_exporter_progress_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.cryptocompare_exporter_progress_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cryptocompare_exporter_progress_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.cryptocompare_exporter_progress_id_seq OWNED BY public.cryptocompare_exporter_progress.id;
 
 
 --
@@ -4158,6 +4192,13 @@ ALTER TABLE ONLY public.contract_addresses ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
+-- Name: cryptocompare_exporter_progress id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cryptocompare_exporter_progress ALTER COLUMN id SET DEFAULT nextval('public.cryptocompare_exporter_progress_id_seq'::regclass);
+
+
+--
 -- Name: currencies id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4870,6 +4911,14 @@ ALTER TABLE ONLY public.comments
 
 ALTER TABLE ONLY public.contract_addresses
     ADD CONSTRAINT contract_addresses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cryptocompare_exporter_progress cryptocompare_exporter_progress_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cryptocompare_exporter_progress
+    ADD CONSTRAINT cryptocompare_exporter_progress_pkey PRIMARY KEY (id);
 
 
 --
@@ -5758,6 +5807,13 @@ CREATE INDEX chart_configurations_user_id_index ON public.chart_configurations U
 --
 
 CREATE UNIQUE INDEX contract_addresses_project_id_address_index ON public.contract_addresses USING btree (project_id, address);
+
+
+--
+-- Name: cryptocompare_exporter_progress_key_queue_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX cryptocompare_exporter_progress_key_queue_index ON public.cryptocompare_exporter_progress USING btree (key, queue);
 
 
 --
@@ -8186,3 +8242,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230206085439);
 INSERT INTO public."schema_migrations" (version) VALUES (20230206100629);
 INSERT INTO public."schema_migrations" (version) VALUES (20230210145707);
 INSERT INTO public."schema_migrations" (version) VALUES (20230216145219);
+INSERT INTO public."schema_migrations" (version) VALUES (20230224120026);

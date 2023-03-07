@@ -850,10 +850,11 @@ defmodule Sanbase.Discord.CommandHandler do
     settings_json = Jason.encode!(%{slug: slug, from: year_ago_iso, to: now_iso})
 
     metrics = if metric == "price_usd", do: [metric], else: ["price_usd", metric]
+    wax = Enum.with_index(metrics) |> Enum.into(%{}) |> Map.values()
 
     widgets_json =
       Jason.encode!([
-        %{widget: "ChartWidget", wm: metrics, whm: [], wax: [0], wpax: [], wc: ["#26C953"]}
+        %{widget: "ChartWidget", wm: metrics, whm: [], wax: wax, wpax: [], wc: ["#26C953"]}
       ])
 
     url = URI.encode("/charts?settings=#{settings_json}&widgets=#{widgets_json}")

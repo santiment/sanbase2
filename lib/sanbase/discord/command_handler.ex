@@ -71,11 +71,9 @@ defmodule Sanbase.Discord.CommandHandler do
           autocomplete_metrics(interaction, focused_option.value, options_map["project"])
       end
     else
-      files = create_charts_embeds(options_map["metric"], options_map["project"])
+      files = fetch_chart_files(options_map["metric"], options_map["project"])
 
       if files != [] do
-        content = "`#{options_map["project"]}`'s `#{options_map["metric"]}`"
-
         Nostrum.Api.edit_interaction_response(interaction, %{
           content: "",
           files: files
@@ -401,8 +399,13 @@ defmodule Sanbase.Discord.CommandHandler do
   def format_table(name, response, discord_user) do
     max_rows = response.rows |> Enum.take(1) |> max_rows()
 
-    rows = response.rows |> Enum.take(max_rows)
-    table = TableRex.quick_render!(rows, response.columns)
+    table =
+      if max_rows == 0 and length(response.columns) == 1 do
+        String.slice(response.rows |> hd |> hd, 0, 1900)
+      else
+        rows = response.rows |> Enum.take(max_rows)
+        TableRex.quick_render!(rows, response.columns)
+      end
 
     content = """
     #{name}: <@#{discord_user}>
@@ -833,7 +836,7 @@ defmodule Sanbase.Discord.CommandHandler do
     |> Sanbase.Repo.all()
   end
 
-  defp create_charts_embeds(metric, slug) do
+  defp fetch_chart_files(metric, slug) do
     now =
       Timex.shift(Timex.now(), minutes: 10)
       |> Sanbase.DateTimeUtils.round_datetime(second: 600)
@@ -862,7 +865,7 @@ defmodule Sanbase.Discord.CommandHandler do
     |> case do
       {:ok, response} ->
         if is_image?(response) do
-          [%{body: response.body, name: "chart.jpeg"}]
+          [%{body: response.body, name: "chart_#{short_url.short_url}.jpeg"}]
         else
           []
         end

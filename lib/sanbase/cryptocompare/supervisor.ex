@@ -5,7 +5,8 @@ defmodule Sanbase.Cryptocompare.Supervisor do
 
   alias Sanbase.Utils.Config
 
-  alias Sanbase.Cryptocompare.{WebsocketScraper, HistoricalScheduler}
+  alias Sanbase.Cryptocompare.Price
+  alias Sanbase.Cryptocompare.OpenInterest
 
   @spec start_link(Keyword.t()) :: Supervisor.on_start()
   def start_link(opts) when is_list(opts) do
@@ -28,11 +29,6 @@ defmodule Sanbase.Cryptocompare.Supervisor do
   def init(_opts) do
     children =
       [
-        # Websocket realtime price exporter
-        start_if(
-          fn -> WebsocketScraper end,
-          fn -> WebsocketScraper.enabled?() end
-        ),
         start_if(
           fn ->
             Sanbase.KafkaExporter.child_spec(
@@ -44,7 +40,10 @@ defmodule Sanbase.Cryptocompare.Supervisor do
               kafka_flush_timeout: 1000
             )
           end,
-          fn -> WebsocketScraper.enabled?() or HistoricalScheduler.enabled?() end
+          fn ->
+            # Both the historical and realtime websocket scrapers export to that topic
+            Price.WebsocketScraper.enabled?() or Price.HistoricalScheduler.enabled?()
+          end
         ),
         # Kafka exporter for the websocket price exporter
         start_if(
@@ -58,11 +57,36 @@ defmodule Sanbase.Cryptocompare.Supervisor do
               kafka_flush_timeout: 1000
             )
           end,
-          fn -> WebsocketScraper.enabled?() end
+          fn -> Price.WebsocketScraper.enabled?() end
         ),
+        # Kafka exporter for the open interest scraper
         start_if(
-          fn -> HistoricalScheduler end,
-          fn -> HistoricalScheduler.enabled?() end
+          fn ->
+            Sanbase.KafkaExporter.child_spec(
+              id: :open_interest_exporter,
+              name: :open_interest_exporter,
+              topic: Config.module_get!(Sanbase.KafkaExporter, :open_interest_ohlc_topic),
+              buffering_max_messages: 5000,
+              can_send_after_interval: 250,
+              kafka_flush_timeout: 1000
+            )
+          end,
+          fn -> OpenInterest.HistoricalScheduler.enabled?() end
+        ),
+        # Websocket realtime price exporter
+        start_if(
+          fn -> Price.WebsocketScraper end,
+          fn -> Price.WebsocketScraper.enabled?() end
+        ),
+        # Resume and pause on termination the price historical queue
+        start_if(
+          fn -> Price.HistoricalScheduler end,
+          fn -> Price.HistoricalScheduler.enabled?() end
+        ),
+        # Resume and pause on termination the open interest historical queue
+        start_if(
+          fn -> OpenInterest.HistoricalScheduler end,
+          fn -> OpenInterest.HistoricalScheduler.enabled?() end
         )
       ]
       |> normalize_children()

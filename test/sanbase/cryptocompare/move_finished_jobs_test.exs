@@ -4,7 +4,7 @@ defmodule Sanbase.Cryptocompare.MoveFinishedJobsTest do
 
   import Sanbase.Factory
   import Sanbase.DateTimeUtils, only: [generate_dates_inclusive: 2]
-  import Sanbase.Cryptocompare.HistoricalDataStub, only: [http_call_data: 3]
+  import Sanbase.Cryptocompare.HistoricalDataStub, only: [ohlcv_price_data: 3]
 
   setup do
     Sanbase.InMemoryKafka.Producer.clear_state()
@@ -30,16 +30,16 @@ defmodule Sanbase.Cryptocompare.MoveFinishedJobsTest do
     from = ~D[2021-01-01]
     to = ~D[2021-01-10]
 
-    Sanbase.Cryptocompare.HistoricalScheduler.add_jobs(base_asset, quote_asset, from, to)
+    Sanbase.Cryptocompare.Price.HistoricalScheduler.add_jobs(base_asset, quote_asset, from, to)
 
-    Sanbase.Mock.prepare_mock2(&HTTPoison.get/3, http_call_data(base_asset, quote_asset, from))
+    Sanbase.Mock.prepare_mock2(&HTTPoison.get/3, ohlcv_price_data(base_asset, quote_asset, from))
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.Cryptocompare.HistoricalScheduler.resume()
+      Sanbase.Cryptocompare.Price.HistoricalScheduler.resume()
 
       # Drain the queue, synchronously executing all the jobs in the current process
       assert %{success: 10, failure: 0} =
-               Oban.drain_queue(Sanbase.Cryptocompare.HistoricalWorker.conf_name(),
-                 queue: Sanbase.Cryptocompare.HistoricalWorker.queue()
+               Oban.drain_queue(Sanbase.Cryptocompare.Price.HistoricalWorker.conf_name(),
+                 queue: Sanbase.Cryptocompare.Price.HistoricalWorker.queue()
                )
 
       # Move 6 of the finished jobs to the finished queue
@@ -61,7 +61,7 @@ defmodule Sanbase.Cryptocompare.MoveFinishedJobsTest do
 
       # Check that the get_pair_dates properly checks both tables
       dates =
-        Sanbase.Cryptocompare.HistoricalScheduler.get_pair_dates(
+        Sanbase.Cryptocompare.Price.HistoricalScheduler.get_pair_dates(
           base_asset,
           quote_asset,
           from,

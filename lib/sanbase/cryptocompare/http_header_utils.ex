@@ -1,5 +1,11 @@
 defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
   defmodule Parser do
+    @moduledoc ~s"""
+    Parse for the X-RateLimit-Remaining-All and X-RateLimit-Reset-All headers
+    coming from Cryptocompare.
+
+    Example value: "1220397, 1;window=1, 33;window=60, 2673;window=3600, 38673;window=86400, 1220397;window=2592000"
+    """
     import NimbleParsec
 
     pair =
@@ -15,6 +21,8 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
 
     defparsec(:list_of_values, leading_integer |> repeat(pair))
   end
+
+  require Logger
 
   @doc ~s"""
   Parse the X-RateLimit-Reset-All header value returned by cryptocompare.
@@ -55,5 +63,35 @@ defmodule Sanbase.Cryptocompare.HTTPHeaderUtils do
       _ ->
         {:error, :parse_error}
     end
+  end
+
+  def get_biggest_ratelimited_window(resp) do
+    get_header(resp, "X-RateLimit-Reset-All")
+    |> elem(1)
+    |> parse_value_list()
+    |> Enum.max_by(& &1.value)
+    |> Map.get(:value)
+  end
+
+  def rate_limited?(resp) do
+    # If any of the rate limit periods has 0 remaining requests
+    # it means that the rate limit is reached
+    zero_remainings =
+      get_header(resp, "X-RateLimit-Remaining-All")
+      |> elem(1)
+      |> parse_value_list()
+      |> Enum.filter(&(&1.value == 0))
+
+    case zero_remainings do
+      [] ->
+        false
+
+      list ->
+        {:error_limited, Enum.max_by(list, & &1.time_period)}
+    end
+  end
+
+  def get_header(%HTTPoison.Response{} = resp, header) do
+    Enum.find(resp.headers, &match?({^header, _}, &1))
   end
 end

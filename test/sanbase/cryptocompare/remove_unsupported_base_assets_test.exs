@@ -22,7 +22,7 @@ defmodule Sanbase.Cryptocompare.RemoveUnsupportedBaseAssetsTest do
     to = ~D[2021-01-10]
 
     for p <- [p1, p2, p3, p4] do
-      Sanbase.Cryptocompare.HistoricalScheduler.add_jobs(p.ticker, "USD", from, to)
+      Sanbase.Cryptocompare.Price.HistoricalScheduler.add_jobs(p.ticker, "USD", from, to)
     end
 
     # Check that all 40 jobs and 4 different base assets are present

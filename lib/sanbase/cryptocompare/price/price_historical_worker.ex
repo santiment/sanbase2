@@ -1,7 +1,7 @@
-defmodule Sanbase.Cryptocompare.HistoricalWorker do
+defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
   @moduledoc ~s"""
   An Oban Worker that processes the jobs in the cryptocompare_historical_jobs_queue
-  queue.
+  queue for fetching and exporting OHLCV data.
 
   An Oban Worker has one main function `perform/1` which receives as argument
   one record from the oban jobs table. If it returns :ok or {:ok, _}, then the
@@ -86,7 +86,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
     assets
   end
 
-  @spec get_data(any, any, any) :: {:error, HTTPoison.Error.t()} | {:ok, any}
+  @spec get_data(String.t(), String.t(), String.t()) :: {:error, HTTPoison.Error.t()} | {:ok, any}
   def get_data(base_asset, quote_asset, date) do
     query_params = [
       fsym: base_asset,
@@ -125,7 +125,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
   end
 
   defp handle_rate_limit(resp, biggest_rate_limited_window) do
-    Sanbase.Cryptocompare.HistoricalScheduler.pause()
+    Sanbase.Cryptocompare.Price.HistoricalScheduler.pause()
 
     header_value =
       get_header(resp, "X-RateLimit-Reset-All")
@@ -143,7 +143,7 @@ defmodule Sanbase.Cryptocompare.HistoricalWorker do
 
     data =
       %{"type" => "resume"}
-      |> Sanbase.Cryptocompare.PauseResumeWorker.new(schedule_in: reset_after_seconds)
+      |> Sanbase.Cryptocompare.Price.PauseResumeWorker.new(schedule_in: reset_after_seconds)
 
     Oban.insert(@oban_conf_name, data)
 

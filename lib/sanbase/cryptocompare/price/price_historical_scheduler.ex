@@ -1,4 +1,4 @@
-defmodule Sanbase.Cryptocompare.HistoricalScheduler do
+defmodule Sanbase.Cryptocompare.Price.HistoricalScheduler do
   @moduledoc ~s"""
   Scrape the prices from Cryptocompare websocket API
   https://min-api.cryptocompare.com/documentation/websockets
@@ -14,8 +14,6 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
   use GenServer
 
   import Sanbase.DateTimeUtils, only: [generate_dates_inclusive: 2]
-
-  alias Sanbase.Cryptocompare.HistoricalWorker
 
   require Logger
   alias Sanbase.Utils.Config
@@ -37,7 +35,7 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
     # In order to be able to stop the historical scraper via env variables
     # the queue is defined as paused and should be resumed from code.
     if enabled?() do
-      Logger.info("[Cryptocompare Historical] Start exporting OHLCV historical data.")
+      Logger.info("[Cryptocompare Historical] Start exporting OHLCV price historical data.")
       resume()
     end
 
@@ -62,7 +60,7 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
     }
 
     Logger.info("""
-    [Cryptocompare Historical] Scheduled #{result_map.jobs_inserted} new jobs \
+    [Cryptocompare Historical] Scheduled #{result_map.jobs_inserted} new price jobs \
     for the #{base_asset}/#{quote_asset} pair. Took: #{result_map.time_elapsed}s.
     """)
 
@@ -101,7 +99,7 @@ defmodule Sanbase.Cryptocompare.HistoricalScheduler do
     data =
       dates
       |> Enum.map(fn date ->
-        HistoricalWorker.new(%{
+        Sanbase.Cryptocompare.Price.HistoricalWorker.new(%{
           base_asset: base_asset,
           quote_asset: quote_asset,
           date: date

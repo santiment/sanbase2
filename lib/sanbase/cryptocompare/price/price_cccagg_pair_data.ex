@@ -1,4 +1,4 @@
-defmodule Sanbase.Cryptocompare.CCCAGGPairData do
+defmodule Sanbase.Cryptocompare.Price.CCCAGGPairData do
   alias Sanbase.Project
 
   require Logger
@@ -29,7 +29,7 @@ defmodule Sanbase.Cryptocompare.CCCAGGPairData do
     |> Enum.each(fn elem -> add_jobs(elem) end)
   end
 
-  def schedule_previous_day_oban_jobs() do
+  def schedule_previous_day_jobs() do
     Logger.info("[CCCAGG Pair Data] Start scheduling cryptocompare previous day oban jobs")
     # Make the scrape not just for the previous day, but for a few days before
     # that too. This is to handle some cases where some CSV becoomes available
@@ -73,7 +73,7 @@ defmodule Sanbase.Cryptocompare.CCCAGGPairData do
   end
 
   defp add_jobs(elem) when is_map(elem) do
-    Sanbase.Cryptocompare.HistoricalScheduler.add_jobs(
+    Sanbase.Cryptocompare.Price.HistoricalScheduler.add_jobs(
       elem.base_asset,
       elem.quote_asset,
       elem.start_date,

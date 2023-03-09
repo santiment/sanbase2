@@ -1,4 +1,4 @@
-defmodule Sanbase.Cryptocompare.WebsocketScraper do
+defmodule Sanbase.Cryptocompare.Price.WebsocketScraper do
   defmodule HealthcheckError do
     defexception [:message]
   end

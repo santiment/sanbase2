@@ -454,7 +454,13 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "eth2_stakers_mvrv_usd_2y",
         "eth2_stakers_mvrv_usd_3y",
         "eth2_stakers_mvrv_usd_5y",
-        "eth2_stakers_mvrv_usd_10y"
+        "eth2_stakers_mvrv_usd_10y",
+        # XRP metrics
+        "daily_assets_issued",
+        "total_assets_issued",
+        "daily_trustlines_count_change",
+        "total_trustlines_count",
+        "daily_dex_volume_in_xrp"
       ]
       |> Enum.sort()
 
@@ -474,6 +480,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
 
     expected_free_metrics =
       [
+        "active_addresses_60d",
+        "active_addresses_90d",
         "active_addresses_30d",
         "active_addresses_7d",
         "active_addresses_24h",
@@ -1499,7 +1507,13 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "eth2_stakers_mvrv_usd_2y",
         "eth2_stakers_mvrv_usd_3y",
         "eth2_stakers_mvrv_usd_5y",
-        "eth2_stakers_mvrv_usd_10y"
+        "eth2_stakers_mvrv_usd_10y",
+        # XRP metrics
+        "daily_assets_issued",
+        "total_assets_issued",
+        "daily_trustlines_count_change",
+        "total_trustlines_count",
+        "daily_dex_volume_in_xrp"
       ]
       |> Enum.sort()
 

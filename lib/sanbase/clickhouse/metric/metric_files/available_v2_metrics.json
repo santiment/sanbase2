@@ -180,7 +180,9 @@
       { "sliding_window": "1h" },
       { "sliding_window": "24h" },
       { "sliding_window": "7d" },
-      { "sliding_window": "30d" }
+      { "sliding_window": "30d" },
+      { "sliding_window": "60d" },
+      { "sliding_window": "90d" }
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -2642,6 +2644,91 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily new XRPL assets issued",
+    "name": "daily_assets_issued",
+    "metric": "daily_assets_issued",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total amount of XRPL assets issued",
+    "name": "total_assets_issued",
+    "metric": "total_assets_issued",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily amount of XRPL trustlines created or closed",
+    "name": "daily_trustlines_count_change",
+    "metric": "trustlines_count_delta",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total amount of XRPL trustlines created",
+    "name": "total_trustlines_count",
+    "metric": "trustlines_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily DEX volume in XRP",
+    "name": "daily_dex_volume_in_xrp",
+    "metric": "daily_dex_volume_in_xrp",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,

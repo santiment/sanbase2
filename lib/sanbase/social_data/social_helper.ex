@@ -3,6 +3,7 @@ defmodule Sanbase.SocialData.SocialHelper do
   alias Sanbase.Project.SocialVolumeQuery
 
   @sources [
+    :4chan,
     :telegram,
     :reddit,
     :twitter,

@@ -65,6 +65,26 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Social Dominance AI Total",
+    "name": "social_dominance_ai_total",
+    "metric": "social_dominance_ai",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Sentiment Volume Consumed Total",
     "name": "sentiment_volume_consumed_total",
     "metric": "sentiment_volume_consumed_1d",
@@ -127,6 +147,129 @@
     "human_readable_name": "Sentiment Balance Total",
     "name": "sentiment_balance_total",
     "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Social Volume 4chan",
+    "name": "social_volume_4chan",
+    "metric": "social_volume_4chan",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Social Dominance 4chan",
+    "name": "social_dominance_4chan",
+    "metric": "social_dominance_4chan_v2",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed 4chan",
+    "name": "sentiment_volume_consumed_4chan",
+    "metric": "sentiment_volume_consumed_4chan",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Positive 4chan",
+    "name": "sentiment_positive_4chan",
+    "metric": "sentiment_positive_4chan",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Negative 4chan",
+    "name": "sentiment_negative_4chan",
+    "metric": "sentiment_negative_4chan",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug",
+      "text"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance 4chan",
+    "name": "sentiment_balance_4chan",
+    "metric": "sentiment_balance_4chan",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
@@ -1463,6 +1606,44 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "1h Moving Average Of Social Dominance AI Total",
+    "name": "social_dominance_ai_total_1h_moving_average",
+    "metric": "social_dominance_ai_1h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "24h Moving Average Of Social Dominance AI Total",
+    "name": "social_dominance_ai_total_24h_moving_average",
+    "metric": "social_dominance_ai_24h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "1h Moving Average Of Social Dominance Telegram",
     "name": "social_dominance_telegram_1h_moving_average",
     "metric": "social_dominance_telegram_1h",
@@ -1485,6 +1666,44 @@
     "human_readable_name": "24h Moving Average Of Social Dominance Telegram",
     "name": "social_dominance_telegram_24h_moving_average",
     "metric": "social_dominance_telegram_24h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "1h Moving Average Of Social Dominance 4chan",
+    "name": "social_dominance_4chan_1h_moving_average",
+    "metric": "social_dominance_4chan_1h",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "24h Moving Average Of Social Dominance 4chan",
+    "name": "social_dominance_4chan_24h_moving_average",
+    "metric": "social_dominance_4chan_24h",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [

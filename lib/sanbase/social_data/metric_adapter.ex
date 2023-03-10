@@ -19,6 +19,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     # Social volume counts the mentions of a given word or words describing as subject
     # A project can be addressed by different words.
     # Example: `btc` and `bitcoin` refer to bitcoin
+    "social_volume_4chan",
     "social_volume_telegram",
     "social_volume_reddit",
     "social_volume_twitter",
@@ -39,13 +40,15 @@ defmodule Sanbase.SocialData.MetricAdapter do
   ]
 
   @social_dominance_timeseries_metrics [
+    "social_dominance_4chan",
     "social_dominance_telegram",
     "social_dominance_reddit",
     "social_dominance_twitter_crypto",
     "social_dominance_twitter_news",
     "social_dominance_twitter_nft",
     "social_dominance_youtube_videos",
-    "social_dominance_total"
+    "social_dominance_total",
+    "social_dominance_ai_total"
   ]
 
   @sentiment_timeseries_metrics for name <- ["sentiment"],

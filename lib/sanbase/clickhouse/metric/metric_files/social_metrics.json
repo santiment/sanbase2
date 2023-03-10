@@ -165,7 +165,7 @@
   },
   {
     "human_readable_name": "Social Volume 4chan",
-    "name": "social_volume_4chan",
+    "name": "social_volume_chan",
     "metric": "social_volume_4chan",
     "version": "2020-07-31",
     "access": {
@@ -188,7 +188,7 @@
   },
   {
     "human_readable_name": "Social Dominance 4chan",
-    "name": "social_dominance_4chan",
+    "name": "social_dominance_chan",
     "metric": "social_dominance_4chan_v2",
     "version": "2020-07-31",
     "access": "restricted",
@@ -208,7 +208,7 @@
   },
   {
     "human_readable_name": "Sentiment Volume Consumed 4chan",
-    "name": "sentiment_volume_consumed_4chan",
+    "name": "sentiment_volume_consumed_chan",
     "metric": "sentiment_volume_consumed_4chan",
     "version": "2020-07-31",
     "access": "restricted",
@@ -228,7 +228,7 @@
   },
   {
     "human_readable_name": "Sentiment Positive 4chan",
-    "name": "sentiment_positive_4chan",
+    "name": "sentiment_positive_chan",
     "metric": "sentiment_positive_4chan",
     "version": "2020-07-31",
     "access": "restricted",
@@ -248,7 +248,7 @@
   },
   {
     "human_readable_name": "Sentiment Negative 4chan",
-    "name": "sentiment_negative_4chan",
+    "name": "sentiment_negative_chan",
     "metric": "sentiment_negative_4chan",
     "version": "2020-07-31",
     "access": "restricted",
@@ -268,7 +268,7 @@
   },
   {
     "human_readable_name": "Sentiment Balance 4chan",
-    "name": "sentiment_balance_4chan",
+    "name": "sentiment_balance_chan",
     "metric": "sentiment_balance_4chan",
     "version": "2020-07-31",
     "access": "restricted",
@@ -1683,7 +1683,7 @@
   },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance 4chan",
-    "name": "social_dominance_4chan_1h_moving_average",
+    "name": "social_dominance_chan_1h_moving_average",
     "metric": "social_dominance_4chan_1h",
     "version": "2019-01-01",
     "access": "restricted",
@@ -1702,7 +1702,7 @@
   },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance 4chan",
-    "name": "social_dominance_4chan_24h_moving_average",
+    "name": "social_dominance_chan_24h_moving_average",
     "metric": "social_dominance_4chan_24h",
     "version": "2019-01-01",
     "access": "restricted",

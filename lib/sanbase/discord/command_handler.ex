@@ -12,6 +12,7 @@ defmodule Sanbase.Discord.CommandHandler do
 
   @prefix "!q"
   @ai_prefix "!ai"
+  @docs_prefix "!docs"
   @mock_role_id 1
   @max_size 1800
   @ephemeral_message_flags 64
@@ -22,6 +23,10 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def is_ai_command?(content) do
     String.starts_with?(content, @ai_prefix)
+  end
+
+  def is_docs_command?(content) do
+    String.starts_with?(content, @docs_prefix)
   end
 
   def handle_interaction("query", interaction) do
@@ -320,6 +325,43 @@ defmodule Sanbase.Discord.CommandHandler do
 
       {:error, _} ->
         content = "Couldn't generate sql query based on your prompt"
+        Api.edit_message(msg.channel_id, loading_msg.id, content: content)
+    end
+  end
+
+  def handle_command("docs", msg) do
+    {:ok, loading_msg} =
+      Api.create_message(
+        msg.channel_id,
+        content: ":robot: Thinking...",
+        message_reference: %{message_id: msg.id}
+      )
+
+    prompt = String.trim(msg.content, "!docs")
+
+    case Sanbase.OpenAI.docs(
+           prompt,
+           msg.author.username <> msg.author.discriminator
+         ) do
+      {:ok, response} ->
+        content = """
+        #{response["answer"]}
+        #{response["sources"] |> String.replace("../academy/src/docs/", " https://academy.santiment.net/") |> String.replace("index.md", "") |> String.replace("/index/", "/")}
+        """
+
+        components =
+          case Regex.run(~r/```(?:sql)?([^`]*)```/ms, content) do
+            [_, _] -> [ai_action_row()]
+            nil -> []
+          end
+
+        Api.edit_message(msg.channel_id, loading_msg.id,
+          content: content,
+          components: components
+        )
+
+      {:error, _} ->
+        content = "Couldn't fetch information to answer your question"
         Api.edit_message(msg.channel_id, loading_msg.id, content: content)
     end
   end

@@ -4,6 +4,7 @@ defmodule Sanbase.OpenAI do
   import Ecto.Query
 
   alias Sanbase.Repo
+  alias Sanbase.Utils.Config
 
   @openai_url "https://api.openai.com/v1/chat/completions"
 
@@ -109,6 +110,25 @@ defmodule Sanbase.OpenAI do
     end
   end
 
+  def docs(prompt, discord_user) do
+    url = "#{metrics_hub_url()}/docs"
+
+    case HTTPoison.post(
+           url,
+           Jason.encode!(%{question: prompt}),
+           [{"Content-Type", "application/json"}],
+           timeout: 60_000,
+           recv_timeout: 60_000
+         ) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        body = Jason.decode!(body)
+        {:ok, body}
+
+      error ->
+        {:error, "Can't fetch"}
+    end
+  end
+
   def generate_query(prompt, tries \\ 1)
 
   def generate_query(_prompt, tries) when tries >= 5 do
@@ -150,5 +170,9 @@ defmodule Sanbase.OpenAI do
       {"Content-Type", "application/json"},
       {"Authorization", "Bearer #{System.get_env("OPENAI_API_KEY")}"}
     ]
+  end
+
+  defp metrics_hub_url() do
+    Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
 end

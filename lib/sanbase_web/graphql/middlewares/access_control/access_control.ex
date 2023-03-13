@@ -21,6 +21,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @compile {:inline,
             transform_resolution: 1,
             check_has_access: 2,
+            full_check_has_access: 2,
             apply_if_not_resolved: 2,
             check_plan_has_access: 1,
             check_from_to_params_sanity: 1,
@@ -55,7 +56,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # Here we transform the name to an atom in snake case for consistency
   # and faster comparison of atoms
   defp transform_resolution(%Resolution{} = resolution) do
-    %{context: context, definition: definition, arguments: arguments, source: source} = resolution
+    %{
+      context: context,
+      definition: definition,
+      arguments: arguments,
+      source: source
+    } = resolution
 
     query_atom_name =
       definition.name
@@ -63,7 +69,23 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       |> String.to_existing_atom()
       |> get_query_or_argument(source, arguments)
 
-    context = context |> Map.put(:__query_argument_atom_name__, query_atom_name)
+    # Make it easier to check cases where we have either %{selector: %{slug: slug}} or just %{slug: slug}
+    extracted_slug = Map.get(arguments, :slug) || get_in(arguments, [:selector, :slug])
+
+    # Make it easier to work with the getMetric's `metric` argument,
+    # so resolution.source does not need to be checked. This way it can
+    # also be extracted from aggregatedTimeseriesData on a project type
+    extracted_metric =
+      case query_atom_name do
+        {:metric, metric} -> metric
+        _ -> nil
+      end
+
+    context =
+      context
+      |> Map.put(:__query_argument_atom_name__, query_atom_name)
+      |> Map.put(:__slug__, extracted_slug)
+      |> Map.put(:__metric__, extracted_metric)
 
     %Resolution{resolution | context: context}
   end
@@ -71,20 +93,49 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # Basic auth should have no restrictions. Check only the sanity of the `from`
   # and `to` params. This includes checks that `to` is after `from` and that
   # both are after 2009-01-01T00:00:00Z.
-  defp check_has_access(%Resolution{context: %{auth: %{auth_method: :basic}}} = resolution, _opts) do
+  defp check_has_access(
+         %Resolution{context: %{auth: %{auth_method: :basic}}} = resolution,
+         _opts
+       ) do
     resolution
     |> check_from_to_params_sanity()
   end
 
-  defp check_has_access(%Resolution{arguments: %{slug: slug}} = resolution, _opts)
+  defp check_has_access(
+         %Resolution{context: %{__slug__: slug}} = resolution,
+         _opts
+       )
        when is_binary(slug) and slug in @freely_available_slugs do
     resolution
     |> check_from_to_params_sanity()
   end
 
+  @xrp_free_metrics ~w( daily_assets_issued total_assets_issued daily_trustlines_count_change total_trustlines_count daily_dex_volume_in_xrp network_growth)
+  @xrp_free_metrics_patterns [~r/^active_addresses*/, ~r/^holders_distribution*/]
+  defp check_has_access(
+         %Resolution{context: %{__slug__: slug, __metric__: metric}} = resolution,
+         opts
+       )
+       when is_binary(slug) and slug in ["xrp", "ripple"] do
+    cond do
+      metric in @xrp_free_metrics ->
+        resolution |> check_from_to_params_sanity()
+
+      Enum.any?(@xrp_free_metrics_patterns, &Regex.match?(&1, metric)) ->
+        resolution |> check_from_to_params_sanity()
+
+      true ->
+        full_check_has_access(resolution, opts)
+    end
+  end
+
   # The auth method is not `basic` and the slug is not one of the freely available slugs
   # all of the required checks are done
   defp check_has_access(resolution, opts) do
+    full_check_has_access(resolution, opts)
+  end
+
+  defp full_check_has_access(resolution, opts) do
     resolution
     |> apply_if_not_resolved(&check_plan_has_access/1)
     |> apply_if_not_resolved(&check_from_to_params_sanity/1)
@@ -128,29 +179,42 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          }
        }) do
     %{product: product_code, plan: plan_name} = token
+
     token_has_access? = token_has_access?(token, query_or_argument, arguments[:slug])
+
     plan_has_access? = AccessChecker.plan_has_access?(plan_name, product_code, query_or_argument)
 
     plan_has_access? and token_has_access?
   end
 
-  defp check_shared_access_token_has_access?(%Resolution{} = _resolution), do: false
+  defp check_shared_access_token_has_access?(%Resolution{} = _resolution),
+    do: false
 
   defp token_has_access?(token, query_or_argument, slug) do
     case query_or_argument do
-      {:metric, metric} -> %{metric: to_string(metric), slug: slug} in token.metrics
-      {:query, query} -> %{query: to_string(query), slug: slug} in token.queries
-      _ -> false
+      {:metric, metric} ->
+        %{metric: to_string(metric), slug: slug} in token.metrics
+
+      {:query, query} ->
+        %{query: to_string(query), slug: slug} in token.queries
+
+      _ ->
+        false
     end
   end
 
   defp check_user_plan_has_access(%Resolution{} = resolution) do
-    %Resolution{context: %{__query_argument_atom_name__: query_or_argument} = context} =
-      resolution
+    %Resolution{
+      context: %{__query_argument_atom_name__: query_or_argument} = context
+    } = resolution
 
     {plan_name, product_code} = context_to_plan_name_product_code(context)
 
-    case AccessChecker.plan_has_access?(plan_name, product_code, query_or_argument) do
+    case AccessChecker.plan_has_access?(
+           plan_name,
+           product_code,
+           query_or_argument
+         ) do
       true ->
         resolution
 
@@ -194,7 +258,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
        ) do
     {plan_name, product_code} = context_to_plan_name_product_code(context)
 
-    if Plan.AccessChecker.is_restricted?(plan_name, product_code, query_or_argument) do
+    if Plan.AccessChecker.is_restricted?(
+         plan_name,
+         product_code,
+         query_or_argument
+       ) do
       restricted_query(resolution, middleware_args, query_or_argument)
     else
       not_restricted_query(resolution, middleware_args)
@@ -207,9 +275,20 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   defp restricted_query(resolution, middleware_args, query_or_argument) do
     args =
-      case restricted_query_shared_access_token(resolution, middleware_args, query_or_argument) do
-        nil -> restricted_query_user_plan(resolution, middleware_args, query_or_argument)
-        args -> args
+      case restricted_query_shared_access_token(
+             resolution,
+             middleware_args,
+             query_or_argument
+           ) do
+        nil ->
+          restricted_query_user_plan(
+            resolution,
+            middleware_args,
+            query_or_argument
+          )
+
+        args ->
+          args
       end
 
     %{
@@ -261,10 +340,18 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     {plan_name, product_code} = context_to_plan_name_product_code(context)
 
     historical_data_in_days =
-      AccessChecker.historical_data_in_days(plan_name, product_code, query_or_argument)
+      AccessChecker.historical_data_in_days(
+        plan_name,
+        product_code,
+        query_or_argument
+      )
 
     realtime_data_cut_off_in_days =
-      AccessChecker.realtime_data_cut_off_in_days(plan_name, product_code, query_or_argument)
+      AccessChecker.realtime_data_cut_off_in_days(
+        plan_name,
+        product_code,
+        query_or_argument
+      )
 
     case query_or_argument do
       {:query, _} ->
@@ -308,7 +395,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   # Move the `to` datetime back so access to realtime data is not given
-  defp restrict_to(to_datetime, %{allow_realtime_data: true}, _), do: to_datetime
+  defp restrict_to(to_datetime, %{allow_realtime_data: true}, _),
+    do: to_datetime
+
   defp restrict_to(to_datetime, _, nil), do: to_datetime
 
   defp restrict_to(to_datetime, _, days) do
@@ -317,7 +406,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   # Move the `from` datetime forward so access to historical data is not given
-  defp restrict_from(from_datetime, %{allow_historical_data: true}, _), do: from_datetime
+  defp restrict_from(from_datetime, %{allow_historical_data: true}, _),
+    do: from_datetime
+
   defp restrict_from(from_datetime, _, nil), do: from_datetime
 
   defp restrict_from(from_datetime, _, days) when is_integer(days) do
@@ -404,7 +495,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   defp check_from_to_both_outside(%Resolution{} = resolution), do: resolution
 
-  defp update_resolution_from_to(%Resolution{arguments: args} = resolution, from, to) do
+  defp update_resolution_from_to(
+         %Resolution{arguments: args} = resolution,
+         from,
+         to
+       ) do
     %Resolution{resolution | arguments: %{args | from: from, to: to}}
   end
 
@@ -412,14 +507,24 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp get_query_or_argument(:timeseries_data, %{metric: metric}, _args),
     do: {:metric, metric}
 
-  defp get_query_or_argument(:timeseries_data_per_slug, %{metric: metric}, _args),
-    do: {:metric, metric}
+  defp get_query_or_argument(
+         :timeseries_data_per_slug,
+         %{metric: metric},
+         _args
+       ),
+       do: {:metric, metric}
 
-  defp get_query_or_argument(:aggregated_timeseries_data, %{metric: metric}, _args),
-    do: {:metric, metric}
+  defp get_query_or_argument(
+         :aggregated_timeseries_data,
+         %{metric: metric},
+         _args
+       ),
+       do: {:metric, metric}
 
-  defp get_query_or_argument(:aggregated_timeseries_data, _source, %{metric: metric}),
-    do: {:metric, metric}
+  defp get_query_or_argument(:aggregated_timeseries_data, _source, %{
+         metric: metric
+       }),
+       do: {:metric, metric}
 
   defp get_query_or_argument(:histogram_data, %{metric: metric}, _args),
     do: {:metric, metric}
@@ -431,8 +536,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp get_query_or_argument(:timeseries_data, %{signal: signal}, _args),
     do: {:signal, signal}
 
-  defp get_query_or_argument(:aggregated_timeseries_data, %{signal: signal}, _args),
-    do: {:signal, signal}
+  defp get_query_or_argument(
+         :aggregated_timeseries_data,
+         %{signal: signal},
+         _args
+       ),
+       do: {:signal, signal}
 
   # query
   defp get_query_or_argument(query, _source, _args), do: {:query, query}

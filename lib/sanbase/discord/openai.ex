@@ -110,7 +110,7 @@ defmodule Sanbase.OpenAI do
     end
   end
 
-  def docs(prompt, discord_user) do
+  def docs(prompt, _discord_user) do
     url = "#{metrics_hub_url()}/docs"
 
     case HTTPoison.post(
@@ -124,7 +124,7 @@ defmodule Sanbase.OpenAI do
         body = Jason.decode!(body)
         {:ok, body}
 
-      error ->
+      _error ->
         {:error, "Can't fetch"}
     end
   end
@@ -143,7 +143,7 @@ defmodule Sanbase.OpenAI do
         body = Jason.decode!(body)
         {:ok, body}
 
-      error ->
+      _error ->
         {:error, "Can't fetch"}
     end
   end
@@ -162,7 +162,7 @@ defmodule Sanbase.OpenAI do
         body = Jason.decode!(body)
         {:ok, body}
 
-      error ->
+      _error ->
         {:error, "Can't fetch"}
     end
   end

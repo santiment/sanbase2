@@ -385,11 +385,11 @@ defmodule Sanbase.Discord.CommandHandler do
       )
 
     with {:ok, branch} <- extract_branch_name(msg.content),
-         {:ok, response} <- Sanbase.OpenAI.index(branch) do
+         {:ok, _response} <- Sanbase.OpenAI.index(branch) do
       content = "Your git branch: #{branch} is indexed :beers:"
       Api.edit_message(msg.channel_id, loading_msg.id, content: content)
     else
-      error ->
+      _error ->
         content = "Couldn't index your git branch"
         Api.edit_message(msg.channel_id, loading_msg.id, content: content)
     end
@@ -422,7 +422,7 @@ defmodule Sanbase.Discord.CommandHandler do
         components: components
       )
     else
-      error ->
+      _error ->
         content = "Couldn't fetch answer from your git branch"
         Api.edit_message(msg.channel_id, loading_msg.id, content: content)
     end

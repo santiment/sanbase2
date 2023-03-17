@@ -17,7 +17,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
   alias Sanbase.Utils.Config
 
   @oban_conf_name :oban_scrapers
-  @unique_peroid 60 * 86_400
+  # @unique_peroid 60 * 86_400
   @oban_queue :cryptocompare_open_interest_historical_jobs_queue
 
   def start_link(opts \\ []) do
@@ -105,7 +105,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
     # Filter the list so only 3 markets and BTC/ETH instruments are left
     json_body
     |> Jason.decode!()
-    |> Map.get("Data")
+    |> Map.fetch!("Data")
     |> Enum.filter(fn {k, _} -> k in ["binance", "bybit", "deribit"] end)
     |> Enum.map(fn {market, data} ->
       mapped_instruments =

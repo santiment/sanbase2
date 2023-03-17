@@ -13,6 +13,8 @@ defmodule Sanbase.Discord.CommandHandler do
   @prefix "!q"
   @ai_prefix "!ai"
   @docs_prefix "!docs"
+  @index_prefix "!gi"
+  @ask_prefix "!ga"
   @mock_role_id 1
   @max_size 1800
   @ephemeral_message_flags 64
@@ -27,6 +29,14 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def is_docs_command?(content) do
     String.starts_with?(content, @docs_prefix)
+  end
+
+  def is_index_command?(content) do
+    String.starts_with?(content, @index_prefix)
+  end
+
+  def is_ask_command?(content) do
+    String.starts_with?(content, @ask_prefix)
   end
 
   def handle_interaction("query", interaction) do
@@ -363,6 +373,76 @@ defmodule Sanbase.Discord.CommandHandler do
       {:error, _} ->
         content = "Couldn't fetch information to answer your question"
         Api.edit_message(msg.channel_id, loading_msg.id, content: content)
+    end
+  end
+
+  def handle_command("gi", msg) do
+    {:ok, loading_msg} =
+      Api.create_message(
+        msg.channel_id,
+        content: ":robot: Thinking...",
+        message_reference: %{message_id: msg.id}
+      )
+
+    with {:ok, branch} <- extract_branch_name(msg.content),
+         {:ok, response} <- Sanbase.OpenAI.index(branch) do
+      content = "Your git branch: #{branch} is indexed :beers:"
+      Api.edit_message(msg.channel_id, loading_msg.id, content: content)
+    else
+      error ->
+        content = "Couldn't index your git branch"
+        Api.edit_message(msg.channel_id, loading_msg.id, content: content)
+    end
+  end
+
+  def handle_command("ga", msg) do
+    {:ok, loading_msg} =
+      Api.create_message(
+        msg.channel_id,
+        content: ":robot: Thinking...",
+        message_reference: %{message_id: msg.id}
+      )
+
+    with {:ok, branch, question} <- extract_branch_name_and_question(msg.content),
+         {:ok, response} <- Sanbase.OpenAI.ask(branch, question) do
+      content = """
+      Q: #{question}
+      A: #{response["answer"]}
+      Sources: #{response["sources"]}
+      """
+
+      components =
+        case Regex.run(~r/```(?:sql)?([^`]*)```/ms, content) do
+          [_, _] -> [ai_action_row()]
+          nil -> []
+        end
+
+      Api.edit_message(msg.channel_id, loading_msg.id,
+        content: content,
+        components: components
+      )
+    else
+      error ->
+        content = "Couldn't fetch answer from your git branch"
+        Api.edit_message(msg.channel_id, loading_msg.id, content: content)
+    end
+  end
+
+  def extract_branch_name(message) do
+    regex = ~r/^!gi\s+(?<branch>[a-zA-Z0-9\-\_\/\.]+)/
+
+    case Regex.named_captures(regex, message) do
+      %{"branch" => branch} -> {:ok, branch}
+      _ -> {:error, "No branch name found"}
+    end
+  end
+
+  def extract_branch_name_and_question(message) do
+    regex = ~r/^!ga\s+(?<branch>[a-zA-Z0-9\-\_\/\.]+)\s+(?<question>.+)/
+
+    case Regex.named_captures(regex, message) do
+      %{"branch" => branch, "question" => question} -> {:ok, branch, question}
+      _ -> {:error, "Invalid input format"}
     end
   end
 

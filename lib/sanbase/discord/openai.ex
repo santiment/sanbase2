@@ -129,6 +129,44 @@ defmodule Sanbase.OpenAI do
     end
   end
 
+  def index(branch_name) do
+    url = "#{metrics_hub_url()}/index"
+
+    case HTTPoison.post(
+           url,
+           Jason.encode!(%{branch: branch_name}),
+           [{"Content-Type", "application/json"}],
+           timeout: 60_000,
+           recv_timeout: 60_000
+         ) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        body = Jason.decode!(body)
+        {:ok, body}
+
+      error ->
+        {:error, "Can't fetch"}
+    end
+  end
+
+  def ask(branch_name, question) do
+    url = "#{metrics_hub_url()}/ask"
+
+    case HTTPoison.post(
+           url,
+           Jason.encode!(%{branch: branch_name, question: question}),
+           [{"Content-Type", "application/json"}],
+           timeout: 60_000,
+           recv_timeout: 60_000
+         ) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        body = Jason.decode!(body)
+        {:ok, body}
+
+      error ->
+        {:error, "Can't fetch"}
+    end
+  end
+
   def generate_query(prompt, tries \\ 1)
 
   def generate_query(_prompt, tries) when tries >= 5 do

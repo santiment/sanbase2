@@ -98,6 +98,8 @@ defmodule Sanbase.DiscordConsumer do
       CommandHandler.is_command?(msg.content) -> do_handle_command(msg)
       CommandHandler.is_ai_command?(msg.content) -> CommandHandler.handle_command("ai", msg)
       CommandHandler.is_docs_command?(msg.content) -> CommandHandler.handle_command("docs", msg)
+      CommandHandler.is_index_command?(msg.content) -> CommandHandler.handle_command("gi", msg)
+      CommandHandler.is_ask_command?(msg.content) -> CommandHandler.handle_command("ga", msg)
       true -> :ignore
     end
   end

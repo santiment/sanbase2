@@ -10,11 +10,11 @@ defmodule Sanbase.Discord.CommandHandler do
   alias Nostrum.Struct.Component.{ActionRow, TextInput}
   alias Sanbase.Utils.Config
 
-  @prefix "!q"
-  @ai_prefix "!ai"
-  @docs_prefix "!docs"
-  @index_prefix "!gi"
-  @ask_prefix "!ga"
+  @prefix "!q "
+  @ai_prefix "!ai "
+  @docs_prefix "!docs "
+  @index_prefixes ["!gi ", "!git_index "]
+  @ask_prefixes ["!ga ", "!git_ask "]
   @mock_role_id 1
   @max_size 1800
   @ephemeral_message_flags 64
@@ -32,11 +32,11 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   def is_index_command?(content) do
-    String.starts_with?(content, @index_prefix)
+    String.starts_with?(content, @index_prefixes)
   end
 
   def is_ask_command?(content) do
-    String.starts_with?(content, @ask_prefix)
+    String.starts_with?(content, @ask_prefixes)
   end
 
   def handle_interaction("query", interaction) do
@@ -429,19 +429,15 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   def extract_branch_name(message) do
-    regex = ~r/^!gi\s+(?<branch>[a-zA-Z0-9\-\_\/\.]+)/
-
-    case Regex.named_captures(regex, message) do
-      %{"branch" => branch} -> {:ok, branch}
-      _ -> {:error, "No branch name found"}
+    case String.split(message, ~r{\s+}, parts: 2) do
+      [_, branch] -> {:ok, branch}
+      _ -> {:error, "Invalid input format"}
     end
   end
 
   def extract_branch_name_and_question(message) do
-    regex = ~r/^!ga\s+(?<branch>[a-zA-Z0-9\-\_\/\.]+)\s+(?<question>.+)/
-
-    case Regex.named_captures(regex, message) do
-      %{"branch" => branch, "question" => question} -> {:ok, branch, question}
+    case String.split(message, ~r{\s+}, parts: 3) do
+      [_, branch, question] -> {:ok, branch, question}
       _ -> {:error, "Invalid input format"}
     end
   end

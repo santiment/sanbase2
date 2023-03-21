@@ -139,8 +139,13 @@ defimpl Sanbase.Alert, for: Any do
     fun = fn _identifier, payload ->
       payload = transform_payload(payload, trigger.id, :telegram)
 
-      Sanbase.Telegram.send_message(trigger.user, payload)
-      |> maybe_transform_telegram_response(trigger, telegram_chat_id)
+      response = Sanbase.Telegram.send_message(trigger.user, payload)
+
+      # Deactivate the alert if the message is sent to telegram, telegram
+      # is the only channel and the telegram bot is blocked by the user.
+      # The function returns :ok or {:error, reason} which is used in the
+      # caller.
+      deactivate_alert_if_bot_blocked(response, trigger)
     end
 
     send_or_limit("telegram", trigger, max_alerts_to_send, fun)
@@ -200,19 +205,24 @@ defimpl Sanbase.Alert, for: Any do
       payload = transform_payload(payload, trigger.id, :telegram_channel)
       {payload, opts} = maybe_extend_payload_telegram_channel(payload, trigger, channel)
 
-      Sanbase.Telegram.send_message_to_chat_id(channel, payload)
-      |> maybe_transform_telegram_response(trigger, channel, opts)
+      response = Sanbase.Telegram.send_message_to_chat_id(channel, payload)
+      # Send a reply to the original message, if it was delived successfuly
+      # It contains the chat preview image.
+      maybe_send_preview_image_as_reply(response, trigger, channel, opts)
+      # Deactivate the alert if the message is sent to telegram, telegram
+      # is the only channel and the telegram bot is blocked by the user.
+      # The function returns :ok or {:error, reason} which is used in the
+      # caller.
+      deactivate_alert_if_bot_blocked(response, trigger)
     end
 
     send_or_limit("telegram_channel", trigger, max_alerts_to_send, fun)
   end
 
-  defp maybe_transform_telegram_response(_response, _trigger, _channel, _opts \\ [])
-
   # For daily and intraday metric signals add preview image of the chart for metric + asset
   # The preview image should be a reply to the original alert message
   # only for Sanr signals telegram channel and one test channel
-  defp maybe_transform_telegram_response(
+  defp maybe_send_preview_image_as_reply(
          {:ok, response},
          %{trigger: %{settings: %{type: type}}},
          channel,
@@ -220,11 +230,14 @@ defimpl Sanbase.Alert, for: Any do
        )
        when type in ["metric_signal", "daily_metric_signal"] and
               channel in ["@test_san_bot86", "@sanr_signals"] do
-    send_preview_image(response, channel, opts)
-    :ok
+    if short_url_id = Keyword.get(opts, :short_url_id) do
+      send_preview_image(response, channel, short_url_id)
+    end
   end
 
-  defp maybe_transform_telegram_response({:error, error}, trigger, _channel, _opts) do
+  defp maybe_send_preview_image_as_reply(_, _, _, _), do: :ok
+
+  defp deactivate_alert_if_bot_blocked({:error, error}, trigger) do
     case String.contains?(error, "blocked the telegram bot") do
       true ->
         # In case the trigger does not have other channels but only telegram
@@ -240,36 +253,28 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  defp maybe_transform_telegram_response({:ok, _}, _trigger, _channel, _opts), do: :ok
+  defp deactivate_alert_if_bot_blocked(_response, _trigger), do: :ok
 
-  defp send_preview_image(response, channel, opts) do
-    short_url_id = Keyword.get(opts, :short_url_id)
+  defp send_preview_image(response, channel, short_url_id) do
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      reply_to_message_id = Jason.decode!(response)["result"]["message_id"]
 
-    if short_url_id do
-      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-        reply_to_message_id = Jason.decode!(response)["result"]["message_id"]
+      image_url = "#{preview_url()}/chart/#{short_url_id}"
 
-        image_url = "#{preview_url()}/chart/#{short_url_id}"
+      HTTPoison.get(image_url, [basic_auth_header()], timeout: 15_000, recv_timeout: 15_000)
+      |> handle_chart_preview_response(channel, reply_to_message_id)
+    end)
+  end
 
-        is_image? = fn response ->
-          response.headers |> Enum.into(%{}) |> Map.get("Content-Type") == "image/jpeg"
-        end
+  defp handle_chart_preview_response({:ok, response}, channel, reply_to_message_id) do
+    image? = response.headers |> Enum.into(%{}) |> Map.get("Content-Type") == "image/jpeg"
 
-        HTTPoison.get(image_url, [basic_auth_header()], timeout: 15_000, recv_timeout: 15_000)
-        |> case do
-          {:ok, img_response} ->
-            if is_image?.(img_response) do
-              Sanbase.Telegram.send_photo_by_file_content(
-                channel,
-                img_response.body,
-                reply_to_message_id
-              )
-            end
-
-          _ ->
-            :ok
-        end
-      end)
+    if image? do
+      Sanbase.Telegram.send_photo_by_file_content(
+        channel,
+        response.body,
+        reply_to_message_id
+      )
     end
   end
 

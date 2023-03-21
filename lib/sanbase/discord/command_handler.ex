@@ -385,11 +385,11 @@ defmodule Sanbase.Discord.CommandHandler do
       )
 
     with {:ok, branch} <- extract_branch_name(msg.content),
-         {:ok, response} <- Sanbase.OpenAI.index(branch) do
+         {:ok, _response} <- Sanbase.OpenAI.index(branch) do
       content = "Your git branch: #{branch} is indexed :beers:"
       Api.edit_message(msg.channel_id, loading_msg.id, content: content)
     else
-      error ->
+      _error ->
         content = "Couldn't index your git branch"
         Api.edit_message(msg.channel_id, loading_msg.id, content: content)
     end
@@ -422,24 +422,17 @@ defmodule Sanbase.Discord.CommandHandler do
         components: components
       )
     else
-      error ->
+      _error ->
         content = "Couldn't fetch answer from your git branch"
         Api.edit_message(msg.channel_id, loading_msg.id, content: content)
     end
   end
 
-  def extract_branch_name(message) do
-    case String.split(message, ~r{\s+}, parts: 2) do
-      [_, branch] -> {:ok, branch}
-      _ -> {:error, "Invalid input format"}
-    end
-  end
-
-  def extract_branch_name_and_question(message) do
-    case String.split(message, ~r{\s+}, parts: 3) do
-      [_, branch, question] -> {:ok, branch, question}
-      _ -> {:error, "Invalid input format"}
-    end
+  def handle_command("invalid_command", msg) do
+    Nostrum.Api.create_message(msg.channel_id,
+      content: "<:bangbang:1045078993604452465> Invalid command entered!",
+      message_reference: %{message_id: msg.id}
+    )
   end
 
   def handle_command("help", msg) do
@@ -467,11 +460,18 @@ defmodule Sanbase.Discord.CommandHandler do
     )
   end
 
-  def handle_command("invalid_command", msg) do
-    Nostrum.Api.create_message(msg.channel_id,
-      content: "<:bangbang:1045078993604452465> Invalid command entered!",
-      message_reference: %{message_id: msg.id}
-    )
+  def extract_branch_name(message) do
+    case String.split(message, ~r{\s+}, parts: 2) do
+      [_, branch] -> {:ok, branch}
+      _ -> {:error, "Invalid input format"}
+    end
+  end
+
+  def extract_branch_name_and_question(message) do
+    case String.split(message, ~r{\s+}, parts: 3) do
+      [_, branch, question] -> {:ok, branch, question}
+      _ -> {:error, "Invalid input format"}
+    end
   end
 
   # Example valid invocations

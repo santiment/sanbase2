@@ -428,18 +428,11 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def extract_branch_name(message) do
-    case String.split(message, ~r{\s+}, parts: 2) do
-      [_, branch] -> {:ok, branch}
-      _ -> {:error, "Invalid input format"}
-    end
-  end
-
-  def extract_branch_name_and_question(message) do
-    case String.split(message, ~r{\s+}, parts: 3) do
-      [_, branch, question] -> {:ok, branch, question}
-      _ -> {:error, "Invalid input format"}
-    end
+  def handle_command("invalid_command", msg) do
+    Nostrum.Api.create_message(msg.channel_id,
+      content: "<:bangbang:1045078993604452465> Invalid command entered!",
+      message_reference: %{message_id: msg.id}
+    )
   end
 
   def handle_command("help", msg) do
@@ -467,11 +460,18 @@ defmodule Sanbase.Discord.CommandHandler do
     )
   end
 
-  def handle_command("invalid_command", msg) do
-    Nostrum.Api.create_message(msg.channel_id,
-      content: "<:bangbang:1045078993604452465> Invalid command entered!",
-      message_reference: %{message_id: msg.id}
-    )
+  def extract_branch_name(message) do
+    case String.split(message, ~r{\s+}, parts: 2) do
+      [_, branch] -> {:ok, branch}
+      _ -> {:error, "Invalid input format"}
+    end
+  end
+
+  def extract_branch_name_and_question(message) do
+    case String.split(message, ~r{\s+}, parts: 3) do
+      [_, branch, question] -> {:ok, branch, question}
+      _ -> {:error, "Invalid input format"}
+    end
   end
 
   # Example valid invocations

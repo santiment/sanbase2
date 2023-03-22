@@ -49,7 +49,9 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
     schedule_next_job = Keyword.get(opts, :schedule_next_job, false)
     beginning_of_day = DateTime.utc_now() |> Timex.beginning_of_day() |> DateTime.to_unix()
 
-    get_markets_and_instruments()
+    {:ok, markets_and_instruments} = get_markets_and_instruments()
+
+    markets_and_instruments
     |> Enum.flat_map(fn {market, instruments} ->
       for instrument <- instruments do
         new_job(market, instrument, beginning_of_day, schedule_next_job, limit)
@@ -107,7 +109,13 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
     |> Jason.decode!()
     |> Map.fetch!("Data")
     |> Enum.map(fn {market, data} ->
-      mapped_instruments = data["instruments"] |> Enum.map(fn {k, _} -> k end) |> Enum.uniq()
+      mapped_instruments =
+        data["instruments"]
+        |> Enum.map(fn {k, _} -> k end)
+        |> Enum.uniq()
+        |> Enum.filter(fn instrument ->
+          String.contains?(instrument, "PERPETUAL")
+        end)
 
       {market, mapped_instruments}
     end)

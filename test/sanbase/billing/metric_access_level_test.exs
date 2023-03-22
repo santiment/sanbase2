@@ -460,7 +460,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "total_assets_issued",
         "daily_trustlines_count_change",
         "total_trustlines_count",
-        "daily_dex_volume_in_xrp"
+        "dex_volume_in_xrp_5m",
+        "dex_volume_in_usd_5m"
       ]
       |> Enum.sort()
 
@@ -1524,7 +1525,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "total_assets_issued",
         "daily_trustlines_count_change",
         "total_trustlines_count",
-        "daily_dex_volume_in_xrp"
+        "dex_volume_in_xrp_5m",
+        "dex_volume_in_usd_5m"
       ]
       |> Enum.sort()
 

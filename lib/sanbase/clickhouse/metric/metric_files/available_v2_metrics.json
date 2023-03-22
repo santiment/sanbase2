@@ -2718,9 +2718,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Daily DEX volume in XRP",
-    "name": "daily_dex_volume_in_xrp",
-    "metric": "daily_dex_volume_in_xrp",
+    "human_readable_name": "DEX volume in XRP",
+    "name": "dex_volume_in_xrp_5m",
+    "metric": "dex_volume_in_xrp_5min",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
@@ -2729,8 +2729,25 @@
       "SANBASE": "free"
     },
     "aggregation": "sum",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEX volume in USD",
+    "name": "dex_volume_in_usd_5m",
+    "metric": "dex_volume_in_usd_5min",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
   }

@@ -20,16 +20,16 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
     unique: [period: 60 * 86_400]
 
   alias Sanbase.Utils.Config
-  alias Sanbase.Cryptocompare.OHLCOpenInterestPoint
+  alias Sanbase.Cryptocompare.OpenInterestPoint
   alias Sanbase.Cryptocompare.HTTPHeaderUtils
   alias Sanbase.Cryptocompare.ExporterProgress
 
   require Logger
 
-  @url "https://data-api.cryptocompare.com/futures/v1/historical/open-interest/hours"
+  @url "https://data-api.cryptocompare.com/futures/v1/historical/open-interest/minutes"
   @limit 2000
   @oban_conf_name :oban_scrapers
-  @topic :open_interest_ohlc_topic
+  @topic :open_interest_topic
 
   def queue(), do: @queue
   def conf_name(), do: @oban_conf_name
@@ -141,18 +141,9 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
           quote_currency: map["QUOTE_CURRENCY"],
           settlement_currency: map["SETTLEMENT_CURRENCY"],
           contract_currency: map["CONTRACT_CURRENCY"],
-          open_settlement: map["OPEN_SETTLEMENT"],
-          open_mark_price: map["OPEN_MARK_PRICE"],
-          open_quote: map["OPEN_QUOTE"],
-          high_settlement: map["HIGH_SETTLEMENT"],
-          high_mark_price: map["HIGH_MARK_PRICE"],
-          high_quote: map["HIGH_QUOTE"],
           close_settlement: map["CLOSE_SETTLEMENT"],
           close_mark_price: map["CLOSE_MARK_PRICE"],
-          close_quote: map["CLOSE_QUOTE"],
-          low_settlement: map["LOW_SETTLEMENT"],
-          low_mark_price: map["LOW_MARK_PRICE"],
-          low_quote: map["LOW_QUOTE"]
+          close_quote: map["CLOSE_QUOTE"]
         }
       end)
       |> then(fn list ->
@@ -212,8 +203,8 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
 
   defp to_json_kv_tuple(point) do
     point
-    |> OHLCOpenInterestPoint.new()
-    |> OHLCOpenInterestPoint.json_kv_tuple()
+    |> OpenInterestPoint.new()
+    |> OpenInterestPoint.json_kv_tuple()
   end
 
   defp api_key(), do: Config.module_get(Sanbase.Cryptocompare, :api_key)

@@ -65,7 +65,7 @@ defmodule Sanbase.Cryptocompare.Supervisor do
             Sanbase.KafkaExporter.child_spec(
               id: :open_interest_exporter,
               name: :open_interest_exporter,
-              topic: Config.module_get!(Sanbase.KafkaExporter, :open_interest_ohlc_topic),
+              topic: Config.module_get!(Sanbase.KafkaExporter, :open_interest_topic),
               buffering_max_messages: 5000,
               can_send_after_interval: 250,
               kafka_flush_timeout: 1000

@@ -106,14 +106,8 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
     json_body
     |> Jason.decode!()
     |> Map.fetch!("Data")
-    |> Enum.filter(fn {k, _} -> k in ["binance", "bybit", "deribit"] end)
     |> Enum.map(fn {market, data} ->
-      mapped_instruments =
-        data["instruments"]
-        |> Enum.filter(fn {k, v} ->
-          String.contains?(k, ["BTC", "ETH"]) and v["HAS_OPEN_INTEREST_UPDATES"]
-        end)
-        |> Enum.map(fn {k, _} -> k end)
+      mapped_instruments = data["instruments"] |> Enum.map(fn {k, _} -> k end) |> Enum.uniq()
 
       {market, mapped_instruments}
     end)

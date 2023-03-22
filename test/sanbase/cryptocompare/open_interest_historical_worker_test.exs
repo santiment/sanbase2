@@ -90,13 +90,13 @@ defmodule Sanbase.Cryptocompare.OpenInterestHistoricalWorkerTest do
       )
 
       state = Sanbase.InMemoryKafka.Producer.get_state()
-      topic = state["open_interest_ohlc"]
+      topic = state["open_interest_cryptocompare"]
 
       assert length(topic) == limit
 
       for i <- (limit - 1)..0 do
         assert {"#{market}_#{instrument}_#{timestamp - i * 3600}",
-                "{\"close_mark_price\":1332.98969276,\"close_quote\":187708030,\"close_settlement\":140817.31540725136,\"contract_currency\":\"USD\",\"high_mark_price\":1333.65720018,\"high_quote\":190854700,\"high_settlement\":144349.51318039416,\"instrument\":\"ETHUSD_PERP\",\"low_mark_price\":1320.5277073,\"low_quote\":187529820,\"low_settlement\":140745.47411301592,\"mapped_instrument\":\"#{instrument}\",\"market\":\"#{market}\",\"open_mark_price\":1322.89,\"open_quote\":190652310,\"open_settlement\":144118.03702499828,\"quote_currency\":\"USD\",\"settlement_currency\":\"ETH\",\"timestamp\":#{timestamp - i * 3600}}"} in topic
+                "{\"close_mark_price\":1332.98969276,\"close_quote\":187708030,\"close_settlement\":140817.31540725136,\"contract_currency\":\"USD\",\"instrument\":\"ETHUSD_PERP\",\"mapped_instrument\":\"#{instrument}\",\"market\":\"#{market}\",\"quote_currency\":\"USD\",\"settlement_currency\":\"ETH\",\"timestamp\":#{timestamp - i * 3600}}"} in topic
       end
     end)
 
@@ -147,7 +147,7 @@ defmodule Sanbase.Cryptocompare.OpenInterestHistoricalWorkerTest do
                )
 
       state = Sanbase.InMemoryKafka.Producer.get_state()
-      topic = state["open_interest_ohlc"]
+      topic = state["open_interest_cryptocompare"]
 
       # The number of non-overlapped hours is limit + 10
       assert length(topic) == limit + 10

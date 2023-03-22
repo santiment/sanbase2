@@ -118,6 +118,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
        )
        when is_binary(slug) and slug in ["xrp", "ripple"] do
     cond do
+      metric == nil ->
+        full_check_has_access(resolution, opts)
+
       metric in @xrp_free_metrics ->
         resolution |> check_from_to_params_sanity()
 

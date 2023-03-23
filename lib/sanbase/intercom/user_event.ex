@@ -88,6 +88,8 @@ defmodule Sanbase.Intercom.UserEvent do
   # helpers
 
   defp sync_with_intercom(user_id, since) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
     Sanbase.Intercom.get_events_for_user(user_id, since)
     |> Enum.map(fn %{
                      "created_at" => created_at,
@@ -98,11 +100,11 @@ defmodule Sanbase.Intercom.UserEvent do
       %{
         user_id: user_id,
         event_name: event_name,
-        created_at: DateTime.from_unix!(created_at),
+        created_at: now,
         metadata: metadata,
         remote_id: remote_id,
-        inserted_at: Timex.now() |> DateTime.truncate(:second),
-        updated_at: Timex.now() |> DateTime.truncate(:second)
+        inserted_at: now,
+        updated_at: now
       }
     end)
     |> create(_is_authenticated = true)

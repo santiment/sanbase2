@@ -5,6 +5,7 @@ defmodule Sanbase.OpenAI do
 
   alias Sanbase.Repo
   alias Sanbase.Utils.Config
+  alias Sanbase.Discord.ThreadAiContext
 
   @openai_url "https://api.openai.com/v1/chat/completions"
 
@@ -110,7 +111,7 @@ defmodule Sanbase.OpenAI do
     end
   end
 
-  def docs(prompt, _discord_user) do
+  def docs(prompt, _params) do
     url = "#{metrics_hub_url()}/docs"
 
     case HTTPoison.post(
@@ -123,6 +124,29 @@ defmodule Sanbase.OpenAI do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         body = Jason.decode!(body)
         {:ok, body}
+
+      _error ->
+        {:error, "Can't fetch"}
+    end
+  end
+
+  def threaded_docs(prompt, params) do
+    url = "#{metrics_hub_url()}/docs"
+
+    context = ThreadAiContext.fetch_history_context(params, 5)
+
+    case HTTPoison.post(
+           url,
+           Jason.encode!(%{question: prompt, messages: context}),
+           [{"Content-Type", "application/json"}],
+           timeout: 60_000,
+           recv_timeout: 60_000
+         ) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        body = Jason.decode!(body)
+        params = params |> Map.put(:answer, body["answer"]) |> Map.put(:question, prompt)
+        {:ok, thread_db} = ThreadAiContext.create(params)
+        {:ok, body, thread_db}
 
       _error ->
         {:error, "Can't fetch"}

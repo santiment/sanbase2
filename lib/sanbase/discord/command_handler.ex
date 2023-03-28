@@ -9,6 +9,7 @@ defmodule Sanbase.Discord.CommandHandler do
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Component.{ActionRow, TextInput}
   alias Sanbase.Utils.Config
+  alias Sanbase.Discord.ThreadAiContext
 
   @prefix "!q "
   @ai_prefix "!ai "
@@ -18,6 +19,15 @@ defmodule Sanbase.Discord.CommandHandler do
   @mock_role_id 1
   @max_size 1800
   @ephemeral_message_flags 64
+  @local_bot_id 1_039_543_550_326_612_009
+  @prod_bot_id 1_039_814_526_708_764_742
+
+  def bot_id() do
+    case Config.module_get(Sanbase, :deployment_env) do
+      "dev" -> @local_bot_id
+      _ -> @prod_bot_id
+    end
+  end
 
   def is_command?(content) do
     String.starts_with?(content, @prefix)
@@ -276,6 +286,26 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
+  def handle_interaction("up", interaction, thread_id) do
+    ThreadAiContext.increment_vote_pos_by_id(thread_id)
+    respond_to_component_interaction(interaction, thread_id)
+  end
+
+  def handle_interaction("down", interaction, thread_id) do
+    ThreadAiContext.increment_vote_neg_by_id(thread_id)
+    respond_to_component_interaction(interaction, thread_id)
+  end
+
+  defp respond_to_component_interaction(interaction, thread_id) do
+    Nostrum.Api.create_interaction_response(interaction.id, interaction.token, %{
+      # interaction response type: UPDATE_MESSAGE*	7	for components, edit the message the component was attached to
+      type: 7,
+      data: %{
+        components: [thumbs_action_row(thread_id)]
+      }
+    })
+  end
+
   def handle_command("run", name, sql, msg) do
     {:ok, loading_msg} =
       Api.create_message(
@@ -304,12 +334,7 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   def handle_command("ai", msg) do
-    {:ok, loading_msg} =
-      Api.create_message(
-        msg.channel_id,
-        content: ":robot: Thinking...",
-        message_reference: %{message_id: msg.id}
-      )
+    {:ok, loading_msg} = loading_msg(msg)
 
     prompt = String.trim(msg.content, "!ai")
 
@@ -340,49 +365,20 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   def handle_command("docs", msg) do
-    {:ok, loading_msg} =
-      Api.create_message(
-        msg.channel_id,
-        content: ":robot: Thinking...",
-        message_reference: %{message_id: msg.id}
-      )
+    {:ok, loading_msg} = loading_msg(msg)
 
     prompt = String.trim(msg.content, "!docs")
+    discord_user = msg.author.username <> msg.author.discriminator
 
-    case Sanbase.OpenAI.docs(
-           prompt,
-           msg.author.username <> msg.author.discriminator
-         ) do
-      {:ok, response} ->
-        content = """
-        #{response["answer"]}
-        #{response["sources"] |> String.replace("../academy/src/docs/", " https://academy.santiment.net/") |> String.replace("index.md", "") |> String.replace("/index/", "/")}
-        """
+    kw_list =
+      Sanbase.OpenAI.docs(prompt, discord_user)
+      |> process_response()
 
-        components =
-          case Regex.run(~r/```(?:sql)?([^`]*)```/ms, content) do
-            [_, _] -> [ai_action_row()]
-            nil -> []
-          end
-
-        Api.edit_message(msg.channel_id, loading_msg.id,
-          content: content,
-          components: components
-        )
-
-      {:error, _} ->
-        content = "Couldn't fetch information to answer your question"
-        Api.edit_message(msg.channel_id, loading_msg.id, content: content)
-    end
+    Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
   end
 
   def handle_command("gi", msg) do
-    {:ok, loading_msg} =
-      Api.create_message(
-        msg.channel_id,
-        content: ":robot: Thinking...",
-        message_reference: %{message_id: msg.id}
-      )
+    {:ok, loading_msg} = loading_msg(msg)
 
     with {:ok, branch} <- extract_branch_name(msg.content),
          {:ok, _response} <- Sanbase.OpenAI.index(branch) do
@@ -396,12 +392,7 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   def handle_command("ga", msg) do
-    {:ok, loading_msg} =
-      Api.create_message(
-        msg.channel_id,
-        content: ":robot: Thinking...",
-        message_reference: %{message_id: msg.id}
-      )
+    {:ok, loading_msg} = loading_msg(msg)
 
     with {:ok, branch, question} <- extract_branch_name_and_question(msg.content),
          {:ok, response} <- Sanbase.OpenAI.ask(branch, question) do
@@ -425,6 +416,14 @@ defmodule Sanbase.Discord.CommandHandler do
       _error ->
         content = "Couldn't fetch answer from your git branch"
         Api.edit_message(msg.channel_id, loading_msg.id, content: content)
+    end
+  end
+
+  def handle_command("mention", msg) do
+    Nostrum.Api.get_channel(msg.channel_id)
+    |> case do
+      {:ok, channel} -> process_message(msg, channel)
+      {:error, _} -> :ok
     end
   end
 
@@ -458,6 +457,150 @@ defmodule Sanbase.Discord.CommandHandler do
       content: content,
       message_reference: %{message_id: msg.id}
     )
+  end
+
+  defp loading_msg(msg) do
+    Nostrum.Api.create_message(
+      msg.channel_id,
+      content: ":robot: Thinking...",
+      message_reference: %{message_id: msg.id}
+    )
+  end
+
+  defp process_response({:ok, response, thread_db}) do
+    {process_response({:ok, response}), thread_db}
+  end
+
+  defp process_response({:ok, response}) do
+    content = """
+    #{response["answer"]}
+    #{response["sources"] |> format_sources()}
+    """
+
+    components =
+      case Regex.run(~r/```(?:sql)?([^`]*)```/ms, content) do
+        [_, _] -> [ai_action_row()]
+        nil -> []
+      end
+
+    [
+      content: content,
+      components: components
+    ]
+  end
+
+  defp process_response({:error, _}) do
+    content = "Couldn't fetch information to answer your question"
+
+    [
+      content: content,
+      components: []
+    ]
+  end
+
+  defp format_sources(sources) do
+    extract_filenames_or_links_from_string(sources)
+    |> Enum.map(fn link ->
+      "<#{link}>"
+
+      link =
+        link
+        |> String.replace("../academy/src/docs/", "https://academy.santiment.net/")
+        |> String.replace("index.md", "")
+        |> String.replace("/index/", "/")
+
+      "<#{link}>"
+    end)
+    |> Enum.join("\n")
+  end
+
+  defp extract_filenames_or_links_from_string(string) do
+    string
+    |> String.split(" ")
+    |> Enum.map(fn filename ->
+      case Regex.run(~r/https?:\/\/[^\s]+/, filename) do
+        [link] -> link
+        nil -> filename
+      end
+    end)
+  end
+
+  def process_message(msg, channel) do
+    # channel type thread
+    case channel.type in [10, 11, 12] do
+      true ->
+        answer_question(msg, channel)
+
+      false ->
+        {:ok, thread_channel} = create_new_thread(msg)
+        answer_question(msg, thread_channel)
+    end
+  end
+
+  def answer_question(msg, channel) do
+    discord_user = msg.author.username <> msg.author.discriminator
+    prompt = String.replace(msg.content, "<@#{bot_id()}>", "")
+
+    Api.create_message(channel.id,
+      content: "Hang on <@#{to_string(msg.author.id)}> as I search Academy. :robot:"
+    )
+
+    Api.start_typing(channel.id)
+
+    channel_name =
+      case Nostrum.Api.get_channel(channel.parent_id) do
+        {:ok, parent_channel} -> parent_channel.name
+        _ -> nil
+      end
+
+    {guild_name, _channel_name} = get_guild_channel(msg.guild_id, msg.channel_id)
+
+    {kw_list, thread_db} =
+      Sanbase.OpenAI.threaded_docs(prompt, %{
+        discord_user: discord_user,
+        guild_id: to_string(msg.guild_id),
+        guild_name: guild_name,
+        thread_id: to_string(channel.id),
+        thread_name: channel.name,
+        channel_id: to_string(channel.parent_id),
+        channel_name: channel_name
+      })
+      |> process_response()
+
+    content = Keyword.get(kw_list, :content)
+
+    new_content = """
+    ----------------------
+    #{content}
+    ----------------------
+    `Note: you can ask me a follow up question by @ mentioning me again` :speech_balloon:
+    ----------------------
+    """
+
+    kw_list = Keyword.put(kw_list, :content, new_content)
+    Api.create_message(channel.id, kw_list)
+
+    embeds = [
+      %Embed{
+        description:
+          "<@#{to_string(msg.author.id)}> I am still learning and improving, please let me know how I did by reactiing below"
+      }
+    ]
+
+    Api.create_message(channel.id,
+      content: "",
+      embeds: embeds,
+      components: [thumbs_action_row(thread_db)]
+    )
+  end
+
+  def create_new_thread(msg) do
+    thread_name =
+      msg.content
+      |> String.replace("<@#{bot_id()}>", "")
+      |> String.slice(0, 90)
+
+    Api.start_thread_with_message(msg.channel_id, msg.id, %{name: thread_name})
   end
 
   def extract_branch_name(message) do
@@ -814,6 +957,36 @@ defmodule Sanbase.Discord.CommandHandler do
     |> ActionRow.append(run_button)
   end
 
+  def thumbs_action_row(%ThreadAiContext{} = thread_db) do
+    ar = ActionRow.action_row()
+
+    thumbs_up_button =
+      Button.button(
+        style: 2,
+        label: "#{thread_db.votes_pos}",
+        custom_id: "up_#{thread_db.id}",
+        emoji: %{name: "👍"}
+      )
+
+    thumbs_down_button =
+      Button.button(
+        style: 2,
+        label: "#{thread_db.votes_neg}",
+        custom_id: "down_#{thread_db.id}",
+        emoji: %{name: "👎"}
+      )
+
+    ar
+    |> ActionRow.append(thumbs_up_button)
+    |> ActionRow.append(thumbs_down_button)
+  end
+
+  def thumbs_action_row(thread_id) do
+    thread_db = Sanbase.Discord.ThreadAiContext.by_id(thread_id)
+
+    thumbs_action_row(thread_db)
+  end
+
   defp create_chart_embed(exec_result, dd, panel_id) do
     dt_idx =
       Enum.find_index(exec_result.column_types, fn c ->
@@ -924,12 +1097,31 @@ defmodule Sanbase.Discord.CommandHandler do
   defp get_guild_channel(_, nil), do: {nil, nil}
 
   defp get_guild_channel(guild_id, channel_id) do
-    with {:ok, guild} <- Nostrum.Cache.GuildCache.get(guild_id),
-         {:ok, channel} <- Nostrum.Cache.ChannelCache.get(channel_id) do
-      {guild.name, channel.name}
-    else
-      _ -> {nil, nil}
-    end
+    guild_name =
+      case Nostrum.Cache.GuildCache.get(guild_id) do
+        {:ok, guild} ->
+          guild.name
+
+        _ ->
+          case Nostrum.Api.get_guild(guild_id) do
+            {:ok, guild} -> guild.name
+            _ -> nil
+          end
+      end
+
+    channel_name =
+      case Nostrum.Cache.ChannelCache.get(channel_id) do
+        {:ok, channel} ->
+          channel.name
+
+        _ ->
+          case Nostrum.Api.get_channel(channel_id) do
+            {:ok, channel} -> channel.name
+            _ -> nil
+          end
+      end
+
+    {guild_name, channel_name}
   end
 
   defp handle_pin_unpin_error(false, action, interaction) do

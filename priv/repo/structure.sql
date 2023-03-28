@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.7 (Homebrew)
--- Dumped by pg_dump version 14.7 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -3364,6 +3364,47 @@ CREATE TABLE public.telegram_user_tokens (
 
 
 --
+-- Name: thread_ai_context; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.thread_ai_context (
+    id bigint NOT NULL,
+    discord_user character varying(255),
+    guild_id bigint,
+    guild_name character varying(255),
+    channel_id bigint,
+    channel_name character varying(255),
+    thread_id bigint,
+    thread_name character varying(255),
+    question text,
+    answer text,
+    votes_pos integer DEFAULT 0,
+    votes_neg integer DEFAULT 0,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: thread_ai_context_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.thread_ai_context_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: thread_ai_context_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.thread_ai_context_id_seq OWNED BY public.thread_ai_context.id;
+
+
+--
 -- Name: timeline_event_comments_mapping; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4647,6 +4688,13 @@ ALTER TABLE ONLY public.tags ALTER COLUMN id SET DEFAULT nextval('public.tags_id
 
 
 --
+-- Name: thread_ai_context id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.thread_ai_context ALTER COLUMN id SET DEFAULT nextval('public.thread_ai_context_id_seq'::regclass);
+
+
+--
 -- Name: timeline_event_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5503,6 +5551,14 @@ ALTER TABLE ONLY public.tags
 
 ALTER TABLE ONLY public.telegram_user_tokens
     ADD CONSTRAINT telegram_user_tokens_pkey PRIMARY KEY (user_id, token);
+
+
+--
+-- Name: thread_ai_context thread_ai_context_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.thread_ai_context
+    ADD CONSTRAINT thread_ai_context_pkey PRIMARY KEY (id);
 
 
 --
@@ -8243,3 +8299,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230206100629);
 INSERT INTO public."schema_migrations" (version) VALUES (20230210145707);
 INSERT INTO public."schema_migrations" (version) VALUES (20230216145219);
 INSERT INTO public."schema_migrations" (version) VALUES (20230224120026);
+INSERT INTO public."schema_migrations" (version) VALUES (20230327194228);

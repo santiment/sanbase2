@@ -89,6 +89,8 @@ defmodule Sanbase.DiscordConsumer do
     }
   ]
 
+  @local_bot_id 1_039_543_550_326_612_009
+
   def start_link do
     Consumer.start_link(__MODULE__)
   end
@@ -100,6 +102,7 @@ defmodule Sanbase.DiscordConsumer do
       CommandHandler.is_docs_command?(msg.content) -> CommandHandler.handle_command("docs", msg)
       CommandHandler.is_index_command?(msg.content) -> CommandHandler.handle_command("gi", msg)
       CommandHandler.is_ask_command?(msg.content) -> CommandHandler.handle_command("ga", msg)
+      msg_contains_bot_mention?(msg) -> CommandHandler.handle_command("mention", msg)
       true -> :ignore
     end
   end
@@ -135,13 +138,21 @@ defmodule Sanbase.DiscordConsumer do
           interaction,
         _ws_state
       }) do
-    [command, panel_id] = String.split(custom_id, "_")
+    [command, id] = String.split(custom_id, "_")
 
-    if command in ["rerun", "pin", "unpin", "show"] do
-      CommandHandler.handle_interaction(command, interaction, panel_id)
-      |> handle_response({command, panel_id}, interaction)
-    else
-      :noop
+    cond do
+      command in ["rerun", "pin", "unpin", "show"] ->
+        panel_id = id
+
+        CommandHandler.handle_interaction(command, interaction, panel_id)
+        |> handle_response({command, panel_id}, interaction)
+
+      command in ["up", "down"] ->
+        thread_id = id
+        CommandHandler.handle_interaction(command, interaction, thread_id)
+
+      true ->
+        :noop
     end
   end
 
@@ -149,6 +160,11 @@ defmodule Sanbase.DiscordConsumer do
   # you don't have a method definition for each event type.
   def handle_event(_event) do
     :noop
+  end
+
+  defp msg_contains_bot_mention?(msg) do
+    msg.mentions
+    |> Enum.any?(&(&1.id == CommandHandler.bot_id()))
   end
 
   defp handle_msg_response(response, command, msg) do

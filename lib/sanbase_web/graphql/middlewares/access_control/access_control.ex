@@ -110,8 +110,14 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     |> check_from_to_params_sanity()
   end
 
-  @xrp_free_metrics ~w( daily_assets_issued total_assets_issued daily_trustlines_count_change total_trustlines_count dex_volume_in_xrp_5m network_growth)
-  @xrp_free_metrics_patterns [~r/^active_addresses*/, ~r/^holders_distribution*/]
+  @xrp_free_metrics_patterns [
+    ~r/^network_growth$/,
+    ~r/^active_addresses*/,
+    ~r/^holders_distribution*/,
+    ~r/^dex_volume_in_(usd|xrp)*/,
+    ~r/^(total|daily)_assets_issued*/,
+    ~r/^(total|daily)_rustlines_count*/
+  ]
   defp check_has_access(
          %Resolution{context: %{__slug__: slug, __metric__: metric}} = resolution,
          opts
@@ -120,9 +126,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     cond do
       metric == nil ->
         full_check_has_access(resolution, opts)
-
-      metric in @xrp_free_metrics ->
-        resolution |> check_from_to_params_sanity()
 
       Enum.any?(@xrp_free_metrics_patterns, &Regex.match?(&1, metric)) ->
         resolution |> check_from_to_params_sanity()

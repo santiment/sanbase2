@@ -110,7 +110,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     |> check_from_to_params_sanity()
   end
 
-  @xrp_free_metrics ~w( daily_assets_issued total_assets_issued daily_trustlines_count_change total_trustlines_count daily_dex_volume_in_xrp network_growth)
+  @xrp_free_metrics ~w( daily_assets_issued total_assets_issued daily_trustlines_count_change total_trustlines_count dex_volume_in_xrp_5m network_growth)
   @xrp_free_metrics_patterns [~r/^active_addresses*/, ~r/^holders_distribution*/]
   defp check_has_access(
          %Resolution{context: %{__slug__: slug, __metric__: metric}} = resolution,

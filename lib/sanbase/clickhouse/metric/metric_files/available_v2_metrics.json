@@ -2254,6 +2254,40 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Aave v2 protocol total supplied in USD",
+    "name": "aave_v2_protocol_total_supplied_usd",
+    "metric": "aavev2_total_protocol_supplied_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Aave v2 protocol total borrowed in USD",
+    "name": "aave_v2_protocol_total_borrowed_usd",
+    "metric": "aavev2_total_protocol_borrowed_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Aave v2 supply APY",
     "name": "aave_v2_supply_apy",
     "metric": "aavev2_supply_apy",
@@ -2597,6 +2631,40 @@
     "human_readable_name": "Compound protocol total borrowed in USD",
     "name": "compound_protocol_total_borrowed_usd",
     "metric": "compound_total_protocol_borrowed_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound supply APY",
+    "name": "compound_supply_apy",
+    "metric": "compound_supply_apy",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound borrow APY",
+    "name": "compound_borrow_apy",
+    "metric": "compound_borrow_apy",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],

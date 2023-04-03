@@ -228,7 +228,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   end
 
   def paid(subscriptions) do
-    Enum.filter(subscriptions, fn subscription -> subscription.latest_invoice_amount_due > 0 end)
+    Enum.filter(subscriptions, fn subscription -> subscription.latest_invoice_amount_paid > 0 end)
   end
 
   def not_paid(subscriptions) do

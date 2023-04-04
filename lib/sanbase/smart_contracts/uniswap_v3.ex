@@ -1,11 +1,9 @@
 defmodule Sanbase.SmartContracts.UniswapV3 do
-  @san_contract "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
-  @weth_contract "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
   @uniswap_v3_pool "0x345bec0d86f156294e6602516284c19bd449be1e"
 
   @query """
   query($pool: String!) {
-    positions(where: {pool: $pool}) {
+    positions(first: 999, where: {pool: $pool}) {
       owner
       depositedToken0
       depositedToken1
@@ -13,8 +11,8 @@ defmodule Sanbase.SmartContracts.UniswapV3 do
   }
   """
 
-  def get_deposited_san_tokens(address) do
-    get_uniswap_v3_nfts(address)
+  def get_deposited_san_tokens() do
+    get_uniswap_v3_nfts()
     |> case do
       {:ok, %{"positions" => positions}} ->
         Enum.reduce(positions, %{}, fn p, acc ->
@@ -31,7 +29,12 @@ defmodule Sanbase.SmartContracts.UniswapV3 do
     end
   end
 
-  def get_uniswap_v3_nfts(owner) do
+  def get_deposited_san_tokens(address) do
+    get_deposited_san_tokens()
+    |> Map.get(address, 0)
+  end
+
+  def get_uniswap_v3_nfts() do
     url = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3"
     variables = %{"pool" => @uniswap_v3_pool}
     headers = [{"Content-Type", "application/json"}]

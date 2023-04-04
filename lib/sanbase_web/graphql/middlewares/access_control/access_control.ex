@@ -116,7 +116,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     ~r/^holders_distribution*/,
     ~r/^dex_volume_in_(usd|xrp)*/,
     ~r/^(total|daily)_assets_issued*/,
-    ~r/^(total|daily)_rustlines_count*/
+    ~r/^(total|daily)_trustlines_count*/
   ]
   defp check_has_access(
          %Resolution{context: %{__slug__: slug, __metric__: metric}} = resolution,

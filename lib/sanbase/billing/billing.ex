@@ -106,7 +106,7 @@ defmodule Sanbase.Billing do
   end
 
   def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
-      when is_binary(stripe_id) do
+      when is_binary(stripe_id) and is_binary(card_token) do
     with {:ok, _} = result <- StripeApi.update_customer(user, card_token) do
       emit_event(result, :update_stripe_customer, %{user: user, card_token: card_token})
 

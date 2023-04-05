@@ -43,7 +43,7 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
           target: Type.target(),
           channel: Type.channel(),
           operation: Type.operation(),
-          state: Map.t(),
+          state: map,
           # Private fields, not stored in DB.
           filtered_target: Type.filtered_target(),
           triggered?: boolean(),

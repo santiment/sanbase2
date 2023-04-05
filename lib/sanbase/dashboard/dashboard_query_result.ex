@@ -5,7 +5,7 @@ defmodule Sanbase.Dashboard.Query.Result do
 
   @type t :: %__MODULE__{
           clickhouse_query_id: String.t(),
-          summary: Map.t(),
+          summary: map,
           rows: list(String.t() | number() | boolean() | DateTime.t()),
           compressed_rows: String.t(),
           columns: list(String.t()),

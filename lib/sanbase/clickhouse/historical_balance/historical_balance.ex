@@ -32,7 +32,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   @type slug :: String.t()
 
-  @type address :: String.t() | list(String.t())
+  @type address :: String.t()
+  @type address_or_addresses :: address | list(address)
 
   @typedoc ~s"""
   An interval represented as string. It has the format of number followed by one of:
@@ -135,7 +136,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           to :: DateTime.t()
         ) ::
           __MODULE__.Behaviour.balance_change_result()
-
   def balance_change(selector, address, from, to) do
     case selector_to_args(selector) do
       %{blockchain: blockchain, slug: slug}

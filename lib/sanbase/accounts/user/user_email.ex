@@ -78,8 +78,7 @@ defmodule Sanbase.Accounts.User.Email do
 
   def update_email_from_email_candidate(user) do
     validated_at =
-      (user.email_candidate_token_validated_at || Timex.now())
-      |> Timex.to_naive_datetime()
+      (user.email_candidate_token_validated_at || NaiveDateTime.utc_now())
       |> NaiveDateTime.truncate(:second)
 
     user

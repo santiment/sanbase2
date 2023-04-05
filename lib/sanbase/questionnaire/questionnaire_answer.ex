@@ -24,7 +24,7 @@ defmodule Sanbase.Questionnaire.Answer do
           uuid: String.t(),
           question_uuid: String.t(),
           user_id: non_neg_integer(),
-          answer: Map.t(),
+          answer: map,
           inserted_at: NaiveDateTime.t(),
           updated_at: NaiveDateTime.t()
         }
@@ -49,7 +49,7 @@ defmodule Sanbase.Questionnaire.Answer do
   @doc ~s"""
   Record the answer of a user to a question.
   """
-  @spec create(question_uuid, non_neg_integer, Map.t()) ::
+  @spec create(question_uuid, non_neg_integer, map) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(question_uuid, user_id, params) do
     {:ok, type} = Question.get_type(question_uuid)
@@ -70,7 +70,7 @@ defmodule Sanbase.Questionnaire.Answer do
   @doc ~s"""
   Update an answer
   """
-  @spec update(answer_uuid, non_neg_integer(), Map.t()) ::
+  @spec update(answer_uuid, non_neg_integer(), map) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(uuid, user_id, params) do
     case Sanbase.Repo.get(__MODULE__, uuid) do

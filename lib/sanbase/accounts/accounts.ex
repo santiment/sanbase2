@@ -38,7 +38,7 @@ defmodule Sanbase.Accounts do
   `email_login_verify` the `:register_user` event can be emitted, containing the
   URL stored before.
   """
-  @spec forward_registration(User.t(), String.t(), Map.t()) ::
+  @spec forward_registration(User.t(), String.t(), map) ::
           {:ok, :evolve_state | :keep_state, User.t()} | no_return()
   def forward_registration(%User{} = user, action, data) do
     %{registration_state: %{"state" => current_state}} = user

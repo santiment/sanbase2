@@ -50,7 +50,7 @@ defmodule Sanbase.Accounts.User.SanBalance do
   @spec san_balance_or_zero(%User{}) :: float
   def san_balance_or_zero(%User{} = user) do
     case san_balance(user) do
-      {:ok, san_balance} -> san_balance
+      {:ok, san_balance} -> san_balance || 0
       _ -> 0
     end
   end

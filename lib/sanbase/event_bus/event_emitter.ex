@@ -43,7 +43,7 @@ defmodule Sanbase.EventBus.EventEmitter do
       If changeset param is passed in the args it emits event only if there are actual
       changes in the changeset.
       """
-      @spec emit_event(arg :: term, event_type :: atom, args :: map) :: term | no_return
+      @spec emit_event(term, atom, map) :: term | no_return
       def emit_event(arg, event_type, %{changeset: changeset} = args) do
         if changeset.changes != %{} do
           emit_event(arg, event_type, Map.delete(args, :changeset))
@@ -81,9 +81,9 @@ defmodule Sanbase.EventBus.EventEmitter do
             Process.sleep(10)
 
             try do
-              events = :ets.tab2list(ets_table)
+              ets_table_size = :ets.info(ets_table).size
 
-              if count > 0 and events != [] do
+              if count > 0 and ets_table_size != 0 do
                 maybe_wait(module, event_type, count - 1)
               end
             rescue

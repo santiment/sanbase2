@@ -16,7 +16,7 @@ defmodule Sanbase.Questionnaire.Validation do
     This is for consistency. It can be done as a `single_select` type, but the answers
     and casing can vary between questions.
   """
-  @spec validate_question_answers_options(Atom.t(), Map.t()) ::
+  @spec validate_question_answers_options(Atom.t(), map) ::
           true | {:error, String.t()}
   def validate_question_answers_options(type, answers_map)
       when type in [:single_select, :multiple_select] do

@@ -108,6 +108,7 @@ defmodule Sanbase.Mixfile do
       {:finch, "~> 0.12", override: true},
       {:floki, "~> 0.20"},
       {:gettext, "~> 0.11"},
+      {:gradient, github: "esl/gradient", only: [:dev], runtime: false},
       {:guardian_db, "~> 2.0"},
       {:guardian, "~> 2.0"},
       {:hackney, "~> 1.17", override: true},

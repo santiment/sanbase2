@@ -95,8 +95,8 @@ defmodule Sanbase.Billing.DiscordNotification do
   end
 
   defp subscription_time_left_str(subscription) do
-    days_left = abs(Timex.diff(subscription.current_period_end, Timex.now(), :days))
-    hours_left = abs(Timex.diff(subscription.current_period_end, Timex.now(), :hours))
+    days_left = abs(DateTime.diff(subscription.current_period_end, DateTime.utc_now(), :days))
+    hours_left = abs(DateTime.diff(subscription.current_period_end, DateTime.utc_now(), :hours))
 
     cond do
       days_left == 0 and hours_left == 1 -> "1 hour"
@@ -256,7 +256,7 @@ defmodule Sanbase.Billing.DiscordNotification do
     Timex.diff(Timex.now(), created_at_dt, :months) + 1
   end
 
-  defp format_cents_amount(amount) do
+  defp format_cents_amount(amount) when is_number(amount) do
     "$" <> Number.Delimit.number_to_delimited(amount / 100, precision: 0)
   end
 

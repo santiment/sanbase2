@@ -25,7 +25,7 @@ defmodule Sanbase.Dashboard.Panel do
   @type panel_args :: %{
           optional(:name) => String.t(),
           optional(:description) => String.t(),
-          optional(:settings) => Map.t(),
+          optional(:settings) => map,
           optional(:sql) => sql()
         }
 

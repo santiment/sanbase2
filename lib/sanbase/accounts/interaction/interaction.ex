@@ -89,7 +89,7 @@ defmodule Sanbase.Accounts.Interaction do
   The entity_type is converted to its internal representation before storing.
   This means that all types of watchlists are stored as `watchlist`.
   """
-  @spec store_user_interaction(non_neg_integer(), Map.t()) ::
+  @spec store_user_interaction(non_neg_integer(), map) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def store_user_interaction(user_id, args) do
     inserted_at =

@@ -23,7 +23,7 @@ defmodule Sanbase.Dashboard.History do
           description: String.t(),
           is_public: boolean(),
           panels: list(Dashboard.Panel.t()),
-          parameters: Map.t(),
+          parameters: map,
           inserted_at: NaiveDateTime.t(),
           updated_at: NaiveDateTime.t(),
           #

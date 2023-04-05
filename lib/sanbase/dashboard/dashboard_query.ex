@@ -1,7 +1,7 @@
 defmodule Sanbase.Dashboard.Query do
   alias Sanbase.Dashboard.Query
 
-  @spec run(String.t(), Map.t(), Map.t()) ::
+  @spec run(String.t(), map, map) ::
           {:ok, Query.Result.t()} | {:error, String.t()}
   @doc ~s"""
   Compute the SQL defined in the panel by executing it against ClickHouse.

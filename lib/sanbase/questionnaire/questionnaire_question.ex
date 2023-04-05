@@ -26,7 +26,7 @@ defmodule Sanbase.Questionnaire.Question do
           order: non_neg_integer(),
           question: String.t(),
           type: :single_select | :multiple_select | :open_text | :open_number | :boolean,
-          answer_options: Map.t(),
+          answer_options: map,
           has_extra_open_text_answer: boolean(),
           inserted_at: NaiveDateTime.t(),
           updated_at: NaiveDateTime.t()
@@ -76,7 +76,7 @@ defmodule Sanbase.Questionnaire.Question do
   @doc ~s"""
   Create a new question that belongs to a given questionnaire
   """
-  @spec create(questionnaire_uuid, Map.t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  @spec create(questionnaire_uuid, map) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(questionnaire_uuid, %{} = params) do
     type = params[:type]
 
@@ -93,7 +93,7 @@ defmodule Sanbase.Questionnaire.Question do
   @doc ~s"""
   Update existing question
   """
-  @spec update(question_uuid, Map.t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  @spec update(question_uuid, map) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(id, %{} = params) do
     case by_uuid(id) do
       {:ok, %__MODULE__{} = question} ->

@@ -12,6 +12,8 @@ defmodule Sanbase.Balance do
 
   @type slug :: String.t()
   @type address :: String.t()
+  @type addresses :: list(address)
+  @type address_or_addresses :: address | addresses
   @type interval :: String.t()
   @type operator :: Sanbase.Metric.SqlQuery.Helper.operator()
 
@@ -21,7 +23,7 @@ defmodule Sanbase.Balance do
   of time starting with that datetime.
   """
   @spec historical_balance_ohlc(
-          list(address),
+          address_or_addresses,
           slug,
           DateTime.t(),
           DateTime.t(),
@@ -40,10 +42,10 @@ defmodule Sanbase.Balance do
 
   def historical_balance_ohlc(address, slug, from, to, interval) do
     with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
-      address = Sanbase.BlockchainAddress.to_internal_format(address)
+      address_or_addresses = Sanbase.BlockchainAddress.to_internal_format(address)
 
       do_historical_balance_ohlc(
-        address,
+        address_or_addresses,
         slug,
         decimals,
         blockchain,

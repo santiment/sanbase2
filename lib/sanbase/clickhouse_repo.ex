@@ -14,7 +14,7 @@ defmodule Sanbase.ClickhouseRepo do
     case Config.module_get(__MODULE__, :clickhouse_repo_enabled?) do
       true -> true
       false -> false
-      nil -> System.get_env("CLICKHOUSE_REPO_ENABLED", "true") |> String.to_existing_atom()
+      nil -> (System.get_env("CLICKHOUSE_REPO_ENABLED") || "true") |> String.to_existing_atom()
     end
   end
 
@@ -36,10 +36,12 @@ defmodule Sanbase.ClickhouseRepo do
   @doc ~s"""
   Execute a query and apply `transform_fn/1` on each row of the result.
   """
-  @spec query_transform(Sanbase.Clickhouse.Query.t(), (list() -> list())) ::
-          {:ok, any()} | {:error, String.t()}
-  @spec query_transform(String.t(), list(), (list() -> list())) ::
-          {:ok, any()} | {:error, String.t()}
+  @spec query_transform(Sanbase.Clickhouse.Query.t(), (list -> transform_result)) ::
+          {:ok, list(transform_result)} | {:error, String.t()}
+        when transform_result: any()
+  @spec query_transform(String.t(), list, (list -> transform_result)) ::
+          {:ok, list(transform_result)} | {:error, String.t()}
+        when transform_result: any
   def query_transform(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
     %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
     query_transform(sql, args, transform_fn)
@@ -60,10 +62,12 @@ defmodule Sanbase.ClickhouseRepo do
   Return a map with the transformed rows alongside some metadata -
   the query id, column names and a short summary of the used resources
   """
-  @spec query_transform_with_metadata(Sanbase.Clickhouse.Query.t(), (list() -> list())) ::
-          {:ok, Map.t()} | {:error, String.t()}
-  @spec query_transform_with_metadata(String.t(), list(), (list() -> list())) ::
-          {:ok, Map.t()} | {:error, String.t()}
+  @spec query_transform_with_metadata(Sanbase.Clickhouse.Query.t(), (list() -> transform_result)) ::
+          {:ok, map()} | {:error, String.t()}
+        when transform_result: any
+  @spec query_transform_with_metadata(String.t(), list(), (list() -> transform_result)) ::
+          {:ok, map()} | {:error, String.t()}
+        when transform_result: any
   def query_transform_with_metadata(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
     %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
     query_transform_with_metadata(sql, args, transform_fn)
@@ -96,10 +100,10 @@ defmodule Sanbase.ClickhouseRepo do
   and using `reduce` for every row
   """
   @spec query_reduce(Sanbase.Clickhouse.Query.t(), acc, (list(), acc -> acc)) ::
-          {:ok, Map.t()} | {:error, String.t()}
+          {:ok, map()} | {:error, String.t()}
         when acc: any
   @spec query_reduce(String.t(), list(), acc, (list(), acc -> acc)) ::
-          {:ok, Map.t()} | {:error, String.t()}
+          {:ok, map()} | {:error, String.t()}
         when acc: any
   def query_reduce(%Sanbase.Clickhouse.Query{} = query, init, reducer) do
     %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)

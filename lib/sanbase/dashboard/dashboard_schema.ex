@@ -32,7 +32,7 @@ defmodule Sanbase.Dashboard.Schema do
           name: String.t(),
           description: String.t(),
           is_public: boolean(),
-          parameters: Map.t(),
+          parameters: map,
           panels: list(Panel.t()),
           inserted_at: NaiveDateTime.t(),
           updated_at: NaiveDateTime.t(),

@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.Query do
   defstruct [:sql, :parameters, :settings, :format]
 
   @type sql :: String.t()
-  @type parameters :: Map.t()
+  @type parameters :: map()
 
   @type t :: %__MODULE__{
           sql: sql(),

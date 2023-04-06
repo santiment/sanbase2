@@ -157,7 +157,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       insert(:subscription_pro_sanbase,
         user: context.user,
         status: "trialing",
-        trial_end: DateTime.add(Timex.now(), 10 * 24 * 3600)
+        trial_end: DateTime.add(DateTime.utc_now(), 10 * 24 * 3600, :second)
       )
 
       query = subscribe_without_card_mutation(context.plans.plan_pro_sanbase_yearly.id)
@@ -373,6 +373,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   describe "cancel_subscription mutation" do
     test "successfully cancel subscription", context do
       period_end = Timex.shift(Timex.now(), days: 3) |> DateTime.truncate(:second)
+      Process.sleep(1000)
 
       subscription =
         insert(:subscription_essential,
@@ -596,7 +597,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       insert(:subscription_pro_sanbase,
         user: context.user,
         status: "trialing",
-        trial_end: DateTime.add(Timex.now(), 10 * 24 * 3600)
+        trial_end: DateTime.add(DateTime.utc_now(), 10 * 24 * 3600, :second)
       )
 
       res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
@@ -612,7 +613,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       insert(:subscription_pro_sanbase,
         user: context.user,
         status: "trialing",
-        trial_end: DateTime.add(Timex.now(), -10 * 24 * 3600)
+        trial_end: DateTime.add(DateTime.utc_now(), -10 * 24 * 3600, :second)
       )
 
       res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
@@ -629,7 +630,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       insert(:subscription_pro_sanbase,
         user: context.user,
         status: "trialing",
-        trial_end: DateTime.add(Timex.now(), -20 * 24 * 3600)
+        trial_end: DateTime.add(DateTime.utc_now(), -20 * 24 * 3600, :second)
       )
 
       res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)

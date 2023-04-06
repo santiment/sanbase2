@@ -23,6 +23,7 @@ defmodule Sanbase.Accounts.User do
   alias Sanbase.Alert.HistoricalActivity
   alias Sanbase.Billing.Subscription
 
+  @type t :: %__MODULE__{}
   @salt_length 64
 
   # Fallback username and email for Insights owned by deleted user accounts

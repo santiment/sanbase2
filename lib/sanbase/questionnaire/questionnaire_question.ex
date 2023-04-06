@@ -125,7 +125,7 @@ defmodule Sanbase.Questionnaire.Question do
   @doc ~s"""
 
   """
-  @spec get_type(question_uuid) :: {:ok, Atom.t()} | {:error, Ecto.Changeset.t()}
+  @spec get_type(question_uuid) :: {:ok, atom()} | {:error, Ecto.Changeset.t()}
   def get_type(question_uuid) do
     case by_uuid(question_uuid) do
       {:ok, %__MODULE__{} = question} -> {:ok, question.type}

@@ -242,7 +242,7 @@ defmodule Sanbase.Application do
   @doc ~s"""
   Children common for all types of container types
   """
-  @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
+  @spec common_children() :: list(:supervisor.child_spec() | {module(), term()} | module())
   def common_children() do
     [
       # Start the PubSub

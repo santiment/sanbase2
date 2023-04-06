@@ -23,7 +23,7 @@ defmodule Sanbase.Interaction.DateTime do
 
     counter = :ets.update_counter(@ets_table, :counter, {2, 1}, {:counter, 1})
 
-    DateTime.add(DateTime.utc_now(), -counter)
+    DateTime.add(DateTime.utc_now(), -counter, :second)
   end
 
   def to_naive(dt), do: DateTime.to_naive(dt)

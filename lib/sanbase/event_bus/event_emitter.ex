@@ -13,9 +13,9 @@ defmodule Sanbase.EventBus.EventEmitter do
       function emit_event/3 required by behaviour Sanbase.EventBus.EventEmitter.Behaviour \
       is not implemented (in module #{inspect(env.module)}).
       We will inject a default implementation for now:
-          def emit_event(first_arg, _event_type, _args) do
-            first_arg
-          end
+        def emit_event(first_arg, _event_type, _args) do
+          first_arg
+        end
       """
 
       IO.warn(message, Macro.Env.stacktrace(env))

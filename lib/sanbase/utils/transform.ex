@@ -234,7 +234,7 @@ defmodule Sanbase.Utils.Transform do
     iex> Sanbase.Utils.Transform.merge_by_datetime([%{a: 3.5, datetime: ~U[2020-01-01 00:00:00Z]}, %{a: 2, datetime: ~U[2020-01-02 00:00:00Z]}], [%{a: 10, datetime: ~U[2020-01-01 00:00:00Z]}, %{a: 6, datetime: ~U[2020-01-02 00:00:00Z]}], &Kernel.*/2, :a)
     [%{a: 35.0, datetime: ~U[2020-01-01 00:00:00Z]}, %{a: 12, datetime: ~U[2020-01-02 00:00:00Z]}]
   """
-  @spec merge_by_datetime(list(), list(), fun(), any()) :: list()
+  @spec merge_by_datetime(list(), list(), function(), any()) :: list()
   def merge_by_datetime(list1, list2, func, key) do
     map = list2 |> Enum.into(%{}, fn %{datetime: dt} = item2 -> {dt, item2[key]} end)
 

@@ -54,8 +54,7 @@ defmodule Sanbase.Accounts.User.Email do
 
   def mark_email_token_as_validated(user) do
     validated_at =
-      (user.email_token_validated_at || Timex.now())
-      |> Timex.to_naive_datetime()
+      (user.email_token_validated_at || NaiveDateTime.utc_now())
       |> NaiveDateTime.truncate(:second)
 
     user

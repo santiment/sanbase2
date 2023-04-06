@@ -35,7 +35,7 @@ defmodule Sanbase.Alert.History.ResultBuilder do
   defp in_cooldown(last_triggered_dt, %{datetime: datetime}, cooldown_sec) do
     DateTime.compare(
       datetime,
-      Timex.shift(last_triggered_dt, seconds: cooldown_sec)
+      DateTime.add(last_triggered_dt, cooldown_sec, :second)
     ) == :lt
   end
 end

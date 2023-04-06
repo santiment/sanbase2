@@ -42,6 +42,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
 
   @type historical_balance_result :: {:ok, list(historical_balance)} | {:error, String.t()}
 
+  @type current_balance_result :: {:ok, list(address_balance_map)} | {:error, String.t()}
+
   @type balance_change :: %{
           address: address,
           balance_start: number,
@@ -72,7 +74,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
   the latest balance.
   """
   @callback current_balance(address, target, decimals) ::
-              {:ok, list(address_balance_map)} | {:error, String.t()}
+              current_balance_result()
 
   @doc ~s"""
   For a given address or list of addresses returns the combined
@@ -128,5 +130,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
               before :: datetime
             ) :: {:ok, float()} | {:error, String.t()}
 
-  @optional_callbacks historical_balance_change: 6, last_balance: 5
+  @callback last_balance_before(
+              address,
+              slug,
+              before :: datetime
+            ) :: {:ok, float()} | {:error, String.t()}
+
+  @optional_callbacks historical_balance_change: 6,
+                      last_balance: 5,
+                      last_balance_before: 3,
+                      last_balance_before: 4
 end

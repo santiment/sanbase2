@@ -39,7 +39,7 @@ defmodule Sanbase.Alert.History.WalletTriggerHistory do
     defp get_historical_balance(selector, addresses, time_window) do
       to = DateTime.utc_now()
       shift = @historical_days_from + str_to_days(time_window) - 1
-      from = DateTime.add(to, -shift, :day)
+      from = DateTime.add(to, -shift * 86400, :second)
 
       Sanbase.Clickhouse.HistoricalBalance.historical_balance(
         selector,

@@ -12,7 +12,7 @@ defmodule Sanbase.Billing.ApiInfo do
   @fields @query_type.fields |> Map.keys()
 
   @type query_or_argument_tuple ::
-          {:query, Atom.t()} | {:metric, String.t()} | {:signal, String.t()}
+          {:query, atom()} | {:metric, String.t()} | {:signal, String.t()}
 
   @typedoc """
   Key is one of "SANAPI" or "SANBASE". Value is one of "FREE", "PRO", etc.

@@ -35,7 +35,7 @@ defmodule Sanbase.Notifications.Notification do
   Return whether a given notification type has been sent for a project
   in the past `duration` seconds
   """
-  @spec has_cooldown?(%Project{}, %Type{}, non_neg_integer(), Atom.t()) :: boolean()
+  @spec has_cooldown?(%Project{}, %Type{}, non_neg_integer(), atom()) :: boolean()
   def has_cooldown?(%Project{} = project, %Type{} = type, duration, duration_type \\ :seconds) do
     {has_cooldown?, _} = get_cooldown(project, type, duration, duration_type)
     has_cooldown?

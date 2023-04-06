@@ -29,6 +29,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   defguard are_proper_function_arguments(fun, ttl, refresh_time_delta)
            when is_function(fun, 0) and is_integer(ttl) and ttl > 0 and
                   is_integer(refresh_time_delta) and
+                  refresh_time_delta > 0 and
                   refresh_time_delta < ttl
 
   @doc ~s"""
@@ -62,9 +63,15 @@ defmodule Sanbase.Cache.RehydratingCache do
       refresh_time_delta seconds the cache will be recomputed and stored again.
       The count for ttl starts from 0 again when value is recomputed.
   """
-  @spec register_function((() -> any()), any(), pos_integer(), pos_integer()) ::
+  @spec register_function(
+          (() -> any()),
+          any(),
+          pos_integer(),
+          pos_integer(),
+          String.t()
+        ) ::
           :ok | {:error, :already_registered}
-  def register_function(fun, key, ttl, refresh_time_delta, description \\ nil)
+  def register_function(fun, key, ttl, refresh_time_delta, description \\ "")
       when are_proper_function_arguments(fun, ttl, refresh_time_delta) do
     map = %{
       function: fun,
@@ -88,8 +95,12 @@ defmodule Sanbase.Cache.RehydratingCache do
   if a recomputation is running when get is invoked, the old value is returned.
   """
   @spec get(any(), non_neg_integer(), Keyword.t()) ::
-          {:ok, any()} | {:nocache, {:ok, any()}} | {:error, :timeout} | {:error, :not_registered}
-  def get(key, timeout \\ 30_000, opts \\ []) when is_integer(timeout) and timeout > 0 do
+          {:ok, any()}
+          | {:nocache, {:ok, any()}}
+          | {:error, :timeout}
+          | {:error, :not_registered}
+  def get(key, timeout \\ 30_000, opts \\ [])
+      when is_integer(timeout) and timeout > 0 do
     case Store.get(@store_name, key) do
       nil ->
         GenServer.call(@name, {:get, key, timeout}, timeout)
@@ -217,13 +228,17 @@ defmodule Sanbase.Cache.RehydratingCache do
     %{progress: progress, fails: fails} = state
 
     new_state =
-      case Enum.find(progress, fn {_k, v} -> match?({:in_progress, ^pid, _}, v) end) do
+      case Enum.find(progress, fn {_k, v} ->
+             match?({:in_progress, ^pid, _}, v)
+           end) do
         {k, _v} ->
           new_progress = Map.update!(progress, k, fn _ -> :failed end)
 
           # Store the number of fails and the last reason for the fail
           new_fails =
-            Map.update(fails, k, {1, reason}, fn {count, _last_reason} -> {count + 1, reason} end)
+            Map.update(fails, k, {1, reason}, fn {count, _last_reason} ->
+              {count + 1, reason}
+            end)
 
           %{state | progress: new_progress, fails: new_fails}
 
@@ -254,7 +269,14 @@ defmodule Sanbase.Cache.RehydratingCache do
 
     %{pid: pid} = run_function(self(), fun_map, state.task_supervisor)
     now = Timex.now()
-    new_progress = Map.put(state.progress, key, {:in_progress, pid, {now, DateTime.to_unix(now)}})
+
+    new_progress =
+      Map.put(
+        state.progress,
+        key,
+        {:in_progress, pid, {now, DateTime.to_unix(now)}}
+      )
+
     new_functions = Map.put(state.functions, key, fun_map)
 
     %{state | functions: new_functions, progress: new_progress}
@@ -286,9 +308,11 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   defp run_function_get_updated_progress(state, key, fun_map) do
     %{progress: progress, task_supervisor: task_supervisor, now_unix: now_unix} = state
+
     now_dt = DateTime.from_unix!(now_unix)
 
     %{pid: pid} = run_function(self(), fun_map, task_supervisor)
+
     # Put both the datetime and unix timestamp in the progress map. The unix is used
     # in checks and guards as it is plain number comparisons. The DateTime is used
     # when inspecting the state during runtime to debug/observe.
@@ -327,18 +351,26 @@ defmodule Sanbase.Cache.RehydratingCache do
             # Task execution failed, retry immediatelly
             _progress = run_function_get_updated_progress(state, key, fun_map)
 
-          run_after_unix when is_integer(run_after_unix) and now_unix >= run_after_unix ->
+          run_after_unix
+          when is_integer(run_after_unix) and now_unix >= run_after_unix ->
             # It is time to execute the function again
             _progress = run_function_get_updated_progress(state, key, fun_map)
 
           {:in_progress, pid, {_started_datetime, started_unix}} ->
-            handle_in_progress_function_run(state, pid, key, fun_map, started_unix)
+            handle_in_progress_function_run(
+              state,
+              pid,
+              key,
+              fun_map,
+              started_unix
+            )
 
           nil ->
             # No recorded progress. Should not happend.
             _progress = run_function_get_updated_progress(state, key, fun_map)
 
-          run_after_unix when is_integer(run_after_unix) and now_unix < run_after_unix ->
+          run_after_unix
+          when is_integer(run_after_unix) and now_unix < run_after_unix ->
             # It's still not time to reevaluate the function again
             Map.put(acc, key, run_after_unix)
         end
@@ -364,7 +396,9 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   defp do_fill_waiting_list(state, key, from, timeout) do
     elem = {from, Timex.shift(Timex.now(), milliseconds: timeout)}
+
     new_waiting = Map.update(state.waiting, key, [elem], fn list -> [elem | list] end)
+
     %{state | waiting: new_waiting}
   end
 
@@ -388,7 +422,12 @@ defmodule Sanbase.Cache.RehydratingCache do
     {:noreply, %{state | progress: new_progress}}
   end
 
-  defp store_result_handle_info({:nocache, {:ok, _value}} = result, state, fun_map, now_unix) do
+  defp store_result_handle_info(
+         {:nocache, {:ok, _value}} = result,
+         state,
+         fun_map,
+         now_unix
+       ) do
     # Store the result but let it be reevaluated immediately on the next run.
     # This is to not calculate a function that always returns :nocache on
     # every run.
@@ -404,10 +443,21 @@ defmodule Sanbase.Cache.RehydratingCache do
     new_progress = Map.put(progress, key, now_unix)
     Store.put(@store_name, key, result, ttl)
 
-    {:noreply, %{state | progress: new_progress, waiting: new_waiting, functions: new_functions}}
+    {:noreply,
+     %{
+       state
+       | progress: new_progress,
+         waiting: new_waiting,
+         functions: new_functions
+     }}
   end
 
-  defp store_result_handle_info({:ok, _value} = result, state, fun_map, now_unix) do
+  defp store_result_handle_info(
+         {:ok, _value} = result,
+         state,
+         fun_map,
+         now_unix
+       ) do
     # Put the value in the store. Send the result to the waiting callers.
     %{progress: progress, waiting: waiting, functions: functions} = state
     %{key: key, refresh_time_delta: refresh_time_delta, ttl: ttl} = fun_map
@@ -420,7 +470,13 @@ defmodule Sanbase.Cache.RehydratingCache do
     new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
     Store.put(@store_name, key, result, ttl)
 
-    {:noreply, %{state | progress: new_progress, waiting: new_waiting, functions: new_functions}}
+    {:noreply,
+     %{
+       state
+       | progress: new_progress,
+         waiting: new_waiting,
+         functions: new_functions
+     }}
   end
 
   defp store_result_handle_info(_, state, fun_map, now_unix) do

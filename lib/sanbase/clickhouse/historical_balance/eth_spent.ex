@@ -7,7 +7,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthSpent do
 
   @type slug :: String.t()
 
-  @type address :: String.t() | list(String.t())
+  @type address_or_addresses :: String.t() | list(String.t())
 
   @typedoc ~s"""
   An interval represented as string. It has the format of number followed by one of:
@@ -30,20 +30,24 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthSpent do
   This is special case of balance_change/4 but as ethereum is used a lot for calculating
   ethereum spent this case avoids a call to the database to obtain the contract
   """
-  @spec eth_balance_change(address, from :: DateTime.t(), to :: DateTime.t()) ::
+  @spec eth_balance_change(address_or_addresses, from :: DateTime.t(), to :: DateTime.t()) ::
           HistoricalBalance.Behaviour.balance_change_result()
-  def eth_balance_change(addresses, from, to) do
-    Sanbase.Balance.balance_change(addresses, "ethereum", from, to)
+  def eth_balance_change(address_or_addresses, from, to) do
+    Sanbase.Balance.balance_change(address_or_addresses, "ethereum", from, to)
   end
 
   @doc ~s"""
   For a given address or list of addresses returns the ethereum  balance change for each bucket
   of size `interval` in the from-to time period
   """
-  @spec eth_balance_change(address, from :: DateTime.t(), to :: DateTime.t(), interval) ::
-          HistoricalBalance.Behaviour.historical_balance_change_result()
-  def eth_balance_change(addresses, from, to, interval) do
-    Sanbase.Balance.historical_balance_changes(addresses, "ethereum", from, to, interval)
+  def eth_balance_change(address_or_addresses, from, to, interval) do
+    Sanbase.Balance.historical_balance_changes(
+      address_or_addresses,
+      "ethereum",
+      from,
+      to,
+      interval
+    )
   end
 
   @doc ~s"""
@@ -54,10 +58,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthSpent do
     of the difference between the two balance
     - Zero otherwise
   """
-  @spec eth_spent(address | list(address), DateTime.t(), DateTime.t()) ::
+  @spec eth_spent(address_or_addresses, DateTime.t(), DateTime.t()) ::
           {:ok, number()} | {:error, String.t()}
-  def eth_spent(addresses, from, to) do
-    case eth_balance_change(addresses, from, to) do
+  def eth_spent(address_or_addresses, from, to) do
+    case eth_balance_change(address_or_addresses, from, to) do
       {:ok, balance_changes} ->
         eth_spent =
           balance_changes
@@ -83,11 +87,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthSpent do
     - If the combined balance of the addresses increases compared to the previous
     time bucket, the ethereum spent is equal to 0
   """
-  @spec eth_spent_over_time(address | list(address), DateTime.t(), DateTime.t(), interval) ::
+  @spec eth_spent_over_time(address_or_addresses, DateTime.t(), DateTime.t(), interval) ::
           eth_spent_over_time_result()
-  def eth_spent_over_time(addresses, from, to, interval)
-      when is_binary(addresses) or is_list(addresses) do
-    case eth_balance_change(addresses, from, to, interval) do
+  def eth_spent_over_time(address_or_addresses, from, to, interval) do
+    case eth_balance_change(address_or_addresses, from, to, interval) do
       {:ok, balance_changes} ->
         eth_spent_over_time =
           balance_changes

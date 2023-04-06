@@ -39,7 +39,7 @@ defmodule Sanbase.Entity.Query do
     end
   end
 
-  @spec maybe_filter_is_featured_query(Ecto.Query.t(), Sanbase.Entity.opts(), Atom.t()) ::
+  @spec maybe_filter_is_featured_query(Ecto.Query.t(), Sanbase.Entity.opts(), atom()) ::
           Ecto.Query.t()
   def maybe_filter_is_featured_query(query, opts, featured_item_field) do
     case Keyword.get(opts, :is_featured_data_only) do

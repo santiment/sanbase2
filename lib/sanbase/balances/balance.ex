@@ -60,9 +60,6 @@ defmodule Sanbase.Balance do
   Return timeseries data for balances. For every point in time
   return the last balance that is associated with that datetime.s
   """
-  @spec historical_balance(address, slug, DateTime.t(), DateTime.t(), interval) ::
-          {:ok, list(%{datetime: DateTime.t(), balance: number()})}
-          | {:error, String.t()}
   def historical_balance(address, slug, from, to, interval)
       when is_binary(address) do
     with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
@@ -84,16 +81,6 @@ defmodule Sanbase.Balance do
   Return the balance changes data for every address in the list in the specified
   time range.
   """
-  @spec balance_change(list(), String.t(), DateTime.t(), DateTime.t()) ::
-          {:ok,
-           %{
-             address: String.t(),
-             balance_start: number(),
-             balance_end: number(),
-             balance_change_amount: number(),
-             balance_change_percent: number()
-           }}
-          | {:error, String.t()}
   def balance_change([], _slug, _from, _to), do: {:ok, []}
 
   def balance_change(address_or_addresses, slug, from, to) do
@@ -155,8 +142,6 @@ defmodule Sanbase.Balance do
   Return the last known balance at or before `datetime` for every address
   provided as the first argument.
   """
-  @spec last_balance_before(address | list(address), slug, DateTime.t()) ::
-          {:ok, %{address => number()}} | {:error, String.t()}
   def last_balance_before(address_or_addresses, slug, datetime) do
     with {:ok, {decimals, _infr, blockchain}} <- info_by_slug(slug) do
       addresses =
@@ -173,8 +158,6 @@ defmodule Sanbase.Balance do
   such asset return the slug and current balance. If some project is not
   in Santiment's database it is not shown.
   """
-  @spec assets_held_by_address(address, Keyword.t()) ::
-          {:ok, list(%{slug: slug, balance: number()})} | {:error, String.t()}
   def assets_held_by_address(address, opts \\ []) do
     address = Sanbase.BlockchainAddress.to_internal_format(address)
 
@@ -290,8 +273,6 @@ defmodule Sanbase.Balance do
   @doc ~s"""
   Return the current balance for every address provided and a given slu
   """
-  @spec current_balance(address | list(address), slug) ::
-          {:ok, [%{address: address, balance: number()}]} | {:error, String.t()}
   def current_balance(address_or_addresses, slug) do
     with {:ok, {decimals, infr, blockchain}} <- info_by_slug(slug),
          {:ok, table} <- realtime_balances_table_or_nil(slug, infr) do

@@ -29,7 +29,7 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
 
   @type plan_name :: String.t()
   @type product_code :: String.t()
-  @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, Atom.t()}
+  @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
 
   alias Sanbase.Billing.ApiInfo
 
@@ -120,7 +120,7 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
     @min_plan_map[query_or_argument][product_code] || "FREE"
   end
 
-  @spec get_available_metrics_for_plan(plan_name, product_code, Atom.t()) ::
+  @spec get_available_metrics_for_plan(plan_name, product_code, atom()) ::
           list(binary())
   def get_available_metrics_for_plan(plan_name, product_code, restriction_type \\ :all)
 

@@ -30,7 +30,7 @@ defmodule Sanbase.Price do
   @metrics @metrics ++ Enum.map(@metrics, &Atom.to_string/1)
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
-  @type metric :: String.t() | Atom.t()
+  @type metric :: String.t() | atom()
   @type error :: String.t()
   @type slug :: String.t()
   @type slugs :: list(slug)

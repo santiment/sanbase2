@@ -18,7 +18,7 @@ defmodule Sanbase.Dashboard.Database.Table do
   and the column type is the value.
   Example: %{slug: "LowCardinality(String)", dt: "DateTime"}
   """
-  @type columns_map :: %{required(Atom.t()) => String.t()}
+  @type columns_map :: %{required(atom()) => String.t()}
 
   @type t :: %{
           table: Striong.t(),

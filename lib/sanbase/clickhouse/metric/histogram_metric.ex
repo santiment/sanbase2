@@ -171,7 +171,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   def last_datetime_computed_at(metric, _selector, _opts)
       when metric in @eth2_metrics do
-    query_struct = {"SELECT toUnixTimestamp(max(dt)) FROM eth2_staking_transfers_v2", []}
+    sql = "SELECT toUnixTimestamp(max(dt)) FROM eth2_staking_transfers_v2"
+    query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
 
     ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
       DateTime.from_unix!(timestamp)

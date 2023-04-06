@@ -309,8 +309,10 @@ defmodule Sanbase.Price.PricePairSql do
     WHERE slug != ''
     """
 
+    datetime = DateTime.add(DateTime.utc_now(), -7 * 86400, :second)
+
     params = %{
-      datetime: DateTime.add(DateTime.utc_now(), -7, :day) |> DateTime.to_unix(),
+      datetime: datetime |> DateTime.to_unix(),
       source: source
     }
 

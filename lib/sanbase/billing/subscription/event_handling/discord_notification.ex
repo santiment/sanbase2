@@ -95,8 +95,10 @@ defmodule Sanbase.Billing.DiscordNotification do
   end
 
   defp subscription_time_left_str(subscription) do
-    days_left = abs(DateTime.diff(subscription.current_period_end, DateTime.utc_now(), :days))
-    hours_left = abs(DateTime.diff(subscription.current_period_end, DateTime.utc_now(), :hours))
+    seconds_diff = abs(DateTime.diff(subscription.current_period_end, DateTime.utc_now()))
+
+    hours_left = div(seconds_diff, 3600)
+    days_left = div(seconds_diff, 86400)
 
     cond do
       days_left == 0 and hours_left == 1 -> "1 hour"

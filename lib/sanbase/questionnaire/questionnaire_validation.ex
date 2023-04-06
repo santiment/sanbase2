@@ -16,7 +16,7 @@ defmodule Sanbase.Questionnaire.Validation do
     This is for consistency. It can be done as a `single_select` type, but the answers
     and casing can vary between questions.
   """
-  @spec validate_question_answers_options(Atom.t(), map) ::
+  @spec validate_question_answers_options(atom(), map) ::
           true | {:error, String.t()}
   def validate_question_answers_options(type, answers_map)
       when type in [:single_select, :multiple_select] do
@@ -50,7 +50,7 @@ defmodule Sanbase.Questionnaire.Validation do
   @doc ~s"""
   Check the that question is non-empty string with at least 4 characters
   """
-  @spec validate_question_text(Atom.t(), String.t()) ::
+  @spec validate_question_text(atom(), String.t()) ::
           true | {:error, String.t()}
   def validate_question_text(_type, question) do
     case is_binary(question) and String.length(String.trim(question)) >= 4 do

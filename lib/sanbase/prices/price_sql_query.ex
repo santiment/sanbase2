@@ -1,17 +1,26 @@
 defmodule Sanbase.Price.SqlQuery do
   @table "asset_prices_v3"
 
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, maybe_str_to_sec: 1]
+  import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
 
   import Sanbase.Metric.SqlQuery.Helper,
     only: [
       to_unix_timestamp: 3,
       aggregation: 3,
       generate_comparison_string: 3,
-      dt_to_unix: 2
+      dt_to_unix: 2,
+      timerange_parameters: 2,
+      timerange_parameters: 3
     ]
 
-  def timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation) do
+  def timeseries_data_query(
+        slug_or_slugs,
+        from,
+        to,
+        interval,
+        source,
+        aggregation
+      ) do
     sql = """
     SELECT
       #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
@@ -40,7 +49,15 @@ defmodule Sanbase.Price.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def timeseries_metric_data_query(slug_or_slugs, metric, from, to, interval, source, aggregation) do
+  def timeseries_metric_data_query(
+        slug_or_slugs,
+        metric,
+        from,
+        to,
+        interval,
+        source,
+        aggregation
+      ) do
     sql = """
     SELECT
       #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
@@ -188,7 +205,14 @@ defmodule Sanbase.Price.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, aggregation) do
+  def aggregated_metric_timeseries_data_query(
+        slugs,
+        metric,
+        from,
+        to,
+        source,
+        aggregation
+      ) do
     sql = """
     SELECT slugString, SUM(value), toUInt32(SUM(has_changed))
     FROM (
@@ -225,7 +249,15 @@ defmodule Sanbase.Price.SqlQuery do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, source) do
+  def slugs_by_filter_query(
+        metric,
+        from,
+        to,
+        operation,
+        threshold,
+        aggregation,
+        source
+      ) do
     query_struct = filter_order_base_query(metric, from, to, aggregation, source)
 
     sql =
@@ -495,7 +527,7 @@ defmodule Sanbase.Price.SqlQuery do
     """
 
     params = %{
-      datetime: DateTime.add(DateTime.utc_now(), -1, :day),
+      datetime: DateTime.add(DateTime.utc_now(), -1 * 86400, :second),
       volume_usd: volume,
       source: source
     }
@@ -528,22 +560,6 @@ defmodule Sanbase.Price.SqlQuery do
   end
 
   # Private functions
-
-  defp timerange_parameters(from, to, interval \\ nil)
-
-  defp timerange_parameters(from, to, nil) do
-    {dt_to_unix(:from, from), dt_to_unix(:to, to)}
-  end
-
-  defp timerange_parameters(from, to, interval) do
-    from_unix = dt_to_unix(:from, from)
-    to_unix = dt_to_unix(:to, to)
-    interval_sec = str_to_sec(interval)
-    interval = maybe_str_to_sec(interval)
-    span = div(to_unix - from_unix, interval_sec) |> max(1)
-
-    {from_unix, to_unix, interval, span}
-  end
 
   defp slug_filter(slug, opts) when is_binary(slug) do
     arg_name = Keyword.fetch!(opts, :argument_name)

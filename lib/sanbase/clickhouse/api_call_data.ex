@@ -18,7 +18,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   Get a timeseries with the total number of api calls made by a user in a given interval
   and auth method
   """
-  @spec api_call_history(non_neg_integer(), DateTime.t(), DateTime.t(), String.t(), Atom.t()) ::
+  @spec api_call_history(non_neg_integer(), DateTime.t(), DateTime.t(), String.t(), atom()) ::
           {:ok, list(%{datetime: DateTime.t(), api_calls_count: non_neg_integer()})}
           | {:error, String.t()}
   def api_call_history(user_id, from, to, interval, auth_method) do
@@ -36,7 +36,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   Get a timeseries with the total number of api calls made by a user in a given interval
   and auth method
   """
-  @spec api_call_count(non_neg_integer(), DateTime.t(), DateTime.t(), Atom.t()) ::
+  @spec api_call_count(non_neg_integer(), DateTime.t(), DateTime.t(), atom()) ::
           {:ok, number()} | {:error, String.t()}
   def api_call_count(user_id, from, to, auth_method \\ :all) do
     query_struct = api_call_count_query(user_id, from, to, auth_method)

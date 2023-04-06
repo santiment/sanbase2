@@ -306,10 +306,11 @@ defmodule Sanbase.ApiCallLimit do
     case Enum.min([quota_size, min_remaining]) do
       0 ->
         now = DateTime.utc_now()
+        end_of_month = Timex.end_of_month(now)
 
         blocked_for_seconds =
           cond do
-            api_calls_remaining.month == 0 -> Timex.diff(Timex.end_of_month(now), now, :seconds)
+            api_calls_remaining.month == 0 -> DateTime.diff(end_of_month, now, :second)
             api_calls_remaining.hour == 0 -> 3600 - (now.minute * 60 + now.second)
             api_calls_remaining.minute == 0 -> 60 - now.second
           end

@@ -1,70 +1,72 @@
 defmodule Sanbase.Price.SqlQuery do
   @table "asset_prices_v3"
 
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, maybe_str_to_sec: 1]
+  import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
 
   import Sanbase.Metric.SqlQuery.Helper,
     only: [
       to_unix_timestamp: 3,
       aggregation: 3,
       generate_comparison_string: 3,
-      dt_to_unix: 2
+      dt_to_unix: 2,
+      timerange_parameters: 2,
+      timerange_parameters: 3
     ]
 
   def timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation) do
-    query = """
+    sql = """
     SELECT
-      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS time,
+      #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
       #{aggregation(aggregation, "price_usd", "dt")} AS price_usd,
       #{aggregation(aggregation, "price_btc", "dt")} AS price_btc,
       #{aggregation(aggregation, "marketcap_usd", "dt")} AS marketcap_usd,
       #{aggregation(aggregation, "volume_usd", "dt")} AS volume_usd
     FROM #{@table}
     PREWHERE
-      #{slug_filter(slug_or_slugs, argument_position: 2)} AND
-      source = cast(?3, 'LowCardinality(String)') AND
-      dt >= toDateTime(?4) AND
-      dt < toDateTime(?5)
+      #{slug_filter(slug_or_slugs, argument_name: "slug")} AND
+      source = cast({{source}}, 'LowCardinality(String)') AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
     GROUP BY slug, time
     ORDER BY time ASC
     """
 
-    args = [
-      maybe_str_to_sec(interval),
-      slug_or_slugs,
-      source,
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to)
-    ]
+    params = %{
+      interval: maybe_str_to_sec(interval),
+      slug: slug_or_slugs,
+      source: source,
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def timeseries_metric_data_query(slug_or_slugs, metric, from, to, interval, source, aggregation) do
-    query = """
+    sql = """
     SELECT
-      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS time,
+      #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
       #{aggregation(aggregation, "#{metric}", "dt")}
     FROM #{@table}
     PREWHERE
-      #{slug_filter(slug_or_slugs, argument_position: 2)} AND
+      #{slug_filter(slug_or_slugs, argument_name: "slug")} AND
       NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND #{metric} > 0 AND
-      source = cast(?3, 'LowCardinality(String)') AND
-      dt >= toDateTime(?4) AND
-      dt < toDateTime(?5)
+      source = cast({{source}}, 'LowCardinality(String)') AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
     GROUP BY time
     ORDER BY time
     """
 
-    args = [
-      maybe_str_to_sec(interval),
-      slug_or_slugs,
-      source,
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to)
-    ]
+    params = %{
+      interval: maybe_str_to_sec(interval),
+      slug: slug_or_slugs,
+      source: source,
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def timeseries_metric_data_per_slug_query(
@@ -76,30 +78,30 @@ defmodule Sanbase.Price.SqlQuery do
         source,
         aggregation
       ) do
-    query = """
+    sql = """
     SELECT
-      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS time,
+      #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
       slug,
       #{aggregation(aggregation, "#{metric}", "dt")}
     FROM #{@table} FINAL
     PREWHERE
-      #{slug_filter(slug_or_slugs, argument_position: 2)} AND
-      source = cast(?3, 'LowCardinality(String)') AND
-      dt >= toDateTime(?4) AND
-      dt < toDateTime(?5)
+      #{slug_filter(slug_or_slugs, argument_name: "slug")} AND
+      source = cast({{source}}, 'LowCardinality(String)') AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}]})
     GROUP BY time, slug
     ORDER BY time
     """
 
-    args = [
-      maybe_str_to_sec(interval),
-      slug_or_slugs,
-      source,
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to)
-    ]
+    params = %{
+      interval: maybe_str_to_sec(interval),
+      slug: slug_or_slugs,
+      source: source,
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def aggregated_timeseries_data_query(slugs, from, to, source, opts \\ []) do
@@ -107,11 +109,11 @@ defmodule Sanbase.Price.SqlQuery do
     marketcap_aggr = Keyword.get(opts, :marketcap_aggregation, :avg)
     volume_aggr = Keyword.get(opts, :volume_aggregation, :avg)
 
-    query = """
+    sql = """
     SELECT slugString, SUM(price_usd), SUM(price_btc), SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([?1]) AS slugString,
+        arrayJoin([{{slugs}}]) AS slugString,
         toFloat64(0) AS price_usd,
         toFloat64(0) AS price_btc,
         toFloat64(0) AS marketcap_usd,
@@ -128,29 +130,34 @@ defmodule Sanbase.Price.SqlQuery do
         #{aggregation(volume_aggr, "volume_usd", "dt")} AS volume_usd,
         toUInt32(1) AS has_changed
       FROM #{@table}
-        PREWHERE slug IN (?1) AND
-        dt >= toDateTime(?2) AND
-        dt < toDateTime(?3) AND
-        source = cast(?4, 'LowCardinality(String)')
+        PREWHERE slug IN ({{slugs}}) AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
+        source = cast({{source}}, 'LowCardinality(String)')
       GROUP BY slug
     )
     GROUP BY slugString
     """
 
-    args = [slugs, DateTime.to_unix(from), DateTime.to_unix(to), source]
+    params = %{
+      slugs: slugs,
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to),
+      source: source
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def aggregated_marketcap_and_volume_query(slugs, from, to, source, opts) do
     marketcap_aggr = Keyword.get(opts, :marketcap_aggregation, :avg)
     volume_aggr = Keyword.get(opts, :volume_aggregation, :avg)
 
-    query = """
+    sql = """
     SELECT slugString, SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([?1]) AS slugString,
+        arrayJoin([{{slugs}}]) AS slugString,
         toFloat64(0) AS marketcap_usd,
         toFloat64(0) AS volume_usd,
         toUInt32(0) AS has_changed
@@ -164,30 +171,31 @@ defmodule Sanbase.Price.SqlQuery do
         toUInt32(1) AS has_changed
       FROM #{@table}
       PREWHERE
-        slug IN (?1) AND
-        dt >= toDateTime(?2) AND
-        dt < toDateTime(?3) AND
-        source = cast(?4, 'LowCardinality(String)')
+        slug IN ({{slugs}}) AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
+        source = cast({{source}}, 'LowCardinality(String)')
       GROUP BY slug
     )
     GROUP BY slugString
     """
 
-    {query,
-     [
-       slugs,
-       from |> DateTime.to_unix(),
-       to |> DateTime.to_unix(),
-       source
-     ]}
+    params = %{
+      slugs: slugs,
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to),
+      source: source
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, aggregation) do
-    query = """
+    sql = """
     SELECT slugString, SUM(value), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([?1]) AS slugString,
+        arrayJoin([{{slugs}}]) AS slugString,
         toFloat64(0) AS value,
         toUInt32(0) AS has_changed
 
@@ -200,46 +208,47 @@ defmodule Sanbase.Price.SqlQuery do
       FROM #{@table}
       PREWHERE
         NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND
-        slug IN (?1) AND
-        source = cast(?2, 'LowCardinality(String)') AND
-        dt < toDateTime(?3)
-        #{if from, do: "AND dt >= toDateTime(?4)"}
+        slug IN ({{slugs}}) AND
+        source = cast({{source}}, 'LowCardinality(String)') AND
+        dt < toDateTime({{to}})
+        #{if from, do: "AND dt >= toDateTime({{from}})"}
       GROUP BY slug
     )
     GROUP BY slugString
     """
 
-    args =
-      case from do
-        %DateTime{} -> [slugs, source, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
-        _ -> [slugs, source, to |> DateTime.to_unix()]
-      end
+    params = %{
+      slugs: slugs,
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to),
+      source: source
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, source) do
-    {query, args} = filter_order_base_query(metric, from, to, aggregation, source)
+    query_struct = filter_order_base_query(metric, from, to, aggregation, source)
 
-    query =
-      query <>
+    sql =
+      query_struct.sql <>
         """
         WHERE #{generate_comparison_string("value", operation, threshold)}
         """
 
-    {query, args}
+    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
   end
 
   def slugs_order_query(metric, from, to, direction, aggregation, source) do
-    {query, args} = filter_order_base_query(metric, from, to, aggregation, source)
+    query_struct = filter_order_base_query(metric, from, to, aggregation, source)
 
-    query =
-      query <>
+    sql =
+      query_struct.sql <>
         """
         ORDER BY value #{direction |> Atom.to_string() |> String.upcase()}
         """
 
-    {query, args}
+    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
   end
 
   defp filter_order_base_query(metric, from, to, aggregation, source) do
@@ -255,7 +264,7 @@ defmodule Sanbase.Price.SqlQuery do
         _ -> from
       end
 
-    query = """
+    sql = """
     SELECT slug, value
     FROM (
       SELECT
@@ -264,31 +273,29 @@ defmodule Sanbase.Price.SqlQuery do
       FROM #{@table}
       PREWHERE
         isNotNull(#{metric}) AND NOT isNaN(#{metric}) AND #{metric} > 0 AND
-        dt >= toDateTime(?1) AND
-        dt < toDateTime(?2) AND
-        source = cast(?3, 'LowCardinality(String)')
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
+        source = cast({{source}}, 'LowCardinality(String)')
       GROUP BY slug
     )
     """
 
-    args = [
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
-      source
-    ]
+    params = %{
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to),
+      source: source
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def ohlc_query(slug, from, to, source) do
-    {from, to} = timerange_parameters(from, to)
-
-    query = """
+    sql = """
     SELECT
       SUM(open_price), SUM(high_price), SUM(close_price), SUM(low_price), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([(?1)]) AS slugString,
+        arrayJoin([({{slug}})]) AS slugString,
         toFloat64(0) AS open_price,
         toFloat64(0) AS high_price,
         toFloat64(0) AS close_price,
@@ -306,228 +313,237 @@ defmodule Sanbase.Price.SqlQuery do
         toUInt32(1) AS has_changed
       FROM #{@table}
       PREWHERE
-        slug = cast(?1, 'LowCardinality(String)') AND
-        source = cast(?2, 'LowCardinality(String)') AND
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4)
+        slug = cast({{slug}}, 'LowCardinality(String)') AND
+        source = cast({{ource}}, 'LowCardinality(String)') AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}})
       GROUP BY slug
     )
     GROUP BY slugString
     """
 
-    args = [slug, source, from, to]
+    {from, to} = timerange_parameters(from, to)
 
-    {query, args}
+    params = %{
+      slug: slug,
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to),
+      source: source
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def timeseries_ohlc_data_query(slug, from, to, interval, source) do
-    query = """
+    sql = """
     SELECT
-      #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS time,
+      #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
       argMin(price_usd, dt) AS open_price,
       max(price_usd) AS high_price,
       min(price_usd) AS low_price,
       argMax(price_usd, dt) AS close_price
     FROM #{@table}
     PREWHERE
-      slug = cast(?2, 'LowCardinality(String)') AND
-      source = cast(?3, 'LowCardinality(String)') AND
-      dt >= toDateTime(?4) AND
-      dt < toDateTime(?5)
+      slug = cast({{slug}}, 'LowCardinality(String)') AND
+      source = cast({{source}}, 'LowCardinality(String)') AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
     GROUP BY time
     ORDER BY time ASC
     """
 
-    args = [
-      maybe_str_to_sec(interval),
-      slug,
-      source,
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to)
-    ]
+    params = %{
+      interval: maybe_str_to_sec(interval),
+      slug: slug,
+      source: source,
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def combined_marketcap_and_volume_query(slugs, from, to, interval, source) do
-    {from, to, interval, span} = timerange_parameters(from, to, interval)
-
-    query = """
+    sql = """
     SELECT time,SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
+        toUnixTimestamp(intDiv(toUInt32({{from}} + number * {{interval}}), {{interval}}) * {{interval}}) AS time,
         toFloat64(0) AS marketcap_usd,
         toFloat64(0) AS volume_usd,
         toUInt32(0) AS has_changed
-      FROM numbers(?2)
+      FROM numbers({{span}})
       UNION ALL
       SELECT
-        toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+        #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
         argMax(marketcap_usd, dt) AS marketcap_usd,
         argMax(volume_usd, dt) AS volume_usd,
         toUInt32(1) AS has_changed
       FROM #{@table}
       PREWHERE
-        slug IN (?3) AND
-        source = ?4 AND
-        dt >= toDateTime(?5) AND
-        dt < toDateTime(?6)
+        slug IN ({{slugs}}) AND
+        source = cast({{source}}, 'LowCardinality(String)') AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}})
       GROUP BY time, slug
     )
     GROUP BY time
     ORDER BY time
     """
 
-    args = [interval, span, slugs, source, from, to]
+    {from, to, interval, span} = timerange_parameters(from, to, interval)
 
-    {query, args}
+    params = %{
+      interval: interval,
+      slugs: slugs,
+      source: source,
+      span: span,
+      from: from,
+      to: to
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def last_record_before_query(slug, datetime, source) do
-    query = """
-    SELECT
-      price_usd, price_btc, marketcap_usd, volume_usd
+    sql = """
+    SELECT price_usd, price_btc, marketcap_usd, volume_usd
     FROM #{@table}
-    PREWHERE
-      slug = cast(?1, 'LowCardinality(String)') AND
-      source = cast(?2, 'LowCardinality(String)') AND
-      dt >= toDateTime(?3) AND
-      dt < toDateTime(?4)
+    WHERE
+      slug = cast({{slug}}, 'LowCardinality(String)') AND
+      source = cast({{source}}, 'LowCardinality(String)') AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
     ORDER BY dt DESC
     LIMIT 1
     """
 
     # Put an artificial lower boundary otherwise the query is too slow
-    from = Timex.shift(datetime, days: -30) |> DateTime.to_unix()
-    to = datetime |> DateTime.to_unix()
-    args = [slug, source, from, to]
+    from = Timex.shift(datetime, days: -30)
+    to = datetime
 
-    {query, args}
+    params = %{
+      slug: slug,
+      source: source,
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to)
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def last_datetime_computed_at_query(slug) do
-    query = """
+    sql = """
     SELECT toUnixTimestamp(max(dt))
     FROM #{@table}
-    PREWHERE slug = cast(?1, 'LowCardinality(String)')
+    PREWHERE slug = cast({{slug}}, 'LowCardinality(String)')
     """
 
-    args = [slug]
-    {query, args}
+    params = %{slug: slug}
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def select_any_record_query(slug) do
-    query = """
+    sql = """
     SELECT any(dt)
     FROM #{@table}
-    PREWHERE slug = cast(?1, 'LowCardinality(String)')
+    PREWHERE slug = cast({{slug}}, 'LowCardinality(String)')
     """
 
-    args = [slug]
-    {query, args}
+    params = %{slug: slug}
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def first_datetime_query(slug, source) do
-    query = """
+    sql = """
     SELECT
       toUnixTimestamp(dt)
     FROM #{@table}
     PREWHERE
-      slug = cast(?1, 'LowCardinality(String)') AND
-      source = cast(?2, 'LowCardinality(String)')
+      slug = cast({{slug}}, 'LowCardinality(String)') AND
+      source = cast({{source}}, 'LowCardinality(String)')
     ORDER BY dt ASC
     LIMIT 1
     """
 
-    args = [slug, source]
+    params = %{slug: slug, source: source}
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def available_slugs_query(source) do
-    query = """
+    sql = """
     SELECT distinct(slug)
     FROM #{@table}
-    PREWHERE source = cast(?1, 'LowCardinality(String)')
+    PREWHERE source = cast({{source}}, 'LowCardinality(String)')
     """
 
-    args = [source]
+    params = %{source: source}
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def slugs_with_volume_over_query(volume, source) do
-    datetime = Timex.shift(Timex.now(), days: -1)
-
-    query = """
+    sql = """
     SELECT
       distinct(slug)
     FROM #{@table}
     PREWHERE
-      dt >= toDateTime(?1) AND
-      source = cast(?2, 'LowCardinality(String)') AND
-      volume_usd >= ?3
+      dt >= toDateTime({{datetime}}) AND
+      source = cast({{source}}, 'LowCardinality(String)') AND
+      volume_usd >= {{volume_usd}}
     """
 
-    args = [datetime |> DateTime.to_unix(), source, volume]
+    params = %{
+      datetime: DateTime.add(DateTime.utc_now(), -1, :day),
+      volume_usd: volume,
+      source: source
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def latest_prices_per_slug_query(slugs, limit_per_slug) do
-    query = """
+    sql = """
     SELECT
       slug,
       arrayReverse(groupArray(price_usd)) AS last_prices_usd,
       arrayReverse(groupArray(price_btc)) AS last_prices_btc
     FROM (
       SELECT slug, price_usd, price_btc
-      FROM asset_prices_v3
-      PREWHERE dt >= now() - interval 1 week AND slug IN (?1)
+      FROM #{@table}
+      WHERE
+        dt >= now() - INTERVAL 7 DAY AND
+        slug IN ({{slugs}})
       ORDER BY dt desc
-      LIMIT ?2 BY slug
+      LIMIT {{limit_per_slug}} BY slug
     )
     GROUP BY slug
 
     """
 
-    args = [slugs, limit_per_slug]
+    params = %{slugs: slugs, limit_per_slug: limit_per_slug}
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   # Private functions
 
-  defp timerange_parameters(from, to, interval \\ nil)
-
-  defp timerange_parameters(from, to, nil) do
-    {dt_to_unix(:from, from), dt_to_unix(:to, to)}
-  end
-
-  defp timerange_parameters(from, to, interval) do
-    from_unix = dt_to_unix(:from, from)
-    to_unix = dt_to_unix(:to, to)
-    interval_sec = str_to_sec(interval)
-    interval = maybe_str_to_sec(interval)
-    span = div(to_unix - from_unix, interval_sec) |> max(1)
-
-    {from_unix, to_unix, interval, span}
-  end
-
   defp slug_filter(slug, opts) when is_binary(slug) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
     """
-    slug = cast(?#{arg_position}, 'LowCardinality(String)')
+    slug = cast({{#{arg_name}}}, 'LowCardinality(String)')
     """
   end
 
   defp slug_filter(slugs, opts) when is_list(slugs) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
     """
-    slug IN (?#{arg_position})
+    slug IN ({{#{arg_name}}})
     """
   end
 end

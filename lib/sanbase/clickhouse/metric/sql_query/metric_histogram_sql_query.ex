@@ -1,6 +1,8 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Metric.SqlQuery.Helper, only: [to_unix_timestamp: 3, dt_to_unix: 2]
+
+  import Sanbase.Metric.SqlQuery.Helper,
+    only: [to_unix_timestamp: 3, asset_id_filter: 2, metric_id_filter: 2]
 
   alias Sanbase.Clickhouse.MetricAdapter.FileHandler
 
@@ -16,21 +18,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         _ -> "age_distribution_5min_delta"
       end
 
-    query = """
+    sql = """
     SELECT round(price, 2) AS price, sum(tokens_amount) AS tokens_amount
     FROM (
       SELECT *
       FROM (
         SELECT
-            toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?3) * ?3) AS t,
-            sum(measure) AS tokens_amount
+          toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), {{interval}}) * {{interval}}) AS t,
+          sumKahan(measure) AS tokens_amount
         FROM (
           SELECT dt, argMax(measure, computed_at) AS measure, value
           FROM distribution_deltas_5min
           PREWHERE
-            metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{metric}' ) AND
-            asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
-            dt < toDateTime(?2)
+            #{metric_id_filter(metric, argument_name: "metric")} AND
+            #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND
+            dt < toDateTime({{to}})
           GROUP BY dt, value
         )
         GROUP BY t
@@ -39,14 +41,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
       ALL LEFT JOIN
       (
         SELECT
-          toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?3) * ?3) AS t,
+          toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS t,
           avg(value) AS price
         FROM (
           SELECT dt, argMax(value, computed_at) AS value
           FROM intraday_metrics
           PREWHERE
-            asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1) AND
-            metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd' LIMIT 1)
+            #{metric_id_filter("price_usd", argument_name: "price_metric")} AND
+            #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND
           GROUP BY dt
         )
         GROUP BY t
@@ -56,13 +58,15 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     ORDER BY price ASC
     """
 
-    args = [
-      slug,
-      to |> DateTime.to_unix(),
-      interval_sec
-    ]
+    params = %{
+      slug: slug,
+      to: to |> DateTime.to_unix(),
+      interval: interval_sec,
+      metric: metric,
+      price_metric: "price_usd"
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def histogram_data_query(metric, slug, from, to, interval, _limit)
@@ -75,24 +79,24 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         _ -> "age_distribution_5min_delta"
       end
 
-    query = """
-    SELECT round(price, 2) AS price, sum(tokens_amount) AS tokens_amount
+    sql = """
+    SELECT round(price, 2) AS price, sumKahan(tokens_amount) AS tokens_amount
     FROM (
       SELECT *
       FROM (
         SELECT
-            toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?4) * ?4) AS t,
-            -sum(measure) AS tokens_amount
+            toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), {{interval}}) * {{interval}}) AS t,
+            -sumKahan(measure) AS tokens_amount
         FROM (
           SELECT dt, value, argMax(measure, computed_at) AS measure, value
           FROM distribution_deltas_5min
           PREWHERE
-            metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{metric}' ) AND
-            asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
-            dt >= toDateTime(?2) AND
-            dt < toDateTime(?3) AND
+            #{metric_id_filter(metric, argument_name: "metric")} AND
+            #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND
+            dt >= toDateTime({{from}}) AND
+            dt < toDateTime({{to}}) AND
             dt != value AND
-            value < toDateTime(?2)
+            value < toDateTime({{from}})
           GROUP BY dt, value
           )
         GROUP BY t
@@ -101,14 +105,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
       ALL LEFT JOIN
       (
         SELECT
-          toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?4) * ?4) AS t,
+          toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS t,
           avg(value) AS price
         FROM (
           SELECT dt, argMax(value, computed_at) AS value
           FROM intraday_metrics
           PREWHERE
-            asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1) AND
-            metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd' LIMIT 1)
+            #{metric_id_filter("price_usd", argument_name: "price_metric")} AND
+            #{asset_id_filter(%{slug: slug}, argument_name: "slug")}
           GROUP BY dt
         )
         GROUP BY t
@@ -118,50 +122,52 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     ORDER BY price ASC
     """
 
-    args = [
-      slug,
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
-      interval_sec
-    ]
+    params = %{
+      interval: interval_sec,
+      slug: slug,
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix(),
+      metric: metric,
+      price_metric: "price_usd"
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def histogram_data_query("eth2_staked_amount_per_label", "ethereum", from, to, _interval, limit) do
-    query = """
+    sql = """
     SELECT
       label,
-      SUM(locked_sum) AS value
+      sumKahan(locked_sum) AS value
     FROM (
       SELECT
         address,
         locked_sum,
         #{label_select(label_as: "label")}
       FROM (
-        SELECT address, SUM(amount) AS locked_sum
+        SELECT address, sumKahan(amount) AS locked_sum
         FROM (
-            SELECT distinct *
+            SELECT DISTINCT *
             FROM eth2_staking_transfers_v2 FINAL
             WHERE
-              dt < toDateTime(?2)
-              #{if from, do: "AND dt >= toDateTime(?3)"}
+              dt < toDateTime({{to}})
+              #{if from, do: "AND dt >= toDateTime({{from}})"}
         )
         GROUP BY address
       )
     )
     GROUP BY label
     ORDER BY value DESC
-    LIMIT ?1
+    LIMIT {{limit}}
     """
 
-    args =
-      case from do
-        nil -> [limit, to |> DateTime.to_unix()]
-        _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
-      end
+    params = %{
+      limit: limit,
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix()
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def histogram_data_query(
@@ -172,7 +178,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         _interval,
         limit
       ) do
-    query = """
+    sql = """
     SELECT
       label,
       count(address) AS value
@@ -184,22 +190,22 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
           SELECT DISTINCT(address)
           FROM eth2_staking_transfers_v2 FINAL
           WHERE
-            dt < toDateTime(?2)
-            #{if from, do: "AND dt >= toDateTime(?3)"}
+            dt < toDateTime({{to}})
+            #{if from, do: "AND dt >= toDateTime({{from}})"}
         )
     )
     GROUP BY label
     ORDER BY value DESC
-    LIMIT ?1
+    LIMIT {{limit}}
     """
 
-    args =
-      case from do
-        nil -> [limit, to |> DateTime.to_unix()]
-        _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
-      end
+    params = %{
+      limit: limit,
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix()
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def histogram_data_query(
@@ -210,10 +216,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         _interval,
         limit
       ) do
-    query = """
+    sql = """
     SELECT
       label,
-      sum(address_inflow) AS value
+      sumKahan(address_inflow) AS value
     FROM (
       SELECT
         address,
@@ -222,7 +228,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
       FROM (
           SELECT
             from AS address,
-            sum(value / 1e18) AS address_inflow
+            sumKahan(value / 1e18) AS address_inflow
           FROM eth_transfers
           WHERE to GLOBAL IN (
             SELECT address
@@ -234,8 +240,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
                 SELECT DISTINCT(address)
                 FROM eth2_staking_transfers_v2 FINAL
                 WHERE
-                  dt < toDateTime(?2)
-                  #{if from, do: "AND dt >= toDateTime(?3)"}
+                  dt < toDateTime({{to}})
+                  #{if from, do: "AND dt >= toDateTime({{from}})"}
               )
             )
             WHERE label_str = ''
@@ -245,16 +251,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     )
     GROUP BY label
     ORDER BY value DESC
-    LIMIT ?1
+    LIMIT {{limit}}
     """
 
-    args =
-      case from do
-        nil -> [limit, to |> DateTime.to_unix()]
-        _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
-      end
+    params = %{
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix(),
+      limit: limit
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def histogram_data_query(
@@ -265,7 +271,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         _interval,
         limit
       ) do
-    query = """
+    sql = """
     SELECT
       address,
       label,
@@ -281,23 +287,23 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
           SUM(amount) AS locked_value
         FROM eth2_staking_transfers_v2 FINAL
         WHERE
-          dt < toDateTime(?2)
-          #{if from, do: "AND dt >= toDateTime(?3)"}
+          dt < toDateTime({{to}})
+          #{if from, do: "AND dt >= toDateTime({{from}})"}
         GROUP BY address
         ORDER BY locked_value DESC
-        LIMIT ?1
+        LIMIT {{limit}}
       )
     )
     ORDER BY staked DESC
     """
 
-    args =
-      case from do
-        nil -> [limit, to |> DateTime.to_unix()]
-        _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
-      end
+    params = %{
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix(),
+      limit: limit
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def histogram_data_query(
@@ -308,7 +314,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         _interval,
         limit
       ) do
-    query = """
+    sql = """
     SELECT
       label,
       round(sum(locked_sum) / 32) AS value
@@ -320,8 +326,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
       FROM (
         SELECT distinct *
         FROM eth2_staking_transfers_v2 FINAL
-        WHERE dt < toDateTime(?2)
-        #{if from, do: "AND dt >= toDateTime(?3)"}
+        WHERE dt < toDateTime({{to}})
+        #{if from, do: "AND dt >= toDateTime({{from}})"}
       )
       GROUP BY address
     )
@@ -353,16 +359,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     ) USING address
     GROUP BY label
     ORDER BY value desc
-    LIMIT ?1
+    LIMIT {{limit}}
     """
 
-    args =
-      case from do
-        nil -> [limit, to |> DateTime.to_unix()]
-        _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
-      end
+    params = %{
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix(),
+      limit: limit
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def histogram_data_query(
@@ -373,7 +379,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         _interval,
         limit
       ) do
-    query = """
+    sql = """
     SELECT
       label,
       round(sum(locked_sum)) AS value
@@ -387,8 +393,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         SELECT distinct *
         FROM eth2_staking_transfers_v2 FINAL
         WHERE
-          dt < toDateTime(?2)
-          #{if from, do: "AND dt >= toDateTime(?3)"}
+          dt < toDateTime({{to}})
+          #{if from, do: "AND dt >= toDateTime({{from}})"}
       ) AS transfers
       INNER JOIN
       (
@@ -430,16 +436,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     ) USING address
     GROUP BY label
     ORDER BY value desc
-    LIMIT ?1
+    LIMIT {{limit}}
     """
 
-    args =
-      case from do
-        nil -> [limit, to |> DateTime.to_unix()]
-        _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
-      end
+    params = %{
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix(),
+      limit: limit
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def histogram_data_query(
@@ -450,7 +456,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         interval,
         limit
       ) do
-    query = """
+    sql = """
     WITH (
       SELECT
         groupArray(label) as labels
@@ -495,13 +501,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
               SELECT DISTINCT *
               FROM eth2_staking_transfers_v2
               FINAL
-              WHERE dt < toDateTime(?3)
+              WHERE dt < toDateTime({{to}})
           )
           GROUP BY address
         ) USING (address)
         GROUP BY label
         ORDER BY value DESC
-        LIMIT ?4
+        LIMIT {{limit}}
       )
     ) AS topStakers
     SELECT
@@ -510,7 +516,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     FROM
     (
       SELECT
-        #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS t,
+        #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
         groupArray((label, value)) AS groupArr
       FROM (
         SELECT
@@ -539,7 +545,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
                 sum(amount) AS sum_value
               FROM eth2_staking_transfers_v2 FINAL
               -- ETH2 staking started on 2020-11-03
-              WHERE dt >= toDateTime(?2) AND dt < toDateTime(?3)
+              WHERE dt >= toDateTime({{from}}) AND dt < toDateTime({{to}})
               GROUP BY address, dt
             ) AS transfers
             INNER JOIN
@@ -566,7 +572,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
 
             SELECT
               DISTINCT value AS label,
-              arrayJoin(arrayMap( x -> toDate(x), timeSlots(toDateTime('2020-11-03 00:00:00'), toUInt32(toDateTime(?3) - toIntervalDay(1) - toDateTime('2020-11-03 00:00:00')), toUInt32(?1)))) AS dt,
+              arrayJoin(arrayMap( x -> toDate(x), timeSlots(toDateTime('2020-11-03 00:00:00'), toUInt32(toDateTime({{to}}) - toIntervalDay(1) - toDateTime('2020-11-03 00:00:00')), toUInt32({{interval}})))) AS dt,
               0 AS sum_value
             FROM label_metadata FINAL
             WHERE key = 'eth2_staking_address' AND has(topStakers, value)
@@ -574,21 +580,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
           GROUP BY label, dt
           )
         )
-        WHERE dt >= toDateTime(?2) AND dt < toDateTime(?3)
+        WHERE dt >= toDateTime({{from}}) AND dt < toDateTime({{to}})
       )
       GROUP BY dt
       ORDER BY dt ASC
     )
     """
 
-    args = [
-      str_to_sec(interval),
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to),
-      limit
-    ]
+    params = %{
+      interval: str_to_sec(interval),
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix(),
+      limit: limit
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def histogram_data_query(
@@ -599,14 +605,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         interval,
         limit
       ) do
-    query = """
+    sql = """
     SELECT
       t,
       groupArr
     FROM
     (
       SELECT
-        #{to_unix_timestamp(interval, "dt", argument_position: 1)} AS t,
+        #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
         groupArray((label, value)) AS groupArr
       FROM (
         SELECT dt, label, value
@@ -616,7 +622,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
           FROM (
             SELECT address, toDate(dt) AS dt, sum(amount) AS sum_value
             FROM eth2_staking_transfers_v2 FINAL
-            WHERE dt >= toDateTime(?2) AND dt < toDateTime(?3)
+            WHERE dt >= toDateTime({{from}}) AND dt < toDateTime({{to}})
             GROUP BY address, dt
           ) AS transfers
           INNER JOIN
@@ -637,56 +643,56 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
           ) USING (address)
           GROUP BY label, dt
         )
-        WHERE rank <= ?4
+        WHERE rank <= {{limit}}
       )
       GROUP BY dt
       ORDER BY dt ASC
     )
     """
 
-    args = [
-      str_to_sec(interval),
-      dt_to_unix(:from, from),
-      dt_to_unix(:to, to),
-      limit
-    ]
+    params = %{
+      interval: str_to_sec(interval),
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix(),
+      limit: limit
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  # Generic
+  # Generic, "age_distribution" goes here
   def histogram_data_query(metric, slug, from, to, interval, limit) do
-    query = """
+    sql = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?5) * ?5) AS t,
+      toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), {{interval}}) * {{interval}}) AS t,
       -sum(measure) AS sum_measure
     FROM (
       SELECT value, argMax(measure, computed_at) AS measure
       FROM #{Map.get(@table_map, metric)}
       PREWHERE
-        metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
-        asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?2 ) AND
+        #{metric_id_filter(metric, argument_name: "metric")} AND
+        #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND
         dt != value AND
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4) AND
-        value < toDateTime(?3)
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
+        value < toDateTime({{from}})
       GROUP BY dt, value
     )
     GROUP BY t
     ORDER BY sum_measure DESC
-    LIMIT ?6
+    LIMIT {{limit}}
     """
 
-    args = [
-      Map.get(@name_to_metric_map, metric),
-      slug,
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
-      interval |> str_to_sec(),
-      limit
-    ]
+    params = %{
+      slug: slug,
+      metric: Map.get(@name_to_metric_map, metric),
+      interval: str_to_sec(interval),
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix(),
+      limit: limit
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp label_select(opts) do

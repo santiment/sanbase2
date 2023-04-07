@@ -4,12 +4,11 @@ defmodule Sanbase.PricePair do
   import Sanbase.Utils.Transform,
     only: [
       maybe_unwrap_ok_value: 1,
-      maybe_apply_function: 2,
       maybe_sort: 3,
       maybe_transform_datetime_data_tuple_to_map: 1
     ]
 
-  import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 2]
+  import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 1]
 
   alias Sanbase.ClickhouseRepo
 
@@ -63,19 +62,17 @@ defmodule Sanbase.PricePair do
     source = Keyword.get(opts, :source) || @default_source
     aggregation = Keyword.get(opts, :aggregation) || :last
 
-    {query, args} =
-      timeseries_data_query(
-        slug_or_slugs,
-        quote_asset,
-        from,
-        to,
-        interval,
-        source,
-        aggregation
-      )
-
+    timeseries_data_query(
+      slug_or_slugs,
+      quote_asset,
+      from,
+      to,
+      interval,
+      source,
+      aggregation
+    )
     # Handle both cases where the aggregation is OHLC or it's not
-    exec_timeseries_data_query(query, args)
+    |> exec_timeseries_data_query()
   end
 
   def timeseries_data_per_slug([], _quote_asset, _from, _to, _interval, _opts), do: {:ok, []}
@@ -85,10 +82,10 @@ defmodule Sanbase.PricePair do
     aggregation = Keyword.get(opts, :aggregation) || :last
     slugs = List.wrap(slug_or_slugs)
 
-    {query, args} =
+    query_struct =
       timeseries_data_per_slug_query(slugs, quote_asset, from, to, interval, source, aggregation)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [timestamp, slug, value], acc ->
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [timestamp, slug, value], acc ->
       datetime = DateTime.from_unix!(timestamp)
       elem = %{slug: slug, value: value}
       Map.update(acc, datetime, [elem], &[elem | &1])
@@ -127,10 +124,10 @@ defmodule Sanbase.PricePair do
     aggregation = Keyword.get(opts, :aggregation) || :last
     slugs = List.wrap(slug_or_slugs)
 
-    {query, args} =
+    query_struct =
       aggregated_timeseries_data_query(slugs, quote_asset, from, to, source, aggregation)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, value, has_changed], acc ->
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [slug, value, has_changed], acc ->
       # This way if the slug does not have any data still include it in the result
       # with value `nil`. This way the API can cache the result. In case one of the
       # aggregated_timeseries_data calls fails, the slugs in it won't be included
@@ -146,10 +143,10 @@ defmodule Sanbase.PricePair do
     aggregation = Keyword.get(opts, :aggregation) || :last
     source = Keyword.get(opts, :source, @default_source)
 
-    {query, args} =
+    query_struct =
       slugs_by_filter_query(quote_asset, from, to, source, operator, threshold, aggregation)
 
-    ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+    ClickhouseRepo.query_transform(query_struct, fn [slug, _value] -> slug end)
   end
 
   def slugs_order(quote_asset, from, to, direction, opts \\ [])
@@ -157,8 +154,8 @@ defmodule Sanbase.PricePair do
   def slugs_order(quote_asset, from, to, direction, opts) do
     aggregation = Keyword.get(opts, :aggregation) || :last
     source = Keyword.get(opts, :source, @default_source)
-    {query, args} = slugs_order_query(quote_asset, from, to, source, direction, aggregation)
-    ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+    query_struct = slugs_order_query(quote_asset, from, to, source, direction, aggregation)
+    ClickhouseRepo.query_transform(query_struct, fn [slug, _value] -> slug end)
   end
 
   @doc ~s"""
@@ -168,11 +165,10 @@ defmodule Sanbase.PricePair do
 
   def last_record_before(slug, quote_asset, datetime, opts) do
     source = Keyword.get(opts, :source, @default_source)
-    {query, args} = last_record_before_query(slug, quote_asset, datetime, source)
+    query_struct = last_record_before_query(slug, quote_asset, datetime, source)
 
     ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [unix, value] ->
         %{
           datetime: DateTime.from_unix!(unix),
@@ -201,18 +197,18 @@ defmodule Sanbase.PricePair do
 
   def available_slugs(quote_asset, opts) do
     source = Keyword.get(opts, :source) || @default_source
-    {query, args} = available_slugs_query(quote_asset, source)
+    query_struct = available_slugs_query(quote_asset, source)
 
-    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+    ClickhouseRepo.query_transform(query_struct, fn [slug] -> slug end)
   end
 
   def has_data?(slug, quote_asset, opts \\ [])
 
   def has_data?(slug, quote_asset, opts) do
     source = Keyword.get(opts, :source, @default_source)
-    {query, args} = select_any_record_query(slug, quote_asset, source)
+    query_struct = select_any_record_query(slug, quote_asset, source)
 
-    ClickhouseRepo.query_transform(query, args, & &1)
+    ClickhouseRepo.query_transform(query_struct, & &1)
     |> case do
       {:ok, [_]} -> {:ok, true}
       {:ok, []} -> {:ok, false}
@@ -224,9 +220,9 @@ defmodule Sanbase.PricePair do
 
   def available_quote_assets(slug, opts) do
     source = Keyword.get(opts, :source, @default_source)
-    {query, args} = available_quote_assets_query(slug, source)
+    query_struct = available_quote_assets_query(slug, source)
 
-    ClickhouseRepo.query_transform(query, args, fn [quote_asset] -> quote_asset end)
+    ClickhouseRepo.query_transform(query_struct, fn [quote_asset] -> quote_asset end)
   end
 
   @doc ~s"""
@@ -238,16 +234,21 @@ defmodule Sanbase.PricePair do
 
   def first_datetime(slug, quote_asset, opts) do
     source = Keyword.get(opts, :source, @default_source)
-    {query, args} = first_datetime_query(slug, quote_asset, source)
+    query_struct = first_datetime_query(slug, quote_asset, source)
 
-    ClickhouseRepo.query_transform(query, args, fn
+    ClickhouseRepo.query_transform(query_struct, fn
       [timestamp] -> DateTime.from_unix!(timestamp)
     end)
     |> maybe_unwrap_ok_value()
   end
 
-  def last_datetime_computed_at(_slug, _quote_asset, _opts) do
-    # TODO FIXME
-    {:ok, DateTime.utc_now()}
+  def last_datetime_computed_at(slug, quote_asset, opts \\ []) do
+    source = Keyword.get(opts, :source, @default_source)
+    query_struct = last_datetime_computed_at_query(slug, quote_asset, source)
+
+    ClickhouseRepo.query_transform(query_struct, fn
+      [timestamp] -> DateTime.from_unix!(timestamp)
+    end)
+    |> maybe_unwrap_ok_value()
   end
 end

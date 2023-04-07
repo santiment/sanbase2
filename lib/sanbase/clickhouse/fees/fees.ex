@@ -5,9 +5,9 @@ defmodule Sanbase.Clickhouse.Fees do
   alias Sanbase.ClickhouseRepo
 
   def eth_fees_distribution(from, to, limit) do
-    {query, args} = eth_fees_distribution_query(from, to, limit)
+    query_struct = eth_fees_distribution_query(from, to, limit)
 
-    ClickhouseRepo.query_transform(query, args, & &1)
+    ClickhouseRepo.query_transform(query_struct, & &1)
     |> maybe_apply_function(&value_fees_list_to_result/1)
   end
 
@@ -68,10 +68,7 @@ defmodule Sanbase.Clickhouse.Fees do
   end
 
   defp eth_fees_distribution_query(from, to, limit) do
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-
-    query = """
+    sql = """
     SELECT
       multiIf(contract = '', 'ethereum',isNull(name), contract, name) AS asset,
       fees
@@ -85,18 +82,18 @@ defmodule Sanbase.Clickhouse.Fees do
             (
                 SELECT transactionHash, any(value) AS value
                 FROM eth_transfers
-                PREWHERE dt >= toDateTime(?1) AND dt < toDateTime(?2) AND type = 'fee'
+                PREWHERE dt >= toDateTime({{from}}) AND dt < toDateTime({{to}}) AND type = 'fee'
                 GROUP BY from, type, to, dt, transactionHash, primaryKey
             )
             ANY LEFT JOIN
             (
                 SELECT transactionHash, contract, assetRefId
                 FROM erc20_transfers_union
-                WHERE dt >= toDateTime(?1) and dt < toDateTime(?2)
+                WHERE dt >= toDateTime({{from}}) and dt < toDateTime({{to}})
             ) USING (transactionHash)
             GROUP BY assetRefId, contract
             ORDER BY fees DESC
-            LIMIT ?3
+            LIMIT {{limit}}
         )
         ALL LEFT JOIN
         (
@@ -106,6 +103,12 @@ defmodule Sanbase.Clickhouse.Fees do
     ) ORDER BY fees DESC
     """
 
-    {query, [from_unix, to_unix, limit]}
+    params = %{
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      limit: limit
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

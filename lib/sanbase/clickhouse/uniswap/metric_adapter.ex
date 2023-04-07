@@ -63,9 +63,9 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
         interval,
         limit
       ) do
-    {query, args} = histogram_data_query(metric, selector, from, to, interval, limit)
+    query_struct = histogram_data_query(metric, selector, from, to, interval, limit)
 
-    Sanbase.ClickhouseRepo.query_transform(query, args, fn [address, value] ->
+    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [address, value] ->
       %{address: address, value: value}
     end)
     |> maybe_add_balances(from, to)
@@ -201,7 +201,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
          _interval,
          limit
        ) do
-    query = """
+    sql = """
     SELECT
       to AS address,
       amount AS value
@@ -213,16 +213,16 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
       PREWHERE
         assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = 'uniswap' LIMIT 1) AND
         from = '0x090d4613473dee047c3f2706764f49e0821d256e' AND
-        dt >= toDateTime(?1) AND
-        dt < toDateTime(?2)
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}})
       GROUP BY to
       ORDER BY amount DESC
-      LIMIT ?3
+      LIMIT {{limit}}
     )
     """
 
-    args = [from |> DateTime.to_unix(), to |> DateTime.to_unix(), limit]
+    params = %{from: from |> DateTime.to_unix(), to: to |> DateTime.to_unix(), limit: limit}
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

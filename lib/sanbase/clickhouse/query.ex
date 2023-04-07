@@ -8,9 +8,12 @@ defmodule Sanbase.Clickhouse.Query do
   """
   defstruct [:sql, :parameters, :settings, :format]
 
+  @type sql :: String.t()
+  @type parameters :: Map.t()
+
   @type t :: %__MODULE__{
-          sql: String.t(),
-          parameters: Map.t(),
+          sql: sql(),
+          parameters: parameters(),
           settings: String.t() | nil,
           format: String.t()
         }
@@ -38,6 +41,7 @@ defmodule Sanbase.Clickhouse.Query do
       format: "JSONCompact"
     }
   """
+  @spec new(sql, parameters, Keyword.t()) :: t()
   def new(sql, parameters, opts \\ []) do
     %__MODULE__{
       sql: sql,
@@ -45,6 +49,23 @@ defmodule Sanbase.Clickhouse.Query do
       settings: Keyword.get(opts, :settings, nil),
       format: Keyword.get(opts, :format, @default_format)
     }
+  end
+
+  @spec put_sql(t(), sql) :: t()
+  def put_sql(struct, sql) when is_binary(sql) do
+    %{struct | sql: sql}
+  end
+
+  @spec put_sql(t(), parameters) :: t()
+  def put_parameters(struct, parameters) when is_map(parameters) do
+    %{struct | parameters: parameters}
+  end
+
+  @spec add_parameter(t(), any(), any()) :: t()
+  def add_parameter(struct, key, value) do
+    parameters = struct.parameters |> Map.put(key, value)
+
+    %{struct | parameters: parameters}
   end
 
   @doc ~s"""

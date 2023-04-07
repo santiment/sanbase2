@@ -15,7 +15,7 @@ defmodule Sanbase.Price do
     only: [
       maybe_nullify_values: 1,
       remove_missing_values: 1,
-      exec_timeseries_data_query: 2
+      exec_timeseries_data_query: 1
     ]
 
   alias Sanbase.Project
@@ -152,12 +152,10 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       aggregation = Keyword.get(opts, :aggregation) || :last
 
-      {query, args} =
-        timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation)
+      query_struct = timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation)
 
       ClickhouseRepo.query_transform(
-        query,
-        args,
+        query_struct,
         fn [timestamp, price_usd, price_btc, marketcap_usd, volume_usd] ->
           %{
             datetime: DateTime.from_unix!(timestamp),
@@ -210,18 +208,16 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       aggregation = Keyword.get(opts, :aggregation) || :last
 
-      {query, args} =
-        timeseries_metric_data_query(
-          slug_or_slugs,
-          metric,
-          from,
-          to,
-          interval,
-          source,
-          aggregation
-        )
-
-      exec_timeseries_data_query(query, args)
+      timeseries_metric_data_query(
+        slug_or_slugs,
+        metric,
+        from,
+        to,
+        interval,
+        source,
+        aggregation
+      )
+      |> exec_timeseries_data_query()
     end
   end
 
@@ -231,7 +227,7 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       aggregation = Keyword.get(opts, :aggregation) || :last
 
-      {query, args} =
+      query_struct =
         timeseries_metric_data_per_slug_query(
           slug_or_slugs,
           metric,
@@ -242,7 +238,7 @@ defmodule Sanbase.Price do
           aggregation
         )
 
-      ClickhouseRepo.query_reduce(query, args, %{}, fn [timestamp, slug, value], acc ->
+      ClickhouseRepo.query_reduce(query_struct, %{}, fn [timestamp, slug, value], acc ->
         datetime = DateTime.from_unix!(timestamp)
         elem = %{slug: slug, value: value}
         Map.update(acc, datetime, [elem], &[elem | &1])
@@ -273,9 +269,9 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       slugs = List.wrap(slug_or_slugs)
 
-      {query, args} = aggregated_timeseries_data_query(slugs, from, to, source)
+      query_struct = aggregated_timeseries_data_query(slugs, from, to, source)
 
-      ClickhouseRepo.query_transform(query, args, fn
+      ClickhouseRepo.query_transform(query_struct, fn
         [slug, price_usd, price_btc, marketcap_usd, volume_usd, has_changed] ->
           %{
             slug: slug,
@@ -334,10 +330,10 @@ defmodule Sanbase.Price do
       aggregation = Keyword.get(opts, :aggregation) || :avg
       slugs = List.wrap(slug_or_slugs)
 
-      {query, args} =
+      query_struct =
         aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, aggregation)
 
-      ClickhouseRepo.query_reduce(query, args, %{}, fn
+      ClickhouseRepo.query_reduce(query_struct, %{}, fn
         [slug, value, has_changed], acc ->
           value = if has_changed == 1, do: value
           Map.put(acc, slug, value)
@@ -364,9 +360,9 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       slugs = List.wrap(slug_or_slugs)
 
-      {query, args} = aggregated_marketcap_and_volume_query(slugs, from, to, source, opts)
+      query_struct = aggregated_marketcap_and_volume_query(slugs, from, to, source, opts)
 
-      ClickhouseRepo.query_transform(query, args, fn
+      ClickhouseRepo.query_transform(query_struct, fn
         [slug, marketcap_usd, volume_usd, has_changed] ->
           %{
             slug: slug,
@@ -383,9 +379,9 @@ defmodule Sanbase.Price do
   end
 
   def latest_prices_per_slug(slugs, limit_per_slug) do
-    {query, args} = latest_prices_per_slug_query(slugs, limit_per_slug)
+    query_struct = latest_prices_per_slug_query(slugs, limit_per_slug)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, prices_usd, prices_btc], acc ->
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [slug, prices_usd, prices_btc], acc ->
       acc
       |> Map.put({slug, "USD"}, prices_usd)
       |> Map.put({slug, "BTC"}, prices_btc)
@@ -396,10 +392,10 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       aggregation = Keyword.get(opts, :aggregation) || :last
 
-      {query, args} =
+      query_struct =
         slugs_by_filter_query(metric, from, to, operator, threshold, aggregation, source)
 
-      ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+      ClickhouseRepo.query_transform(query_struct, fn [slug, _value] -> slug end)
     end
   end
 
@@ -407,9 +403,9 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       aggregation = Keyword.get(opts, :aggregation) || :last
 
-      {query, args} = slugs_order_query(metric, from, to, direction, aggregation, source)
+      query_struct = slugs_order_query(metric, from, to, direction, aggregation, source)
 
-      ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+      ClickhouseRepo.query_transform(query_struct, fn [slug, _value] -> slug end)
     end
   end
 
@@ -422,11 +418,10 @@ defmodule Sanbase.Price do
 
   def last_record_before(slug, datetime, opts) do
     with {:ok, source} <- opts_to_source(opts) do
-      {query, args} = last_record_before_query(slug, datetime, source)
+      query_struct = last_record_before_query(slug, datetime, source)
 
       ClickhouseRepo.query_transform(
-        query,
-        args,
+        query_struct,
         fn [price_usd, price_btc, marketcap_usd, volume_usd] ->
           %{
             price_usd: price_usd,
@@ -449,9 +444,9 @@ defmodule Sanbase.Price do
   @spec ohlc(slug, DateTime.t(), DateTime.t(), opts) :: ohlc_result()
   def ohlc(slug, from, to, opts \\ []) do
     with {:ok, source} <- opts_to_source(opts) do
-      {query, args} = ohlc_query(slug, from, to, source)
+      query_struct = ohlc_query(slug, from, to, source)
 
-      ClickhouseRepo.query_transform(query, args, fn [open, high, low, close, has_changed] ->
+      ClickhouseRepo.query_transform(query_struct, fn [open, high, low, close, has_changed] ->
         %{
           open_price_usd: open,
           high_price_usd: high,
@@ -473,11 +468,10 @@ defmodule Sanbase.Price do
           timeseries_ohlc_data_result()
   def timeseries_ohlc_data(slug, from, to, interval, opts \\ []) do
     with {:ok, source} <- opts_to_source(opts) do
-      {query, args} = timeseries_ohlc_data_query(slug, from, to, interval, source)
+      query_struct = timeseries_ohlc_data_query(slug, from, to, interval, source)
 
       ClickhouseRepo.query_transform(
-        query,
-        args,
+        query_struct,
         fn [timestamp, open, high, low, close] ->
           %{
             datetime: DateTime.from_unix!(timestamp),
@@ -523,11 +517,10 @@ defmodule Sanbase.Price do
     with {:ok, source} <- opts_to_source(opts) do
       slugs = List.wrap(slug_or_slugs)
 
-      {query, args} = combined_marketcap_and_volume_query(slugs, from, to, interval, source)
+      query_struct = combined_marketcap_and_volume_query(slugs, from, to, interval, source)
 
       ClickhouseRepo.query_transform(
-        query,
-        args,
+        query_struct,
         fn [timestamp, marketcap_usd, volume_usd, has_changed] ->
           %{
             datetime: DateTime.from_unix!(timestamp),
@@ -560,16 +553,16 @@ defmodule Sanbase.Price do
 
   def slugs_with_volume_over(volume, opts) when is_number(volume) do
     with {:ok, source} <- opts_to_source(opts) do
-      {query, args} = slugs_with_volume_over_query(volume, source)
+      query_struct = slugs_with_volume_over_query(volume, source)
 
-      ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+      ClickhouseRepo.query_transform(query_struct, fn [slug] -> slug end)
     end
   end
 
   def has_data?(slug) do
-    {query, args} = select_any_record_query(slug)
+    query_struct = select_any_record_query(slug)
 
-    ClickhouseRepo.query_transform(query, args, & &1)
+    ClickhouseRepo.query_transform(query_struct, & &1)
     |> case do
       {:ok, [_]} -> {:ok, true}
       {:ok, []} -> {:ok, false}
@@ -587,9 +580,9 @@ defmodule Sanbase.Price do
 
   def first_datetime(slug, opts) do
     with {:ok, source} <- opts_to_source(opts) do
-      {query, args} = first_datetime_query(slug, source)
+      query_struct = first_datetime_query(slug, source)
 
-      ClickhouseRepo.query_transform(query, args, fn
+      ClickhouseRepo.query_transform(query_struct, fn
         [timestamp] -> DateTime.from_unix!(timestamp)
       end)
       |> maybe_unwrap_ok_value()
@@ -597,9 +590,9 @@ defmodule Sanbase.Price do
   end
 
   def last_datetime_computed_at(slug) do
-    {query, args} = last_datetime_computed_at_query(slug)
+    query_struct = last_datetime_computed_at_query(slug)
 
-    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+    ClickhouseRepo.query_transform(query_struct, fn [datetime] ->
       DateTime.from_unix!(datetime)
     end)
     |> maybe_unwrap_ok_value()

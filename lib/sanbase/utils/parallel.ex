@@ -19,7 +19,7 @@ defmodule Sanbase.Parallel do
     map_type = Keyword.get(opts, :map_type) || :map
 
     stream =
-      Task.Supervisor.async_stream_nolink(
+      Task.Supervisor.async_stream(
         Sanbase.TaskSupervisor,
         collection,
         func,

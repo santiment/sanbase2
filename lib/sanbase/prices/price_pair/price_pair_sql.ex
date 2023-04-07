@@ -279,6 +279,25 @@ defmodule Sanbase.Price.PricePairSql do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
+  def last_datetime_computed_at_query(slug, quote_asset, source) do
+    sql = """
+    SELECT toUnixTimestamp(max(dt))
+    FROM #{@table}
+    WHERE
+      #{base_asset_filter(slug, argument_name: "slug")} AND
+      quote_asset = {{quote_asset}} AND
+      source = {{source}}
+    """
+
+    params = %{
+      slug: slug,
+      quote_asset: quote_asset,
+      source: source
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
   def available_quote_assets_query(slug, source) do
     sql = """
     SELECT distinct(quote_asset)

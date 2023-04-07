@@ -242,8 +242,13 @@ defmodule Sanbase.PricePair do
     |> maybe_unwrap_ok_value()
   end
 
-  def last_datetime_computed_at(_slug, _quote_asset, _opts) do
-    # TODO FIXME
-    {:ok, DateTime.utc_now()}
+  def last_datetime_computed_at(slug, quote_asset, opts \\ []) do
+    source = Keyword.get(opts, :source, @default_source)
+    query_struct = last_datetime_computed_at_query(slug, quote_asset, source)
+
+    ClickhouseRepo.query_transform(query_struct, fn
+      [timestamp] -> DateTime.from_unix!(timestamp)
+    end)
+    |> maybe_unwrap_ok_value()
   end
 end

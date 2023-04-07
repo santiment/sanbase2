@@ -1,6 +1,5 @@
 defmodule Sanbase.Signal.SqlQuery do
   @table "signals"
-  @metadata_table "signal_metadata"
 
   @moduledoc ~s"""
   Define the SQL queries to access the signals in Clickhouse
@@ -11,7 +10,9 @@ defmodule Sanbase.Signal.SqlQuery do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, asset_id_filter: 2]
+
+  import Sanbase.Metric.SqlQuery.Helper,
+    only: [aggregation: 3, asset_id_filter: 2, signal_id_filter: 2]
 
   alias Sanbase.Signal.FileHandler
 
@@ -24,66 +25,62 @@ defmodule Sanbase.Signal.SqlQuery do
   end
 
   def available_signals_query(slug) do
-    query = """
+    sql = """
     SELECT name
-    FROM #{@metadata_table}
+    FROM signal_metadata
     PREWHERE signal_id in (
       SELECT DISTINCT(signal_id)
       FROM #{@table}
       INNER JOIN (
-        SELECT * FROM asset_metadata FINAL PREWHERE name = ?1
+        SELECT * FROM asset_metadata FINAL PREWHERE name = {{slug}}
     ) using(asset_id)
     )
     """
 
-    args = [
-      slug
-    ]
-
-    {query, args}
+    params = %{slug: slug}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def available_slugs_query(signal) do
-    query = """
+    sql = """
     SELECT DISTINCT(name)
     FROM asset_metadata
     PREWHERE asset_id in (
       SELECT DISTINCT(asset_id)
       FROM #{@table}
       INNER JOIN (
-        SELECT * FROM #{@metadata_table} PREWHERE name = ?1
+        SELECT * FROM signal_metadata PREWHERE name = {{signal}}
       ) USING(signal_id))
     """
 
-    args = [
-      Map.get(FileHandler.name_to_signal_map(), signal)
-    ]
+    params = %{
+      signal: Map.get(FileHandler.name_to_signal_map(), signal)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def first_datetime_query(signal, slug) do
-    query = """
+    sql = """
     SELECT toUnixTimestamp(toDateTime(min(dt)))
     FROM #{@table}
     PREWHERE
-      signal_id = ( SELECT argMax(signal_id, version) FROM signal_metadata FINAL PREWHERE name = ?1 GROUP BY name LIMIT 1) AND
-      asset_id = ( select asset_id from asset_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
+      #{signal_id_filter(%{signal: signal}, argument_name: "signal")} AND
+      #{asset_id_filter(%{slug: slug}, argument_name: "slug")}
     """
 
-    args = [
-      Map.get(FileHandler.name_to_signal_map(), signal),
-      slug
-    ]
+    params = %{
+      signal: Map.get(FileHandler.name_to_signal_map(), signal),
+      slug: slug
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def raw_data_query(signals, from, to) do
     # Clickhouse does not support multiple joins with using, so there's an extra
     # nesting just for that
-
-    query = """
+    sql = """
     SELECT
       dt, signal, slug, value, metadata
     FROM(
@@ -94,9 +91,9 @@ defmodule Sanbase.Signal.SqlQuery do
         SELECT argMax(signal_id, version) AS signal_id2, name AS signal FROM signal_metadata FINAL GROUP BY name
       ) USING signal_id2
       PREWHERE
-        #{maybe_filter_signals(signals, argument_position: 3, trailing_and: true)}
-        dt >= toDateTime(?1) AND
-        dt < toDateTime(?2) AND
+        #{maybe_filter_signals(signals, argument_name: "signals", trailing_and: true)}
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
         isNotNull(value) AND NOT isNaN(value)
     )
     ANY LEFT JOIN (
@@ -104,47 +101,45 @@ defmodule Sanbase.Signal.SqlQuery do
     ) USING asset_id
     """
 
-    args = [from |> DateTime.to_unix(), to |> DateTime.to_unix()]
+    params = %{
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix(),
+      signals: signals
+    }
 
-    args =
-      case signals do
-        :all -> args
-        [_ | _] -> args ++ [signals]
-      end
-
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def timeseries_data_query(signal, slug_or_slugs, from, to, _interval, :none) do
-    query = """
+    sql = """
     SELECT
       toUnixTimestamp(dt) AS dt,
       value,
       metadata
     FROM #{@table} FINAL
     PREWHERE
-      dt >= toDateTime(?1) AND
-      dt < toDateTime(?2) AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}}) AND
       isNotNull(value) AND NOT isNaN(value) AND
-      signal_id = ( SELECT argMax(signal_id, version) FROM #{@metadata_table} FINAL PREWHERE name = ?3 GROUP BY name LIMIT 1 ) AND
-      #{asset_id_filter(%{slug: slug_or_slugs}, argument_position: 4)}
+      #{signal_id_filter(%{signal: signal}, argument_name: "signal")} AND
+      #{asset_id_filter(%{slug: slug_or_slugs}, argument_name: "slug")}
     ORDER BY dt
     """
 
-    args = [
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
-      Map.get(FileHandler.name_to_signal_map(), signal),
-      slug_or_slugs
-    ]
+    params = %{
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix(),
+      signal: Map.get(FileHandler.name_to_signal_map(), signal),
+      slug: slug_or_slugs
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def timeseries_data_query(signal, slug_or_slugs, from, to, interval, aggregation) do
-    query = """
+    sql = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
+      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS t,
       #{aggregation(aggregation, "value", "dt")},
       groupArray(metadata) AS metadata
     FROM(
@@ -155,29 +150,28 @@ defmodule Sanbase.Signal.SqlQuery do
         metadata
       FROM #{@table} FINAL
       PREWHERE
-        dt >= toDateTime(?2) AND
-        dt < toDateTime(?3) AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
         isNotNull(value) AND NOT isNaN(value) AND
-        #{asset_id_filter(%{slug: slug_or_slugs}, argument_position: 5)} AND
-        signal_id = ( SELECT argMax(signal_id, version) FROM #{@metadata_table} FINAL PREWHERE name = ?4 GROUP BY name LIMIT 1 )
-    )
+        #{asset_id_filter(%{slug: slug_or_slugs}, argument_name: "slug")} AND
+        #{signal_id_filter(%{signal: signal}, argument_name: "signal")}
     GROUP BY t
     ORDER BY t
     """
 
-    args = [
-      str_to_sec(interval),
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
-      Map.get(FileHandler.name_to_signal_map(), signal),
-      slug_or_slugs
-    ]
+    params = %{
+      interval: str_to_sec(interval),
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix(),
+      signal: Map.get(FileHandler.name_to_signal_map(), signal),
+      slug: slug_or_slugs
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def aggregated_timeseries_data_query(signal, slug_or_slugs, from, to, aggregation) do
-    query = """
+    sql = """
     SELECT
       name as slug,
       toFloat32(#{aggregation(aggregation, "value", "dt")}) as value
@@ -188,40 +182,40 @@ defmodule Sanbase.Signal.SqlQuery do
         value
       FROM #{@table}
       PREWHERE
-        dt >= toDateTime(?2) AND
-        dt < toDateTime(?3) AND
-        #{asset_id_filter(%{slug: slug_or_slugs}, argument_position: 4)} AND
-        signal_id = ( SELECT argMax(signal_id, version) FROM #{@metadata_table} FINAL PREWHERE name = ?1 GROUP BY name LIMIT 1 )
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
+        #{asset_id_filter(%{slug: slug_or_slugs}, argument_name: "slugs")} AND
+        #{signal_id_filter(%{signal: signal}, argument_name: "signal")}
     )
     INNER JOIN (
       SELECT asset_id, name
       FROM asset_metadata FINAL
-      PREWHERE name IN (?4)
+      PREWHERE name IN ({{slugs}})
     ) USING (asset_id)
     GROUP BY slug
     """
 
-    args = [
-      Map.get(FileHandler.name_to_signal_map(), signal),
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
-      slug_or_slugs
-    ]
+    params = %{
+      signal: Map.get(FileHandler.name_to_signal_map(), signal),
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix(),
+      slugs: slug_or_slugs |> List.wrap()
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp maybe_filter_signals(:all, _opts), do: ""
 
   defp maybe_filter_signals([_ | _], opts) do
-    argument_position = Keyword.fetch!(opts, :argument_position)
+    argument_name = Keyword.fetch!(opts, :argument_name)
     trailing_and = if Keyword.get(opts, :trailing_and), do: " AND", else: ""
 
     """
     signal_id IN (
       SELECT argMax(signal_id, version)
       FROM signal_metadata FINAL
-      PREWHERE name in (?#{argument_position})
+      PREWHERE name in ({{#{argument_name}}})
       GROUP BY name
     )
     """ <> trailing_and

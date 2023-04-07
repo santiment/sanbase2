@@ -1,4 +1,6 @@
 defmodule Sanbase.Clickhouse.Github.SqlQuery do
+  import Sanbase.Metric.SqlQuery.Helper, only: [timerange_parameters: 3]
+
   @non_dev_events [
     "IssueCommentEvent",
     "IssuesEvent",
@@ -204,7 +206,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       )
       GROUP BY owner
       """
-      |> wrap_aggregated_in_zero_filling_query(organizations_pos: 1)
+      |> wrap_aggregated_in_zero_filling_query()
 
     params = [
       organizations: organizations |> Enum.map(&String.downcase/1),
@@ -231,7 +233,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       )
       GROUP BY owner
       """
-      |> wrap_aggregated_in_zero_filling_query(organizations_pos: 1)
+      |> wrap_aggregated_in_zero_filling_query()
 
     params = %{
       organizations: organizations |> Enum.map(&String.downcase/1),
@@ -321,16 +323,5 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
     GROUP BY time
     ORDER BY time
     """
-  end
-
-  defp timerange_parameters(from, to, interval) do
-    Enum.min([to, Timex.now()], DateTime)
-
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
-    span = div(to_unix - from_unix, interval_sec) |> max(1)
-
-    {from_unix, to_unix, interval_sec, span}
   end
 end

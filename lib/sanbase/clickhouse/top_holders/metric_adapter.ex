@@ -177,9 +177,9 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          true <- chain_supported?(infr, slug, metric) do
       table = Map.get(@infrastructure_to_table, infr)
-      {query, args} = first_datetime_query(table, contract)
+      query_struct = first_datetime_query(table, contract)
 
-      ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
+      ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
         DateTime.from_unix!(timestamp)
       end)
       |> maybe_unwrap_ok_value()
@@ -191,9 +191,9 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          true <- chain_supported?(infr, slug, metric) do
       table = Map.get(@infrastructure_to_table, infr)
-      {query, args} = last_datetime_computed_at_query(table, contract)
+      query_struct = last_datetime_computed_at_query(table, contract)
 
-      ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
+      ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
         DateTime.from_unix!(timestamp)
       end)
       |> maybe_unwrap_ok_value()

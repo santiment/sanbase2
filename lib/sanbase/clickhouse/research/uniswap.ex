@@ -8,9 +8,9 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
   defp dt_ordered_table(), do: Config.module_get(Erc20Transfers, :address_ordered_table)
 
   def who_claimed() do
-    {query, args} = who_claimed_query()
+    query_struct = who_claimed_query()
 
-    ClickhouseRepo.query_transform(query, args, fn [k, v] -> {k, v} end)
+    ClickhouseRepo.query_transform(query_struct, fn [k, v] -> {k, v} end)
     |> case do
       {:ok, pairs_list} ->
         {:ok, Map.new(pairs_list, fn {k, v} -> {String.to_existing_atom(k), v} end)}
@@ -21,9 +21,9 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
   end
 
   def value_distribution() do
-    {query, args} = value_distribution_query()
+    query_struct = value_distribution_query()
 
-    ClickhouseRepo.query_transform(query, args, fn [k, v] -> {k, v} end)
+    ClickhouseRepo.query_transform(query_struct, fn [k, v] -> {k, v} end)
     |> case do
       {:ok, pairs_list} ->
         {:ok, Map.new(pairs_list, fn {k, v} -> {String.to_existing_atom(k), v} end)}
@@ -36,7 +36,7 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
   # Private Functions
 
   defp value_distribution_query() do
-    query = """
+    sql = """
     SELECT
       'total_minted' AS exchange_status,
       sum(value)/1e18 AS token_value
@@ -85,11 +85,11 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
     GROUP BY exchange_status
     """
 
-    {query, []}
+    Sanbase.Clickhouse.Query.new(sql, _params = %{})
   end
 
   defp who_claimed_query() do
-    query = """
+    sql = """
     SELECT exchange_status, sum(value2) AS value3
     FROM (
       SELECT
@@ -110,6 +110,6 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
     ORDER BY value3 DESC
     """
 
-    {query, []}
+    Sanbase.Clickhouse.Query.new(sql, _params = %{})
   end
 end

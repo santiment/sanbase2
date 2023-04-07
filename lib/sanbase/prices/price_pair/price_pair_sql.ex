@@ -2,7 +2,13 @@ defmodule Sanbase.Price.PricePairSql do
   @table "asset_price_pairs_only"
 
   import Sanbase.Metric.SqlQuery.Helper,
-    only: [aggregation: 3, generate_comparison_string: 3]
+    only: [
+      aggregation: 3,
+      generate_comparison_string: 3,
+      dt_to_unix: 2,
+      timerange_parameters: 2,
+      timerange_parameters: 3
+    ]
 
   def timeseries_data_query(
         slug_or_slugs,
@@ -13,8 +19,6 @@ defmodule Sanbase.Price.PricePairSql do
         source,
         aggregation
       ) do
-    {from, to, interval, _span} = timerange_parameters(from, to, interval)
-
     sql = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS time,
@@ -29,6 +33,8 @@ defmodule Sanbase.Price.PricePairSql do
     GROUP BY time
     ORDER BY time
     """
+
+    {from, to, interval, _span} = timerange_parameters(from, to, interval)
 
     params = %{
       interval: interval,
@@ -51,12 +57,10 @@ defmodule Sanbase.Price.PricePairSql do
         source,
         aggregation
       ) do
-    {from, to, interval, _span} = timerange_parameters(from, to, interval)
-
     sql = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), {{interval}}) * {{interval}}) AS time,
-      dictGetString('cryptocompare_to_san_asset_mapping', 'slug', tuple(base_asset)) AS slug,
+      #{base_asset_to_slug()} AS slug,
       #{aggregation(aggregation, "price", "dt")}
     FROM #{@table}
     PREWHERE
@@ -68,6 +72,8 @@ defmodule Sanbase.Price.PricePairSql do
     GROUP BY time, slug
     ORDER BY time
     """
+
+    {from, to, interval, _span} = timerange_parameters(from, to, interval)
 
     params = %{
       interval: interval,
@@ -144,183 +150,216 @@ defmodule Sanbase.Price.PricePairSql do
         threshold,
         aggregation
       ) do
-    {query, args} = filter_order_base_query(quote_asset, from, to, source, aggregation)
+    query_struct = filter_order_base_query(quote_asset, from, to, source, aggregation)
 
-    query =
-      query <>
+    sql =
+      query_struct.sql <>
         """
         WHERE #{generate_comparison_string("value", operation, threshold)}
         """
 
-    {query, args}
+    San
+    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
   end
 
   def slugs_order_query(quote_asset, from, to, source, direction, aggregation) do
-    {query, args} = filter_order_base_query(quote_asset, from, to, source, aggregation)
+    query_struct = filter_order_base_query(quote_asset, from, to, source, aggregation)
 
-    query =
-      query <>
+    sql =
+      query_struct.sql <>
         """
         ORDER BY value #{direction |> Atom.to_string() |> String.upcase()}
         """
 
-    {query, args}
+    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
   end
 
   defp filter_order_base_query(quote_asset, from, to, source, aggregation) do
-    query = """
+    sql = """
     SELECT slug, value
     FROM (
       SELECT
-        dictGetString('cryptocompare_to_san_asset_mapping', 'slug', tuple(base_asset)) AS slug,
+        #{base_asset_to_slug()} AS slug,
         value
       FROM (
         SELECT
           base_asset,
           #{aggregation(aggregation, "price", "dt")} AS value
         FROM #{@table}
-        PREWHERE
+        WHERE
           isNotNull(price) AND NOT isNaN(price) AND
-          quote_asset = ?1 AND
-          source = ?2 AND
-          dt >= toDateTime(?3) AND
-          dt < toDateTime(?4)
+          quote_asset = {{quote_asset}} AND
+          source = {{source}} AND
+          dt >= toDateTime({{from}}) AND
+          dt < toDateTime({{to}})
         GROUP BY base_asset
       )
       WHERE slug != ''
     )
     """
 
-    args = [
-      quote_asset,
-      source,
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix()
+    params = [
+      quote_asset: quote_asset,
+      source: source,
+      from: from |> DateTime.to_unix(),
+      to: to |> DateTime.to_unix()
     ]
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def last_record_before_query(slug, quote_asset, datetime, source) do
-    query = """
+    sql = """
     SELECT
       toUnixTimestamp(dt), price
     FROM #{@table}
-    PREWHERE
-      base_asset = dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(?1)) AND
-      quote_asset = ?2 AND
-      source = ?3 AND
-      dt >= toDateTime(?4) AND
-      dt < toDateTime(?5)
+    WHERE
+      #{base_asset_filter(slug, argument_name: "slug")} AND
+      quote_asset = {{quote_asset}} AND
+      source = {{source}} AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
     ORDER BY dt DESC
     LIMIT 1
     """
 
     # Put an artificial lower boundary otherwise the query is too slow
-    from = Timex.shift(datetime, days: -14) |> DateTime.to_unix()
-    to = datetime |> DateTime.to_unix()
-    args = [slug, quote_asset, source, from, to]
+    from = Timex.shift(datetime, days: -14)
+    to = datetime
 
-    {query, args}
+    params = %{
+      slug: slug,
+      quote_asset: quote_asset,
+      source: source,
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to)
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def select_any_record_query(slug, quote_asset, source) do
-    query = """
+    sql = """
     SELECT any(dt)
     FROM #{@table}
-    PREWHERE
-      base_asset = dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(?1)) AND
-      quote_asset = ?2 AND
-      source = ?3
+    WHERE
+      #{base_asset_filter(slug, argument_name: "slug")} AND
+      quote_asset = {{quote_asset}} AND
+      source = {{source}}
     """
 
-    args = [slug, quote_asset, source]
-    {query, args}
+    params = %{
+      slug: slug,
+      quote_asset: quote_asset,
+      source: source
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def first_datetime_query(slug, quote_asset, source) do
-    query = """
+    sql = """
     SELECT
       toUnixTimestamp(dt)
     FROM #{@table}
-    PREWHERE
-      base_asset = dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(?1)) AND
-      quote_asset = ?2 AND
-      source = ?3
+    WHERE
+      #{base_asset_filter(slug, argument_name: "slug")} AND
+      quote_asset = {{quote_asset}} AND
+      source = {{source}}
     ORDER BY dt ASC
     LIMIT 1
     """
 
-    args = [slug, quote_asset, source]
+    params = %{
+      slug: slug,
+      quote_asset: quote_asset,
+      source: source
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def available_quote_assets_query(slug, source) do
-    query = """
+    sql = """
     SELECT distinct(quote_asset)
     FROM #{@table}
-    PREWHERE
-      base_asset = dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(?1)) AND
-      source = ?2
+    WHERE
+      #{base_asset_filter(slug, argument_name: "slug")} AND
+      source = {{source}}
     """
 
-    args = [slug, source]
+    params = %{
+      slug: slug,
+      source: source
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def available_slugs_query(source) do
-    query = """
-    SELECT dictGetString('cryptocompare_to_san_asset_mapping', 'slug', tuple(base_asset)) AS slug
+    sql = """
+    SELECT #{base_asset_to_slug()} AS slug
     FROM (
       SELECT distinct(base_asset) AS base_asset
       FROM #{@table}
       PREWHERE
-        dt >= toDateTime(?1) AND
-        source = ?3
+        dt >= toDateTime({{datetime}}) AND
+        source = {{source}}
     )
     WHERE slug != ''
     """
 
-    datetime = Timex.shift(Timex.now(), days: -7) |> DateTime.to_unix()
+    params = %{
+      datetime: DateTime.add(DateTime.utc_now(), -7, :day) |> DateTime.to_unix(),
+      source: source
+    }
 
-    args = [datetime, source]
-
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def available_slugs_query(quote_asset, source, days \\ 7) do
-    query = """
-    SELECT dictGetString('cryptocompare_to_san_asset_mapping', 'slug', tuple(base_asset)) AS slug
+  def available_slugs_query(quote_asset, source) do
+    sql = """
+    SELECT #{base_asset_to_slug()} AS slug
     FROM (
       SELECT distinct(base_asset) AS base_asset
       FROM #{@table}
       PREWHERE
-        quote_asset = ?1 AND
-        dt >= toDateTime(?2) AND
-        source = ?3
+        quote_asset = {{quote_asset}} AND
+        dt >= toDateTime({{datetime}}) AND
+        source = {{source}}
     )
     WHERE slug != ''
     """
 
-    datetime = Timex.shift(Timex.now(), days: -days) |> DateTime.to_unix()
+    params = %{
+      quote_asset: quote_asset,
+      datetime: DateTime.add(DateTime.utc_now(), -7, :day) |> DateTime.to_unix(),
+      source: source
+    }
 
-    args = [quote_asset, datetime, source]
-
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   # Private functions
 
-  defp slug_filter_map(slug, opts) when is_binary(slug) do
-    pos = Keyword.fetch!(opts, :argument_position)
+  defp base_asset_filter(slug, opts) when is_binary(slug) do
+    arg_name = Keyword.get(opts, :argument_name)
 
-    "base_asset = dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(?#{pos}))"
+    "base_asset = dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple({{#{arg_name}}}))"
+  end
+
+  defp base_asset_to_slug() do
+    "dictGetString('cryptocompare_to_san_asset_mapping', 'slug', tuple(base_asset)) "
+  end
+
+  defp slug_filter_map(slug, opts) when is_binary(slug) do
+    arg_name = Keyword.fetch!(opts, :argument_name)
+
+    "base_asset = dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple({{#{arg_name}}}))"
   end
 
   defp slug_filter_map(slugs, opts) when is_list(slugs) do
-    pos = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
     # Just using `IN arrayMap(s -> ...)` won't work as the right side of the IN
     # operator is not a constant and Clickhouse throws an error.
@@ -328,28 +367,9 @@ defmodule Sanbase.Price.PricePairSql do
     base_asset IN (
       SELECT dictGetString('san_to_cryptocompare_asset_mapping', 'base_asset', tuple(slug)) AS base_asset
       FROM system.one
-      ARRAY JOIN [?#{pos}] AS slug
+      ARRAY JOIN [{{#{arg_name}}}] AS slug
       HAVING base_asset != ''
     )
     """
-  end
-
-  defp timerange_parameters(from, to, interval \\ nil)
-
-  defp timerange_parameters(from, to, nil) do
-    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-
-    {from_unix, to_unix}
-  end
-
-  defp timerange_parameters(from, to, interval) do
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
-    span = div(to_unix - from_unix, interval_sec) |> max(1)
-
-    {from_unix, to_unix, interval_sec, span}
   end
 end

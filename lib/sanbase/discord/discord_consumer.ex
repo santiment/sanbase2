@@ -89,7 +89,7 @@ defmodule Sanbase.DiscordConsumer do
     }
   ]
 
-  @local_bot_id 1_039_543_550_326_612_009
+  #  @local_bot_id 1_039_543_550_326_612_009
 
   def start_link do
     Consumer.start_link(__MODULE__)

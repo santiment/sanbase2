@@ -3,14 +3,13 @@ defmodule Sanbase.Clickhouse.TopHolders do
   Uses ClickHouse to calculate the percent supply in exchanges, non exchanges and combined
   """
 
-  alias Sanbase.DateTimeUtils
-
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Clickhouse.Label
   alias Sanbase.Project
 
   import Sanbase.Metric.SqlQuery.Helper
   import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
+  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
 
   @table "eth_top_holders_daily_union"
 
@@ -30,9 +29,9 @@ defmodule Sanbase.Clickhouse.TopHolders do
         }
 
   def realtime_top_holders(slug, opts) do
-    {query, args} = realtime_top_holders_query(slug, opts)
+    query_struct = realtime_top_holders_query(slug, opts)
 
-    ClickhouseRepo.query_transform(query, args, &holder_transform_func/1)
+    ClickhouseRepo.query_transform(query_struct, &holder_transform_func/1)
   end
 
   @spec top_holders(String.t(), DateTime.t(), DateTime.t(), Keyword.t()) ::
@@ -40,9 +39,15 @@ defmodule Sanbase.Clickhouse.TopHolders do
   def top_holders(slug, from, to, opts) do
     contract_opts = [contract_type: :latest_onchain_contract]
 
-    with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug, contract_opts),
-         {query, args} <- top_holders_query(slug, contract, decimals, from, to, opts),
-         {:ok, result} <- ClickhouseRepo.query_transform(query, args, &holder_transform_func/1),
+    with {:ok, contract, decimals} <-
+           Project.contract_info_by_slug(slug, contract_opts),
+         query_struct <-
+           top_holders_query(slug, contract, decimals, from, to, opts),
+         {:ok, result} <-
+           ClickhouseRepo.query_transform(
+             query_struct,
+             &holder_transform_func/1
+           ),
          addresses = Enum.map(result, & &1.address) |> Enum.uniq(),
          {:ok, address_labels_map} <- Label.get_address_labels(slug, addresses) do
       labelled_top_holders =
@@ -65,13 +70,20 @@ defmodule Sanbase.Clickhouse.TopHolders do
   def percent_of_total_supply(slug, holders_count, from, to, interval) do
     contract_opts = [contract_type: :latest_onchain_contract]
 
-    with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug, contract_opts) do
-      {query, args} =
-        percent_of_total_supply_query(contract, decimals, holders_count, from, to, interval)
+    with {:ok, contract, decimals} <-
+           Project.contract_info_by_slug(slug, contract_opts) do
+      query_struct =
+        percent_of_total_supply_query(
+          contract,
+          decimals,
+          holders_count,
+          from,
+          to,
+          interval
+        )
 
       ClickhouseRepo.query_transform(
-        query,
-        args,
+        query_struct,
         fn [dt, in_exchanges, outside_exchanges, in_top_holders_total] ->
           %{
             datetime: DateTime.from_unix!(dt),
@@ -92,8 +104,15 @@ defmodule Sanbase.Clickhouse.TopHolders do
           to :: DateTime.t(),
           interval :: String.t()
         ) :: {:ok, list(percent_of_total_supply)} | {:error, String.t()}
-  def percent_of_total_supply(contract, decimals, number_of_holders, from, to, interval) do
-    {query, args} =
+  def percent_of_total_supply(
+        contract,
+        decimals,
+        number_of_holders,
+        from,
+        to,
+        interval
+      ) do
+    query_struct =
       percent_of_total_supply_query(
         contract,
         decimals,
@@ -104,8 +123,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
       )
 
     ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [dt, in_exchanges, outside_exchanges, in_holders] ->
         %{
           datetime: DateTime.from_unix!(dt),
@@ -132,11 +150,14 @@ defmodule Sanbase.Clickhouse.TopHolders do
   defp realtime_top_holders_query("ethereum" = slug, opts) do
     {limit, offset} = opts_to_limit_offset(opts)
 
-    query = """
+    sql = """
     WITH
       ( SELECT argMax(balance, dt) FROM eth_balances_realtime total_balance,
-      ( SELECT pow(10, decimals) FROM asset_metadata FINAL where name = ?1 LIMIT 1 ) AS decimals,
-      ( SELECT argMax(value, dt) FROM intraday_metrics PREWHERE #{asset_id_filter(%{slug: slug}, argument_position: 1)} AND #{metric_id_filter("price_usd", argument_position: 2)} ) AS price_usd
+      ( SELECT pow(10, decimals) FROM asset_metadata FINAL where name = {{slug}} LIMIT 1 ) AS decimals,
+      ( SELECT argMax(value, dt)
+        FROM intraday_metrics
+        WHERE #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND #{metric_id_filter("price_usd", argument_name: "metric")}
+      ) AS price_usd
 
     SELECT
       toUnixTimestamp(max(dt)),
@@ -149,27 +170,47 @@ defmodule Sanbase.Clickhouse.TopHolders do
       addressType = 'normal'
     GROUP BY address
     ORDER BY balance2 DESC
-    LIMIT ?3 OFFSET ?4
+    LIMIT {{limit}} OFFSET {{ofset}}
     """
 
-    args = [slug, "price_usd", limit, offset]
+    params = %{
+      slug: slug,
+      metric: "price_usd",
+      limit: limit,
+      offset: offset
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp realtime_top_holders_query(slug, opts) do
-    {limit, offset} = opts_to_limit_offset(opts)
+    asset_ref_id_filter = fn column, opts ->
+      arg_name = Keyword.fetch!(opts, :argument_name)
 
-    asset_data = fn column, opts ->
-      argument_position = Keyword.fetch!(opts, :argument_position)
-      "( SELECT #{column} FROM asset_metadata FINAL WHERE name = ?#{argument_position} LIMIT 1 )"
+      "asset_ref_id = ( SELECT #{column} FROM asset_metadata FINAL WHERE name = {{#{arg_name}}} LIMIT 1 )"
     end
 
-    query = """
+    sql = """
     WITH
-      ( SELECT argMax(balance, dt) FROM erc20_balances_realtime PREWHERE assetRefId = #{asset_data.("asset_ref_id", argument_position: 1)} AND addressType = 'total' ) AS total_balance,
-      ( SELECT pow(10, decimals) FROM asset_metadata FINAL where name = ?1 LIMIT 1 ) AS decimals,
-      ( SELECT argMax(value, dt) FROM intraday_metrics PREWHERE #{asset_id_filter(%{slug: slug}, argument_position: 1)} AND #{metric_id_filter("price_usd", argument_position: 2)} ) AS price_usd
+      (
+        SELECT argMax(balance, dt)
+        FROM erc20_balances_realtime
+        WHERE
+          #{asset_ref_id_filter.("asset_ref_id", argument_name: "slug")} AND
+          addressType = 'total'
+      ) AS total_balance,
+      (
+        SELECT pow(10, decimals)
+        FROM asset_metadata FINAL
+        WHERE name = {{slug}} LIMIT 1
+      ) AS decimals,
+      (
+        SELECT argMax(value, dt)
+        FROM intraday_metrics
+        WHERE
+          #{asset_id_filter(%{slug: slug}, argument_name: "slug")} AND
+          #{metric_id_filter("price_usd", argument_name: "metric")}
+      ) AS price_usd
 
     SELECT
       toUnixTimestamp(max(dt)),
@@ -178,48 +219,51 @@ defmodule Sanbase.Clickhouse.TopHolders do
       balance2 * price_usd AS balance_usd,
       (balance2 / (total_balance / decimals)) AS partOfTotal
     FROM erc20_balances_realtime
-    PREWHERE
-      assetRefId = #{asset_data.("asset_ref_id", argument_position: 1)} AND
+    WHERE
+      #{asset_ref_id_filter.("asset_ref_id", argument_name: "slug")} AND
       addressType = 'normal'
     GROUP BY address
     ORDER BY balance2 DESC
-    LIMIT ?3 OFFSET ?4
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
-    args = [slug, "price_usd", limit, offset]
+    {limit, offset} = opts_to_limit_offset(opts)
 
-    {query, args}
+    params = %{slug: slug, metric: "price_usd", limit: limit, offset: offset}
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp top_holders_query(slug, contract, decimals, from, to, opts) do
     {limit, offset} = opts_to_limit_offset(opts)
 
-    args = [
-      slug,
-      contract,
-      decimals,
-      DateTime.to_unix(from),
-      DateTime.to_unix(to),
-      limit,
-      offset
-    ]
+    params = %{
+      slug: slug,
+      contract: contract,
+      decimals: decimals,
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      limit: limit,
+      offset: offset,
+      price_usd_metric: "price_usd"
+    }
 
-    {labels_owners_filter, args} = maybe_add_labels_owners_filter(opts, args)
+    {labels_owners_filter, params} = maybe_add_labels_owners_filter(opts, params)
 
     # Select the raw data and combine it with the partOfTotal by a UNION
-    inner_query = """
+    inner_sql = """
     SELECT
-      dt, contract, address, rank, value / pow(10, ?3) AS value,
-      multiIf(valueTotal > 0, value / (valueTotal / pow(10, ?3)), 0) AS partOfTotal
+      dt, contract, address, rank, value / pow(10, {{decimals}}) AS value,
+      multiIf(valueTotal > 0, value / (valueTotal / pow(10, {{decimals}})), 0) AS partOfTotal
     FROM (
       SELECT *
       FROM #{@table} FINAL
       WHERE
-        contract = ?2
+        contract = {{contract}}
         AND rank > 0
         AND address NOT IN ('TOTAL', 'freeze')
-        AND dt >= toStartOfDay(toDateTime(?4))
-        AND dt <= toStartOfDay(toDateTime(?5))
+        AND dt >= toStartOfDay(toDateTime({{from}}))
+        AND dt <= toStartOfDay(toDateTime({{to}}))
     )
     GLOBAL ANY LEFT JOIN (
       SELECT
@@ -227,62 +271,65 @@ defmodule Sanbase.Clickhouse.TopHolders do
         sum(value) AS valueTotal
       FROM #{@table} FINAL
       WHERE
-        contract = ?2
+        contract = {{contract}}
         AND address IN ('TOTAL','freeze') AND rank < 0
-        AND dt >= toStartOfDay(toDateTime(?4))
-        AND dt <= toStartOfDay(toDateTime(?5))
+        AND dt >= toStartOfDay(toDateTime({{from}}))
+        AND dt <= toStartOfDay(toDateTime({{to}}))
       GROUP BY dt
     ) USING (dt)
     """
 
     # Order the data by value in descending order and select one row per address
-    top_addresses_query = """
+    top_addresses_sql = """
     SELECT
       max(dt) AS dtMax, address, argMax(value, dt) AS val, argMax(partOfTotal, dt) AS partOfTotal
-    FROM ( #{inner_query} )
+    FROM ( #{inner_sql} )
     GROUP BY address
     ORDER BY val DESC
     """
 
     # Apply (maybe) the filtering by labels and add the pagination - limit and offset
-    filter_labels_query = """
+    filter_labels_sql = """
     SELECT
       dtMax AS dt, address, val, partOfTotal
-    FROM ( #{top_addresses_query} )
+    FROM ( #{top_addresses_sql} )
     #{labels_owners_filter}
-    LIMIT ?6 OFFSET ?7
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
     # Join with the intraday_metrics table to fetch the price_usd and add the value_usd
-    query = """
+    sql = """
     SELECT
-      toUnixTimestamp(dt), address, val as value, val * price as value_usd, partOfTotal
-    FROM ( #{filter_labels_query} )
+      toUnixTimestamp(dt), address, val AS value, val * price AS value_usd, partOfTotal
+    FROM ( #{filter_labels_sql} )
     GLOBAL ANY JOIN (
       SELECT
-        toStartOfDay(dt) as dt,
+        toStartOfDay(dt) AS dt,
         avg(value) AS price
       FROM intraday_metrics FINAL
-      PREWHERE
-        asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1)
-        AND metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd' LIMIT 1)
+      WHERE
+        #{metric_id_filter("price_usd", argument_name: "price_usd_metric")} AND
+        #{asset_id_filter(%{slug: slug}, argument_name: "slug")}
       GROUP BY dt
     ) USING (dt)
     """
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  defp maybe_add_labels_owners_filter(opts, args) do
-    {owners_str, args} = filter_str(:owners, opts, args)
-    {labels_str, args} = filter_str(:labels, opts, args)
+  defp maybe_add_labels_owners_filter(opts, params) do
+    {owners_str, params} = filter_str(:owners, opts, params)
+    {labels_str, params} = filter_str(:labels, opts, params)
 
     case labels_str == nil and owners_str == nil do
       true ->
-        {"", args}
+        {"", params}
 
       false ->
-        clause = [labels_str, owners_str] |> Enum.reject(&is_nil/1) |> Enum.join(" AND ")
+        clause =
+          [labels_str, owners_str]
+          |> Enum.reject(&is_nil/1)
+          |> Enum.join(" AND ")
 
         str = """
         GLOBAL ANY INNER JOIN
@@ -293,29 +340,33 @@ defmodule Sanbase.Clickhouse.TopHolders do
         ) USING (address)
         """
 
-        {str, args}
+        {str, params}
     end
   end
 
-  defp filter_str(:owners, opts, args) do
+  defp filter_str(:owners, opts, params) do
     case Keyword.get(opts, :owners, :all) do
       :all ->
-        {nil, args}
+        {nil, params}
 
       values ->
-        str = "JSONExtractString(metadata, 'owner') IN (?#{length(args) + 1})"
-        {str, args ++ [values]}
+        params_count = map_size(params)
+        owners_key = "owners_param_count_#{params_count}"
+        str = "JSONExtractString(metadata, 'owner') IN ({{#{owners_key}}})"
+        {str, Map.put(params, owners_key, values)}
     end
   end
 
-  defp filter_str(:labels, opts, args) do
+  defp filter_str(:labels, opts, params) do
     case Keyword.get(opts, :labels, :all) do
       :all ->
-        {nil, args}
+        {nil, params}
 
       values ->
-        str = "label IN (?#{length(args) + 1})"
-        {str, args ++ [values]}
+        params_count = map_size(params)
+        labels_key = "labels_param_count_#{params_count}"
+        str = "label IN ({{#{labels_key}})"
+        {str, Map.put(params, labels_key, values)}
     end
   end
 
@@ -327,56 +378,39 @@ defmodule Sanbase.Clickhouse.TopHolders do
          to,
          interval
        ) do
-    from_datetime_unix = DateTime.to_unix(from)
-    to_datetime_unix = DateTime.to_unix(to)
-    interval_sec = DateTimeUtils.str_to_sec(interval)
-
-    query = """
+    sql = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?6) * ?6) AS time,
+      #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time
       sumIf(partOfTotal, isExchange = 1) * 100 AS in_exchanges,
       sumIf(partOfTotal, isExchange = 0) * 100 AS outside_exchanges,
       in_exchanges + outside_exchanges AS in_top_holders_total
     FROM
     (
-      SELECT
-        dt,
-        contract,
-        address,
-        rank,
-        value,
-        partOfTotal
+      SELECT dt, contract, address, rank, value, partOfTotal
       FROM
       (
         SELECT *
         FROM
         (
-          SELECT
-            dt,
-            contract,
-            address,
-            rank,
-            value,
-            partOfTotal
-          FROM
+          SELECT dt, contract, address, rank, value, partOfTotal FROM
           (
             SELECT
               dt,
               contract,
               address,
               rank,
-              value / pow(10, ?1) AS value,
-              multiIf(valueTotal > 0, value / (valueTotal / pow(10, ?1)), 0) AS partOfTotal
+              value / pow(10, {{decimals}}) AS value,
+              multiIf(valueTotal > 0, value / (valueTotal / pow(10, {{decimals}})), 0) AS partOfTotal
             FROM
             (
               SELECT *
               FROM #{@table}
               WHERE
-                contract = ?2 AND
+                contract = {{contract}} AND
                 rank > 0 AND
-                rank <= ?3 AND
-                dt >= toStartOfDay(toDateTime(?4)) AND
-                dt <= toStartOfDay(toDateTime(?5))
+                rank <= {{number_of_holders}} AND
+                dt >= toStartOfDay(toDateTime({{from}})) AND
+                dt <= toStartOfDay(toDateTime({{to}}))
             )
             GLOBAL ANY LEFT JOIN
             (
@@ -385,10 +419,10 @@ defmodule Sanbase.Clickhouse.TopHolders do
                 sum(value) AS valueTotal
               FROM #{@table}
               WHERE
-                contract = ?2 AND
+                contract = {{contract}} AND
                 address IN ('TOTAL', 'freeze') AND rank < 0 AND
-                dt >= toStartOfDay(toDateTime(?4)) AND
-                dt <= toStartOfDay(toDateTime(?5))
+                dt >= toStartOfDay(toDateTime({{from}})) AND
+                dt <= toStartOfDay(toDateTime({{to}}))
               GROUP BY dt
             ) USING (dt)
           )
@@ -407,15 +441,15 @@ defmodule Sanbase.Clickhouse.TopHolders do
     ORDER BY dt ASC
     """
 
-    args = [
-      decimals,
-      contract,
-      number_of_holders,
-      from_datetime_unix,
-      to_datetime_unix,
-      interval_sec
-    ]
+    params = %{
+      decimals: decimals,
+      contract: contract,
+      number_of_holders: number_of_holders,
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      interval: str_to_sec(interval)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

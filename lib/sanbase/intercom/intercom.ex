@@ -180,13 +180,17 @@ defmodule Sanbase.Intercom do
   end
 
   def fetch_ch_data_user(user_id, date) do
-    query = """
+    sql = """
     SELECT dt, user_id, attributes
     FROM sanbase_user_intercom_attributes
-    WHERE (toStartOfDay(dt) = ?1) AND user_id = ?2
+    WHERE (toStartOfDay(dt) = {{date}}) AND user_id = {{user_id}}
     """
 
-    ClickhouseRepo.query_transform(query, [date, user_id], fn [dt, user_id, attributes] ->
+    params = %{date: date, user_id: user_id}
+
+    query_struct = Sanbase.Clickhouse.Query.new(sql, params)
+
+    ClickhouseRepo.query_transform(query_struct, fn [dt, user_id, attributes] ->
       %{
         dt: dt,
         user_id: user_id,
@@ -196,20 +200,23 @@ defmodule Sanbase.Intercom do
   end
 
   def fetch_ch_data(datetime, limit, offset) do
-    date = DateTime.to_date(datetime) |> Date.to_string()
-
-    offset = offset * limit
-
-    query = """
+    sql = """
     SELECT dt, user_id, attributes
     FROM sanbase_user_intercom_attributes
-    WHERE (toStartOfDay(dt) = ?1) AND user_id >= 87180
+    WHERE (toStartOfDay(dt) = {{date}}) AND user_id >= 87180
     ORDER BY user_id ASC
-    LIMIT ?2
-    OFFSET ?3
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
-    ClickhouseRepo.query_transform(query, [date, limit, offset], fn [dt, user_id, attributes] ->
+    params = %{
+      date: DateTime.to_date(datetime) |> Date.to_string(),
+      limit: limit,
+      offset: offset * limit
+    }
+
+    query_struct = Sanbase.Clickhouse.Query.new(sql, params)
+
+    ClickhouseRepo.query_transform(query_struct, fn [dt, user_id, attributes] ->
       %{
         dt: dt,
         user_id: user_id,
@@ -219,16 +226,19 @@ defmodule Sanbase.Intercom do
   end
 
   def fetch_all_synced_user_ids() do
-    query = """
+    sql = """
     SELECT user_id
     FROM sanbase_user_intercom_attributes
-    WHERE toStartOfDay(dt) = ?1
+    WHERE toStartOfDay(dt) = {{date}}
     ORDER BY user_id ASC
     """
 
     today = DateTime.to_date(DateTime.utc_now()) |> to_string
+    params = %{date: today}
 
-    {:ok, user_ids} = ClickhouseRepo.query_transform(query, [today], fn [user_id] -> user_id end)
+    query_struct = Sanbase.Clickhouse.Query.new(sql, params)
+
+    {:ok, user_ids} = ClickhouseRepo.query_transform(query_struct, fn [user_id] -> user_id end)
 
     user_ids
   end

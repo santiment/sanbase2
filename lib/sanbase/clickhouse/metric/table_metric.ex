@@ -21,9 +21,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.TableMetric do
         _opts
       ) do
     slugs = List.wrap(slug_or_slugs)
-    {query, args} = table_data_query(metric, slugs, from, to)
+    query_struct = table_data_query(metric, slugs, from, to)
 
-    ClickhouseRepo.query_transform(query, args, fn [_label | tail] -> tail end)
+    ClickhouseRepo.query_transform(query_struct, fn [_label | tail] -> tail end)
     |> maybe_apply_function(&transform_table_data(&1, slugs))
   end
 

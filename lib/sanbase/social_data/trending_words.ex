@@ -22,6 +22,7 @@ defmodule Sanbase.SocialData.TrendingWords do
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+  import Sanbase.Metric.SqlQuery.Helper, only: [to_unix_timestamp: 3, dt_to_unix: 2]
 
   alias Sanbase.ClickhouseRepo
 
@@ -81,9 +82,9 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, map()} | {:error, String.t()}
   def get_trending_words(from, to, interval, size, sources \\ @default_sources) do
-    {query, args} = get_trending_words_query(from, to, interval, size, sources)
+    query_struct = get_trending_words_query(from, to, interval, size, sources)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn
       [dt, word, _project, score], acc ->
         datetime = DateTime.from_unix!(dt)
         elem = %{word: word, score: score}
@@ -100,9 +101,9 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, map()} | {:error, String.t()}
   def get_trending_projects(from, to, interval, size, sources \\ @default_sources) do
-    {query, args} = get_trending_words_query(from, to, interval, size, sources)
+    query_struct = get_trending_words_query(from, to, interval, size, sources)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn
       [_dt, _word, nil, _score], acc ->
         acc
 
@@ -175,9 +176,9 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, list(word_stat)} | {:error, String.t()}
   def get_word_trending_history(word, from, to, interval, size, sources \\ @default_sources) do
-    {query, args} = word_trending_history_query(word, from, to, interval, size, sources)
+    query_struct = word_trending_history_query(word, from, to, interval, size, sources)
 
-    ClickhouseRepo.query_transform(query, args, fn [dt, position] ->
+    ClickhouseRepo.query_transform(query_struct, fn [dt, position] ->
       position = if position > 0, do: position
 
       %{
@@ -198,9 +199,9 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, list(word_stat)} | {:error, String.t()}
   def get_project_trending_history(slug, from, to, interval, size, sources \\ @default_sources) do
-    {query, args} = project_trending_history_query(slug, from, to, interval, size, sources)
+    query_struct = project_trending_history_query(slug, from, to, interval, size, sources)
 
-    ClickhouseRepo.query_transform(query, args, fn [dt, position] ->
+    ClickhouseRepo.query_transform(query_struct, fn [dt, position] ->
       position = if position > 0, do: position
 
       %{
@@ -212,7 +213,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   end
 
   defp get_trending_words_query(from, to, interval, size, sources) do
-    query = """
+    sql = """
     SELECT
       t,
       word,
@@ -220,43 +221,48 @@ defmodule Sanbase.SocialData.TrendingWords do
       SUM(score) / #{length(sources)} AS total_score
     FROM(
         SELECT
-          toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
+          #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
           word,
           any(project) AS project,
           argMax(score, dt) as score
         FROM #{@table}
         PREWHERE
-          dt >= toDateTime(?2) AND
-          dt < toDateTime(?3) AND
-          source IN (?4)
+          dt >= toDateTime({{from}}) AND
+          dt < toDateTime({{to}}) AND
+          source IN ({{sources}})
         GROUP BY t, word, source
         ORDER BY t, score DESC
     )
     GROUP BY t, word
     ORDER BY t, total_score DESC
-    LIMIT ?5 BY t
+    LIMIT {{limit}} BY t
     """
 
     sources = Enum.map(sources, &to_string/1)
-    args = [str_to_sec(interval), from, to, sources, size]
 
-    {query, args}
+    params = %{
+      interval: str_to_sec(interval),
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to),
+      sources: sources,
+      limit: size
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp word_trending_history_query(word, from, to, interval, size, sources) do
-    {query, args} = get_trending_words_query(from, to, interval, size, sources)
-    args_len = length(args)
-    next_pos = args_len + 1
+    query_struct = get_trending_words_query(from, to, interval, size, sources)
 
-    query =
+    sql =
       [
         """
         SELECT
           t,
-          toUInt32(indexOf(groupArray(?#{args_len})(word), ?#{next_pos}))
+          toUInt32(indexOf(groupArray({{limit}})(word), {{word}}))
         FROM(
         """,
-        query,
+        query_struct.sql,
         """
         )
         GROUP BY t
@@ -265,35 +271,27 @@ defmodule Sanbase.SocialData.TrendingWords do
       ]
       |> to_string()
 
-    args = args ++ [word]
-    {query, args}
+    query_struct
+    |> Sanbase.Clickhouse.Query.put_sql(sql)
+    |> Sanbase.Clickhouse.Query.add_parameter(:word, word)
   end
 
   defp project_trending_history_query(slug, from, to, interval, size, sources) do
-    {query, args} = get_trending_words_query(from, to, interval, size, sources)
-    args_len = length(args)
-    next_pos = args_len + 1
+    query_struct = get_trending_words_query(from, to, interval, size, sources)
 
-    query =
-      [
-        """
-        SELECT
-          t,
-          toUInt32(indexOf(groupArray(?#{args_len})(project), ?#{next_pos}))
-        FROM(
-        """,
-        query,
-        """
-        )
-        GROUP BY t
-        ORDER BY t
-        """
-      ]
-      |> to_string()
+    sql = """
+    SELECT
+      t,
+      toUInt32(indexOf(groupArray({{limit}})(project), {{ticker_slug}})) AS pos_in_top_n
+    FROM ( #{query_struct.sql} )
+    GROUP BY t
+    ORDER BY t
+    """
 
-    ticker = Sanbase.Project.ticker_by_slug(slug)
+    ticker_slug = Sanbase.Project.ticker_by_slug(slug) <> "_" <> slug
 
-    args = args ++ [ticker <> "_" <> slug]
-    {query, args}
+    query_struct
+    |> Sanbase.Clickhouse.Query.put_sql(sql)
+    |> Sanbase.Clickhouse.Query.add_parameter(:ticker_slug, ticker_slug)
   end
 end

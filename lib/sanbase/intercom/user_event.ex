@@ -92,7 +92,6 @@ defmodule Sanbase.Intercom.UserEvent do
 
     Sanbase.Intercom.get_events_for_user(user_id, since)
     |> Enum.map(fn %{
-                     "created_at" => created_at,
                      "event_name" => event_name,
                      "id" => remote_id,
                      "metadata" => metadata

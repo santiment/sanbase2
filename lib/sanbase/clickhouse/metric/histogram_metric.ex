@@ -38,9 +38,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   def histogram_data(metric, selector, from, to, interval, limit)
 
   def histogram_data("age_distribution" = metric, %{slug: slug}, from, to, interval, limit) do
-    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+    query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
+    ClickhouseRepo.query_transform(query_struct, fn [unix, value] ->
       range_from = unix |> DateTime.from_unix!()
 
       range_to =
@@ -56,9 +56,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   def histogram_data(metric, %{slug: slug}, from, to, interval, limit)
       when metric in @spent_coins_cost_histograms do
-    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+    query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query, args, fn [price, amount] ->
+    ClickhouseRepo.query_transform(query_struct, fn [price, amount] ->
       %{
         price: Sanbase.Math.to_float(price),
         value: Sanbase.Math.to_float(amount)
@@ -69,9 +69,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   def histogram_data(metric, %{slug: "ethereum" = slug}, from, to, interval, limit)
       when metric in @eth2_string_label_float_value_metrics do
-    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+    query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query, args, fn [label, amount] ->
+    ClickhouseRepo.query_transform(query_struct, fn [label, amount] ->
       %{
         label: label,
         value: Sanbase.Math.to_float(amount)
@@ -81,9 +81,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   def histogram_data(metric, %{slug: "ethereum" = slug}, from, to, interval, limit)
       when metric in @eth2_string_address_string_label_float_value_metrics do
-    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+    query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query, args, fn [address, label, amount] ->
+    ClickhouseRepo.query_transform(query_struct, fn [address, label, amount] ->
       %{
         address: address,
         label: label,
@@ -94,9 +94,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   def histogram_data(metric, %{slug: "ethereum" = slug}, from, to, interval, limit)
       when metric in @eth2_datetime_staking_pools_integer_valuation_list do
-    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+    query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query, args, fn [timestamp, value] ->
+    ClickhouseRepo.query_transform(query_struct, fn [timestamp, value] ->
       %{
         datetime: DateTime.from_unix!(timestamp),
         value:
@@ -171,9 +171,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   def last_datetime_computed_at(metric, _selector, _opts)
       when metric in @eth2_metrics do
-    {query, args} = {"SELECT toUnixTimestamp(max(dt)) FROM eth2_staking_transfers_v2", []}
+    sql = "SELECT toUnixTimestamp(max(dt)) FROM eth2_staking_transfers_v2"
+    query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
 
-    ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
+    ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
       DateTime.from_unix!(timestamp)
     end)
     |> maybe_unwrap_ok_value()

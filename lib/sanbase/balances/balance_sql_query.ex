@@ -1,7 +1,9 @@
 defmodule Sanbase.Balance.SqlQuery do
   import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Metric.SqlQuery.Helper, only: [generate_comparison_string: 3]
+
+  import Sanbase.Metric.SqlQuery.Helper,
+    only: [generate_comparison_string: 3, timerange_parameters: 3]
 
   def historical_balance_changes_query(
         addresses,
@@ -43,7 +45,7 @@ defmodule Sanbase.Balance.SqlQuery do
     SELECT time, SUM(balance_change)
       FROM (
         SELECT
-          toUnixTimestamp(intDiv(toUInt32(?6 + number * {{interval}}), {{interval}}) * {{interval}}) AS time,
+          toUnixTimestamp(intDiv(toUInt32({{from}} + number * {{interval}}), {{interval}}) * {{interval}}) AS time,
           toFloat64(0) AS balance_change
         FROM numbers({{span}})
 
@@ -55,10 +57,7 @@ defmodule Sanbase.Balance.SqlQuery do
     ORDER BY time
     """
 
-    interval = Sanbase.DateTimeUtils.str_to_sec(interval)
-    to_unix = DateTime.to_unix(to)
-    from_unix = DateTime.to_unix(from)
-    span = div(to_unix - from_unix, interval) |> max(1)
+    {from, to, interval, span} = timerange_parameters(from, to, interval)
 
     params = %{
       interval: interval,
@@ -66,8 +65,8 @@ defmodule Sanbase.Balance.SqlQuery do
       blockchain: blockchain,
       slug: slug,
       decimals: Sanbase.Math.ipow(10, decimals),
-      from: from_unix,
-      to: to_unix,
+      from: from,
+      to: to,
       span: span
     }
 
@@ -79,7 +78,7 @@ defmodule Sanbase.Balance.SqlQuery do
     SELECT
       address,
       argMaxIf(value, dt, dt <= {{from}}) / {{decimals}} AS start_balance,
-      argMaxIf(value, dt, dt <= {{to}}) / ?6 AS end_balance,
+      argMaxIf(value, dt, dt <= {{to}}) / {{decimals}} AS end_balance,
       end_balance - start_balance AS diff
     FROM (
       SELECT
@@ -190,7 +189,7 @@ defmodule Sanbase.Balance.SqlQuery do
       toUInt8(SUM(has_changed))
     FROM (
       SELECT
-        toUnixTimestamp(intDiv(toUInt32(?5 + number * {{interval}}), {{interval}}) * {{interval}}) AS time,
+        toUnixTimestamp(intDiv(toUInt32({{from}} + number * {{interval}}), {{interval}}) * {{interval}}) AS time,
         toFloat64(0) AS open,
         toFloat64(0) AS high,
         toFloat64(0) AS low,
@@ -381,24 +380,30 @@ defmodule Sanbase.Balance.SqlQuery do
 
     {limit, offset} = opts_to_limit_offset(opts)
     limit = Enum.min([limit, 10_000])
-    params = %{slug: slug, decimals: decimals, limit: limit, offset: offset}
+
+    params = %{
+      slug: slug,
+      decimals: Sanbase.Math.ipow(10, decimals),
+      limit: limit,
+      offset: offset
+    }
 
     {labels_join_str, params} = maybe_join_labels(labels, blockchain, params)
 
     sql = """
     SELECT address, balance
     FROM (
-      SELECT address, argMax(balance, dt) / pow(10, ?2) AS balance
+      SELECT address, argMax(balance, dt) / {{decimals}}AS balance
       FROM #{table}
       PREWHERE
-        assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?1 LIMIT 1) AND
+        assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1) AND
         addressType = 'normal'
       GROUP BY address
     )
     #{labels_join_str}
     WHERE balance > 1e-10
     ORDER BY balance #{direction}
-    LIMIT ?3 OFFSET ?4
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
     Sanbase.Clickhouse.Query.new(sql, params)

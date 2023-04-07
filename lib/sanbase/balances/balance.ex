@@ -191,7 +191,6 @@ defmodule Sanbase.Balance do
   def usd_value_address_change(address, datetime) do
     address = Sanbase.BlockchainAddress.to_internal_format(address)
     query_struct = usd_value_address_change_query(address, datetime)
-    hidden_projects_slugs = hidden_projects_slugs()
 
     ClickhouseRepo.query_transform(
       query_struct,
@@ -218,9 +217,12 @@ defmodule Sanbase.Balance do
       end
     )
     |> maybe_apply_function(fn data ->
+      hidden_projects_slugs = hidden_projects_slugs()
       Enum.reject(data, &(&1.slug in hidden_projects_slugs))
     end)
-    |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.usd_value_change, :desc) end)
+    |> maybe_apply_function(fn data ->
+      Enum.sort_by(data, & &1.usd_value_change, :desc)
+    end)
   end
 
   def usd_value_held_by_address(address) do

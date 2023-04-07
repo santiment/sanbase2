@@ -694,11 +694,10 @@ defmodule Sanbase.Discord.CommandHandler do
     """
   end
 
-  def compute_and_save(name, query, _query_params, args) do
-    args = Map.put(args, :name, name)
+  def compute_and_save(name, query, _query_params, params) do
+    params = Map.put(params, :name, name)
 
-    DiscordDashboard.create(sanbase_bot_id(), query, args)
-    |> case do
+    case DiscordDashboard.create(sanbase_bot_id(), query, params) do
       {:ok, result, dd, panel_id} -> {:ok, result, dd, panel_id}
       {:error, reason} -> {:execution_error, reason}
     end

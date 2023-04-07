@@ -532,9 +532,9 @@ defmodule Sanbase.Balance.SqlQuery do
     sql = """
     SELECT
       name,
-      current_balance,
-      current_price_usd,
-      current_balance * current_price_usd AS current_usd_value
+      balance,
+      price_usd,
+      balance * price_usd AS usd_value
     FROM (
       #{query_struct.sql}
     )
@@ -542,7 +542,7 @@ defmodule Sanbase.Balance.SqlQuery do
     (
       SELECT
         slug AS name,
-        argMax(price_usd, dt) AS current_price_usd,
+        argMax(price_usd, dt) AS price_usd
       FROM asset_prices_v3
       WHERE dt >= now() - INTERVAL 24 HOUR
       GROUP BY name

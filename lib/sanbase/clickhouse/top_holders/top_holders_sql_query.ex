@@ -48,7 +48,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
       %{
         interval: params.interval |> str_to_sec(),
         contract: params.contract,
-        count: params.count,
+        limit: params.count,
         from: params.from |> DateTime.to_unix(),
         to: params.to |> DateTime.to_unix(),
         blockchain: params.blockchain,

@@ -6,6 +6,7 @@ defmodule Sanbase.RunExamples do
   """
   @queries [
     :basic_metric_queries,
+    :available_metrics,
     :trending_words,
     :top_holders,
     :asset_prices,
@@ -127,6 +128,10 @@ defmodule Sanbase.RunExamples do
       )
 
     {:ok, :success}
+  end
+
+  defp do_run(:available_metrics) do
+    {:ok, [_ | _]} = Sanbase.Metric.available_metrics_for_selector(%{slug: "ethereum"})
   end
 
   defp do_run(:top_holders) do

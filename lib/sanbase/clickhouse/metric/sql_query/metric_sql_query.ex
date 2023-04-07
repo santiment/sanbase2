@@ -337,7 +337,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   def available_metrics_for_selector_query(selector) do
-    selector =
+    selector_value =
       case selector do
         %{slug: slug} -> slug
         %{contract_address: contract_address} -> contract_address
@@ -356,7 +356,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
 
     """
 
-    params = %{selector: selector}
+    params = %{selector: selector_value}
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 

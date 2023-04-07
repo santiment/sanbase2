@@ -149,7 +149,9 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE has(contract_addresses, {{#{arg_name}}}) LIMIT 1 )"
   end
 
-  def asset_id_filter(_, opts) do
+  def asset_id_filter(arg, opts) do
+    IO.inspect(arg)
+
     case Keyword.get(opts, :allow_missing_slug, false) do
       true -> "1 = 1"
       false -> raise("Missing slug in asset_id_filter")

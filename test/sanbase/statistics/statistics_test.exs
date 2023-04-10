@@ -5,7 +5,8 @@ defmodule Sanbase.StatisticsTest do
   import Sanbase.TestHelpers
 
   setup_all_with_mocks([
-    {Sanbase.Clickhouse.ApiCallData, [:passthrough], [active_users_count: fn _, _ -> 10 end]}
+    {Sanbase.Clickhouse.ApiCallData, [:passthrough],
+     [active_users_count: fn _, _ -> {:ok, 10} end]}
   ]) do
     []
   end

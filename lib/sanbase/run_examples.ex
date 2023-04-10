@@ -15,22 +15,30 @@ defmodule Sanbase.RunExamples do
     :github,
     :historical_balance,
     :uniswap,
-    :histograms
+    :histograms,
+    :api_calls_made,
+    :sanqueries,
+    :transfers,
+    :san_burn_credit_transactions,
+    :signals
   ]
   def run do
+    break_if_production()
+
     original_level = Application.get_env(:logger, :level)
 
     IO.puts("""
     Start running a set of queries that hit the real databases.
-    ==================================================
+    ============================================================
     """)
 
     try do
+      IO.puts("Configure the log level to :warning")
       Logger.configure(level: :warning)
 
       {t, _result} =
         :timer.tc(fn ->
-          Sanbase.Parallel.map(@queries, &measure_run(&1),
+          Sanbase.Parallel.map(@queries, &measured_run(&1),
             max_concurrency: System.schedulers(),
             ordered: false,
             timeout: 60_000
@@ -38,26 +46,69 @@ defmodule Sanbase.RunExamples do
         end)
 
       IO.puts("""
-      ==================================================
+      ============================================================
       Finish running the whole set of queries.
-      Time spent: #{Float.round(t / 1_000_000, 2)} seconds
+      Total time spent: #{to_seconds(t)} seconds
       """)
     rescue
       error ->
         IO.puts("Error running the example queries: #{Exception.message(error)}")
     after
+      IO.puts("Configure the log level to back to the original :#{original_level}")
+
       Logger.configure(level: original_level)
     end
 
     :ok
   end
 
-  defp measure_run(arg) do
-    IO.puts("Start running #{arg}")
+  defp break_if_production() do
+    postgres = System.get_env("DATABASE_URL") || ""
+    ch = System.get_env("CLICKHOUSEDATABASE_URL") || ""
+    ch_ro = System.get_env("CLICKHOUSE_READONLY_DATABASE_URL") || ""
+
+    if postgres =~ "production",
+      do: raise("Do not run the examples against prod postgres!")
+
+    if ch =~ "production",
+      do: raise("Do not run the examples against prod postgres!")
+
+    if ch_ro =~ "production",
+      do: raise("Do not run the examples against prod readonly CH!")
+
+    :ok
+  end
+
+  defp measured_run(arg) do
+    IO.puts(IO.ANSI.format([:light_blue, "Start running #{arg}"]))
 
     {t, _val} = :timer.tc(fn -> do_run(arg) end)
 
-    IO.puts("Finish running #{arg}. Took #{t / 1000}ms")
+    IO.puts(
+      IO.ANSI.format([
+        :light_green,
+        "Finish running #{arg}. Took #{to_seconds(t)}s"
+      ])
+    )
+  rescue
+    e ->
+      IO.puts(
+        IO.ANSI.format([
+          :red,
+          """
+          Finish running #{arg} with an error: #{Exception.message(e)}
+          Stacktrace:
+          #{Exception.format_stacktrace(__STACKTRACE__)}
+          """
+        ])
+      )
+  end
+
+  defp to_seconds(microseconds) do
+    case microseconds / 1_000_000 do
+      sec when sec < 1.0 -> Float.round(sec, 4)
+      sec -> Float.round(sec, 2)
+    end
   end
 
   # Implement a do_run for each of the values in @queries
@@ -368,6 +419,8 @@ defmodule Sanbase.RunExamples do
         infrastructure: "ETH",
         address: "0x0000000000000000000000000000000000000000"
       })
+
+    {:ok, :success}
   end
 
   defp do_run(:uniswap) do
@@ -387,8 +440,141 @@ defmodule Sanbase.RunExamples do
 
     {:ok, _} = Sanbase.Price.first_datetime("uniswap")
     {:ok, _} = Sanbase.Price.last_datetime_computed_at("uniswap")
+
+    {:ok, :success}
   end
 
   defp do_run(:histograms) do
+    for metric <- [
+          "age_distribution",
+          "spent_coins_cost",
+          "eth2_staked_amount_per_label",
+          "eth2_unlabeled_staker_inflow_sources",
+          "eth2_staking_pools_usd",
+          "eth2_staking_pools_validators_count_over_time",
+          "eth2_top_stakers"
+        ] do
+      {:ok, _} =
+        Sanbase.Clickhouse.MetricAdapter.HistogramMetric.histogram_data(
+          metric,
+          %{slug: "ethereum"},
+          ~U[2023-01-01 00:00:00Z],
+          ~U[2023-01-01 00:00:00Z],
+          "12h",
+          2
+        )
+    end
+
+    {:ok, :success}
+  end
+
+  defp do_run(:api_calls_made) do
+    {:ok, _} =
+      Sanbase.Clickhouse.ApiCallData.active_users_count(
+        ~U[2023-01-01 00:00:00Z],
+        ~U[2023-01-02 00:00:00Z]
+      )
+
+    {:ok, _} =
+      Sanbase.Clickhouse.ApiCallData.api_call_count(
+        22,
+        ~U[2023-01-01 00:00:00Z],
+        ~U[2023-01-02 00:00:00Z]
+      )
+
+    {:ok, _} =
+      Sanbase.Clickhouse.ApiCallData.api_call_history(
+        22,
+        ~U[2023-01-01 00:00:00Z],
+        ~U[2023-01-02 00:00:00Z],
+        "1d"
+      )
+
+    {:ok, :success}
+  end
+
+  defp do_run(:sanqueries) do
+    {:ok, _} =
+      Sanbase.Dashboard.Query.run(
+        """
+        SELECT dt, value
+        FROM intraday_metrics
+        WHERE
+          asset_id = (SELECT asset_id FROM asset_metadata WHERE name == {{slug}} LIMIT 1) AND
+          metric_id = (SELECT metric_id FROM metric_metadata WHERE name == {{metric}} LIMIT 1)
+        LIMIT 2
+        """,
+        %{slug: "bitcoin", metric: "active_addresses_24h"},
+        %{sanbase_user_id: 22}
+      )
+
+    {:ok, :success}
+  end
+
+  defp do_run(:transfers) do
+    {:ok, _} =
+      Sanbase.Transfers.top_wallet_transfers(
+        "ethereum",
+        "0x0000000000000000000000000000000000000000",
+        ~U[2023-01-01 00:00:00Z],
+        ~U[2023-01-02 00:00:00Z],
+        1,
+        10,
+        :in
+      )
+
+    {:ok, _} =
+      Sanbase.Transfers.incoming_transfers_summary(
+        "ethereum",
+        "0x0000000000000000000000000000000000000000",
+        ~U[2023-01-01 00:00:00Z],
+        ~U[2023-01-02 00:00:00Z],
+        []
+      )
+
+    {:ok, _} =
+      Sanbase.Transfers.top_transfers(
+        "santiment",
+        ~U[2023-01-01 00:00:00Z],
+        ~U[2023-01-02 00:00:00Z],
+        1,
+        10
+      )
+
+    {:ok, :success}
+  end
+
+  defp do_run(:san_burn_credit_transactions) do
+    {:ok, _} = Sanbase.Billing.Subscription.SanBurnCreditTransaction.fetch_burn_trxs()
+
+    {:ok, :success}
+  end
+
+  defp do_run(:signals) do
+    [_ | _] = Sanbase.Signal.available_signals()
+
+    {:ok, _} =
+      Sanbase.Signal.timeseries_data(
+        "anomaly_daily_active_addresses",
+        %{slug: "ethereum"},
+        ~U[2023-01-01 00:00:00Z],
+        ~U[2023-01-03 00:00:00Z],
+        "1d",
+        []
+      )
+
+    {:ok, _} =
+      Sanbase.Signal.aggregated_timeseries_data(
+        "anomaly_daily_active_addresses",
+        %{slug: "ethereum"},
+        ~U[2023-01-01 00:00:00Z],
+        ~U[2023-01-03 00:00:00Z],
+        []
+      )
+
+    {:ok, _} = Sanbase.Signal.available_signals(%{slug: "ethereum"})
+    {:ok, _} = Sanbase.Signal.available_slugs("anomaly_daily_active_addresses")
+
+    {:ok, :success}
   end
 end

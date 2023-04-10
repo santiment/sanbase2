@@ -145,6 +145,11 @@ defmodule Sanbase.Intercom do
   end
 
   def all_users_stats do
+    {:ok, users_used_api} = ApiCallData.users_used_api()
+    {:ok, users_used_sansheets} = ApiCallData.users_used_sansheets()
+    {:ok, api_calls_count_per_user} = ApiCallData.api_calls_count_per_user()
+    {:ok, all_user_subscriptions_map} = Subscription.Stats.all_user_subscriptions_map()
+
     %{
       paid_users: paid_users(),
       triggers_map: Statistics.resource_user_count_map(Sanbase.Alert.UserTrigger),
@@ -152,14 +157,18 @@ defmodule Sanbase.Intercom do
       watchlists_map: Statistics.resource_user_count_map(Sanbase.UserList),
       screeners_map: Statistics.user_screeners_count_map(),
       user_triggers_type_count: Statistics.user_triggers_type_count(),
-      users_used_api_list: ApiCallData.users_used_api(),
-      users_used_sansheets_list: ApiCallData.users_used_sansheets(),
-      api_calls_per_user_count: ApiCallData.api_calls_count_per_user(),
-      all_user_subscriptions_map: Subscription.Stats.all_user_subscriptions_map()
+      users_used_api_list: users_used_api,
+      users_used_sansheets_list: users_used_sansheets,
+      api_calls_per_user_count: api_calls_count_per_user,
+      all_user_subscriptions_map: all_user_subscriptions_map
     }
   end
 
   def all_users_stats(until) do
+    {:ok, users_used_api} = ApiCallData.users_used_api(until: until)
+    {:ok, users_used_sansheets} = ApiCallData.users_used_sansheets(until: until)
+    {:ok, api_calls_count_per_user} = ApiCallData.api_calls_count_per_user(until: until)
+
     %{
       paid_users: paid_users(),
       triggers_map: Statistics.resource_user_count_map(Sanbase.Alert.UserTrigger),
@@ -167,9 +176,9 @@ defmodule Sanbase.Intercom do
       watchlists_map: Statistics.resource_user_count_map(Sanbase.UserList),
       screeners_map: Statistics.user_screeners_count_map(),
       user_triggers_type_count: Statistics.user_triggers_type_count(),
-      users_used_api_list: ApiCallData.users_used_api(until: until),
-      users_used_sansheets_list: ApiCallData.users_used_sansheets(until: until),
-      api_calls_per_user_count: ApiCallData.api_calls_count_per_user(until: until),
+      users_used_api_list: users_used_api,
+      users_used_sansheets_list: users_used_sansheets,
+      api_calls_per_user_count: api_calls_count_per_user,
       all_user_subscriptions_map: Subscription.Stats.all_user_subscriptions_map()
     }
   end

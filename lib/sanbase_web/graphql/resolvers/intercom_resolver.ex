@@ -20,11 +20,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
   end
 
   def api_metric_distribution(_, _, _) do
-    {:ok, ApiCallData.api_metric_distribution()}
+    ApiCallData.api_metric_distribution()
   end
 
   def api_metric_distribution_per_user(_, _, _) do
-    {:ok, ApiCallData.api_metric_distribution_per_user()}
+    ApiCallData.api_metric_distribution_per_user()
   end
 
   def track_events(_, %{events: events} = params, resolution) do

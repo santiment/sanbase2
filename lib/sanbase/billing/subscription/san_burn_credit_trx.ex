@@ -121,7 +121,7 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
     Sanbase.StripeApi.add_credit(user.stripe_customer_id, -amount * 100, burn_trx.trx_hash)
   end
 
-  def fetch_san_burns_query() do
+  defp fetch_san_burns_query() do
     sql = """
     SELECT toUnixTimestamp(dt), from, value / pow(10, 18), transactionHash
     FROM erc20_transfers_to

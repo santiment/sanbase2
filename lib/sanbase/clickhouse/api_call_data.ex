@@ -4,13 +4,10 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   Get data about the API Calls that were made by users
   """
 
+  @type auth_method :: :all | :apikey | :jwt | :basic
+
   import Sanbase.Utils.Transform,
-    only: [
-      maybe_unwrap_ok_value: 1,
-      maybe_apply_function: 2,
-      maybe_sort: 3,
-      maybe_extract_value_from_tuple: 1
-    ]
+    only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, maybe_sort: 3]
 
   alias Sanbase.ClickhouseRepo
 
@@ -18,10 +15,10 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   Get a timeseries with the total number of api calls made by a user in a given interval
   and auth method
   """
-  @spec api_call_history(non_neg_integer(), DateTime.t(), DateTime.t(), String.t(), Atom.t()) ::
+  @spec api_call_history(non_neg_integer(), DateTime.t(), DateTime.t(), String.t(), auth_method) ::
           {:ok, list(%{datetime: DateTime.t(), api_calls_count: non_neg_integer()})}
           | {:error, String.t()}
-  def api_call_history(user_id, from, to, interval, auth_method) do
+  def api_call_history(user_id, from, to, interval, auth_method \\ :apikey) do
     query_struct = api_call_history_query(user_id, from, to, interval, auth_method)
 
     ClickhouseRepo.query_transform(query_struct, fn [t, count] ->
@@ -36,39 +33,46 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   Get a timeseries with the total number of api calls made by a user in a given interval
   and auth method
   """
-  @spec api_call_count(non_neg_integer(), DateTime.t(), DateTime.t(), Atom.t()) ::
+  @spec api_call_count(non_neg_integer(), DateTime.t(), DateTime.t(), auth_method) ::
           {:ok, number()} | {:error, String.t()}
-  def api_call_count(user_id, from, to, auth_method \\ :all) do
+  def api_call_count(user_id, from, to, auth_method \\ :apikey) do
     query_struct = api_call_count_query(user_id, from, to, auth_method)
 
     ClickhouseRepo.query_transform(query_struct, fn [count] -> count end)
     |> maybe_unwrap_ok_value()
   end
 
+  @spec active_users_count(DateTime.t(), DateTime.t()) ::
+          {:ok, number()} | {:error, String.t()}
   def active_users_count(from, to) do
     query_struct = active_users_count_query(from, to)
 
-    ClickhouseRepo.query_transform(query_struct, fn value -> value end)
+    ClickhouseRepo.query_transform(query_struct, fn [value] -> value end)
     |> maybe_unwrap_ok_value()
-    |> maybe_extract_value_from_tuple()
   end
 
+  @spec users_used_api(Keyword.t()) ::
+          {:ok, number()} | {:error, String.t()}
   def users_used_api(opts \\ []) do
     until = Keyword.get(opts, :until, Timex.now())
     query_struct = users_used_api_query(until)
 
     ClickhouseRepo.query_transform(query_struct, fn [value] -> value end)
-    |> maybe_extract_value_from_tuple()
+    |> maybe_unwrap_ok_value()
   end
 
+  @spec users_used_sansheets(Keyword.t()) ::
+          {:ok, number()} | {:error, String.t()}
   def users_used_sansheets(opts \\ []) do
     until = Keyword.get(opts, :until, Timex.now())
     query_struct = users_used_sansheets_query(until)
 
     ClickhouseRepo.query_transform(query_struct, fn [value] -> value end)
-    |> maybe_extract_value_from_tuple()
+    |> maybe_unwrap_ok_value()
   end
 
+  @spec api_calls_count_per_user(Keyword.t()) ::
+          {:ok, map()} | {:error, String.t()}
   def api_calls_count_per_user(opts \\ []) do
     until = Keyword.get(opts, :until, Timex.now())
     query_struct = api_calls_count_per_user_query(until)
@@ -76,18 +80,22 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     ClickhouseRepo.query_reduce(query_struct, %{}, fn [user_id, count], acc ->
       Map.put(acc, user_id, count)
     end)
-    |> maybe_extract_value_from_tuple()
+    |> maybe_unwrap_ok_value()
   end
 
+  @spec api_metric_distribution() ::
+          {:ok, list(map())} | {:error, String.t()}
   def api_metric_distribution() do
     query_struct = api_metric_distribution_query()
 
     ClickhouseRepo.query_transform(query_struct, fn [metric, count] ->
       %{metric: metric, count: count}
     end)
-    |> maybe_extract_value_from_tuple()
+    |> maybe_unwrap_ok_value()
   end
 
+  @spec api_metric_distribution_per_user() ::
+          {:ok, map()} | {:error, String.t()}
   def api_metric_distribution_per_user() do
     query_struct = api_metric_distribution_per_user_query()
 
@@ -100,8 +108,9 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     |> maybe_apply_function(
       &Enum.map(&1, fn {user_id, map} -> Map.put(map, :user_id, user_id) end)
     )
-    |> maybe_extract_value_from_tuple()
   end
+
+  # Private functions
 
   defp update_api_distribution_user_map(map, metric, count) do
     elem = %{metric: metric, count: count}

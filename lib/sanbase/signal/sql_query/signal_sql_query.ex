@@ -155,6 +155,7 @@ defmodule Sanbase.Signal.SqlQuery do
         isNotNull(value) AND NOT isNaN(value) AND
         #{asset_id_filter(%{slug: slug_or_slugs}, argument_name: "slug")} AND
         #{signal_id_filter(%{signal: signal}, argument_name: "signal")}
+    )
     GROUP BY t
     ORDER BY t
     """

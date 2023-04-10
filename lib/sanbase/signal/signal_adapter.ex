@@ -2,7 +2,9 @@ defmodule Sanbase.Signal.SignalAdapter do
   @behaviour Sanbase.Signal.Behaviour
 
   import Sanbase.Signal.SqlQuery
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
+
+  import Sanbase.Utils.Transform,
+    only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
   alias Sanbase.Signal.FileHandler
   alias Sanbase.ClickhouseRepo
@@ -95,8 +97,9 @@ defmodule Sanbase.Signal.SignalAdapter do
   def first_datetime(signal, %{slug: slug}) when is_binary(slug) do
     query_struct = first_datetime_query(signal, slug)
 
-    ClickhouseRepo.query_transform(query_struct, fn [datetime] ->
-      DateTime.from_unix!(datetime)
+    ClickhouseRepo.query_transform(query_struct, fn
+      [0] -> nil
+      [timestamp] -> DateTime.from_unix!(timestamp)
     end)
     |> maybe_unwrap_ok_value()
   end
@@ -105,31 +108,38 @@ defmodule Sanbase.Signal.SignalAdapter do
   def raw_data(signals, selector, from, to) do
     query_struct = raw_data_query(signals, from, to)
 
-    ClickhouseRepo.query_transform(query_struct, fn [unix, signal, slug, value, metadata] ->
-      metadata =
-        case Jason.decode(metadata) do
-          {:ok, value} -> value
-          _ -> %{}
-        end
+    ClickhouseRepo.query_transform(
+      query_struct,
+      fn [unix, signal, slug, value, metadata] ->
+        metadata =
+          case Jason.decode(metadata) do
+            {:ok, value} -> value
+            _ -> %{}
+          end
 
-      %{
-        datetime: DateTime.from_unix!(unix),
-        signal: Map.get(@signal_to_name_map, signal),
-        slug: slug,
-        value: value,
-        metadata: metadata
-      }
-    end)
+        %{
+          datetime: DateTime.from_unix!(unix),
+          signal: Map.get(@signal_to_name_map, signal),
+          slug: slug,
+          value: value,
+          metadata: metadata
+        }
+      end
+    )
     |> maybe_apply_function(fn list -> Enum.filter(list, & &1.signal) end)
-    |> maybe_apply_function(fn list -> filter_slugs_by_selector(list, selector) end)
+    |> maybe_apply_function(fn list ->
+      filter_slugs_by_selector(list, selector)
+    end)
   end
 
   @impl Sanbase.Signal.Behaviour
-  def timeseries_data(_signal, %{slug: []}, _from, _to, _interval, _opts), do: {:ok, []}
+  def timeseries_data(_signal, %{slug: []}, _from, _to, _interval, _opts),
+    do: {:ok, []}
 
   def timeseries_data(signal, %{slug: slug_or_slugs}, from, to, interval, opts)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, signal)
+
     slugs = slug_or_slugs |> List.wrap()
 
     query_struct = timeseries_data_query(signal, slugs, from, to, interval, aggregation)
@@ -161,6 +171,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   def aggregated_timeseries_data(signal, %{slug: slug_or_slugs}, from, to, opts)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, signal)
+
     slugs = slug_or_slugs |> List.wrap()
 
     query_struct = aggregated_timeseries_data_query(signal, slugs, from, to, aggregation)
@@ -198,10 +209,13 @@ defmodule Sanbase.Signal.SignalAdapter do
   # should be packed in a Helper module to be used on all the signal data.
   # The same way the metric modules are structured
   defp resolve_restrictions(restrictions) when is_map(restrictions) do
-    Enum.into(restrictions, %{}, fn {k, v} -> {k, String.to_existing_atom(v)} end)
+    Enum.into(restrictions, %{}, fn {k, v} ->
+      {k, String.to_existing_atom(v)}
+    end)
   end
 
-  defp resolve_restrictions(restriction) when restriction in [:free, :restriction] do
+  defp resolve_restrictions(restriction)
+       when restriction in [:free, :restriction] do
     %{"historical" => restriction, "realtime" => restriction}
   end
 end

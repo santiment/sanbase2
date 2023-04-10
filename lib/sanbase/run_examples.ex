@@ -18,7 +18,9 @@ defmodule Sanbase.RunExamples do
     :histograms,
     :api_calls_made,
     :sanqueries,
-    :transfers
+    :transfers,
+    :san_burn_credit_transactions,
+    :signals
   ]
   def run do
     break_if_production()
@@ -417,6 +419,8 @@ defmodule Sanbase.RunExamples do
         infrastructure: "ETH",
         address: "0x0000000000000000000000000000000000000000"
       })
+
+    {:ok, :success}
   end
 
   defp do_run(:uniswap) do
@@ -436,6 +440,8 @@ defmodule Sanbase.RunExamples do
 
     {:ok, _} = Sanbase.Price.first_datetime("uniswap")
     {:ok, _} = Sanbase.Price.last_datetime_computed_at("uniswap")
+
+    {:ok, :success}
   end
 
   defp do_run(:histograms) do
@@ -458,6 +464,8 @@ defmodule Sanbase.RunExamples do
           2
         )
     end
+
+    {:ok, :success}
   end
 
   defp do_run(:api_calls_made) do
@@ -481,6 +489,8 @@ defmodule Sanbase.RunExamples do
         ~U[2023-01-02 00:00:00Z],
         "1d"
       )
+
+    {:ok, :success}
   end
 
   defp do_run(:sanqueries) do
@@ -497,6 +507,8 @@ defmodule Sanbase.RunExamples do
         %{slug: "bitcoin", metric: "active_addresses_24h"},
         %{sanbase_user_id: 22}
       )
+
+    {:ok, :success}
   end
 
   defp do_run(:transfers) do
@@ -528,5 +540,41 @@ defmodule Sanbase.RunExamples do
         1,
         10
       )
+
+    {:ok, :success}
+  end
+
+  defp do_run(:san_burn_credit_transactions) do
+    {:ok, _} = Sanbase.Billing.Subscription.SanBurnCreditTransaction.fetch_burn_trxs()
+
+    {:ok, :success}
+  end
+
+  defp do_run(:signals) do
+    [_ | _] = Sanbase.Signal.available_signals()
+
+    {:ok, _} =
+      Sanbase.Signal.timeseries_data(
+        "anomaly_daily_active_addresses",
+        %{slug: "ethereum"},
+        ~U[2023-01-01 00:00:00Z],
+        ~U[2023-01-03 00:00:00Z],
+        "1d",
+        []
+      )
+
+    {:ok, _} =
+      Sanbase.Signal.aggregated_timeseries_data(
+        "anomaly_daily_active_addresses",
+        %{slug: "ethereum"},
+        ~U[2023-01-01 00:00:00Z],
+        ~U[2023-01-03 00:00:00Z],
+        []
+      )
+
+    {:ok, _} = Sanbase.Signal.available_signals(%{slug: "ethereum"})
+    {:ok, _} = Sanbase.Signal.available_slugs("anomaly_daily_active_addresses")
+
+    {:ok, :success}
   end
 end

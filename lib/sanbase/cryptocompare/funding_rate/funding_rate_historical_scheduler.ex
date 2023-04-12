@@ -1,4 +1,4 @@
-defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
+defmodule Sanbase.Cryptocompare.FundingRate.HistoricalScheduler do
   @moduledoc ~s"""
   Scrape the prices from Cryptocompare websocket API
   https://min-api.cryptocompare.com/documentation/websockets
@@ -19,7 +19,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
 
   @oban_conf_name :oban_scrapers
   # @unique_peroid 60 * 86_400
-  @oban_queue :cryptocompare_open_interest_historical_jobs_queue
+  @oban_queue :cryptocompare_funding_rate_historical_jobs_queue
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -34,10 +34,10 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
     # In order to be able to stop the historical scraper via env variables
     # the queue is defined as paused and should be resumed from code.
     if enabled?() do
-      Logger.info("[Cryptocompare Historical] Start exporting OpenInterest historical data.")
+      Logger.info("[Cryptocompare Historical] Start exporting FundingRate historical data.")
       resume()
     else
-      Logger.info("[Cryptocompare Historical] OpenInterest historical scheduler is not enabled.")
+      Logger.info("[Cryptocompare Historical] FundingRate historical scheduler is not enabled.")
     end
 
     {:ok, %{}}
@@ -65,7 +65,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
   end
 
   defp new_job(market, instrument, timestamp, schedule_next_job, limit) do
-    Sanbase.Cryptocompare.OpenInterest.HistoricalWorker.new(%{
+    Sanbase.Cryptocompare.FundingRate.HistoricalWorker.new(%{
       market: market,
       instrument: instrument,
       timestamp: timestamp,

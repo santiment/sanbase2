@@ -422,7 +422,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         WHERE (blockchain = 'ethereum') AND (label_id IN (
             SELECT label_id
             FROM label_metadata
-            WHERE key = 'eth2_staking_address'
+            WHERE key = 'eth2_staking_name'
         ))
       )
       INNER JOIN
@@ -431,7 +431,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
             label_id,
             value
         FROM label_metadata
-        WHERE key = 'eth2_staking_address'
+        WHERE key = 'eth2_staking_name'
       ) USING (label_id)
     ) USING address
     GROUP BY label
@@ -479,7 +479,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
               WHERE (blockchain = 'ethereum') AND (label_id IN (
                   SELECT label_id
                   FROM label_metadata
-                  WHERE key = 'eth2_staking_address'
+                  WHERE key = 'eth2_staking_name'
               ))
           )
           INNER JOIN
@@ -488,7 +488,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
                   label_id,
                   value
               FROM label_metadata
-              WHERE key = 'eth2_staking_address'
+              WHERE key = 'eth2_staking_name'
           ) USING (label_id)
         )
         INNER JOIN
@@ -557,13 +557,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
               (
                 SELECT address, label_id
                 FROM current_label_addresses
-                WHERE (blockchain = 'ethereum') AND (label_id IN ( SELECT label_id FROM label_metadata WHERE key = 'eth2_staking_address' ))
+                WHERE (blockchain = 'ethereum') AND (label_id IN ( SELECT label_id FROM label_metadata WHERE key = 'eth2_staking_name' ))
               )
               INNER JOIN
               (
                 SELECT label_id, value
                 FROM label_metadata
-                WHERE key = 'eth2_staking_address' AND has(topStakers, value)
+                WHERE key = 'eth2_staking_name' AND has(topStakers, value)
               ) USING (label_id)
             ) USING (address)
             GROUP BY label, dt
@@ -575,7 +575,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
               arrayJoin(arrayMap( x -> toDate(x), timeSlots(toDateTime('2020-11-03 00:00:00'), toUInt32(toDateTime({{to}}) - toIntervalDay(1) - toDateTime('2020-11-03 00:00:00')), toUInt32({{interval}})))) AS dt,
               0 AS sum_value
             FROM label_metadata FINAL
-            WHERE key = 'eth2_staking_address' AND has(topStakers, value)
+            WHERE key = 'eth2_staking_name' AND has(topStakers, value)
           )
           GROUP BY label, dt
           )
@@ -632,13 +632,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
             (
               SELECT address, label_id
               FROM current_label_addresses
-              WHERE (blockchain = 'ethereum') AND (label_id IN ( SELECT label_id FROM label_metadata WHERE key = 'eth2_staking_address' ) )
+              WHERE (blockchain = 'ethereum') AND (label_id IN ( SELECT label_id FROM label_metadata WHERE key = 'eth2_staking_name' ) )
             )
             INNER JOIN
             (
               SELECT label_id, value
               FROM label_metadata
-              WHERE key = 'eth2_staking_address'
+              WHERE key = 'eth2_staking_name'
             ) USING (label_id)
           ) USING (address)
           GROUP BY label, dt

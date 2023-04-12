@@ -345,7 +345,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         WHERE (blockchain = 'ethereum') AND (label_id IN (
           SELECT label_id
           FROM label_metadata
-          WHERE key = 'eth2_staking_address'
+          WHERE key = 'eth2_staking_name'
         ))
       )
       INNER JOIN
@@ -354,7 +354,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
           label_id,
           value
         FROM label_metadata
-        WHERE key = 'eth2_staking_address'
+        WHERE key = 'eth2_staking_name'
       ) USING (label_id)
     ) USING address
     GROUP BY label

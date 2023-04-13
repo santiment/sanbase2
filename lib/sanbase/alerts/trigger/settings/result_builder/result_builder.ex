@@ -101,7 +101,7 @@ defmodule Sanbase.Alert.ResultBuilder do
     added_items_key = Keyword.fetch!(opts, :added_items_key)
     removed_items_key = Keyword.fetch!(opts, :removed_items_key)
 
-    %{state: %{^state_list_key => previous_list}} = settings
+    previous_list = Map.get(settings.state, state_list_key, [])
 
     added_items = (current_list -- previous_list) |> Enum.reject(&is_nil/1)
     removed_items = (previous_list -- current_list) |> Enum.reject(&is_nil/1)
@@ -138,7 +138,8 @@ defmodule Sanbase.Alert.ResultBuilder do
     added_items_key = Keyword.fetch!(opts, :added_items_key)
     removed_items_key = Keyword.fetch!(opts, :removed_items_key)
 
-    %{state: %{^state_list_key => previous_map}} = settings
+    # TODO: Take a look at this. Sometimes it's a list, sometimes it's a map
+    previous_map = Map.get(settings.state, state_list_key, %{})
 
     template_kv =
       Enum.reduce(current_data, %{}, fn {identifier, current_list}, acc ->

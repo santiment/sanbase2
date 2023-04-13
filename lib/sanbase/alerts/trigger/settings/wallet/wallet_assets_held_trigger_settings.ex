@@ -108,7 +108,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
       {__MODULE__, :assets_held, selector, round_datetime(DateTime.utc_now())}
       |> Sanbase.Cache.hash()
 
-    Sanbase.Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->
+    Sanbase.Cache.get_or_store(cache_key, fn ->
       {:ok, _} = HistoricalBalance.assets_held_by_address(selector)
     end)
   end

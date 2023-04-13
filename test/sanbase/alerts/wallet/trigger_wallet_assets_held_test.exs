@@ -13,6 +13,9 @@ defmodule Sanbase.Alert.WalletAssetsHeldTriggerSettingsTest do
   alias Sanbase.Clickhouse.HistoricalBalance
 
   setup do
+    # Some of the code needs to run in the web pod while creating the asset
+    # to do the initial setup. That's why we need to clear both caches
+    Sanbase.Cache.clear_all()
     Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
     user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
@@ -63,11 +66,13 @@ defmodule Sanbase.Alert.WalletAssetsHeldTriggerSettingsTest do
       # Clear the cache after creating the triggers so the cached call to the HistoricalBalance
       # module that is used to initialize the states is cleared. In the next evaluation it should
       # call the second function in the mock_fun list
+      Sanbase.Cache.clear_all()
       Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
       log = capture_log(fn -> Scheduler.run_alert(WalletAssetsHeldTriggerSettings) end)
       assert log =~ "In total 2/2 wallet_assets_held alerts were sent successfully"
 
+      Sanbase.Cache.clear_all()
       Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
       assert capture_log(fn -> Scheduler.run_alert(WalletAssetsHeldTriggerSettings) end) =~
@@ -106,6 +111,7 @@ defmodule Sanbase.Alert.WalletAssetsHeldTriggerSettingsTest do
       # Clear the cache after creating the triggers so the cached call to the HistoricalBalance
       # module that is used to initialize the states is cleared. In the next evaluation it should
       # call the second function in the mock_fun list
+      Sanbase.Cache.clear_all()
       Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
       Scheduler.run_alert(WalletAssetsHeldTriggerSettings)

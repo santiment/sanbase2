@@ -56,5 +56,8 @@ config :sanbase, Sanbase.Cryptocompare.Price.HistoricalScheduler,
 config :sanbase, Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler,
   enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OPEN_INTEREST_SCHEDULER_ENABLED", "false"}
 
+config :sanbase, Sanbase.Cryptocompare.FundingRate.HistoricalScheduler,
+  enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_FUNDING_RATE_SCHEDULER_ENABLED", "false"}
+
 config :sanbase, Sanbase.Twitter.FollowersScheduler,
   enabled?: {:system, "TWITTER_FOLLOWERS_SCHEDULER_ENABLED", "false"}

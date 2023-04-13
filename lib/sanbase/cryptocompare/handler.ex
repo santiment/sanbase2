@@ -35,7 +35,54 @@ defmodule Sanbase.Cryptocompare.Handler do
     end
   end
 
+  def get_markets_and_instruments() do
+    url = "https://data-api.cryptocompare.com/futures/v1/markets/instruments"
+    headers = [{"authorization", "Apikey #{api_key()}"}]
+
+    case HTTPoison.get(url, headers, recv_timeout: 15_000) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        market_mapped_instruments_map = parse_markets_instruments_response(body)
+
+        {:ok, market_mapped_instruments_map}
+
+      {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
+        Logger.error("""
+        [Cryptocompare Historical] Failed to get markets. Status code: #{status_code}. \
+        Body: #{body}
+        """)
+
+        {:error, "Failed to get markets"}
+
+      {:error, error} ->
+        Logger.error("""
+        [Cryptocompare Historical] Failed to get markets. Error: #{inspect(error)}
+        """)
+
+        {:error, "Failed to get markets"}
+    end
+  end
+
   # Private function
+
+  defp parse_markets_instruments_response(json_body) do
+    # Filter the list so only 3 markets and BTC/ETH instruments are left
+    json_body
+    |> Jason.decode!()
+    |> Map.fetch!("Data")
+    |> Enum.map(fn {market, data} ->
+      mapped_instruments =
+        data["instruments"]
+        |> Enum.map(fn {k, _} -> k end)
+        |> Enum.uniq()
+        |> Enum.filter(fn instrument ->
+          String.contains?(instrument, "PERPETUAL")
+        end)
+
+      {market, mapped_instruments}
+    end)
+    |> Map.new()
+  end
+
   defp api_key(), do: Config.module_get(Sanbase.Cryptocompare, :api_key)
 
   defp maybe_remove_known_timestamps({:ok, list}, timestamps, opts) do

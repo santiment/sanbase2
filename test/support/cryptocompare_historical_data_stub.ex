@@ -129,6 +129,53 @@ defmodule Sanbase.Cryptocompare.HistoricalDataStub do
     {:ok, http_response}
   end
 
+  def funding_rate_data(market, instrument, timestamp, limit) do
+    fragments =
+      Enum.map(0..(limit - 1), fn shift ->
+        """
+        {
+          "UNIT": "MINUTE",
+          "TIMESTAMP": #{timestamp - shift * 3600},
+          "TYPE": "934",
+          "MARKET": "#{market}",
+          "INSTRUMENT": "#{instrument}",
+          "MAPPED_INSTRUMENT": "ETH-USDT-VANILLA-PERPETUAL",
+          "INDEX_UNDERLYING": "ETH",
+          "QUOTE_CURRENCY": "USDT",
+          "SETTLEMENT_CURRENCY": "USDT",
+          "CONTRACT_CURRENCY": "ETH",
+          "INTERVAL_MS": 28800000,
+          "OPEN": 1.29e-05,
+          "HIGH": 1.29e-05,
+          "LOW": 1.29e-05,
+          "CLOSE": 0.01,
+          "TOTAL_FUNDING_RATE_UPDATES": 0
+        }
+        """
+      end)
+
+    json = """
+    {
+      "Data": [
+        #{Enum.join(fragments, ",\n")}
+      ],
+      "Err": {}
+    }
+    """
+
+    http_response = %HTTPoison.Response{
+      status_code: 200,
+      body: json,
+      headers: [
+        {"Content-Type", "application/json; charset=UTF-8"},
+        {"X-RateLimit-Remaining-All",
+         "1220397, 9500;window=1, 9500;window=60, 9500;window=3600, 38673;window=86400, 1220397;window=2592000"}
+      ]
+    }
+
+    {:ok, http_response}
+  end
+
   defp plus_minute_unix(date, minutes) do
     # receive a date Date and minutes int and return unix timestamp that is minutes after date
     DateTime.new!(date, ~T[00:00:00])

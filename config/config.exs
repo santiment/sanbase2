@@ -61,6 +61,7 @@ config :sanbase, Sanbase.KafkaExporter,
   asset_ohlcv_price_pairs_topic:
     {:system, "KAFKA_ASSET_OHLCV_PRICE_POINTS_TOPIC", "asset_ohlcv_price_pairs"},
   open_interest_topic: {:system, "KAFKA_OPEN_INTEREST_TOPIC", "open_interest_cryptocompare"},
+  funding_rate_topic: {:system, "KAFKA_FUNDING_RATE_TOPIC", "funding_rate_cryptocompare"},
   api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"},
   twitter_followers_topic: {:system, "KAFKA_TWITTER_FOLLOWERS_TOPIC", "twitter_followers"}
 

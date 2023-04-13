@@ -1,4 +1,4 @@
-defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
+defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
   @moduledoc ~s"""
   An Oban Worker that processes the jobs in the cryptocompare_historical_jobs_queue
   queue.
@@ -14,31 +14,31 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
   default 20 attempts and the default algorithm used first retry after some seconds
   and the last attempt is done after about 3 weeks.
   """
-  @queue :cryptocompare_open_interest_historical_jobs_queue
+  @queue :cryptocompare_funding_rate_historical_jobs_queue
   use Oban.Worker,
     queue: @queue,
     unique: [period: 60 * 86_400]
 
   alias Sanbase.Utils.Config
-  alias Sanbase.Cryptocompare.OpenInterestPoint
+  alias Sanbase.Cryptocompare.FundingRatePoint
   alias Sanbase.Cryptocompare.ExporterProgress
   alias Sanbase.Cryptocompare.Handler
 
   require Logger
 
-  @url "https://data-api.cryptocompare.com/futures/v1/historical/open-interest/minutes"
+  @url "https://data-api.cryptocompare.com/futures/v1/historical/funding-rate/minutes"
   @limit 2000
   @oban_conf_name :oban_scrapers
-  @topic :open_interest_topic
+  @topic :funding_rate_topic
 
   def queue(), do: @queue
   def conf_name(), do: @oban_conf_name
 
   def pause_resume_worker(),
-    do: Sanbase.Cryptocompare.OpenInterest.PauseResumeWorker
+    do: Sanbase.Cryptocompare.FundingRate.PauseResumeWorker
 
   def historical_scheduler(),
-    do: Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler
+    do: Sanbase.Cryptocompare.FundingRate.HistoricalScheduler
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
@@ -122,9 +122,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
           quote_currency: map["QUOTE_CURRENCY"],
           settlement_currency: map["SETTLEMENT_CURRENCY"],
           contract_currency: map["CONTRACT_CURRENCY"],
-          close_settlement: map["CLOSE_SETTLEMENT"],
-          close_mark_price: map["CLOSE_MARK_PRICE"],
-          close_quote: map["CLOSE_QUOTE"]
+          close: map["CLOSE"]
         }
       end)
 
@@ -153,7 +151,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
         "timestamp" => min_timestamp,
         "limit" => @limit
       }
-      |> Sanbase.Cryptocompare.OpenInterest.HistoricalWorker.new()
+      |> Sanbase.Cryptocompare.FundingRate.HistoricalWorker.new()
 
     case Oban.insert(@oban_conf_name, job_args) do
       {:ok, _} -> :ok
@@ -172,7 +170,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
 
   defp to_json_kv_tuple(point) do
     point
-    |> OpenInterestPoint.new()
-    |> OpenInterestPoint.json_kv_tuple()
+    |> FundingRatePoint.new()
+    |> FundingRatePoint.json_kv_tuple()
   end
 end

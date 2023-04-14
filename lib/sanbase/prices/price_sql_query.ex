@@ -88,7 +88,7 @@ defmodule Sanbase.Price.SqlQuery do
       #{slug_filter(slug_or_slugs, argument_name: "slug")} AND
       source = cast({{source}}, 'LowCardinality(String)') AND
       dt >= toDateTime({{from}}) AND
-      dt < toDateTime({{to}]})
+      dt < toDateTime({{to}})
     GROUP BY time, slug
     ORDER BY time
     """

@@ -30,8 +30,12 @@ config :sanbase, Oban.Scrapers,
     cryptocompare_historical_jobs_queue: [limit: 25, paused: true],
     cryptocompare_historical_jobs_pause_resume_queue: 1,
     cryptocompare_historical_add_jobs_queue: 1,
-    # Cryptocompare open xrate queue
+    # Cryptocompare open interest queues
     cryptocompare_open_interest_historical_jobs_queue: [limit: 10, paused: true],
+    cryptocompare_open_interest_historical_jobs_pause_resume_queue: 1,
+    # Cryptocompare funding rate queues
+    cryptocompare_funding_rate_historical_jobs_queue: [limit: 10, paused: true],
+    cryptocompare_funding_rate_historical_jobs_pause_resume_queue: 1,
     # Twitter queues
     twitter_followers_migration_queue: [limit: 25, paused: true]
   ],
@@ -42,6 +46,8 @@ config :sanbase, Oban.Scrapers,
      crontab: [
        {"0 3 * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,
         args: %{type: "schedule_historical_price_jobs"}, max_attempts: 10},
+       {"0 1 * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,
+        args: %{type: "schedule_historical_open_interest, jobs"}, max_attempts: 10},
        {"0 1 * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,
         args: %{type: "schedule_historical_open_interest, jobs"}, max_attempts: 10}
      ]}

@@ -163,7 +163,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
 
     params = %{
       limit: limit,
-      from: from |> DateTime.to_unix(),
+      from: from && from |> DateTime.to_unix(),
       to: to |> DateTime.to_unix()
     }
 
@@ -201,7 +201,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
 
     params = %{
       limit: limit,
-      from: from |> DateTime.to_unix(),
+      from: from && from |> DateTime.to_unix(),
       to: to |> DateTime.to_unix()
     }
 
@@ -255,7 +255,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     """
 
     params = %{
-      from: from |> DateTime.to_unix(),
+      from: from && from |> DateTime.to_unix(),
       to: to |> DateTime.to_unix(),
       limit: limit
     }
@@ -298,7 +298,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     """
 
     params = %{
-      from: from |> DateTime.to_unix(),
+      from: from && from |> DateTime.to_unix(),
       to: to |> DateTime.to_unix(),
       limit: limit
     }
@@ -363,7 +363,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     """
 
     params = %{
-      from: from |> DateTime.to_unix(),
+      from: from && from |> DateTime.to_unix(),
       to: to |> DateTime.to_unix(),
       limit: limit
     }
@@ -440,7 +440,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     """
 
     params = %{
-      from: from |> DateTime.to_unix(),
+      from: from && from |> DateTime.to_unix(),
       to: to |> DateTime.to_unix(),
       limit: limit
     }

@@ -22,13 +22,22 @@ defmodule Sanbase.RunExamples do
     :san_burn_credit_transactions,
     :signals
   ]
+
+  @from ~U[2023-01-01 00:00:00Z]
+  @to ~U[2023-01-03 00:00:00Z]
+  @null_address "0x0000000000000000000000000000000000000000"
+
   def run do
     break_if_production()
 
     original_level = Application.get_env(:logger, :level)
+    max_concurrency = 2 * System.schedulers()
+    timeout_minutes = 10
 
     IO.puts("""
     Start running a set of queries that hit the real databases.
+    Running with #{max_concurrency} concurrent workers.
+    Timeout: #{timeout_minutes} minutes
     ============================================================
     """)
 
@@ -39,9 +48,9 @@ defmodule Sanbase.RunExamples do
       {t, _result} =
         :timer.tc(fn ->
           Sanbase.Parallel.map(@queries, &measured_run(&1),
-            max_concurrency: System.schedulers(),
+            max_concurrency: max_concurrency,
             ordered: false,
-            timeout: 60_000
+            timeout: :timer.minutes(timeout_minutes)
           )
         end)
 
@@ -117,16 +126,17 @@ defmodule Sanbase.RunExamples do
           "price_usd",
           "daily_active_addresses",
           "active_addresses_24h",
-          "dev_activity",
-          "dev_activity_1d",
-          "dev_activity_contributors_count"
+          "dev_activity_1d"
         ] do
       {:ok, [_ | _]} =
-        Sanbase.Metric.timeseries_data(
+        Sanbase.Metric.timeseries_data(metric, %{slug: "ethereum"}, @from, @to, "1d")
+
+      {:ok, [_ | _]} =
+        Sanbase.Metric.timeseries_data_per_slug(
           metric,
-          %{slug: "ethereum"},
-          ~U[2023-01-01 00:00:00Z],
-          ~U[2023-01-05 00:00:00Z],
+          %{slug: ["ethereum", "bitcoin"]},
+          @from,
+          @to,
           "1d"
         )
 
@@ -134,18 +144,21 @@ defmodule Sanbase.RunExamples do
         Sanbase.Metric.aggregated_timeseries_data(
           metric,
           %{slug: "ethereum"},
-          Timex.shift(Timex.now(), days: -2),
-          Timex.now()
+          @from,
+          @to
+        )
+
+      {:ok, _} =
+        Sanbase.Metric.aggregated_timeseries_data(
+          metric,
+          %{slug: ["ethereum", "bitcoin"]},
+          @from,
+          @to
         )
 
       {:ok, _} = Sanbase.Metric.first_datetime(metric, %{slug: "ethereum"}, [])
 
-      {:ok, _} =
-        Sanbase.Metric.last_datetime_computed_at(
-          metric,
-          %{slug: "ethereum"},
-          []
-        )
+      {:ok, _} = Sanbase.Metric.last_datetime_computed_at(metric, %{slug: "ethereum"}, [])
 
       {:ok, :success}
     end
@@ -164,19 +177,13 @@ defmodule Sanbase.RunExamples do
     {:ok, [_ | _]} =
       Sanbase.SocialData.TrendingWords.get_word_trending_history(
         "bitcoin",
-        ~U[2023-01-01 00:00:00Z],
+        @from,
         ~U[2023-01-30 00:00:00Z],
         "1d",
         10
       )
 
-    {:ok, %{}} =
-      Sanbase.SocialData.TrendingWords.get_trending_words(
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-05 00:00:00Z],
-        "6h",
-        10
-      )
+    {:ok, %{}} = Sanbase.SocialData.TrendingWords.get_trending_words(@from, @to, "6h", 10)
 
     {:ok, :success}
   end
@@ -189,8 +196,8 @@ defmodule Sanbase.RunExamples do
     {:ok, _} =
       Sanbase.Clickhouse.TopHolders.top_holders(
         "ethereum",
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-03 00:00:00Z],
+        @from,
+        @to,
         []
       )
 
@@ -203,8 +210,8 @@ defmodule Sanbase.RunExamples do
         Sanbase.Clickhouse.TopHolders.MetricAdapter.timeseries_data(
           metric,
           %{slug: "ethereum"},
-          ~U[2023-01-01 00:00:00Z],
-          ~U[2023-01-03 00:00:00Z],
+          @from,
+          @to,
           "1d",
           []
         )
@@ -229,44 +236,71 @@ defmodule Sanbase.RunExamples do
     {:ok, _} =
       Sanbase.Price.aggregated_timeseries_data(
         ["bitcoin", "ethereum"],
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z]
+        @from,
+        @to
       )
 
     {:ok, _} =
       Sanbase.Price.aggregated_timeseries_data(
         "ethereum",
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z]
+        @from,
+        @to
+      )
+
+    {:ok, _} =
+      Sanbase.Price.aggregated_metric_timeseries_data(
+        "ethereum",
+        "price_usd",
+        @from,
+        @to
       )
 
     {:ok, _} =
       Sanbase.Price.timeseries_data(
         "ethereum",
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z],
+        @from,
+        @to,
+        "12h"
+      )
+
+    {:ok, _} =
+      Sanbase.Price.timeseries_metric_data(
+        "ethereum",
+        "price_usd",
+        @from,
+        @to,
         "12h"
       )
 
     {:ok, _} =
       Sanbase.Price.timeseries_data(
         "ethereum",
-        ~U[2023-01-01 00:00:00Z],
+        @from,
         ~U[2023-01-10 00:00:00Z],
         "toStartOfWeek"
       )
 
     {:ok, _} =
+      Sanbase.Price.timeseries_metric_data_per_slug(
+        ["ethereum", "bitcoin"],
+        "price_usd",
+        @from,
+        @to,
+        "12h",
+        []
+      )
+
+    {:ok, _} =
       Sanbase.Price.aggregated_marketcap_and_volume(
         ["bitcoin", "ethereum"],
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z]
+        @from,
+        @to
       )
 
     {:ok, _} = Sanbase.Price.first_datetime("ethereum")
     {:ok, _} = Sanbase.Price.last_datetime_computed_at("ethereum")
 
-    {:ok, _} = Sanbase.Price.last_record_before("ethereum", ~U[2023-01-01 00:00:00Z])
+    {:ok, _} = Sanbase.Price.last_record_before("ethereum", @from)
 
     {:ok, :success}
   end
@@ -276,24 +310,24 @@ defmodule Sanbase.RunExamples do
       Sanbase.PricePair.aggregated_timeseries_data(
         ["bitcoin", "ethereum"],
         "USD",
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z]
+        @from,
+        @to
       )
 
     {:ok, _} =
       Sanbase.PricePair.aggregated_timeseries_data(
         "ethereum",
         "BTC",
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z]
+        @from,
+        @to
       )
 
     {:ok, _} =
       Sanbase.PricePair.timeseries_data(
         "ethereum",
         "USD",
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z],
+        @from,
+        @to,
         "12h"
       )
 
@@ -301,9 +335,19 @@ defmodule Sanbase.RunExamples do
       Sanbase.PricePair.timeseries_data(
         "ethereum",
         "USD",
-        ~U[2023-01-01 00:00:00Z],
+        @from,
         ~U[2023-01-10 00:00:00Z],
         "toStartOfWeek"
+      )
+
+    {:ok, _} =
+      Sanbase.PricePair.timeseries_data_per_slug(
+        ["ethereum", "bitcoin"],
+        "USD",
+        @from,
+        @to,
+        "12h",
+        []
       )
 
     {:ok, _} = Sanbase.PricePair.first_datetime("ethereum", "USD")
@@ -313,7 +357,7 @@ defmodule Sanbase.RunExamples do
       Sanbase.PricePair.last_record_before(
         "ethereum",
         "BTC",
-        ~U[2023-01-01 00:00:00Z]
+        @from
       )
 
     {:ok, :success}
@@ -323,8 +367,8 @@ defmodule Sanbase.RunExamples do
     {:ok, _} =
       Sanbase.Twitter.timeseries_data(
         "santimentfeed",
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z],
+        @from,
+        @to,
         "12h"
       )
 
@@ -337,8 +381,8 @@ defmodule Sanbase.RunExamples do
     {:ok, [_ | _]} =
       Sanbase.Clickhouse.Github.dev_activity(
         ["santiment"],
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-03 00:00:00Z],
+        @from,
+        @to,
         "1d",
         "None",
         nil
@@ -347,8 +391,8 @@ defmodule Sanbase.RunExamples do
     {:ok, [_ | _]} =
       Sanbase.Clickhouse.Github.github_activity(
         ["santiment"],
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-03 00:00:00Z],
+        @from,
+        @to,
         "1d",
         "None",
         nil
@@ -357,26 +401,49 @@ defmodule Sanbase.RunExamples do
     {:ok, %{"santiment" => _}} =
       Sanbase.Clickhouse.Github.total_dev_activity(
         ["santiment"],
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-03 00:00:00Z]
+        @from,
+        @to
       )
 
     {:ok, %{"santiment" => _, "bitcoin" => _}} =
       Sanbase.Clickhouse.Github.total_github_activity(
         ["santiment", "bitcoin"],
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-03 00:00:00Z]
+        @from,
+        @to
       )
 
     {:ok, [_ | _]} =
       Sanbase.Clickhouse.Github.dev_activity_contributors_count(
         ["santiment"],
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-05 00:00:00Z],
+        @from,
+        @to,
         "1d",
         "None",
         nil
       )
+
+    for metric <- ["dev_activity", "dev_activity_contributors_count"] do
+      {:ok, [_ | _]} =
+        Sanbase.Metric.timeseries_data(
+          metric,
+          %{slug: "ethereum"},
+          @from,
+          @to,
+          "1d"
+        )
+
+      {:ok, _} =
+        Sanbase.Metric.aggregated_timeseries_data(
+          metric,
+          %{slug: "ethereum"},
+          @from,
+          @to
+        )
+
+      {:ok, _} = Sanbase.Metric.first_datetime(metric, %{slug: "ethereum"}, [])
+
+      {:ok, _} = Sanbase.Metric.last_datetime_computed_at(metric, %{slug: "ethereum"}, [])
+    end
 
     {:ok, :success}
   end
@@ -385,39 +452,36 @@ defmodule Sanbase.RunExamples do
     {:ok, [_ | _]} =
       Sanbase.Clickhouse.HistoricalBalance.historical_balance(
         %{slug: "ethereum"},
-        "0x0000000000000000000000000000000000000000",
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-05 00:00:00Z],
+        @null_address,
+        @from,
+        @to,
         "1d"
       )
 
     {:ok, [_ | _]} =
       Sanbase.Clickhouse.HistoricalBalance.balance_change(
         %{slug: "ethereum"},
-        "0x0000000000000000000000000000000000000000",
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-05 00:00:00Z]
+        @null_address,
+        @from,
+        @to
       )
 
     {:ok, [_ | _]} =
       Sanbase.Clickhouse.HistoricalBalance.usd_value_address_change(
-        %{
-          infrastructure: "ETH",
-          address: "0x0000000000000000000000000000000000000000"
-        },
-        ~U[2023-01-01 00:00:00Z]
+        %{infrastructure: "ETH", address: @null_address},
+        @from
       )
 
     {:ok, [_ | _]} =
       Sanbase.Clickhouse.HistoricalBalance.usd_value_held_by_address(%{
         infrastructure: "ETH",
-        address: "0x0000000000000000000000000000000000000000"
+        address: @null_address
       })
 
     {:ok, [_ | _]} =
       Sanbase.Clickhouse.HistoricalBalance.assets_held_by_address(%{
         infrastructure: "ETH",
-        address: "0x0000000000000000000000000000000000000000"
+        address: @null_address
       })
 
     {:ok, :success}
@@ -432,8 +496,8 @@ defmodule Sanbase.RunExamples do
     #   Sanbase.Clickhouse.Uniswap.MetricAdapter.histogram_data(
     #     "uniswap_top_claimers",
     #     %{slug: "uniswap"},
-    #     ~U[2023-01-01 00:00:00Z],
-    #     ~U[2023-01-05 00:00:00Z],
+    #     @from,
+    #     @to,
     #     "1d",
     #     10
     #   )
@@ -459,9 +523,9 @@ defmodule Sanbase.RunExamples do
           metric,
           %{slug: "ethereum"},
           ~U[2023-01-01 00:00:00Z],
-          ~U[2023-01-01 00:00:00Z],
-          "12h",
-          2
+          ~U[2023-01-01 03:00:00Z],
+          "3h",
+          1
         )
     end
 
@@ -469,26 +533,11 @@ defmodule Sanbase.RunExamples do
   end
 
   defp do_run(:api_calls_made) do
-    {:ok, _} =
-      Sanbase.Clickhouse.ApiCallData.active_users_count(
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z]
-      )
+    {:ok, _} = Sanbase.Clickhouse.ApiCallData.active_users_count(@from, @to)
 
-    {:ok, _} =
-      Sanbase.Clickhouse.ApiCallData.api_call_count(
-        22,
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z]
-      )
+    {:ok, _} = Sanbase.Clickhouse.ApiCallData.api_call_count(22, @from, @to)
 
-    {:ok, _} =
-      Sanbase.Clickhouse.ApiCallData.api_call_history(
-        22,
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z],
-        "1d"
-      )
+    {:ok, _} = Sanbase.Clickhouse.ApiCallData.api_call_history(22, @from, @to, "1d")
 
     {:ok, :success}
   end
@@ -515,31 +564,29 @@ defmodule Sanbase.RunExamples do
     {:ok, _} =
       Sanbase.Transfers.top_wallet_transfers(
         "ethereum",
-        "0x0000000000000000000000000000000000000000",
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z],
+        @null_address,
+        @from,
+        @to,
         1,
         10,
         :in
       )
 
     {:ok, _} =
-      Sanbase.Transfers.incoming_transfers_summary(
-        "ethereum",
-        "0x0000000000000000000000000000000000000000",
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z],
-        []
-      )
+      Sanbase.Transfers.incoming_transfers_summary("ethereum", @null_address, @from, @to, [])
 
     {:ok, _} =
-      Sanbase.Transfers.top_transfers(
-        "santiment",
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-02 00:00:00Z],
-        1,
-        10
-      )
+      Sanbase.Transfers.outgoing_transfers_summary("ethereum", @null_address, @from, @to, [])
+
+    {:ok, _} =
+      Sanbase.Transfers.incoming_transfers_summary("santiment", @null_address, @from, @to, [])
+
+    {:ok, _} =
+      Sanbase.Transfers.outgoing_transfers_summary("santiment", @null_address, @from, @to, [])
+
+    {:ok, _} = Sanbase.Transfers.top_transfers("santiment", @from, @to, 1, 10)
+
+    {:ok, _} = Sanbase.Transfers.top_transfers("bitcoin", @from, @to, 1, 10)
 
     {:ok, :success}
   end
@@ -557,8 +604,8 @@ defmodule Sanbase.RunExamples do
       Sanbase.Signal.timeseries_data(
         "anomaly_daily_active_addresses",
         %{slug: "ethereum"},
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-03 00:00:00Z],
+        @from,
+        @to,
         "1d",
         []
       )
@@ -567,8 +614,8 @@ defmodule Sanbase.RunExamples do
       Sanbase.Signal.aggregated_timeseries_data(
         "anomaly_daily_active_addresses",
         %{slug: "ethereum"},
-        ~U[2023-01-01 00:00:00Z],
-        ~U[2023-01-03 00:00:00Z],
+        @from,
+        @to,
         []
       )
 

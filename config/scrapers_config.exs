@@ -47,9 +47,9 @@ config :sanbase, Oban.Scrapers,
        {"0 3 * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,
         args: %{type: "schedule_historical_price_jobs"}, max_attempts: 10},
        {"0 1 * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,
-        args: %{type: "schedule_historical_open_interest, jobs"}, max_attempts: 10},
+        args: %{type: "schedule_historical_open_interest_jobs"}, max_attempts: 10},
        {"0 1 * * *", Sanbase.Cryptocompare.AddHistoricalJobsWorker,
-        args: %{type: "schedule_historical_funding_rate, jobs"}, max_attempts: 10}
+        args: %{type: "schedule_historical_funding_rate_jobs"}, max_attempts: 10}
      ]}
   ]
 

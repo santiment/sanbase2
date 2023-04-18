@@ -186,7 +186,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       transactionHash,
       (any(value) / {{decimals}}) AS value
     FROM erc20_transfers
-    PREWHERE
+    WHERE
       #{top_wallet_transfers_address_clause(type, argument_name: "wallets", trailing_and: true)}
       assetRefId = cityHash64('ETH_' || {{contract}}) AND
       dt >= toDateTime({{from}}) AND
@@ -250,7 +250,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       transactionHash,
       (any(value) / {{decimals}}) AS value
     FROM #{dt_ordered_table()}
-    PREWHERE
+    WHERE
       assetRefId = cityHash64('ETH_' || {{contract}}) AND
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}})
@@ -286,7 +286,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         false ->
           """
           UNION DISTINCT
-          SELECT * FROM erc20_transfers_to PREWHERE to = {{address}}
+          SELECT * FROM erc20_transfers_to WHERE to = {{address}}
           """
       end
 
@@ -373,7 +373,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         0 AS incoming,
         any(value) AS outgoing
       FROM erc20_transfers
-      PREWHERE
+      WHERE
         from IN ({{addresses}}) AND
         assetRefId = cityHash64('ETH_' || {{contract}}) AND
         dt >= toDateTime({{from}}) AND
@@ -387,7 +387,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         any(value) AS incoming,
         0 AS outgoing
       FROM erc20_transfers_to
-      PREWHERE
+      WHERE
         to IN ({{from}}) AND
         assetRefId = cityHash64('ETH_' || {{contract}}) AND
         dt >= toDateTime({{from}}) AND
@@ -427,7 +427,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         0 AS incoming,
         any(value) AS outgoing
       FROM erc20_transfers
-      PREWHERE
+      WHERE
         from IN ({{addresses}}) AND
         assetRefId = cityHash64('ETH_' || {{contract}}) AND
         dt >= toDateTime({{from}}) AND
@@ -441,7 +441,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         any(value) AS incoming,
         0 AS outgoing
       FROM erc20_transfers_to
-      PREWHERE
+      WHERE
         to in ({{addresses}}) AND
         assetRefId = cityHash64('ETH_' || {{contract}}) AND
         dt >= toDateTime({{from}}) AND
@@ -485,10 +485,11 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     FROM (
       SELECT dt, from, to, any(value) AS value
       FROM #{table}
-      assetRefId = cityHash64('ETH_' || {{contract}}) AND
-      #{filter_column} = {{address}} AND
-      dt >= toDateTime({{from}}) AND
-      dt < toDateTime({{to}})
+      WHERE
+        assetRefId = cityHash64('ETH_' || {{contract}}) AND
+        #{filter_column} = {{address}} AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}})
       GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
     )
     GROUP BY "#{select_column}"

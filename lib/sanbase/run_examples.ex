@@ -573,22 +573,20 @@ defmodule Sanbase.RunExamples do
       )
 
     {:ok, _} =
-      Sanbase.Transfers.incoming_transfers_summary(
-        "ethereum",
-        @null_address,
-        @from,
-        @to,
-        []
-      )
+      Sanbase.Transfers.incoming_transfers_summary("ethereum", @null_address, @from, @to, [])
 
     {:ok, _} =
-      Sanbase.Transfers.top_transfers(
-        "santiment",
-        @from,
-        @to,
-        1,
-        10
-      )
+      Sanbase.Transfers.outgoing_transfers_summary("ethereum", @null_address, @from, @to, [])
+
+    {:ok, _} =
+      Sanbase.Transfers.incoming_transfers_summary("santiment", @null_address, @from, @to, [])
+
+    {:ok, _} =
+      Sanbase.Transfers.outgoing_transfers_summary("santiment", @null_address, @from, @to, [])
+
+    {:ok, _} = Sanbase.Transfers.top_transfers("santiment", @from, @to, 1, 10)
+
+    {:ok, _} = Sanbase.Transfers.top_transfers("bitcoin", @from, @to, 1, 10)
 
     {:ok, :success}
   end

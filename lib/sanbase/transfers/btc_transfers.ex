@@ -162,8 +162,8 @@ defmodule Sanbase.Transfers.BtcTransfers do
 
     params = %{
       amount_filter: amount_filter,
-      from: DateTime.from_unix(from),
-      to: DateTime.from_unix(to),
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
       limit: limit,
       offset: offset,
       excluded_addresses: excluded_addresses

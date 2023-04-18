@@ -102,6 +102,11 @@ defmodule Sanbase.Cryptocompare.Supervisor do
         start_if(
           fn -> OpenInterest.HistoricalScheduler end,
           fn -> OpenInterest.HistoricalScheduler.enabled?() end
+        ),
+        # Resume and pause on termination the funding rate historical queue
+        start_if(
+          fn -> FundingRate.HistoricalScheduler end,
+          fn -> FundingRate.HistoricalScheduler.enabled?() end
         )
       ]
       |> normalize_children()

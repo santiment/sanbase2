@@ -131,13 +131,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         _ -> from
       end
 
-    params = [
+    params = %{
       slugs: slugs,
       # Fetch internal metric name used. Fallback to the same name if missing.
       metric: Map.get(@name_to_metric_map, metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to)
-    ]
+    }
 
     {additional_filters, params} = additional_filters(filters, params, trailing_and: true)
 
@@ -220,12 +220,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         _ -> from
       end
 
-    params = [
+    params = %{
       # Fetch internal metric name used. Fallback to the same name if missing.
       metric: Map.get(@name_to_metric_map, metric),
       from: dt_to_unix(:from, from),
       to: dt_to_unix(:to, to)
-    ]
+    }
 
     {additional_filters, params} = additional_filters(filters, params, trailing_and: true)
 

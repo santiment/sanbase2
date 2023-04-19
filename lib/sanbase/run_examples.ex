@@ -20,14 +20,15 @@ defmodule Sanbase.RunExamples do
     :sanqueries,
     :transfers,
     :san_burn_credit_transactions,
-    :signals
+    :signals,
+    :additional_filters
   ]
 
   @from ~U[2023-01-01 00:00:00Z]
   @to ~U[2023-01-03 00:00:00Z]
   @null_address "0x0000000000000000000000000000000000000000"
 
-  def run do
+  def run(queries \\ :all) do
     break_if_production()
 
     original_level = Application.get_env(:logger, :level)
@@ -45,9 +46,11 @@ defmodule Sanbase.RunExamples do
       IO.puts("Configure the log level to :warning")
       Logger.configure(level: :warning)
 
+      queries = if queries == :all, do: @queries, else: queries
+
       {t, _result} =
         :timer.tc(fn ->
-          Sanbase.Parallel.map(@queries, &measured_run(&1),
+          Sanbase.Parallel.map(queries, &measured_run(&1),
             max_concurrency: max_concurrency,
             ordered: false,
             timeout: :timer.minutes(timeout_minutes)
@@ -623,5 +626,28 @@ defmodule Sanbase.RunExamples do
     {:ok, _} = Sanbase.Signal.available_slugs("anomaly_daily_active_addresses")
 
     {:ok, :success}
+  end
+
+  defp do_run(:additional_filters) do
+    {:ok, _} =
+      Sanbase.Metric.aggregated_timeseries_data(
+        "labelled_historical_balance",
+        %{slug: "ethereum"},
+        @from,
+        @to,
+        additional_filters: [
+          label_fqn: ["santiment/owner->Coinbase:v1"]
+        ]
+      )
+
+    {:ok, _} =
+      Sanbase.Clickhouse.Exchanges.ExchangeMetric.top_exchanges_by_balance(
+        %{slug: "ethereum"},
+        1,
+        additional_filters: [
+          owner: ["binance"],
+          label: ["centralized_exchange"]
+        ]
+      )
   end
 end

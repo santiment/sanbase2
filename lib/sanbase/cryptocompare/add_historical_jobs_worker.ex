@@ -49,6 +49,33 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
   end
 
   @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"type" => "schedule_historical_open_interest, jobs"}} = job) do
+    # For some time the job scheduling had a typo where instead of `_`, there was `, `
+    # With this function we handle this by catching these cases and adding the job again
+    # with the proper name, so the perform can handle them.
+    scheduled_at = job.scheduled_at
+
+    Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler.schedule_previous_day_jobs(
+      datetime: scheduled_at
+    )
+
+    :ok
+  end
+
+  def perform(%Oban.Job{args: %{"type" => "schedule_historical_funding_rate, jobs"}} = job) do
+    # For some time the job scheduling had a typo where instead of `_`, there was `, `
+    # With this function we handle this by catching these cases and adding the job again
+    # with the proper name, so the perform can handle them.
+    scheduled_at = job.scheduled_at
+
+    Sanbase.Cryptocompare.FundingRate.HistoricalScheduler.schedule_previous_day_jobs(
+      datetime: scheduled_at
+    )
+
+    :ok
+  end
+
+  @impl Oban.Worker
   def timeout(_job), do: :timer.minutes(60)
 
   @impl Worker

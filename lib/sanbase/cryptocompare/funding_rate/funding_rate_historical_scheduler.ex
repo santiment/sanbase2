@@ -48,7 +48,8 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalScheduler do
   def schedule_previous_day_jobs(opts \\ []) do
     limit = Keyword.get(opts, :limit, 30)
     schedule_next_job = Keyword.get(opts, :schedule_next_job, false)
-    beginning_of_day = DateTime.utc_now() |> Timex.beginning_of_day() |> DateTime.to_unix()
+    datetime = Keyword.get(opts, :datetime, DateTime.utc_now())
+    beginning_of_day = datetime |> Timex.beginning_of_day() |> DateTime.to_unix()
 
     {:ok, markets_and_instruments} = Handler.get_markets_and_instruments()
 

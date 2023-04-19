@@ -4,22 +4,7 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
   require Logger
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"type" => "schedule_historical_jobs"}}) do
-    Logger.info(
-      "[Cryptocompare.AddHistoricalJobsWorker] Start adding historical CCCAGG price jobs."
-    )
-
-    Sanbase.Cryptocompare.Price.CCCAGGPairData.schedule_previous_day_jobs()
-
-    Logger.info(
-      "[Cryptocompare.AddHistoricalJobsWorker] Finished adding historical CCCAGG price jobs."
-    )
-
-    :ok
-  end
-
-  @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"type" => "schedule_historical_price_jobs"}}) do
+  def perform(%Oban.Job{args: %{type: "schedule_historical_price_jobs"}}) do
     Logger.info("[Cryptocompare.AddHistoricalJobsWorker] Start adding historical price jobs.")
 
     Sanbase.Cryptocompare.Price.CCCAGGPairData.schedule_previous_day_jobs()
@@ -31,7 +16,7 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{
-        args: %{"type" => "schedule_historical_open_interest_jobs"}
+        args: %{type: "schedule_historical_open_interest_jobs"}
       }) do
     Logger.info(
       "[Cryptocompare.AddHistoricalJobsWorker] Start adding historical open interest jobs."
@@ -48,7 +33,7 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{
-        args: %{"type" => "schedule_historical_funding_rate_jobs"}
+        args: %{type: "schedule_historical_funding_rate_jobs"}
       }) do
     Logger.info(
       "[Cryptocompare.AddHistoricalJobsWorker] Start adding historical funding rate jobs."

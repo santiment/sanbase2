@@ -204,6 +204,7 @@ defmodule Sanbase.Mixfile do
       "ecto.migrate": [
         "load_dotenv",
         "database_safety",
+        "excellent_migrations.check_safety",
         "ecto.migrate -r Sanbase.Repo",
         "ecto.dump -r Sanbase.Repo"
       ],

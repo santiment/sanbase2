@@ -8,6 +8,8 @@ config :event_bus,
   # Otherwise the `Base62` is reported as undefined
   id_generator: EventBus.Util.Base62
 
+config :excellent_migrations, start_after: "20230421080101"
+
 # General application configuration
 config :sanbase,
   env: Mix.env(),

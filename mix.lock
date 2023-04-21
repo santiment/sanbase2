@@ -54,6 +54,7 @@
   "ex_queb": {:git, "https://github.com/iwarshak/ex_queb.git", "3aab53ac21cb9b9292614abadfaeb96c10e1f74b", []},
   "ex_unit_notifier": {:hex, :ex_unit_notifier, "1.2.0", "73ced2ecee0f2da0705e372c21ce61e4e5d927ddb797f73928e52818b9cc1754", [:mix], [], "hexpm", "f38044c9d50de68ad7f0aec4d781a10d9f1c92c62b36bf0227ec0aaa96aee332"},
   "exactor": {:hex, :exactor, "2.2.4", "5efb4ddeb2c48d9a1d7c9b465a6fffdd82300eb9618ece5d34c3334d5d7245b1", [:mix], [], "hexpm", "1222419f706e01bfa1095aec9acf6421367dcfab798a6f67c54cf784733cd6b5"},
+  "excellent_migrations": {:hex, :excellent_migrations, "0.1.6", "5ac916760cee8c63f55a2dbf3eadabb699a60adde5943ce069c1f7ee93f92963", [:mix], [{:credo, "~> 1.5", [hex: :credo, repo: "hexpm", optional: true]}], "hexpm", "c39269b0e4c0412b3e87fd77fe7ce8dd0e8470a6ec3df7d150b8d198b69a0239"},
   "excoveralls": {:hex, :excoveralls, "0.15.0", "ac941bf85f9f201a9626cc42b2232b251ad8738da993cf406a4290cacf562ea4", [:mix], [{:hackney, "~> 1.16", [hex: :hackney, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm", "9631912006b27eca30a2f3c93562bc7ae15980afb014ceb8147dc5cdd8f376f1"},
   "expletive": {:hex, :expletive, "0.1.5", "9e29db97aa83309b169870a1c08554a214561a04dc3cc38476141f3c62bd27b7", [:mix], [], "hexpm", "f07359b0b4b8cc39001a688d080373aa05d10ad294f0701b96d9169831ac22fd"},
   "exprintf": {:hex, :exprintf, "0.2.1", "b7e895dfb00520cfb7fc1671303b63b37dc3897c59be7cbf1ae62f766a8a0314", [:mix], [], "hexpm", "20a0e8c880be90e56a77fcc82533c5d60c643915c7ce0cc8aa1e06ed6001da28"},

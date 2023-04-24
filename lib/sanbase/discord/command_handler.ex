@@ -423,7 +423,7 @@ defmodule Sanbase.Discord.CommandHandler do
     Nostrum.Api.get_channel(msg.channel_id)
     |> case do
       {:ok, channel} -> process_message(msg, channel)
-      {:error, _} -> :ok
+      error -> error
     end
   end
 
@@ -469,6 +469,10 @@ defmodule Sanbase.Discord.CommandHandler do
 
   defp process_response({:ok, response, thread_db}) do
     {process_response({:ok, response}), thread_db}
+  end
+
+  defp process_response({:error, response, thread_db}) do
+    {process_response({:error, response}), thread_db}
   end
 
   defp process_response({:ok, response}) do
@@ -523,6 +527,11 @@ defmodule Sanbase.Discord.CommandHandler do
         nil -> filename
       end
     end)
+    |> Enum.filter(fn source ->
+      String.contains?(source, "academy") || String.contains?(source, ".md") ||
+        String.contains?(source, "index")
+    end)
+    |> Enum.reject(&(&1 == ""))
   end
 
   def process_message(msg, channel) do
@@ -587,11 +596,13 @@ defmodule Sanbase.Discord.CommandHandler do
       }
     ]
 
-    Api.create_message(channel.id,
-      content: "",
-      embeds: embeds,
-      components: [thumbs_action_row(thread_db)]
-    )
+    if thread_db do
+      Api.create_message(channel.id,
+        content: "",
+        embeds: embeds,
+        components: [thumbs_action_row(thread_db)]
+      )
+    end
   end
 
   def create_new_thread(msg) do

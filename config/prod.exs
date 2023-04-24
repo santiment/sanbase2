@@ -16,8 +16,6 @@ config :sanbase, SanbaseWeb.Endpoint,
   root: ".",
   version: Application.spec(:sanbase, :vsn),
   load_from_system_env: true,
-  secret_key_base: "${SECRET_KEY_BASE}",
-  live_view: [signing_salt: "${PHOENIX_LIVE_VIEW_SIGNING_SALT}"],
   check_origin: ["//*.santiment.net", "//*.sanr.app"]
 
 # Clickhousex does not support `:system` tuples. The configuration is done
@@ -61,11 +59,6 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
 
 config :sanbase, SanbaseWeb.Plug.SessionPlug,
   domain: {:system, "SANTIMENT_ROOT_DOMAIN", ".santiment.net"}
-
-config :ethereumex,
-  url: "${PARITY_URL}",
-  http_options: [timeout: 25_000, recv_timeout: 25_000],
-  http_headers: [{"Content-Type", "application/json"}]
 
 if File.exists?("config/prod.secret.exs") do
   import_config "prod.secret.exs"

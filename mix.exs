@@ -80,7 +80,6 @@ defmodule Sanbase.Mixfile do
       {:db_connection, "~> 2.2", override: true},
       {:decimal, "~> 2.0", override: true},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
-      {:distillery, "~> 2.0", runtime: false},
       {:earmark, "~> 1.2"},
       {:ecto_enum, "~> 1.4"},
       {:ecto_psql_extras, "~> 0.3"},

@@ -1,4 +1,4 @@
-FROM santimentjenkins/elixir:1.12
+FROM santimentjenkins/elixir:1.14.4
 
 RUN apk add --no-cache make \
                        g++ \
@@ -15,7 +15,7 @@ RUN apk add --no-cache make \
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
-RUN mix archive.install hex phx_new 1.5.3
+RUN mix archive.install hex phx_new 1.6.14
 
 #RUN mix format --check-formatted
 

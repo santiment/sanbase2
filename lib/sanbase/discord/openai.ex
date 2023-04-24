@@ -1,5 +1,8 @@
 defmodule Sanbase.OpenAI do
   use Ecto.Schema
+
+  require Logger
+
   import Ecto.Changeset
   import Ecto.Query
 
@@ -148,8 +151,9 @@ defmodule Sanbase.OpenAI do
         {:ok, thread_db} = ThreadAiContext.create(params)
         {:ok, body, thread_db}
 
-      _error ->
-        {:error, "Can't fetch"}
+      error ->
+        Logger.error("Can't fetch docs: #{inspect(error)}")
+        {:error, "Can't fetch", nil}
     end
   end
 
@@ -186,7 +190,7 @@ defmodule Sanbase.OpenAI do
         body = Jason.decode!(body)
         {:ok, body}
 
-      _error ->
+      error ->
         {:error, "Can't fetch"}
     end
   end

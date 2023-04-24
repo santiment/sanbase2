@@ -97,13 +97,27 @@ defmodule Sanbase.DiscordConsumer do
 
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
     cond do
-      CommandHandler.is_command?(msg.content) -> do_handle_command(msg)
-      CommandHandler.is_ai_command?(msg.content) -> CommandHandler.handle_command("ai", msg)
-      CommandHandler.is_docs_command?(msg.content) -> CommandHandler.handle_command("docs", msg)
-      CommandHandler.is_index_command?(msg.content) -> CommandHandler.handle_command("gi", msg)
-      CommandHandler.is_ask_command?(msg.content) -> CommandHandler.handle_command("ga", msg)
-      msg_contains_bot_mention?(msg) -> CommandHandler.handle_command("mention", msg)
-      true -> :ignore
+      CommandHandler.is_command?(msg.content) ->
+        do_handle_command(msg)
+
+      CommandHandler.is_ai_command?(msg.content) ->
+        CommandHandler.handle_command("ai", msg)
+
+      CommandHandler.is_docs_command?(msg.content) ->
+        Nostrum.Api.get_channel(msg.channel_id) && CommandHandler.handle_command("docs", msg)
+
+      CommandHandler.is_index_command?(msg.content) ->
+        CommandHandler.handle_command("gi", msg)
+
+      CommandHandler.is_ask_command?(msg.content) ->
+        CommandHandler.handle_command("ga", msg)
+
+      msg_contains_bot_mention?(msg) ->
+        Nostrum.Api.get_channel(msg.channel_id)
+        CommandHandler.handle_command("mention", msg)
+
+      true ->
+        :ignore
     end
   end
 

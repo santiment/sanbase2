@@ -475,6 +475,15 @@ defmodule Sanbase.Discord.CommandHandler do
     {process_response({:error, response}), thread_db}
   end
 
+  defp process_response({:ok, %{"answer" => "DK"}}) do
+    content = "Couldn't fetch information to answer your question"
+
+    [
+      content: content,
+      components: []
+    ]
+  end
+
   defp process_response({:ok, response}) do
     content = """
     #{response["answer"]}
@@ -503,14 +512,16 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   defp format_sources(sources) do
-    extract_filenames_or_links_from_string(sources)
+    sources
+    |> extract_filenames_or_links_from_string()
     |> Enum.map(fn link ->
       "<#{link}>"
 
       link =
         link
-        |> String.replace("../academy/src/docs/", "https://academy.santiment.net/")
+        |> String.replace("src/docs/", "https://academy.santiment.net/")
         |> String.replace("index.md", "")
+        |> String.replace("README.md", "https://github.com/santiment/sanpy")
         |> String.replace("/index/", "/")
 
       "<#{link}>"
@@ -520,7 +531,7 @@ defmodule Sanbase.Discord.CommandHandler do
 
   defp extract_filenames_or_links_from_string(string) do
     string
-    |> String.split(" ")
+    |> String.split(~r/,\s+/)
     |> Enum.map(fn filename ->
       case Regex.run(~r/https?:\/\/[^\s]+/, filename) do
         [link] -> link
@@ -528,7 +539,9 @@ defmodule Sanbase.Discord.CommandHandler do
       end
     end)
     |> Enum.filter(fn source ->
-      String.contains?(source, "academy") || String.contains?(source, ".md") ||
+      String.contains?(source, "sanr") ||
+        String.contains?(source, "sanpy") ||
+        String.contains?(source, "academy") || String.contains?(source, ".md") ||
         String.contains?(source, "index")
     end)
     |> Enum.reject(&(&1 == ""))

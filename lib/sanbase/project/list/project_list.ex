@@ -261,7 +261,7 @@ defmodule Sanbase.Project.List do
     opts = Keyword.put(opts, :preload?, false)
 
     projects_query(opts)
-    |> join(:inner, [p], gl in Project.GithubOrganization, on: gl.project_id == p.id)
+    |> join(:inner, [p], gl in Project.GithubOrganization)
     |> select([p], p.slug)
     |> distinct(true)
     |> Repo.all()

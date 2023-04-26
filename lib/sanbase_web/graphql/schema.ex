@@ -159,6 +159,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:linked_user_queries)
     import_fields(:market_queries)
     import_fields(:metric_queries)
+    import_fields(:moderation_queries)
     import_fields(:nft_queries)
     import_fields(:presigned_s3_url_queries)
     import_fields(:price_queries)
@@ -177,6 +178,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:timeline_queries)
     import_fields(:user_list_queries)
     import_fields(:user_queries)
+    import_fields(:vote_queries)
     import_fields(:webinar_queries)
     import_fields(:widget_queries)
   end

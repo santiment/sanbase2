@@ -7,6 +7,9 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
+  object :vote_queries do
+  end
+
   object :vote_mutations do
     @desc """
     Vote for an insight. The user must logged in.

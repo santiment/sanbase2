@@ -7,9 +7,6 @@ defmodule SanbaseWeb.Graphql.Schema.ModerationQueries do
   alias SanbaseWeb.Graphql.Resolvers.ModerationResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTModeratorAuth
 
-  object :moderation_queries do
-  end
-
   object :moderation_mutations do
     field :moderate_featured, :boolean do
       arg(:entity_id, non_null(:integer))

@@ -121,8 +121,8 @@ defmodule Sanbase.OpenAI do
            url,
            Jason.encode!(%{question: prompt}),
            [{"Content-Type", "application/json"}],
-           timeout: 60_000,
-           recv_timeout: 60_000
+           timeout: 120_000,
+           recv_timeout: 120_000
          ) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         body = Jason.decode!(body)
@@ -142,8 +142,8 @@ defmodule Sanbase.OpenAI do
            url,
            Jason.encode!(%{question: prompt, messages: context}),
            [{"Content-Type", "application/json"}],
-           timeout: 60_000,
-           recv_timeout: 60_000
+           timeout: 120_000,
+           recv_timeout: 120_000
          ) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         body = Jason.decode!(body)

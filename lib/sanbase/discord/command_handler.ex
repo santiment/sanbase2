@@ -484,6 +484,18 @@ defmodule Sanbase.Discord.CommandHandler do
     ]
   end
 
+  defp process_response({:ok, %{"type" => "search"} = response}) do
+    content = """
+    #{response["answer"]}
+    #{response["sources"] |> format_search_sources()}
+    """
+
+    [
+      content: content,
+      components: []
+    ]
+  end
+
   defp process_response({:ok, response}) do
     content = """
     #{response["answer"]}
@@ -492,8 +504,17 @@ defmodule Sanbase.Discord.CommandHandler do
 
     components =
       case Regex.run(~r/```(?:sql)?([^`]*)```/ms, content) do
-        [_, _] -> [ai_action_row()]
-        nil -> []
+        [_, matched] ->
+          matched = matched |> String.trim() |> String.downcase()
+
+          if String.starts_with?(matched, ["select", "show", "describe"]) do
+            [ai_action_row()]
+          else
+            []
+          end
+
+        nil ->
+          []
       end
 
     [
@@ -511,12 +532,14 @@ defmodule Sanbase.Discord.CommandHandler do
     ]
   end
 
+  defp format_search_sources(sources) do
+    sources |> Enum.map(fn link -> "<#{link}>" end) |> Enum.join("\n")
+  end
+
   defp format_sources(sources) do
     sources
     |> extract_filenames_or_links_from_string()
     |> Enum.map(fn link ->
-      "<#{link}>"
-
       link =
         link
         |> String.replace("src/docs/", "https://academy.santiment.net/")

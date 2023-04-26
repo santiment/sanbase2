@@ -113,7 +113,7 @@ defmodule Sanbase.DiscordConsumer do
         CommandHandler.handle_command("ga", msg)
 
       msg_contains_bot_mention?(msg) ->
-        Nostrum.Api.get_channel(msg.channel_id)
+        warm_up()
         CommandHandler.handle_command("mention", msg)
 
       true ->
@@ -133,6 +133,8 @@ defmodule Sanbase.DiscordConsumer do
         _ws_state
       })
       when command in ["query", "help", "auth", "create-admin", "remove-admin", "list", "chart"] do
+    warm_up()
+
     CommandHandler.handle_interaction(command, interaction)
     |> handle_response(command, interaction)
   end
@@ -142,6 +144,8 @@ defmodule Sanbase.DiscordConsumer do
         %Interaction{data: %ApplicationCommandInteractionData{custom_id: "run"}} = interaction,
         _ws_state
       }) do
+    warm_up()
+
     CommandHandler.handle_interaction("run", interaction)
     |> handle_response("run", interaction)
   end
@@ -152,6 +156,7 @@ defmodule Sanbase.DiscordConsumer do
           interaction,
         _ws_state
       }) do
+    warm_up()
     [command, id] = String.split(custom_id, "_")
 
     cond do
@@ -257,5 +262,9 @@ defmodule Sanbase.DiscordConsumer do
       {:error, error} ->
         Logger.error("COMMAND ERROR #{command_insp} #{inspect(params)} #{inspect(error)}")
     end
+  end
+
+  defp warm_up() do
+    Nostrum.Api.get_current_user()
   end
 end

@@ -21,7 +21,6 @@ defmodule Sanbase.Timeline.Query do
       left_join: ul in UserList,
       on: event.user_list_id == ul.id,
       left_join: post in Sanbase.Insight.Post,
-      on: event.post_id == post.id,
       where:
         (not is_nil(event.post_id) and post.ready_state == "published" and
            post.state == "approved") or

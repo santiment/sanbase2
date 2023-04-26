@@ -190,7 +190,7 @@ defmodule Sanbase.OpenAI do
         body = Jason.decode!(body)
         {:ok, body}
 
-      _error ->
+      error ->
         {:error, "Can't fetch"}
     end
   end

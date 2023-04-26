@@ -17,6 +17,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserListQueries do
       deprecate("Use `fetch_watchlists` instead")
       meta(access: :free)
 
+      deprecate("Use `fetchWatchlists` instead")
       resolve(&UserListResolver.fetch_user_lists/3)
     end
 
@@ -33,6 +34,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserListQueries do
       deprecate("Use `fetch_public_watchlists` instead")
       meta(access: :free)
 
+      deprecate("Use `fetchPublicWatchlists` instead")
       resolve(&UserListResolver.fetch_public_user_lists/3)
     end
 
@@ -49,6 +51,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserListQueries do
       deprecate("Use `fetch_all_public_watchlists` instead")
       meta(access: :free)
 
+      deprecate("Use `fetchAllPublicWatchlists` instead")
       resolve(&UserListResolver.fetch_all_public_user_lists/3)
     end
 

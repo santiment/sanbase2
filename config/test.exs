@@ -103,11 +103,15 @@ config :sanbase, Sanbase.Alert, email_channel_enabled: {:system, "EMAIL_CHANNEL_
 
 config :sanbase, Oban.Scrapers,
   name: :oban_scrapers,
-  testing: :manual
+  queues: false,
+  plugins: false,
+  crontab: false
 
 config :sanbase, Oban.Web,
   name: :oban_web,
-  testing: :manual
+  queues: false,
+  plugins: false,
+  crontab: false
 
 config :sanbase, Sanbase.Cryptocompare.Price.HistoricalScheduler,
   enabled?: {:system, "CRYPTOCOMPARE_HISTORICAL_OHLCV_PRICES_SCHEDULER_ENABLED", "true"}

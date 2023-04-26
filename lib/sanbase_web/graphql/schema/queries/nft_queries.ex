@@ -42,4 +42,7 @@ defmodule SanbaseWeb.Graphql.Schema.NftQueries do
       cache_resolve(&NftResolver.get_nft_collection_by_contract/3)
     end
   end
+
+  object :nft_mutations do
+  end
 end

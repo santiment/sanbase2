@@ -1251,6 +1251,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         # ETH2 metrics
         "eth2_stakers_count",
         "eth2_roi",
+        "ether_beacon_deposits",
+        "ether_beacon_validator_withdrawals",
+        "ether_beacon_reward_withdrawals",
         # Defi
         "defi_total_value_locked_eth",
         "defi_total_value_locked_usd",

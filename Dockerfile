@@ -3,9 +3,7 @@ ARG OTP_VERSION=25.3
 ARG DEBIAN_VERSION=bullseye-20230227-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
-ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
-# TODO: Start using concrete version of Rust
-ARG RUST_VERSION=1.69.0 
+ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}" 
 
 FROM ${BUILDER_IMAGE} as builder
 
@@ -29,9 +27,8 @@ RUN apt-get update -y && apt-get install -y \
 RUN mkdir /app
 WORKDIR /app
 
-# Add rust
-RUN curl https://sh.rustup.rs -sSf | \
-	sh -s -- --default-toolchain stable -y
+# Add rust version 1.69.0
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=1.69.0 -y
 
 ENV RUSTFLAGS="-C target-feature=-crt-static"
 

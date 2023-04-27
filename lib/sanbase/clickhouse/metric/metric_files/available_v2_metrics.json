@@ -3518,7 +3518,7 @@
   },
   {
     "human_readable_name": "Beacon chain ether deposits",
-    "name": "ether_beacon_deposits",
+    "name": "eth_beacon_deposits",
     "metric": "ether_beacon_deposits",
     "version": "2019-01-01",
     "access": "restricted",
@@ -3535,7 +3535,7 @@
   },
   {
     "human_readable_name": "Beacon chain validator withdrawals - 32 ETH",
-    "name": "ether_beacon_validator_withdrawals",
+    "name": "eth_beacon_validator_withdrawals",
     "metric": "ether_beacon_validator_withdrawals",
     "version": "2019-01-01",
     "access": "restricted",
@@ -3552,7 +3552,7 @@
   },
   {
     "human_readable_name": "Beacon chain validator rewards withdrawals",
-    "name": "ether_beacon_reward_withdrawals",
+    "name": "eth_beacon_reward_withdrawals",
     "metric": "ether_beacon_reward_withdrawals",
     "version": "2019-01-01",
     "access": "restricted",

@@ -701,6 +701,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "median_fees_usd",
         "average_fees_usd_5m",
         "median_fees_usd_5m",
+        "fees_burnt_5m",
+        "fees_burnt_usd_5m",
         "network_circulation_usd_1d",
         "fees_to_network_circulation_usd_1d",
         "avg_gas_used",

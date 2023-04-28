@@ -28,14 +28,14 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
   require Sanbase.Utils.Config, as: Config
 
   def init(_, opts) do
-    pool_size =
-      Config.module_get(__MODULE__, :pool_size)
-      |> Sanbase.Math.to_integer()
+    pool_size = Config.module_get(__MODULE__, :pool_size) |> Sanbase.Math.to_integer()
+    url = System.get_env("CLICKHOUSE_READONLY_DATABASE_URL")
 
-    opts =
+    url_opts =
+      opts =
       opts
+      |> Keyword.merge(Sanbase.ClickhouseRepo.url_to_opts(url))
       |> Keyword.put(:pool_size, pool_size)
-      |> Keyword.put(:url, System.get_env("CLICKHOUSE_READONLY_DATABASE_URL"))
 
     {:ok, opts}
   end

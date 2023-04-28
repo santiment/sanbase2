@@ -3,6 +3,8 @@ defmodule Sanbase.Cryptocompare.Handler do
   alias Sanbase.Cryptocompare.ExporterProgress
   alias Sanbase.Utils.Config, as: Config
 
+  require Logger
+
   @type option :: :module | :timestamps_key | :process_function | :remove_known_timestamps
 
   def execute_http_request(url, query_params) do

@@ -24,13 +24,36 @@ defmodule Sanbase.ClickhouseRepo do
   """
   def init(_, opts) do
     pool_size = Config.module_get(__MODULE__, :pool_size) |> Sanbase.Math.to_integer()
+    url = System.get_env("CLICKHOUSE_DATABASE_URL")
 
     opts =
       opts
+      |> Keyword.merge(url_to_opts(url))
       |> Keyword.put(:pool_size, pool_size)
-      |> Keyword.put(:url, System.get_env("CLICKHOUSE_DATABASE_URL"))
 
     {:ok, opts}
+  end
+
+  def url_to_opts(""), do: []
+
+  def url_to_opts(url) when is_binary(url) do
+    info = URI.parse(url)
+
+    destructure [username, password], info.userinfo && String.split(info.userinfo, ":")
+    "/" <> database = info.path
+
+    scheme =
+      case String.starts_with?(url, "https://") do
+        true -> :https
+        _ -> :http
+      end
+
+    Keyword.new()
+    |> Keyword.put(:hostname, info.host)
+    |> Keyword.put(:port, info.port)
+    |> Keyword.put(:username, username)
+    |> Keyword.put(:database, database)
+    |> Keyword.put(:scheme, scheme)
   end
 
   @doc ~s"""

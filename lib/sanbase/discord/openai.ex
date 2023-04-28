@@ -190,7 +190,7 @@ defmodule Sanbase.OpenAI do
         body = Jason.decode!(body)
         {:ok, body}
 
-      error ->
+      _error ->
         {:error, "Can't fetch"}
     end
   end
@@ -222,11 +222,74 @@ defmodule Sanbase.OpenAI do
     end
   end
 
+  def insights do
+    insights = fetch_last_insights(1)
+
+    Enum.each(insights, fn insight ->
+      summarize(insight)
+    end)
+  end
+
+  def summarize(insight) do
+    prompt = """
+    Your task is to generate a short summary of this crypto insight.
+
+    Summarize the insight below, delimited by triple
+    backticks, in at most 100 words focusing on aspects such as
+    the main idea, the author's opinion, and the author's conclusion.
+
+    Insight: ```#{insight.text |> Floki.parse_document!() |> Floki.text()}```
+
+    The result format should be:
+
+    **Summary**: <your summary here>
+    **Main idea**: <your main idea here>
+    **Author's opinion**: <your opinion here>
+    **Author's conclusion**: <your conclusion here>
+    **Assets mentioned**: <assets mentioned here>
+    **Sentiment of the article towards the assets mentioned**:  <your sentiment here>
+    """
+
+    messages = [%{role: "user", content: prompt}]
+
+    case generate_query(messages) do
+      {:ok, completion} ->
+        """
+        **#{insight.title}**
+        By **#{insight.user.username}**, **#{NaiveDateTime.to_date(insight.published_at) |> to_string}**
+
+        <https://insights.santiment.net/read/#{insight.id}>
+
+        #{completion}
+        """
+
+      error ->
+        error
+    end
+  end
+
+  def fetch_last_insights(n \\ 3) do
+    import Ecto.Query
+
+    query =
+      from(
+        p in Sanbase.Insight.Post,
+        where:
+          p.is_deleted == false and p.is_hidden == false and p.state == "approved" and
+            p.ready_state == "published",
+        order_by: [desc: p.id],
+        preload: [:user],
+        limit: ^n
+      )
+
+    Sanbase.Repo.all(query)
+  end
+
   defp generate_request_body(messages) do
     %{
-      model: "gpt-3.5-turbo",
+      model: "gpt-4",
       messages: messages,
-      max_tokens: 400
+      max_tokens: 2000
     }
     |> Jason.encode!()
   end

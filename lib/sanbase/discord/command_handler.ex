@@ -159,6 +159,25 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
+  def handle_interaction("insights", interaction) do
+    interaction_msg(interaction, "Fetching last 3 insights from Santiment ...")
+
+    insights = Sanbase.OpenAI.fetch_last_insights(3)
+
+    Enum.each(insights, fn insight ->
+      Api.start_typing(interaction.channel_id)
+
+      summary =
+        Sanbase.Cache.get_or_store("insight_summary#{insight.id}", fn ->
+          Sanbase.OpenAI.summarize(insight)
+        end)
+
+      Api.create_message(interaction.channel_id, content: summary <> "\n--------\n")
+    end)
+
+    :ok
+  end
+
   def handle_interaction("help", interaction) do
     embed =
       %Embed{}

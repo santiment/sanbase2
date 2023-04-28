@@ -31,8 +31,12 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
       |> Enum.filter(fn user_id ->
         resp = nft_subscriptions(user_id)
 
-        if resp.has_valid_nft and
-             !LiquiditySubscription.user_has_active_sanbase_subscriptions?(user_id) do
+        valid_nft? = resp.has_valid_nft
+
+        no_active_sanbase_sub? =
+          not LiquiditySubscription.user_has_active_sanbase_subscriptions?(user_id)
+
+        if valid_nft? and no_active_sanbase_sub? do
           create_nft_subscription(user_id)
         end
       end)

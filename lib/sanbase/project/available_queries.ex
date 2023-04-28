@@ -17,12 +17,7 @@ defmodule Sanbase.Project.AvailableQueries do
   @spec all_atom_names() :: [atom()]
   def all_atom_names() do
     project_queries()
-    |> Enum.map(fn query ->
-      query
-      |> Macro.underscore()
-      # credo:disable-for-next-line
-      |> String.to_atom()
-    end)
+    |> Enum.map(&(&1 |> Macro.underscore() |> String.to_atom()))
   end
 
   @doc ~s"""

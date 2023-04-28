@@ -22,6 +22,10 @@ defmodule Sanbase.DiscordConsumer do
       description: "List pinned queries"
     },
     %{
+      name: "insights",
+      description: "Summarize last insights on Sanbase"
+    },
+    %{
       name: "chart",
       description: "Create a Sanbase metric chart",
       options: [
@@ -132,7 +136,16 @@ defmodule Sanbase.DiscordConsumer do
         %Interaction{data: %ApplicationCommandInteractionData{name: command}} = interaction,
         _ws_state
       })
-      when command in ["query", "help", "auth", "create-admin", "remove-admin", "list", "chart"] do
+      when command in [
+             "query",
+             "help",
+             "auth",
+             "create-admin",
+             "remove-admin",
+             "list",
+             "insights",
+             "chart"
+           ] do
     warm_up()
 
     CommandHandler.handle_interaction(command, interaction)

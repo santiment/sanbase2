@@ -1519,7 +1519,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "aave_v3_protocol_total_supplied_usd",
         "aave_v3_protocol_total_borrowed_usd",
         "aave_v3_supply_apy",
-        "aave_v3_stable_borrow_apy",
         "aave_v3_variable_borrow_apy",
         # Compound metrics
         "compound_action_deposits",

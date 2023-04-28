@@ -31,8 +31,7 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
     pool_size = Config.module_get(__MODULE__, :pool_size) |> Sanbase.Math.to_integer()
     url = System.get_env("CLICKHOUSE_READONLY_DATABASE_URL")
 
-    url_opts =
-      opts =
+    opts =
       opts
       |> Keyword.merge(Sanbase.ClickhouseRepo.url_to_opts(url))
       |> Keyword.put(:pool_size, pool_size)

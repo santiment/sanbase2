@@ -45,29 +45,28 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   require Logger
 
-  def project_info_missing?(%Project{} = project) do
-    missing_values =
-      Map.from_struct(project)
-      |> Map.take([
-        :website_link,
-        :email,
-        :reddit_link,
-        :twitter_link,
-        :blog_link,
-        :telegram_link,
-        :slack_link,
-        :github_link,
-        :ticker,
-        :facebook_link,
-        :whitepaper_link,
-        :name,
-        :total_supply
-      ])
-      |> Map.values()
-
-    missing_values? = Enum.any?(missing_values, &is_nil/1)
-
-    missing_values? or !Project.has_contract_address?(project)
+  def project_info_missing?(
+        %Project{
+          website_link: website_link,
+          email: email,
+          reddit_link: reddit_link,
+          twitter_link: twitter_link,
+          btt_link: btt_link,
+          blog_link: blog_link,
+          github_link: github_link,
+          telegram_link: telegram_link,
+          slack_link: slack_link,
+          facebook_link: facebook_link,
+          whitepaper_link: whitepaper_link,
+          ticker: ticker,
+          name: name,
+          total_supply: total_supply
+        } = project
+      ) do
+    !website_link or !email or !reddit_link or !twitter_link or !btt_link or !blog_link or
+      !github_link or !telegram_link or !slack_link or !facebook_link or !whitepaper_link or
+      !ticker or !name or !Project.has_contract_address?(project) or
+      !total_supply
   end
 
   def from_project(project) do

@@ -5,7 +5,7 @@ defmodule Sanbase.FileStore do
   @acl :public_read
   @extension_whitelist ~w(.jpg .jpeg .gif .png .pdf .csv)
   @max_file_size 5 * 1024 * 1024
-
+  @cache_max_age 2_592_000
   @doc ~s"""
     Whitelist file extensions. Now allowing only images.
   """
@@ -21,6 +21,10 @@ defmodule Sanbase.FileStore do
   def filename(_version, {file, scope}) do
     file_name = Path.basename(file.file_name, Path.extname(file.file_name))
     "#{scope}_#{file_name}"
+  end
+
+  def s3_object_headers(_version, {_file, _scope}) do
+    [cache_control: "max-age=#{@cache_max_age}"]
   end
 
   # Helper functions

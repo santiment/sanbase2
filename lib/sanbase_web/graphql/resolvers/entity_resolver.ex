@@ -153,7 +153,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EntityResolver do
     |> temp_maybe_rewrite_min_length_args(args)
   end
 
-  # TODO: Frontend needs to be put filter in `New` tab and backend
+  # TODO: Frontend needs to put filter in `New` tab and backend
   # needs to set these to default 0
   defp temp_maybe_rewrite_min_length_args(opts, args) do
     case Map.get(args, :current_user_data_only, false) do

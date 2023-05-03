@@ -55,6 +55,7 @@ defmodule Sanbase.Price.Validator do
   end
 
   defp node_name(slug) do
+    # credo:disable-for-next-line
     "Sanbase.Price.Validator.Node_#{slug_to_number(slug)}" |> String.to_atom()
   end
 end

@@ -58,7 +58,6 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     query_struct = users_used_api_query(until)
 
     ClickhouseRepo.query_transform(query_struct, fn [value] -> value end)
-    |> maybe_unwrap_ok_value()
   end
 
   @spec users_used_sansheets(Keyword.t()) ::

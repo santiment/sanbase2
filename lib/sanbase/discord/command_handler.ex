@@ -2,6 +2,8 @@ defmodule Sanbase.Discord.CommandHandler do
   import Nostrum.Struct.Embed
   import Ecto.Query
 
+  require Logger
+
   alias Nostrum.Api
   alias Nostrum.Struct.Embed
   alias Sanbase.Accounts.User
@@ -542,7 +544,8 @@ defmodule Sanbase.Discord.CommandHandler do
     ]
   end
 
-  defp process_response({:error, _}) do
+  defp process_response({:error, error}) do
+    Logger.error("error: #{inspect(error)}")
     content = "Couldn't fetch information to answer your question"
 
     [
@@ -606,7 +609,7 @@ defmodule Sanbase.Discord.CommandHandler do
     prompt = String.replace(msg.content, "<@#{bot_id()}>", "")
 
     Api.create_message(channel.id,
-      content: "Hang on <@#{to_string(msg.author.id)}> as I search Academy. :robot:"
+      content: "Hang on <@#{to_string(msg.author.id)}> as I search our knowledge base. :robot:"
     )
 
     Api.start_typing(channel.id)
@@ -632,6 +635,8 @@ defmodule Sanbase.Discord.CommandHandler do
       |> process_response()
 
     content = Keyword.get(kw_list, :content)
+
+    Logger.info("[id=#{msg.id}] content: #{content}")
 
     new_content = """
     ----------------------

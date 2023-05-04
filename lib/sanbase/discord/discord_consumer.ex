@@ -118,8 +118,14 @@ defmodule Sanbase.DiscordConsumer do
 
       msg_contains_bot_mention?(msg) ->
         warm_up(msg)
-        result = CommandHandler.handle_command("mention", msg)
-        log(msg, "MENTION COMMAND RESULT #{inspect(result)}")
+
+        CommandHandler.handle_command("mention", msg)
+        |> case do
+          {:ok, _} -> log(msg, "MENTION COMMAND SUCCESS")
+          :ok -> log(msg, "MENTION COMMAND SUCCESS")
+          result -> log(msg, "MENTION COMMAND RESULT #{inspect(result)}")
+        end
+
         :ok
 
       true ->
@@ -201,7 +207,7 @@ defmodule Sanbase.DiscordConsumer do
     |> Enum.any?(&(&1.id == CommandHandler.bot_id()))
   end
 
-  defp log(msg, log_text) do
+  defp log(msg, log_text, opts \\ []) do
     params = %{
       channel: to_string(msg.channel_id),
       guild: to_string(msg.guild_id),
@@ -209,9 +215,13 @@ defmodule Sanbase.DiscordConsumer do
       discord_user_handle: msg.author.username <> msg.author.discriminator
     }
 
-    Logger.info(
-      "[id=#{msg.id}] #{log_text} msg.content=#{msg.content} metadata=#{inspect(params)}"
-    )
+    log_msg = "[id=#{msg.id}] #{log_text} msg.content=#{msg.content} metadata=#{inspect(params)}"
+
+    if Keyword.get(opts, :type, :info) do
+      Logger.info(log_msg)
+    else
+      Logger.error(log_msg)
+    end
   end
 
   defp handle_msg_response(response, command, msg) do
@@ -303,7 +313,7 @@ defmodule Sanbase.DiscordConsumer do
         log(msg, "WARM UP SUCCESS")
 
       error ->
-        log(msg, "WARM UP ERROR #{inspect(error)}")
+        log(msg, "WARM UP ERROR #{inspect(error)}", type: :error)
     end
   end
 end

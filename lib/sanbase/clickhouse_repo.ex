@@ -1,6 +1,12 @@
 defmodule Sanbase.ClickhouseRepo do
-  # Clickhouse tests are done only through mocking the results.
-  require Application
+  @moduledoc ~s"""
+  Module for interacting with the Clickhouse database.
+
+  In case a read-only user is needed (as when the query to be executed
+  is provided by an external user), dynamically switch the pool of
+  connections with the one of a user with RO permissions:
+  `Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)`
+  """
 
   env = Application.compile_env(:sanbase, :env)
   @adapter if env == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto

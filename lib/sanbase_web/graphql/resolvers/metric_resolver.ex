@@ -346,24 +346,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
 
     with {:ok, from, to, interval} <-
-           calibrate(
-             Metric,
-             metric,
-             selector,
-             from,
-             to,
-             interval,
-             86_400,
-             @datapoints
-           ),
+           calibrate(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
          {:ok, from, to} <-
-           calibrate_incomplete_data_params(
-             include_incomplete_data,
-             Metric,
-             metric,
-             from,
-             to
-           ),
+           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
          {:ok, from} <-
            calibrate_transform_params(transform, from, to, interval) do
       {:ok, from, to, interval}

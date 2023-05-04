@@ -61,7 +61,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "cannot access RESTRICTED metrics for over 2 years", context do
-      {from, to} = from_to(2 * 365 + 1, 31)
+      {from, to} = from_to(2 * 365 + 1, 32)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
       slug = context.project.slug
       selector = %{slug: slug}
@@ -74,7 +74,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "cannot access RESTRICTED queries for over 2 years", context do
-      {from, to} = from_to(2 * 365 + 1, 31)
+      {from, to} = from_to(2 * 365 + 1, 32)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -92,19 +92,22 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access RESTRICTED metrics within 2 years and 30 days interval", context do
-      {from, to} = from_to(2 * 365, 31)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
-      slug = context.project.slug
-      selector = %{slug: slug}
-      query = metric_query(metric, selector, from, to)
-      result = execute_query(context.conn, query, "getMetric")
+      {from, to} = from_to(2 * 365 - 1, 32)
 
-      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
-      assert result != nil
+      for _ <- 1..5 do
+        metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
+        slug = context.project.slug
+        selector = %{slug: slug}
+        query = metric_query(metric, selector, from, to)
+        result = execute_query(context.conn, query, "getMetric")
+
+        assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+        assert result != nil
+      end
     end
 
     test "can access RESTRICTED queries within 2 years and 30 days interval", context do
-      {from, to} = from_to(2 * 365, 31)
+      {from, to} = from_to(2 * 365 - 1, 32)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 

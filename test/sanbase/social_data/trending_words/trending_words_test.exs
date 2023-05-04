@@ -28,16 +28,40 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                  {:ok,
                   %{
                     dt1 => [
-                      %{score: 5, word: "ethereum"},
-                      %{score: 10, word: "bitcoin"}
+                      %{
+                        score: 5,
+                        word: "ethereum",
+                        summaries: [%{datetime: dt1, source: "telegram", summary: "summary2"}]
+                      },
+                      %{
+                        score: 10,
+                        word: "bitcoin",
+                        summaries: [%{datetime: dt1, source: "telegram", summary: "summary1"}]
+                      }
                     ],
                     dt2 => [
-                      %{score: 70, word: "boom"},
-                      %{score: 2, word: "san"}
+                      %{
+                        score: 70,
+                        word: "boom",
+                        summaries: [%{datetime: dt2, source: "telegram", summary: "summary4"}]
+                      },
+                      %{
+                        score: 2,
+                        word: "san",
+                        summaries: [%{datetime: dt2, source: "telegram", summary: "summary3"}]
+                      }
                     ],
                     dt3 => [
-                      %{score: 2, word: "xrp"},
-                      %{score: 1, word: "eth"}
+                      %{
+                        score: 2,
+                        word: "xrp",
+                        summaries: [%{datetime: dt3, source: "telegram", summary: "summary6"}]
+                      },
+                      %{
+                        score: 1,
+                        word: "eth",
+                        summaries: [%{datetime: dt3, source: "reddit", summary: "summary5"}]
+                      }
                     ]
                   }}
       end)
@@ -64,7 +88,20 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         result = TrendingWords.get_currently_trending_words(10)
 
-        assert result == {:ok, [%{score: 2, word: "xrp"}, %{score: 1, word: "eth"}]}
+        assert result ==
+                 {:ok,
+                  [
+                    %{
+                      score: 2,
+                      word: "xrp",
+                      summaries: [%{datetime: dt3, source: "telegram", summary: "summary6"}]
+                    },
+                    %{
+                      score: 1,
+                      word: "eth",
+                      summaries: [%{datetime: dt3, source: "reddit", summary: "summary5"}]
+                    }
+                  ]}
       end)
     end
 
@@ -159,13 +196,17 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
   end
 
   defp trending_words_rows(dt1, dt2, dt3) do
+    dt1_unix = DateTime.to_unix(dt1)
+    dt2_unix = DateTime.to_unix(dt2)
+    dt3_unix = DateTime.to_unix(dt3)
+
     [
-      [DateTime.to_unix(dt1), "bitcoin", nil, 10],
-      [DateTime.to_unix(dt1), "ethereum", nil, 5],
-      [DateTime.to_unix(dt2), "san", nil, 2],
-      [DateTime.to_unix(dt2), "boom", nil, 70],
-      [DateTime.to_unix(dt3), "eth", nil, 1],
-      [DateTime.to_unix(dt3), "xrp", nil, 2]
+      [dt1_unix, "bitcoin", nil, 10, [["telegram", dt1_unix, "summary1"]]],
+      [dt1_unix, "ethereum", nil, 5, [["telegram", dt1_unix, "summary2"]]],
+      [dt2_unix, "san", nil, 2, [["telegram", dt2_unix, "summary3"]]],
+      [dt2_unix, "boom", nil, 70, [["telegram", dt2_unix, "summary4"]]],
+      [dt3_unix, "eth", nil, 1, [["reddit", dt3_unix, "summary5"]]],
+      [dt3_unix, "xrp", nil, 2, [["telegram", dt3_unix, "summary6"]]]
     ]
   end
 end

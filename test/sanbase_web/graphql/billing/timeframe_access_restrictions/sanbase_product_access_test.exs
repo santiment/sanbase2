@@ -148,7 +148,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "can access RESTRICTED queries within 2 years and 30 day ago interval", context do
-      {from, to} = from_to(2 * 365 - 1, 31)
+      {from, to} = from_to(2 * 365 - 2, 32)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
 
@@ -159,7 +159,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "can access RESTRICTED metrics within 2 years and 30 day ago interval", context do
-      {from, to} = from_to(2 * 365 - 1, 31)
+      {from, to} = from_to(2 * 365 - 2, 32)
       slug = context.project.slug
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
       selector = %{slug: slug}

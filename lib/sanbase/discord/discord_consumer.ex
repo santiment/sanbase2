@@ -117,8 +117,10 @@ defmodule Sanbase.DiscordConsumer do
         CommandHandler.handle_command("ga", msg)
 
       msg_contains_bot_mention?(msg) ->
-        warm_up()
-        CommandHandler.handle_command("mention", msg)
+        warm_up(msg)
+        result = CommandHandler.handle_command("mention", msg)
+        log(msg, "MENTION COMMAND RESULT #{inspect(result)}")
+        :ok
 
       true ->
         :ignore
@@ -197,6 +199,19 @@ defmodule Sanbase.DiscordConsumer do
   defp msg_contains_bot_mention?(msg) do
     msg.mentions
     |> Enum.any?(&(&1.id == CommandHandler.bot_id()))
+  end
+
+  defp log(msg, log_text) do
+    params = %{
+      channel: to_string(msg.channel_id),
+      guild: to_string(msg.guild_id),
+      discord_user_id: to_string(msg.author.id),
+      discord_user_handle: msg.author.username <> msg.author.discriminator
+    }
+
+    Logger.info(
+      "[id=#{msg.id}] #{log_text} msg.content=#{msg.content} metadata=#{inspect(params)}"
+    )
   end
 
   defp handle_msg_response(response, command, msg) do
@@ -279,5 +294,16 @@ defmodule Sanbase.DiscordConsumer do
 
   defp warm_up() do
     Nostrum.Api.get_current_user()
+  end
+
+  defp warm_up(msg) do
+    Nostrum.Api.get_current_user()
+    |> case do
+      {:ok, _} ->
+        log(msg, "WARM UP SUCCESS")
+
+      error ->
+        log(msg, "WARM UP ERROR #{inspect(error)}")
+    end
   end
 end

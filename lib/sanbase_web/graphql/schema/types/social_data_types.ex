@@ -75,6 +75,12 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:dominance, :float)
   end
 
+  object :trending_word_summary do
+    field(:source, non_null(:string))
+    field(:datetime, non_null(:datetime))
+    field(:summary, non_null(:string))
+  end
+
   object :trending_words do
     field(:datetime, non_null(:datetime))
     field(:top_words, list_of(:word_with_context))
@@ -90,8 +96,9 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
       cache_resolve(&SocialDataResolver.word_context/3)
     end
 
-    field(:score, :float)
-    field(:word, :string)
+    field(:score, non_null(:float))
+    field(:word, non_null(:string))
+    field(:summaries, list_of(:trending_word_summary))
   end
 
   object :word_trend_score do

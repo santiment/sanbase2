@@ -25,16 +25,20 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
 
       success_response = %{
         dt1 => [
-          %{score: 1, word: "pele"},
-          %{score: 2, word: "people"}
+          %{
+            score: 1,
+            word: "pele",
+            summaries: [%{datetime: dt1, source: "telegram", summary: "Summary"}]
+          },
+          %{score: 2, word: "people", summaries: []}
         ],
         dt2 => [
-          %{score: 3, word: "btx"},
-          %{score: 4, word: "eth"}
+          %{score: 3, word: "btx", summaries: []},
+          %{score: 4, word: "eth", summaries: []}
         ],
         dt3 => [
-          %{score: 5, word: "omg"},
-          %{score: 6, word: "wtf"}
+          %{score: 5, word: "omg", summaries: []},
+          %{score: 6, word: "wtf", summaries: []}
         ]
       }
 
@@ -51,22 +55,36 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                      %{
                        "datetime" => DateTime.to_iso8601(dt1),
                        "topWords" => [
-                         %{"score" => 2, "word" => "people"},
-                         %{"score" => 1, "word" => "pele"}
+                         %{
+                           "score" => 2,
+                           "word" => "people",
+                           "summaries" => []
+                         },
+                         %{
+                           "score" => 1,
+                           "word" => "pele",
+                           "summaries" => [
+                             %{
+                               "datetime" => DateTime.to_iso8601(dt1),
+                               "source" => "telegram",
+                               "summary" => "Summary"
+                             }
+                           ]
+                         }
                        ]
                      },
                      %{
                        "datetime" => DateTime.to_iso8601(dt2),
                        "topWords" => [
-                         %{"score" => 4, "word" => "eth"},
-                         %{"score" => 3, "word" => "btx"}
+                         %{"score" => 4, "word" => "eth", "summaries" => []},
+                         %{"score" => 3, "word" => "btx", "summaries" => []}
                        ]
                      },
                      %{
                        "datetime" => DateTime.to_iso8601(dt3),
                        "topWords" => [
-                         %{"score" => 6, "word" => "wtf"},
-                         %{"score" => 5, "word" => "omg"}
+                         %{"score" => 6, "word" => "wtf", "summaries" => []},
+                         %{"score" => 5, "word" => "omg", "summaries" => []}
                        ]
                      }
                    ]
@@ -207,6 +225,11 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
           topWords{
             word
             score
+            summaries{
+              source
+              datetime
+              summary
+            }
           }
         }
       }

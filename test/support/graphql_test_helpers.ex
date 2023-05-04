@@ -73,8 +73,8 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   end
 
   def from_to(from_days_shift, to_days_shift) do
-    from = Timex.shift(Timex.now(), days: -from_days_shift)
-    to = Timex.shift(Timex.now(), days: -to_days_shift)
+    from = Timex.shift(DateTime.utc_now(), days: -from_days_shift) |> DateTime.truncate(:second)
+    to = Timex.shift(DateTime.utc_now(), days: -to_days_shift) |> DateTime.truncate(:second)
     {from, to}
   end
 

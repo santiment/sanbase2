@@ -300,7 +300,7 @@ defmodule Sanbase.Application do
          name: Sanbase.Cache.name(),
          ttl_check_interval: :timer.seconds(30),
          global_ttl: :timer.minutes(5),
-         acquire_lock_timeout: 30_000
+         acquire_lock_timeout: 60_000
        ]},
 
       # Service for fast checking if a slug is valid

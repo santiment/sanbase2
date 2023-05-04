@@ -85,9 +85,20 @@ defmodule Sanbase.SocialData.TrendingWords do
     query_struct = get_trending_words_query(from, to, interval, size, sources)
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn
-      [dt, word, _project, score], acc ->
+      [dt, word, _project, score, summaries], acc ->
         datetime = DateTime.from_unix!(dt)
-        elem = %{word: word, score: score}
+
+        summaries =
+          summaries
+          |> List.flatten()
+          |> Enum.chunk_every(3)
+          |> Enum.map(fn [source, dt, summary] ->
+            %{source: source, datetime: DateTime.from_unix!(dt), summary: summary}
+          end)
+          |> Enum.reject(&(&1.summary == ""))
+          |> Enum.uniq()
+
+        elem = %{word: word, score: score, summaries: summaries}
         Map.update(acc, datetime, [elem], fn words -> [elem | words] end)
     end)
   end
@@ -218,20 +229,36 @@ defmodule Sanbase.SocialData.TrendingWords do
       t,
       word,
       any(project) AS project,
-      SUM(score) / #{length(sources)} AS total_score
+      SUM(score) / #{length(sources)} AS total_score,
+      groupArray(summary2) AS summaries
     FROM(
+      SELECT
+        #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
+        word,
+        source,
+        any(project) AS project,
+        argMax(score, dt) AS score,
+        groupArray(tuple(source, word_docs_dt, summary)) AS summary2
+      FROM #{@table}
+      LEFT JOIN (
         SELECT
           #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
+          toUnixTimestamp(dt) AS word_docs_dt,
           word,
-          any(project) AS project,
-          argMax(score, dt) as score
-        FROM #{@table}
-        PREWHERE
+          source,
+          summary
+        FROM trending_words_docs
+        WHERE
           dt >= toDateTime({{from}}) AND
           dt < toDateTime({{to}}) AND
           source IN ({{sources}})
-        GROUP BY t, word, source
-        ORDER BY t, score DESC
+      ) USING (t, word, source)
+      WHERE
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
+        source IN ({{sources}})
+      GROUP BY t, word, source
+      ORDER BY t, score DESC
     )
     GROUP BY t, word
     ORDER BY t, total_score DESC

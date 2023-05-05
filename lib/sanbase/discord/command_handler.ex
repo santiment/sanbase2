@@ -22,11 +22,13 @@ defmodule Sanbase.Discord.CommandHandler do
   @max_size 1800
   @ephemeral_message_flags 64
   @local_bot_id 1_039_543_550_326_612_009
+  @stage_bot_id 1_039_177_602_197_372_989
   @prod_bot_id 1_039_814_526_708_764_742
 
   def bot_id() do
     case Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_bot_id
+      "stage" -> @stage_bot_id
       _ -> @prod_bot_id
     end
   end
@@ -545,7 +547,6 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   defp process_response({:error, error}) do
-    Logger.error("error: #{inspect(error)}")
     content = "Couldn't fetch information to answer your question"
 
     [
@@ -630,7 +631,8 @@ defmodule Sanbase.Discord.CommandHandler do
         thread_id: to_string(channel.id),
         thread_name: channel.name,
         channel_id: to_string(channel.parent_id),
-        channel_name: channel_name
+        channel_name: channel_name,
+        msg_id: msg.id
       })
       |> process_response()
 

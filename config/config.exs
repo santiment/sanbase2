@@ -149,7 +149,7 @@ config :hammer,
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 
 config :tesla,
-  adapter: {Tesla.Adapter.Mint, recv_timeout: 30_000}
+  adapter: {Tesla.Adapter.Hackney, recv_timeout: 30_000}
 
 config :sanbase, Sanbase.ApiCallLimit,
   quota_size: 100,

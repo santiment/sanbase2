@@ -136,6 +136,7 @@ defmodule Sanbase.OpenAI do
   def threaded_docs(prompt, params) do
     url = "#{metrics_hub_url()}/docs"
 
+    {msg_id, params} = Map.pop(params, :msg_id)
     context = ThreadAiContext.fetch_history_context(params, 5)
 
     case HTTPoison.post(
@@ -152,7 +153,7 @@ defmodule Sanbase.OpenAI do
         {:ok, body, thread_db}
 
       error ->
-        Logger.error("Can't fetch docs: #{inspect(error)}")
+        Logger.error("[id=#{msg_id}] Can't fetch docs: #{inspect(error)}")
         {:error, "Can't fetch", nil}
     end
   end

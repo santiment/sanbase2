@@ -98,6 +98,7 @@ defmodule Sanbase.Application do
         Logger.info("Starting Scrapers Sanbase.")
 
       "queries" ->
+        Logger.configure(level: :debug)
         Logger.info("Starting Queries Sanbase.")
 
       type when type in ["alerts", "signals"] ->

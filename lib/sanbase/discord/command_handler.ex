@@ -203,47 +203,6 @@ defmodule Sanbase.Discord.CommandHandler do
     Nostrum.Api.create_interaction_response(interaction, data)
   end
 
-  def handle_interaction("auth", interaction) do
-    Nostrum.Api.create_interaction_response(
-      interaction,
-      interaction_message_response("Sent you a DM with instructions")
-    )
-
-    {:ok, channel} = Api.create_dm(interaction.user.id)
-
-    Api.create_message(channel.id, content: "Test bot DMs")
-  end
-
-  def handle_interaction("create-admin", interaction) do
-    options_map = Enum.into(interaction.data.options, %{}, fn o -> {o.name, o.value} end)
-
-    Api.add_guild_member_role(
-      interaction.guild_id,
-      options_map["user"],
-      @mock_role_id
-    )
-
-    Nostrum.Api.create_interaction_response(
-      interaction,
-      interaction_message_response("New admin created")
-    )
-  end
-
-  def handle_interaction("remove-admin", interaction) do
-    options_map = Enum.into(interaction.data.options, %{}, fn o -> {o.name, o.value} end)
-
-    Api.remove_guild_member_role(
-      interaction.guild_id,
-      options_map["user"],
-      @mock_role_id
-    )
-
-    Nostrum.Api.create_interaction_response(
-      interaction,
-      interaction_message_response("Admin removed")
-    )
-  end
-
   def handle_interaction("rerun", interaction, panel_id) do
     interaction_ack(interaction)
     args = get_additional_info(interaction)
@@ -360,31 +319,13 @@ defmodule Sanbase.Discord.CommandHandler do
     {:ok, loading_msg} = loading_msg(msg)
 
     prompt = String.trim(msg.content, "!ai")
+    discord_user = msg.author.username <> msg.author.discriminator
 
-    case Sanbase.OpenAI.generate_sql(
-           prompt,
-           msg.author.username <> msg.author.discriminator
-         ) do
-      {:ok, response} ->
-        content = """
-        #{response}
-        """
+    kw_list =
+      Sanbase.OpenAI.ai(prompt, discord_user)
+      |> process_response()
 
-        components =
-          case Regex.run(~r/```(?:sql)?([^`]*)```/ms, content) do
-            [_, _] -> [ai_action_row()]
-            nil -> []
-          end
-
-        Api.edit_message(msg.channel_id, loading_msg.id,
-          content: content,
-          components: components
-        )
-
-      {:error, _} ->
-        content = "Couldn't generate sql query based on your prompt"
-        Api.edit_message(msg.channel_id, loading_msg.id, content: content)
-    end
+    Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
   end
 
   def handle_command("docs", msg) do

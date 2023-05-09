@@ -130,7 +130,9 @@ config :logger, :console,
 config :sentry,
   json_library: Jason,
   included_environments: [:prod],
-  environment_name: Mix.env()
+  environment_name: Mix.env(),
+  enable_source_code_context: true,
+  root_source_code_path: File.cwd!()
 
 config :earmark,
   # disable using parallel map die to timeout errors

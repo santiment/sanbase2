@@ -40,4 +40,14 @@ if config_env() == :prod do
     url: parity_url,
     http_options: [timeout: 25_000, recv_timeout: 25_000],
     http_headers: [{"Content-Type", "application/json"}]
+
+  config :sentry,
+    dsn: System.get_env("SENTRY_DSN"),
+    environment_name: :prod,
+    enable_source_code_context: true,
+    root_source_code_path: File.cwd!(),
+    tags: %{
+      env: "production"
+    },
+    included_environments: [:prod]
 end

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Endpoint do
+  use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :sanbase
   use SanbaseWeb.Endpoint.ErrorHandler
   use Absinthe.Phoenix.Endpoint
@@ -53,6 +54,8 @@ defmodule SanbaseWeb.Endpoint do
     pass: ["*/*"],
     json_decoder: Jason
   )
+
+  plug(Sentry.PlugContext)
 
   plug(Plug.MethodOverride)
   plug(Plug.Head)

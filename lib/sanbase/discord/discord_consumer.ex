@@ -256,13 +256,35 @@ defmodule Sanbase.DiscordConsumer do
   end
 
   defp warm_up(msg) do
+    t1 = System.monotonic_time(:millisecond)
+
     Nostrum.Api.get_current_user()
     |> case do
       {:ok, _} ->
         log(msg, "WARM UP SUCCESS")
 
+      {:error, :timeout} ->
+        log(msg, "WARM UP TIMEOUT. Restart Ratelimiter", type: :error)
+        {:ok, pid} = restart_ratelimiter()
+        log(msg, "WARM UP TIMEOUT. Ratelimiter pid: #{pid}", type: :error)
+
       error ->
         log(msg, "WARM UP ERROR #{inspect(error)}", type: :error)
     end
+
+    t2 = System.monotonic_time(:millisecond)
+    log(msg, "Time spent warming up #{t2 - t1}ms.")
+  end
+
+  def restart_ratelimiter() do
+    supervisor_pid =
+      Process.whereis(Ratelimiter)
+      |> Process.info()
+      |> Keyword.get(:dictionary)
+      |> Keyword.get(:"$ancestors")
+      |> List.first()
+
+    :ok = Supervisor.terminate_child(supervisor_pid, Nostrum.Api.Ratelimiter)
+    Supervisor.restart_child(supervisor_pid, Nostrum.Api.Ratelimiter)
   end
 end

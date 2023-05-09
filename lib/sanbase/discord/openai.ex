@@ -114,9 +114,19 @@ defmodule Sanbase.OpenAI do
     end
   end
 
+  def ai(prompt, _params) do
+    url = "#{metrics_hub_url()}/social_qa"
+
+    do_request(url, prompt)
+  end
+
   def docs(prompt, _params) do
     url = "#{metrics_hub_url()}/docs"
 
+    do_request(url, prompt)
+  end
+
+  def do_request(url, prompt) do
     case HTTPoison.post(
            url,
            Jason.encode!(%{question: prompt}),

@@ -59,7 +59,8 @@ slaveTemplates.dockerTemplate { label ->
                 -t ${awsRegistry}/sanbase:${scmVars.GIT_COMMIT} \
                 --build-arg SECRET_KEY_BASE=${env.SECRET_KEY_BASE} \
                 --build-arg PARITY_URL=${env.PARITY_URL} \
-                --build-arg GIT_HEAD=${gitHead} . \
+                --build-arg GIT_HEAD=${gitHead} \
+                --build-arg GIT_COMMIT=${scmVars.GIT_COMMIT} . \
                 --progress plain"
 
               sh "docker push ${awsRegistry}/sanbase:${env.BRANCH_NAME}"

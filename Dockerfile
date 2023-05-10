@@ -106,8 +106,12 @@ ENV HOME=/app
 
 RUN chown nobody /app
 
-# set runner ENV
+# expect a build-time argument
+ARG GIT_COMMIT
+
+# set runner ENV vars
 ENV MIX_ENV="prod"
+ENV GIT_COMMIT=$GIT_COMMIT
 
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/sanbase ./

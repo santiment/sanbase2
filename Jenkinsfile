@@ -16,6 +16,7 @@ slaveTemplates.dockerTemplate { label ->
     stage('Run Tests') {
       container('docker') {
         def scmVars = checkout scm
+        println scmVars
         def gitHead = scmVars.GIT_COMMIT.substring(0, 7)
 
         sh "docker build \
@@ -25,7 +26,7 @@ slaveTemplates.dockerTemplate { label ->
 
         sh "docker run \
             --rm --name test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID} \
-            -e POSTGRES_PASSWORD=password \
+            --env POSTGRES_PASSWORD=password \
             -d postgres:12.7-alpine"
 
         try {
@@ -59,7 +60,8 @@ slaveTemplates.dockerTemplate { label ->
                 -t ${awsRegistry}/sanbase:${scmVars.GIT_COMMIT} \
                 --build-arg SECRET_KEY_BASE=${env.SECRET_KEY_BASE} \
                 --build-arg PARITY_URL=${env.PARITY_URL} \
-                --build-arg GIT_HEAD=${gitHead} . \
+                --build-arg GIT_HEAD=${gitHead} \
+                --build-arg GIT_COMMIT=${scmVars.GIT_COMMIT} . \
                 --progress plain"
 
               sh "docker push ${awsRegistry}/sanbase:${env.BRANCH_NAME}"

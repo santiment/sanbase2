@@ -41,7 +41,10 @@ if config_env() == :prod do
     http_options: [timeout: 25_000, recv_timeout: 25_000],
     http_headers: [{"Content-Type", "application/json"}]
 
+  git_sha = System.get_env("GIT_SHA")
+
   config :sentry,
+    release: "sanbase",
     dsn: System.get_env("SENTRY_DSN"),
     environment_name: :prod,
     enable_source_code_context: true,

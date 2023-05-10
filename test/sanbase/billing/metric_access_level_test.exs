@@ -171,6 +171,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "dormant_circulation_2y",
         "realized_value_usd_10y",
         "daily_active_addresses",
+        "aave_v2_active_addresses",
+        "aave_v3_active_addresses",
+        "compound_active_addresses",
+        "makerdao_active_addresses",
         "holders_distribution_total",
         "holders_distribution_over_100",
         "nft_collection_avg_price_usd",
@@ -1499,6 +1503,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "aave_v2_supply_apy",
         "aave_v2_stable_borrow_apy",
         "aave_v2_variable_borrow_apy",
+        "aave_v2_active_addresses",
         # Aave v3 metrics
         "aave_v3_action_deposits",
         "aave_v3_action_liquidations",
@@ -1520,6 +1525,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "aave_v3_protocol_total_borrowed_usd",
         "aave_v3_supply_apy",
         "aave_v3_variable_borrow_apy",
+        "aave_v3_active_addresses",
         # Compound metrics
         "compound_action_deposits",
         "compound_action_liquidations",
@@ -1541,6 +1547,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "compound_protocol_total_borrowed_usd",
         "compound_supply_apy",
         "compound_borrow_apy",
+        "compound_active_addresses",
         # Makerdao metrics
         "makerdao_action_deposits",
         "makerdao_action_liquidations",
@@ -1560,6 +1567,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "makerdao_total_borrowed_usd",
         "makerdao_protocol_total_supplied_usd",
         "makerdao_protocol_total_borrowed_usd",
+        "makerdao_active_addresses",
         # ETH 2.0 stakers MVRV metrics
         "eth2_stakers_realized_value_usd_365d",
         "eth2_stakers_realized_value_usd_2y",

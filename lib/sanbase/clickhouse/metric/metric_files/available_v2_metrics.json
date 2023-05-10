@@ -2339,6 +2339,23 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Daily Active Addresses on Aave v2",
+    "name": "aave_v2_active_addresses",
+    "metric": "aavev2_active_addresses",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Aave v3 deposits",
     "name": "aave_v3_action_deposits",
     "metric": "aavev3_action_deposits",
@@ -2679,6 +2696,23 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Daily Active Addresses on Aave v3",
+    "name": "aave_v3_active_addresses",
+    "metric": "aavev3_active_addresses",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Compound deposits",
     "name": "compound_action_deposits",
     "metric": "compound_action_deposits",
@@ -3016,6 +3050,23 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily Active Addresses on Compound",
+    "name": "compound_active_addresses",
+    "metric": "compound_active_addresses",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -3497,6 +3548,23 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily Active Addresses on MakerDAO",
+    "name": "makerdao_active_addresses",
+    "metric": "makerdao_active_addresses",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {

@@ -16,7 +16,6 @@ slaveTemplates.dockerTemplate { label ->
     stage('Run Tests') {
       container('docker') {
         def scmVars = checkout scm
-        println scmVars
         def gitHead = scmVars.GIT_COMMIT.substring(0, 7)
 
         sh "docker build \

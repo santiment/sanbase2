@@ -24,12 +24,21 @@ defmodule Sanbase.Discord.CommandHandler do
   @local_bot_id 1_039_543_550_326_612_009
   @stage_bot_id 1_039_177_602_197_372_989
   @prod_bot_id 1_039_814_526_708_764_742
+  @prod_pro_roles [532_833_809_947_951_105, 409_637_386_012_721_155]
+  @local_pro_roles [854_304_500_402_880_532]
 
   def bot_id() do
     case Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_bot_id
       "stage" -> @stage_bot_id
       _ -> @prod_bot_id
+    end
+  end
+
+  def pro_roles() do
+    case Config.module_get(Sanbase, :deployment_env) do
+      "dev" -> @local_pro_roles
+      _ -> @prod_pro_roles
     end
   end
 
@@ -318,14 +327,24 @@ defmodule Sanbase.Discord.CommandHandler do
   def handle_command("ai", msg) do
     {:ok, loading_msg} = loading_msg(msg)
 
-    prompt = String.trim(msg.content, "!ai")
-    discord_user = msg.author.username <> msg.author.discriminator
+    pro_roles = pro_roles()
 
-    kw_list =
-      Sanbase.OpenAI.ai(prompt, discord_user)
-      |> process_response()
+    if Enum.any?(MapSet.intersection(MapSet.new(pro_roles), MapSet.new(msg.member.roles))) do
+      prompt = String.trim(msg.content, "!ai")
+      discord_user = msg.author.username <> msg.author.discriminator
 
-    Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
+      kw_list =
+        Sanbase.OpenAI.ai(prompt, discord_user)
+        |> process_response()
+
+      Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
+    else
+      Nostrum.Api.edit_message(
+        msg.channel_id,
+        loading_msg.id,
+        "You need to be a PRO member to use this command"
+      )
+    end
   end
 
   def handle_command("docs", msg) do

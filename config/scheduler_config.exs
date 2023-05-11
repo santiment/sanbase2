@@ -166,5 +166,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_nft_subscriptions: [
       schedule: "9-59/10 * * * *",
       task: {Sanbase.Billing.Subscription.NFTSubscription, :run, []}
+    ],
+    manage_pinecone_index: [
+      schedule: "15 * * * *",
+      task: {Sanbase.OpenAI, :manage_pinecone_index, []}
     ]
   ]

@@ -168,6 +168,15 @@ defmodule Sanbase.OpenAI do
     end
   end
 
+  def manage_pinecone_index() do
+    if is_prod?() do
+      url = "#{metrics_hub_url()}/manage_index"
+      HTTPoison.post(url, Jason.encode!(%{hours: 1}), [{"Content-Type", "application/json"}])
+    end
+
+    :ok
+  end
+
   def index(branch_name) do
     url = "#{metrics_hub_url()}/index"
 
@@ -315,4 +324,6 @@ defmodule Sanbase.OpenAI do
   defp metrics_hub_url() do
     Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
+
+  defp is_prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
 end

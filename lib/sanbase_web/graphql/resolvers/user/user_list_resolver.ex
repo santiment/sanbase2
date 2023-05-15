@@ -296,6 +296,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{context: %{auth: %{current_user: current_user}}}
       ) do
     with {:ok, watchlist} <- UserList.by_id(id, []),
+         {:ok, args} <- transform_slug_to_project_id(args),
          true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.add_user_list_items(current_user, args) do
         {:ok, user_list} ->
@@ -316,6 +317,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{context: %{auth: %{current_user: current_user}}}
       ) do
     with {:ok, watchlist} <- UserList.by_id(id, []),
+         {:ok, args} <- transform_slug_to_project_id(args),
          true <- has_permissions?(watchlist, current_user, :update) do
       case UserList.remove_user_list_items(current_user, args) do
         {:ok, user_list} ->
@@ -328,6 +330,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
           }
       end
     end
+  end
+
+  defp transform_slug_to_project_id(%{list_items: list_items} = args) do
+    {slug_items, non_slug_items} = Enum.split_with(list_items, &Map.has_key?(&1, :slug))
+    slugs = Enum.map(slug_items, & &1.slug)
+
+    project_items =
+      Project.List.ids_by_slugs(slugs)
+      |> Enum.map(fn project_id -> %{project_id: project_id} end)
+
+    list_items = non_slug_items ++ project_items
+
+    args = %{args | list_items: list_items}
+    {:ok, args}
   end
 
   def update_watchlist_settings(_root, %{id: watchlist_id, settings: settings}, %{

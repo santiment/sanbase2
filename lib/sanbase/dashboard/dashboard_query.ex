@@ -85,7 +85,7 @@ defmodule Sanbase.Dashboard.Query do
   def valid_sql_query?(sql) do
     case Map.has_key?(sql, :query) and is_binary(sql[:query]) and String.length(sql[:query]) > 0 do
       true -> :ok
-      false -> {:error, "sql query must be a non-emmpty binary string"}
+      false -> {:error, "sql query must be a non-empty binary string"}
     end
   end
 

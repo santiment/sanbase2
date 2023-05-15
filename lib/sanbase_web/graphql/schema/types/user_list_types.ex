@@ -31,6 +31,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
 
   input_object :input_list_item do
     field(:project_id, :integer)
+    field(:slug, :string)
     field(:blockchain_address, :blockchain_address_input_object)
   end
 

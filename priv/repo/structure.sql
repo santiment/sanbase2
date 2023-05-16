@@ -266,7 +266,18 @@ CREATE TABLE public.ai_context (
     question text,
     answer text,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    guild_id character varying(255),
+    guild_name character varying(255),
+    channel_id character varying(255),
+    channel_name character varying(255),
+    elapsed_time double precision,
+    tokens_request integer,
+    tokens_response integer,
+    tokens_total integer,
+    error_message character varying(255),
+    total_cost double precision,
+    command character varying(255)
 );
 
 
@@ -3370,18 +3381,24 @@ CREATE TABLE public.telegram_user_tokens (
 CREATE TABLE public.thread_ai_context (
     id bigint NOT NULL,
     discord_user character varying(255),
-    guild_id bigint,
+    guild_id character varying(255),
     guild_name character varying(255),
-    channel_id bigint,
+    channel_id character varying(255),
     channel_name character varying(255),
-    thread_id bigint,
+    thread_id character varying(255),
     thread_name character varying(255),
     question text,
     answer text,
     votes_pos integer DEFAULT 0,
     votes_neg integer DEFAULT 0,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    elapsed_time double precision,
+    tokens_request integer,
+    tokens_response integer,
+    tokens_total integer,
+    error_message character varying(255),
+    total_cost double precision
 );
 
 
@@ -8300,3 +8317,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230210145707);
 INSERT INTO public."schema_migrations" (version) VALUES (20230216145219);
 INSERT INTO public."schema_migrations" (version) VALUES (20230224120026);
 INSERT INTO public."schema_migrations" (version) VALUES (20230327194228);
+INSERT INTO public."schema_migrations" (version) VALUES (20230516090551);
+INSERT INTO public."schema_migrations" (version) VALUES (20230516091348);

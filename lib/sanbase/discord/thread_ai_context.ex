@@ -7,16 +7,22 @@ defmodule Sanbase.Discord.ThreadAiContext do
 
   schema "thread_ai_context" do
     field(:discord_user, :string)
-    field(:guild_id, :integer)
+    field(:guild_id, :string)
     field(:guild_name, :string)
-    field(:channel_id, :integer)
+    field(:channel_id, :string)
     field(:channel_name, :string)
-    field(:thread_id, :integer)
+    field(:thread_id, :string)
     field(:thread_name, :string)
     field(:question, :string)
     field(:answer, :string)
     field(:votes_pos, :integer, default: 0)
     field(:votes_neg, :integer, default: 0)
+    field(:elapsed_time, :float)
+    field(:tokens_request, :integer)
+    field(:tokens_response, :integer)
+    field(:tokens_total, :integer)
+    field(:error_message, :string)
+    field(:total_cost, :float)
 
     timestamps()
   end
@@ -35,7 +41,13 @@ defmodule Sanbase.Discord.ThreadAiContext do
       :question,
       :answer,
       :votes_pos,
-      :votes_neg
+      :votes_neg,
+      :elapsed_time,
+      :tokens_request,
+      :tokens_response,
+      :tokens_total,
+      :error_message,
+      :total_cost
     ])
     |> validate_required([
       :discord_user,
@@ -46,7 +58,6 @@ defmodule Sanbase.Discord.ThreadAiContext do
       :thread_id,
       :thread_name,
       :question,
-      :answer,
       :votes_pos,
       :votes_neg
     ])

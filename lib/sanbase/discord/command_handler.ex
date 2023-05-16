@@ -16,8 +16,6 @@ defmodule Sanbase.Discord.CommandHandler do
   @prefix "!q "
   @ai_prefix "!ai "
   @docs_prefix "!docs "
-  @index_prefixes ["!gi ", "!git_index "]
-  @ask_prefixes ["!ga ", "!git_ask "]
   @mock_role_id 1
   @max_size 1800
   @ephemeral_message_flags 64
@@ -52,14 +50,6 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def is_docs_command?(content) do
     String.starts_with?(content, @docs_prefix)
-  end
-
-  def is_index_command?(content) do
-    String.starts_with?(content, @index_prefixes)
-  end
-
-  def is_ask_command?(content) do
-    String.starts_with?(content, @ask_prefixes)
   end
 
   def handle_interaction("query", interaction) do
@@ -172,25 +162,6 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def handle_interaction("insights", interaction) do
-    interaction_msg(interaction, "Fetching last 3 insights from Santiment ...")
-
-    insights = Sanbase.OpenAI.fetch_last_insights(3)
-
-    Enum.each(insights, fn insight ->
-      Api.start_typing(interaction.channel_id)
-
-      summary =
-        Sanbase.Cache.get_or_store("insight_summary#{insight.id}", fn ->
-          Sanbase.OpenAI.summarize(insight)
-        end)
-
-      Api.create_message(interaction.channel_id, content: summary <> "\n--------\n")
-    end)
-
-    :ok
-  end
-
   def handle_interaction("help", interaction) do
     embed =
       %Embed{}
@@ -287,16 +258,6 @@ defmodule Sanbase.Discord.CommandHandler do
     respond_to_component_interaction(interaction, thread_id)
   end
 
-  defp respond_to_component_interaction(interaction, thread_id) do
-    Nostrum.Api.create_interaction_response(interaction.id, interaction.token, %{
-      # interaction response type: UPDATE_MESSAGE*	7	for components, edit the message the component was attached to
-      type: 7,
-      data: %{
-        components: [thumbs_action_row(thread_id)]
-      }
-    })
-  end
-
   def handle_command("run", name, sql, msg) do
     {:ok, loading_msg} =
       Api.create_message(
@@ -333,8 +294,10 @@ defmodule Sanbase.Discord.CommandHandler do
       prompt = String.trim(msg.content, "!ai")
       discord_user = msg.author.username <> msg.author.discriminator
 
+      db_params = db_params(msg, discord_user, "!ai")
+
       kw_list =
-        Sanbase.OpenAI.ai(prompt, discord_user)
+        Sanbase.OpenAI.ai(prompt, db_params)
         |> process_response()
 
       Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
@@ -352,54 +315,13 @@ defmodule Sanbase.Discord.CommandHandler do
 
     prompt = String.trim(msg.content, "!docs")
     discord_user = msg.author.username <> msg.author.discriminator
+    db_params = db_params(msg, discord_user, "!docs")
 
     kw_list =
-      Sanbase.OpenAI.docs(prompt, discord_user)
+      Sanbase.OpenAI.docs(prompt, db_params)
       |> process_response()
 
     Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
-  end
-
-  def handle_command("gi", msg) do
-    {:ok, loading_msg} = loading_msg(msg)
-
-    with {:ok, branch} <- extract_branch_name(msg.content),
-         {:ok, _response} <- Sanbase.OpenAI.index(branch) do
-      content = "Your git branch: #{branch} is indexed :beers:"
-      Api.edit_message(msg.channel_id, loading_msg.id, content: content)
-    else
-      _error ->
-        content = "Couldn't index your git branch"
-        Api.edit_message(msg.channel_id, loading_msg.id, content: content)
-    end
-  end
-
-  def handle_command("ga", msg) do
-    {:ok, loading_msg} = loading_msg(msg)
-
-    with {:ok, branch, question} <- extract_branch_name_and_question(msg.content),
-         {:ok, response} <- Sanbase.OpenAI.ask(branch, question) do
-      content = """
-      Q: #{question}
-      A: #{response["answer"]}
-      Sources: #{response["sources"]}
-      """
-
-      components =
-        case Regex.run(~r/```(?:sql)?([^`]*)```/ms, content) do
-          [_, _] -> [ai_action_row()]
-          nil -> []
-        end
-
-      Api.edit_message(msg.channel_id, loading_msg.id,
-        content: content,
-        components: components
-      )
-    else
-      _error ->
-        content = "Couldn't fetch answer from your git branch"
-        Api.edit_message(msg.channel_id, loading_msg.id, content: content)
-    end
   end
 
   def handle_command("mention", msg) do
@@ -441,6 +363,8 @@ defmodule Sanbase.Discord.CommandHandler do
       message_reference: %{message_id: msg.id}
     )
   end
+
+  # private
 
   defp loading_msg(msg) do
     Nostrum.Api.create_message(
@@ -553,7 +477,7 @@ defmodule Sanbase.Discord.CommandHandler do
     |> Enum.reject(&(&1 == ""))
   end
 
-  def process_message(msg, channel) do
+  defp process_message(msg, channel) do
     # channel type thread
     case channel.type in [10, 11, 12] do
       true ->
@@ -565,7 +489,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def answer_question(msg, channel) do
+  defp answer_question(msg, channel) do
     discord_user = msg.author.username <> msg.author.discriminator
     prompt = String.replace(msg.content, "<@#{bot_id()}>", "")
 
@@ -627,7 +551,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def create_new_thread(msg) do
+  defp create_new_thread(msg) do
     thread_name =
       msg.content
       |> String.replace("<@#{bot_id()}>", "")
@@ -636,16 +560,9 @@ defmodule Sanbase.Discord.CommandHandler do
     Api.start_thread_with_message(msg.channel_id, msg.id, %{name: thread_name})
   end
 
-  def extract_branch_name(message) do
+  defp extract_branch_name(message) do
     case String.split(message, ~r{\s+}, parts: 2) do
       [_, branch] -> {:ok, branch}
-      _ -> {:error, "Invalid input format"}
-    end
-  end
-
-  def extract_branch_name_and_question(message) do
-    case String.split(message, ~r{\s+}, parts: 3) do
-      [_, branch, question] -> {:ok, branch, question}
       _ -> {:error, "Invalid input format"}
     end
   end
@@ -656,7 +573,7 @@ defmodule Sanbase.Discord.CommandHandler do
   #   "!q test query2 ```\nselect now()\n```"
   #   "!q\n```\nselect now()\n```"
   #   "!q what's the time\n```sql\nselect now()\n```"
-  def parse_message_command(content) do
+  defp parse_message_command(content) do
     regexes = [
       ~r/!q([^`]*)`([^`]+)`/,
       ~r/!q([^`]*)```sql([^`]*)```$/ms,
@@ -676,13 +593,13 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def header(name, discord_user) do
+  defp header(name, discord_user) do
     """
     #{name}: <@#{discord_user}>
     """
   end
 
-  def format_table(name, %{rows: []}, discord_user) do
+  defp format_table(name, %{rows: []}, discord_user) do
     """
     #{name}: <@#{discord_user}>
 
@@ -690,7 +607,7 @@ defmodule Sanbase.Discord.CommandHandler do
     """
   end
 
-  def format_table(name, response, discord_user) do
+  defp format_table(name, response, discord_user) do
     max_rows = response.rows |> Enum.take(1) |> max_rows()
 
     table =
@@ -716,7 +633,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def get_execution_summary(qe) do
+  defp get_execution_summary(qe) do
     ed = qe.execution_details
 
     """
@@ -727,7 +644,7 @@ defmodule Sanbase.Discord.CommandHandler do
     """
   end
 
-  def compute_and_save(name, query, _query_params, params) do
+  defp compute_and_save(name, query, _query_params, params) do
     params = Map.put(params, :name, name)
 
     case DiscordDashboard.create(sanbase_bot_id(), query, params) do
@@ -844,6 +761,16 @@ defmodule Sanbase.Discord.CommandHandler do
       content: content,
       components: components,
       embeds: embeds
+    })
+  end
+
+  defp respond_to_component_interaction(interaction, thread_id) do
+    Nostrum.Api.create_interaction_response(interaction.id, interaction.token, %{
+      # interaction response type: UPDATE_MESSAGE*	7	for components, edit the message the component was attached to
+      type: 7,
+      data: %{
+        components: [thumbs_action_row(thread_id)]
+      }
     })
   end
 
@@ -1295,5 +1222,19 @@ defmodule Sanbase.Discord.CommandHandler do
       |> Base.encode64()
 
     {"Authorization", "Basic #{credentials}"}
+  end
+
+  defp db_params(msg, discord_user, command) do
+    {guild_name, channel_name} = get_guild_channel(msg.guild_id, msg.channel_id)
+
+    %{
+      discord_user: discord_user,
+      guild_id: to_string(msg.guild_id),
+      guild_name: guild_name,
+      channel_id: to_string(msg.channel_id),
+      channel_name: channel_name,
+      msg_id: msg.id,
+      command: command
+    }
   end
 end

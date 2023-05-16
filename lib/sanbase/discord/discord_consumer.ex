@@ -22,10 +22,6 @@ defmodule Sanbase.DiscordConsumer do
       description: "List pinned queries"
     },
     %{
-      name: "insights",
-      description: "Summarize last insights on Sanbase"
-    },
-    %{
       name: "chart",
       description: "Create a Sanbase metric chart",
       options: [
@@ -64,12 +60,6 @@ defmodule Sanbase.DiscordConsumer do
         log(msg, "docs COMMAND RESULT #{inspect(result)}")
         :ok
 
-      CommandHandler.is_index_command?(msg.content) ->
-        CommandHandler.handle_command("gi", msg)
-
-      CommandHandler.is_ask_command?(msg.content) ->
-        CommandHandler.handle_command("ga", msg)
-
       msg_contains_bot_mention?(msg) ->
         warm_up(msg)
 
@@ -100,7 +90,6 @@ defmodule Sanbase.DiscordConsumer do
              "query",
              "help",
              "list",
-             "insights",
              "chart"
            ] do
     warm_up()

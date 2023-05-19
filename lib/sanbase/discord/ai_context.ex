@@ -20,7 +20,7 @@ defmodule Sanbase.Discord.AiContext do
     field(:error_message, :string)
     field(:total_cost, :float)
     field(:command, :string)
-
+    field(:prompt, :string)
     timestamps()
   end
 
@@ -41,7 +41,8 @@ defmodule Sanbase.Discord.AiContext do
       :tokens_total,
       :error_message,
       :total_cost,
-      :command
+      :command,
+      :prompt
     ])
     |> validate_required([:discord_user, :guild_id, :channel_id, :question, :command])
   end

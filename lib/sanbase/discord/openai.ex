@@ -42,9 +42,31 @@ defmodule Sanbase.OpenAI do
           |> Map.put(:tokens_total, body["tokens_total"])
           |> Map.put(:total_cost, body["total_cost"])
           |> Map.put(:elapsed_time, elapsed_time)
+          |> Map.put(
+            :prompt,
+            "System:\n" <>
+              body["prompt"]["system"] <> "\n\n" <> "User:\n" <> body["prompt"]["user"]
+          )
 
         AiContext.create(params)
         {:ok, body}
+
+      {:ok, %HTTPoison.Response{status_code: 500, body: body}} ->
+        end_time = System.monotonic_time(:second)
+        elapsed_time = end_time - start_time
+
+        body = Jason.decode!(body)
+
+        params =
+          params
+          |> Map.put(:error_message, body["error"] <> "\n\n --- \n\n" <> body["trace"])
+          |> Map.put(:question, prompt)
+          |> Map.put(:elapsed_time, elapsed_time)
+
+        Logger.error("[id=#{msg_id}] Can't fetch docs: #{inspect(body)}")
+
+        AiContext.create(params)
+        {:error, "Can't fetch"}
 
       error ->
         Logger.error("[id=#{msg_id}] Can't fetch docs: #{inspect(error)}")

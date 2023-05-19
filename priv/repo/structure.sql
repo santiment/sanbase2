@@ -275,9 +275,10 @@ CREATE TABLE public.ai_context (
     tokens_request integer,
     tokens_response integer,
     tokens_total integer,
-    error_message character varying(255),
+    error_message text,
     total_cost double precision,
-    command character varying(255)
+    command character varying(255),
+    prompt text
 );
 
 
@@ -8319,3 +8320,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230224120026);
 INSERT INTO public."schema_migrations" (version) VALUES (20230327194228);
 INSERT INTO public."schema_migrations" (version) VALUES (20230516090551);
 INSERT INTO public."schema_migrations" (version) VALUES (20230516091348);
+INSERT INTO public."schema_migrations" (version) VALUES (20230519090827);

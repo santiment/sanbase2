@@ -560,20 +560,13 @@ defmodule Sanbase.Discord.CommandHandler do
     Api.start_thread_with_message(msg.channel_id, msg.id, %{name: thread_name})
   end
 
-  defp extract_branch_name(message) do
-    case String.split(message, ~r{\s+}, parts: 2) do
-      [_, branch] -> {:ok, branch}
-      _ -> {:error, "Invalid input format"}
-    end
-  end
-
   # Example valid invocations
   #   "!q `select now()`"
   #   "!q test query1 `select now()`"
   #   "!q test query2 ```\nselect now()\n```"
   #   "!q\n```\nselect now()\n```"
   #   "!q what's the time\n```sql\nselect now()\n```"
-  defp parse_message_command(content) do
+  def parse_message_command(content) do
     regexes = [
       ~r/!q([^`]*)`([^`]+)`/,
       ~r/!q([^`]*)```sql([^`]*)```$/ms,

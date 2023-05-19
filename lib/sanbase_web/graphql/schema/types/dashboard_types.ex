@@ -155,6 +155,24 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:inserted_at, non_null(:datetime))
   end
 
+  object :queries_execution_stats do
+    field :credits_spent, :integer do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      resolve(&DashboardResolver.compute_credits_spent/3)
+    end
+
+    field :executed_queries, list_of(:query_execution_stats) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:page, :integer, default_value: 1)
+      arg(:page_size, :integer, default_value: 10)
+
+      resolve(&DashboardResolver.get_executed_queries/3)
+    end
+  end
+
   @desc ~s"""
   The result of executing a raw Clickhouse SQL query.
   """

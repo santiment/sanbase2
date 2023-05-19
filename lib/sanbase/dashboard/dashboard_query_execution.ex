@@ -164,6 +164,34 @@ defmodule Sanbase.Dashboard.QueryExecution do
     end
   end
 
+  def get_executed_queries_stats(user_id, from, to, page, page_size) do
+    query = """
+    SELECT c.count, u.*
+    FROM
+      (
+        SELECT count(*) AS count
+        FROM clickhouse_query_executions
+        WHERE user_id = $1 AND inserted_at >= $2 AND inserted_at < $3
+      ) AS c
+      LEFT JOIN
+      (
+        SELECT clickhouse_query_id, execution_details, credits_cost, inserted_at, query_start_time, query_end_time
+        FROM clickhouse_query_executions
+        WHERE user_id = $1 AND inserted_at >= $2 AND inserted_at < $3
+        ORDER BY inserted_at DESC
+        LIMIT $4 OFFSET $5
+      ) AS u
+      ON true
+    ORDER BY u.inserted_at DESC;
+
+    """
+
+    {limit, offset} =
+      Sanbase.Utils.Transform.opts_to_limit_offset(page: page, page_size: page_size)
+
+    Sanbase.Repo.query(query, [user_id, from, to, limit, offset])
+  end
+
   # Private functions
 
   defp compute_credits_cost(args) do

@@ -144,6 +144,12 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
       resolve(&DashboardResolver.get_clickhouse_query_execution_stats/3)
     end
 
+    field :get_clickhouse_queries_execution_stats, :queries_execution_stats do
+      meta(access: :free)
+
+      resolve(&DashboardResolver.get_clickhouse_queries_execution_stats/3)
+    end
+
     @desc ~s"""
     Compute the raw Clickhouse SQL query defined by the arguments.
 

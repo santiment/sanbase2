@@ -300,6 +300,8 @@ defmodule Sanbase.Discord.CommandHandler do
         Sanbase.OpenAI.ai(prompt, db_params)
         |> process_response()
 
+      kw_list = Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
+
       Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
     else
       Nostrum.Api.edit_message(
@@ -320,6 +322,8 @@ defmodule Sanbase.Discord.CommandHandler do
     kw_list =
       Sanbase.OpenAI.docs(prompt, db_params)
       |> process_response()
+
+    kw_list = Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
 
     Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
   end
@@ -430,7 +434,7 @@ defmodule Sanbase.Discord.CommandHandler do
     ]
   end
 
-  defp process_response({:error, error}) do
+  defp process_response({:error, _error}) do
     content = "Couldn't fetch information to answer your question"
 
     [
@@ -532,7 +536,7 @@ defmodule Sanbase.Discord.CommandHandler do
     ----------------------
     """
 
-    kw_list = Keyword.put(kw_list, :content, new_content)
+    kw_list = Keyword.put(kw_list, :content, trim_message(new_content))
     Api.create_message(channel.id, kw_list)
 
     embeds = [
@@ -1229,5 +1233,13 @@ defmodule Sanbase.Discord.CommandHandler do
       msg_id: msg.id,
       command: command
     }
+  end
+
+  def trim_message(message) do
+    if String.length(message) > 1990 do
+      String.slice(message, 0, 1990) <> "..."
+    else
+      message
+    end
   end
 end

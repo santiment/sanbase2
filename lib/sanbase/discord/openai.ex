@@ -24,8 +24,8 @@ defmodule Sanbase.OpenAI do
            url,
            Jason.encode!(%{question: prompt}),
            [{"Content-Type", "application/json"}],
-           timeout: 120_000,
-           recv_timeout: 120_000
+           timeout: 240_000,
+           recv_timeout: 240_000
          ) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         end_time = System.monotonic_time(:second)
@@ -96,8 +96,8 @@ defmodule Sanbase.OpenAI do
            url,
            Jason.encode!(%{question: prompt, messages: context}),
            [{"Content-Type", "application/json"}],
-           timeout: 120_000,
-           recv_timeout: 120_000
+           timeout: 240_000,
+           recv_timeout: 240_000
          ) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         end_time = System.monotonic_time(:second)

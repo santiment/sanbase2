@@ -28,10 +28,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
   end
 
   def track_events(_, %{events: events} = params, resolution) do
-    %{user_id: user_id, anonymous_user_id: anonymous_user_id} =
-      get_identification_fields(resolution, params)
-
-    if valid_events?(events) do
+    with {:ok, %{} = identification} <- get_identification_fields(resolution, params),
+         :ok <- validate_events(events) do
       events =
         events
         |> Enum.map(fn %{"event_name" => event_name, "created_at" => created_at} = event ->
@@ -41,18 +39,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
             metadata: event["metadata"],
             inserted_at: DateTime.utc_now() |> DateTime.truncate(:second),
             updated_at: DateTime.utc_now() |> DateTime.truncate(:second),
-            user_id: user_id,
-            anonymous_user_id: anonymous_user_id
+            user_id: identification.user_id,
+            anonymous_user_id: identification.anonymous_user_id
           }
         end)
 
-      is_authenticated = user_id != 0
-
-      UserEvent.create(events, is_authenticated)
+      :ok = UserEvent.create(events, identification.is_authenticated)
 
       {:ok, true}
-    else
-      {:error, "List of events contains invalid events"}
     end
   end
 
@@ -62,13 +56,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
   # fields in Clickhouse cannot be NULL. use 0 and empty string when these fields
   # need to not be filled
   defp get_identification_fields(%{context: %{auth: %{current_user: user}}}, _params) do
-    %{user_id: user.id, anonymous_user_id: ""}
+    {:ok, %{user_id: user.id, anonymous_user_id: "", is_authenticated: true}}
   end
 
   defp get_identification_fields(_resolution, params) do
     case params do
       %{anonymous_user_id: anonymous_user_id} when byte_size(anonymous_user_id) >= 28 ->
-        %{user_id: 0, anonymous_user_id: anonymous_user_id}
+        {:ok, %{user_id: 0, anonymous_user_id: anonymous_user_id, is_authenticated: false}}
 
       _ ->
         {:error,
@@ -76,8 +70,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
     end
   end
 
-  defp valid_events?(events) do
-    Enum.all?(events, &valid_event?/1)
+  defp validate_events(events) do
+    case Enum.all?(events, &valid_event?/1) do
+      true -> :ok
+      false -> {:error, "The list of events contains invalid event(s)"}
+    end
   end
 
   defp valid_event?(event) do

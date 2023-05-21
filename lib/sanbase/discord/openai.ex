@@ -57,19 +57,29 @@ defmodule Sanbase.OpenAI do
 
         body = Jason.decode!(body)
 
+        Logger.error("[id=#{msg_id}] Can't fetch docs: #{inspect(body)}")
+
         params =
           params
           |> Map.put(:error_message, body["error"] <> "\n\n --- \n\n" <> body["trace"])
           |> Map.put(:question, prompt)
           |> Map.put(:elapsed_time, elapsed_time)
 
-        Logger.error("[id=#{msg_id}] Can't fetch docs: #{inspect(body)}")
-
         AiContext.create(params)
         {:error, "Can't fetch"}
 
       error ->
+        end_time = System.monotonic_time(:second)
+        elapsed_time = end_time - start_time
         Logger.error("[id=#{msg_id}] Can't fetch docs: #{inspect(error)}")
+
+        params =
+          params
+          |> Map.put(:error_message, inspect(error))
+          |> Map.put(:question, prompt)
+          |> Map.put(:elapsed_time, elapsed_time)
+
+        AiContext.create(params)
         {:error, "Can't fetch"}
     end
   end

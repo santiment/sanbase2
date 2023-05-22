@@ -380,7 +380,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
        ) do
     sql = """
     SELECT
-      #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time
+      #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS time,
       sumIf(partOfTotal, isExchange = 1) * 100 AS in_exchanges,
       sumIf(partOfTotal, isExchange = 0) * 100 AS outside_exchanges,
       in_exchanges + outside_exchanges AS in_top_holders_total

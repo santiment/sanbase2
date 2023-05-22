@@ -24,6 +24,8 @@ defmodule Sanbase.Discord.CommandHandler do
   @prod_bot_id 1_039_814_526_708_764_742
   @prod_pro_roles [532_833_809_947_951_105, 409_637_386_012_721_155]
   @local_pro_roles [854_304_500_402_880_532]
+  @local_guild_id 852_836_083_381_174_282
+  @santiment_guild_id 334_289_660_698_427_392
 
   def bot_id() do
     case Config.module_get(Sanbase, :deployment_env) do
@@ -37,6 +39,13 @@ defmodule Sanbase.Discord.CommandHandler do
     case Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_pro_roles
       _ -> @prod_pro_roles
+    end
+  end
+
+  def santiment_guild_id do
+    case Config.module_get(Sanbase, :deployment_env) do
+      "dev" -> @local_guild_id
+      _ -> @santiment_guild_id
     end
   end
 
@@ -288,28 +297,27 @@ defmodule Sanbase.Discord.CommandHandler do
   def handle_command("ai", msg) do
     {:ok, loading_msg} = loading_msg(msg)
 
-    pro_roles = pro_roles()
+    discord_user = msg.author.username <> msg.author.discriminator
+    db_params = db_params(msg, discord_user, "!ai")
+    prompt = String.trim(msg.content, "!ai")
 
-    if Enum.any?(MapSet.intersection(MapSet.new(pro_roles), MapSet.new(msg.member.roles))) do
-      prompt = String.trim(msg.content, "!ai")
-      discord_user = msg.author.username <> msg.author.discriminator
+    kw_list =
+      case Sanbase.Discord.AiContext.check_limits(db_params) do
+        :ok ->
+          kw_list =
+            Sanbase.OpenAI.ai(prompt, db_params)
+            |> process_response()
 
-      db_params = db_params(msg, discord_user, "!ai")
+          Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
 
-      kw_list =
-        Sanbase.OpenAI.ai(prompt, db_params)
-        |> process_response()
+        {:error, :eserverlimit, time_left} ->
+          [content: "Server limit reached for today. Limit will be reset in #{time_left}."]
 
-      kw_list = Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
+        {:error, :eprolimit, time_left} ->
+          [content: "Pro user limit reached for today. Limit will be reset in #{time_left}"]
+      end
 
-      Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
-    else
-      Nostrum.Api.edit_message(
-        msg.channel_id,
-        loading_msg.id,
-        "You need to be a PRO member to use this command"
-      )
-    end
+    Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
   end
 
   def handle_command("docs", msg) do
@@ -1224,6 +1232,17 @@ defmodule Sanbase.Discord.CommandHandler do
   defp db_params(msg, discord_user, command) do
     {guild_name, channel_name} = get_guild_channel(msg.guild_id, msg.channel_id)
 
+    user_is_pro =
+      Nostrum.Api.get_guild_member(santiment_guild_id(), msg.author.id)
+      |> case do
+        {:ok, member} ->
+          is_pro?(member.roles)
+
+        other ->
+          Logger.error("Failed to get guild member: #{inspect(other)}")
+          false
+      end
+
     %{
       discord_user: discord_user,
       guild_id: to_string(msg.guild_id),
@@ -1231,7 +1250,8 @@ defmodule Sanbase.Discord.CommandHandler do
       channel_id: to_string(msg.channel_id),
       channel_name: channel_name,
       msg_id: msg.id,
-      command: command
+      command: command,
+      user_is_pro: user_is_pro
     }
   end
 
@@ -1241,5 +1261,10 @@ defmodule Sanbase.Discord.CommandHandler do
     else
       message
     end
+  end
+
+  def is_pro?(user_roles_in_santiment) do
+    MapSet.intersection(MapSet.new(pro_roles()), MapSet.new(user_roles_in_santiment))
+    |> Enum.any?()
   end
 end

@@ -278,7 +278,8 @@ CREATE TABLE public.ai_context (
     error_message text,
     total_cost double precision,
     command character varying(255),
-    prompt text
+    prompt text,
+    user_is_pro boolean DEFAULT false
 );
 
 
@@ -8321,3 +8322,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230327194228);
 INSERT INTO public."schema_migrations" (version) VALUES (20230516090551);
 INSERT INTO public."schema_migrations" (version) VALUES (20230516091348);
 INSERT INTO public."schema_migrations" (version) VALUES (20230519090827);
+INSERT INTO public."schema_migrations" (version) VALUES (20230522123937);

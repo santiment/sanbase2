@@ -2,8 +2,12 @@ defmodule Sanbase.Discord.AiContext do
   use Ecto.Schema
 
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Repo
+
+  @server_limit_per_day 10
+  @pro_user_limit_per_day 20
 
   schema "ai_context" do
     field(:answer, :string)
@@ -21,6 +25,7 @@ defmodule Sanbase.Discord.AiContext do
     field(:total_cost, :float)
     field(:command, :string)
     field(:prompt, :string)
+    field(:user_is_pro, :boolean, default: false)
     timestamps()
   end
 
@@ -42,7 +47,8 @@ defmodule Sanbase.Discord.AiContext do
       :error_message,
       :total_cost,
       :command,
-      :prompt
+      :prompt,
+      :user_is_pro
     ])
     |> validate_required([:discord_user, :guild_id, :channel_id, :question, :command])
   end
@@ -50,5 +56,57 @@ defmodule Sanbase.Discord.AiContext do
   def create(params) do
     changeset(%__MODULE__{}, params)
     |> Repo.insert()
+  end
+
+  def check_limits(args) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    start_of_day = DateTime.to_date(now)
+    start_of_next_day = Date.add(start_of_day, 1)
+
+    query_for_server =
+      from(c in __MODULE__,
+        where:
+          c.command == "!ai" and c.guild_id == ^args.guild_id and
+            c.user_is_pro != true and fragment("?::date = ?", c.inserted_at, ^start_of_day),
+        select: count(c.id)
+      )
+
+    query_for_pro_user =
+      from(c in __MODULE__,
+        where:
+          c.command == "!ai" and c.discord_user == ^args.discord_user and
+            c.user_is_pro == true and fragment("?::date = ?", c.inserted_at, ^start_of_day),
+        select: count(c.id)
+      )
+
+    server_query_count = Repo.one(query_for_server)
+    pro_user_query_count = Repo.one(query_for_pro_user)
+
+    time_left =
+      DateTime.diff(
+        DateTime.from_naive!(NaiveDateTime.new!(start_of_next_day, ~T[00:00:00]), "Etc/UTC"),
+        now,
+        :second
+      )
+      |> convert_to_h_m()
+
+    cond do
+      !args.user_is_pro and server_query_count >= @server_limit_per_day ->
+        {:error, :eserverlimit, time_left}
+
+      args.user_is_pro and pro_user_query_count >= @pro_user_limit_per_day ->
+        {:error, :eprolimit, time_left}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp convert_to_h_m(seconds) do
+    hours = div(seconds, 3600)
+    remainder = rem(seconds, 3600)
+    minutes = div(remainder, 60)
+
+    "#{hours} hours #{minutes} minutes"
   end
 end

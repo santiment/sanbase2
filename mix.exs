@@ -161,7 +161,7 @@ defmodule Sanbase.Mixfile do
       {:tesla, "~> 1.0"},
       {:timex, "~> 3.7"},
       {:ueberauth_google, "~> 0.10"},
-      {:ueberauth_twitter, github: "santiment/ueberauth_twitter"},
+      {:ueberauth_twitter, "~> 0.4"},
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.9", override: true},
       {:waffle, "~> 1.1"},

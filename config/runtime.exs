@@ -1,5 +1,19 @@
 import Config
 
+if config_env() in [:dev, :test] do
+  # In order to properly work while developing locally,
+  # load the .env file before doing the configuration
+  Code.ensure_loaded?(Envy) && Envy.auto_load()
+end
+
+config :ueberauth, Ueberauth.Strategy.Google.OAuth,
+  client_id: System.get_env("GOOGLE_OAUTH_CLIENT_ID") |> IO.inspect(label: "8", limit: :infinity),
+  client_secret: System.get_env("GOOGLE_OAUTH_CLIENT_SECRET")
+
+config :ueberauth, Ueberauth.Strategy.Twitter.OAuth,
+  consumer_key: System.get_env("TWITTER_OAUTH_CONSUMER_KEY"),
+  consumer_secret: System.get_env("TWITTER_OAUTH_CONSUMER_SECRET")
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

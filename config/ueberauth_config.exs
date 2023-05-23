@@ -16,10 +16,4 @@ config :guardian, Guardian.DB,
   token_types: ["refresh"],
   sweep_interval: 20
 
-config :ueberauth, Ueberauth.Strategy.Google.OAuth,
-  client_id: {System, :get_env, ["GOOGLE_OAUTH_CLIENT_ID"]},
-  client_secret: {System, :get_env, ["GOOGLE_OAUTH_CLIENT_SECRET"]}
-
-config :ueberauth, Ueberauth.Strategy.Twitter.OAuth,
-  consumer_key: {System, :get_env, ["TWITTER_OAUTH_CONSUMER_KEY"]},
-  consumer_secret: {System, :get_env, ["TWITTER_OAUTH_CONSUMER_SECRET"]}
+# The rest of the config is in runtime.exs so the env vars can be read on runtime

@@ -573,7 +573,10 @@ defmodule Sanbase.Discord.CommandHandler do
       |> String.replace("<@#{bot_id()}>", "")
       |> String.slice(0, 90)
 
-    Api.start_thread_with_message(msg.channel_id, msg.id, %{name: thread_name})
+    Api.start_thread_with_message(msg.channel_id, msg.id, %{
+      name: thread_name,
+      auto_archive_duration: 1440
+    })
   end
 
   # Example valid invocations

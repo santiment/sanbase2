@@ -279,7 +279,10 @@ CREATE TABLE public.ai_context (
     total_cost double precision,
     command character varying(255),
     prompt text,
-    user_is_pro boolean DEFAULT false
+    user_is_pro boolean DEFAULT false,
+    thread_id character varying(255),
+    thread_name character varying(255),
+    votes jsonb DEFAULT '{}'::jsonb
 );
 
 
@@ -8323,3 +8326,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230516090551);
 INSERT INTO public."schema_migrations" (version) VALUES (20230516091348);
 INSERT INTO public."schema_migrations" (version) VALUES (20230519090827);
 INSERT INTO public."schema_migrations" (version) VALUES (20230522123937);
+INSERT INTO public."schema_migrations" (version) VALUES (20230523080400);

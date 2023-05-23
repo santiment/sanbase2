@@ -26,6 +26,9 @@ defmodule Sanbase.Discord.AiContext do
     field(:command, :string)
     field(:prompt, :string)
     field(:user_is_pro, :boolean, default: false)
+    field(:thread_id, :string)
+    field(:thread_name, :string)
+    field(:votes, :map, default: %{})
     timestamps()
   end
 
@@ -48,14 +51,55 @@ defmodule Sanbase.Discord.AiContext do
       :total_cost,
       :command,
       :prompt,
-      :user_is_pro
+      :user_is_pro,
+      :thread_id,
+      :thread_name,
+      :votes
     ])
     |> validate_required([:discord_user, :guild_id, :channel_id, :question, :command])
+  end
+
+  def by_id(id) do
+    query =
+      from(c in __MODULE__,
+        where: c.id == ^id
+      )
+
+    Repo.one(query)
   end
 
   def create(params) do
     changeset(%__MODULE__{}, params)
     |> Repo.insert()
+  end
+
+  def fetch_recent_history(thread_id, limit) do
+    query =
+      from(c in __MODULE__,
+        where: c.thread_id == ^thread_id,
+        order_by: [desc: c.inserted_at],
+        limit: ^limit
+      )
+
+    Repo.all(query)
+  end
+
+  def fetch_history_context(params, limit) do
+    fetch_recent_history(params.thread_id, limit)
+    |> Enum.reverse()
+    |> Enum.map(fn history ->
+      [%{role: "user", content: history.question}, %{role: "assistant", content: history.answer}]
+    end)
+    |> List.flatten()
+  end
+
+  def add_vote(context_id, new_vote) do
+    context = Repo.get!(__MODULE__, context_id)
+
+    updated_votes = Map.merge(context.votes, new_vote)
+
+    changeset(context, %{votes: updated_votes})
+    |> Repo.update()
   end
 
   def check_limits(args) do

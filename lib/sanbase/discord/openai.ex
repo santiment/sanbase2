@@ -2,7 +2,7 @@ defmodule Sanbase.OpenAI do
   require Logger
 
   alias Sanbase.Utils.Config
-  alias Sanbase.Discord.{AiContext, ThreadAiContext}
+  alias Sanbase.Discord.AiContext
 
   def ai(prompt, params) do
     url = "#{metrics_hub_url()}/social_qa"
@@ -48,8 +48,8 @@ defmodule Sanbase.OpenAI do
               body["prompt"]["system"] <> "\n\n" <> "User:\n" <> body["prompt"]["user"]
           )
 
-        AiContext.create(params)
-        {:ok, body}
+        {:ok, ai_context} = AiContext.create(params)
+        {:ok, body, ai_context}
 
       {:ok, %HTTPoison.Response{status_code: 500, body: body}} ->
         end_time = System.monotonic_time(:second)
@@ -66,7 +66,7 @@ defmodule Sanbase.OpenAI do
           |> Map.put(:elapsed_time, elapsed_time)
 
         AiContext.create(params)
-        {:error, "Can't fetch"}
+        {:error, "Can't fetch", nil}
 
       error ->
         end_time = System.monotonic_time(:second)
@@ -80,7 +80,7 @@ defmodule Sanbase.OpenAI do
           |> Map.put(:elapsed_time, elapsed_time)
 
         AiContext.create(params)
-        {:error, "Can't fetch"}
+        {:error, "Can't fetch", nil}
     end
   end
 
@@ -88,7 +88,7 @@ defmodule Sanbase.OpenAI do
     url = "#{metrics_hub_url()}/docs"
 
     {msg_id, params} = Map.pop(params, :msg_id)
-    context = ThreadAiContext.fetch_history_context(params, 5)
+    context = AiContext.fetch_history_context(params, 5)
 
     start_time = System.monotonic_time(:second)
 
@@ -114,8 +114,8 @@ defmodule Sanbase.OpenAI do
           |> Map.put(:total_cost, body["total_cost"])
           |> Map.put(:elapsed_time, elapsed_time)
 
-        {:ok, thread_db} = ThreadAiContext.create(params)
-        {:ok, body, thread_db}
+        {:ok, ai_context} = AiContext.create(params)
+        {:ok, body, ai_context}
 
       error ->
         Logger.error("[id=#{msg_id}] Can't fetch docs: #{inspect(error)}")

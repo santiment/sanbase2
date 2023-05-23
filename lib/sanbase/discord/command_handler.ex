@@ -11,7 +11,7 @@ defmodule Sanbase.Discord.CommandHandler do
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Component.{ActionRow, TextInput}
   alias Sanbase.Utils.Config
-  alias Sanbase.Discord.ThreadAiContext
+  alias Sanbase.Discord.AiContext
 
   @prefix "!q "
   @ai_prefix "!ai "
@@ -257,14 +257,16 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def handle_interaction("up", interaction, thread_id) do
-    ThreadAiContext.increment_vote_pos_by_id(thread_id)
-    respond_to_component_interaction(interaction, thread_id)
+  def handle_interaction("up", interaction, context_id) do
+    discord_user = interaction.user.username <> interaction.user.discriminator
+    AiContext.add_vote(context_id, %{discord_user => 1})
+    respond_to_component_interaction(interaction, context_id)
   end
 
-  def handle_interaction("down", interaction, thread_id) do
-    ThreadAiContext.increment_vote_neg_by_id(thread_id)
-    respond_to_component_interaction(interaction, thread_id)
+  def handle_interaction("down", interaction, context_id) do
+    discord_user = interaction.user.username <> interaction.user.discriminator
+    AiContext.add_vote(context_id, %{discord_user => -1})
+    respond_to_component_interaction(interaction, context_id)
   end
 
   def handle_command("run", name, sql, msg) do
@@ -301,23 +303,40 @@ defmodule Sanbase.Discord.CommandHandler do
     db_params = db_params(msg, discord_user, "!ai")
     prompt = String.trim(msg.content, "!ai")
 
-    kw_list =
-      case Sanbase.Discord.AiContext.check_limits(db_params) do
-        :ok ->
-          kw_list =
-            Sanbase.OpenAI.ai(prompt, db_params)
-            |> process_response()
+    case Sanbase.Discord.AiContext.check_limits(db_params) do
+      :ok ->
+        {kw_list, ai_context} =
+          Sanbase.OpenAI.ai(prompt, db_params)
+          |> process_response()
 
-          Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
+        Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
+        Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
 
-        {:error, :eserverlimit, time_left} ->
-          [content: "Server limit reached for today. Limit will be reset in #{time_left}."]
+        if ai_context do
+          embeds = [
+            %Embed{
+              description:
+                "<@#{to_string(msg.author.id)}> I am still learning and improving, please let me know how I did by reactiing below"
+            }
+          ]
 
-        {:error, :eprolimit, time_left} ->
-          [content: "Pro user limit reached for today. Limit will be reset in #{time_left}"]
-      end
+          Api.create_message(msg.channel_id,
+            content: "",
+            embeds: embeds,
+            components: [ai_context_action_row(ai_context)]
+          )
+        end
 
-    Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
+      {:error, :eserverlimit, time_left} ->
+        Nostrum.Api.edit_message(msg.channel_id, loading_msg.id,
+          content: "Server limit reached for today. Limit will be reset in #{time_left}."
+        )
+
+      {:error, :eprolimit, time_left} ->
+        Nostrum.Api.edit_message(msg.channel_id, loading_msg.id,
+          content: "Pro user limit reached for today. Limit will be reset in #{time_left}"
+        )
+    end
   end
 
   def handle_command("docs", msg) do
@@ -327,7 +346,7 @@ defmodule Sanbase.Discord.CommandHandler do
     discord_user = msg.author.username <> msg.author.discriminator
     db_params = db_params(msg, discord_user, "!docs")
 
-    kw_list =
+    {kw_list, _} =
       Sanbase.OpenAI.docs(prompt, db_params)
       |> process_response()
 
@@ -386,12 +405,12 @@ defmodule Sanbase.Discord.CommandHandler do
     )
   end
 
-  defp process_response({:ok, response, thread_db}) do
-    {process_response({:ok, response}), thread_db}
+  defp process_response({:ok, response, db}) do
+    {process_response({:ok, response}), db}
   end
 
-  defp process_response({:error, response, thread_db}) do
-    {process_response({:error, response}), thread_db}
+  defp process_response({:error, response, db}) do
+    {process_response({:error, response}), db}
   end
 
   defp process_response({:ok, %{"answer" => "DK"}}) do
@@ -501,35 +520,20 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  defp answer_question(msg, channel) do
+  defp answer_question(msg, thread) do
     discord_user = msg.author.username <> msg.author.discriminator
     prompt = String.replace(msg.content, "<@#{bot_id()}>", "")
 
-    Api.create_message(channel.id,
+    Api.create_message(thread.id,
       content: "Hang on <@#{to_string(msg.author.id)}> as I search our knowledge base. :robot:"
     )
 
-    Api.start_typing(channel.id)
+    Api.start_typing(thread.id)
 
-    channel_name =
-      case Nostrum.Api.get_channel(channel.parent_id) do
-        {:ok, parent_channel} -> parent_channel.name
-        _ -> nil
-      end
+    db_params = db_params(msg, thread, discord_user, "!thread")
 
-    {guild_name, _channel_name} = get_guild_channel(msg.guild_id, msg.channel_id)
-
-    {kw_list, thread_db} =
-      Sanbase.OpenAI.threaded_docs(prompt, %{
-        discord_user: discord_user,
-        guild_id: to_string(msg.guild_id),
-        guild_name: guild_name,
-        thread_id: to_string(channel.id),
-        thread_name: channel.name,
-        channel_id: to_string(channel.parent_id),
-        channel_name: channel_name,
-        msg_id: msg.id
-      })
+    {kw_list, ai_context} =
+      Sanbase.OpenAI.threaded_docs(prompt, db_params)
       |> process_response()
 
     content = Keyword.get(kw_list, :content)
@@ -545,7 +549,7 @@ defmodule Sanbase.Discord.CommandHandler do
     """
 
     kw_list = Keyword.put(kw_list, :content, trim_message(new_content))
-    Api.create_message(channel.id, kw_list)
+    Api.create_message(thread.id, kw_list)
 
     embeds = [
       %Embed{
@@ -554,11 +558,11 @@ defmodule Sanbase.Discord.CommandHandler do
       }
     ]
 
-    if thread_db do
-      Api.create_message(channel.id,
+    if ai_context do
+      Api.create_message(thread.id,
         content: "",
         embeds: embeds,
-        components: [thumbs_action_row(thread_db)]
+        components: [ai_context_action_row(ai_context)]
       )
     end
   end
@@ -769,12 +773,12 @@ defmodule Sanbase.Discord.CommandHandler do
     })
   end
 
-  defp respond_to_component_interaction(interaction, thread_id) do
+  defp respond_to_component_interaction(interaction, context_id) do
     Nostrum.Api.create_interaction_response(interaction.id, interaction.token, %{
       # interaction response type: UPDATE_MESSAGE*	7	for components, edit the message the component was attached to
       type: 7,
       data: %{
-        components: [thumbs_action_row(thread_id)]
+        components: [ai_context_action_row(context_id)]
       }
     })
   end
@@ -921,22 +925,24 @@ defmodule Sanbase.Discord.CommandHandler do
     |> ActionRow.append(run_button)
   end
 
-  def thumbs_action_row(%ThreadAiContext{} = thread_db) do
+  def ai_context_action_row(%AiContext{} = context) do
     ar = ActionRow.action_row()
+    votes_pos = context.votes |> Enum.filter(fn {_k, v} -> v == 1 end) |> Enum.count()
+    votes_neg = context.votes |> Enum.filter(fn {_k, v} -> v == -1 end) |> Enum.count()
 
     thumbs_up_button =
       Button.button(
         style: 2,
-        label: "#{thread_db.votes_pos}",
-        custom_id: "up_#{thread_db.id}",
+        label: "#{votes_pos}",
+        custom_id: "up_#{context.id}",
         emoji: %{name: "👍"}
       )
 
     thumbs_down_button =
       Button.button(
         style: 2,
-        label: "#{thread_db.votes_neg}",
-        custom_id: "down_#{thread_db.id}",
+        label: "#{votes_neg}",
+        custom_id: "down_#{context.id}",
         emoji: %{name: "👎"}
       )
 
@@ -945,10 +951,10 @@ defmodule Sanbase.Discord.CommandHandler do
     |> ActionRow.append(thumbs_down_button)
   end
 
-  def thumbs_action_row(thread_id) do
-    thread_db = Sanbase.Discord.ThreadAiContext.by_id(thread_id)
+  def ai_context_action_row(context_id) do
+    context = Sanbase.Discord.AiContext.by_id(context_id)
 
-    thumbs_action_row(thread_db)
+    ai_context_action_row(context)
   end
 
   defp create_chart_embed(exec_result, dd, panel_id) do
@@ -1227,6 +1233,40 @@ defmodule Sanbase.Discord.CommandHandler do
       |> Base.encode64()
 
     {"Authorization", "Basic #{credentials}"}
+  end
+
+  defp db_params(msg, thread, discord_user, "!thread" = command) do
+    channel_name =
+      case Nostrum.Api.get_channel(thread.parent_id) do
+        {:ok, parent_channel} -> parent_channel.name
+        _ -> nil
+      end
+
+    {guild_name, _channel_name} = get_guild_channel(msg.guild_id, msg.channel_id)
+
+    user_is_pro =
+      Nostrum.Api.get_guild_member(santiment_guild_id(), msg.author.id)
+      |> case do
+        {:ok, member} ->
+          is_pro?(member.roles)
+
+        other ->
+          Logger.error("Failed to get guild member: #{inspect(other)}")
+          false
+      end
+
+    %{
+      discord_user: discord_user,
+      guild_id: to_string(msg.guild_id),
+      guild_name: guild_name,
+      channel_id: to_string(msg.channel_id),
+      channel_name: channel_name,
+      thread_id: to_string(thread.id),
+      thread_name: thread.name,
+      msg_id: msg.id,
+      command: command,
+      user_is_pro: user_is_pro
+    }
   end
 
   defp db_params(msg, discord_user, command) do

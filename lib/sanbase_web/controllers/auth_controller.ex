@@ -45,6 +45,11 @@ defmodule SanbaseWeb.AuthController do
     |> redirect(to: "/")
   end
 
+  def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
+    conn
+    |> redirect(to: "/")
+  end
+
   def callback(conn, %{"provider" => "google"}) do
     %{assigns: %{ueberauth_auth: auth}} =
       conn
@@ -84,10 +89,8 @@ defmodule SanbaseWeb.AuthController do
     args = %{login_origin: :twitter, origin_url: origin_url}
 
     with {:ok, user} <- twitter_login(email, twitter_id),
-         {:ok, _, user} <-
-           Accounts.forward_registration(user, "twitter_oauth", args),
-         {:ok, %{} = jwt_tokens_map} <-
-           SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
+         {:ok, _, user} <- Accounts.forward_registration(user, "twitter_oauth", args),
+         {:ok, %{} = jwt_tokens_map} <- SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
       emit_event({:ok, user}, :login_user, args)
 
       conn
@@ -98,11 +101,6 @@ defmodule SanbaseWeb.AuthController do
         conn
         |> redirect(external: get_session(conn, :__san_fail_redirect_url))
     end
-  end
-
-  def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
-    conn
-    |> redirect(to: "/")
   end
 
   defp twitter_login(email, twitter_id)

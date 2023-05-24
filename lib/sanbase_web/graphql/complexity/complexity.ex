@@ -52,6 +52,12 @@ defmodule SanbaseWeb.Graphql.Complexity do
     calculate_complexity(args, child_complexity, struct)
   end
 
+  def from_to_interval_per_slug(args, child_complexity, struct) do
+    many_slugs_weight = many_slugs_weight(args)
+
+    many_slugs_weight * from_to_interval(args, child_complexity, struct)
+  end
+
   # Private functions
 
   defp calculate_complexity(%{from: from, to: to} = args, child_complexity, struct) do
@@ -72,6 +78,9 @@ defmodule SanbaseWeb.Graphql.Complexity do
        complexity_weight)
     |> Sanbase.Math.to_integer()
   end
+
+  defp many_slugs_weight(%{selector: %{slugs: slugs}}) when is_list(slugs), do: length(slugs)
+  defp many_slugs_weight(args), do: 1
 
   # This case is important as here the flow comes from `timeseries_data_complexity`
   # and it will be handled by extracting the name from the %Absinthe.Resolution{}

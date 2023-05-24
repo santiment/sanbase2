@@ -449,7 +449,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:include_incomplete_data, :boolean, default_value: false)
       arg(:caching_params, :caching_params_input_object)
 
-      complexity(&Complexity.from_to_interval/3)
+      complexity(&Complexity.from_to_interval_per_slug/3)
       middleware(AccessControl)
 
       cache_resolve(&MetricResolver.timeseries_data_per_slug/3)

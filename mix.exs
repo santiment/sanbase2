@@ -101,7 +101,8 @@ defmodule Sanbase.Mixfile do
       {:excoveralls, "~> 0.8", optional: true, only: [:test]},
       {:expletive, "~> 0.1.0"},
       {:exprof, "~> 0.2.0"},
-      {:extwitter, "~> 0.12"},
+      # Move back to hex when https://github.com/parroty/extwitter/pull/150 is merged
+      {:extwitter, github: "santiment/extwitter"},
       {:faker, "~> 0.17", only: [:dev, :test]},
       {:finch, "~> 0.12", override: true},
       {:floki, "~> 0.20"},

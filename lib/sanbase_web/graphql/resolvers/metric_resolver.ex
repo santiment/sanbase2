@@ -18,7 +18,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   @datapoints 300
 
+  # wordsize is 8 bytes, 128Mb is represented as 128 * 1024 words of 8 bytes
+  @max_heap_size_in_words 128 * 1024
+
   def get_metric(_root, %{metric: metric} = args, _resolution) do
+    Process.flag(:max_heap_size, @max_heap_size_in_words)
+
     with true <- Metric.is_not_deprecated?(metric),
          true <- Metric.has_metric?(metric) do
       maybe_enable_clickhouse_sql_storage(args)

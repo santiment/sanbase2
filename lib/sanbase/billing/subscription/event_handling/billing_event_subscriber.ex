@@ -82,7 +82,9 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
 
         case subscription.plan.interval do
           "month" ->
-            Sanbase.Accounts.EmailJobs.schedule_annual_discount_emails(subscription)
+            # comment temporarily until we decide to bring back the annual discounts
+            # Sanbase.Accounts.EmailJobs.schedule_annual_discount_emails(subscription)
+            :ok
 
           _ ->
             :ok

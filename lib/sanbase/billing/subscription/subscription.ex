@@ -452,7 +452,8 @@ defmodule Sanbase.Billing.Subscription do
       |> percent_discount()
 
     # recalc percent off if customer buys annual subscription and is within 30 days from trial start date
-    percent_off = recalc_percent_off(user.id, plan.id) || percent_off
+    # comment temporarily until we decide to bring the annual discounts back
+    # percent_off = recalc_percent_off(user.id, plan.id) || percent_off
 
     subscription_defaults(user, plan)
     |> update_subscription_with_coupon(percent_off)

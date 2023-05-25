@@ -118,7 +118,17 @@ defmodule Sanbase.OpenAI do
         {:ok, body, ai_context}
 
       error ->
+        end_time = System.monotonic_time(:second)
+        elapsed_time = end_time - start_time
         Logger.error("[id=#{msg_id}] Can't fetch docs: #{inspect(error)}")
+
+        params =
+          params
+          |> Map.put(:error_message, inspect(error))
+          |> Map.put(:question, prompt)
+          |> Map.put(:elapsed_time, elapsed_time)
+
+        AiContext.create(params)
         {:error, "Can't fetch", nil}
     end
   end

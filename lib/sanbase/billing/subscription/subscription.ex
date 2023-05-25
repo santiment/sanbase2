@@ -233,7 +233,9 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.one()
     |> case do
       %__MODULE__{trial_end: trial_end} when not is_nil(trial_end) ->
-        do_check_eligibility(trial_end)
+        # Removing annual discount eligibility temporally
+        # do_check_eligibility(trial_end)
+        %{is_eligible: false}
 
       _ ->
         %{is_eligible: false}

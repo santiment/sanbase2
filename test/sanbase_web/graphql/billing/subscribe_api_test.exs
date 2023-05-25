@@ -591,55 +591,57 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
   end
 
-  describe "annual discount eligibility" do
-    test "50% off", context do
-      insert(:subscription_pro_sanbase,
-        user: context.user,
-        status: "trialing",
-        trial_end: DateTime.add(Timex.now(), 10 * 24 * 3600)
-      )
+  # Removing annual discount eligibility temporally
 
-      res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-      assert res.is_eligible
-      assert res.discount.percent_off == 50
+  # describe "annual discount eligibility" do
+  #   test "50% off", context do
+  #     insert(:subscription_pro_sanbase,
+  #       user: context.user,
+  #       status: "trialing",
+  #       trial_end: DateTime.add(Timex.now(), 10 * 24 * 3600)
+  #     )
 
-      query = check_annual_discount_eligibility()
-      res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-      assert res["discount"]["percentOff"] == 50
-    end
+  #     res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
+  #     assert res.is_eligible
+  #     assert res.discount.percent_off == 50
 
-    test "35% off", context do
-      insert(:subscription_pro_sanbase,
-        user: context.user,
-        status: "trialing",
-        trial_end: DateTime.add(Timex.now(), -10 * 24 * 3600)
-      )
+  #     query = check_annual_discount_eligibility()
+  #     res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
+  #     assert res["discount"]["percentOff"] == 50
+  #   end
 
-      res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-      assert res.is_eligible
-      assert res.discount.percent_off == 35
+  #   test "35% off", context do
+  #     insert(:subscription_pro_sanbase,
+  #       user: context.user,
+  #       status: "trialing",
+  #       trial_end: DateTime.add(Timex.now(), -10 * 24 * 3600)
+  #     )
 
-      query = check_annual_discount_eligibility()
-      res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-      assert res["isEligible"]
-      assert res["discount"]["percentOff"] == 35
-    end
+  #     res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
+  #     assert res.is_eligible
+  #     assert res.discount.percent_off == 35
 
-    test "not eligible", context do
-      insert(:subscription_pro_sanbase,
-        user: context.user,
-        status: "trialing",
-        trial_end: DateTime.add(Timex.now(), -20 * 24 * 3600)
-      )
+  #     query = check_annual_discount_eligibility()
+  #     res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
+  #     assert res["isEligible"]
+  #     assert res["discount"]["percentOff"] == 35
+  #   end
 
-      res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-      refute res.is_eligible
+  #   test "not eligible", context do
+  #     insert(:subscription_pro_sanbase,
+  #       user: context.user,
+  #       status: "trialing",
+  #       trial_end: DateTime.add(Timex.now(), -20 * 24 * 3600)
+  #     )
 
-      query = check_annual_discount_eligibility()
-      res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-      refute res["isEligible"]
-    end
-  end
+  #     res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
+  #     refute res.is_eligible
+
+  #     query = check_annual_discount_eligibility()
+  #     res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
+  #     refute res["isEligible"]
+  #   end
+  # end
 
   defp check_coupon(coupon) do
     """

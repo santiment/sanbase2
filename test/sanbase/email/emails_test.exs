@@ -268,37 +268,39 @@ defmodule Sanbase.EmailsTest do
       refute called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
     end
 
-    test "send discount 50% email", context do
-      insert(:subscription_pro_sanbase,
-        user: context.user,
-        status: "trialing",
-        trial_end: days_after(10)
-      )
+    # Removing annual discount eligibility temporally
 
-      assert {:ok, :email_sent} =
-               perform_job(Sanbase.Mailer, %{
-                 "user_id" => context.user.id,
-                 "template" => during_trial_annual_discount_template()
-               })
+    # test "send discount 50% email", context do
+    #   insert(:subscription_pro_sanbase,
+    #     user: context.user,
+    #     status: "trialing",
+    #     trial_end: days_after(10)
+    #   )
 
-      assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
-    end
+    #   assert {:ok, :email_sent} =
+    #            perform_job(Sanbase.Mailer, %{
+    #              "user_id" => context.user.id,
+    #              "template" => during_trial_annual_discount_template()
+    #            })
 
-    test "send discount 35% email", context do
-      insert(:subscription_pro_sanbase,
-        user: context.user,
-        status: "trialing",
-        trial_end: days_after(-10)
-      )
+    #   assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
+    # end
 
-      assert {:ok, :email_sent} =
-               perform_job(Sanbase.Mailer, %{
-                 "user_id" => context.user.id,
-                 "template" => after_trial_annual_discount_template()
-               })
+    # test "send discount 35% email", context do
+    #   insert(:subscription_pro_sanbase,
+    #     user: context.user,
+    #     status: "trialing",
+    #     trial_end: days_after(-10)
+    #   )
 
-      assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
-    end
+    #   assert {:ok, :email_sent} =
+    #            perform_job(Sanbase.Mailer, %{
+    #              "user_id" => context.user.id,
+    #              "template" => after_trial_annual_discount_template()
+    #            })
+
+    #   assert_called(Sanbase.TemplateMailer.send(context.user.email, :_, :_))
+    # end
 
     test "do not send discount 50% email", context do
       assert :ok =

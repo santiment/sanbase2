@@ -3,6 +3,7 @@ defmodule Sanbase.OpenAI do
 
   alias Sanbase.Utils.Config
   alias Sanbase.Discord.AiContext
+  alias Sanbase.Discord.GptRouter
 
   def ai(prompt, params) do
     url = "#{metrics_hub_url()}/social_qa"
@@ -130,6 +131,66 @@ defmodule Sanbase.OpenAI do
 
         AiContext.create(params)
         {:error, "Can't fetch", nil}
+    end
+  end
+
+  def route(question, msg_id) do
+    url = "#{metrics_hub_url()}/route"
+    default_route = "academy"
+
+    start_time = System.monotonic_time(:second)
+
+    case HTTPoison.post(
+           url,
+           Jason.encode!(%{question: question}),
+           [{"Content-Type", "application/json"}],
+           timeout: 15_000,
+           recv_timeout: 15_000
+         ) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        end_time = System.monotonic_time(:second)
+        elapsed_time = end_time - start_time
+        body = Jason.decode!(body)
+
+        case body["error"] do
+          nil ->
+            Logger.info(
+              "[id=#{msg_id}] [elapsed=#{elapsed_time}] Route success: question=#{question} #{inspect(body)}"
+            )
+
+            GptRouter.create(%{
+              question: question,
+              route: body["route"],
+              elapsed_time: elapsed_time,
+              scores: %{
+                score_academy: body["score_academy"],
+                score_twitter: body["score_twitter"]
+              }
+            })
+
+            {:ok, body["route"]}
+
+          error ->
+            GptRouter.create(%{
+              question: question,
+              error: inspect(error),
+              elapsed_time: elapsed_time
+            })
+
+            Logger.error("[id=#{msg_id}] Route error: question=#{question} #{inspect(error)}")
+            {:ok, default_route}
+        end
+
+      error ->
+        end_time = System.monotonic_time(:second)
+        elapsed_time = end_time - start_time
+
+        Logger.error(
+          "[id=#{msg_id}] [elapsed=#{elapsed_time}] Route error: question=#{question} #{inspect(error)}"
+        )
+
+        GptRouter.create(%{question: question, error: inspect(error), elapsed_time: elapsed_time})
+        {:ok, default_route}
     end
   end
 

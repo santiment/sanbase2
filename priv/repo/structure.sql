@@ -1535,6 +1535,41 @@ ALTER SEQUENCE public.github_organizations_id_seq OWNED BY public.github_organiz
 
 
 --
+-- Name: gpt_router; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gpt_router (
+    id bigint NOT NULL,
+    question text,
+    route character varying(255),
+    scores jsonb DEFAULT '{}'::jsonb,
+    error text,
+    elapsed_time integer,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: gpt_router_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.gpt_router_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: gpt_router_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.gpt_router_id_seq OWNED BY public.gpt_router.id;
+
+
+--
 -- Name: guardian_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4353,6 +4388,13 @@ ALTER TABLE ONLY public.github_organizations ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: gpt_router id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gpt_router ALTER COLUMN id SET DEFAULT nextval('public.gpt_router_id_seq'::regclass);
+
+
+--
 -- Name: ico_currencies id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5101,6 +5143,14 @@ ALTER TABLE ONLY public.finished_oban_jobs
 
 ALTER TABLE ONLY public.github_organizations
     ADD CONSTRAINT github_organizations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: gpt_router gpt_router_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gpt_router
+    ADD CONSTRAINT gpt_router_pkey PRIMARY KEY (id);
 
 
 --
@@ -8327,3 +8377,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230516091348);
 INSERT INTO public."schema_migrations" (version) VALUES (20230519090827);
 INSERT INTO public."schema_migrations" (version) VALUES (20230522123937);
 INSERT INTO public."schema_migrations" (version) VALUES (20230523080400);
+INSERT INTO public."schema_migrations" (version) VALUES (20230526092048);

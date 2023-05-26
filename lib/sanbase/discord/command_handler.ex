@@ -298,10 +298,10 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def handle_command("ai", msg) do
     {:ok, loading_msg} = loading_msg(msg)
+    prompt = String.trim(msg.content, "!ai")
 
     discord_user = msg.author.username <> msg.author.discriminator
-    db_params = db_params(msg, discord_user, "!ai")
-    prompt = String.trim(msg.content, "!ai")
+    db_params = db_params(msg, "!ai")
 
     case Sanbase.Discord.AiContext.check_limits(db_params) do
       :ok ->
@@ -343,8 +343,7 @@ defmodule Sanbase.Discord.CommandHandler do
     {:ok, loading_msg} = loading_msg(msg)
 
     prompt = String.trim(msg.content, "!docs")
-    discord_user = msg.author.username <> msg.author.discriminator
-    db_params = db_params(msg, discord_user, "!docs")
+    db_params = db_params(msg, "!docs")
 
     {kw_list, _} =
       Sanbase.OpenAI.docs(prompt, db_params)
@@ -512,11 +511,63 @@ defmodule Sanbase.Discord.CommandHandler do
     # channel type thread
     case channel.type in [10, 11, 12] do
       true ->
-        answer_question(msg, channel)
+        route_and_answer(msg, channel)
 
       false ->
         {:ok, thread_channel} = create_new_thread(msg)
-        answer_question(msg, thread_channel)
+        route_and_answer(msg, thread_channel)
+    end
+  end
+
+  defp route_and_answer(msg, thread) do
+    prompt = String.replace(msg.content, "<@#{bot_id()}>", "")
+
+    Api.start_typing(thread.id)
+
+    Sanbase.OpenAI.route(prompt, msg.id)
+    |> case do
+      {:ok, "twitter"} -> handle_ai_command(msg, prompt, thread)
+      {:ok, "academy"} -> answer_question(msg, thread)
+    end
+  end
+
+  def handle_ai_command(msg, prompt, thread) do
+    Api.start_typing(thread.id)
+    db_params = db_params(msg, thread, "!ai")
+
+    case Sanbase.Discord.AiContext.check_limits(db_params) do
+      :ok ->
+        {kw_list, ai_context} =
+          Sanbase.OpenAI.ai(prompt, db_params)
+          |> process_response()
+
+        Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
+        Nostrum.Api.create_message(thread.id, kw_list)
+
+        if ai_context do
+          embeds = [
+            %Embed{
+              description:
+                "<@#{to_string(msg.author.id)}> I am still learning and improving, please let me know how I did by reactiing below"
+            }
+          ]
+
+          Api.create_message(thread.id,
+            content: "",
+            embeds: embeds,
+            components: [ai_context_action_row(ai_context)]
+          )
+        end
+
+      {:error, :eserverlimit, time_left} ->
+        Nostrum.Api.create_message(thread.id,
+          content: "Server limit reached for today. Limit will be reset in #{time_left}."
+        )
+
+      {:error, :eprolimit, time_left} ->
+        Nostrum.Api.create_message(thread.id,
+          content: "Pro user limit reached for today. Limit will be reset in #{time_left}"
+        )
     end
   end
 
@@ -530,7 +581,7 @@ defmodule Sanbase.Discord.CommandHandler do
 
     Api.start_typing(thread.id)
 
-    db_params = db_params(msg, thread, discord_user, "!thread")
+    db_params = db_params(msg, thread, "!thread")
 
     {kw_list, ai_context} =
       Sanbase.OpenAI.threaded_docs(prompt, db_params)
@@ -1238,7 +1289,9 @@ defmodule Sanbase.Discord.CommandHandler do
     {"Authorization", "Basic #{credentials}"}
   end
 
-  defp db_params(msg, thread, discord_user, "!thread" = command) do
+  defp db_params(msg, thread, command) do
+    discord_user = msg.author.username <> msg.author.discriminator
+
     channel_name =
       case Nostrum.Api.get_channel(thread.parent_id) do
         {:ok, parent_channel} -> parent_channel.name
@@ -1272,7 +1325,8 @@ defmodule Sanbase.Discord.CommandHandler do
     }
   end
 
-  defp db_params(msg, discord_user, command) do
+  defp db_params(msg, command) do
+    discord_user = msg.author.username <> msg.author.discriminator
     {guild_name, channel_name} = get_guild_channel(msg.guild_id, msg.channel_id)
 
     user_is_pro =

@@ -22,8 +22,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   @max_heap_size_in_words div(128 * 1024 * 1024, @wordsize)
 
   def get_metric(_root, %{metric: metric} = args, _resolution) do
-    Process.flag(:max_heap_size, @max_heap_size_in_words)
-
     with true <- Metric.is_not_deprecated?(metric),
          true <- Metric.has_metric?(metric) do
       maybe_enable_clickhouse_sql_storage(args)
@@ -170,6 +168,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         args,
         %{source: %{metric: metric}} = resolution
       ) do
+    Process.flag(:max_heap_size, @max_heap_size_in_words)
     requested_fields = requested_fields(resolution)
 
     fetch_timeseries_data(

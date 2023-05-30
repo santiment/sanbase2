@@ -52,7 +52,8 @@ defmodule Sanbase.SocialData.TrendingWords do
           position: position
         }
 
-  @default_sources [:telegram, :reddit]
+  @default_sources [:telegram, :reddit, :twitter_crypto]
+
   # When calculating the trending now words fetch the data for the last
   # N hours to ensure that there is some data and we're not in the middle
   # of computing the latest data
@@ -82,6 +83,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, map()} | {:error, String.t()}
   def get_trending_words(from, to, interval, size, sources \\ @default_sources) do
+    sources = sources || @default_sources
     query_struct = get_trending_words_query(from, to, interval, size, sources)
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn
@@ -112,6 +114,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, map()} | {:error, String.t()}
   def get_trending_projects(from, to, interval, size, sources \\ @default_sources) do
+    sources = sources || @default_sources
     query_struct = get_trending_words_query(from, to, interval, size, sources)
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn
@@ -134,6 +137,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   def get_currently_trending_words(size, sources \\ @default_sources)
 
   def get_currently_trending_words(size, sources) do
+    sources = sources || @default_sources
     now = Timex.now()
     from = Timex.shift(now, hours: -@hours_back_ensure_has_data)
 
@@ -161,6 +165,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   def get_currently_trending_projects(size, sources \\ @default_sources)
 
   def get_currently_trending_projects(size, sources) do
+    sources = sources || @default_sources
     now = Timex.now()
     from = Timex.shift(now, hours: -@hours_back_ensure_has_data)
 
@@ -187,6 +192,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, list(word_stat)} | {:error, String.t()}
   def get_word_trending_history(word, from, to, interval, size, sources \\ @default_sources) do
+    sources = sources || @default_sources
     query_struct = word_trending_history_query(word, from, to, interval, size, sources)
 
     ClickhouseRepo.query_transform(query_struct, fn [dt, position] ->
@@ -210,6 +216,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, list(word_stat)} | {:error, String.t()}
   def get_project_trending_history(slug, from, to, interval, size, sources \\ @default_sources) do
+    sources = sources || @default_sources
     query_struct = project_trending_history_query(slug, from, to, interval, size, sources)
 
     ClickhouseRepo.query_transform(query_struct, fn [dt, position] ->

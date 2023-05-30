@@ -22,7 +22,7 @@ defmodule Sanbase.Dashboard.Query do
     query_metadata =
       query_metadata
       |> extend_query_metadata()
-      |> escape_single_quotes()
+      |> sanitize_metadata_values()
 
     query =
       Sanbase.Clickhouse.Query.new(sql, parameters,
@@ -136,10 +136,11 @@ defmodule Sanbase.Dashboard.Query do
 
   defp handle_result_param(data), do: data
 
-  defp escape_single_quotes(map) do
+  defp sanitize_metadata_values(map) do
     Enum.map(map, fn {key, value} ->
       case is_binary(value) do
-        true -> {key, String.replace(value, "'", "")}
+        # Remove questionmarks and single-quotes
+        true -> {key, String.replace(value, ~r/['?]/, "")}
         false -> {key, value}
       end
     end)

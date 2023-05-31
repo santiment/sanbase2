@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   @datapoints 300
 
   @wordsize 8
-  @max_heap_size_in_words div(128 * 1024 * 1024, @wordsize)
+  @max_heap_size_in_words div(500 * 1024 * 1024, @wordsize)
 
   def get_metric(_root, %{metric: metric} = args, _resolution) do
     with true <- Metric.is_not_deprecated?(metric),

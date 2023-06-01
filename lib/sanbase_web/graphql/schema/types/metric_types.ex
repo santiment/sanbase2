@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
+  alias SanbaseWeb.Graphql.Resolvers.MetricTransform
 
   enum :products_enum do
     value(:sanapi)
@@ -92,6 +93,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:holders_count, :integer)
   end
 
+  @desc """
+  Control how the timeseries metric result is transformed before it is sent.
+  By default the result is not transformed.
+  The list of supported transform types is: #{Enum.join(MetricTransform.transform_types(), ", ")}
+  """
   input_object :timeseries_metric_transform_input_object do
     field(:type, non_null(:string))
     field(:moving_average_base, :integer)

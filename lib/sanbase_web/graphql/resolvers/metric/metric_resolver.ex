@@ -13,6 +13,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   alias Sanbase.Metric
   alias Sanbase.Billing.Plan.Restrictions
   alias Sanbase.Billing.Plan.AccessChecker
+  alias SanbaseWeb.Graphql.Resolvers.MetricTransform
 
   require Logger
 
@@ -321,11 +322,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # from the Metric module.
   defp fetch_timeseries_data(metric, args, requested_fields, function)
        when function in [:timeseries_data, :timeseries_data_per_slug] do
-    transform =
-      Map.get(args, :transform, %{type: "none"})
-      |> Map.update!(:type, &Inflex.underscore/1)
-
     with {:ok, selector} <- args_to_selector(args),
+         {:ok, transform} <- MetricTransform.args_to_transform(args),
          true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
@@ -335,7 +333,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
            transform_datetime_params(selector, metric, transform, args),
          {:ok, result} <-
            apply(Metric, function, [metric, selector, from, to, interval, opts]),
-         {:ok, result} <- apply_transform(transform, result),
+         {:ok, result} <- MetricTransform.apply_transform(transform, result),
          {:ok, result} <- fit_from_datetime(result, args) do
       {:ok, result |> Enum.reject(&is_nil/1)}
     end
@@ -354,7 +352,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
          {:ok, from} <-
-           calibrate_transform_params(transform, from, to, interval) do
+           MetricTransform.calibrate_transform_params(transform, from, to, interval) do
       {:ok, from, to, interval}
     end
   end
@@ -377,106 +375,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   defp maybe_enrich_with_labels(_metric, data), do: {:ok, data}
-
-  defp calibrate_transform_params(%{type: type}, from, _to, _interval)
-       when type in ["none", "cumulative_sum", "z_score"] do
-    {:ok, from}
-  end
-
-  defp calibrate_transform_params(
-         %{type: "moving_average", moving_average_base: base},
-         from,
-         _to,
-         interval
-       ) do
-    shift_by_sec = base * Sanbase.DateTimeUtils.str_to_sec(interval)
-    from = Timex.shift(from, seconds: -shift_by_sec)
-    {:ok, from}
-  end
-
-  defp calibrate_transform_params(%{type: type}, from, _to, interval)
-       when type in [
-              "changes",
-              "consecutive_differences",
-              "percent_change",
-              "cumulative_percent_change"
-            ] do
-    shift_by_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
-    from = Timex.shift(from, seconds: -shift_by_sec)
-    {:ok, from}
-  end
-
-  defp apply_transform(%{type: "none"}, data), do: {:ok, data}
-
-  defp apply_transform(
-         %{type: "moving_average", moving_average_base: base},
-         data
-       ) do
-    Sanbase.Math.simple_moving_average(data, base, value_key: :value)
-  end
-
-  defp apply_transform(
-         %{type: "z_score"},
-         data
-       ) do
-    numbers_list = Enum.map(data, & &1.value)
-
-    case Sanbase.Math.zscore(numbers_list) do
-      {:error, error} ->
-        {:error, error}
-
-      z_score_series ->
-        result =
-          Enum.zip_with(data, z_score_series, fn point, z_score ->
-            Map.put(point, :value, z_score)
-          end)
-
-        {:ok, result}
-    end
-  end
-
-  defp apply_transform(%{type: type}, data)
-       when type in ["changes", "consecutive_differences"] do
-    result =
-      Stream.chunk_every(data, 2, 1, :discard)
-      |> Enum.map(fn [%{value: previous}, %{value: current, datetime: datetime}] ->
-        %{
-          datetime: datetime,
-          value: current - previous
-        }
-      end)
-
-    {:ok, result}
-  end
-
-  defp apply_transform(%{type: type}, data) when type in ["cumulative_sum"] do
-    result =
-      data
-      |> Enum.scan(fn %{value: current} = elem, %{value: previous} ->
-        %{elem | value: current + previous}
-      end)
-
-    {:ok, result}
-  end
-
-  defp apply_transform(%{type: type}, data) when type in ["percent_change"] do
-    result =
-      Stream.chunk_every(data, 2, 1, :discard)
-      |> Enum.map(fn [%{value: previous}, %{value: current, datetime: datetime}] ->
-        %{
-          datetime: datetime,
-          value: Sanbase.Math.percent_change(previous, current)
-        }
-      end)
-
-    {:ok, result}
-  end
-
-  defp apply_transform(%{type: type}, data)
-       when type in ["cumulative_percent_change"] do
-    {:ok, cumsum} = apply_transform(%{type: "cumulative_sum"}, data)
-    apply_transform(%{type: "percent_change"}, cumsum)
-  end
 
   defp transform_interval("all_spent_coins_cost", interval) do
     Enum.max([Sanbase.DateTimeUtils.str_to_days(interval), 1])

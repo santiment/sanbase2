@@ -10,7 +10,17 @@ defmodule Sanbase.Cryptocompare.Jobs do
   # the job.
 
   def move_finished_jobs(opts \\ []) do
-    for queue <- [price_queue(), open_interest_queue(), funding_rate_queue()] do
+    queues =
+      [price_queue(), open_interest_queue(), funding_rate_queue()] ++
+        [
+          "cryptocompare_historical_add_jobs_queue",
+          "email_queue",
+          "twitter_followers_migration_queue"
+        ]
+
+    queues = Enum.uniq(queues)
+
+    for queue <- queues do
       do_move_finished_jobs(queue, opts)
     end
     |> Enum.reduce_while({:ok, 0}, fn

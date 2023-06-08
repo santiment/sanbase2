@@ -95,9 +95,11 @@ defmodule Sanbase.Cryptocompare.Handler do
     # a new job is scheduled with the timestamp of the earliest data point,
     # thus going back in history.
 
+    min_timestamp = if list != [], do: Enum.min_by(list, & &1.timestamp).timestamp
+
     case Keyword.get(opts, :remove_known_timestamps, false) do
       false ->
-        {:ok, list}
+        {:ok, min_timestamp, list}
 
       true ->
         list =
@@ -106,7 +108,7 @@ defmodule Sanbase.Cryptocompare.Handler do
             {min, max} -> list |> Enum.reject(&(&1.timestamp in min..max))
           end
 
-        {:ok, list}
+        {:ok, min_timestamp, list}
     end
   end
 

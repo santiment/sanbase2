@@ -49,20 +49,33 @@ defmodule Sanbase.Cryptocompare.Price.CCCAGGPairData do
 
     Logger.info("[CCCAGG Pair Data] Scheduling oban jobs for #{length(list)} pairs")
 
-    :ok =
+    result =
       list
-      |> Enum.each(fn elem ->
-        elem = %{
-          start_date: days_ago_60,
-          end_date: elem.end_date,
-          base_asset: elem.base_asset,
-          quote_asset: elem.quote_asset
-        }
+      |> Enum.chunk_every(500)
+      |> Sanbase.Parallel.map(
+        fn chunk ->
+          chunk
+          |> Enum.each(fn elem ->
+            elem = %{
+              start_date: days_ago_60,
+              end_date: elem.end_date,
+              base_asset: elem.base_asset,
+              quote_asset: elem.quote_asset
+            }
 
-        add_jobs(elem)
-      end)
+            add_jobs(elem)
+          end)
+        end,
+        timeout: :infinity,
+        ordered: false
+      )
 
     Logger.info("[CCCAGG Pair Data] Finished scheduling cryptocompare previous day oban jobs")
+
+    case Enum.all?(result, &(&1 == :ok)) do
+      true -> :ok
+      false -> {:error, "Error while scheduling jobs"}
+    end
   end
 
   # Private functions

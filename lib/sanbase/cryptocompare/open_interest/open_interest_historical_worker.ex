@@ -47,14 +47,14 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
     limit = Map.get(args, "limit", @limit)
 
     case get_data(market, instrument, limit, timestamp) do
-      {:ok, []} ->
+      {:ok, _, []} ->
         :ok
 
-      {:ok, data} ->
+      {:ok, min_timestamp, data} ->
         :ok = export_data(data)
 
         {min, max} = Enum.min_max_by(data, & &1.timestamp)
-        :ok = maybe_schedule_next_job(min.timestamp, args)
+        :ok = maybe_schedule_next_job(min_timestamp, args)
 
         {:ok, _} =
           ExporterProgress.create_or_update(

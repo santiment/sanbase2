@@ -526,14 +526,15 @@ defmodule Sanbase.Discord.CommandHandler do
 
     Sanbase.OpenAI.route(prompt, msg.id)
     |> case do
-      {:ok, "twitter"} -> handle_ai_command(msg, prompt, thread)
-      {:ok, "academy"} -> answer_question(msg, thread)
+      {:ok, "twitter", timeframe_hours} -> handle_ai_command(msg, prompt, thread, timeframe_hours)
+      {:ok, "academy", _} -> answer_question(msg, thread)
     end
   end
 
-  def handle_ai_command(msg, prompt, thread) do
+  def handle_ai_command(msg, prompt, thread, timeframe_hours) do
     Api.start_typing(thread.id)
     db_params = db_params(msg, thread, "!ai")
+    db_params = Map.put(db_params, :timeframe, timeframe_hours)
 
     case Sanbase.Discord.AiContext.check_limits(db_params) do
       :ok ->

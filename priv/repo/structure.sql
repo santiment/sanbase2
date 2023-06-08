@@ -1546,7 +1546,8 @@ CREATE TABLE public.gpt_router (
     error text,
     elapsed_time integer,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    timeframe integer DEFAULT '-1'::integer
 );
 
 
@@ -8378,3 +8379,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230519090827);
 INSERT INTO public."schema_migrations" (version) VALUES (20230522123937);
 INSERT INTO public."schema_migrations" (version) VALUES (20230523080400);
 INSERT INTO public."schema_migrations" (version) VALUES (20230526092048);
+INSERT INTO public."schema_migrations" (version) VALUES (20230608132801);

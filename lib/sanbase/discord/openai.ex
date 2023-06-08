@@ -23,7 +23,7 @@ defmodule Sanbase.OpenAI do
 
     case HTTPoison.post(
            url,
-           Jason.encode!(%{question: prompt}),
+           Jason.encode!(%{question: prompt, timeframe: params[:timeframe] || -1}),
            [{"Content-Type", "application/json"}],
            timeout: 240_000,
            recv_timeout: 240_000
@@ -162,13 +162,14 @@ defmodule Sanbase.OpenAI do
               question: question,
               route: body["route"],
               elapsed_time: elapsed_time,
+              timeframe: body["timeframe"],
               scores: %{
                 score_academy: body["score_academy"],
                 score_twitter: body["score_twitter"]
               }
             })
 
-            {:ok, body["route"]}
+            {:ok, body["route"], body["timeframe"]}
 
           error ->
             GptRouter.create(%{
@@ -178,7 +179,7 @@ defmodule Sanbase.OpenAI do
             })
 
             Logger.error("[id=#{msg_id}] Route error: question=#{question} #{inspect(error)}")
-            {:ok, default_route}
+            {:ok, default_route, -1}
         end
 
       error ->
@@ -190,7 +191,7 @@ defmodule Sanbase.OpenAI do
         )
 
         GptRouter.create(%{question: question, error: inspect(error), elapsed_time: elapsed_time})
-        {:ok, default_route}
+        {:ok, default_route, -1}
     end
   end
 

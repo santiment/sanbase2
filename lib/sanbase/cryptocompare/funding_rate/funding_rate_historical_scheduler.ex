@@ -16,6 +16,7 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalScheduler do
   require Logger
   alias Sanbase.Utils.Config
   alias Sanbase.Cryptocompare.Handler
+  alias Sanbase.Cryptocompare.FundingRate.HistoricalWorker
 
   @oban_conf_name :oban_scrapers
   # @unique_peroid 60 * 86_400
@@ -46,7 +47,11 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalScheduler do
   def enabled?(), do: Config.module_get(__MODULE__, :enabled?) |> String.to_existing_atom()
 
   def schedule_previous_day_jobs(opts \\ []) do
-    limit = Keyword.get(opts, :limit, 30)
+    limit = Keyword.get(opts, :limit, HistoricalWorker.default_limit())
+    # This job needs to scrape only the previous day of data. It does not need to scrape
+    # historical data. Because of this it does not schedule next jobs.
+    # It fetches 1 value per minute, bu the limit is 2000 so we can fill some gaps, if they
+    # exist.
     schedule_next_job = Keyword.get(opts, :schedule_next_job, false)
     datetime = Keyword.get(opts, :datetime, DateTime.utc_now())
     beginning_of_day = datetime |> Timex.beginning_of_day() |> DateTime.to_unix()

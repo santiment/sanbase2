@@ -33,6 +33,7 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
 
   def queue(), do: @queue
   def conf_name(), do: @oban_conf_name
+  def default_limit(), do: @limit
 
   def pause_resume_worker(),
     do: Sanbase.Cryptocompare.FundingRate.PauseResumeWorker
@@ -47,14 +48,14 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
     limit = Map.get(args, "limit", @limit)
 
     case get_data(market, instrument, limit, timestamp) do
-      {:ok, []} ->
+      {:ok, _, []} ->
         :ok
 
-      {:ok, data} ->
+      {:ok, min_timestamp, data} ->
         :ok = export_data(data)
 
         {min, max} = Enum.min_max_by(data, & &1.timestamp)
-        :ok = maybe_schedule_next_job(min.timestamp, args)
+        :ok = maybe_schedule_next_job(min_timestamp, args)
 
         {:ok, _} =
           ExporterProgress.create_or_update(

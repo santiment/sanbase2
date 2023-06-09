@@ -7,7 +7,7 @@ if config_env() in [:dev, :test] do
 end
 
 config :ueberauth, Ueberauth.Strategy.Google.OAuth,
-  client_id: System.get_env("GOOGLE_OAUTH_CLIENT_ID") |> IO.inspect(label: "8", limit: :infinity),
+  client_id: System.get_env("GOOGLE_OAUTH_CLIENT_ID"),
   client_secret: System.get_env("GOOGLE_OAUTH_CLIENT_SECRET")
 
 config :ueberauth, Ueberauth.Strategy.Twitter.OAuth,

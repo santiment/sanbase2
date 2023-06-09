@@ -33,6 +33,7 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
 
   def queue(), do: @queue
   def conf_name(), do: @oban_conf_name
+  def default_limit(), do: @limit
 
   def pause_resume_worker(),
     do: Sanbase.Cryptocompare.FundingRate.PauseResumeWorker

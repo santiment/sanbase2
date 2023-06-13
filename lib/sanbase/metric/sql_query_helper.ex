@@ -171,13 +171,13 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   def signal_id_filter(%{signal: signal}, opts) when is_binary(signal) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "signal_id = ( SELECT signal_id FROM signal_metadata FINAL PREWHERE name = {{#{arg_name}}} LIMIT 1 )"
+    "signal_id = ( SELECT argMax(signal_id, version) FROM signal_metadata FINAL PREWHERE name = {{#{arg_name}}} LIMIT 1 )"
   end
 
   def signal_id_filter(%{signal: signals}, opts) when is_list(signals) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "signal_id IN ( SELECT DISTINCT(signal_id) FROM signal_metadata FINAL PREWHERE name IN ({{#{arg_name}}}) )"
+    "signal_id IN ( SELECT DISTINCT(signal_id) FROM ( SELECT argMax(signal_id, version) FROM signal_metadata FINAL PREWHERE name IN ({{#{arg_name}}}) ) )"
   end
 
   def signal_id_filter(_, opts) do

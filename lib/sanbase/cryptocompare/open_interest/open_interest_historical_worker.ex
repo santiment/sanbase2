@@ -48,7 +48,12 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
     limit = Map.get(args, "limit", @limit)
 
     case get_data(market, instrument, limit, timestamp) do
-      {:ok, _, []} ->
+      {:ok, min_timestamp, []} when is_integer(min_timestamp) ->
+        :ok = maybe_schedule_next_job(min_timestamp, args)
+
+        :ok
+
+      {:ok, _min_timestamp, []} ->
         :ok
 
       {:ok, min_timestamp, data} ->

@@ -724,6 +724,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "transaction_volume_in_profit",
         "transaction_volume_in_loss",
         "transaction_volume_profit_loss_ratio",
+        "exchange_open_interest",
+        "open_interest_per_settlement_currency",
+        "total_open_interest",
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",

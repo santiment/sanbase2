@@ -198,10 +198,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
          {:ok, _} <- Sanbase.Accounts.EthAccount.create(user.id, address) do
       {:ok, user}
     else
-      {:error, changeset} ->
-        error_msg =
-          "Could not add an ethereum address for user #{user.id}. Reason: #{changeset_errors_string(changeset)}"
+      {:error, error_or_changeset} ->
+        reason =
+          case error_or_changeset do
+            %Ecto.Changeset{} = changeset -> changeset_errors_string(changeset)
+            error -> inspect(error)
+          end
 
+        error_msg = "Could not add an ethereum address for user #{user.id}. Reason: #{reason}"
         Logger.warning(error_msg)
         {:error, error_msg}
     end

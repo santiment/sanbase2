@@ -87,7 +87,9 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
   # Private functions
 
   @spec get_data(String.t(), String.t(), non_neg_integer(), non_neg_integer()) ::
-          {:error, HTTPoison.Error.t()} | {:ok, any}
+          {:error, HTTPoison.Error.t()}
+          | {:error, :first_timestamp_reached}
+          | {:ok, non_neg_integer(), any()}
   def get_data(market, instrument, limit, timestamp) do
     query_params = [
       market: market,

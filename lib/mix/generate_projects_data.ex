@@ -120,7 +120,7 @@ defmodule Sanbase.Mix.GenerateProjectsData do
         blockchain: %{contracts: contracts}
       ]
       |> Jason.OrderedObject.new()
-      |> Jason.encode!(%{pretty: true})
+      |> Jason.encode!(pretty: true)
 
     {slug, json}
   end

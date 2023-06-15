@@ -28,6 +28,7 @@ defmodule Sanbase.Project.ContractAddress do
   @spec add_contract(%Project{}, %{
           required(:address) => address,
           optional(:decimals) => decimals,
+          optional(:description) => String.t(),
           optional(:label) => String.t()
         }) :: {:ok, %__MODULE__{}} | {:error, any()}
         when address: String.t(), decimals: non_neg_integer()
@@ -39,13 +40,14 @@ defmodule Sanbase.Project.ContractAddress do
       address: Map.get(attrs, :address),
       decimals: Map.get(attrs, :decimals),
       label: Map.get(attrs, :label, "main"),
+      description: Map.get(attrs, :description),
       project_id: project_id
     }
 
     %__MODULE__{}
     |> changeset(map)
     |> Sanbase.Repo.insert(
-      on_conflict: [set: [label: map.label, decimals: map.decimals]],
+      on_conflict: [set: [label: map.label, decimals: map.decimals, description: map.description]],
       conflict_target: [:address, :project_id]
     )
   end

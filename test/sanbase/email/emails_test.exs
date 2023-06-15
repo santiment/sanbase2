@@ -108,27 +108,26 @@ defmodule Sanbase.EmailsTest do
         100
       )
 
-      vars3 = %{
-        name: context.user.username,
-        username: context.user.username,
-        end_subscription_date: days_after(14) |> EmailJobs.format_date()
-      }
+      # vars3 = %{
+      #   name: context.user.username,
+      #   username: context.user.username,
+      #   end_subscription_date: days_after(14) |> EmailJobs.format_date()
+      # }
 
-      args3 = Map.merge(args, %{template: during_trial_annual_discount_template(), vars: vars3})
-
+      # args3 = Map.merge(args, %{template: during_trial_annual_discount_template(), vars: vars3})
       # Temporarily disable this test
       # assert_enqueued(
       #   [worker: Sanbase.Mailer, args: args3, scheduled_at: {days_after(12), delta: 10}],
       #   100
       # )
 
-      vars4 = %{
-        name: context.user.username,
-        username: context.user.username,
-        date: days_after(30) |> EmailJobs.format_date()
-      }
+      # vars4 = %{
+      #   name: context.user.username,
+      #   username: context.user.username,
+      #   date: days_after(30) |> EmailJobs.format_date()
+      # }
 
-      args4 = Map.merge(args, %{template: after_trial_annual_discount_template(), vars: vars4})
+      # args4 = Map.merge(args, %{template: after_trial_annual_discount_template(), vars: vars4})
 
       # Temporarily disable this test
       # assert_enqueued(

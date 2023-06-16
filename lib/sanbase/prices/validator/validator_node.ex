@@ -35,6 +35,14 @@ defmodule Sanbase.Price.Validator.Node do
   end
 
   def init(opts) do
+    {:ok, opts, {:continue, :initialize}}
+  end
+
+  def handle_continue(:initialize, opts) do
+    # Make it so crash here won't crash the whole app
+    # This makes scrapers work when Clickhouse is down. This is important
+    # because the scrapers push to Kafka, not Clickhouse directly.
+    Process.sleep(1000)
     number = Keyword.fetch!(opts, :number)
 
     case enabled?() do
@@ -42,7 +50,7 @@ defmodule Sanbase.Price.Validator.Node do
         # If the ClickhouseRepo is disabled do not initialize anything. This is the
         # flow only in dev/test environment. In case of empty state, the price is
         # considered valid.
-        {:ok, %{}}
+        {:noreply, %{}}
 
       true ->
         slugs =
@@ -55,7 +63,7 @@ defmodule Sanbase.Price.Validator.Node do
 
         state = latest_prices |> Map.put(:number, number)
 
-        {:ok, state}
+        {:norepl, state}
     end
   end
 

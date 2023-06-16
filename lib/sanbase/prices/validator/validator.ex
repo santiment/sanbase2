@@ -10,7 +10,11 @@ defmodule Sanbase.Price.Validator do
   """
   use Supervisor
 
-  @gen_servers_count 8
+  if Application.compile_env(:sanbase, :env) == :test do
+    @gen_servers_count 1
+  else
+    @gen_servers_count 8
+  end
 
   def start_link(_opts) do
     Supervisor.start_link(__MODULE__, [], name: __MODULE__)

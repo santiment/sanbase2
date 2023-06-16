@@ -42,7 +42,6 @@ defmodule Sanbase.Price.Validator.Node do
     # Make it so crash here won't crash the whole app
     # This makes scrapers work when Clickhouse is down. This is important
     # because the scrapers push to Kafka, not Clickhouse directly.
-    Process.sleep(1000)
     number = Keyword.fetch!(opts, :number)
 
     case enabled?() do
@@ -53,6 +52,8 @@ defmodule Sanbase.Price.Validator.Node do
         {:noreply, %{}}
 
       true ->
+        Process.sleep(1000)
+
         slugs =
           Sanbase.Cache.get_or_store(:all_project_slugs_include_hidden_no_preload, fn ->
             Project.List.projects_slugs(include_hidden: true, preload?: false)
@@ -63,7 +64,7 @@ defmodule Sanbase.Price.Validator.Node do
 
         state = latest_prices |> Map.put(:number, number)
 
-        {:norepl, state}
+        {:noreply, state}
     end
   end
 

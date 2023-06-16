@@ -13,7 +13,8 @@ defmodule Sanbase.Signal.Behaviour do
           available_aggregations: list(atom()),
           available_selectors: list(atom()),
           data_type: available_data_types(),
-          complexity_weight: number()
+          complexity_weight: number(),
+          is_timebound: boolean()
         }
 
   @type timeseries_data_point :: %{datetime: Datetime.t(), value: float(), metadata: list(map())}

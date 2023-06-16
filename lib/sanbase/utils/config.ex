@@ -1,4 +1,8 @@
 defmodule Sanbase.Utils.Config do
+  @moduledoc ~s"""
+  Module for reading configuration values from the application environment.
+  """
+
   def module_get(module, key) do
     Application.fetch_env!(:sanbase, module)
     |> Keyword.get(key)

@@ -128,8 +128,10 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   end
 
   defp min_interval("signal", signal) do
-    {:ok, metadata} = Sanbase.Signal.metadata(signal)
-    metadata.min_interval
+    case Sanbase.Signal.metadata(signal) do
+      {:ok, metadata} -> metadata.min_interval
+      {:error, error} -> raise(error)
+    end
   end
 
   defp min_interval("query", query)

@@ -34,7 +34,8 @@ defmodule Sanbase.Metric.Behaviour do
           required_selectors: list(atom()),
           data_type: available_data_types(),
           complexity_weight: number(),
-          has_incomplete_data: boolean()
+          has_incomplete_data: boolean(),
+          is_timebound: boolean()
         }
 
   @type histogram_value :: String.t() | float() | integer()

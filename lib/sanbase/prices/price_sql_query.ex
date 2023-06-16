@@ -326,8 +326,8 @@ defmodule Sanbase.Price.SqlQuery do
 
     params = %{
       slug: slug,
-      from: dt_to_unix(:from, from),
-      to: dt_to_unix(:to, to),
+      from: from,
+      to: to,
       source: source
     }
 

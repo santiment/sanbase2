@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver2 do
   @moduledoc ~s"""
   Module with resolvers connected to the Apikey authentication. All the logic
   is delegated to the `Apikey` module
@@ -7,13 +7,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   import SanbaseWeb.Graphql.Helpers.Utils, only: [resolution_to_user_id_or_nil: 1]
 
   alias Sanbase.Dashboard
+  alias Sanbase.Dashboards
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
 
-  def get_clickhouse_database_metadata(_root, args, _resolution) do
-    opts = [functions_filter: args[:functions_filter]]
-    Dashboard.Autocomplete.get_data(opts)
+  def get_clickhouse_database_metadata(_root, _args, _resolution) do
+    Sanbase.Clickhouse.Autocomplete.get_data()
   end
 
   def user_public_dashboards(%Sanbase.Accounts.User{} = user, _args, _resolution) do
@@ -218,10 +218,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
       count = Dataloader.get(loader, SanbaseDataloader, :dashboard_comments_count, id)
       {:ok, count || 0}
     end)
-  end
-
-  def generate_title_by_query(_root, %{sql_query_text: sql_query_text}, _resolution) do
-    Sanbase.OpenAI.generate_from_sql(sql_query_text)
   end
 
   # Private functions

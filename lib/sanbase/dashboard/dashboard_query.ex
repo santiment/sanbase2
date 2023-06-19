@@ -39,7 +39,7 @@ defmodule Sanbase.Dashboard.Query do
            clickhouse_query_id: map.query_id,
            summary: map.summary,
            rows: map.rows,
-           compressed_rows: rows_to_compressed_rows(map.rows),
+           compressed_rows: compress_rows(map.rows),
            columns: map.column_names,
            column_types: map.column_types,
            query_start_time: query_start_time,
@@ -54,14 +54,14 @@ defmodule Sanbase.Dashboard.Query do
     end
   end
 
-  def rows_to_compressed_rows(rows) do
+  def compress_rows(rows) do
     rows
     |> :erlang.term_to_binary()
     |> :zlib.gzip()
     |> Base.encode64()
   end
 
-  def compressed_rows_to_rows(compressed_rows) do
+  def decompress_rows(compressed_rows) do
     compressed_rows
     |> Base.decode64!()
     |> :zlib.gunzip()

@@ -164,7 +164,7 @@ defmodule Sanbase.Dashboard.Cache do
   defp transform_loaded_panel_cache(panel_cache) do
     %{"compressed_rows" => compressed_rows, "updated_at" => updated_at} = panel_cache
 
-    rows = Dashboard.Query.compressed_rows_to_rows(compressed_rows)
+    rows = Dashboard.Query.decompress_rows(compressed_rows)
 
     {:ok, updated_at, _} = DateTime.from_iso8601(updated_at)
     {:ok, rows} = transform_cache_rows(rows)

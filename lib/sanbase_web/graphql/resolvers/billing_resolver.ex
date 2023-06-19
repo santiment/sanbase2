@@ -216,6 +216,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
+  def create_stripe_setup_intent(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    case StripeApi.create_setup_intent(current_user) do
+      {:ok, setup_intent} ->
+        {:ok, %{client_secret: setup_intent.client_secret}}
+
+      {:error, %Stripe.Error{message: message} = reason} ->
+        log_error("Create setup intent: user=#{inspect(current_user)}", reason)
+        {:error, message}
+
+      _ ->
+        {:error, "Can't create setup intent"}
+    end
+  end
+
   def subscriptions(%User{} = user, _args, _resolution) do
     {:ok, Subscription.user_subscriptions_plus_incomplete(user)}
   end

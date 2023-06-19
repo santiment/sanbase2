@@ -3,6 +3,7 @@ defmodule Sanbase.StripeApi do
   Module wrapping communication with Stripe.
   """
 
+  alias Sanbase.Billing
   alias Sanbase.Billing.{Product, Plan}
   alias Sanbase.Accounts.User
 
@@ -12,6 +13,21 @@ defmodule Sanbase.StripeApi do
           customer: String.t(),
           items: list(subscription_item)
         }
+
+  # Stripe docs: https://stripe.com/docs/payments/setupintents/lifecycle
+  # Stripe API: https://stripe.com/docs/api/setup_intents
+  def create_setup_intent(%User{} = user) do
+    case Billing.create_or_update_stripe_customer(user) do
+      {:ok, user} ->
+        Stripe.SetupIntent.create(%{
+          customer: user.stripe_customer_id,
+          usage: "off_session"
+        })
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
   @spec create_customer(%User{}, nil | String.t()) ::
           {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}

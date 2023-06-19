@@ -147,5 +147,16 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       resolve(&BillingResolver.delete_default_payment_instrument/3)
     end
+
+    @desc ~s"""
+    Create setup intent
+    """
+    field :create_stripe_setup_intent, :setup_intent do
+      meta(access: :free)
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.create_stripe_setup_intent/3)
+    end
   end
 end

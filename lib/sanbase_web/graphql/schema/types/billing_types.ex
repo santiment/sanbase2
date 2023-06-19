@@ -99,4 +99,8 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:percent_off, non_null(:integer))
     field(:expire_at, non_null(:datetime))
   end
+
+  object :setup_intent do
+    field(:client_secret, non_null(:string))
+  end
 end

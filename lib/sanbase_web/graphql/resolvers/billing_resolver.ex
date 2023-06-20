@@ -14,11 +14,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def subscribe(_root, %{plan_id: plan_id} = args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    card_token = Map.get(args, :card_token)
+    payment_instrument = Map.take(args, [:card_token, :payment_method_id])
     coupon = Map.get(args, :coupon)
 
     with {:plan?, %Plan{is_deprecated: false} = plan} <- {:plan?, Plan.by_id(plan_id)},
-         {:ok, subscription} <- Billing.subscribe(current_user, plan, card_token, coupon) do
+         {:ok, subscription} <- route_subscription(current_user, plan, payment_instrument, coupon) do
       {:ok, subscription}
     else
       result ->
@@ -27,6 +27,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
           "Subscription attempt failed",
           %{plan_id: plan_id}
         )
+    end
+  end
+
+  def route_subscription(current_user, plan, payment_instrument, coupon) do
+    case payment_instrument do
+      %{card_token: card_token} when is_binary(card_token) ->
+        Billing.subscribe(current_user, plan, card_token, coupon)
+
+      %{payment_method_id: payment_method_id} when is_binary(payment_method_id) ->
+        Subscription.subscribe2(current_user, plan, payment_method_id, coupon)
+
+      _ ->
+        Billing.subscribe(current_user, plan, nil, coupon)
     end
   end
 

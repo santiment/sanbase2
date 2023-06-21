@@ -21,9 +21,12 @@ defmodule Sanbase.OpenAI do
     start_time = System.monotonic_time(:second)
     {msg_id, params} = Map.pop(params, :msg_id)
 
+    timeframe = params[:timeframe] || -1
+    model = params[:model] || "gpt-4"
+
     case HTTPoison.post(
            url,
-           Jason.encode!(%{question: prompt, timeframe: params[:timeframe] || -1}),
+           Jason.encode!(%{question: prompt, timeframe: timeframe, model: model}),
            [{"Content-Type", "application/json"}],
            timeout: 240_000,
            recv_timeout: 240_000

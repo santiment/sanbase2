@@ -303,6 +303,8 @@ defmodule Sanbase.Discord.CommandHandler do
     discord_user = msg.author.username <> msg.author.discriminator
     db_params = db_params(msg, "!ai")
 
+    {prompt, db_params} = extract_model(prompt, db_params)
+
     case Sanbase.Discord.AiContext.check_limits(db_params) do
       :ok ->
         {kw_list, ai_context} =
@@ -536,6 +538,8 @@ defmodule Sanbase.Discord.CommandHandler do
     db_params = db_params(msg, thread, "!ai")
     db_params = Map.put(db_params, :timeframe, timeframe_hours)
 
+    {prompt, db_params} = extract_model(prompt, db_params)
+
     case Sanbase.Discord.AiContext.check_limits(db_params) do
       :ok ->
         {kw_list, ai_context} =
@@ -569,6 +573,21 @@ defmodule Sanbase.Discord.CommandHandler do
         Nostrum.Api.create_message(thread.id,
           content: "Pro user limit reached for today. Limit will be reset in #{time_left}"
         )
+    end
+  end
+
+  defp extract_model(prompt, db_params) do
+    model_regex = ~r/model\s*=\s*(gpt-[3,4])/
+
+    case Regex.run(model_regex, prompt) do
+      [_, model] ->
+        prompt = String.replace(prompt, model_regex, "")
+        db_params = Map.put(db_params, :model, String.downcase(model))
+        {prompt, db_params}
+
+      nil ->
+        db_params = Map.put(db_params, :model, "gpt-4")
+        {prompt, db_params}
     end
   end
 

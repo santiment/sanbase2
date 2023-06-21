@@ -14,6 +14,17 @@ defmodule Sanbase.StripeApi do
           items: list(subscription_item)
         }
 
+  def attach_payment_method_to_customer(user, payment_method_id) do
+    {:ok, user} = Billing.create_or_update_stripe_customer(user)
+
+    params = %{
+      customer: user.stripe_customer_id,
+      payment_method: payment_method_id
+    }
+
+    Stripe.PaymentMethod.attach(params)
+  end
+
   # Stripe docs: https://stripe.com/docs/payments/setupintents/lifecycle
   # Stripe API: https://stripe.com/docs/api/setup_intents
   def create_setup_intent(%User{} = user) do

@@ -16,12 +16,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
 
   def chart_configurations(_root, args, resolution) do
     with %User{} = user <- get_in(resolution.context, [:auth, :current_user]) || %User{},
-         {:ok, project_id} <- get_project_id_from_args(args) do
-      # Update the project_id if it is not nil. This will reduce the slug case
-      # down to project_id case and handle them the same way
-      args = if project_id, do: Map.put(args, :project_id, project_id), else: args
-
+         {:ok, args} <- transform_project_slug_to_id(args),
+         :ok <- validate_only_one_selector(args) do
       case args do
+        %{chart_configuration_ids: chart_configuration_ids} ->
+          # TODO: Improve the response format consistency of the Configuration functions.
+          Configuration.by_ids(chart_configuration_ids, user_id_has_access: user.id)
+
         %{user_id: user_id, project_id: project_id}
         when not is_nil(user_id) and not is_nil(project_id) ->
           # All configurations of user_id for project_id accessible by the current user
@@ -123,18 +124,51 @@ defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
 
   # Private functions
 
-  defp get_project_id_from_args(%{project_id: _, project_slug: _}) do
+  defp transform_project_slug_to_id(%{project_id: _, project_slug: _}) do
     {:error,
      "Both projectId and projectSlug arguments are provided. Please use only one of them or none."}
   end
 
-  defp get_project_id_from_args(%{project_id: project_id}) do
-    {:ok, project_id}
+  defp transform_project_slug_to_id(%{project_id: _} = args) do
+    {:ok, args}
   end
 
-  defp get_project_id_from_args(%{project_slug: slug}) do
-    {:ok, Sanbase.Project.id_by_slug(slug)}
+  defp transform_project_slug_to_id(%{project_slug: slug} = args) do
+    project_id = Sanbase.Project.id_by_slug(slug)
+
+    args =
+      args
+      |> Map.delete(:project_slug)
+      |> Map.put(:project_id, project_id)
+
+    {:ok, args}
   end
 
-  defp get_project_id_from_args(_), do: {:ok, nil}
+  defp transform_project_slug_to_id(args), do: {:ok, args}
+
+  defp validate_only_one_selector(args) do
+    # This is called AFTER transform_project_slug_to_id/2, so no checks for project_slug
+    # are needed here.
+    cond do
+      map_size(args) == 1 and Map.has_key?(args, :project_id) ->
+        :ok
+
+      map_size(args) == 1 and Map.has_key?(args, :user_id) ->
+        :ok
+
+      map_size(args) == 2 and Map.has_key?(args, :user_id) and Map.has_key?(args, :project_id) ->
+        :ok
+
+      map_size(args) == 1 and Map.has_key?(args, :chart_configuration_ids) ->
+        :ok
+
+      map_size(args) == 0 ->
+        :ok
+
+      true ->
+        {:error,
+         "Too many arguments provided. Please use only one of the following arguments: " <>
+           "project_slug, project_id, user_id, chart_configuration_ids, or the combination of user_id and project_id"}
+    end
+  end
 end

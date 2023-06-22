@@ -21,6 +21,7 @@ defmodule SanbaseWeb.Graphql.Schema.ChartConfigurationQueries do
     field :chart_configurations, list_of(:chart_configuration) do
       meta(access: :free)
 
+      arg(:chart_configuration_ids, list_of(:integer))
       arg(:user_id, :integer)
       arg(:project_id, :integer)
       arg(:project_slug, :string)

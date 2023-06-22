@@ -94,6 +94,7 @@ defmodule Sanbase.Chart.Configuration do
         preload: ^preload,
         order_by: fragment("array_position(?, ?::int)", ^config_ids, conf.id)
       )
+      |> maybe_apply_only_with_user_access(opts)
       |> Repo.all()
 
     {:ok, result}
@@ -256,6 +257,16 @@ defmodule Sanbase.Chart.Configuration do
       %{project_ids: project_ids} ->
         query
         |> where([config], config.project_id in ^project_ids)
+
+      _ ->
+        query
+    end
+  end
+
+  defp maybe_apply_only_with_user_access(query, opts) do
+    case Keyword.get(opts, :user_id_has_access) do
+      user_id when is_integer(user_id) ->
+        query |> where([config], config.user_id == ^user_id or config.is_public == true)
 
       _ ->
         query

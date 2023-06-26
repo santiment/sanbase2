@@ -531,7 +531,7 @@ defmodule Sanbase.Discord.CommandHandler do
       {:ok, "twitter", timeframe_hours, sentiment, projects} ->
         handle_ai_command(msg, prompt, thread, timeframe_hours, sentiment, projects)
 
-      {:ok, "academy", _} ->
+      {:ok, "academy", _, _, _} ->
         answer_question(msg, thread)
     end
   end

@@ -9,6 +9,8 @@ defmodule Sanbase.Discord.GptRouter do
     field(:error, :string)
     field(:elapsed_time, :integer)
     field(:timeframe, :integer, default: -1)
+    field(:sentiment, :boolean, default: false)
+    field(:projects, {:array, :string}, default: [])
 
     timestamps()
   end
@@ -16,7 +18,16 @@ defmodule Sanbase.Discord.GptRouter do
   @doc false
   def changeset(gpt_router, attrs) do
     gpt_router
-    |> cast(attrs, [:question, :route, :scores, :error, :elapsed_time, :timeframe])
+    |> cast(attrs, [
+      :question,
+      :route,
+      :scores,
+      :error,
+      :elapsed_time,
+      :timeframe,
+      :sentiment,
+      :projects
+    ])
     |> validate_required([:question])
   end
 

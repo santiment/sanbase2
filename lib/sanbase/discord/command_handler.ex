@@ -528,15 +528,20 @@ defmodule Sanbase.Discord.CommandHandler do
 
     Sanbase.OpenAI.route(prompt, msg.id)
     |> case do
-      {:ok, "twitter", timeframe_hours} -> handle_ai_command(msg, prompt, thread, timeframe_hours)
-      {:ok, "academy", _} -> answer_question(msg, thread)
+      {:ok, "twitter", timeframe_hours, sentiment, projects} ->
+        handle_ai_command(msg, prompt, thread, timeframe_hours, sentiment, projects)
+
+      {:ok, "academy", _} ->
+        answer_question(msg, thread)
     end
   end
 
-  def handle_ai_command(msg, prompt, thread, timeframe_hours) do
+  def handle_ai_command(msg, prompt, thread, timeframe_hours, sentiment, projects) do
     Api.start_typing(thread.id)
     db_params = db_params(msg, thread, "!ai")
     db_params = Map.put(db_params, :timeframe, timeframe_hours)
+    db_params = Map.put(db_params, :sentiment, sentiment)
+    db_params = Map.put(db_params, :projects, projects)
 
     {prompt, db_params} = extract_model(prompt, db_params)
 

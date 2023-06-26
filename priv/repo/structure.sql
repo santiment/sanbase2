@@ -1547,7 +1547,9 @@ CREATE TABLE public.gpt_router (
     elapsed_time integer,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    timeframe integer DEFAULT '-1'::integer
+    timeframe integer DEFAULT '-1'::integer,
+    sentiment boolean DEFAULT false,
+    projects character varying(255)[] DEFAULT ARRAY[]::character varying[]
 );
 
 
@@ -8380,3 +8382,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230522123937);
 INSERT INTO public."schema_migrations" (version) VALUES (20230523080400);
 INSERT INTO public."schema_migrations" (version) VALUES (20230526092048);
 INSERT INTO public."schema_migrations" (version) VALUES (20230608132801);
+INSERT INTO public."schema_migrations" (version) VALUES (20230626080554);

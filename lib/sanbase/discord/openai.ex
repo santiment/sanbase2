@@ -23,10 +23,18 @@ defmodule Sanbase.OpenAI do
 
     timeframe = params[:timeframe] || -1
     model = params[:model] || "gpt-4"
+    sentiment = params[:sentiment] || false
+    projects = params[:projects] || []
 
     case HTTPoison.post(
            url,
-           Jason.encode!(%{question: prompt, timeframe: timeframe, model: model}),
+           Jason.encode!(%{
+             question: prompt,
+             timeframe: timeframe,
+             model: model,
+             sentiment: sentiment,
+             projects: projects
+           }),
            [{"Content-Type", "application/json"}],
            timeout: 240_000,
            recv_timeout: 240_000
@@ -169,10 +177,12 @@ defmodule Sanbase.OpenAI do
               scores: %{
                 score_academy: body["score_academy"],
                 score_twitter: body["score_twitter"]
-              }
+              },
+              sentiment: body["sentiment"],
+              projects: body["projects"]
             })
 
-            {:ok, body["route"], body["timeframe"]}
+            {:ok, body["route"], body["timeframe"], body["sentiment"], normalize_projects(body)}
 
           error ->
             GptRouter.create(%{
@@ -212,4 +222,21 @@ defmodule Sanbase.OpenAI do
   end
 
   defp is_prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
+
+  @cryptos %{
+    "eth" => ["eth", "ethereum"],
+    "btc" => ["btc", "bitcoin"]
+  }
+
+  defp normalize_projects(body) do
+    body["projects"]
+    |> Enum.map(&String.downcase/1)
+    |> Enum.flat_map(&crypto_project/1)
+  end
+
+  defp crypto_project(project) do
+    Enum.reduce(@cryptos, [], fn {key, value}, acc ->
+      if project == key, do: acc ++ value, else: acc
+    end)
+  end
 end

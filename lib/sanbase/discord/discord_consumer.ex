@@ -60,6 +60,12 @@ defmodule Sanbase.DiscordConsumer do
         log(msg, "docs COMMAND RESULT #{inspect(result)}")
         :ok
 
+      CommandHandler.is_test_command?(msg.content) ->
+        warm_up(msg)
+        result = CommandHandler.handle_command("test", msg)
+        log(msg, "test COMMAND RESULT #{inspect(result)}")
+        :ok
+
       msg_contains_bot_mention?(msg) ->
         warm_up(msg)
 

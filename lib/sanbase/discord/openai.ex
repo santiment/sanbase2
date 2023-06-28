@@ -217,6 +217,19 @@ defmodule Sanbase.OpenAI do
     :ok
   end
 
+  def search_insights(query) do
+    url = "#{metrics_hub_url()}/search_insights"
+
+    HTTPoison.post(url, Jason.encode!(%{query: query}), [{"Content-Type", "application/json"}])
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        body |> Jason.decode!()
+
+      _ ->
+        []
+    end
+  end
+
   defp metrics_hub_url() do
     Config.module_get(Sanbase.SocialData, :metricshub_url)
   end

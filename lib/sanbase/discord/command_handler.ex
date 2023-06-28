@@ -61,6 +61,10 @@ defmodule Sanbase.Discord.CommandHandler do
     String.starts_with?(content, @docs_prefix)
   end
 
+  def is_test_command?(content) do
+    String.starts_with?(content, "!test")
+  end
+
   def handle_interaction("query", interaction) do
     name_input = TextInput.text_input("Dashboard name", "dashname", placeholder: "Dashboard name")
 
@@ -354,6 +358,26 @@ defmodule Sanbase.Discord.CommandHandler do
     kw_list = Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
 
     Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
+  end
+
+  def handle_command("test", msg) do
+    {:ok, loading_msg} = loading_msg(msg)
+
+    query = String.trim(msg.content, "!test")
+
+    links = Sanbase.OpenAI.search_insights(query)
+
+    content =
+      if length(links) == 0 do
+        "No results found"
+      else
+        Enum.map(links, fn link ->
+          "<#{link}>"
+        end)
+        |> Enum.join("\n")
+      end
+
+    Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, content: content)
   end
 
   def handle_command("mention", msg) do

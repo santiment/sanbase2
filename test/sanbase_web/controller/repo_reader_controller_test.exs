@@ -18,7 +18,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert %{"error" => error} =
                  context.conn
-                 |> post("/projects_data_validator_webhook/#{context.secret}", %{
+                 |> post("/projects_data_validator_webhook", %{
                    "branch" => "some_branch",
                    "changed_files" => "projects/santiment/data.json"
                  })
@@ -35,7 +35,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert %{"error" => error} =
                  context.conn
-                 |> post("/projects_data_validator_webhook/#{context.secret}", %{
+                 |> post("/projects_data_validator_webhook", %{
                    "branch" => "some_branch",
                    "changed_files" => "projects/santiment/data.json"
                  })
@@ -51,7 +51,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
       end)
       |> Sanbase.Mock.run_with_mocks(fn ->
         context.conn
-        |> post("/projects_data_validator_webhook/#{context.secret}", %{
+        |> post("/projects_data_validator_webhook", %{
           "branch" => "some_branch",
           "changed_files" => "projects/santiment/data.json"
         })
@@ -67,7 +67,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert %{"error" => error} =
                  context.conn
-                 |> post("/projects_data_validator_webhook/#{context.secret}", %{
+                 |> post("/projects_data_validator_webhook", %{
                    "branch" => "some_branch",
                    "changed_files" => "projects/santiment/data.json"
                  })
@@ -85,7 +85,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert %{"error" => error} =
                  context.conn
-                 |> post("/projects_data_validator_webhook/#{context.secret}", %{
+                 |> post("/projects_data_validator_webhook", %{
                    "branch" => "some_branch",
                    "changed_files" => "projects/santiment/data.json"
                  })
@@ -103,7 +103,7 @@ defmodule SanbaseWeb.RepoReaderControllerTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert %{"error" => error} =
                  context.conn
-                 |> post("/projects_data_validator_webhook/#{context.secret}", %{
+                 |> post("/projects_data_validator_webhook", %{
                    "branch" => "some_branch",
                    "changed_files" => "projects/santiment/data.json"
                  })

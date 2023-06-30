@@ -163,6 +163,13 @@ defmodule Sanbase.DiscordConsumer do
 
     log_msg = "[id=#{msg.id}] #{log_text} msg.content=#{msg.content} metadata=#{inspect(params)}"
 
+    stacktrace = Keyword.get(opts, :stacktrace)
+
+    log_msg =
+      if stacktrace,
+        do: log_msg <> " stacktrace=#{Exception.format_stacktrace(stacktrace)}",
+        else: log_msg
+
     if Keyword.get(opts, :type, :info) do
       Logger.info(log_msg)
     else
@@ -180,6 +187,13 @@ defmodule Sanbase.DiscordConsumer do
 
     log_msg =
       "[id=#{interaction.id}] [#{inspect(interaction.data)}] #{log_text} metadata=#{inspect(params)}"
+
+    stacktrace = Keyword.get(opts, :stacktrace)
+
+    log_msg =
+      if stacktrace,
+        do: log_msg <> " stacktrace=#{Exception.format_stacktrace(stacktrace)}",
+        else: log_msg
 
     if Keyword.get(opts, :type, :info) do
       Logger.info(log_msg)
@@ -272,12 +286,19 @@ defmodule Sanbase.DiscordConsumer do
     try do
       Nostrum.Api.get_current_user()
     rescue
-      e in RuntimeError ->
+      e ->
         if retries > 0 do
-          log(msg_or_interaction, "WARM UP ERROR: #{inspect(e)}. Retrying...", type: :error)
+          log(msg_or_interaction, "WARM UP ERROR: #{inspect(e)}. Retrying...",
+            type: :error,
+            stacktrace: __STACKTRACE__
+          )
+
           warm_up(msg_or_interaction, retries - 1)
         else
-          log(msg_or_interaction, "WARM UP ERROR: #{inspect(e)}. No more retries.", type: :error)
+          log(msg_or_interaction, "WARM UP ERROR: #{inspect(e)}. No more retries.",
+            type: :error,
+            stacktrace: __STACKTRACE__
+          )
         end
     else
       {:ok, _} ->
@@ -285,6 +306,8 @@ defmodule Sanbase.DiscordConsumer do
 
       {:error, :timeout} ->
         log(msg_or_interaction, "WARM UP TIMEOUT. Restart Ratelimiter", type: :error)
+        {:ok, pid} = restart_ratelimiter()
+        log(msg_or_interaction, "WARM UP TIMEOUT. Ratelimiter pid: #{pid}", type: :error)
 
       error ->
         log(msg_or_interaction, "WARM UP ERROR #{inspect(error)}", type: :error)

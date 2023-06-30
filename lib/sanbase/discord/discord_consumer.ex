@@ -282,6 +282,7 @@ defmodule Sanbase.DiscordConsumer do
 
   defp warm_up(msg_or_interaction, retries \\ 3) do
     t1 = System.monotonic_time(:millisecond)
+    log(msg_or_interaction, "WARM UP STARTING...")
 
     try do
       Nostrum.Api.get_current_user()
@@ -306,8 +307,6 @@ defmodule Sanbase.DiscordConsumer do
 
       {:error, :timeout} ->
         log(msg_or_interaction, "WARM UP TIMEOUT. Restart Ratelimiter", type: :error)
-        {:ok, pid} = restart_ratelimiter()
-        log(msg_or_interaction, "WARM UP TIMEOUT. Ratelimiter pid: #{pid}", type: :error)
 
       error ->
         log(msg_or_interaction, "WARM UP ERROR #{inspect(error)}", type: :error)

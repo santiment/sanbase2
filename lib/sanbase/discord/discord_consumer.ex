@@ -280,61 +280,51 @@ defmodule Sanbase.DiscordConsumer do
     end
   end
 
-  defp warm_up(msg_or_interaction, retries \\ 2) do
+  defp warm_up(msg_or_interaction, retries \\ 3) do
     t1 = System.monotonic_time(:millisecond)
     log(msg_or_interaction, "WARM UP STARTING...")
 
-    try do
-      task = Task.async(fn -> Nostrum.Api.get_current_user() end)
-      # Wait for 5 seconds
-      result = Task.await(task, 5000)
-    rescue
-      e ->
+    task = Task.async(fn -> Nostrum.Api.get_current_user() end)
+
+    case Task.yield(task, 5000) || Task.shutdown(task) do
+      nil ->
+        log(msg_or_interaction, "WARM UP ERROR: Timeout reached.", type: :error)
+
         if retries > 0 do
-          log(msg_or_interaction, "WARM UP ERROR: #{inspect(e)}. Retrying...",
-            type: :error,
-            stacktrace: __STACKTRACE__
-          )
+          log(msg_or_interaction, "WARM UP TIMEOUT: Retrying...", type: :error)
 
           warm_up(msg_or_interaction, retries - 1)
         else
-          log(msg_or_interaction, "WARM UP ERROR: #{inspect(e)}. No more retries.",
-            type: :error,
-            stacktrace: __STACKTRACE__
-          )
+          log(msg_or_interaction, "WARM UP TIMEOUT: No more retries.", type: :error)
         end
-    else
-      result ->
-        case result do
-          {:ok, _} ->
-            log(msg_or_interaction, "WARM UP SUCCESS")
 
-          {:error, :timeout} ->
-            log(msg_or_interaction, "WARM UP TIMEOUT. Restart Ratelimiter", type: :error)
-
-          error ->
-            log(msg_or_interaction, "Unexpected error in WARM UP: #{inspect(error)}", type: :error)
-
-            if retries > 0 do
-              log(msg_or_interaction, "WARM UP ERROR: #{inspect(error)}. Retrying...",
-                type: :error
-              )
-
-              warm_up(msg_or_interaction, retries - 1)
-            else
-              log(msg_or_interaction, "WARM UP ERROR: #{inspect(error)}. No more retries.",
-                type: :error
-              )
-            end
-        end
-    after
-      t2 = System.monotonic_time(:millisecond)
-      log(msg_or_interaction, "Time spent warming up #{t2 - t1}ms.")
-
-      if retries > 0 do
-        warm_up(msg_or_interaction, retries - 1)
-      end
+      {:ok, result} ->
+        # handle the result
+        handle_result(result, msg_or_interaction, retries)
     end
+
+    t2 = System.monotonic_time(:millisecond)
+    log(msg_or_interaction, "Time spent warming up #{t2 - t1}ms.")
+  end
+
+  defp handle_result({:ok, _}, msg_or_interaction, _retries) do
+    log(msg_or_interaction, "WARM UP SUCCESS")
+  end
+
+  defp handle_result({:error, :timeout}, msg_or_interaction, _retries) do
+    log(msg_or_interaction, "WARM UP TIMEOUT. Restart Ratelimiter", type: :error)
+  end
+
+  defp handle_result(error, msg_or_interaction, retries) when retries > 0 do
+    log(msg_or_interaction, "Unexpected error in WARM UP: #{inspect(error)}. Retrying...",
+      type: :error
+    )
+
+    warm_up(msg_or_interaction, retries - 1)
+  end
+
+  defp handle_result(error, msg_or_interaction, _retries) do
+    log(msg_or_interaction, "WARM UP ERROR: #{inspect(error)}. No more retries.", type: :error)
   end
 
   def restart_ratelimiter() do

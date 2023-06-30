@@ -98,7 +98,7 @@ defmodule Sanbase.DiscordConsumer do
              "list",
              "chart"
            ] do
-    warm_up()
+    warm_up(interaction)
 
     CommandHandler.handle_interaction(command, interaction)
     |> handle_response(command, interaction)
@@ -109,7 +109,7 @@ defmodule Sanbase.DiscordConsumer do
         %Interaction{data: %ApplicationCommandInteractionData{custom_id: "run"}} = interaction,
         _ws_state
       }) do
-    warm_up()
+    warm_up(interaction)
 
     CommandHandler.handle_interaction("run", interaction)
     |> handle_response("run", interaction)
@@ -121,7 +121,7 @@ defmodule Sanbase.DiscordConsumer do
           interaction,
         _ws_state
       }) do
-    warm_up()
+    warm_up(interaction)
     [command, id] = String.split(custom_id, "_")
 
     cond do
@@ -151,7 +151,9 @@ defmodule Sanbase.DiscordConsumer do
     |> Enum.any?(&(&1.id == CommandHandler.bot_id()))
   end
 
-  defp log(msg, log_text, opts \\ []) do
+  defp log(msg_or_interaction, log_text, opts \\ [])
+
+  defp log(%Nostrum.Struct.Message{} = msg, log_text, opts) do
     params = %{
       channel: to_string(msg.channel_id),
       guild: to_string(msg.guild_id),
@@ -160,6 +162,24 @@ defmodule Sanbase.DiscordConsumer do
     }
 
     log_msg = "[id=#{msg.id}] #{log_text} msg.content=#{msg.content} metadata=#{inspect(params)}"
+
+    if Keyword.get(opts, :type, :info) do
+      Logger.info(log_msg)
+    else
+      Logger.error(log_msg)
+    end
+  end
+
+  defp log(%Nostrum.Struct.Interaction{} = interaction, log_text, opts) do
+    params = %{
+      channel: to_string(interaction.channel_id),
+      guild: to_string(interaction.guild_id),
+      discord_user_id: to_string(interaction.user.id),
+      discord_user_handle: interaction.user.username <> interaction.user.discriminator
+    }
+
+    log_msg =
+      "[id=#{interaction.id}] [#{inspect(interaction.data)}] #{log_text} metadata=#{inspect(params)}"
 
     if Keyword.get(opts, :type, :info) do
       Logger.info(log_msg)
@@ -246,29 +266,32 @@ defmodule Sanbase.DiscordConsumer do
     end
   end
 
-  defp warm_up() do
-    Nostrum.Api.get_current_user()
-  end
-
-  defp warm_up(msg) do
+  defp warm_up(msg_or_interaction, retries \\ 3) do
     t1 = System.monotonic_time(:millisecond)
 
-    Nostrum.Api.get_current_user()
-    |> case do
+    try do
+      Nostrum.Api.get_current_user()
+    rescue
+      e in RuntimeError ->
+        if retries > 0 do
+          log(msg_or_interaction, "WARM UP ERROR: #{inspect(e)}. Retrying...", type: :error)
+          warm_up(msg_or_interaction, retries - 1)
+        else
+          log(msg_or_interaction, "WARM UP ERROR: #{inspect(e)}. No more retries.", type: :error)
+        end
+    else
       {:ok, _} ->
-        log(msg, "WARM UP SUCCESS")
+        log(msg_or_interaction, "WARM UP SUCCESS")
 
       {:error, :timeout} ->
-        log(msg, "WARM UP TIMEOUT. Restart Ratelimiter", type: :error)
-        {:ok, pid} = restart_ratelimiter()
-        log(msg, "WARM UP TIMEOUT. Ratelimiter pid: #{pid}", type: :error)
+        log(msg_or_interaction, "WARM UP TIMEOUT. Restart Ratelimiter", type: :error)
 
       error ->
-        log(msg, "WARM UP ERROR #{inspect(error)}", type: :error)
+        log(msg_or_interaction, "WARM UP ERROR #{inspect(error)}", type: :error)
     end
 
     t2 = System.monotonic_time(:millisecond)
-    log(msg, "Time spent warming up #{t2 - t1}ms.")
+    log(msg_or_interaction, "Time spent warming up #{t2 - t1}ms.")
   end
 
   def restart_ratelimiter() do

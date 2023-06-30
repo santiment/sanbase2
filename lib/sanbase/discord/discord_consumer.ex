@@ -285,8 +285,21 @@ defmodule Sanbase.DiscordConsumer do
     log(msg_or_interaction, "WARM UP STARTING...")
 
     try do
-      Nostrum.Api.get_current_user()
+      task = Task.async(fn -> Nostrum.Api.get_current_user() end)
+      # Wait for 5 seconds
+      result = Task.await(task, 5000)
     rescue
+      e in TaskAwaitTimeoutError ->
+        log(msg_or_interaction, "WARM UP ERROR: Timeout reached. #{inspect(e)}", type: :error)
+
+        if retries > 0 do
+          log(msg_or_interaction, "WARM UP TIMEOUT: Retrying...", type: :error)
+
+          warm_up(msg_or_interaction, retries - 1)
+        else
+          log(msg_or_interaction, "WARM UP TIMEOUT: No more retries.", type: :error)
+        end
+
       e ->
         if retries > 0 do
           log(msg_or_interaction, "WARM UP ERROR: #{inspect(e)}. Retrying...",

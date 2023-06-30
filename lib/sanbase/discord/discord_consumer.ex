@@ -302,18 +302,33 @@ defmodule Sanbase.DiscordConsumer do
           )
         end
     else
-      {:ok, _} ->
-        log(msg_or_interaction, "WARM UP SUCCESS")
+      result ->
+        case result do
+          {:ok, _} ->
+            log(msg_or_interaction, "WARM UP SUCCESS")
 
-      {:error, :timeout} ->
-        log(msg_or_interaction, "WARM UP TIMEOUT. Restart Ratelimiter", type: :error)
+          {:error, :timeout} ->
+            log(msg_or_interaction, "WARM UP TIMEOUT. Restart Ratelimiter", type: :error)
 
-      error ->
-        log(msg_or_interaction, "WARM UP ERROR #{inspect(error)}", type: :error)
+          error ->
+            log(msg_or_interaction, "Unexpected error in WARM UP: #{inspect(error)}", type: :error)
+
+            if retries > 0 do
+              log(msg_or_interaction, "WARM UP ERROR: #{inspect(error)}. Retrying...",
+                type: :error
+              )
+
+              warm_up(msg_or_interaction, retries - 1)
+            else
+              log(msg_or_interaction, "WARM UP ERROR: #{inspect(error)}. No more retries.",
+                type: :error
+              )
+            end
+        end
+    after
+      t2 = System.monotonic_time(:millisecond)
+      log(msg_or_interaction, "Time spent warming up #{t2 - t1}ms.")
     end
-
-    t2 = System.monotonic_time(:millisecond)
-    log(msg_or_interaction, "Time spent warming up #{t2 - t1}ms.")
   end
 
   def restart_ratelimiter() do

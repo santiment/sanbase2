@@ -286,7 +286,7 @@ defmodule Sanbase.DiscordConsumer do
 
     task = Task.async(fn -> Nostrum.Api.get_current_user() end)
 
-    case Task.yield(task, 5000) || Task.shutdown(task) do
+    case Task.yield(task, 2000) || Task.shutdown(task) do
       nil ->
         log(msg_or_interaction, "WARM UP ERROR: Timeout reached.", type: :error)
 

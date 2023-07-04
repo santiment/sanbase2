@@ -22,7 +22,8 @@ defmodule Sanbase.Application.Queries do
       start_if(
         fn -> Sanbase.DiscordConsumer end,
         fn -> Sanbase.Nostrum.enabled?() end
-      )
+      ),
+      Sanbase.Discord.Worker
     ]
 
     opts = [

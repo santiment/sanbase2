@@ -325,12 +325,16 @@ defimpl Sanbase.Alert, for: Any do
   # when the alert is defined on a metric
   defp maybe_extend_payload_telegram_channel(
          payload,
-         %{trigger: %{settings: %{metric: metric} = settings}} = _user_trigger,
+         %{trigger: %{settings: %{metric: metric} = settings}} = user_trigger,
          channel
        )
        when channel in ["@test_san_bot86", "@sanr_signals"] do
     template_kv = settings.template_kv || %{}
     slugs = Map.keys(template_kv)
+
+    Logger.info(
+      "[maybe_extend_payload_telegram_channel_#{user_trigger.id}] [user_trigger: #{inspect(user_trigger)}] [payload: #{inspect(payload)}] [slugs: #{inspect(slugs)}]]"
+    )
 
     if length(slugs) > 0 do
       slug = hd(slugs)
@@ -346,6 +350,10 @@ defimpl Sanbase.Alert, for: Any do
             {"https://app.santiment.net/charts?slug=#{slug}?utm_source=telegram&utm_medium=signals",
              nil}
         end
+
+      Logger.info(
+        "[maybe_extend_payload_telegram_channel_#{user_trigger.id}] sanbase_link: #{inspect(sanbase_link)}] [short_url_id: #{inspect(short_url_id)}]"
+      )
 
       payload = """
       #{String.trim_trailing(payload)}

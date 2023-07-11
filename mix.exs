@@ -170,7 +170,8 @@ defmodule Sanbase.Mixfile do
       {:nostrum, github: "Kraigie/nostrum"},
       {:gun, "~> 2.0", hex: :remedy_gun, override: true},
       {:cowlib, "~> 2.11", hex: :remedy_cowlib, override: true},
-      {:table_rex, "~> 3.1"}
+      {:table_rex, "~> 3.1"},
+      {:poison, "~> 5.0"}
     ]
   end
 

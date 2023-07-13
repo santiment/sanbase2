@@ -25,16 +25,17 @@ defmodule Sanbase.Project.ListSelector do
   See `args_to_opts/1` for description of the argument format.
   """
   def projects(args) do
-    opts = args_to_opts(args)
-    projects = Project.List.projects(opts)
+    with {:ok, opts} <- args_to_opts(args) do
+      projects = Project.List.projects(opts)
 
-    {:ok,
-     %{
-       projects: projects,
-       total_projects_count: total_projects_count(projects, opts),
-       has_pagination?: Keyword.get(opts, :has_pagination?),
-       all_included_slugs: Keyword.get(opts, :included_slugs)
-     }}
+      {:ok,
+       %{
+         projects: projects,
+         total_projects_count: total_projects_count(projects, opts),
+         has_pagination?: Keyword.get(opts, :has_pagination?),
+         all_included_slugs: Keyword.get(opts, :included_slugs)
+       }}
+    end
   end
 
   @doc ~s"""
@@ -43,14 +44,15 @@ defmodule Sanbase.Project.ListSelector do
   See `args_to_opts/1` for description of the argument format.
   """
   def slugs(args) do
-    opts = args_to_opts(args)
-    slugs = Project.List.projects_slugs(opts)
+    with {:ok, opts} <- args_to_opts(args) do
+      slugs = Project.List.projects_slugs(opts)
 
-    {:ok,
-     %{
-       slugs: slugs,
-       total_projects_count: total_projects_count(slugs, opts)
-     }}
+      {:ok,
+       %{
+         slugs: slugs,
+         total_projects_count: total_projects_count(slugs, opts)
+       }}
+    end
   end
 
   @doc ~s"""
@@ -92,23 +94,22 @@ defmodule Sanbase.Project.ListSelector do
 
     base_slugs = base_slugs(base_projects_selector)
 
-    included_slugs =
-      filters
-      |> included_slugs_by_filters(filters_combinator)
-      |> intersect_with_base_slugs(base_slugs)
-      |> remove_hidden_slugs()
+    with {:ok, included_slugs} <- included_slugs_by_filters(filters, filters_combinator),
+         included_slugs = intersect_with_base_slugs(included_slugs, base_slugs),
+         included_slugs = remove_hidden_slugs(included_slugs),
+         {:ok, ordered_slugs} <- ordered_slugs_by_order_by(order_by, included_slugs) do
+      opts = [
+        has_selector?: not is_nil(args[:selector]),
+        has_order?: not is_nil(order_by),
+        has_pagination?: not is_nil(pagination),
+        pagination: pagination,
+        min_volume: Map.get(args, :min_volume),
+        included_slugs: included_slugs,
+        ordered_slugs: ordered_slugs
+      ]
 
-    ordered_slugs = order_by |> ordered_slugs_by_order_by(included_slugs)
-
-    [
-      has_selector?: not is_nil(args[:selector]),
-      has_order?: not is_nil(order_by),
-      has_pagination?: not is_nil(pagination),
-      pagination: pagination,
-      min_volume: Map.get(args, :min_volume),
-      included_slugs: included_slugs,
-      ordered_slugs: ordered_slugs
-    ]
+      {:ok, opts}
+    end
   end
 
   # Private functions
@@ -214,24 +215,39 @@ defmodule Sanbase.Project.ListSelector do
     {:error, "The base slugs argument is invalid: #{inspect(data)}."}
   end
 
-  defp included_slugs_by_filters([], _filters_combinator), do: :all
-  defp included_slugs_by_filters([%{name: "erc20"}], _filters_combinator), do: :erc20
+  defp included_slugs_by_filters([], _filters_combinator), do: {:ok, :all}
+  defp included_slugs_by_filters([%{name: "erc20"}], _filters_combinator), do: {:ok, :erc20}
 
   defp included_slugs_by_filters(filters, filters_combinator) when is_list(filters) do
-    filters
-    |> Sanbase.Parallel.map(
-      fn filter ->
-        cache_key = {__MODULE__, :included_slugs_by_filter, filter} |> Sanbase.Cache.hash()
-        {:ok, slugs} = Sanbase.Cache.get_or_store(cache_key, fn -> slugs_by_filter(filter) end)
+    result =
+      filters
+      |> Sanbase.Parallel.map(
+        fn filter ->
+          cache_key = {__MODULE__, :included_slugs_by_filter, filter} |> Sanbase.Cache.hash()
+          fun = fn -> slugs_by_filter(filter) end
 
-        slugs |> MapSet.new()
-      end,
-      timeout: 60_000,
-      ordered: false,
-      max_concurrency: 3
-    )
-    |> Sanbase.Utils.Transform.combine_mapsets(combinator: filters_combinator)
-    |> Enum.to_list()
+          case Sanbase.Cache.get_or_store(cache_key, fun) do
+            {:ok, slugs} -> MapSet.new(slugs)
+            {:error, error} -> {:error, error}
+          end
+        end,
+        timeout: 60_000,
+        ordered: false,
+        max_concurrency: 3
+      )
+
+    case Enum.find(result, &match?({:error, _}, &1)) do
+      nil ->
+        slugs =
+          result
+          |> Sanbase.Utils.Transform.combine_mapsets(combinator: filters_combinator)
+          |> Enum.to_list()
+
+        {:ok, slugs}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp slugs_by_filter(%{name: "market_segments", args: args}) do
@@ -281,26 +297,27 @@ defmodule Sanbase.Project.ListSelector do
     end
   end
 
-  defp ordered_slugs_by_order_by(nil, slugs), do: slugs
+  defp ordered_slugs_by_order_by(nil, slugs), do: {:ok, slugs}
 
   defp ordered_slugs_by_order_by(order_by, slugs) do
     %{metric: metric, from: from, to: to, direction: direction} = order_by
-    aggregation = Map.get(order_by, :aggregation)
+    opts = [aggregation: Map.get(order_by, :aggregation)]
 
-    {:ok, ordered_slugs} =
-      Sanbase.Metric.slugs_order(metric, from, to, direction, aggregation: aggregation)
+    with {:ok, ordered_slugs} <- Sanbase.Metric.slugs_order(metric, from, to, direction, opts) do
+      case slugs do
+        :all ->
+          {:ok, ordered_slugs}
 
-    case slugs do
-      :all ->
-        ordered_slugs
+        :erc20 ->
+          slugs_mapset = Project.List.erc20_projects_slugs() |> MapSet.new()
+          slugs = Enum.filter(ordered_slugs, &(&1 in slugs_mapset))
+          {:ok, slugs}
 
-      :erc20 ->
-        slugs_mapset = Project.List.erc20_projects_slugs() |> MapSet.new()
-        Enum.filter(ordered_slugs, &(&1 in slugs_mapset))
-
-      ^slugs when is_list(slugs) ->
-        slugs_mapset = slugs |> MapSet.new()
-        Enum.filter(ordered_slugs, &(&1 in slugs_mapset))
+        ^slugs when is_list(slugs) ->
+          slugs_mapset = slugs |> MapSet.new()
+          slugs = Enum.filter(ordered_slugs, &(&1 in slugs_mapset))
+          {:ok, slugs}
+      end
     end
   end
 end

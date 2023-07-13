@@ -33,21 +33,15 @@ defmodule Sanbase.Parallel do
       :map ->
         stream
         |> Enum.map(fn
-          {:ok, elem} ->
-            elem
-
-          data ->
-            data
+          {:ok, elem} -> elem
+          data -> data
         end)
 
       :flat_map ->
         stream
         |> Enum.flat_map(fn
-          {:ok, elem} ->
-            elem
-
-          data ->
-            data
+          {:ok, elem} -> elem
+          data -> data
         end)
     end
   end

@@ -1402,8 +1402,8 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   def trim_message(message) do
-    if String.length(message) > 1990 do
-      String.slice(message, 0, 1990) <> "..."
+    if String.length(message) > 1900 do
+      String.slice(message, 0, 1900) <> "... (message truncated)"
     else
       message
     end

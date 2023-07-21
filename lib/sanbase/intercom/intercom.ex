@@ -18,6 +18,7 @@ defmodule Sanbase.Intercom do
 
   @user_events_url "https://api.intercom.io/events?type=user"
   @contacts_url "https://api.intercom.io/contacts"
+  @data_attributes_url "https://api.intercom.io/data_attributes"
 
   @batch_size 100
   @max_retries 5
@@ -109,6 +110,22 @@ defmodule Sanbase.Intercom do
       |> Jason.encode!()
 
     HTTPoison.post(@contacts_url, body, intercom_headers())
+  end
+
+  def create_data_attribute(name, type) do
+    body =
+      %{
+        name: name,
+        model: "contact",
+        data_type: type
+      }
+      |> Jason.encode!()
+
+    HTTPoison.post(@data_attributes_url, body, intercom_headers())
+  end
+
+  def list_data_attributes() do
+    HTTPoison.get(@data_attributes_url <> "?model=contact", intercom_headers())
   end
 
   def get_contact_by_user_id(user_id) do

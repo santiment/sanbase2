@@ -11,9 +11,13 @@ defmodule Sanbase.Intercom.StripeAttributes do
   alias Sanbase.Intercom
 
   def run do
-    all_stats = all_stats()
-    user_ids = fetch_all_db_user_ids()
-    run(user_ids, all_stats)
+    if is_prod?() do
+      all_stats = all_stats()
+      user_ids = fetch_all_db_user_ids()
+      run(user_ids, all_stats)
+    else
+      :ok
+    end
   end
 
   def run(user_ids, all_stats) do
@@ -181,4 +185,6 @@ defmodule Sanbase.Intercom.StripeAttributes do
     |> Timeseries.active_subscriptions()
     |> Timeseries.paid()
   end
+
+  defp is_prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
 end

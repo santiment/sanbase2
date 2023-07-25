@@ -43,6 +43,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     Logger.info("[CMC] Fetching realtime data from coinmarketcap")
     # Fetch current coinmarketcap data for many tickers
     {:ok, tickers} = Ticker.fetch_data(opts)
+    # Add a special case for SAN token since it might be out of top 5K projects
+    {:ok, san_tickers} = Ticker.fetch_data_by_slug("santiment")
+
+    tickers = tickers ++ san_tickers
 
     # Create a map where the coinmarketcap_id is key and the values is the list of
     # santiment slugs that have that coinmarketcap_id

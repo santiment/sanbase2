@@ -99,6 +99,30 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     end
   end
 
+  # Fetch quotes for single project
+  @spec fetch_data_by_slug(String.t()) :: {:error, String.t()} | {:ok, [%__MODULE__{}]}
+  def fetch_data_by_slug(slug) do
+    "v1/cryptocurrency/quotes/latest?slug=#{slug}&convert=USD,BTC"
+    |> get()
+    |> case do
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
+        {:ok, parse_json(body)}
+
+      {:ok, %Tesla.Env{status: status}} ->
+        error = "Failed fetching #{slug} information. Status: #{status}"
+
+        Logger.warning(error)
+        {:error, error}
+
+      {:error, error} ->
+        error_msg = "Error fetching #{slug} information. Error message #{inspect(error)}"
+
+        Logger.error(error_msg)
+
+        {:error, error_msg}
+    end
+  end
+
   @spec parse_json(String.t()) :: [%__MODULE__{}] | no_return
   defp parse_json(json) do
     %{"data" => data} =
@@ -108,6 +132,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     data =
       data
       |> Enum.map(fn project_data ->
+        project_data =
+          case project_data do
+            {_, %{"id" => _id} = data} -> data
+            %{"id" => _id} = data -> data
+          end
+
         %{
           "id" => id,
           "name" => name,

@@ -170,9 +170,5 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     manage_pinecone_index: [
       schedule: "15 * * * *",
       task: {Sanbase.OpenAI, :manage_pinecone_index, []}
-    ],
-    sync_stripe_attributes_intercom: [
-      schedule: "30 01 * * *",
-      task: {Sanbase.Intercom.StripeAttributes, :run, []}
     ]
   ]

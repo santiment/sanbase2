@@ -27,20 +27,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
     Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{
         status: 200,
-        body: File.read!(Path.join(__DIR__, "data/btc_web_api_success_huge_volume.json"))
+        body: File.read!(Path.join(__DIR__, "data/btc_web_api_success_huge_volume2.json"))
       }
     end)
 
-    WebApi.fetch_and_store_prices(context.project, ~U[2018-01-01T23:59:01.000Z])
+    WebApi.fetch_and_store_prices(context.project, ~U[2023-07-19 00:00:00Z])
     prices = Sanbase.InMemoryKafka.Producer.get_state() |> Map.get("asset_prices")
 
     filtered_record =
-      {"coinmarketcap_bitcoin_2018-01-01T23:59:20.000Z",
-       "{\"marketcap_usd\":229119666553,\"price_btc\":1.0,\"price_usd\":13657.23046875,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1514851160,\"volume_usd\":null}"}
+      {"coinmarketcap_bitcoin_2023-07-19T00:00:05Z",
+       "{\"marketcap_usd\":580312507941,\"price_btc\":1.0,\"price_usd\":29862.047207949952,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1689724805,\"volume_usd\":null}"}
 
     ok_record =
-      {"coinmarketcap_bitcoin_2018-01-02T23:59:22.000Z",
-       "{\"marketcap_usd\":251377940171,\"price_btc\":1.0,\"price_usd\":14982.1015625,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1514937562,\"volume_usd\":16846582784}"}
+      {"coinmarketcap_bitcoin_2023-07-19T00:00:00Z",
+       "{\"marketcap_usd\":580312507941,\"price_btc\":1.0,\"price_usd\":29862.047207949952,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1689724800,\"volume_usd\":13140495959}"}
 
     assert filtered_record in prices
     assert ok_record in prices
@@ -50,11 +50,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
     Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{
         status: 200,
-        body: File.read!(Path.join(__DIR__, "data/btc_web_api_success.json"))
+        body: File.read!(Path.join(__DIR__, "data/btc_web_api_success2.json"))
       }
     end)
 
-    from_datetime = ~U[2018-01-01T23:59:01.000Z]
+    from_datetime = ~U[2023-07-19 00:00:00Z]
 
     WebApi.fetch_and_store_prices(context.project, from_datetime)
     state = Sanbase.InMemoryKafka.Producer.get_state()
@@ -62,8 +62,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
     assert length(prices) > 0
 
     record =
-      {"coinmarketcap_bitcoin_2018-01-01T23:59:20.000Z",
-       "{\"marketcap_usd\":229119666553,\"price_btc\":1.0,\"price_usd\":13657.23046875,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1514851160,\"volume_usd\":10291150848}"}
+      {"coinmarketcap_bitcoin_2023-07-19T00:00:00Z",
+       "{\"marketcap_usd\":580312507941,\"price_btc\":1.0,\"price_usd\":29862.047207949952,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1689724800,\"volume_usd\":13140495959}"}
 
     assert record in prices
   end

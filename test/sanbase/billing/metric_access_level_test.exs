@@ -984,6 +984,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mcd_supply",
         "scd_collat_ratio",
         "scd_locked_token",
+        "total_dai_created",
         # derivatives
         "bitmex_perpetual_funding_rate",
         "bitmex_perpetual_basis",

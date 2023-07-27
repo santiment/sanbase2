@@ -981,7 +981,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mcd_dsr",
         "mcd_locked_token",
         "mcd_stability_fee",
-        "mcd_supply",
         "scd_collat_ratio",
         "scd_locked_token",
         "total_dai_created",

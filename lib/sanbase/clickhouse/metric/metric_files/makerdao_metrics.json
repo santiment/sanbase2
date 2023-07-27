@@ -34,23 +34,6 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Multi-Collateral DAI Total Supply",
-    "name": "mcd_supply",
-    "metric": "mcd_debt",
-    "version": "2019-12-22",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
     "human_readable_name": "Collateralization Ratio for BAT and USDC in Multi-Collateral CDPs",
     "name": "mcd_collat_ratio",
     "metric": "daily_dai_collat_ratio",
@@ -198,6 +181,23 @@
       "SANBASE": "free"
     },
     "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total Multi-Collateral DAI Created",
+    "name": "total_dai_created",
+    "metric": "mcd_total_dai_created",
+    "version": "2019-12-09",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,

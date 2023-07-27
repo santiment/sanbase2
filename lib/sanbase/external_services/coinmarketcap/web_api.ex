@@ -192,27 +192,24 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     with {:ok, decoded} <- Jason.decode(json),
          %{
            "data" => data,
-           "status" => %{"error_code" => 0, "error_message" => nil}
+           "status" => %{"error_code" => "0", "error_message" => "SUCCESS"}
          } <- decoded do
       result =
         Enum.map(
-          data,
+          data["points"],
           fn
-            {datetime_iso8601,
-             %{"BTC" => [price_btc], "USD" => [price_usd, volume_usd, marketcap_usd]}} ->
-              %PricePoint{
-                price_usd: price_usd |> Sanbase.Math.to_float(),
-                price_btc: price_btc |> Sanbase.Math.to_float(),
-                marketcap_usd: marketcap_usd |> Sanbase.Math.to_integer(),
-                volume_usd: volume_usd |> Sanbase.Math.to_integer(),
-                datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime_iso8601)
-              }
+            {dt_unix, point} ->
+              v = point["v"]
 
-            {_, _} ->
-              nil
+              %PricePoint{
+                price_usd: Enum.at(v, 0) |> Sanbase.Math.to_float(),
+                price_btc: Enum.at(v, 3) |> Sanbase.Math.to_float(),
+                marketcap_usd: Enum.at(v, 2) |> Sanbase.Math.to_integer(),
+                volume_usd: Enum.at(v, 1) |> Sanbase.Math.to_integer(),
+                datetime: DateTime.from_unix!(String.to_integer(dt_unix))
+              }
           end
         )
-        |> Enum.reject(&is_nil/1)
 
       {:ok, result, interval}
     else
@@ -250,13 +247,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     end
   end
 
+  # 26 July 2023: CMC API v1 doesn't work anymore. We need to use v3
+  # Check format here: https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=1807&range=1689724800~1689984000
+
   defp extract_price_points_for_interval(id, {from_unix, to_unix} = interval)
        when is_integer(id) do
     Logger.info("""
       [CMC] Extracting price points for coinmarketcap integer id #{id} and interval [#{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}]
     """)
 
-    "/v1.1/cryptocurrency/quotes/historical?convert=USD,BTC&format=chart_crypto_details&id=#{id}&time_start=#{from_unix}&time_end=#{to_unix}"
+    "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=#{id}&range=#{from_unix}~#{to_unix}"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->

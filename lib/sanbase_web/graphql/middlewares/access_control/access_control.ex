@@ -111,6 +111,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   @xrp_free_metrics_patterns [
+    ~r/^transactions_count$/,
     ~r/^network_growth$/,
     ~r/^active_addresses*/,
     ~r/^holders_distribution*/,

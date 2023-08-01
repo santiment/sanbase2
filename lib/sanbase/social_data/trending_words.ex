@@ -18,7 +18,6 @@ defmodule Sanbase.SocialData.TrendingWords do
   channels, including hundreds of telegram groups, subredits, discord groups,
   bitcointalk forums, etc.
   """
-  use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
@@ -60,19 +59,7 @@ defmodule Sanbase.SocialData.TrendingWords do
 
   @hours_back_ensure_has_data 3
 
-  @table "trending_words_v4_top_500"
-  schema @table do
-    field(:dt, :utc_datetime)
-    field(:word, :string)
-    field(:volume, :float)
-    field(:volume_normalized, :float)
-    field(:unqiue_users, :integer)
-    field(:score, :float)
-    field(:source, :string)
-    # ticker_slug
-    field(:project, :string)
-    field(:computed_at, :string)
-  end
+  @table "trending_words_docs_v2"
 
   @spec get_trending_words(
           DateTime.t(),
@@ -254,7 +241,7 @@ defmodule Sanbase.SocialData.TrendingWords do
           word,
           source,
           summary
-        FROM trending_words_docs
+        FROM #{@table}
         WHERE
           dt >= toDateTime({{from}}) AND
           dt < toDateTime({{to}}) AND

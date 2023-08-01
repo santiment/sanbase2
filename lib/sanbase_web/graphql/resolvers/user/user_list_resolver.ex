@@ -262,21 +262,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   ###########################
 
   def create_user_list(_root, args, %{context: %{auth: %{current_user: current_user}}}) do
-    case UserList.create_user_list(current_user, args) do
-      {:ok, user_list} ->
-        {:ok, user_list}
+    with {:ok, args} <- transform_slug_to_project_id(args) do
+      case UserList.create_user_list(current_user, args) do
+        {:ok, user_list} ->
+          {:ok, user_list}
 
-      {:error, changeset} ->
-        {
-          :error,
-          message: "Cannot create user list", details: changeset_errors(changeset)
-        }
+        {:error, changeset} ->
+          {
+            :error,
+            message: "Cannot create user list", details: changeset_errors(changeset)
+          }
+      end
     end
   end
 
   def update_watchlist(_root, %{id: id} = args, %{context: %{auth: %{current_user: current_user}}}) do
     with {:ok, watchlist} <- UserList.by_id(id, []),
-         true <- has_permissions?(watchlist, current_user, :update) do
+         true <- has_permissions?(watchlist, current_user, :update),
+         {:ok, args} <- transform_slug_to_project_id(args) do
       case UserList.update_user_list(current_user, args) do
         {:ok, user_list} ->
           {:ok, user_list}
@@ -334,7 +337,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
 
   defp transform_slug_to_project_id(%{list_items: list_items} = args) do
     {slug_items, non_slug_items} = Enum.split_with(list_items, &Map.has_key?(&1, :slug))
-    slugs = Enum.map(slug_items, & &1.slug)
+
+    slugs = Enum.map(slug_items, &(&1[:slug] || &1["slug"]))
 
     project_items =
       Project.List.ids_by_slugs(slugs)
@@ -345,6 +349,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     args = %{args | list_items: list_items}
     {:ok, args}
   end
+
+  defp transform_slug_to_project_id(args), do: {:ok, args}
 
   def update_watchlist_settings(_root, %{id: watchlist_id, settings: settings}, %{
         context: %{auth: %{current_user: current_user}}

@@ -641,7 +641,7 @@ defmodule Sanbase.RunExamples do
       )
 
     {:ok, _} =
-      Sanbase.Clickhouse.Exchanges.ExchangeMetric.top_exchanges_by_balance(
+      Sanbase.Clickhouse.Exchanges.top_exchanges_by_balance(
         %{slug: "ethereum"},
         1,
         additional_filters: [

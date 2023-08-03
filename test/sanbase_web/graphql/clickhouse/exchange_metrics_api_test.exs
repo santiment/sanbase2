@@ -80,7 +80,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
       ]
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Exchanges.ExchangeMetric.top_exchanges_by_balance/3,
+        &Sanbase.Clickhouse.Exchanges.top_exchanges_by_balance/3,
         {:ok, data}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->

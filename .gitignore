@@ -7,6 +7,7 @@
 /.history/
 !.env.example
 !app/.env
+.elixir-tools/
 
 # Generated on crash by the VM
 erl_crash.dump

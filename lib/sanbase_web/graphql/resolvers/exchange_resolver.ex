@@ -12,6 +12,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
     ExchangeAddress.exchange_names(slug, Map.get(args, :is_dex, nil))
   end
 
+  def get_label_based_metric_owners(_root, %{metric: metric} = args, _resolution) do
+    Exchanges.owners_by_slug_and_metric(metric, args[:slug])
+  end
+
   def top_exchanges_by_balance(
         _root,
         args,
@@ -26,7 +30,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
       end
 
     with {:ok, selector} <- Sanbase.Project.Selector.args_to_selector(args),
-         {:ok, result} <- Exchanges.ExchangeMetric.top_exchanges_by_balance(selector, limit, opts) do
+         {:ok, result} <- Exchanges.top_exchanges_by_balance(selector, limit, opts) do
       {:ok, result}
     end
     |> maybe_handle_graphql_error(fn error ->

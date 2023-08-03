@@ -1,7 +1,12 @@
-defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
+defmodule Sanbase.Clickhouse.Exchanges do
+  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
+
   import Sanbase.Metric.SqlQuery.Helper, only: [asset_id_filter: 2, additional_filters: 3]
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+
+  @name_to_metric_map FileHandler.name_to_metric_map()
+  @table_map FileHandler.table_map()
 
   def top_exchanges_by_balance(%{slug: slug_or_slugs}, limit, opts \\ []) do
     filters = Keyword.get(opts, :additional_filters, [])
@@ -24,7 +29,38 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
     )
   end
 
+  def owners_by_slug_and_metric(metric, slug) do
+    table = Map.get(@table_map, metric)
+
+    case not is_nil(table) && table =~ "label" do
+      true ->
+        query_struct = owners_by_slug_and_metric_query(metric, slug)
+
+        ClickhouseRepo.query_transform(query_struct, fn [owner] -> owner end)
+
+      false ->
+        {:error, "The provided metric #{metric} is not a label-based metric"}
+    end
+  end
+
   # Private functions
+
+  defp owners_by_slug_and_metric_query(metric, slug) do
+    params = %{
+      metric: Map.get(@name_to_metric_map, metric),
+      slug: slug
+    }
+
+    sql = """
+    SELECT DISTINCT owner
+    FROM #{Map.get(@table_map, metric)}
+    WHERE
+      metric_id = get_metric_id({{metric}})
+      #{if slug, do: "AND asset_id = get_asset_id({{slug}})"}
+    """
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
 
   defp top_exchanges_by_balance_query(slug_or_slugs, limit, filters) do
     params = %{slug: slug_or_slugs, limit: limit}

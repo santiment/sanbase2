@@ -94,6 +94,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:context, list_of(:word_context))
     field(:score, non_null(:float))
     field(:word, non_null(:string))
+    field(:summary, non_null(:string))
     field(:summaries, list_of(:trending_word_summary))
   end
 

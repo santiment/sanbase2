@@ -77,10 +77,18 @@ defmodule Sanbase.SocialData.TrendingWords do
       [dt, word, _project, score, context, summary], acc ->
         datetime = DateTime.from_unix!(dt)
 
-        summaries = [%{source: source, summary: summary}]
+        summaries = [%{source: source, datetime: datetime, summary: summary}]
         context = transform_context(context)
 
-        elem = %{word: word, score: score, context: context, summaries: summaries}
+        elem = %{
+          word: word,
+          score: score,
+          context: context,
+          # Keep both summaries and summary for backwards compatibility. Remove summaries later
+          summary: summary,
+          summaries: summaries
+        }
+
         Map.update(acc, datetime, [elem], fn words -> [elem | words] end)
     end)
   end

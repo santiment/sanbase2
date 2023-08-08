@@ -53,7 +53,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsWatchlistTargetTest do
 
   test "evaluate trending words triggers", context do
     with_mock Sanbase.SocialData.TrendingWords, [:passthrough],
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok, [%{word: context.p1.ticker, score: 10}] ++ top_words()}
       end do
       [triggered] =

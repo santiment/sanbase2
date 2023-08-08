@@ -122,7 +122,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
       ]
 
       with_mock SocialData.TrendingWords,
-        get_word_trending_history: fn _, _, _, _, _ -> {:ok, success_response} end do
+        get_word_trending_history: fn _, _, _, _, _, _ -> {:ok, success_response} end do
         args = %{word: "word", from: dt1, to: dt3, interval: "1d", size: 10}
 
         query = word_trending_history_query(args)
@@ -144,7 +144,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
       %{dt1: dt1, dt2: dt2} = context
 
       with_mock SocialData.TrendingWords,
-        get_word_trending_history: fn _, _, _, _, _ -> {:error, "Something went wrong"} end do
+        get_word_trending_history: fn _, _, _, _, _, _ -> {:error, "Something went wrong"} end do
         args = %{word: "word", from: dt1, to: dt2, interval: "1d", size: 10}
 
         query = word_trending_history_query(args)
@@ -170,7 +170,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
       ]
 
       with_mock SocialData.TrendingWords,
-        get_project_trending_history: fn _, _, _, _, _ -> {:ok, success_response} end do
+        get_project_trending_history: fn _, _, _, _, _, _ -> {:ok, success_response} end do
         args = %{
           slug: project.slug,
           from: dt1,
@@ -198,7 +198,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
       %{dt1: dt1, dt2: dt2} = context
 
       with_mock SocialData.TrendingWords,
-        get_word_trending_history: fn _, _, _, _, _ -> {:error, "Something went wrong"} end do
+        get_word_trending_history: fn _, _, _, _, _, _ -> {:error, "Something went wrong"} end do
         args = %{word: "word", from: dt1, to: dt2, interval: "1d", size: 10}
 
         query = word_trending_history_query(args)

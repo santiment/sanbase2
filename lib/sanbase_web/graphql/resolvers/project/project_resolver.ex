@@ -211,7 +211,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   defp trending_projects() do
     Cache.wrap(
       fn ->
-        case Sanbase.SocialData.TrendingWords.get_currently_trending_projects(10) do
+        case Sanbase.SocialData.TrendingWords.get_currently_trending_projects(10, :all) do
           {:ok, data} -> {:ok, Enum.map(data, & &1.slug)}
           {:error, error} -> {:error, error}
         end

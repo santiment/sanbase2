@@ -4,11 +4,9 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  enum :trending_words_sources do
+  enum :trending_words_source do
     value(:telegram)
-    value(:twitter)
     value(:twitter_crypto)
-    value(:bitcointalk)
     value(:reddit)
     value(:all)
   end
@@ -93,10 +91,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   end
 
   object :word_with_context do
-    field :context, list_of(:word_context) do
-      cache_resolve(&SocialDataResolver.word_context/3)
-    end
-
+    field(:context, list_of(:word_context))
     field(:score, non_null(:float))
     field(:word, non_null(:string))
     field(:summaries, list_of(:trending_word_summary))
@@ -105,7 +100,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   object :word_trend_score do
     field(:datetime, non_null(:datetime))
     field(:score, non_null(:float))
-    field(:source, :trending_words_sources)
+    field(:source, :trending_words_source)
   end
 
   object :word_context do

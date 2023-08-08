@@ -55,9 +55,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         %{from: from, to: to, interval: interval, size: size} = args,
         _resolution
       ) do
-    sources = Map.get(args, :sources)
+    source = Map.get(args, :source, :all)
 
-    case SocialData.TrendingWords.get_trending_words(from, to, interval, size, sources) do
+    case SocialData.TrendingWords.get_trending_words(from, to, interval, size, source) do
       {:ok, result} ->
         result =
           result
@@ -81,7 +81,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         %{word: word, from: from, to: to, interval: interval, size: size},
         _resolution
       ) do
-    SocialData.TrendingWords.get_word_trending_history(word, from, to, interval, size)
+    SocialData.TrendingWords.get_word_trending_history(word, from, to, interval, size, :all)
   end
 
   def get_project_trending_history(
@@ -89,7 +89,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         %{slug: slug, from: from, to: to, interval: interval, size: size},
         _resolution
       ) do
-    SocialData.TrendingWords.get_project_trending_history(slug, from, to, interval, size)
+    SocialData.TrendingWords.get_project_trending_history(slug, from, to, interval, size, :all)
   end
 
   def words_social_volume(

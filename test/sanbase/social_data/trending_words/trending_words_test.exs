@@ -34,13 +34,27 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                         score: 5,
                         word: "ethereum",
                         context: context,
-                        summaries: [%{datetime: dt1, source: "telegram", summary: "summary2"}]
+                        summary: "summary2",
+                        summaries: [
+                          %{
+                            datetime: dt1,
+                            source: "reddit,telegram,twitter_crypto",
+                            summary: "summary2"
+                          }
+                        ]
                       },
                       %{
                         score: 10,
                         word: "bitcoin",
                         context: context,
-                        summaries: [%{datetime: dt1, source: "telegram", summary: "summary1"}]
+                        summary: "summary1",
+                        summaries: [
+                          %{
+                            datetime: dt1,
+                            source: "reddit,telegram,twitter_crypto",
+                            summary: "summary1"
+                          }
+                        ]
                       }
                     ],
                     dt2 => [
@@ -48,13 +62,27 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                         score: 70,
                         word: "boom",
                         context: context,
-                        summaries: [%{datetime: dt2, source: "telegram", summary: "summary4"}]
+                        summary: "summary4",
+                        summaries: [
+                          %{
+                            datetime: dt2,
+                            source: "reddit,telegram,twitter_crypto",
+                            summary: "summary4"
+                          }
+                        ]
                       },
                       %{
                         score: 2,
                         word: "san",
                         context: context,
-                        summaries: [%{datetime: dt2, source: "telegram", summary: "summary3"}]
+                        summary: "summary3",
+                        summaries: [
+                          %{
+                            datetime: dt2,
+                            source: "reddit,telegram,twitter_crypto",
+                            summary: "summary3"
+                          }
+                        ]
                       }
                     ],
                     dt3 => [
@@ -62,13 +90,27 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                         score: 2,
                         word: "xrp",
                         context: context,
-                        summaries: [%{datetime: dt3, source: "telegram", summary: "summary6"}]
+                        summary: "summary6",
+                        summaries: [
+                          %{
+                            datetime: dt3,
+                            source: "reddit,telegram,twitter_crypto",
+                            summary: "summary6"
+                          }
+                        ]
                       },
                       %{
                         score: 1,
                         word: "eth",
                         context: context,
-                        summaries: [%{datetime: dt3, source: "reddit", summary: "summary5"}]
+                        summary: "summary5",
+                        summaries: [
+                          %{
+                            datetime: dt3,
+                            source: "reddit,telegram,twitter_crypto",
+                            summary: "summary5"
+                          }
+                        ]
                       }
                     ]
                   }}
@@ -105,13 +147,27 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                       score: 2,
                       word: "xrp",
                       context: context,
-                      summaries: [%{datetime: dt3, source: "telegram", summary: "summary6"}]
+                      summary: "summary6",
+                      summaries: [
+                        %{
+                          datetime: dt3,
+                          source: "reddit,telegram,twitter_crypto",
+                          summary: "summary6"
+                        }
+                      ]
                     },
                     %{
                       score: 1,
                       word: "eth",
                       context: context,
-                      summaries: [%{datetime: dt3, source: "reddit", summary: "summary5"}]
+                      summary: "summary5",
+                      summaries: [
+                        %{
+                          datetime: dt3,
+                          source: "reddit,telegram,twitter_crypto",
+                          summary: "summary5"
+                        }
+                      ]
                     }
                   ]}
       end)
@@ -220,12 +276,12 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     ]
 
     [
-      [dt1_unix, "bitcoin", nil, 10, context, [["telegram", dt1_unix, "summary1"]]],
-      [dt1_unix, "ethereum", nil, 5, context, [["telegram", dt1_unix, "summary2"]]],
-      [dt2_unix, "san", nil, 2, context, [["telegram", dt2_unix, "summary3"]]],
-      [dt2_unix, "boom", nil, 70, context, [["telegram", dt2_unix, "summary4"]]],
-      [dt3_unix, "eth", nil, 1, context, [["reddit", dt3_unix, "summary5"]]],
-      [dt3_unix, "xrp", nil, 2, context, [["telegram", dt3_unix, "summary6"]]]
+      [dt1_unix, "bitcoin", nil, 10, context, "summary1"],
+      [dt1_unix, "ethereum", nil, 5, context, "summary2"],
+      [dt2_unix, "san", nil, 2, context, "summary3"],
+      [dt2_unix, "boom", nil, 70, context, "summary4"],
+      [dt3_unix, "eth", nil, 1, context, "summary5"],
+      [dt3_unix, "xrp", nil, 2, context, "summary6"]
     ]
   end
 end

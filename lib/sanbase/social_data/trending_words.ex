@@ -74,26 +74,15 @@ defmodule Sanbase.SocialData.TrendingWords do
     query_struct = get_trending_words_query(from, to, interval, size, source)
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn
-      [dt, word, _project, score, context, summaries], acc ->
+      [dt, word, _project, score, context, summary], acc ->
         datetime = DateTime.from_unix!(dt)
 
-        summaries = transform_summaries_result(summaries)
+        summaries = [%{source: source, summary: summary}]
         context = transform_context(context)
 
         elem = %{word: word, score: score, context: context, summaries: summaries}
         Map.update(acc, datetime, [elem], fn words -> [elem | words] end)
     end)
-  end
-
-  defp transform_summaries_result(summaries) do
-    summaries
-    |> List.flatten()
-    |> Enum.chunk_every(3)
-    |> Enum.map(fn [source, dt, summary] ->
-      %{source: source, datetime: DateTime.from_unix!(dt), summary: summary}
-    end)
-    |> Enum.reject(&(&1.summary == ""))
-    |> Enum.uniq()
   end
 
   defp transform_context(context) do
@@ -235,7 +224,7 @@ defmodule Sanbase.SocialData.TrendingWords do
       any(project) AS project,
       argMax(score, dt) / {{score_equalizer}} AS score,
       argMax(words_context, dt) AS context,
-      groupArray(tuple(source, t, summary)) AS summaries
+      argMax(summary, dt) AS summaries
     FROM #{@table}
     WHERE
       dt >= toDateTime({{from}}) AND

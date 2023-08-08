@@ -40,7 +40,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingWordTest do
 
   test "evaluate trending words triggers", context do
     with_mock Sanbase.SocialData.TrendingWords, [:passthrough],
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok, [%{word: "Santiment", score: 10}] ++ top_words()}
       end do
       [triggered] =
@@ -63,7 +63,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingWordTest do
     end)
 
     with_mock Sanbase.SocialData.TrendingWords, [:passthrough],
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok, [%{word: "sANtiment", score: 10}] ++ top_words()}
       end do
       assert capture_log(fn ->
@@ -86,7 +86,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingWordTest do
     end)
 
     with_mock Sanbase.SocialData.TrendingWords, [:passthrough],
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok, [%{word: "santiment", score: 10}, %{word: "san", score: 11}] ++ top_words()}
       end do
       assert capture_log(fn ->
@@ -109,7 +109,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingWordTest do
     end)
 
     with_mock Sanbase.SocialData.TrendingWords, [:passthrough],
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok, [%{word: "santiment", score: 10}, %{word: "san", score: 11}] ++ top_words()}
       end do
       [triggered] =

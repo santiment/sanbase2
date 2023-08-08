@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
   test "no ticker or slug is trending", context do
     with_mock Sanbase.SocialData.TrendingWords,
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok,
          [
            %{word: "1", score: 2},
@@ -64,7 +64,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
     slug = context.project1.slug |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok,
          [
            %{word: slug, score: 2},
@@ -93,7 +93,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
     ticker = context.project2.ticker |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok,
          [
            %{word: ticker, score: 2},
@@ -123,7 +123,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
     slug = context.project1.slug |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok,
          [
            %{word: ticker, score: 1.5},
@@ -154,7 +154,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
     name = context.project1.name |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok,
          [
            %{word: name, score: 2},
@@ -185,7 +185,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
     name2 = context.project2.name |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok,
          [
            %{word: name1, score: 3},
@@ -206,7 +206,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
     ticker2 = context.project2.ticker |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok,
          [
            %{word: name1, score: 3},
@@ -235,7 +235,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
     slug = context.project1.slug |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok,
          [
            %{word: slug, score: 3},
@@ -260,7 +260,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
     ticker = context.project1.ticker |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok,
          [
            %{word: slug, score: 3},
@@ -288,7 +288,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
     slug2 = context.project3.slug |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok,
          [
            %{word: slug, score: 3},

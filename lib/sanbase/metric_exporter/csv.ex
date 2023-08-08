@@ -276,7 +276,7 @@ defmodule Sanbase.MetricExporter.CSV do
     filename = "trending_words_1h_santiment_#{format_dt(date, @send_hour)}.csv.gz"
     header = ["datetime"] ++ rename_column(Enum.to_list(1..10))
 
-    {:ok, data} = Sanbase.SocialData.TrendingWords.get_trending_words(from, to, "1h", 10)
+    {:ok, data} = Sanbase.SocialData.TrendingWords.get_trending_words(from, to, "1h", 10, :all)
 
     data =
       data

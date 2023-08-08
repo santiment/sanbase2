@@ -152,7 +152,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     {:ok, trending_words} =
       Cache.wrap(
         fn ->
-          {:ok, words} = TrendingWords.get_currently_trending_words(@trending_words_size)
+          {:ok, words} = TrendingWords.get_currently_trending_words(@trending_words_size, :all)
 
           result =
             words

@@ -22,7 +22,9 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result = TrendingWords.get_trending_words(dt1, dt3, "1d", 2)
+        result = TrendingWords.get_trending_words(dt1, dt3, "1d", 2, :all)
+
+        context = [%{word: "usd", score: 1.0}, %{word: "money", score: 0.5}]
 
         assert result ==
                  {:ok,
@@ -31,11 +33,13 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                       %{
                         score: 5,
                         word: "ethereum",
+                        context: context,
                         summaries: [%{datetime: dt1, source: "telegram", summary: "summary2"}]
                       },
                       %{
                         score: 10,
                         word: "bitcoin",
+                        context: context,
                         summaries: [%{datetime: dt1, source: "telegram", summary: "summary1"}]
                       }
                     ],
@@ -43,11 +47,13 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                       %{
                         score: 70,
                         word: "boom",
+                        context: context,
                         summaries: [%{datetime: dt2, source: "telegram", summary: "summary4"}]
                       },
                       %{
                         score: 2,
                         word: "san",
+                        context: context,
                         summaries: [%{datetime: dt2, source: "telegram", summary: "summary3"}]
                       }
                     ],
@@ -55,11 +61,13 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                       %{
                         score: 2,
                         word: "xrp",
+                        context: context,
                         summaries: [%{datetime: dt3, source: "telegram", summary: "summary6"}]
                       },
                       %{
                         score: 1,
                         word: "eth",
+                        context: context,
                         summaries: [%{datetime: dt3, source: "reddit", summary: "summary5"}]
                       }
                     ]
@@ -72,7 +80,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        {:error, error} = TrendingWords.get_trending_words(dt1, dt3, "1d", 2)
+        {:error, error} = TrendingWords.get_trending_words(dt1, dt3, "1d", 2, :all)
 
         assert error =~ "Cannot execute database query."
       end)
@@ -86,7 +94,9 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result = TrendingWords.get_currently_trending_words(10)
+        result = TrendingWords.get_currently_trending_words(10, :all)
+
+        context = [%{word: "usd", score: 1.0}, %{word: "money", score: 0.5}]
 
         assert result ==
                  {:ok,
@@ -94,11 +104,13 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                     %{
                       score: 2,
                       word: "xrp",
+                      context: context,
                       summaries: [%{datetime: dt3, source: "telegram", summary: "summary6"}]
                     },
                     %{
                       score: 1,
                       word: "eth",
+                      context: context,
                       summaries: [%{datetime: dt3, source: "reddit", summary: "summary5"}]
                     }
                   ]}
@@ -108,7 +120,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     test "clickhouse returns error", _context do
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        {:error, error} = TrendingWords.get_currently_trending_words(10)
+        {:error, error} = TrendingWords.get_currently_trending_words(10, :all)
 
         assert error =~ "Cannot execute database query."
       end)
@@ -122,7 +134,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result = TrendingWords.get_word_trending_history("word", dt1, dt3, "1d", 10)
+        result = TrendingWords.get_word_trending_history("word", dt1, dt3, "1d", 10, :all)
 
         assert result ==
                  {:ok,
@@ -138,7 +150,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        {:error, error} = TrendingWords.get_word_trending_history("word", dt1, dt2, "1h", 10)
+        {:error, error} =
+          TrendingWords.get_word_trending_history("word", dt1, dt2, "1h", 10, :all)
 
         assert error =~ "Cannot execute database query."
       end)
@@ -154,7 +167,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result = TrendingWords.get_project_trending_history(project.slug, dt1, dt3, "1d", 10)
+        result =
+          TrendingWords.get_project_trending_history(project.slug, dt1, dt3, "1d", 10, :all)
 
         assert result ==
                  {:ok,
@@ -172,7 +186,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:error, error} =
-          TrendingWords.get_project_trending_history(project.slug, dt1, dt2, "1h", 10)
+          TrendingWords.get_project_trending_history(project.slug, dt1, dt2, "1h", 10, :all)
 
         assert error =~ "Cannot execute database query."
       end)
@@ -200,13 +214,18 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     dt2_unix = DateTime.to_unix(dt2)
     dt3_unix = DateTime.to_unix(dt3)
 
+    context = [
+      "{'word': 'usd', 'score': 1.0}",
+      "{'word': 'money', 'score': 0.5}"
+    ]
+
     [
-      [dt1_unix, "bitcoin", nil, 10, [["telegram", dt1_unix, "summary1"]]],
-      [dt1_unix, "ethereum", nil, 5, [["telegram", dt1_unix, "summary2"]]],
-      [dt2_unix, "san", nil, 2, [["telegram", dt2_unix, "summary3"]]],
-      [dt2_unix, "boom", nil, 70, [["telegram", dt2_unix, "summary4"]]],
-      [dt3_unix, "eth", nil, 1, [["reddit", dt3_unix, "summary5"]]],
-      [dt3_unix, "xrp", nil, 2, [["telegram", dt3_unix, "summary6"]]]
+      [dt1_unix, "bitcoin", nil, 10, context, [["telegram", dt1_unix, "summary1"]]],
+      [dt1_unix, "ethereum", nil, 5, context, [["telegram", dt1_unix, "summary2"]]],
+      [dt2_unix, "san", nil, 2, context, [["telegram", dt2_unix, "summary3"]]],
+      [dt2_unix, "boom", nil, 70, context, [["telegram", dt2_unix, "summary4"]]],
+      [dt3_unix, "eth", nil, 1, context, [["reddit", dt3_unix, "summary5"]]],
+      [dt3_unix, "xrp", nil, 2, context, [["telegram", dt3_unix, "summary6"]]]
     ]
   end
 end

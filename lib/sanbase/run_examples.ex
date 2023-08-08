@@ -174,7 +174,8 @@ defmodule Sanbase.RunExamples do
         ~U[2023-01-23 00:00:00Z],
         ~U[2023-01-30 00:00:00Z],
         "1d",
-        10
+        10,
+        :all
       )
 
     {:ok, [_ | _]} =
@@ -183,10 +184,11 @@ defmodule Sanbase.RunExamples do
         @from,
         ~U[2023-01-30 00:00:00Z],
         "1d",
-        10
+        10,
+        :all
       )
 
-    {:ok, %{}} = Sanbase.SocialData.TrendingWords.get_trending_words(@from, @to, "6h", 10)
+    {:ok, %{}} = Sanbase.SocialData.TrendingWords.get_trending_words(@from, @to, "6h", 10, :all)
 
     {:ok, :success}
   end

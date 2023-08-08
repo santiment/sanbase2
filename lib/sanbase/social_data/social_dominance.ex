@@ -95,7 +95,7 @@ defmodule Sanbase.SocialData.SocialDominance do
     %{from: from, to: to, interval: interval, source: source} = social_dominance_args()
 
     with {:ok, trending_words} when trending_words != [] <-
-           SocialData.TrendingWords.get_currently_trending_words(@trending_words_size),
+           SocialData.TrendingWords.get_currently_trending_words(@trending_words_size, :all),
          words <- Enum.map(trending_words, & &1.word),
          {:ok, words_volume} <-
            SocialData.social_volume(%{words: words}, from, to, interval, source),

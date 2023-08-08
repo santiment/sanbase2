@@ -30,7 +30,6 @@ defmodule Sanbase.ClickhouseRepo do
   """
   def init(_, opts) do
     pool_size = Config.module_get(__MODULE__, :pool_size) |> Sanbase.Math.to_integer()
-    url = System.get_env("CLICKHOUSE_DATABASE_URL")
 
     opts =
       opts
@@ -120,8 +119,11 @@ defmodule Sanbase.ClickhouseRepo do
     maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
 
     case __MODULE__.query(sanitized_query, ordered_params) do
-      {:ok, result} -> {:ok, Enum.reduce(result.rows, init, reducer)}
-      {:error, error} -> log_and_return_error(error, "query_reduce/4")
+      {:ok, result} ->
+        {:ok, Enum.reduce(result.rows, init, reducer)}
+
+      {:error, error} ->
+        log_and_return_error(error, "query_reduce/4")
     end
   rescue
     e ->

@@ -32,7 +32,7 @@ defmodule Sanbase.RunExamples do
     break_if_production()
 
     original_level = Application.get_env(:logger, :level)
-    max_concurrency = 2 * System.schedulers()
+    max_concurrency = 4
     timeout_minutes = 10
 
     IO.puts("""
@@ -168,7 +168,7 @@ defmodule Sanbase.RunExamples do
   end
 
   defp do_run(:trending_words) do
-    {:ok, [_ | _]} =
+    {:ok, _} =
       Sanbase.SocialData.TrendingWords.get_project_trending_history(
         "bitcoin",
         ~U[2023-01-23 00:00:00Z],
@@ -178,7 +178,7 @@ defmodule Sanbase.RunExamples do
         :all
       )
 
-    {:ok, [_ | _]} =
+    {:ok, _} =
       Sanbase.SocialData.TrendingWords.get_word_trending_history(
         "bitcoin",
         @from,
@@ -427,6 +427,30 @@ defmodule Sanbase.RunExamples do
         nil
       )
 
+    {:ok, %{"santiment" => _}} =
+      Sanbase.Clickhouse.Github.total_dev_activity_contributors_count(
+        ["santiment"],
+        @from,
+        @to
+      )
+
+    {:ok, [_ | _]} =
+      Sanbase.Clickhouse.Github.github_activity_contributors_count(
+        ["santiment"],
+        @from,
+        @to,
+        "1d",
+        "None",
+        nil
+      )
+
+    {:ok, %{"santiment" => _}} =
+      Sanbase.Clickhouse.Github.total_github_activity_contributors_count(
+        ["santiment"],
+        @from,
+        @to
+      )
+
     for metric <- ["dev_activity", "dev_activity_contributors_count"] do
       {:ok, [_ | _]} =
         Sanbase.Metric.timeseries_data(
@@ -454,14 +478,21 @@ defmodule Sanbase.RunExamples do
   end
 
   defp do_run(:historical_balance) do
-    {:ok, [_ | _]} =
-      Sanbase.Clickhouse.HistoricalBalance.historical_balance(
-        %{slug: "ethereum"},
-        @null_address,
-        @from,
-        @to,
-        "1d"
-      )
+    for {slug, address} <- [
+          {"ethereum", @null_address},
+          {"santiment", @null_address},
+          {"xrp", "rMQ98K56yXJbDGv49ZSmW51sLn94Xe1mu1"},
+          {"bitcoin", "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"}
+        ] do
+      {:ok, [_ | _]} =
+        Sanbase.Clickhouse.HistoricalBalance.historical_balance(
+          %{slug: slug},
+          address,
+          @from,
+          @to,
+          "1d"
+        )
+    end
 
     {:ok, [_ | _]} =
       Sanbase.Clickhouse.HistoricalBalance.balance_change(

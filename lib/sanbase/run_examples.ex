@@ -25,6 +25,7 @@ defmodule Sanbase.RunExamples do
   ]
 
   @from ~U[2023-01-01 00:00:00Z]
+  @closer_to ~U[2023-01-01 08:00:00Z]
   @to ~U[2023-01-03 00:00:00Z]
   @null_address "0x0000000000000000000000000000000000000000"
 
@@ -489,7 +490,7 @@ defmodule Sanbase.RunExamples do
           %{slug: slug},
           address,
           @from,
-          @to,
+          @closer_to,
           "1d"
         )
     end
@@ -499,13 +500,13 @@ defmodule Sanbase.RunExamples do
         %{slug: "ethereum"},
         @null_address,
         @from,
-        @to
+        @closer_to
       )
 
     {:ok, [_ | _]} =
       Sanbase.Clickhouse.HistoricalBalance.usd_value_address_change(
         %{infrastructure: "ETH", address: @null_address},
-        @from
+        Timex.shift(Timex.now(), days: -3)
       )
 
     {:ok, [_ | _]} =

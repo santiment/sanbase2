@@ -275,7 +275,7 @@ defmodule Sanbase.Clickhouse.Github.SqlQuery do
       SELECT owner, uniqExact(actor) AS value
       FROM #{@table}
       PREWHERE
-        owner IN ({{organizatins}}) AND
+        owner IN ({{organizations}}) AND
         dt >= toDateTime({{from}}) AND
         dt <= toDateTime({{to}})
       GROUP BY owner

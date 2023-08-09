@@ -199,7 +199,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
         address = {{address}} AND
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}}) AND
-        currency = {{currency }}
+        currency = {{currency}}
       GROUP BY time
     )
     GROUP BY time

@@ -257,7 +257,7 @@ defmodule Sanbase.Balance.SqlQuery do
         values_merged.2 AS value
       FROM balances_aggregated
       WHERE
-        #{address_clause(addresses, argument_name: "аddresses")} AND
+        #{address_clause(addresses, argument_name: "addresses")} AND
         blockchain = {{blockchain}} AND
         asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1 )
       GROUP BY address

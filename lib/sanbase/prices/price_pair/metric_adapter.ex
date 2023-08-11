@@ -138,7 +138,7 @@ defmodule Sanbase.PricePair.MetricAdapter do
 
   def available_metrics(%{slug: slug}) do
     cache_key = {__MODULE__, :has_price_data?, slug} |> Sanbase.Cache.hash()
-    cache_key_with_ttl = {cache_key, 600}
+    cache_key_with_ttl = {cache_key, 900}
 
     case Sanbase.Cache.get_or_store(cache_key_with_ttl, fn ->
            PricePair.available_quote_assets(slug)

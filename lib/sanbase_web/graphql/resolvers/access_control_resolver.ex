@@ -11,12 +11,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
 
     product_code = Product.code_by_id(product_id)
 
+    filter = Map.get(args, :filter)
+
     Cache.wrap(
       fn ->
-        restrictions = Sanbase.Billing.Plan.Restrictions.get_all(plan_name, product_code)
+        restrictions = Sanbase.Billing.Plan.Restrictions.get_all(plan_name, product_code, filter)
         {:ok, restrictions}
       end,
-      {:get_access_restrictions, plan_name, product_code}
+      {:get_access_restrictions, plan_name, product_code, filter}
     ).()
   end
 

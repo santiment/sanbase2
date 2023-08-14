@@ -65,6 +65,7 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
       getAccessRestrictions{
         type
         name
+        internalName
         isRestricted
         restrictedFrom
         restrictedTo

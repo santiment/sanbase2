@@ -18,6 +18,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   @selectors_map FileHandler.selectors_map()
   @human_readable_name_map FileHandler.human_readable_name_map()
   @signal_to_name_map FileHandler.signal_to_name_map()
+  @name_to_signal_map FileHandler.name_to_signal_map()
   @access_map FileHandler.access_map()
   @min_plan_map FileHandler.min_plan_map()
   @free_signals FileHandler.signals_with_access(:free)
@@ -83,6 +84,7 @@ defmodule Sanbase.Signal.SignalAdapter do
     {:ok,
      %{
        signal: signal,
+       internal_signal: Map.get(@name_to_signal_map, signal),
        min_interval: Map.get(@min_interval_map, signal),
        default_aggregation: Map.get(@aggregation_map, signal),
        available_aggregations: @aggregations,

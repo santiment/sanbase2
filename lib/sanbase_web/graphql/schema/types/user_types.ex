@@ -265,9 +265,16 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:pulse_count, :integer)
   end
 
+  enum :access_restriction_filter_enum do
+    value(:metric)
+    value(:query)
+    value(:signal)
+  end
+
   object :access_restriction do
     field(:type, non_null(:string))
     field(:name, non_null(:string))
+    field(:internal_name, non_null(:string))
     field(:min_interval, :string)
     field(:is_restricted, non_null(:boolean))
     field(:is_accessible, non_null(:boolean))

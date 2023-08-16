@@ -222,8 +222,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def available_slugs(), do: get_available_slugs()
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs(metric) when metric in @histogram_metrics_name_list,
-    do: HistogramMetric.available_slugs(metric)
+  def available_slugs(metric)
+      # otherwise age_distribution causes an infinite loop
+      when metric in @histogram_metrics_name_list and metric not in ["age_distribution"],
+      do: HistogramMetric.available_slugs(metric)
 
   def available_slugs(metric), do: get_available_slugs(metric)
 

@@ -164,15 +164,21 @@ defmodule Sanbase.Intercom.StripeAttributes do
   end
 
   def current_subs() do
-    from(s in Timeseries, order_by: [desc: s.id], limit: 1)
-    |> Repo.one()
-    |> Map.get(:subscriptions)
-    |> Enum.map(fn map_with_string_keys ->
-      Enum.map(map_with_string_keys, fn {key, value} ->
-        {String.to_existing_atom(key), value}
-      end)
-      |> Enum.into(%{})
-    end)
+    query = from(s in Timeseries, order_by: [desc: s.id], limit: 1)
+
+    case Repo.one(query) do
+      nil ->
+        raise("No subscriptions found in subscription_timeseries")
+
+      %Timeseries{subscriptions: subscriptions} ->
+        subscriptions
+        |> Enum.map(fn map_with_string_keys ->
+          Enum.map(map_with_string_keys, fn {key, value} ->
+            {String.to_existing_atom(key), value}
+          end)
+          |> Enum.into(%{})
+        end)
+    end
   end
 
   def current_active_subs() do

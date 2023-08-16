@@ -180,6 +180,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     |> maybe_unwrap_ok_value()
   end
 
+  def available_slugs("age_distribution") do
+    Sanbase.Clickhouse.MetricAdapter.available_slugs("age_distribution")
+  end
+
   def available_slugs(metric) when metric in @spent_coins_cost_histograms do
     Metric.available_slugs("price_usd")
   end

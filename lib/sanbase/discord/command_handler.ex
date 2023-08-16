@@ -315,7 +315,8 @@ defmodule Sanbase.Discord.CommandHandler do
           Sanbase.OpenAI.ai(prompt, db_params)
           |> process_response()
 
-        Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
+        # TODO: Check
+        #  Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
         Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
 
         if ai_context do
@@ -368,13 +369,9 @@ defmodule Sanbase.Discord.CommandHandler do
     links = Sanbase.OpenAI.search_insights(query)
 
     content =
-      if length(links) == 0 do
-        "No results found"
-      else
-        Enum.map(links, fn link ->
-          "<#{link}>"
-        end)
-        |> Enum.join("\n")
+      case links do
+        [] -> "No results found"
+        _ -> Enum.map(links, &"<#{&1}>") |> Enum.join("\n")
       end
 
     Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, content: content)
@@ -575,7 +572,8 @@ defmodule Sanbase.Discord.CommandHandler do
           Sanbase.OpenAI.ai(prompt, db_params)
           |> process_response()
 
-        Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
+        # TODO: Check
+        # Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
         Nostrum.Api.create_message(thread.id, kw_list)
 
         if ai_context do

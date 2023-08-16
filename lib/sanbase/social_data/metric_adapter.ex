@@ -254,14 +254,28 @@ defmodule Sanbase.SocialData.MetricAdapter do
     do: {:ok, Project.List.projects_slugs(preload?: false)}
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs("social_volume_" <> _source),
-    do: {:ok, Project.List.projects_slugs(preload?: false)}
+  def available_slugs(metric) do
+    slugs =
+      case metric do
+        "social_volume_" <> _source ->
+          Project.List.projects_slugs(preload?: false)
 
-  def available_slugs("social_dominance_" <> _source),
-    do: {:ok, Project.List.projects_slugs(preload?: false)}
+        "social_dominance_" <> _source ->
+          Project.List.projects_slugs(preload?: false)
 
-  def available_slugs("community_messages_count_" <> _source),
-    do: {:ok, Project.List.projects_by_non_null_field(:telegram_link) |> Enum.map(& &1.slug)}
+        "community_messages_count_" <> _source ->
+          Project.List.projects_by_non_null_field(:telegram_link) |> Enum.map(& &1.slug)
+
+        metric ->
+          {:ok, %{available_selectors: selectors}} = metadata(metric)
+
+          if :slug not in selectors,
+            do: [],
+            else: raise("available_slugs/1 not implemented for #{metric}")
+      end
+
+    {:ok, slugs}
+  end
 
   @impl Sanbase.Metric.Behaviour
   def available_timeseries_metrics(), do: @timeseries_metrics
@@ -319,6 +333,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
       case metric do
         "community_messages_count" <> _ -> [:slug]
         "social_active_users" -> [:source]
+        "nft_social_volume" -> [:contract_address]
         _ -> [:slug, :text]
       end
 

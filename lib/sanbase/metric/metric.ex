@@ -784,7 +784,14 @@ defmodule Sanbase.Metric do
   # When using slug, the social metrics are fetched from clickhouse
   # But when text selector is used, the metric should be fetched from Elasticsearch
   # as it cannot be precomputed due to the vast number of possible text arguments
-  defp maybe_change_module(module, metric, %{text: _text}, _opts) do
+  defp maybe_change_module(module, metric, %{text: _}, _opts) do
+    case metric in @social_metrics do
+      true -> Sanbase.SocialData.MetricAdapter
+      false -> module
+    end
+  end
+
+  defp maybe_change_module(module, metric, %{contract_address: _}, _opts) do
     case metric in @social_metrics do
       true -> Sanbase.SocialData.MetricAdapter
       false -> module

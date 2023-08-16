@@ -94,6 +94,8 @@ defmodule Sanbase.SocialData.SocialVolume do
     end
   end
 
+  defp maybe_format_response(_data, _words = []), do: %{}
+
   defp maybe_format_response(data, words) do
     # Metricshub returns different format when a single word is provided.
     # Unify both responses so the result is handled easily

@@ -315,8 +315,7 @@ defmodule Sanbase.Discord.CommandHandler do
           Sanbase.OpenAI.ai(prompt, db_params)
           |> process_response()
 
-        # TODO: Check
-        #  Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
+        kw_list = Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
         Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, kw_list)
 
         if ai_context do
@@ -572,8 +571,7 @@ defmodule Sanbase.Discord.CommandHandler do
           Sanbase.OpenAI.ai(prompt, db_params)
           |> process_response()
 
-        # TODO: Check
-        # Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
+        kw_list = Keyword.put(kw_list, :content, trim_message(Keyword.get(kw_list, :content)))
         Nostrum.Api.create_message(thread.id, kw_list)
 
         if ai_context do

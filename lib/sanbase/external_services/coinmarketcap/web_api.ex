@@ -163,7 +163,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   end
 
   def price_stream(identifier, from_datetime, to_datetime) do
-    intervals_stream(from_datetime, to_datetime, days_step: 10)
+    intervals_stream(from_datetime, to_datetime, days_step: 1)
     |> Stream.map(&extract_price_points_for_interval(identifier, &1))
   end
 
@@ -327,10 +327,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
+    now_unix = DateTime.utc_now() |> DateTime.to_unix()
+    to_unix = Enum.min([to_unix, now_unix])
 
     Stream.unfold(from_unix, fn start_unix ->
       if start_unix <= to_unix do
         end_unix = start_unix + 86_400 * days_step
+        end_unix = Enum.min([end_unix, now_unix])
         {{start_unix, end_unix}, end_unix}
       else
         nil

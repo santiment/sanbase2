@@ -1,12 +1,12 @@
 defmodule Sanbase.Dashboard.Autocomplete do
   alias Sanbase.ClickhouseRepo
 
-  def get_data() do
+  def get_data(opts \\ []) do
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
 
     result = %{
       columns: get_columns(),
-      functions: get_functions(),
+      functions: get_functions(opts),
       tables: get_tables()
     }
 
@@ -79,14 +79,29 @@ defmodule Sanbase.Dashboard.Autocomplete do
     result
   end
 
-  defp get_functions() do
+  defp get_functions(opts) do
+    filter_functions =
+      case Keyword.get(opts, :functions_filter) do
+        :user_defined -> "origin = 'SQLUserDefined'"
+        :system -> "origin = 'System'"
+        _ -> nil
+      end
+
     sql = """
-    SELECT name
+    SELECT name, origin
     FROM system.functions
+    #{if filter_functions, do: "WHERE #{filter_functions}"}
     """
 
     query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
-    {:ok, result} = ClickhouseRepo.query_transform(query_struct, fn [name] -> %{name: name} end)
+
+    {:ok, result} =
+      ClickhouseRepo.query_transform(query_struct, fn [name, origin] ->
+        %{name: name, origin: origin}
+      end)
+
     result
+    # TODO: Remove after cleanup
+    |> Enum.reject(&(&1.name =~ ~r"boris|tzanko"))
   end
 end

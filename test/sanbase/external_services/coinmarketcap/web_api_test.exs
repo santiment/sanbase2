@@ -31,7 +31,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
       }
     end)
 
-    WebApi.fetch_and_store_prices(context.project, ~U[2023-07-19 00:00:00Z])
+    :ok = WebApi.fetch_and_store_prices(context.project, ~U[2023-07-19 00:00:00Z])
     prices = Sanbase.InMemoryKafka.Producer.get_state() |> Map.get("asset_prices")
 
     filtered_record =
@@ -56,7 +56,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
 
     from_datetime = ~U[2023-07-19 00:00:00Z]
 
-    WebApi.fetch_and_store_prices(context.project, from_datetime)
+    :ok = WebApi.fetch_and_store_prices(context.project, from_datetime)
     state = Sanbase.InMemoryKafka.Producer.get_state()
     prices = state["asset_prices"]
     assert length(prices) > 0
@@ -100,16 +100,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
       }
     end)
 
-    WebApi.fetch_and_store_prices("TOTAL_MARKET", ~U[2018-01-01 00:00:00Z])
+    :ok = WebApi.fetch_and_store_prices("TOTAL_MARKET", ~U[2018-01-01 00:00:00Z])
 
     state = Sanbase.InMemoryKafka.Producer.get_state()
     prices = state["asset_prices"]
     assert length(prices) > 0
 
-    record =
-      {"coinmarketcap_TOTAL_MARKET_2018-01-03T00:00:00.000Z",
-       "{\"marketcap_usd\":673426702336,\"price_btc\":null,\"price_usd\":null,\"slug\":\"TOTAL_MARKET\",\"source\":\"coinmarketcap\",\"timestamp\":1514937600,\"volume_usd\":43249201152}"}
+    assert {"coinmarketcap_TOTAL_MARKET_2023-08-21T12:35:00.000Z",
+            "{\"marketcap_usd\":1053345319615,\"price_btc\":null,\"price_usd\":null,\"slug\":\"TOTAL_MARKET\",\"source\":\"coinmarketcap\",\"timestamp\":1692621300,\"volume_usd\":24975771713}"} in prices
 
-    assert record in prices
+    assert {"coinmarketcap_TOTAL_MARKET_2023-08-21T12:35:00.000Z",
+            "{\"marketcap_usd\":1053345319615,\"price_btc\":null,\"price_usd\":null,\"slug\":\"TOTAL_MARKET\",\"source\":\"coinmarketcap\",\"timestamp\":1692621300,\"volume_usd\":24975771713}"} in prices
   end
 end

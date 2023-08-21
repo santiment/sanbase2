@@ -89,13 +89,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         # in case the next fetch succeeds and we store a later progress datetime
         price_stream(coinmarketcap_integer_id, last_fetched_datetime, DateTime.utc_now())
         |> Stream.take(10)
-        |> Enum.reduce_while(%{}, fn
+        |> Enum.reduce_while(:ok, fn
           {:ok, result, interval}, acc ->
             store_price_points(project, result, interval)
             {:cont, acc}
 
-          _, acc ->
-            {:halt, acc}
+          error, _acc ->
+            {:halt, {:error, "Error in fetch_and_store_prices/2 for project: #{inspect(error)}"}}
         end)
     end
   end
@@ -110,13 +110,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     # in case the next fetch succeeds and we store a later progress datetime
     price_stream("TOTAL_MARKET", last_fetched_datetime, DateTime.utc_now())
     |> Stream.take(10)
-    |> Enum.reduce_while(%{}, fn
+    |> Enum.reduce_while(:ok, fn
       {:ok, result, interval}, acc ->
         store_price_points("TOTAL_MARKET", result, interval)
         {:cont, acc}
 
-      _, acc ->
-        {:halt, acc}
+      error, _acc ->
+        {:halt, {:error, "Error in fetch_and_store_prices/2 for TOTAL_MARKET: #{inspect(error)}"}}
     end)
   end
 
@@ -170,11 +170,19 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   defp json_to_price_points(json, "TOTAL_MARKET", interval) do
     with {:ok, decoded} <- Jason.decode(json),
          %{
-           "data" => data,
-           "status" => %{"error_code" => 0, "error_message" => nil}
+           "data" => %{"quotes" => quotes},
+           "status" => %{"error_code" => "0"}
          } <- decoded do
       result =
-        Enum.map(data, fn {datetime_iso8601, [marketcap_usd, volume_usd]} ->
+        Enum.map(quotes, fn %{
+                              "quote" => [
+                                %{
+                                  "timestamp" => datetime_iso8601,
+                                  "totalMarketCap" => marketcap_usd,
+                                  "totalVolume24H" => volume_usd
+                                }
+                              ]
+                            } ->
           %PricePoint{
             marketcap_usd: marketcap_usd |> Sanbase.Math.to_integer(),
             volume_usd: volume_usd |> Sanbase.Math.to_integer(),
@@ -221,8 +229,34 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
          "TOTAL_MARKET" = total_market,
          {from_unix, to_unix} = interval
        ) do
+    "https://api.coinmarketcap.com/data-api/v3/global-metrics/quotes/historical?format=chart&interval=5m&timeEnd=#{to_unix}&timeStart=#{from_unix}"
+    |> get()
+    |> case do
+      {:ok, %Tesla.Env{status: 429} = resp} ->
+        wait_rate_limit(resp)
+        extract_price_points_for_interval(total_market, interval)
+
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
+        json_to_price_points(body, total_market, interval)
+
+      {:ok, %Tesla.Env{status: status}} ->
+        error_msg = "[CMC] Error fetching data for #{total_market}. Status code: #{status}"
+        Logger.error(error_msg)
+        {:error, error_msg}
+
+      {:error, error} ->
+        error_msg = "[CMC] Error fetching data for #{total_market}. Reason: #{inspect(error)}"
+        Logger.error(error_msg)
+        {:error, error_msg}
+    end
+  end
+
+  defp extract_price_points_for_interval(
+         "TOTAL_MARKET" = total_market,
+         {from_unix, to_unix} = interval
+       ) do
     Logger.info("""
-      [CMC] Extracting price points for TOTAL_MARKET and interval [#{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}]
+      [CMC] Extracting price points for #{total_market} and interval [#{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}]
     """)
 
     "/v1.1/global-metrics/quotes/historical?format=chart&interval=5m&time_start=#{from_unix}&time_end=#{to_unix}"
@@ -236,12 +270,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         json_to_price_points(body, total_market, interval)
 
       {:ok, %Tesla.Env{status: status}} ->
-        error_msg = "[CMC] Error fetching data for TOTAL_MARKET. Status code: #{status}"
+        error_msg = "[CMC] Error fetching data for #{total_market}. Status code: #{status}"
         Logger.error(error_msg)
         {:error, error_msg}
 
       {:error, error} ->
-        error_msg = "[CMC] Error fetching data for TOTAL_MARKET. Reason: #{inspect(error)}"
+        error_msg = "[CMC] Error fetching data for #{total_market}. Reason: #{inspect(error)}"
         Logger.error(error_msg)
         {:error, error_msg}
     end

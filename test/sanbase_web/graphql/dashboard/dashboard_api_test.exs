@@ -858,7 +858,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         getClickhouseDatabaseMetadata{
           columns{ name isInSortingKey isInPartitionKey }
           tables{ name partitionKey sortingKey primaryKey }
-          functions{ name }
+          functions{ name origin }
         }
       }
       """
@@ -876,7 +876,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
              }}
           end,
           # mock functions response
-          fn -> {:ok, %{rows: [["logTrace"], ["aes_decrypt_mysql"]]}} end,
+          fn -> {:ok, %{rows: [["logTrace", "System"], ["get_asset_id", "SQLUserDefined"]]}} end,
           # mock tables response
           fn ->
             {:ok,
@@ -912,7 +912,10 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                      "name" => "computed_at"
                    }
                  ],
-                 "functions" => [%{"name" => "logTrace"}, %{"name" => "aes_decrypt_mysql"}],
+                 "functions" => [
+                   %{"name" => "logTrace", "origin" => "System"},
+                   %{"name" => "get_asset_id", "origin" => "SQLUserDefined"}
+                 ],
                  "tables" => [
                    %{
                      "name" => "asset_metadata",

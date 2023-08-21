@@ -11,8 +11,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
   require Logger
 
-  def get_clickhouse_database_metadata(_root, _args, _resolution) do
-    Dashboard.Autocomplete.get_data()
+  def get_clickhouse_database_metadata(_root, args, _resolution) do
+    opts = [functions_filter: args[:functions_filter]]
+    Dashboard.Autocomplete.get_data(opts)
   end
 
   def user_public_dashboards(%Sanbase.Accounts.User{} = user, _args, _resolution) do

@@ -20,6 +20,8 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     field :get_clickhouse_database_metadata, :clickhouse_database_metadata do
       meta(access: :free)
 
+      arg(:functions_filter, :clickhouse_metadata_function_filter_enum)
+
       cache_resolve(&DashboardResolver.get_clickhouse_database_metadata/3)
     end
 

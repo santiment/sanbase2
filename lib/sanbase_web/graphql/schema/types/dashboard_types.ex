@@ -35,6 +35,12 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
   """
   object :clickhouse_database_function_metadata do
     field(:name, non_null(:string))
+    field(:origin, non_null(:string))
+  end
+
+  enum :clickhouse_metadata_function_filter_enum do
+    value(:system)
+    value(:user_defined)
   end
 
   @desc ~s"""

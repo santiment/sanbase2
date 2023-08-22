@@ -33,6 +33,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                       %{
                         score: 5,
                         word: "ethereum",
+                        slug: "ethereum",
                         context: context,
                         summary: "summary2",
                         summaries: [
@@ -46,6 +47,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                       %{
                         score: 10,
                         word: "bitcoin",
+                        slug: "bitcoin",
                         context: context,
                         summary: "summary1",
                         summaries: [
@@ -61,6 +63,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                       %{
                         score: 70,
                         word: "boom",
+                        slug: nil,
                         context: context,
                         summary: "summary4",
                         summaries: [
@@ -74,6 +77,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                       %{
                         score: 2,
                         word: "san",
+                        slug: "santiment",
                         context: context,
                         summary: "summary3",
                         summaries: [
@@ -89,6 +93,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                       %{
                         score: 2,
                         word: "xrp",
+                        slug: "ripple",
                         context: context,
                         summary: "summary6",
                         summaries: [
@@ -102,6 +107,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                       %{
                         score: 1,
                         word: "eth",
+                        slug: "ethereum",
                         context: context,
                         summary: "summary5",
                         summaries: [
@@ -146,6 +152,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                     %{
                       score: 2,
                       word: "xrp",
+                      slug: "ripple",
                       context: context,
                       summary: "summary6",
                       summaries: [
@@ -159,6 +166,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                     %{
                       score: 1,
                       word: "eth",
+                      slug: "ethereum",
                       context: context,
                       summary: "summary5",
                       summaries: [
@@ -276,12 +284,12 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     ]
 
     [
-      [dt1_unix, "bitcoin", nil, 10, context, "summary1"],
-      [dt1_unix, "ethereum", nil, 5, context, "summary2"],
-      [dt2_unix, "san", nil, 2, context, "summary3"],
+      [dt1_unix, "bitcoin", "BTC_bitcoin", 10, context, "summary1"],
+      [dt1_unix, "ethereum", "ETH_ethereum", 5, context, "summary2"],
+      [dt2_unix, "san", "SAN_santiment", 2, context, "summary3"],
       [dt2_unix, "boom", nil, 70, context, "summary4"],
-      [dt3_unix, "eth", nil, 1, context, "summary5"],
-      [dt3_unix, "xrp", nil, 2, context, "summary6"]
+      [dt3_unix, "eth", "ETH_ethereum", 1, context, "summary5"],
+      [dt3_unix, "xrp", "XRP_ripple", 2, context, "summary6"]
     ]
   end
 end

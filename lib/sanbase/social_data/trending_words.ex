@@ -66,15 +66,17 @@ defmodule Sanbase.SocialData.TrendingWords do
           DateTime.t(),
           interval,
           non_neg_integer,
+          atom(),
           atom()
         ) ::
           {:ok, map()} | {:error, String.t()}
-  def get_trending_words(from, to, interval, size, source) do
+  def get_trending_words(from, to, interval, size, source, word_type_filter \\ :all) do
     source = if source == :all, do: @default_source, else: to_string(source)
-    query_struct = get_trending_words_query(from, to, interval, size, source)
+    query_struct = get_trending_words_query(from, to, interval, size, source, word_type_filter)
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn
-      [dt, word, _project, score, context, summary], acc ->
+      [dt, word, project, score, context, summary], acc ->
+        slug = if project, do: String.split(project, "_", parts: 2) |> List.last()
         datetime = DateTime.from_unix!(dt)
 
         summaries = [%{source: source, datetime: datetime, summary: summary}]
@@ -82,6 +84,7 @@ defmodule Sanbase.SocialData.TrendingWords do
 
         elem = %{
           word: word,
+          slug: slug,
           score: score,
           context: context,
           # Keep both summaries and summary for backwards compatibility. Remove summaries later
@@ -117,7 +120,11 @@ defmodule Sanbase.SocialData.TrendingWords do
           {:ok, map()} | {:error, String.t()}
   def get_trending_projects(from, to, interval, size, source) do
     source = if source == :all, do: @default_source, else: to_string(source)
-    query_struct = get_trending_words_query(from, to, interval, size, source)
+    # The word_type_filter is :all for backwards compatibility. The logic is
+    # to find if any of the top `size` trending words are projects, not just
+    # taking the top 10 projects, regardless of their position in the overall
+    # ranking
+    query_struct = get_trending_words_query(from, to, interval, size, source, :all)
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn
       [_dt, _word, nil, _score], acc ->
@@ -224,12 +231,12 @@ defmodule Sanbase.SocialData.TrendingWords do
 
   # Private functions
 
-  defp get_trending_words_query(from, to, interval, size, source) do
+  defp get_trending_words_query(from, to, interval, size, source, word_type_filter) do
     sql = """
     SELECT
       #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
       word,
-      any(project) AS project,
+      any(project) AS project2,
       argMax(score, dt) / {{score_equalizer}} AS score,
       argMax(words_context, dt) AS context,
       argMax(summary, dt) AS summaries
@@ -238,6 +245,7 @@ defmodule Sanbase.SocialData.TrendingWords do
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}}) AND
       source = {{source}}
+      #{word_type_filter_str(word_type_filter)}
     GROUP BY t, word, source
     ORDER BY t, score DESC
     LIMIT {{limit}} BY t
@@ -256,8 +264,16 @@ defmodule Sanbase.SocialData.TrendingWords do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
+  defp word_type_filter_str(word_type_filter) do
+    case word_type_filter do
+      :all -> ""
+      :project -> "AND project IS NOT NULL"
+      :non_project -> "AND project IS NULL"
+    end
+  end
+
   defp word_trending_history_query(word, from, to, interval, size, source) do
-    query_struct = get_trending_words_query(from, to, interval, size, source)
+    query_struct = get_trending_words_query(from, to, interval, size, source, :all)
 
     sql =
       [
@@ -282,12 +298,12 @@ defmodule Sanbase.SocialData.TrendingWords do
   end
 
   defp project_trending_history_query(slug, from, to, interval, size, source) do
-    query_struct = get_trending_words_query(from, to, interval, size, source)
+    query_struct = get_trending_words_query(from, to, interval, size, source, :all)
 
     sql = """
     SELECT
       t,
-      toUInt32(indexOf(groupArray({{limit}})(project), {{ticker_slug}})) AS pos_in_top_n
+      toUInt32(indexOf(groupArray({{limit}})(project2), {{ticker_slug}})) AS pos_in_top_n
     FROM ( #{query_struct.sql} )
     GROUP BY t
     ORDER BY t

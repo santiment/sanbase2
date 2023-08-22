@@ -22,6 +22,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     end)
   end
 
+  def project_from_root_slug(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :project_by_slug, slug)
+    |> on_load(fn loader ->
+      {:ok, Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)}
+    end)
+  end
+
   def social_volume(
         _root,
         %{slug: slug, from: from, to: to, interval: interval, social_volume_type: type},
@@ -56,8 +64,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         _resolution
       ) do
     source = Map.get(args, :source, :all)
+    filter = Map.get(args, :word_type_filter, :all)
 
-    case SocialData.TrendingWords.get_trending_words(from, to, interval, size, source) do
+    case SocialData.TrendingWords.get_trending_words(from, to, interval, size, source, filter) do
       {:ok, result} ->
         result =
           result

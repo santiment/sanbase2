@@ -9,6 +9,9 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
+    insert(:project, slug: "bitcoin", ticker: "BTC", name: "Bitcoin")
+    insert(:project, slug: "ethereum", ticker: "ETH", name: "Ethereum")
+
     conn = setup_jwt_auth(build_conn(), user)
 
     [
@@ -21,29 +24,46 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
 
   describe "get trending words api" do
     test "success", context do
-      %{dt1: dt1, dt2: dt2, dt3: dt3} = context
+      %{dt1: dt1, dt3: dt3} = context
 
-      success_response = %{
-        dt1 => [
-          %{
-            score: 1,
-            word: "pele",
-            summaries: [%{datetime: dt1, source: "telegram", summary: "Summary"}]
-          },
-          %{score: 2, word: "people", summaries: []}
+      rows = [
+        [
+          DateTime.to_unix(dt1),
+          "eth",
+          "ETH_ethereum",
+          72.4,
+          [
+            "{'word': 'btc', 'score': 0.85}",
+            "{'word': 'halving', 'score': 1.0}"
+          ],
+          "The summary"
         ],
-        dt2 => [
-          %{score: 3, word: "btx", summaries: []},
-          %{score: 4, word: "eth", summaries: []}
+        [
+          DateTime.to_unix(dt1),
+          "btc",
+          "BTC_bitcoin",
+          74.5,
+          [
+            "{'word': 'eth', 'score': 0.63}",
+            "{'word': 'bitcoin', 'score': 1.0}"
+          ],
+          "Another summary"
         ],
-        dt3 => [
-          %{score: 5, word: "omg", summaries: []},
-          %{score: 6, word: "wtf", summaries: []}
+        [
+          DateTime.to_unix(dt1),
+          "word",
+          nil,
+          82.0,
+          [
+            "{'word': 'short', 'score': 0.82}",
+            "{'word': 'tight', 'score': 1.0}"
+          ],
+          "Third summary"
         ]
-      }
+      ]
 
-      with_mock SocialData.TrendingWords,
-        get_trending_words: fn _, _, _, _, _ -> {:ok, success_response} end do
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{from: dt1, to: dt3, interval: "1d", size: 2}
 
         query = trending_words_query(args)
@@ -56,48 +76,51 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                        "datetime" => DateTime.to_iso8601(dt1),
                        "topWords" => [
                          %{
-                           "score" => 2,
-                           "word" => "people",
-                           "summaries" => []
+                           "project" => nil,
+                           "score" => 82.0,
+                           "word" => "word",
+                           "context" => [
+                             %{"score" => 1.0, "word" => "tight"},
+                             %{"score" => 0.82, "word" => "short"}
+                           ],
+                           "summary" => "Third summary"
                          },
                          %{
-                           "score" => 1,
-                           "word" => "pele",
-                           "summaries" => [
-                             %{
-                               "datetime" => DateTime.to_iso8601(dt1),
-                               "source" => "telegram",
-                               "summary" => "Summary"
-                             }
-                           ]
+                           "project" => %{"slug" => "bitcoin"},
+                           "score" => 74.5,
+                           "word" => "btc",
+                           "context" => [
+                             %{"score" => 1.0, "word" => "bitcoin"},
+                             %{"score" => 0.63, "word" => "eth"}
+                           ],
+                           "summary" => "Another summary"
+                         },
+                         %{
+                           "project" => %{"slug" => "ethereum"},
+                           "score" => 72.4,
+                           "word" => "eth",
+                           "context" => [
+                             %{"score" => 1.0, "word" => "halving"},
+                             %{"score" => 0.85, "word" => "btc"}
+                           ],
+                           "summary" => "The summary"
                          }
-                       ]
-                     },
-                     %{
-                       "datetime" => DateTime.to_iso8601(dt2),
-                       "topWords" => [
-                         %{"score" => 4, "word" => "eth", "summaries" => []},
-                         %{"score" => 3, "word" => "btx", "summaries" => []}
-                       ]
-                     },
-                     %{
-                       "datetime" => DateTime.to_iso8601(dt3),
-                       "topWords" => [
-                         %{"score" => 6, "word" => "wtf", "summaries" => []},
-                         %{"score" => 5, "word" => "omg", "summaries" => []}
                        ]
                      }
                    ]
                  }
                }
-      end
+      end)
     end
 
     test "error", context do
       %{dt1: dt1, dt2: dt2} = context
 
-      with_mock SocialData.TrendingWords,
-        get_trending_words: fn _, _, _, _, _ -> {:error, "Something broke"} end do
+      Sanbase.Mock.prepare_mock2(
+        &SocialData.TrendingWords.get_trending_words/6,
+        {:error, "Something broke"}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
         args = %{from: dt1, to: dt2, interval: "1h", size: 10}
 
         query = trending_words_query(args)
@@ -107,7 +130,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
           |> get_error_message()
 
         assert error_msg =~ "Something broke"
-      end
+      end)
     end
   end
 
@@ -224,11 +247,12 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
           datetime
           topWords{
             word
+            project{ slug }
             score
-            summaries{
-              source
-              datetime
-              summary
+            summary
+            context{
+              word
+              score
             }
           }
         }

@@ -62,6 +62,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
       arg(:size, non_null(:integer))
+      arg(:word_type_filter, :trending_word_type_filter)
 
       arg(:source, :trending_words_source)
 

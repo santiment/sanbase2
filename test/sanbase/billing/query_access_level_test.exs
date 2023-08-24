@@ -67,6 +67,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :fetch_public_watchlists,
           :fetch_user_lists,
           :fetch_watchlists,
+          :generate_title_by_query,
           :get_access_restrictions,
           :get_attributes_for_users,
           :get_auth_sessions,

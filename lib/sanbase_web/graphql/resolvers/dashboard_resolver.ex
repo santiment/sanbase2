@@ -220,6 +220,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end)
   end
 
+  def generate_title_by_query(_root, %{query: query}, _resolution) do
+    Sanbase.OpenAI.generate_from_sql(query)
+  end
+
   # Private functions
 
   defp result_to_panel(%{panel: panel, dashboard: dashboard}) do

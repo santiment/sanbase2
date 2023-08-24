@@ -175,6 +175,15 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
         max_ttl_offset: 10
       )
     end
+
+    field :generate_title_by_query, :query_human_description do
+      meta(access: :free)
+      arg(:query, non_null(:string))
+
+      middleware(UserAuth)
+
+      resolve(&DashboardResolver.generate_title_by_query/3)
+    end
   end
 
   object :dashboard_mutations do

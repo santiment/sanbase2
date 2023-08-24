@@ -64,3 +64,9 @@ npm-debug.log
 
 # editors
 .zed
+
+# aider
+.aider.chat.history.md
+.aider.ident.cache.v1/
+.aider.tags.cache.v1/
+.aider.input.history

@@ -220,8 +220,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end)
   end
 
-  def generate_title_by_query(_root, %{query: query}, _resolution) do
-    Sanbase.OpenAI.generate_from_sql(query)
+  def generate_title_by_query(_root, %{sql_query_text: sql_query_text}, _resolution) do
+    Sanbase.OpenAI.generate_from_sql(sql_query_text)
   end
 
   # Private functions

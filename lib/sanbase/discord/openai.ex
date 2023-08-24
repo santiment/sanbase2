@@ -239,7 +239,9 @@ defmodule Sanbase.OpenAI do
       "You are a helpful assistant specialized in generating human-readable titles and descriptions based on ClickHouse SQL queries."
 
     prompt = """
-    I need you to transform the following ClickHouse SQL queries into a human-readable title and description. Always return a JSON containing 'title' and 'description' fields.
+    I need you to transform the following ClickHouse SQL queries into a human-readable title and description.
+    Always return a JSON containing 'title' and 'description' fields.
+    Important: Never return anything else besides the JSON.
 
     SQL: SELECT * FROM users WHERE age >= 21;
     {"title": "Fetch Adult Users", "description": "Retrieve all users who are 21 years old or above"}
@@ -250,10 +252,10 @@ defmodule Sanbase.OpenAI do
     SQL: #{sql};
     """
 
-    chat(prompt, system_prompt: system_prompt)
+    chat(prompt, system_prompt: system_prompt, max_tokens: 500, temperature: 0.5)
     |> case do
       {:ok, result} -> {:ok, %{title: result["title"], description: result["description"]}}
-      {:error, error} -> {:error, error}
+      {:error, _error} -> {:error, "Could not generate title and description for this SQL query"}
     end
   end
 
@@ -268,7 +270,9 @@ defmodule Sanbase.OpenAI do
 
     payload = %{
       "model" => Keyword.get(opts, :model, "gpt-4"),
-      "messages" => messages
+      "messages" => messages,
+      "max_tokens" => Keyword.get(opts, :max_tokens, 1000),
+      "temperature" => Keyword.get(opts, :temperature, 0.0)
     }
 
     headers = [
@@ -292,10 +296,16 @@ defmodule Sanbase.OpenAI do
          |> Jason.decode!()}
 
       {:ok, %HTTPoison.Response{status_code: status_code}} when status_code != 200 ->
-        handle_retry(prompt, opts, retries, "Received non-200 status code: #{status_code}")
+        error_msg =
+          "[openai_chat] Received non-200 status code: #{status_code} for prompt: #{prompt}"
+
+        Logger.error(error_msg)
+        handle_retry(prompt, opts, retries, error_msg)
 
       {:error, %HTTPoison.Error{reason: reason}} ->
-        handle_retry(prompt, opts, retries, "HTTP error: #{reason}")
+        error_msg = "[openai_chat] HTTP error: #{reason} for prompt: #{prompt}"
+        Logger.error(error_msg)
+        handle_retry(prompt, opts, retries, error_msg)
     end
   end
 

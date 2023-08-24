@@ -308,4 +308,9 @@ defmodule SanbaseWeb.Graphql.DashboardTypes do
     field(:dashboard_id, non_null(:integer))
     field(:panels, list_of(:panel_cache))
   end
+
+  object :query_human_description do
+    field(:title, non_null(:string))
+    field(:description, non_null(:string))
+  end
 end

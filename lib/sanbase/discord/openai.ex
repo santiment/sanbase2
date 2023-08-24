@@ -230,6 +230,48 @@ defmodule Sanbase.OpenAI do
     end
   end
 
+  @doc """
+  Generates a title and description based on a given SQL query using GPT-4.
+  """
+  @spec generate_from_sql(String.t()) :: {:ok, map()} | {:error, String.t()}
+  def generate_from_sql(sql) do
+    prompt = """
+    I need you to transform the following ClickHouse SQL queries into a human-readable title and description. Always return a JSON containing 'title' and 'description' fields.
+
+    SQL: SELECT * FROM users WHERE age >= 21;
+    JSON: {"title": "Fetch Adult Users", "description": "Retrieve all users who are 21 years old or above in ClickHouse."}
+
+    SQL: DELETE FROM posts WHERE post_id=5;
+    JSON: {"title": "Delete a Specific Post", "description": "Remove the post with an ID of 5 from the posts table in ClickHouse."}
+
+    SQL: #{sql};
+    """
+
+    payload = %{
+      "model" => "gpt-4",
+      "messages" => [
+        %{"role" => "system", "content" => "You are a helpful assistant specialized in generating human-readable titles and descriptions based on ClickHouse SQL queries."},
+        %{"role" => "user", "content" => prompt}
+      ]
+    }
+
+    headers = [
+      {"Content-Type", "application/json"},
+      {"Authorization", "Bearer YOUR_OPENAI_API_KEY"}
+    ]
+
+    case HTTPoison.post("https://api.openai.com/v1/chat/completions", Jason.encode!(payload), headers) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, Jason.decode!(body)["choices"] |> Enum.at(0) |> Map.get("message") |> Map.get("content") |> Jason.decode!()}
+
+      {:ok, %HTTPoison.Response{status_code: status_code}} when status_code != 200 ->
+        {:error, "Received non-200 status code: #{status_code}"}
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {:error, "HTTP error: #{reason}"}
+    end
+  end
+
   defp metrics_hub_url() do
     Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
@@ -251,5 +293,9 @@ defmodule Sanbase.OpenAI do
     Enum.reduce(@cryptos, [], fn {key, value}, acc ->
       if project == key, do: acc ++ value, else: acc
     end)
+  end
+
+  defp openai_api_key() do
+    Config.module_get(Sanbase.OpenAI, :openai_api_key)
   end
 end

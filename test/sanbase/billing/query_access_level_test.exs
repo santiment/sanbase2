@@ -155,7 +155,16 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :user_list,
           :watchlist,
           :watchlist_by_slug,
-          :words_social_dominance
+          :words_social_dominance,
+          # Queries 2.0
+          :get_dashboard,
+          :get_sql_query,
+          :get_public_queries,
+          :get_queries_executions,
+          :get_user_queries,
+          :run_dashboard_sql_query,
+          :run_raw_sql_query,
+          :run_sql_query
         ]
         |> Enum.sort()
 
@@ -163,11 +172,11 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
     end
 
     test "restricted queries defined in the schema" do
-      basic_queries =
+      restricted_queries =
         Sanbase.Billing.ApiInfo.get_queries_with_access_level(:restricted)
         |> Enum.sort()
 
-      expected_basic_queries =
+      expected_restricted_queries =
         [
           :average_token_age_consumed_in_days,
           :burn_rate,
@@ -204,7 +213,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         ]
         |> Enum.sort()
 
-      assert basic_queries == expected_basic_queries
+      assert restricted_queries == expected_restricted_queries
     end
 
     test "forbidden queries from the schema" do

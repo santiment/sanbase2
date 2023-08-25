@@ -20,6 +20,16 @@ defmodule Sanbase.Queries.QueryMetadata do
     }
   end
 
+  @doc false
+  def from_local_dev(user_id) do
+    # To be used only in test and dev environment
+    %{
+      sanbase_user_id: user_id,
+      product: "DEV",
+      query_ran_from_prod_marker: false
+    }
+  end
+
   def sanitize(map) do
     Map.new(map, fn {key, value} ->
       case is_binary(value) do

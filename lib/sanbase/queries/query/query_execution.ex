@@ -34,6 +34,22 @@ defmodule Sanbase.Queries.QueryExecution do
           updated_at: NaiveDateTime.t()
         }
 
+  @preload [:user, :query]
+
+  # The credits cost is computed as the dot product of the vectors
+  # representing the stats' values and the weights, i.e
+  # value(read_gb)*weight(read_gb) + value(result_gb)*weight(result_gb) + ...
+  # The values for the weights are manually picked.
+  @credit_cost_weights %{
+    read_compressed_gb: 0.2,
+    cpu_time_microseconds: 0.0000007,
+    query_duration_ms: 0.005,
+    memory_usage_gb: 20,
+    read_rows: 0.00000001,
+    read_gb: 0.05,
+    result_rows: 0.001,
+    result_gb: 2000
+  }
   schema "clickhouse_query_executions" do
     belongs_to(:user, User)
     belongs_to(:query, Query)
@@ -77,6 +93,8 @@ defmodule Sanbase.Queries.QueryExecution do
     :query_end_time
   ]
 
+  @required_fields @fields -- [:query_id]
+
   @doc ~s"""
   Store a query execution run by a user. It computes the credits cost
   of the computation and stores it alongside some metadata.
@@ -85,10 +103,11 @@ defmodule Sanbase.Queries.QueryExecution do
   """
   @spec store_execution(Dashboard.Query.Result.t(), user_id, non_neg_integer()) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def store_execution(query_result, user_id, attempts_left \\ 3) do
+  def store_execution(query_result, user_id, wait_fetching_details_ms, attempts_left \\ 3) do
     # The query_log needs 7.5 seconds to be flushed to disk. Trying to
-    # read the data before that can result in an empty result
-    Process.sleep(8000)
+    # read the data before that can result in an empty result. The wait_fetching_details_ms
+    # can be changed in tests to speed up the tests
+    Process.sleep(wait_fetching_details_ms)
 
     %{credits_cost: credits_cost, execution_details: execution_details} =
       compute_credits_cost(query_result)
@@ -104,12 +123,7 @@ defmodule Sanbase.Queries.QueryExecution do
 
     args =
       query_result
-      |> Map.take([
-        :query_id,
-        :clickhouse_query_id,
-        :query_start_time,
-        :query_end_time
-      ])
+      |> Map.take([:query_id, :clickhouse_query_id, :query_start_time, :query_end_time])
       |> Map.merge(%{
         credits_cost: credits_cost,
         user_id: user_id,
@@ -118,7 +132,7 @@ defmodule Sanbase.Queries.QueryExecution do
 
     %__MODULE__{}
     |> cast(args, @fields)
-    |> validate_required(@fields)
+    |> validate_required(@required_fields)
     |> Sanbase.Repo.insert()
   rescue
     _ ->
@@ -136,8 +150,6 @@ defmodule Sanbase.Queries.QueryExecution do
 
   The stats include information about how many rows and bytes have been
   read from the disk, how much CPU time was used, how big is the result, etc.
-
-
   """
   @spec get_execution_stats(non_neg_integer(), String.t(), non_neg_integer()) ::
           {:ok, t()} | {:error, String.t()}
@@ -166,6 +178,13 @@ defmodule Sanbase.Queries.QueryExecution do
     end
   end
 
+  def get_query_execution_by_clickhouse_query_id(clickhouse_query_id, querying_user_id) do
+    from(
+      qe in __MODULE__,
+      where: qe.clickhouse_query_id == ^clickhouse_query_id and qe.user_id == ^querying_user_id
+    )
+  end
+
   @doc ~s"""
   Return a list of the executed queries for a user.
   The options' list can contain `:page` and `:page_size` keys
@@ -173,15 +192,13 @@ defmodule Sanbase.Queries.QueryExecution do
   """
   @spec get_user_query_executions(user_id, Keyword.t()) :: Ecto.Query.t()
   def get_user_query_executions(user_id, opts) do
-    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
-
     from(
       qe in __MODULE__,
       where: qe.user_id == ^user_id,
-      order_by: [desc: qe.id],
-      limit: ^limit,
-      offset: ^offset
+      order_by: [desc: qe.id]
     )
+    |> paginate(opts)
+    |> maybe_preload(opts)
   end
 
   # Private functions
@@ -196,34 +213,17 @@ defmodule Sanbase.Queries.QueryExecution do
     # from inside the rescue block
     {:ok, %{} = execution_details} = get_execution_details(clickhouse_query_id, query_start_time)
 
-    # The credits cost is computed as the dot product of the vectors
-    # representing the stats' values and the weights, i.e
-    # value(read_gb)*weight(read_gb) + value(result_gb)*weight(result_gb) + ...
-    # The values for the weights are manually picked. They are going to be tuned
-    # as times go by.
-    weights = %{
-      read_compressed_gb: 0.2,
-      cpu_time_microseconds: 0.0000007,
-      query_duration_ms: 0.005,
-      memory_usage_gb: 20,
-      read_rows: 0.00000001,
-      read_gb: 0.05,
-      result_rows: 0.001,
-      result_gb: 2000
-    }
-
     credits_cost =
-      Map.merge(execution_details, weights, fn _k, value, weight ->
-        value * weight
+      execution_details
+      |> Enum.reduce(0, fn {key, value}, acc ->
+        acc + value * Map.fetch!(@credit_cost_weights, key)
       end)
-      |> Map.values()
-      |> Enum.sum()
 
     %{execution_details: execution_details, credits_cost: credits_cost}
   end
 
-  defp get_execution_details(query_id, event_time_start) do
-    query_struct = get_execution_details_query(query_id, event_time_start)
+  defp get_execution_details(clickhouse_query_id, event_time_start) do
+    query_struct = get_execution_details_query(clickhouse_query_id, event_time_start)
 
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo)
 
@@ -254,7 +254,7 @@ defmodule Sanbase.Queries.QueryExecution do
     |> Sanbase.Utils.Transform.maybe_unwrap_ok_value()
   end
 
-  defp get_execution_details_query(query_id, event_time_start) do
+  defp get_execution_details_query(clickhouse_query_id, event_time_start) do
     sql = """
     SELECT
       ProfileEvents['ReadCompressedBytes'] / pow(2,30) AS read_compressed_gb,
@@ -267,17 +267,36 @@ defmodule Sanbase.Queries.QueryExecution do
       result_bytes / pow(2, 30) AS result_gb
     FROM system.query_log_distributed
     PREWHERE
-      query_id = {{query_id}} AND
+      query_id = {{clickhouse_query_id}} AND
       type = 'QueryFinish' AND
       event_time >= toDateTime({{datetime}}) - INTERVAL 1 MINUTE AND
       event_time <= toDateTime({{datetime}}) + INTERVAL 1 MINUTE
     """
 
     params = %{
-      query_id: query_id,
+      clickhouse_query_id: clickhouse_query_id,
       datetime: DateTime.to_unix(event_time_start)
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  defp paginate(query, opts) do
+    {limit, offset} = Sanbase.Utils.Transform.opts_to_limit_offset(opts)
+
+    query
+    |> limit(^limit)
+    |> offset(^offset)
+  end
+
+  defp maybe_preload(query, opts) do
+    case Keyword.get(opts, :preload?, true) do
+      false ->
+        query
+
+      true ->
+        preload = Keyword.get(opts, :preload, @preload)
+        query |> preload(^preload)
+    end
   end
 end

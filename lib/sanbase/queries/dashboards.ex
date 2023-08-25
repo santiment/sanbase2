@@ -65,23 +65,33 @@ defmodule Sanbase.Dashboards do
   Queries are added to the dashboard using the `add_query_to_dashboard/4` function.
   """
   @spec create_dashboard(user_id(), create_dashboard_args()) ::
-          {:ok, Dashboard.t()} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
+          {:ok, Dashboard.t()} | {:error, String.t()}
   def create_dashboard(args, user_id) do
     args = args |> Map.merge(%{user_id: user_id})
 
     changeset = Dashboard.create_changeset(%Dashboard{}, args)
 
-    Repo.insert(changeset)
+    case Repo.insert(changeset) do
+      {:ok, dashboard} ->
+        dashboard = Repo.preload(dashboard, [:queries, :user])
+        {:ok, dashboard}
+
+      {:error, changeset} ->
+        {:error, changeset_errors_string(changeset)}
+    end
   end
 
-  @spec update_dashboard(dashboard_id(), user_id(), create_dashboard_args()) ::
-          {:ok, Dashboard.t()} | {:error, Changeset.t()}
-  def update_dashboard(dashboard_id, querying_user_id, args) do
+  @doc ~s"""
+  TODO
+  """
+  @spec update_dashboard(dashboard_id(), update_dashboard_args(), user_id()) ::
+          {:ok, Dashboard.t()} | {:error, String.t()}
+  def update_dashboard(dashboard_id, args, querying_user_id) do
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:dashboard_get_for_mutation, fn _repo, _changes ->
-      dashboard_get_for_mutation(dashboard_id, querying_user_id)
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id)
     end)
-    |> Ecto.Multi.run(:update, fn _repo, %{dashboard_get_for_mutation: struct} ->
+    |> Ecto.Multi.run(:update, fn _repo, %{get_dashboard_for_mutation: struct} ->
       changeset = Dashboard.update_changeset(struct, args)
 
       Repo.update(changeset)
@@ -109,15 +119,17 @@ defmodule Sanbase.Dashboards do
   @spec put_global_parameter(
           dashboard_id(),
           user_id(),
-          String.t(),
-          String.t()
-        ) :: {:ok, Dashboard.t()} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
-  def put_global_parameter(dashboard_id, querying_user_id, key, value) do
+          Keyword.t()
+        ) :: {:ok, Dashboard.t()} | {:error, String.t()}
+  def put_global_parameter(dashboard_id, querying_user_id, opts) do
+    key = Keyword.fetch!(opts, :key)
+    value = Keyword.fetch!(opts, :value)
+
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:dashboard_get_for_mutation, fn _repo, _changes ->
-      dashboard_get_for_mutation(dashboard_id, querying_user_id)
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id)
     end)
-    |> Ecto.Multi.run(:put_global_parameter, fn _repo, %{dashboard_get_for_mutation: struct} ->
+    |> Ecto.Multi.run(:put_global_parameter, fn _repo, %{get_dashboard_for_mutation: struct} ->
       parameters = Map.put(struct.parameters, key, %{"value" => value, "overrides" => []})
       changeset = Dashboard.update_changeset(struct, %{parameters: parameters})
 
@@ -144,7 +156,7 @@ defmodule Sanbase.Dashboards do
           dashboard_query_mapping_id(),
           user_id(),
           Keyword.t()
-        ) :: {:ok, Dashboard.t()} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
+        ) :: {:ok, Dashboard.t()} | {:error, String.t()}
   def put_global_parameter_override(
         dashboard_id,
         dashboard_query_mapping_id,
@@ -155,7 +167,7 @@ defmodule Sanbase.Dashboards do
     global = Keyword.fetch!(opts, :global)
 
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:dashboard_get_for_mutation, fn _repo, _changes ->
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
       get_dashboard_by_mapping_id_for_mutation(
         dashboard_id,
         dashboard_query_mapping_id,
@@ -164,7 +176,7 @@ defmodule Sanbase.Dashboards do
     end)
     |> Ecto.Multi.run(
       :put_override,
-      fn _repo, %{dashboard_get_for_mutation: struct} ->
+      fn _repo, %{get_dashboard_for_mutation: struct} ->
         case Map.get(struct.parameters, global) do
           nil ->
             {:error, "Parameter #{global} does not exist in dashboard with id #{dashboard_id}."}
@@ -187,22 +199,6 @@ defmodule Sanbase.Dashboards do
     |> process_transaction_result(:put_override)
   end
 
-  defp get_dashboard_by_mapping_id_for_mutation(
-         dashboard_id,
-         dashboard_query_mapping_id,
-         querying_user_id
-       ) do
-    query = DashboardQueryMapping.by_id(dashboard_query_mapping_id)
-
-    case Repo.one(query) do
-      %{dashboard: %{id: ^dashboard_id, user_id: ^querying_user_id} = dashboard} ->
-        {:ok, dashboard}
-
-      _ ->
-        {:error, mapping_error(dashboard_query_mapping_id, dashboard_id, querying_user_id)}
-    end
-  end
-
   @doc ~s"""
   Delete a dashboard.
 
@@ -212,10 +208,10 @@ defmodule Sanbase.Dashboards do
           {:ok, Dashboard.t()} | {:error, Changeset.t()}
   def delete_dashboard(dashboard_id, querying_user_id) do
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:dashboard_get_for_mutation, fn _repo, _changes ->
-      dashboard_get_for_mutation(dashboard_id, querying_user_id)
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id)
     end)
-    |> Ecto.Multi.run(:delete, fn _repo, %{dashboard_get_for_mutation: struct} ->
+    |> Ecto.Multi.run(:delete, fn _repo, %{get_dashboard_for_mutation: struct} ->
       Repo.delete(struct)
     end)
     |> Repo.transaction()
@@ -260,17 +256,17 @@ defmodule Sanbase.Dashboards do
 
   One query can be added multiple times to a dashboard, with different settings.
   """
-  @spec add_query_to_dashboard(dashboard_id(), query_id(), Map.t(), user_id()) ::
+  @spec add_query_to_dashboard(dashboard_id(), query_id(), user_id(), Map.t()) ::
           {:ok, DashboardQueryMapping.t()} | {:error, String.t()}
-  def add_query_to_dashboard(dashboard_id, query_id, settings, querying_user_id) do
+  def add_query_to_dashboard(dashboard_id, query_id, querying_user_id, settings \\ %{}) do
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:dashboard_get_for_mutation, fn _repo, _changes ->
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
       # Only to make sure the user can mutate the dashboard. Do not preload any assoc
-      dashboard_get_for_mutation(dashboard_id, querying_user_id, preload?: false)
+      get_dashboard_for_mutation(dashboard_id, querying_user_id, preload?: false)
     end)
-    |> Ecto.Multi.run(:query_get_for_read, fn _repo, _changes ->
+    |> Ecto.Multi.run(:get_query_for_read, fn _repo, _changes ->
       # Only to make sure the user can read the query. Do not preload any assoc.
-      query_get_for_read(query_id, querying_user_id, preload?: false)
+      get_query_for_read(query_id, querying_user_id, preload?: false)
     end)
     |> Ecto.Multi.run(:add_query_to_dashboard, fn _repo, _changes ->
       changeset =
@@ -284,7 +280,7 @@ defmodule Sanbase.Dashboards do
       Repo.insert(changeset)
     end)
     |> Ecto.Multi.run(:add_preloads, fn _repo, %{add_query_to_dashboard: struct} ->
-      {:ok, Repo.preload(struct, [:dashboard, :query])}
+      {:ok, Repo.preload(struct, [:dashboard, :query, :user])}
     end)
     |> Repo.transaction()
     |> process_transaction_result(:add_preloads)
@@ -317,7 +313,7 @@ defmodule Sanbase.Dashboards do
       Repo.delete(struct)
     end)
     |> Ecto.Multi.run(:add_preloads, fn _repo, %{add_query_to_dashboard: struct} ->
-      {:ok, Repo.preload(struct, [:dashboard, :query])}
+      {:ok, Repo.preload(struct, [:dashboard, :query, :user])}
     end)
     |> Repo.transaction()
     |> process_transaction_result(:add_preloads)
@@ -346,7 +342,7 @@ defmodule Sanbase.Dashboards do
       Repo.update(changeset)
     end)
     |> Ecto.Multi.run(:add_preloads, fn _repo, %{add_query_to_dashboard: struct} ->
-      {:ok, Repo.preload(struct, [:dashboard, :query])}
+      {:ok, Repo.preload(struct, [:dashboard, :query, :user])}
     end)
     |> Repo.transaction()
     |> process_transaction_result(:add_preloads)
@@ -354,21 +350,37 @@ defmodule Sanbase.Dashboards do
 
   # Private functions
 
-  defp dashboard_get_for_mutation(dashboard_id, querying_user_id, opts \\ []) do
+  defp get_dashboard_by_mapping_id_for_mutation(
+         dashboard_id,
+         dashboard_query_mapping_id,
+         querying_user_id
+       ) do
+    query = DashboardQueryMapping.by_id(dashboard_query_mapping_id)
+
+    case Repo.one(query) do
+      %{dashboard: %{id: ^dashboard_id, user_id: ^querying_user_id} = dashboard} ->
+        {:ok, dashboard}
+
+      _ ->
+        {:error, mapping_error(dashboard_query_mapping_id, dashboard_id, querying_user_id)}
+    end
+  end
+
+  defp get_dashboard_for_mutation(dashboard_id, querying_user_id, opts \\ []) do
     query = Dashboard.get_for_mutation(dashboard_id, querying_user_id, opts)
 
     case Repo.one(query) do
       %Dashboard{} = struct -> {:ok, struct}
-      _ -> {:error, "Dashboard does not exist or it belongs to another user."}
+      _ -> {:error, "Dashboard does not exist, or it is owner by another user."}
     end
   end
 
-  defp query_get_for_read(query_id, querying_user_id, opts) do
+  defp get_query_for_read(query_id, querying_user_id, opts) do
     query = Query.get_for_read(query_id, querying_user_id, opts)
 
     case Repo.one(query) do
       %Query{} = struct -> {:ok, struct}
-      _ -> {:error, "Query does not exist, or it belongs to another user and is private."}
+      _ -> {:error, "Query does not exist, or it is owned by another user and is private."}
     end
   end
 

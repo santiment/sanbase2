@@ -20,7 +20,7 @@ defmodule Sanbase.Repo.Migrations.AddQueriesTables do
       add(:settings, :jsonb)
 
       # SQL Query
-      add(:sql_query, :text, default: "")
+      add(:sql_query_text, :text, default: "")
       add(:sql_parameters, :map, default: %{})
 
       # Ownership

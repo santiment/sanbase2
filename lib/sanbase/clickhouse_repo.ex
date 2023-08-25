@@ -53,8 +53,11 @@ defmodule Sanbase.ClickhouseRepo do
 
   def query_transform(query, args, transform_fn) do
     case execute_query_transform(query, args) do
-      {:ok, result} -> {:ok, Enum.map(result.rows, transform_fn)}
-      {:error, error} -> {:error, error}
+      {:ok, result} ->
+        {:ok, Enum.map(result.rows, transform_fn)}
+
+      {:error, error} ->
+        {:error, error}
     end
   rescue
     e ->

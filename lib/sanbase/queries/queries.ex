@@ -21,6 +21,35 @@ defmodule Sanbase.Queries do
   # TODO: Make part of subscription plan
   @credits_per_month 1_000_000
 
+  @typedoc ~s"""
+  Preload options
+  """
+  @type preload_option :: {:preload?, boolean()} | {:preload, [atom()]}
+  @type preload_opts :: [preload_option]
+
+  @typedoc ~s"""
+  Pagination options
+  """
+  @type pagination_option ::
+          {:page, non_neg_integer()} | {:page_size, non_neg_integer()}
+  @type pagination_opts :: [pagination_option]
+
+  @typedoc ~s"""
+  Union of both the pagination and preload opttions
+  """
+  @type pagination_and_preload_option :: pagination_option | preload_option
+  @type pagination_and_preload_opts :: [pagination_and_preload_option]
+
+  @typedoc ~s"""
+  Control the storing of the query execution details.
+  After a query is executed, an additional query is made in order
+  to fetch the execution details (they are not part of the query result).
+  """
+  @type run_query_option ::
+          {:store_execution_details, boolean()}
+          | {:wait_fetching_details_ms, non_neg_integer()}
+
+  @type run_query_opts :: [run_query_option]
   @doc ~s"""
   Execute the query and return the result.
 
@@ -35,11 +64,14 @@ defmodule Sanbase.Queries do
     web app or via the API, is it coming from production or dev/test environment.
     - user_id is the id of the user that is executing the query.
   """
-  @spec run_query(Query.t(), QueryMetadata.t(), user_id) ::
+  @spec run_query(Query.t(), user_id, QueryMetadata.t(), Keyword.t()) ::
           {:ok, Executor.Result.t()} | {:error, String.t()}
-  def run_query(%Query{} = query, %{} = query_metadata, user_id) do
+  def run_query(%Query{} = query, user_id, query_metadata, opts \\ []) do
+    query_metadata = Map.put_new(query_metadata, :sanbase_user_id, user_id)
+
     with {:ok, result} <- Sanbase.Queries.Executor.run(query, query_metadata) do
-      store_execution_data_async(result, user_id)
+      maybe_store_execution_data_async(result, user_id, opts)
+
       {:ok, result}
     end
   end
@@ -113,7 +145,7 @@ defmodule Sanbase.Queries do
   @spec get_ephemeral_query_struct(String.t(), Map.t()) :: Query.t()
   def get_ephemeral_query_struct(query, parameters) do
     %Query{
-      sql_query: query,
+      sql_query_text: query,
       sql_parameters: parameters
     }
   end
@@ -122,8 +154,12 @@ defmodule Sanbase.Queries do
   Get a list of queries that belong to a user ordered by last updated.
   The owner of the queries can see all of them, but other users can only see
   public queries.
+
+  `opts` can contain:
+    - `:page` and `:page_size` keys to control the pagination;
+    - `:preload?` and `:preload` keys to control the preloads.
   """
-  @spec get_user_queries(query_id, user_id, Keyword.t()) :: {:ok, [Query.t()]}
+  @spec get_user_queries(query_id, user_id, pagination_and_preload_opts) :: {:ok, [Query.t()]}
   def get_user_queries(user_id, querying_user_id, opts) do
     query = Query.get_user_queries(user_id, querying_user_id, opts)
 
@@ -132,8 +168,12 @@ defmodule Sanbase.Queries do
 
   @doc ~s"""
   Get a list of public queries.
+
+  `opts` can contain:
+    - `:page` and `:page_size` keys to control the pagination;
+    - `:preload?` and `:preload` keys to control the preloads.
   """
-  @spec get_public_queries(Keyword.t()) :: {:ok, [Query.t()]}
+  @spec get_public_queries(pagination_and_preload_opts()) :: {:ok, [Query.t()]}
   def get_public_queries(opts) do
     query = Query.get_public_queries(opts)
 
@@ -147,12 +187,29 @@ defmodule Sanbase.Queries do
 
   This function presumes that the user themself are fetching the list
   of query executions.
+
+  `opts` can contain:
+    - `:page` and `:page_size` keys to control the pagination;
+    - `:preload?` and `:preload` keys to control the preloads.
   """
-  @spec get_query(user_id, Keyword.t()) :: {:ok, [QueryExecution.t()]}
+  @spec get_query(user_id, pagination_and_preload_opts()) :: {:ok, [QueryExecution.t()]}
   def get_user_query_executions(user_id, opts) do
     query = QueryExecution.get_user_query_executions(user_id, opts)
 
     {:ok, Repo.all(query)}
+  end
+
+  def get_query_execution(clickhouse_query_id, querying_user_id) do
+    query =
+      QueryExecution.get_query_execution_by_clickhouse_query_id(
+        clickhouse_query_id,
+        querying_user_id
+      )
+
+    case Repo.one(query) do
+      %QueryExecution{} = execution -> {:ok, execution}
+      nil -> {:error, "Query execution does not exist, or it is owned by another user"}
+    end
   end
 
   @doc ~s"""
@@ -163,7 +220,7 @@ defmodule Sanbase.Queries do
   - description: The description of the query
   - is_public: Whether the query is public or not
   - settings: The settings of the query. This is an arbitrary map (JSON object)
-  - sql_query: The SQL query itself
+  - sql_query_text: The SQL query itself
   - sql_parameters: The parameters of the SQL query.
   - origin_id: The id of the original query if this query is a duplicate of another query.
     This is used to track changes.
@@ -202,7 +259,7 @@ defmodule Sanbase.Queries do
   """
   @spec update_query(query_id, Query.create_query_args(), user_id) ::
           {:ok, Query.t()} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
-  def update_query(query_id, querying_user_id, attrs) do
+  def update_query(query_id, attrs, querying_user_id) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_for_mutation, fn _repo, _changes ->
       get_for_mutation(query_id, querying_user_id)
@@ -285,15 +342,20 @@ defmodule Sanbase.Queries do
 
   # Private functions
 
-  defp store_execution_data_async(result, user_id) do
+  defp maybe_store_execution_data_async(result, user_id, opts) do
     # When a Clickhouse query is executed, the query details are buffered in
     # memory for up to 7500ms before they flush to the database table.
     # Because of this, storing the execution data is done in a separate process
     # to avoid blocking the main process and to return the result to the user
     # faster.
-    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-      QueryExecution.store_execution(result, user_id)
-    end)
+
+    if Keyword.get(opts, :store_execution_data, true) do
+      wait_fetching_details_ms = Keyword.get(opts, :wait_fetching_details_ms, 7500)
+
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        QueryExecution.store_execution(result, user_id, wait_fetching_details_ms)
+      end)
+    end
   end
 
   defp get_for_mutation(query_id, querying_user_id) do

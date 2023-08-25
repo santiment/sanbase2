@@ -11,7 +11,6 @@ defmodule Sanbase.Queries.Dashboard do
   import Ecto.Query
   import Ecto.Changeset
   import Sanbase.Utils.Transform, only: [to_bang: 1]
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
@@ -33,7 +32,8 @@ defmodule Sanbase.Queries.Dashboard do
           optional(:name) => String.t(),
           optional(:description) => String.t(),
           optional(:is_public) => boolean(),
-          optional(:parameters) => map()
+          optional(:parameters) => map(),
+          optional(:settings) => map()
         }
 
   @type update_dashboard_args :: %{
@@ -41,6 +41,7 @@ defmodule Sanbase.Queries.Dashboard do
           optional(:description) => String.t(),
           optional(:is_public) => boolean(),
           optional(:parameters) => map(),
+          optional(:settings) => map(),
           # updatable by moderators only
           optional(:is_deleted) => boolean(),
           optional(:is_hidden) => boolean()
@@ -100,10 +101,13 @@ defmodule Sanbase.Queries.Dashboard do
       foreign_key: :dashboard_id
     )
 
+    # Backwards compatibility with Queries 1.0. Will be removed
+    embeds_many(:panels, Sanbase.Dashboard.Panel, on_replace: :delete)
+
     timestamps()
   end
 
-  @create_fields [:name, :description, :is_public, :parameters, :user_id]
+  @create_fields [:name, :description, :is_public, :parameters, :settings, :user_id]
   @update_fields @create_fields -- [:user_id]
   @preload [:queries, :user, :featured_item]
 

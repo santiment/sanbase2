@@ -84,7 +84,7 @@ config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
   username: "sanbase",
   password: "",
   timeout: 600_000,
-  pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "0"},
+  pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "1"},
   pool_overflow: 10,
   show_sensitive_data_on_connection_error: true
 

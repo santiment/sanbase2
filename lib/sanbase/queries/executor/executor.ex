@@ -58,7 +58,7 @@ defmodule Sanbase.Queries.Executor do
            # The query_id can be nil in case the query is ephemeral
            query_id: query.id,
            clickhouse_query_id: map.query_id,
-           summary: map.summary,
+           summary: make_summary_values_numbers(map.summary),
            rows: map.rows,
            compressed_rows: Result.compress_rows(map.rows),
            columns: map.column_names,
@@ -75,6 +75,10 @@ defmodule Sanbase.Queries.Executor do
     end
   end
 
+  defp make_summary_values_numbers(summary) do
+    Map.new(summary, fn {k, v} -> {k, Sanbase.Math.to_float(v)} end)
+  end
+
   defp put_read_only_repo() do
     # Use the pool defined by the ReadOnly repo. This is used only here
     # as this is the only place where we need to execute queries written
@@ -87,16 +91,19 @@ defmodule Sanbase.Queries.Executor do
   defp create_clickhouse_query(%Query{} = query, %{} = query_metadata) do
     query_metadata = QueryMetadata.sanitize(query_metadata)
     opts = [settings: "log_comment='#{Jason.encode!(query_metadata)}'"]
-    clickhouse_query = Sanbase.Clickhouse.Query.new(query.sql_query, query.sql_parameters, opts)
 
-    extended_sql = extend_sql(clickhouse_query.sql, query_metadata)
-    Sanbase.Clickhouse.Query.put_sql(clickhouse_query, extended_sql)
+    Sanbase.Clickhouse.Query.new(query.sql_query_text, query.sql_parameters, opts)
+    |> extend_sql_query(query_metadata)
   end
 
-  defp extend_sql(sql, query_metadata) do
-    sql
-    |> extend_query_with_prod_marker()
-    |> extend_query_with_user_id_comment(query_metadata.sanbase_user_id)
+  defp extend_sql_query(clickhouse_query, query_metadata) do
+    extended_sql =
+      clickhouse_query
+      |> Sanbase.Clickhouse.Query.get_sql_text()
+      |> extend_query_with_prod_marker()
+      |> extend_query_with_user_id_comment(query_metadata.sanbase_user_id)
+
+    Sanbase.Clickhouse.Query.put_sql(clickhouse_query, extended_sql)
   end
 
   @is_prod Application.compile_env(:sanbase, :env) == :prod

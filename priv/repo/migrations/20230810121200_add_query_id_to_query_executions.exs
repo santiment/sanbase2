@@ -1,7 +1,7 @@
 defmodule Sanbase.Repo.Migrations.AddQueryIdToQueryExecutions do
   use Ecto.Migration
 
-  def change do
+  def up do
     alter table(:clickhouse_query_executions) do
       remove(:query_id)
     end
@@ -14,5 +14,17 @@ defmodule Sanbase.Repo.Migrations.AddQueryIdToQueryExecutions do
     end
 
     create(index(:clickhouse_query_executions, [:query_id]))
+  end
+
+  def down do
+    drop(index(:clickhouse_query_executions, [:query_id]))
+
+    alter table(:clickhouse_query_executions) do
+      remove(:query_id)
+    end
+
+    alter table(:clickhouse_query_executions) do
+      add(:query_id, :string)
+    end
   end
 end

@@ -21,7 +21,7 @@ defmodule Sanbase.Queries.Query do
           optional(:description) => String.t(),
           optional(:is_public) => boolean(),
           optional(:settings) => map(),
-          optional(:sql_query) => String.t(),
+          optional(:sql_query_text) => String.t(),
           optional(:sql_parameters) => Map.t(),
           optional(:origin_id) => non_neg_integer()
         }
@@ -31,7 +31,7 @@ defmodule Sanbase.Queries.Query do
           optional(:description) => String.t(),
           optional(:is_public) => boolean(),
           optional(:settings) => map(),
-          optional(:sql_query) => String.t(),
+          optional(:sql_query_text) => String.t(),
           optional(:sql_parameters) => Map.t(),
           optional(:origin_id) => non_neg_integer(),
           # updatable by moderators only
@@ -48,7 +48,7 @@ defmodule Sanbase.Queries.Query do
           description: String.t(),
           is_public: boolean(),
           settings: map(),
-          sql_query: String.t(),
+          sql_query_text: String.t(),
           sql_parameters: map(),
           user_id: non_neg_integer(),
           is_deleted: boolean(),
@@ -73,7 +73,7 @@ defmodule Sanbase.Queries.Query do
     field(:settings, :map)
 
     # SQL-related fields
-    field(:sql_query, :string, default: "")
+    field(:sql_query_text, :string, default: "")
     field(:sql_parameters, :map, default: %{})
 
     belongs_to(:user, User)
@@ -87,7 +87,7 @@ defmodule Sanbase.Queries.Query do
     timestamps()
   end
 
-  @create_fields ~w(name description is_public settings sql_query sql_parameters user_id origin_id uuid origin_uuid)a
+  @create_fields ~w(name description is_public settings sql_query_text sql_parameters user_id origin_id uuid origin_uuid)a
   @required_fields ~w(user_id uuid)a
   @doc false
   def create_changeset(%__MODULE__{} = query, attrs) do
@@ -96,7 +96,7 @@ defmodule Sanbase.Queries.Query do
     |> validate_required(@required_fields)
     |> validate_length(:name, min: 1, max: 512)
     |> validate_length(:description, min: 1, max: 5_000)
-    |> validate_length(:sql_query, min: 1, max: 20_000)
+    |> validate_length(:sql_query_text, min: 1, max: 20_000)
   end
 
   @update_fields @create_fields -- [:user_id, :uuid]
@@ -106,7 +106,7 @@ defmodule Sanbase.Queries.Query do
     |> cast(attrs, @update_fields)
     |> validate_length(:description, min: 1, max: 5_000)
     |> validate_length(:name, min: 1, max: 512)
-    |> validate_length(:sql_query, min: 1, max: 20_000)
+    |> validate_length(:sql_query_text, min: 1, max: 20_000)
   end
 
   @doc ~s"""
@@ -114,9 +114,9 @@ defmodule Sanbase.Queries.Query do
   This is used as a wrapper around the SQL query and its parameters
   when running an arbitrary SQL that is not stored in the database.
   """
-  def ephemeral_struct(sql_query, sql_parameters) do
+  def ephemeral_struct(sql_query_text, sql_parameters) do
     %__MODULE__{
-      sql_query: sql_query,
+      sql_query_text: sql_query_text,
       sql_parameters: sql_parameters
     }
   end

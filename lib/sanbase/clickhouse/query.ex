@@ -56,6 +56,9 @@ defmodule Sanbase.Clickhouse.Query do
     %{struct | sql: sql}
   end
 
+  def get_sql_text(%__MODULE__{} = query), do: query.sql
+  def get_sql_parameters(%__MODULE__{} = query), do: query.parameters
+
   @spec put_sql(t(), parameters) :: t()
   def put_parameters(struct, parameters) when is_map(parameters) do
     %{struct | parameters: parameters}

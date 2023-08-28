@@ -101,7 +101,7 @@ defmodule Sanbase.Intercom.StripeAttributes do
     end)
   end
 
-  def users_renewal_upcoming_at do
+  def users_renewal_upcoming_at() do
     sub_ids = current_active_subs() |> Enum.map(& &1.id)
 
     from(
@@ -163,6 +163,17 @@ defmodule Sanbase.Intercom.StripeAttributes do
     |> Enum.into(%{})
   end
 
+  defp current_active_subs() do
+    current_subs()
+    |> Timeseries.active_subscriptions()
+  end
+
+  defp current_active_paid_subs() do
+    current_subs()
+    |> Timeseries.active_subscriptions()
+    |> Timeseries.paid()
+  end
+
   def current_subs() do
     query = from(s in Timeseries, order_by: [desc: s.id], limit: 1)
 
@@ -171,25 +182,18 @@ defmodule Sanbase.Intercom.StripeAttributes do
         raise("No subscriptions found in subscription_timeseries")
 
       %Timeseries{subscriptions: subscriptions} ->
-        subscriptions
-        |> Enum.map(fn map_with_string_keys ->
-          Enum.map(map_with_string_keys, fn {key, value} ->
-            {String.to_existing_atom(key), value}
-          end)
-          |> Enum.into(%{})
-        end)
+        transform_maps_to_atom_keys(subscriptions)
     end
   end
 
-  def current_active_subs() do
-    current_subs()
-    |> Timeseries.active_subscriptions()
-  end
-
-  def current_active_paid_subs() do
-    current_subs()
-    |> Timeseries.active_subscriptions()
-    |> Timeseries.paid()
+  defp transform_maps_to_atom_keys(subscriptions) do
+    subscriptions
+    # Transform the keys of each map from the list from string to atom.
+    |> Enum.map(fn map_with_string_keys ->
+      Map.new(map_with_string_keys, fn {key, value} ->
+        {String.to_existing_atom(key), value}
+      end)
+    end)
   end
 
   defp is_prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"

@@ -269,9 +269,9 @@ defmodule Sanbase.SocialData.MetricAdapter do
         metric ->
           {:ok, %{available_selectors: selectors}} = metadata(metric)
 
-          if :slug not in selectors,
-            do: [],
-            else: raise("available_slugs/1 not implemented for #{metric}")
+          if :slug in selectors,
+            do: raise("available_slugs/1 not implemented for #{metric}"),
+            else: []
       end
 
     {:ok, slugs}

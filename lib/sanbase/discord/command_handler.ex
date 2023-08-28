@@ -16,7 +16,7 @@ defmodule Sanbase.Discord.CommandHandler do
   @prefix "!q "
   @ai_prefix "!ai "
   @docs_prefix "!docs "
-  @mock_role_id 1
+  # @mock_role_id 1
   @max_size 1800
   @ephemeral_message_flags 64
   @local_bot_id 1_039_543_550_326_612_009
@@ -304,7 +304,8 @@ defmodule Sanbase.Discord.CommandHandler do
     {:ok, loading_msg} = loading_msg(msg)
     prompt = String.trim(msg.content, "!ai")
 
-    discord_user = msg.author.username <> msg.author.discriminator
+    # TODO: Check
+    # discord_user = msg.author.username <> msg.author.discriminator
     db_params = db_params(msg, "!ai")
 
     {prompt, db_params} = extract_model(prompt, db_params)
@@ -617,7 +618,8 @@ defmodule Sanbase.Discord.CommandHandler do
   end
 
   defp answer_question(msg, thread) do
-    discord_user = msg.author.username <> msg.author.discriminator
+    # TODO: Check
+    # discord_user = msg.author.username <> msg.author.discriminator
     prompt = String.replace(msg.content, "<@#{bot_id()}>", "")
 
     Api.create_message(thread.id,
@@ -1026,8 +1028,8 @@ defmodule Sanbase.Discord.CommandHandler do
 
   def ai_context_action_row(%AiContext{} = context) do
     ar = ActionRow.action_row()
-    votes_pos = context.votes |> Enum.filter(fn {_k, v} -> v == 1 end) |> Enum.count()
-    votes_neg = context.votes |> Enum.filter(fn {_k, v} -> v == -1 end) |> Enum.count()
+    votes_pos = context.votes |> Enum.count(fn {_k, v} -> v == 1 end)
+    votes_neg = context.votes |> Enum.count(fn {_k, v} -> v == -1 end)
 
     thumbs_up_button =
       Button.button(

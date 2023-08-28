@@ -173,7 +173,7 @@ defmodule Sanbase.MetricExporter.CSV do
       ],
       interval: "1h"
     },
-    development_activity_1d: %{metrics: ["dev_activity"], interval: "1d"}
+    development_activity_1d: %{metrics: ["dev_activity_1d"], interval: "1d"}
   }
 
   def slugs() do
@@ -310,52 +310,55 @@ defmodule Sanbase.MetricExporter.CSV do
     end)
   end
 
-  def fetch_timeseries(slugs, "dev_activity", from, to, _interval) do
-    data =
-      case Metric.aggregated_timeseries_data("dev_activity", %{slug: slugs}, from, to, []) do
-        {:ok, data} ->
-          data
+  @doc ~s"""
+  Return timeseries  data in the format
+  %{
+    "bitcoin" => [
+      %{datetime: ~U[2023-08-25 00:00:00Z], value: 26048.932927770074},
+      %{datetime: ~U[2023-08-26 00:00:00Z], value: 26009.348515545655},
+      %{datetime: ~U[2023-08-27 00:00:00Z], value: 26087.470742809328},
+      %{datetime: ~U[2023-08-28 00:00:00Z], value: 26159.70917904751}
+    ],
+    "ethereum" => [
+      %{datetime: ~U[2023-08-25 00:00:00Z], value: 1653.171919615368},
+      %{datetime: ~U[2023-08-26 00:00:00Z], value: 1646.344935140887},
+      %{datetime: ~U[2023-08-27 00:00:00Z], value: 1657.3042178366325},
+      %{datetime: ~U[2023-08-28 00:00:00Z], value: 1657.174284083438}
+    ]
+  }
+  """
+  def fetch_timeseries(slugs, metric, from, to, interval) do
+    data = get_timeseries_data_per_slug!(metric, slugs, from, to, interval)
 
-        {:error, reason} ->
-          msg =
-            "Error metrics csv exporter fetching aggregated_timeseries_data for metric=dev_activity slug=#{inspect(slugs)},from=#{from},to=#{to}"
+    Enum.reduce(slugs, %{}, fn slug, acc ->
+      slug_data = extract_slug_data(data, slug)
 
-          raise("#{msg}.Reason=#{inspect(reason)}")
-      end
-
-    data
-    |> Enum.into(%{}, fn {slug, value} ->
-      {slug, [%{datetime: from, value: value}]}
+      Map.put(acc, slug, slug_data)
     end)
   end
 
-  def fetch_timeseries(slugs, metric, from, to, interval) do
-    data =
-      case Sanbase.Metric.timeseries_data_per_slug(metric, %{slug: slugs}, from, to, interval) do
-        {:ok, data} ->
-          data
-
-        {:error, reason} ->
-          msg =
-            "Error metrics csv exporter fetching timeseries_data_per_slug for metric=#{metric},slug=#{inspect(slugs)},from=#{from},to=#{to},interval=#{interval}"
-
-          raise("#{msg}.Reason=#{inspect(reason)}")
-      end
-
-    Enum.reduce(slugs, %{}, fn slug, acc ->
-      data =
+  defp get_timeseries_data_per_slug!(metric, slugs, from, to, interval) do
+    case Sanbase.Metric.timeseries_data_per_slug(metric, %{slug: slugs}, from, to, interval) do
+      {:ok, data} ->
         data
-        |> Enum.map(fn map ->
-          x = Enum.find(map.data, fn y -> y.slug == slug end)
-          value = x[:value] || ""
 
-          %{
-            datetime: map.datetime,
-            value: value
-          }
-        end)
+      {:error, reason} ->
+        msg =
+          "Error metrics csv exporter fetching timeseries_data_per_slug for metric=#{metric},slug=#{inspect(slugs)},from=#{from},to=#{to},interval=#{interval}"
 
-      Map.put(acc, slug, data)
+        raise("#{msg}.Reason=#{inspect(reason)}")
+    end
+  end
+
+  defp extract_slug_data(data, slug) do
+    data
+    |> Enum.map(fn map ->
+      value = Enum.find_value(map.data, fn map -> if map.slug == slug, do: map.value end)
+
+      %{
+        datetime: map.datetime,
+        value: value || ""
+      }
     end)
   end
 

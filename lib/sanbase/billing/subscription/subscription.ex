@@ -27,11 +27,13 @@ defmodule Sanbase.Billing.Subscription do
   @product_sanbase Product.product_sanbase()
   @sanbase_basic_plan_id 205
   @preload_fields [:user, plan: [:product]]
-  @during_trial_discount_percent_off 50
-  @one_month_trial_discount_percent_off 35
-  @one_month_discount_days 30
-  @trial_days 14
-  @annual_discount_plan_ids [202]
+
+  # Unused due to disabling of annual discounts
+  # @one_month_discount_days 30
+  # @during_trial_discount_percent_off 50
+  # @trial_days 14
+  # @one_month_trial_discount_percent_off 35
+  # @annual_discount_plan_ids [202]
 
   schema "subscriptions" do
     field(:stripe_id, :string)
@@ -575,39 +577,39 @@ defmodule Sanbase.Billing.Subscription do
   defp format_trial_end(nil), do: nil
   defp format_trial_end(trial_end), do: DateTime.from_unix!(trial_end)
 
-  defp do_check_eligibility(trial_end) do
-    now = DateTime.utc_now()
+  # defp do_check_eligibility(trial_end) do
+  #   now = DateTime.utc_now()
 
-    one_month_discount_expires_seconds = (@one_month_discount_days - @trial_days) * 24 * 3600
+  #   one_month_discount_expires_seconds = (@one_month_discount_days - @trial_days) * 24 * 3600
 
-    cond do
-      DateTime.diff(trial_end, now) > 0 ->
-        %{
-          is_eligible: true,
-          discount: %{percent_off: @during_trial_discount_percent_off, expire_at: trial_end}
-        }
+  #   cond do
+  #     DateTime.diff(trial_end, now) > 0 ->
+  #       %{
+  #         is_eligible: true,
+  #         discount: %{percent_off: @during_trial_discount_percent_off, expire_at: trial_end}
+  #       }
 
-      DateTime.diff(now, trial_end) < one_month_discount_expires_seconds ->
-        %{
-          is_eligible: true,
-          discount: %{
-            percent_off: @one_month_trial_discount_percent_off,
-            expire_at: DateTime.add(trial_end, one_month_discount_expires_seconds, :second)
-          }
-        }
+  #     DateTime.diff(now, trial_end) < one_month_discount_expires_seconds ->
+  #       %{
+  #         is_eligible: true,
+  #         discount: %{
+  #           percent_off: @one_month_trial_discount_percent_off,
+  #           expire_at: DateTime.add(trial_end, one_month_discount_expires_seconds, :second)
+  #         }
+  #       }
 
-      true ->
-        %{is_eligible: false}
-    end
-  end
+  #     true ->
+  #       %{is_eligible: false}
+  #   end
+  # end
 
-  defp recalc_percent_off(_user_id, plan_id) when plan_id not in @annual_discount_plan_ids,
-    do: nil
+  # defp recalc_percent_off(_user_id, plan_id) when plan_id not in @annual_discount_plan_ids,
+  #   do: nil
 
-  defp recalc_percent_off(user_id, plan_id) when plan_id in @annual_discount_plan_ids do
-    case annual_discount_eligibility(user_id) do
-      %{is_eligible: true, discount: %{percent_off: percent_off}} -> percent_off
-      %{is_eligible: false} -> nil
-    end
-  end
+  # defp recalc_percent_off(user_id, plan_id) when plan_id in @annual_discount_plan_ids do
+  #   case annual_discount_eligibility(user_id) do
+  #     %{is_eligible: true, discount: %{percent_off: percent_off}} -> percent_off
+  #     %{is_eligible: false} -> nil
+  #   end
+  # end
 end

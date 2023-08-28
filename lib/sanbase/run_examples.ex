@@ -1,4 +1,6 @@
 defmodule Sanbase.RunExamples do
+  # credo:disable-for-this-file
+
   @moduledoc ~s"""
   This module is used in local env to test that the SQL queries are not broken and are
   running. The quereies here **must** make a DB request in order to properly test the SQL.

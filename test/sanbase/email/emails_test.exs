@@ -11,7 +11,7 @@ defmodule Sanbase.EmailsTest do
 
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.Subscription
-  alias Sanbase.Accounts.EmailJobs
+  # alias Sanbase.Accounts.EmailJobs
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
 

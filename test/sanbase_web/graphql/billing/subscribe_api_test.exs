@@ -796,17 +796,17 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
   end
 
-  defp check_annual_discount_eligibility() do
-    """
-    {
-      checkAnnualDiscountEligibility {
-        isEligible
-        discount {
-          percentOff
-          expireAt
-        }
-      }
-    }
-    """
-  end
+  # defp check_annual_discount_eligibility() do
+  #   """
+  #   {
+  #     checkAnnualDiscountEligibility {
+  #       isEligible
+  #       discount {
+  #         percentOff
+  #         expireAt
+  #       }
+  #     }
+  #   }
+  #   """
+  # end
 end

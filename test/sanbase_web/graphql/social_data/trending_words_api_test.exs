@@ -36,7 +36,8 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
             "{'word': 'btc', 'score': 0.85}",
             "{'word': 'halving', 'score': 1.0}"
           ],
-          "The summary"
+          "The summary",
+          [0.2, 0.3, 0.5]
         ],
         [
           DateTime.to_unix(dt1),
@@ -47,7 +48,8 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
             "{'word': 'eth', 'score': 0.63}",
             "{'word': 'bitcoin', 'score': 1.0}"
           ],
-          "Another summary"
+          "Another summary",
+          [0.8, 0.1, 0.1]
         ],
         [
           DateTime.to_unix(dt1),
@@ -58,7 +60,8 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
             "{'word': 'short', 'score': 0.82}",
             "{'word': 'tight', 'score': 1.0}"
           ],
-          "Third summary"
+          "Third summary",
+          [0.5, 0.15, 0.35]
         ]
       ]
 
@@ -76,34 +79,43 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                        "datetime" => DateTime.to_iso8601(dt1),
                        "topWords" => [
                          %{
-                           "project" => nil,
-                           "score" => 82.0,
-                           "word" => "word",
                            "context" => [
                              %{"score" => 1.0, "word" => "tight"},
                              %{"score" => 0.82, "word" => "short"}
                            ],
-                           "summary" => "Third summary"
+                           "project" => nil,
+                           "score" => 82.0,
+                           "summary" => "Third summary",
+                           "word" => "word",
+                           "negativeSentimentRatio" => 0.15,
+                           "neutralSentimentRatio" => 0.35,
+                           "positiveSentimentRatio" => 0.5
                          },
                          %{
-                           "project" => %{"slug" => "bitcoin"},
-                           "score" => 74.5,
-                           "word" => "btc",
                            "context" => [
                              %{"score" => 1.0, "word" => "bitcoin"},
                              %{"score" => 0.63, "word" => "eth"}
                            ],
-                           "summary" => "Another summary"
+                           "project" => %{"slug" => "bitcoin"},
+                           "score" => 74.5,
+                           "summary" => "Another summary",
+                           "word" => "btc",
+                           "negativeSentimentRatio" => 0.1,
+                           "neutralSentimentRatio" => 0.1,
+                           "positiveSentimentRatio" => 0.8
                          },
                          %{
-                           "project" => %{"slug" => "ethereum"},
-                           "score" => 72.4,
-                           "word" => "eth",
                            "context" => [
                              %{"score" => 1.0, "word" => "halving"},
                              %{"score" => 0.85, "word" => "btc"}
                            ],
-                           "summary" => "The summary"
+                           "project" => %{"slug" => "ethereum"},
+                           "score" => 72.4,
+                           "summary" => "The summary",
+                           "word" => "eth",
+                           "negativeSentimentRatio" => 0.3,
+                           "neutralSentimentRatio" => 0.5,
+                           "positiveSentimentRatio" => 0.2
                          }
                        ]
                      }
@@ -250,6 +262,9 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
             project{ slug }
             score
             summary
+            positiveSentimentRatio
+            negativeSentimentRatio
+            neutralSentimentRatio
             context{
               word
               score

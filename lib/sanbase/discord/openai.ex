@@ -4,6 +4,7 @@ defmodule Sanbase.OpenAI do
   alias Sanbase.Utils.Config
   alias Sanbase.Discord.AiContext
   alias Sanbase.Discord.GptRouter
+  alias Sanbase.Discord.AiGenCode
 
   def ai(prompt, params) do
     url = "#{metrics_hub_url()}/social_qa"
@@ -93,6 +94,134 @@ defmodule Sanbase.OpenAI do
 
         AiContext.create(params)
         {:error, "Can't fetch", nil}
+    end
+  end
+
+  def generate_program(query, discord_metadata) do
+    url = "#{ai_server_url()}/generate"
+
+    do_request_ai_server(url, %{query: query})
+    |> case do
+      {:ok, result} ->
+        params = %{
+          parent_id: nil,
+          question: query,
+          answer: result["gpt_answer"],
+          program: result["program"],
+          program_result: result["program_result"],
+          elapsed_time: result["elapsed_time"],
+          is_from_vs: false
+        }
+
+        params = Map.merge(params, discord_metadata)
+
+        {:ok, ai_gen_code} = AiGenCode.create(params)
+
+        {:ok, ai_gen_code}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def find_or_generate_program(query, discord_metadata) do
+    url = "#{ai_server_url()}/find_or_generate"
+
+    do_request_ai_server(url, %{query: query})
+    |> case do
+      {:ok, result} ->
+        params = %{
+          parent_id: nil,
+          question: query,
+          answer: result["gpt_answer"],
+          program: result["program"],
+          program_result: result["program_result"],
+          elapsed_time: result["elapsed_time"],
+          is_from_vs: result["is_from_vs"]
+        }
+
+        params = Map.merge(params, discord_metadata)
+
+        {:ok, ai_gen_code} = AiGenCode.create(params)
+
+        {:ok, ai_gen_code}
+
+      {:error, _error} ->
+        generate_program(query, discord_metadata)
+    end
+  end
+
+  def change_program(ai_gen_code, changes, discord_metadata, chat_history \\ []) do
+    url = "#{ai_server_url()}/change"
+
+    do_request_ai_server(url, %{
+      query: ai_gen_code.question,
+      program: ai_gen_code.program,
+      changes: changes,
+      chat_history: chat_history
+    })
+    |> case do
+      {:ok, result} ->
+        params = %{
+          parent_id: ai_gen_code.id,
+          question: ai_gen_code.question,
+          changes: changes,
+          answer: result["gpt_answer"],
+          program: result["program"],
+          program_result: result["program_result"],
+          elapsed_time: result["elapsed_time"]
+        }
+
+        params = Map.merge(params, discord_metadata)
+
+        {:ok, ai_gen_code} = AiGenCode.create(params)
+
+        {:ok, ai_gen_code}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def save_program(ai_gen_code) do
+    url = "#{ai_server_url()}/save"
+
+    do_request_ai_server(url, %{query: ai_gen_code.question, program: ai_gen_code.program})
+    |> case do
+      {:ok, _} ->
+        {:ok, ai_gen_code} = AiGenCode.change(ai_gen_code, %{is_saved_vs: true})
+        {:ok, ai_gen_code}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def do_request_ai_server(url, params) do
+    start_time = System.monotonic_time(:second)
+
+    response =
+      HTTPoison.post(
+        url,
+        Jason.encode!(params),
+        [{"Content-Type", "application/json"}],
+        timeout: 240_000,
+        recv_timeout: 240_000
+      )
+
+    end_time = System.monotonic_time(:second)
+    elapsed_time = end_time - start_time
+
+    case response do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        body = Jason.decode!(body)
+        IO.inspect(body)
+        body = Map.put(body, "elapsed_time", elapsed_time)
+
+        {:ok, body}
+
+      error ->
+        {:error, error}
     end
   end
 
@@ -320,6 +449,10 @@ defmodule Sanbase.OpenAI do
 
   defp metrics_hub_url() do
     Config.module_get(Sanbase.SocialData, :metricshub_url)
+  end
+
+  defp ai_server_url() do
+    System.get_env("AI_SERVER_URL")
   end
 
   defp is_prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"

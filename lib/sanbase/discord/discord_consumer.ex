@@ -4,6 +4,7 @@ defmodule Sanbase.DiscordConsumer do
   require Logger
 
   alias Sanbase.Discord.CommandHandler
+  alias Sanbase.Discord.CodeHandler
   alias Nostrum.Struct.Interaction
   alias Nostrum.Struct.ApplicationCommandInteractionData
 
@@ -37,6 +38,18 @@ defmodule Sanbase.DiscordConsumer do
           description: "metric",
           required: true,
           autocomplete: true
+        }
+      ]
+    },
+    %{
+      name: "code",
+      description: "Answer question by generating code",
+      options: [
+        %{
+          type: 3,
+          name: "question",
+          description: "Ask a question",
+          required: true
         }
       ]
     }
@@ -95,12 +108,26 @@ defmodule Sanbase.DiscordConsumer do
              "query",
              "help",
              "list",
-             "chart"
+             "chart",
+             "code"
            ] do
     warm_up(interaction)
 
-    CommandHandler.handle_interaction(command, interaction)
-    |> handle_response(command, interaction)
+    case command do
+      cmd when cmd in ["code"] ->
+        case CodeHandler.discord_metadata(interaction) do
+          %{user_is_team_member: true} = metadata ->
+            CodeHandler.handle_interaction(command, interaction, metadata)
+            |> handle_response(cmd, interaction, retry: false)
+
+          _ ->
+            CodeHandler.access_denied(interaction)
+        end
+
+      cmd when cmd in ["query", "help", "list", "chart"] ->
+        CommandHandler.handle_interaction(command, interaction)
+        |> handle_response(command, interaction)
+    end
   end
 
   def handle_event({
@@ -133,6 +160,23 @@ defmodule Sanbase.DiscordConsumer do
       command in ["up", "down"] ->
         thread_id = id
         CommandHandler.handle_interaction(command, interaction, thread_id)
+
+      command in [
+        "show-program",
+        "show-program-result",
+        "change-program-modal",
+        "generate-program",
+        "save-program",
+        "program-changes"
+      ] ->
+        case CodeHandler.discord_metadata(interaction) do
+          %{user_is_team_member: true} = metadata ->
+            CodeHandler.handle_interaction(command, interaction, id, metadata)
+            |> handle_response({command, id}, interaction)
+
+          _ ->
+            CodeHandler.access_denied(interaction)
+        end
 
       true ->
         :noop

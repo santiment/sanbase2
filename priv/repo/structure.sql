@@ -306,6 +306,50 @@ ALTER SEQUENCE public.ai_context_id_seq OWNED BY public.ai_context.id;
 
 
 --
+-- Name: ai_gen_code; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_gen_code (
+    id bigint NOT NULL,
+    question text,
+    answer text,
+    parent_id bigint,
+    program text,
+    program_result text,
+    discord_user text,
+    guild_id text,
+    guild_name text,
+    channel_id text,
+    channel_name text,
+    elapsed_time integer,
+    changes text,
+    is_saved_vs boolean DEFAULT false,
+    is_from_vs boolean DEFAULT false,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: ai_gen_code_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ai_gen_code_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ai_gen_code_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ai_gen_code_id_seq OWNED BY public.ai_gen_code.id;
+
+
+--
 -- Name: api_call_limits; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4202,6 +4246,13 @@ ALTER TABLE ONLY public.ai_context ALTER COLUMN id SET DEFAULT nextval('public.a
 
 
 --
+-- Name: ai_gen_code id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_gen_code ALTER COLUMN id SET DEFAULT nextval('public.ai_gen_code_id_seq'::regclass);
+
+
+--
 -- Name: api_call_limits id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4922,6 +4973,14 @@ ALTER TABLE ONLY public.active_widgets
 
 ALTER TABLE ONLY public.ai_context
     ADD CONSTRAINT ai_context_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ai_gen_code ai_gen_code_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_gen_code
+    ADD CONSTRAINT ai_gen_code_pkey PRIMARY KEY (id);
 
 
 --
@@ -6886,6 +6945,14 @@ CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE
 
 
 --
+-- Name: ai_gen_code ai_gen_code_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_gen_code
+    ADD CONSTRAINT ai_gen_code_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.ai_gen_code(id);
+
+
+--
 -- Name: api_call_limits api_call_limits_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8383,3 +8450,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230523080400);
 INSERT INTO public."schema_migrations" (version) VALUES (20230526092048);
 INSERT INTO public."schema_migrations" (version) VALUES (20230608132801);
 INSERT INTO public."schema_migrations" (version) VALUES (20230626080554);
+INSERT INTO public."schema_migrations" (version) VALUES (20230829111631);

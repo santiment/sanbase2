@@ -42,7 +42,7 @@ defmodule Sanbase.Discord.CommandHandler do
     end
   end
 
-  def santiment_guild_id do
+  def santiment_guild_id() do
     case Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_guild_id
       _ -> @santiment_guild_id
@@ -600,6 +600,37 @@ defmodule Sanbase.Discord.CommandHandler do
           content: "Pro user limit reached for today. Limit will be reset in #{time_left}"
         )
     end
+  end
+
+  def get_guild_channel(nil, _), do: {nil, nil}
+  def get_guild_channel(_, nil), do: {nil, nil}
+
+  def get_guild_channel(guild_id, channel_id) do
+    guild_name =
+      case Nostrum.Cache.GuildCache.get(guild_id) do
+        {:ok, guild} ->
+          guild.name
+
+        _ ->
+          case Nostrum.Api.get_guild(guild_id) do
+            {:ok, guild} -> guild.name
+            _ -> nil
+          end
+      end
+
+    channel_name =
+      case Nostrum.Cache.ChannelCache.get(channel_id) do
+        {:ok, channel} ->
+          channel.name
+
+        _ ->
+          case Nostrum.Api.get_channel(channel_id) do
+            {:ok, channel} -> channel.name
+            _ -> nil
+          end
+      end
+
+    {guild_name, channel_name}
   end
 
   defp extract_model(prompt, db_params) do
@@ -1162,37 +1193,6 @@ defmodule Sanbase.Discord.CommandHandler do
         channel_id
       )
     end
-  end
-
-  defp get_guild_channel(nil, _), do: {nil, nil}
-  defp get_guild_channel(_, nil), do: {nil, nil}
-
-  defp get_guild_channel(guild_id, channel_id) do
-    guild_name =
-      case Nostrum.Cache.GuildCache.get(guild_id) do
-        {:ok, guild} ->
-          guild.name
-
-        _ ->
-          case Nostrum.Api.get_guild(guild_id) do
-            {:ok, guild} -> guild.name
-            _ -> nil
-          end
-      end
-
-    channel_name =
-      case Nostrum.Cache.ChannelCache.get(channel_id) do
-        {:ok, channel} ->
-          channel.name
-
-        _ ->
-          case Nostrum.Api.get_channel(channel_id) do
-            {:ok, channel} -> channel.name
-            _ -> nil
-          end
-      end
-
-    {guild_name, channel_name}
   end
 
   defp handle_pin_unpin_error(false, action, interaction) do

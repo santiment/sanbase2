@@ -100,6 +100,9 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:context, list_of(:word_context))
     field(:score, non_null(:float))
     field(:word, non_null(:string))
+    field(:positive_sentiment_ratio, :float)
+    field(:negative_sentiment_ratio, :float)
+    field(:neutral_sentiment_ratio, :float)
 
     field :project, :project do
       cache_resolve(&SocialDataResolver.project_from_root_slug/3)

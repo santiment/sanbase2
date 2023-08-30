@@ -174,21 +174,24 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
            "status" => %{"error_code" => "0"}
          } <- decoded do
       result =
-        Enum.map(quotes, fn %{
-                              "quote" => [
-                                %{
-                                  "timestamp" => datetime_iso8601,
-                                  "totalMarketCap" => marketcap_usd,
-                                  "totalVolume24H" => volume_usd
-                                }
-                              ]
-                            } ->
-          %PricePoint{
-            marketcap_usd: marketcap_usd |> Sanbase.Math.to_integer(),
-            volume_usd: volume_usd |> Sanbase.Math.to_integer(),
-            datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime_iso8601)
-          }
-        end)
+        Enum.map(
+          quotes || [],
+          fn %{
+               "quote" => [
+                 %{
+                   "timestamp" => datetime_iso8601,
+                   "totalMarketCap" => marketcap_usd,
+                   "totalVolume24H" => volume_usd
+                 }
+               ]
+             } ->
+            %PricePoint{
+              marketcap_usd: marketcap_usd |> Sanbase.Math.to_integer(),
+              volume_usd: volume_usd |> Sanbase.Math.to_integer(),
+              datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime_iso8601)
+            }
+          end
+        )
 
       {:ok, result, interval}
     else
@@ -204,7 +207,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
          } <- decoded do
       result =
         Enum.map(
-          data["points"],
+          data["points"] || [],
           fn
             {dt_unix, point} ->
               v = point["v"]
@@ -230,36 +233,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
          {from_unix, to_unix} = interval
        ) do
     "https://api.coinmarketcap.com/data-api/v3/global-metrics/quotes/historical?format=chart&interval=5m&timeEnd=#{to_unix}&timeStart=#{from_unix}"
-    |> get()
-    |> case do
-      {:ok, %Tesla.Env{status: 429} = resp} ->
-        wait_rate_limit(resp)
-        extract_price_points_for_interval(total_market, interval)
-
-      {:ok, %Tesla.Env{status: 200, body: body}} ->
-        json_to_price_points(body, total_market, interval)
-
-      {:ok, %Tesla.Env{status: status}} ->
-        error_msg = "[CMC] Error fetching data for #{total_market}. Status code: #{status}"
-        Logger.error(error_msg)
-        {:error, error_msg}
-
-      {:error, error} ->
-        error_msg = "[CMC] Error fetching data for #{total_market}. Reason: #{inspect(error)}"
-        Logger.error(error_msg)
-        {:error, error_msg}
-    end
-  end
-
-  defp extract_price_points_for_interval(
-         "TOTAL_MARKET" = total_market,
-         {from_unix, to_unix} = interval
-       ) do
-    Logger.info("""
-      [CMC] Extracting price points for #{total_market} and interval [#{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}]
-    """)
-
-    "/v1.1/global-metrics/quotes/historical?format=chart&interval=5m&time_start=#{from_unix}&time_end=#{to_unix}"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->

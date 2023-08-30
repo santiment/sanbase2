@@ -24,102 +24,120 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         result = TrendingWords.get_trending_words(dt1, dt3, "1d", 2, :all)
 
-        context = [%{word: "usd", score: 1.0}, %{word: "money", score: 0.5}]
-
         assert result ==
-                 {:ok,
-                  %{
-                    dt1 => [
-                      %{
-                        score: 5,
-                        word: "ethereum",
-                        slug: "ethereum",
-                        context: context,
-                        summary: "summary2",
-                        summaries: [
-                          %{
-                            datetime: dt1,
-                            source: "reddit,telegram,twitter_crypto",
-                            summary: "summary2"
-                          }
-                        ]
-                      },
-                      %{
-                        score: 10,
-                        word: "bitcoin",
-                        slug: "bitcoin",
-                        context: context,
-                        summary: "summary1",
-                        summaries: [
-                          %{
-                            datetime: dt1,
-                            source: "reddit,telegram,twitter_crypto",
-                            summary: "summary1"
-                          }
-                        ]
-                      }
-                    ],
-                    dt2 => [
-                      %{
-                        score: 70,
-                        word: "boom",
-                        slug: nil,
-                        context: context,
-                        summary: "summary4",
-                        summaries: [
-                          %{
-                            datetime: dt2,
-                            source: "reddit,telegram,twitter_crypto",
-                            summary: "summary4"
-                          }
-                        ]
-                      },
-                      %{
-                        score: 2,
-                        word: "san",
-                        slug: "santiment",
-                        context: context,
-                        summary: "summary3",
-                        summaries: [
-                          %{
-                            datetime: dt2,
-                            source: "reddit,telegram,twitter_crypto",
-                            summary: "summary3"
-                          }
-                        ]
-                      }
-                    ],
-                    dt3 => [
-                      %{
-                        score: 2,
-                        word: "xrp",
-                        slug: "ripple",
-                        context: context,
-                        summary: "summary6",
-                        summaries: [
-                          %{
-                            datetime: dt3,
-                            source: "reddit,telegram,twitter_crypto",
-                            summary: "summary6"
-                          }
-                        ]
-                      },
-                      %{
-                        score: 1,
-                        word: "eth",
-                        slug: "ethereum",
-                        context: context,
-                        summary: "summary5",
-                        summaries: [
-                          %{
-                            datetime: dt3,
-                            source: "reddit,telegram,twitter_crypto",
-                            summary: "summary5"
-                          }
-                        ]
-                      }
-                    ]
-                  }}
+                 {
+                   :ok,
+                   %{
+                     dt1 => [
+                       %{
+                         context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                         score: 5,
+                         slug: "ethereum",
+                         summaries: [
+                           %{
+                             datetime: dt1,
+                             source: "4chan,bitcointalk,reddit",
+                             summary: "summary2"
+                           }
+                         ],
+                         summary: "summary2",
+                         word: "ethereum",
+                         negative_sentiment_ratio: 0.3,
+                         neutral_sentiment_ratio: 0.5,
+                         positive_sentiment_ratio: 0.2
+                       },
+                       %{
+                         context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                         score: 10,
+                         slug: "bitcoin",
+                         summaries: [
+                           %{
+                             datetime: dt1,
+                             source: "4chan,bitcointalk,reddit",
+                             summary: "summary1"
+                           }
+                         ],
+                         summary: "summary1",
+                         word: "bitcoin",
+                         negative_sentiment_ratio: 0.3,
+                         neutral_sentiment_ratio: 0.5,
+                         positive_sentiment_ratio: 0.2
+                       }
+                     ],
+                     dt2 => [
+                       %{
+                         context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                         score: 70,
+                         slug: nil,
+                         summaries: [
+                           %{
+                             datetime: dt2,
+                             source: "4chan,bitcointalk,reddit",
+                             summary: "summary4"
+                           }
+                         ],
+                         summary: "summary4",
+                         word: "boom",
+                         negative_sentiment_ratio: 0.1,
+                         neutral_sentiment_ratio: 0.7,
+                         positive_sentiment_ratio: 0.2
+                       },
+                       %{
+                         context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                         score: 2,
+                         slug: "santiment",
+                         summaries: [
+                           %{
+                             datetime: dt2,
+                             source: "4chan,bitcointalk,reddit",
+                             summary: "summary3"
+                           }
+                         ],
+                         summary: "summary3",
+                         word: "san",
+                         negative_sentiment_ratio: 0.1,
+                         neutral_sentiment_ratio: 0.5,
+                         positive_sentiment_ratio: 0.4
+                       }
+                     ],
+                     dt3 => [
+                       %{
+                         context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                         score: 2,
+                         slug: "ripple",
+                         summaries: [
+                           %{
+                             datetime: dt3,
+                             source: "4chan,bitcointalk,reddit",
+                             summary: "summary6"
+                           }
+                         ],
+                         summary: "summary6",
+                         word: "xrp",
+                         negative_sentiment_ratio: 0.3,
+                         neutral_sentiment_ratio: 0.5,
+                         positive_sentiment_ratio: 0.2
+                       },
+                       %{
+                         context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                         score: 1,
+                         slug: "ethereum",
+                         summaries: [
+                           %{
+                             datetime: dt3,
+                             source: "4chan,bitcointalk,reddit",
+                             summary: "summary5"
+                           }
+                         ],
+                         summary: "summary5",
+                         word: "eth",
+                         negative_sentiment_ratio: 0.3,
+                         neutral_sentiment_ratio: 0.5,
+                         positive_sentiment_ratio: 0.2
+                       }
+                     ]
+                   }
+                 }
       end)
     end
 
@@ -144,40 +162,46 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         result = TrendingWords.get_currently_trending_words(10, :all)
 
-        context = [%{word: "usd", score: 1.0}, %{word: "money", score: 0.5}]
-
         assert result ==
-                 {:ok,
-                  [
-                    %{
-                      score: 2,
-                      word: "xrp",
-                      slug: "ripple",
-                      context: context,
-                      summary: "summary6",
-                      summaries: [
-                        %{
-                          datetime: dt3,
-                          source: "reddit,telegram,twitter_crypto",
-                          summary: "summary6"
-                        }
-                      ]
-                    },
-                    %{
-                      score: 1,
-                      word: "eth",
-                      slug: "ethereum",
-                      context: context,
-                      summary: "summary5",
-                      summaries: [
-                        %{
-                          datetime: dt3,
-                          source: "reddit,telegram,twitter_crypto",
-                          summary: "summary5"
-                        }
-                      ]
-                    }
-                  ]}
+                 {
+                   :ok,
+                   [
+                     %{
+                       context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                       score: 2,
+                       slug: "ripple",
+                       summaries: [
+                         %{
+                           datetime: ~U[2019-01-03 00:00:00Z],
+                           source: "4chan,bitcointalk,reddit",
+                           summary: "summary6"
+                         }
+                       ],
+                       summary: "summary6",
+                       word: "xrp",
+                       negative_sentiment_ratio: 0.3,
+                       neutral_sentiment_ratio: 0.5,
+                       positive_sentiment_ratio: 0.2
+                     },
+                     %{
+                       context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
+                       score: 1,
+                       slug: "ethereum",
+                       summaries: [
+                         %{
+                           datetime: ~U[2019-01-03 00:00:00Z],
+                           source: "4chan,bitcointalk,reddit",
+                           summary: "summary5"
+                         }
+                       ],
+                       summary: "summary5",
+                       word: "eth",
+                       negative_sentiment_ratio: 0.3,
+                       neutral_sentiment_ratio: 0.5,
+                       positive_sentiment_ratio: 0.2
+                     }
+                   ]
+                 }
       end)
     end
 
@@ -284,12 +308,12 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     ]
 
     [
-      [dt1_unix, "bitcoin", "BTC_bitcoin", 10, context, "summary1"],
-      [dt1_unix, "ethereum", "ETH_ethereum", 5, context, "summary2"],
-      [dt2_unix, "san", "SAN_santiment", 2, context, "summary3"],
-      [dt2_unix, "boom", nil, 70, context, "summary4"],
-      [dt3_unix, "eth", "ETH_ethereum", 1, context, "summary5"],
-      [dt3_unix, "xrp", "XRP_ripple", 2, context, "summary6"]
+      [dt1_unix, "bitcoin", "BTC_bitcoin", 10, context, "summary1", [0.2, 0.3, 0.5]],
+      [dt1_unix, "ethereum", "ETH_ethereum", 5, context, "summary2", [0.2, 0.3, 0.5]],
+      [dt2_unix, "san", "SAN_santiment", 2, context, "summary3", [0.4, 0.1, 0.5]],
+      [dt2_unix, "boom", nil, 70, context, "summary4", [0.2, 0.1, 0.7]],
+      [dt3_unix, "eth", "ETH_ethereum", 1, context, "summary5", [0.2, 0.3, 0.5]],
+      [dt3_unix, "xrp", "XRP_ripple", 2, context, "summary6", [0.2, 0.3, 0.5]]
     ]
   end
 end

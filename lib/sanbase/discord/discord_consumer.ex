@@ -8,7 +8,6 @@ defmodule Sanbase.DiscordConsumer do
   alias Nostrum.Struct.Interaction
   alias Nostrum.Struct.ApplicationCommandInteractionData
 
-  @env Application.compile_env(:sanbase, :env)
   @commands [
     %{
       name: "help",

@@ -50,16 +50,12 @@ defmodule Sanbase.SocialData.TrendingWords do
           datetme: DateTime.t(),
           position: position
         }
-
-  @default_source "reddit,telegram,twitter_crypto"
+  @table "trending_words_docs_v3"
 
   # When calculating the trending now words fetch the data for the last
   # N hours to ensure that there is some data and we're not in the middle
   # of computing the latest data
-
   @hours_back_ensure_has_data 3
-
-  @table "trending_words_docs_v2"
 
   @spec get_trending_words(
           DateTime.t(),
@@ -71,13 +67,18 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, map()} | {:error, String.t()}
   def get_trending_words(from, to, interval, size, source, word_type_filter \\ :all) do
-    source = if source == :all, do: @default_source, else: to_string(source)
+    source = if source == :all, do: default_source(), else: to_string(source)
+
     query_struct = get_trending_words_query(from, to, interval, size, source, word_type_filter)
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn
-      [dt, word, project, score, context, summary], acc ->
+      [dt, word, project, score, context, summary, sentiment_ratios], acc ->
         slug = if project, do: String.split(project, "_", parts: 2) |> List.last()
         datetime = DateTime.from_unix!(dt)
+        # The percentage of the documents that mention the word that have
+        # postive, negative or netural sentiment. The values are in the range [0, 1]
+        # and add up to 1
+        [pos_sentiment, neg_sentiment, neu_sentiment] = sentiment_ratios
 
         summaries = [%{source: source, datetime: datetime, summary: summary}]
         context = transform_context(context)
@@ -89,7 +90,10 @@ defmodule Sanbase.SocialData.TrendingWords do
           context: context,
           # Keep both summaries and summary for backwards compatibility. Remove summaries later
           summary: summary,
-          summaries: summaries
+          summaries: summaries,
+          positive_sentiment_ratio: pos_sentiment,
+          negative_sentiment_ratio: neg_sentiment,
+          neutral_sentiment_ratio: neu_sentiment
         }
 
         Map.update(acc, datetime, [elem], fn words -> [elem | words] end)
@@ -119,7 +123,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, map()} | {:error, String.t()}
   def get_trending_projects(from, to, interval, size, source) do
-    source = if source == :all, do: @default_source, else: to_string(source)
+    source = if source == :all, do: default_source(), else: to_string(source)
     # The word_type_filter is :all for backwards compatibility. The logic is
     # to find if any of the top `size` trending words are projects, not just
     # taking the top 10 projects, regardless of their position in the overall
@@ -144,7 +148,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   @spec get_currently_trending_words(non_neg_integer(), atom()) ::
           {:ok, list(trending_word)} | {:error, String.t()}
   def get_currently_trending_words(size, source) do
-    source = if source == :all, do: @default_source, else: to_string(source)
+    source = if source == :all, do: default_source(), else: to_string(source)
     now = Timex.now()
     from = Timex.shift(now, hours: -@hours_back_ensure_has_data)
 
@@ -167,7 +171,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   @spec get_currently_trending_projects(non_neg_integer(), atom()) ::
           {:ok, list(trending_slug)} | {:error, String.t()}
   def get_currently_trending_projects(size, source) do
-    source = if source == :all, do: @default_source, else: to_string(source)
+    source = if source == :all, do: default_source(), else: to_string(source)
     now = Timex.now()
     from = Timex.shift(now, hours: -@hours_back_ensure_has_data)
 
@@ -191,7 +195,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, list(word_stat)} | {:error, String.t()}
   def get_word_trending_history(word, from, to, interval, size, source) do
-    source = if source == :all, do: @default_source, else: to_string(source)
+    source = if source == :all, do: default_source(), else: to_string(source)
     query_struct = word_trending_history_query(word, from, to, interval, size, source)
 
     ClickhouseRepo.query_transform(query_struct, fn [dt, position] ->
@@ -215,7 +219,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         ) ::
           {:ok, list(word_stat)} | {:error, String.t()}
   def get_project_trending_history(slug, from, to, interval, size, source) do
-    source = if source == :all, do: @default_source, else: to_string(source)
+    source = if source == :all, do: default_source(), else: to_string(source)
     query_struct = project_trending_history_query(slug, from, to, interval, size, source)
 
     ClickhouseRepo.query_transform(query_struct, fn [dt, position] ->
@@ -239,7 +243,8 @@ defmodule Sanbase.SocialData.TrendingWords do
       any(project) AS project2,
       argMax(score, dt) / {{score_equalizer}} AS score,
       argMax(words_context, dt) AS context,
-      argMax(summary, dt) AS summaries
+      argMax(summary, dt) AS summary,
+      tuple(argMax(pos_ratio, dt), argMax(neg_ratio, dt), argMax(neu_ratio, dt)) AS sentiment_ratios
     FROM #{@table}
     WHERE
       dt >= toDateTime({{from}}) AND
@@ -314,5 +319,12 @@ defmodule Sanbase.SocialData.TrendingWords do
     query_struct
     |> Sanbase.Clickhouse.Query.put_sql(sql)
     |> Sanbase.Clickhouse.Query.add_parameter(:ticker_slug, ticker_slug)
+  end
+
+  defp default_source do
+    case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
+      "prod" -> "reddit,telegram,twitter_crypto"
+      _ -> "4chan,bitcointalk,reddit"
+    end
   end
 end

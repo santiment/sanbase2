@@ -215,7 +215,6 @@ defmodule Sanbase.OpenAI do
     case response do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         body = Jason.decode!(body)
-        IO.inspect(body)
         body = Map.put(body, "elapsed_time", elapsed_time)
 
         {:ok, body}
@@ -381,14 +380,13 @@ defmodule Sanbase.OpenAI do
     SQL: #{sql};
     """
 
-    chat(prompt, system_prompt: system_prompt, max_tokens: 500, temperature: 0.5)
-    |> case do
+    case chat(prompt, system_prompt: system_prompt, max_tokens: 500, temperature: 0.5) do
       {:ok, result} -> {:ok, %{title: result["title"], description: result["description"]}}
       {:error, _error} -> {:error, "Could not generate title and description for this SQL query"}
     end
   end
 
-  defp chat(prompt, opts \\ [], retries \\ 3) do
+  defp chat(prompt, opts, retries \\ 3) do
     messages = [%{"role" => "user", "content" => prompt}]
 
     messages =
@@ -409,13 +407,16 @@ defmodule Sanbase.OpenAI do
       {"Authorization", "Bearer #{openai_api_key()}"}
     ]
 
-    case HTTPoison.post(
-           "https://api.openai.com/v1/chat/completions",
-           Jason.encode!(payload),
-           headers,
-           timeout: 60_000,
-           recv_timeout: 60_000
-         ) do
+    http_response =
+      HTTPoison.post(
+        "https://api.openai.com/v1/chat/completions",
+        Jason.encode!(payload),
+        headers,
+        timeout: 60_000,
+        recv_timeout: 60_000
+      )
+
+    case http_response do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok,
          Jason.decode!(body)["choices"]

@@ -3376,6 +3376,74 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Compound v3 ETH market supply APY",
+    "name": "compound_v3_eth_market_supply_apy",
+    "metric": "compoundv3_eth_market_supply_rate",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound v3 ETH market borrow APY",
+    "name": "compound_v3_eth_market_borrow_apy",
+    "metric": "compoundv3_eth_market_borrow_rate",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound v3 USDC market supply APY",
+    "name": "compound_v3_usdc_market_supply_apy",
+    "metric": "compoundv3_usdc_market_supply_rate",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Compound v3 USDC market borrow APY",
+    "name": "compound_v3_usdc_market_borrow_apy",
+    "metric": "compoundv3_usdc_market_borrow_rate",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Daily Active Addresses on Compound v3",
     "name": "compound_v3_active_addresses",
     "metric": "compoundv3_active_addresses",

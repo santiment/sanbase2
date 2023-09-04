@@ -7,13 +7,13 @@ defmodule Sanbase.OpenAI do
   alias Sanbase.Discord.AiGenCode
 
   def ai(prompt, params) do
-    url = "#{metrics_hub_url()}/social_qa"
+    url = "#{ai_server_url()}/question/social"
 
     do_request(url, prompt, params)
   end
 
   def docs(prompt, params) do
-    url = "#{metrics_hub_url()}/docs"
+    url = "#{ai_server_url()}/question/docs"
 
     do_request(url, prompt, params)
   end
@@ -55,11 +55,18 @@ defmodule Sanbase.OpenAI do
           |> Map.put(:tokens_total, body["tokens_total"])
           |> Map.put(:total_cost, body["total_cost"])
           |> Map.put(:elapsed_time, elapsed_time)
-          |> Map.put(
-            :prompt,
-            "System:\n" <>
-              body["prompt"]["system"] <> "\n\n" <> "User:\n" <> body["prompt"]["user"]
-          )
+
+        params =
+          if body["prompt"] do
+            Map.put(
+              params,
+              :prompt,
+              "System:\n" <>
+                body["prompt"]["system"] <> "\n\n" <> "User:\n" <> body["prompt"]["user"]
+            )
+          else
+            params
+          end
 
         {:ok, ai_context} = AiContext.create(params)
         {:ok, body, ai_context}
@@ -225,7 +232,7 @@ defmodule Sanbase.OpenAI do
   end
 
   def threaded_docs(prompt, params) do
-    url = "#{metrics_hub_url()}/docs"
+    url = "#{ai_server_url()}/question/docs"
 
     {msg_id, params} = Map.pop(params, :msg_id)
     context = AiContext.fetch_history_context(params, 5)
@@ -274,7 +281,7 @@ defmodule Sanbase.OpenAI do
   end
 
   def route(question, msg_id) do
-    url = "#{metrics_hub_url()}/route"
+    url = "#{ai_server_url()}/question/route"
     default_route = "academy"
 
     start_time = System.monotonic_time(:second)
@@ -338,15 +345,15 @@ defmodule Sanbase.OpenAI do
 
   def manage_pinecone_index() do
     if is_prod?() do
-      url = "#{metrics_hub_url()}/manage_index"
-      HTTPoison.post(url, Jason.encode!(%{hours: 1}), [{"Content-Type", "application/json"}])
+      url = "#{ai_server_url()}/pinecone/index"
+      HTTPoison.put(url, Jason.encode!(%{hours: 1}), [{"Content-Type", "application/json"}])
     end
 
     :ok
   end
 
   def search_insights(query) do
-    url = "#{metrics_hub_url()}/search_insights"
+    url = "#{ai_server_url()}/question/insights"
 
     HTTPoison.post(url, Jason.encode!(%{query: query}), [{"Content-Type", "application/json"}])
     |> case do
@@ -446,10 +453,6 @@ defmodule Sanbase.OpenAI do
   defp handle_retry(prompt, opts, retries, _error_message) when retries > 0 do
     :timer.sleep(1000)
     chat(prompt, opts, retries - 1)
-  end
-
-  defp metrics_hub_url() do
-    Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
 
   defp ai_server_url() do

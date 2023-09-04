@@ -18,10 +18,12 @@ defmodule Sanbase.Email.MailjetApiImpl do
   @base_url "https://api.mailjet.com/v3/REST/"
   @bi_weekly_list_id -1
   @monthly_newsletter_list_id 61_085
+  @mailjet_sanr_list_id 10_321_582
 
   @mailjet_lists %{
     bi_weekly: @bi_weekly_list_id,
-    monthly_newsletter: @monthly_newsletter_list_id
+    monthly_newsletter: @monthly_newsletter_list_id,
+    sanr_network_emails: @mailjet_sanr_list_id
   }
 
   def subscribe(list_atom, email_or_emails) do

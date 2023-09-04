@@ -123,6 +123,11 @@ defmodule Sanbase.Discord.CodeHandler do
     case Sanbase.OpenAI.change_program(old_ai_gen_code, changes, metadata) do
       {:ok, ai_gen_code} ->
         content = """
+        After the following changes:
+        ```
+        #{changes}
+        ```
+
         🇶: #{ai_gen_code.question}
 
         🇦: #{ai_gen_code.answer}

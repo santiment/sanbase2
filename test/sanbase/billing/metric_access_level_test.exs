@@ -1571,6 +1571,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "compound_v3_total_borrowed_usd",
         "compound_v3_protocol_total_supplied_usd",
         "compound_v3_protocol_total_borrowed_usd",
+        "compound_v3_eth_market_supply_apy",
+        "compound_v3_eth_market_borrow_apy",
+        "compound_v3_usdc_market_supply_apy",
+        "compound_v3_usdc_market_borrow_apy",
         "compound_v3_active_addresses",
         # Makerdao metrics
         "makerdao_action_deposits",

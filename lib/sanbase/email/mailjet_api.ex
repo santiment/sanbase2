@@ -19,11 +19,13 @@ defmodule Sanbase.Email.MailjetApiImpl do
   @bi_weekly_list_id -1
   @monthly_newsletter_list_id 61_085
   @mailjet_sanr_list_id 10_321_582
+  @alpha_naratives_list_id 10_321_590
 
   @mailjet_lists %{
     bi_weekly: @bi_weekly_list_id,
     monthly_newsletter: @monthly_newsletter_list_id,
-    sanr_network_emails: @mailjet_sanr_list_id
+    sanr_network_emails: @mailjet_sanr_list_id,
+    alpha_naratives_emails: @alpha_naratives_list_id
   }
 
   def subscribe(list_atom, email_or_emails) do

@@ -2985,6 +2985,37 @@ ALTER SEQUENCE public.san_burn_credit_transactions_id_seq OWNED BY public.san_bu
 
 
 --
+-- Name: sanr_emails; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sanr_emails (
+    id bigint NOT NULL,
+    email character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: sanr_emails_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.sanr_emails_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: sanr_emails_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.sanr_emails_id_seq OWNED BY public.sanr_emails.id;
+
+
+--
 -- Name: schedule_rescrape_prices; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4715,6 +4746,13 @@ ALTER TABLE ONLY public.san_burn_credit_transactions ALTER COLUMN id SET DEFAULT
 
 
 --
+-- Name: sanr_emails id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanr_emails ALTER COLUMN id SET DEFAULT nextval('public.sanr_emails_id_seq'::regclass);
+
+
+--
 -- Name: schedule_rescrape_prices id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5557,6 +5595,14 @@ ALTER TABLE ONLY public.roles
 
 ALTER TABLE ONLY public.san_burn_credit_transactions
     ADD CONSTRAINT san_burn_credit_transactions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sanr_emails sanr_emails_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanr_emails
+    ADD CONSTRAINT sanr_emails_pkey PRIMARY KEY (id);
 
 
 --
@@ -6494,6 +6540,13 @@ CREATE UNIQUE INDEX questionnaire_answers_question_uuid_user_id_index ON public.
 --
 
 CREATE INDEX san_burn_credit_transactions_trx_hash_index ON public.san_burn_credit_transactions USING btree (trx_hash);
+
+
+--
+-- Name: sanr_emails_email_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX sanr_emails_email_index ON public.sanr_emails USING btree (email);
 
 
 --
@@ -8451,3 +8504,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230526092048);
 INSERT INTO public."schema_migrations" (version) VALUES (20230608132801);
 INSERT INTO public."schema_migrations" (version) VALUES (20230626080554);
 INSERT INTO public."schema_migrations" (version) VALUES (20230829111631);
+INSERT INTO public."schema_migrations" (version) VALUES (20230904092357);

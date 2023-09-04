@@ -1,13 +1,13 @@
-defmodule Sanbase.Sanr.Email do
+defmodule Sanbase.LandingEmails.AlphaNaratives do
   use Ecto.Schema
   import Ecto.Changeset
 
   alias Sanbase.Repo
   alias Sanbase.Email.MailjetApi
 
-  @mailjet_sanr_list :sanr_network_emails
+  @mailjet_alpha_naratives :alpha_naratives_emails
 
-  schema "sanr_emails" do
+  schema "alpha_naratives_emails" do
     field(:email, :string)
     timestamps()
   end
@@ -28,7 +28,7 @@ defmodule Sanbase.Sanr.Email do
     |> Repo.insert()
     |> case do
       {:ok, result} ->
-        MailjetApi.subscribe(@mailjet_sanr_list, email)
+        MailjetApi.subscribe(@mailjet_alpha_naratives, email)
         {:ok, result}
 
       {:error, reason} ->

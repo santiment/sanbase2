@@ -350,6 +350,37 @@ ALTER SEQUENCE public.ai_gen_code_id_seq OWNED BY public.ai_gen_code.id;
 
 
 --
+-- Name: alpha_naratives_emails; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.alpha_naratives_emails (
+    id bigint NOT NULL,
+    email character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: alpha_naratives_emails_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.alpha_naratives_emails_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: alpha_naratives_emails_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.alpha_naratives_emails_id_seq OWNED BY public.alpha_naratives_emails.id;
+
+
+--
 -- Name: api_call_limits; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4284,6 +4315,13 @@ ALTER TABLE ONLY public.ai_gen_code ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: alpha_naratives_emails id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.alpha_naratives_emails ALTER COLUMN id SET DEFAULT nextval('public.alpha_naratives_emails_id_seq'::regclass);
+
+
+--
 -- Name: api_call_limits id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5019,6 +5057,14 @@ ALTER TABLE ONLY public.ai_context
 
 ALTER TABLE ONLY public.ai_gen_code
     ADD CONSTRAINT ai_gen_code_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: alpha_naratives_emails alpha_naratives_emails_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.alpha_naratives_emails
+    ADD CONSTRAINT alpha_naratives_emails_pkey PRIMARY KEY (id);
 
 
 --
@@ -5931,6 +5977,13 @@ ALTER TABLE ONLY public.webinar_registrations
 
 ALTER TABLE ONLY public.webinars
     ADD CONSTRAINT webinars_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: alpha_naratives_emails_email_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX alpha_naratives_emails_email_index ON public.alpha_naratives_emails USING btree (email);
 
 
 --
@@ -8505,3 +8558,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230608132801);
 INSERT INTO public."schema_migrations" (version) VALUES (20230626080554);
 INSERT INTO public."schema_migrations" (version) VALUES (20230829111631);
 INSERT INTO public."schema_migrations" (version) VALUES (20230904092357);
+INSERT INTO public."schema_migrations" (version) VALUES (20230904141409);

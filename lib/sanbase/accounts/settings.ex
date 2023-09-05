@@ -42,6 +42,8 @@ defmodule Sanbase.Accounts.Settings do
     # 2. Email campaigns/lists through Mailchimp
     field(:is_subscribed_monthly_newsletter, :boolean, default: true)
     field(:is_subscribed_biweekly_report, :boolean, default: false)
+
+    field(:sanbase_version, :string)
   end
 
   def changeset(schema, params) do
@@ -65,7 +67,8 @@ defmodule Sanbase.Accounts.Settings do
       :is_subscribed_biweekly_report,
       :is_subscribed_marketing_emails,
       :is_subscribed_comments_emails,
-      :is_subscribed_likes_emails
+      :is_subscribed_likes_emails,
+      :sanbase_version
     ])
   end
 

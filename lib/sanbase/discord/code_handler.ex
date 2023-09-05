@@ -8,6 +8,7 @@ defmodule Sanbase.Discord.CodeHandler do
 
   @team_role_id 409_637_386_012_721_155
   @local_team_role_id 854_304_500_402_880_532
+  @ephemeral_message_flags 64
 
   def team_role_id do
     case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
@@ -56,7 +57,7 @@ defmodule Sanbase.Discord.CodeHandler do
   end
 
   def handle_interaction("show-program", interaction, id, _metadata) do
-    interaction_ack_visible(interaction)
+    interaction_ack(interaction)
 
     ai_gen_code = AiGenCode.by_id(id)
 
@@ -70,7 +71,7 @@ defmodule Sanbase.Discord.CodeHandler do
   end
 
   def handle_interaction("show-program-result", interaction, id, _metadata) do
-    interaction_ack_visible(interaction)
+    interaction_ack(interaction)
 
     ai_gen_code = AiGenCode.by_id(id)
 
@@ -201,6 +202,13 @@ defmodule Sanbase.Discord.CodeHandler do
 
   defp interaction_ack_visible(interaction) do
     Nostrum.Api.create_interaction_response(interaction, %{type: 5})
+  end
+
+  defp interaction_ack(interaction) do
+    Nostrum.Api.create_interaction_response(interaction, %{
+      type: 5,
+      data: %{flags: @ephemeral_message_flags}
+    })
   end
 
   def create_modal(interaction, id) do

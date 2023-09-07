@@ -3,6 +3,10 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
 
   require Logger
 
+  # If this is changed, the crontab expression in config/scrapers_config.exs should
+  # be updated as well.
+  @open_interest_minutes_interval 10
+
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"type" => "schedule_historical_price_jobs"}}) do
     Logger.info("[Cryptocompare.AddHistoricalJobsWorker] Start adding historical price jobs.")
@@ -22,7 +26,11 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
       "[Cryptocompare.AddHistoricalJobsWorker] Start adding historical open interest jobs."
     )
 
-    Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler.schedule_previous_day_jobs()
+    # The limit is set to a higher value so it can account for delays in the scheduler.
+    # The scheduler runs every 10 minutes.
+    Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler.schedule_jobs(
+      limit: @open_interest_minutes_interval * 20
+    )
 
     Logger.info(
       "[Cryptocompare.AddHistoricalJobsWorker] Finished adding historical open interest jobs."
@@ -43,33 +51,6 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
 
     Logger.info(
       "[Cryptocompare.AddHistoricalJobsWorker] Finished adding historical funding rate jobs."
-    )
-
-    :ok
-  end
-
-  @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"type" => "schedule_historical_open_interest, jobs"}} = job) do
-    # For some time the job scheduling had a typo where instead of `_`, there was `, `
-    # With this function we handle this by catching these cases and adding the job again
-    # with the proper name, so the perform can handle them.
-    scheduled_at = job.scheduled_at
-
-    Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler.schedule_previous_day_jobs(
-      datetime: scheduled_at
-    )
-
-    :ok
-  end
-
-  def perform(%Oban.Job{args: %{"type" => "schedule_historical_funding_rate, jobs"}} = job) do
-    # For some time the job scheduling had a typo where instead of `_`, there was `, `
-    # With this function we handle this by catching these cases and adding the job again
-    # with the proper name, so the perform can handle them.
-    scheduled_at = job.scheduled_at
-
-    Sanbase.Cryptocompare.FundingRate.HistoricalScheduler.schedule_previous_day_jobs(
-      datetime: scheduled_at
     )
 
     :ok

@@ -38,6 +38,13 @@ defmodule Sanbase.Cryptocompare.Handler do
   end
 
   def get_markets_and_instruments() do
+    cache_key = {__MODULE__, :get_markets_and_instruments}
+    Sanbase.Cache.get_or_store({cache_key, 600}, &do_get_markets_and_instruments/0)
+  end
+
+  # Private function
+
+  defp do_get_markets_and_instruments() do
     url = "https://data-api.cryptocompare.com/futures/v1/markets/instruments"
     headers = [{"authorization", "Apikey #{api_key()}"}]
 
@@ -63,8 +70,6 @@ defmodule Sanbase.Cryptocompare.Handler do
         {:error, "Failed to get markets"}
     end
   end
-
-  # Private function
 
   defp parse_markets_instruments_response(json_body) do
     # Filter the list so only 3 markets and BTC/ETH instruments are left

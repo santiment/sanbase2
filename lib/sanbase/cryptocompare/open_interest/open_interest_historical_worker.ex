@@ -27,13 +27,13 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
   require Logger
 
   @url "https://data-api.cryptocompare.com/futures/v1/historical/open-interest/minutes"
-  @limit 2000
+  @default_limit 2000
   @oban_conf_name :oban_scrapers
   @topic :open_interest_topic
 
   def queue(), do: @queue
   def conf_name(), do: @oban_conf_name
-  def default_limit(), do: @limit
+  def default_limit(), do: @default_limit
 
   def pause_resume_worker(),
     do: Sanbase.Cryptocompare.OpenInterest.PauseResumeWorker
@@ -45,7 +45,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
   def perform(%Oban.Job{args: args}) do
     %{"market" => market, "instrument" => instrument, "timestamp" => timestamp} = args
 
-    limit = Map.get(args, "limit", @limit)
+    limit = Map.get(args, "limit", @default_limit)
 
     case get_data(market, instrument, limit, timestamp) do
       {:ok, min_timestamp, []} when is_integer(min_timestamp) ->
@@ -159,7 +159,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
         "instrument" => args["instrument"],
         "schedule_next_job" => true,
         "timestamp" => min_timestamp,
-        "limit" => @limit
+        "limit" => @default_limit
       }
       |> Sanbase.Cryptocompare.OpenInterest.HistoricalWorker.new()
 

@@ -64,6 +64,22 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
     |> Enum.each(&Oban.insert_all(@oban_conf_name, &1))
   end
 
+  def schedule_jobs(opts \\ []) do
+    limit = Keyword.fetch!(opts, :limit)
+    schedule_next_job = Keyword.get(opts, :schedule_next_job, false)
+
+    # Scrape the last `limit` number of data points.
+    to_datetime = DateTime.utc_now()
+
+    {:ok, markets_and_instruments} = Handler.get_markets_and_instruments()
+
+    for {market, instruments} <- markets_and_instruments, instrument <- instruments do
+      new_job(market, instrument, to_datetime, schedule_next_job, limit)
+    end
+    |> Enum.chunk_every(200)
+    |> Enum.each(&Oban.insert_all(@oban_conf_name, &1))
+  end
+
   def add_job(market, instrument, timestamp, schedule_next_job, limit) do
     job = new_job(market, instrument, timestamp, schedule_next_job, limit)
     Oban.insert(@oban_conf_name, job)

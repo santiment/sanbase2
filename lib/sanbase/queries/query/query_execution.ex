@@ -83,6 +83,27 @@ defmodule Sanbase.Queries.QueryExecution do
     )
   end
 
+  def execution_summary(user_id) do
+    now = DateTime.utc_now()
+    beginning_of_minute = %{now | :second => 0, :microsecond => {0, 0}}
+    beginning_of_hour = %{now | :minute => 0, :second => 0, :microsecond => {0, 0}}
+    beginning_of_day = Timex.beginning_of_day(now)
+    beginning_of_month = Timex.beginning_of_month(now)
+
+    from(c in __MODULE__,
+      where: c.user_id == ^user_id and c.inserted_at >= ^beginning_of_month,
+      select: %{
+        monthly_credits_spent: sum(c.credits_cost),
+        queries_executed_minute:
+          fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_minute),
+        queries_executed_hour:
+          fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_hour),
+        queries_executed_day:
+          fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_day)
+      }
+    )
+  end
+
   @fields [
     :user_id,
     :query_id,

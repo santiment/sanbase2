@@ -52,9 +52,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   def run_sql_query(
         _root,
         %{query_id: query_id},
-        %{context: %{auth: %{current_user: user}}} = resolution
+        %{context: %{auth: %{current_user: user}} = context} = resolution
       ) do
-    with :ok <- Queries.user_can_execute_query(user.id),
+    with :ok <- Queries.user_can_execute_query(user.id, context.product_code, context.auth.plan),
          {:ok, query} <- Queries.get_query(query_id, user.id) do
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user.id, query_metadata)
@@ -64,9 +64,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   def run_raw_sql_query(
         _root,
         %{sql_query_text: query, sql_parameters: parameters},
-        %{context: %{auth: %{current_user: user}}} = resolution
+        %{context: %{auth: %{current_user: user}} = context} = resolution
       ) do
-    with :ok <- Queries.user_can_execute_query(user.id),
+    with :ok <- Queries.user_can_execute_query(user.id, context.product_code, context.auth.plan),
          query = Queries.get_ephemeral_query_struct(query, parameters) do
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user.id, query_metadata)
@@ -76,11 +76,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   def run_dashboard_sql_query(
         _root,
         %{dashboard_id: dashboard_id, dashboard_query_mapping_id: mapping_id},
-        %{context: %{auth: %{current_user: user}}} = resolution
+        %{context: %{auth: %{current_user: user}} = context} = resolution
       ) do
     # get_dashboard_query/3 is a function that returns a query struct with the
     # query's local parameter being overriden by the dashboard global parameters
-    with :ok <- Queries.user_can_execute_query(user.id),
+    with :ok <- Queries.user_can_execute_query(user.id, context.product_code, context.auth.plan),
          query = Queries.get_dashboard_query(dashboard_id, mapping_id, user.id) do
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user.id, query_metadata)

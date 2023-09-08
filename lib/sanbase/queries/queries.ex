@@ -18,9 +18,6 @@ defmodule Sanbase.Queries do
   @type dashboard_id :: Dashboard.dashboard_id()
   @type dashboard_query_mapping_id :: DashboardQueryMapping.dashboard_query_mapping_id()
 
-  # TODO: Make part of subscription plan
-  @credits_per_month 1_000_000
-
   @typedoc ~s"""
   Preload options
   """
@@ -83,17 +80,33 @@ defmodule Sanbase.Queries do
   profiling details - how much RAM memory it used, how much data it read from
   the disk, how big is the result, etc.
   """
-  @spec user_can_execute_query(user_id) :: :ok | {:error, String.t()}
-  def user_can_execute_query(user_id) do
-    now = DateTime.utc_now()
-    beginning_of_month = Timex.beginning_of_month(now)
+  @spec user_can_execute_query(user_id, String.t(), String.t()) :: :ok | {:error, String.t()}
+  def user_can_execute_query(user_id, product_code, plan_name) do
+    query = QueryExecution.execution_summary(user_id)
 
-    query = QueryExecution.credits_spent(user_id, now, beginning_of_month)
+    query_executions_limit = query_executions_limit(product_code, plan_name)
+    monthly_credits_limit = credits_limit(product_code, plan_name)
 
     case Sanbase.Repo.one(query) do
-      nil -> :ok
-      credits_spent when credits_spent < @credits_per_month -> :ok
-      _ -> {:error, "The user with id #{user_id} has no credits left"}
+      %{monthly_credits_spent: credits_spent}
+      when credits_spent >= monthly_credits_limit ->
+        {:error, "The user with id #{user_id} has no credits left"}
+
+      %{queries_executed_minute: count}
+      when count >= query_executions_limit.minute ->
+        {:error,
+         "The user with id #{user_id} has executed more queries than allowed in a minute."}
+
+      %{queries_executed_hour: count}
+      when count >= query_executions_limit.hour ->
+        {:error, "The user with id #{user_id} has executed more queries than allowed in a hour."}
+
+      %{queries_executed_day: count}
+      when count >= query_executions_limit.day ->
+        {:error, "The user with id #{user_id} has executed more queries than allowed in a day."}
+
+      _ ->
+        :ok
     end
   end
 
@@ -375,4 +388,27 @@ defmodule Sanbase.Queries do
 
   defp process_transaction_result({:error, _, error, _}, _ok_field),
     do: {:error, error}
+
+  defp credits_limit(product_code, plan_name) do
+    case {product_code, plan_name} do
+      {_, "FREE"} -> 5_000
+      {"SANBASE", "PRO"} -> 1_000_000
+      {"SANAPI", "BASIC"} -> 2_000_000
+      {"SANAPI", "PRO"} -> 5_000_000
+      {"SANAPI", "CUSTOM"} -> 20_000_000
+      # This needs to be updated so its taken from the plan definition
+      {"SANAPI", "CUSTOM_" <> _} -> 20_000_000
+    end
+  end
+
+  defp query_executions_limit(product_code, plan_name) do
+    case {product_code, plan_name} do
+      {_, "FREE"} -> %{minute: 1, hour: 5, day: 10}
+      {"SANBASE", "PRO"} -> %{minute: 10, hour: 50, day: 100}
+      {"SANAPI", "BASIC"} -> %{minute: 20, hour: 100, day: 200}
+      {"SANAPI", "PRO"} -> %{minute: 50, hour: 250, day: 500}
+      {"SANAPI", "CUSTOM"} -> %{minute: 200, hour: 1000, day: 2000}
+      {"SANAPI", "CUSTOM_" <> _} -> %{minute: 200, hour: 1000, day: 2000}
+    end
+  end
 end

@@ -69,7 +69,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler do
     schedule_next_job = Keyword.get(opts, :schedule_next_job, false)
 
     # Scrape the last `limit` number of data points.
-    to_datetime = DateTime.utc_now()
+    to_datetime = DateTime.utc_now() |> DateTime.to_unix()
 
     {:ok, markets_and_instruments} = Handler.get_markets_and_instruments()
 

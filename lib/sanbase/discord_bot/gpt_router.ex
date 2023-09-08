@@ -1,4 +1,4 @@
-defmodule Sanbase.Discord.GptRouter do
+defmodule Sanbase.DiscordBot.GptRouter do
   use Ecto.Schema
   import Ecto.Changeset
 

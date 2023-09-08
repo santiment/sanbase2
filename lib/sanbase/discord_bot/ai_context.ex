@@ -1,4 +1,4 @@
-defmodule Sanbase.Discord.AiContext do
+defmodule Sanbase.DiscordBot.AiContext do
   use Ecto.Schema
 
   import Ecto.Changeset

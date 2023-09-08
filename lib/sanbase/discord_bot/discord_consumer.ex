@@ -3,8 +3,9 @@ defmodule Sanbase.DiscordConsumer do
 
   require Logger
 
-  alias Sanbase.Discord.CommandHandler
-  alias Sanbase.Discord.CodeHandler
+  alias Sanbase.DiscordBot.LegacyCommandHandler
+  alias Sanbase.DiscordBot.CommandHandler
+  alias Sanbase.DiscordBot.CodeHandler
   alias Nostrum.Struct.Interaction
   alias Nostrum.Struct.ApplicationCommandInteractionData
 
@@ -57,24 +58,12 @@ defmodule Sanbase.DiscordConsumer do
 
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
     cond do
-      CommandHandler.is_command?(msg.content) ->
+      LegacyCommandHandler.is_command?(msg.content) ->
         do_handle_command(msg)
 
-      CommandHandler.is_ai_command?(msg.content) ->
+      LegacyCommandHandler.is_test_command?(msg.content) ->
         warm_up(msg)
-        result = CommandHandler.handle_command("ai", msg)
-        log(msg, "ai COMMAND RESULT #{inspect(result)}")
-        :ok
-
-      CommandHandler.is_docs_command?(msg.content) ->
-        warm_up(msg)
-        result = CommandHandler.handle_command("docs", msg)
-        log(msg, "docs COMMAND RESULT #{inspect(result)}")
-        :ok
-
-      CommandHandler.is_test_command?(msg.content) ->
-        warm_up(msg)
-        result = CommandHandler.handle_command("test", msg)
+        result = LegacyCommandHandler.handle_command("test", msg)
         log(msg, "test COMMAND RESULT #{inspect(result)}")
         :ok
 
@@ -125,7 +114,7 @@ defmodule Sanbase.DiscordConsumer do
         end
 
       cmd when cmd in ["query", "help", "list", "chart"] ->
-        CommandHandler.handle_interaction(command, interaction)
+        LegacyCommandHandler.handle_interaction(command, interaction)
         |> handle_response(command, interaction)
     end
   end
@@ -137,7 +126,7 @@ defmodule Sanbase.DiscordConsumer do
       }) do
     warm_up(interaction)
 
-    CommandHandler.handle_interaction("run", interaction)
+    LegacyCommandHandler.handle_interaction("run", interaction)
     |> handle_response("run", interaction)
   end
 
@@ -154,7 +143,7 @@ defmodule Sanbase.DiscordConsumer do
       command in ["rerun", "pin", "unpin", "show"] ->
         panel_id = id
 
-        CommandHandler.handle_interaction(command, interaction, panel_id)
+        LegacyCommandHandler.handle_interaction(command, interaction, panel_id)
         |> handle_response({command, panel_id}, interaction)
 
       command in ["up", "down"] ->
@@ -268,13 +257,13 @@ defmodule Sanbase.DiscordConsumer do
   end
 
   defp do_handle_command(msg) do
-    with {:ok, name, sql} <- CommandHandler.parse_message_command(msg.content) do
-      CommandHandler.handle_command("run", name, sql, msg)
+    with {:ok, name, sql} <- LegacyCommandHandler.parse_message_command(msg.content) do
+      LegacyCommandHandler.handle_command("run", name, sql, msg)
       |> handle_msg_response("run", msg)
     else
       {:error, :invalid_command} ->
-        CommandHandler.handle_command("invalid_command", msg)
-        CommandHandler.handle_command("help", msg)
+        LegacyCommandHandler.handle_command("invalid_command", msg)
+        LegacyCommandHandler.handle_command("help", msg)
 
       false ->
         :ignore
@@ -282,12 +271,12 @@ defmodule Sanbase.DiscordConsumer do
   end
 
   defp retry({command, panel_id}, interaction) do
-    CommandHandler.handle_interaction(command, interaction, panel_id)
+    LegacyCommandHandler.handle_interaction(command, interaction, panel_id)
     |> handle_response(command, interaction, retry: false)
   end
 
   defp retry(command, interaction) do
-    CommandHandler.handle_interaction(command, interaction)
+    LegacyCommandHandler.handle_interaction(command, interaction)
     |> handle_response(command, interaction, retry: false)
   end
 

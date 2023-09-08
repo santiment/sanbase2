@@ -1,4 +1,4 @@
-defmodule Sanbase.Discord.Insights do
+defmodule Sanbase.DiscordBot.Insights do
   import Ecto.Query
 
   def run(n) do

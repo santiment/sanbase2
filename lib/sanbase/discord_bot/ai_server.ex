@@ -342,6 +342,50 @@ defmodule Sanbase.DiscordBot.AiServer do
     end
   end
 
+  def answer(question, discord_metadata \\ {}) do
+    url = "#{ai_server_url()}/question"
+
+    route_blacklist =
+      AiContext.check_limits(discord_metadata)
+      |> case do
+        :ok -> []
+        {:error, _, _} -> ["twitter"]
+      end
+
+    messages = AiContext.fetch_history_context(discord_metadata, 5)
+
+    ai_server_params = %{
+      question: question,
+      messages: messages,
+      route_blacklist: route_blacklist
+    }
+
+    do_request_ai_server(url, ai_server_params)
+    |> case do
+      {:ok, result} ->
+        answer = result["answer"]
+
+        params =
+          discord_metadata
+          |> Map.put(:answer, answer["answer"])
+          |> Map.put(:question, question)
+          |> Map.put(:tokens_request, answer["tokens_request"])
+          |> Map.put(:tokens_response, answer["tokens_response"])
+          |> Map.put(:tokens_total, answer["tokens_total"])
+          |> Map.put(:total_cost, answer["total_cost"])
+          |> Map.put(:elapsed_time, result["elapsed_time"])
+          |> Map.put(:route, result["route"])
+          |> Map.put(:command, add_command(result["route"]["route"]))
+
+        params = maybe_add_prompt(params, answer["prompt"])
+
+        AiContext.create(params)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   def manage_pinecone_index() do
     if is_prod?() do
       url = "#{ai_server_url()}/pinecone/index"
@@ -377,15 +421,31 @@ defmodule Sanbase.DiscordBot.AiServer do
     "btc" => ["btc", "bitcoin"]
   }
 
-  defp normalize_projects(body) do
-    body["projects"]
+  def normalize_projects(route) do
+    route["projects"]
     |> Enum.map(&String.downcase/1)
     |> Enum.flat_map(&crypto_project/1)
   end
 
   defp crypto_project(project) do
-    Enum.reduce(@cryptos, [], fn {key, value}, acc ->
+    Enum.reduce(@cryptos, [project], fn {key, value}, acc ->
       if project == key, do: acc ++ value, else: acc
     end)
+    |> Enum.uniq()
   end
+
+  defp maybe_add_prompt(params, prompt) do
+    if prompt do
+      prompt =
+        "System:\n" <>
+          answer["prompt"]["system"] <> "\n\n" <> "User:\n" <> answer["prompt"]["user"]
+
+      Map.put(params, :prompt, prompt)
+    else
+      params
+    end
+  end
+
+  defp add_command("twitter"), do: "!ai"
+  defp add_command("academy"), do: "!thread"
 end

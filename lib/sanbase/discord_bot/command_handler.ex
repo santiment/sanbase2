@@ -102,10 +102,16 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     end
   end
 
+  defp route_and_answer2(msg, thread) do
+    query = String.replace(msg.content, "<@#{bot_id()}>", "")
+    Nostrum.Api.start_typing(thread.id)
+    discord_metadata = db_params(msg, thread)
+  end
+
   def handle_ai_command(msg, prompt, thread, timeframe_hours, sentiment, projects) do
     Nostrum.Api.start_typing(thread.id)
 
-    db_params = db_params(msg, thread, "!ai")
+    db_params = db_params(msg, thread)
     db_params = Map.put(db_params, :timeframe, timeframe_hours)
     db_params = Map.put(db_params, :sentiment, sentiment)
     db_params = Map.put(db_params, :projects, projects)
@@ -157,7 +163,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
 
     Nostrum.Api.start_typing(thread.id)
 
-    db_params = db_params(msg, thread, "!thread")
+    db_params = db_params(msg, thread)
     prompt = String.replace(msg.content, "<@#{bot_id()}>", "")
     {kw_list, ai_context} = AiServer.threaded_docs(prompt, db_params) |> process_response()
 
@@ -310,7 +316,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     end
   end
 
-  defp db_params(msg, thread, command) do
+  defp db_params(msg, thread) do
     discord_user = msg.author.username <> msg.author.discriminator
 
     channel_name =
@@ -341,7 +347,6 @@ defmodule Sanbase.DiscordBot.CommandHandler do
       thread_id: to_string(thread.id),
       thread_name: thread.name,
       msg_id: msg.id,
-      command: command,
       user_is_pro: user_is_pro
     }
   end

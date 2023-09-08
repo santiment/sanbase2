@@ -40,6 +40,8 @@ defmodule Sanbase.Cryptocompare.Handler do
   def get_markets_and_instruments() do
     cache_key = {__MODULE__, :get_markets_and_instruments}
     Sanbase.Cache.get_or_store({cache_key, 600}, &do_get_markets_and_instruments/0)
+
+    do_get_markets_and_instruments()
   end
 
   # Private function
@@ -71,15 +73,15 @@ defmodule Sanbase.Cryptocompare.Handler do
     end
   end
 
+  @markets ~w[binance bitfinex bitmex bybit coinbase cryptodotcom kraken okex]
   defp parse_markets_instruments_response(json_body) do
-    # Filter the list so only 3 markets and BTC/ETH instruments are left
     json_body
     |> Jason.decode!()
     |> Map.fetch!("Data")
     |> Enum.map(fn {market, data} ->
       mapped_instruments =
         data["instruments"]
-        |> Enum.map(fn {k, _} -> k end)
+        |> Enum.map(fn {instrument, _} -> instrument end)
         |> Enum.uniq()
         |> Enum.filter(fn instrument ->
           String.contains?(instrument, "PERPETUAL")
@@ -87,6 +89,7 @@ defmodule Sanbase.Cryptocompare.Handler do
 
       {market, mapped_instruments}
     end)
+    |> Enum.filter(fn {k, _} -> k in @markets end)
     |> Map.new()
   end
 

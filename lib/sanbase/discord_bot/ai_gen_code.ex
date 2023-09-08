@@ -1,4 +1,4 @@
-defmodule Sanbase.Discord.AiGenCode do
+defmodule Sanbase.DiscordBot.AiGenCode do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query

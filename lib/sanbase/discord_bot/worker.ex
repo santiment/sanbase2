@@ -1,4 +1,4 @@
-defmodule Sanbase.Discord.Worker do
+defmodule Sanbase.DiscordBot.Worker do
   use GenServer
   require Logger
 

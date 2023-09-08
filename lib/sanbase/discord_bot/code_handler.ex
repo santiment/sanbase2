@@ -1,15 +1,17 @@
-defmodule Sanbase.Discord.CodeHandler do
+defmodule Sanbase.DiscordBot.CodeHandler do
   require Logger
 
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Component.{ActionRow, TextInput}
 
-  alias Sanbase.Discord.AiGenCode
+  alias Sanbase.DiscordBot.AiGenCode
+  alias Sanbase.DiscordBot.Utils
+  alias Sanbase.DiscordBot.AiServer
 
   @team_role_id 409_637_386_012_721_155
   @local_team_role_id 854_304_500_402_880_532
-  @ephemeral_message_flags 64
 
+  @spec team_role_id() :: integer()
   def team_role_id do
     case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
       "dev" -> @local_team_role_id
@@ -17,12 +19,17 @@ defmodule Sanbase.Discord.CodeHandler do
     end
   end
 
+  @spec handle_interaction(
+          String.t(),
+          Nostrum.Struct.Interaction.t(),
+          map()
+        ) :: {:ok, any()} | {:error, any()}
   def handle_interaction("code", interaction, metadata) do
-    interaction_ack_visible(interaction)
+    Utils.interaction_ack_visible(interaction)
 
     [option] = interaction.data.options
 
-    case Sanbase.OpenAI.find_or_generate_program(option.value, metadata) do
+    case AiServer.find_or_generate_program(option.value, metadata) do
       {:ok, ai_gen_code} ->
         content = """
         🇶: #{ai_gen_code.question}
@@ -31,7 +38,7 @@ defmodule Sanbase.Discord.CodeHandler do
 
         """
 
-        edit_interaction_response(interaction, content, [action_row(ai_gen_code)])
+        Utils.edit_interaction_response(interaction, content, [action_row(ai_gen_code)])
 
       {:error, error} ->
         Logger.error(
@@ -42,22 +49,28 @@ defmodule Sanbase.Discord.CodeHandler do
     end
   end
 
+  @spec handle_interaction(
+          String.t(),
+          Nostrum.Struct.Interaction.t(),
+          String.t(),
+          map()
+        ) :: {:ok, any()} | {:error, any()}
   def handle_interaction("save-program", interaction, id, _metadata) do
-    interaction_ack_visible(interaction)
+    Utils.interaction_ack_visible(interaction)
 
     ai_gen_code = AiGenCode.by_id(id)
 
-    Sanbase.OpenAI.save_program(ai_gen_code)
+    AiServer.save_program(ai_gen_code)
 
     content = """
     🟢 Program saved successfully!
     """
 
-    edit_interaction_response(interaction, content, [])
+    Utils.edit_interaction_response(interaction, content, [])
   end
 
   def handle_interaction("show-program", interaction, id, _metadata) do
-    interaction_ack(interaction)
+    Utils.interaction_ack(interaction)
 
     ai_gen_code = AiGenCode.by_id(id)
 
@@ -67,11 +80,11 @@ defmodule Sanbase.Discord.CodeHandler do
     ```
     """
 
-    edit_interaction_response(interaction, content, [action_row(ai_gen_code)])
+    Utils.edit_interaction_response(interaction, content, [action_row(ai_gen_code)])
   end
 
   def handle_interaction("show-program-result", interaction, id, _metadata) do
-    interaction_ack(interaction)
+    Utils.interaction_ack(interaction)
 
     ai_gen_code = AiGenCode.by_id(id)
 
@@ -81,15 +94,15 @@ defmodule Sanbase.Discord.CodeHandler do
     ```
     """
 
-    edit_interaction_response(interaction, content, [])
+    Utils.edit_interaction_response(interaction, content, [])
   end
 
   def handle_interaction("generate-program", interaction, id, metadata) do
-    interaction_ack_visible(interaction)
+    Utils.interaction_ack_visible(interaction)
 
     old_ai_gen_code = AiGenCode.by_id(id)
 
-    case Sanbase.OpenAI.generate_program(old_ai_gen_code.question, metadata) do
+    case AiServer.generate_program(old_ai_gen_code.question, metadata) do
       {:ok, ai_gen_code} ->
         content = """
         🇶: #{ai_gen_code.question}
@@ -98,7 +111,7 @@ defmodule Sanbase.Discord.CodeHandler do
 
         """
 
-        edit_interaction_response(interaction, content, [action_row(ai_gen_code)])
+        Utils.edit_interaction_response(interaction, content, [action_row(ai_gen_code)])
 
       {:error, error} ->
         Logger.error(
@@ -110,7 +123,7 @@ defmodule Sanbase.Discord.CodeHandler do
   end
 
   def handle_interaction("program-changes", interaction, id, metadata) do
-    interaction_ack_visible(interaction)
+    Utils.interaction_ack_visible(interaction)
 
     changes =
       interaction.data.components
@@ -121,7 +134,7 @@ defmodule Sanbase.Discord.CodeHandler do
 
     old_ai_gen_code = AiGenCode.by_id(id)
 
-    case Sanbase.OpenAI.change_program(old_ai_gen_code, changes, metadata) do
+    case AiServer.change_program(old_ai_gen_code, changes, metadata) do
       {:ok, ai_gen_code} ->
         content = """
         After the following changes:
@@ -135,7 +148,7 @@ defmodule Sanbase.Discord.CodeHandler do
 
         """
 
-        edit_interaction_response(interaction, content, [action_row(ai_gen_code)])
+        Utils.edit_interaction_response(interaction, content, [action_row(ai_gen_code)])
 
       {:error, error} ->
         Logger.error("Failed to change program with id #{old_ai_gen_code.id}: #{inspect(error)}")
@@ -148,29 +161,29 @@ defmodule Sanbase.Discord.CodeHandler do
   end
 
   def access_denied(interaction) do
-    interaction_ack_visible(interaction)
+    Utils.interaction_ack_visible(interaction)
 
     content =
       "You don't have access to this command. The command is available only to Santiment team members."
 
-    edit_interaction_response(interaction, content, [])
+    Utils.edit_interaction_response(interaction, content, [])
   end
 
   def generic_error_message(interaction) do
     content = "An errror occured. Please try again"
-    edit_interaction_response(interaction, content, [])
+    Utils.edit_interaction_response(interaction, content, [])
   end
 
   def discord_metadata(interaction) do
     {guild_name, channel_name} =
-      Sanbase.Discord.CommandHandler.get_guild_channel(
+      Sanbase.DiscordBot.LegacyCommandHandler.get_guild_channel(
         interaction.guild_id,
         interaction.channel_id
       )
 
     user_is_team_member =
       Nostrum.Api.get_guild_member(
-        Sanbase.Discord.CommandHandler.santiment_guild_id(),
+        Sanbase.DiscordBot.LegacyCommandHandler.santiment_guild_id(),
         interaction.user.id
       )
       |> case do
@@ -193,25 +206,8 @@ defmodule Sanbase.Discord.CodeHandler do
   end
 
   # helpers
-  defp edit_interaction_response(interaction, content, components) do
-    Nostrum.Api.edit_interaction_response(interaction, %{
-      content: trim_message(content),
-      components: components
-    })
-  end
 
-  defp interaction_ack_visible(interaction) do
-    Nostrum.Api.create_interaction_response(interaction, %{type: 5})
-  end
-
-  defp interaction_ack(interaction) do
-    Nostrum.Api.create_interaction_response(interaction, %{
-      type: 5,
-      data: %{flags: @ephemeral_message_flags}
-    })
-  end
-
-  def create_modal(interaction, id) do
+  defp create_modal(interaction, id) do
     changes_input =
       TextInput.text_input("Changes", "changes_" <> id,
         placeholder: "What changes do you want to make?",
@@ -271,20 +267,5 @@ defmodule Sanbase.Discord.CodeHandler do
     |> ActionRow.append(change_button)
     |> ActionRow.append(gen_button)
     |> ActionRow.append(save_button)
-  end
-
-  defp trim_message(message) do
-    end_message =
-      if String.starts_with?(String.trim_leading(message), "```") do
-        "... (message truncated)```"
-      else
-        "... (message truncated)"
-      end
-
-    if String.length(message) > 1950 do
-      String.slice(message, 0, 1950) <> end_message
-    else
-      message
-    end
   end
 end

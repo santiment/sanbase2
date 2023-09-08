@@ -23,7 +23,7 @@ defmodule Sanbase.Application.Queries do
         fn -> Sanbase.DiscordConsumer end,
         fn -> Sanbase.Nostrum.enabled?() end
       ),
-      Sanbase.Discord.Worker
+      Sanbase.DiscordBot.Worker
     ]
 
     opts = [

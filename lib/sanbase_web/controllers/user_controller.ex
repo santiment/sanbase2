@@ -37,6 +37,13 @@ defmodule SanbaseWeb.UserController do
     show(conn, %{"id" => user.id})
   end
 
+  def reset_queries_credits_spent(conn, %{"id" => user_id}) do
+    Sanbase.Math.to_integer(user_id)
+    |> Sanbase.ModeratorQueries.reset_user_monthly_credits()
+
+    show(conn, %{"id" => user_id})
+  end
+
   def has_many(user) do
     user =
       user |> Sanbase.Repo.preload([:eth_accounts, :posts, subscriptions: [plan: [:product]]])
@@ -92,6 +99,8 @@ defmodule SanbaseWeb.UserController do
         {:error, _} -> 0
       end
 
+    {:ok, executions_details} = Sanbase.Queries.user_executions_summary(user.id)
+
     [
       %{
         name: "Api Calls Limits",
@@ -104,14 +113,24 @@ defmodule SanbaseWeb.UserController do
         actions: [:reset_api_call_limits]
       },
       %{
-        name: "Api calls used",
+        name: "Api Calls Used",
         fields: [
           %{
-            field_name: "Api calls used",
+            field_name: "Api Calls Used",
             data: api_calls_count
           }
         ],
         actions: []
+      },
+      %{
+        name: "Queries Resources Spent",
+        fields: [
+          %{
+            field_name: "Queries Resources Spent",
+            data: inspect(executions_details, pretty: true)
+          }
+        ],
+        actions: [:reset_queries_credits_spent]
       }
     ]
   end

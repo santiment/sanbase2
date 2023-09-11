@@ -280,7 +280,7 @@ defmodule Sanbase.Dashboards do
       Repo.insert(changeset)
     end)
     |> Ecto.Multi.run(:add_preloads, fn _repo, %{add_query_to_dashboard: struct} ->
-      {:ok, Repo.preload(struct, [:dashboard, :query, :user])}
+      {:ok, Repo.preload(struct, [:dashboard, [dashboard: :user], :query])}
     end)
     |> Repo.transaction()
     |> process_transaction_result(:add_preloads)

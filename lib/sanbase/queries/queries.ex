@@ -73,6 +73,12 @@ defmodule Sanbase.Queries do
     end
   end
 
+  def user_executions_summary(user_id) do
+    query = QueryExecution.executions_summary(user_id)
+
+    {:ok, Sanbase.Repo.one(query)}
+  end
+
   @doc ~s"""
   Check if the user has credits left to run a computation.
 
@@ -82,26 +88,24 @@ defmodule Sanbase.Queries do
   """
   @spec user_can_execute_query(user_id, String.t(), String.t()) :: :ok | {:error, String.t()}
   def user_can_execute_query(user_id, product_code, plan_name) do
-    query = QueryExecution.execution_summary(user_id)
-
     query_executions_limit = query_executions_limit(product_code, plan_name)
     monthly_credits_limit = credits_limit(product_code, plan_name)
 
-    case Sanbase.Repo.one(query) do
-      %{monthly_credits_spent: credits_spent}
+    case user_executions_summary(user_id) do
+      {:ok, %{monthly_credits_spent: credits_spent}}
       when credits_spent >= monthly_credits_limit ->
         {:error, "The user with id #{user_id} has no credits left"}
 
-      %{queries_executed_minute: count}
+      {:ok, %{queries_executed_minute: count}}
       when count >= query_executions_limit.minute ->
         {:error,
          "The user with id #{user_id} has executed more queries than allowed in a minute."}
 
-      %{queries_executed_hour: count}
+      {:ok, %{queries_executed_hour: count}}
       when count >= query_executions_limit.hour ->
         {:error, "The user with id #{user_id} has executed more queries than allowed in a hour."}
 
-      %{queries_executed_day: count}
+      {:ok, %{queries_executed_day: count}}
       when count >= query_executions_limit.day ->
         {:error, "The user with id #{user_id} has executed more queries than allowed in a day."}
 

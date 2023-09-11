@@ -83,7 +83,7 @@ defmodule Sanbase.Queries.QueryExecution do
     )
   end
 
-  def execution_summary(user_id) do
+  def executions_summary(user_id) do
     now = DateTime.utc_now()
     beginning_of_minute = %{now | :second => 0, :microsecond => {0, 0}}
     beginning_of_hour = %{now | :minute => 0, :second => 0, :microsecond => {0, 0}}
@@ -219,6 +219,18 @@ defmodule Sanbase.Queries.QueryExecution do
       order_by: [desc: qe.id]
     )
     |> paginate(opts)
+    |> maybe_preload(opts)
+  end
+
+  @spec get_user_monthly_executions(user_id, Keyword.t()) :: Ecto.Query.t()
+  def get_user_monthly_executions(user_id, opts) do
+    beginning_of_month = Timex.beginning_of_month(DateTime.utc_now())
+
+    from(
+      qe in __MODULE__,
+      where: qe.user_id == ^user_id and qe.inserted_at >= ^beginning_of_month,
+      order_by: [desc: qe.id]
+    )
     |> maybe_preload(opts)
   end
 

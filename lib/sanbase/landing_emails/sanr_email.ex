@@ -6,6 +6,7 @@ defmodule Sanbase.LandingEmails.SanrEmail do
   alias Sanbase.Email.MailjetApi
 
   @mailjet_sanr_list :sanr_network_emails
+  @sanr_network_welcome_template "sanr-network-welcome"
 
   schema "sanr_emails" do
     field(:email, :string)
@@ -29,6 +30,7 @@ defmodule Sanbase.LandingEmails.SanrEmail do
     |> case do
       {:ok, result} ->
         MailjetApi.subscribe(@mailjet_sanr_list, email)
+        Sanbase.TemplateMailer.send(email, @sanr_network_welcome_template, %{})
         {:ok, result}
 
       {:error, reason} ->

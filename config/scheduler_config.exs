@@ -169,6 +169,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     ],
     manage_pinecone_index: [
       schedule: "15 * * * *",
-      task: {Sanbase.OpenAI, :manage_pinecone_index, []}
+      task: {Sanbase.AiServer, :manage_pinecone_index, []}
     ]
   ]

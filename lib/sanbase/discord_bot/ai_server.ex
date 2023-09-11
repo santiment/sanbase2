@@ -379,7 +379,8 @@ defmodule Sanbase.DiscordBot.AiServer do
 
         params = maybe_add_prompt(params, answer["prompt"])
 
-        AiContext.create(params)
+        {:ok, ai_context} = AiContext.create(params)
+        {:ok, ai_context, result}
 
       {:error, reason} ->
         {:error, reason}
@@ -438,7 +439,7 @@ defmodule Sanbase.DiscordBot.AiServer do
     if prompt do
       prompt =
         "System:\n" <>
-          answer["prompt"]["system"] <> "\n\n" <> "User:\n" <> answer["prompt"]["user"]
+          prompt["system"] <> "\n\n" <> "User:\n" <> prompt["user"]
 
       Map.put(params, :prompt, prompt)
     else

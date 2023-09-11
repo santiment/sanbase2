@@ -46,7 +46,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     |> case do
       {:ok, channel} ->
         channel_or_thread = maybe_create_thread(msg, channel)
-        route_and_answer(msg, channel_or_thread)
+        route_and_answer2(msg, channel_or_thread)
 
       error ->
         error
@@ -103,9 +103,29 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   end
 
   defp route_and_answer2(msg, thread) do
-    query = String.replace(msg.content, "<@#{bot_id()}>", "")
-    Nostrum.Api.start_typing(thread.id)
+    query = extract_query(msg)
+    # Nostrum.Api.start_typing(thread.id)
+    typing_task = Task.async(fn -> keep_typing(thread.id) end)
     discord_metadata = db_params(msg, thread)
+
+    result = AiServer.answer(query, discord_metadata)
+    Task.shutdown(typing_task, :brutal_kill)
+
+    case result do
+      {:ok, ai_context, ai_server_response} ->
+        kw_list = process_ai_server_response(ai_server_response)
+
+        kw_list =
+          Keyword.put(kw_list, :content, Utils.trim_message(Keyword.get(kw_list, :content)))
+
+        Nostrum.Api.create_message(thread.id, kw_list)
+
+        feedback_row_message(msg, thread, ai_context)
+
+      {:error, _} ->
+        content = "Couldn't fetch information to answer your question"
+        Nostrum.Api.create_message(thread.id, content: content)
+    end
   end
 
   def handle_ai_command(msg, prompt, thread, timeframe_hours, sentiment, projects) do
@@ -436,9 +456,88 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     {guild_name, channel_name}
   end
 
-  def extract_thread_name(msg) do
+  defp extract_thread_name(msg) do
     msg.content
     |> String.replace("<@#{bot_id()}>", "")
     |> String.slice(0, 90)
+  end
+
+  defp process_ai_server_response(ai_server_response) do
+    case ai_server_response["answer"] do
+      %{"answer" => "DK"} ->
+        content = "Couldn't fetch information to answer your question"
+
+        [
+          content: content,
+          components: []
+        ]
+
+      %{"type" => "search"} = answer ->
+        content = """
+        #{answer["answer"]}
+        #{answer["sources"] |> format_search_sources()}
+        """
+
+        [
+          content: content,
+          components: []
+        ]
+
+      answer ->
+        content = """
+        #{answer["answer"]}
+        #{answer["sources"] |> format_sources()}
+        """
+
+        components =
+          case Regex.run(~r/```(?:sql)?([^`]*)```/ms, content) do
+            [_, matched] ->
+              matched = matched |> String.trim() |> String.downcase()
+
+              if String.starts_with?(matched, ["select", "show", "describe"]) do
+                [ai_action_row()]
+              else
+                []
+              end
+
+            nil ->
+              []
+          end
+
+        [
+          content: content,
+          components: components
+        ]
+    end
+  end
+
+  defp feedback_row_message(msg, thread, ai_context) do
+    embeds = [
+      %Embed{
+        description:
+          "<@#{to_string(msg.author.id)}> I am still learning and improving, please let me know how I did by reactiing below"
+      }
+    ]
+
+    Nostrum.Api.create_message(thread.id,
+      content: "",
+      embeds: embeds,
+      components: [ai_context_action_row(ai_context)]
+    )
+  end
+
+  defp extract_query(msg) do
+    msg.content
+    |> String.replace("<@#{bot_id()}>", "")
+  end
+
+  defp keep_typing(thread_id) do
+    loop_typing(thread_id)
+  end
+
+  defp loop_typing(thread_id) do
+    Nostrum.Api.start_typing(thread_id)
+    :timer.sleep(7000)
+    loop_typing(thread_id)
   end
 end

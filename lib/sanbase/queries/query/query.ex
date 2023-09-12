@@ -43,7 +43,6 @@ defmodule Sanbase.Queries.Query do
           id: non_neg_integer(),
           uuid: String.t(),
           origin_id: non_neg_integer(),
-          origin_uuid: String.t(),
           name: String.t(),
           description: String.t(),
           is_public: boolean(),
@@ -65,7 +64,6 @@ defmodule Sanbase.Queries.Query do
     # If the query is a duplicate of another query, origin_id points to that original query
     # This is used to track changes.
     field(:origin_id, :integer)
-    field(:origin_uuid, :string)
 
     field(:name, :string)
     field(:description, :string)
@@ -87,7 +85,7 @@ defmodule Sanbase.Queries.Query do
     timestamps()
   end
 
-  @create_fields ~w(name description is_public settings sql_query_text sql_query_parameters user_id origin_id uuid origin_uuid)a
+  @create_fields ~w(name description is_public settings sql_query_text sql_query_parameters user_id origin_id uuid)a
   @required_fields ~w(user_id uuid)a
   @doc false
   def create_changeset(%__MODULE__{} = query, attrs) do

@@ -41,8 +41,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         execute_dashboard_mutation(context.conn, :create_dashboard, %{
           name: "MyDashboard",
           description: "some text",
-          is_public: true,
-          parameters: %{"slug" => "bitcoin"}
+          is_public: true
         })
         |> get_in(["data", "createDashboard"])
 
@@ -52,7 +51,6 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                "name" => "MyDashboard",
                "description" => "some text",
                "panels" => [],
-               "parameters" => %{"slug" => "bitcoin"},
                "user" => %{"id" => ^user_id}
              } = result
     end
@@ -67,8 +65,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
           id: dashboard_id,
           name: "MyDashboard - update",
           description: "some text - update",
-          is_public: false,
-          parameters: %{slug: "ethereum"}
+          is_public: false
         })
         |> get_in(["data", "updateDashboard"])
 
@@ -79,7 +76,6 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                "name" => "MyDashboard - update",
                "description" => "some text - update",
                "panels" => [],
-               "parameters" => %{"slug" => "ethereum"},
                "user" => %{"id" => ^user_id}
              } = result
     end

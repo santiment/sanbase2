@@ -49,7 +49,8 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     end
 
     @desc ~s"""
-    Fetch a list of the public queries.
+    Fetch a list of the public queries. Includes queries of all users, including
+    the current querying user.
     """
     field :get_public_queries, list_of(:sql_query) do
       meta(access: :free)
@@ -153,10 +154,39 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
   object :queries_mutations do
     @desc ~s"""
-    TODO
+    Create a new SQL Query.
+
+    The origin_id field can be filled with the id of another query. This is used
+    when one wants to create a copy/fork of another query. The origin_id can be used
+    to track the original query's changes and to update the forked query accordingly,
+    if needed.
+
+    The sql_query_text and sql_query_parameters hold the actual query and its parameters.
+
+    The settings field contains arbitrary JSON data that can be used to store any
+    extra parameters relevant to the frontend.
+
+    Example:
+
+    mutation{
+      createSqlQuery(
+        name: "Some records"
+        description: "An example of a select statement with parameters"
+        isPublic: true
+        sqlQueryText: "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}}) LIMIT {{limit}}"
+        sqlQueryParameters: "{\"slug\": \"bitcoin\", \"limit\": 1}"
+        settings: "{\"anyKey\": \"anyValue\", \"layout\": [0,1,2,3,4,5]}"){
+          id
+          name
+          description
+          isPublic
+          sqlQueryText
+          sqlQueryParameters
+      }
+    }
     """
     field :create_sql_query, :sql_query do
-      arg(:origin_uuid, :string)
+      arg(:origin_id, :integer)
       arg(:name, :string)
       arg(:description, :string)
       arg(:is_public, :boolean)
@@ -170,13 +200,14 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     end
 
     @desc ~s"""
-    TODO
+    Update the fields of an existing SQL query, identified by the query_id.
+    Only the owner of the query can update it.
     """
     field :update_sql_query, :sql_query do
       arg(:query_id, non_null(:integer))
 
+      arg(:origin_id, :integer)
       arg(:name, :string)
-      arg(:origin_uuid, :string)
       arg(:description, :string)
       arg(:is_public, :boolean)
       arg(:sql_query_text, :string)
@@ -189,7 +220,8 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     end
 
     @desc ~s"""
-    TODO
+    Delete an existing SQL query, identified by the query_id.
+    Only the owner of the query can delete it.
     """
     field :delete_sql_query, :sql_query do
       arg(:query_id, non_null(:integer))
@@ -202,17 +234,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
   object :dashboard_queries do
     @desc ~s"""
-    Get the schema of a dashboard.
-
-    The schema is the defintion of the dashboard and its panels.
-    The definitions include:
-    - the name, description and public status of the dashboard.
-    - the panels in the dashboard, described by their name, type,
-      SQL query and arguments, etc.
-
-    It does not contain any result data that is produced by SQL
-    queries in the dashboard. The results can be obtained by the
-    getDashboardCache query.
+    Get a dashboard.
     """
     field :get_dashboard, :dashboard do
       meta(access: :free)
@@ -224,9 +246,9 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
   object :dashboard_mutations do
     @desc ~s"""
-    Create an empty (without panels) dashboard.
+    Create an empty (without queries) dashboard.
 
-    A dashboard is holding together panels, each defining a
+    A dashboard is holding together queries, each defining a
     Clickhouse SQL query and how to visualize it. The dashboard
     usually has a topic it is about and the panels in it show
     different types of information about that topic.
@@ -245,7 +267,6 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       arg(:description, :string)
       arg(:is_public, :boolean, default_value: false)
       arg(:settings, :json)
-      arg(:parameters, :json)
 
       middleware(JWTAuth)
 
@@ -266,7 +287,6 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       arg(:description, :string)
       arg(:is_public, :boolean)
       arg(:settings, :json)
-      arg(:parameters, :json)
 
       middleware(JWTAuth)
 

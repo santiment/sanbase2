@@ -16,6 +16,7 @@ defmodule Sanbase.ModeratorQueries do
       Sanbase.Queries.QueryExecution.get_user_monthly_executions(user_id, preload?: false)
       # Exclude order_by clause so update_all/2 can be executed
       |> Ecto.Query.exclude(:order_by)
+      # To avoid match errors on the second `nil` element in the restult tuple
       |> Ecto.Query.exclude(:select)
 
     {_, nil} = Sanbase.Repo.update_all(query, set: [credits_cost: 0])

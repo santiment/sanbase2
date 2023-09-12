@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     # Identification data
     field(:id, non_null(:integer))
     field(:uuid, non_null(:string))
-    field(:origin_uuid, non_null(:string))
+    field(:origin_id, :integer)
 
     # Basic Info
     field(:name, non_null(:string))

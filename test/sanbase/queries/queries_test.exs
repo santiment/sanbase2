@@ -72,7 +72,7 @@ defmodule Sanbase.QueriesTest do
 
       assert query.id == fetched_query.id
       assert query.uuid == fetched_query.uuid
-      assert query.origin_uuid == fetched_query.origin_uuid
+      assert query.origin_id == fetched_query.origin_id
       assert query.sql_query_text == fetched_query.sql_query_text
       assert query.sql_query_parameters == fetched_query.sql_query_parameters
       assert query.user_id == fetched_query.user_id

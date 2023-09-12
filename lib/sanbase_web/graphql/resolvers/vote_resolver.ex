@@ -8,7 +8,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   alias Sanbase.Vote
   alias Sanbase.Insight.Post
   alias Sanbase.Chart
-  alias Sanbase.Queries.Dashboard
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.UserList

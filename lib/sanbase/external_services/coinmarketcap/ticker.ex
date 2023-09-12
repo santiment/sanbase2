@@ -15,13 +15,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     :name,
     :slug,
     :symbol,
+    :is_self_reported,
     :price_usd,
     :price_btc,
     :rank,
     :volume_usd,
     :market_cap_usd,
+    :reported_market_cap_usd,
+    :self_reported_market_cap_usd,
     :last_updated,
     :available_supply,
+    :reported_available_supply,
+    :self_reported_available_supply,
     :total_supply,
     :percent_change_1h,
     :percent_change_24h,
@@ -144,7 +149,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
           "symbol" => symbol,
           "slug" => slug,
           "cmc_rank" => rank,
-          "circulating_supply" => circulating_supply,
+          "circulating_supply" => reported_circulating_supply,
+          "self_reported_circulating_supply" => self_reported_circulating_supply,
+          "self_reported_market_cap" => self_reported_marketcap,
           "total_supply" => total_supply,
           "max_supply" => _max_supply,
           "last_updated" => last_updated,
@@ -152,7 +159,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
             "USD" => %{
               "price" => price_usd,
               "volume_24h" => volume_24h_usd,
-              "market_cap" => mcap_usd,
+              "market_cap" => reported_mcap_usd,
               "percent_change_1h" => percent_change_1h_usd,
               "percent_change_24h" => percent_change_24h_usd,
               "percent_change_7d" => percent_change_7d_usd
@@ -168,18 +175,34 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
           }
         } = project_data
 
+        # For now, override the values only for santiment. At the moment of writing
+        # this code, more than 970 out of 3100 have 0 for marketcap and circulating supply.
+        # Using self reported values for those projects would potentially introduce
+        # less reliable data.
+        {mcap_usd, circulating_supply, is_self_reported} =
+          if slug == "santiment" and reported_mcap_usd == 0 do
+            {self_reported_marketcap, self_reported_circulating_supply, true}
+          else
+            {reported_mcap_usd, reported_circulating_supply, false}
+          end
+
         %__MODULE__{
           id: id,
           slug: slug,
           name: name,
           symbol: symbol,
+          is_self_reported: is_self_reported,
           price_usd: price_usd,
           price_btc: price_btc,
           rank: rank,
           volume_usd: volume_24h_usd,
           market_cap_usd: mcap_usd,
+          reported_market_cap_usd: reported_mcap_usd,
+          self_reported_market_cap_usd: self_reported_marketcap,
           last_updated: last_updated,
           available_supply: circulating_supply,
+          reported_available_supply: reported_circulating_supply,
+          self_reported_available_supply: self_reported_circulating_supply,
           total_supply: total_supply,
           percent_change_1h: percent_change_1h_usd,
           percent_change_24h: percent_change_24h_usd,

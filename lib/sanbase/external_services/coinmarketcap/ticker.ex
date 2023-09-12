@@ -175,8 +175,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
           }
         } = project_data
 
+        # For now, override the values only for santiment. At the moment of writing
+        # this code, more than 970 out of 3100 have 0 for marketcap and circulating supply.
+        # Using self reported values for those projects would potentially introduce
+        # less reliable data.
         {mcap_usd, circulating_supply, is_self_reported} =
-          if reported_mcap_usd == 0 do
+          if slug == "santiment" and reported_mcap_usd == 0 do
             {self_reported_marketcap, self_reported_circulating_supply, true}
           else
             {reported_mcap_usd, reported_circulating_supply, false}

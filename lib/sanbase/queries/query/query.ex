@@ -22,7 +22,7 @@ defmodule Sanbase.Queries.Query do
           optional(:is_public) => boolean(),
           optional(:settings) => map(),
           optional(:sql_query_text) => String.t(),
-          optional(:sql_parameters) => Map.t(),
+          optional(:sql_query_parameters) => Map.t(),
           optional(:origin_id) => non_neg_integer()
         }
 
@@ -32,7 +32,7 @@ defmodule Sanbase.Queries.Query do
           optional(:is_public) => boolean(),
           optional(:settings) => map(),
           optional(:sql_query_text) => String.t(),
-          optional(:sql_parameters) => Map.t(),
+          optional(:sql_query_parameters) => Map.t(),
           optional(:origin_id) => non_neg_integer(),
           # updatable by moderators only
           optional(:is_deleted) => boolean(),
@@ -49,7 +49,7 @@ defmodule Sanbase.Queries.Query do
           is_public: boolean(),
           settings: map(),
           sql_query_text: String.t(),
-          sql_parameters: map(),
+          sql_query_parameters: map(),
           user_id: non_neg_integer(),
           is_deleted: boolean(),
           is_hidden: boolean(),
@@ -74,7 +74,7 @@ defmodule Sanbase.Queries.Query do
 
     # SQL-related fields
     field(:sql_query_text, :string, default: "")
-    field(:sql_parameters, :map, default: %{})
+    field(:sql_query_parameters, :map, default: %{})
 
     belongs_to(:user, User)
 
@@ -87,7 +87,7 @@ defmodule Sanbase.Queries.Query do
     timestamps()
   end
 
-  @create_fields ~w(name description is_public settings sql_query_text sql_parameters user_id origin_id uuid origin_uuid)a
+  @create_fields ~w(name description is_public settings sql_query_text sql_query_parameters user_id origin_id uuid origin_uuid)a
   @required_fields ~w(user_id uuid)a
   @doc false
   def create_changeset(%__MODULE__{} = query, attrs) do
@@ -114,10 +114,10 @@ defmodule Sanbase.Queries.Query do
   This is used as a wrapper around the SQL query and its parameters
   when running an arbitrary SQL that is not stored in the database.
   """
-  def ephemeral_struct(sql_query_text, sql_parameters) do
+  def ephemeral_struct(sql_query_text, sql_query_parameters) do
     %__MODULE__{
       sql_query_text: sql_query_text,
-      sql_parameters: sql_parameters
+      sql_query_parameters: sql_query_parameters
     }
   end
 

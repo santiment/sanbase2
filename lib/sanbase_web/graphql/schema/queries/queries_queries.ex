@@ -88,7 +88,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     {
       runRawSqlQuery(
         sqlQueryText: "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}}) LIMIT {{limit}}"
-        sqlParameters: "{\"slug\": \"bitcoin\", \"limit\": 1}"){
+        sqlQueryParameters: "{\"slug\": \"bitcoin\", \"limit\": 1}"){
           columns
           rows
       }
@@ -98,7 +98,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       meta(access: :free)
 
       arg(:sql_query_text, non_null(:string))
-      arg(:sql_parameters, non_null(:json))
+      arg(:sql_query_parameters, non_null(:json))
 
       middleware(UserAuth)
 
@@ -161,7 +161,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       arg(:description, :string)
       arg(:is_public, :boolean)
       arg(:sql_query_text, :string)
-      arg(:sql_parameters, :json)
+      arg(:sql_query_parameters, :json)
       arg(:settings, :json)
 
       middleware(JWTAuth)
@@ -180,7 +180,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       arg(:description, :string)
       arg(:is_public, :boolean)
       arg(:sql_query_text, :string)
-      arg(:sql_parameters, :json)
+      arg(:sql_query_parameters, :json)
       arg(:settings, :json)
 
       middleware(JWTAuth)

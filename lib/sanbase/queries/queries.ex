@@ -163,7 +163,7 @@ defmodule Sanbase.Queries do
   def get_ephemeral_query_struct(query, parameters) do
     %Query{
       sql_query_text: query,
-      sql_parameters: parameters
+      sql_query_parameters: parameters
     }
   end
 
@@ -238,7 +238,7 @@ defmodule Sanbase.Queries do
   - is_public: Whether the query is public or not
   - settings: The settings of the query. This is an arbitrary map (JSON object)
   - sql_query_text: The SQL query itself
-  - sql_parameters: The parameters of the SQL query.
+  - sql_query_parameters: The parameters of the SQL query.
   - origin_id: The id of the original query if this query is a duplicate of another query.
     This is used to track changes.
   - user_id: The id of the user that created the query.
@@ -248,7 +248,7 @@ defmodule Sanbase.Queries do
 
   Parametrization of the query is done via templating - the places that need to be filled
   are indicated by the syntax {{<key>}}. Example: WHERE address = {{address}}
-  The parameters are provided as a map in the `sql_parameters` parameter.
+  The parameters are provided as a map in the `sql_query_parameters` parameter.
   """
   @spec create_query(Query.create_query_args(), user_id) ::
           {:ok, Query.t()} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
@@ -345,9 +345,9 @@ defmodule Sanbase.Queries do
         end
       )
 
-    new_query_sql_parameters = Map.merge(query.sql_parameters, overrides)
+    new_sql_query_parameters = Map.merge(query.sql_query_parameters, overrides)
 
-    query = %Query{query | sql_parameters: new_query_sql_parameters}
+    query = %Query{query | sql_query_parameters: new_sql_query_parameters}
     {:ok, query}
   end
 

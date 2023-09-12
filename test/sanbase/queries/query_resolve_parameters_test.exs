@@ -12,7 +12,7 @@ defmodule Sanbase.Queries.ResolveParametersTest do
              Sanbase.Queries.create_query(
                %{
                  sql_query_text: "SELECT * FROM metrics WHERE slug = {{slug}} LIMIT {{limit}}",
-                 sql_parameters: %{"slug" => "ethereum", "limit" => 20}
+                 sql_query_parameters: %{"slug" => "ethereum", "limit" => 20}
                },
                user.id
              )
@@ -45,7 +45,7 @@ defmodule Sanbase.Queries.ResolveParametersTest do
     assert fetched_dashboard_query.sql_query_text ==
              "SELECT * FROM metrics WHERE slug = {{slug}} LIMIT {{limit}}"
 
-    assert fetched_dashboard_query.sql_parameters == %{
+    assert fetched_dashboard_query.sql_query_parameters == %{
              "slug" => "bitcoin",
              "limit" => 20
            }
@@ -60,7 +60,7 @@ defmodule Sanbase.Queries.ResolveParametersTest do
     assert fetched_query.sql_query_text ==
              "SELECT * FROM metrics WHERE slug = {{slug}} LIMIT {{limit}}"
 
-    assert fetched_query.sql_parameters == %{
+    assert fetched_query.sql_query_parameters == %{
              "slug" => "bitcoin",
              "limit" => 20
            }

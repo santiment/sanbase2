@@ -14,7 +14,7 @@ defmodule Sanbase.QueriesTest do
              Queries.create_query(
                %{
                  sql_query_text: "SELECT * FROM metrics WHERE slug = {{slug}} LIMIT {{limit}}",
-                 sql_parameters: %{"slug" => "ethereum", "limit" => 20}
+                 sql_query_parameters: %{"slug" => "ethereum", "limit" => 20}
                },
                user.id
              )
@@ -24,7 +24,7 @@ defmodule Sanbase.QueriesTest do
     sql_query_text =
       "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}}) LIMIT {{limit}}"
 
-    sql_parameters = %{slug: "bitcoin", limit: 2}
+    sql_query_parameters = %{slug: "bitcoin", limit: 2}
 
     {:ok, dashboard} =
       Sanbase.Dashboards.create_dashboard(%{name: "My dashboard", is_public: false}, user.id)
@@ -40,7 +40,7 @@ defmodule Sanbase.QueriesTest do
       dashboard_query_mapping: dashboard_query_mapping,
       query_metadata: query_metadata,
       sql_query_text: sql_query_text,
-      sql_parameters: sql_parameters
+      sql_query_parameters: sql_query_parameters
     }
   end
 
@@ -50,7 +50,7 @@ defmodule Sanbase.QueriesTest do
                Queries.create_query(
                  %{
                    sql_query_text: "SELECT * FROM metrics WHERE slug = {{slug}} LIMIT {{limit}}",
-                   sql_parameters: %{"slug" => "ethereum", "limit" => 20}
+                   sql_query_parameters: %{"slug" => "ethereum", "limit" => 20}
                  },
                  user.id
                )
@@ -60,7 +60,7 @@ defmodule Sanbase.QueriesTest do
       assert fetched_query.sql_query_text ==
                "SELECT * FROM metrics WHERE slug = {{slug}} LIMIT {{limit}}"
 
-      assert fetched_query.sql_parameters == %{"slug" => "ethereum", "limit" => 20}
+      assert fetched_query.sql_query_parameters == %{"slug" => "ethereum", "limit" => 20}
 
       assert fetched_query.user_id == user.id
       assert fetched_query.id == query.id
@@ -74,7 +74,7 @@ defmodule Sanbase.QueriesTest do
       assert query.uuid == fetched_query.uuid
       assert query.origin_uuid == fetched_query.origin_uuid
       assert query.sql_query_text == fetched_query.sql_query_text
-      assert query.sql_parameters == fetched_query.sql_parameters
+      assert query.sql_query_parameters == fetched_query.sql_query_parameters
       assert query.user_id == fetched_query.user_id
       assert query.settings == fetched_query.settings
     end
@@ -101,7 +101,7 @@ defmodule Sanbase.QueriesTest do
       {:ok, query} =
         Sanbase.Queries.get_dashboard_query(dashboard.id, dashboard_query_mapping.id, user.id)
 
-      assert query.sql_parameters == %{"slug" => "bitcoin", "limit" => 20}
+      assert query.sql_query_parameters == %{"slug" => "bitcoin", "limit" => 20}
     end
 
     test "can update own query", %{user: user, query: query} do
@@ -111,7 +111,7 @@ defmodule Sanbase.QueriesTest do
                  %{
                    name: "My updated dashboard",
                    sql_query_text: "SELECT * FROM metrics WHERE slug IN {{slugs}}",
-                   sql_parameters: %{"slugs" => ["ethereum", "bitcoin"]}
+                   sql_query_parameters: %{"slugs" => ["ethereum", "bitcoin"]}
                  },
                  user.id
                )
@@ -120,7 +120,7 @@ defmodule Sanbase.QueriesTest do
       assert updated_query.id == query.id
       assert updated_query.name == "My updated dashboard"
       assert updated_query.sql_query_text == "SELECT * FROM metrics WHERE slug IN {{slugs}}"
-      assert updated_query.sql_parameters == %{"slugs" => ["ethereum", "bitcoin"]}
+      assert updated_query.sql_query_parameters == %{"slugs" => ["ethereum", "bitcoin"]}
 
       # The updates are persisted
       assert {:ok, fetched_query} = Queries.get_query(query.id, user.id)
@@ -128,7 +128,7 @@ defmodule Sanbase.QueriesTest do
       assert fetched_query.id == query.id
       assert fetched_query.name == "My updated dashboard"
       assert fetched_query.sql_query_text == "SELECT * FROM metrics WHERE slug IN {{slugs}}"
-      assert fetched_query.sql_parameters == %{"slugs" => ["ethereum", "bitcoin"]}
+      assert fetched_query.sql_query_parameters == %{"slugs" => ["ethereum", "bitcoin"]}
     end
 
     test "cannot update other user query", %{query: query, user2: user2} do
@@ -138,7 +138,7 @@ defmodule Sanbase.QueriesTest do
                  %{
                    name: "My updated dashboard",
                    sql_query_text: "SELECT * FROM metrics WHERE slug IN {{slugs}}",
-                   sql_parameters: %{"slugs" => ["ethereum", "bitcoin"]}
+                   sql_query_parameters: %{"slugs" => ["ethereum", "bitcoin"]}
                  },
                  user2.id
                )
@@ -368,14 +368,14 @@ defmodule Sanbase.QueriesTest do
     test "run raw query", context do
       %{
         sql_query_text: sql_query_text,
-        sql_parameters: sql_parameters,
+        sql_query_parameters: sql_query_parameters,
         query_metadata: query_metadata,
         user: user
       } = context
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        query = Sanbase.Queries.get_ephemeral_query_struct(sql_query_text, sql_parameters)
+        query = Sanbase.Queries.get_ephemeral_query_struct(sql_query_text, sql_query_parameters)
 
         {:ok, result} =
           Sanbase.Queries.run_query(query, user.id, query_metadata, store_execution_details: false)
@@ -560,7 +560,7 @@ defmodule Sanbase.QueriesTest do
           Sanbase.Queries.get_query(dashboard_query_mapping.query_id, user.id)
 
         # Check that the query when fetched directly has ethereum as slug
-        assert standalone_query.sql_parameters == %{"slug" => "ethereum", "limit" => 20}
+        assert standalone_query.sql_query_parameters == %{"slug" => "ethereum", "limit" => 20}
 
         {:ok, query} =
           Sanbase.Queries.get_dashboard_query(
@@ -571,7 +571,7 @@ defmodule Sanbase.QueriesTest do
 
         # Check that the query when fetched in the context of a dashboard has bitcoin as slug,
         # because the global parameter has overriden the local one
-        assert query.sql_parameters == %{"slug" => "bitcoin_from_global", "limit" => 20}
+        assert query.sql_query_parameters == %{"slug" => "bitcoin_from_global", "limit" => 20}
 
         {:ok, _result} =
           Sanbase.Queries.run_query(query, user.id, query_metadata, store_execution_details: false)

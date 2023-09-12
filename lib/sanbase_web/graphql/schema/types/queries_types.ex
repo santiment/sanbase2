@@ -21,7 +21,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
 
     # SQL Query & Params
     field(:sql_query_text, non_null(:string))
-    field(:sql_parameters, non_null(:json))
+    field(:sql_query_parameters, non_null(:json))
 
     # User
     field(:user, :user)
@@ -52,7 +52,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   """
   input_object :sql_query_input_object do
     field(:sql_query_text, :string)
-    field(:sql_parameters, :json)
+    field(:sql_query_parameters, :json)
 
     field(:name, :string)
     field(:description, :string)

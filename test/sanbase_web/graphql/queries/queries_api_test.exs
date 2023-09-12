@@ -526,7 +526,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         queries {
           id
           sqlQueryText
-          sqlParameters
+          sqlQueryParameters
           settings
           user{ id }
         }

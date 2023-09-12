@@ -92,7 +92,7 @@ defmodule Sanbase.Queries.Executor do
     query_metadata = QueryMetadata.sanitize(query_metadata)
     opts = [settings: "log_comment='#{Jason.encode!(query_metadata)}'"]
 
-    Sanbase.Clickhouse.Query.new(query.sql_query_text, query.sql_parameters, opts)
+    Sanbase.Clickhouse.Query.new(query.sql_query_text, query.sql_query_parameters, opts)
     |> extend_sql_query(query_metadata)
   end
 

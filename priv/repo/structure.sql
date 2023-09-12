@@ -2916,7 +2916,7 @@ CREATE TABLE public.queries (
     is_public boolean DEFAULT true,
     settings jsonb,
     sql_query_text text DEFAULT ''::text,
-    sql_parameters jsonb DEFAULT '{}'::jsonb,
+    sql_query_parameters jsonb DEFAULT '{}'::jsonb,
     user_id bigint NOT NULL,
     is_hidden boolean DEFAULT false,
     is_deleted boolean DEFAULT false,

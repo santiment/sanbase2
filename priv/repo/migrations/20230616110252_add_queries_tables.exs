@@ -21,7 +21,7 @@ defmodule Sanbase.Repo.Migrations.AddQueriesTables do
 
       # SQL Query
       add(:sql_query_text, :text, default: "")
-      add(:sql_parameters, :map, default: %{})
+      add(:sql_query_parameters, :map, default: %{})
 
       # Ownership
       add(:user_id, references(:users), null: false)

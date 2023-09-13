@@ -108,20 +108,20 @@ defmodule Sanbase.Dashboards do
   This can be useful if one wants to easily control all queries from one place -- change
   the asset, the time range, the limit in the LIMIT clause, etc.
 
-  When adding a global parameter, the following parameters can be provided:
+  When adding a global parameter, the following opts can be provided:
     - key: The name of the parameter.
     - value: The value of the parameter that will be used to override the query parameters.
 
   By default, the global parameter does not override anything, even if the names of the
   parameters match. Overriding a query parameter is done manually and explicitly by invoking
-  put_global_parameter_override
+  add_global_parameter_override
   """
-  @spec put_global_parameter(
+  @spec add_global_parameter(
           dashboard_id(),
           user_id(),
           Keyword.t()
         ) :: {:ok, Dashboard.t()} | {:error, String.t()}
-  def put_global_parameter(dashboard_id, querying_user_id, opts) do
+  def add_global_parameter(dashboard_id, querying_user_id, opts) do
     key = Keyword.fetch!(opts, :key)
     value = Keyword.fetch!(opts, :value)
 
@@ -129,14 +129,78 @@ defmodule Sanbase.Dashboards do
     |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
       get_dashboard_for_mutation(dashboard_id, querying_user_id)
     end)
-    |> Ecto.Multi.run(:put_global_parameter, fn _repo, %{get_dashboard_for_mutation: struct} ->
+    |> Ecto.Multi.run(:add_global_parameter, fn _repo, %{get_dashboard_for_mutation: struct} ->
       parameters = Map.put(struct.parameters, key, %{"value" => value, "overrides" => []})
       changeset = Dashboard.update_changeset(struct, %{parameters: parameters})
 
       Repo.update(changeset)
     end)
     |> Repo.transaction()
-    |> process_transaction_result(:put_global_parameter)
+    |> process_transaction_result(:add_global_parameter)
+  end
+
+  @doc ~s"""
+  Delete a global parameter
+  """
+  @spec delete_global_parameter(dashboard_id(), user_id(), String.t()) ::
+          {:ok, Dashboard.t()} | {:error, String.t()}
+  def delete_global_parameter(dashboard_id, querying_user_id, key) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id)
+    end)
+    |> Ecto.Multi.run(:delete_global_parameter, fn _repo, %{get_dashboard_for_mutation: struct} ->
+      parameters = Map.delete(struct.parameters, key)
+      changeset = Dashboard.update_changeset(struct, %{parameters: parameters})
+
+      Repo.update(changeset)
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:delete_global_parameter)
+  end
+
+  @doc ~s"""
+  Update a global parameter.
+
+  When updating a global parameters, the following opts can be provided:
+    - key: The name of the parameter.
+    - new_key (optional): The new name of the parameter.
+    - new_value (optional): The new value of the parameter that will be used to override the query parameters.
+  """
+  @spec update_global_parameter(dashboard_id(), user_id(), Keyword.t()) ::
+          {:ok, Dashboard.t()} | {:error, String.t()}
+  def update_global_parameter(dashboard_id, querying_user_id, opts) do
+    key = Keyword.fetch!(opts, :key)
+    new_key = Keyword.get(opts, :new_key, nil)
+    new_value = Keyword.get(opts, :new_value, nil)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id)
+    end)
+    |> Ecto.Multi.run(:update_global_parameter, fn _repo, %{get_dashboard_for_mutation: struct} ->
+      case Map.get(struct.parameters, key) do
+        nil ->
+          {:error, "Dashboard parameter with key #{key} does not exist."}
+
+        map ->
+          updated_key = if new_key, do: new_key, else: key
+          updated_value = if new_value, do: Map.put(map, "value", new_value), else: map
+
+          updated_parameters =
+            struct.parameters
+            # Just Map.put/3 in case of updated key will leave the old key in the map and the
+            # overrides will continue to work.
+            |> Map.delete(key)
+            |> Map.put(updated_key, updated_value)
+
+          changeset = Dashboard.update_changeset(struct, %{parameters: updated_parameters})
+
+          Repo.update(changeset)
+      end
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:update_global_parameter)
   end
 
   @doc ~s"""
@@ -151,13 +215,13 @@ defmodule Sanbase.Dashboards do
   - opts: Keys `:local` and `:global` control the name of the query local and dashboard global
     parameters that are mapped.
   """
-  @spec put_global_parameter_override(
+  @spec add_global_parameter_override(
           dashboard_id(),
           dashboard_query_mapping_id(),
           user_id(),
           Keyword.t()
         ) :: {:ok, Dashboard.t()} | {:error, String.t()}
-  def put_global_parameter_override(
+  def add_global_parameter_override(
         dashboard_id,
         dashboard_query_mapping_id,
         querying_user_id,
@@ -175,7 +239,7 @@ defmodule Sanbase.Dashboards do
       )
     end)
     |> Ecto.Multi.run(
-      :put_override,
+      :add_global_paramter_override,
       fn _repo, %{get_dashboard_for_mutation: struct} ->
         case Map.get(struct.parameters, global) do
           nil ->
@@ -196,7 +260,81 @@ defmodule Sanbase.Dashboards do
       end
     )
     |> Repo.transaction()
-    |> process_transaction_result(:put_override)
+    |> process_transaction_result(:add_global_paramter_override)
+  end
+
+  @doc ~s"""
+
+  Given the follwoing global parameters:
+
+  %{
+    "slug" => %{
+      "value" => "bitcoin",
+      "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "slug"}]
+    },
+    "another_key" => %{
+      "value" => "another_value",
+      "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "another_key"}]
+    }
+  }
+
+  When deleting the override for the slug parameter and dashboard_query_mapping_id 101, the result will be:
+  %{
+    "slug" => %{
+      "value" => "bitcoin",
+      "overrides" => []
+    },
+    "another_key" => %{
+      "value" => "another_value",
+      "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "another_key"}]
+    }
+  }
+  """
+  @spec delete_global_parameter_override(
+          dashboard_id(),
+          dashboard_query_mapping_id(),
+          user_id(),
+          String.t()
+        ) :: {:ok, Dashboard.t()} | {:error, String.t()}
+  def delete_global_parameter_override(
+        dashboard_id,
+        dashboard_query_mapping_id,
+        querying_user_id,
+        global_key
+      ) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_by_mapping_id_for_mutation(
+        dashboard_id,
+        dashboard_query_mapping_id,
+        querying_user_id
+      )
+    end)
+    |> Ecto.Multi.run(
+      :delete_global_paramter_override,
+      fn _repo, %{get_dashboard_for_mutation: struct} ->
+        case Map.get(struct.parameters, global_key) do
+          nil ->
+            {:error,
+             "Parameter #{global_key} does not exist in dashboard with id #{dashboard_id}."}
+
+          %{} = map ->
+            updated_overrides =
+              Enum.reject(
+                map["overrides"],
+                &(&1["dashboard_query_mapping_id"] == dashboard_query_mapping_id)
+              )
+
+            updated_parameter_map = Map.put(map, "overrides", updated_overrides)
+            updated_parameters = Map.put(struct.parameters, global_key, updated_parameter_map)
+            changeset = Dashboard.update_changeset(struct, %{parameters: updated_parameters})
+
+            Repo.update(changeset)
+        end
+      end
+    )
+    |> Repo.transaction()
+    |> process_transaction_result(:delete_global_paramter_override)
   end
 
   @doc ~s"""

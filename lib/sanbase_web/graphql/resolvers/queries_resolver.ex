@@ -124,12 +124,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   # Query-Dashboard interactions
 
-  def put_dashboard_global_parameter(
+  def add_dashboard_global_parameter(
         _root,
         %{dashboard_id: dashboard_id, key: key, value: value},
         %{context: %{auth: %{current_user: user}}}
       ) do
-    Dashboards.put_global_parameter(dashboard_id, user.id, key: key, value: value)
+    Dashboards.add_global_parameter(dashboard_id, user.id, key: key, value: value)
+  end
+
+  def update_dashboard_global_parameter(
+        _root,
+        %{dashboard_id: dashboard_id, key: key} = args,
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    opts = Map.take(args, [:new_key, :new_value]) |> Keyword.new()
+
+    case opts do
+      [] ->
+        {:error, "Error update dashboard global parameter: neither new key nor value provided"}
+
+      [_ | _] ->
+        Dashboards.update_global_parameter(dashboard_id, user.id, opts)
+    end
   end
 
   def put_dashboard_global_parameter_override(
@@ -142,7 +158,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         },
         %{context: %{auth: %{current_user: user}}}
       ) do
-    Dashboards.put_global_parameter_override(
+    Dashboards.add_global_parameter_override(
       dashboard_id,
       mapping_id,
       user.id,

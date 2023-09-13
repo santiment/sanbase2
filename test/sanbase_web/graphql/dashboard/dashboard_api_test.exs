@@ -775,7 +775,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
                "isPublic" => true,
                "message" => "Store second version",
                "name" => "MyDashboard",
-               "parameters" => %{"slug" => "bitcoin"},
+               "parameters" => %{},
                "panels" => [
                  %{
                    "sql" => %{
@@ -1011,8 +1011,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         %{
           name: "MyDashboard",
           description: "some text",
-          is_public: true,
-          parameters: %{slug: "bitcoin"}
+          is_public: true
         }
 
     mutation_name = mutation |> Inflex.camelize(:lower)

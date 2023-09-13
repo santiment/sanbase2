@@ -307,7 +307,24 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
   object :dashboard_queries_interaction_mutations do
     @desc ~s"""
-    TODO
+    Add a query to a dashboard.
+
+    In order to add a query to a dashboard, the following conditions must be met:
+    - The dashboard must exist and must be owned by the querying user;
+    - The query must exist and the querying user must have reading access to it (the
+      query is public or the querying user owns the query);
+
+    When a query is added to a dashboard, the returned result is a `dashboard_query_mapping`.
+    The mapping has its own id, which is used to identify the mapping when updating, deleting
+    or running the query. The mapping also has its own settings, which can be used to store
+    arbitrary data relevant to the frontend.
+
+    The mapping id is used instead of just the (dashboard_id, query_id) tuple as a single query
+    can be added multiple times to a dashboard. It makes sense to add the same query multiple times
+    to a dashboard if the global parameters are used to override the query parameters. For example,
+    a query can be added to a dashboard with the global parameter `slug` set to `bitcoin`, and then again
+    added to the same dashboard with the global parameter `slug` set to `ethereum`. This way, the same
+    query can be used to show information about different assets.
     """
     field :create_dashboard_query, :dashboard_query_mapping do
       arg(:dashboard_id, non_null(:integer))
@@ -321,7 +338,10 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     end
 
     @desc ~s"""
-    TODO
+    Update a dashboard query mapping.
+
+    The dashboard query mapping is identified by the dashboard_id and dashboard_query_mapping_id.
+    Only the owner of the dashboard can update the mapping.
     """
     field :update_dashboard_query, :dashboard_query_mapping do
       arg(:dashboard_id, non_null(:integer))
@@ -334,7 +354,10 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     end
 
     @desc ~s"""
-    TODO
+    Delete a dshboard query mapping.
+
+    The dashboard query mapping is identified by the dashboard_id and dashboard_query_mapping_id.
+    Only the owner of the dashboard can delete the mapping.
     """
     field :delete_dashboard_query, :dashboard_query_mapping do
       arg(:dashboard_id, non_null(:integer))
@@ -345,7 +368,21 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       resolve(&QueriesResolver.delete_dashboard_query/3)
     end
 
-    field :put_dashboard_global_parameter, :dashboard do
+    @desc ~s"""
+    Create a new dashboard global parameter or override the value of an existing one.
+
+    Dashboard global parameters are used to override the query parameters.
+    The global parameters are used in two steps:
+    - Create a new global parameter with a name and a value via this mutation
+    - Override the value of a query parameter with the value of the global parameter
+      via the putDashboardGlobalParameterOverride mutation
+
+    When a global parameter is first created it has no effect on any of the queries.
+    The overriding needs to be explicitly stated, no automatic overriding based on name is done.
+    This allows for more flexibility as it does not put requirements on the parameter names used in
+    the queries, which might be owned by other users.
+    """
+    field :add_dashboard_global_parameter, :dashboard do
       arg(:dashboard_id, non_null(:integer))
       arg(:key, non_null(:string))
       arg(:value, non_null(:dashboard_global_paramter_value))
@@ -355,6 +392,31 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       resolve(&QueriesResolver.put_dashboard_global_parameter/3)
     end
 
+    @desc ~s"""
+    Create a new dashboard global parameter or override the value of an existing one.
+
+    """
+
+    field :update_dashboard_global_parameter, :dashboard do
+      arg(:dashboard_id, non_null(:integer))
+      arg(:key, non_null(:string))
+      arg(:new_key, :dashboard_global_paramter_value)
+      arg(:new_value, :dashboard_global_paramter_value)
+
+      middleware(JWTAuth)
+
+      resolve(&QueriesResolver.put_dashboard_global_parameter/3)
+    end
+
+    @desc ~s"""
+    Override the value of a query parameter with the value of a global parameter.
+    The dashboard and query are identified by the dashboard_id and the dashboard_query_mapping_id.
+
+    The global and local parameters must already exist. The overriding is stored only in the dashboard
+    and does not mutate the query itself in any way.
+
+    Only the owner of the dashboard can override the parameters.
+    """
     field :put_dashboard_global_parameter_override, :dashboard do
       arg(:dashboard_id, non_null(:integer))
       arg(:dashboard_query_mapping_id, non_null(:integer))

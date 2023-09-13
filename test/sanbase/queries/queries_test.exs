@@ -84,13 +84,13 @@ defmodule Sanbase.QueriesTest do
         Sanbase.Dashboards.add_query_to_dashboard(dashboard.id, query.id, user.id)
 
       {:ok, dashboard} =
-        Sanbase.Dashboards.put_global_parameter(dashboard.id, user.id,
+        Sanbase.Dashboards.add_global_parameter(dashboard.id, user.id,
           key: "slug",
           value: "bitcoin"
         )
 
       {:ok, _} =
-        Sanbase.Dashboards.put_global_parameter_override(
+        Sanbase.Dashboards.add_global_parameter_override(
           dashboard.id,
           dashboard_query_mapping.id,
           user.id,
@@ -540,13 +540,13 @@ defmodule Sanbase.QueriesTest do
       } = context
 
       {:ok, dashboard} =
-        Sanbase.Dashboards.put_global_parameter(dashboard.id, user.id,
+        Sanbase.Dashboards.add_global_parameter(dashboard.id, user.id,
           key: "slug",
           value: "bitcoin_from_global"
         )
 
       {:ok, _dashboard} =
-        Sanbase.Dashboards.put_global_parameter_override(
+        Sanbase.Dashboards.add_global_parameter_override(
           dashboard.id,
           dashboard_query_mapping.id,
           user.id,

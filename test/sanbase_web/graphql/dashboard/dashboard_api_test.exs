@@ -285,10 +285,16 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         )
         |> get_in(["data", "createDashboardPanel"])
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, mocked_clickhouse_result()}
-      )
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 2
+        )
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           execute_dashboard_panel_cache_mutation(context.conn, :compute_dashboard_panel, %{
@@ -349,10 +355,16 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         )
         |> get_in(["data", "createDashboardPanel"])
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, mocked_clickhouse_result()}
-      )
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 2
+        )
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         execute_dashboard_panel_cache_mutation(
           context.conn,
@@ -482,10 +494,16 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         )
         |> get_in(["data", "createDashboardPanel"])
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, mocked_clickhouse_result()}
-      )
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 2
+        )
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           execute_dashboard_panel_cache_mutation(
@@ -649,10 +667,16 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
       }
       """
 
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, mocked_clickhouse_result()}
-      )
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 2
+        )
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           context.conn
@@ -699,6 +723,63 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
         }
       }
     end
+  end
+
+  defp mocked_execution_details_result() do
+    %Clickhousex.Result{
+      query_id: "1774C4BC91E058D4",
+      summary: %{
+        "read_bytes" => "5069080",
+        "read_rows" => "167990",
+        "result_bytes" => "0",
+        "result_rows" => "0",
+        "total_rows_to_read" => "167990",
+        "written_bytes" => "0",
+        "written_rows" => "0"
+      },
+      command: :selected,
+      columns: [
+        "read_compressed_gb",
+        "cpu_time_microseconds",
+        "query_duration_ms",
+        "memory_usage_gb",
+        "read_rows",
+        "read_gb",
+        "result_rows",
+        "result_gb"
+      ],
+      column_types: [
+        "Float64",
+        "UInt64",
+        "UInt64",
+        "Float64",
+        "UInt64",
+        "Float64",
+        "UInt64",
+        "Float64"
+      ],
+      rows: [
+        [
+          # read_compressed_gb
+          0.001110738143324852,
+          # cpu_time_microseconds
+          101_200,
+          # query_duration_ms
+          47,
+          # memory_usage_gb
+          0.03739274851977825,
+          # read_rows
+          364_923,
+          # read_gb
+          0.01087852381169796,
+          # result_rows
+          2,
+          # result_gb
+          2.980232238769531e-7
+        ]
+      ],
+      num_rows: 1
+    }
   end
 
   describe "keep dashboard history" do

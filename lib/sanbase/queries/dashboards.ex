@@ -145,7 +145,7 @@ defmodule Sanbase.Dashboards do
   def apply_global_parameters(
         %Query{} = query,
         %Dashboard{} = dashboard,
-        dashboard_query_mapping_id
+        mapping_id
       ) do
     # Walk over the dashboard global parameters and extract a map, where the keys
     # are parameters of the query and the values are the global values that will
@@ -157,7 +157,7 @@ defmodule Sanbase.Dashboards do
       |> Enum.reduce(
         %{},
         fn {_key, %{"value" => value, "overrides" => overrides}}, acc ->
-          case get_query_param_from_overrides(overrides, query_mapping_id) do
+          case Enum.find(overrides, &(&1["dashboard_query_mapping_id"] == mapping_id)) do
             nil -> acc
             %{"parameter" => parameter} -> Map.put(acc, parameter, value)
           end
@@ -608,7 +608,7 @@ defmodule Sanbase.Dashboards do
     %Query{
       query
       | sql_query_text: "<masked>",
-        sql_query_paramters: %{}
+        sql_query_parameters: %{}
     }
   end
 

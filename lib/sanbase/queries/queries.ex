@@ -136,20 +136,19 @@ defmodule Sanbase.Queries do
   """
   @spec get_dashboard_query(dashboard_id, dashboard_query_mapping_id, user_id) ::
           {:ok, Query.t()} | {:error, String.t()}
-  def get_dashboard_query(dashboard_id, dashboard_query_mapping_id, querying_user_id) do
-    query = DashboardQueryMapping.by_id(dashboard_query_mapping_id)
+  def get_dashboard_query(dashboard_id, mapping_id, querying_user_id) do
+    query = DashboardQueryMapping.by_id(mapping_id)
 
     with %DashboardQueryMapping{dashboard: dashboard, query: query} <- Repo.one(query),
          %Dashboard{id: ^dashboard_id} <- dashboard,
          true <- dashboard.is_public or dashboard.user_id == querying_user_id,
-         {:ok, query} <-
-           Dashboards.apply_global_parameters(query, dashboard, dashboard_query_mapping_id) do
+         {:ok, query} <- Sanbase.Dashboards.apply_global_parameters(query, dashboard, mapping_id) do
       {:ok, query}
     else
       _ ->
         {:error,
          """
-         Dashboard query mapping with id #{dashboard_query_mapping_id} does not exist,
+         Dashboard query mapping with id #{mapping_id} does not exist,
          it is not part of dashboard #{dashboard_id}, or the dashboard is not public.
          """}
     end
@@ -305,12 +304,6 @@ defmodule Sanbase.Queries do
     end)
     |> Repo.transaction()
     |> process_transaction_result(:delete)
-  end
-
-  defp get_query_param_from_overrides(overrides, query_mapping_id) do
-    Enum.find(overrides, fn map ->
-      map["dashboard_query_mapping_id"] == query_mapping_id
-    end)
   end
 
   # Private functions

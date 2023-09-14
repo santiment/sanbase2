@@ -389,7 +389,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       middleware(JWTAuth)
 
-      resolve(&QueriesResolver.put_dashboard_global_parameter/3)
+      resolve(&QueriesResolver.add_dashboard_global_parameter/3)
     end
 
     @desc ~s"""
@@ -405,7 +405,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       middleware(JWTAuth)
 
-      resolve(&QueriesResolver.put_dashboard_global_parameter/3)
+      resolve(&QueriesResolver.add_dashboard_global_parameter/3)
     end
 
     @desc ~s"""
@@ -417,7 +417,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
     Only the owner of the dashboard can override the parameters.
     """
-    field :put_dashboard_global_parameter_override, :dashboard do
+    field :add_dashboard_global_parameter_override, :dashboard do
       arg(:dashboard_id, non_null(:integer))
       arg(:dashboard_query_mapping_id, non_null(:integer))
 
@@ -426,7 +426,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       middleware(JWTAuth)
 
-      resolve(&QueriesResolver.put_dashboard_global_parameter_override/3)
+      resolve(&QueriesResolver.add_dashboard_global_parameter_override/3)
     end
   end
 end

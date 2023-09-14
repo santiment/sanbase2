@@ -142,7 +142,8 @@ defmodule Sanbase.Queries do
     with %DashboardQueryMapping{dashboard: dashboard, query: query} <- Repo.one(query),
          %Dashboard{id: ^dashboard_id} <- dashboard,
          true <- dashboard.is_public or dashboard.user_id == querying_user_id,
-         {:ok, query} <- resolve_parameters(query, dashboard, dashboard_query_mapping_id) do
+         {:ok, query} <-
+           Dashboards.apply_global_parameters(query, dashboard, dashboard_query_mapping_id) do
       {:ok, query}
     else
       _ ->
@@ -304,51 +305,6 @@ defmodule Sanbase.Queries do
     end)
     |> Repo.transaction()
     |> process_transaction_result(:delete)
-  end
-
-  @doc ~s"""
-  Replace local parameters with the correct global parameter overrides.
-
-  The global parameters are defined on the dashboard level and have the following
-  structure:
-  %{
-    "slug" => %{
-      "value" => "bitcoin",
-      "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "slug"}]
-    }
-  }
-
-  When a query `q` added to the dashboard, with dashboard-query mapping id `dq_id`,
-  is executed, the parameters are resolved in the following way:
-  - Iterate over the global parameters;
-  - Find those who have `dq_id` in their overrides;
-  - Extract the key-value pairs from the overrides;
-  - Replace the paramters in `q` with the overrides.
-  """
-  @spec resolve_parameters(Query.t(), Dashboard.t(), non_neg_integer()) ::
-          {:ok, Query.t()}
-  def resolve_parameters(%Query{} = query, %Dashboard{} = dashboard, query_mapping_id) do
-    # Walk over the dashboard global parameters and extract a map, where the keys
-    # are parameters of the query and the values are the global values that will
-    # override the query values (like %{"slug" => "global_slug_value"}).
-    # The name of the global parameter is not needed, only the value and the list
-    # of overrides.
-    overrides =
-      dashboard.parameters
-      |> Enum.reduce(
-        %{},
-        fn {_key, %{"value" => value, "overrides" => overrides}}, acc ->
-          case get_query_param_from_overrides(overrides, query_mapping_id) do
-            nil -> acc
-            %{"parameter" => parameter} -> Map.put(acc, parameter, value)
-          end
-        end
-      )
-
-    new_sql_query_parameters = Map.merge(query.sql_query_parameters, overrides)
-
-    query = %Query{query | sql_query_parameters: new_sql_query_parameters}
-    {:ok, query}
   end
 
   defp get_query_param_from_overrides(overrides, query_mapping_id) do

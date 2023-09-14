@@ -124,6 +124,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   # Query-Dashboard interactions
 
+  def create_dashboard_query(
+        _root,
+        %{dashboard_id: dashboard_id, query_id: query_id, settings: settings},
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    Dashboards.add_query_to_dashboard(dashboard_id, query_id, user.id, settings)
+  end
+
+  def update_dashboard_query(
+        _root,
+        %{dashboard_id: dashboard_id, dashboard_query_mapping_id: mapping_id, settings: settings},
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    Dashboards.update_dashboard_query(dashboard_id, mapping_id, settings, user.id)
+  end
+
+  def delete_dashboard_query(
+        _root,
+        %{dashboard_id: dashboard_id, dashboard_query_mapping_id: mapping_id},
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    Dashboards.remove_query_from_dashboard(dashboard_id, mapping_id, user.id)
+  end
+
+  # Dashboard Global Parameters CRUD (without explicit read)
+
   def add_dashboard_global_parameter(
         _root,
         %{dashboard_id: dashboard_id, key: key, value: value},
@@ -148,7 +174,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     end
   end
 
-  def put_dashboard_global_parameter_override(
+  def delete_dashboard_global_parameter(
+        _root,
+        %{dashboard_id: dashboard_id, key: key},
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    Dashboards.delete_global_parameter(dashboard_id, user.id, key)
+  end
+
+  # Dashboard Global Paramter Overrides CRUD (without explicit read)
+
+  def add_dashboard_global_parameter_override(
         _root,
         %{
           dashboard_id: dashboard_id,
@@ -167,28 +203,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     )
   end
 
-  def create_dashboard_query(
+  def update_dashboard_global_parameter_override(
         _root,
-        %{dashboard_id: dashboard_id, query_id: query_id, settings: settings},
+        %{
+          dashboard_id: dashboard_id,
+          dashboard_query_mapping_id: mapping_id,
+          global_parameter: global,
+          local_parameter: local
+        },
         %{context: %{auth: %{current_user: user}}}
       ) do
-    Dashboards.add_query_to_dashboard(dashboard_id, query_id, user.id, settings)
-  end
-
-  def update_dashboard_query(
-        _root,
-        %{dashboard_id: dashboard_id, dashboard_query_mapping_id: mapping_id, settings: settings},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    Dashboards.update_dashboard_query(dashboard_id, mapping_id, settings, user.id)
-  end
-
-  def delete_dashboard_query(
-        _root,
-        %{dashboard_id: dashboard_id, dashboard_query_mapping_id: mapping_id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    Dashboards.remove_query_from_dashboard(dashboard_id, mapping_id, user.id)
+    Dashboards.add_global_parameter_override(
+      dashboard_id,
+      mapping_id,
+      user.id,
+      local: local,
+      global: global
+    )
   end
 
   # Exectutions Histiory

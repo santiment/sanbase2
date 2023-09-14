@@ -1,8 +1,6 @@
 defmodule Sanbase.Dashboards do
   @moduledoc ~s"""
   Dashboard is a collection of SQL queries and static widgets.
-
-  Dashboards
   """
 
   alias Sanbase.Repo
@@ -40,10 +38,7 @@ defmodule Sanbase.Dashboards do
 
     case Repo.one(query) do
       %Dashboard{} = dashboard ->
-        # TODO: Make some of the fields not viewable to the querying user
-        # if the query is private but is added to a public dashboard
-        # dashboard = mask_protected_fields(dashboard, querying_user_id)
-        {:ok, dashboard}
+        {:ok, mask_dashboard_not_viewable_parts(dashboard)}
 
       _ ->
         {:error,
@@ -63,6 +58,13 @@ defmodule Sanbase.Dashboards do
   - user_id: The id of the user that created the query.
 
   Queries are added to the dashboard using the `add_query_to_dashboard/4` function.
+  There are corresponding functions for updating/removing dashboard queries.
+
+  Global parameters can be added to the dashboard using the `add_global_parameter/3` function.
+  There are corresponding functions for updating/removing global parameters.
+
+  When neededing to override a query local parameter with a global parameter, use the
+  `add_global_parameter_override/4` function.
   """
   @spec create_dashboard(user_id(), create_dashboard_args()) ::
           {:ok, Dashboard.t()} | {:error, String.t()}
@@ -82,7 +84,7 @@ defmodule Sanbase.Dashboards do
   end
 
   @doc ~s"""
-  TODO
+  Update a dashboard
   """
   @spec update_dashboard(dashboard_id(), update_dashboard_args(), user_id()) ::
           {:ok, Dashboard.t()} | {:error, String.t()}
@@ -98,6 +100,74 @@ defmodule Sanbase.Dashboards do
     end)
     |> Repo.transaction()
     |> process_transaction_result(:update)
+  end
+
+  @doc ~s"""
+  Delete a dashboard
+
+  Only the owner of the dashboard can delete it
+  """
+  @spec delete_dashboard(dashboard_id(), user_id()) ::
+          {:ok, Dashboard.t()} | {:error, String.t()}
+  def delete_dashboard(dashboard_id, querying_user_id) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id)
+    end)
+    |> Ecto.Multi.run(:delete_dashboard, fn _repo, %{get_dashboard_for_mutation: struct} ->
+      Repo.delete(struct)
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:delete_dashboard)
+  end
+
+  @doc ~s"""
+  Replace local parameters with the correct global parameter overrides.
+
+  The global parameters are defined on the dashboard level and have the following
+  structure:
+  %{
+    "slug" => %{
+      "value" => "bitcoin",
+      "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "slug"}]
+    }
+  }
+
+  When a query `q` added to the dashboard, with dashboard-query mapping id `dq_id`,
+  is executed, the parameters are resolved in the following way:
+  - Iterate over the global parameters;
+  - Find those who have `dq_id` in their overrides;
+  - Extract the key-value pairs from the overrides;
+  - Replace the paramters in `q` with the overrides.
+  """
+  @spec apply_global_parameters(Query.t(), Dashboard.t(), non_neg_integer()) ::
+          {:ok, Query.t()}
+  def apply_global_parameters(
+        %Query{} = query,
+        %Dashboard{} = dashboard,
+        dashboard_query_mapping_id
+      ) do
+    # Walk over the dashboard global parameters and extract a map, where the keys
+    # are parameters of the query and the values are the global values that will
+    # override the query values (like %{"slug" => "global_slug_value"}).
+    # The name of the global parameter is not needed, only the value and the list
+    # of overrides.
+    overrides =
+      dashboard.parameters
+      |> Enum.reduce(
+        %{},
+        fn {_key, %{"value" => value, "overrides" => overrides}}, acc ->
+          case get_query_param_from_overrides(overrides, query_mapping_id) do
+            nil -> acc
+            %{"parameter" => parameter} -> Map.put(acc, parameter, value)
+          end
+        end
+      )
+
+    new_sql_query_parameters = Map.merge(query.sql_query_parameters, overrides)
+
+    query = %Query{query | sql_query_parameters: new_sql_query_parameters}
+    {:ok, query}
   end
 
   @doc ~s"""
@@ -338,25 +408,6 @@ defmodule Sanbase.Dashboards do
   end
 
   @doc ~s"""
-  Delete a dashboard.
-
-  Only the owner of a dashboard can delete it.
-  """
-  @spec delete_dashboard(dashboard_id(), user_id()) ::
-          {:ok, Dashboard.t()} | {:error, Changeset.t()}
-  def delete_dashboard(dashboard_id, querying_user_id) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
-      get_dashboard_for_mutation(dashboard_id, querying_user_id)
-    end)
-    |> Ecto.Multi.run(:delete, fn _repo, %{get_dashboard_for_mutation: struct} ->
-      Repo.delete(struct)
-    end)
-    |> Repo.transaction()
-    |> process_transaction_result(:delete)
-  end
-
-  @doc ~s"""
   Return a boolean showing if the dashboard is public or not.
   """
   @spec public?(Dashboard.t()) :: boolean()
@@ -537,4 +588,29 @@ defmodule Sanbase.Dashboards do
     it is not part of dashboard #{dashboard_id}, or the dashboard is not owned by user #{querying_user_id}.
     """
   end
+
+  defp mask_dashboard_not_viewable_parts(%Dashboard{} = dashboard) do
+    # TODO: Make sure if this is the desired behavior.
+    # When viewing a dashboard, hide the SQL query text and query parameters
+    # if the query is private and the querying user is not the owner of the query
+    masked_queries =
+      dashboard.queries
+      |> Enum.map(&mask_query_not_viewable_parts(&1, dashboard.user_id))
+
+    %Dashboard{dashboard | queries: masked_queries}
+  end
+
+  defp mask_query_not_viewable_parts(
+         %Query{user_id: query_owner_user_id, is_public: false} = query,
+         dashboard_owner_user_id
+       )
+       when query_owner_user_id != dashboard_owner_user_id do
+    %Query{
+      query
+      | sql_query_text: "<masked>",
+        sql_query_paramters: %{}
+    }
+  end
+
+  defp mask_query_not_viewable_parts(query, _dashboard_owner_user_id), do: query
 end

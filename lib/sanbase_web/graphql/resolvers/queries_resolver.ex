@@ -160,7 +160,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   def update_dashboard_global_parameter(
         _root,
-        %{dashboard_id: dashboard_id, key: key} = args,
+        %{dashboard_id: dashboard_id} = args,
         %{context: %{auth: %{current_user: user}}}
       ) do
     opts = Map.take(args, [:new_key, :new_value]) |> Keyword.new()
@@ -203,13 +203,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     )
   end
 
-  def update_dashboard_global_parameter_override(
+  def delete_dashboard_global_parameter_override(
         _root,
         %{
           dashboard_id: dashboard_id,
           dashboard_query_mapping_id: mapping_id,
-          global_parameter: global,
-          local_parameter: local
+          key: key
         },
         %{context: %{auth: %{current_user: user}}}
       ) do
@@ -217,8 +216,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       dashboard_id,
       mapping_id,
       user.id,
-      local: local,
-      global: global
+      key
     )
   end
 

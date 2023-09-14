@@ -393,10 +393,14 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     end
 
     @desc ~s"""
-    Create a new dashboard global parameter or override the value of an existing one.
+    Update an existing dashboard global parameter.
 
+    At least one of the new_key and new_value must be provided:
+    - new_key - Change the name of the global parameter. Changing the name
+      does not require changing the queries and/or the dashboard query mappings.
+      The key is used only when displaying the parameter in the frontend;
+    - new_value - Change the value of the global parameter.
     """
-
     field :update_dashboard_global_parameter, :dashboard do
       arg(:dashboard_id, non_null(:integer))
       arg(:key, non_null(:string))
@@ -406,6 +410,18 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       middleware(JWTAuth)
 
       resolve(&QueriesResolver.add_dashboard_global_parameter/3)
+    end
+
+    @desc ~s"""
+    Delete an existing dashboard global parameter
+    """
+    field :delete_dashboard_global_parameter, :dashboard do
+      arg(:dashboard_id, non_null(:integer))
+      arg(:key, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&QueriesResolver.delete_dashboard_global_parameter/3)
     end
 
     @desc ~s"""

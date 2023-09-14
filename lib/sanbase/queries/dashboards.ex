@@ -184,7 +184,7 @@ defmodule Sanbase.Dashboards do
 
   By default, the global parameter does not override anything, even if the names of the
   parameters match. Overriding a query parameter is done manually and explicitly by invoking
-  add_global_parameter_override
+  add_global_parameter_override.
   """
   @spec add_global_parameter(
           dashboard_id(),
@@ -207,26 +207,6 @@ defmodule Sanbase.Dashboards do
     end)
     |> Repo.transaction()
     |> process_transaction_result(:add_global_parameter)
-  end
-
-  @doc ~s"""
-  Delete a global parameter
-  """
-  @spec delete_global_parameter(dashboard_id(), user_id(), String.t()) ::
-          {:ok, Dashboard.t()} | {:error, String.t()}
-  def delete_global_parameter(dashboard_id, querying_user_id, key) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
-      get_dashboard_for_mutation(dashboard_id, querying_user_id)
-    end)
-    |> Ecto.Multi.run(:delete_global_parameter, fn _repo, %{get_dashboard_for_mutation: struct} ->
-      parameters = Map.delete(struct.parameters, key)
-      changeset = Dashboard.update_changeset(struct, %{parameters: parameters})
-
-      Repo.update(changeset)
-    end)
-    |> Repo.transaction()
-    |> process_transaction_result(:delete_global_parameter)
   end
 
   @doc ~s"""
@@ -274,6 +254,26 @@ defmodule Sanbase.Dashboards do
   end
 
   @doc ~s"""
+  Delete a global parameter
+  """
+  @spec delete_global_parameter(dashboard_id(), user_id(), String.t()) ::
+          {:ok, Dashboard.t()} | {:error, String.t()}
+  def delete_global_parameter(dashboard_id, querying_user_id, key) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id)
+    end)
+    |> Ecto.Multi.run(:delete_global_parameter, fn _repo, %{get_dashboard_for_mutation: struct} ->
+      parameters = Map.delete(struct.parameters, key)
+      changeset = Dashboard.update_changeset(struct, %{parameters: parameters})
+
+      Repo.update(changeset)
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:delete_global_parameter)
+  end
+
+  @doc ~s"""
   Explicitly override a query parameter with a global parameter.
 
   In order to override a query parameter, the following parameters must be provided:
@@ -284,6 +284,23 @@ defmodule Sanbase.Dashboards do
   - querying_user_id: The id of the user who executes the function
   - opts: Keys `:local` and `:global` control the name of the query local and dashboard global
     parameters that are mapped.
+
+  The global parameters are defined on the dashboard level and have the following format:
+
+    %{
+      "slug" => %{
+        "value" => "bitcoin",
+        "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "slug"}]
+      },
+      "another_key" => %{
+        "value" => "another_value",
+        "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "another_key"}]
+      }
+    }
+
+  Here the top-level value is the `key` of the global parameter. The value of the global parameter
+  is another map that defines the `value` and the list of `overrides`. The `overrides` list contains
+  information which query and which parameter in that query to override.
   """
   @spec add_global_parameter_override(
           dashboard_id(),
@@ -334,6 +351,7 @@ defmodule Sanbase.Dashboards do
   end
 
   @doc ~s"""
+  Delete a global parameter override for a query mapping.
 
   Given the follwoing global parameters:
 

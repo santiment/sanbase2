@@ -358,7 +358,11 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
       mock_fun =
         Sanbase.Mock.wrap_consecutives(
           [
+            # There is a sleep of 8000ms before the execution details are queried
+            # Because of that the order of mocks here is listed as it is
             fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end,
             fn -> {:ok, mocked_execution_details_result()} end
           ],
           arity: 2

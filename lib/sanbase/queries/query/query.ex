@@ -3,10 +3,13 @@ defmodule Sanbase.Queries.Query do
   TODO
   """
 
+  @behaviour Sanbase.Entity.Behaviour
+
   use Ecto.Schema
 
   import Ecto.Query
   import Ecto.Changeset
+  import Sanbase.Utils.Transform, only: [to_bang: 1]
 
   alias Sanbase.Accounts.User
 
@@ -190,6 +193,68 @@ defmodule Sanbase.Queries.Query do
     )
     |> paginate(opts)
     |> maybe_preload(opts)
+  end
+
+  # Entity-based queries
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id!(id, opts) when is_integer(id), do: by_id(id, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_id(id, _opts) when is_integer(id) do
+    query = from(ut in base_query(), where: ut.id == ^id)
+
+    case Repo.one(query) do
+      %__MODULE__{} = struct -> {:ok, struct}
+      nil -> {:error, "Query with id #{id} does not exist"}
+    end
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids!(ids, opts) when is_list(ids), do: by_ids(ids, opts) |> to_bang()
+
+  @impl Sanbase.Entity.Behaviour
+  def by_ids(ids, opts) when is_list(ids) do
+    result =
+      from(ul in base_query(),
+        where: ul.id in ^ids,
+        order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
+      )
+      |> maybe_preload(opts)
+      |> Repo.all()
+
+    {:ok, result}
+  end
+
+  # The base of all the entity queries
+  defp base_entity_ids_query(opts) do
+    base_query()
+    |> Sanbase.Entity.Query.maybe_filter_is_hidden(opts)
+    # |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
+    |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
+    |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> select([ul], ul.id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def public_and_user_entity_ids_query(user_id, opts) do
+    base_entity_ids_query(opts)
+    |> where([ul], ul.is_public == true or ul.user_id == ^user_id)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def public_entity_ids_query(opts) do
+    base_entity_ids_query(opts)
+    |> where([ul], ul.is_public == true)
+  end
+
+  @impl Sanbase.Entity.Behaviour
+  def user_entity_ids_query(user_id, opts) do
+    # Disable the filter by users
+    opts = Keyword.put(opts, :user_ids, nil)
+
+    base_entity_ids_query(opts)
+    |> where([ul], ul.user_id == ^user_id)
   end
 
   # Private functions

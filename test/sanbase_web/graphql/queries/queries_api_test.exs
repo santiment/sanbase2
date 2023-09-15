@@ -18,14 +18,24 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         |> get_in(["data", "createDashboard", "id"])
 
       vote = fn ->
-        context.conn
-        |> post(
-          "/graphql",
-          mutation_skeleton("mutation{ vote(dashboardId: #{dashboard_id}) { votedAt } }")
-        )
+        vote_result =
+          context.conn
+          |> post(
+            "/graphql",
+            mutation_skeleton(
+              "mutation{ vote(dashboardId: #{dashboard_id}) { votedAt votes { totalVotes } } }"
+            )
+          )
+          |> json_response(200)
+          |> get_in(["data", "vote"])
+
+        vote_result
       end
 
-      for _ <- 1..10, do: vote.()
+      for i <- 1..10 do
+        vote = vote.()
+        assert %{"votedAt" => _, "votes" => %{"totalVotes" => ^i}} = vote
+      end
 
       total_votes =
         get_dashboard(context.conn, dashboard_id)
@@ -34,27 +44,37 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       assert total_votes == 10
     end
 
-    # test "queries ", context do
-    #   query_id =
-    #     execute_sql_query_mutation(context.conn, :create_sql_query)
-    #     |> get_in(["data", "createSqlQuery", "id"])
+    test "queries ", context do
+      query_id =
+        execute_sql_query_mutation(context.conn, :create_sql_query)
+        |> get_in(["data", "createSqlQuery", "id"])
 
-    #   vote = fn ->
-    #     context.conn
-    #     |> post(
-    #       "/graphql",
-    #       mutation_skeleton("mutation{ vote(queryId: #{query_id}) { votedAt } }")
-    #     )
-    #   end
+      vote = fn ->
+        vote_result =
+          context.conn
+          |> post(
+            "/graphql",
+            mutation_skeleton(
+              "mutation{ vote(queryId: #{query_id}) { votedAt votes { totalVotes } } }"
+            )
+          )
+          |> json_response(200)
+          |> get_in(["data", "vote"])
 
-    #   for _ <- 1..10, do: vote.()
+        vote_result
+      end
 
-    #   total_votes =
-    #     get_sql_query(context.conn, query_id)
-    #     |> get_in(["data", "getSqlQuery", "votes", "totalVotes"])
+      for i <- 1..10 do
+        vote = vote.()
+        assert %{"votedAt" => _, "votes" => %{"totalVotes" => ^i}} = vote
+      end
 
-    #   assert total_votes == 10
-    # end
+      total_votes =
+        get_sql_query(context.conn, query_id)
+        |> get_in(["data", "getSqlQuery", "votes", "totalVotes"])
+
+      assert total_votes == 10
+    end
   end
 
   describe "CRUD Queries APIs" do
@@ -565,12 +585,13 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         user{ id }
         sqlQueryText
         sqlQueryParameters
-
+        votes {
+          totalVotes
+        }
       }
     }
     """
 
-    # TODO add votes{ totalVotes } when implemented
     conn
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)

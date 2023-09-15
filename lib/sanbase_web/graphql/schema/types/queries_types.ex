@@ -28,7 +28,16 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
 
     # Cached value. Store the last run of the query along with
     # some metadata - when it was computed, how long it took, etc.
-    field(:last_known_result, :sql_query_execution_result)
+    # field(:last_known_result, :sql_query_execution_result)
+
+    # Votes
+    field :votes, :vote do
+      resolve(&VoteResolver.votes/3)
+    end
+
+    field :voted_at, :datetime do
+      resolve(&VoteResolver.voted_at/3)
+    end
 
     # Timestamps
     field(:created_at, non_null(:datetime))

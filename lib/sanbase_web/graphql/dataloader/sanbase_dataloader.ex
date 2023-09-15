@@ -58,6 +58,8 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :chart_configuration_voted_at,
     :dashboard_vote_stats,
     :dashboard_voted_at,
+    :query_vote_stats,
+    :query_voted_at,
     :insight_vote_stats,
     :insight_voted_at,
     :timeline_event_vote_stats,

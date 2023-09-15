@@ -258,7 +258,14 @@ defmodule Sanbase.Queries do
 
     changeset = Query.create_changeset(%Query{}, args)
 
-    Repo.insert(changeset)
+    case Repo.insert(changeset) do
+      {:ok, %Query{} = query} ->
+        query = query |> Repo.preload([:user])
+        {:ok, query}
+
+      {:error, changeset} ->
+        {:error, changeset_errors_string(changeset)}
+    end
   end
 
   @doc ~s"""

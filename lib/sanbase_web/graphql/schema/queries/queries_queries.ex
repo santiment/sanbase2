@@ -200,11 +200,11 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     end
 
     @desc ~s"""
-    Update the fields of an existing SQL query, identified by the query_id.
+    Update the fields of an existing SQL query, identified by the id.
     Only the owner of the query can update it.
     """
     field :update_sql_query, :sql_query do
-      arg(:query_id, non_null(:integer))
+      arg(:id, non_null(:integer))
 
       arg(:origin_id, :integer)
       arg(:name, :string)
@@ -220,11 +220,11 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     end
 
     @desc ~s"""
-    Delete an existing SQL query, identified by the query_id.
+    Delete an existing SQL query, identified by the id.
     Only the owner of the query can delete it.
     """
     field :delete_sql_query, :sql_query do
-      arg(:query_id, non_null(:integer))
+      arg(:id, non_null(:integer))
 
       middleware(JWTAuth)
 

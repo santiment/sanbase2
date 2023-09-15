@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
   end
 
   describe "voting" do
-    test "vote and get votes", context do
+    test "dashboards ", context do
       dashboard_id =
         execute_dashboard_mutation(context.conn, :create_dashboard)
         |> get_in(["data", "createDashboard", "id"])
@@ -32,6 +32,138 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         |> get_in(["data", "getDashboard", "votes", "totalVotes"])
 
       assert total_votes == 10
+    end
+
+    # test "queries ", context do
+    #   query_id =
+    #     execute_sql_query_mutation(context.conn, :create_sql_query)
+    #     |> get_in(["data", "createSqlQuery", "id"])
+
+    #   vote = fn ->
+    #     context.conn
+    #     |> post(
+    #       "/graphql",
+    #       mutation_skeleton("mutation{ vote(queryId: #{query_id}) { votedAt } }")
+    #     )
+    #   end
+
+    #   for _ <- 1..10, do: vote.()
+
+    #   total_votes =
+    #     get_sql_query(context.conn, query_id)
+    #     |> get_in(["data", "getSqlQuery", "votes", "totalVotes"])
+
+    #   assert total_votes == 10
+    # end
+  end
+
+  describe "CRUD Queries APIs" do
+    test "create", context do
+      sql_query =
+        execute_sql_query_mutation(context.conn, :create_sql_query, %{
+          name: "My Query",
+          description: "some desc",
+          is_public: true,
+          sql_query_text:
+            "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})",
+          sql_query_parameters: %{slug: "bitcoin"},
+          settings: %{"some_var" => [0, 1, 2, 3]}
+        })
+        |> get_in(["data", "createSqlQuery"])
+
+      user_id = context.user.id |> to_string()
+
+      assert assert %{
+                      "description" => "some desc",
+                      "name" => "My Query",
+                      "user" => %{"id" => ^user_id},
+                      "id" => _,
+                      "settings" => %{"some_var" => [0, 1, 2, 3]},
+                      "sqlQueryParameters" => %{"slug" => "bitcoin"},
+                      "sqlQueryText" =>
+                        "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})"
+                    } = sql_query
+    end
+
+    test "get", context do
+      sql_query_id =
+        execute_sql_query_mutation(context.conn, :create_sql_query)
+        |> get_in(["data", "createSqlQuery", "id"])
+
+      sql_query =
+        get_sql_query(context.conn, sql_query_id)
+        |> get_in(["data", "getSqlQuery"])
+
+      user_id = context.user.id |> to_string()
+
+      assert %{
+               "description" => "some desc",
+               "id" => _,
+               "isPublic" => true,
+               "name" => "MyQuery",
+               "settings" => %{"some_key" => [0, 1, 2, 3]},
+               "sqlQueryParameters" => %{"slug" => "bitcoin"},
+               "sqlQueryText" =>
+                 "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})",
+               "user" => %{"id" => ^user_id}
+             } = sql_query
+    end
+
+    test "update", context do
+      sql_query_id =
+        execute_sql_query_mutation(context.conn, :create_sql_query)
+        |> get_in(["data", "createSqlQuery", "id"])
+
+      sql_query =
+        execute_sql_query_mutation(context.conn, :update_sql_query, %{
+          id: sql_query_id,
+          name: "New Query Name",
+          description: "some desc - update",
+          is_public: false,
+          sql_query_text: "SELECT * FROM intraday_metrics WHERE asset_id = 123 LIMIT {{limit}}",
+          sql_query_parameters: %{limit: 10}
+        })
+        |> get_in(["data", "updateSqlQuery"])
+
+      user_id = context.user.id |> to_string()
+
+      # The API returns the updated version
+      assert assert %{
+                      "description" => "some desc - update",
+                      "id" => _,
+                      "name" => "New Query Name",
+                      "settings" => %{"some_key" => [0, 1, 2, 3]},
+                      "sqlQueryParameters" => %{"limit" => 10},
+                      "sqlQueryText" =>
+                        "SELECT * FROM intraday_metrics WHERE asset_id = 123 LIMIT {{limit}}",
+                      "user" => %{"id" => ^user_id}
+                    } = sql_query
+
+      # The updated version is persisted in the DB
+      {:ok, fetched_query} = Sanbase.Queries.get_query(sql_query_id, context.user.id)
+      assert fetched_query.name == "New Query Name"
+      assert fetched_query.description == "some desc - update"
+      assert fetched_query.is_public == false
+
+      assert fetched_query.sql_query_text ==
+               "SELECT * FROM intraday_metrics WHERE asset_id = 123 LIMIT {{limit}}"
+
+      assert fetched_query.sql_query_parameters == %{"limit" => 10}
+    end
+
+    test "delete", context do
+      sql_query_id =
+        execute_sql_query_mutation(context.conn, :create_sql_query)
+        |> get_in(["data", "createSqlQuery", "id"])
+
+      # query exists
+      assert {:ok, _} = Sanbase.Queries.get_query(sql_query_id, context.user.id)
+
+      execute_sql_query_mutation(context.conn, :delete_sql_query, %{id: sql_query_id})
+
+      # query  no longer exists
+      assert {:error, error_msg} = Sanbase.Queries.get_query(sql_query_id, context.user.id)
+      assert error_msg =~ "Query does not exist or you don't have access to it"
     end
   end
 
@@ -90,6 +222,26 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
       assert {:error, error_msg} = Sanbase.Dashboards.get_dashboard(dashboard_id, context.user.id)
       assert error_msg =~ "does not exist"
+    end
+
+    test "get", context do
+      dashboard_id =
+        execute_dashboard_mutation(context.conn, :create_dashboard)
+        |> get_in(["data", "createDashboard", "id"])
+
+      dashboard =
+        get_dashboard(context.conn, dashboard_id)
+        |> get_in(["data", "getDashboard"])
+
+      assert %{
+               "description" => "some text",
+               "id" => _,
+               "isPublic" => true,
+               "name" => "MyDashboard",
+               "queries" => [],
+               "settings" => %{"some_key" => [0, 1, 2, 3]},
+               "votes" => %{"totalVotes" => 0}
+             } = dashboard
     end
   end
 
@@ -338,6 +490,40 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     |> json_response(200)
   end
 
+  defp execute_sql_query_mutation(conn, mutation, args \\ nil) do
+    args =
+      args ||
+        %{
+          name: "MyQuery",
+          description: "some desc",
+          is_public: true,
+          sql_query_text:
+            "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})",
+          sql_query_parameters: %{slug: "bitcoin"},
+          settings: %{"some_key" => [0, 1, 2, 3]}
+        }
+
+    mutation_name = mutation |> Inflex.camelize(:lower)
+
+    mutation = """
+    mutation {
+      #{mutation_name}(#{map_to_args(args)}){
+        id
+        name
+        description
+        user{ id }
+        sqlQueryText
+        sqlQueryParameters
+        settings
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+  end
+
   defp get_dashboard(conn, dashboard_id) do
     query = """
     {
@@ -347,6 +533,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         description
         isPublic
         settings
+        user{ id }
         queries {
           id
           sqlQueryText
@@ -361,6 +548,29 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     }
     """
 
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
+  defp get_sql_query(conn, query_id) do
+    query = """
+    {
+      getSqlQuery(id: #{query_id}){
+        id
+        name
+        description
+        isPublic
+        settings
+        user{ id }
+        sqlQueryText
+        sqlQueryParameters
+
+      }
+    }
+    """
+
+    # TODO add votes{ totalVotes } when implemented
     conn
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)

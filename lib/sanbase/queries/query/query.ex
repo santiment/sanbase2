@@ -9,7 +9,6 @@ defmodule Sanbase.Queries.Query do
   import Ecto.Changeset
 
   alias Sanbase.Accounts.User
-  alias Sanbase.Queries.QueryExecution
 
   @type query_id :: non_neg_integer()
   @type user_id :: non_neg_integer()
@@ -75,8 +74,6 @@ defmodule Sanbase.Queries.Query do
     field(:sql_query_parameters, :map, default: %{})
 
     belongs_to(:user, User)
-
-    has_many(:query_execution, QueryExecution)
 
     # Fields related to timeline hiding and reversible-deletion
     field(:is_deleted, :boolean)

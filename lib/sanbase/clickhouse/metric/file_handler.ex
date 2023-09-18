@@ -155,10 +155,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
 
   @metrics_json_including_deprecated Helper.expand_patterns(@metrics_json_pre_expand_patterns)
 
-  @metrics_json Enum.reject(
-                  @metrics_json_including_deprecated,
-                  &(not is_nil(&1["deprecated_since"]))
-                )
+  # The deprecated metrics are filter at a later stage at runtime, not here at compile time
+  # This is because `deprecated_since` can hold a future value and until then
+  # it can still be used.
+  @metrics_json @metrics_json_including_deprecated
 
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
   @metrics_data_type_map Helper.name_to_field_map(@metrics_json, "data_type",

@@ -90,12 +90,14 @@ defmodule Sanbase.Metric do
   end
 
   def is_not_deprecated?(metric) do
-    case Map.get(@deprecated_metrics_map, metric) do
-      nil ->
-        true
+    now = DateTime.utc_now()
+    deprecated_since = Map.get(@deprecated_metrics_map, metric)
 
-      %DateTime{} = deprecated_since ->
-        {:error, "The metric #{metric} is deprecated since #{deprecated_since}"}
+    # The metric is not deprecated if `deprecated_since` is nil or if the the
+    # date is in the future
+    case is_nil(deprecated_since) or DateTime.compare(now, deprecated_since) == :lt do
+      true -> true
+      false -> {:error, "The metric #{metric} is deprecated since #{deprecated_since}"}
     end
   end
 

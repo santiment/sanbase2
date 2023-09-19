@@ -195,7 +195,7 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   @doc ~s"""
-  Add artificial support for positional paramters. Extract all occurences of `?1`,
+  Add artificial support for positional parameters. Extract all occurences of `?1`,
   `?2`, etc. in the query and reorder and duplicate the params so every param
   in the list appears in order as if every positional param is just `?`
   """
@@ -277,12 +277,12 @@ defmodule Sanbase.ClickhouseRepo do
 
   # If the `__store_executed_clickhouse_sql__` flag is set to true
   # from the MetricResolver module, store the executed SQL query
-  # after interpolating the paramters in it.
+  # after interpolating the parameters in it.
   defp maybe_store_executed_clickhouse_sql(query, params) do
     if Process.get(:__store_executed_clickhouse_sql__, false) do
       list = Process.get(:__executed_clickhouse_sql_list__, [])
 
-      # Interpolate the paramters inside the query so it is easy to copy-paste
+      # Interpolate the parameters inside the query so it is easy to copy-paste
       interpolated_query =
         Clickhousex.Codec.Values.encode(
           %Clickhousex.Query{param_count: length(params)},

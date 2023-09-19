@@ -29,14 +29,14 @@ defmodule Sanbase.Queries.ResolveParametersTest do
                value: "bitcoin"
              )
 
-    # Make the global paramter override the query local paramter
+    # Make the global parameter override the query local parameter
     assert {:ok, dashboard} =
              Sanbase.Dashboards.add_global_parameter_override(
                dashboard.id,
                dashboard_query_mapping.id,
                user.id,
-               global: "slug",
-               local: "slug"
+               dashboard_parameter_key: "slug",
+               query_parameter_key: "slug"
              )
 
     %{
@@ -53,7 +53,7 @@ defmodule Sanbase.Queries.ResolveParametersTest do
 
     # Check that when `get_dashboard_query/3` is called, the global parameter
     # has overriden the local one. `get_dashboard_query/3` is responsible
-    # for resolving the paramters, while just `get_query/2` is not.
+    # for resolving the parameters, while just `get_query/2` is not.
     assert {:ok, fetched_dashboard_query} =
              Sanbase.Queries.get_dashboard_query(
                dashboard.id,
@@ -103,7 +103,7 @@ defmodule Sanbase.Queries.ResolveParametersTest do
     %{dashboard: dashboard, dashboard_query_mapping: dashboard_query_mapping, user: user} =
       context
 
-    # Delete the paramter override
+    # Delete the parameter override
     assert {:ok, _} =
              Sanbase.Dashboards.delete_global_parameter_override(
                dashboard.id,
@@ -130,7 +130,7 @@ defmodule Sanbase.Queries.ResolveParametersTest do
     %{dashboard: dashboard, dashboard_query_mapping: dashboard_query_mapping, user: user} =
       context
 
-    # Delete the paramter override
+    # Delete the parameter override
     assert {:ok, _} =
              Sanbase.Dashboards.delete_global_parameter(
                dashboard.id,

@@ -138,7 +138,7 @@ defmodule Sanbase.Dashboards do
   - Iterate over the global parameters;
   - Find those who have `dq_id` in their overrides;
   - Extract the key-value pairs from the overrides;
-  - Replace the paramters in `q` with the overrides.
+  - Replace the parameters in `q` with the overrides.
   """
   @spec apply_global_parameters(Query.t(), Dashboard.t(), non_neg_integer()) ::
           {:ok, Query.t()}
@@ -282,7 +282,7 @@ defmodule Sanbase.Dashboards do
     One query can be added multiple times to a dashboard, so the mapping id is used instead
     of query_id in order to uniquely identify the query.
   - querying_user_id: The id of the user who executes the function
-  - opts: Keys `:local` and `:global` control the name of the query local and dashboard global
+  - opts: Keys `:query_parameter_key` and `:dashboard_parameter_key` control the name of the query local and dashboard global
     parameters that are mapped.
 
   The global parameters are defined on the dashboard level and have the following format:
@@ -314,8 +314,8 @@ defmodule Sanbase.Dashboards do
         querying_user_id,
         opts
       ) do
-    local = Keyword.fetch!(opts, :local)
-    global = Keyword.fetch!(opts, :global)
+    query_key = Keyword.fetch!(opts, :query_parameter_key)
+    dashboard_key = Keyword.fetch!(opts, :dashboard_parameter_key)
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
@@ -326,20 +326,21 @@ defmodule Sanbase.Dashboards do
       )
     end)
     |> Ecto.Multi.run(
-      :add_global_paramter_override,
+      :add_parameter_override,
       fn _repo, %{get_dashboard_for_mutation: struct} ->
-        case Map.get(struct.parameters, global) do
+        case Map.get(struct.parameters, dashboard_key) do
           nil ->
-            {:error, "Parameter #{global} does not exist in dashboard with id #{dashboard_id}."}
+            {:error,
+             "Parameter #{dashboard_key} does not exist in dashboard with id #{dashboard_id}."}
 
           %{} = map ->
             elem = %{
               "dashboard_query_mapping_id" => dashboard_query_mapping_id,
-              "parameter" => local
+              "parameter" => query_key
             }
 
             updated_parameter_map = Map.update(map, "overrides", [elem], &[elem | &1])
-            parameters = Map.put(struct.parameters, global, updated_parameter_map)
+            parameters = Map.put(struct.parameters, dashboard_key, updated_parameter_map)
             changeset = Dashboard.update_changeset(struct, %{parameters: parameters})
 
             Repo.update(changeset)
@@ -347,7 +348,7 @@ defmodule Sanbase.Dashboards do
       end
     )
     |> Repo.transaction()
-    |> process_transaction_result(:add_global_paramter_override)
+    |> process_transaction_result(:add_parameter_override)
   end
 
   @doc ~s"""
@@ -399,7 +400,7 @@ defmodule Sanbase.Dashboards do
       )
     end)
     |> Ecto.Multi.run(
-      :delete_global_paramter_override,
+      :delete_global_parameter_override,
       fn _repo, %{get_dashboard_for_mutation: struct} ->
         case Map.get(struct.parameters, global_key) do
           nil ->
@@ -422,7 +423,7 @@ defmodule Sanbase.Dashboards do
       end
     )
     |> Repo.transaction()
-    |> process_transaction_result(:delete_global_paramter_override)
+    |> process_transaction_result(:delete_global_parameter_override)
   end
 
   @doc ~s"""

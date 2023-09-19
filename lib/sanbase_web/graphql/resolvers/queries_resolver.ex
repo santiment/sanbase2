@@ -51,10 +51,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   def run_sql_query(
         _root,
-        %{query_id: query_id},
+        %{id: query_id},
         %{context: %{auth: %{current_user: user}} = context} = resolution
       ) do
-    with :ok <- Queries.user_can_execute_query(user.id, context.product_code, context.auth.plan),
+    with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
          {:ok, query} <- Queries.get_query(query_id, user.id) do
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user.id, query_metadata)
@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{sql_query_text: query_text, sql_query_parameters: query_parameters},
         %{context: %{auth: %{current_user: user}} = context} = resolution
       ) do
-    with :ok <- Queries.user_can_execute_query(user.id, context.product_code, context.auth.plan),
+    with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
          query = Queries.get_ephemeral_query_struct(query_text, query_parameters) do
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user.id, query_metadata)
@@ -80,8 +80,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       ) do
     # get_dashboard_query/3 is a function that returns a query struct with the
     # query's local parameter being overriden by the dashboard global parameters
-    with :ok <- Queries.user_can_execute_query(user.id, context.product_code, context.auth.plan),
-         query = Queries.get_dashboard_query(dashboard_id, mapping_id, user.id) do
+    with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
+         {:ok, query} <- Queries.get_dashboard_query(dashboard_id, mapping_id, user.id) do
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user.id, query_metadata)
     end
@@ -152,10 +152,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   def add_dashboard_global_parameter(
         _root,
-        %{dashboard_id: dashboard_id, key: key, value: value},
+        %{dashboard_id: dashboard_id, key: key, value: value_map},
         %{context: %{auth: %{current_user: user}}}
       ) do
-    Dashboards.add_global_parameter(dashboard_id, user.id, key: key, value: value)
+    with {:ok, value} <- get_global_param_one_value(value_map) do
+      Dashboards.add_global_parameter(dashboard_id, user.id, key: key, value: value)
+    end
   end
 
   def update_dashboard_global_parameter(
@@ -182,15 +184,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Dashboards.delete_global_parameter(dashboard_id, user.id, key)
   end
 
-  # Dashboard Global Paramter Overrides CRUD (without explicit read)
+  # Dashboard Global parameter Overrides CRUD (without explicit read)
 
   def add_dashboard_global_parameter_override(
         _root,
         %{
           dashboard_id: dashboard_id,
           dashboard_query_mapping_id: mapping_id,
-          global_parameter: global,
-          local_parameter: local
+          dashboard_parameter_key: dashboard_parameter_key,
+          query_parameter_key: query_parameter_key
         },
         %{context: %{auth: %{current_user: user}}}
       ) do
@@ -198,8 +200,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       dashboard_id,
       mapping_id,
       user.id,
-      local: local,
-      global: global
+      query_parameter_key: query_parameter_key,
+      dashboard_parameter_key: dashboard_parameter_key
     )
   end
 
@@ -236,5 +238,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{context: %{auth: %{current_user: user}}}
       ) do
     Queries.get_user_query_executions(user, page: page, page_size: page_size)
+  end
+
+  # Private functions
+
+  defp get_global_param_one_value(value_map) do
+    if map_size(value_map) == 1 do
+      value = Map.values(value_map) |> List.first()
+      {:ok, value}
+    else
+      {:error,
+       "Error adding dashboard global parameter: the `value` input object must set only a single field"}
+    end
   end
 end

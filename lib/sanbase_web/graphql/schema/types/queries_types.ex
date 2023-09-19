@@ -127,7 +127,8 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:updated_at, :datetime)
   end
 
-  input_object :dashboard_global_paramter_value do
+  input_object :dashboard_global_parameter_value do
+    field(:boolean, :boolean)
     field(:integer, :integer)
     field(:integer_list, list_of(:integer))
     field(:float, :float)
@@ -196,5 +197,6 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:id, non_null(:integer))
     field(:query, non_null(:sql_query))
     field(:dashboard, non_null(:dashboard))
+    field(:settings, :json)
   end
 end

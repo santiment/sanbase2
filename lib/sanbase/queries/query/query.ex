@@ -204,7 +204,7 @@ defmodule Sanbase.Queries.Query do
   def by_id(id, _opts) when is_integer(id) do
     query = from(ut in base_query(), where: ut.id == ^id)
 
-    case Repo.one(query) do
+    case Sanbase.Repo.one(query) do
       %__MODULE__{} = struct -> {:ok, struct}
       nil -> {:error, "Query with id #{id} does not exist"}
     end
@@ -221,7 +221,7 @@ defmodule Sanbase.Queries.Query do
         order_by: fragment("array_position(?, ?::int)", ^ids, ul.id)
       )
       |> maybe_preload(opts)
-      |> Repo.all()
+      |> Sanbase.Repo.all()
 
     {:ok, result}
   end

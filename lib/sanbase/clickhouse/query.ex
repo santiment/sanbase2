@@ -134,7 +134,7 @@ defmodule Sanbase.Clickhouse.Query do
   # This is useful as the SQL Editor allows you to run a subsection
   # of the query by highlighting it. Instead of doing the filtration of
   # the parameters used in this section, this check is done on the backend
-  # The paramters are transformed into positional parameters, so a mismatch
+  # The parameters are transformed into positional parameters, so a mismatch
   # between the number of used an provided parameters resuls in an error
   defp take_used_parameters_subset(sql, parameters) do
     Enum.filter(parameters, fn {key, _value} ->

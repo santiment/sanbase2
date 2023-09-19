@@ -94,8 +94,8 @@ defmodule Sanbase.QueriesTest do
           dashboard.id,
           dashboard_query_mapping.id,
           user.id,
-          local: "slug",
-          global: "slug"
+          query_parameter_key: "slug",
+          dashboard_parameter_key: "slug"
         )
 
       {:ok, query} =
@@ -550,8 +550,8 @@ defmodule Sanbase.QueriesTest do
           dashboard.id,
           dashboard_query_mapping.id,
           user.id,
-          local: "slug",
-          global: "slug"
+          query_parameter_key: "slug",
+          dashboard_parameter_key: "slug"
         )
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})

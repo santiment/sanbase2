@@ -381,11 +381,27 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     The overriding needs to be explicitly stated, no automatic overriding based on name is done.
     This allows for more flexibility as it does not put requirements on the parameter names used in
     the queries, which might be owned by other users.
+
+    The parameter key is always a string.
+    The parameter value is an input object so the value can have different types. The allowed
+    input objects are (and exactly one must be set):
+      - value: {string: "santiment"}
+      - value: {integer: 3}
+      - value: {float: 5.125}
+      - value: {stringList: ["bitcoin", "ethereum"]}
+      - value: {integerList: [3, 123, 122]}
+      - value: {floatList: [5.125, 3.14]}
+    Example:
+      mutation{
+        addDashboardGlobalParameter(dashboardId: 1, key: "slug", value: {string: "bitcoin"}){
+          parameters
+        }
+      }
     """
     field :add_dashboard_global_parameter, :dashboard do
       arg(:dashboard_id, non_null(:integer))
       arg(:key, non_null(:string))
-      arg(:value, non_null(:dashboard_global_paramter_value))
+      arg(:value, non_null(:dashboard_global_parameter_value))
 
       middleware(JWTAuth)
 
@@ -404,8 +420,8 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     field :update_dashboard_global_parameter, :dashboard do
       arg(:dashboard_id, non_null(:integer))
       arg(:key, non_null(:string))
-      arg(:new_key, :dashboard_global_paramter_value)
-      arg(:new_value, :dashboard_global_paramter_value)
+      arg(:new_key, :string)
+      arg(:new_value, :dashboard_global_parameter_value)
 
       middleware(JWTAuth)
 
@@ -437,8 +453,8 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       arg(:dashboard_id, non_null(:integer))
       arg(:dashboard_query_mapping_id, non_null(:integer))
 
-      arg(:global_parameter, non_null(:string))
-      arg(:local_parameter, non_null(:string))
+      arg(:dashboard_parameter_key, non_null(:string))
+      arg(:query_parameter_key, non_null(:string))
 
       middleware(JWTAuth)
 

@@ -208,6 +208,26 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
              } = result
     end
 
+    test "get", context do
+      dashboard_id =
+        execute_dashboard_mutation(context.conn, :create_dashboard)
+        |> get_in(["data", "createDashboard", "id"])
+
+      dashboard =
+        get_dashboard(context.conn, dashboard_id)
+        |> get_in(["data", "getDashboard"])
+
+      assert %{
+               "description" => "some text",
+               "id" => _,
+               "isPublic" => true,
+               "name" => "MyDashboard",
+               "queries" => [],
+               "settings" => %{"some_key" => [0, 1, 2, 3]},
+               "votes" => %{"totalVotes" => 0}
+             } = dashboard
+    end
+
     test "update", context do
       dashboard_id =
         execute_dashboard_mutation(context.conn, :create_dashboard)
@@ -243,59 +263,30 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       assert {:error, error_msg} = Sanbase.Dashboards.get_dashboard(dashboard_id, context.user.id)
       assert error_msg =~ "does not exist"
     end
-
-    test "get", context do
-      dashboard_id =
-        execute_dashboard_mutation(context.conn, :create_dashboard)
-        |> get_in(["data", "createDashboard", "id"])
-
-      dashboard =
-        get_dashboard(context.conn, dashboard_id)
-        |> get_in(["data", "getDashboard"])
-
-      assert %{
-               "description" => "some text",
-               "id" => _,
-               "isPublic" => true,
-               "name" => "MyDashboard",
-               "queries" => [],
-               "settings" => %{"some_key" => [0, 1, 2, 3]},
-               "votes" => %{"totalVotes" => 0}
-             } = dashboard
-    end
   end
 
   describe "run queries" do
-    test "compute raw clickhouse query", context do
-      args = %{
-        query:
-          "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}}) LIMIT {{limit}}",
-        parameters: %{slug: "bitcoin", limit: 2},
-        map_as_input_object: true
-      }
+    test "run raw sql query", context do
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 2
+        )
 
-      query = """
-      {
-        computeRawClickhouseQuery(#{map_to_args(args)}){
-          columns
-          columnTypes
-          rows
-          clickhouseQueryId
-          summary
-        }
-      }
-      """
-
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, mocked_clickhouse_result()}
-      )
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
+        args = %{
+          sql_query_text:
+            "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}}) LIMIT {{limit}}",
+          sql_query_parameters: %{slug: "bitcoin", limit: 2}
+        }
+
         result =
-          context.conn
-          |> post("/graphql", query_skeleton(query))
-          |> json_response(200)
-          |> get_in(["data", "computeRawClickhouseQuery"])
+          run_sql_query(context.conn, :run_raw_sql_query, args)
+          |> get_in(["data", "runRawSqlQuery"])
 
         assert result == %{
                  "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
@@ -306,35 +297,216 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                    [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
                  ],
                  "summary" => %{
-                   "read_bytes" => "0",
-                   "read_rows" => "0",
-                   "total_rows_to_read" => "0",
-                   "written_bytes" => "0",
-                   "written_rows" => "0"
+                   "read_bytes" => 0.0,
+                   "read_rows" => 0.0,
+                   "total_rows_to_read" => 0.0,
+                   "written_bytes" => 0.0,
+                   "written_rows" => 0.0
                  }
                }
       end)
     end
 
-    defp mocked_clickhouse_result() do
-      %Clickhousex.Result{
-        columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
-        column_types: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
-        command: :selected,
-        num_rows: 2,
-        query_id: "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
-        rows: [
-          [2503, 250, ~N[2008-12-10 00:00:00], 0.0, ~N[2020-02-28 15:18:42]],
-          [2503, 250, ~N[2008-12-10 00:05:00], 0.0, ~N[2020-02-28 15:18:42]]
-        ],
-        summary: %{
-          "read_bytes" => "0",
-          "read_rows" => "0",
-          "total_rows_to_read" => "0",
-          "written_bytes" => "0",
-          "written_rows" => "0"
+    test "run sql query by id", context do
+      {:ok, query} = create_query(context.user.id)
+
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 2
+        )
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          run_sql_query(context.conn, :run_sql_query, %{id: query.id})
+          |> get_in(["data", "runSqlQuery"])
+
+        assert result == %{
+                 "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
+                 "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                 "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+                 "rows" => [
+                   [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                   [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                 ],
+                 "summary" => %{
+                   "read_bytes" => 0.0,
+                   "read_rows" => 0.0,
+                   "total_rows_to_read" => 0.0,
+                   "written_bytes" => 0.0,
+                   "written_rows" => 0.0
+                 }
+               }
+      end)
+    end
+
+    test "run dashboard query (resolve global params)", context do
+      {:ok, query} = create_query(context.user.id)
+
+      {:ok, dashboard} =
+        Sanbase.Dashboards.create_dashboard(%{name: "My Dashboard"}, context.user.id)
+
+      query_id = query.id
+      dashboard_id = dashboard.id
+
+      # Add a query to a dashboard
+      mapping =
+        execute_dashboard_query_mutation(context.conn, :create_dashboard_query, %{
+          dashboard_id: dashboard.id,
+          query_id: query.id,
+          settings: %{layout: [0, 1, 2, 3, 4]}
+        })
+        |> get_in(["data", "createDashboardQuery"])
+
+      assert %{
+               "dashboard" => %{"id" => ^dashboard_id, "parameters" => %{}},
+               "id" => _,
+               "query" => %{"id" => ^query_id},
+               "settings" => %{"layout" => [0, 1, 2, 3, 4]}
+             } = mapping
+
+      # Add global parameters and override the query's local parameters
+      dashboard_with_params =
+        add_dashboard_global_parameter(context.conn, %{
+          dashboard_id: dashboard.id,
+          key: "slug",
+          value: %{string: "santiment", map_as_input_object: true}
+        })
+        |> get_in(["data", "addDashboardGlobalParameter"])
+
+      assert dashboard_with_params == %{
+               "parameters" => %{"slug" => %{"overrides" => [], "value" => "santiment"}}
+             }
+
+      # Add global parameter override for a query local parameter
+      override =
+        add_dashboard_global_parameter_override(context.conn, %{
+          dashboard_id: dashboard.id,
+          dashboard_query_mapping_id: mapping["id"],
+          dashboard_parameter_key: "slug",
+          query_parameter_key: "slug"
+        })
+        |> get_in(["data", "addDashboardGlobalParameterOverride"])
+
+      assert override == %{
+               "parameters" => %{
+                 "slug" => %{
+                   "overrides" => [
+                     %{"dashboard_query_mapping_id" => mapping["id"], "parameter" => "slug"}
+                   ],
+                   "value" => "santiment"
+                 }
+               }
+             }
+
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 2
+        )
+
+      # Run a dashboard query. Expect the dashboard parameter to override
+      # the query local parameter
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          run_sql_query(context.conn, :run_dashboard_sql_query, %{
+            dashboard_id: dashboard.id,
+            dashboard_query_mapping_id: mapping["id"]
+          })
+          |> get_in(["data", "runDashboardSqlQuery"])
+
+        assert result == %{
+                 "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
+                 "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                 "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+                 "rows" => [
+                   [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                   [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                 ],
+                 "summary" => %{
+                   "read_bytes" => 0.0,
+                   "read_rows" => 0.0,
+                   "total_rows_to_read" => 0.0,
+                   "written_bytes" => 0.0,
+                   "written_rows" => 0.0
+                 }
+               }
+      end)
+    end
+
+    defp add_dashboard_global_parameter(conn, args) do
+      mutation = """
+      mutation{
+        addDashboardGlobalParameter(#{map_to_args(args)}){
+          parameters
         }
       }
+      """
+
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
+    end
+
+    defp add_dashboard_global_parameter_override(conn, args) do
+      mutation = """
+      mutation{
+        addDashboardGlobalParameterOverride(#{map_to_args(args)}){
+          parameters
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
+    end
+
+    defp execute_dashboard_query_mutation(conn, mutation, args) do
+      mutation_name = mutation |> Inflex.camelize(:lower)
+
+      mutation = """
+      mutation {
+        #{mutation_name}(#{map_to_args(args)}){
+          id
+          query{ id sqlQueryText sqlQueryParameters }
+          dashboard { id parameters }
+          settings
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
+    end
+
+    defp run_sql_query(conn, query, args) do
+      query_name = query |> Inflex.camelize(:lower)
+
+      mutation = """
+      {
+        #{query_name}(#{map_to_args(args)}){
+            columns
+            columnTypes
+            rows
+            clickhouseQueryId
+            summary
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+      |> json_response(200)
     end
   end
 
@@ -480,6 +652,17 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     end
   end
 
+  defp create_query(user_id) do
+    Sanbase.Queries.create_query(
+      %{
+        sql_query_text:
+          "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}}) LIMIT {{limit}}",
+        sql_query_parameters: %{slug: "bitcoin", limit: 10}
+      },
+      user_id
+    )
+  end
+
   defp execute_dashboard_mutation(conn, mutation, args \\ nil) do
     args =
       args ||
@@ -595,5 +778,83 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     conn
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)
+  end
+
+  defp mocked_clickhouse_result() do
+    %Clickhousex.Result{
+      columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
+      column_types: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+      command: :selected,
+      num_rows: 2,
+      query_id: "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
+      rows: [
+        [2503, 250, ~N[2008-12-10 00:00:00], 0.0, ~N[2020-02-28 15:18:42]],
+        [2503, 250, ~N[2008-12-10 00:05:00], 0.0, ~N[2020-02-28 15:18:42]]
+      ],
+      summary: %{
+        "read_bytes" => "0",
+        "read_rows" => "0",
+        "total_rows_to_read" => "0",
+        "written_bytes" => "0",
+        "written_rows" => "0"
+      }
+    }
+  end
+
+  defp mocked_execution_details_result() do
+    %Clickhousex.Result{
+      query_id: "1774C4BC91E058D4",
+      summary: %{
+        "read_bytes" => "5069080",
+        "read_rows" => "167990",
+        "result_bytes" => "0",
+        "result_rows" => "0",
+        "total_rows_to_read" => "167990",
+        "written_bytes" => "0",
+        "written_rows" => "0"
+      },
+      command: :selected,
+      columns: [
+        "read_compressed_gb",
+        "cpu_time_microseconds",
+        "query_duration_ms",
+        "memory_usage_gb",
+        "read_rows",
+        "read_gb",
+        "result_rows",
+        "result_gb"
+      ],
+      column_types: [
+        "Float64",
+        "UInt64",
+        "UInt64",
+        "Float64",
+        "UInt64",
+        "Float64",
+        "UInt64",
+        "Float64"
+      ],
+      rows: [
+        [
+          # read_compressed_gb
+          0.001110738143324852,
+          # cpu_time_microseconds
+          101_200,
+          # query_duration_ms
+          47,
+          # memory_usage_gb
+          0.03739274851977825,
+          # read_rows
+          364_923,
+          # read_gb
+          0.01087852381169796,
+          # result_rows
+          2,
+          # result_gb
+          2.980232238769531e-7
+        ]
+      ],
+      num_rows: 1
+    }
   end
 end

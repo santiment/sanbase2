@@ -160,7 +160,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_dashboard,
           :get_sql_query,
           :get_public_queries,
-          :get_queries_executions,
+          :get_query_executions,
           :get_user_queries,
           :run_dashboard_sql_query,
           :run_raw_sql_query,

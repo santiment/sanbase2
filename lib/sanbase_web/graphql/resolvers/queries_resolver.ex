@@ -28,15 +28,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   def get_user_queries(
         _root,
-        %{user_id: user_id, page: page, page_size: page_size},
-        %{context: %{auth: %{current_user: user}}}
+        %{page: page, page_size: page_size} = args,
+        resolution
       ) do
-    Queries.get_user_queries(
-      _queried_user_id = user_id,
-      _querying_user_id = user.id,
-      page: page,
-      page_size: page_size
-    )
+    querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
+    queried_user_id = Map.get(args, :user_id, querying_user_id)
+
+    if not is_nil(queried_user_id) do
+      Queries.get_user_queries(
+        queried_user_id,
+        querying_user_id,
+        page: page,
+        page_size: page_size
+      )
+    else
+      {:error,
+       "Error getting user queries: no userId provided, nor the query is executed by a logged in user."}
+    end
   end
 
   def get_public_queries(
@@ -232,12 +240,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Queries.get_query_execution(clickhouse_query_id, user.id)
   end
 
-  def get_queries_executions(
+  def get_query_executions(
         _root,
         %{page: page, page_size: page_size},
         %{context: %{auth: %{current_user: user}}}
       ) do
-    Queries.get_user_query_executions(user, page: page, page_size: page_size)
+    Queries.get_user_query_executions(user.id, page: page, page_size: page_size)
   end
 
   # Private functions

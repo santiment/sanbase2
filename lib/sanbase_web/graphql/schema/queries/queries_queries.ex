@@ -40,7 +40,11 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     field :get_user_queries, list_of(:sql_query) do
       meta(access: :free)
 
-      arg(:user_id, non_null(:integer))
+      @desc ~s"""
+      The id of the user whose queries are being fetched.
+      If the argument is not provided, fetch the current user queries.
+      """
+      arg(:user_id, :integer)
 
       arg(:page, non_null(:integer))
       arg(:page_size, non_null(:integer))
@@ -66,7 +70,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
     The list of executions can be additonally filtered by the query_id
     """
-    field :get_queries_executions, list_of(:sql_query_execution_stats) do
+    field :get_query_executions, list_of(:sql_query_execution_stats) do
       meta(access: :free)
 
       arg(:page, non_null(:integer))
@@ -76,7 +80,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       middleware(UserAuth)
 
-      resolve(&QueriesResolver.get_queries_executions/3)
+      resolve(&QueriesResolver.get_query_executions/3)
     end
 
     @desc ~s"""
@@ -186,8 +190,9 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     }
     """
     field :create_sql_query, :sql_query do
+      arg(:name, non_null(:string))
+
       arg(:origin_id, :integer)
-      arg(:name, :string)
       arg(:description, :string)
       arg(:is_public, :boolean)
       arg(:sql_query_text, :string)

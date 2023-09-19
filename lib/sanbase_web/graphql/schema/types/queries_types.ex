@@ -45,31 +45,6 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   end
 
   @desc ~s"""
-  Input object for an SQL query and its parameters.
-
-  The SQL query is expected to be a valid SQL query.
-  The parametrization is done via the {{key}} syntax
-  where the {{key}} is the name of the parameter and when
-  the query is computed, the key is substituted for the
-  value provided in `parameters`.
-  The parameters are a JSON map where the key is the
-  parameter name and the value is its value.
-
-  Example:
-  query: 'SELECT * FROM table WHERE slug = {{slug}} LIMIT {{limit}}'
-  parameters: '{slug: "bitcoin", limit: 10}'
-  """
-  input_object :sql_query_input_object do
-    field(:sql_query_text, :string)
-    field(:sql_query_parameters, :json)
-
-    field(:name, :string)
-    field(:description, :string)
-    field(:is_public, :boolean)
-    field(:settings, :json)
-  end
-
-  @desc ~s"""
   The Dashboard type defines the Queries 2.0 dashboard -- it holds the static data
   (name, description, public status, owner, etc.), and the list of queries that hold the
   actual SQL Query and parameters. The result of the execution of the
@@ -86,10 +61,10 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   object :dashboard do
     field(:id, non_null(:integer))
     field(:name, non_null(:string))
-    field(:description, :string)
     field(:is_public, non_null(:boolean))
-    field(:parameters, non_null(:json))
-    field(:settings, non_null(:json))
+    field(:description, :string)
+    field(:parameters, :json)
+    field(:settings, :json)
 
     # Virtual view field
     field(:views, :integer)
@@ -148,6 +123,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   how many credits were spent running this query, etc.
   """
   object :sql_query_execution_stats do
+    field(:query_id, :integer)
     field(:read_compressed_gb, non_null(:float))
     field(:cpu_time_microseconds, non_null(:float))
     field(:query_duration_ms, non_null(:float))

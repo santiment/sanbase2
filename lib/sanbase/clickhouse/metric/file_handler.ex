@@ -155,9 +155,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
 
   @metrics_json_including_deprecated Helper.expand_patterns(@metrics_json_pre_expand_patterns)
 
-  # The deprecated metrics are filter at a later stage at runtime, not here at compile time
-  # This is because `deprecated_since` can hold a future value and until then
-  # it can still be used.
+  # The deprecated metrics are filtered at a later stage at runtime, not here at compile time.
+  # This is because `hard_deprecate_after` can hold a future value and until then
+  # it can still be used. The filtering is done in the Sanbase.Metric.Helper module
+  # which is the one directly used by the Sanbase.Metric module.
   @metrics_json @metrics_json_including_deprecated
 
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
@@ -214,12 +215,20 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
 
   @deprecated_metrics_map Helper.name_to_field_map(
                             @metrics_json_including_deprecated,
-                            "deprecated_since",
+                            "hard_deprecate_after",
                             required?: false,
                             transform_fn: &Sanbase.DateTimeUtils.from_iso8601!/1
                           )
                           |> Enum.reject(fn {_k, v} -> v == nil end)
                           |> Map.new()
+
+  @soft_deprecated_metrics_map Helper.name_to_field_map(
+                                 @metrics_json_including_deprecated,
+                                 "is_deprecated",
+                                 required?: false
+                               )
+                               |> Enum.reject(fn {_k, v} -> v == nil end)
+                               |> Map.new()
 
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)
@@ -257,6 +266,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   def required_selectors_map(), do: @required_selectors_map
   def metrics_label_map(), do: @metrics_label_map
   def deprecated_metrics_map(), do: @deprecated_metrics_map
+  def soft_deprecated_metrics_map(), do: @soft_deprecated_metrics_map
   def timebound_flag_map(), do: @timebound_flag_map
 
   def metrics_with_access(level) when level in [:free, :restricted] do

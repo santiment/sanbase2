@@ -70,6 +70,7 @@ defmodule Sanbase.Metric do
   @table_metric_to_module_map Helper.table_metric_to_module_map()
   @required_selectors_map Helper.required_selectors_map()
   @deprecated_metrics_map Helper.deprecated_metrics_map()
+  @soft_deprecated_metrics_map Helper.soft_deprecated_metrics_map()
 
   @doc ~s"""
   Check if `metric` is a valid metric name.
@@ -91,13 +92,13 @@ defmodule Sanbase.Metric do
 
   def is_not_deprecated?(metric) do
     now = DateTime.utc_now()
-    deprecated_since = Map.get(@deprecated_metrics_map, metric)
+    hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
 
-    # The metric is not deprecated if `deprecated_since` is nil or if the the
+    # The metric is not deprecated if `hard_deprecate_after` is nil or if the the
     # date is in the future
-    case is_nil(deprecated_since) or DateTime.compare(now, deprecated_since) == :lt do
+    case is_nil(hard_deprecate_after) or DateTime.compare(now, hard_deprecate_after) == :lt do
       true -> true
-      false -> {:error, "The metric #{metric} is deprecated since #{deprecated_since}"}
+      false -> {:error, "The metric #{metric} is deprecated since #{hard_deprecate_after}"}
     end
   end
 
@@ -423,7 +424,10 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module.metadata(metric)
+        case module.metadata(metric) do
+          {:ok, metadata} -> {:ok, extend_metadata(metadata, metric)}
+          error -> error
+        end
     end
   end
 
@@ -875,5 +879,16 @@ defmodule Sanbase.Metric do
       data_sorted_by_slug = Enum.sort_by(data, & &1.slug, :asc)
       %{elem | data: data_sorted_by_slug}
     end)
+  end
+
+  defp extend_metadata(metadata, metric) do
+    hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
+    is_soft_deprecated = Map.get(@soft_deprecated_metrics_map, metric)
+
+    is_deprecated = not is_nil(hard_deprecate_after) or not is_nil(is_soft_deprecated)
+
+    metadata
+    |> Map.put(:is_deprecated, is_deprecated)
+    |> Map.put(:hard_deprecate_after, hard_deprecate_after)
   end
 end

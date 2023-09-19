@@ -39,6 +39,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @metric_to_names_map FileHandler.metric_to_names_map()
   @name_to_metric_map FileHandler.name_to_metric_map()
   @deprecated_metrics_map FileHandler.deprecated_metrics_map()
+  @soft_deprecated_metrics_map FileHandler.soft_deprecated_metrics_map()
   @timebound_flag_map FileHandler.timebound_flag_map()
   @default_complexity_weight 0.3
 
@@ -65,6 +66,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def deprecated_metrics_map(), do: @deprecated_metrics_map
+
+  @impl Sanbase.Metric.Behaviour
+  def soft_deprecated_metrics_map(), do: @soft_deprecated_metrics_map
 
   @impl Sanbase.Metric.Behaviour
   def access_map(), do: @access_map

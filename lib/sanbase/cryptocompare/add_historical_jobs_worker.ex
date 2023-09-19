@@ -3,10 +3,6 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
 
   require Logger
 
-  # If this is changed, the crontab expression in config/scrapers_config.exs should
-  # be updated as well.
-  @open_interest_minutes_interval 10
-
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"type" => "schedule_historical_price_jobs"}}) do
     Logger.info("[Cryptocompare.AddHistoricalJobsWorker] Start adding historical price jobs.")
@@ -26,11 +22,16 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
       "[Cryptocompare.AddHistoricalJobsWorker] Start adding historical open interest jobs."
     )
 
-    # The limit is set to a higher value so it can account for delays in the scheduler.
-    # The scheduler runs every 10 minutes.
-    Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler.schedule_jobs(
-      limit: @open_interest_minutes_interval * 20
-    )
+    prod_env? = deployment_env() == "prod"
+    hour = DateTime.utc_now().hour
+
+    # On prod we add a job every time this triggers. On stage we add a job every 3 hours.
+    # This is done in order to reduce the overall API calls amount.
+    if prod_env? or rem(hour, 3) == 0 do
+      # The limit is set to a higher value so it can account for delays in the scheduler.
+      # The scheduler runs every 1 hour.
+      Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler.schedule_jobs(limit: 500)
+    end
 
     Logger.info(
       "[Cryptocompare.AddHistoricalJobsWorker] Finished adding historical open interest jobs."
@@ -65,5 +66,9 @@ defmodule Sanbase.Cryptocompare.AddHistoricalJobsWorker do
     # This is so all the attempts can be made on the same day without
     # waiting too much. The max_attempts is also changed to 10
     300 * attempt
+  end
+
+  def deployment_env() do
+    Sanbase.Utils.Config.module_get(Sanbase, :deployment_env)
   end
 end

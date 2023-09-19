@@ -372,6 +372,24 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:available_selectors, list_of(:selector_name))
 
     @desc ~s"""
+    A metric can be marked as deprecated. If this is the case, the metric
+    should not be used anymore as it is going to be removed in the future.
+    A deprecation can be soft or hard. A soft deprecation means that the
+    metric is marked as deprecated, but is still accessible. A hard deprecation
+    means that the metric is marked as deprecated and it is no longer accessible.
+    All accessible metrics are soft-deprecated. A metric that is marked as deprecated
+    will become hard-deprecated at `hardDeprecateDatetime` datetime (which might not be
+    yet set.)
+    """
+    field(:is_deprecated, non_null(:boolean))
+
+    @desc ~s"""
+    After `hardDeprecateDatetime` the metric is hard-deprecated and will no longer
+    be accsessible.
+    """
+    field(:hard_deprecate_after, :datetime)
+
+    @desc ~s"""
     The data type of the metric can be either timeseries or histogram.
       - Timeseries data is a sequence taken at successive equally spaced points
         in time (every 5 minutes, every day, every year, etc.).
@@ -382,14 +400,37 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     """
     field(:data_type, :metric_data_type)
 
+    @desc ~s"""
+    A metric is considered timebound, if it is computed on the set of coins/tokens
+    that have been moved in a specified time period.
+    For more information visit https://academy.santiment.net/metrics/details/timebound
+    """
     field(:is_timebound, :boolean)
 
+    @desc ~s"""
+    A boolean flag that indicates whether the metric is accessible or not by the
+    current querying user. Some of the metrics are accsessible only to users with
+    a PRO plan or higher, for example.
+    """
     field(:is_accessible, :boolean)
 
+    @desc ~s"""
+    A boolean flag that indicates whether the metric has partially restricted accsess by the
+    current querying user. Some of the metrics have their historical or realtime data
+    available only to users with a PRO  plan or higher, for example.
+    """
     field(:is_restricted, :boolean)
 
+    @desc ~s"""
+    If the current querying user has restricted accsess to the metric, this field contains the
+    first datetime that the user has access to.
+    """
     field(:restricted_from, :datetime)
 
+    @desc ~s"""
+    If the current querying user has restricted accsess to the metric, this field contains the
+    last datetime that the user has access to.
+    """
     field(:restricted_to, :datetime)
   end
 

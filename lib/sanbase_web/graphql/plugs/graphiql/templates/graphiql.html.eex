@@ -92,7 +92,7 @@ add "&raw" to the end of the URL within a browser.
         onEditVariables: onEditVariables,
         query: '<%= query_string %>',
         response: '<%= result_string %>',
-        variables: '<%= variables_string %>',
+        variables: '<%= variables_string |> String.replace(~s[\"], ~s[\\"]) %>',
       }),
       document.getElementById("root")
     );

@@ -6,6 +6,7 @@ defmodule Sanbase.LandingEmails.AlphaNaratives do
   alias Sanbase.Email.MailjetApi
 
   @mailjet_alpha_naratives :alpha_naratives_emails
+  @alpha_naratives_welcome_template "alpha-naratives-welcome"
 
   schema "alpha_naratives_emails" do
     field(:email, :string)
@@ -29,6 +30,7 @@ defmodule Sanbase.LandingEmails.AlphaNaratives do
     |> case do
       {:ok, result} ->
         MailjetApi.subscribe(@mailjet_alpha_naratives, email)
+        Sanbase.TemplateMailer.send(email, @alpha_naratives_welcome_template, %{})
         {:ok, result}
 
       {:error, reason} ->

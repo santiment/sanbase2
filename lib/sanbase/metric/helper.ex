@@ -45,6 +45,7 @@ defmodule Sanbase.Metric.Helper do
   Module.register_attribute(__MODULE__, :table_metric_module_mapping_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :required_selectors_map_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :deprecated_metrics_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :soft_deprecated_metrics_acc, accumulate: true)
 
   for module <- @metric_modules do
     @required_selectors_map_acc module.required_selectors
@@ -79,6 +80,9 @@ defmodule Sanbase.Metric.Helper do
 
     if function_exported?(module, :deprecated_metrics_map, 0),
       do: @deprecated_metrics_acc(module.deprecated_metrics_map)
+
+    if function_exported?(module, :soft_deprecated_metrics_map, 0),
+      do: @soft_deprecated_metrics_acc(module.soft_deprecated_metrics_map)
   end
 
   flat_unique = fn list -> list |> List.flatten() |> Enum.uniq() end
@@ -137,30 +141,81 @@ defmodule Sanbase.Metric.Helper do
                           |> Enum.reject(&match?({_, nil}, &1))
                           |> Map.new()
 
-  def access_map(), do: @access_map
-  def aggregations_per_metric(), do: @aggregations_per_metric
-  def aggregations(), do: @aggregations
-  def incomplete_metrics(), do: @incomplete_metrics
-  def free_metrics(), do: @free_metrics
-  def deprecated_metrics_map(), do: @deprecated_metrics_map
-  def histogram_metric_module_mapping(), do: @histogram_metric_module_mapping
-  def histogram_metric_to_module_map(), do: @histogram_metric_to_module_map
-  def histogram_metrics_mapset(), do: @histogram_metrics_mapset
-  def histogram_metrics(), do: @histogram_metrics
-  def metric_module_mapping(), do: @metric_module_mapping
-  def metric_modules(), do: @metric_modules
-  def metric_to_module_map(), do: @metric_to_module_map
-  def metrics_mapset(), do: @metrics_mapset
-  def metrics(), do: @metrics
-  def min_plan_map(), do: @min_plan_map
-  def restricted_metrics(), do: @restricted_metrics
-  def table_metrics(), do: @table_metrics
-  def table_metrics_mapset(), do: @table_metrics_mapset
-  def table_metric_module_mapping(), do: @table_metric_module_mapping
-  def table_metric_to_module_map(), do: @table_metric_to_module_map
-  def timeseries_metric_module_mapping(), do: @timeseries_metric_module_mapping
-  def timeseries_metric_to_module_map(), do: @timeseries_metric_to_module_map
-  def timeseries_metrics_mapset(), do: @timeseries_metrics_mapset
-  def timeseries_metrics(), do: @timeseries_metrics
-  def required_selectors_map(), do: @required_selectors_map
+  @soft_deprecated_metrics_map Enum.reduce(@soft_deprecated_metrics_acc, %{}, &Map.merge(&1, &2))
+                               |> Enum.reject(&match?({_, nil}, &1))
+                               |> Map.new()
+
+  # Do not remove deprecated metrics from the deprecated_metrics_map, as it
+  # will just become empty and unusable
+  def deprecated_metrics_map(),
+    do: @deprecated_metrics_map |> transform(remove_hard_deprecated: false)
+
+  def soft_deprecated_metrics_map(), do: @soft_deprecated_metrics_map |> transform()
+  def access_map(), do: @access_map |> transform()
+  def aggregations_per_metric(), do: @aggregations_per_metric |> transform()
+  def aggregations(), do: @aggregations |> transform()
+  def incomplete_metrics(), do: @incomplete_metrics |> transform()
+  def free_metrics(), do: @free_metrics |> transform()
+  def histogram_metric_module_mapping(), do: @histogram_metric_module_mapping |> transform()
+  def histogram_metric_to_module_map(), do: @histogram_metric_to_module_map |> transform()
+  def histogram_metrics_mapset(), do: @histogram_metrics_mapset |> transform()
+  def histogram_metrics(), do: @histogram_metrics |> transform()
+  def metric_module_mapping(), do: @metric_module_mapping |> transform()
+  def metric_modules(), do: @metric_modules |> transform()
+  def metric_to_module_map(), do: @metric_to_module_map |> transform()
+  def metrics_mapset(), do: @metrics_mapset |> transform()
+  def metrics(), do: @metrics |> transform()
+  def min_plan_map(), do: @min_plan_map |> transform()
+  def restricted_metrics(), do: @restricted_metrics |> transform()
+  def table_metrics(), do: @table_metrics |> transform()
+  def table_metrics_mapset(), do: @table_metrics_mapset |> transform()
+  def table_metric_module_mapping(), do: @table_metric_module_mapping |> transform()
+  def table_metric_to_module_map(), do: @table_metric_to_module_map |> transform()
+  def timeseries_metric_module_mapping(), do: @timeseries_metric_module_mapping |> transform()
+  def timeseries_metric_to_module_map(), do: @timeseries_metric_to_module_map |> transform()
+  def timeseries_metrics_mapset(), do: @timeseries_metrics_mapset |> transform()
+  def timeseries_metrics(), do: @timeseries_metrics |> transform()
+  def required_selectors_map(), do: @required_selectors_map |> transform()
+
+  # Private functions
+
+  defp transform(metrics, opts \\ []) do
+    # The `remove_hard_deprecated/1` function is used to completely remove
+    # hard deprecated metrics. The `deprecated_metrics_map` contains the metric
+    # as a key and a datetime as a value. If the current time is after that value,
+    # the metric is excluded
+    metrics
+    |> then(fn metrics ->
+      if Keyword.get(opts, :remove_hard_deprecated, true),
+        do: remove_hard_deprecated(metrics),
+        else: metrics
+    end)
+  end
+
+  defp remove_hard_deprecated(metrics) when is_list(metrics) do
+    now = DateTime.utc_now()
+
+    Enum.reject(metrics, fn metric ->
+      hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
+      not is_nil(hard_deprecate_after) and DateTime.compare(hard_deprecate_after, now) == :lt
+    end)
+  end
+
+  defp remove_hard_deprecated(%MapSet{} = metrics) do
+    now = DateTime.utc_now()
+
+    MapSet.reject(metrics, fn metric ->
+      hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
+      not is_nil(hard_deprecate_after) and DateTime.compare(hard_deprecate_after, now) == :lt
+    end)
+  end
+
+  defp remove_hard_deprecated(metrics) when is_map(metrics) do
+    now = DateTime.utc_now()
+
+    Map.reject(metrics, fn {metric, _} ->
+      hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
+      not is_nil(hard_deprecate_after) and DateTime.compare(hard_deprecate_after, now) == :lt
+    end)
+  end
 end

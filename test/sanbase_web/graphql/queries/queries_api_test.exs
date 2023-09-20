@@ -263,6 +263,69 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       assert {:error, error_msg} = Sanbase.Dashboards.get_dashboard(dashboard_id, context.user.id)
       assert error_msg =~ "does not exist"
     end
+
+    test "parameters", context do
+      {:ok, dashboard} =
+        Sanbase.Dashboards.create_dashboard(%{name: "My Dashboard"}, context.user.id)
+
+      # Add global parameters and override the query's local parameters
+      dashboard_with_params =
+        execute_global_parameter_mutation(
+          context.conn,
+          :add_dashboard_global_parameter,
+          %{
+            dashboard_id: dashboard.id,
+            key: "slug",
+            value: %{string: "santiment", map_as_input_object: true}
+          }
+        )
+        |> get_in(["data", "addDashboardGlobalParameter"])
+
+      assert dashboard_with_params == %{
+               "parameters" => %{"slug" => %{"overrides" => [], "value" => "santiment"}}
+             }
+
+      # Add another param
+      dashboard_with_params =
+        execute_global_parameter_mutation(
+          context.conn,
+          :add_dashboard_global_parameter,
+          %{
+            dashboard_id: dashboard.id,
+            key: "limit",
+            value: %{integer: 20, map_as_input_object: true}
+          }
+        )
+        |> get_in(["data", "addDashboardGlobalParameter"])
+
+      assert dashboard_with_params == %{
+               "parameters" => %{
+                 "slug" => %{"overrides" => [], "value" => "santiment"},
+                 "limit" => %{"overrides" => [], "value" => 20}
+               }
+             }
+
+      # Update parameter
+      dashboard_with_params =
+        execute_global_parameter_mutation(
+          context.conn,
+          :update_dashboard_global_parameter,
+          %{
+            dashboard_id: dashboard.id,
+            key: "slug",
+            new_key: "slug2",
+            new_value: %{string: "bitcoin", map_as_input_object: true}
+          }
+        )
+        |> get_in(["data", "updateDashboardGlobalParameter"])
+
+      assert dashboard_with_params == %{
+               "parameters" => %{
+                 "slug2" => %{"overrides" => [], "value" => "bitcoin"},
+                 "limit" => %{"overrides" => [], "value" => 20}
+               }
+             }
+    end
   end
 
   describe "run queries" do
@@ -371,11 +434,15 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
       # Add global parameters and override the query's local parameters
       dashboard_with_params =
-        add_dashboard_global_parameter(context.conn, %{
-          dashboard_id: dashboard.id,
-          key: "slug",
-          value: %{string: "santiment", map_as_input_object: true}
-        })
+        execute_global_parameter_mutation(
+          context.conn,
+          :add_dashboard_global_parameter,
+          %{
+            dashboard_id: dashboard.id,
+            key: "slug",
+            value: %{string: "santiment", map_as_input_object: true}
+          }
+        )
         |> get_in(["data", "addDashboardGlobalParameter"])
 
       assert dashboard_with_params == %{
@@ -384,12 +451,16 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
       # Add global parameter override for a query local parameter
       override =
-        add_dashboard_global_parameter_override(context.conn, %{
-          dashboard_id: dashboard.id,
-          dashboard_query_mapping_id: mapping["id"],
-          dashboard_parameter_key: "slug",
-          query_parameter_key: "slug"
-        })
+        execute_global_parameter_mutation(
+          context.conn,
+          :add_dashboard_global_parameter_override,
+          %{
+            dashboard_id: dashboard.id,
+            dashboard_query_mapping_id: mapping["id"],
+            dashboard_parameter_key: "slug",
+            query_parameter_key: "slug"
+          }
+        )
         |> get_in(["data", "addDashboardGlobalParameterOverride"])
 
       assert override == %{
@@ -440,73 +511,6 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                  }
                }
       end)
-    end
-
-    defp add_dashboard_global_parameter(conn, args) do
-      mutation = """
-      mutation{
-        addDashboardGlobalParameter(#{map_to_args(args)}){
-          parameters
-        }
-      }
-      """
-
-      conn
-      |> post("/graphql", mutation_skeleton(mutation))
-      |> json_response(200)
-    end
-
-    defp add_dashboard_global_parameter_override(conn, args) do
-      mutation = """
-      mutation{
-        addDashboardGlobalParameterOverride(#{map_to_args(args)}){
-          parameters
-        }
-      }
-      """
-
-      conn
-      |> post("/graphql", mutation_skeleton(mutation))
-      |> json_response(200)
-    end
-
-    defp execute_dashboard_query_mutation(conn, mutation, args) do
-      mutation_name = mutation |> Inflex.camelize(:lower)
-
-      mutation = """
-      mutation {
-        #{mutation_name}(#{map_to_args(args)}){
-          id
-          query{ id sqlQueryText sqlQueryParameters }
-          dashboard { id parameters }
-          settings
-        }
-      }
-      """
-
-      conn
-      |> post("/graphql", mutation_skeleton(mutation))
-      |> json_response(200)
-    end
-
-    defp run_sql_query(conn, query, args) do
-      query_name = query |> Inflex.camelize(:lower)
-
-      mutation = """
-      {
-        #{query_name}(#{map_to_args(args)}){
-            columns
-            columnTypes
-            rows
-            clickhouseQueryId
-            summary
-        }
-      }
-      """
-
-      conn
-      |> post("/graphql", mutation_skeleton(mutation))
-      |> json_response(200)
     end
   end
 
@@ -718,6 +722,61 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         sqlQueryText
         sqlQueryParameters
         settings
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+  end
+
+  defp execute_global_parameter_mutation(conn, mutation, args) do
+    mutation_name = mutation |> Inflex.camelize(:lower)
+
+    mutation = """
+    mutation{
+      #{mutation_name}(#{map_to_args(args)}){
+        parameters
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+  end
+
+  defp execute_dashboard_query_mutation(conn, mutation, args) do
+    mutation_name = mutation |> Inflex.camelize(:lower)
+
+    mutation = """
+    mutation {
+      #{mutation_name}(#{map_to_args(args)}){
+        id
+        query{ id sqlQueryText sqlQueryParameters }
+        dashboard { id parameters }
+        settings
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+  end
+
+  defp run_sql_query(conn, query, args) do
+    query_name = query |> Inflex.camelize(:lower)
+
+    mutation = """
+    {
+      #{query_name}(#{map_to_args(args)}){
+          columns
+          columnTypes
+          rows
+          clickhouseQueryId
+          summary
       }
     }
     """

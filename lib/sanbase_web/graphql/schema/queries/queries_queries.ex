@@ -492,7 +492,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       middleware(JWTAuth)
 
-      resolve(&QueriesResolver.add_dashboard_global_parameter/3)
+      resolve(&QueriesResolver.update_dashboard_global_parameter/3)
     end
 
     @desc ~s"""

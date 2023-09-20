@@ -170,17 +170,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   def update_dashboard_global_parameter(
         _root,
-        %{dashboard_id: dashboard_id} = args,
+        %{dashboard_id: dashboard_id, key: key} = args,
         %{context: %{auth: %{current_user: user}}}
       ) do
-    opts = Map.take(args, [:new_key, :new_value]) |> Keyword.new()
+    opts =
+      args
+      |> Map.take([:new_key, :new_value])
+      |> Keyword.new()
+      |> Keyword.put(:key, key)
 
     case opts do
       [] ->
         {:error, "Error update dashboard global parameter: neither new key nor value provided"}
 
       [_ | _] ->
-        Dashboards.update_global_parameter(dashboard_id, user.id, opts)
+        # If `new_value` is set, transform it to a single value.
+        # If it is set, but with an error, `with` will return an error.
+        # If `new_value` is not provided, the `else` branch will be executed.
+        if new_value_map = Keyword.get(opts, :new_value) do
+          with {:ok, new_value} <- get_global_param_one_value(new_value_map) do
+            opts = Keyword.put(opts, :new_value, new_value)
+            Dashboards.update_global_parameter(dashboard_id, user.id, opts)
+          end
+        else
+          Dashboards.update_global_parameter(dashboard_id, user.id, opts)
+        end
     end
   end
 

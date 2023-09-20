@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 14.7 (Homebrew)
+-- Dumped by pg_dump version 14.7 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -687,14 +687,14 @@ ALTER SEQUENCE public.chart_configurations_id_seq OWNED BY public.chart_configur
 CREATE TABLE public.clickhouse_query_executions (
     id bigint NOT NULL,
     user_id bigint,
-    query_id character varying(255),
     clickhouse_query_id character varying(255) NOT NULL,
     execution_details jsonb NOT NULL,
     credits_cost integer NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     query_start_time timestamp(0) without time zone NOT NULL,
-    query_end_time timestamp(0) without time zone NOT NULL
+    query_end_time timestamp(0) without time zone NOT NULL,
+    query_id bigint
 );
 
 
@@ -921,6 +921,39 @@ ALTER SEQUENCE public.dashboard_comments_mapping_id_seq OWNED BY public.dashboar
 
 
 --
+-- Name: dashboard_query_mappings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dashboard_query_mappings (
+    id bigint NOT NULL,
+    dashboard_id bigint,
+    query_id bigint,
+    settings jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: dashboard_query_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dashboard_query_mappings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dashboard_query_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dashboard_query_mappings_id_seq OWNED BY public.dashboard_query_mappings.id;
+
+
+--
 -- Name: dashboards; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -935,7 +968,8 @@ CREATE TABLE public.dashboards (
     updated_at timestamp without time zone NOT NULL,
     is_deleted boolean DEFAULT false,
     is_hidden boolean DEFAULT false,
-    parameters jsonb DEFAULT '{}'::jsonb
+    parameters jsonb DEFAULT '{}'::jsonb,
+    settings jsonb DEFAULT '{}'::jsonb
 );
 
 
@@ -1203,7 +1237,8 @@ CREATE TABLE public.votes (
     watchlist_id bigint,
     user_trigger_id bigint,
     dashboard_id bigint,
-    CONSTRAINT only_one_fk CHECK (((((((
+    query_id bigint,
+    CONSTRAINT only_one_fk CHECK ((((((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
@@ -1226,6 +1261,10 @@ CASE
 END) +
 CASE
     WHEN (dashboard_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (query_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -2869,6 +2908,48 @@ ALTER SEQUENCE public.pumpkins_id_seq OWNED BY public.pumpkins.id;
 
 
 --
+-- Name: queries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.queries (
+    id bigint NOT NULL,
+    uuid character varying(255) NOT NULL,
+    origin_id integer,
+    origin_uuid character varying(255),
+    name text,
+    description text,
+    is_public boolean DEFAULT true,
+    settings jsonb,
+    sql_query_text text DEFAULT ''::text,
+    sql_query_parameters jsonb DEFAULT '{}'::jsonb,
+    user_id bigint NOT NULL,
+    is_hidden boolean DEFAULT false,
+    is_deleted boolean DEFAULT false,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: queries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.queries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: queries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.queries_id_seq OWNED BY public.queries.id;
+
+
+--
 -- Name: questionnaire_answers; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4435,6 +4516,13 @@ ALTER TABLE ONLY public.dashboard_comments_mapping ALTER COLUMN id SET DEFAULT n
 
 
 --
+-- Name: dashboard_query_mappings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_query_mappings ALTER COLUMN id SET DEFAULT nextval('public.dashboard_query_mappings_id_seq'::regclass);
+
+
+--
 -- Name: dashboards id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4761,6 +4849,13 @@ ALTER TABLE ONLY public.promo_trials ALTER COLUMN id SET DEFAULT nextval('public
 --
 
 ALTER TABLE ONLY public.pumpkins ALTER COLUMN id SET DEFAULT nextval('public.pumpkins_id_seq'::regclass);
+
+
+--
+-- Name: queries id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries ALTER COLUMN id SET DEFAULT nextval('public.queries_id_seq'::regclass);
 
 
 --
@@ -5197,6 +5292,14 @@ ALTER TABLE ONLY public.dashboard_comments_mapping
 
 
 --
+-- Name: dashboard_query_mappings dashboard_query_mappings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_query_mappings
+    ADD CONSTRAINT dashboard_query_mappings_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: dashboards_cache dashboards_cache_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5594,6 +5697,14 @@ ALTER TABLE ONLY public.promo_trials
 
 ALTER TABLE ONLY public.pumpkins
     ADD CONSTRAINT pumpkins_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: queries queries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries
+    ADD CONSTRAINT queries_pkey PRIMARY KEY (id);
 
 
 --
@@ -6093,6 +6204,13 @@ CREATE INDEX chart_configurations_user_id_index ON public.chart_configurations U
 
 
 --
+-- Name: clickhouse_query_executions_query_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clickhouse_query_executions_query_id_index ON public.clickhouse_query_executions USING btree (query_id);
+
+
+--
 -- Name: contract_addresses_project_id_address_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6125,6 +6243,20 @@ CREATE UNIQUE INDEX dashboard_comments_mapping_comment_id_index ON public.dashbo
 --
 
 CREATE INDEX dashboard_comments_mapping_dashboard_id_index ON public.dashboard_comments_mapping USING btree (dashboard_id);
+
+
+--
+-- Name: dashboard_query_mappings_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dashboard_query_mappings_dashboard_id_index ON public.dashboard_query_mappings USING btree (dashboard_id);
+
+
+--
+-- Name: dashboard_query_mappings_query_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dashboard_query_mappings_query_id_index ON public.dashboard_query_mappings USING btree (query_id);
 
 
 --
@@ -6583,6 +6715,13 @@ CREATE INDEX pumpkins_user_id_index ON public.pumpkins USING btree (user_id);
 
 
 --
+-- Name: queries_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX queries_user_id_index ON public.queries USING btree (user_id);
+
+
+--
 -- Name: questionnaire_answers_question_uuid_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6933,6 +7072,13 @@ CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (pos
 
 
 --
+-- Name: votes_query_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_query_id_user_id_index ON public.votes USING btree (query_id, user_id);
+
+
+--
 -- Name: votes_timeline_event_id_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7164,6 +7310,14 @@ ALTER TABLE ONLY public.chart_configurations
 
 
 --
+-- Name: clickhouse_query_executions clickhouse_query_executions_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clickhouse_query_executions
+    ADD CONSTRAINT clickhouse_query_executions_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id) ON DELETE SET NULL;
+
+
+--
 -- Name: clickhouse_query_executions clickhouse_query_executions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7217,6 +7371,22 @@ ALTER TABLE ONLY public.dashboard_comments_mapping
 
 ALTER TABLE ONLY public.dashboard_comments_mapping
     ADD CONSTRAINT dashboard_comments_mapping_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dashboard_query_mappings dashboard_query_mappings_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_query_mappings
+    ADD CONSTRAINT dashboard_query_mappings_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dashboard_query_mappings dashboard_query_mappings_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_query_mappings
+    ADD CONSTRAINT dashboard_query_mappings_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id) ON DELETE CASCADE;
 
 
 --
@@ -7660,6 +7830,14 @@ ALTER TABLE ONLY public.pumpkins
 
 
 --
+-- Name: queries queries_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries
+    ADD CONSTRAINT queries_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: questionnaire_answers questionnaire_answers_question_uuid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8017,6 +8195,14 @@ ALTER TABLE ONLY public.votes
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: votes votes_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id);
 
 
 --
@@ -8556,8 +8742,13 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230522123937);
 INSERT INTO public."schema_migrations" (version) VALUES (20230523080400);
 INSERT INTO public."schema_migrations" (version) VALUES (20230526092048);
 INSERT INTO public."schema_migrations" (version) VALUES (20230608132801);
+INSERT INTO public."schema_migrations" (version) VALUES (20230616110252);
 INSERT INTO public."schema_migrations" (version) VALUES (20230626080554);
+INSERT INTO public."schema_migrations" (version) VALUES (20230713112639);
+INSERT INTO public."schema_migrations" (version) VALUES (20230803140335);
+INSERT INTO public."schema_migrations" (version) VALUES (20230810121200);
 INSERT INTO public."schema_migrations" (version) VALUES (20230829111631);
 INSERT INTO public."schema_migrations" (version) VALUES (20230904092357);
 INSERT INTO public."schema_migrations" (version) VALUES (20230904141409);
 INSERT INTO public."schema_migrations" (version) VALUES (20230908085236);
+INSERT INTO public."schema_migrations" (version) VALUES (20230915121540);

@@ -1,7 +1,6 @@
 defmodule Sanbase.MetricExporter.CSV do
   require Logger
 
-  alias Sanbase.Metric
   alias Sanbase.MetricExporter.S3
 
   @send_hour ~T[17:00:00]

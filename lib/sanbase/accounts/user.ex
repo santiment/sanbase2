@@ -219,11 +219,13 @@ defmodule Sanbase.Accounts.User do
     |> Repo.all()
   end
 
+  @doc false
   def all_users() do
+    # Apparantly, it does not fetch all users.
     from(
       u in __MODULE__,
-      order_by: [desc: u.id],
-      limit: 10
+      order_by: [desc: u.updated_at],
+      limit: 2000
     )
     |> Repo.all()
   end

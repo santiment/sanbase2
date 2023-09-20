@@ -174,7 +174,7 @@ defmodule Sanbase.Intercom.StripeAttributes do
     |> Timeseries.paid()
   end
 
-  def current_subs() do
+  defp current_subs() do
     query = from(s in Timeseries, order_by: [desc: s.id], limit: 1)
 
     case Repo.one(query) do

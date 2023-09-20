@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
   alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
   alias SanbaseWeb.Graphql.Middlewares.{UserAuth, JWTAuth}
 
-  object :dashboard_queries do
+  object :old_dashboard_queries do
     @desc ~s"""
     Get metadata bout the Clickhouse database exposed for the SQL Editor.
 
@@ -186,63 +186,11 @@ defmodule SanbaseWeb.Graphql.Schema.DashboardQueries do
     end
   end
 
-  object :dashboard_mutations do
-    @desc ~s"""
-    Create an empty (without panels) dashboard.
-
-    A dashboard is holding together panels, each defining a
-    Clickhouse SQL query and how to visualize it. The dashboard
-    usually has a topic it is about and the panels in it show
-    different types of information about that topic.
-
-    The dashboard is created with its name, description, parameters and public
-    status. Public dashboards are visible to all users.
-
-    In order to manipulate the panels of the dashboard, refer to the
-    createDashboardPanel/updateDashboardPanel/removeDashboardPanel
-    mutations.
-
-    Dashboard holds the global parameters that are shared by all panels.
-    """
-    field :create_dashboard, :dashboard_schema do
-      arg(:name, non_null(:string))
-      arg(:description, :string)
-      arg(:is_public, :boolean)
-      arg(:parameters, :json)
-
-      middleware(JWTAuth)
-
-      resolve(&DashboardResolver.create_dashboard/3)
-    end
-
-    @desc ~s"""
-    Update the name, description, parameters or public status of a dashboard.
-
-    In order to manipulate the panels of the dashboard, refer to the
-    createDashboardPanel/updateDashboardPanel/removeDashboardPanel
-    mutations.
-    """
-    field :update_dashboard, :dashboard_schema do
-      arg(:id, non_null(:integer))
-
-      arg(:name, :string)
-      arg(:description, :string)
-      arg(:is_public, :boolean)
-      arg(:parameters, :json)
-
-      middleware(JWTAuth)
-
-      resolve(&DashboardResolver.update_dashboard/3)
-    end
-
+  object :old_dashboard_mutations do
     @desc ~s"""
     Remove a dashboard.
-
-    In order to manipulate the panels of the dashboard, refer to the
-    createDashboardPanel/updateDashboardPanel/removeDashboardPanel
-    mutations.
     """
-    field :remove_dashboard, :dashboard_schema do
+    field :remove_dashboard, :dashboard do
       arg(:id, non_null(:integer))
 
       middleware(JWTAuth)

@@ -99,7 +99,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   def store_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
     %{dashboard_id: dashboard_id, panel_id: panel_id, panel: panel} = args
     # storing requires edit access, not just view access
-    compressed_rows = Dashboard.Query.rows_to_compressed_rows(panel.rows)
+    compressed_rows = Dashboard.Query.compress_rows(panel.rows)
     panel = Map.put(panel, :compressed_rows, compressed_rows)
 
     with true <- is_dashboard_owner?(dashboard_id, user.id),
@@ -116,16 +116,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
         %{context: %{auth: %{current_user: user}}}
       ) do
     case Dashboard.QueryExecution.get_execution_stats(user.id, clickhouse_query_id) do
-      {:ok, stats} ->
+      {:ok, %{execution_details: details} = stats} ->
         execution_details = %{
-          cpu_time_microseconds: stats.execution_details["cpu_time_microseconds"],
-          memory_usage_gb: stats.execution_details["memory_usage_gb"],
-          query_duration_ms: stats.execution_details["query_duration_ms"],
-          read_compressed_gb: stats.execution_details["read_compressed_gb"],
-          read_gb: stats.execution_details["read_gb"],
-          read_rows: stats.execution_details["read_rows"],
-          result_gb: stats.execution_details["result_gb"],
-          result_rows: stats.execution_details["result_rows"]
+          cpu_time_microseconds: details["cpu_time_microseconds"],
+          memory_usage_gb: details["memory_usage_gb"],
+          query_duration_ms: details["query_duration_ms"],
+          read_compressed_gb: details["read_compressed_gb"],
+          read_gb: details["read_gb"],
+          read_rows: details["read_rows"],
+          result_gb: details["result_gb"],
+          result_rows: details["result_rows"]
         }
 
         result =
@@ -239,7 +239,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     case Dashboard.get_is_public_and_owner(id) do
       {:ok, %{user_id: ^user_id}} -> true
       {:ok, %{is_public: true}} -> true
-      _ -> {:error, "Dashboard is private or does not exist"}
+      _ -> {:error, "Dashboard does not exist or it's not owned by the user"}
     end
   end
 
@@ -249,7 +249,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
         true
 
       _ ->
-        {:error, "Dashboard does not exist or it's not owned by the user."}
+        {:error, "Dashboard does not exist or it's not owned by the user"}
     end
   end
 

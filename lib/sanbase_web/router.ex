@@ -58,11 +58,14 @@ defmodule SanbaseWeb.Router do
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
 
-    get("/", CustomAdminController, :index)
     post("/users", UserController, :search)
+
+    get("/", CustomAdminController, :index)
     get("/users/reset_api_call_limits", UserController, :reset_api_call_limits)
+    get("/users/reset_queries_credits_spent", UserController, :reset_queries_credits_spent)
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)
+
     resources("/reports", ReportController)
     resources("/sheets_templates", SheetsTemplateController)
     resources("/webinars", WebinarController)

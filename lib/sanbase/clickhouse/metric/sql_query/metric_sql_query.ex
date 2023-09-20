@@ -121,7 +121,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   def aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters) do
     # In case of `:last` aggregation, scanning big intervals of data leads to
     # unnecessarily increased resources consumption as we're getting only the
-    # last value. We rewrite the `from` paramter to be closer to `to`. This
+    # last value. We rewrite the `from` parameter to be closer to `to`. This
     # rewrite has negative effect in cases there are lagging values. If the
     # value is lagging more than 7 days, though, it's safe to assume it is not
     # supported.
@@ -210,7 +210,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   defp aggregated_slugs_base_query(metric, from, to, aggregation, filters) do
     # In case of `:last` aggregation, scanning big intervals of data leads to
     # unnecessarily increased resources consumption as we're getting only the
-    # last value. We rewrite the `from` paramter to be closer to `to`. This
+    # last value. We rewrite the `from` parameter to be closer to `to`. This
     # rewrite has negative effect in cases there are lagging values. If the
     # value is lagging more than 7 days, though, it's safe to assume it is not
     # supported.

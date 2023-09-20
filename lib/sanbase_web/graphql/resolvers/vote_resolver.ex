@@ -8,7 +8,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
   alias Sanbase.Vote
   alias Sanbase.Insight.Post
   alias Sanbase.Chart
-  alias Sanbase.Dashboard
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.UserList
@@ -42,13 +41,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     get_votes(loader, :chart_configuration_vote_stats, selector)
   end
 
-  def votes(%Dashboard.Schema{} = dashboard, _args, %{
+  def votes(%Sanbase.Dashboard.Schema{} = dashboard, _args, %{
         context: %{loader: loader} = context
       }) do
     user = get_in(context, [:auth, :current_user]) || %User{id: nil}
     selector = %{dashboard_id: dashboard.id, user_id: user.id}
 
     get_votes(loader, :dashboard_vote_stats, selector)
+  end
+
+  def votes(%Sanbase.Queries.Dashboard{} = dashboard, _args, %{
+        context: %{loader: loader} = context
+      }) do
+    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
+    selector = %{dashboard_id: dashboard.id, user_id: user.id}
+
+    get_votes(loader, :dashboard_vote_stats, selector)
+  end
+
+  def votes(%Sanbase.Queries.Query{} = query, _args, %{
+        context: %{loader: loader} = context
+      }) do
+    user = get_in(context, [:auth, :current_user]) || %User{id: nil}
+    selector = %{query_id: query.id, user_id: user.id}
+
+    get_votes(loader, :query_vote_stats, selector)
   end
 
   def votes(%{trigger: %{id: user_trigger_id}}, _args, %{
@@ -105,7 +122,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     # Handles the case where the `votes` is called on top of the result
     # from `vote`/`unvote`. They return the entity id as a result which
     # can be used from the `source` map in the resolution
-    votes(%Dashboard.Schema{id: id}, args, resolution)
+    votes(%Sanbase.Queries.Dashboard{id: id}, args, resolution)
+  end
+
+  def votes(_root, args, %{source: %{query_id: id}} = resolution) do
+    # Handles the case where the `votes` is called on top of the result
+    # from `vote`/`unvote`. They return the entity id as a result which
+    # can be used from the `source` map in the resolution
+    votes(%Sanbase.Queries.Query{id: id}, args, resolution)
   end
 
   def votes(_root, args, %{source: %{user_trigger_id: id}} = resolution) do
@@ -150,11 +174,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.VoteResolver do
     get_voted_at(loader, :chart_configuration_voted_at, selector)
   end
 
-  def voted_at(%Dashboard.Schema{} = config, _args, %{
+  def voted_at(%Sanbase.Dashboard.Schema{} = config, _args, %{
         context: %{loader: loader, auth: %{current_user: user}}
       }) do
     selector = %{dashboard_id: config.id, user_id: user.id}
     get_voted_at(loader, :dashboard_voted_at, selector)
+  end
+
+  def voted_at(%Sanbase.Queries.Dashboard{} = config, _args, %{
+        context: %{loader: loader, auth: %{current_user: user}}
+      }) do
+    selector = %{dashboard_id: config.id, user_id: user.id}
+    get_voted_at(loader, :dashboard_voted_at, selector)
+  end
+
+  def voted_at(%Sanbase.Queries.Query{} = config, _args, %{
+        context: %{loader: loader, auth: %{current_user: user}}
+      }) do
+    selector = %{query_id: config.id, user_id: user.id}
+    get_voted_at(loader, :query_voted_at, selector)
   end
 
   def voted_at(%{trigger: %{id: id}}, _args, %{

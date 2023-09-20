@@ -88,55 +88,24 @@ defmodule Sanbase.DiscordBot.CommandHandler do
   end
 
   defp route_and_answer(msg, thread) do
-    prompt = String.replace(msg.content, "<@#{bot_id()}>", "")
+    query = extract_query(msg)
+    # Nostrum.Api.start_typing(thread.id)
+    typing_task = Task.async(fn -> keep_typing(thread.id) end)
+    discord_metadata = db_params(msg, thread)
 
-    Nostrum.Api.start_typing(thread.id)
+    result = AiServer.answer(query, discord_metadata)
+    Task.shutdown(typing_task, :brutal_kill)
 
-    AiServer.route(prompt, msg.id)
-    |> case do
-      {:ok, "twitter", timeframe_hours, sentiment, projects} ->
-        handle_ai_command(msg, prompt, thread, timeframe_hours, sentiment, projects)
-
-      {:ok, "academy", _, _, _} ->
-        answer_question(msg, thread)
-    end
-  end
-
-  def handle_ai_command(msg, prompt, thread, timeframe_hours, sentiment, projects) do
-    Nostrum.Api.start_typing(thread.id)
-
-    db_params = db_params(msg, thread, "!ai")
-    db_params = Map.put(db_params, :timeframe, timeframe_hours)
-    db_params = Map.put(db_params, :sentiment, sentiment)
-    db_params = Map.put(db_params, :projects, projects)
-
-    {prompt, db_params} = extract_model(prompt, db_params)
-
-    case AiContext.check_limits(db_params) do
-      :ok ->
-        {kw_list, ai_context} =
-          AiServer.ai(prompt, db_params)
-          |> process_response()
+    case result do
+      {:ok, ai_context, ai_server_response} ->
+        kw_list = process_ai_server_response(ai_server_response)
 
         kw_list =
           Keyword.put(kw_list, :content, Utils.trim_message(Keyword.get(kw_list, :content)))
 
         Nostrum.Api.create_message(thread.id, kw_list)
 
-        if ai_context do
-          embeds = [
-            %Embed{
-              description:
-                "<@#{to_string(msg.author.id)}> I am still learning and improving, please let me know how I did by reactiing below"
-            }
-          ]
-
-          Nostrum.Api.create_message(thread.id,
-            content: "",
-            embeds: embeds,
-            components: [ai_context_action_row(ai_context)]
-          )
-        end
+        feedback_row_message(msg, thread, ai_context)
 
       {:error, :eserverlimit, time_left} ->
         Nostrum.Api.create_message(thread.id,
@@ -147,134 +116,39 @@ defmodule Sanbase.DiscordBot.CommandHandler do
         Nostrum.Api.create_message(thread.id,
           content: "Pro user limit reached for today. Limit will be reset in #{time_left}"
         )
+
+      {:error, _} ->
+        content = "Couldn't fetch information to answer your question"
+        Nostrum.Api.create_message(thread.id, content: content)
     end
-  end
-
-  defp answer_question(msg, thread) do
-    Nostrum.Api.create_message(thread.id,
-      content: "Hang on <@#{to_string(msg.author.id)}> as I search our knowledge base. :robot:"
-    )
-
-    Nostrum.Api.start_typing(thread.id)
-
-    db_params = db_params(msg, thread, "!thread")
-    prompt = String.replace(msg.content, "<@#{bot_id()}>", "")
-    {kw_list, ai_context} = AiServer.threaded_docs(prompt, db_params) |> process_response()
-
-    content = Keyword.get(kw_list, :content)
-
-    Logger.info("[id=#{msg.id}] content: #{content}")
-
-    new_content = """
-    ----------------------
-    #{content}
-    ----------------------
-    `Note: you can ask me a follow up question by @ mentioning me again` :speech_balloon:
-    ----------------------
-    """
-
-    kw_list = Keyword.put(kw_list, :content, Utils.trim_message(new_content))
-    Nostrum.Api.create_message(thread.id, kw_list)
-
-    embeds = [
-      %Embed{
-        description:
-          "<@#{to_string(msg.author.id)}> I am still learning and improving, please let me know how I did by reactiing below"
-      }
-    ]
-
-    if ai_context do
-      Nostrum.Api.create_message(thread.id,
-        content: "",
-        embeds: embeds,
-        components: [ai_context_action_row(ai_context)]
-      )
-    end
-  end
-
-  defp process_response({:ok, response, db}) do
-    {process_response({:ok, response}), db}
-  end
-
-  defp process_response({:error, response, db}) do
-    {process_response({:error, response}), db}
-  end
-
-  defp process_response({:ok, %{"answer" => "DK"}}) do
-    content = "Couldn't fetch information to answer your question"
-
-    [
-      content: content,
-      components: []
-    ]
-  end
-
-  defp process_response({:ok, %{"type" => "search"} = response}) do
-    content = """
-    #{response["answer"]}
-    #{response["sources"] |> format_search_sources()}
-    """
-
-    [
-      content: content,
-      components: []
-    ]
-  end
-
-  defp process_response({:ok, response}) do
-    content = """
-    #{response["answer"]}
-    #{response["sources"] |> format_sources()}
-    """
-
-    components =
-      case Regex.run(~r/```(?:sql)?([^`]*)```/ms, content) do
-        [_, matched] ->
-          matched = matched |> String.trim() |> String.downcase()
-
-          if String.starts_with?(matched, ["select", "show", "describe"]) do
-            [ai_action_row()]
-          else
-            []
-          end
-
-        nil ->
-          []
-      end
-
-    [
-      content: content,
-      components: components
-    ]
-  end
-
-  defp process_response({:error, _error}) do
-    content = "Couldn't fetch information to answer your question"
-
-    [
-      content: content,
-      components: []
-    ]
   end
 
   defp format_search_sources(sources) do
-    sources |> Enum.map(fn link -> "<#{link}>" end) |> Enum.join("\n")
+    sources = sources |> Enum.map(fn link -> "<#{link}>" end) |> Enum.join("\n")
+    "Sources: \n#{sources}"
   end
 
-  defp format_sources(sources) do
-    sources
-    |> extract_filenames_or_links_from_string()
-    |> Enum.map(fn link ->
-      link =
-        link
-        |> String.replace("src/docs/", "https://academy.santiment.net/")
-        |> String.replace("index.md", "")
-        |> String.replace("README.md", "https://github.com/santiment/sanpy")
-        |> String.replace("/index/", "/")
+  defp format_academy_sources(""), do: ""
 
-      "<#{link}>"
-    end)
-    |> Enum.join("\n")
+  defp format_academy_sources(sources) do
+    sources =
+      sources
+      |> extract_filenames_or_links_from_string()
+      |> Enum.map(fn link ->
+        link =
+          link
+          |> String.replace("src/docs/", "https://academy.santiment.net/")
+          |> String.replace("index.md", "")
+          |> String.replace("README.md", "https://github.com/santiment/sanpy")
+          |> String.replace("/index/", "/")
+
+        link = Regex.replace(~r/\.md$/, link, "")
+
+        "<#{link}>"
+      end)
+      |> Enum.join("\n")
+
+    "Sources: \n#{sources}"
   end
 
   defp extract_filenames_or_links_from_string(string) do
@@ -295,22 +169,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     |> Enum.reject(&(&1 == ""))
   end
 
-  defp extract_model(prompt, db_params) do
-    model_regex = ~r/model\s*=\s*(gpt-[3,4])/
-
-    case Regex.run(model_regex, prompt) do
-      [_, model] ->
-        prompt = String.replace(prompt, model_regex, "")
-        db_params = Map.put(db_params, :model, String.downcase(model))
-        {prompt, db_params}
-
-      nil ->
-        db_params = Map.put(db_params, :model, "gpt-4")
-        {prompt, db_params}
-    end
-  end
-
-  defp db_params(msg, thread, command) do
+  defp db_params(msg, thread) do
     discord_user = msg.author.username <> msg.author.discriminator
 
     channel_name =
@@ -341,7 +200,6 @@ defmodule Sanbase.DiscordBot.CommandHandler do
       thread_id: to_string(thread.id),
       thread_name: thread.name,
       msg_id: msg.id,
-      command: command,
       user_is_pro: user_is_pro
     }
   end
@@ -393,7 +251,7 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     ai_context_action_row(context)
   end
 
-  defp ai_action_row do
+  defp run_command_action_row do
     run_button = Button.button(label: "Run 🚀", custom_id: "run", style: 3)
 
     ActionRow.action_row()
@@ -431,9 +289,91 @@ defmodule Sanbase.DiscordBot.CommandHandler do
     {guild_name, channel_name}
   end
 
-  def extract_thread_name(msg) do
+  defp extract_thread_name(msg) do
     msg.content
     |> String.replace("<@#{bot_id()}>", "")
     |> String.slice(0, 90)
+  end
+
+  defp process_ai_server_response(ai_server_response) do
+    case ai_server_response["answer"] do
+      %{"answer" => "DK"} ->
+        content = "Couldn't fetch information to answer your question"
+
+        [
+          content: content,
+          components: []
+        ]
+
+      %{"type" => "search"} = answer ->
+        content = """
+        #{answer["answer"]}
+        #{answer["sources"] |> format_search_sources()}
+        """
+
+        [
+          content: content,
+          components: []
+        ]
+
+      answer ->
+        content = """
+        #{answer["answer"]}
+        #{answer["sources"] |> format_academy_sources()}
+        """
+
+        components = maybe_add_run_component(content)
+
+        [
+          content: content,
+          components: components
+        ]
+    end
+  end
+
+  defp feedback_row_message(msg, thread, ai_context) do
+    embeds = [
+      %Embed{
+        description:
+          "<@#{to_string(msg.author.id)}> I am still learning and improving, please let me know how I did by reactiing below"
+      }
+    ]
+
+    Nostrum.Api.create_message(thread.id,
+      content: "",
+      embeds: embeds,
+      components: [ai_context_action_row(ai_context)]
+    )
+  end
+
+  defp maybe_add_run_component(content) do
+    case Regex.run(~r/```(?:sql)?([^`]*)```/ms, content) do
+      [_, matched] ->
+        matched = matched |> String.trim() |> String.downcase()
+
+        if String.starts_with?(matched, ["select", "show", "describe"]) do
+          [run_command_action_row()]
+        else
+          []
+        end
+
+      nil ->
+        []
+    end
+  end
+
+  defp extract_query(msg) do
+    msg.content
+    |> String.replace("<@#{bot_id()}>", "")
+  end
+
+  defp keep_typing(thread_id) do
+    loop_typing(thread_id)
+  end
+
+  defp loop_typing(thread_id) do
+    Nostrum.Api.start_typing(thread_id)
+    :timer.sleep(7000)
+    loop_typing(thread_id)
   end
 end

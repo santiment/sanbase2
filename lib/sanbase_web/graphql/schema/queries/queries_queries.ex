@@ -84,20 +84,26 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     end
 
     @desc ~s"""
-    Compute the raw Clickhouse SQL query defined by the provided query and parameters.
-    The query is defined as a string and the parameters are defined as a JSON map. The query
-    is not stored in the database, and is only executed once.
+    Run the raw Clickhouse SQL query defined by the provided query and parameters.
+    The query text is a string and the parameters are a JSON map.
+    The query is not stored in the database, and is only executed once.
+
+    Running a query costs credits. The credits cost of a query are computed based
+    on how "complex" the query is -- how much data it reads from the disk, how big is
+    the result in rows and bytes, how many microseconds of the CPU are used, etc.
 
     Example:
 
-    {
-      runRawSqlQuery(
-        sqlQueryText: "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}}) LIMIT {{limit}}"
-        sqlQueryParameters: "{\"slug\": \"bitcoin\", \"limit\": 1}"){
-          columns
-          rows
+      {
+        runRawSqlQuery(
+          sqlQueryText: "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}}) LIMIT {{limit}}"
+          sqlQueryParameters: "{\"slug\": \"bitcoin\", \"limit\": 1}"){
+            columns
+            rows
+            clickhouseQueryId
+            creditsCost
+        }
       }
-    }
     """
     field :run_raw_sql_query, :sql_query_execution_result do
       meta(access: :free)
@@ -117,6 +123,21 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     The query is executed with its own set of parameters
 
     The computed result is not stored in the database.
+
+    Running a query costs credits. The credits cost of a query are computed based
+    on how "complex" the query is -- how much data it reads from the disk, how big is
+    the result in rows and bytes, how many microseconds of the CPU are used, etc.
+
+    Example:
+
+      {
+        runSqlQuery(id: 10){
+          columns
+          rows
+          clickhouseQueryId
+          creditsCost
+        }
+      }
     """
     field :run_sql_query, :sql_query_execution_result do
       meta(access: :free)
@@ -143,6 +164,21 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     parameters with the same name.
 
     The computed result is not stored in the database.
+
+    Running a query costs credits. The credits cost of a query are computed based
+    on how "complex" the query is -- how much data it reads from the disk, how big is
+    the result in rows and bytes, how many microseconds of the CPU are used, etc.
+
+    Example:
+
+      {
+        runDashboardSqlQuery(dashboardId: 10, dashboardQueryMappingId: 20){
+          columns
+          rows
+          clickhouseQueryId
+          creditsCost
+        }
+      }
     """
     field :run_dashboard_sql_query, :sql_query_execution_result do
       meta(access: :free)
@@ -177,7 +213,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
         name: "Some records"
         description: "An example of a select statement with parameters"
         isPublic: true
-        sqlQueryText: "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}}) LIMIT {{limit}}"
+        sqlQueryText: "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}}) LIMIT {{limit}}"
         sqlQueryParameters: "{\"slug\": \"bitcoin\", \"limit\": 1}"
         settings: "{\"anyKey\": \"anyValue\", \"layout\": [0,1,2,3,4,5]}"){
           id
@@ -207,6 +243,19 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     @desc ~s"""
     Update the fields of an existing SQL query, identified by the id.
     Only the owner of the query can update it.
+
+    Example:
+
+    mutation {
+      updateSqlQuery(id: 1, sqlQueryParameters: "{\"slug\": \"ethereum\", \"limit\": 1}"){
+        id
+        name
+        description
+        isPublic
+        sqlQueryText
+        sqlQueryParameters
+      }
+    }
     """
     field :update_sql_query, :sql_query do
       arg(:id, non_null(:integer))
@@ -227,6 +276,19 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     @desc ~s"""
     Delete an existing SQL query, identified by the id.
     Only the owner of the query can delete it.
+
+    Example:
+
+      mutation {
+        deleteSqlQuery(id: 1){
+          id
+          name
+          description
+          isPublic
+          sqlQueryText
+          sqlQueryParameters
+        }
+      }
     """
     field :delete_sql_query, :sql_query do
       arg(:id, non_null(:integer))

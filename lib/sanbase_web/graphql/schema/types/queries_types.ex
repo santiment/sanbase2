@@ -5,7 +5,14 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
 
   @desc ~s"""
-  TODO
+  A GraphQL type that represents an SQL Query.
+
+  The SQL Query is an entity that encapsulates a Clickhouse SQL query, the
+  query parameters and the query metadata (name, description, etc.).
+
+  The query can be public or private. Public queries are visible to all users,
+  while private queries are visible only to the user that created them.
+  Queries can be executed and the result of their executions displayed.
   """
   object :sql_query do
     # Identification data

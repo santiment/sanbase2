@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.UserAuth do
         } = resolution,
         opts
       ) do
-    Helpers.handle_user_access(current_user, opts, resolution)
+    Helpers.handle_user_access(resolution, current_user, opts)
   end
 
   def call(resolution, _), do: Resolution.put_result(resolution, {:error, :unauthorized})

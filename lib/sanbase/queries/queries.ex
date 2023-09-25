@@ -14,6 +14,8 @@ defmodule Sanbase.Queries do
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
+  @compile_env Application.compile_env(:sanbase, :env)
+
   @type user_id :: non_neg_integer()
   @type query_id :: Query.query_id()
   @type dashboard_id :: Dashboard.dashboard_id()
@@ -300,12 +302,20 @@ defmodule Sanbase.Queries do
     # to avoid blocking the main process and to return the result to the user
     # faster.
 
-    if Keyword.get(opts, :store_execution_data, true) do
+    if Keyword.get(opts, :store_execution_details, true) do
       wait_fetching_details_ms = Keyword.get(opts, :wait_fetching_details_ms, 7500)
 
-      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      store = fn ->
         QueryExecution.store_execution(result, user_id, wait_fetching_details_ms)
-      end)
+      end
+
+      # In test do not do it in an async way as this can lead to mocking issues.
+      # It also helps find issues where neither store_execution_details is set to false
+      # nor wait_fetching_details_ms is set to 0.
+      case @compile_env do
+        :test -> store.()
+        _ -> Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn -> store.() end)
+      end
     end
   end
 

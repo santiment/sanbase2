@@ -285,7 +285,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     label_fqn_key = "label_fqn_#{pos}"
 
     str =
-      "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple({{#{label_fqn_key}}}}))"
+      "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple({{#{label_fqn_key}}}))"
 
     {str, Map.put(params, label_fqn_key, value)}
   end

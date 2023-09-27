@@ -118,6 +118,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "30 03 * * *",
       task: {Sanbase.Intercom, :sync_newly_registered_to_intercom, []}
     ],
+    sync_stripe_attributes_to_intercom: [
+      schedule: "@daily",
+      task: {Sanbase.Intercom.StripeAttributes, :run, []}
+    ],
     sync_coinmarketcap_projects: [
       # When a new project gets a coinmarketcap string slug associated with it,
       # it is not until the first scrape which includes it, that it also gets the

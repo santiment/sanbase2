@@ -7,13 +7,12 @@ defmodule Sanbase.Intercom.StripeAttributes do
   alias Sanbase.Repo
   alias Sanbase.Billing.Subscription.Timeseries
   alias Sanbase.Accounts.User
-  alias Sanbase.ClickhouseRepo
   alias Sanbase.Intercom
 
   def run do
     if is_prod?() do
       all_stats = all_stats()
-      user_ids = fetch_all_db_user_ids()
+      user_ids = get_all_ids(all_stats)
       run(user_ids, all_stats)
     else
       :ok
@@ -55,18 +54,12 @@ defmodule Sanbase.Intercom.StripeAttributes do
     end)
   end
 
-  def fetch_all_db_user_ids() do
-    from(u in User, order_by: [asc: u.id], select: u.id)
-    |> Repo.all()
-  end
-
   def all_stats do
     %{
       users_with_paid_active_subscriptions: users_with_paid_active_subscriptions(),
       users_with_trialing_subscriptions: users_with_trialing_subscriptions(),
       users_renewal_upcoming_at: users_renewal_upcoming_at(),
-      users_subscription_set_to_cancel: users_subscription_set_to_cancel(),
-      users_last_active_at: users_last_active_at()
+      users_subscription_set_to_cancel: users_subscription_set_to_cancel()
     }
   end
 
@@ -77,8 +70,7 @@ defmodule Sanbase.Intercom.StripeAttributes do
       trialing_subscription: Enum.member?(all_stats[:users_with_trialing_subscriptions], user_id),
       renewal_upcoming_at: Map.get(all_stats[:users_renewal_upcoming_at], user_id),
       subscription_set_to_cancel:
-        Enum.member?(all_stats[:users_subscription_set_to_cancel], user_id),
-      last_active_at: Map.get(all_stats[:users_last_active_at], user_id)
+        Enum.member?(all_stats[:users_subscription_set_to_cancel], user_id)
     }
   end
 
@@ -127,32 +119,6 @@ defmodule Sanbase.Intercom.StripeAttributes do
     |> Repo.all()
   end
 
-  def users_last_active_at() do
-    sql = """
-    SELECT
-      user_id,
-      max(dt) as last_dt
-    FROM
-      api_call_data
-    GROUP BY user_id
-    """
-
-    query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
-
-    ClickhouseRepo.query_transform(query_struct, fn [user_id, dt] -> {user_id, dt} end)
-    |> case do
-      {:ok, result} ->
-        result
-        |> Enum.map(fn {user_id, dt} ->
-          {user_id, DateTime.from_naive!(dt, "Etc/UTC") |> DateTime.to_unix()}
-        end)
-        |> Enum.into(%{})
-
-      {:error, _} ->
-        %{}
-    end
-  end
-
   def stripe_customer_sanbase_user_map do
     from(
       u in User,
@@ -184,6 +150,21 @@ defmodule Sanbase.Intercom.StripeAttributes do
       %Timeseries{subscriptions: subscriptions} ->
         transform_maps_to_atom_keys(subscriptions)
     end
+  end
+
+  def get_all_ids(all_stats) do
+    keys = Map.keys(all_stats)
+
+    Enum.reduce(keys, [], fn key, acc ->
+      case Map.get(all_stats, key) do
+        %{} ->
+          Enum.concat(acc, Map.keys(Map.get(all_stats, key)))
+
+        _ ->
+          Enum.concat(acc, Map.get(all_stats, key))
+      end
+    end)
+    |> Enum.uniq()
   end
 
   defp transform_maps_to_atom_keys(subscriptions) do

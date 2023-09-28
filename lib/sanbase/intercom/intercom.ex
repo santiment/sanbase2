@@ -151,7 +151,15 @@ defmodule Sanbase.Intercom do
   def update_contact(intercom_id, params) do
     body_json = Jason.encode!(params)
 
-    HTTPoison.put!("#{@contacts_url}/#{intercom_id}", body_json, intercom_headers())
+    HTTPoison.put("#{@contacts_url}/#{intercom_id}", body_json, intercom_headers())
+    |> case do
+      {:ok, response} ->
+        response
+
+      {:error, reason} ->
+        Logger.error("Error updating contact: #{inspect(reason)}")
+        {:error, reason}
+    end
   end
 
   def get_events_for_user(user_id, since \\ nil) do

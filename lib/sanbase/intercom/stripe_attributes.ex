@@ -12,7 +12,12 @@ defmodule Sanbase.Intercom.StripeAttributes do
   def run do
     if is_prod?() do
       all_stats = all_stats()
-      user_ids = get_all_ids(all_stats)
+
+      user_ids =
+        (get_distinct_user_ids_updated_in_last_5_months() ++
+           get_all_user_ids_from_stats(all_stats))
+        |> Enum.uniq()
+
       run(user_ids, all_stats)
     else
       :ok
@@ -32,9 +37,8 @@ defmodule Sanbase.Intercom.StripeAttributes do
             Intercom.create_contact(user_id)
 
           %{"id" => intercom_id, "custom_attributes" => custom_attributes} ->
-            Intercom.update_contact(intercom_id, %{
-              "custom_attributes" => Map.merge(custom_attributes, stats)
-            })
+            params = %{"custom_attributes" => Map.merge(custom_attributes, stats)}
+            Intercom.update_contact(intercom_id, params)
         end
 
         # print progress every 100 user_ids
@@ -65,11 +69,12 @@ defmodule Sanbase.Intercom.StripeAttributes do
 
   def stats(all_stats, user_id) do
     %{
-      paid_active_subscription:
+      "paid_active_subscription" =>
         Enum.member?(all_stats[:users_with_paid_active_subscriptions], user_id),
-      trialing_subscription: Enum.member?(all_stats[:users_with_trialing_subscriptions], user_id),
-      renewal_upcoming_at: Map.get(all_stats[:users_renewal_upcoming_at], user_id),
-      subscription_set_to_cancel:
+      "trialing_subscription" =>
+        Enum.member?(all_stats[:users_with_trialing_subscriptions], user_id),
+      "renewal_upcoming_at" => Map.get(all_stats[:users_renewal_upcoming_at], user_id),
+      "subscription_set_to_cancel" =>
         Enum.member?(all_stats[:users_subscription_set_to_cancel], user_id)
     }
   end
@@ -119,6 +124,16 @@ defmodule Sanbase.Intercom.StripeAttributes do
     |> Repo.all()
   end
 
+  def get_distinct_user_ids_updated_in_last_5_months() do
+    from(
+      s in Subscription,
+      where: s.updated_at >= ago(5, "month"),
+      select: s.user_id,
+      distinct: s.user_id
+    )
+    |> Repo.all()
+  end
+
   def stripe_customer_sanbase_user_map do
     from(
       u in User,
@@ -152,7 +167,7 @@ defmodule Sanbase.Intercom.StripeAttributes do
     end
   end
 
-  def get_all_ids(all_stats) do
+  def get_all_user_ids_from_stats(all_stats) do
     keys = Map.keys(all_stats)
 
     Enum.reduce(keys, [], fn key, acc ->

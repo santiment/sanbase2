@@ -299,17 +299,17 @@ defmodule Sanbase.QueriesTest do
         # by default, although here it's set so it can be also tested
         run_query_opts = [store_execution_details: true, wait_fetching_details_ms: 0]
         # Run a query by id
-        {:ok, _result} = Sanbase.Queries.run_query(query, user.id, query_metadata, run_query_opts)
+        {:ok, _result} = Sanbase.Queries.run_query(query, user, query_metadata, run_query_opts)
 
         # Ensure that the executions are sequentials. The storing of details is async
         # so it could happen that the details are reordered.
         Process.sleep(10)
 
         # Run a raw query
-        ephemeral_query = Sanbase.Queries.get_ephemeral_query_struct("SELECT now()", %{})
+        ephemeral_query = Sanbase.Queries.get_ephemeral_query_struct("SELECT now()", %{}, user)
 
         {:ok, _result} =
-          Sanbase.Queries.run_query(ephemeral_query, user.id, query_metadata, run_query_opts)
+          Sanbase.Queries.run_query(ephemeral_query, user, query_metadata, run_query_opts)
 
         Process.sleep(10)
 
@@ -375,10 +375,11 @@ defmodule Sanbase.QueriesTest do
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        query = Sanbase.Queries.get_ephemeral_query_struct(sql_query_text, sql_query_parameters)
+        query =
+          Sanbase.Queries.get_ephemeral_query_struct(sql_query_text, sql_query_parameters, user)
 
         {:ok, result} =
-          Sanbase.Queries.run_query(query, user.id, query_metadata, store_execution_details: false)
+          Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
 
         assert %Sanbase.Queries.Executor.Result{
                  query_id: nil,
@@ -430,7 +431,7 @@ defmodule Sanbase.QueriesTest do
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, result} =
-          Sanbase.Queries.run_query(query, user.id, query_metadata, store_execution_details: false)
+          Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
 
         assert %Sanbase.Queries.Executor.Result{
                  query_id: ^query_id,
@@ -489,7 +490,7 @@ defmodule Sanbase.QueriesTest do
           )
 
         {:ok, result} =
-          Sanbase.Queries.run_query(query, user.id, query_metadata, store_execution_details: false)
+          Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
 
         assert %Sanbase.Queries.Executor.Result{
                  query_id: ^query_id,
@@ -574,7 +575,7 @@ defmodule Sanbase.QueriesTest do
         assert query.sql_query_parameters == %{"slug" => "bitcoin_from_global", "limit" => 20}
 
         {:ok, _result} =
-          Sanbase.Queries.run_query(query, user.id, query_metadata, store_execution_details: false)
+          Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
 
         assert_called(
           Sanbase.ClickhouseRepo.query(

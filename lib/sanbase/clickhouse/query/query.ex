@@ -6,7 +6,7 @@ defmodule Sanbase.Clickhouse.Query do
   using named parameters and a template. It also provides options for adding
   the Clickhous specific SETTINGS and FORMAT fragments to the query.
   """
-  defstruct [:sql, :parameters, :settings, :format]
+  defstruct [:sql, :parameters, :settings, :format, :environment]
 
   @type sql :: String.t()
   @type parameters :: Map.t()
@@ -15,6 +15,7 @@ defmodule Sanbase.Clickhouse.Query do
           sql: sql(),
           parameters: parameters(),
           settings: String.t() | nil,
+          environment: map() | nil,
           format: String.t()
         }
 
@@ -78,7 +79,7 @@ defmodule Sanbase.Clickhouse.Query do
   """
   def get_sql_args(%__MODULE__{} = query) do
     query = preprocess_query(query)
-    {sql, args} = transform_parameters_to_args(query)
+    {sql, args} = transform_parameters_to_args2(query)
 
     %{sql: sql, args: args}
   end
@@ -128,6 +129,10 @@ defmodule Sanbase.Clickhouse.Query do
       end)
 
     {sql, args}
+  end
+
+  defp transform_parameters_to_args2(%{sql: sql, parameters: parameters, environment: env}) do
+    {sql, args} = Sanbase.TemplateEngine.run_generate_positional_params(sql, parameters, env)
   end
 
   # Take only those parameters which are seen in the query.

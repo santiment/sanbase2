@@ -213,6 +213,38 @@ defmodule Sanbase.Project.List do
     |> Repo.one()
   end
 
+  def projects_data_for_queries(opts \\ []) do
+    opts = Keyword.put(opts, :preload?, false)
+
+    projects_query(opts)
+    |> preload([:github_organizations, :contract_addresses])
+    |> join(:left, [p], orgs in assoc(p, :github_organizations), as: :orgs)
+    |> join(:left, [p], addresses in assoc(p, :contract_addresses), as: :addresses)
+    |> select([
+      :id,
+      :name,
+      :ticker,
+      :slug,
+      github_organizations: [:organization],
+      contract_addresses: [:address, :decimals, :label]
+    ])
+    |> Repo.all()
+    |> Enum.map(fn p ->
+      %{
+        "id" => p.id,
+        "name" => p.name,
+        "ticker" => p.ticker,
+        "slug" => p.slug,
+        "github_organizations" => Enum.map(p.github_organizations, & &1.organization),
+        "contract_addresses" =>
+          Enum.map(
+            p.contract_addresses,
+            &%{"address" => &1.address, "decimals" => &1.decimals, "label" => &1.label}
+          )
+      }
+    end)
+  end
+
   @doc ~s"""
   Returns `page_size` number of all projects from the `page` pages.
   Filtering out projects based on some conditions can be controled by the options.

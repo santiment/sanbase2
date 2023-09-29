@@ -44,9 +44,10 @@ defmodule Sanbase.Queries.Executor do
   def run(%Query{} = query, %{} = query_metadata) do
     query_start_time = DateTime.utc_now()
 
-    put_read_only_repo()
+    _ = put_read_only_repo()
 
-    clickhouse_query = create_clickhouse_query(query, query_metadata)
+    %Sanbase.Clickhouse.Query{} =
+      clickhouse_query = create_clickhouse_query(query, query_metadata)
 
     case Sanbase.ClickhouseRepo.query_transform_with_metadata(
            clickhouse_query,

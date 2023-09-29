@@ -50,6 +50,7 @@ defmodule Sanbase.Queries do
           | {:wait_fetching_details_ms, non_neg_integer()}
 
   @type run_query_opts :: [run_query_option]
+
   @doc ~s"""
   Execute the query and return the result.
 
@@ -64,13 +65,14 @@ defmodule Sanbase.Queries do
     web app or via the API, is it coming from production or dev/test environment.
     - user_id is the id of the user that is executing the query.
   """
-  @spec run_query(Query.t(), user_id, QueryMetadata.t(), Keyword.t()) ::
+  @spec run_query(Query.t(), User.t(), QueryMetadata.t(), Keyword.t()) ::
           {:ok, Executor.Result.t()} | {:error, String.t()}
-  def run_query(%Query{} = query, user_id, query_metadata, opts \\ []) do
-    query_metadata = Map.put_new(query_metadata, :sanbase_user_id, user_id)
+  def run_query(%Query{} = query, user, query_metadata, opts \\ []) do
+    query_metadata = Map.put_new(query_metadata, :sanbase_user_id, user.id)
 
-    with {:ok, result} <- Sanbase.Queries.Executor.run(query, query_metadata) do
-      maybe_store_execution_data_async(result, user_id, opts)
+    with {:ok, environment} <- Sanbase.Queries.Environment.new(query, user),
+         {:ok, result} <- Sanbase.Queries.Executor.run(query, query_metadata) do
+      maybe_store_execution_data_async(result, user.id, opts)
 
       {:ok, result}
     end
@@ -139,11 +141,13 @@ defmodule Sanbase.Queries do
   in the database. This is used for ephemeral queries that are provided directly
   to the API as a string and a map of parameters.
   """
-  @spec get_ephemeral_query_struct(String.t(), Map.t()) :: Query.t()
-  def get_ephemeral_query_struct(query, parameters) do
+  @spec get_ephemeral_query_struct(String.t(), Map.t(), User.t()) :: Query.t()
+  def get_ephemeral_query_struct(query, parameters, user) do
     %Query{
       sql_query_text: query,
-      sql_query_parameters: parameters
+      sql_query_parameters: parameters,
+      user_id: user.id,
+      user: user
     }
   end
 
@@ -313,8 +317,12 @@ defmodule Sanbase.Queries do
       # It also helps find issues where neither store_execution_details is set to false
       # nor wait_fetching_details_ms is set to 0.
       case @compile_env do
-        :test -> store.()
-        _ -> Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn -> store.() end)
+        :test ->
+          store.()
+
+        _ ->
+          spawn(fn -> store.() end)
+          # _ -> Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn -> store.() end)
       end
     end
   end

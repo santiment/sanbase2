@@ -26,45 +26,112 @@ defmodule Sanbase.TemplateEngine do
     iex> Sanbase.TemplateEngine.run("MediumNum: {{medium_num}}", %{medium_num: 100000})
     "MediumNum: 100000"
 
-    iex> Sanbase.TemplateEngine.run("Human Readable MediumNum: {{medium_num}}", %{medium_num: 100000, __human_readable__: [:medium_num]})
+    iex> Sanbase.TemplateEngine.run("Human Readable MediumNum: {{medium_num:human_readable}}", %{medium_num: 100000})
     "Human Readable MediumNum: 100,000.00"
 
     iex> Sanbase.TemplateEngine.run("BigNum: {{big_num}}", %{big_num: 999999999999})
     "BigNum: 999999999999"
 
-    iex> Sanbase.TemplateEngine.run("Human Readable BigNum: {{big_num}}", %{big_num: 999999999999, __human_readable__: [:big_num]})
+    iex> Sanbase.TemplateEngine.run("Human Readable BigNum: {{big_num:human_readable}}", %{big_num: 999999999999})
     "Human Readable BigNum: 1,000.00 Billion"
 
     iex> Sanbase.TemplateEngine.run("{{timebound}} has human readable value {{timebound:human_readable}}", %{timebound: "3d"})
     "3d has human readable value 3 days"
   """
 
+  defmodule TemplateEngineException do
+    defexception [:message]
+  end
+
+  @template_regex ~r/\{\{(?<capture>.*?)\}\}/
+
   @spec run(String.t(), map) :: String.t()
-  def run(template, kv) do
-    {human_readable_map, kv} = Map.split(kv, [:__human_readable__])
+  def run(template, params) do
+    params = Map.new(params, fn {k, v} -> {to_string(k), v} end)
+    env = Sanbase.Clickhouse.Query.Environment.empty()
 
-    human_readable_mapset =
-      Map.get(human_readable_map, :__human_readable__, [])
-      |> MapSet.new()
+    captures = Regex.scan(@template_regex, template, capture: :all_but_first)
 
-    Enum.reduce(kv, template, fn {key, value}, acc ->
-      # Support `key:human_readable` to convert the value to human readable even
-      # if it's not part of the :__human_readable))
-      human_readalbe_key = "#{key}:human_readable"
+    captures
+    |> Enum.reduce(template, fn [key], template_acc ->
+      case prepare_replace(template_acc, key, env, params) do
+        {key, {:ok, value}} ->
+          String.replace(template_acc, "{{#{key}}}", to_string(value))
 
-      acc
-      |> replace(key, value, human_readable_mapset)
-      |> replace(human_readalbe_key, value, MapSet.put(human_readable_mapset, human_readalbe_key))
+        {_key, :no_value} ->
+          template_acc
+      end
     end)
   end
 
-  defp replace(string, key, value, human_readable_mapset) do
-    String.replace(string, "{{#{key}}}", fn _ ->
-      case key in human_readable_mapset do
-        true -> value |> human_readable() |> to_string()
-        false -> value |> to_string()
+  @spec run_generate_positional_params(String.t(), map(), map()) :: {String.t(), list(any())}
+  def run_generate_positional_params(template, params, env) do
+    params = Map.new(params, fn {k, v} -> {to_string(k), v} end)
+
+    captures =
+      Regex.scan(@template_regex, template, capture: :all_but_first)
+      |> Enum.uniq()
+
+    {sql, args, _position} =
+      captures
+      |> Enum.reduce(
+        {template, _args = [], _position = 1},
+        fn [key], {template_acc, args_acc, position} ->
+          case prepare_replace(template, key, env, params) do
+            {_key, {:ok, value}} ->
+              template_acc = String.replace(template_acc, "{{#{key}}}", "?#{position}")
+
+              args_acc = [value | args_acc]
+
+              {template_acc, args_acc, position + 1}
+
+            {_key, :no_value} ->
+              raise(TemplateEngineException,
+                message: """
+                Error generating positional parameters. The key '#{key}' has no value
+                in the parameters map or the environment. Please check for typos,
+                missing keys, inproper use of the environment variables or functions.
+
+                Parameters: #{inspect(params)}
+                Environment: #{inspect(env)}
+                """
+              )
+          end
+        end
+      )
+
+    {sql, Enum.reverse(args)}
+  end
+
+  defp prepare_replace(string, key, env, params) do
+    value_tuple =
+      cond do
+        String.starts_with?(string, "@") ->
+          "@" <> env_spec = key
+          env_key = String.split(env_spec, "[", parts: 2) |> List.first()
+          value = Map.get(env, env_key)
+
+          # Apply the ["key"] part of the key
+          {:ok, value}
+
+        String.ends_with?(key, ":human_readable") ->
+          [key, _] = String.split(key, ":human_readable")
+
+          if not Map.has_key?(params, key),
+            do: raise("Template parameter #{key} not found in the parameters map")
+
+          value = params[key] |> human_readable()
+          {:ok, value}
+
+        Map.has_key?(params, key) ->
+          value = params[key]
+          {:ok, value}
+
+        true ->
+          :no_value
       end
-    end)
+
+    {key, value_tuple}
   end
 
   # Numbers below 1000 are not changed
@@ -79,7 +146,7 @@ defmodule Sanbase.TemplateEngine do
   defp human_readable(data) do
     cond do
       # Transform interval to human readable interval
-      true == Sanbase.DateTimeUtils.valid_interval?(data) ->
+      Sanbase.DateTimeUtils.valid_interval?(data) ->
         Sanbase.DateTimeUtils.interval_to_str(data)
 
       # Transform numbers to human readable number
@@ -97,6 +164,15 @@ defmodule Sanbase.TemplateEngine do
 
       is_integer(data) ->
         Integer.to_string(data)
+
+      true ->
+        raise(TemplateEngineException,
+          message: """
+          Error transforming #{inspect(data)} of type #{Sanbase.Utils.get_type(data)} into a human readable format.
+          The value's type is not supported. The supported types are: DateTime, integers, floats and strings
+          that represent intervals (1d, 5w, 12h, etc.)
+          """
+        )
     end
   end
 end

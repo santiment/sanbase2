@@ -156,13 +156,17 @@ defmodule Sanbase.Queries.QueryExecution do
     |> validate_required(@required_fields)
     |> Sanbase.Repo.insert()
   rescue
-    _ ->
+    e ->
       # This can happen if the query details are not flushed to the system.query_log
       # table or some other clickouse error occurs. Allow for 3 attempts in total before
       # reraising the exception.
-      case attempts_left do
-        0 -> {:error, "Cannot store execution"}
-        _ -> store_execution(user_id, query_result, attempts_left - 1)
+
+      case attempts_left <= 0 do
+        true ->
+          {:error, "Cannot store execution"}
+
+        false ->
+          store_execution(user_id, query_result, wait_fetching_details_ms, attempts_left - 1)
       end
   end
 

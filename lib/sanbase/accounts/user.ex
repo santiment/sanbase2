@@ -44,6 +44,21 @@ defmodule Sanbase.Accounts.User do
              :consent_id
            ]}
 
+  @type t :: %__MODULE__{
+          email: String.t(),
+          username: String.t(),
+          name: String.t(),
+          first_login: boolean(),
+          avatar_url: String.t(),
+          registration_state: map(),
+          is_superuser: boolean(),
+          privacy_policy_accepted: boolean(),
+          marketing_accepted: boolean(),
+          user_settings: map(),
+          inserted_at: DateTime.t(),
+          updated_at: DateTime.t()
+        }
+
   schema "users" do
     field(:email, :string)
     field(:username, :string)

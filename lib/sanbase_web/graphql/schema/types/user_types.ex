@@ -103,6 +103,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:first_login, :boolean, default_value: false)
     field(:avatar_url, :string)
     field(:stripe_customer_id, :string)
+    field(:inserted_at, non_null(:datetime))
+    field(:updated_at, non_null(:datetime))
 
     field :is_moderator, :boolean do
       resolve(&UserResolver.is_moderator/3)

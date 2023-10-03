@@ -155,7 +155,8 @@ defmodule Sanbase.Queries.Query do
   def get_for_mutation(query_id, querying_user_id, opts) when not is_nil(querying_user_id) do
     from(
       q in base_query(),
-      where: q.id == ^query_id and q.user_id == ^querying_user_id
+      where: q.id == ^query_id and q.user_id == ^querying_user_id,
+      lock: "FOR UPDATE"
     )
     |> maybe_preload(opts)
   end

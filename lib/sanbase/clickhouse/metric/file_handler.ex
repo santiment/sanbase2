@@ -250,24 +250,27 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   end
 
   def aggregations(), do: @aggregations
-  def access_map(), do: @access_map
-  def table_map(), do: @table_map
-  def metrics_mapset(), do: @metrics_mapset
-  def aggregation_map(), do: @aggregation_map
-  def min_interval_map(), do: @min_interval_map
-  def min_plan_map(), do: @min_plan_map
-  def name_to_metric_map(), do: @name_to_metric_map
-  def metric_to_names_map(), do: @metric_to_names_map
-  def human_readable_name_map(), do: @human_readable_name_map
-  def metric_version_map(), do: @metric_version_map
-  def metrics_data_type_map(), do: @metrics_data_type_map
-  def incomplete_data_map(), do: @incomplete_data_map
-  def selectors_map(), do: @selectors_map
-  def required_selectors_map(), do: @required_selectors_map
-  def metrics_label_map(), do: @metrics_label_map
+  def access_map(), do: @access_map |> transform()
+  def table_map(), do: @table_map |> transform()
+  def metrics_mapset(), do: @metrics_mapset |> transform()
+  def aggregation_map(), do: @aggregation_map |> transform()
+  def min_interval_map(), do: @min_interval_map |> transform()
+  def min_plan_map(), do: @min_plan_map |> transform()
+  def name_to_metric_map(), do: @name_to_metric_map |> transform()
+
+  def metric_to_names_map(),
+    do: @metric_to_names_map |> transform(metric_name_in_map_value_list: true)
+
+  def human_readable_name_map(), do: @human_readable_name_map |> transform()
+  def metric_version_map(), do: @metric_version_map |> transform()
+  def metrics_data_type_map(), do: @metrics_data_type_map |> transform()
+  def incomplete_data_map(), do: @incomplete_data_map |> transform()
+  def selectors_map(), do: @selectors_map |> transform()
+  def required_selectors_map(), do: @required_selectors_map |> transform()
+  def metrics_label_map(), do: @metrics_label_map |> transform()
   def deprecated_metrics_map(), do: @deprecated_metrics_map
   def soft_deprecated_metrics_map(), do: @soft_deprecated_metrics_map
-  def timebound_flag_map(), do: @timebound_flag_map
+  def timebound_flag_map(), do: @timebound_flag_map |> transform()
 
   def metrics_with_access(level) when level in [:free, :restricted] do
     @access_map
@@ -284,4 +287,53 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   end
 
   def name_to_metric(name), do: Map.get(@name_to_metric_map, name)
+
+  # Private functions
+
+  defp transform(metrics, opts \\ []) do
+    # The `remove_hard_deprecated/1` function is used to completely remove
+    # hard deprecated metrics. The `deprecated_metrics_map` contains the metric
+    # as a key and a datetime as a value. If the current time is after that value,
+    # the metric is excluded
+    metrics
+    |> then(fn metrics ->
+      if Keyword.get(opts, :remove_hard_deprecated, true),
+        do: remove_hard_deprecated(metrics, opts),
+        else: metrics
+    end)
+  end
+
+  defp remove_hard_deprecated(metrics, opts) when is_list(metrics) do
+    now = DateTime.utc_now()
+
+    case Keyword.get(opts, :metric_name_in_map_value_list, false) do
+      false ->
+        Enum.reject(metrics, &is_hard_deprecated(&1, now))
+
+      true ->
+        Enum.map(metrics, fn {key, metric_names} ->
+          {key, Enum.reject(metric_names, &is_hard_deprecated(&1, now))}
+        end)
+        |> Map.reject(fn {_k, v} -> v == [] end)
+    end
+  end
+
+  defp remove_hard_deprecated(%MapSet{} = metrics, _opts) do
+    now = DateTime.utc_now()
+
+    MapSet.reject(metrics, &is_hard_deprecated(&1, now))
+  end
+
+  defp remove_hard_deprecated(metrics, _opts) when is_map(metrics) do
+    now = DateTime.utc_now()
+
+    Map.reject(metrics, fn {metric, _} -> is_hard_deprecated(metric, now) end)
+  end
+
+  defp is_hard_deprecated(metric, now) do
+    # Provide `now` as a parameter so it's not calling DateTime.utc_now/0 each time
+    # when this is invoked over an enumerable
+    hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
+    not is_nil(hard_deprecate_after) and DateTime.compare(hard_deprecate_after, now) == :lt
+  end
 end

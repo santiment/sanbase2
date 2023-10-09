@@ -305,7 +305,7 @@ defmodule Sanbase.Price.PricePairSql do
     WHERE
       #{base_asset_filter(slug, argument_name: "slug")} AND
       source = {{source}} AND
-      dt > now() - INTERVAL 30 DAY
+      dt > now() - INTERVAL 14 DAY
     """
 
     params = %{

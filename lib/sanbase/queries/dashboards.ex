@@ -34,18 +34,49 @@ defmodule Sanbase.Dashboards do
   @spec get_dashboard(dashboard_id(), user_id(), Keyword.t()) ::
           {:ok, Dashboard.t()} | {:error, String.t()}
   def get_dashboard(dashboard_id, querying_user_id, opts \\ []) do
-    query = Dashboard.get_for_read(dashboard_id, querying_user_id, opts)
+    # If empty, set the default options so the rest of the logic that depends on the defaults
+    # can still work
+    opts = if [] == opts, do: [preload?: true, preload: Dashboard.default_preload()], else: opts
 
-    case Repo.one(query) do
-      %Dashboard{} = dashboard ->
-        {:ok, mask_dashboard_not_viewable_parts(dashboard)}
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes ->
+      # The :queries preload is handled separately in the :maybe_load_queries step.
+      # This is because we want to preload the queries AND preserve the id of the record
+      # from the join-through table. This id is used to distinguish the mappings if the
+      # same queries is added multiple times to the same dashboard.
+      no_queries_preload_opts = Keyword.update(opts, :preload, [], &(&1 -- [:queries]))
+      query = Dashboard.get_for_read(dashboard_id, querying_user_id, no_queries_preload_opts)
 
-      _ ->
-        {:error,
-         """
-         Dashboard with id #{dashboard_id} does not exist, or it is private and owned by another user.
-         """}
-    end
+      case Repo.one(query) do
+        %Dashboard{} = dashboard ->
+          {:ok, dashboard}
+
+        _ ->
+          {:error,
+           "Dashboard with id #{dashboard_id} does not exist, or it is private and owned by another user"}
+      end
+    end)
+    |> Ecto.Multi.run(:maybe_load_queries, fn _repo, %{get_dashboard: dashboard} ->
+      dashboard =
+        case :queries in Keyword.get(opts, :preload, []) do
+          true -> %{dashboard | queries: get_dashboard_queries_with_mapping_id(dashboard.id)}
+          false -> dashboard
+        end
+
+      {:ok, mask_dashboard_not_viewable_parts(dashboard)}
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:maybe_load_queries)
+  end
+
+  defp get_dashboard_queries_with_mapping_id(dashboard_id) do
+    # Get the queries for the dashboard and add the the mapping id
+    # as dashboard_query_mapping_id Query virutal field
+    DashboardQueryMapping.dashboard_id_rows(dashboard_id)
+    |> Repo.all()
+    |> Enum.map(fn row ->
+      %{row.query | dashboard_query_mapping_id: row.id}
+    end)
   end
 
   @doc ~s"""

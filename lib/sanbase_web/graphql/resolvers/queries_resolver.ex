@@ -283,6 +283,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Queries.get_user_query_executions(user.id, page: page, page_size: page_size)
   end
 
+  # Text Widgets
+
+  def add_dashboard_text_widget(_root, %{dashboard_id: dashboard_id} = args, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    Dashboards.add_text_widget(dashboard_id, user.id, args)
+  end
+
+  def update_dashboard_text_widget(
+        _root,
+        %{dashboard_id: dashboard_id, text_widget_id: text_widget_id} = args,
+        %{
+          context: %{auth: %{current_user: user}}
+        }
+      ) do
+    Dashboards.update_text_widget(dashboard_id, text_widget_id, user.id, args)
+  end
+
+  def delete_dashboard_text_widget(
+        _root,
+        %{dashboard_id: dashboard_id, text_widget_id: text_widget_id},
+        %{
+          context: %{auth: %{current_user: user}}
+        }
+      ) do
+    Dashboards.delete_text_widget(dashboard_id, text_widget_id, user.id)
+  end
+
   # Private functions
 
   defp get_global_param_one_value(value_map) do

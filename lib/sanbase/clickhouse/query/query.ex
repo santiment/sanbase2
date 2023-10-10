@@ -132,7 +132,7 @@ defmodule Sanbase.Clickhouse.Query do
   end
 
   defp transform_parameters_to_args2(%{sql: sql, parameters: parameters, environment: env}) do
-    {sql, args} = Sanbase.TemplateEngine.run_generate_positional_params(sql, parameters, env)
+    {_sql, _args} = Sanbase.TemplateEngine.run_generate_positional_params(sql, parameters, env)
   end
 
   # Take only those parameters which are seen in the query.

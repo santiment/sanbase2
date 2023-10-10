@@ -51,6 +51,17 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:updated_at, non_null(:datetime))
   end
 
+  object :text_widget do
+    field(:id, non_null(:integer))
+    field(:name, :string)
+    field(:description, :string)
+    field(:body, :string)
+
+    # Timestamps
+    field(:created_at, non_null(:datetime))
+    field(:updated_at, non_null(:datetime))
+  end
+
   @desc ~s"""
   The Dashboard type defines the Queries 2.0 dashboard -- it holds the static data
   (name, description, public status, owner, etc.), and the list of queries that hold the
@@ -88,6 +99,8 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     # New: Queries. This is replacing the :panels
     # list from Queries 1.0
     field(:queries, list_of(:sql_query))
+
+    field(:text_widgets, list_of(:text_widget))
 
     field :user, non_null(:public_user) do
       resolve(&UserResolver.user_no_preloads/3)

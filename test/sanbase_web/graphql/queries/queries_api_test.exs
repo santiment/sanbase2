@@ -326,6 +326,9 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                }
              }
     end
+
+    test "text widgets", context do
+    end
   end
 
   describe "run queries" do
@@ -687,6 +690,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         description
         user{ id }
         queries { id }
+        textWidgets { id name description body }
         settings
       }
     }

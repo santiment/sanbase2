@@ -309,6 +309,28 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       resolve(&QueriesResolver.get_dashboard/3)
     end
+
+    @desc ~s"""
+    Fetch a list of the dashboards that belong to a user.
+
+    If the querying user is the same as the queried user, both public and private
+    dashboards are returned. If the querying user is different from the queried user,
+    only the public queries are shown.
+    """
+    field :get_user_dashboards, list_of(:dashboard_for_lists) do
+      meta(access: :free)
+
+      @desc ~s"""
+      The id of the user whose queries are being fetched.
+      If the argument is not provided, fetch the current user queries.
+      """
+      arg(:user_id, :integer)
+
+      arg(:page, non_null(:integer))
+      arg(:page_size, non_null(:integer))
+
+      resolve(&QueriesResolver.get_user_dashboards/3)
+    end
   end
 
   object :dashboard_mutations do

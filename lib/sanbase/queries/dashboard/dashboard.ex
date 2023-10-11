@@ -109,8 +109,8 @@ defmodule Sanbase.Queries.Dashboard do
 
   @create_fields [:name, :description, :is_public, :parameters, :settings, :user_id]
   @update_fields @create_fields -- [:user_id]
-  @preload [:queries, :user, :featured_item]
 
+  @preload [:queries, :user, :featured_item]
   def default_preload(), do: @preload
 
   def create_changeset(%__MODULE__{} = dashboard, attrs) do

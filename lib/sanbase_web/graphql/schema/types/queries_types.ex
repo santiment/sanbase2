@@ -109,6 +109,40 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:updated_at, :datetime)
   end
 
+  object :dashboard_for_lists do
+    # Do not allow fetching queries/panels when a list
+    # of dashboards is used.
+
+    field(:id, non_null(:integer))
+    field(:name, non_null(:string))
+    field(:is_public, non_null(:boolean))
+    field(:description, :string)
+    field(:parameters, :json)
+    field(:settings, :json)
+
+    # Virtual view field
+    field(:views, :integer)
+
+    field :user, non_null(:public_user) do
+      resolve(&UserResolver.user_no_preloads/3)
+    end
+
+    field :comments_count, :integer do
+      resolve(&DashboardResolver.comments_count/3)
+    end
+
+    field :voted_at, :datetime do
+      resolve(&VoteResolver.voted_at/3)
+    end
+
+    field :votes, :vote do
+      resolve(&VoteResolver.votes/3)
+    end
+
+    field(:inserted_at, :datetime)
+    field(:updated_at, :datetime)
+  end
+
   input_object :dashboard_global_parameter_value do
     field(:boolean, :boolean)
     field(:integer, :integer)

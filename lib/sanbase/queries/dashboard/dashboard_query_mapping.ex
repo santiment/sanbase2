@@ -47,6 +47,13 @@ defmodule Sanbase.Queries.DashboardQueryMapping do
     |> maybe_preload(opts)
   end
 
+  def dashboard_id_rows(dashboard_id) do
+    from(d in __MODULE__,
+      where: d.dashboard_id == ^dashboard_id,
+      preload: [:query]
+    )
+  end
+
   # Private functions
 
   defp maybe_preload(query, opts) do

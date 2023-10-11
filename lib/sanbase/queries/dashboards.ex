@@ -34,18 +34,49 @@ defmodule Sanbase.Dashboards do
   @spec get_dashboard(dashboard_id(), user_id(), Keyword.t()) ::
           {:ok, Dashboard.t()} | {:error, String.t()}
   def get_dashboard(dashboard_id, querying_user_id, opts \\ []) do
-    query = Dashboard.get_for_read(dashboard_id, querying_user_id, opts)
+    # If empty, set the default options so the rest of the logic that depends on the defaults
+    # can still work
+    opts = if [] == opts, do: [preload?: true, preload: Dashboard.default_preload()], else: opts
 
-    case Repo.one(query) do
-      %Dashboard{} = dashboard ->
-        {:ok, mask_dashboard_not_viewable_parts(dashboard)}
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes ->
+      # The :queries preload is handled separately in the :maybe_load_queries step.
+      # This is because we want to preload the queries AND preserve the id of the record
+      # from the join-through table. This id is used to distinguish the mappings if the
+      # same queries is added multiple times to the same dashboard.
+      no_queries_preload_opts = Keyword.update(opts, :preload, [], &(&1 -- [:queries]))
+      query = Dashboard.get_for_read(dashboard_id, querying_user_id, no_queries_preload_opts)
 
-      _ ->
-        {:error,
-         """
-         Dashboard with id #{dashboard_id} does not exist, or it is private and owned by another user.
-         """}
-    end
+      case Repo.one(query) do
+        %Dashboard{} = dashboard ->
+          {:ok, dashboard}
+
+        _ ->
+          {:error,
+           "Dashboard with id #{dashboard_id} does not exist, or it is private and owned by another user"}
+      end
+    end)
+    |> Ecto.Multi.run(:maybe_load_queries, fn _repo, %{get_dashboard: dashboard} ->
+      dashboard =
+        case :queries in Keyword.get(opts, :preload, []) do
+          true -> %{dashboard | queries: get_dashboard_queries_with_mapping_id(dashboard.id)}
+          false -> dashboard
+        end
+
+      {:ok, mask_dashboard_not_viewable_parts(dashboard)}
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:maybe_load_queries)
+  end
+
+  defp get_dashboard_queries_with_mapping_id(dashboard_id) do
+    # Get the queries for the dashboard and add the the mapping id
+    # as dashboard_query_mapping_id Query virutal field
+    DashboardQueryMapping.dashboard_id_rows(dashboard_id)
+    |> Repo.all()
+    |> Enum.map(fn row ->
+      %{row.query | dashboard_query_mapping_id: row.id}
+    end)
   end
 
   @doc ~s"""
@@ -75,7 +106,7 @@ defmodule Sanbase.Dashboards do
 
     case Repo.insert(changeset) do
       {:ok, dashboard} ->
-        dashboard = Repo.preload(dashboard, [:queries, :user])
+        dashboard = Repo.preload(dashboard, Dashboard.default_preload())
         {:ok, dashboard}
 
       {:error, changeset} ->
@@ -98,8 +129,12 @@ defmodule Sanbase.Dashboards do
 
       Repo.update(changeset)
     end)
+    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      get_dashboard(dashboard_id, querying_user_id)
+    end)
     |> Repo.transaction()
-    |> process_transaction_result(:update)
+    |> process_transaction_result(:get_dashboard)
   end
 
   @doc ~s"""
@@ -205,8 +240,12 @@ defmodule Sanbase.Dashboards do
 
       Repo.update(changeset)
     end)
+    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      get_dashboard(dashboard_id, querying_user_id)
+    end)
     |> Repo.transaction()
-    |> process_transaction_result(:add_global_parameter)
+    |> process_transaction_result(:get_dashboard)
   end
 
   @doc ~s"""
@@ -249,8 +288,12 @@ defmodule Sanbase.Dashboards do
           Repo.update(changeset)
       end
     end)
+    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      get_dashboard(dashboard_id, querying_user_id)
+    end)
     |> Repo.transaction()
-    |> process_transaction_result(:update_global_parameter)
+    |> process_transaction_result(:get_dashboard)
   end
 
   @doc ~s"""
@@ -269,8 +312,12 @@ defmodule Sanbase.Dashboards do
 
       Repo.update(changeset)
     end)
+    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      get_dashboard(dashboard_id, querying_user_id)
+    end)
     |> Repo.transaction()
-    |> process_transaction_result(:delete_global_parameter)
+    |> process_transaction_result(:get_dashboard)
   end
 
   @doc ~s"""
@@ -347,8 +394,12 @@ defmodule Sanbase.Dashboards do
         end
       end
     )
+    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      get_dashboard(dashboard_id, querying_user_id)
+    end)
     |> Repo.transaction()
-    |> process_transaction_result(:add_parameter_override)
+    |> process_transaction_result(:get_dashboard)
   end
 
   @doc ~s"""
@@ -422,8 +473,12 @@ defmodule Sanbase.Dashboards do
         end
       end
     )
+    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      get_dashboard(dashboard_id, querying_user_id)
+    end)
     |> Repo.transaction()
-    |> process_transaction_result(:delete_global_parameter_override)
+    |> process_transaction_result(:get_dashboard)
   end
 
   @doc ~s"""
@@ -440,6 +495,9 @@ defmodule Sanbase.Dashboards do
   """
   @spec user_dashboards(user_id(), user_id() | nil, Keyword.t()) :: {:ok, [Dashboard.t()]}
   def user_dashboards(user_id, querying_user_id, opts \\ []) do
+    # The get_user_dashboards GraphQL API uses a GraphQL type that does not show
+    # the queries, so there's no need to properly preload them in order to
+    # fill the dashboard_query_mapping_id
     query = Dashboard.get_user_dashboards(user_id, querying_user_id, opts)
 
     {:ok, Repo.all(query)}
@@ -488,10 +546,17 @@ defmodule Sanbase.Dashboards do
       Repo.insert(changeset)
     end)
     |> Ecto.Multi.run(:add_preloads, fn _repo, %{add_query_to_dashboard: struct} ->
-      {:ok, Repo.preload(struct, [:dashboard, [dashboard: :user], :query])}
+      # Do not preload the dashboard as it will be added in the next step
+      {:ok, Repo.preload(struct, [:query])}
+    end)
+    |> Ecto.Multi.run(:fetch_dashboard_queries, fn _repo, %{add_preloads: struct} ->
+      # Refetch the dashboard so it has queries properly preloaded
+      with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
+        {:ok, %{struct | dashboard: dashboard}}
+      end
     end)
     |> Repo.transaction()
-    |> process_transaction_result(:add_preloads)
+    |> process_transaction_result(:fetch_dashboard_queries)
   end
 
   @doc ~s"""
@@ -521,10 +586,17 @@ defmodule Sanbase.Dashboards do
       Repo.delete(struct)
     end)
     |> Ecto.Multi.run(:add_preloads, fn _repo, %{add_query_to_dashboard: struct} ->
-      {:ok, Repo.preload(struct, [:dashboard, :query, :user])}
+      # Do not preload the dashboard as it will be added in the next step
+      {:ok, Repo.preload(struct, [:query])}
+    end)
+    |> Ecto.Multi.run(:fetch_dashboard_queries, fn _repo, %{add_preloads: struct} ->
+      # Refetch the dashboard so it has queries properly preloaded
+      with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
+        {:ok, %{struct | dashboard: dashboard}}
+      end
     end)
     |> Repo.transaction()
-    |> process_transaction_result(:add_preloads)
+    |> process_transaction_result(:fetch_dashboard_queries)
   end
 
   @doc ~s"""
@@ -550,10 +622,17 @@ defmodule Sanbase.Dashboards do
       Repo.update(changeset)
     end)
     |> Ecto.Multi.run(:add_preloads, fn _repo, %{add_query_to_dashboard: struct} ->
-      {:ok, Repo.preload(struct, [:dashboard, :query, :user])}
+      # Do not preload the dashboard as it will be added in the next step
+      {:ok, Repo.preload(struct, [:query])}
+    end)
+    |> Ecto.Multi.run(:fetch_dashboard_queries, fn _repo, %{add_preloads: struct} ->
+      # Refetch the dashboard so it has queries properly preloaded
+      with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
+        {:ok, %{struct | dashboard: dashboard}}
+      end
     end)
     |> Repo.transaction()
-    |> process_transaction_result(:add_preloads)
+    |> process_transaction_result(:fetch_dashboard_queries)
   end
 
   # Private functions

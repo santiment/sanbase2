@@ -111,6 +111,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_telegram_deep_link,
           :get_trigger_by_id,
           :get_user,
+          :get_user_dashboards,
           :get_webinars,
           :github_activity,
           :github_availables_repos,

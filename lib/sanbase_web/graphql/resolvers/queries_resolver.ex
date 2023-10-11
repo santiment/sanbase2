@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       )
     else
       {:error,
-       "Error getting user queries: no userId provided, nor the query is executed by a logged in user."}
+       "Error getting user queries: neither userId is provided, nor the query is executed by a logged in user."}
     end
   end
 
@@ -103,6 +103,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{context: %{auth: %{current_user: user}}}
       ) do
     Dashboards.get_dashboard(id, user.id)
+  end
+
+  def get_user_dashboards(
+        _root,
+        %{page: page, page_size: page_size} = args,
+        resolution
+      ) do
+    querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
+    queried_user_id = Map.get(args, :user_id, querying_user_id)
+
+    if not is_nil(queried_user_id) do
+      Dashboards.user_dashboards(
+        queried_user_id,
+        querying_user_id,
+        page: page,
+        page_size: page_size
+      )
+    else
+      {:error,
+       "Error getting user dashboards: neither userId is provided, nor the query is executed by a logged in user."}
+    end
   end
 
   def create_dashboard(

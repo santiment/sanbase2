@@ -7,10 +7,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
   alias Sanbase.Metric
 
   test "returns data for all available metric", %{conn: conn} do
-    metrics =
-      Metric.available_metrics()
-      |> Enum.shuffle()
-      |> Enum.take(100)
+    metrics = Metric.available_metrics() |> Enum.shuffle()
 
     aggregations = Metric.available_aggregations()
 

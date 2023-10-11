@@ -2,6 +2,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+  import Sanbase.Metric.SqlQuery.Helper, only: [asset_id_filter: 2]
 
   alias Sanbase.Metric
   alias Sanbase.ClickhouseRepo
@@ -145,10 +146,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     sql = """
     SELECT max(dt)
     FROM distribution_deltas_5min
-    WHERE asset_id = (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT 1)
+    WHERE #{asset_id_filter(selector, argument_name: "selector")}
     """
 
-    params = %{selector: selector}
+    params = %{
+      selector: asset_filter_value(selector)
+    }
 
     Sanbase.Clickhouse.Query.new(sql, params)
     |> ClickhouseRepo.query_transform(fn [timestamp] -> DateTime.from_unix!(timestamp) end)
@@ -304,4 +307,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     |> Map.put([low, divider], Float.round(lower_half_amount, 2))
     |> Map.put([divider, high], Float.round(upper_half_amount, 2))
   end
+
+  defp asset_filter_value(%{slug: slug_or_slugs}), do: slug_or_slugs
+  defp asset_filter_value(_), do: nil
 end

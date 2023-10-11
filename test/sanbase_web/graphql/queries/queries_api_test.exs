@@ -326,8 +326,84 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                }
              }
     end
+  end
 
-    test "text widgets", context do
+  describe "dashboard text widget" do
+    test "create", context do
+      {:ok, %{id: dashboard_id}} =
+        Sanbase.Dashboards.create_dashboard(%{name: "My Dashboard"}, context.user.id)
+
+      # The dashboard mutation can run any mutation that returns a dashboard as a result
+      result =
+        execute_dashboard_text_widget_mutation(context.conn, :add_dashboard_text_widget, %{
+          dashboard_id: dashboard_id,
+          name: "My First Text Widget",
+          description: "desc",
+          body: "body"
+        })
+        |> get_in(["data", "addDashboardTextWidget"])
+
+      assert %{
+               "id" => ^dashboard_id,
+               "name" => "My Dashboard",
+               "queries" => [],
+               "settings" => %{},
+               "textWidgets" => [
+                 %{
+                   "body" => "body",
+                   "description" => "desc",
+                   "id" => <<_::binary>>,
+                   "name" => "My First Text Widget"
+                 }
+               ],
+               "user" => %{"id" => _}
+             } = result["dashboard"]
+
+      {:ok, fetched_dashboard} = Sanbase.Dashboards.get_dashboard(dashboard_id, context.user.id)
+
+      assert length(fetched_dashboard.text_widgets) == 1
+      [text_widget] = fetched_dashboard.text_widgets
+      assert %{body: "body", description: "desc", name: "My First Text Widget"} = text_widget
+    end
+
+    test "update", context do
+      {:ok, %{id: dashboard_id}} =
+        Sanbase.Dashboards.create_dashboard(%{name: "My Dashboard"}, context.user.id)
+
+      {:ok, %{text_widget: %{id: text_widget_id}}} =
+        Sanbase.Dashboards.add_text_widget(dashboard_id, context.user.id, %{
+          name: "N",
+          description: "D",
+          body: "B"
+        })
+
+      # The dashboard mutation can run any mutation that returns a dashboard as a result
+      result =
+        execute_dashboard_text_widget_mutation(context.conn, :update_dashboard_text_widget, %{
+          dashboard_id: dashboard_id,
+          text_widget_id: text_widget_id,
+          name: "Updated name",
+          description: "Updated desc"
+        })
+        |> get_in(["data", "addDashboardTextWidget"])
+        |> IO.inspect(label: "389", limit: :infinity)
+
+      assert %{
+               "id" => ^dashboard_id,
+               "name" => "My Dashboard",
+               "queries" => [],
+               "settings" => %{},
+               "textWidgets" => [
+                 %{
+                   "id" => ^text_widget_id,
+                   "body" => "body",
+                   "description" => "Updated desc",
+                   "name" => "Updated name"
+                 }
+               ]
+             } = result["dashboard"]
+
+      assert %{"id" => ^text_widget_id} = result["textWidget"]
     end
   end
 
@@ -684,14 +760,44 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
     mutation = """
     mutation {
-      #{mutation_name}(#{map_to_args(args)}){
+      #{mutation_name}(#{map_to_args(args)}) {
         id
         name
         description
-        user{ id }
+        user { id }
         queries { id }
         textWidgets { id name description body }
         settings
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+  end
+
+  defp execute_dashboard_text_widget_mutation(conn, mutation, args) do
+    mutation_name = mutation |> Inflex.camelize(:lower)
+
+    mutation = """
+    mutation {
+      #{mutation_name}(#{map_to_args(args)}){
+        dashboard {
+          id
+          name
+          description
+          user { id }
+          queries { id }
+          textWidgets { id name description body }
+          settings
+        }
+        textWidget {
+          id
+          name
+          description
+          body
+        }
       }
     }
     """

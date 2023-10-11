@@ -405,6 +405,5 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   defp asset_filter_value(%{slug: slug_or_slugs}), do: slug_or_slugs
-
   defp asset_filter_value(_), do: nil
 end

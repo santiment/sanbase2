@@ -52,7 +52,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   end
 
   object :text_widget do
-    field(:id, non_null(:integer))
+    field(:id, non_null(:string))
     field(:name, :string)
     field(:description, :string)
     field(:body, :string)
@@ -228,5 +228,10 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:query, non_null(:sql_query))
     field(:dashboard, non_null(:dashboard))
     field(:settings, :json)
+  end
+
+  object :dashboard_text_widget_tuple do
+    field(:text_widget, non_null(:text_widget))
+    field(:dashboard, non_null(:dashboard))
   end
 end

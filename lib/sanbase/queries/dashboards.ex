@@ -512,8 +512,18 @@ defmodule Sanbase.Dashboards do
       |> Ecto.Changeset.put_embed(:text_widgets, [changeset] ++ dashboard.text_widgets)
       |> Repo.update()
     end)
+    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      case get_dashboard(dashboard_id, querying_user_id) do
+        {:ok, %{text_widgets: [text_widget | _]} = dashboard} ->
+          {:ok, %{dashboard: dashboard, text_widget: text_widget}}
+
+        {:error, error} ->
+          {:error, error}
+      end
+    end)
     |> Repo.transaction()
-    |> process_transaction_result(:add_text_widget)
+    |> process_transaction_result(:get_dashboard)
   end
 
   @doc ~s"""
@@ -550,8 +560,12 @@ defmodule Sanbase.Dashboards do
           |> Repo.update()
       end
     end)
+    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      get_dashboard(dashboard_id, querying_user_id)
+    end)
     |> Repo.transaction()
-    |> process_transaction_result(:update_text_widget)
+    |> process_transaction_result(:get_dashboard)
   end
 
   @doc ~s"""
@@ -579,8 +593,12 @@ defmodule Sanbase.Dashboards do
           |> Repo.update()
       end
     end)
+    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      get_dashboard(dashboard_id, querying_user_id)
+    end)
     |> Repo.transaction()
-    |> process_transaction_result(:delete_text_widget)
+    |> process_transaction_result(:get_dashboard)
   end
 
   @doc ~s"""

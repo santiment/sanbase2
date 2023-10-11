@@ -550,7 +550,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       resolve(&QueriesResolver.add_dashboard_global_parameter_override/3)
     end
 
-    field :add_dashboard_text_widget, :dashboard do
+    field :add_dashboard_text_widget, :dashboard_text_widget_tuple do
       arg(:dashboard_id, non_null(:integer))
 
       arg(:name, :string)
@@ -562,7 +562,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       resolve(&QueriesResolver.add_dashboard_text_widget/3)
     end
 
-    field :update_dashboard_text_widget, :dashboard do
+    field :update_dashboard_text_widget, :dashboard_text_widget_tuple do
       arg(:dashboard_id, non_null(:integer))
       arg(:text_widget_id, non_null(:string))
 
@@ -575,7 +575,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       resolve(&QueriesResolver.update_dashboard_text_widget/3)
     end
 
-    field :delete_dashboard_text_widget, :dashboard do
+    field :delete_dashboard_text_widget, :dashboard_text_widget_tuple do
       arg(:dashboard_id, non_null(:integer))
       arg(:text_widget_id, non_null(:string))
 

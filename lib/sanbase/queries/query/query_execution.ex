@@ -156,7 +156,7 @@ defmodule Sanbase.Queries.QueryExecution do
     |> validate_required(@required_fields)
     |> Sanbase.Repo.insert()
   rescue
-    e ->
+    _ ->
       # This can happen if the query details are not flushed to the system.query_log
       # table or some other clickouse error occurs. Allow for 3 attempts in total before
       # reraising the exception.

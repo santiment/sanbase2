@@ -8,6 +8,8 @@ defmodule Sanbase.Clickhouse.Query do
   """
   defstruct [:sql, :parameters, :settings, :format, :environment]
 
+  alias Sanbase.Clickhouse.Query.Environment
+
   @type sql :: String.t()
   @type parameters :: Map.t()
 
@@ -15,7 +17,7 @@ defmodule Sanbase.Clickhouse.Query do
           sql: sql(),
           parameters: parameters(),
           settings: String.t() | nil,
-          environment: map() | nil,
+          environment: Environment.t(),
           format: String.t()
         }
 
@@ -48,7 +50,8 @@ defmodule Sanbase.Clickhouse.Query do
       sql: sql,
       parameters: parameters,
       settings: Keyword.get(opts, :settings, nil),
-      format: Keyword.get(opts, :format, @default_format)
+      format: Keyword.get(opts, :format, @default_format),
+      environment: Keyword.get(opts, :environment, Environment.empty())
     }
   end
 

@@ -71,7 +71,7 @@ defmodule Sanbase.Queries do
     query_metadata = Map.put_new(query_metadata, :sanbase_user_id, user.id)
 
     with {:ok, environment} <- Sanbase.Queries.Environment.new(query, user),
-         {:ok, result} <- Sanbase.Queries.Executor.run(query, query_metadata) do
+         {:ok, result} <- Sanbase.Queries.Executor.run(query, query_metadata, environment) do
       maybe_store_execution_data_async(result, user.id, opts)
 
       {:ok, result}

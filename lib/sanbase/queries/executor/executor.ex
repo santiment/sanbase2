@@ -32,6 +32,7 @@ defmodule Sanbase.Queries.Executor do
   alias Sanbase.Queries.Query
   alias Sanbase.Queries.QueryMetadata
   alias Sanbase.Queries.Executor.Result
+  alias Sanbase.Clickhouse.Query.Environment
 
   @doc ~s"""
   Compute the SQL defined in the panel by executing it against ClickHouse.
@@ -39,15 +40,15 @@ defmodule Sanbase.Queries.Executor do
   The SQL query and arguments are taken from the panel and are executed.
   The result is transformed by converting the Date and NaiveDateTime types to DateTime.
   """
-  @spec run(Query.t(), QueryMetadata.t()) ::
+  @spec run(Query.t(), QueryMetadata.t(), Environment.t()) ::
           {:ok, Result.t()} | {:error, String.t()}
-  def run(%Query{} = query, %{} = query_metadata) do
+  def run(%Query{} = query, %{} = query_metadata, %{} = environment) do
     query_start_time = DateTime.utc_now()
 
     _ = put_read_only_repo()
 
     %Sanbase.Clickhouse.Query{} =
-      clickhouse_query = create_clickhouse_query(query, query_metadata)
+      clickhouse_query = create_clickhouse_query(query, query_metadata, environment)
 
     case Sanbase.ClickhouseRepo.query_transform_with_metadata(
            clickhouse_query,
@@ -89,9 +90,9 @@ defmodule Sanbase.Queries.Executor do
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
   end
 
-  defp create_clickhouse_query(%Query{} = query, %{} = query_metadata) do
+  defp create_clickhouse_query(query, query_metadata, environment) do
     query_metadata = QueryMetadata.sanitize(query_metadata)
-    opts = [settings: "log_comment='#{Jason.encode!(query_metadata)}'"]
+    opts = [settings: "log_comment='#{Jason.encode!(query_metadata)}'", environment: environment]
 
     Sanbase.Clickhouse.Query.new(query.sql_query_text, query.sql_query_parameters, opts)
     |> extend_sql_query(query_metadata)

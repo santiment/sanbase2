@@ -328,7 +328,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     end
   end
 
-  describe "dashboard text widget" do
+  describe "Dashboards Text Widget" do
     test "create", context do
       {:ok, %{id: dashboard_id}} =
         Sanbase.Dashboards.create_dashboard(%{name: "My Dashboard"}, context.user.id)
@@ -455,7 +455,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     end
   end
 
-  describe "run queries" do
+  describe "Run Queries" do
     test "run raw sql query", context do
       mock_fun =
         Sanbase.Mock.wrap_consecutives(
@@ -478,7 +478,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
           run_sql_query(context.conn, :run_raw_sql_query, args)
           |> get_in(["data", "runRawSqlQuery"])
 
-        assert result == %{
+        assert %{
                  "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
                  "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                  "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
@@ -493,7 +493,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                    "written_bytes" => 0.0,
                    "written_rows" => 0.0
                  }
-               }
+               } = result
       end)
     end
 
@@ -515,7 +515,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
           run_sql_query(context.conn, :run_sql_query, %{id: query.id})
           |> get_in(["data", "runSqlQuery"])
 
-        assert result == %{
+        # Use match `=` operator to avoid checking the queryStartTime and queryEndTime
+        assert %{
                  "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
                  "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                  "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
@@ -530,7 +531,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                    "written_bytes" => 0.0,
                    "written_rows" => 0.0
                  }
-               }
+               } = result
       end)
     end
 
@@ -621,7 +622,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
           })
           |> get_in(["data", "runDashboardSqlQuery"])
 
-        assert result == %{
+        assert %{
                  "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
                  "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                  "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
@@ -636,7 +637,56 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                    "written_bytes" => 0.0,
                    "written_rows" => 0.0
                  }
-               }
+               } = result
+      end)
+    end
+  end
+
+  describe "Caching" do
+    test "cache queries on a dashboard", context do
+      {:ok, query} = Sanbase.Queries.create_query(%{name: "Query"}, context.user.id)
+
+      {:ok, dashboard} =
+        Sanbase.Dashboards.create_dashboard(%{name: "Dashboard"}, context.user.id)
+
+      {:ok, dashboard_query_mapping} =
+        Sanbase.Dashboards.add_query_to_dashboard(
+          dashboard.id,
+          query.id,
+          context.user.id
+        )
+
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 2
+        )
+
+      # Run a dashboard query. Expect the dashboard parameter to override
+      # the query local parameter
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          run_sql_query(context.conn, :run_dashboard_sql_query, %{
+            dashboard_id: dashboard.id,
+            dashboard_query_mapping_id: dashboard_query_mapping.id
+          })
+          |> get_in(["data", "runDashboardSqlQuery"])
+
+        stored =
+          store_dashboard_query_execution(context.conn, %{
+            dashboard_id: dashboard.id,
+            dashboard_query_mapping_id: dashboard_query_mapping.id,
+            query_execution_result: Jason.encode!(result)
+          })
+          |> IO.inspect(label: "685", limit: :infinity)
+
+        cache =
+          get_cached_dashboard_queries_executions(context.conn, %{dashboard_id: dashboard.id})
+          |> IO.inspect(label: "688", limit: :infinity)
       end)
     end
   end
@@ -930,17 +980,52 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     mutation = """
     {
       #{query_name}(#{map_to_args(args)}){
-          columns
-          columnTypes
-          rows
-          clickhouseQueryId
-          summary
+        columns
+        columnTypes
+        rows
+        clickhouseQueryId
+        summary
+        queryStartTime
+        queryEndTime
       }
     }
     """
 
     conn
     |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+  end
+
+  defp store_dashboard_query_execution(conn, args) do
+    mutation = """
+    mutation{
+      storeDashboardQueryExecution(#{map_to_args(args)}){
+        queries{
+          queryId
+          dashboardQueryMappingId
+        }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+  end
+
+  defp get_cached_dashboard_queries_executions(conn, args) do
+    query = """
+    {
+      getCachedDashboardQueriesExecutions(#{map_to_args(args)}){
+        queries{
+          dashboardQueryMappingId
+        }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
     |> json_response(200)
   end
 

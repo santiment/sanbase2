@@ -62,7 +62,7 @@ defmodule Sanbase.Queries.Executor do
            clickhouse_query_id: map.query_id,
            summary: make_summary_values_numbers(map.summary),
            rows: map.rows,
-           compressed_rows: Result.compress_rows(map.rows),
+           compressed_rows: nil,
            columns: map.column_names,
            column_types: map.column_types,
            query_start_time: query_start_time,
@@ -92,6 +92,7 @@ defmodule Sanbase.Queries.Executor do
 
   defp create_clickhouse_query(query, query_metadata, environment) do
     query_metadata = QueryMetadata.sanitize(query_metadata)
+
     opts = [settings: "log_comment='#{Jason.encode!(query_metadata)}'", environment: environment]
 
     Sanbase.Clickhouse.Query.new(query.sql_query_text, query.sql_query_parameters, opts)

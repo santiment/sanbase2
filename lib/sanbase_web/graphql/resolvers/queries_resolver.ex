@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   alias Sanbase.Queries
   alias Sanbase.Dashboards
   alias Sanbase.Queries.QueryMetadata
+  alias Sanbase.Queries.Executor.Result
 
   require Logger
 
@@ -180,6 +181,38 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{context: %{auth: %{current_user: user}}}
       ) do
     Dashboards.remove_query_from_dashboard(dashboard_id, mapping_id, user.id)
+  end
+
+  def store_dashboard_query_execution(
+        _root,
+        %{
+          dashboard_id: dashboard_id,
+          dashboard_query_mapping_id: mapping_id,
+          query_execution_result: query_execution_result
+        },
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    with {:ok, query_execution_result} <- Result.from_json_string(query_execution_result),
+         {:ok, dashboard_cache} <-
+           Dashboards.store_dashboard_query_execution(
+             dashboard_id,
+             mapping_id,
+             query_execution_result,
+             user.id
+           ) do
+      queries = Map.values(dashboard_cache.queries)
+      {:ok, %{queries: queries}}
+    end
+  end
+
+  def get_cached_dashboard_queries_executions(_root, %{dashboard_id: dashboard_id}, resolution) do
+    querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
+
+    with {:ok, dashboard_cache} <-
+           Dashboards.get_cached_dashboard_queries_executions(dashboard_id, querying_user_id) do
+      queries = Map.values(dashboard_cache.queries)
+      {:ok, %{queries: queries}}
+    end
   end
 
   # Dashboard Global Parameters CRUD (without explicit read)

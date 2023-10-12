@@ -77,6 +77,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_available_metrics,
           :get_available_signals,
           :get_blockchain_address_labels,
+          :get_cached_dashboard_queries,
           :get_chart_configuration_shared_access_token,
           :get_clickhouse_database_metadata,
           :get_clickhouse_query_execution_stats,

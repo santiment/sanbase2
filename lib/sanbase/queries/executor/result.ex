@@ -8,7 +8,7 @@ defmodule Sanbase.Queries.Executor.Result do
           clickhouse_query_id: String.t(),
           summary: Map.t(),
           rows: list(String.t() | number() | boolean() | DateTime.t()),
-          compressed_rows: String.t(),
+          compressed_rows: String.t() | nil,
           columns: list(String.t()),
           column_types: list(String.t()),
           query_start_time: DateTime.t(),
@@ -24,6 +24,28 @@ defmodule Sanbase.Queries.Executor.Result do
             column_types: nil,
             query_start_time: nil,
             query_end_time: nil
+
+  def from_json_string(json) do
+    case Jason.decode(json) do
+      {:ok, map} ->
+        result = %__MODULE__{
+          query_id: map["query_id"],
+          clickhouse_query_id: map["clickhouse_query_id"],
+          summary: map["summary"],
+          rows: map["rows"],
+          compressed_rows: map["compressed_rows"],
+          columns: map["columns"],
+          column_types: map["column_types"],
+          query_start_time: map["query_start_time"],
+          query_end_time: map["query_end_time"]
+        }
+
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, "Provided JSON is malformed: #{inspect(error)}"}
+    end
+  end
 
   def compress_rows(rows) do
     rows

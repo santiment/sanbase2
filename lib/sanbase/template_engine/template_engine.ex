@@ -50,9 +50,7 @@ defmodule Sanbase.TemplateEngine do
     params = Map.new(params, fn {k, v} -> {to_string(k), v} end)
     env = Sanbase.Clickhouse.Query.Environment.empty()
 
-    captures = Regex.scan(@template_regex, template, capture: :all_but_first)
-
-    captures
+    get_captures(template)
     |> Enum.reduce(template, fn [key], template_acc ->
       case prepare_replace(template_acc, key, env, params) do
         {key, {:ok, value}} ->
@@ -68,12 +66,8 @@ defmodule Sanbase.TemplateEngine do
   def run_generate_positional_params(template, params, env) do
     params = Map.new(params, fn {k, v} -> {to_string(k), v} end)
 
-    captures =
-      Regex.scan(@template_regex, template, capture: :all_but_first)
-      |> Enum.uniq()
-
     {sql, args, _position} =
-      captures
+      get_captures(template)
       |> Enum.reduce(
         {template, _args = [], _position = 1},
         fn [key], {template_acc, args_acc, position} ->
@@ -89,8 +83,8 @@ defmodule Sanbase.TemplateEngine do
               raise(TemplateEngineException,
                 message: """
                 Error generating positional parameters. The key '#{key}' has no value
-                in the parameters map or the environment. Please check for typos,
-                missing keys, inproper use of the environment variables or functions.
+                in the parameters map, or in the environment. Please check for typos,
+                missing keys, or inproper use of the environment.
 
                 Parameters: #{inspect(params)}
                 Environment: #{inspect(env)}
@@ -101,6 +95,25 @@ defmodule Sanbase.TemplateEngine do
       )
 
     {sql, Enum.reverse(args)}
+  end
+
+  defp get_captures(template) do
+    captures =
+      Regex.scan(@template_regex, template, capture: :all_but_first)
+      |> Enum.uniq()
+
+    if Enum.any?(captures, fn [key] -> String.contains?(key, ["{", "}"]) end) do
+      raise(TemplateEngineException,
+        message: """
+        Error parsing the template. The template contains a key that itself contains
+        { or }. This means that an opening or closing bracket is missing.
+
+        Template: #{inspect(template)}
+        """
+      )
+    end
+
+    captures
   end
 
   defp prepare_replace(string, key, env, params) do

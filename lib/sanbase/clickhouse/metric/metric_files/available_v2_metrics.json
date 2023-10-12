@@ -1624,7 +1624,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "The Realized Cap Hodl Waves for coins between {{low:human_readable} and {{high:human_readable}}",
+    "human_readable_name": "The Realized Cap Hodl Waves for coins between {{low:human_readable}} and {{high:human_readable}}",
     "name": "realized_cap_hodl_waves_{{low}}_to_{{high}}",
     "metric": "realized_cap_hodl_waves_{{db_metric}}",
     "version": "2019-01-01",

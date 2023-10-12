@@ -500,30 +500,31 @@ defmodule Sanbase.Dashboards do
   @spec add_text_widget(dashboard_id(), user_id(), text_widget_args()) ::
           {:ok, Dashboard.t()} | {:error, String.t()}
   def add_text_widget(dashboard_id, querying_user_id, args) do
+    text_widget_id = UUID.uuid4()
+
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
       get_dashboard_for_mutation(dashboard_id, querying_user_id, preload?: false)
     end)
     |> Ecto.Multi.run(:add_text_widget, fn _, %{get_dashboard_for_mutation: dashboard} ->
-      changeset = TextWidget.changeset(%TextWidget{}, args)
+      changeset =
+        TextWidget.changeset(%TextWidget{}, args)
+        |> Ecto.Changeset.put_change(:id, text_widget_id)
 
       dashboard
       |> Ecto.Changeset.change()
       |> Ecto.Changeset.put_embed(:text_widgets, [changeset] ++ dashboard.text_widgets)
       |> Repo.update()
     end)
-    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
+    |> Ecto.Multi.run(:get_dashboard_and_text_widget, fn _repo, _changes_so_far ->
       # Get the dashboard so the queries are properly preloaded
-      case get_dashboard(dashboard_id, querying_user_id) do
-        {:ok, %{text_widgets: [text_widget | _]} = dashboard} ->
-          {:ok, %{dashboard: dashboard, text_widget: text_widget}}
-
-        {:error, error} ->
-          {:error, error}
+      with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
+        text_widget = Enum.find(dashboard.text_widgets, &(&1.id == text_widget_id))
+        {:ok, %{dashboard: dashboard, text_widget: text_widget}}
       end
     end)
     |> Repo.transaction()
-    |> process_transaction_result(:get_dashboard)
+    |> process_transaction_result(:get_dashboard_and_text_widget)
   end
 
   @doc ~s"""
@@ -560,12 +561,15 @@ defmodule Sanbase.Dashboards do
           |> Repo.update()
       end
     end)
-    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
+    |> Ecto.Multi.run(:get_dashboard_and_text_widget, fn _repo, _changes_so_far ->
       # Get the dashboard so the queries are properly preloaded
-      get_dashboard(dashboard_id, querying_user_id)
+      with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
+        text_widget = Enum.find(dashboard.text_widgets, &(&1.id == text_widget_id))
+        {:ok, %{dashboard: dashboard, text_widget: text_widget}}
+      end
     end)
     |> Repo.transaction()
-    |> process_transaction_result(:get_dashboard)
+    |> process_transaction_result(:get_dashboard_and_text_widget)
   end
 
   @doc ~s"""
@@ -583,22 +587,30 @@ defmodule Sanbase.Dashboards do
         nil ->
           {:error, "Text widget with id #{text_widget_id} does not exist."}
 
-        _text_widget ->
+        text_widget ->
           text_widgets =
             Enum.reject(dashboard.text_widgets, fn %{id: id} -> id == text_widget_id end)
 
-          dashboard
-          |> Ecto.Changeset.change()
-          |> Ecto.Changeset.put_embed(:text_widgets, text_widgets)
-          |> Repo.update()
+          result =
+            dashboard
+            |> Ecto.Changeset.change()
+            |> Ecto.Changeset.put_embed(:text_widgets, text_widgets)
+            |> Repo.update()
+
+          case result do
+            {:ok, dashboard} -> {:ok, %{dashboard: dashboard, text_widget: text_widget}}
+            {:error, error} -> {:error, error}
+          end
       end
     end)
-    |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes_so_far ->
+    |> Ecto.Multi.run(:get_dashboard_and_text_widget, fn _repo, %{delete_text_widget: map} ->
       # Get the dashboard so the queries are properly preloaded
-      get_dashboard(dashboard_id, querying_user_id)
+      with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
+        {:ok, %{map | dashboard: dashboard}}
+      end
     end)
     |> Repo.transaction()
-    |> process_transaction_result(:get_dashboard)
+    |> process_transaction_result(:get_dashboard_and_text_widget)
   end
 
   @doc ~s"""

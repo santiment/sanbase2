@@ -88,7 +88,7 @@ defmodule Sanbase.Queries.Dashboard do
       on_delete: :delete_all
     )
 
-    embeds_many(:text_widgets, TextWidget)
+    embeds_many(:text_widgets, TextWidget, on_replace: :delete)
 
     # Keep for backwards compatibility reasons
     embeds_many(:panels, Sanbase.Dashboard.Panel, on_replace: :delete)

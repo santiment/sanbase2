@@ -372,9 +372,9 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
       {:ok, %{text_widget: %{id: text_widget_id}}} =
         Sanbase.Dashboards.add_text_widget(dashboard_id, context.user.id, %{
-          name: "N",
-          description: "D",
-          body: "B"
+          name: "name",
+          description: "description",
+          body: "body"
         })
 
       # The dashboard mutation can run any mutation that returns a dashboard as a result
@@ -385,8 +385,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
           name: "Updated name",
           description: "Updated desc"
         })
-        |> get_in(["data", "addDashboardTextWidget"])
-        |> IO.inspect(label: "389", limit: :infinity)
+        |> get_in(["data", "updateDashboardTextWidget"])
 
       assert %{
                "id" => ^dashboard_id,
@@ -403,7 +402,56 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                ]
              } = result["dashboard"]
 
-      assert %{"id" => ^text_widget_id} = result["textWidget"]
+      assert %{
+               "id" => ^text_widget_id,
+               "body" => "body",
+               "description" => "Updated desc",
+               "name" => "Updated name"
+             } = result["textWidget"]
+
+      {:ok, fetched_dashboard} = Sanbase.Dashboards.get_dashboard(dashboard_id, context.user.id)
+
+      assert length(fetched_dashboard.text_widgets) == 1
+      [text_widget] = fetched_dashboard.text_widgets
+      assert %{body: "body", description: "Updated desc", name: "Updated name"} = text_widget
+    end
+
+    test "delete", context do
+      {:ok, %{id: dashboard_id}} =
+        Sanbase.Dashboards.create_dashboard(%{name: "My Dashboard"}, context.user.id)
+
+      {:ok, %{text_widget: %{id: text_widget_id}}} =
+        Sanbase.Dashboards.add_text_widget(dashboard_id, context.user.id, %{
+          name: "name",
+          description: "description",
+          body: "body"
+        })
+
+      result =
+        execute_dashboard_text_widget_mutation(context.conn, :delete_dashboard_text_widget, %{
+          dashboard_id: dashboard_id,
+          text_widget_id: text_widget_id
+        })
+        |> get_in(["data", "deleteDashboardTextWidget"])
+
+      assert %{
+               "id" => ^dashboard_id,
+               "name" => "My Dashboard",
+               "queries" => [],
+               "settings" => %{},
+               "textWidgets" => []
+             } = result["dashboard"]
+
+      assert %{
+               "id" => ^text_widget_id,
+               "body" => "body",
+               "description" => "description",
+               "name" => "name"
+             } = result["textWidget"]
+
+      {:ok, fetched_dashboard} = Sanbase.Dashboards.get_dashboard(dashboard_id, context.user.id)
+
+      assert length(fetched_dashboard.text_widgets) == 0
     end
   end
 

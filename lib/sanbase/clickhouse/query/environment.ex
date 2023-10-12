@@ -1,6 +1,6 @@
-defmodule Sanbase.Queries.Environment do
+defmodule Sanbase.Clickhouse.Query.Environment do
   @moduledoc ~s"""
-  Each Queries query is executed in an execution environment.
+  Each query is executed in an execution environment.
 
   An environment is represented as its bindings -- a map of key-value pairs.
   The environment bindings are provided by Santiment Backend. The bindings
@@ -48,6 +48,9 @@ defmodule Sanbase.Queries.Environment do
           assets: [asset]
         }
 
+  @spec empty() :: t()
+  def empty(), do: %__MODULE__{}
+
   @spec new(Dashboard.t(), User.t()) :: {:ok, t()} | {:error, String.t()}
   @spec new(Query.t(), User.t()) :: {:ok, t()} | {:error, String.t()}
   def new(%Dashboard{} = dashboard, %User{} = querying_user) do
@@ -63,6 +66,35 @@ defmodule Sanbase.Queries.Environment do
   end
 
   def new(%Query{} = query, %User{} = querying_user) do
+    with {:ok, assets} <- get_assets() do
+      env = %__MODULE__{
+        owner: query.user |> user_subset(),
+        executor: querying_user |> user_subset(),
+        assets: assets
+      }
+
+      {:ok, env}
+    else
+      {:error, reason} ->
+        {:error, "Error loading the Execution Enviornment. Reason: #{inspect(reason)}"}
+    end
+  end
+
+  @spec queries_env(Dashboard.t(), User.t()) :: {:ok, t()} | {:error, String.t()}
+  @spec queries_env(Query.t(), User.t()) :: {:ok, t()} | {:error, String.t()}
+  def queries_env(%Dashboard{} = dashboard, %User{} = querying_user) do
+    with {:ok, assets} <- get_assets() do
+      env = %__MODULE__{
+        owner: dashboard.user |> user_subset(),
+        executor: querying_user |> user_subset(),
+        assets: assets
+      }
+
+      {:ok, env}
+    end
+  end
+
+  def queries_env(%Query{} = query, %User{} = querying_user) do
     with {:ok, assets} <- get_assets() do
       env = %__MODULE__{
         owner: query.user |> user_subset(),

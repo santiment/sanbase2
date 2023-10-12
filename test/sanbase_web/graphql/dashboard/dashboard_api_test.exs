@@ -1233,7 +1233,7 @@ defmodule SanbaseWeb.Graphql.DashboardApiTest do
           map_as_input_object: true,
           query:
             "SELECT * FROM intraday_metrics WHERE asset_id IN (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT {{limit}})",
-          parameters: Jason.encode!(%{"limit" => 20})
+          parameters: Jason.encode!(%{"limit" => 20, "slug" => "bitcoin"})
         }
       }
     }

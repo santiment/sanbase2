@@ -8,6 +8,8 @@ defmodule Sanbase.Dashboards do
   alias Sanbase.Queries.Dashboard
   alias Sanbase.Queries.DashboardQueryMapping
 
+  alias Sanbase.Queries.TextWidget
+
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
   # Type aliases
@@ -17,6 +19,8 @@ defmodule Sanbase.Dashboards do
   @type create_dashboard_args :: Dashboard.create_dashboard_args()
   @type update_dashboard_args :: Dashboard.update_dashboard_args()
   @type dashboard_query_mapping_id :: DashboardQueryMapping.dashboard_query_mapping_id()
+  @type text_widget_id :: TextWidget.text_widget_id()
+  @type text_widget_args :: TextWidget.text_widget_args()
 
   @type visibility_data :: %{
           user_id: user_id(),
@@ -479,6 +483,134 @@ defmodule Sanbase.Dashboards do
     end)
     |> Repo.transaction()
     |> process_transaction_result(:get_dashboard)
+  end
+
+  @doc ~s"""
+  Add a text widget to the dashboard
+
+  A text widget is a static widget that can be used to display text on the dashboard.
+  A text widget has 3 text fields:
+    - name
+    - description
+    - body
+
+  A text widget has no parameters and is not executed against ClickHouse. But it can use the
+  dashboard global parameters and the environment variables.
+  """
+  @spec add_text_widget(dashboard_id(), user_id(), text_widget_args()) ::
+          {:ok, Dashboard.t()} | {:error, String.t()}
+  def add_text_widget(dashboard_id, querying_user_id, args) do
+    text_widget_id = UUID.uuid4()
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id, preload?: false)
+    end)
+    |> Ecto.Multi.run(:add_text_widget, fn _, %{get_dashboard_for_mutation: dashboard} ->
+      changeset =
+        TextWidget.changeset(%TextWidget{}, args)
+        |> Ecto.Changeset.put_change(:id, text_widget_id)
+
+      dashboard
+      |> Ecto.Changeset.change()
+      |> Ecto.Changeset.put_embed(:text_widgets, [changeset] ++ dashboard.text_widgets)
+      |> Repo.update()
+    end)
+    |> Ecto.Multi.run(:get_dashboard_and_text_widget, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
+        text_widget = Enum.find(dashboard.text_widgets, &(&1.id == text_widget_id))
+        {:ok, %{dashboard: dashboard, text_widget: text_widget}}
+      end
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:get_dashboard_and_text_widget)
+  end
+
+  @doc ~s"""
+  Update the text widget with the given id on a given dashboard.
+  """
+  @spec update_text_widget(dashboard_id(), text_widget_id(), user_id(), text_widget_args()) ::
+          {:ok, Dashboard.t()} | {:error, String.t()}
+  def update_text_widget(dashboard_id, text_widget_id, querying_user_id, args) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id, preload?: false)
+    end)
+    |> Ecto.Multi.run(:update_text_widget, fn _, %{get_dashboard_for_mutation: dashboard} ->
+      case Enum.find(dashboard.text_widgets, &(&1.id == text_widget_id)) do
+        nil ->
+          {:error, "Text widget with id #{text_widget_id} does not exist."}
+
+        text_widget ->
+          changeset = TextWidget.changeset(text_widget, args)
+
+          text_widgets =
+            Enum.map(
+              dashboard.text_widgets,
+              fn
+                # Replace the text widget that has the same id
+                %{id: ^text_widget_id} -> changeset
+                elem -> elem
+              end
+            )
+
+          dashboard
+          |> Ecto.Changeset.change()
+          |> Ecto.Changeset.put_embed(:text_widgets, text_widgets)
+          |> Repo.update()
+      end
+    end)
+    |> Ecto.Multi.run(:get_dashboard_and_text_widget, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
+        text_widget = Enum.find(dashboard.text_widgets, &(&1.id == text_widget_id))
+        {:ok, %{dashboard: dashboard, text_widget: text_widget}}
+      end
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:get_dashboard_and_text_widget)
+  end
+
+  @doc ~s"""
+  Delete a text widget with the given id on a given dashboard.
+  """
+  @spec delete_text_widget(dashboard_id(), text_widget_id(), user_id()) ::
+          {:ok, Dashboard.t()} | {:error, String.t()}
+  def delete_text_widget(dashboard_id, text_widget_id, querying_user_id) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id, preload?: false)
+    end)
+    |> Ecto.Multi.run(:delete_text_widget, fn _, %{get_dashboard_for_mutation: dashboard} ->
+      case Enum.find(dashboard.text_widgets, &(&1.id == text_widget_id)) do
+        nil ->
+          {:error, "Text widget with id #{text_widget_id} does not exist."}
+
+        text_widget ->
+          text_widgets =
+            Enum.reject(dashboard.text_widgets, fn %{id: id} -> id == text_widget_id end)
+
+          result =
+            dashboard
+            |> Ecto.Changeset.change()
+            |> Ecto.Changeset.put_embed(:text_widgets, text_widgets)
+            |> Repo.update()
+
+          case result do
+            {:ok, dashboard} -> {:ok, %{dashboard: dashboard, text_widget: text_widget}}
+            {:error, error} -> {:error, error}
+          end
+      end
+    end)
+    |> Ecto.Multi.run(:get_dashboard_and_text_widget, fn _repo, %{delete_text_widget: map} ->
+      # Get the dashboard so the queries are properly preloaded
+      with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
+        {:ok, %{map | dashboard: dashboard}}
+      end
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:get_dashboard_and_text_widget)
   end
 
   @doc ~s"""

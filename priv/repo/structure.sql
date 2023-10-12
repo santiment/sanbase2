@@ -969,7 +969,8 @@ CREATE TABLE public.dashboards (
     is_deleted boolean DEFAULT false,
     is_hidden boolean DEFAULT false,
     parameters jsonb DEFAULT '{}'::jsonb,
-    settings jsonb DEFAULT '{}'::jsonb
+    settings jsonb DEFAULT '{}'::jsonb,
+    text_widgets jsonb
 );
 
 
@@ -8807,3 +8808,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230904141409);
 INSERT INTO public."schema_migrations" (version) VALUES (20230908085236);
 INSERT INTO public."schema_migrations" (version) VALUES (20230915121540);
 INSERT INTO public."schema_migrations" (version) VALUES (20230925041216);
+INSERT INTO public."schema_migrations" (version) VALUES (20231003070443);

@@ -6,7 +6,9 @@ defmodule Sanbase.Clickhouse.Query do
   using named parameters and a template. It also provides options for adding
   the Clickhous specific SETTINGS and FORMAT fragments to the query.
   """
-  defstruct [:sql, :parameters, :settings, :format]
+  defstruct [:sql, :parameters, :settings, :format, :environment]
+
+  alias Sanbase.Clickhouse.Query.Environment
 
   @type sql :: String.t()
   @type parameters :: Map.t()
@@ -15,6 +17,7 @@ defmodule Sanbase.Clickhouse.Query do
           sql: sql(),
           parameters: parameters(),
           settings: String.t() | nil,
+          environment: Environment.t(),
           format: String.t()
         }
 
@@ -47,7 +50,8 @@ defmodule Sanbase.Clickhouse.Query do
       sql: sql,
       parameters: parameters,
       settings: Keyword.get(opts, :settings, nil),
-      format: Keyword.get(opts, :format, @default_format)
+      format: Keyword.get(opts, :format, @default_format),
+      environment: Keyword.get(opts, :environment, Environment.empty())
     }
   end
 
@@ -72,13 +76,23 @@ defmodule Sanbase.Clickhouse.Query do
   end
 
   @doc ~s"""
-  Process the SQL query and named parameters and return
-  - the SQL query string transformed to use positional parameters
-  - the parameters transformed to a list of arguments, positionally ordered
+  Process the SQL query and named parameters and return a map with keys:
+  - sql: The SQL query string transformed to use positional parameters, so the
+    clickhousex library can use it.
+  - args: The parameters transformed to a list of arguments, positionally ordered.
+    Adding/removing/reordering elements in this list will cause a database error, as
+    the order is specific for the sql query.
   """
+  @spec get_sql_args(t()) :: %{sql: String.t(), args: list()}
   def get_sql_args(%__MODULE__{} = query) do
     query = preprocess_query(query)
-    {sql, args} = transform_parameters_to_args(query)
+
+    {sql, args} =
+      Sanbase.TemplateEngine.run_generate_positional_params(
+        query.sql,
+        query.parameters,
+        query.environment
+      )
 
     %{sql: sql, args: args}
   end
@@ -107,39 +121,5 @@ defmodule Sanbase.Clickhouse.Query do
   defp add_format(%{sql: sql, format: format} = query) do
     sql = sql <> "\nFORMAT #{format}"
     %{query | sql: sql}
-  end
-
-  defp transform_parameters_to_args(%{sql: sql, parameters: parameters}) do
-    parameters = take_used_parameters_subset(sql, parameters)
-
-    # Transform the named parameters to positional parameters that are
-    # understood by the ClickhouseRepo
-    param_names = Map.keys(parameters)
-    param_name_positions = Enum.with_index(param_names, 1)
-    # Get the args in the same order as the param_names
-    args = Enum.map(param_names, &Map.get(parameters, &1))
-
-    sql =
-      Enum.reduce(param_name_positions, sql, fn {param_name, position}, sql_acc ->
-        # Replace all occurences of {{<param_name>}} with ?<position>
-        # For example: WHERE address = {{address}} => WHERE address = ?1
-        kv = %{param_name => "?#{position}"}
-        Sanbase.TemplateEngine.run(sql_acc, kv)
-      end)
-
-    {sql, args}
-  end
-
-  # Take only those parameters which are seen in the query.
-  # This is useful as the SQL Editor allows you to run a subsection
-  # of the query by highlighting it. Instead of doing the filtration of
-  # the parameters used in this section, this check is done on the backend
-  # The parameters are transformed into positional parameters, so a mismatch
-  # between the number of used an provided parameters resuls in an error
-  defp take_used_parameters_subset(sql, parameters) do
-    Enum.filter(parameters, fn {key, _value} ->
-      String.contains?(sql, "{{#{key}}}")
-    end)
-    |> Map.new()
   end
 end

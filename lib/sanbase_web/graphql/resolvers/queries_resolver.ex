@@ -65,7 +65,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
          {:ok, query} <- Queries.get_query(query_id, user.id) do
       query_metadata = QueryMetadata.from_resolution(resolution)
-      Queries.run_query(query, user.id, query_metadata)
+      Queries.run_query(query, user, query_metadata)
     end
   end
 
@@ -75,9 +75,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{context: %{auth: %{current_user: user}} = context} = resolution
       ) do
     with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
-         query = Queries.get_ephemeral_query_struct(query_text, query_parameters) do
+         query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user) do
       query_metadata = QueryMetadata.from_resolution(resolution)
-      Queries.run_query(query, user.id, query_metadata)
+      Queries.run_query(query, user, query_metadata)
     end
   end
 
@@ -91,7 +91,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
          {:ok, query} <- Queries.get_dashboard_query(dashboard_id, mapping_id, user.id) do
       query_metadata = QueryMetadata.from_resolution(resolution)
-      Queries.run_query(query, user.id, query_metadata)
+      Queries.run_query(query, user, query_metadata)
     end
   end
 
@@ -281,6 +281,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{context: %{auth: %{current_user: user}}}
       ) do
     Queries.get_user_query_executions(user.id, page: page, page_size: page_size)
+  end
+
+  # Text Widgets
+
+  def add_dashboard_text_widget(_root, %{dashboard_id: dashboard_id} = args, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    Dashboards.add_text_widget(dashboard_id, user.id, args)
+  end
+
+  def update_dashboard_text_widget(
+        _root,
+        %{dashboard_id: dashboard_id, text_widget_id: text_widget_id} = args,
+        %{
+          context: %{auth: %{current_user: user}}
+        }
+      ) do
+    Dashboards.update_text_widget(dashboard_id, text_widget_id, user.id, args)
+  end
+
+  def delete_dashboard_text_widget(
+        _root,
+        %{dashboard_id: dashboard_id, text_widget_id: text_widget_id},
+        %{
+          context: %{auth: %{current_user: user}}
+        }
+      ) do
+    Dashboards.delete_text_widget(dashboard_id, text_widget_id, user.id)
   end
 
   # Private functions

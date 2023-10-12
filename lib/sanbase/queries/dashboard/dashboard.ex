@@ -15,6 +15,7 @@ defmodule Sanbase.Queries.Dashboard do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Queries.Query
+  alias Sanbase.Queries.TextWidget
 
   @type t :: %__MODULE__{
           id: non_neg_integer(),
@@ -87,6 +88,11 @@ defmodule Sanbase.Queries.Dashboard do
       on_delete: :delete_all
     )
 
+    embeds_many(:text_widgets, TextWidget, on_replace: :delete)
+
+    # Keep for backwards compatibility reasons
+    embeds_many(:panels, Sanbase.Dashboard.Panel, on_replace: :delete)
+
     # Fields related to timeline hiding and reversible-deletion
     field(:is_hidden, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)
@@ -101,16 +107,13 @@ defmodule Sanbase.Queries.Dashboard do
       foreign_key: :dashboard_id
     )
 
-    # Backwards compatibility with Queries 1.0. Will be removed
-    embeds_many(:panels, Sanbase.Dashboard.Panel, on_replace: :delete)
-
     timestamps()
   end
 
   @create_fields [:name, :description, :is_public, :parameters, :settings, :user_id]
   @update_fields @create_fields -- [:user_id]
 
-  @preload [:queries, :user, :featured_item]
+  @preload [:queries, :user, :featured_item, queries: :user]
   def default_preload(), do: @preload
 
   def create_changeset(%__MODULE__{} = dashboard, attrs) do
@@ -156,7 +159,8 @@ defmodule Sanbase.Queries.Dashboard do
   def get_for_mutation(dashboard_id, querying_user_id, opts) when not is_nil(querying_user_id) do
     from(
       d in base_query(),
-      where: d.id == ^dashboard_id and d.user_id == ^querying_user_id
+      where: d.id == ^dashboard_id and d.user_id == ^querying_user_id,
+      lock: "FOR UPDATE"
     )
     |> maybe_preload(opts)
   end

@@ -21,7 +21,7 @@ defmodule Sanbase.Queries.DashboardQueryMapping do
   @type dashboard_query_mapping_id :: non_neg_integer()
   @type user_id :: non_neg_integer()
 
-  @preload [:dashboard, :query]
+  @preload [:dashboard, :query, dashboard: :user, query: :user]
 
   schema "dashboard_query_mappings" do
     field(:settings, :map)

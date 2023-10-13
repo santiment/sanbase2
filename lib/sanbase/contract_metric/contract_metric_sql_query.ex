@@ -66,7 +66,7 @@ defmodule Sanbase.Contract.MetricAdapter.SqlQuery do
     PREWHERE
       dt >= toDateTime({{from}}) AND
       dt < toDateTime({{to}}) AND
-      to = {{contract_address}}}
+      to = {{contract_address}}
     GROUP BY time
     ORDER BY time
     """

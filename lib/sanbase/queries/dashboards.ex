@@ -168,7 +168,7 @@ defmodule Sanbase.Dashboards do
   %{
     "slug" => %{
       "value" => "bitcoin",
-      "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "slug"}]
+      "overrides" => [%{"dashboard_query_mapping_id" => "05d2e783-ac22-40c5-9d51-f8df5a33f568", "parameter" => "slug"}]
     }
   }
 
@@ -179,7 +179,7 @@ defmodule Sanbase.Dashboards do
   - Extract the key-value pairs from the overrides;
   - Replace the parameters in `q` with the overrides.
   """
-  @spec apply_global_parameters(Query.t(), Dashboard.t(), non_neg_integer()) ::
+  @spec apply_global_parameters(Query.t(), Dashboard.t(), dashboard_query_mapping_id()) ::
           {:ok, Query.t()}
   def apply_global_parameters(
         %Query{} = query,
@@ -341,11 +341,11 @@ defmodule Sanbase.Dashboards do
     %{
       "slug" => %{
         "value" => "bitcoin",
-        "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "slug"}]
+        "overrides" => [%{"dashboard_query_mapping_id" => "05d2e783-ac22-40c5-9d51-f8df5a33f568", "parameter" => "slug"}]
       },
       "another_key" => %{
         "value" => "another_value",
-        "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "another_key"}]
+        "overrides" => [%{"dashboard_query_mapping_id" => "05d2e783-ac22-40c5-9d51-f8df5a33f568", "parameter" => "another_key"}]
       }
     }
 
@@ -414,15 +414,15 @@ defmodule Sanbase.Dashboards do
   %{
     "slug" => %{
       "value" => "bitcoin",
-      "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "slug"}]
+      "overrides" => [%{"dashboard_query_mapping_id" => "05d2e783-ac22-40c5-9d51-f8df5a33f568", "parameter" => "slug"}]
     },
     "another_key" => %{
       "value" => "another_value",
-      "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "another_key"}]
+      "overrides" => [%{"dashboard_query_mapping_id" => "05d2e783-ac22-40c5-9d51-f8df5a33f568", "parameter" => "another_key"}]
     }
   }
 
-  When deleting the override for the slug parameter and dashboard_query_mapping_id 101, the result will be:
+  When deleting the override for the slug parameter and dashboard_query_mapping_id "05d2e783-ac22-40c5-9d51-f8df5a33f568", the result will be:
   %{
     "slug" => %{
       "value" => "bitcoin",
@@ -430,7 +430,7 @@ defmodule Sanbase.Dashboards do
     },
     "another_key" => %{
       "value" => "another_value",
-      "overrides" => [%{"dashboard_query_mapping_id" => 101, "parameter" => "another_key"}]
+      "overrides" => [%{"dashboard_query_mapping_id" => "05d2e783-ac22-40c5-9d51-f8df5a33f568", "parameter" => "another_key"}]
     }
   }
   """

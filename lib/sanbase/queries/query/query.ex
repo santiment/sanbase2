@@ -83,7 +83,7 @@ defmodule Sanbase.Queries.Query do
     field(:is_hidden, :boolean)
 
     # TODO: Add comment
-    field(:dashboard_query_mapping_id, :integer, virtual: true)
+    field(:dashboard_query_mapping_id, :string, virtual: true)
 
     timestamps()
   end

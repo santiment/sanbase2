@@ -17,12 +17,13 @@ defmodule Sanbase.Queries.DashboardQueryMapping do
           updated_at: DateTime.t()
         }
 
+  @type dashboard_query_mapping_id :: String.t()
   @type dashboard_id :: Dashboard.dashboard_id()
-  @type dashboard_query_mapping_id :: non_neg_integer()
   @type user_id :: non_neg_integer()
 
   @preload [:dashboard, :query, dashboard: :user, query: :user]
 
+  @primary_key {:id, :binary_id, autogenerate: true}
   schema "dashboard_query_mappings" do
     field(:settings, :map)
 

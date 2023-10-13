@@ -224,7 +224,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   end
 
   object :dashboard_query_mapping do
-    field(:id, non_null(:integer))
+    field(:id, non_null(:string))
     field(:query, non_null(:sql_query))
     field(:dashboard, non_null(:dashboard))
     field(:settings, :json)

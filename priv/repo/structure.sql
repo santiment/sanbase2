@@ -925,32 +925,13 @@ ALTER SEQUENCE public.dashboard_comments_mapping_id_seq OWNED BY public.dashboar
 --
 
 CREATE TABLE public.dashboard_query_mappings (
-    id bigint NOT NULL,
+    id uuid NOT NULL,
     dashboard_id bigint,
     query_id bigint,
     settings jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
-
-
---
--- Name: dashboard_query_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.dashboard_query_mappings_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: dashboard_query_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.dashboard_query_mappings_id_seq OWNED BY public.dashboard_query_mappings.id;
 
 
 --
@@ -981,9 +962,10 @@ CREATE TABLE public.dashboards (
 CREATE TABLE public.dashboards_cache (
     id bigint NOT NULL,
     dashboard_id bigint,
-    panels jsonb NOT NULL,
+    panels jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    queries jsonb DEFAULT '{}'::jsonb
 );
 
 
@@ -4546,13 +4528,6 @@ ALTER TABLE ONLY public.currencies ALTER COLUMN id SET DEFAULT nextval('public.c
 --
 
 ALTER TABLE ONLY public.dashboard_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.dashboard_comments_mapping_id_seq'::regclass);
-
-
---
--- Name: dashboard_query_mappings id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dashboard_query_mappings ALTER COLUMN id SET DEFAULT nextval('public.dashboard_query_mappings_id_seq'::regclass);
 
 
 --
@@ -8809,3 +8784,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230908085236);
 INSERT INTO public."schema_migrations" (version) VALUES (20230915121540);
 INSERT INTO public."schema_migrations" (version) VALUES (20230925041216);
 INSERT INTO public."schema_migrations" (version) VALUES (20231003070443);
+INSERT INTO public."schema_migrations" (version) VALUES (20231012122039);
+INSERT INTO public."schema_migrations" (version) VALUES (20231012130814);

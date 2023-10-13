@@ -184,7 +184,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       meta(access: :free)
 
       arg(:dashboard_id, non_null(:integer))
-      arg(:dashboard_query_mapping_id, non_null(:integer))
+      arg(:dashboard_query_mapping_id, non_null(:string))
 
       middleware(UserAuth)
 
@@ -434,7 +434,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     """
     field :update_dashboard_query, :dashboard_query_mapping do
       arg(:dashboard_id, non_null(:integer))
-      arg(:dashboard_query_mapping_id, non_null(:integer))
+      arg(:dashboard_query_mapping_id, non_null(:string))
       arg(:settings, :json)
 
       middleware(JWTAuth)
@@ -450,7 +450,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     """
     field :delete_dashboard_query, :dashboard_query_mapping do
       arg(:dashboard_id, non_null(:integer))
-      arg(:dashboard_query_mapping_id, non_null(:integer))
+      arg(:dashboard_query_mapping_id, non_null(:string))
 
       middleware(JWTAuth)
 
@@ -540,7 +540,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     """
     field :add_dashboard_global_parameter_override, :dashboard do
       arg(:dashboard_id, non_null(:integer))
-      arg(:dashboard_query_mapping_id, non_null(:integer))
+      arg(:dashboard_query_mapping_id, non_null(:string))
 
       arg(:dashboard_parameter_key, non_null(:string))
       arg(:query_parameter_key, non_null(:string))

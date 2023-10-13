@@ -588,6 +588,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
             query_parameter_key: "slug"
           }
         )
+        |> IO.inspect(label: "591", limit: :infinity)
         |> get_in(["data", "addDashboardGlobalParameterOverride"])
 
       assert override == %{

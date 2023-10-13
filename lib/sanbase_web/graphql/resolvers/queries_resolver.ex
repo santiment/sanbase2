@@ -155,10 +155,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   def create_dashboard_query(
         _root,
-        %{dashboard_id: dashboard_id, query_id: query_id, settings: settings},
+        %{dashboard_id: dashboard_id, query_id: query_id} = args,
         %{context: %{auth: %{current_user: user}}}
       ) do
-    Dashboards.add_query_to_dashboard(dashboard_id, query_id, user.id, settings)
+    Dashboards.add_query_to_dashboard(
+      dashboard_id,
+      query_id,
+      user.id,
+      Map.get(args, :settings, %{})
+    )
   end
 
   def update_dashboard_query(
@@ -166,7 +171,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{dashboard_id: dashboard_id, dashboard_query_mapping_id: mapping_id, settings: settings},
         %{context: %{auth: %{current_user: user}}}
       ) do
-    Dashboards.update_dashboard_query(dashboard_id, mapping_id, settings, user.id)
+    Dashboards.update_dashboard_query(dashboard_id, mapping_id, user.id, settings)
   end
 
   def delete_dashboard_query(

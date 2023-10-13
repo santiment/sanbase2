@@ -734,9 +734,14 @@ defmodule Sanbase.Dashboards do
   @doc ~s"""
   Update the settings of a dashboard query mapping.
   """
-  @spec update_dashboard_query(dashboard_id(), dashboard_query_mapping_id(), Map.t(), user_id()) ::
+  @spec update_dashboard_query(dashboard_id(), dashboard_query_mapping_id(), user_id(), Map.t()) ::
           {:ok, DashboardQueryMapping.t()} | {:error, String.t()}
-  def update_dashboard_query(dashboard_id, dashboard_query_mapping_id, settings, querying_user_id) do
+  def update_dashboard_query(
+        dashboard_id,
+        dashboard_query_mapping_id,
+        querying_user_id,
+        settings
+      ) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_mapping, fn _repo, _changes ->
       query = DashboardQueryMapping.by_id(dashboard_query_mapping_id)

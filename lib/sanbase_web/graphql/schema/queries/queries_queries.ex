@@ -435,7 +435,8 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     field :update_dashboard_query, :dashboard_query_mapping do
       arg(:dashboard_id, non_null(:integer))
       arg(:dashboard_query_mapping_id, non_null(:string))
-      arg(:settings, :json)
+      # The settings are the only thing that can be updated, hence non_null
+      arg(:settings, non_null(:json))
 
       middleware(JWTAuth)
 

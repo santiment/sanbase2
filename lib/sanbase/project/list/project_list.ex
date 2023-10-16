@@ -56,6 +56,17 @@ defmodule Sanbase.Project.List do
     |> Repo.all()
   end
 
+  def projects_twitter_handles_by_slugs(slugs, opts \\ []) do
+    opts = Keyword.put(opts, :preload?, false)
+
+    projects_query(opts)
+    |> where([p], p.slug in ^slugs)
+    |> select([p], p.twitter_link)
+    |> Repo.all()
+    |> Enum.map(&Sanbase.Project.TwitterData.link_to_handle/1)
+    |> Enum.reject(&is_nil/1)
+  end
+
   @doc ~s"""
   Return the slugs of all projects that are marked as hidden
 

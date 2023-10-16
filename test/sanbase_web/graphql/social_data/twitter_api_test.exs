@@ -95,7 +95,9 @@ defmodule Sanbase.Github.TwitterApiTest do
   test "fetching last twitter data for a project with invalid twitter link", context do
     %{conn: conn, project: project} = context
 
-    Sanbase.Project.changeset(project, %{twitter_link: "santiment"})
+    Sanbase.Project.changeset(project, %{
+      twitter_link: "not_a_link(should_be_starting_with_https://...)"
+    })
     |> Sanbase.Repo.update!()
 
     result =

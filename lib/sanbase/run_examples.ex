@@ -527,10 +527,6 @@ defmodule Sanbase.RunExamples do
   end
 
   defp do_run(:uniswap) do
-    # These are slow or crash with too much memory used
-    # {:ok, %{}} = Sanbase.Clickhouse.Research.Uniswap.who_claimed()
-    # {:ok, %{}} = Sanbase.Clickhouse.Research.Uniswap.value_distribution()
-
     # {:ok, [_ | _]} =
     #   Sanbase.Clickhouse.Uniswap.MetricAdapter.histogram_data(
     #     "uniswap_top_claimers",

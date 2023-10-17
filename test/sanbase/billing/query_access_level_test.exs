@@ -150,8 +150,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :top_transfers,
           :transaction_volume_per_address,
           :twitter_data,
-          :uniswap_value_distribution,
-          :uniswap_who_claimed,
           :upcoming_invoice,
           :usd_value_address_change,
           :user_list,

@@ -83,6 +83,17 @@ defmodule Sanbase.Queries.QueryExecution do
     )
   end
 
+  @doc ~s"""
+  Return a query that computes the summary of the user's executions.
+
+  The summary includes the total credits spent in the current month and amount of
+  queries executed in the current minute, hour and day.
+  Only the queries that have non-zero credits cost are counted. The only way a query
+  can have a zero cost is if it has been set to zero by a moderator/admin. This happens
+  when a moderator/admin clears the user's queries to reset their limits via the admin
+  panel.
+  """
+  @spec executions_summary(user_id) :: Ecto.Query.t()
   def executions_summary(user_id) do
     now = DateTime.utc_now()
     beginning_of_minute = %{now | :second => 0, :microsecond => {0, 0}}
@@ -91,7 +102,11 @@ defmodule Sanbase.Queries.QueryExecution do
     beginning_of_month = Timex.beginning_of_month(now)
 
     from(c in __MODULE__,
-      where: c.user_id == ^user_id and c.inserted_at >= ^beginning_of_month,
+      # The c.credits_cost > 0 is added to avoid counting the queries that have been "cleared"
+      # when a moderator/admin has cleared the user's queries to reset their limits. If they
+      # are counted, the user might still be restricted after cleaning their limits.
+      where:
+        c.user_id == ^user_id and c.inserted_at >= ^beginning_of_month and c.credits_cost > 0,
       select: %{
         monthly_credits_spent: sum(c.credits_cost),
         queries_executed_minute:
@@ -255,6 +270,11 @@ defmodule Sanbase.Queries.QueryExecution do
       |> Enum.reduce(0, fn {key, value}, acc ->
         acc + value * Map.fetch!(@credit_cost_weights, key)
       end)
+
+    # The credits cost cannot be 0. The only way a credits cost can be 0 is if it has been
+    # set to 0 by a moderator/admin after it was executed. This happens when a moderator/admin
+    # clears the user's executions to reset their limits via the admin panel.
+    credits_cost = Enum.max([credits_cost, 1])
 
     %{execution_details: execution_details, credits_cost: credits_cost}
   end

@@ -60,11 +60,11 @@ defmodule Sanbase.Queries.Authorization do
   defp query_executions_limit(product_code, plan_name) do
     case {product_code, plan_name} do
       {_, "FREE"} -> %{minute: 1, hour: 5, day: 10}
-      {"SANBASE", "PRO"} -> %{minute: 10, hour: 50, day: 100}
-      {"SANAPI", "BASIC"} -> %{minute: 20, hour: 100, day: 200}
-      {"SANAPI", "PRO"} -> %{minute: 50, hour: 250, day: 500}
-      {"SANAPI", "CUSTOM"} -> %{minute: 200, hour: 1000, day: 2000}
-      {"SANAPI", "CUSTOM_" <> _} -> %{minute: 200, hour: 1000, day: 2000}
+      {"SANBASE", "PRO"} -> %{minute: 10, hour: 100, day: 500}
+      {"SANAPI", "BASIC"} -> %{minute: 20, hour: 200, day: 1000}
+      {"SANAPI", "PRO"} -> %{minute: 50, hour: 600, day: 3000}
+      {"SANAPI", "CUSTOM"} -> %{minute: 200, hour: 1000, day: 5000}
+      {"SANAPI", "CUSTOM_" <> _} -> %{minute: 200, hour: 1000, day: 5000}
     end
   end
 

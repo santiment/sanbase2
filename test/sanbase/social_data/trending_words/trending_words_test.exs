@@ -36,7 +36,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          summaries: [
                            %{
                              datetime: dt1,
-                             source: "4chan,bitcointalk,reddit",
+                             source: "4chan,reddit",
                              summary: "summary2"
                            }
                          ],
@@ -53,7 +53,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          summaries: [
                            %{
                              datetime: dt1,
-                             source: "4chan,bitcointalk,reddit",
+                             source: "4chan,reddit",
                              summary: "summary1"
                            }
                          ],
@@ -72,7 +72,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          summaries: [
                            %{
                              datetime: dt2,
-                             source: "4chan,bitcointalk,reddit",
+                             source: "4chan,reddit",
                              summary: "summary4"
                            }
                          ],
@@ -89,7 +89,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          summaries: [
                            %{
                              datetime: dt2,
-                             source: "4chan,bitcointalk,reddit",
+                             source: "4chan,reddit",
                              summary: "summary3"
                            }
                          ],
@@ -108,7 +108,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          summaries: [
                            %{
                              datetime: dt3,
-                             source: "4chan,bitcointalk,reddit",
+                             source: "4chan,reddit",
                              summary: "summary6"
                            }
                          ],
@@ -125,7 +125,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          summaries: [
                            %{
                              datetime: dt3,
-                             source: "4chan,bitcointalk,reddit",
+                             source: "4chan,reddit",
                              summary: "summary5"
                            }
                          ],
@@ -173,7 +173,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                        summaries: [
                          %{
                            datetime: ~U[2019-01-03 00:00:00Z],
-                           source: "4chan,bitcointalk,reddit",
+                           source: "4chan,reddit",
                            summary: "summary6"
                          }
                        ],
@@ -190,7 +190,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                        summaries: [
                          %{
                            datetime: ~U[2019-01-03 00:00:00Z],
-                           source: "4chan,bitcointalk,reddit",
+                           source: "4chan,reddit",
                            summary: "summary5"
                          }
                        ],

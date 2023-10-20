@@ -2037,6 +2037,40 @@ ALTER SEQUENCE public.metrics_id_seq OWNED BY public.metrics.id;
 
 
 --
+-- Name: monitored_twitter_handles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.monitored_twitter_handles (
+    id bigint NOT NULL,
+    handle character varying(255) NOT NULL,
+    origin character varying(255) NOT NULL,
+    notes text,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: monitored_twitter_handles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.monitored_twitter_handles_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: monitored_twitter_handles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.monitored_twitter_handles_id_seq OWNED BY public.monitored_twitter_handles.id;
+
+
+--
 -- Name: newsletter_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4685,6 +4719,13 @@ ALTER TABLE ONLY public.metrics ALTER COLUMN id SET DEFAULT nextval('public.metr
 
 
 --
+-- Name: monitored_twitter_handles id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitored_twitter_handles ALTER COLUMN id SET DEFAULT nextval('public.monitored_twitter_handles_id_seq'::regclass);
+
+
+--
 -- Name: newsletter_tokens id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5504,6 +5545,14 @@ ALTER TABLE ONLY public.market_segments
 
 ALTER TABLE ONLY public.metrics
     ADD CONSTRAINT metrics_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: monitored_twitter_handles monitored_twitter_handles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitored_twitter_handles
+    ADD CONSTRAINT monitored_twitter_handles_pkey PRIMARY KEY (id);
 
 
 --
@@ -6518,6 +6567,13 @@ CREATE UNIQUE INDEX market_segments_name_index ON public.market_segments USING b
 --
 
 CREATE UNIQUE INDEX metrics_name_index ON public.metrics USING btree (name);
+
+
+--
+-- Name: monitored_twitter_handles_handle_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX monitored_twitter_handles_handle_index ON public.monitored_twitter_handles USING btree (handle);
 
 
 --
@@ -7633,6 +7689,14 @@ ALTER TABLE ONLY public.list_items
 
 ALTER TABLE ONLY public.list_items
     ADD CONSTRAINT list_items_user_list_id_fkey FOREIGN KEY (user_list_id) REFERENCES public.user_lists(id) ON DELETE CASCADE;
+
+
+--
+-- Name: monitored_twitter_handles monitored_twitter_handles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitored_twitter_handles
+    ADD CONSTRAINT monitored_twitter_handles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -8786,3 +8850,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230925041216);
 INSERT INTO public."schema_migrations" (version) VALUES (20231003070443);
 INSERT INTO public."schema_migrations" (version) VALUES (20231012122039);
 INSERT INTO public."schema_migrations" (version) VALUES (20231012130814);
+INSERT INTO public."schema_migrations" (version) VALUES (20231019111320);

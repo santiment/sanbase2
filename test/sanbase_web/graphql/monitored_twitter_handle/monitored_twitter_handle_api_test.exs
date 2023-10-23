@@ -39,6 +39,13 @@ defmodule SanbaseWeb.Graphql.MonitoredTwitterHandleApiTest do
       |> get_in(["errors", Access.at(0), "message"])
 
     assert error_msg =~ "already being monitored"
+
+    # Get current user added handles
+    handles =
+      get_current_user_handles(conn)
+      |> get_in(["data", "getCurrentUserSubmittedTwitterHandles"])
+
+    assert handles == [%{"handle" => "santimentfeed", "notes" => "note"}]
   end
 
   defp add_twitter_handle_to_monitor(conn, args) do
@@ -51,6 +58,21 @@ defmodule SanbaseWeb.Graphql.MonitoredTwitterHandleApiTest do
 
   defp is_twitter_handle_monitored(conn, args) do
     query = "{ isTwitterHandleMonitored(#{map_to_args(args)}) }"
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
+  defp get_current_user_handles(conn) do
+    query = """
+    {
+      getCurrentUserSubmittedTwitterHandles {
+        notes
+        handle
+      }
+    }
+    """
 
     conn
     |> post("/graphql", query_skeleton(query))

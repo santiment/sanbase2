@@ -2047,7 +2047,8 @@ CREATE TABLE public.monitored_twitter_handles (
     notes text,
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    status character varying(255) DEFAULT 'pending_approval'::character varying
 );
 
 
@@ -8851,3 +8852,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231003070443);
 INSERT INTO public."schema_migrations" (version) VALUES (20231012122039);
 INSERT INTO public."schema_migrations" (version) VALUES (20231012130814);
 INSERT INTO public."schema_migrations" (version) VALUES (20231019111320);
+INSERT INTO public."schema_migrations" (version) VALUES (20231023123140);

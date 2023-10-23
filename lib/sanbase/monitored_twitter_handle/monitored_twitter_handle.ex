@@ -39,7 +39,7 @@ defmodule Sanbase.MonitoredTwitterHandle do
           {:ok, Sanbase.MonitoredTwitterHandle.t()} | {:error, String.t()}
   def add_new(handle, user_id, origin, notes) do
     %__MODULE__{}
-    |> change(%{handle: handle, user_id: user_id, origin: origin, notes: notes})
+    |> change(%{handle: String.downcase(handle), user_id: user_id, origin: origin, notes: notes})
     |> validate_required([:handle, :user_id, :origin])
     |> unique_constraint(:handle)
     |> Sanbase.Repo.insert()

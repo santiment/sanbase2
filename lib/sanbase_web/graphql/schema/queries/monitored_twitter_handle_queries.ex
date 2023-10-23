@@ -8,6 +8,14 @@ defmodule SanbaseWeb.Graphql.Schema.MonitoredTwitterHandleQueries do
   alias SanbaseWeb.Graphql.Resolvers.MonitoredTwitterHandleResolver
 
   object :monitored_twitter_handle_queries do
+    field :get_current_user_submitted_twitter_handles, list_of(:monitored_twitter_handle) do
+      meta(access: :free)
+
+      middleware(UserAuth)
+
+      resolve(&MonitoredTwitterHandleResolver.get_current_user_submitted_twitter_handles/3)
+    end
+
     field :is_twitter_handle_monitored, :boolean do
       meta(access: :free)
 

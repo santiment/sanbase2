@@ -420,8 +420,11 @@ defmodule Sanbase.Balance.SqlQuery do
     GLOBAL ANY INNER JOIN
     (
       SELECT address
-      FROM blockchain_address_labels
-      PREWHERE blockchain = {{#{blockchain_key}}} AND label IN ({{#{labels_key}}})})
+      FROM current_label_addresses
+      WHERE blockchain = {{#{blockchain_key}}} AND
+      label_id IN (
+        SELECT label_id FROM label_metadata WHERE key IN ({{#{labels_key}}})
+      )
     ) USING (address)
     """
 

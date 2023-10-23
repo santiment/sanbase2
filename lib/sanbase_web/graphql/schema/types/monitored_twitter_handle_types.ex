@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.MonitoredTwitterHandleTypes do
   object :monitored_twitter_handle do
     field(:handle, non_null(:string))
     field(:notes, :string)
+    field(:status, :string)
 
     field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))

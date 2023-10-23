@@ -12,6 +12,8 @@ defmodule Sanbase.MonitoredTwitterHandle do
           user_id: User.user_id(),
           user: User.t(),
           origin: String.t(),
+          # One of approved/declined/pending_approval
+          status: String.t(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -20,6 +22,7 @@ defmodule Sanbase.MonitoredTwitterHandle do
     field(:handle, :string)
     field(:notes, :string)
     field(:origin, :string)
+    field(:status, :string)
 
     belongs_to(:user, User)
 

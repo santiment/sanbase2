@@ -80,6 +80,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_chart_configuration_shared_access_token,
           :get_clickhouse_database_metadata,
           :get_clickhouse_query_execution_stats,
+          :get_current_user_submitted_twitter_handles,
           :get_coupon,
           :get_dashboard_cache,
           :get_dashboard_panel_cache,

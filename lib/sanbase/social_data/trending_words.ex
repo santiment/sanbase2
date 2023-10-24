@@ -238,20 +238,33 @@ defmodule Sanbase.SocialData.TrendingWords do
   defp get_trending_words_query(from, to, interval, size, source, word_type_filter) do
     sql = """
     SELECT
-      #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
+      t,
       word,
-      any(project) AS project2,
-      argMax(score, dt) / {{score_equalizer}} AS score,
-      argMax(words_context, dt) AS context,
-      argMax(summary, dt) AS summary,
-      tuple(argMax(pos_ratio, dt), argMax(neg_ratio, dt), argMax(neu_ratio, dt)) AS sentiment_ratios
-    FROM #{@table}
-    WHERE
-      dt >= toDateTime({{from}}) AND
-      dt < toDateTime({{to}}) AND
-      source = {{source}}
-      #{word_type_filter_str(word_type_filter)}
-    GROUP BY t, word, source
+      project AS project2,
+      score,
+      context,
+      summary,
+      sentiment_ratios
+    FROM
+    (
+      SELECT
+        #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
+        dt,
+        max(dt) OVER (PARTITION BY t) AS last_dt_in_group,
+        word,
+        project,
+        score / {{score_equalizer}} AS score,
+        words_context AS context,
+        summary,
+        tuple(pos_ratio, neg_ratio, neu_ratio) AS sentiment_ratios
+      FROM #{@table}
+      WHERE
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
+        source = {{source}}
+        #{word_type_filter_str(word_type_filter)}
+    )
+    WHERE dt = last_dt_in_group
     ORDER BY t, score DESC
     LIMIT {{limit}} BY t
     """
@@ -263,7 +276,8 @@ defmodule Sanbase.SocialData.TrendingWords do
       source: source,
       limit: size,
       # The score equalizer is used to make sure that the score is comparable in absolute values
-      score_equalizer: if(source == "reddit,telegram,twitter_crypto", do: 3, else: 1)
+      # no matter if the source is `reddit`, `4chat,reddit` or `reddit,telegram,twitter_crypto`
+      score_equalizer: length(String.split(source, ","))
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -324,7 +338,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   defp default_source do
     case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
       "prod" -> "reddit,telegram,twitter_crypto"
-      _ -> "4chan,bitcointalk,reddit"
+      _ -> "4chan,reddit"
     end
   end
 end

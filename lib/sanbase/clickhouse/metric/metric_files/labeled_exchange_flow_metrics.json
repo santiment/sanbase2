@@ -15,7 +15,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Exchange to Miners Flow",
@@ -33,7 +33,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Miners Exchange Balance",
@@ -51,7 +51,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Whales to Exchanges Flow",
@@ -69,7 +69,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Exchanges to Whales Flow",
@@ -87,7 +87,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Whales Exchange Balance",
@@ -105,7 +105,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEX and DEX Traders to Exchanges Flow",
@@ -123,7 +123,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Exchanges to CEX and DEX Traders Flow",
@@ -141,7 +141,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEX and DEX Traders Exchange Balance",
@@ -159,7 +159,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEX Traders to Exchanges Flow",
@@ -177,7 +177,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Exchanges to DEX Traders Flow",
@@ -195,7 +195,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEX Traders Exchange Balance",
@@ -213,7 +213,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi to Exchanges Flow",
@@ -231,7 +231,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Exchanges to DeFi Flow",
@@ -249,7 +249,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi Exchange Balance",
@@ -267,7 +267,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Genesis to Exchanges Flow",
@@ -285,7 +285,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Exchanges to Genesis Flow",
@@ -303,7 +303,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Genesis Exchange Balance",
@@ -321,7 +321,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other To Exchanges Flow",
@@ -339,7 +339,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Exchanges to Other Flow",
@@ -357,7 +357,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other Exchange Balance",
@@ -375,6 +375,6 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "hardDeprecateAfter": "2023-11-26T00:00:00Z"
   }
 ]

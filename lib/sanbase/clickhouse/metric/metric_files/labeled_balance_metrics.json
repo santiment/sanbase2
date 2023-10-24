@@ -14,8 +14,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "Genesis Balance",
@@ -32,8 +31,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "DEX Trader Balance",
@@ -50,8 +48,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "CEX and DEX Trader Balance",
@@ -68,8 +65,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "DeFi Balance",
@@ -86,8 +82,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "DEX Balance",
@@ -104,8 +99,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "CEX Balance",
@@ -122,8 +116,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "CEX Traders Balance",
@@ -140,8 +133,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "Deposit Balance",
@@ -158,8 +150,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "Proxy Balance",
@@ -176,8 +167,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "Whale Balance",
@@ -194,8 +184,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "Makerdao Bite Keeper Balance",
@@ -212,8 +201,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "Makerdao CDP Owner Balance",
@@ -230,8 +218,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "Unlabeled Balance",
@@ -248,8 +235,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "All Known Balance",
@@ -266,7 +252,6 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries",
-    "hardDeprecateAfter": "2023-11-12"
+    "data_type": "timeseries"
   }
 ]

@@ -45,9 +45,9 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          negative_sentiment_ratio: 0.3,
                          neutral_sentiment_ratio: 0.5,
                          positive_sentiment_ratio: 0.2,
-                         bearish_bb_sentiment_ratio: 0.3,
+                         negative_bb_sentiment_ratio: 0.3,
                          neutral_bb_sentiment_ratio: 0.5,
-                         bullish_bb_sentiment_ratio: 0.2
+                         positive_bb_sentiment_ratio: 0.2
                        },
                        %{
                          context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
@@ -65,9 +65,9 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          negative_sentiment_ratio: 0.3,
                          neutral_sentiment_ratio: 0.5,
                          positive_sentiment_ratio: 0.2,
-                         bearish_bb_sentiment_ratio: 0.3,
+                         negative_bb_sentiment_ratio: 0.3,
                          neutral_bb_sentiment_ratio: 0.5,
-                         bullish_bb_sentiment_ratio: 0.2
+                         positive_bb_sentiment_ratio: 0.2
                        }
                      ],
                      dt2 => [
@@ -87,9 +87,9 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          negative_sentiment_ratio: 0.1,
                          neutral_sentiment_ratio: 0.7,
                          positive_sentiment_ratio: 0.2,
-                         bearish_bb_sentiment_ratio: 0.1,
+                         negative_bb_sentiment_ratio: 0.1,
                          neutral_bb_sentiment_ratio: 0.7,
-                         bullish_bb_sentiment_ratio: 0.2
+                         positive_bb_sentiment_ratio: 0.2
                        },
                        %{
                          context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
@@ -107,9 +107,9 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          negative_sentiment_ratio: 0.1,
                          neutral_sentiment_ratio: 0.5,
                          positive_sentiment_ratio: 0.4,
-                         bearish_bb_sentiment_ratio: 0.1,
+                         negative_bb_sentiment_ratio: 0.1,
                          neutral_bb_sentiment_ratio: 0.5,
-                         bullish_bb_sentiment_ratio: 0.4
+                         positive_bb_sentiment_ratio: 0.4
                        }
                      ],
                      dt3 => [
@@ -129,9 +129,9 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          negative_sentiment_ratio: 0.3,
                          neutral_sentiment_ratio: 0.5,
                          positive_sentiment_ratio: 0.2,
-                         bearish_bb_sentiment_ratio: 0.3,
+                         negative_bb_sentiment_ratio: 0.3,
                          neutral_bb_sentiment_ratio: 0.5,
-                         bullish_bb_sentiment_ratio: 0.2
+                         positive_bb_sentiment_ratio: 0.2
                        },
                        %{
                          context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
@@ -149,9 +149,9 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          negative_sentiment_ratio: 0.3,
                          neutral_sentiment_ratio: 0.5,
                          positive_sentiment_ratio: 0.2,
-                         bearish_bb_sentiment_ratio: 0.3,
+                         negative_bb_sentiment_ratio: 0.3,
                          neutral_bb_sentiment_ratio: 0.5,
-                         bullish_bb_sentiment_ratio: 0.2
+                         positive_bb_sentiment_ratio: 0.2
                        }
                      ]
                    }
@@ -200,9 +200,9 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                        negative_sentiment_ratio: 0.3,
                        neutral_sentiment_ratio: 0.5,
                        positive_sentiment_ratio: 0.2,
-                       bearish_bb_sentiment_ratio: 0.3,
+                       negative_bb_sentiment_ratio: 0.3,
                        neutral_bb_sentiment_ratio: 0.5,
-                       bullish_bb_sentiment_ratio: 0.2
+                       positive_bb_sentiment_ratio: 0.2
                      },
                      %{
                        context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
@@ -220,9 +220,9 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                        negative_sentiment_ratio: 0.3,
                        neutral_sentiment_ratio: 0.5,
                        positive_sentiment_ratio: 0.2,
-                       bearish_bb_sentiment_ratio: 0.3,
+                       negative_bb_sentiment_ratio: 0.3,
                        neutral_bb_sentiment_ratio: 0.5,
-                       bullish_bb_sentiment_ratio: 0.2
+                       positive_bb_sentiment_ratio: 0.2
                      }
                    ]
                  }

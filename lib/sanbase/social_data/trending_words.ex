@@ -79,7 +79,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         # postive, negative or netural sentiment. The values are in the range [0, 1]
         # and add up to 1
         [pos_sentiment, neg_sentiment, neu_sentiment] = sentiment_ratios
-        [bull_bb_sentiment, bear_bb_sentiment, neu_bb_sentiment] = bb_sentiment_ratios
+        [positive_bb_sentiment, negative_bb_sentiment, neutral_bb_sentiment] = bb_sentiment_ratios
 
         summaries = [%{source: source, datetime: datetime, summary: summary}]
         context = transform_context(context)
@@ -95,9 +95,9 @@ defmodule Sanbase.SocialData.TrendingWords do
           positive_sentiment_ratio: pos_sentiment,
           negative_sentiment_ratio: neg_sentiment,
           neutral_sentiment_ratio: neu_sentiment,
-          bullish_bb_sentiment_ratio: bull_bb_sentiment,
-          bearish_bb_sentiment_ratio: bear_bb_sentiment,
-          neutral_bb_sentiment_ratio: neu_bb_sentiment
+          positive_bb_sentiment_ratio: positive_bb_sentiment,
+          negative_bb_sentiment_ratio: negative_bb_sentiment,
+          neutral_bb_sentiment_ratio: neutral_bb_sentiment
         }
 
         Map.update(acc, datetime, [elem], fn words -> [elem | words] end)
@@ -262,7 +262,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         words_context AS context,
         summary,
         tuple(pos_ratio, neg_ratio, neu_ratio) AS sentiment_ratios,
-        tuple(bull_bb_ratio, bear_bb_ratio, neu_bb_ratio) AS bb_sentiment_ratios
+        tuple(positive_bb_ratio, negative_bb_ratio, neutral_bb_ratio) AS bb_sentiment_ratios
       FROM #{@table}
       WHERE
         dt >= toDateTime({{from}}) AND

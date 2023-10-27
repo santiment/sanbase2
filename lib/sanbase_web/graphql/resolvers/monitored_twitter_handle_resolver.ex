@@ -17,4 +17,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MonitoredTwitterHandleResolver do
       {:error, error_msg} -> {:error, error_msg}
     end
   end
+
+  def get_current_user_submitted_twitter_handles(_root, _args, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    Sanbase.MonitoredTwitterHandle.get_user_submissions(user.id)
+  end
 end

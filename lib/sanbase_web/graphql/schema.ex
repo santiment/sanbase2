@@ -55,6 +55,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.MarketSegmentTypes)
   import_types(Graphql.MarketTypes)
   import_types(Graphql.MetricTypes)
+  import_types(Graphql.MonitoredTwitterHandleTypes)
   import_types(Graphql.NftTypes)
   import_types(Graphql.PaginationTypes)
   import_types(Graphql.PriceTypes)

@@ -92,6 +92,16 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
   end
 
+  object :user_promo_code do
+    field(:campaign, :string)
+    field(:coupon, :string)
+    field(:percent_off, :integer)
+    field(:redeem_by, :datetime)
+    field(:max_redemptions, :integer)
+    field(:times_redeemed, :integer)
+    field(:data, :json)
+  end
+
   object :user do
     field(:id, non_null(:id))
     field(:email, :string)
@@ -105,6 +115,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:stripe_customer_id, :string)
     field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
+
+    field :promo_codes, list_of(:user_promo_code) do
+      resolve(&UserResolver.user_promo_codes/3)
+    end
 
     field :is_moderator, :boolean do
       resolve(&UserResolver.is_moderator/3)

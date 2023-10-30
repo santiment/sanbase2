@@ -17,6 +17,62 @@ defmodule SanbaseWeb do
   and import those modules here.
   """
 
+  def live_component do
+    quote do
+      use Phoenix.LiveComponent
+
+      # HTML escaping functionality
+      import Phoenix.HTML
+      # Core UI components and translation
+      import SanbaseWeb.CoreComponents
+      import SanbaseWeb.Gettext
+
+      # Shortcut for generating JS commands
+      alias Phoenix.LiveView.JS
+
+      alias SanbaseWeb.Router.Helpers, as: Routes
+    end
+  end
+
+  def live_view do
+    quote do
+      use Phoenix.LiveView,
+        layout: {SanbaseWeb.Layouts, :app}
+
+      # HTML escaping functionality
+      import Phoenix.HTML
+      # Core UI components and translation
+      import SanbaseWeb.CoreComponents
+      import SanbaseWeb.Gettext
+
+      # Shortcut for generating JS commands
+      alias Phoenix.LiveView.JS
+
+      alias SanbaseWeb.Router.Helpers, as: Routes
+    end
+  end
+
+  def html do
+    quote do
+      use Phoenix.Component
+
+      # Import convenience functions from controllers
+      import Phoenix.Controller,
+        only: [get_csrf_token: 0, view_module: 1, view_template: 1]
+
+      # HTML escaping functionality
+      import Phoenix.HTML
+      # Core UI components and translation
+      import SanbaseWeb.CoreComponents
+      import SanbaseWeb.Gettext
+
+      # Shortcut for generating JS commands
+      alias Phoenix.LiveView.JS
+
+      alias SanbaseWeb.Router.Helpers, as: Routes
+    end
+  end
+
   def controller do
     quote do
       use Phoenix.Controller, namespace: SanbaseWeb

@@ -39,6 +39,6 @@
 
 
   <%= for table <- @has_many do %>
-    <SanbaseWeb.TableComponent.table model={table.model} rows={table.rows} fields={table.fields} funcs={table.funcs} />
+    <SanbaseWeb.CoreComponents.old_table model={table.model} rows={table.rows} fields={table.fields} funcs={table.funcs} />
   <% end %>
 </div>

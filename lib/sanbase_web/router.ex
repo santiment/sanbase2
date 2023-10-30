@@ -58,6 +58,8 @@ defmodule SanbaseWeb.Router do
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
 
+    live("/monitored_twitter_handle", MonitoredTwitterHandleLive.Index)
+
     post("/users", UserController, :search)
 
     get("/", CustomAdminController, :index)

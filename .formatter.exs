@@ -8,5 +8,6 @@
     "priv/**/*.{ex,exs}",
     "mix.exs",
     ".formatter.exs"
-  ]
+  ],
+  plugins: [Phoenix.LiveView.HTMLFormatter]
 ]

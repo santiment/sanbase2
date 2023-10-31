@@ -12,10 +12,9 @@ defmodule SanbaseWeb.Endpoint do
     max_age: 24 * 60 * 60 * 30,
     # Doesn't need to be a secret. Session cookies are signed by both secret_key_base and signing_salt
     # For reference: https://github.com/phoenixframework/phoenix/issues/2146
-    signing_salt: "grT-As16"
+    signing_salt: "grT-As16",
+    same_site: "Lax"
   ]
-
-  socket("/socket", SanbaseWeb.UserSocket, websocket: true, check_origin: false)
 
   socket("/live", Phoenix.LiveView.Socket,
     websocket: [
@@ -25,11 +24,13 @@ defmodule SanbaseWeb.Endpoint do
     ]
   )
 
+  socket("/socket", SanbaseWeb.UserSocket, websocket: true, check_origin: false)
+
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phoenix.digest
   # when deploying your static files in production.
-  plug(Plug.Static, at: "/", from: :sanbase, gzip: false)
+  plug(Plug.Static, at: "/", from: :sanbase, gzip: false, only: SanbaseWeb.static_paths())
   plug(Plug.Static, at: "/kaffy", from: :kaffy, gzip: false, only: ~w(assets))
 
   # Prometheus /metrics endpoint

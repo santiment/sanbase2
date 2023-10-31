@@ -37,6 +37,12 @@ defmodule Sanbase.MonitoredTwitterHandle do
     {:ok, Repo.exists?(query)}
   end
 
+  def list_all_pending_approval() do
+    query = from(m in __MODULE__, where: m.status == "pending_approval")
+
+    Repo.all(query)
+  end
+
   @doc ~s"""
   Add a twitter handle to monitor
   """

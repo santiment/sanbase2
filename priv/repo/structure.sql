@@ -2048,7 +2048,9 @@ CREATE TABLE public.monitored_twitter_handles (
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    status character varying(255) DEFAULT 'pending_approval'::character varying
+    status character varying(255) DEFAULT 'pending_approval'::character varying,
+    approved_by text,
+    declined_by text
 );
 
 
@@ -8924,3 +8926,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231012130814);
 INSERT INTO public."schema_migrations" (version) VALUES (20231019111320);
 INSERT INTO public."schema_migrations" (version) VALUES (20231023123140);
 INSERT INTO public."schema_migrations" (version) VALUES (20231026084628);
+INSERT INTO public."schema_migrations" (version) VALUES (20231030143950);

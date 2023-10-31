@@ -24,6 +24,8 @@ defmodule SanbaseWeb.ConnCase do
 
       # The default endpoint for testing
       @endpoint SanbaseWeb.Endpoint
+
+      use SanbaseWeb, :verified_routes
     end
   end
 

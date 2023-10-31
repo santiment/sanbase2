@@ -71,6 +71,8 @@ COPY assets assets
 # RUN mix format --check-formatted
 
 # compile assets
+RUN cd assets && npm install
+RUN mix assets.setup
 RUN mix assets.deploy
 
 # Compile the release

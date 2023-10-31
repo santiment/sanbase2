@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Endpoint do
     at: "/",
     from: :sanbase,
     gzip: false,
-    only: ~w(assets js css fonts images favicon.ico robots.txt)
+    only: SanbaseWeb.static_paths()
   )
 
   plug(Plug.Static, at: "/kaffy", from: :kaffy, gzip: false, only: ~w(assets))

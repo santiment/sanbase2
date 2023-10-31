@@ -16,6 +16,28 @@ defmodule SanbaseWeb do
   below. Instead, define any helper function in modules
   and import those modules here.
   """
+  def static_paths, do: ~w(assets js css fonts images favicon.ico robots.txt)
+
+  def router do
+    quote do
+      use Phoenix.Router
+
+      # Import common connection and controller functions to use in pipelines
+      import Plug.Conn
+      import Phoenix.Controller
+      import Phoenix.LiveView.Router
+      unquote(verified_routes())
+    end
+  end
+
+  def channel do
+    quote do
+      use Phoenix.Channel
+      import SanbaseWeb.Gettext
+
+      unquote(verified_routes())
+    end
+  end
 
   def controller do
     quote do
@@ -26,6 +48,37 @@ defmodule SanbaseWeb do
       import Phoenix.LiveView.Controller
 
       alias SanbaseWeb.Router.Helpers, as: Routes
+      unquote(verified_routes())
+    end
+  end
+
+  def live_view do
+    quote do
+      use Phoenix.LiveView,
+        layout: {PentoWeb.Layouts, :app}
+
+      unquote(html_helpers())
+    end
+  end
+
+  def live_component do
+    quote do
+      use Phoenix.LiveComponent
+
+      unquote(html_helpers())
+    end
+  end
+
+  def html do
+    quote do
+      use Phoenix.Component
+
+      # Import convenience functions from controllers
+      import Phoenix.Controller,
+        only: [get_csrf_token: 0, view_module: 1, view_template: 1]
+
+      # Include general helpers for rendering HTML
+      unquote(html_helpers())
     end
   end
 
@@ -36,29 +89,12 @@ defmodule SanbaseWeb do
         namespace: SanbaseWeb
 
       # Import convenience functions from controllers
-      import Phoenix.Controller, only: [get_flash: 1, get_flash: 2, view_module: 1]
+      import Phoenix.Controller, only: [view_module: 1]
 
       use Phoenix.HTML
       import Phoenix.View
 
       unquote(view_helpers())
-    end
-  end
-
-  def router do
-    quote do
-      use Phoenix.Router
-
-      import Plug.Conn
-      import Phoenix.Controller
-      import Phoenix.LiveView.Router
-    end
-  end
-
-  def channel do
-    quote do
-      use Phoenix.Channel
-      import SanbaseWeb.Gettext
     end
   end
 
@@ -73,6 +109,33 @@ defmodule SanbaseWeb do
       import SanbaseWeb.ErrorHelpers
       import SanbaseWeb.Gettext
       alias SanbaseWeb.Router.Helpers, as: Routes
+
+      unquote(verified_routes())
+    end
+  end
+
+  defp html_helpers do
+    quote do
+      # HTML escaping functionality
+      import Phoenix.HTML
+      # Core UI components and translation
+      import SanbaseWeb.CoreComponents
+      import SanbaseWeb.Gettext
+
+      # Shortcut for generating JS commands
+      alias Phoenix.LiveView.JS
+
+      # Routes generation with the ~p sigil
+      unquote(verified_routes())
+    end
+  end
+
+  def verified_routes do
+    quote do
+      use Phoenix.VerifiedRoutes,
+        endpoint: SanbaseWeb.Endpoint,
+        router: SanbaseWeb.Router,
+        statics: SanbaseWeb.static_paths()
     end
   end
 

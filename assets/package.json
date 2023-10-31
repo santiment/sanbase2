@@ -4,7 +4,7 @@
   "scripts": {
     "deploy": "webpack --mode production",
     "watch": "webpack --mode development --watch",
-    "build:dev": "webpack --progress --colors --watch",
+    "build:dev": "webpack --mode development --progress --colors",
     "build:prod": "NODE_ENV=production webpack --progress --colors -p"
   },
   "dependencies": {

@@ -19,9 +19,9 @@ config :sanbase, SanbaseWeb.Endpoint,
       "node_modules/webpack/bin/webpack.js",
       "--mode",
       "development",
+      "--watch",
       "--watch-stdin",
-      "--display",
-      "errors-only",
+      "--color",
       cd: Path.expand("../assets", __DIR__)
     ]
   ]

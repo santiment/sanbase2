@@ -11,6 +11,9 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive.Index do
           <:col :let={row} label="Notes"><%= row.notes %></:col>
 
           <:action :let={row}>
+            <.button phx-click={JS.push("approve", value: %{id: row.id})}>
+              Approve
+            </.button>
             <.button phx-click={JS.push("decline", value: %{id: row.id})}>
               Decline
             </.button>
@@ -28,13 +31,11 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive.Index do
 
   @impl true
   def handle_event("approve", %{"id" => id}, socket) do
-    IO.inspect("GOT EVENT")
     {:noreply, socket}
   end
 
   @impl true
   def handle_event("decline", %{"id" => id}, socket) do
-    IO.inspect("GOT EVENT")
     {:noreply, socket}
   end
 

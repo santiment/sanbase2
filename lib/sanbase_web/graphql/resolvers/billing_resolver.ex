@@ -1,6 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   alias Sanbase.Billing
-  alias Sanbase.Billing.{Subscription, Plan}
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.UserPromoCode
+
   alias Sanbase.Accounts.User
 
   alias Sanbase.StripeApi
@@ -17,8 +20,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     payment_instrument = Map.take(args, [:card_token, :payment_method_id])
     coupon = Map.get(args, :coupon)
 
-    with {:plan?, %Plan{is_deprecated: false} = plan} <- {:plan?, Plan.by_id(plan_id)},
+    with {_, %Plan{is_deprecated: false} = plan} <- {:plan?, Plan.by_id(plan_id)},
+         true <- UserPromoCode.is_coupon_usable(coupon, plan),
          {:ok, subscription} <- route_subscription(current_user, plan, payment_instrument, coupon) do
+      # If the coupon exists in the user_promo_codes table, times_redeemed
+      # will be bumped by one. We don't check beforehand if the coupon exists and if it's valid,
+      # as the Stripe API will take care of this.
+      if coupon, do: UserPromoCode.use_coupon(coupon)
+
       {:ok, subscription}
     else
       result ->
@@ -125,8 +134,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   end
 
   def get_coupon(_root, %{coupon: coupon}, _resolution) do
-    Sanbase.StripeApi.retrieve_coupon(coupon)
-    |> case do
+    case Sanbase.StripeApi.retrieve_coupon(coupon) do
       {:ok,
        %Stripe.Coupon{
          valid: valid,

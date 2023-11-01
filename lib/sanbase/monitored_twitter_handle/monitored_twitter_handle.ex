@@ -16,6 +16,7 @@ defmodule Sanbase.MonitoredTwitterHandle do
           origin: String.t(),
           # One of approved/declined/pending_approval
           status: String.t(),
+          comment: String.t(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -25,6 +26,8 @@ defmodule Sanbase.MonitoredTwitterHandle do
     field(:notes, :string)
     field(:origin, :string)
     field(:status, :string)
+    # moderator/admin comment when approving/declining
+    field(:comment, :string)
 
     belongs_to(:user, User)
 
@@ -62,14 +65,16 @@ defmodule Sanbase.MonitoredTwitterHandle do
     {:ok, Repo.all(query)}
   end
 
-  @doc false
-  def update_status(record_id, status)
+  # @doc false
+  def update_status(record_id, status, comment \\ nil)
       when status in ["approved", "declined", "pending_approval"] do
     # The status is updated from an admin panel
-    Repo.get!(__MODULE__, record_id)
-    |> change(%{status: status})
-    |> Repo.update()
-    |> case do
+    result =
+      Repo.get!(__MODULE__, record_id)
+      |> change(%{status: status, comment: comment})
+      |> Repo.update()
+
+    case result do
       {:ok, %__MODULE__{user_id: user_id}} = result when status == "approved" ->
         maybe_add_user_promo_code(user_id)
         result
@@ -77,6 +82,12 @@ defmodule Sanbase.MonitoredTwitterHandle do
       result ->
         result
     end
+  end
+
+  def list_all_submissions() do
+    query = from(m in __MODULE__, where: m.origin == "graphql_api")
+
+    Repo.all(query)
   end
 
   # Private functions

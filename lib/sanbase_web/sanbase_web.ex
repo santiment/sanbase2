@@ -55,7 +55,7 @@ defmodule SanbaseWeb do
   def live_view do
     quote do
       use Phoenix.LiveView,
-        layout: {PentoWeb.Layouts, :app}
+        layout: {SanbaseWeb.Layouts, :app}
 
       unquote(html_helpers())
     end

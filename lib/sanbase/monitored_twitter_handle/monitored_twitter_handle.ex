@@ -32,6 +32,7 @@ defmodule Sanbase.MonitoredTwitterHandle do
   end
 
   def is_handle_monitored(handle) do
+    handle = String.downcase(handle)
     query = from(m in __MODULE__, where: m.handle == ^handle)
 
     {:ok, Repo.exists?(query)}

@@ -16,7 +16,12 @@ config :sanbase, SanbaseWeb.Endpoint,
   root: ".",
   version: Application.spec(:sanbase, :vsn),
   load_from_system_env: true,
-  check_origin: ["//*.santiment.net", "//*.sanr.app"]
+  check_origin: [
+    "//*.santiment.net",
+    "//*.sanr.app",
+    "//*.sanbase-admin.stage.san",
+    "//*.sanbase-admin.production.san"
+  ]
 
 # Clickhousex does not support `:system` tuples. The configuration is done
 # by defining defining `:url` in the ClickhouseRepo `init` function.

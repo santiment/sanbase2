@@ -1,5 +1,3 @@
-import '../css/app.css';
-
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
 import {Socket} from "phoenix"

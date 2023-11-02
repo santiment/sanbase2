@@ -18,24 +18,24 @@ slaveTemplates.dockerTemplate { label ->
         def scmVars = checkout scm
         def gitHead = scmVars.GIT_COMMIT.substring(0, 7)
 
-        sh "docker build \
-          -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID} \
-          -f Dockerfile-test . \
-          --progress plain"
+        // sh "docker build \
+        //   -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID} \
+        //   -f Dockerfile-test . \
+        //   --progress plain"
 
-        sh "docker run \
-            --rm --name test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID} \
-            -e POSTGRES_PASSWORD=password \
-            -d postgres:12.7-alpine"
+        // sh "docker run \
+        //     --rm --name test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID} \
+        //     -e POSTGRES_PASSWORD=password \
+        //     -d postgres:12.7-alpine"
 
-        try {
-          sh "docker run --rm \
-            --link test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID}:test-db \
-            --env DATABASE_URL=postgres://postgres:password@test-db:5432/postgres \
-            -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID}"
-        } finally {
-          sh "docker kill test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID}"
-        }
+        // try {
+        //   sh "docker run --rm \
+        //     --link test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID}:test-db \
+        //     --env DATABASE_URL=postgres://postgres:password@test-db:5432/postgres \
+        //     -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID}"
+        // } finally {
+        //   sh "docker kill test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.BRANCH_NAME}-${env.CHANGE_ID}"
+        // }
 
         if (env.BRANCH_NAME == 'master') {
           withCredentials([

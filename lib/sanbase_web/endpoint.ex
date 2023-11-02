@@ -22,7 +22,8 @@ defmodule SanbaseWeb.Endpoint do
       connect_info: [
         session: {SanbaseWeb.LiveViewUtils, :session_options, [@session_options]}
       ]
-    ]
+    ],
+    check_origin: false
   )
 
   # Serve at "/" the static files from "priv/static" directory.

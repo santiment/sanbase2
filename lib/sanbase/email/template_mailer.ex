@@ -10,7 +10,7 @@ defmodule Sanbase.TemplateMailer do
 
   def send(rcpt_email, template_slug, vars) do
     template = Sanbase.Email.Template.templates()[template_slug]
-    Map.put(vars, :current_year, Date.utc_today().year())
+    vars = Map.put(vars, :current_year, Date.utc_today().year())
 
     if template do
       subject =

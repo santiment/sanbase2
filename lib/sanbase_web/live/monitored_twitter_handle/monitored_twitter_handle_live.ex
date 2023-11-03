@@ -14,7 +14,7 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
           <:col :let={row} label="Notes"><%= row.notes %></:col>
           <:col :let={row} label="Moderator comment"><%= row.comment %></:col>
           <:action :let={row}>
-            <.form :let={f} for={@form} phx-submit="update_status">
+            <.form for={@form} phx-submit="update_status">
               <.input type="text" field={@form[:comment]} placeholder="Comment..." />
               <input type="hidden" name="record_id" value={row.id} />
               <.button name="status" value="approved">Approve</.button>
@@ -35,6 +35,7 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
      |> assign(:form, to_form(%{}))}
   end
 
+  @impl true
   def handle_event(
         "update_status",
         %{"status" => status, "record_id" => record_id} = params,
@@ -49,7 +50,7 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
     {:noreply, assign(socket, :handles, handles)}
   end
 
-  defp update_assigns_handle(handles, record_id, status, comment \\ nil) do
+  defp update_assigns_handle(handles, record_id, status, comment) do
     handles
     |> Enum.map(fn
       %{id: ^record_id} = record ->

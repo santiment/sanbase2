@@ -7,10 +7,10 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
   def render(assigns) do
     ~H"""
     <div>
-      <div class="flex-1 p:2 sm:p-6 justify-center flex flex-col-reverse scrolling-auto">
+      <div class="flex-1 p:2 sm:p-6 justify-evenly flex flex-col-reverse scrolling-auto">
         <.table id="monitored_twitter_handles" rows={@handles}>
           <:col :let={row} label="Status">
-            <p class={row.status_color} -600>
+            <p class={row.status_color}>
               <%= row.status |> String.replace("_", " ") |> String.upcase() %>
             </p>
           </:col>
@@ -28,25 +28,37 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
             <.form for={@form} phx-submit="update_status">
               <.input type="text" class="" field={@form[:comment]} placeholder="Comment..." />
               <input type="hidden" name="record_id" value={row.id} />
-              <.button
+              <SanbaseWeb.MonitoredTwitterHandleLive.bbutton
                 name="status"
                 value="approved"
-                class="my-1 focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
-              >
-                Approve
-              </.button>
-              <.button
+                color="green"
+                display_text="Approve"
+              />
+              <SanbaseWeb.MonitoredTwitterHandleLive.bbutton
                 name="status"
                 value="declined"
-                class="my-1 focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
-              >
-                Decline
-              </.button>
+                color="red"
+                display_text="Decline"
+              />
             </.form>
           </:action>
         </.table>
       </div>
     </div>
+    """
+  end
+
+  def bbutton(assigns) do
+    ~H"""
+    <.button
+      name={@name}
+      value={@value}
+      class={"my-1 focus:outline-none text-white bg-#{@color}-700 hover:bg-#{@color}-800 focus:ring-4 focus:ring-#{@color}-300
+              font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-#{@color}-600 dark:hover:bg-#{@color}-700
+              dark:focus:ring-#{@color}-800"}
+    >
+      <%= @display_text %>
+    </.button>
     """
   end
 
@@ -82,6 +94,7 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
         record
         |> Map.put(:status, status)
         |> Map.put(:comment, comment)
+        |> Map.put(:status_color, status_to_color(status))
 
       record ->
         record

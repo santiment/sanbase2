@@ -7,10 +7,18 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
   def render(assigns) do
     ~H"""
     <div>
-      <div class="flex-1 p:2 sm:p-6 justify-between flex flex-col-reverse scrolling-auto">
+      <div class="flex-1 p:2 sm:p-6 justify-center flex flex-col-reverse scrolling-auto">
         <.table id="monitored_twitter_handles" rows={@handles}>
-          <:col :let={row} label="Status"><p class={row.status_color}-600><%= row.status |> String.replace("_", " ") |> String.upcase()  %></p></:col>
-          <:col :let={row} label="Twitter Handle (Clickable link)"><.link class="underline text-blue-600" href={"https://x.com/#{row.handle}"}><%= row.handle %></.link></:col>
+          <:col :let={row} label="Status">
+            <p class={row.status_color} -600>
+              <%= row.status |> String.replace("_", " ") |> String.upcase() %>
+            </p>
+          </:col>
+          <:col :let={row} label="Twitter Handle (Clickable link)">
+            <.link class="underline text-blue-600" href={"https://x.com/#{row.handle}"}>
+              <%= row.handle %>
+            </.link>
+          </:col>
           <:col :let={row} label="Notes"><%= row.notes %></:col>
           <:col :let={row} label="User ID"><%= row.user_id %></:col>
           <:col :let={row} label="Username"><%= row.user_username %></:col>
@@ -18,10 +26,22 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
           <:col :let={row} label="Moderator comment"><%= row.comment %></:col>
           <:action :let={row}>
             <.form for={@form} phx-submit="update_status">
-              <.input type="text" field={@form[:comment]} placeholder="Comment..." />
+              <.input type="text" class="" field={@form[:comment]} placeholder="Comment..." />
               <input type="hidden" name="record_id" value={row.id} />
-              <.button name="status" value="approved">Approve</.button>
-              <.button name="status" value="declined">Decline</.button>
+              <.button
+                name="status"
+                value="approved"
+                class="my-1 focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+              >
+                Approve
+              </.button>
+              <.button
+                name="status"
+                value="declined"
+                class="my-1 focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
+              >
+                Decline
+              </.button>
             </.form>
           </:action>
         </.table>

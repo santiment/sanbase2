@@ -9,9 +9,12 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
     <div>
       <div class="flex-1 p:2 sm:p-6 justify-between flex flex-col-reverse scrolling-auto">
         <.table id="monitored_twitter_handles" rows={@handles}>
-          <:col :let={row} label="Twitter Handle"><%= row.handle %></:col>
-          <:col :let={row} label="Status"><%= row.status %></:col>
+          <:col :let={row} label="Status"><p class={row.status_color}-600><%= row.status |> String.replace("_", " ") |> String.upcase()  %></p></:col>
+          <:col :let={row} label="Twitter Handle (Clickable link)"><.link class="underline text-blue-600" href={"https://x.com/#{row.handle}"}><%= row.handle %></.link></:col>
           <:col :let={row} label="Notes"><%= row.notes %></:col>
+          <:col :let={row} label="User ID"><%= row.user_id %></:col>
+          <:col :let={row} label="Username"><%= row.user_username %></:col>
+          <:col :let={row} label="Email"><%= row.user_email %></:col>
           <:col :let={row} label="Moderator comment"><%= row.comment %></:col>
           <:action :let={row}>
             <.form for={@form} phx-submit="update_status">
@@ -75,11 +78,19 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
         handle: struct.handle,
         notes: struct.notes,
         comment: struct.comment,
-        inserted_at: struct.inserted_at
+        inserted_at: struct.inserted_at,
+        status_color: status_to_color(struct.status),
+        user_id: struct.user.id,
+        user_username: struct.user.username,
+        user_email: struct.user.email
       }
     end)
     |> order_records()
   end
+
+  defp status_to_color("approved"), do: "text-green-600"
+  defp status_to_color("declined"), do: "text-red-600"
+  defp status_to_color("pending_approval"), do: "text-yellow-600"
 
   defp order_records(handles) do
     handles

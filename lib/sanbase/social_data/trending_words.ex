@@ -78,8 +78,8 @@ defmodule Sanbase.SocialData.TrendingWords do
         # The percentage of the documents that mention the word that have
         # postive, negative or netural sentiment. The values are in the range [0, 1]
         # and add up to 1
-        [pos_sentiment, neg_sentiment, neu_sentiment] = sentiment_ratios
-        [positive_bb_sentiment, negative_bb_sentiment, neutral_bb_sentiment] = bb_sentiment_ratios
+        [positive_sentiment, neutral_sentiment, negative_sentiment] = sentiment_ratios
+        [positive_bb_sentiment, neutral_bb_sentiment, negative_bb_sentiment] = bb_sentiment_ratios
 
         summaries = [%{source: source, datetime: datetime, summary: summary}]
         context = transform_context(context)
@@ -92,9 +92,9 @@ defmodule Sanbase.SocialData.TrendingWords do
           # Keep both summaries and summary for backwards compatibility. Remove summaries later
           summary: summary,
           summaries: summaries,
-          positive_sentiment_ratio: pos_sentiment,
-          negative_sentiment_ratio: neg_sentiment,
-          neutral_sentiment_ratio: neu_sentiment,
+          positive_sentiment_ratio: positive_sentiment,
+          negative_sentiment_ratio: negative_sentiment,
+          neutral_sentiment_ratio: neutral_sentiment,
           positive_bb_sentiment_ratio: positive_bb_sentiment,
           negative_bb_sentiment_ratio: negative_bb_sentiment,
           neutral_bb_sentiment_ratio: neutral_bb_sentiment
@@ -261,8 +261,8 @@ defmodule Sanbase.SocialData.TrendingWords do
         score / {{score_equalizer}} AS score,
         words_context AS context,
         summary,
-        tuple(pos_ratio, neg_ratio, neu_ratio) AS sentiment_ratios,
-        tuple(positive_bb_ratio, negative_bb_ratio, neutral_bb_ratio) AS bb_sentiment_ratios
+        tuple(positive_ratio, neutral_ratio, negative_ratio) AS sentiment_ratios,
+        tuple(positive_bb_ratio, neutral_bb_ratio, negative_bb_ratio) AS bb_sentiment_ratios
       FROM #{@table}
       WHERE
         dt >= toDateTime({{from}}) AND

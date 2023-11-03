@@ -2048,7 +2048,8 @@ CREATE TABLE public.monitored_twitter_handles (
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    status character varying(255) DEFAULT 'pending_approval'::character varying
+    status character varying(255) DEFAULT 'pending_approval'::character varying,
+    comment text
 );
 
 
@@ -3949,6 +3950,46 @@ ALTER SEQUENCE public.user_lists_id_seq OWNED BY public.user_lists.id;
 
 
 --
+-- Name: user_promo_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_promo_codes (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    coupon character varying(255) NOT NULL,
+    campaign character varying(255),
+    percent_off integer,
+    max_redemptions integer DEFAULT 1,
+    times_redeemed integer DEFAULT 0,
+    redeem_by timestamp(0) without time zone,
+    metadata jsonb,
+    extra_data jsonb,
+    valid boolean DEFAULT true NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_promo_codes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_promo_codes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_promo_codes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_promo_codes_id_seq OWNED BY public.user_promo_codes.id;
+
+
+--
 -- Name: user_roles; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5091,6 +5132,13 @@ ALTER TABLE ONLY public.user_lists ALTER COLUMN id SET DEFAULT nextval('public.u
 
 
 --
+-- Name: user_promo_codes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_promo_codes ALTER COLUMN id SET DEFAULT nextval('public.user_promo_codes_id_seq'::regclass);
+
+
+--
 -- Name: user_settings id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6034,6 +6082,14 @@ ALTER TABLE ONLY public.user_intercom_attributes
 
 ALTER TABLE ONLY public.user_lists
     ADD CONSTRAINT user_lists_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_promo_codes user_promo_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_promo_codes
+    ADD CONSTRAINT user_promo_codes_pkey PRIMARY KEY (id);
 
 
 --
@@ -7058,6 +7114,13 @@ CREATE INDEX user_intercom_attributes_user_id_index ON public.user_intercom_attr
 --
 
 CREATE UNIQUE INDEX user_lists_slug_index ON public.user_lists USING btree (slug);
+
+
+--
+-- Name: user_promo_codes_coupon_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_promo_codes_coupon_index ON public.user_promo_codes USING btree (coupon);
 
 
 --
@@ -8213,6 +8276,14 @@ ALTER TABLE ONLY public.user_lists
 
 
 --
+-- Name: user_promo_codes user_promo_codes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_promo_codes
+    ADD CONSTRAINT user_promo_codes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_roles user_roles_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8853,3 +8924,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231012122039);
 INSERT INTO public."schema_migrations" (version) VALUES (20231012130814);
 INSERT INTO public."schema_migrations" (version) VALUES (20231019111320);
 INSERT INTO public."schema_migrations" (version) VALUES (20231023123140);
+INSERT INTO public."schema_migrations" (version) VALUES (20231026084628);
+INSERT INTO public."schema_migrations" (version) VALUES (20231101104145);

@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Router do
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_live_flash)
+    plug(:put_root_layout, {SanbaseWeb.Layouts, :root})
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
   end
@@ -53,10 +54,11 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/admin2", SanbaseWeb do
-    pipe_through([:admin_pod_only, :browser, :basic_auth])
+    pipe_through([:browser, :basic_auth])
     import Phoenix.LiveDashboard.Router
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
+    live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
 
     post("/users", UserController, :search)
 

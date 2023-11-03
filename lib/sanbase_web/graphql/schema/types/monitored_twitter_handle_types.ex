@@ -6,6 +6,11 @@ defmodule SanbaseWeb.Graphql.MonitoredTwitterHandleTypes do
     field(:notes, :string)
     field(:status, :string)
 
+    @desc ~s"""
+    Comment submitted by a moderator when approving or declining a handle.
+    """
+    field(:comment, :string)
+
     field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
   end

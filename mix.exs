@@ -89,6 +89,8 @@ defmodule Sanbase.Mixfile do
       {:envy, "~> 1.1.1", only: [:dev, :test]},
       {:erlex, "~> 0.2.6", override: true},
       {:ethereumex, "~> 0.9"},
+      {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
       {:event_bus, "~> 1.7.0"},
       {:ex_abi, "~> 0.6"},
       {:ex_admin, github: "santiment/ex_admin"},
@@ -142,7 +144,8 @@ defmodule Sanbase.Mixfile do
       {:phoenix_live_reload, "~> 1.1", only: :dev},
       {:phoenix_live_view, "~> 0.14"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix, "~> 1.6.0"},
+      {:phoenix_view, "~> 2.0"},
+      {:phoenix, "~> 1.7.0"},
       {:plug_cowboy, "~> 2.5"},
       {:postgrex, "~> 0.16", override: true},
       {:prom_ex, "~> 1.8"},
@@ -222,6 +225,13 @@ defmodule Sanbase.Mixfile do
         "ecto.load -r Sanbase.Repo --skip-if-loaded",
         "test"
       ]
-    ]
+    ] ++
+      [
+        # esbuild/assets building related
+        setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
+        "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
+        "assets.build": ["tailwind default", "esbuild default"],
+        "assets.deploy": ["tailwind default --minify", "esbuild default --minify", "phx.digest"]
+      ]
   end
 end

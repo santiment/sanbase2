@@ -52,6 +52,20 @@ defmodule SanbaseWeb do
     end
   end
 
+  # In order to migrate to the new controller we need to rework /admin2 and /admin2/reports
+  # def controller do
+  #   quote do
+  #     use Phoenix.Controller,
+  #       formats: [:html, :json],
+  #       layouts: [html: SanbaseWeb.Layouts]
+
+  #     import Plug.Conn
+  #     import SanbaseWeb.Gettext
+
+  #     unquote(verified_routes())
+  #   end
+  # end
+
   def live_view do
     quote do
       use Phoenix.LiveView,

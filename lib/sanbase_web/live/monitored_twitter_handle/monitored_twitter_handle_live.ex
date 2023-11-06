@@ -28,16 +28,16 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
             <.form for={@form} phx-submit="update_status">
               <.input type="text" class="" field={@form[:comment]} placeholder="Comment..." />
               <input type="hidden" name="record_id" value={row.id} />
-              <SanbaseWeb.MonitoredTwitterHandleLive.bbutton
+              <SanbaseWeb.MonitoredTwitterHandleLive.update_status_button
                 name="status"
                 value="approved"
-                color="green"
+                class="bg-green-600 hover:bg-green-800"
                 display_text="Approve"
               />
-              <SanbaseWeb.MonitoredTwitterHandleLive.bbutton
+              <SanbaseWeb.MonitoredTwitterHandleLive.update_status_button
                 name="status"
                 value="declined"
-                color="red"
+                class="bg-red-600 hover:bg-red-800"
                 display_text="Decline"
               />
             </.form>
@@ -48,17 +48,18 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
     """
   end
 
-  def bbutton(assigns) do
+  def update_status_button(assigns) do
     ~H"""
-    <.button
+    <button
       name={@name}
       value={@value}
-      class={"my-1 focus:outline-none text-white bg-#{@color}-700 hover:bg-#{@color}-800 focus:ring-4 focus:ring-#{@color}-300
-              font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-#{@color}-600 dark:hover:bg-#{@color}-700
-              dark:focus:ring-#{@color}-800"}
+      class={[
+        "phx-submit-loading:opacity-75 rounded-lg my-1 py-2 px-3 text-sm font-semibold leading-6 text-white",
+        @class
+      ]}
     >
       <%= @display_text %>
-    </.button>
+    </button>
     """
   end
 

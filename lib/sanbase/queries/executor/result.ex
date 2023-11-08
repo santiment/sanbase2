@@ -26,7 +26,7 @@ defmodule Sanbase.Queries.Executor.Result do
             query_end_time: nil
 
   def from_json_string(json) do
-    case Jason.decode(json) do
+    case map_from_json(json) do
       {:ok, map} ->
         result = %__MODULE__{
           query_id: map["query_id"],
@@ -44,6 +44,16 @@ defmodule Sanbase.Queries.Executor.Result do
 
       {:error, error} ->
         {:error, "Provided JSON is malformed: #{inspect(error)}"}
+    end
+  end
+
+  defp map_from_json(json) do
+    with {:ok, map} <- Jason.decode(json) do
+      # The JSON provided by the frontend to the API might include
+      # keys like queryStartTime, queryEndTime, etc.
+      map_with_underscore_keys = Map.new(map, fn {k, v} -> {Inflex.underscore(k), v} end)
+
+      {:ok, map_with_underscore_keys}
     end
   end
 

@@ -718,8 +718,8 @@ defmodule Sanbase.RunExamples do
     {:ok, dashboard_cache} =
       Sanbase.Dashboards.get_cached_dashboard_queries_executions(dashboard.id, user.id)
 
-    # for r <- [dashboard_cache, mapping, dashboard, query],
-    #     do: Sanbase.Repo.delete(r)
+    for r <- [dashboard_cache, mapping, dashboard, query],
+        do: Sanbase.Repo.delete(r)
 
     {:ok, :success}
   end

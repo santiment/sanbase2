@@ -622,7 +622,7 @@ defmodule Sanbase.QueriesTest do
 
       # Test outside of the mock to make sure no database queries are made
       {:ok, dashboard_cache} =
-        Sanbase.Dashboards.get_cached_dashboard_queries(dashboard.id, user.id)
+        Sanbase.Dashboards.get_cached_dashboard_queries_executions(dashboard.id, user.id)
 
       assert %Sanbase.Queries.DashboardCache{
                queries: %{},

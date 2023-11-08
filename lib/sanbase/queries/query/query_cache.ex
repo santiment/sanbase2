@@ -38,8 +38,6 @@ defmodule Sanbase.Queries.QueryCache do
         result.compressed_rows
       end
 
-      IO.inspect(result)
-
     %__MODULE__{
       query_id: result.query_id,
       dashboard_query_mapping_id: dashboard_query_mapping_id,

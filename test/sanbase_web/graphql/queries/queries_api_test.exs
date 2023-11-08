@@ -644,6 +644,9 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
   describe "Caching" do
     test "cache queries on a dashboard", context do
+      Application.put_env(:__sanbase_queires__, :store_execution_details, false)
+      on_exit(fn -> Application.delete_env(:__sanbase_queires__, :store_execution_details) end)
+
       {:ok, query} = Sanbase.Queries.create_query(%{name: "Query"}, context.user.id)
 
       {:ok, dashboard} =
@@ -669,6 +672,9 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       # the query local parameter
       Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
+        dashboard_query_mapping_id = dashboard_query_mapping.id
+        query_id = query.id
+
         result =
           run_sql_query(context.conn, :run_dashboard_sql_query, %{
             dashboard_id: dashboard.id,
@@ -682,12 +688,63 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
             dashboard_query_mapping_id: dashboard_query_mapping.id,
             query_execution_result: Jason.encode!(result)
           })
-          |> IO.inspect(label: "685", limit: :infinity)
+          |> get_in(["data", "storeDashboardQueryExecution"])
+
+        assert %{
+                 "queries" => [
+                   %{
+                     "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
+                     "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+                     "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                     "dashboardQueryMappingId" => ^dashboard_query_mapping_id,
+                     "queryStartTime" => query_start_time,
+                     "queryEndTime" => query_end_time,
+                     "queryId" => ^query_id,
+                     "rows" => [
+                       [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                       [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                     ]
+                   }
+                 ]
+               } = stored
+
+        assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_start_time))
+        assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_end_time))
 
         cache =
           get_cached_dashboard_queries_executions(context.conn, %{dashboard_id: dashboard.id})
-          |> IO.inspect(label: "688", limit: :infinity)
+          |> get_in(["data", "getCachedDashboardQueriesExecutions"])
+
+        assert %{
+                 "queries" => [
+                   %{
+                     "queryId" => ^query_id,
+                     "dashboardQueryMappingId" => ^dashboard_query_mapping_id,
+                     "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
+                     "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+                     "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                     "queryStartTime" => query_start_time,
+                     "queryEndTime" => query_end_time,
+                     "rows" => [
+                       [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                       [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                     ]
+                   }
+                 ]
+               } = cache
+
+        assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_start_time))
+        assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_end_time))
       end)
+    end
+
+    defp datetime_close_to_now?(dt) do
+      Sanbase.TestUtils.datetime_close_to(
+        Timex.now(),
+        dt,
+        2,
+        :seconds
+      )
     end
   end
 
@@ -980,10 +1037,12 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     mutation = """
     {
       #{query_name}(#{map_to_args(args)}){
-        columns
-        columnTypes
-        rows
+        queryId
+        dashboardQueryMappingId
         clickhouseQueryId
+        columnTypes
+        columns
+        rows
         summary
         queryStartTime
         queryEndTime
@@ -1003,6 +1062,12 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         queries{
           queryId
           dashboardQueryMappingId
+          clickhouseQueryId
+          columns
+          rows
+          columnTypes
+          queryStartTime
+          queryEndTime
         }
       }
     }
@@ -1018,7 +1083,14 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     {
       getCachedDashboardQueriesExecutions(#{map_to_args(args)}){
         queries{
+          queryId
           dashboardQueryMappingId
+          clickhouseQueryId
+          columnTypes
+          columns
+          rows
+          queryStartTime
+          queryEndTime
         }
       }
     }

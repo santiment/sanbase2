@@ -143,9 +143,15 @@ defmodule Sanbase.Queries.DashboardCache do
   @doc ~s"""
   Update the dashboard's query cache with the provided result.
   """
-  @spec update_query_cache(non_neg_integer(), String.t(), Result.t(), user_id()) ::
+  @spec update_query_cache(non_neg_integer(), String.t(), Result.t(), user_id(), Keyword.t()) ::
           {:ok, t()} | {:error, any()}
-  def update_query_cache(dashboard_id, dashboard_query_mapping_id, query_result, querying_user_id) do
+  def update_query_cache(
+        dashboard_id,
+        dashboard_query_mapping_id,
+        query_result,
+        querying_user_id,
+        opts \\ []
+      ) do
     # Do not transform the loaded queries cache. Transforming it would
     # convert `compressed_rows` to `rows`, which will be written back and break
     with query_cache =
@@ -168,6 +174,7 @@ defmodule Sanbase.Queries.DashboardCache do
       |> change(%{queries: queries})
       |> Repo.update()
       |> maybe_transform_error()
+      |> maybe_apply_function(&transform_loaded_dashboard_cache(&1, opts))
     end
   end
 
@@ -208,29 +215,20 @@ defmodule Sanbase.Queries.DashboardCache do
   end
 
   defp transform_loaded_queries(query_cache) do
-    IO.inspect(query_cache)
+    query_cache = atomize_keys(query_cache)
 
-    %{"compressed_rows" => compressed_rows, "updated_at" => updated_at} = query_cache
-    %{"query_start_time" => start_dt, "query_end_time" => query_end_dt} = query_cache
+    %{compressed_rows: compressed_rows, updated_at: updated_at} = query_cache
+    %{query_start_time: start_dt, query_end_time: query_end_dt} = query_cache
 
     {:ok, rows} =
       compressed_rows
       |> Result.decompress_rows()
       |> transform_rows()
 
-    {:ok, updated_at, _} = DateTime.from_iso8601(updated_at)
+    updated_at = to_datetime(updated_at)
 
     query_cache
-    |> Map.drop(["compressed_rows", "updated_at", "query_start_time", "query_end_time"])
-    |> Map.new(fn {k, v} ->
-      # Ignore old, no longer existing keys like san_query_id
-      try do
-        {String.to_existing_atom(k), v}
-      rescue
-        _ -> {nil, nil}
-      end
-    end)
-    |> Map.delete(nil)
+    |> Map.drop([:compressed_rows, :updated_at, :query_start_time, :query_end_time])
     |> Map.merge(%{
       rows: rows,
       updated_at: updated_at,
@@ -238,6 +236,34 @@ defmodule Sanbase.Queries.DashboardCache do
       query_start_time: Sanbase.DateTimeUtils.from_iso8601!(start_dt),
       query_end_time: Sanbase.DateTimeUtils.from_iso8601!(query_end_dt)
     })
+  end
+
+  defp to_datetime(data) do
+    case data do
+      %DateTime{} ->
+        data
+
+      <<_::binary>> ->
+        {:ok, dt, _} = DateTime.from_iso8601(data)
+        dt
+    end
+  end
+
+  defp atomize_keys(map) do
+    map
+    |> Map.new(fn
+      {k, v} when is_atom(k) ->
+        {k, v}
+
+      {k, v} when is_binary(k) ->
+        # Ignore old, no longer existing keys like san_query_id
+        try do
+          {String.to_existing_atom(k), v}
+        rescue
+          _ -> {nil, nil}
+        end
+    end)
+    |> Map.delete(nil)
   end
 
   defp transform_rows(rows) do

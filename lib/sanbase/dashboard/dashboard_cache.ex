@@ -101,9 +101,9 @@ defmodule Sanbase.Dashboard.Cache do
   @doc ~s"""
   Update the dashboard's panel cache with the provided result.
   """
-  @spec update_panel_cache(non_neg_integer(), String.t(), Dashboad.Query.Result.t()) ::
+  @spec update_panel_cache(non_neg_integer(), String.t(), Dashboad.Query.Result.t(), Keyword.t()) ::
           {:ok, t()} | {:error, any()}
-  def update_panel_cache(dashboard_id, panel_id, query_result) do
+  def update_panel_cache(dashboard_id, panel_id, query_result, opts \\ []) do
     with true <- query_result_size_allowed?(query_result),
          {:ok, cache} <-
            by_dashboard_id(dashboard_id,
@@ -123,6 +123,8 @@ defmodule Sanbase.Dashboard.Cache do
       cache
       |> change(%{panels: panels})
       |> Repo.update()
+      |> maybe_apply_function(&transform_loaded_dashboard_cache(&1, opts))
+      |> IO.inspect(label: "127", limit: :infinity)
     end
   end
 
@@ -130,15 +132,16 @@ defmodule Sanbase.Dashboard.Cache do
   Remove the panel result from the cache. This is invoked when the panel is
   removed from the dashboard.
   """
-  @spec remove_panel_cache(non_neg_integer(), String.t()) ::
+  @spec remove_panel_cache(non_neg_integer(), String.t(), Keyword.t()) ::
           {:ok, t()} | {:error, any()}
-  def remove_panel_cache(dashboard_id, panel_id) do
+  def remove_panel_cache(dashboard_id, panel_id, opts \\ []) do
     {:ok, cache} = by_dashboard_id(dashboard_id, lock_for_update: true)
     panels = Enum.reject(cache.panels, &(&1.id == panel_id))
 
     cache
     |> change(%{panels: panels})
     |> Repo.update()
+    |> maybe_apply_function(&transform_loaded_dashboard_cache(&1, opts))
   end
 
   # Private functions

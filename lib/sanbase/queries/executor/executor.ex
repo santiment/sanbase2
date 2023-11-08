@@ -43,7 +43,7 @@ defmodule Sanbase.Queries.Executor do
   @spec run(Query.t(), QueryMetadata.t(), Environment.t()) ::
           {:ok, Result.t()} | {:error, String.t()}
   def run(%Query{} = query, %{} = query_metadata, %{} = environment) do
-    query_start_time = DateTime.utc_now()
+    query_start_time = DateTime.utc_now() |> DateTime.truncate(:millisecond)
 
     _ = put_read_only_repo()
 
@@ -66,7 +66,7 @@ defmodule Sanbase.Queries.Executor do
            columns: map.column_names,
            column_types: map.column_types,
            query_start_time: query_start_time,
-           query_end_time: DateTime.utc_now()
+           query_end_time: DateTime.utc_now() |> DateTime.truncate(:millisecond)
          }}
 
       {:error, error} ->

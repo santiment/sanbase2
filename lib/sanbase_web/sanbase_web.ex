@@ -41,30 +41,15 @@ defmodule SanbaseWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: SanbaseWeb
+      use Phoenix.Controller,
+        formats: [:html, :json],
+        layouts: [html: SanbaseWeb.Layouts]
 
       import Plug.Conn
       import SanbaseWeb.Gettext
-      import Phoenix.LiveView.Controller
-
-      alias SanbaseWeb.Router.Helpers, as: Routes
       unquote(verified_routes())
     end
   end
-
-  # In order to migrate to the new controller we need to rework /admin2 and /admin2/reports
-  # def controller do
-  #   quote do
-  #     use Phoenix.Controller,
-  #       formats: [:html, :json],
-  #       layouts: [html: SanbaseWeb.Layouts]
-
-  #     import Plug.Conn
-  #     import SanbaseWeb.Gettext
-
-  #     unquote(verified_routes())
-  #   end
-  # end
 
   def live_view do
     quote do

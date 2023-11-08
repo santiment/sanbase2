@@ -317,7 +317,7 @@ defmodule Sanbase.Queries do
             Application.get_env(
               :__sanbase_queires__,
               :__wait_fetching_details_ms_,
-              Keyword.get(opts, :store_execution_details, true)
+              Keyword.get(opts, :wait_fetching_details_ms, 7500)
             )
         ]
 

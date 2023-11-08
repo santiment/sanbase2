@@ -2,12 +2,25 @@
 
 <table class="table-auto border-collapse w-full mb-4">
   <thead>
-    <tr class="rounded-lg text-sm font-medium text-gray-700 text-left" style="font-size: 0.9674rem">
-      <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">ID</th>
-      <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">Name</th>
-      <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">Email</th>
-      <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">Username</th>
-      <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">Actions</th>
+    <tr
+      class="rounded-lg text-sm font-medium text-gray-700 text-left"
+      style="font-size: 0.9674rem"
+    >
+      <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+        ID
+      </th>
+      <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+        Name
+      </th>
+      <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+        Email
+      </th>
+      <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+        Username
+      </th>
+      <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+        Actions
+      </th>
     </tr>
   </thead>
   <tbody class="text-sm font-normal text-gray-700">
@@ -18,8 +31,9 @@
         <td class="px-5 py-5 text-sm bg-white border-b border-gray-200"><%= user.email %></td>
         <td class="px-5 py-5 text-sm bg-white border-b border-gray-200"><%= user.username %></td>
         <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
-          <span><%= link "Show", to: Routes.user_path(@conn, :show, user) %></span> |
-          <span><%= link "Edit", to: Routes.user_path(@conn, :edit, user) %></span> |
+          <span><%= link("Show", to: Routes.user_path(@conn, :show, user)) %></span>
+          | <span><%= link("Edit", to: Routes.user_path(@conn, :edit, user)) %></span>
+          |
         </td>
       </tr>
     <% end %>

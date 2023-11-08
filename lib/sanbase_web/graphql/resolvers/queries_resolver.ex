@@ -200,9 +200,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
              query_execution_result,
              user.id
            ) do
-      queries =
-        Map.values(dashboard_cache.queries)
-        |> IO.inspect(label: "205", limit: :infinity)
+      queries = Map.values(dashboard_cache.queries)
 
       {:ok, %{queries: queries}}
     end

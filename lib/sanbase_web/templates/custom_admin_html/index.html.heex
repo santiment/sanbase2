@@ -7,7 +7,7 @@
       </div>
       <%= for {name, path} <- @routes do %>
         <nav class="mt-10">
-          <%= link name, to: path, class: "flex items-center px-6 py-2 mt-4 duration-200 border-l-4 border-gray-900 text-gray-500 hover:bg-gray-600 hover:bg-opacity-25 hover:text-gray-100" %></span>
+          <span><%= link name, to: path, class: "flex items-center px-6 py-2 mt-4 duration-200 border-l-4 border-gray-900 text-gray-500 hover:bg-gray-600 hover:bg-opacity-25 hover:text-gray-100" %></span>
         </nav>
       <% end %>
     </div>

@@ -682,11 +682,13 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
           })
           |> get_in(["data", "runDashboardSqlQuery"])
 
+        compressed_result = Jason.encode!(result) |> :zlib.gzip() |> Base.encode64()
+
         stored =
           store_dashboard_query_execution(context.conn, %{
             dashboard_id: dashboard.id,
             dashboard_query_mapping_id: dashboard_query_mapping.id,
-            query_execution_result: Jason.encode!(result)
+            compressed_query_execution_result: compressed_result
           })
           |> get_in(["data", "storeDashboardQueryExecution"])
 

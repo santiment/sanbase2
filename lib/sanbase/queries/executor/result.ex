@@ -25,7 +25,37 @@ defmodule Sanbase.Queries.Executor.Result do
             query_start_time: nil,
             query_end_time: nil
 
+  @doc ~s"""
+  Accept a binary that is a base64-encoded gzip binary, and return
+  the decoded and decompressed value
+
+  In order to reduce the size of data sent from the frontend to the backend
+  when storing cached values.
+  """
+  @spec decode_and_decompress(String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  def decode_and_decompress(base64_gzip) when is_binary(base64_gzip) do
+    with {:ok, gzip} <- Base.decode64(base64_gzip),
+         decompressed when is_binary(decompressed) <- :zlib.gunzip(gzip) do
+      {:ok, decompressed}
+    else
+      :error ->
+        {:error, "The provided value is not a valid base64-encoded binary"}
+    end
+  rescue
+    _e in [ErlangError] ->
+      {:error, "The provided value is not a valid gzip binary"}
+  end
+
+  @doc ~s"""
+  Accept a string that is a stringified JSON object representing the result
+  of executing an SQL query, and return a `Result` struct.
+  The GraphQL API uses snake_case internally, but the JS frontend uses camelCase,
+  so the keys might be in any of those two formats. This function will handle
+  both cases.
+  """
+  @spec from_json_string(String.t()) :: {:ok, t()} | {:error, String.t()}
   def from_json_string(json) do
+    # map_from_json/1 will also convert all keys to snake_case
     case map_from_json(json) do
       {:ok, map} ->
         result = %__MODULE__{

@@ -188,11 +188,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{
           dashboard_id: dashboard_id,
           dashboard_query_mapping_id: mapping_id,
-          query_execution_result: query_execution_result
+          compressed_query_execution_result: compressed_query_execution_result
         },
         %{context: %{auth: %{current_user: user}}}
       ) do
-    with {:ok, query_execution_result} <- Result.from_json_string(query_execution_result),
+    with {:ok, result_string} <- Result.decode_and_decompress(compressed_query_execution_result),
+         {:ok, query_execution_result} <- Result.from_json_string(result_string),
          {:ok, dashboard_cache} <-
            Dashboards.store_dashboard_query_execution(
              dashboard_id,

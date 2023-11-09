@@ -344,7 +344,13 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       arg(:dashboard_id, non_null(:integer))
       arg(:dashboard_query_mapping_id, non_null(:string))
 
-      arg(:query_execution_result, non_null(:string))
+      @desc ~s"""
+      This is the result of the query execution. The JSON obtained from
+      runSqlQuery/runRawSqlQuery/runDashboardSqlQuery is first stringified,
+      then gzipped and the encoded in base64. This is done to reduce the
+      size of the data sent from the frontend to the backend.
+      """
+      arg(:compressed_query_execution_result, non_null(:string))
 
       middleware(JWTAuth)
 

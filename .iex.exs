@@ -8,7 +8,6 @@ alias Sanbase.Model.{
   MarketSegment,
   LatestCoinmarketcapData,
   ModelUtils,
-
   Currency,
   Ico,
   IcoCurrency

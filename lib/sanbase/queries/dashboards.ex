@@ -641,7 +641,7 @@ defmodule Sanbase.Dashboards do
   """
   @spec get_visibility_data(dashboard_id()) :: {:ok, visibility_data()} | {:error, String.t()}
   def get_visibility_data(dashboard_id) do
-    query = get_visibility_data(dashboard_id)
+    query = Dashboard.get_visibility_data(dashboard_id)
 
     case Repo.one(query) do
       %{} = data -> {:ok, data}
@@ -770,6 +770,47 @@ defmodule Sanbase.Dashboards do
     end)
     |> Repo.transaction()
     |> process_transaction_result(:fetch_dashboard_queries)
+  end
+
+  ## Cache-related
+
+  @doc ~s"""
+
+  """
+  @spec store_dashboard_query_execution(
+          dashboard_id(),
+          dashboard_query_mapping_id(),
+          map(),
+          user_id()
+        ) ::
+          {:ok, DashboardQueryMappingCache.t()} | {:error, String.t()}
+  def store_dashboard_query_execution(
+        dashboard_id,
+        dashboard_query_mapping_id,
+        query_result,
+        user_id
+      ) do
+    Sanbase.Queries.DashboardCache.update_query_cache(
+      dashboard_id,
+      dashboard_query_mapping_id,
+      query_result,
+      user_id
+    )
+  end
+
+  @doc ~s"""
+
+  """
+  @spec get_cached_dashboard_queries_executions(
+          dashboard_id(),
+          user_id()
+        ) ::
+          {:ok, DashboardQueryMappingCache.t()} | {:error, String.t()}
+  def get_cached_dashboard_queries_executions(
+        dashboard_id,
+        user_id
+      ) do
+    Sanbase.Queries.DashboardCache.by_dashboard_id(dashboard_id, user_id)
   end
 
   # Private functions

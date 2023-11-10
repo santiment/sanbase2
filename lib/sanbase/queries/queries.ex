@@ -300,18 +300,46 @@ defmodule Sanbase.Queries do
 
   # Private functions
 
+  defp get_store_execution_opts(opts) do
+    # In test env allow the configuration to be provided as application env
+    # so that we can disable the storing of details even when the function is called through
+    # the API where  we cannot provide the opts arg.
+    case @compile_env do
+      :test ->
+        [
+          store_execution_details:
+            Application.get_env(
+              :__sanbase_queires__,
+              :store_execution_details,
+              Keyword.get(opts, :store_execution_details, true)
+            ),
+          wait_fetching_details_ms:
+            Application.get_env(
+              :__sanbase_queires__,
+              :__wait_fetching_details_ms_,
+              Keyword.get(opts, :wait_fetching_details_ms, 7500)
+            )
+        ]
+
+      _ ->
+        [
+          store_execution_details: Keyword.get(opts, :store_execution_details, true),
+          wait_fetching_details_ms: Keyword.get(opts, :wait_fetching_details_ms, 7500)
+        ]
+    end
+  end
+
   defp maybe_store_execution_data_async(result, user_id, opts) do
     # When a Clickhouse query is executed, the query details are buffered in
     # memory for up to 7500ms before they flush to the database table.
     # Because of this, storing the execution data is done in a separate process
     # to avoid blocking the main process and to return the result to the user
     # faster.
+    opts = get_store_execution_opts(opts)
 
-    if Keyword.get(opts, :store_execution_details, true) do
-      wait_fetching_details_ms = Keyword.get(opts, :wait_fetching_details_ms, 7500)
-
+    if opts[:store_execution_details] do
       store = fn ->
-        QueryExecution.store_execution(result, user_id, wait_fetching_details_ms)
+        QueryExecution.store_execution(result, user_id, opts[:wait_fetching_details_ms])
       end
 
       # In test do not do it in an async way as this can lead to mocking issues.

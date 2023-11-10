@@ -48,7 +48,12 @@ if config_env() == :prod do
     root: ".",
     version: Application.spec(:sanbase, :vsn),
     load_from_system_env: true,
-    check_origin: ["//*.santiment.net", "//*.sanr.app"]
+    check_origin: [
+      "//*.santiment.net",
+      "//*.sanr.app",
+      "//*.sanbase-admin.stage.san",
+      "//*.sanbase-admin.production.san"
+    ]
 
   config :ethereumex,
     url: parity_url,

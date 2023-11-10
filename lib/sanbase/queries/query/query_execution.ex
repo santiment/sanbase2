@@ -108,7 +108,7 @@ defmodule Sanbase.Queries.QueryExecution do
       where:
         c.user_id == ^user_id and c.inserted_at >= ^beginning_of_month and c.credits_cost > 0,
       select: %{
-        monthly_credits_spent: sum(c.credits_cost),
+        monthly_credits_spent: coalesce(sum(c.credits_cost), 0),
         queries_executed_minute:
           fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_minute),
         queries_executed_hour:

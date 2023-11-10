@@ -70,8 +70,9 @@ defmodule Sanbase.Billing.UserPromoCode do
   This is used when counting how many promo codes in total have been issued
   """
   def get_total_user_promo_codes_for_campaign(user_id, campaign) do
-    from(p in __MODULE__, where: p.user_id == ^user_id and p.campaign == ^campaign)
-    |> Repo.all()
+    query = from(p in __MODULE__, where: p.user_id == ^user_id and p.campaign == ^campaign)
+
+    {:ok, Repo.all(query)}
   end
 
   def is_coupon_usable(nil, _), do: true

@@ -1,17 +1,16 @@
 defmodule SanbaseWeb.CustomAdminController do
   use SanbaseWeb, :controller
 
-  alias SanbaseWeb.Router.Helpers, as: Routes
-
   def index(conn, _params) do
-    render(conn, "index.html",
+    render(conn, :index,
       search_value: "",
       routes: [
-        {"Users", Routes.user_path(conn, :index)},
-        {"Webinars", Routes.webinar_path(conn, :index)},
-        {"Sheets templates", Routes.sheets_template_path(conn, :index)},
-        {"Reports", Routes.report_path(conn, :index)},
-        {"Custom plans", Routes.custom_plan_path(conn, :index)}
+        {"Users", ~p"/admin2/users"},
+        {"Webinars", ~p"/admin2/webinars"},
+        {"Sheets templates", ~p"/admin2/sheets_templates/"},
+        {"Reports", ~p"/admin2/reports"},
+        {"Custom plans", ~p"/admin2/custom_plans"},
+        {"Monitored Twitter Handles", ~p"/admin2/monitored_twitter_handle_live"}
       ]
     )
   end

@@ -17,6 +17,8 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   object :sql_query do
     # Identification data
     field(:id, non_null(:integer))
+    field(:dashboard_query_mapping_id, :string)
+
     field(:uuid, non_null(:string))
     field(:origin_id, :integer)
 
@@ -51,6 +53,9 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:updated_at, non_null(:datetime))
   end
 
+  @desc ~s"""
+  TODO: Document this type
+  """
   object :text_widget do
     field(:id, non_null(:string))
     field(:name, :string)
@@ -76,6 +81,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   the query's own parameters. The interaction with the global parameter happens through the
   putDashboardGlobalParameter and putDashboardGlobalParameterOverride mutations.
   """
+
   object :dashboard do
     field(:id, non_null(:integer))
     field(:name, non_null(:string))
@@ -214,6 +220,25 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   - queryEndTime: The time when the query finished executing.
   """
   object :sql_query_execution_result do
+    @desc "Non-null when executing a stored query"
+    field(:query_id, :integer)
+    @desc "Non-null when executing a dashboard query"
+    field(:dashboard_query_mapping_id, :string)
+
+    field(:clickhouse_query_id, non_null(:string))
+    field(:summary, non_null(:json))
+    field(:rows, non_null(:json))
+    field(:columns, non_null(list_of(:string)))
+    field(:column_types, non_null(list_of(:string)))
+    field(:query_start_time, non_null(:datetime))
+    field(:query_end_time, non_null(:datetime))
+  end
+
+  object :dashboard_cached_executions do
+    field(:queries, list_of(:sql_query_execution_result))
+  end
+
+  input_object :sql_query_execution_result_input_object do
     field(:clickhouse_query_id, non_null(:string))
     field(:summary, non_null(:json))
     field(:rows, non_null(:json))

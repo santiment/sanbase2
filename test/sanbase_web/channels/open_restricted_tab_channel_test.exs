@@ -17,8 +17,7 @@ defmodule SanbaseWeb.OpenTabChannelTest do
                SanbaseWeb.UserSocket,
                %{
                  "access_token" => context.conn.private.plug_session["access_token"]
-               },
-               %{}
+               }
              )
 
     assert {:ok, %{}, %Phoenix.Socket{}} =
@@ -45,8 +44,7 @@ defmodule SanbaseWeb.OpenTabChannelTest do
         SanbaseWeb.UserSocket,
         %{
           "access_token" => context.conn.private.plug_session["access_token"]
-        },
-        %{}
+        }
       )
 
     {:ok, _, socket} =

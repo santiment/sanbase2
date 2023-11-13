@@ -24,9 +24,9 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
 
     # Basic Info
     field(:name, non_null(:string))
-    field(:description, non_null(:string))
+    field(:description, :string)
     field(:is_public, non_null(:boolean))
-    field(:settings, non_null(:json))
+    field(:settings, :json)
 
     # SQL Query & Params
     field(:sql_query_text, non_null(:string))

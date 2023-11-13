@@ -359,16 +359,23 @@ defmodule Sanbase.Balance.SqlQuery do
     sql = """
     SELECT address, balance
     FROM (
-      SELECT address, argMax(balance, dt) / pow(10, {{decimals}}) AS balance
-      FROM #{table}
-      PREWHERE
-        addressType = 'normal'
-      GROUP BY address
+        SELECT
+          ebr.address,
+          argMax(ebr.balance, ebr.dt) / pow(10, {{decimals}}) AS balance
+      FROM #{table} AS ebr
+      WHERE (ebr.address GLOBAL IN (
+        SELECT address
+        FROM eth_top_holders_daily
+        WHERE value > 1e10 AND(dt = toStartOfDay(today() - toIntervalDay(1))) AND (rank > 0)
+        ORDER BY value #{direction}
+        LIMIT {{limit}}*2
+      )) AND (ebr.addressType = 'normal')
+      GROUP BY ebr.address
     )
     #{labels_join_str}
-    WHERE balance > 1e-10
     ORDER BY balance #{direction}
-    LIMIT {{limit}} OFFSET {{offset}}
+    LIMIT {{limit}}
+    OFFSET {{offset}}
     """
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -397,7 +404,7 @@ defmodule Sanbase.Balance.SqlQuery do
       FROM #{table}
       PREWHERE
         assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1) AND
-        addressType = 'normal'
+        addressType = 'normal' AND (dt > (now() - toIntervalDay(1)))
       GROUP BY address
     )
     #{labels_join_str}

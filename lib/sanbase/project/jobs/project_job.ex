@@ -19,11 +19,14 @@ defmodule Sanbase.Project.Job do
     Enum.map(projects, fn project ->
       {project, get_ecosystem_full_path(project, slug_to_project_map)}
     end)
+    |> Enum.reject(fn {p, _} -> is_nil(p) end)
     |> Enum.map(fn
       {project, []} -> {project, ""}
       {project, path} -> {project, "/" <> Enum.join(path, "/") <> "/"}
     end)
   end
+
+  defp get_ecosystem_full_path(nil, _slug_to_project_map), do: []
 
   defp get_ecosystem_full_path(project, slug_to_project_map) do
     case project.ecosystem == project.slug do

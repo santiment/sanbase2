@@ -6,8 +6,12 @@ defmodule Sanbase.RunExamples do
   running. The quereies here **must** make a DB request in order to properly test the SQL.
   Do not run in tests, as if mocked, the purpose of this module would be lost.
   """
+
+  import Ecto.Query
+
   @queries [
     :santiment_queries,
+    :menus,
     :basic_metric_queries,
     :available_metrics,
     :trending_words,
@@ -714,7 +718,6 @@ defmodule Sanbase.RunExamples do
       )
 
     {:ok, dashboard} = Sanbase.Dashboards.create_dashboard(%{name: "MyName"}, user.id)
-
     {:ok, mapping} = Sanbase.Dashboards.add_query_to_dashboard(dashboard.id, query.id, user.id)
 
     # Add and remove the mapping to test the removal
@@ -737,11 +740,133 @@ defmodule Sanbase.RunExamples do
         user.id
       )
 
+    query_id = query.id
+    dashboard_id = dashboard.id
+    dashboard_query_mapping_id = mapping.id
+
+    %Sanbase.Queries.DashboardCache{
+      dashboard_id: ^dashboard_id,
+      queries: %{
+        ^dashboard_query_mapping_id => %{
+          clickhouse_query_id: _,
+          column_types: ["String", "UInt64"],
+          columns: ["big_num", "num"],
+          dashboard_id: _,
+          dashboard_query_mapping_id: ^dashboard_query_mapping_id,
+          query_end_time: _,
+          query_id: ^query_id,
+          query_start_time: _,
+          rows: [["2.12 Trillion", 2_123_801_239_123]],
+          summary: %{
+            "read_bytes" => 1.0,
+            "read_rows" => 1.0,
+            "result_bytes" => 0.0,
+            "result_rows" => 0.0,
+            "total_rows_to_read" => 0.0,
+            "written_bytes" => 0.0,
+            "written_rows" => 0.0
+          },
+          updated_at: _
+        }
+      },
+      inserted_at: _,
+      updated_at: _
+    } = stored
+
     {:ok, dashboard_cache} =
       Sanbase.Dashboards.get_cached_dashboard_queries_executions(dashboard.id, user.id)
 
     for r <- [dashboard_cache, mapping, dashboard, query],
         do: Sanbase.Repo.delete(r)
+
+    {:ok, :success}
+  end
+
+  defp do_run(:menus) do
+    user = Sanbase.Factory.insert(:user)
+    user2 = Sanbase.Factory.insert(:user)
+
+    {:ok, query} = Sanbase.Queries.create_query(%{name: "Query"}, user.id)
+    {:ok, dashboard} = Sanbase.Dashboards.create_dashboard(%{name: "Dashboard"}, user.id)
+
+    {:ok, menu} =
+      Sanbase.Menus.create_menu(%{name: "MyMenu", description: "MyDescription"}, user.id)
+
+    {:ok, _} =
+      Sanbase.Menus.create_menu_item(
+        %{parent_id: menu.id, query_id: query.id, position: 1},
+        user.id
+      )
+
+    {:ok, _} =
+      Sanbase.Menus.create_menu_item(
+        %{parent_id: menu.id, dashboard_id: dashboard.id, position: 2},
+        user.id
+      )
+
+    # Cannot create item on non-owner menu
+    {:error, _} =
+      Sanbase.Menus.create_menu_item(
+        %{parent_id: menu.id, dashboard_id: dashboard.id, position: 2},
+        user2.id
+      )
+
+    {:ok, sub_menu} =
+      Sanbase.Menus.create_menu(
+        %{
+          name: "MySubMenu",
+          description: "MySubDescription",
+          parent_id: menu.id,
+          position: 1
+        },
+        user.id
+      )
+
+    {:ok, _} = Sanbase.Menus.update_menu(sub_menu.id, %{name: "MySubMenuNewName"}, user.id)
+    # Cannot update non-owner menu
+    {:error, _} = Sanbase.Menus.update_menu(sub_menu.id, %{name: "hehe"}, user2.id)
+    {:ok, fetched_menu} = Sanbase.Menus.get_menu(menu.id, user.id)
+
+    menu_id = menu.id
+    sub_menu_id = sub_menu.id
+    query_id = query.id
+    dashboard_id = dashboard.id
+
+    %{
+      description: "MyDescription",
+      id: ^menu_id,
+      menu_items: [
+        %{
+          description: "MySubDescription",
+          id: ^sub_menu_id,
+          menu_items: [],
+          name: "MySubMenuNewName",
+          position: 1,
+          type: :menu
+        },
+        %{description: nil, id: ^query_id, name: "Query", position: 2, type: :query},
+        %{description: nil, id: ^dashboard_id, name: "Dashboard", position: 3, type: :dashboard}
+      ],
+      name: "MyMenu",
+      type: :menu
+    } = Sanbase.Menus.menu_to_simple_map(fetched_menu)
+
+    for r <- [query, dashboard, sub_menu] do
+      Sanbase.Repo.delete(r)
+    end
+
+    # Check that the menu still exists
+    {:ok, fetched_menu} = Sanbase.Menus.get_menu(menu.id, user.id)
+    # The menu does not have any menu items now
+    [] = fetched_menu.menu_items
+
+    # Deleting the query, dashboard and sub_menu also cascaded and deleted the
+    # menu_items rows
+    menu_item_ids = from(mi in Sanbase.Menus.MenuItem, where: mi.parent_id == ^menu.id)
+    [] = Sanbase.Repo.all(menu_item_ids)
+
+    Sanbase.Repo.delete(menu)
+    {:error, _} = Sanbase.Menus.get_menu(menu.id, user.id)
 
     {:ok, :success}
   end

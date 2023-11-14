@@ -24,7 +24,8 @@ defmodule Sanbase.RunExamples do
     :transfers,
     :san_burn_credit_transactions,
     :signals,
-    :additional_filters
+    :additional_filters,
+    :top_addresses
   ]
 
   @from ~U[2023-01-01 00:00:00Z]
@@ -523,6 +524,18 @@ defmodule Sanbase.RunExamples do
         infrastructure: "ETH",
         address: @null_address
       })
+  end
+
+  defp do_run(:top_addresses) do
+    {:ok, _} =
+      Sanbase.Balance.current_balance_top_addresses(
+        "ethereum",
+        18,
+        "ETH",
+        "ethereum",
+        "eth_balances_realtime",
+        labels: ["whale_usd_balance"]
+      )
 
     {:ok, :success}
   end

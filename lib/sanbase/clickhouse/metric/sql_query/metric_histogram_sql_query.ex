@@ -136,28 +136,49 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
 
   def histogram_data_query("eth2_staked_amount_per_label", "ethereum", from, to, _interval, limit) do
     sql = """
-    SELECT
-      label,
-      sumKahan(locked_sum) AS value
-    FROM (
+    WITH addresses_sum AS (
       SELECT
         address,
-        locked_sum,
-        #{label_select(label_as: "label")}
+        locked_sum
       FROM (
-        SELECT address, sumKahan(amount) AS locked_sum
+        SELECT
+          address,
+          sumKahan(amount) AS locked_sum
         FROM (
-            SELECT DISTINCT *
-            FROM eth2_staking_transfers_v2 FINAL
-            WHERE
+          SELECT DISTINCT *
+          FROM
+              eth2_staking_transfers_v2 FINAL
+          WHERE
               dt < toDateTime({{to}})
               #{if from, do: "AND dt >= toDateTime({{from}})"}
         )
         GROUP BY address
       )
     )
-    GROUP BY label
-    ORDER BY value DESC
+    SELECT
+      -- If key == 'owner' -> we will take value
+      multiIf(
+              m.key = 'owner', m.value,
+              m.key
+          ),
+      addresses_sum.locked_sum
+    FROM addresses_sum
+    LEFT JOIN (
+      SELECT
+          blockchain,
+          label_id,
+          address
+      FROM
+          current_label_addresses
+      WHERE
+        address IN (SELECT address FROM addresses_sum) AND
+        blockchain = 'ethereum'
+    ) AS cla
+    ON addresses_sum.address = cla.address
+    LEFT JOIN (
+      SELECT label_id, key, value FROM label_metadata
+    ) AS m
+    ON cla.label_id = m.label_id
     LIMIT {{limit}}
     """
 
@@ -179,20 +200,37 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         limit
       ) do
     sql = """
+    WITH staking_address AS (
+      SELECT DISTINCT(address)
+      FROM
+          eth2_staking_transfers_v2 FINAL
+      WHERE
+          dt < toDateTime({{to}})
+          #{if from, do: "AND dt >= toDateTime({{from}})"}
+    )
     SELECT
       label,
-      count(address) AS value
+      count(address) as value
     FROM (
       SELECT
-        address,
-        #{label_select(label_as: "label")}
-        FROM (
-          SELECT DISTINCT(address)
-          FROM eth2_staking_transfers_v2 FINAL
-          WHERE
-            dt < toDateTime({{to}})
-            #{if from, do: "AND dt >= toDateTime({{from}})"}
-        )
+          staking_address.address as address,
+          multiIf(
+              m.key = 'owner', m.value,
+              m.key
+          ) as label
+      FROM staking_address
+      LEFT JOIN (
+        SELECT *
+        FROM
+            current_label_addresses
+        WHERE
+          address IN (SELECT address FROM staking_address) AND
+          blockchain = 'ethereum'
+      ) AS cla
+      ON staking_address.address = cla.address
+      LEFT JOIN (
+          SELECT label_id, key, value FROM label_metadata
+      ) AS m ON cla.label_id = m.label_id
     )
     GROUP BY label
     ORDER BY value DESC
@@ -272,28 +310,54 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         limit
       ) do
     sql = """
-    SELECT
-      address,
-      label,
-      locked_value AS staked
-    FROM (
+    WITH lock_addresses AS (
       SELECT
-        address,
-        locked_value,
-        #{label_select(label_as: "label")}
-      FROM (
-        SELECT
           address,
           SUM(amount) AS locked_value
-        FROM eth2_staking_transfers_v2 FINAL
-        WHERE
+      FROM
+          eth2_staking_transfers_v2 FINAL
+      WHERE
           dt < toDateTime({{to}})
           #{if from, do: "AND dt >= toDateTime({{from}})"}
-        GROUP BY address
-        ORDER BY locked_value DESC
-        LIMIT {{limit}}
-      )
+      GROUP BY address
+      ORDER BY locked_value DESC
+      LIMIT {{limit}}
     )
+
+    SELECT
+        lock_addresses.address as address,
+        multiIf(
+                m.key = 'owner', m.value,
+                m.key
+        ) as label,
+        lock_addresses.locked_value as staked
+    FROM lock_addresses
+    LEFT JOIN (
+        SELECT
+            blockchain,
+            label_id,
+            address
+        FROM
+            current_label_addresses
+        WHERE
+            address IN (
+                SELECT
+                    address
+                FROM
+                    lock_addresses
+            )
+        AND
+            blockchain = 'ethereum'
+    ) AS cla
+    ON lock_addresses.address = cla.address
+    LEFT JOIN (
+        SELECT
+            label_id,
+            key,
+            value
+        FROM label_metadata
+    ) AS m
+    ON cla.label_id = m.label_id
     ORDER BY staked DESC
     """
 

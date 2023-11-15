@@ -728,6 +728,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "exchange_open_interest",
         "open_interest_per_settlement_currency",
         "total_open_interest",
+        "funding_rates_aggregated_by_exchange",
+        "funding_rates_aggregated_by_settlement_currency",
+        "total_funding_rates_aggregated_per_asset",
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",

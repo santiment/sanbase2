@@ -48,6 +48,11 @@ defmodule Sanbase.Billing do
     |> Enum.empty?()
   end
 
+  def eligible_for_api_trial?(user_id) do
+    Subscription.all_user_subscriptions_for_product(user_id, Product.product_api())
+    |> Enum.empty?()
+  end
+
   @doc ~s"""
   Sync the locally defined Products and Plans with stripe.
 

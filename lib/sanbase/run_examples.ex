@@ -713,6 +713,11 @@ defmodule Sanbase.RunExamples do
 
     {:ok, mapping} = Sanbase.Dashboards.add_query_to_dashboard(dashboard.id, query.id, user.id)
 
+    # Add and remove the mapping to test the removal
+    {:ok, mapping2} = Sanbase.Dashboards.add_query_to_dashboard(dashboard.id, query.id, user.id)
+
+    {:ok, _} = Sanbase.Dashboards.remove_query_from_dashboard(dashboard.id, mapping2.id, user.id)
+
     {:ok, q} = Sanbase.Queries.get_dashboard_query(dashboard.id, mapping.id, user.id)
 
     query_metadata = Sanbase.Queries.QueryMetadata.from_local_dev(user.id)

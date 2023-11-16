@@ -717,7 +717,7 @@ defmodule Sanbase.Dashboards do
     |> Ecto.Multi.run(:remove_dashboard_query_mapping, fn _repo, %{get_mapping: struct} ->
       Repo.delete(struct)
     end)
-    |> Ecto.Multi.run(:add_preloads, fn _repo, %{add_query_to_dashboard: struct} ->
+    |> Ecto.Multi.run(:add_preloads, fn _repo, %{remove_dashboard_query_mapping: struct} ->
       # Do not preload the dashboard as it will be added in the next step
       {:ok, Repo.preload(struct, [:query])}
     end)

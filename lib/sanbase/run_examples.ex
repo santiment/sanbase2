@@ -388,95 +388,99 @@ defmodule Sanbase.RunExamples do
   end
 
   defp do_run(:github) do
-    {:ok, [_ | _]} =
-      Sanbase.Clickhouse.Github.dev_activity(
-        ["santiment"],
-        @from,
-        @to,
-        "1d",
-        "None",
-        nil
-      )
-
-    {:ok, [_ | _]} =
-      Sanbase.Clickhouse.Github.github_activity(
-        ["santiment"],
-        @from,
-        @to,
-        "1d",
-        "None",
-        nil
-      )
-
-    {:ok, %{"santiment" => _}} =
-      Sanbase.Clickhouse.Github.total_dev_activity(
-        ["santiment"],
-        @from,
-        @to
-      )
-
-    {:ok, %{"santiment" => _, "bitcoin" => _}} =
-      Sanbase.Clickhouse.Github.total_github_activity(
-        ["santiment", "bitcoin"],
-        @from,
-        @to
-      )
-
-    {:ok, [_ | _]} =
-      Sanbase.Clickhouse.Github.dev_activity_contributors_count(
-        ["santiment"],
-        @from,
-        @to,
-        "1d",
-        "None",
-        nil
-      )
-
-    {:ok, %{"santiment" => _}} =
-      Sanbase.Clickhouse.Github.total_dev_activity_contributors_count(
-        ["santiment"],
-        @from,
-        @to
-      )
-
-    {:ok, [_ | _]} =
-      Sanbase.Clickhouse.Github.github_activity_contributors_count(
-        ["santiment"],
-        @from,
-        @to,
-        "1d",
-        "None",
-        nil
-      )
-
-    {:ok, %{"santiment" => _}} =
-      Sanbase.Clickhouse.Github.total_github_activity_contributors_count(
-        ["santiment"],
-        @from,
-        @to
-      )
-
-    for metric <- ["dev_activity", "dev_activity_contributors_count"] do
+    for interval <- ["1d", "toStartOfHour"] do
       {:ok, [_ | _]} =
-        Sanbase.Metric.timeseries_data(
-          metric,
-          %{slug: "ethereum"},
+        Sanbase.Clickhouse.Github.dev_activity(
+          ["santiment"],
           @from,
           @to,
-          "1d"
+          interval,
+          "None",
+          nil
         )
 
-      {:ok, _} =
-        Sanbase.Metric.aggregated_timeseries_data(
-          metric,
-          %{slug: "ethereum"},
+      {:ok, [_ | _]} =
+        Sanbase.Clickhouse.Github.github_activity(
+          ["santiment"],
+          @from,
+          @to,
+          interval,
+          "None",
+          nil
+        )
+
+      {:ok, [_ | _]} =
+        Sanbase.Clickhouse.Github.dev_activity_contributors_count(
+          ["santiment"],
+          @from,
+          @to,
+          interval,
+          "None",
+          nil
+        )
+
+      {:ok, [_ | _]} =
+        Sanbase.Clickhouse.Github.github_activity_contributors_count(
+          ["santiment"],
+          @from,
+          @to,
+          interval,
+          "None",
+          nil
+        )
+
+      for metric <- ["dev_activity", "dev_activity_contributors_count"] do
+        {:ok, [_ | _]} =
+          Sanbase.Metric.timeseries_data(
+            metric,
+            %{slug: "ethereum"},
+            @from,
+            @to,
+            interval
+          )
+      end
+
+      {:ok, %{"santiment" => _}} =
+        Sanbase.Clickhouse.Github.total_dev_activity_contributors_count(
+          ["santiment"],
           @from,
           @to
         )
 
-      {:ok, _} = Sanbase.Metric.first_datetime(metric, %{slug: "ethereum"}, [])
+      {:ok, %{"santiment" => _}} =
+        Sanbase.Clickhouse.Github.total_github_activity_contributors_count(
+          ["santiment"],
+          @from,
+          @to
+        )
 
-      {:ok, _} = Sanbase.Metric.last_datetime_computed_at(metric, %{slug: "ethereum"}, [])
+      {:ok, %{"santiment" => _}} =
+        Sanbase.Clickhouse.Github.total_dev_activity(
+          ["santiment"],
+          @from,
+          @to
+        )
+
+      {:ok, %{"santiment" => _, "bitcoin" => _}} =
+        Sanbase.Clickhouse.Github.total_github_activity(
+          ["santiment", "bitcoin"],
+          @from,
+          @to
+        )
+
+      for metric <- ["dev_activity", "dev_activity_contributors_count"] do
+        {:ok, _} =
+          Sanbase.Metric.aggregated_timeseries_data(
+            metric,
+            %{slug: "ethereum"},
+            @from,
+            @to
+          )
+
+        {:ok, _} = Sanbase.Metric.first_datetime(metric, %{slug: "ethereum"}, [])
+
+        {:ok, _} = Sanbase.Metric.last_datetime_computed_at(metric, %{slug: "ethereum"}, [])
+      end
     end
 
     {:ok, :success}

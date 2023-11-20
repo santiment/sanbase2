@@ -60,12 +60,45 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     "if({{#{arg_name}}} = {{#{arg_name}}}, toUnixTimestamp(toDateTime(#{function}(#{dt_column}))), null)"
   end
 
-  def to_unix_timestamp_from_number(<<digit::utf8, _::binary>> = _interval, opts \\ [])
+  def to_unix_timestamp_from_number(interval_or_function, opts \\ [])
+
+  def to_unix_timestamp_from_number(<<digit::utf8, _::binary>> = _interval, opts)
       when digit in ?0..?9 do
     interval_name = Keyword.get(opts, :interval_argument_name, "interval")
     from_name = Keyword.get(opts, :from_argument_name, "from")
 
     "toUnixTimestamp(intDiv(toUInt32({{#{from_name}}} + number * {{#{interval_name}}}), {{#{interval_name}}}) * {{#{interval_name}}})"
+  end
+
+  def to_unix_timestamp_from_number(function, opts)
+      when function in @supported_interval_functions do
+    from_name = Keyword.get(opts, :from_argument_name, "from")
+
+    expression =
+      case function do
+        "toStartOfMonth" ->
+          "addMonths(toStartOfMonth(toDateTime({{#{from_name}}})), number)"
+
+        "toStartOfWeek" ->
+          "addDays(toStartOfWeek(toDateTime({{#{from_name}}})), number * 7)"
+
+        "toMonday" ->
+          "addDays(toMonday(toDateTime({{#{from_name}}})), number * 7)"
+
+        "toStartOfDay" ->
+          "addDays(toStartOfDay(toDateTime({{#{from_name}}})), number)"
+
+        "toStartOfQuarter" ->
+          "addQuarters(toStartOfQuarter(toDateTime({{#{from_name}}})), number)"
+
+        "toStartOfYear" ->
+          "addYears(toStartOfYear(toDateTime({{#{from_name}}})), number)"
+
+        "toStartOfHour" ->
+          "addHours(toStartOfHour(toDateTime({{#{from_name}}})), number)"
+      end
+
+    "toUnixTimestamp(toDateTime(#{expression}))"
   end
 
   def aggregation(:ohlc, value_column, dt_column) do

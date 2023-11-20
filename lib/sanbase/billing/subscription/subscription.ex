@@ -25,13 +25,15 @@ defmodule Sanbase.Billing.Subscription do
   Please, contact administrator of the site for more information.
   """
   @product_sanbase Product.product_sanbase()
+  @product_api Product.product_api()
   @sanbase_basic_plan_id 205
   @preload_fields [:user, plan: [:product]]
+  @trial_days 14
 
   # Unused due to disabling of annual discounts
   # @one_month_discount_days 30
   # @during_trial_discount_percent_off 50
-  # @trial_days 14
+
   # @one_month_trial_discount_percent_off 35
   # @annual_discount_plan_ids [202]
 
@@ -139,7 +141,7 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       if db_subscription.status == :active do
-        maybe_delete_trialing_subscriptions(user.id)
+        maybe_delete_trialing_subscriptions(user.id, plan)
       end
 
       {:ok, default_preload(db_subscription, force: true)}
@@ -155,16 +157,26 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       if db_subscription.status == :active do
-        maybe_delete_trialing_subscriptions(user.id)
+        maybe_delete_trialing_subscriptions(user.id, plan)
       end
 
       {:ok, default_preload(db_subscription, force: true)}
     end
   end
 
-  def maybe_delete_trialing_subscriptions(user_id) do
+  def maybe_delete_trialing_subscriptions(user_id, %Plan{product_id: product_id})
+      when product_id == @product_sanbase do
     __MODULE__
-    |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, Product.product_sanbase())
+    |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, @product_sanbase)
+    |> Repo.all()
+    |> Enum.filter(fn subscription -> subscription.status == :trialing end)
+    |> Enum.each(fn subscription -> StripeApi.delete_subscription(subscription.stripe_id) end)
+  end
+
+  def maybe_delete_trialing_subscriptions(user_id, %Plan{product_id: product_id})
+      when product_id == @product_api do
+    __MODULE__
+    |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, @product_api)
     |> Repo.all()
     |> Enum.filter(fn subscription -> subscription.status == :trialing end)
     |> Enum.each(fn subscription -> StripeApi.delete_subscription(subscription.stripe_id) end)
@@ -499,26 +511,24 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   defp subscription_defaults(user, %Plan{product_id: product_id} = plan)
-       when product_id == @product_sanbase do
+       when product_id in [@product_sanbase, @product_api] do
     defaults = %{
       customer: user.stripe_customer_id,
       items: [%{plan: plan.stripe_id}]
     }
 
-    defaults =
-      case Billing.eligible_for_sanbase_trial?(user.id) do
-        true ->
-          Map.put(
-            defaults,
-            :trial_end,
-            Sanbase.DateTimeUtils.days_after(14) |> DateTime.to_unix()
-          )
+    trial_end_unix = Sanbase.DateTimeUtils.days_after(@trial_days) |> DateTime.to_unix()
 
-        false ->
-          defaults
-      end
+    cond do
+      product_id == @product_sanbase and Billing.eligible_for_sanbase_trial?(user.id) ->
+        Map.put(defaults, :trial_end, trial_end_unix)
 
-    defaults
+      product_id == @product_api and Billing.eligible_for_api_trial?(user.id) ->
+        Map.put(defaults, :trial_end, trial_end_unix)
+
+      true ->
+        defaults
+    end
   end
 
   defp subscription_defaults(user, plan) do

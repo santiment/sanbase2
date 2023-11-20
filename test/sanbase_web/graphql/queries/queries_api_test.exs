@@ -457,6 +457,10 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
   describe "Run Queries" do
     test "run raw sql query", context do
+      # In test env the storing runs not async and there's a 7500ms sleep
+      Application.put_env(:__sanbase_queires__, :store_execution_details, false)
+      on_exit(fn -> Application.delete_env(:__sanbase_queires__, :store_execution_details) end)
+
       mock_fun =
         Sanbase.Mock.wrap_consecutives(
           [
@@ -498,6 +502,10 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     end
 
     test "run sql query by id", context do
+      # In test env the storing runs not async and there's a 7500ms sleep
+      Application.put_env(:__sanbase_queires__, :store_execution_details, false)
+      on_exit(fn -> Application.delete_env(:__sanbase_queires__, :store_execution_details) end)
+
       {:ok, query} = create_query(context.user.id)
 
       mock_fun =
@@ -535,7 +543,60 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       end)
     end
 
+    test "delete dashboard query", context do
+      {:ok, query} = create_query(context.user.id)
+
+      {:ok, dashboard} =
+        Sanbase.Dashboards.create_dashboard(%{name: "My Dashboard"}, context.user.id)
+
+      # Add a query to a dashboard
+      mapping =
+        execute_dashboard_query_mutation(context.conn, :create_dashboard_query, %{
+          dashboard_id: dashboard.id,
+          query_id: query.id,
+          settings: %{layout: [0, 1, 2, 3, 4]}
+        })
+        |> get_in(["data", "createDashboardQuery"])
+
+      # Assert that the dashboard has exactly 1 query added
+      assert {:ok, %{queries: [_]}} =
+               Sanbase.Dashboards.get_dashboard(dashboard.id, context.user.id)
+
+      result =
+        execute_dashboard_query_mutation(context.conn, :delete_dashboard_query, %{
+          dashboard_id: dashboard.id,
+          dashboard_query_mapping_id: mapping["id"]
+        })
+        |> get_in(["data", "deleteDashboardQuery"])
+
+      dashboard_query_mapping_id = mapping["id"]
+
+      query_id = query.id
+      dashboard_id = dashboard.id
+
+      assert %{
+               "dashboard" => %{"id" => ^dashboard_id, "parameters" => %{}},
+               "id" => ^dashboard_query_mapping_id,
+               "query" => %{
+                 "id" => ^query_id,
+                 "sqlQueryParameters" => %{"limit" => 10, "slug" => "bitcoin"},
+                 "sqlQueryText" =>
+                   "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}}) LIMIT {{limit}}"
+               },
+               "settings" => %{"layout" => [0, 1, 2, 3, 4]}
+             } = result
+
+      # Assert that the dashboard has no queries
+
+      assert {:ok, %{queries: []}} =
+               Sanbase.Dashboards.get_dashboard(dashboard_id, context.user.id)
+    end
+
     test "run dashboard query (resolve global params)", context do
+      # In test env the storing runs not async and there's a 7500ms sleep
+      Application.put_env(:__sanbase_queires__, :store_execution_details, false)
+      on_exit(fn -> Application.delete_env(:__sanbase_queires__, :store_execution_details) end)
+
       {:ok, query} = create_query(context.user.id)
 
       {:ok, dashboard} =
@@ -644,6 +705,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
   describe "Caching" do
     test "cache queries on a dashboard", context do
+      # In test env the storing runs not async and there's a 7500ms sleep
       Application.put_env(:__sanbase_queires__, :store_execution_details, false)
       on_exit(fn -> Application.delete_env(:__sanbase_queires__, :store_execution_details) end)
 

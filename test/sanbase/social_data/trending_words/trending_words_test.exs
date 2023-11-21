@@ -42,11 +42,11 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          ],
                          summary: "summary2",
                          word: "ethereum",
-                         negative_sentiment_ratio: 0.3,
-                         neutral_sentiment_ratio: 0.5,
+                         negative_sentiment_ratio: 0.5,
+                         neutral_sentiment_ratio: 0.3,
                          positive_sentiment_ratio: 0.2,
-                         negative_bb_sentiment_ratio: 0.3,
-                         neutral_bb_sentiment_ratio: 0.5,
+                         negative_bb_sentiment_ratio: 0.5,
+                         neutral_bb_sentiment_ratio: 0.3,
                          positive_bb_sentiment_ratio: 0.2
                        },
                        %{
@@ -62,11 +62,11 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          ],
                          summary: "summary1",
                          word: "bitcoin",
-                         negative_sentiment_ratio: 0.3,
-                         neutral_sentiment_ratio: 0.5,
+                         negative_sentiment_ratio: 0.5,
+                         neutral_sentiment_ratio: 0.3,
                          positive_sentiment_ratio: 0.2,
-                         negative_bb_sentiment_ratio: 0.3,
-                         neutral_bb_sentiment_ratio: 0.5,
+                         negative_bb_sentiment_ratio: 0.5,
+                         neutral_bb_sentiment_ratio: 0.3,
                          positive_bb_sentiment_ratio: 0.2
                        }
                      ],
@@ -84,11 +84,11 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          ],
                          summary: "summary4",
                          word: "boom",
-                         negative_sentiment_ratio: 0.1,
-                         neutral_sentiment_ratio: 0.7,
+                         negative_sentiment_ratio: 0.7,
+                         neutral_sentiment_ratio: 0.1,
                          positive_sentiment_ratio: 0.2,
-                         negative_bb_sentiment_ratio: 0.1,
-                         neutral_bb_sentiment_ratio: 0.7,
+                         negative_bb_sentiment_ratio: 0.7,
+                         neutral_bb_sentiment_ratio: 0.1,
                          positive_bb_sentiment_ratio: 0.2
                        },
                        %{
@@ -104,11 +104,11 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          ],
                          summary: "summary3",
                          word: "san",
-                         negative_sentiment_ratio: 0.1,
-                         neutral_sentiment_ratio: 0.5,
+                         negative_sentiment_ratio: 0.5,
+                         neutral_sentiment_ratio: 0.1,
                          positive_sentiment_ratio: 0.4,
-                         negative_bb_sentiment_ratio: 0.1,
-                         neutral_bb_sentiment_ratio: 0.5,
+                         negative_bb_sentiment_ratio: 0.5,
+                         neutral_bb_sentiment_ratio: 0.1,
                          positive_bb_sentiment_ratio: 0.4
                        }
                      ],
@@ -126,11 +126,11 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          ],
                          summary: "summary6",
                          word: "xrp",
-                         negative_sentiment_ratio: 0.3,
-                         neutral_sentiment_ratio: 0.5,
+                         negative_sentiment_ratio: 0.5,
+                         neutral_sentiment_ratio: 0.3,
                          positive_sentiment_ratio: 0.2,
-                         negative_bb_sentiment_ratio: 0.3,
-                         neutral_bb_sentiment_ratio: 0.5,
+                         negative_bb_sentiment_ratio: 0.5,
+                         neutral_bb_sentiment_ratio: 0.3,
                          positive_bb_sentiment_ratio: 0.2
                        },
                        %{
@@ -146,11 +146,11 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          ],
                          summary: "summary5",
                          word: "eth",
-                         negative_sentiment_ratio: 0.3,
-                         neutral_sentiment_ratio: 0.5,
+                         negative_sentiment_ratio: 0.5,
+                         neutral_sentiment_ratio: 0.3,
                          positive_sentiment_ratio: 0.2,
-                         negative_bb_sentiment_ratio: 0.3,
-                         neutral_bb_sentiment_ratio: 0.5,
+                         negative_bb_sentiment_ratio: 0.5,
+                         neutral_bb_sentiment_ratio: 0.3,
                          positive_bb_sentiment_ratio: 0.2
                        }
                      ]
@@ -197,11 +197,11 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                        ],
                        summary: "summary6",
                        word: "xrp",
-                       negative_sentiment_ratio: 0.3,
-                       neutral_sentiment_ratio: 0.5,
+                       negative_sentiment_ratio: 0.5,
+                       neutral_sentiment_ratio: 0.3,
                        positive_sentiment_ratio: 0.2,
-                       negative_bb_sentiment_ratio: 0.3,
-                       neutral_bb_sentiment_ratio: 0.5,
+                       negative_bb_sentiment_ratio: 0.5,
+                       neutral_bb_sentiment_ratio: 0.3,
                        positive_bb_sentiment_ratio: 0.2
                      },
                      %{
@@ -217,11 +217,11 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                        ],
                        summary: "summary5",
                        word: "eth",
-                       negative_sentiment_ratio: 0.3,
-                       neutral_sentiment_ratio: 0.5,
+                       negative_sentiment_ratio: 0.5,
+                       neutral_sentiment_ratio: 0.3,
                        positive_sentiment_ratio: 0.2,
-                       negative_bb_sentiment_ratio: 0.3,
-                       neutral_bb_sentiment_ratio: 0.5,
+                       negative_bb_sentiment_ratio: 0.5,
+                       neutral_bb_sentiment_ratio: 0.3,
                        positive_bb_sentiment_ratio: 0.2
                      }
                    ]

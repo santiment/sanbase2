@@ -90,11 +90,11 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                            "score" => 82.0,
                            "summary" => "Third summary",
                            "word" => "word",
-                           "negativeSentimentRatio" => 0.15,
-                           "neutralSentimentRatio" => 0.35,
+                           "negativeSentimentRatio" => 0.35,
+                           "neutralSentimentRatio" => 0.15,
                            "positiveSentimentRatio" => 0.5,
-                           "negativeBbSentimentRatio" => 0.15,
-                           "neutralBbSentimentRatio" => 0.35,
+                           "negativeBbSentimentRatio" => 0.35,
+                           "neutralBbSentimentRatio" => 0.15,
                            "positiveBbSentimentRatio" => 0.5
                          },
                          %{
@@ -122,11 +122,11 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                            "score" => 72.4,
                            "summary" => "The summary",
                            "word" => "eth",
-                           "negativeSentimentRatio" => 0.3,
-                           "neutralSentimentRatio" => 0.5,
+                           "negativeSentimentRatio" => 0.5,
+                           "neutralSentimentRatio" => 0.3,
                            "positiveSentimentRatio" => 0.2,
-                           "negativeBbSentimentRatio" => 0.3,
-                           "neutralBbSentimentRatio" => 0.5,
+                           "negativeBbSentimentRatio" => 0.5,
+                           "neutralBbSentimentRatio" => 0.3,
                            "positiveBbSentimentRatio" => 0.2
                          }
                        ]

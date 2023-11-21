@@ -113,6 +113,8 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     end
 
     field(:summary, non_null(:string))
+    field(:bullish_summary, non_null(:string))
+    field(:bearish_summary, non_null(:string))
     field(:summaries, list_of(:trending_word_summary))
   end
 

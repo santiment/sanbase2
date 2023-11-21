@@ -72,7 +72,19 @@ defmodule Sanbase.SocialData.TrendingWords do
     query_struct = get_trending_words_query(from, to, interval, size, source, word_type_filter)
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn
-      [dt, word, project, score, context, summary, sentiment_ratios, bb_sentiment_ratios], acc ->
+      [
+        dt,
+        word,
+        project,
+        score,
+        context,
+        summary,
+        bullish_summary,
+        bearish_summary,
+        sentiment_ratios,
+        bb_sentiment_ratios
+      ],
+      acc ->
         slug = if project, do: String.split(project, "_", parts: 2) |> List.last()
         datetime = DateTime.from_unix!(dt)
         # The percentage of the documents that mention the word that have
@@ -91,6 +103,8 @@ defmodule Sanbase.SocialData.TrendingWords do
           context: context,
           # Keep both summaries and summary for backwards compatibility. Remove summaries later
           summary: summary,
+          bullish_summary: bullish_summary,
+          bearish_summary: bearish_summary,
           summaries: summaries,
           positive_sentiment_ratio: positive_sentiment,
           negative_sentiment_ratio: negative_sentiment,
@@ -248,6 +262,8 @@ defmodule Sanbase.SocialData.TrendingWords do
       score,
       context,
       summary,
+      bullish_summary,
+      bearish_summary,
       sentiment_ratios,
       bb_sentiment_ratios
     FROM

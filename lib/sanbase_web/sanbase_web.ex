@@ -41,13 +41,12 @@ defmodule SanbaseWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: SanbaseWeb
+      use Phoenix.Controller,
+        formats: [:html, :json],
+        layouts: [html: SanbaseWeb.Layouts]
 
       import Plug.Conn
       import SanbaseWeb.Gettext
-      import Phoenix.LiveView.Controller
-
-      alias SanbaseWeb.Router.Helpers, as: Routes
       unquote(verified_routes())
     end
   end

@@ -13,7 +13,7 @@ defmodule SanbaseWeb.UserChannelTest do
 
   describe "join common channel" do
     test "test join channel" do
-      assert {:ok, socket} = connect(SanbaseWeb.UserSocket, %{}, %{})
+      assert {:ok, socket} = connect(SanbaseWeb.UserSocket, %{})
 
       assert {:ok, %{}, %Phoenix.Socket{}} =
                subscribe_and_join(
@@ -71,7 +71,7 @@ defmodule SanbaseWeb.UserChannelTest do
     end
 
     defp get_socket() do
-      {:ok, socket} = connect(SanbaseWeb.UserSocket, %{}, %{})
+      {:ok, socket} = connect(SanbaseWeb.UserSocket, %{})
 
       {:ok, _, socket} = subscribe_and_join(socket, SanbaseWeb.UserChannel, "users:common", %{})
 
@@ -86,8 +86,7 @@ defmodule SanbaseWeb.UserChannelTest do
                  SanbaseWeb.UserSocket,
                  %{
                    "access_token" => context.conn.private.plug_session["access_token"]
-                 },
-                 %{}
+                 }
                )
 
       assert {:ok, %{}, %Phoenix.Socket{}} =
@@ -108,8 +107,7 @@ defmodule SanbaseWeb.UserChannelTest do
           SanbaseWeb.UserSocket,
           %{
             "access_token" => context.conn.private.plug_session["access_token"]
-          },
-          %{}
+          }
         )
 
       {:ok, _, socket} =

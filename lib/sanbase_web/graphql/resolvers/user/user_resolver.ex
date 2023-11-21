@@ -255,6 +255,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     {:ok, Sanbase.Billing.UserPromoCode.get_user_promo_codes(user.id)}
   end
 
+  def user_promo_codes(%Sanbase.Accounts.User{} = user, _args, _resolution) do
+    {:ok, Sanbase.Billing.UserPromoCode.get_user_promo_codes(user.id)}
+  end
+
+  def user_promo_codes(_, _, _) do
+    {:ok, []}
+  end
+
   def user_no_preloads(%{user_id: user_id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :users_by_id, user_id)

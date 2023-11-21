@@ -2,7 +2,7 @@ defmodule SanbaseWeb.CustomAdminController do
   use SanbaseWeb, :controller
 
   def index(conn, _params) do
-    render(conn, "index.html",
+    render(conn, :index,
       search_value: "",
       routes: [
         {"Users", ~p"/admin2/users"},

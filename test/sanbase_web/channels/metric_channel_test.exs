@@ -16,7 +16,7 @@ defmodule SanbaseWeb.MetricChannelTest do
   describe "anonymous user socket" do
     test "receive broadcast metric data" do
       # `jti` and `access_token` are not provided
-      {:ok, socket} = connect(SanbaseWeb.UserSocket, %{}, %{})
+      {:ok, socket} = connect(SanbaseWeb.UserSocket, %{})
 
       assert {:ok, %{}, _socket} =
                subscribe_and_join(socket, SanbaseWeb.MetricChannel, "metrics:price", %{})
@@ -39,7 +39,7 @@ defmodule SanbaseWeb.MetricChannelTest do
     test "broadcasting is fast" do
       # This is a very basic test that does not test represent
       # the real world scenario.
-      {:ok, socket} = connect(SanbaseWeb.UserSocket, %{}, %{})
+      {:ok, socket} = connect(SanbaseWeb.UserSocket, %{})
 
       assert {:ok, %{}, _socket} =
                subscribe_and_join(socket, SanbaseWeb.MetricChannel, "metrics:price", %{})
@@ -218,8 +218,7 @@ defmodule SanbaseWeb.MetricChannelTest do
       {:ok, socket} =
         connect(
           SanbaseWeb.UserSocket,
-          %{"access_token" => conn.private.plug_session["access_token"]},
-          %{}
+          %{"access_token" => conn.private.plug_session["access_token"]}
         )
 
       socket

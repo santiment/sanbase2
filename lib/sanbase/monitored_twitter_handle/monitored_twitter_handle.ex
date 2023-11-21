@@ -35,7 +35,7 @@ defmodule Sanbase.MonitoredTwitterHandle do
   end
 
   def is_handle_monitored(handle) do
-    handle = String.downcase(handle)
+    handle = normalize_handle(handle)
     query = from(m in __MODULE__, where: m.handle == ^handle)
 
     {:ok, Repo.exists?(query)}
@@ -48,7 +48,7 @@ defmodule Sanbase.MonitoredTwitterHandle do
           {:ok, Sanbase.MonitoredTwitterHandle.t()} | {:error, String.t()}
   def add_new(handle, user_id, origin, notes) do
     %__MODULE__{}
-    |> change(%{handle: String.downcase(handle), user_id: user_id, origin: origin, notes: notes})
+    |> change(%{handle: normalize_handle(handle), user_id: user_id, origin: origin, notes: notes})
     |> validate_required([:handle, :user_id, :origin])
     |> unique_constraint(:handle)
     |> Repo.insert()
@@ -85,12 +85,19 @@ defmodule Sanbase.MonitoredTwitterHandle do
   end
 
   def list_all_submissions() do
-    query = from(m in __MODULE__, where: m.origin == "graphql_api")
+    query = from(m in __MODULE__, where: m.origin == "graphql_api", preload: [:user])
 
     Repo.all(query)
   end
 
   # Private functions
+
+  defp normalize_handle(handle) do
+    handle
+    |> String.downcase()
+    |> String.trim()
+    |> String.trim_leading("@")
+  end
 
   defp count_user_approved_submissions(user_id) do
     query = from(m in __MODULE__, where: m.user_id == ^user_id and m.status == "approved")
@@ -121,20 +128,21 @@ defmodule Sanbase.MonitoredTwitterHandle do
       # This includes all used and unused promo codes for that campaign.
       codes_count = length(codes)
 
-      cond do
-        records_count >= 7 and codes_count <= 1 ->
-          create_user_promo_code(user_id, 27)
-
-        records_count >= 3 and codes_count == 0 ->
-          create_user_promo_code(user_id, 54)
-
-        true ->
-          :ok
+      # Run the creation in 2 ifs so in case of re-issuing of promo codes,
+      # we create all the necessary promo codes on one run
+      if records_count >= 3 and codes_count == 0 do
+        create_user_promo_code_for_campaign(user_id, 27)
       end
+
+      if records_count >= 7 and codes_count == 1 do
+        create_user_promo_code_for_campaign(user_id, 54)
+      end
+
+      :ok
     end
   end
 
-  defp create_user_promo_code(user_id, percent_off) do
+  defp create_user_promo_code_for_campaign(user_id, percent_off) do
     redeem_by = DateTime.utc_now() |> DateTime.add(30, :day) |> DateTime.truncate(:second)
 
     {:ok, coupon} =

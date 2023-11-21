@@ -7,6 +7,7 @@ defmodule Sanbase.RunExamples do
   Do not run in tests, as if mocked, the purpose of this module would be lost.
   """
   @queries [
+    :santiment_queries,
     :basic_metric_queries,
     :available_metrics,
     :trending_words,
@@ -23,7 +24,8 @@ defmodule Sanbase.RunExamples do
     :transfers,
     :san_burn_credit_transactions,
     :signals,
-    :additional_filters
+    :additional_filters,
+    :top_addresses
   ]
 
   @from ~U[2023-01-01 00:00:00Z]
@@ -386,95 +388,99 @@ defmodule Sanbase.RunExamples do
   end
 
   defp do_run(:github) do
-    {:ok, [_ | _]} =
-      Sanbase.Clickhouse.Github.dev_activity(
-        ["santiment"],
-        @from,
-        @to,
-        "1d",
-        "None",
-        nil
-      )
-
-    {:ok, [_ | _]} =
-      Sanbase.Clickhouse.Github.github_activity(
-        ["santiment"],
-        @from,
-        @to,
-        "1d",
-        "None",
-        nil
-      )
-
-    {:ok, %{"santiment" => _}} =
-      Sanbase.Clickhouse.Github.total_dev_activity(
-        ["santiment"],
-        @from,
-        @to
-      )
-
-    {:ok, %{"santiment" => _, "bitcoin" => _}} =
-      Sanbase.Clickhouse.Github.total_github_activity(
-        ["santiment", "bitcoin"],
-        @from,
-        @to
-      )
-
-    {:ok, [_ | _]} =
-      Sanbase.Clickhouse.Github.dev_activity_contributors_count(
-        ["santiment"],
-        @from,
-        @to,
-        "1d",
-        "None",
-        nil
-      )
-
-    {:ok, %{"santiment" => _}} =
-      Sanbase.Clickhouse.Github.total_dev_activity_contributors_count(
-        ["santiment"],
-        @from,
-        @to
-      )
-
-    {:ok, [_ | _]} =
-      Sanbase.Clickhouse.Github.github_activity_contributors_count(
-        ["santiment"],
-        @from,
-        @to,
-        "1d",
-        "None",
-        nil
-      )
-
-    {:ok, %{"santiment" => _}} =
-      Sanbase.Clickhouse.Github.total_github_activity_contributors_count(
-        ["santiment"],
-        @from,
-        @to
-      )
-
-    for metric <- ["dev_activity", "dev_activity_contributors_count"] do
+    for interval <- ["1d", "toStartOfHour"] do
       {:ok, [_ | _]} =
-        Sanbase.Metric.timeseries_data(
-          metric,
-          %{slug: "ethereum"},
+        Sanbase.Clickhouse.Github.dev_activity(
+          ["santiment"],
           @from,
           @to,
-          "1d"
+          interval,
+          "None",
+          nil
         )
 
-      {:ok, _} =
-        Sanbase.Metric.aggregated_timeseries_data(
-          metric,
-          %{slug: "ethereum"},
+      {:ok, [_ | _]} =
+        Sanbase.Clickhouse.Github.github_activity(
+          ["santiment"],
+          @from,
+          @to,
+          interval,
+          "None",
+          nil
+        )
+
+      {:ok, [_ | _]} =
+        Sanbase.Clickhouse.Github.dev_activity_contributors_count(
+          ["santiment"],
+          @from,
+          @to,
+          interval,
+          "None",
+          nil
+        )
+
+      {:ok, [_ | _]} =
+        Sanbase.Clickhouse.Github.github_activity_contributors_count(
+          ["santiment"],
+          @from,
+          @to,
+          interval,
+          "None",
+          nil
+        )
+
+      for metric <- ["dev_activity", "dev_activity_contributors_count"] do
+        {:ok, [_ | _]} =
+          Sanbase.Metric.timeseries_data(
+            metric,
+            %{slug: "ethereum"},
+            @from,
+            @to,
+            interval
+          )
+      end
+
+      {:ok, %{"santiment" => _}} =
+        Sanbase.Clickhouse.Github.total_dev_activity_contributors_count(
+          ["santiment"],
           @from,
           @to
         )
 
-      {:ok, _} = Sanbase.Metric.first_datetime(metric, %{slug: "ethereum"}, [])
+      {:ok, %{"santiment" => _}} =
+        Sanbase.Clickhouse.Github.total_github_activity_contributors_count(
+          ["santiment"],
+          @from,
+          @to
+        )
 
-      {:ok, _} = Sanbase.Metric.last_datetime_computed_at(metric, %{slug: "ethereum"}, [])
+      {:ok, %{"santiment" => _}} =
+        Sanbase.Clickhouse.Github.total_dev_activity(
+          ["santiment"],
+          @from,
+          @to
+        )
+
+      {:ok, %{"santiment" => _, "bitcoin" => _}} =
+        Sanbase.Clickhouse.Github.total_github_activity(
+          ["santiment", "bitcoin"],
+          @from,
+          @to
+        )
+
+      for metric <- ["dev_activity", "dev_activity_contributors_count"] do
+        {:ok, _} =
+          Sanbase.Metric.aggregated_timeseries_data(
+            metric,
+            %{slug: "ethereum"},
+            @from,
+            @to
+          )
+
+        {:ok, _} = Sanbase.Metric.first_datetime(metric, %{slug: "ethereum"}, [])
+
+        {:ok, _} = Sanbase.Metric.last_datetime_computed_at(metric, %{slug: "ethereum"}, [])
+      end
     end
 
     {:ok, :success}
@@ -522,6 +528,18 @@ defmodule Sanbase.RunExamples do
         infrastructure: "ETH",
         address: @null_address
       })
+  end
+
+  defp do_run(:top_addresses) do
+    {:ok, _} =
+      Sanbase.Balance.current_balance_top_addresses(
+        "ethereum",
+        18,
+        "ETH",
+        "ethereum",
+        "eth_balances_realtime",
+        labels: ["whale_usd_balance"]
+      )
 
     {:ok, :success}
   end
@@ -681,5 +699,50 @@ defmodule Sanbase.RunExamples do
           label: ["centralized_exchange"]
         ]
       )
+  end
+
+  defp do_run(:santiment_queries) do
+    user = Sanbase.Factory.insert(:user)
+
+    {:ok, query} =
+      Sanbase.Queries.create_query(
+        %{
+          sql_query_text: "SELECT {{big_num:human_readable}} AS big_num, {{big_num}} AS num",
+          sql_query_parameters: %{slug: "bitcoin", big_num: 2_123_801_239_123}
+        },
+        user.id
+      )
+
+    {:ok, dashboard} = Sanbase.Dashboards.create_dashboard(%{name: "MyName"}, user.id)
+
+    {:ok, mapping} = Sanbase.Dashboards.add_query_to_dashboard(dashboard.id, query.id, user.id)
+
+    # Add and remove the mapping to test the removal
+    {:ok, mapping2} = Sanbase.Dashboards.add_query_to_dashboard(dashboard.id, query.id, user.id)
+
+    {:ok, _} = Sanbase.Dashboards.remove_query_from_dashboard(dashboard.id, mapping2.id, user.id)
+
+    {:ok, q} = Sanbase.Queries.get_dashboard_query(dashboard.id, mapping.id, user.id)
+
+    query_metadata = Sanbase.Queries.QueryMetadata.from_local_dev(user.id)
+
+    {:ok, result} =
+      Sanbase.Queries.run_query(q, user, query_metadata, store_execution_details: false)
+
+    {:ok, stored} =
+      Sanbase.Dashboards.store_dashboard_query_execution(
+        dashboard.id,
+        mapping.id,
+        result,
+        user.id
+      )
+
+    {:ok, dashboard_cache} =
+      Sanbase.Dashboards.get_cached_dashboard_queries_executions(dashboard.id, user.id)
+
+    for r <- [dashboard_cache, mapping, dashboard, query],
+        do: Sanbase.Repo.delete(r)
+
+    {:ok, :success}
   end
 end

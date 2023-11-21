@@ -297,6 +297,65 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       resolve(&QueriesResolver.delete_query/3)
     end
+
+    @desc ~s"""
+    Update the dashboard cache with the provided data.
+
+    This mutation, along with computeDashboardPanel, provides
+    the capabilities to compute and store dashboard panel results
+    separately. In contrast to computeAndStoreDashboardPanel, having
+    the methods separated allows users to compute many different panel
+    configurations and only store the result of the one that satisfies
+    the requirements.
+
+    All the panel fields are required.
+
+    The `rows` and `summary` fields must be JSON encoded.
+
+    Example:
+
+    mutation {
+      storeDashboardPanel(
+        dashboardId: 134
+        panelId: "c5a3b5dd-0e31-42ae-954a-83b741818a28"
+        panel: {
+            clickhouseQueryId: "177a5a3d-072b-48ac-8cf5-d8375c8314ef"
+            columns: ["asset_id", "metric_id", "dt", "value", "computed_at"]
+            columnTypes: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"]
+            queryEndTime: "2022-06-14T12:08:10Z"
+            queryStartTime: "2022-06-14T12:08:10Z"
+            rows: "[[2503,250,\"2008-12-10T00:00:00Z\",0.0,\"2020-02-28T15:18:42Z\"],[2503,250,\"2008-12-10T00:05:00Z\",0.0,\"2020-02-28T15:18:42Z\"]]"
+            summary: "{\"read_bytes\":\"0\",\"read_rows\":\"0\",\"total_rows_to_read\":\"0\",\"written_bytes\":\"0\",\"written_rows\":\"0\"}"
+        }
+      ){
+        id
+        clickhouseQueryId
+        dashboardId
+        columns
+        rows
+        summary
+        updatedAt
+        queryStartTime
+        queryEndTime
+      }
+    }
+    """
+    field :store_dashboard_query_execution, :dashboard_cached_executions do
+      arg(:dashboard_id, non_null(:integer))
+      arg(:dashboard_query_mapping_id, non_null(:string))
+
+      @desc ~s"""
+      This is the result of the query execution. The JSON obtained from
+      runSqlQuery/runRawSqlQuery/runDashboardSqlQuery is first stringified,
+      then gzipped and the encoded in base64. This is done to reduce the
+      size of the data sent from the frontend to the backend.
+      """
+      arg(:compressed_query_execution_result, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&QueriesResolver.store_dashboard_query_execution/3)
+    end
   end
 
   object :dashboard_queries do
@@ -308,6 +367,29 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       arg(:id, non_null(:integer))
 
       resolve(&QueriesResolver.get_dashboard/3)
+    end
+
+    @desc ~s"""
+    Get the last computed version of the queries on a dashboard.
+
+    The query returns a list of the last execution of every
+    query. The query execution (cache) is described by its
+    id and a JSON-formatted string of the result. The result
+    contains the column names, the column types, the rows and
+    the time they were computed. The SQL query text and parameters that
+    were used to compute the result can be found in the dashhboard
+    schema, fetched by the getDashboard query.
+
+    This is called a cache because only the latest result is
+    stored and all previous states are discarded. Storing data
+    for long time after other computations and changes are done
+    is done via snapshots (to be implemented).
+    """
+    field :get_cached_dashboard_queries_executions, :dashboard_cached_executions do
+      meta(access: :free)
+      arg(:dashboard_id, non_null(:integer))
+
+      resolve(&QueriesResolver.get_cached_dashboard_queries_executions/3)
     end
 
     @desc ~s"""

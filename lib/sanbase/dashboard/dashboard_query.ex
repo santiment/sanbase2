@@ -65,7 +65,7 @@ defmodule Sanbase.Dashboard.Query do
     compressed_rows
     |> Base.decode64!()
     |> :zlib.gunzip()
-    |> :erlang.binary_to_term()
+    |> Plug.Crypto.non_executable_binary_to_term([:safe])
   end
 
   def valid_sql?(args) do

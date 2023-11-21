@@ -277,6 +277,8 @@ defmodule Sanbase.SocialData.TrendingWords do
         score / {{score_equalizer}} AS score,
         words_context AS context,
         summary,
+        bullish_summary,
+        bearish_summary,
         tuple(positive_ratio, neutral_ratio, negative_ratio) AS sentiment_ratios,
         tuple(positive_bb_ratio, neutral_bb_ratio, negative_bb_ratio) AS bb_sentiment_ratios
       FROM #{@table}

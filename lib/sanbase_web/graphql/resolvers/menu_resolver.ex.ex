@@ -2,6 +2,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MenuResolver do
   alias Sanbase.Menus
 
   # Menu CRUD
+  defp maybe_transform_menu({:ok, menu}) do
+    transformed_menu = Menus.menu_to_simple_map(menu)
+    {:ok, transformed_menu}
+  end
+
+  defp maybe_transform_menu({:error, reason}) do
+    {:error, reason}
+  end
 
   def get_menu(
         _root,
@@ -10,31 +18,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.MenuResolver do
       ) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
 
-    case Menus.get_menu(menu_id, querying_user_id) do
-      {:ok, menu} -> {:ok, Menus.menu_to_simple_map(menu)}
-      {:error, reason} -> {:error, reason}
-    end
+    Menus.get_menu(menu_id, querying_user_id)
+    |> maybe_transform_menu()
   end
 
   def create_menu(_root, %{name: _} = param, %{context: %{auth: %{current_user: current_user}}}) do
-    case Menus.create_menu(param, current_user.id) do
-      {:ok, menu} -> {:ok, Menus.menu_to_simple_map(menu)}
-      {:error, reason} -> {:error, reason}
-    end
+    Menus.create_menu(param, current_user.id)
+    |> maybe_transform_menu()
   end
 
   def update_menu(_root, %{id: id} = params, %{context: %{auth: %{current_user: current_user}}}) do
-    case Menus.update_menu(id, params, current_user.id) do
-      {:ok, menu} -> {:ok, Menus.menu_to_simple_map(menu)}
-      {:error, reason} -> {:error, reason}
-    end
+    Menus.update_menu(id, params, current_user.id)
+    |> maybe_transform_menu()
   end
 
   def delete_menu(_root, %{id: id}, %{context: %{auth: %{current_user: current_user}}}) do
-    case Menus.delete_menu(id, current_user.id) do
-      {:ok, menu} -> {:ok, Menus.menu_to_simple_map(menu)}
-      {:error, reason} -> {:error, reason}
-    end
+    Menus.delete_menu(id, current_user.id)
+    |> maybe_transform_menu()
   end
 
   # MenuItem C~R~UD
@@ -43,27 +43,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.MenuResolver do
         context: %{auth: %{current_user: current_user}}
       }) do
     with {:ok, params} <- create_menu_item_params(args) do
-      case Menus.create_menu_item(params, current_user.id) do
-        {:ok, menu} -> {:ok, Menus.menu_to_simple_map(menu)}
-        {:error, reason} -> {:error, reason}
-      end
+      Menus.create_menu_item(params, current_user.id)
+      |> maybe_transform_menu()
     end
   end
 
   def update_menu_item(_root, %{id: id} = params, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    case Menus.update_menu_item(id, params, current_user.id) do
-      {:ok, menu} -> {:ok, Menus.menu_to_simple_map(menu)}
-      {:error, reason} -> {:error, reason}
-    end
+    Menus.update_menu_item(id, params, current_user.id)
+    |> maybe_transform_menu()
   end
 
   def delete_menu_item(_root, %{id: id}, %{context: %{auth: %{current_user: current_user}}}) do
-    case Menus.delete_menu_item(id, current_user.id) do
-      {:ok, menu} -> {:ok, Menus.menu_to_simple_map(menu)}
-      {:error, reason} -> {:error, reason}
-    end
+    Menus.delete_menu_item(id, current_user.id)
+    |> maybe_transform_menu()
   end
 
   # Private functions

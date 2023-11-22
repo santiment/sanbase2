@@ -9095,6 +9095,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231012130814);
 INSERT INTO public."schema_migrations" (version) VALUES (20231019111320);
 INSERT INTO public."schema_migrations" (version) VALUES (20231023123140);
 INSERT INTO public."schema_migrations" (version) VALUES (20231026084628);
-INSERT INTO public."schema_migrations" (version) VALUES (20231030143950);
 INSERT INTO public."schema_migrations" (version) VALUES (20231101104145);
 INSERT INTO public."schema_migrations" (version) VALUES (20231110093800);

@@ -56,7 +56,7 @@ defmodule Sanbase.Menus do
     query = Menu.by_id(menu_id, user_id)
 
     case Repo.one(query) do
-      nil -> {:error, "Menu with id #{menu_id} not found"}
+      nil -> {:error, "Menu with id #{menu_id} not found or it is owned by another user"}
       menu -> {:ok, menu}
     end
   end
@@ -65,10 +65,14 @@ defmodule Sanbase.Menus do
   Convert a menu with preloaded menu items to a map in the format. This format
   can directly be returned by the GraphQL API if the return type is `:json`
 
+  Note: The keys are strings in camelCase, not atoms in snake case. This is because this result
+  is directly returned to the API client as a JSON type, which does not go through the
+  snake_case => camelCase transformation.
+
   %{
-    entity: :menu, id: 1, name: "N", description: "D", menu_items: [
-      %{entity_type: :query, id: 2, name: "Q", description: "D", position: 1},
-      %{entity_type: :dashboard, id: 21, name: "D", description: "D", position: 2}
+    "entityType" => :menu, "entityId" 1, "name" => "N", "description" => "D", "menuItems" => [
+      %{"entityType" => :query, "entityType" => 2, "name" => "Q", "description" => "D", "position" => 1},
+      %{"entityType" => :dashboard, "entityType" => 21, "name" => "D", "description" => "D", "position" => 2}
     ]
   }
   """
@@ -77,12 +81,12 @@ defmodule Sanbase.Menus do
       # If this menu is a sub-menu, then the caller from get_menu_items/1 will
       # additionally set the menu_item_id. If this is the top-level menu, then
       # this is not a sub-menu and it does not have a menu_item_id
-      menu_item_id: nil,
-      type: :menu,
-      id: menu.id,
-      name: menu.name,
-      description: menu.description,
-      menu_items: get_menu_items(menu)
+      "menuItemId" => nil,
+      "entityType" => :menu,
+      "entityId" => menu.id,
+      "name" => menu.name,
+      "description" => menu.description,
+      "menuItems" => get_menu_items(menu)
     }
     |> recursively_order_menu_items()
   end
@@ -212,7 +216,7 @@ defmodule Sanbase.Menus do
       case Map.get(params, :position) do
         nil ->
           # If `position` is not specified, add it at the end by getting the last position + 1
-          {:ok, get_next_position(params.parent_id)}
+          get_next_position(params.parent_id)
 
         position when is_integer(position) ->
           # If `position` is specified, bump all the positions bigger than it by 1 in
@@ -256,16 +260,31 @@ defmodule Sanbase.Menus do
       get_menu_item_for_update(menu_item_id, user_id)
     end)
     |> Ecto.Multi.run(
-      :maybe_update_items_positions,
+      :adjust_position,
       fn _repo, %{get_menu_item_for_update: menu_item} ->
         case Map.get(params, :position) do
           nil ->
-            {:ok, nil}
+            parent_id = Map.get(params, :parent_id)
+
+            # We cannot change the parent_id without also specifying the position
+            case is_nil(parent_id) or parent_id == menu_item.parent_id do
+              true ->
+                {:ok, nil}
+
+              false ->
+                {:error,
+                 "If the parent_id for a menu item is updated, the position in the new menu must also be specified"}
+            end
 
           position when is_integer(position) ->
             # If `position` is specified, bump all the positions bigger than it by 1 in
             # order to avoid having multiple items with the same position.
-            {:ok, {_, nil}} = inc_all_positions_after(menu_item.parent_id, position)
+            #
+            # If the menu gets its parent_id also changed , the bumping
+            # must happen in the new parent menu, not in the old one.
+            parent_id_after_update = Map.get(params, :parent_id, menu_item.parent_id)
+
+            {:ok, {_, nil}} = inc_all_positions_after(parent_id_after_update, position)
             {:ok, position}
         end
       end
@@ -307,7 +326,7 @@ defmodule Sanbase.Menus do
     query = Menu.get_for_update(menu_id, user_id)
 
     case Repo.one(query) do
-      nil -> {:error, "Menu item does not exist"}
+      nil -> {:error, "Menu with id #{menu_id} not found or it is owned by another user"}
       menu -> {:ok, menu}
     end
   end
@@ -316,13 +335,18 @@ defmodule Sanbase.Menus do
     query = MenuItem.get_for_update(menu_item_id, user_id)
 
     case Repo.one(query) do
-      nil -> {:error, "Menu item does not exist"}
-      menu -> {:ok, menu}
+      nil ->
+        {:error,
+         "Menu item with id #{menu_item_id} not found or it is part of a menu owned by another user"}
+
+      menu ->
+        {:ok, menu}
     end
   end
 
   defp get_next_position(menu_id) do
     query = MenuItem.get_next_position(menu_id)
+
     {:ok, Repo.one(query)}
   end
 
@@ -341,15 +365,15 @@ defmodule Sanbase.Menus do
     do: {:error, error}
 
   # Helpers for transforming a menu struct to a simple map
-  defp recursively_order_menu_items(%{menu_items: menu_items} = map) do
+  defp recursively_order_menu_items(%{"menuItems" => menu_items} = map) do
     sorted_menu_items =
-      Enum.sort_by(menu_items, & &1.position, :asc)
+      Enum.sort_by(menu_items, & &1["position"], :asc)
       |> Enum.map(fn
-        %{menu_items: [_ | _]} = elem -> recursively_order_menu_items(elem)
+        %{"menuItems" => [_ | _]} = elem -> recursively_order_menu_items(elem)
         x -> x
       end)
 
-    %{map | menu_items: sorted_menu_items}
+    %{map | "menuItems" => sorted_menu_items}
   end
 
   defp recursively_order_menu_items(data), do: data
@@ -359,17 +383,38 @@ defmodule Sanbase.Menus do
   defp get_menu_items(%Menu{menu_items: list}) when is_list(list) do
     list
     |> Enum.map(fn
-      %{id: menu_item_id, query: %{id: _} = map, position: position} ->
-        Map.take(map, [:id, :name, :description])
-        |> Map.merge(%{type: :query, position: position, menu_item_id: menu_item_id})
+      %{id: menu_item_id, query: %{} = map, position: position} ->
+        %{
+          "name" => map.name,
+          "description" => map.description,
+          "entityType" => :query,
+          "entityId" => map.id,
+          "position" => position,
+          "menuItemId" => menu_item_id
+        }
 
-      %{id: menu_item_id, dashboard: %{id: _} = map, position: position} ->
-        Map.take(map, [:id, :name, :description])
-        |> Map.merge(%{type: :dashboard, position: position, menu_item_id: menu_item_id})
+      %{id: menu_item_id, dashboard: %{} = map, position: position} ->
+        Map.take(map, [:name, :description])
 
-      %{id: menu_item_id, menu: %{id: _} = map, position: position} ->
+        %{
+          "name" => map.name,
+          "description" => map.description,
+          "entityType" => :dashboard,
+          "entityId" => map.id,
+          "position" => position,
+          "menuItemId" => menu_item_id
+        }
+
+      %{id: menu_item_id, menu: %{} = map, position: position} ->
         menu_to_simple_map(map)
-        |> Map.merge(%{type: :menu, position: position, menu_item_id: menu_item_id})
+        |> Map.merge(%{
+          "name" => map.name,
+          "description" => map.description,
+          "entityType" => :menu,
+          "entityId" => map.id,
+          "position" => position,
+          "menuItemId" => menu_item_id
+        })
     end)
   end
 end

@@ -800,7 +800,13 @@ defmodule Sanbase.RunExamples do
 
     {:ok, _} =
       Sanbase.Menus.create_menu_item(
-        %{parent_id: menu.id, dashboard_id: dashboard.id, position: 2},
+        %{parent_id: menu.id, dashboard_id: dashboard.id, position: 1},
+        user.id
+      )
+
+    {:ok, _} =
+      Sanbase.Menus.create_menu_item(
+        %{parent_id: menu.id, dashboard_id: dashboard.id},
         user.id
       )
 

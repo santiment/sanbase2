@@ -93,6 +93,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_full_url,
           :get_label_based_metric_owners,
           :get_market_exchanges,
+          :get_menu,
           :get_metric,
           :get_most_recent,
           :get_most_used,

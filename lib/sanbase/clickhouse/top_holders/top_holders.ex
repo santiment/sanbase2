@@ -166,7 +166,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
       balance2 * price_usd AS balance_usd,
       (balance2 / (total_balance / decimals)) AS partOfTotal
     FROM eth_balances_realtime
-    PREWHERE
+    WHERE
       addressType = 'normal'
     GROUP BY address
     ORDER BY balance2 DESC
@@ -335,8 +335,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
         GLOBAL ANY INNER JOIN
         (
           SELECT address
-          FROM blockchain_address_labels
-          PREWHERE blockchain = 'ethereum' AND #{clause}
+          FROM current_label_addresses
+          WHERE blockchain = 'ethereum' AND label_id IN (SELECT label_id FROM label_metadata WHERE #{clause})
         ) USING (address)
         """
 
@@ -352,7 +352,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
       values ->
         params_count = map_size(params)
         owners_key = "owners_param_count_#{params_count}"
-        str = "JSONExtractString(metadata, 'owner') IN ({{#{owners_key}}})"
+        str = "(key = 'owner' AND value IN ({{#{owners_key}}}))"
+
         {str, Map.put(params, owners_key, values)}
     end
   end
@@ -365,7 +366,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
       values ->
         params_count = map_size(params)
         labels_key = "labels_param_count_#{params_count}"
-        str = "label IN ({{#{labels_key}})"
+        str = "(key IN ({{#{labels_key}}}))"
+
         {str, Map.put(params, labels_key, values)}
     end
   end

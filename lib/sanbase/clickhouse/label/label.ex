@@ -266,7 +266,7 @@ defmodule Sanbase.Clickhouse.Label do
   end
 
   defp addresses_labels_query(slug, "ethereum", addresses) do
-    sql = create_addresses_labels_query(slug)
+    sql = create_addresses_labels_query()
     params = %{addresses: addresses, slug: slug}
 
     Sanbase.Clickhouse.Query.new(sql, params)
@@ -321,9 +321,9 @@ defmodule Sanbase.Clickhouse.Label do
     end)
   end
 
-  defp create_addresses_labels_query(slug) do
+  defp create_addresses_labels_query() do
     """
-    -- Query using v2
+    -- Query using labeling framework v2
     SELECT
         address,
         -- Creating Proper View of key

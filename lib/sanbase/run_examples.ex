@@ -208,11 +208,21 @@ defmodule Sanbase.RunExamples do
 
   defp do_run(:top_holders) do
     {:ok, _} =
+      Sanbase.Clickhouse.TopHolders.percent_of_total_supply(
+        "ethereum",
+        5,
+        @from,
+        @closer_to,
+        "1d"
+      )
+
+    {:ok, _} =
       Sanbase.Clickhouse.TopHolders.top_holders(
         "ethereum",
         @from,
-        @to,
-        []
+        @closer_to,
+        labels: ["centralized_exchange"],
+        owners: ["binance"]
       )
 
     for metric <- [
@@ -225,7 +235,7 @@ defmodule Sanbase.RunExamples do
           metric,
           %{slug: "ethereum"},
           @from,
-          @to,
+          @closer_to,
           "1d",
           []
         )

@@ -17,14 +17,6 @@ defmodule Sanbase.Clickhouse.Label do
 
   @create_label_topic "label_changes"
 
-  def list_all(blockchain) do
-    query_struct = all_blockchain_labels_query(blockchain)
-
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [label] ->
-      label
-    end)
-  end
-
   def addresses_by_labels(label_fqn_or_fqns, opts \\ [])
 
   def addresses_by_labels(label_fqn_or_fqns, opts) do
@@ -238,26 +230,10 @@ defmodule Sanbase.Clickhouse.Label do
     end
   end
 
-  defp addresses_labels_query(slug, "ethereum", addresses) do
+  defp addresses_labels_query(slug, blockchain, addresses) do
     sql = create_addresses_labels_query()
-    params = %{addresses: addresses, slug: slug}
+    params = %{addresses: addresses, slug: slug, blockchain: blockchain}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp addresses_labels_query(_slug, blockchain, addresses) do
-    sql = """
-    SELECT address, label, metadata
-    FROM(
-      SELECT address, label, argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
-      FROM blockchain_address_labels
-      PREWHERE blockchain = {{blockchain}} AND address IN ({{addresses}})
-      GROUP BY blockchain, asset_id, label, address
-      HAVING sign = 1
-    )
-    """
-
-    params = %{blockchain: blockchain, addresses: addresses}
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
@@ -357,7 +333,7 @@ defmodule Sanbase.Clickhouse.Label do
                     FROM
                         current_label_addresses
                     WHERE
-                        address IN [{{addresses}}]
+                        address IN [{{addresses}}] AND blockchain = {{blockchain}}
                 ) AS a
             LEFT JOIN
                 (

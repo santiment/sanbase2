@@ -4157,7 +4157,7 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
-    "min_interval": "4h",
+    "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
@@ -4174,7 +4174,7 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
-    "min_interval": "1d",
+    "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
@@ -4191,7 +4191,7 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
-    "min_interval": "7d",
+    "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"

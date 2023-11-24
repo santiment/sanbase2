@@ -27,7 +27,7 @@ defmodule Sanbase.MetricMetadataTest do
     for metric <- metrics do
       {:ok, metadata} = Metric.metadata(metric)
       assert metadata.default_aggregation in aggregations
-      assert metadata.min_interval in ["1s", "1m", "5m", "15m", "1h", "4h", "6h", "8h", "1d", "7d"]
+      assert metadata.min_interval in ["1s", "1m", "5m", "15m", "1h", "6h", "8h", "1d"]
     end
   end
 end

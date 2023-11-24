@@ -17,12 +17,6 @@ defmodule Sanbase.Clickhouse.Label do
 
   @create_label_topic "label_changes"
 
-  def list_all(:all = _blockchain) do
-    query_struct = all_labels_query()
-
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [label] -> label end)
-  end
-
   def list_all(blockchain) do
     query_struct = all_blockchain_labels_query(blockchain)
 
@@ -165,27 +159,6 @@ defmodule Sanbase.Clickhouse.Label do
     do: {:error, "Username is required for creating custom address labels"}
 
   # Private functions
-
-  defp all_labels_query() do
-    sql = """
-    SELECT DISTINCT(label) FROM blockchain_address_labels
-    """
-
-    params = %{}
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp all_blockchain_labels_query(blockchain) do
-    sql = """
-    SELECT DISTINCT(label)
-    FROM blockchain_address_labels
-    PREWHERE blockchain = {{blockchain}}
-    """
-
-    params = %{blockchain: blockchain}
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
   # For backwards compatibility, if the slug is nil treat it as ethereum blockchain
   defp slug_to_blockchain(nil), do: "ethereum"
 

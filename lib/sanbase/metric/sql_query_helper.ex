@@ -223,14 +223,14 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   def label_id_by_label_fqn_filter(label_fqn, opts) when is_binary(label_fqn) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple({{#{arg_name}}}))"
+    "label_id = dictGetUInt64('default.labels_by_fqn', 'label_id', tuple({{#{arg_name}}}))"
   end
 
   def label_id_by_label_fqn_filter(label_fqns, opts) when is_list(label_fqns) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
     "label_id IN (
-      SELECT dictGetUInt64('default.label_ids_dict', 'label_id', tuple(fqn)) AS label_id
+      SELECT dictGetUInt64('default.labels_by_fqn', 'label_id', tuple(fqn)) AS label_id
       FROM system.one
       ARRAY JOIN [{{#{arg_name}}}] AS fqn
     )"
@@ -305,7 +305,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     label_fqn_key = "label_fqn_#{pos}"
 
     str = "label_id IN (
-      SELECT dictGetUInt64('default.label_ids_dict', 'label_id', tuple(fqn)) AS label_id
+      SELECT dictGetUInt64('default.labels_by_fqn', 'label_id', tuple(fqn)) AS label_id
       FROM system.one
       ARRAY JOIN [{{#{label_fqn_key}}}] AS fqn
     )"
@@ -318,7 +318,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     label_fqn_key = "label_fqn_#{pos}"
 
     str =
-      "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple({{#{label_fqn_key}}}))"
+      "label_id = dictGetUInt64('default.labels_by_fqn', 'label_id', tuple({{#{label_fqn_key}}}))"
 
     {str, Map.put(params, label_fqn_key, value)}
   end

@@ -159,7 +159,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   def addresses_by_label_fqns_query(label_fqns, nil = _blockchain) do
     sql = """
-    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
       #{label_id_by_label_fqn_filter(label_fqns, argument_name: "label_fqns")}
@@ -173,7 +173,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   def addresses_by_label_fqns_query(label_fqns, blockchain) do
     sql = """
-    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
       #{label_id_by_label_fqn_filter(label_fqns, argument_name: "label_fqns")} AND
@@ -188,7 +188,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   def addresses_by_label_keys_query(label_keys, nil = _blockchain) do
     sql = """
-    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
       #{label_id_by_label_key_filter(label_keys, argument_name: "label_keys")}
@@ -202,7 +202,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   def addresses_by_label_keys_query(label_keys, blockchain) do
     sql = """
-    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
       #{label_id_by_label_key_filter(label_keys, argument_name: "label_keys")} AND

@@ -107,6 +107,7 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
         WHERE #{exchange_type_filter(:both)}
         AND blockchain = {{blockchain}}
     ) USING address
+    LIMIT {{limit}}
     """
 
     params = %{

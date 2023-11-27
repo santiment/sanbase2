@@ -1098,7 +1098,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "whales_to_exchanges_flow",
         "exchanges_to_whales_flow",
         "whale_to_traders_flow",
-        "other_traders_balance",
         # labeled holders metrics
         "holders_labeled_negative_distribution_100_to_1k",
         "holders_labeled_negative_distribution_0.1_to_1",
@@ -1547,7 +1546,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "daily_trustlines_count_change",
         "total_trustlines_count",
         "dex_volume_in_xrp_5m",
-        "dex_volume_in_usd_5m"
+        "dex_volume_in_usd_5m",
+        # Some balance metrics
+        "all_known_balance",
+        "unlabeled_balance",
+        "miners_exchange_balance"
       ]
       |> Enum.sort()
 

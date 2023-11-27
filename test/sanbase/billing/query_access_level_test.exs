@@ -33,7 +33,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :api_metric_distribution,
           :assets_held_by_address,
           :blockchain_address_label_changes,
-          :blockchain_address_labels,
           :blockchain_address_transaction_volume_over_time,
           :blockchain_address_user_pair,
           :blockchain_address,

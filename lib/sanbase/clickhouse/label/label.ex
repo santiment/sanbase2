@@ -17,20 +17,6 @@ defmodule Sanbase.Clickhouse.Label do
 
   @create_label_topic "label_changes"
 
-  def list_all(:all = _blockchain) do
-    query_struct = all_labels_query()
-
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [label] -> label end)
-  end
-
-  def list_all(blockchain) do
-    query_struct = all_blockchain_labels_query(blockchain)
-
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [label] ->
-      label
-    end)
-  end
-
   def addresses_by_labels(label_fqn_or_fqns, opts \\ [])
 
   def addresses_by_labels(label_fqn_or_fqns, opts) do
@@ -165,27 +151,6 @@ defmodule Sanbase.Clickhouse.Label do
     do: {:error, "Username is required for creating custom address labels"}
 
   # Private functions
-
-  defp all_labels_query() do
-    sql = """
-    SELECT DISTINCT(label) FROM blockchain_address_labels
-    """
-
-    params = %{}
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp all_blockchain_labels_query(blockchain) do
-    sql = """
-    SELECT DISTINCT(label)
-    FROM blockchain_address_labels
-    PREWHERE blockchain = {{blockchain}}
-    """
-
-    params = %{blockchain: blockchain}
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
   # For backwards compatibility, if the slug is nil treat it as ethereum blockchain
   defp slug_to_blockchain(nil), do: "ethereum"
 
@@ -194,7 +159,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   def addresses_by_label_fqns_query(label_fqns, nil = _blockchain) do
     sql = """
-    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
       #{label_id_by_label_fqn_filter(label_fqns, argument_name: "label_fqns")}
@@ -208,7 +173,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   def addresses_by_label_fqns_query(label_fqns, blockchain) do
     sql = """
-    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
       #{label_id_by_label_fqn_filter(label_fqns, argument_name: "label_fqns")} AND
@@ -223,7 +188,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   def addresses_by_label_keys_query(label_keys, nil = _blockchain) do
     sql = """
-    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
       #{label_id_by_label_key_filter(label_keys, argument_name: "label_keys")}
@@ -237,7 +202,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   def addresses_by_label_keys_query(label_keys, blockchain) do
     sql = """
-    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
       #{label_id_by_label_key_filter(label_keys, argument_name: "label_keys")} AND
@@ -265,26 +230,10 @@ defmodule Sanbase.Clickhouse.Label do
     end
   end
 
-  defp addresses_labels_query(slug, "ethereum", addresses) do
+  defp addresses_labels_query(slug, blockchain, addresses) do
     sql = create_addresses_labels_query()
-    params = %{addresses: addresses, slug: slug}
+    params = %{addresses: addresses, slug: slug, blockchain: blockchain}
 
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp addresses_labels_query(_slug, blockchain, addresses) do
-    sql = """
-    SELECT address, label, metadata
-    FROM(
-      SELECT address, label, argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
-      FROM blockchain_address_labels
-      PREWHERE blockchain = {{blockchain}} AND address IN ({{addresses}})
-      GROUP BY blockchain, asset_id, label, address
-      HAVING sign = 1
-    )
-    """
-
-    params = %{blockchain: blockchain, addresses: addresses}
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
@@ -384,7 +333,7 @@ defmodule Sanbase.Clickhouse.Label do
                     FROM
                         current_label_addresses
                     WHERE
-                        address IN [{{addresses}}]
+                        address IN [{{addresses}}] AND blockchain = {{blockchain}}
                 ) AS a
             LEFT JOIN
                 (

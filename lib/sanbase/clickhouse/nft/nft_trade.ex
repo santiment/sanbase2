@@ -89,7 +89,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
 
   defp fetch_label_query(contract, blockchain, field) do
     sql = """
-    SELECT dictGet('default.labels_dict', '#{field}', label_id)
+    SELECT dictGet('default.labels', '#{field}', label_id)
     FROM
     (
         SELECT labels
@@ -97,7 +97,7 @@ defmodule Sanbase.Clickhouse.NftTrade do
         WHERE (blockchain = {{blockchain}}) AND (address = lower({{contract}}))
     )
     ARRAY JOIN labels AS label_id
-    WHERE dictGet('default.labels_dict', 'key', label_id) = 'name'
+    WHERE dictGet('default.labels', 'key', label_id) = 'name'
     """
 
     params = %{blockchain: blockchain, contract: contract}

@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_available_metrics_for_selector(context.conn, %{slug: "santiment"})
 
-      assert result == metrics
+      assert Enum.sort(result) == Enum.sort(metrics)
     end)
   end
 
@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Graphql.AvailableMetricsApiTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_available_metrics_for_selector(context.conn, %{contract_address: "0x1"})
 
-      assert result == metrics
+      assert Enum.sort(result) == Enum.sort(metrics)
     end)
   end
 

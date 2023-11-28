@@ -13,7 +13,7 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressLabelChange.SqlQuery do
     SELECT
       toUnixTimestamp(dt),
       address,
-      dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn,
+      dictGetString('default.labels', 'fqn', label_id) AS label_fqn,
       sign
     FROM address_label_changes
     PREWHERE

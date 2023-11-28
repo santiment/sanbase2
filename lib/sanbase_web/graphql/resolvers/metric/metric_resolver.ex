@@ -54,6 +54,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
     metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
+    metrics = Enum.sort(metrics, :asc)
     {:ok, metrics}
   end
 
@@ -61,6 +62,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     metrics = Metric.available_metrics()
     metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
     metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
+    metrics = Enum.sort(metrics, :asc)
+
     {:ok, metrics}
   end
 
@@ -68,10 +71,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     case Metric.available_metrics_for_selector(args.selector) do
       {:ok, metrics} ->
         metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
+        metrics = Enum.sort(metrics, :asc)
+
         {:ok, metrics}
 
       {:nocache, {:ok, metrics}} ->
         metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
+        metrics = Enum.sort(metrics, :asc)
+
         {:nocache, {:ok, metrics}}
     end
   end
@@ -81,6 +88,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def get_available_projects(_root, _args, %{source: %{metric: metric}}) do
     with {:ok, slugs} <- Metric.available_slugs(metric) do
+      slugs = Enum.sort(slugs, :asc)
       {:ok, Sanbase.Project.List.by_slugs(slugs)}
     end
   end

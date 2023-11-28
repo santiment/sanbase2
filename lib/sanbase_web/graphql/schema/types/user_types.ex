@@ -296,6 +296,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:is_accessible, non_null(:boolean))
     field(:restricted_from, :datetime)
     field(:restricted_to, :datetime)
+    field(:is_deprecated, non_null(:boolean))
+    field(:hard_deprecate_after, :datetime)
   end
 
   object :api_call_data do

@@ -2,6 +2,7 @@ defmodule SanbaseWeb.UserController do
   use SanbaseWeb, :controller
 
   alias Sanbase.Accounts.User
+  alias SanbaseWeb.Router.Helpers, as: Routes
 
   def index(conn, _params) do
     users = User.all_users()
@@ -27,6 +28,26 @@ defmodule SanbaseWeb.UserController do
       belongs_to: belongs_to(user),
       has_many: has_many(user)
     )
+  end
+
+  def edit(conn, %{"id" => id}) do
+    {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
+    changeset = User.changeset(user, %{})
+    render(conn, "edit.html", user: user, changeset: changeset)
+  end
+
+  def update(conn, %{"id" => id, "user" => user_params}) do
+    {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
+
+    case User.changeset(user, user_params) |> Sanbase.Repo.update() do
+      {:ok, user} ->
+        conn
+        |> put_flash(:info, "User updated successfully.")
+        |> redirect(to: Routes.user_path(conn, :show, user))
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        render(conn, "edit.html", user: user, changeset: changeset)
+    end
   end
 
   def reset_api_call_limits(conn, %{"id" => id}) do

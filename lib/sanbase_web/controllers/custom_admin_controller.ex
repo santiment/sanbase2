@@ -5,7 +5,7 @@ defmodule SanbaseWeb.CustomAdminController do
     render(conn, :index,
       search_value: "",
       routes: [
-        {"Users", ~p"/admin2/users"},
+        {"Users", ~p"/admin2/generic?resource=users"},
         {"Webinars", ~p"/admin2/webinars"},
         {"Sheets templates", ~p"/admin2/sheets_templates/"},
         {"Reports", ~p"/admin2/reports"},

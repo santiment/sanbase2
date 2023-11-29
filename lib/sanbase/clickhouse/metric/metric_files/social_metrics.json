@@ -2891,5 +2891,803 @@
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Total v2",
+    "name": "sentiment_balance_v2",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Hourly Total v2",
+    "name": "sentiment_balance_v2_1h",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Daily Total v2",
+    "name": "sentiment_balance_v2_1d",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance 4chan v2",
+    "name": "sentiment_balance_4chan_v2",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Hourly 4chan v2",
+    "name": "sentiment_balance_4chan_v2_1h",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Daily 4chan v2",
+    "name": "sentiment_balance_4chan_v2_1d",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Bitcointalk v2",
+    "name": "sentiment_balance_bitcointalk_v2",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Hourly Bitcointalk v2",
+    "name": "sentiment_balance_bitcointalk_v2_1h",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Daily Bitcointalk v2",
+    "name": "sentiment_balance_bitcointalk_v2_1d",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Reddit v2",
+    "name": "sentiment_balance_reddit_v2",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Hourly Reddit v2",
+    "name": "sentiment_balance_reddit_v2_1h",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Daily Reddit v2",
+    "name": "sentiment_balance_reddit_v2_1d",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Telegram v2",
+    "name": "sentiment_balance_telegram_v2",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Hourly Telegram v2",
+    "name": "sentiment_balance_telegram_v2_1h",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Daily Telegram v2",
+    "name": "sentiment_balance_telegram_v2_1d",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Twitter v2",
+    "name": "sentiment_balance_twitter_v2",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Hourly Twitter v2",
+    "name": "sentiment_balance_twitter_v2_1h",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Daily Twitter v2",
+    "name": "sentiment_balance_twitter_v2_1d",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Youtube v2",
+    "name": "sentiment_balance_youtube_videos_v2",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Hourly Youtube v2",
+    "name": "sentiment_balance_youtube_videos_v2_1h",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Daily Youtube v2",
+    "name": "sentiment_balance_youtube_videos_v2_1d",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Total v2",
+    "name": "sentiment_volume_consumed_v2",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Hourly Total v2",
+    "name": "sentiment_volume_consumed_v2_1h",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Daily Total v2",
+    "name": "sentiment_volume_consumed_v2_1d",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed 4chan v2",
+    "name": "sentiment_volume_consumed_4chan_v2",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Hourly 4chan v2",
+    "name": "sentiment_volume_consumed_4chan_v2_1h",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Daily 4chan v2",
+    "name": "sentiment_volume_consumed_4chan_v2_1d",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Bitcointalk v2",
+    "name": "sentiment_volume_consumed_bitcointalk_v2",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Hourly Bitcointalk v2",
+    "name": "sentiment_volume_consumed_bitcointalk_v2_1h",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Daily Bitcointalk v2",
+    "name": "sentiment_volume_consumed_bitcointalk_v2_1d",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Reddit v2",
+    "name": "sentiment_volume_consumed_reddit_v2",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Hourly Reddit v2",
+    "name": "sentiment_volume_consumed_reddit_v2_1h",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Daily Reddit v2",
+    "name": "sentiment_volume_consumed_reddit_v2_1d",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Telegram v2",
+    "name": "sentiment_volume_consumed_telegram_v2",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Hourly Telegram v2",
+    "name": "sentiment_volume_consumed_telegram_v2_1h",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Daily Telegram v2",
+    "name": "sentiment_volume_consumed_telegram_v2_1d",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Twitter v2",
+    "name": "sentiment_volume_consumed_twitter_v2",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Hourly Twitter v2",
+    "name": "sentiment_volume_consumed_twitter_v2_1h",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Daily Twitter v2",
+    "name": "sentiment_volume_consumed_twitter_v2_1d",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Youtube v2",
+    "name": "sentiment_volume_consumed_youtube_videos_v2",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Hourly Youtube v2",
+    "name": "sentiment_volume_consumed_youtube_videos_v2_1h",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Daily Youtube v2",
+    "name": "sentiment_volume_consumed_youtube_videos_v2_1d",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": {
+      "historical": "restricted",
+      "realtime": "free"
+    },
+    "selectors": ["slug", "text"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
   }
 ]

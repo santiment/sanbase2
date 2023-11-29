@@ -58,6 +58,10 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
         promotion = promoter["promotions"] |> hd
 
         assert promoter["email"] == resp["email"]
+
+        assert promoter["dashboardUrl"] ==
+                 "https://santiment.firstpromoter.com/view_dashboard_as?at=#{resp["auth_token"]}"
+
         assert promotion["visitorsCount"] == resp["promotions"] |> hd |> Map.get("visitors_count")
       end)
     end
@@ -86,6 +90,7 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
         currentBalance
         earningsBalance
         paidBalance
+        dashboardUrl
         promotions {
           refId
           referralLink
@@ -112,6 +117,7 @@ defmodule SanbaseWeb.Graphql.PromoterApiTest do
         currentBalance
         earningsBalance
         paidBalance
+        dashboardUrl
         promotions {
           refId
           referralLink

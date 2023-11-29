@@ -21,7 +21,7 @@ defmodule Sanbase.Queries.QueryMetadata do
   end
 
   @doc false
-  def from_local_dev(user_id) do
+  def from_local_dev(user_id) when is_integer(user_id) do
     # To be used only in test and dev environment
     %{
       sanbase_user_id: user_id,

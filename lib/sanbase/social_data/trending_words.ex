@@ -50,7 +50,7 @@ defmodule Sanbase.SocialData.TrendingWords do
           datetme: DateTime.t(),
           position: position
         }
-  @table "trending_words_docs_v3"
+  @table "trending_words_docs_v4"
 
   # When calculating the trending now words fetch the data for the last
   # N hours to ensure that there is some data and we're not in the middle
@@ -72,13 +72,26 @@ defmodule Sanbase.SocialData.TrendingWords do
     query_struct = get_trending_words_query(from, to, interval, size, source, word_type_filter)
 
     ClickhouseRepo.query_reduce(query_struct, %{}, fn
-      [dt, word, project, score, context, summary, sentiment_ratios], acc ->
+      [
+        dt,
+        word,
+        project,
+        score,
+        context,
+        summary,
+        bullish_summary,
+        bearish_summary,
+        sentiment_ratios,
+        bb_sentiment_ratios
+      ],
+      acc ->
         slug = if project, do: String.split(project, "_", parts: 2) |> List.last()
         datetime = DateTime.from_unix!(dt)
         # The percentage of the documents that mention the word that have
         # postive, negative or netural sentiment. The values are in the range [0, 1]
         # and add up to 1
-        [pos_sentiment, neg_sentiment, neu_sentiment] = sentiment_ratios
+        [positive_sentiment, neutral_sentiment, negative_sentiment] = sentiment_ratios
+        [positive_bb_sentiment, neutral_bb_sentiment, negative_bb_sentiment] = bb_sentiment_ratios
 
         summaries = [%{source: source, datetime: datetime, summary: summary}]
         context = transform_context(context)
@@ -90,10 +103,15 @@ defmodule Sanbase.SocialData.TrendingWords do
           context: context,
           # Keep both summaries and summary for backwards compatibility. Remove summaries later
           summary: summary,
+          bullish_summary: bullish_summary,
+          bearish_summary: bearish_summary,
           summaries: summaries,
-          positive_sentiment_ratio: pos_sentiment,
-          negative_sentiment_ratio: neg_sentiment,
-          neutral_sentiment_ratio: neu_sentiment
+          positive_sentiment_ratio: positive_sentiment,
+          negative_sentiment_ratio: negative_sentiment,
+          neutral_sentiment_ratio: neutral_sentiment,
+          positive_bb_sentiment_ratio: positive_bb_sentiment,
+          negative_bb_sentiment_ratio: negative_bb_sentiment,
+          neutral_bb_sentiment_ratio: neutral_bb_sentiment
         }
 
         Map.update(acc, datetime, [elem], fn words -> [elem | words] end)
@@ -244,7 +262,10 @@ defmodule Sanbase.SocialData.TrendingWords do
       score,
       context,
       summary,
-      sentiment_ratios
+      bullish_summary,
+      bearish_summary,
+      sentiment_ratios,
+      bb_sentiment_ratios
     FROM
     (
       SELECT
@@ -256,7 +277,10 @@ defmodule Sanbase.SocialData.TrendingWords do
         score / {{score_equalizer}} AS score,
         words_context AS context,
         summary,
-        tuple(pos_ratio, neg_ratio, neu_ratio) AS sentiment_ratios
+        bullish_summary,
+        bearish_summary,
+        tuple(positive_ratio, neutral_ratio, negative_ratio) AS sentiment_ratios,
+        tuple(positive_bb_ratio, neutral_bb_ratio, negative_bb_ratio) AS bb_sentiment_ratios
       FROM #{@table}
       WHERE
         dt >= toDateTime({{from}}) AND

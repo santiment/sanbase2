@@ -136,26 +136,63 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
 
   def histogram_data_query("eth2_staked_amount_per_label", "ethereum", from, to, _interval, limit) do
     sql = """
-    SELECT
-      label,
-      sumKahan(locked_sum) AS value
-    FROM (
-      SELECT
-        address,
-        locked_sum,
-        #{label_select(label_as: "label")}
-      FROM (
-        SELECT address, sumKahan(amount) AS locked_sum
-        FROM (
-            SELECT DISTINCT *
-            FROM eth2_staking_transfers_v2 FINAL
-            WHERE
-              dt < toDateTime({{to}})
-              #{if from, do: "AND dt >= toDateTime({{from}})"}
+    WITH addresses_sum AS
+    (
+        SELECT
+            address,
+            locked_sum
+        FROM
+        (
+            SELECT
+                address,
+                sumKahan(amount) AS locked_sum
+            FROM
+            (
+                SELECT DISTINCT *
+                FROM eth2_staking_transfers_v2
+                FINAL
+                WHERE (dt < toDateTime({{to}}))
+                #{if from, do: "AND dt >= toDateTime({{from}})"}
+            )
+            GROUP BY address
         )
-        GROUP BY address
-      )
     )
+
+    SELECT
+        -- Creating Proper View of key
+        arrayStringConcat(
+            arrayMap(x -> concat(upper(substring(x, 1, 1)), substring(x, 2, length(x) - 1)),
+            splitByChar('_',
+                -- If key == 'owner' -> we will take value
+                multiIf(
+                        m.key = 'owner', m.value,
+                        m.key = '', 'Unlabeled',
+                        m.key
+                    )
+            )), ' '
+        ) as label,
+        sumKahan(addresses_sum.locked_sum) as value
+    FROM addresses_sum
+    LEFT JOIN
+    (
+        SELECT
+            blockchain,
+            label_id,
+            address
+        FROM current_label_addresses
+        WHERE (address IN (
+            SELECT address
+            FROM addresses_sum
+        )) AND (blockchain = 'ethereum')
+    ) AS cla ON addresses_sum.address = cla.address
+    LEFT JOIN
+    (
+        SELECT
+            label_id,
+            key,
+            value
+        FROM label_metadata
+    ) AS m ON cla.label_id = m.label_id
     GROUP BY label
     ORDER BY value DESC
     LIMIT {{limit}}
@@ -179,20 +216,45 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         limit
       ) do
     sql = """
+    WITH staking_address AS (
+      SELECT DISTINCT(address)
+      FROM
+          eth2_staking_transfers_v2 FINAL
+      WHERE
+          dt < toDateTime({{to}})
+          #{if from, do: "AND dt >= toDateTime({{from}})"}
+    )
     SELECT
       label,
-      count(address) AS value
+      count(address) as value
     FROM (
       SELECT
-        address,
-        #{label_select(label_as: "label")}
-        FROM (
-          SELECT DISTINCT(address)
-          FROM eth2_staking_transfers_v2 FINAL
-          WHERE
-            dt < toDateTime({{to}})
-            #{if from, do: "AND dt >= toDateTime({{from}})"}
-        )
+          staking_address.address as address,
+          -- Creating Proper View of key
+          arrayStringConcat(
+              arrayMap(x -> concat(upper(substring(x, 1, 1)), substring(x, 2, length(x) - 1)),
+              splitByChar('_',
+                  -- If key == 'owner' -> we will take value
+                  multiIf(
+                          m.key = 'owner', m.value,
+                          m.key = '', 'Unlabeled',
+                          m.key
+                      )
+              )), ' '
+          ) as label
+      FROM staking_address
+      LEFT JOIN (
+        SELECT *
+        FROM
+            current_label_addresses
+        WHERE
+          address IN (SELECT address FROM staking_address) AND
+          blockchain = 'ethereum'
+      ) AS cla
+      ON staking_address.address = cla.address
+      LEFT JOIN (
+          SELECT label_id, key, value FROM label_metadata
+      ) AS m ON cla.label_id = m.label_id
     )
     GROUP BY label
     ORDER BY value DESC
@@ -209,61 +271,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
   end
 
   def histogram_data_query(
-        "eth2_unlabeled_staker_inflow_sources",
-        "ethereum",
-        from,
-        to,
-        _interval,
-        limit
-      ) do
-    sql = """
-    SELECT
-      label,
-      sumKahan(address_inflow) AS value
-    FROM (
-      SELECT
-        address,
-        address_inflow,
-        #{label_select(label_as: "label", label_str_as: "label_str")}
-      FROM (
-          SELECT
-            from AS address,
-            sumKahan(value / 1e18) AS address_inflow
-          FROM eth_transfers
-          WHERE to GLOBAL IN (
-            SELECT address
-            FROM (
-              SELECT
-                address,
-                dictGet('default.eth_label_dict', 'labels', (cityHash64(address), toUInt64(0))) AS label_str
-              FROM (
-                SELECT DISTINCT(address)
-                FROM eth2_staking_transfers_v2 FINAL
-                WHERE
-                  dt < toDateTime({{to}})
-                  #{if from, do: "AND dt >= toDateTime({{from}})"}
-              )
-            )
-            WHERE label_str = ''
-          )
-        GROUP BY address
-      )
-    )
-    GROUP BY label
-    ORDER BY value DESC
-    LIMIT {{limit}}
-    """
-
-    params = %{
-      from: from && from |> DateTime.to_unix(),
-      to: to |> DateTime.to_unix(),
-      limit: limit
-    }
-
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  def histogram_data_query(
         "eth2_top_stakers",
         "ethereum",
         from,
@@ -272,29 +279,57 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         limit
       ) do
     sql = """
-    SELECT
-      address,
-      label,
-      locked_value AS staked
-    FROM (
+    WITH lock_addresses AS (
       SELECT
-        address,
-        locked_value,
-        #{label_select(label_as: "label")}
-      FROM (
-        SELECT
           address,
           SUM(amount) AS locked_value
-        FROM eth2_staking_transfers_v2 FINAL
-        WHERE
+      FROM
+          eth2_staking_transfers_v2 FINAL
+      WHERE
           dt < toDateTime({{to}})
           #{if from, do: "AND dt >= toDateTime({{from}})"}
-        GROUP BY address
-        ORDER BY locked_value DESC
-        LIMIT {{limit}}
-      )
+      GROUP BY address
+      ORDER BY locked_value DESC
+      LIMIT {{limit}}
     )
-    ORDER BY staked DESC
+
+    SELECT
+        lock_addresses.address as address,
+        arrayStringConcat(groupUniqArray(multiIf(
+          m.key = 'owner', m.value,
+          m.key = '', 'Unlabeled',
+          m.key)
+         ), ', ') AS labels,
+        max(lock_addresses.locked_value) AS max_staked
+    FROM lock_addresses
+    LEFT JOIN (
+        SELECT
+            blockchain,
+            label_id,
+            address
+        FROM
+            current_label_addresses
+        WHERE
+            address IN (
+                SELECT
+                    address
+                FROM
+                    lock_addresses
+            )
+        AND
+            blockchain = 'ethereum'
+    ) AS cla
+    ON lock_addresses.address = cla.address
+    LEFT JOIN (
+        SELECT
+            label_id,
+            key,
+            value
+        FROM label_metadata
+    ) AS m
+    ON cla.label_id = m.label_id
+    GROUP BY lock_addresses.address
+    ORDER BY max_staked DESC
     """
 
     params = %{
@@ -693,30 +728,5 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     }
 
     Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp label_select(opts) do
-    label_as = Keyword.get(opts, :label_as, "label")
-    label_str_as = Keyword.get(opts, :label_str_as, "label_str")
-
-    """
-    dictGet('default.eth_label_dict', 'labels', (cityHash64(address), toUInt64(0))) AS #{label_str_as},
-    splitByChar(',', #{label_str_as}) AS label_arr_internal,
-    multiIf(
-      has(label_arr_internal, 'decentralized_exchange'), 'DEX',
-      hasAny(label_arr_internal, ['centralized_exchange', 'deposit']), 'CEX',
-      has(label_arr_internal, 'defi'), 'DeFi',
-      has(label_arr_internal, 'genesis'), 'Genesis',
-      has(label_arr_internal, 'miner'), 'Miner',
-      has(label_arr_internal, 'makerdao-cdp-owner'), 'CDP Owner',
-      has(label_arr_internal, 'whale'), 'Whale',
-      hasAll(label_arr_internal, ['dex_trader', 'withdrawal']), 'CEX & DEX Trader',
-      has(label_arr_internal, 'withdrawal'), 'CEX Trader',
-      has(label_arr_internal, 'proxy'), 'Proxy',
-      has(label_arr_internal, 'dex_trader'), 'DEX Trader',
-      #{label_str_as} = '', 'Unlabeled',
-      label_arr_internal[1]
-      ) AS #{label_as}
-    """
   end
 end

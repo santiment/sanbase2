@@ -32,7 +32,10 @@ defmodule Sanbase.StripeApi do
       {:ok, user} ->
         Stripe.SetupIntent.create(%{
           customer: user.stripe_customer_id,
-          usage: "off_session"
+          usage: "off_session",
+          automatic_payment_methods: %{
+            enabled: true
+          }
         })
 
       {:error, reason} ->

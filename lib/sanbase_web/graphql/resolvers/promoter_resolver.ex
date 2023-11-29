@@ -19,6 +19,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PromoterResolver do
 
   # Note: Adding new field to extract should be also reflected by adding it in promoter_types.ex
   defp extract_and_atomize_needed_fields({:ok, promoter}) do
+    auth_token = promoter["auth_token"]
+
     promoter =
       promoter
       |> Map.take([
@@ -46,6 +48,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.PromoterResolver do
         end)
       end)
       |> Sanbase.MapUtils.atomize_keys()
+
+    promoter =
+      promoter
+      |> Map.put(
+        :dashboard_url,
+        "https://santiment.firstpromoter.com/view_dashboard_as?at=#{auth_token}"
+      )
 
     {:ok, promoter}
   end

@@ -1,32 +1,12 @@
 defmodule Sanbase.SanLang.Parser do
-  import NimbleParsec
+  alias Sanbase.SanLang.Environment
+  alias Sanbase.SanLang.Interpreter
 
-  symbol =
-    ascii_string([?a..?z, ?A..?Z, ?_], min: 1)
-    |> concat(ascii_string([?a..?z, ?A..?Z, ?_, ?0..?9], max: 100))
-    |> reduce({Enum, :join, [""]})
-    |> unwrap_and_tag(:symbol)
-
-  env_var =
-    string("@")
-    |> concat(ascii_string([?a..?z, ?A..?Z, ?_, ?0..?9], max: 100))
-    |> reduce({Enum, :join, [""]})
-    |> unwrap_and_tag(:env_var)
-
-  access_operator =
-    ignore(string(~S|["|))
-    |> concat(symbol)
-    |> ignore(string(~S|"]|))
-    |> unwrap_and_tag(:access_operator)
-
-  whitespace = string(" ") |> ignore()
-  newlines = choice([string("\n"), string("\r")]) |> ignore()
-
-  expression =
-    repeat(choice([newlines, whitespace]))
-    |> choice([env_var, symbol, access_operator])
-
-  defparsec(:parse, expression)
+  def parse_eval(input, env \\ Environment.new()) do
+    with {:ok, tokens, _} <- :san_lang_lexer.string(input),
+         {:ok, ast} <- :san_lang_parser.parse(tokens),
+         {:ok, result} <- Interpreter.eval(ast, env) do
+      {:ok, result}
+    end
+  end
 end
-
-Sanbase.SanLang.Parser.parse("_address2")

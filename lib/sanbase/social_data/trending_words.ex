@@ -283,12 +283,12 @@ defmodule Sanbase.SocialData.TrendingWords do
             (argMax(positive_bb_ratio, computed_at), argMax(neutral_bb_ratio, computed_at), argMax(negative_bb_ratio, computed_at)) AS bb_sentiment_ratios
         FROM #{@table}
         WHERE (dt >= toDateTime({{from}})) AND (dt < toDateTime({{to}})) AND (source = {{source}})
-        #{word_type_filter_str(word_type_filter)}
         GROUP BY
             t,
             dt,
             source,
             docs_id
+        #{word_type_filter_str(word_type_filter)}
     )
     WHERE (dt = last_dt_in_group) AND (dt = t)
     ORDER BY
@@ -314,8 +314,8 @@ defmodule Sanbase.SocialData.TrendingWords do
   defp word_type_filter_str(word_type_filter) do
     case word_type_filter do
       :all -> ""
-      :project -> "AND project IS NOT NULL"
-      :non_project -> "AND project IS NULL"
+      :project -> "HAVING project IS NOT NULL"
+      :non_project -> "HAVING project IS NULL"
     end
   end
 

@@ -309,13 +309,13 @@ defmodule Sanbase.Queries do
         [
           store_execution_details:
             Application.get_env(
-              :__sanbase_queires__,
-              :store_execution_details,
+              :__sanbase_queries__,
+              :__store_execution_details__,
               Keyword.get(opts, :store_execution_details, true)
             ),
           wait_fetching_details_ms:
             Application.get_env(
-              :__sanbase_queires__,
+              :__sanbase_queries__,
               :__wait_fetching_details_ms_,
               Keyword.get(opts, :wait_fetching_details_ms, 7500)
             )

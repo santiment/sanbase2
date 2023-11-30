@@ -1,5 +1,5 @@
 defmodule Sanbase.QueriesTest do
-  use SanbaseWeb.ConnCase, async: true
+  use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
   import Mock, only: [assert_called: 1]

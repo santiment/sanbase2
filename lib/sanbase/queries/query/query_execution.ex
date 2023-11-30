@@ -114,7 +114,9 @@ defmodule Sanbase.Queries.QueryExecution do
         queries_executed_hour:
           fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_hour),
         queries_executed_day:
-          fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_day)
+          fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_day),
+        queries_executed_month:
+          fragment("COUNT(CASE WHEN inserted_at >= ? THEN 1 ELSE NULL END)", ^beginning_of_month)
       }
     )
   end

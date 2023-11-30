@@ -270,7 +270,7 @@ defmodule Sanbase.SocialData.TrendingWords do
     (
       SELECT
         #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
-        argMax(dt, computed_at) AS dt,
+        dt,
         max(dt) OVER (PARTITION BY t) AS last_dt_in_group,
         argMax(word, computed_at) AS word,
         argMax(project, computed_at) AS project,
@@ -287,7 +287,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         dt < toDateTime({{to}}) AND
         source = {{source}}
         #{word_type_filter_str(word_type_filter)}
-      GROUP BY source, docs_id, t, last_dt_in_group
+      GROUP BY t, dt, source, docs_id
     )
     WHERE dt = last_dt_in_group
     ORDER BY t, score DESC

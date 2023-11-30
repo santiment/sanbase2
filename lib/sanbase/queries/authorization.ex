@@ -17,6 +17,29 @@ defmodule Sanbase.Queries.Authorization do
     end
   end
 
+  def query_executions_limit(product_code, plan_name) do
+    case {product_code, plan_name} do
+      {_, "FREE"} -> %{minute: 1, hour: 5, day: 10}
+      {"SANBASE", "PRO"} -> %{minute: 10, hour: 100, day: 500}
+      {"SANAPI", "BASIC"} -> %{minute: 20, hour: 200, day: 1000}
+      {"SANAPI", "PRO"} -> %{minute: 50, hour: 600, day: 3000}
+      {"SANAPI", "CUSTOM"} -> %{minute: 200, hour: 1000, day: 5000}
+      {"SANAPI", "CUSTOM_" <> _} -> %{minute: 200, hour: 1000, day: 5000}
+    end
+  end
+
+  def credits_limit(product_code, plan_name) do
+    case {product_code, plan_name} do
+      {_, "FREE"} -> 5_000
+      {"SANBASE", "PRO"} -> 1_000_000
+      {"SANAPI", "BASIC"} -> 2_000_000
+      {"SANAPI", "PRO"} -> 5_000_000
+      {"SANAPI", "CUSTOM"} -> 20_000_000
+      # This needs to be updated so its taken from the plan definition
+      {"SANAPI", "CUSTOM_" <> _} -> 20_000_000
+    end
+  end
+
   # Private functions
 
   defp check_user_limits(user_id, product_code, plan_name) do
@@ -54,29 +77,6 @@ defmodule Sanbase.Queries.Authorization do
       false
     else
       true
-    end
-  end
-
-  defp query_executions_limit(product_code, plan_name) do
-    case {product_code, plan_name} do
-      {_, "FREE"} -> %{minute: 1, hour: 5, day: 10}
-      {"SANBASE", "PRO"} -> %{minute: 10, hour: 100, day: 500}
-      {"SANAPI", "BASIC"} -> %{minute: 20, hour: 200, day: 1000}
-      {"SANAPI", "PRO"} -> %{minute: 50, hour: 600, day: 3000}
-      {"SANAPI", "CUSTOM"} -> %{minute: 200, hour: 1000, day: 5000}
-      {"SANAPI", "CUSTOM_" <> _} -> %{minute: 200, hour: 1000, day: 5000}
-    end
-  end
-
-  defp credits_limit(product_code, plan_name) do
-    case {product_code, plan_name} do
-      {_, "FREE"} -> 5_000
-      {"SANBASE", "PRO"} -> 1_000_000
-      {"SANAPI", "BASIC"} -> 2_000_000
-      {"SANAPI", "PRO"} -> 5_000_000
-      {"SANAPI", "CUSTOM"} -> 20_000_000
-      # This needs to be updated so its taken from the plan definition
-      {"SANAPI", "CUSTOM_" <> _} -> 20_000_000
     end
   end
 end

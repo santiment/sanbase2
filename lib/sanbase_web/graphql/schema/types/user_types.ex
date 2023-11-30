@@ -102,6 +102,19 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:data, :json)
   end
 
+  object :queries_executions_info do
+    field(:credits_availalbe_month, non_null(:integer))
+    field(:credits_spent_month, non_null(:integer))
+    field(:credits_remaining_month, non_null(:integer))
+    field(:queries_executed_month, non_null(:integer))
+    field(:queries_executed_day, non_null(:integer))
+    field(:queries_executed_hour, non_null(:integer))
+    field(:queries_executed_minute, non_null(:integer))
+    field(:queries_executed_day_limit, non_null(:integer))
+    field(:queries_executed_hour_limit, non_null(:integer))
+    field(:queries_executed_minute_limit, non_null(:integer))
+  end
+
   object :user do
     field(:id, non_null(:id))
     field(:email, :string)
@@ -115,6 +128,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:stripe_customer_id, :string)
     field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
+
+    field :queries_executions_info, :queries_executions_info do
+      resolve(&UserResolver.queries_executions_info/3)
+    end
 
     field :promo_codes, list_of(:user_promo_code) do
       resolve(&UserResolver.user_promo_codes/3)

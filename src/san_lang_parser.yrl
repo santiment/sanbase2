@@ -4,19 +4,23 @@ Nonterminals
   value
   access_op
   function_call
-  arguments_list
-  argument
+  function_call_args_list
+  function_call_arg
+  lambda_fn
+  lambda_args
 .
 
 Terminals
   %% Types
   int float ascii_string
-  %% 
+  %% vars and env vars
   identifier env_var
+  %% arithmetic operators
   '+' '-' '*' '/'
-  '='
-  '(' ')' '[' ']'
-  ','
+  %% other
+  '(' ')' '[' ']' ',' 
+  %% lambda tokens
+  'fn' '->' 'end'
 .
 
 Rootsymbol
@@ -49,13 +53,21 @@ access_op -> identifier '[' ascii_string ']': {access_op, '$1', '$3'}.
 access_op -> env_var '[' ascii_string ']': {access_op, '$1', '$3'}.
 access_op -> access_op '[' ascii_string ']': {access_op, '$1', '$3'}.
 
-%% Empty function call.
+%% Lambda function
+lambda_fn -> 'fn' lambda_args '->' expr 'end' : {lambda_fn, '$2', '$4'}.
+lambda_args -> identifier ',' lambda_args : ['$1' | '$3'].
+lambda_args -> identifier : ['$1'].
+
+%% Named function call -- empty and with args.
 function_call -> identifier '('  ')' : {function_call, '$1', []}.
-function_call -> identifier '(' arguments_list ')' : {function_call, '$1', '$3'}.
+function_call -> identifier '(' function_call_args_list ')' : {function_call, '$1', '$3'}.
 
 %% Arguments list with at least 1 argument. Function calls with 0 arguments are
 %% handled directly by the function_call rule.
-arguments_list -> value ',' arguments_list : ['$1' | '$3'].
-arguments_list -> value : ['$1'].
+function_call_args_list -> function_call_arg ',' function_call_args_list : ['$1' | '$3'].
+function_call_args_list -> function_call_arg : ['$1'].
+
+function_call_arg -> value : '$1'.
+function_call_arg -> lambda_fn : '$1'.
  
 Erlang code.

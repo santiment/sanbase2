@@ -3,9 +3,11 @@ Definitions.
 INT           = [0-9]+
 FLOAT         = [0-9]+\.[0-9]+
 STRING        = \"[^\"]*\"
-IDENTIFIER        = [a-zA-Z][a-zA-Z0-9_]*
+IDENTIFIER    = [a-zA-Z][a-zA-Z0-9_]*
 ENV_VAR       = [@][a-zA-Z][a-zA-Z0-9_]*
 WHITESPACE    = [\s\t\n\r]
+LAMBDA_START  = fn
+LAMBDA_END    = end
 
 Rules.
 \+                : {token, {'+',  TokenLine}}.
@@ -19,7 +21,8 @@ Rules.
 \-\>              : {token, {'->', TokenLine}}.
 \,                : {token, {',',  TokenLine}}.
 \"                : {token, {'"',  TokenLine}}.
-{FUNCTION_NAME}   : {token, {function, TokenLine, to_binary(TokenChars)}}.
+{LAMBDA_START}    : {token, {'fn', TokenLine}}.
+{LAMBDA_END}      : {token, {'end', TokenLine}}.
 {ENV_VAR}         : {token, {env_var, TokenLine, to_binary(TokenChars)}}.
 {STRING}          : {token, {ascii_string, TokenLine, strip_quoted_ascii_string(TokenChars)}}.
 {IDENTIFIER}      : {token, {identifier, TokenLine, to_binary(TokenChars)}}.

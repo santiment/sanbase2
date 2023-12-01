@@ -3,6 +3,7 @@ Nonterminals
   expr expr1 expr2
   value
   access_op
+  access_op_key
   function_call
   function_call_args_list
   function_call_arg
@@ -41,7 +42,7 @@ value -> identifier : '$1'.
 %% Currently the only way of combining multiple values is by using the
 %% arithmetic operators: @data["key"] + pow(2, 10)
 expr -> expr '+' expr1 : {'+', '$1', '$3'}.
-expr -> expr '-' expr1 : {'+', '$1', '$3'}.
+expr -> expr '-' expr1 : {'-', '$1', '$3'}.
 expr -> expr1 : '$1'.
 expr1 -> expr1 '*' expr2 : {'*', '$1', '$3'}.
 expr1 -> expr1 '/' expr2 : {'/', '$1', '$3'}.
@@ -49,9 +50,12 @@ expr1 -> expr2 : '$1'.
 expr2 -> value : '$1'.
 
 %% Handle multiple levels of access operators: @data["key"], @data["key"]["key2"]
-access_op -> identifier '[' ascii_string ']': {access_op, '$1', '$3'}.
-access_op -> env_var '[' ascii_string ']': {access_op, '$1', '$3'}.
-access_op -> access_op '[' ascii_string ']': {access_op, '$1', '$3'}.
+access_op -> identifier '[' access_op_key ']': {access_op, '$1', '$3'}.
+access_op -> env_var '[' access_op_key ']': {access_op, '$1', '$3'}.
+access_op -> access_op '[' access_op_key ']': {access_op, '$1', '$3'}.
+
+access_op_key -> ascii_string : '$1'.
+access_op_key -> identifier : '$1'.
 
 %% Lambda function
 lambda_fn -> 'fn' lambda_args '->' expr 'end' : {lambda_fn, '$2', '$4'}.

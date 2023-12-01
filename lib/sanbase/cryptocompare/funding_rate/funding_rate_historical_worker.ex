@@ -91,7 +91,7 @@ defmodule Sanbase.Cryptocompare.FundingRate.HistoricalWorker do
       limit: limit
     ]
 
-    case Handler.execute_http_request(@url, query_params, no_api_key: true) do
+    case Handler.execute_http_request(@url, query_params) do
       {:ok, %{status_code: 200} = http_response} ->
         Sanbase.Cryptocompare.Handler.handle_http_response(http_response,
           module: __MODULE__,

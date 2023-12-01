@@ -7,11 +7,8 @@ defmodule Sanbase.Cryptocompare.Handler do
 
   @type option :: :module | :timestamps_key | :process_function | :remove_known_timestamps
 
-  def execute_http_request(url, query_params, opts \\ []) do
-    headers =
-      if Keyword.get(opts, :no_api_key, false),
-        do: [],
-        else: [{"authorization", "Apikey #{api_key()}"}]
+  def execute_http_request(url, query_params) do
+    headers = [{"authorization", "Apikey #{api_key()}"}]
 
     url = url <> "?" <> URI.encode_query(query_params)
 

@@ -127,7 +127,7 @@
   {
     "human_readable_name": "Sentiment Balance Total",
     "name": "sentiment_balance_total",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1737,1165 +1737,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Positive Document Count Total",
-    "name": "positive_docs_count",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Neutral Document Count Total",
-    "name": "neutral_docs_count",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Negative Document Count Total",
-    "name": "negative_docs_count",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Positive Document Count Telegram",
-    "name": "positive_docs_count_telegram",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Neutral Document Count Telegram",
-    "name": "neutral_docs_count_telegram",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Negative Document Count Telegram",
-    "name": "negative_docs_count_telegram",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Positive Document Count Reddit",
-    "name": "positive_docs_count_reddit",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Neutral Document Count Reddit",
-    "name": "neutral_docs_count_reddit",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Negative Document Count Reddit",
-    "name": "negative_docs_count_reddit",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Positive Document Count Twitter",
-    "name": "positive_docs_count_twitter",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Neutral Document Count Twitter",
-    "name": "neutral_docs_count_twitter",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Negative Document Count Twitter",
-    "name": "negative_docs_count_twitter",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Positive Document Count 4chan",
-    "name": "positive_docs_count_4chan",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Neutral Document Count 4chan",
-    "name": "neutral_docs_count_4chan",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Negative Document Count 4chan",
-    "name": "negative_docs_count_4chan",
-    "metric": "docs_count",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Total",
-    "name": "sentiment_positive_ratio",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Total",
-    "name": "sentiment_neutral_ratio",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Total",
-    "name": "sentiment_negative_ratio",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Telegram",
-    "name": "sentiment_positive_ratio_telegram",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Telegram",
-    "name": "sentiment_neutral_ratio_telegram",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Telegram",
-    "name": "sentiment_negative_ratio_telegram",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Reddit",
-    "name": "sentiment_positive_ratio_reddit",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Reddit",
-    "name": "sentiment_neutral_ratio_reddit",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Reddit",
-    "name": "sentiment_negative_ratio_reddit",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Twitter",
-    "name": "sentiment_positive_ratio_twitter",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Twitter",
-    "name": "sentiment_neutral_ratio_twitter",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Twitter",
-    "name": "sentiment_negative_ratio_twitter",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio 4chan",
-    "name": "sentiment_positive_ratio_4chan",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio 4chan",
-    "name": "sentiment_neutral_ratio_4chan",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio 4chan",
-    "name": "sentiment_negative_ratio_4chan",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Houlry Total",
-    "name": "sentiment_positive_ratio_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Hourly Total",
-    "name": "sentiment_neutral_ratio_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Hourly Total",
-    "name": "sentiment_negative_ratio_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Hourly Telegram",
-    "name": "sentiment_positive_ratio_telegram_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Hourly Telegram",
-    "name": "sentiment_neutral_ratio_telegram_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Hourly Telegram",
-    "name": "sentiment_negative_ratio_telegram_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Hourly Reddit",
-    "name": "sentiment_positive_ratio_reddit_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Hourly Reddit",
-    "name": "sentiment_neutral_ratio_reddit_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Hourly Reddit",
-    "name": "sentiment_negative_ratio_reddit_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Hourly Twitter",
-    "name": "sentiment_positive_ratio_twitter_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Hourly Twitter",
-    "name": "sentiment_neutral_ratio_twitter_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Hourly Twitter",
-    "name": "sentiment_negative_ratio_twitter_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Hourly 4chan",
-    "name": "sentiment_positive_ratio_4chan_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Hourly 4chan",
-    "name": "sentiment_neutral_ratio_4chan_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Hourly 4chan",
-    "name": "sentiment_negative_ratio_4chan_1h",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1h",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Daily Total",
-    "name": "sentiment_positive_ratio_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Daily Total",
-    "name": "sentiment_neutral_ratio_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Daily Total",
-    "name": "sentiment_negative_ratio_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Daily Telegram",
-    "name": "sentiment_positive_ratio_telegram_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Daily Telegram",
-    "name": "sentiment_neutral_ratio_telegram_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Daily Telegram",
-    "name": "sentiment_negative_ratio_telegram_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Daily Reddit",
-    "name": "sentiment_positive_ratio_reddit_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Daily Reddit",
-    "name": "sentiment_neutral_ratio_reddit_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Daily Reddit",
-    "name": "sentiment_negative_ratio_reddit_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Daily Twitter",
-    "name": "sentiment_positive_ratio_twitter_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Daily Twitter",
-    "name": "sentiment_neutral_ratio_twitter_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Daily Twitter",
-    "name": "sentiment_negative_ratio_twitter_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Positive Ratio Daily 4chan",
-    "name": "sentiment_positive_ratio_4chan_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Neutral Ratio Daily 4chan",
-    "name": "sentiment_neutral_ratio_4chan_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Negative Ratio Daily 4chan",
-    "name": "sentiment_negative_ratio_4chan_1d",
-    "metric": "sentiment_ratio",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
     "human_readable_name": "Sentiment Balance Total v2",
     "name": "sentiment_balance_v2",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -2914,7 +1758,7 @@
   {
     "human_readable_name": "Sentiment Balance Hourly Total v2",
     "name": "sentiment_balance_v2_1h",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -2933,7 +1777,7 @@
   {
     "human_readable_name": "Sentiment Balance Daily Total v2",
     "name": "sentiment_balance_v2_1d",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -2952,7 +1796,7 @@
   {
     "human_readable_name": "Sentiment Balance 4chan v2",
     "name": "sentiment_balance_4chan_v2",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -2971,7 +1815,7 @@
   {
     "human_readable_name": "Sentiment Balance Hourly 4chan v2",
     "name": "sentiment_balance_4chan_v2_1h",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -2990,7 +1834,7 @@
   {
     "human_readable_name": "Sentiment Balance Daily 4chan v2",
     "name": "sentiment_balance_4chan_v2_1d",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3009,7 +1853,7 @@
   {
     "human_readable_name": "Sentiment Balance Bitcointalk v2",
     "name": "sentiment_balance_bitcointalk_v2",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3028,7 +1872,7 @@
   {
     "human_readable_name": "Sentiment Balance Hourly Bitcointalk v2",
     "name": "sentiment_balance_bitcointalk_v2_1h",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3047,7 +1891,7 @@
   {
     "human_readable_name": "Sentiment Balance Daily Bitcointalk v2",
     "name": "sentiment_balance_bitcointalk_v2_1d",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3066,7 +1910,7 @@
   {
     "human_readable_name": "Sentiment Balance Reddit v2",
     "name": "sentiment_balance_reddit_v2",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3085,7 +1929,7 @@
   {
     "human_readable_name": "Sentiment Balance Hourly Reddit v2",
     "name": "sentiment_balance_reddit_v2_1h",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3104,7 +1948,7 @@
   {
     "human_readable_name": "Sentiment Balance Daily Reddit v2",
     "name": "sentiment_balance_reddit_v2_1d",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3123,7 +1967,7 @@
   {
     "human_readable_name": "Sentiment Balance Telegram v2",
     "name": "sentiment_balance_telegram_v2",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3142,7 +1986,7 @@
   {
     "human_readable_name": "Sentiment Balance Hourly Telegram v2",
     "name": "sentiment_balance_telegram_v2_1h",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3161,7 +2005,7 @@
   {
     "human_readable_name": "Sentiment Balance Daily Telegram v2",
     "name": "sentiment_balance_telegram_v2_1d",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3180,7 +2024,7 @@
   {
     "human_readable_name": "Sentiment Balance Twitter v2",
     "name": "sentiment_balance_twitter_v2",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3199,7 +2043,7 @@
   {
     "human_readable_name": "Sentiment Balance Hourly Twitter v2",
     "name": "sentiment_balance_twitter_v2_1h",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3218,7 +2062,7 @@
   {
     "human_readable_name": "Sentiment Balance Daily Twitter v2",
     "name": "sentiment_balance_twitter_v2_1d",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3237,7 +2081,7 @@
   {
     "human_readable_name": "Sentiment Balance Youtube v2",
     "name": "sentiment_balance_youtube_videos_v2",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3256,7 +2100,7 @@
   {
     "human_readable_name": "Sentiment Balance Hourly Youtube v2",
     "name": "sentiment_balance_youtube_videos_v2_1h",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",
@@ -3275,7 +2119,7 @@
   {
     "human_readable_name": "Sentiment Balance Daily Youtube v2",
     "name": "sentiment_balance_youtube_videos_v2_1d",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": {
       "historical": "restricted",

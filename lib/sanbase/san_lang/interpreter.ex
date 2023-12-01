@@ -29,7 +29,7 @@ defmodule Sanbase.SanLang.Interpreter do
     eval_function_call(function_name, args, env)
   end
 
-  defp eval_function_call("pow", args, env) when length(args) == 2 do
+  defp eval_function_call(function_name, args, env) do
     args = Enum.map(args, &eval(&1, env))
     apply(Sanbase.SanLang.Kernel, :pow, args)
   end

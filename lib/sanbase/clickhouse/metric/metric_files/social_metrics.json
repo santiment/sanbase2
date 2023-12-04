@@ -76,7 +76,7 @@
   {
     "human_readable_name": "Sentiment Volume Consumed Total",
     "name": "sentiment_volume_consumed_total",
-    "metric": "sentiment_volume_consumed_1d",
+    "metric": "sentiment_volume_consumed_v2_1d",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -127,7 +127,7 @@
   {
     "human_readable_name": "Sentiment Balance Total",
     "name": "sentiment_balance_total",
-    "metric": "sentiment_balance",
+    "metric": "sentiment_balance_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -181,7 +181,7 @@
   {
     "human_readable_name": "Sentiment Volume Consumed 4chan",
     "name": "sentiment_volume_consumed_4chan",
-    "metric": "sentiment_volume_consumed_4chan",
+    "metric": "sentiment_volume_consumed_4chan_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -232,7 +232,7 @@
   {
     "human_readable_name": "Sentiment Balance 4chan",
     "name": "sentiment_balance_4chan",
-    "metric": "sentiment_balance_4chan",
+    "metric": "sentiment_balance_4chan_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -286,7 +286,7 @@
   {
     "human_readable_name": "Sentiment Volume Consumed Telegram",
     "name": "sentiment_volume_consumed_telegram",
-    "metric": "sentiment_volume_consumed_telegram",
+    "metric": "sentiment_volume_consumed_telegram_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -337,7 +337,7 @@
   {
     "human_readable_name": "Sentiment Balance Telegram",
     "name": "sentiment_balance_telegram",
-    "metric": "sentiment_balance_telegram",
+    "metric": "sentiment_balance_telegram_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -391,7 +391,7 @@
   {
     "human_readable_name": "Sentiment Volume Consumed Reddit",
     "name": "sentiment_volume_consumed_reddit",
-    "metric": "sentiment_volume_consumed_reddit",
+    "metric": "sentiment_volume_consumed_reddit_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -442,7 +442,7 @@
   {
     "human_readable_name": "Sentiment Balance Reddit",
     "name": "sentiment_balance_reddit",
-    "metric": "sentiment_balance_reddit",
+    "metric": "sentiment_balance_reddit_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -829,7 +829,7 @@
   {
     "human_readable_name": "Sentiment Volume Consumed Twitter",
     "name": "sentiment_volume_consumed_twitter",
-    "metric": "sentiment_volume_consumed_twitter",
+    "metric": "sentiment_volume_consumed_twitter_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1033,7 +1033,7 @@
   {
     "human_readable_name": "Sentiment Balance Twitter",
     "name": "sentiment_balance_twitter",
-    "metric": "sentiment_balance_twitter",
+    "metric": "sentiment_balance_twitter_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1138,7 +1138,7 @@
   {
     "human_readable_name": "Sentiment Volume Consumed Youtube",
     "name": "sentiment_volume_consumed_youtube_videos",
-    "metric": "sentiment_volume_consumed_youtube_videos",
+    "metric": "sentiment_volume_consumed_youtube_videos_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1189,7 +1189,7 @@
   {
     "human_readable_name": "Sentiment Balance Youtube",
     "name": "sentiment_balance_youtube_videos",
-    "metric": "sentiment_balance_youtube_videos",
+    "metric": "sentiment_balance_youtube_videos_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1243,7 +1243,7 @@
   {
     "human_readable_name": "Sentiment Volume Consumed Bitcointalk",
     "name": "sentiment_volume_consumed_bitcointalk",
-    "metric": "sentiment_volume_consumed_bitcointalk",
+    "metric": "sentiment_volume_consumed_bitcointalk_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1294,7 +1294,7 @@
   {
     "human_readable_name": "Sentiment Balance Bitcointalk",
     "name": "sentiment_balance_bitcointalk",
-    "metric": "sentiment_balance_bitcointalk",
+    "metric": "sentiment_balance_bitcointalk_v2",
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1737,28 +1737,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Total v2",
-    "name": "sentiment_balance_v2",
-    "metric": "sentiment_balance_v2",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Balance Hourly Total v2",
-    "name": "sentiment_balance_v2_1h",
+    "human_readable_name": "Sentiment Balance Hourly Total",
+    "name": "sentiment_balance_1h",
     "metric": "sentiment_balance_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -1777,8 +1757,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Daily Total v2",
-    "name": "sentiment_balance_v2_1d",
+    "human_readable_name": "Sentiment Balance Daily Total",
+    "name": "sentiment_balance_1d",
     "metric": "sentiment_balance_v2_1d",
     "version": "2020-07-31",
     "access": {
@@ -1797,28 +1777,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance 4chan v2",
-    "name": "sentiment_balance_4chan_v2",
-    "metric": "sentiment_balance_4chan_v2",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Balance Hourly 4chan v2",
-    "name": "sentiment_balance_4chan_v2_1h",
+    "human_readable_name": "Sentiment Balance Hourly 4chan",
+    "name": "sentiment_balance_4chan_1h",
     "metric": "sentiment_balance_4chan_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -1837,8 +1797,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Daily 4chan v2",
-    "name": "sentiment_balance_4chan_v2_1d",
+    "human_readable_name": "Sentiment Balance Daily 4chan",
+    "name": "sentiment_balance_4chan_1d",
     "metric": "sentiment_balance_4chan_v2_1d",
     "version": "2020-07-31",
     "access": {
@@ -1857,28 +1817,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Bitcointalk v2",
-    "name": "sentiment_balance_bitcointalk_v2",
-    "metric": "sentiment_balance_bitcointalk_v2",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Balance Hourly Bitcointalk v2",
-    "name": "sentiment_balance_bitcointalk_v2_1h",
+    "human_readable_name": "Sentiment Balance Hourly Bitcointalk",
+    "name": "sentiment_balance_bitcointalk_1h",
     "metric": "sentiment_balance_bitcointalk_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -1897,8 +1837,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Daily Bitcointalk v2",
-    "name": "sentiment_balance_bitcointalk_v2_1d",
+    "human_readable_name": "Sentiment Balance Daily Bitcointalk",
+    "name": "sentiment_balance_bitcointalk_1d",
     "metric": "sentiment_balance_bitcointalk_v2_1d",
     "version": "2020-07-31",
     "access": {
@@ -1917,28 +1857,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Reddit v2",
-    "name": "sentiment_balance_reddit_v2",
-    "metric": "sentiment_balance_reddit_v2",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Balance Hourly Reddit v2",
-    "name": "sentiment_balance_reddit_v2_1h",
+    "human_readable_name": "Sentiment Balance Hourly Reddit",
+    "name": "sentiment_balance_reddit_1h",
     "metric": "sentiment_balance_reddit_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -1957,8 +1877,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Daily Reddit v2",
-    "name": "sentiment_balance_reddit_v2_1d",
+    "human_readable_name": "Sentiment Balance Daily Reddit",
+    "name": "sentiment_balance_reddit_1d",
     "metric": "sentiment_balance_reddit_v2_1d",
     "version": "2020-07-31",
     "access": {
@@ -1977,28 +1897,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Telegram v2",
-    "name": "sentiment_balance_telegram_v2",
-    "metric": "sentiment_balance_telegram_v2",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Balance Hourly Telegram v2",
-    "name": "sentiment_balance_telegram_v2_1h",
+    "human_readable_name": "Sentiment Balance Hourly Telegram",
+    "name": "sentiment_balance_telegram_1h",
     "metric": "sentiment_balance_telegram_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -2017,8 +1917,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Daily Telegram v2",
-    "name": "sentiment_balance_telegram_v2_1d",
+    "human_readable_name": "Sentiment Balance Daily Telegram",
+    "name": "sentiment_balance_telegram_1d",
     "metric": "sentiment_balance_telegram_v2_1d",
     "version": "2020-07-31",
     "access": {
@@ -2037,28 +1937,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Twitter v2",
-    "name": "sentiment_balance_twitter_v2",
-    "metric": "sentiment_balance_twitter_v2",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Balance Hourly Twitter v2",
-    "name": "sentiment_balance_twitter_v2_1h",
+    "human_readable_name": "Sentiment Balance Hourly Twitter",
+    "name": "sentiment_balance_twitter_1h",
     "metric": "sentiment_balance_twitter_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -2077,8 +1957,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Daily Twitter v2",
-    "name": "sentiment_balance_twitter_v2_1d",
+    "human_readable_name": "Sentiment Balance Daily Twitter",
+    "name": "sentiment_balance_twitter_1d",
     "metric": "sentiment_balance_twitter_v2_1d",
     "version": "2020-07-31",
     "access": {
@@ -2097,28 +1977,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Youtube v2",
-    "name": "sentiment_balance_youtube_videos_v2",
-    "metric": "sentiment_balance_youtube_videos_v2",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Balance Hourly Youtube v2",
-    "name": "sentiment_balance_youtube_videos_v2_1h",
+    "human_readable_name": "Sentiment Balance Hourly Youtube",
+    "name": "sentiment_balance_youtube_videos_1h",
     "metric": "sentiment_balance_youtube_videos_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -2137,8 +1997,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Balance Daily Youtube v2",
-    "name": "sentiment_balance_youtube_videos_v2_1d",
+    "human_readable_name": "Sentiment Balance Daily Youtube",
+    "name": "sentiment_balance_youtube_videos_1d",
     "metric": "sentiment_balance_youtube_videos_v2_1d",
     "version": "2020-07-31",
     "access": {
@@ -2157,8 +2017,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Total v2",
-    "name": "sentiment_volume_consumed_v2",
+    "human_readable_name": "Sentiment Volume Consumed Total",
+    "name": "sentiment_volume_consumed_5m",
     "metric": "sentiment_volume_consumed_v2",
     "version": "2020-07-31",
     "access": {
@@ -2177,8 +2037,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Hourly Total v2",
-    "name": "sentiment_volume_consumed_v2_1h",
+    "human_readable_name": "Sentiment Volume Consumed Hourly Total",
+    "name": "sentiment_volume_consumed_1h",
     "metric": "sentiment_volume_consumed_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -2197,28 +2057,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Daily Total v2",
-    "name": "sentiment_volume_consumed_v2_1d",
-    "metric": "sentiment_volume_consumed_v2_1d",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Sentiment Volume Consumed 4chan v2",
-    "name": "sentiment_volume_consumed_4chan_v2",
+    "human_readable_name": "Sentiment Volume Consumed 4chan",
+    "name": "sentiment_volume_consumed_4chan",
     "metric": "sentiment_volume_consumed_4chan_v2",
     "version": "2020-07-31",
     "access": {
@@ -2237,8 +2077,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Hourly 4chan v2",
-    "name": "sentiment_volume_consumed_4chan_v2_1h",
+    "human_readable_name": "Sentiment Volume Consumed Hourly 4chan",
+    "name": "sentiment_volume_consumed_4chan_1h",
     "metric": "sentiment_volume_consumed_4chan_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -2257,8 +2097,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Daily 4chan v2",
-    "name": "sentiment_volume_consumed_4chan_v2_1d",
+    "human_readable_name": "Sentiment Volume Consumed Daily 4chan",
+    "name": "sentiment_volume_consumed_4chan_1d",
     "metric": "sentiment_volume_consumed_4chan_v2_1d",
     "version": "2020-07-31",
     "access": {
@@ -2277,8 +2117,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Bitcointalk v2",
-    "name": "sentiment_volume_consumed_bitcointalk_v2",
+    "human_readable_name": "Sentiment Volume Consumed Bitcointalk",
+    "name": "sentiment_volume_consumed_bitcointalk",
     "metric": "sentiment_volume_consumed_bitcointalk_v2",
     "version": "2020-07-31",
     "access": {
@@ -2297,8 +2137,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Hourly Bitcointalk v2",
-    "name": "sentiment_volume_consumed_bitcointalk_v2_1h",
+    "human_readable_name": "Sentiment Volume Consumed Hourly Bitcointalk",
+    "name": "sentiment_volume_consumed_bitcointalk_1h",
     "metric": "sentiment_volume_consumed_bitcointalk_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -2317,8 +2157,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Daily Bitcointalk v2",
-    "name": "sentiment_volume_consumed_bitcointalk_v2_1d",
+    "human_readable_name": "Sentiment Volume Consumed Daily Bitcointalk",
+    "name": "sentiment_volume_consumed_bitcointalk_1d",
     "metric": "sentiment_volume_consumed_bitcointalk_v2_1d",
     "version": "2020-07-31",
     "access": {
@@ -2337,8 +2177,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Reddit v2",
-    "name": "sentiment_volume_consumed_reddit_v2",
+    "human_readable_name": "Sentiment Volume Consumed Reddit",
+    "name": "sentiment_volume_consumed_reddit",
     "metric": "sentiment_volume_consumed_reddit_v2",
     "version": "2020-07-31",
     "access": {
@@ -2357,8 +2197,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Hourly Reddit v2",
-    "name": "sentiment_volume_consumed_reddit_v2_1h",
+    "human_readable_name": "Sentiment Volume Consumed Hourly Reddit",
+    "name": "sentiment_volume_consumed_reddit_1h",
     "metric": "sentiment_volume_consumed_reddit_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -2377,8 +2217,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Daily Reddit v2",
-    "name": "sentiment_volume_consumed_reddit_v2_1d",
+    "human_readable_name": "Sentiment Volume Consumed Daily Reddit",
+    "name": "sentiment_volume_consumed_reddit_1d",
     "metric": "sentiment_volume_consumed_reddit_v2_1d",
     "version": "2020-07-31",
     "access": {
@@ -2397,8 +2237,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Telegram v2",
-    "name": "sentiment_volume_consumed_telegram_v2",
+    "human_readable_name": "Sentiment Volume Consumed Telegram",
+    "name": "sentiment_volume_consumed_telegram",
     "metric": "sentiment_volume_consumed_telegram_v2",
     "version": "2020-07-31",
     "access": {
@@ -2417,8 +2257,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Hourly Telegram v2",
-    "name": "sentiment_volume_consumed_telegram_v2_1h",
+    "human_readable_name": "Sentiment Volume Consumed Hourly Telegram",
+    "name": "sentiment_volume_consumed_telegram_1h",
     "metric": "sentiment_volume_consumed_telegram_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -2437,8 +2277,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Daily Telegram v2",
-    "name": "sentiment_volume_consumed_telegram_v2_1d",
+    "human_readable_name": "Sentiment Volume Consumed Daily Telegram",
+    "name": "sentiment_volume_consumed_telegram_1d",
     "metric": "sentiment_volume_consumed_telegram_v2_1d",
     "version": "2020-07-31",
     "access": {
@@ -2457,8 +2297,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Twitter v2",
-    "name": "sentiment_volume_consumed_twitter_v2",
+    "human_readable_name": "Sentiment Volume Consumed Twitter",
+    "name": "sentiment_volume_consumed_twitter",
     "metric": "sentiment_volume_consumed_twitter_v2",
     "version": "2020-07-31",
     "access": {
@@ -2477,8 +2317,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Hourly Twitter v2",
-    "name": "sentiment_volume_consumed_twitter_v2_1h",
+    "human_readable_name": "Sentiment Volume Consumed Hourly Twitter",
+    "name": "sentiment_volume_consumed_twitter_1h",
     "metric": "sentiment_volume_consumed_twitter_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -2497,8 +2337,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Daily Twitter v2",
-    "name": "sentiment_volume_consumed_twitter_v2_1d",
+    "human_readable_name": "Sentiment Volume Consumed Daily Twitter",
+    "name": "sentiment_volume_consumed_twitter_1d",
     "metric": "sentiment_volume_consumed_twitter_v2_1d",
     "version": "2020-07-31",
     "access": {
@@ -2517,8 +2357,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Youtube v2",
-    "name": "sentiment_volume_consumed_youtube_videos_v2",
+    "human_readable_name": "Sentiment Volume Consumed Youtube",
+    "name": "sentiment_volume_consumed_youtube_videos",
     "metric": "sentiment_volume_consumed_youtube_videos_v2",
     "version": "2020-07-31",
     "access": {
@@ -2537,8 +2377,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Hourly Youtube v2",
-    "name": "sentiment_volume_consumed_youtube_videos_v2_1h",
+    "human_readable_name": "Sentiment Volume Consumed Hourly Youtube",
+    "name": "sentiment_volume_consumed_youtube_videos_1h",
     "metric": "sentiment_volume_consumed_youtube_videos_v2_1h",
     "version": "2020-07-31",
     "access": {
@@ -2557,8 +2397,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Daily Youtube v2",
-    "name": "sentiment_volume_consumed_youtube_videos_v2_1d",
+    "human_readable_name": "Sentiment Volume Consumed Daily Youtube",
+    "name": "sentiment_volume_consumed_youtube_videos_1d",
     "metric": "sentiment_volume_consumed_youtube_videos_v2_1d",
     "version": "2020-07-31",
     "access": {

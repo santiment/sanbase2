@@ -366,7 +366,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   defp default_source do
     case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
       "prod" -> "reddit,telegram,twitter_crypto"
-      _ -> "4chan,reddit"
+      _ -> "4chan,reddit,telegram"
     end
   end
 end

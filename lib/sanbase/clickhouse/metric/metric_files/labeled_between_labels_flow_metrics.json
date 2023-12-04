@@ -303,7 +303,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hard_deprecate_after": "2024-01-10T00:00:00Z"
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "DEX Traders to Other Flow",
@@ -411,7 +411,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hard_deprecate_after": "2024-01-10T00:00:00Z"
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "CEXes to CEX and DEX Traders Flow",
@@ -537,7 +537,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hard_deprecate_after": "2024-01-10T00:00:00Z"
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "CEX and DEX Traders Whale Balance",
@@ -789,7 +789,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hard_deprecate_after": "2024-01-10T00:00:00Z"
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "CEXes to Other Flow",
@@ -843,7 +843,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hard_deprecate_after": "2024-01-10T00:00:00Z"
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "DEXes to DeFi Flow",
@@ -861,7 +861,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hard_deprecate_after": "2024-01-10T00:00:00Z"
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi DEX Balance",
@@ -1005,7 +1005,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hard_deprecate_after": "2024-01-10T00:00:00Z"
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi to Whale Flow",
@@ -1059,7 +1059,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "hard_deprecate_after": "2024-01-10T00:00:00Z"
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi to Other Flow",

@@ -84,7 +84,7 @@
   "jason": {:hex, :jason, "1.4.1", "af1504e35f629ddcdd6addb3513c3853991f694921b1b9368b0bd32beb9f1b63", [:mix], [{:decimal, "~> 1.0 or ~> 2.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm", "fbb01ecdfd565b56261302f7e1fcc27c4fb8f32d56eab74db621fc154604a7a1"},
   "jose": {:hex, :jose, "1.11.5", "3bc2d75ffa5e2c941ca93e5696b54978323191988eb8d225c2e663ddfefd515e", [:mix, :rebar3], [], "hexpm", "dcd3b215bafe02ea7c5b23dafd3eb8062a5cd8f2d904fd9caa323d37034ab384"},
   "jumper": {:hex, :jumper, "1.0.1", "3c00542ef1a83532b72269fab9f0f0c82bf23a35e27d278bfd9ed0865cecabff", [:mix], [], "hexpm", "318c59078ac220e966d27af3646026db9b5a5e6703cb2aa3e26bcfaba65b7433"},
-  "kaffe": {:git, "https://github.com/santiment/kaffe.git", "330657f21f868e23480c2a290a793268d1819662", []},
+  "kaffe": {:git, "https://github.com/santiment/kaffe.git", "089b31969c49bf75443f078a6ef2d29fc056315f", []},
   "kaffy": {:git, "https://github.com/santiment/kaffy.git", "e790a98aa03aca8422097446b4cea1966b358047", []},
   "kafka_protocol": {:git, "https://github.com/santiment/kafka_protocol.git", "0e498daca1f380ccd4e4d70c5d475a57299a41d2", [branch: "working-version"]},
   "kcl": {:hex, :kcl, "1.4.2", "8b73a55a14899dc172fcb05a13a754ac171c8165c14f65043382d567922f44ab", [:mix], [{:curve25519, ">= 1.0.4", [hex: :curve25519, repo: "hexpm", optional: false]}, {:ed25519, "~> 1.3", [hex: :ed25519, repo: "hexpm", optional: false]}, {:poly1305, "~> 1.0", [hex: :poly1305, repo: "hexpm", optional: false]}, {:salsa20, "~> 1.0", [hex: :salsa20, repo: "hexpm", optional: false]}], "hexpm", "9f083dd3844d902df6834b258564a82b21a15eb9f6acdc98e8df0c10feeabf05"},

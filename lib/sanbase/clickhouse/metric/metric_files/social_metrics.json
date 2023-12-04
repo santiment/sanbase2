@@ -1741,10 +1741,7 @@
     "name": "sentiment_balance_1h",
     "metric": "sentiment_balance_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1761,10 +1758,7 @@
     "name": "sentiment_balance_1d",
     "metric": "sentiment_balance_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1781,10 +1775,7 @@
     "name": "sentiment_balance_4chan_1h",
     "metric": "sentiment_balance_4chan_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1801,10 +1792,7 @@
     "name": "sentiment_balance_4chan_1d",
     "metric": "sentiment_balance_4chan_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1821,10 +1809,7 @@
     "name": "sentiment_balance_bitcointalk_1h",
     "metric": "sentiment_balance_bitcointalk_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1841,10 +1826,7 @@
     "name": "sentiment_balance_bitcointalk_1d",
     "metric": "sentiment_balance_bitcointalk_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1861,10 +1843,7 @@
     "name": "sentiment_balance_reddit_1h",
     "metric": "sentiment_balance_reddit_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1881,10 +1860,7 @@
     "name": "sentiment_balance_reddit_1d",
     "metric": "sentiment_balance_reddit_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1901,10 +1877,7 @@
     "name": "sentiment_balance_telegram_1h",
     "metric": "sentiment_balance_telegram_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1921,10 +1894,7 @@
     "name": "sentiment_balance_telegram_1d",
     "metric": "sentiment_balance_telegram_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1941,10 +1911,7 @@
     "name": "sentiment_balance_twitter_1h",
     "metric": "sentiment_balance_twitter_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1961,10 +1928,7 @@
     "name": "sentiment_balance_twitter_1d",
     "metric": "sentiment_balance_twitter_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1981,10 +1945,7 @@
     "name": "sentiment_balance_youtube_videos_1h",
     "metric": "sentiment_balance_youtube_videos_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2001,10 +1962,7 @@
     "name": "sentiment_balance_youtube_videos_1d",
     "metric": "sentiment_balance_youtube_videos_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2021,10 +1979,7 @@
     "name": "sentiment_volume_consumed_5m",
     "metric": "sentiment_volume_consumed_v2",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2041,10 +1996,7 @@
     "name": "sentiment_volume_consumed_1h",
     "metric": "sentiment_volume_consumed_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2061,10 +2013,7 @@
     "name": "sentiment_volume_consumed_4chan",
     "metric": "sentiment_volume_consumed_4chan_v2",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2081,10 +2030,7 @@
     "name": "sentiment_volume_consumed_4chan_1h",
     "metric": "sentiment_volume_consumed_4chan_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2101,10 +2047,7 @@
     "name": "sentiment_volume_consumed_4chan_1d",
     "metric": "sentiment_volume_consumed_4chan_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2121,10 +2064,7 @@
     "name": "sentiment_volume_consumed_bitcointalk",
     "metric": "sentiment_volume_consumed_bitcointalk_v2",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2141,10 +2081,7 @@
     "name": "sentiment_volume_consumed_bitcointalk_1h",
     "metric": "sentiment_volume_consumed_bitcointalk_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2161,10 +2098,7 @@
     "name": "sentiment_volume_consumed_bitcointalk_1d",
     "metric": "sentiment_volume_consumed_bitcointalk_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2181,10 +2115,7 @@
     "name": "sentiment_volume_consumed_reddit",
     "metric": "sentiment_volume_consumed_reddit_v2",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2201,10 +2132,7 @@
     "name": "sentiment_volume_consumed_reddit_1h",
     "metric": "sentiment_volume_consumed_reddit_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2221,10 +2149,7 @@
     "name": "sentiment_volume_consumed_reddit_1d",
     "metric": "sentiment_volume_consumed_reddit_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2241,10 +2166,7 @@
     "name": "sentiment_volume_consumed_telegram",
     "metric": "sentiment_volume_consumed_telegram_v2",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2261,10 +2183,7 @@
     "name": "sentiment_volume_consumed_telegram_1h",
     "metric": "sentiment_volume_consumed_telegram_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2281,10 +2200,7 @@
     "name": "sentiment_volume_consumed_telegram_1d",
     "metric": "sentiment_volume_consumed_telegram_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2297,34 +2213,11 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Twitter",
-    "name": "sentiment_volume_consumed_twitter",
-    "metric": "sentiment_volume_consumed_twitter_v2",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
     "human_readable_name": "Sentiment Volume Consumed Hourly Twitter",
     "name": "sentiment_volume_consumed_twitter_1h",
     "metric": "sentiment_volume_consumed_twitter_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2341,10 +2234,7 @@
     "name": "sentiment_volume_consumed_twitter_1d",
     "metric": "sentiment_volume_consumed_twitter_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2357,34 +2247,11 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Youtube",
-    "name": "sentiment_volume_consumed_youtube_videos",
-    "metric": "sentiment_volume_consumed_youtube_videos_v2",
-    "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
-    "selectors": ["slug", "text"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
     "human_readable_name": "Sentiment Volume Consumed Hourly Youtube",
     "name": "sentiment_volume_consumed_youtube_videos_1h",
     "metric": "sentiment_volume_consumed_youtube_videos_v2_1h",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -2401,10 +2268,7 @@
     "name": "sentiment_volume_consumed_youtube_videos_1d",
     "metric": "sentiment_volume_consumed_youtube_videos_v2_1d",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",

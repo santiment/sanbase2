@@ -22,14 +22,21 @@ defmodule SanbaseWeb.Endpoint do
       connect_info: [
         session: {SanbaseWeb.LiveViewUtils, :session_options, [@session_options]}
       ]
-    ]
+    ],
+    check_origin: false
   )
 
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phoenix.digest
   # when deploying your static files in production.
-  plug(Plug.Static, at: "/", from: :sanbase, gzip: false)
+  plug(Plug.Static,
+    at: "/",
+    from: :sanbase,
+    gzip: false,
+    only: SanbaseWeb.static_paths()
+  )
+
   plug(Plug.Static, at: "/kaffy", from: :kaffy, gzip: false, only: ~w(assets))
 
   # Prometheus /metrics endpoint

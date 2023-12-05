@@ -145,6 +145,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     {:ok, %{count: length(followers), users: followers}}
   end
 
+  def queries_executions_info(_root, _args, %{context: %{auth: %{current_user: user}} = context}) do
+    product_code = context.product_code
+    plan_name = context.auth.plan
+
+    with {:ok, details} <- Sanbase.Queries.user_executions_summary(user.id) do
+      credits_limit = Sanbase.Queries.Authorization.credits_limit(product_code, plan_name)
+
+      executions_limit =
+        Sanbase.Queries.Authorization.query_executions_limit(product_code, plan_name)
+
+      result = %{
+        credits_availalbe_month: credits_limit,
+        credits_spent_month: details.monthly_credits_spent,
+        credits_remaining_month: credits_limit - details.monthly_credits_spent,
+        queries_executed_month: details.queries_executed_month,
+        queries_executed_day: details.queries_executed_day,
+        queries_executed_hour: details.queries_executed_hour,
+        queries_executed_minute: details.queries_executed_minute,
+        queries_executed_day_limit: executions_limit.day,
+        queries_executed_hour_limit: executions_limit.hour,
+        queries_executed_minute_limit: executions_limit.minute
+      }
+
+      {:ok, result}
+    end
+  end
+
   def change_name(_root, %{name: new_name}, %{context: %{auth: %{current_user: user}}}) do
     case User.change_name(user, new_name) do
       {:ok, user} ->
@@ -253,6 +280,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
 
   def user_promo_codes(_root, _args, %{context: %{auth: %{current_user: user}}}) do
     {:ok, Sanbase.Billing.UserPromoCode.get_user_promo_codes(user.id)}
+  end
+
+  def user_promo_codes(%Sanbase.Accounts.User{} = user, _args, _resolution) do
+    {:ok, Sanbase.Billing.UserPromoCode.get_user_promo_codes(user.id)}
+  end
+
+  def user_promo_codes(_, _, _) do
+    {:ok, []}
   end
 
   def user_no_preloads(%{user_id: user_id}, _args, %{context: %{loader: loader}}) do

@@ -2006,6 +2006,89 @@ ALTER SEQUENCE public.market_segments_id_seq OWNED BY public.market_segments.id;
 
 
 --
+-- Name: menu_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.menu_items (
+    id bigint NOT NULL,
+    parent_id bigint,
+    query_id bigint,
+    dashboard_id bigint,
+    menu_id bigint,
+    "position" integer,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    CONSTRAINT only_one_fk CHECK ((((
+CASE
+    WHEN (query_id IS NULL) THEN 0
+    ELSE 1
+END +
+CASE
+    WHEN (dashboard_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (menu_id IS NULL) THEN 0
+    ELSE 1
+END) = 1))
+);
+
+
+--
+-- Name: menu_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.menu_items_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: menu_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.menu_items_id_seq OWNED BY public.menu_items.id;
+
+
+--
+-- Name: menus; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.menus (
+    id bigint NOT NULL,
+    name character varying(255),
+    description character varying(255),
+    parent_id bigint,
+    user_id bigint,
+    is_global boolean DEFAULT false,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: menus_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.menus_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: menus_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.menus_id_seq OWNED BY public.menus.id;
+
+
+--
 -- Name: metrics; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2048,7 +2131,10 @@ CREATE TABLE public.monitored_twitter_handles (
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    status character varying(255) DEFAULT 'pending_approval'::character varying
+    status character varying(255) DEFAULT 'pending_approval'::character varying,
+    approved_by text,
+    declined_by text,
+    comment text
 );
 
 
@@ -4753,6 +4839,20 @@ ALTER TABLE ONLY public.market_segments ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: menu_items id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menu_items ALTER COLUMN id SET DEFAULT nextval('public.menu_items_id_seq'::regclass);
+
+
+--
+-- Name: menus id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menus ALTER COLUMN id SET DEFAULT nextval('public.menus_id_seq'::regclass);
+
+
+--
 -- Name: metrics id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5585,6 +5685,22 @@ ALTER TABLE ONLY public.list_items
 
 ALTER TABLE ONLY public.market_segments
     ADD CONSTRAINT market_segments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: menu_items menu_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menu_items
+    ADD CONSTRAINT menu_items_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: menus menus_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menus
+    ADD CONSTRAINT menus_pkey PRIMARY KEY (id);
 
 
 --
@@ -6616,6 +6732,13 @@ CREATE UNIQUE INDEX list_items_user_list_id_project_id_index ON public.list_item
 --
 
 CREATE UNIQUE INDEX market_segments_name_index ON public.market_segments USING btree (name);
+
+
+--
+-- Name: menus_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX menus_user_id_index ON public.menus USING btree (user_id);
 
 
 --
@@ -7752,6 +7875,54 @@ ALTER TABLE ONLY public.list_items
 
 ALTER TABLE ONLY public.list_items
     ADD CONSTRAINT list_items_user_list_id_fkey FOREIGN KEY (user_list_id) REFERENCES public.user_lists(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menu_items menu_items_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menu_items
+    ADD CONSTRAINT menu_items_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menu_items menu_items_menu_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menu_items
+    ADD CONSTRAINT menu_items_menu_id_fkey FOREIGN KEY (menu_id) REFERENCES public.menus(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menu_items menu_items_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menu_items
+    ADD CONSTRAINT menu_items_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.menus(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menu_items menu_items_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menu_items
+    ADD CONSTRAINT menu_items_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menus menus_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menus
+    ADD CONSTRAINT menus_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.menus(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menus menus_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menus
+    ADD CONSTRAINT menus_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -8924,3 +9095,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231012130814);
 INSERT INTO public."schema_migrations" (version) VALUES (20231019111320);
 INSERT INTO public."schema_migrations" (version) VALUES (20231023123140);
 INSERT INTO public."schema_migrations" (version) VALUES (20231026084628);
+INSERT INTO public."schema_migrations" (version) VALUES (20231101104145);
+INSERT INTO public."schema_migrations" (version) VALUES (20231110093800);

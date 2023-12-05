@@ -14,7 +14,9 @@ defmodule Sanbase.Billing.Plan.Restrictions do
           is_accessible: boolean(),
           is_restricted: boolean(),
           restricted_from: DateTime.t() | nil,
-          restricted_to: DateTime.t() | nil
+          restricted_to: DateTime.t() | nil,
+          is_deprecated: boolean(),
+          hard_deprecate_after: DateTime.t() | nil
         }
 
   @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
@@ -43,6 +45,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
             )
         end
     end
+    |> post_process()
   end
 
   @doc ~s"""
@@ -67,6 +70,12 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   end
 
   # Private functions
+
+  defp post_process(map) do
+    map
+    # Replace misssing `is_deprecated` with `false`. Replace `nil` with `false`.
+    |> Map.update(:is_deprecated, false, fn value -> if is_nil(value), do: false, else: value end)
+  end
 
   defp maybe_filter_by_type(list, nil), do: list
 
@@ -139,7 +148,9 @@ defmodule Sanbase.Billing.Plan.Restrictions do
       {:ok, metadata} ->
         %{
           min_interval: metadata.min_interval,
-          internal_name: metadata.internal_metric
+          internal_name: metadata.internal_metric,
+          is_deprecated: metadata.is_deprecated,
+          hard_deprecate_after: metadata.hard_deprecate_after
         }
 
       {:error, error} ->
@@ -188,5 +199,6 @@ defmodule Sanbase.Billing.Plan.Restrictions do
 
   defp get_extra_queries(_plan_name, _product_code) do
     [not_restricted_access_map("query", "ethSpentOverTime")]
+    |> Enum.map(&post_process/1)
   end
 end

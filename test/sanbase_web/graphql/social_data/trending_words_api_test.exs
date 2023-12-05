@@ -37,6 +37,9 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
             "{'word': 'halving', 'score': 1.0}"
           ],
           "The summary",
+          "Bullish summary",
+          "Bearish summary",
+          [0.2, 0.3, 0.5],
           [0.2, 0.3, 0.5]
         ],
         [
@@ -49,6 +52,9 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
             "{'word': 'bitcoin', 'score': 1.0}"
           ],
           "Another summary",
+          "Bullish summary",
+          "Bearish summary",
+          [0.8, 0.1, 0.1],
           [0.8, 0.1, 0.1]
         ],
         [
@@ -61,6 +67,9 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
             "{'word': 'tight', 'score': 1.0}"
           ],
           "Third summary",
+          "Bullish summary",
+          "Bearish summary",
+          [0.5, 0.15, 0.35],
           [0.5, 0.15, 0.35]
         ]
       ]
@@ -86,10 +95,15 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                            "project" => nil,
                            "score" => 82.0,
                            "summary" => "Third summary",
+                           "bullishSummary" => "Bullish summary",
+                           "bearishSummary" => "Bearish summary",
                            "word" => "word",
-                           "negativeSentimentRatio" => 0.15,
-                           "neutralSentimentRatio" => 0.35,
-                           "positiveSentimentRatio" => 0.5
+                           "negativeSentimentRatio" => 0.35,
+                           "neutralSentimentRatio" => 0.15,
+                           "positiveSentimentRatio" => 0.5,
+                           "negativeBbSentimentRatio" => 0.35,
+                           "neutralBbSentimentRatio" => 0.15,
+                           "positiveBbSentimentRatio" => 0.5
                          },
                          %{
                            "context" => [
@@ -99,10 +113,15 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                            "project" => %{"slug" => "bitcoin"},
                            "score" => 74.5,
                            "summary" => "Another summary",
+                           "bullishSummary" => "Bullish summary",
+                           "bearishSummary" => "Bearish summary",
                            "word" => "btc",
                            "negativeSentimentRatio" => 0.1,
                            "neutralSentimentRatio" => 0.1,
-                           "positiveSentimentRatio" => 0.8
+                           "positiveSentimentRatio" => 0.8,
+                           "negativeBbSentimentRatio" => 0.1,
+                           "neutralBbSentimentRatio" => 0.1,
+                           "positiveBbSentimentRatio" => 0.8
                          },
                          %{
                            "context" => [
@@ -112,10 +131,15 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                            "project" => %{"slug" => "ethereum"},
                            "score" => 72.4,
                            "summary" => "The summary",
+                           "bullishSummary" => "Bullish summary",
+                           "bearishSummary" => "Bearish summary",
                            "word" => "eth",
-                           "negativeSentimentRatio" => 0.3,
-                           "neutralSentimentRatio" => 0.5,
-                           "positiveSentimentRatio" => 0.2
+                           "negativeSentimentRatio" => 0.5,
+                           "neutralSentimentRatio" => 0.3,
+                           "positiveSentimentRatio" => 0.2,
+                           "negativeBbSentimentRatio" => 0.5,
+                           "neutralBbSentimentRatio" => 0.3,
+                           "positiveBbSentimentRatio" => 0.2
                          }
                        ]
                      }
@@ -262,9 +286,14 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
             project{ slug }
             score
             summary
+            bullishSummary,
+            bearishSummary,
             positiveSentimentRatio
             negativeSentimentRatio
             neutralSentimentRatio
+            positiveBbSentimentRatio
+            negativeBbSentimentRatio
+            neutralBbSentimentRatio
             context{
               word
               score

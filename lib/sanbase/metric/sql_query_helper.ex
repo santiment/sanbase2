@@ -60,12 +60,45 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     "if({{#{arg_name}}} = {{#{arg_name}}}, toUnixTimestamp(toDateTime(#{function}(#{dt_column}))), null)"
   end
 
-  def to_unix_timestamp_from_number(<<digit::utf8, _::binary>> = _interval, opts \\ [])
+  def to_unix_timestamp_from_number(interval_or_function, opts \\ [])
+
+  def to_unix_timestamp_from_number(<<digit::utf8, _::binary>> = _interval, opts)
       when digit in ?0..?9 do
     interval_name = Keyword.get(opts, :interval_argument_name, "interval")
     from_name = Keyword.get(opts, :from_argument_name, "from")
 
     "toUnixTimestamp(intDiv(toUInt32({{#{from_name}}} + number * {{#{interval_name}}}), {{#{interval_name}}}) * {{#{interval_name}}})"
+  end
+
+  def to_unix_timestamp_from_number(function, opts)
+      when function in @supported_interval_functions do
+    from_name = Keyword.get(opts, :from_argument_name, "from")
+
+    expression =
+      case function do
+        "toStartOfMonth" ->
+          "addMonths(toStartOfMonth(toDateTime({{#{from_name}}})), number)"
+
+        "toStartOfWeek" ->
+          "addDays(toStartOfWeek(toDateTime({{#{from_name}}})), number * 7)"
+
+        "toMonday" ->
+          "addDays(toMonday(toDateTime({{#{from_name}}})), number * 7)"
+
+        "toStartOfDay" ->
+          "addDays(toStartOfDay(toDateTime({{#{from_name}}})), number)"
+
+        "toStartOfQuarter" ->
+          "addQuarters(toStartOfQuarter(toDateTime({{#{from_name}}})), number)"
+
+        "toStartOfYear" ->
+          "addYears(toStartOfYear(toDateTime({{#{from_name}}})), number)"
+
+        "toStartOfHour" ->
+          "addHours(toStartOfHour(toDateTime({{#{from_name}}})), number)"
+      end
+
+    "toUnixTimestamp(toDateTime(#{expression}))"
   end
 
   def aggregation(:ohlc, value_column, dt_column) do
@@ -190,14 +223,14 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   def label_id_by_label_fqn_filter(label_fqn, opts) when is_binary(label_fqn) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple({{#{arg_name}}}))"
+    "label_id = dictGetUInt64('default.labels_by_fqn', 'label_id', tuple({{#{arg_name}}}))"
   end
 
   def label_id_by_label_fqn_filter(label_fqns, opts) when is_list(label_fqns) do
     arg_name = Keyword.fetch!(opts, :argument_name)
 
     "label_id IN (
-      SELECT dictGetUInt64('default.label_ids_dict', 'label_id', tuple(fqn)) AS label_id
+      SELECT dictGetUInt64('default.labels_by_fqn', 'label_id', tuple(fqn)) AS label_id
       FROM system.one
       ARRAY JOIN [{{#{arg_name}}}] AS fqn
     )"
@@ -272,7 +305,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     label_fqn_key = "label_fqn_#{pos}"
 
     str = "label_id IN (
-      SELECT dictGetUInt64('default.label_ids_dict', 'label_id', tuple(fqn)) AS label_id
+      SELECT dictGetUInt64('default.labels_by_fqn', 'label_id', tuple(fqn)) AS label_id
       FROM system.one
       ARRAY JOIN [{{#{label_fqn_key}}}] AS fqn
     )"
@@ -285,7 +318,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     label_fqn_key = "label_fqn_#{pos}"
 
     str =
-      "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple({{#{label_fqn_key}}}))"
+      "label_id = dictGetUInt64('default.labels_by_fqn', 'label_id', tuple({{#{label_fqn_key}}}))"
 
     {str, Map.put(params, label_fqn_key, value)}
   end

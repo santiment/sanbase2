@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.Schema.PromoterTypes do
     field(:current_balance, :integer)
     field(:paid_balance, :integer)
     field(:promotions, list_of(:promotion))
+    field(:dashboard_url, :string)
   end
 
   object :promotion do

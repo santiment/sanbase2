@@ -1,5 +1,5 @@
 defmodule Sanbase.QueriesTest do
-  use SanbaseWeb.ConnCase, async: true
+  use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
   import Mock, only: [assert_called: 1]
@@ -587,6 +587,85 @@ defmodule Sanbase.QueriesTest do
           )
         )
       end)
+    end
+  end
+
+  describe "Caching" do
+    test "cache dashboard queries", context do
+      %{
+        query: %{id: query_id} = query,
+        dashboard_query_mapping: %{id: dashboard_query_mapping_id} = dashboard_query_mapping,
+        dashboard: %{id: dashboard_id} = dashboard,
+        user: user,
+        query_metadata: query_metadata
+      } = context
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        {:ok, result} =
+          Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
+
+        {:ok, dashboard_cache} =
+          Sanbase.Dashboards.store_dashboard_query_execution(
+            dashboard.id,
+            dashboard_query_mapping.id,
+            result,
+            user.id
+          )
+
+        assert %Sanbase.Queries.DashboardCache{
+                 queries: %{},
+                 inserted_at: _,
+                 updated_at: _
+               } = dashboard_cache
+      end)
+
+      # Test outside of the mock to make sure no database queries are made
+      {:ok, dashboard_cache} =
+        Sanbase.Dashboards.get_cached_dashboard_queries_executions(dashboard.id, user.id)
+
+      assert %Sanbase.Queries.DashboardCache{
+               queries: %{},
+               inserted_at: _,
+               updated_at: _
+             } = dashboard_cache
+
+      assert %{
+               query_id: ^query_id,
+               dashboard_query_mapping_id: ^dashboard_query_mapping_id,
+               clickhouse_query_id: "1774C4BC91E05698",
+               column_types: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+               columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
+               dashboard_id: ^dashboard_id,
+               query_end_time: _,
+               query_start_time: _,
+               rows: [
+                 [
+                   1482,
+                   1645,
+                   ~U[1970-01-01 00:00:00Z],
+                   0.045183932486757644,
+                   ~U[2023-07-26 13:10:51Z]
+                 ],
+                 [
+                   1482,
+                   1647,
+                   ~U[1970-01-01 00:00:00Z],
+                   -0.13018891098082416,
+                   ~U[2023-07-25 20:27:06Z]
+                 ]
+               ],
+               summary: %{
+                 "read_bytes" => 408_534.0,
+                 "read_rows" => 12667.0,
+                 "result_bytes" => 0.0,
+                 "result_rows" => 0.0,
+                 "total_rows_to_read" => 4475.0,
+                 "written_bytes" => 0.0,
+                 "written_rows" => 0.0
+               },
+               updated_at: _
+             } = dashboard_cache.queries[dashboard_query_mapping.id]
     end
   end
 

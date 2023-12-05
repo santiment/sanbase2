@@ -63,7 +63,7 @@ defmodule Sanbase.Mixfile do
       {:absinthe_phoenix, "~> 2.0"},
       {:absinthe_plug, "~> 1.5"},
       {:absinthe, "~> 1.5"},
-      {:brod, "~> 3.8", manager: :rebar3, override: true},
+      {:brod, "== 3.8.1", manager: :rebar3, override: true},
       {:browser, "~> 0.5"},
       {:cachex, "~> 3.4"},
       {:cidr, "~> 1.1"},
@@ -84,11 +84,14 @@ defmodule Sanbase.Mixfile do
       {:earmark, "~> 1.2"},
       {:ecto_enum, "~> 1.4"},
       {:ecto_psql_extras, "~> 0.3"},
-      {:ecto_sql, "~> 3.6"},
-      {:ecto, "~> 3.6"},
+      {:ecto_sql, "== 3.9.0"},
+      # Our config breaks with the newest ecto version
+      {:ecto, "== 3.9.1"},
       {:envy, "~> 1.1.1", only: [:dev, :test]},
       {:erlex, "~> 0.2.6", override: true},
       {:ethereumex, "~> 0.9"},
+      {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
       {:event_bus, "~> 1.7.0"},
       {:ex_abi, "~> 0.6"},
       {:ex_admin, github: "santiment/ex_admin"},
@@ -140,9 +143,10 @@ defmodule Sanbase.Mixfile do
       {:phoenix_html, "~> 3.0", override: true},
       {:phoenix_live_dashboard, "~> 0.3"},
       {:phoenix_live_reload, "~> 1.1", only: :dev},
-      {:phoenix_live_view, "~> 0.14"},
+      {:phoenix_live_view, "~> 0.20"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix, "~> 1.6.0"},
+      {:phoenix_view, "~> 2.0"},
+      {:phoenix, "~> 1.7.0"},
       {:plug_cowboy, "~> 2.5"},
       {:postgrex, "~> 0.16", override: true},
       {:prom_ex, "~> 1.8"},
@@ -222,6 +226,13 @@ defmodule Sanbase.Mixfile do
         "ecto.load -r Sanbase.Repo --skip-if-loaded",
         "test"
       ]
-    ]
+    ] ++
+      [
+        # esbuild/assets building related
+        setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
+        "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
+        "assets.build": ["tailwind default", "esbuild default"],
+        "assets.deploy": ["tailwind default --minify", "esbuild default --minify", "phx.digest"]
+      ]
   end
 end

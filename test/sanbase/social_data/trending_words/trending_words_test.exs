@@ -36,15 +36,20 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          summaries: [
                            %{
                              datetime: dt1,
-                             source: "4chan,reddit",
+                             source: "4chan,reddit,telegram",
                              summary: "summary2"
                            }
                          ],
                          summary: "summary2",
+                         bullish_summary: "bullish_summary2",
+                         bearish_summary: "bearish_summary2",
                          word: "ethereum",
-                         negative_sentiment_ratio: 0.3,
-                         neutral_sentiment_ratio: 0.5,
-                         positive_sentiment_ratio: 0.2
+                         negative_sentiment_ratio: 0.5,
+                         neutral_sentiment_ratio: 0.3,
+                         positive_sentiment_ratio: 0.2,
+                         negative_bb_sentiment_ratio: 0.5,
+                         neutral_bb_sentiment_ratio: 0.3,
+                         positive_bb_sentiment_ratio: 0.2
                        },
                        %{
                          context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
@@ -53,15 +58,20 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          summaries: [
                            %{
                              datetime: dt1,
-                             source: "4chan,reddit",
+                             source: "4chan,reddit,telegram",
                              summary: "summary1"
                            }
                          ],
                          summary: "summary1",
+                         bullish_summary: "bullish_summary1",
+                         bearish_summary: "bearish_summary1",
                          word: "bitcoin",
-                         negative_sentiment_ratio: 0.3,
-                         neutral_sentiment_ratio: 0.5,
-                         positive_sentiment_ratio: 0.2
+                         negative_sentiment_ratio: 0.5,
+                         neutral_sentiment_ratio: 0.3,
+                         positive_sentiment_ratio: 0.2,
+                         negative_bb_sentiment_ratio: 0.5,
+                         neutral_bb_sentiment_ratio: 0.3,
+                         positive_bb_sentiment_ratio: 0.2
                        }
                      ],
                      dt2 => [
@@ -72,15 +82,20 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          summaries: [
                            %{
                              datetime: dt2,
-                             source: "4chan,reddit",
+                             source: "4chan,reddit,telegram",
                              summary: "summary4"
                            }
                          ],
                          summary: "summary4",
+                         bullish_summary: "bullish_summary4",
+                         bearish_summary: "bearish_summary4",
                          word: "boom",
-                         negative_sentiment_ratio: 0.1,
-                         neutral_sentiment_ratio: 0.7,
-                         positive_sentiment_ratio: 0.2
+                         negative_sentiment_ratio: 0.7,
+                         neutral_sentiment_ratio: 0.1,
+                         positive_sentiment_ratio: 0.2,
+                         negative_bb_sentiment_ratio: 0.7,
+                         neutral_bb_sentiment_ratio: 0.1,
+                         positive_bb_sentiment_ratio: 0.2
                        },
                        %{
                          context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
@@ -89,15 +104,20 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          summaries: [
                            %{
                              datetime: dt2,
-                             source: "4chan,reddit",
+                             source: "4chan,reddit,telegram",
                              summary: "summary3"
                            }
                          ],
                          summary: "summary3",
+                         bullish_summary: "bullish_summary3",
+                         bearish_summary: "bearish_summary3",
                          word: "san",
-                         negative_sentiment_ratio: 0.1,
-                         neutral_sentiment_ratio: 0.5,
-                         positive_sentiment_ratio: 0.4
+                         negative_sentiment_ratio: 0.5,
+                         neutral_sentiment_ratio: 0.1,
+                         positive_sentiment_ratio: 0.4,
+                         negative_bb_sentiment_ratio: 0.5,
+                         neutral_bb_sentiment_ratio: 0.1,
+                         positive_bb_sentiment_ratio: 0.4
                        }
                      ],
                      dt3 => [
@@ -108,15 +128,20 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          summaries: [
                            %{
                              datetime: dt3,
-                             source: "4chan,reddit",
+                             source: "4chan,reddit,telegram",
                              summary: "summary6"
                            }
                          ],
                          summary: "summary6",
+                         bullish_summary: "bullish_summary6",
+                         bearish_summary: "bearish_summary6",
                          word: "xrp",
-                         negative_sentiment_ratio: 0.3,
-                         neutral_sentiment_ratio: 0.5,
-                         positive_sentiment_ratio: 0.2
+                         negative_sentiment_ratio: 0.5,
+                         neutral_sentiment_ratio: 0.3,
+                         positive_sentiment_ratio: 0.2,
+                         negative_bb_sentiment_ratio: 0.5,
+                         neutral_bb_sentiment_ratio: 0.3,
+                         positive_bb_sentiment_ratio: 0.2
                        },
                        %{
                          context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
@@ -125,15 +150,20 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                          summaries: [
                            %{
                              datetime: dt3,
-                             source: "4chan,reddit",
+                             source: "4chan,reddit,telegram",
                              summary: "summary5"
                            }
                          ],
                          summary: "summary5",
+                         bullish_summary: "bullish_summary5",
+                         bearish_summary: "bearish_summary5",
                          word: "eth",
-                         negative_sentiment_ratio: 0.3,
-                         neutral_sentiment_ratio: 0.5,
-                         positive_sentiment_ratio: 0.2
+                         negative_sentiment_ratio: 0.5,
+                         neutral_sentiment_ratio: 0.3,
+                         positive_sentiment_ratio: 0.2,
+                         negative_bb_sentiment_ratio: 0.5,
+                         neutral_bb_sentiment_ratio: 0.3,
+                         positive_bb_sentiment_ratio: 0.2
                        }
                      ]
                    }
@@ -173,15 +203,20 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                        summaries: [
                          %{
                            datetime: ~U[2019-01-03 00:00:00Z],
-                           source: "4chan,reddit",
+                           source: "4chan,reddit,telegram",
                            summary: "summary6"
                          }
                        ],
                        summary: "summary6",
+                       bullish_summary: "bullish_summary6",
+                       bearish_summary: "bearish_summary6",
                        word: "xrp",
-                       negative_sentiment_ratio: 0.3,
-                       neutral_sentiment_ratio: 0.5,
-                       positive_sentiment_ratio: 0.2
+                       negative_sentiment_ratio: 0.5,
+                       neutral_sentiment_ratio: 0.3,
+                       positive_sentiment_ratio: 0.2,
+                       negative_bb_sentiment_ratio: 0.5,
+                       neutral_bb_sentiment_ratio: 0.3,
+                       positive_bb_sentiment_ratio: 0.2
                      },
                      %{
                        context: [%{score: 1.0, word: "usd"}, %{score: 0.5, word: "money"}],
@@ -190,15 +225,20 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                        summaries: [
                          %{
                            datetime: ~U[2019-01-03 00:00:00Z],
-                           source: "4chan,reddit",
+                           source: "4chan,reddit,telegram",
                            summary: "summary5"
                          }
                        ],
                        summary: "summary5",
+                       bullish_summary: "bullish_summary5",
+                       bearish_summary: "bearish_summary5",
                        word: "eth",
-                       negative_sentiment_ratio: 0.3,
-                       neutral_sentiment_ratio: 0.5,
-                       positive_sentiment_ratio: 0.2
+                       negative_sentiment_ratio: 0.5,
+                       neutral_sentiment_ratio: 0.3,
+                       positive_sentiment_ratio: 0.2,
+                       negative_bb_sentiment_ratio: 0.5,
+                       neutral_bb_sentiment_ratio: 0.3,
+                       positive_bb_sentiment_ratio: 0.2
                      }
                    ]
                  }
@@ -308,12 +348,78 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     ]
 
     [
-      [dt1_unix, "bitcoin", "BTC_bitcoin", 10, context, "summary1", [0.2, 0.3, 0.5]],
-      [dt1_unix, "ethereum", "ETH_ethereum", 5, context, "summary2", [0.2, 0.3, 0.5]],
-      [dt2_unix, "san", "SAN_santiment", 2, context, "summary3", [0.4, 0.1, 0.5]],
-      [dt2_unix, "boom", nil, 70, context, "summary4", [0.2, 0.1, 0.7]],
-      [dt3_unix, "eth", "ETH_ethereum", 1, context, "summary5", [0.2, 0.3, 0.5]],
-      [dt3_unix, "xrp", "XRP_ripple", 2, context, "summary6", [0.2, 0.3, 0.5]]
+      [
+        dt1_unix,
+        "bitcoin",
+        "BTC_bitcoin",
+        10,
+        context,
+        "summary1",
+        "bullish_summary1",
+        "bearish_summary1",
+        [0.2, 0.3, 0.5],
+        [0.2, 0.3, 0.5]
+      ],
+      [
+        dt1_unix,
+        "ethereum",
+        "ETH_ethereum",
+        5,
+        context,
+        "summary2",
+        "bullish_summary2",
+        "bearish_summary2",
+        [0.2, 0.3, 0.5],
+        [0.2, 0.3, 0.5]
+      ],
+      [
+        dt2_unix,
+        "san",
+        "SAN_santiment",
+        2,
+        context,
+        "summary3",
+        "bullish_summary3",
+        "bearish_summary3",
+        [0.4, 0.1, 0.5],
+        [0.4, 0.1, 0.5]
+      ],
+      [
+        dt2_unix,
+        "boom",
+        nil,
+        70,
+        context,
+        "summary4",
+        "bullish_summary4",
+        "bearish_summary4",
+        [0.2, 0.1, 0.7],
+        [0.2, 0.1, 0.7]
+      ],
+      [
+        dt3_unix,
+        "eth",
+        "ETH_ethereum",
+        1,
+        context,
+        "summary5",
+        "bullish_summary5",
+        "bearish_summary5",
+        [0.2, 0.3, 0.5],
+        [0.2, 0.3, 0.5]
+      ],
+      [
+        dt3_unix,
+        "xrp",
+        "XRP_ripple",
+        2,
+        context,
+        "summary6",
+        "bullish_summary6",
+        "bearish_summary6",
+        [0.2, 0.3, 0.5],
+        [0.2, 0.3, 0.5]
+      ]
     ]
   end
 end

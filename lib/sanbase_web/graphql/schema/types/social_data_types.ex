@@ -103,12 +103,18 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:positive_sentiment_ratio, :float)
     field(:negative_sentiment_ratio, :float)
     field(:neutral_sentiment_ratio, :float)
+    # bearish/bullish sentiment ratios
+    field(:positive_bb_sentiment_ratio, :float)
+    field(:negative_bb_sentiment_ratio, :float)
+    field(:neutral_bb_sentiment_ratio, :float)
 
     field :project, :project do
       cache_resolve(&SocialDataResolver.project_from_root_slug/3)
     end
 
     field(:summary, non_null(:string))
+    field(:bullish_summary, non_null(:string))
+    field(:bearish_summary, non_null(:string))
     field(:summaries, list_of(:trending_word_summary))
   end
 

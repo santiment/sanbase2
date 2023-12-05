@@ -17,20 +17,6 @@ defmodule Sanbase.Clickhouse.Label do
 
   @create_label_topic "label_changes"
 
-  def list_all(:all = _blockchain) do
-    query_struct = all_labels_query()
-
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [label] -> label end)
-  end
-
-  def list_all(blockchain) do
-    query_struct = all_blockchain_labels_query(blockchain)
-
-    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [label] ->
-      label
-    end)
-  end
-
   def addresses_by_labels(label_fqn_or_fqns, opts \\ [])
 
   def addresses_by_labels(label_fqn_or_fqns, opts) do
@@ -108,8 +94,9 @@ defmodule Sanbase.Clickhouse.Label do
         query_struct,
         %{},
         fn [address, label, metadata], acc ->
-          label = %{name: label, metadata: metadata, origin: "santiment"}
-          Map.update(acc, address, [label], &[label | &1])
+          new_label = %{name: label, metadata: metadata, origin: "santiment"}
+          updated_labels = update_labels(acc[address], new_label)
+          Map.put(acc, address, updated_labels)
         end
       )
 
@@ -129,8 +116,9 @@ defmodule Sanbase.Clickhouse.Label do
       query_struct,
       %{},
       fn [address, label, metadata], acc ->
-        label = %{name: label, metadata: metadata, origin: "santiment"}
-        Map.update(acc, address, [label], &[label | &1])
+        new_label = %{name: label, metadata: metadata, origin: "santiment"}
+        updated_labels = update_labels(acc[address], new_label)
+        Map.put(acc, address, updated_labels)
       end
     )
   end
@@ -163,27 +151,6 @@ defmodule Sanbase.Clickhouse.Label do
     do: {:error, "Username is required for creating custom address labels"}
 
   # Private functions
-
-  defp all_labels_query() do
-    sql = """
-    SELECT DISTINCT(label) FROM blockchain_address_labels
-    """
-
-    params = %{}
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
-  defp all_blockchain_labels_query(blockchain) do
-    sql = """
-    SELECT DISTINCT(label)
-    FROM blockchain_address_labels
-    PREWHERE blockchain = {{blockchain}}
-    """
-
-    params = %{blockchain: blockchain}
-    Sanbase.Clickhouse.Query.new(sql, params)
-  end
-
   # For backwards compatibility, if the slug is nil treat it as ethereum blockchain
   defp slug_to_blockchain(nil), do: "ethereum"
 
@@ -192,7 +159,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   def addresses_by_label_fqns_query(label_fqns, nil = _blockchain) do
     sql = """
-    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
       #{label_id_by_label_fqn_filter(label_fqns, argument_name: "label_fqns")}
@@ -206,7 +173,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   def addresses_by_label_fqns_query(label_fqns, blockchain) do
     sql = """
-    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
       #{label_id_by_label_fqn_filter(label_fqns, argument_name: "label_fqns")} AND
@@ -221,7 +188,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   def addresses_by_label_keys_query(label_keys, nil = _blockchain) do
     sql = """
-    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
       #{label_id_by_label_key_filter(label_keys, argument_name: "label_keys")}
@@ -235,7 +202,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   def addresses_by_label_keys_query(label_keys, blockchain) do
     sql = """
-    SELECT address, blockchain, dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn
+    SELECT address, blockchain, dictGetString('default.labels', 'fqn', label_id) AS label_fqn
     FROM label_addresses
     PREWHERE
       #{label_id_by_label_key_filter(label_keys, argument_name: "label_keys")} AND
@@ -248,26 +215,25 @@ defmodule Sanbase.Clickhouse.Label do
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  defp addresses_labels_query(slug, "ethereum", addresses) do
-    sql = create_addresses_labels_query(slug)
-    params = %{addresses: addresses, slug: slug}
+  # update_labels/2 is used to avoid duplicates
+  defp update_labels(existing_labels, new_label) do
+    case existing_labels do
+      nil ->
+        [new_label]
 
-    Sanbase.Clickhouse.Query.new(sql, params)
+      _ ->
+        if Enum.any?(existing_labels, fn label -> label.name == new_label.name end) do
+          existing_labels
+        else
+          [new_label | existing_labels]
+        end
+    end
   end
 
-  defp addresses_labels_query(_slug, blockchain, addresses) do
-    sql = """
-    SELECT address, label, metadata
-    FROM(
-      SELECT address, label, argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
-      FROM blockchain_address_labels
-      PREWHERE blockchain = {{blockchain}} AND address IN ({{addresses}})
-      GROUP BY blockchain, asset_id, label, address
-      HAVING sign = 1
-    )
-    """
+  defp addresses_labels_query(slug, blockchain, addresses) do
+    sql = create_addresses_labels_query()
+    params = %{addresses: addresses, slug: slug, blockchain: blockchain}
 
-    params = %{blockchain: blockchain, addresses: addresses}
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
@@ -304,98 +270,89 @@ defmodule Sanbase.Clickhouse.Label do
     end)
   end
 
-  defp create_addresses_labels_query(slug) do
+  defp create_addresses_labels_query() do
     """
-    SELECT address,
-           label,
-           concat('\{', '"owner": "', owner, '"\}') as metadata
-    FROM (
-        SELECT address,
-               arrayJoin(labels_owners_filtered) as label_owner,
-               label_owner.1 as label_raw,
-               label_owner.2 as owner,
-               multiIf(
-                   owner = 'uniswap router', 'Uniswap Router',
-                   label_raw='uniswap_ecosystem', 'Uniswap Ecosystem',
-                   label_raw='cex_dex_trader', 'CEX & DEX Trader',
-                   label_raw='centralized_exchange', 'CEX',
-                   label_raw='decentralized_exchange', 'DEX',
-                   label_raw='withdrawal', 'CEX Trader',
-                   label_raw='dex_trader', 'DEX Trader',
-                   #{whale_filter(slug, argument_name: "slug")}
-                   label_raw='deposit', 'CEX Deposit',
-                   label_raw='defi', 'DeFi',
-                   label_raw='deployer', 'Deployer',
-                   label_raw='stablecoin', 'Stablecoin',
-                   label_raw='uniswap_ecosystem', 'Uniswap',
-                   label_raw='makerdao-cdp-owner', 'MakerDAO CDP Owner',
-                   label_raw='makerdao-bite-keeper', 'MakerDAO Bite Keeper',
-                   label_raw='genesis', 'Genesis',
-                   label_raw='proxy', 'Proxy',
-                   label_raw='system', 'System',
-                   label_raw='miner', 'Miner',
-                   label_raw='contract_factory', 'Contract Factory',
-                   label_raw='derivative_token', 'Derivative Token',
-                   label_raw='eth2stakingcontract', 'ETH2 Staking Contract',
-                   label_raw
-               ) as label
+    -- Query using labeling framework v2
+    SELECT
+        address,
+        -- Creating Proper View of key
+        arrayStringConcat(
+            arrayMap(x -> concat(upper(substring(x, 1, 1)), substring(x, 2, length(x) - 1)),
+            splitByChar('_',
+                -- If key == 'owner' -> we will take value
+                multiIf(
+                        key_v = 'owner', value,
+                        key_v
+                    )
+            )), ' '
+        ) as key,
+
+        multiIf(
+            key_v = 'owner',  concat('{\"owner\": \"', value, '\"}'),
+            key_v != 'owner', value,
+            ''
+        ) as metadata
+    FROM
+        (
+        SELECT
+            address,
+            arrayJoin(key_value_cleaned) as key_value,
+            key_value.1 as key_v,
+            key_value.2 as value
         FROM (
-            SELECT address_hash,
-                   address,
-                   asset_id,
-                   splitByChar(',', labels) as label_arr,
-                   splitByChar(',', owners) as owner_arr,
-                   arrayZip(label_arr, owner_arr) as labels_owners,
-                   multiIf(
-                       -- if there is the `system` label for an address, we exclude other labels
-                       has(label_arr, 'system'), arrayFilter(x -> x.1 = 'system', labels_owners),
-                       -- if an address has a `centralized_exchange` label and at least one of the `deposit` and
-                       -- `withdrawal` labels, we exclude the `deposit` and `withdrawal` labels.
-                       has(label_arr, 'centralized_exchange') AND hasAny(label_arr, ['deposit', 'withdrawal']), arrayFilter(x -> x.1 NOT IN ('deposit', 'withdrawal'), labels_owners),
-                       -- if there are the `dex_trader` and `decentralized_exchange` labels for an address, we exclude `dex_trader` label
-                       hasAll(label_arr, ['dex_trader', 'decentralized_exchange']), arrayFilter(x -> x.1 != 'dex_trader', labels_owners),
-                       -- if there are the `deposit` and `withdrawal` labels for an address, we exclude the `withdrawal` label
-                       hasAll(label_arr, ['deposit', 'withdrawal']), arrayFilter(x -> x.1 != 'withdrawal', labels_owners),
-                       -- if there are the `dex_trader` and `withdrawal` labels for an address, we replace these metrics to the `cex_dex_trader` label
-                       hasAll(label_arr, ['dex_trader', 'withdrawal']), arrayPushFront(arrayFilter(x -> x.1 NOT IN ['dex_trader', 'withdrawal'], labels_owners), ('cex_dex_trader', arrayFilter(x -> x.1 == 'withdrawal', labels_owners)[1].2)),
-                       labels_owners
-                   ) as labels_owners_filtered
-            FROM eth_labels_final
-            ANY INNER JOIN (
-                SELECT cityHash64(address) as address_hash,
-                       address
-                FROM (
-                    SELECT lower(arrayJoin([{{addresses}}])) as address
-                )
-            )
-            USING address_hash
-            PREWHERE address_hash IN (
-                SELECT cityHash64(address)
-                FROM (
-                    SELECT lower(arrayJoin([{{addresses}}])) as address
-                )
-            )
+            SELECT
+                -- Here we can add filtration rules
+                a.address as address,
+                groupArray(m.key) AS keys_arr,
+                groupArray(m.value) AS values_arr,
+                arrayZip(keys_arr, values_arr) as labels_owners,
+                multiIf(
+                -- Exclude owner: cefi
+                has(keys_arr, 'cefi'), arrayFilter(x -> x.1 != 'cefi', labels_owners),
+
+                -- If nft_marketplace - exclude nft_trader, nft_user, nft_user_threshold
+                has(keys_arr, 'nft_marketplace'), arrayFilter(x -> x.1 NOT IN ('nft_trader', 'nft_user', 'nft_user_threshold'), labels_owners),
+
+                -- If decentralized_exchange(defi) exclude dex_user
+                has(keys_arr, 'decentralized_exchange'), arrayFilter(x -> x.1 != 'dex_user', labels_owners),
+
+                -- If centralized_exchange + depost + withdrawal - Delete "depost + withdrawal"
+                has(keys_arr, 'centralized_exchange') AND hasAny(keys_arr, ['deposit', 'withdrawal']), arrayFilter(x -> x.1 NOT IN ('deposit', 'withdrawal'), labels_owners),
+
+                -- If depost + withdrawal - exclude withdrawal
+                hasAll(keys_arr, ['deposit', 'withdrawal']), arrayFilter(x -> x.1 != 'withdrawal', labels_owners),
+                labels_owners
+
+                -- Check whale label by asset_name
+                ) as key_value_cleaned
+            FROM
+                (
+                    SELECT
+                        address,
+                        label_id
+                    FROM
+                        current_label_addresses
+                    WHERE
+                        address IN [{{addresses}}] AND blockchain = {{blockchain}}
+                ) AS a
+            LEFT JOIN
+                (
+                    SELECT
+                        label_id,
+                        key,
+                        value,
+                        asset_name,
+                        multiIf(
+                            asset_name != {{slug}} AND key = 'whale', NULL,
+                            key
+                        ) AS filtered_key
+                    FROM
+                        label_metadata
+                ) AS m USING (label_id)
+            WHERE m.filtered_key IS NOT NULL
+            GROUP BY address
         )
-        ANY LEFT JOIN (
-          select asset_id, name from asset_metadata
-        ) USING asset_id
     )
-    WHERE label != 'whale_wrong'
-    """
-  end
-
-  defp whale_filter(nil, _) do
-    """
-    label_raw='whale', concat('Whale, token:', name),
-    """
-  end
-
-  defp whale_filter(slug, opts) when is_binary(slug) do
-    arg_name = Keyword.fetch!(opts, :argument_name)
-
-    """
-    label_raw='whale' AND asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = {{#{arg_name}}}), 'Whale',
-    label_raw='whale' AND asset_id != (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = {{#{arg_name}}}), 'whale_wrong',
     """
   end
 

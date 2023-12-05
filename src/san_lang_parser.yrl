@@ -1,9 +1,10 @@
 Nonterminals
   grammar
-  expr expr1 expr2
+  expr 
   value
-  access_op
-  access_op_key
+  comparison_op
+  access_expr
+  access_expr_key
   function_call
   function_call_args_list
   function_call_arg
@@ -18,6 +19,8 @@ Terminals
   identifier env_var
   %% arithmetic operators
   '+' '-' '*' '/'
+  %% cmp operators
+  '==' '!=' '<' '<=' '>' '>='
   %% other
   '(' ')' '[' ']' ',' 
   %% lambda tokens
@@ -28,34 +31,47 @@ Rootsymbol
    grammar
 .
 
-grammar -> expr : '$1'.
+%% Precedence
+Left 100 '+'.
+Left 100 '-'.
+Left 200 '*'.
+Left 200 '/'.
 
-value -> int : '$1'.
-value -> float : '$1'.
-value -> ascii_string : '$1'.
-value -> env_var : '$1'.
-value -> access_op : '$1'.
-value -> function_call : '$1'.
-value -> identifier : '$1'.
+grammar -> expr : '$1'.
 
 %% expr, expr1 and expr2 handle the precedence of the arithmetic operators
 %% Currently the only way of combining multiple values is by using the
 %% arithmetic operators: @data["key"] + pow(2, 10)
-expr -> expr '+' expr1 : {'+', '$1', '$3'}.
-expr -> expr '-' expr1 : {'-', '$1', '$3'}.
-expr -> expr1 : '$1'.
-expr1 -> expr1 '*' expr2 : {'*', '$1', '$3'}.
-expr1 -> expr1 '/' expr2 : {'/', '$1', '$3'}.
-expr1 -> expr2 : '$1'.
-expr2 -> value : '$1'.
+expr -> expr '+' expr : {'+', '$1', '$3'}.
+expr -> expr '-' expr : {'-', '$1', '$3'}.
+expr -> expr '*' expr : {'*', '$1', '$3'}.
+expr -> expr '/' expr : {'/', '$1', '$3'}.
+expr -> value : '$1'.
+
+%% Values
+value -> int : '$1'.
+value -> float : '$1'.
+value -> ascii_string : '$1'.
+value -> env_var : '$1'.
+value -> access_expr : '$1'.
+value -> function_call : '$1'.
+value -> identifier : '$1'.
 
 %% Handle multiple levels of access operators: @data["key"], @data["key"]["key2"]
-access_op -> identifier '[' access_op_key ']': {access_op, '$1', '$3'}.
-access_op -> env_var '[' access_op_key ']': {access_op, '$1', '$3'}.
-access_op -> access_op '[' access_op_key ']': {access_op, '$1', '$3'}.
+access_expr -> identifier '[' access_expr_key ']': {access_expr, '$1', '$3'}.
+access_expr -> env_var '[' access_expr_key ']': {access_expr, '$1', '$3'}.
+access_expr -> access_expr '[' access_expr_key ']': {access_expr, '$1', '$3'}.
 
-access_op_key -> ascii_string : '$1'.
-access_op_key -> identifier : '$1'.
+access_expr_key -> ascii_string : '$1'.
+access_expr_key -> identifier : '$1'.
+
+%% comparison expressions
+comparison_op -> '==' : '$1'.
+comparison_op -> '!=' : '$1'.
+comparison_op -> '<' : '$1'.
+comparison_op -> '<=' : '$1'.
+comparison_op -> '>' : '$1'.
+comparison_op -> '>=' : '$1'.
 
 %% Lambda function
 lambda_fn -> 'fn' lambda_args '->' expr 'end' : {lambda_fn, '$2', '$4'}.

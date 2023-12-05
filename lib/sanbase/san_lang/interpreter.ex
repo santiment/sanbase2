@@ -25,12 +25,12 @@ defmodule Sanbase.SanLang.Interpreter do
   def eval({:/, l, r}, env), do: eval(l, env) / eval(r, env)
 
   # Access Operator
-  def eval({:access_op, {:access_op, _, _} = inner_access_op, {:ascii_string, _, key}}, env) do
-    env_var = eval(inner_access_op, env)
+  def eval({:access_expr, {:access_expr, _, _} = inner_access_expr, {:ascii_string, _, key}}, env) do
+    env_var = eval(inner_access_expr, env)
     Map.get(env_var, key)
   end
 
-  def eval({:access_op, env_var_or_identifier, key}, env) do
+  def eval({:access_expr, env_var_or_identifier, key}, env) do
     # The acessed type is an env var or an identifier
     map = eval(env_var_or_identifier, env)
     # The key can be a string, or an identifier if used from inside a map/filter/reduce

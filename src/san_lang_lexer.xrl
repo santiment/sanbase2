@@ -1,19 +1,25 @@
 Definitions.
 
-INT           = [0-9]+
-FLOAT         = [0-9]+\.[0-9]+
-STRING        = \"[^\"]*\"
-IDENTIFIER    = [a-zA-Z][a-zA-Z0-9_]*
-ENV_VAR       = [@][a-zA-Z][a-zA-Z0-9_]*
-WHITESPACE    = [\s\t\n\r]
-KW_FN         = fn
-KW_END        = end
+INT               = [0-9]+
+FLOAT             = [0-9]+\.[0-9]+
+STRING            = \"[^\"]*\"
+IDENTIFIER        = [a-zA-Z][a-zA-Z0-9_]*
+ENV_VAR           = [@][a-zA-Z][a-zA-Z0-9_]*
+WHITESPACE        = [\s\t\n\r]
+KW_FN             = fn
+KW_END            = end
 
 Rules.
 \+                : {token, {'+',  TokenLine}}.
 \-                : {token, {'-',  TokenLine}}.
 \*                : {token, {'*',  TokenLine}}.
 \/                : {token, {'/',  TokenLine}}.
+\>                : {token, {'>',  TokenLine}}.
+\<                : {token, {'<',  TokenLine}}.
+\>=               : {token, {'>=',  TokenLine}}.
+\<=               : {token, {'<=',  TokenLine}}.
+\==               : {token, {'==',  TokenLine}}.
+\!=               : {token, {'!=',  TokenLine}}.
 \(                : {token, {'(',  TokenLine}}.
 \)                : {token, {')',  TokenLine}}.
 \[                : {token, {'[',  TokenLine}}.

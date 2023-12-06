@@ -10,7 +10,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
 
   require Logger
 
-  def products_with_plans(_root, _args, _resolution) do
+  def products_with_plans(_root, _args, %{
+        context: %{
+          origin_url: origin_url,
+          origin_host_parts: origin_host_parts,
+          remote_ip: remote_ip
+        }
+      }) do
+    Logger.info(
+      "products_with_plans: #{inspect(origin_url)}, #{inspect(origin_host_parts)}, #{inspect(remote_ip)}"
+    )
+
+    remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
+    Sanbase.Geoip.Data.find_or_insert(remote_ip)
+
     Plan.product_with_plans()
   end
 

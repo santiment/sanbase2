@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.7 (Homebrew)
--- Dumped by pg_dump version 14.7 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1635,6 +1635,40 @@ ALTER SEQUENCE public.free_form_json_storage_id_seq OWNED BY public.free_form_js
 
 
 --
+-- Name: geoip_data; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.geoip_data (
+    id bigint NOT NULL,
+    ip_address character varying(255),
+    is_vpn boolean,
+    country_name character varying(255),
+    country_code character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: geoip_data_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.geoip_data_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: geoip_data_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.geoip_data_id_seq OWNED BY public.geoip_data.id;
+
+
+--
 -- Name: github_organizations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2132,8 +2166,6 @@ CREATE TABLE public.monitored_twitter_handles (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     status character varying(255) DEFAULT 'pending_approval'::character varying,
-    approved_by text,
-    declined_by text,
     comment text
 );
 
@@ -4769,6 +4801,13 @@ ALTER TABLE ONLY public.free_form_json_storage ALTER COLUMN id SET DEFAULT nextv
 
 
 --
+-- Name: geoip_data id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.geoip_data ALTER COLUMN id SET DEFAULT nextval('public.geoip_data_id_seq'::regclass);
+
+
+--
 -- Name: github_organizations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5597,6 +5636,14 @@ ALTER TABLE ONLY public.finished_oban_jobs
 
 ALTER TABLE ONLY public.free_form_json_storage
     ADD CONSTRAINT free_form_json_storage_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: geoip_data geoip_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.geoip_data
+    ADD CONSTRAINT geoip_data_pkey PRIMARY KEY (id);
 
 
 --
@@ -6655,6 +6702,13 @@ CREATE INDEX finished_oban_jobs_queue_index ON public.finished_oban_jobs USING b
 --
 
 CREATE UNIQUE INDEX free_form_json_storage_key_index ON public.free_form_json_storage USING btree (key);
+
+
+--
+-- Name: geoip_data_ip_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX geoip_data_ip_address_index ON public.geoip_data USING btree (ip_address);
 
 
 --
@@ -9097,3 +9151,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231023123140);
 INSERT INTO public."schema_migrations" (version) VALUES (20231026084628);
 INSERT INTO public."schema_migrations" (version) VALUES (20231101104145);
 INSERT INTO public."schema_migrations" (version) VALUES (20231110093800);
+INSERT INTO public."schema_migrations" (version) VALUES (20231206123012);

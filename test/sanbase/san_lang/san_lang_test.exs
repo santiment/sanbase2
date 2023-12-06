@@ -36,6 +36,26 @@ defmodule Sanbase.SanLangTest do
            ]
   end
 
+  test "simple comparisons" do
+    assert SanLang.eval("1 > 2") == false
+    assert SanLang.eval("1 > 0") == true
+    assert SanLang.eval("1 >= 2") == false
+    assert SanLang.eval("5 >= 5") == true
+    assert SanLang.eval("1 == 2") == false
+    assert SanLang.eval("1024 == 1024") == true
+    assert SanLang.eval("1 != 2") == true
+    assert SanLang.eval("10 != 10") == false
+  end
+
+  test "simple booleans" do
+    assert SanLang.eval("true") == true
+    assert SanLang.eval("false") == false
+    assert SanLang.eval("true and false") == false
+    assert SanLang.eval("true and true") == true
+    assert SanLang.eval("true or false") == true
+    assert SanLang.eval("false or false") == false
+  end
+
   test "arithmetic" do
     assert SanLang.eval("1 + 2") == 3
     assert SanLang.eval("1 - 2") == -1
@@ -44,6 +64,16 @@ defmodule Sanbase.SanLangTest do
     # The function div/2 is used for integer division
     assert SanLang.eval("6 / 2") == 3.0
     assert SanLang.eval("6 / 4") == 1.5
+  end
+
+  test "combining arithmetic, boolean comparisons and function calls" do
+    assert SanLang.eval("20 > 5 and 10 < 20") == true
+    assert SanLang.eval("pow(2, 10) > 1000") == true
+    assert SanLang.eval("pow(2, 10) < 1000") == false
+    assert SanLang.eval("pow(2, 10) == 1024") == true
+    assert SanLang.eval("20 + 5 > 24") == true
+    assert SanLang.eval("20 + 5 > 24 and 20 + 5 < 30") == true
+    assert SanLang.eval("20 + 5  * 2 > 29 and 20 + 5 < 30") == true
   end
 
   test "named function calls with literal args" do
@@ -72,10 +102,9 @@ defmodule Sanbase.SanLangTest do
         "data2" => [1, 2, 3.14, 4, 5, 6.15]
       })
 
-    assert SanLang.eval(~s|filter(@data, fn x -> x["key"] > 3 end)|, env) == [%{"key" => 3}]
-    assert SanLang.eval(~s|filter(@data2, fn x -> x > 3 end)|, env) == [%{"key" => 3}]
-    # TODO: After boolean operators are implemented
-    # assert SanLang.eval(~s|filter(@data2, fn x -> x > 3 and x <= 5.5 end)|, env) == [3.14,4,5]
+    assert SanLang.eval(~s|filter(@data, fn x -> x["key"] >= 3 end)|, env) == [%{"key" => 3}]
+    assert SanLang.eval(~s|filter(@data2, fn x -> x >= 3 end)|, env) == [3.14, 4, 5, 6.15]
+    assert SanLang.eval(~s|filter(@data2, fn x -> x > 3 and x <= 5.5 end)|, env) == [3.14, 4, 5]
   end
 
   test "map/2 + flat_map/2 + map_keys/1" do

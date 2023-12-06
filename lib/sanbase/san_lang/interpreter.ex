@@ -17,7 +17,10 @@ defmodule Sanbase.SanLang.Interpreter do
   def eval({:env_var, _, _} = env_var, env), do: eval_env_var(env_var, env)
   def eval({:identifier, _, _} = identifier, env), do: eval_identifier(identifier, env)
   def eval({:lambda_fn, _args, _body} = lambda, env), do: eval_lambda_fn(lambda, env)
-  def eval({:boolean_expr, _op, _lhs, _rhs} = lambda, env), do: eval_boolean_expr(lambda, env)
+
+  def eval({{boolean_op, _}, _, _} = boolean_expr, env) when boolean_op in [:and, :or],
+    do: eval_boolean_expr(boolean_expr, env)
+
   def eval({boolean, _}, _env) when boolean in [true, false], do: boolean
 
   # Arithemtic
@@ -41,7 +44,7 @@ defmodule Sanbase.SanLang.Interpreter do
   end
 
   # Boolean expressions
-  def eval_boolean_expr({:boolean_expr, {op, _}, lhs, rhs}, env) when op in ~w(and or)a do
+  def eval_boolean_expr({{op, _}, lhs, rhs}, env) when op in [:and, :or] do
     lhs = eval(lhs, env)
     rhs = eval(rhs, env)
 
@@ -58,7 +61,7 @@ defmodule Sanbase.SanLang.Interpreter do
   end
 
   # Comparison
-  def eval({:comparison_expr, {op, _}, lhs, rhs}, env) when op in ~w(== != < > <= >=)a,
+  def eval({{:comparison_expr, {op, _}}, lhs, rhs}, env) when op in ~w(== != < > <= >=)a,
     do: apply(Kernel, op, [eval(lhs, env), eval(rhs, env)])
 
   # Named Function Calls
@@ -85,7 +88,10 @@ defmodule Sanbase.SanLang.Interpreter do
 
     # Each of the functions in the Kernel module takes an environment as the last argument
     args = args ++ [env]
-    apply(SanLang.Kernel, String.to_existing_atom(function_name), args)
+    # We've already checked that the function name exists. Somethimes there are strange
+    # errors during tests that :map_keys is not an existing atom, even though there is
+    # such a function in the SanLang.Kernel module
+    apply(SanLang.Kernel, String.to_atom(function_name), args)
   end
 
   defp eval_function_call(function_name, _args, _env) when is_binary(function_name) do

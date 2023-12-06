@@ -63,6 +63,21 @@ defmodule Sanbase.SanLangTest do
     assert SanLang.eval("map(@data, fn val -> val end)", env) == [1, 2, 3]
   end
 
+  test "filter/2" do
+    env = SanLang.Environment.new()
+
+    env =
+      SanLang.Environment.put_env_bindings(env, %{
+        "data" => [%{"key" => 1}, %{"key" => 2}, %{"key" => 3}],
+        "data2" => [1, 2, 3.14, 4, 5, 6.15]
+      })
+
+    assert SanLang.eval(~s|filter(@data, fn x -> x["key"] > 3 end)|, env) == [%{"key" => 3}]
+    assert SanLang.eval(~s|filter(@data2, fn x -> x > 3 end)|, env) == [%{"key" => 3}]
+    # TODO: After boolean operators are implemented
+    # assert SanLang.eval(~s|filter(@data2, fn x -> x > 3 and x <= 5.5 end)|, env) == [3.14,4,5]
+  end
+
   test "map/2 + flat_map/2 + map_keys/1" do
     env = SanLang.Environment.new()
 

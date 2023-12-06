@@ -17,6 +17,8 @@ defmodule Sanbase.SanLang.Interpreter do
   def eval({:env_var, _, _} = env_var, env), do: eval_env_var(env_var, env)
   def eval({:identifier, _, _} = identifier, env), do: eval_identifier(identifier, env)
   def eval({:lambda_fn, _args, _body} = lambda, env), do: eval_lambda_fn(lambda, env)
+  def eval({:boolean_expr, _op, _lhs, _rhs} = lambda, env), do: eval_boolean_expr(lambda, env)
+  def eval({boolean, _}, _env) when boolean in [true, false], do: boolean
 
   # Arithemtic
   def eval({:+, l, r}, env), do: eval(l, env) + eval(r, env)
@@ -37,6 +39,27 @@ defmodule Sanbase.SanLang.Interpreter do
     key = eval(key, env)
     Map.get(map, key)
   end
+
+  # Boolean expressions
+  def eval_boolean_expr({:boolean_expr, {op, _}, lhs, rhs}, env) when op in ~w(and or)a do
+    lhs = eval(lhs, env)
+    rhs = eval(rhs, env)
+
+    cond do
+      not is_boolean(lhs) ->
+        raise ArgumentError, message: "Left hand side of #{op} must be a boolean"
+
+      not is_boolean(rhs) ->
+        raise ArgumentError, message: "Right hand side of #{op} must be a boolean"
+
+      true ->
+        apply(:erlang, op, [lhs, rhs])
+    end
+  end
+
+  # Comparison
+  def eval({:comparison_expr, {op, _}, lhs, rhs}, env) when op in ~w(== != < > <= >=)a,
+    do: apply(Kernel, op, [eval(lhs, env), eval(rhs, env)])
 
   # Named Function Calls
   def eval({:function_call, {:identifier, _, function_name}, args}, env) do

@@ -23,6 +23,25 @@ defmodule Sanbase.SanLang.Kernel do
     |> Enum.reverse()
   end
 
+  def filter(enumerable, {:lambda_fn, _args, _body} = lambda_fn, %Environment{} = env) do
+    {:lambda_fn, [{:identifier, _, local_binding}], _body} = lambda_fn
+
+    enumerable
+    |> Enum.reduce({[], env}, fn elem, {acc, env} ->
+      env = Environment.add_local_binding(env, local_binding, elem)
+
+      case Interpreter.eval(lambda_fn, env) do
+        falsey when falsey in [false, nil] ->
+          {acc, env}
+
+        _ ->
+          {[elem | acc], env}
+      end
+    end)
+    |> elem(0)
+    |> Enum.reverse()
+  end
+
   def flat_map(enumerable, {:lambda_fn, _args, _body} = lambda_fn, %Environment{} = env) do
     reduce(enumerable, lambda_fn, env)
     |> flat_reverse([])

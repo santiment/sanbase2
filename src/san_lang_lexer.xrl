@@ -8,6 +8,10 @@ ENV_VAR           = [@][a-zA-Z][a-zA-Z0-9_]*
 WHITESPACE        = [\s\t\n\r]
 KW_FN             = fn
 KW_END            = end
+KW_AND            = and
+KW_OR             = or
+TRUE              = true
+FALSE             = false
 
 Rules.
 \+                : {token, {'+',  TokenLine}}.
@@ -27,8 +31,12 @@ Rules.
 \-\>              : {token, {'->', TokenLine}}.
 \,                : {token, {',',  TokenLine}}.
 \"                : {token, {'"',  TokenLine}}.
+{TRUE}            : {token, {true, TokenLine}}.
+{FALSE}           : {token, {false, TokenLine}}.
 {KW_FN}           : {token, {'fn', TokenLine}}.
 {KW_END}          : {token, {'end', TokenLine}}.
+{KW_AND}          : {token, {'and', TokenLine}}.
+{KW_OR}           : {token, {'or', TokenLine}}.
 {ENV_VAR}         : {token, {env_var, TokenLine, to_binary(TokenChars)}}.
 {STRING}          : {token, {ascii_string, TokenLine, strip_quoted_ascii_string(TokenChars)}}.
 {IDENTIFIER}      : {token, {identifier, TokenLine, to_binary(TokenChars)}}.

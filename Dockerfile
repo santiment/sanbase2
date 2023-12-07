@@ -65,6 +65,8 @@ COPY priv priv
 
 COPY lib lib
 
+COPY src src
+
 COPY assets assets
 
 # check that the code is formatted

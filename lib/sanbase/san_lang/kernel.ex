@@ -10,6 +10,8 @@ defmodule Sanbase.SanLang.Kernel do
     div(dividend, divisor)
   end
 
+  def length(list, _env) when is_list(list), do: length(list)
+
   def map_keys(map, _env) when is_map(map) do
     Map.keys(map)
   end

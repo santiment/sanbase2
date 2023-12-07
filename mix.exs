@@ -133,6 +133,7 @@ defmodule Sanbase.Mixfile do
       {:mutex, "~> 1.1"},
       {:neuron, "~> 5.0", only: :dev},
       {:nimble_csv, "~> 1.1"},
+      {:nimble_parsec, "~> 1.4"},
       {:norm, "~> 0.12"},
       {:nostrum, github: "Kraigie/nostrum"},
       {:number, "~> 1.0"},

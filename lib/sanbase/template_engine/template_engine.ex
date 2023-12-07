@@ -47,49 +47,66 @@ defmodule Sanbase.TemplateEngine do
 
   @spec run(String.t(), map) :: String.t()
   def run(template, params) do
+    # k(ey) is either atom or string
     params = Map.new(params, fn {k, v} -> {to_string(k), v} end)
     env = Sanbase.Clickhouse.Query.Environment.empty()
 
     get_captures(template)
-    |> Enum.reduce(template, fn [key], template_acc ->
-      case prepare_replace(template_acc, key, env, params) do
-        {key, {:ok, value}} ->
-          String.replace(template_acc, "{{#{key}}}", to_string(value))
+    |> Enum.reduce(template, fn
+      %{code?: false} = map, template_acc ->
+        replace_template_key_with_value(template_acc, map, params, env)
 
-        {_key, :no_value} ->
-          template_acc
-      end
+      %{code?: true} = map, template_acc ->
+        replace_template_key_with_code_execution(template_acc, map, env)
     end)
+  end
+
+  defp replace_template_key_with_value(template, %{key: key, content: content}, params, env) do
+    case prepare_replace(template, content, params, env) do
+      {:ok, value} -> String.replace(template, key, stringify_value(value))
+      :no_value -> template
+    end
+  end
+
+  defp replace_template_key_with_code_execution(
+         template,
+         %{lang: "san", lang_version: "1.0"} = map,
+         env
+       ) do
+    execution_result = Sanbase.SanLang.eval(map.content, env)
+    String.replace(template, map.key, stringify_value(execution_result))
+  end
+
+  defp stringify_value(value) do
+    cond do
+      is_number(value) -> to_string(value)
+      is_binary(value) -> value
+      is_boolean(value) -> to_string(value)
+      is_list(value) -> inspect(value)
+      is_map(value) -> Jason.encode!(value)
+      is_atom(value) -> to_string(value)
+      true -> raise("Unsupported value type for value: #{inspect(value)}")
+    end
   end
 
   @spec run_generate_positional_params(String.t(), map(), map()) :: {String.t(), list(any())}
   def run_generate_positional_params(template, params, env) do
     params = Map.new(params, fn {k, v} -> {to_string(k), v} end)
+    captures = get_captures(template)
 
     {sql, args, _position} =
-      get_captures(template)
-      |> Enum.reduce(
+      Enum.reduce(
+        captures,
         {template, _args = [], _position = 1},
-        fn [key], {template_acc, args_acc, position} ->
-          case prepare_replace(template, key, env, params) do
-            {_key, {:ok, value}} ->
-              template_acc = String.replace(template_acc, "{{#{key}}}", "?#{position}")
-
+        fn %{code?: false} = map, {template_acc, args_acc, position} ->
+          case prepare_replace(template, map.content, params, env) do
+            {:ok, value} ->
+              template_acc = String.replace(template_acc, map.key, "?#{position}")
               args_acc = [value | args_acc]
-
               {template_acc, args_acc, position + 1}
 
-            {_key, :no_value} ->
-              raise(TemplateEngineException,
-                message: """
-                Error generating positional parameters. The key '#{key}' has no value
-                in the parameters map, or in the environment. Please check for typos,
-                missing keys, or inproper use of the environment.
-
-                Parameters: #{inspect(params)}
-                Environment: #{inspect(env)}
-                """
-              )
+            :no_value ->
+              raise_positional_params_error(template, map.content, params, env)
           end
         end
       )
@@ -97,12 +114,35 @@ defmodule Sanbase.TemplateEngine do
     {sql, Enum.reverse(args)}
   end
 
-  defp get_captures(template) do
-    captures =
-      Regex.scan(@template_regex, template, capture: :all_but_first)
-      |> Enum.uniq()
+  defp raise_positional_params_error(template, key, params, env) do
+    raise(TemplateEngineException,
+      message: """
+      Error parsing the template. The template contains a key that is not present in the params map.
 
-    if Enum.any?(captures, fn [key] -> String.contains?(key, ["{", "}"]) end) do
+      Template: #{inspect(template)}
+      Key: #{inspect(key)}
+      Params: #{inspect(params)}
+      Env: #{inspect(env)}
+      """
+    )
+  end
+
+  @doc ~s"""
+  Extract the captures from the template. The captures are the keys that are enclosed in {{}}
+  """
+  def get_captures(template) do
+    captures =
+      Regex.scan(@template_regex, template)
+      |> Enum.uniq()
+      |> Enum.map(fn [key_with_enclosing_curly_braces, inner] ->
+        inner = String.trim(inner)
+        content_data_map = parse_template_inner(inner)
+        # The template itself is needed in order to find/replace it with the value.
+        content_data_map
+        |> Map.put(:key, key_with_enclosing_curly_braces)
+      end)
+
+    if Enum.any?(captures, fn map -> String.contains?(map.content, ["{", "}"]) end) do
       raise(TemplateEngineException,
         message: """
         Error parsing the template. The template contains a key that itself contains
@@ -116,35 +156,48 @@ defmodule Sanbase.TemplateEngine do
     captures
   end
 
-  defp prepare_replace(string, key, env, params) do
-    value_tuple =
-      cond do
-        String.starts_with?(string, "@") ->
-          "@" <> env_spec = key
-          env_key = String.split(env_spec, "[", parts: 2) |> List.first()
-          value = Map.get(env, env_key)
+  defp parse_template_inner("[lang=" <> rest) do
+    [lang_with_version, rest] = String.split(rest, "]", parts: 2)
+    [lang, version] = String.split(lang_with_version, ":")
 
-          # Apply the ["key"] part of the key
-          {:ok, value}
+    %{
+      code?: true,
+      lang: String.trim(lang),
+      lang_version: String.trim(version),
+      content: String.trim(rest)
+    }
+  end
 
-        String.ends_with?(key, ":human_readable") ->
-          [key, _] = String.split(key, ":human_readable")
+  defp parse_template_inner(content) do
+    %{code?: false, lang: nil, lang_version: nil, content: String.trim(content)}
+  end
 
-          if not Map.has_key?(params, key),
-            do: raise("Template parameter #{key} not found in the parameters map")
+  defp prepare_replace(string, key, params, env) do
+    cond do
+      String.starts_with?(string, "@") ->
+        "@" <> env_spec = key
+        env_key = String.split(env_spec, "[", parts: 2) |> List.first()
+        value = Map.get(env, env_key)
 
-          value = params[key] |> human_readable()
-          {:ok, value}
+        # Apply the ["key"] part of the key
+        {:ok, value}
 
-        Map.has_key?(params, key) ->
-          value = params[key]
-          {:ok, value}
+      String.ends_with?(key, ":human_readable") ->
+        [key, _] = String.split(key, ":human_readable")
 
-        true ->
-          :no_value
-      end
+        if not Map.has_key?(params, key),
+          do: raise("Template parameter #{key} not found in the parameters map")
 
-    {key, value_tuple}
+        value = params[key] |> human_readable()
+        {:ok, value}
+
+      Map.has_key?(params, key) ->
+        value = params[key]
+        {:ok, value}
+
+      true ->
+        :no_value
+    end
   end
 
   # Numbers below 1000 are not changed

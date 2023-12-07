@@ -3,10 +3,10 @@ defmodule Sanbase.Repo.Migrations.CreateGeoipData do
 
   def change do
     create table(:geoip_data) do
-      add(:ip_address, :string)
-      add(:is_vpn, :boolean)
-      add(:country_name, :string)
-      add(:country_code, :string)
+      add(:ip_address, :string, null: false)
+      add(:is_vpn, :boolean, null: false)
+      add(:country_name, :string, null: false)
+      add(:country_code, :string, null: false)
 
       timestamps()
     end

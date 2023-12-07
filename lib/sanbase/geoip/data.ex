@@ -1,6 +1,5 @@
 defmodule Sanbase.Geoip.Data do
   use Ecto.Schema
-  import Ecto.Query
   import Ecto.Changeset
   alias Sanbase.Repo
   alias Sanbase.Geoip
@@ -26,18 +25,7 @@ defmodule Sanbase.Geoip.Data do
       nil ->
         case Geoip.fetch_geo_data(remote_ip) do
           {:ok, data} ->
-            is_vpn =
-              data["security"]["is_proxy"] == true and data["security"]["proxy_type"] == "VPN"
-
-            changeset =
-              changeset(%__MODULE__{}, %{
-                ip_address: remote_ip,
-                is_vpn: is_vpn,
-                country_name: data["country_name"],
-                country_code: data["country_code2"]
-              })
-
-            Repo.insert(changeset)
+            create(remote_ip, data)
 
           {:error, _} = error ->
             error
@@ -46,5 +34,19 @@ defmodule Sanbase.Geoip.Data do
       geoip_data ->
         {:ok, geoip_data}
     end
+  end
+
+  def create(remote_ip, data) do
+    is_vpn = data["security"]["is_proxy"] == true and data["security"]["proxy_type"] == "VPN"
+
+    changeset =
+      changeset(%__MODULE__{}, %{
+        ip_address: remote_ip,
+        is_vpn: is_vpn,
+        country_name: data["country_name"],
+        country_code: data["country_code2"]
+      })
+
+    Repo.insert(changeset)
   end
 end

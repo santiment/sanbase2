@@ -3,10 +3,13 @@ defmodule Sanbase.Geoip do
 
   def fetch_geo_data(ip) do
     tag = "Geoip.fetch_geo_data"
-    url = "https://api.ipgeolocation.io/ipgeo?ip=#{ip}&include=security"
+
+    url =
+      "https://api.ipgeolocation.io/ipgeo?ip=#{ip}&include=security&fields=country_code2,country_name"
+
     headers = [{"Origin", "https://ipgeolocation.io"}]
 
-    case HTTPoison.get(url, headers, timeout: 1000) do
+    case HTTPoison.get(url, headers, timeout: 3000) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         body
         |> Jason.decode()

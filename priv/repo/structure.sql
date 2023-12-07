@@ -1640,10 +1640,10 @@ ALTER SEQUENCE public.free_form_json_storage_id_seq OWNED BY public.free_form_js
 
 CREATE TABLE public.geoip_data (
     id bigint NOT NULL,
-    ip_address character varying(255),
-    is_vpn boolean,
-    country_name character varying(255),
-    country_code character varying(255),
+    ip_address character varying(255) NOT NULL,
+    is_vpn boolean NOT NULL,
+    country_name character varying(255) NOT NULL,
+    country_code character varying(255) NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );

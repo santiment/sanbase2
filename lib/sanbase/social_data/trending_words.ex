@@ -268,32 +268,28 @@ defmodule Sanbase.SocialData.TrendingWords do
       bb_sentiment_ratios
     FROM
     (
-        SELECT
-            #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
-            dt,
-            max(dt) OVER (PARTITION BY t) AS last_dt_in_group,
-            argMax(word, computed_at) AS word,
-            argMax(project, computed_at) AS project,
-            argMax(score, computed_at) / {{score_equalizer}} AS score,
-            argMax(words_context, computed_at) AS context,
-            argMax(summary, computed_at) AS summary,
-            argMax(bullish_summary, computed_at) AS bullish_summary,
-            argMax(bearish_summary, computed_at) AS bearish_summary,
-            (argMax(positive_ratio, computed_at), argMax(neutral_ratio, computed_at), argMax(negative_ratio, computed_at)) AS sentiment_ratios,
-            (argMax(positive_bb_ratio, computed_at), argMax(neutral_bb_ratio, computed_at), argMax(negative_bb_ratio, computed_at)) AS bb_sentiment_ratios
-        FROM #{@table}
-        WHERE (dt >= toDateTime({{from}})) AND (dt < toDateTime({{to}})) AND (source = {{source}})
-        GROUP BY
-            t,
-            dt,
-            source,
-            docs_id
+      SELECT
+        #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
+        dt,
+        max(dt) OVER (PARTITION BY t) AS last_dt_in_group,
+        word,
+        project,
+        score / {{score_equalizer}} AS score,
+        words_context AS context,
+        summary,
+        bullish_summary,
+        bearish_summary,
+        tuple(positive_ratio, neutral_ratio, negative_ratio) AS sentiment_ratios,
+        tuple(positive_bb_ratio, neutral_bb_ratio, negative_bb_ratio) AS bb_sentiment_ratios
+      FROM #{@table} FINAL
+      WHERE
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
+        source = {{source}}
         #{word_type_filter_str(word_type_filter)}
     )
-    WHERE (dt = last_dt_in_group) AND (dt = t)
-    ORDER BY
-        t ASC,
-        score DESC
+    WHERE dt = last_dt_in_group
+    ORDER BY t, score DESC
     LIMIT {{limit}} BY t
     """
 
@@ -314,8 +310,8 @@ defmodule Sanbase.SocialData.TrendingWords do
   defp word_type_filter_str(word_type_filter) do
     case word_type_filter do
       :all -> ""
-      :project -> "HAVING project IS NOT NULL"
-      :non_project -> "HAVING project IS NULL"
+      :project -> "AND project IS NOT NULL"
+      :non_project -> "AND project IS NULL"
     end
   end
 

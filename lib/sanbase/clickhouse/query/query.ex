@@ -90,8 +90,8 @@ defmodule Sanbase.Clickhouse.Query do
     {sql, args} =
       Sanbase.TemplateEngine.run_generate_positional_params(
         query.sql,
-        query.parameters,
-        query.environment
+        params: query.parameters,
+        env: query.environment
       )
 
     %{sql: sql, args: args}

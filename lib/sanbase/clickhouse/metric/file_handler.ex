@@ -56,10 +56,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
 
             Enum.map(parameters_list, fn parameters ->
               metric_map
-              |> Map.put("name", TemplateEngine.run(name, parameters))
-              |> Map.put("metric", TemplateEngine.run(metric, parameters))
-              |> Map.put("human_readable_name", TemplateEngine.run(human_name, parameters))
-              |> Map.put("aliases", Enum.map(aliases, &TemplateEngine.run(&1, parameters)))
+              |> Map.put("name", TemplateEngine.run(name, params: parameters))
+              |> Map.put("metric", TemplateEngine.run(metric, params: parameters))
+              |> Map.put(
+                "human_readable_name",
+                TemplateEngine.run(human_name, params: parameters)
+              )
+              |> Map.put(
+                "aliases",
+                Enum.map(aliases, &TemplateEngine.run(&1, params: parameters))
+              )
             end)
         end
       end)

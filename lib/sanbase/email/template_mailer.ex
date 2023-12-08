@@ -15,7 +15,7 @@ defmodule Sanbase.TemplateMailer do
     if template do
       subject =
         case template[:dynamic_subject] do
-          subject when is_binary(subject) -> Sanbase.TemplateEngine.run(subject, vars)
+          subject when is_binary(subject) -> Sanbase.TemplateEngine.run(subject, params: vars)
           nil -> template[:subject]
         end
 

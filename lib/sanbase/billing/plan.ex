@@ -16,8 +16,33 @@ defmodule Sanbase.Billing.Plan do
   @plans_order [free: 0, basic: 1, pro: 2, premium: 3, custom: 4]
   @plans Keyword.keys(@plans_order)
 
+  @ppp_plans %{
+    off_70_percent: [206, 207, 208, 209]
+  }
+
+  @country_ppp_plan_map %{
+    "TR" => :off_70_percent
+  }
+
+  @symbol_to_percent_map %{
+    off_70_percent: 70
+  }
+
   def plans(), do: @plans
   def plans_order(), do: @plans_order
+
+  def ppp_plans(), do: @ppp_plans
+  def country_ppp_plan_map(), do: @country_ppp_plan_map
+  def symbol_to_percent_map(), do: @symbol_to_percent_map
+
+  def ppp_plans_for_country(nil), do: []
+
+  def ppp_plans_for_country(country_code) do
+    case Map.get(@country_ppp_plan_map, country_code) do
+      nil -> []
+      key -> @ppp_plans[key] |> by_ids()
+    end
+  end
 
   def sort_plans(plans),
     do: Enum.sort_by(plans, fn plan -> Keyword.get(@plans_order, plan) end)
@@ -35,6 +60,10 @@ defmodule Sanbase.Billing.Plan do
     field(:is_deprecated, :boolean, default: false)
     # plans that customers can't subscribe on their own
     field(:is_private, :boolean)
+
+    # is plan for parity purchasing power
+    field(:is_ppp, :boolean, default: false)
+
     # order first by `order` field, then by id
     field(:order, :integer)
 

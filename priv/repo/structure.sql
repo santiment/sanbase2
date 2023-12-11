@@ -2405,7 +2405,8 @@ CREATE TABLE public.plans (
     "order" integer DEFAULT 0,
     is_private boolean DEFAULT false,
     has_custom_restrictions boolean DEFAULT false NOT NULL,
-    restrictions jsonb
+    restrictions jsonb,
+    is_ppp boolean DEFAULT false
 );
 
 
@@ -9152,3 +9153,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231026084628);
 INSERT INTO public."schema_migrations" (version) VALUES (20231101104145);
 INSERT INTO public."schema_migrations" (version) VALUES (20231110093800);
 INSERT INTO public."schema_migrations" (version) VALUES (20231206123012);
+INSERT INTO public."schema_migrations" (version) VALUES (20231208133929);
+INSERT INTO public."schema_migrations" (version) VALUES (20231208134017);

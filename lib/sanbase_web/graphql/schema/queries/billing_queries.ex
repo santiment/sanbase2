@@ -16,6 +16,15 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
     end
 
     @desc ~s"""
+    Purchasing power parity settings for the user.
+    """
+    field :ppp_settings, :ppp_settings do
+      meta(access: :free)
+
+      resolve(&BillingResolver.ppp_settings/3)
+    end
+
+    @desc ~s"""
     List all user invoice payments.
     """
     field :payments, list_of(:payments) do

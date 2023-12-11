@@ -118,6 +118,74 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end)
   end
 
+  describe "ppp settings" do
+    test "when eligible", context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Geoip.fetch_geo_data/1,
+        {:ok,
+         %{
+           "country_name" => "Turkey",
+           "country_code2" => "TR",
+           "security" => %{"is_proxy" => false, "proxy_type" => nil}
+         }}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = ppp_settings_query()
+
+        result =
+          context.conn
+          |> execute_query(query, "pppSettings")
+
+        assert result["isEligibleForPPP"] == true
+        assert result["country"] == "Turkey"
+        assert result["percentOff"] == 70
+        assert length(result["plans"]) == 4
+      end)
+    end
+
+    test "when not eligible", context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Geoip.fetch_geo_data/1,
+        {:ok,
+         %{
+           "country_name" => "Test Country",
+           "country_code2" => "TC",
+           "security" => %{"is_proxy" => false, "proxy_type" => nil}
+         }}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = ppp_settings_query()
+
+        result =
+          context.conn
+          |> execute_query(query, "pppSettings")
+
+        assert result["isEligibleForPPP"] == false
+      end)
+    end
+
+    test "when not eligible due to VPN", context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Geoip.fetch_geo_data/1,
+        {:ok,
+         %{
+           "country_name" => "Turkey",
+           "country_code2" => "TR",
+           "security" => %{"is_proxy" => true, "proxy_type" => "VPN"}
+         }}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = ppp_settings_query()
+
+        result =
+          context.conn
+          |> execute_query(query, "pppSettings")
+
+        assert result["isEligibleForPPP"] == false
+      end)
+    end
+  end
+
   describe "#currentUser[subscriptions]" do
     test "when there are subscriptions - currentUser return list of subscriptions", context do
       insert(:subscription_essential, user: context.user)
@@ -653,6 +721,27 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   #     refute res["isEligible"]
   #   end
   # end
+
+  def ppp_settings_query() do
+    """
+    {
+      pppSettings {
+        isEligibleForPPP
+        country
+        percentOff
+        plans {
+          id
+          name
+          interval
+          amount
+          product {
+            name
+          }
+        }
+      }
+    }
+    """
+  end
 
   defp check_coupon(coupon) do
     """

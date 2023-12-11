@@ -94,6 +94,33 @@ defmodule Sanbase.Accounts.UserSettings do
     end
   end
 
+  # max emails per day = 200, max telegram per day = 1000
+  def update_settings(user, %{
+        alerts_per_day_limit: %{"email" => email_limit, "telegram" => telegram_limit}
+      })
+      when is_integer(email_limit) and email_limit > 0 and is_integer(telegram_limit) and
+             telegram_limit > 0 do
+    default_limits = Sanbase.Accounts.Settings.default_alerts_limit_per_day()
+
+    cond do
+      email_limit > 200 ->
+        {:error, "Email limit cannot be more than 200"}
+
+      telegram_limit > 1000 ->
+        {:error, "Telegram limit cannot be more than 1000"}
+
+      true ->
+        limits =
+          default_limits |> Map.merge(%{"email" => email_limit, "telegram" => telegram_limit})
+
+        settings_update(user.id, %{alerts_per_day_limit: limits})
+    end
+  end
+
+  def update_settings(_, %{alerts_per_day_limit: _}) do
+    {:error, "Invalid values for alerts_per_day_limit"}
+  end
+
   def update_settings(%User{id: id}, params) do
     settings_update(id, params)
   end

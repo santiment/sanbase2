@@ -3,7 +3,7 @@ defmodule Sanbase.Accounts.Settings do
   import Ecto.Changeset
 
   @default_alerts_limit_per_day %{
-    "email" => 50,
+    "email" => 20,
     "telegram" => 100,
     "telegram_channel" => 1000,
     "webhook" => 1000,

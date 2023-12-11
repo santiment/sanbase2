@@ -50,6 +50,8 @@ defmodule Sanbase.Queries.QueryExecution do
     result_rows: 0.001,
     result_gb: 2000
   }
+
+  @timestamps_opts [type: :utc_datetime]
   schema "clickhouse_query_executions" do
     belongs_to(:user, User)
     belongs_to(:query, Query)
@@ -150,10 +152,7 @@ defmodule Sanbase.Queries.QueryExecution do
     %{credits_cost: credits_cost, execution_details: execution_details} =
       compute_credits_cost(query_result)
 
-    credits_cost =
-      [Float.round(credits_cost), 1]
-      |> Enum.max()
-      |> Kernel.trunc()
+    credits_cost = [credits_cost, 1] |> Enum.max() |> Kernel.trunc()
 
     # credits_cost is stored outside the execution_details as it's not
     # really an execution detail, but a business logic detail. Also having
@@ -173,7 +172,7 @@ defmodule Sanbase.Queries.QueryExecution do
     |> validate_required(@required_fields)
     |> Sanbase.Repo.insert()
   rescue
-    _ ->
+    _e ->
       # This can happen if the query details are not flushed to the system.query_log
       # table or some other clickouse error occurs. Allow for 3 attempts in total before
       # reraising the exception.
@@ -206,7 +205,10 @@ defmodule Sanbase.Queries.QueryExecution do
 
     case Sanbase.Repo.one(query) do
       %__MODULE__{} = query_execution ->
-        {:ok, query_execution}
+        {:ok, %{execution_details: d} = query_execution}
+        atomized = Map.new(d, fn {k, v} -> {String.to_existing_atom(k), v} end)
+
+        {:ok, Map.put(query_execution, :execution_details, atomized)}
 
       nil ->
         case attempts_left do
@@ -265,7 +267,8 @@ defmodule Sanbase.Queries.QueryExecution do
 
     # If there is no result yet this will return {:ok, nil} which will fail and will be retried
     # from inside the rescue block
-    {:ok, %{} = execution_details} = get_execution_details(clickhouse_query_id, query_start_time)
+    {:ok, %{} = execution_details} =
+      compute_execution_details(clickhouse_query_id, query_start_time)
 
     credits_cost =
       execution_details
@@ -281,8 +284,8 @@ defmodule Sanbase.Queries.QueryExecution do
     %{execution_details: execution_details, credits_cost: credits_cost}
   end
 
-  defp get_execution_details(clickhouse_query_id, event_time_start) do
-    query_struct = get_execution_details_query(clickhouse_query_id, event_time_start)
+  defp compute_execution_details(clickhouse_query_id, event_time_start) do
+    query_struct = compute_execution_details_query(clickhouse_query_id, event_time_start)
 
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo)
 
@@ -313,7 +316,7 @@ defmodule Sanbase.Queries.QueryExecution do
     |> Sanbase.Utils.Transform.maybe_unwrap_ok_value()
   end
 
-  defp get_execution_details_query(clickhouse_query_id, event_time_start) do
+  defp compute_execution_details_query(clickhouse_query_id, event_time_start) do
     sql = """
     SELECT
       ProfileEvents['ReadCompressedBytes'] / pow(2,30) AS read_compressed_gb,

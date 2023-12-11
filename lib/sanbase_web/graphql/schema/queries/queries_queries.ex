@@ -84,6 +84,23 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     end
 
     @desc ~s"""
+    Every SQL query executed in Clickhouse is uniquely identified by an id.
+
+    This unique id is called `clickhouseQueryId` throught our API. If it is
+    provided back to thi query by the user that executed it, it returns
+    data about the execution of the query - how much RAM memory it used,
+    how many gigabytes/rows were read, how big is the result, how much CPU
+    time it used, etc.
+    """
+    field :get_clickhouse_query_execution_stats, :query_execution_stats do
+      meta(access: :free)
+      arg(:clickhouse_query_id, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&QueriesResolver.get_clickhouse_query_execution_stats/3)
+    end
+
+    @desc ~s"""
     Run the raw Clickhouse SQL query defined by the provided query and parameters.
     The query text is a string and the parameters are a JSON map.
     The query is not stored in the database, and is only executed once.

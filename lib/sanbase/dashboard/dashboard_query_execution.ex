@@ -92,10 +92,7 @@ defmodule Sanbase.Dashboard.QueryExecution do
     %{credits_cost: credits_cost, execution_details: execution_details} =
       compute_credits_cost(query_result)
 
-    credits_cost =
-      [Float.round(credits_cost), 1]
-      |> Enum.max()
-      |> Kernel.trunc()
+    credits_cost = [credits_cost, 1] |> Enum.max() |> trunc()
 
     # credits_cost is stored outside the execution_details as it's not
     # really an execution detail, but a business logic detail. Also having
@@ -198,6 +195,7 @@ defmodule Sanbase.Dashboard.QueryExecution do
       end)
       |> Map.values()
       |> Enum.sum()
+      |> trunc()
 
     %{execution_details: execution_details, credits_cost: credits_cost}
   end

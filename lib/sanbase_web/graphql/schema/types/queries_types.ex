@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:origin_id, :integer)
 
     # Basic Info
-    field(:name, non_null(:string))
+    field(:name, :string)
     field(:description, :string)
     field(:is_public, non_null(:boolean))
     field(:settings, :json)

@@ -110,37 +110,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
-  def get_clickhouse_query_execution_stats(
-        _root,
-        %{clickhouse_query_id: clickhouse_query_id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    case Dashboard.QueryExecution.get_execution_stats(user.id, clickhouse_query_id) do
-      {:ok, %{execution_details: details} = stats} ->
-        execution_details = %{
-          cpu_time_microseconds: details["cpu_time_microseconds"],
-          memory_usage_gb: details["memory_usage_gb"],
-          query_duration_ms: details["query_duration_ms"],
-          read_compressed_gb: details["read_compressed_gb"],
-          read_gb: details["read_gb"],
-          read_rows: details["read_rows"],
-          result_gb: details["result_gb"],
-          result_rows: details["result_rows"]
-        }
-
-        result =
-          stats
-          |> Map.from_struct()
-          |> Map.take([:credits_cost, :query_start_time, :query_end_time])
-          |> Map.merge(execution_details)
-
-        {:ok, result}
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
-
   def get_dashboard_schema(_root, args, resolution) do
     user_id_or_nil = resolution_to_user_id_or_nil(resolution)
 

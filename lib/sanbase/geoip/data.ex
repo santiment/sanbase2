@@ -75,7 +75,9 @@ defmodule Sanbase.Geoip.Data do
   end
 
   def create(remote_ip, data) do
-    is_vpn = data["security"]["is_proxy"] == true and data["security"]["proxy_type"] == "VPN"
+    is_vpn =
+      data["security"]["is_proxy"] == true and
+        data["security"]["proxy_type"] == "VPN"
 
     changeset =
       changeset(%__MODULE__{}, %{

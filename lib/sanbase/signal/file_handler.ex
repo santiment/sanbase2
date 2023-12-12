@@ -53,9 +53,9 @@ defmodule Sanbase.Signal.FileHandler do
 
         %{
           signal_map
-          | "name" => TemplateEngine.run(name, params: params),
-            "signal" => TemplateEngine.run(signal, params: params),
-            "human_readable_name" => TemplateEngine.run(human_readable_name, params: params)
+          | "name" => TemplateEngine.run!(name, params: params),
+            "signal" => TemplateEngine.run!(signal, params: params),
+            "human_readable_name" => TemplateEngine.run!(human_readable_name, params: params)
         }
       end)
     end

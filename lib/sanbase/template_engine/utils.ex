@@ -7,7 +7,7 @@ defmodule Sanbase.TemplateEngine.Utils do
       is_list(value) -> inspect(value)
       is_map(value) -> Jason.encode!(value)
       is_atom(value) -> to_string(value)
-      true -> raise("Unsupported value type  for value: #{inspect(value)}")
+      true -> raise("Unsupported value type for value: #{inspect(value)}")
     end
   end
 

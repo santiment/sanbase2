@@ -132,6 +132,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :popular_insight_authors,
           :popular_search_terms,
           :post,
+          :ppp_settings,
           :products_with_plans,
           :project_by_slug,
           :project,

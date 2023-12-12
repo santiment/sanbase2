@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   alias Sanbase.Billing.Subscription
   alias Sanbase.Billing.Plan
   alias Sanbase.Billing.UserPromoCode
+  alias Sanbase.Billing.Plan.PurchasingPowerParity
 
   alias Sanbase.Accounts.User
 
@@ -21,8 +22,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
 
     with {:ok, geoip_data} <- Sanbase.Geoip.Data.find_or_insert(remote_ip),
-         true <- Sanbase.Geoip.Data.eligible_for_ppp?(geoip_data.ip_address) do
-      {:ok, Sanbase.Geoip.Data.ppp_settings(geoip_data)}
+         true <- PurchasingPowerParity.ip_eligible_for_ppp?(geoip_data.ip_address) do
+      {:ok, PurchasingPowerParity.ppp_settings(geoip_data)}
     else
       _ -> {:ok, %{is_eligible_for_ppp: false}}
     end

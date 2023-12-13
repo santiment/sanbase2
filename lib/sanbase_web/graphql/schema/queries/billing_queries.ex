@@ -100,6 +100,14 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
       resolve(&BillingResolver.subscribe/3)
     end
 
+    field :pay_now, :subscription_plan do
+      arg(:subscription_id, non_null(:integer))
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.pay_now/3)
+    end
+
     @desc ~s"""
     Upgrade/Downgrade a subscription to another plan using existing card information.
     """

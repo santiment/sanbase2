@@ -54,6 +54,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
+  def pay_now(_root, %{subscription_id: subscription_id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    Subscription.pay_now(current_user, subscription_id)
+  end
+
   def route_subscription(current_user, plan, payment_instrument, coupon) do
     case payment_instrument do
       %{card_token: card_token} when is_binary(card_token) ->

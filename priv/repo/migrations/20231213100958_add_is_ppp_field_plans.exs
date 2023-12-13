@@ -1,4 +1,4 @@
-defmodule Sanbase.Repo.Migrations.AddIsPppPlans do
+defmodule Sanbase.Repo.Migrations.AddIsPppFieldPlans do
   use Ecto.Migration
 
   def change do

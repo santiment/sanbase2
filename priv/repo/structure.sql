@@ -9153,6 +9153,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231026084628);
 INSERT INTO public."schema_migrations" (version) VALUES (20231101104145);
 INSERT INTO public."schema_migrations" (version) VALUES (20231110093800);
 INSERT INTO public."schema_migrations" (version) VALUES (20231206123012);
-INSERT INTO public."schema_migrations" (version) VALUES (20231208133929);
-INSERT INTO public."schema_migrations" (version) VALUES (20231208134017);
 INSERT INTO public."schema_migrations" (version) VALUES (20231211133112);
+INSERT INTO public."schema_migrations" (version) VALUES (20231213100958);
+INSERT INTO public."schema_migrations" (version) VALUES (20231213101042);

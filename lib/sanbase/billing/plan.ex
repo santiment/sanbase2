@@ -35,6 +35,10 @@ defmodule Sanbase.Billing.Plan do
     field(:is_deprecated, :boolean, default: false)
     # plans that customers can't subscribe on their own
     field(:is_private, :boolean)
+
+    # is plan for parity purchasing power
+    field(:is_ppp, :boolean, default: false)
+
     # order first by `order` field, then by id
     field(:order, :integer)
 

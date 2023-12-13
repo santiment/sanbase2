@@ -20,6 +20,16 @@ defmodule Sanbase.Geoip.Data do
     |> validate_required([:ip_address, :is_vpn, :country_name, :country_code])
   end
 
+  def country_code_by_ip(ip_address) do
+    case find_or_insert(ip_address) do
+      {:ok, geoip_data} ->
+        geoip_data.country_code
+
+      _ ->
+        nil
+    end
+  end
+
   def find_or_insert(remote_ip) do
     case Repo.get_by(__MODULE__, ip_address: remote_ip) do
       nil ->

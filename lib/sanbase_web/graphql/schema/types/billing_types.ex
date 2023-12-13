@@ -103,4 +103,11 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
   object :setup_intent do
     field(:client_secret, non_null(:string))
   end
+
+  object :ppp_settings do
+    field(:is_eligible_for_ppp, non_null(:boolean))
+    field(:country, :string)
+    field(:plans, list_of(:plan))
+    field(:percent_off, :integer)
+  end
 end

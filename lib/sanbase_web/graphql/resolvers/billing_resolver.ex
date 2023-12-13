@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   alias Sanbase.Billing.Subscription
   alias Sanbase.Billing.Plan
   alias Sanbase.Billing.UserPromoCode
+  alias Sanbase.Billing.Plan.PurchasingPowerParity
 
   alias Sanbase.Accounts.User
 
@@ -10,21 +11,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
 
   require Logger
 
-  def products_with_plans(_root, _args, %{
-        context: %{
-          origin_url: origin_url,
-          origin_host_parts: origin_host_parts,
-          remote_ip: remote_ip
-        }
-      }) do
-    Logger.info(
-      "products_with_plans: #{inspect(origin_url)}, #{inspect(origin_host_parts)}, #{inspect(remote_ip)}"
-    )
-
+  def products_with_plans(_root, _args, %{context: %{remote_ip: remote_ip}}) do
     remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
     Sanbase.Geoip.Data.find_or_insert(remote_ip)
 
     Plan.product_with_plans()
+  end
+
+  def ppp_settings(_root, _args, %{context: %{remote_ip: remote_ip}}) do
+    remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
+
+    with {:ok, geoip_data} <- Sanbase.Geoip.Data.find_or_insert(remote_ip),
+         true <- PurchasingPowerParity.ip_eligible_for_ppp?(geoip_data.ip_address) do
+      {:ok, PurchasingPowerParity.ppp_settings(geoip_data)}
+    else
+      _ -> {:ok, %{is_eligible_for_ppp: false}}
+    end
   end
 
   def subscribe(_root, %{plan_id: plan_id} = args, %{

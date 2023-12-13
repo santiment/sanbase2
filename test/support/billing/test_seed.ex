@@ -30,7 +30,14 @@ defmodule Sanbase.Billing.TestSeed do
           plan_pro_sanbase: insert(:plan_pro_sanbase, product: product_sanbase),
           plan_pro_plus_sanbase: insert(:plan_pro_plus_sanbase, product: product_sanbase),
           plan_pro_sanbase_yearly: insert(:plan_pro_sanbase_yearly, product: product_sanbase),
-          plan_pro_graphs_factory: insert(:plan_pro_sandata, product: product_sandata)
+          plan_pro_graphs_factory: insert(:plan_pro_sandata, product: product_sandata),
+          plan_pro_70off_sanbase: insert(:plan_pro_70off_sanbase, product: product_sanbase),
+          plan_pro_70off_yearly_sanbase:
+            insert(:plan_pro_70off_yearly_sanbase, product: product_sanbase),
+          plan_pro_plus_70off_sanbase:
+            insert(:plan_pro_plus_70off_sanbase, product: product_sanbase),
+          plan_pro_plus_70off_yearly_sanbase:
+            insert(:plan_pro_plus_70off_yearly_sanbase, product: product_sanbase)
         }
 
         true = :ets.insert(ets_table, {@key, data})

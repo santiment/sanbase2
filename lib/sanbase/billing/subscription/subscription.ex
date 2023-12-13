@@ -255,6 +255,38 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
+  def pay_now(current_user, subscription_id) do
+    subscription = by_id(subscription_id)
+
+    case subscription.user_id != current_user.id do
+      true ->
+        {:error, "User is not authorized to pay for this subscription"}
+
+      false ->
+        pay_now(subscription)
+    end
+  end
+
+  def pay_now(subscription) do
+    case subscription.status do
+      :trialing -> end_trial(subscription)
+      _ -> {:error, "Subscription is not trialing"}
+    end
+  end
+
+  def end_trial(subscription) do
+    trial_end_unix = Timex.now() |> DateTime.to_unix()
+
+    with {:ok, stripe_subscription} <-
+           StripeApi.update_subscription(subscription.stripe_id, %{trial_end: trial_end_unix}),
+         {:ok, db_subscription} <-
+           sync_subscription_with_stripe(stripe_subscription, subscription) do
+      {:ok, db_subscription}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @doc ~s"""
   50% off if customer buys annual subscription while trialing
   35% if customer buys annual subscription within 30 days of the trial start date

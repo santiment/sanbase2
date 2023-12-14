@@ -1,18 +1,6 @@
 defmodule Sanbase.TemplateEngine do
   @moduledoc ~s"""
-  Produce a string value from a given template and key-value enumerable.
-  All occurances in the template that are enclosed in double braces are replaced
-  with the corersponding values from KV enumerable.
-
-  There are two ways to transform a value into its human readable variant.
-
-  The first way is to provide an :__human_readable__ key inside the kv argument which
-  is a list of the keys that need to be transformed.
-
-  The second way is to replace the `{{key}}` in the template with `{{key:human_readable}}`.
-  This way is more flexible as it allows to make only enable transformation into
-  human readable only for parts of the template.
-
+  Process templates containing {{<key>}} and {% <code> %} placeholders.
   """
 
   import Sanbase.TemplateEngine.Utils, only: [human_readable: 1, stringify_value: 1]

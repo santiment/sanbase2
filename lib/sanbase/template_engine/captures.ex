@@ -1,5 +1,14 @@
 defmodule Sanbase.TemplateEngine.Captures do
   defmodule CaptureMap do
+    @type t :: %__MODULE__{
+            code?: boolean(),
+            key: String.t(),
+            id: integer(),
+            lang: String.t() | nil,
+            lang_version: String.t() | nil,
+            inner_content: String.t()
+          }
+
     defstruct [
       :code?,
       :key,

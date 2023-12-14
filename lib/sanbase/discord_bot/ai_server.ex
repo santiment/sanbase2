@@ -20,7 +20,8 @@ defmodule Sanbase.DiscordBot.AiServer do
     ai_server_params = %{
       question: question,
       messages: messages,
-      route_blacklist: route_blacklist
+      route_blacklist: route_blacklist,
+      metadata: discord_metadata
     }
 
     do_request_ai_server(url, ai_server_params)

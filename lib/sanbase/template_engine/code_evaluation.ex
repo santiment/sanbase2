@@ -1,13 +1,13 @@
 defmodule Sanbase.TemplateEngine.CodeEvaluation do
   def eval(capture, env) do
     with true <- lang_supported?(capture),
-         {:ok, result} <- do_eval(capture.inner_content, env) do
+         {:ok, result} <- do_eval(capture.inner_content, capture.lang, env) do
       result
     end
   end
 
-  defp do_eval("", _env), do: {:ok, ""}
-  defp do_eval(input, env), do: {:ok, Sanbase.SanLang.eval(input, env)}
+  defp do_eval("", _lang = "san", _env), do: {:ok, ""}
+  defp do_eval(input, _lang = "san", env), do: {:ok, Sanbase.SanLang.eval(input, env)}
 
   defp lang_supported?(%{lang: "san", lang_version: ver}) do
     case ver do

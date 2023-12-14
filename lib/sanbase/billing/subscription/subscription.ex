@@ -153,7 +153,7 @@ defmodule Sanbase.Billing.Subscription do
   """
   def subscribe2(user, plan, payment_method_id, coupon \\ nil) do
     with :ok <- has_active_subscriptions(user, plan),
-         {:ok, user} <- StripeApi.attach_payment_method_to_customer(user, payment_method_id),
+         {:ok, _} <- StripeApi.attach_payment_method_to_customer(user, payment_method_id),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       if db_subscription.status == :active do

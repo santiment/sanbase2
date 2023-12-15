@@ -9,6 +9,14 @@ defmodule Sanbase.SanLangTest do
     assert SanLang.eval!(~s|"a string"|) == "a string"
   end
 
+  test "lists" do
+    assert SanLang.eval!("[]") == []
+    assert SanLang.eval!("[1, 2, 3]") == [1, 2, 3]
+    assert SanLang.eval!("[1, 2, 3.14]") == [1, 2, 3.14]
+    assert SanLang.eval!("[1, 2, 3.14, \"a string\"]") == [1, 2, 3.14, "a string"]
+    assert SanLang.eval!("[1,2,[3,4,[[[5]]]]]") == [1, 2, [3, 4, [[[5]]]]]
+  end
+
   test "env vars are pulled from the environment" do
     env = SanLang.Environment.new()
     env = SanLang.Environment.put_env_bindings(env, %{"a" => 1, "b" => "some string value"})

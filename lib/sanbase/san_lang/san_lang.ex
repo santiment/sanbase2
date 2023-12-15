@@ -17,7 +17,8 @@ defmodule Sanbase.SanLang do
       - pow(2, 10) => 1024
       - div(10, 5) => 2
     - Named functions with lambda function as arguments:
-      - map(@projects, fn p -> x["name"] end) => ["Bitcoin", "Ethereum"]
+      - map([1,2,3], fn x -> x + 10 end) => [11, 12, 13]
+      - filter([1,2,3], fn x -> x > 1 end) => [2, 3]
     - Comparisons and boolean expressions: ==, !=, >, <, >=, <=, and, or
       - 1 + 2 * 3 + 10 > 10 => true
   """
@@ -65,7 +66,7 @@ defmodule Sanbase.SanLang do
   end
 
   @doc ~s"""
-  Same as eval/2, but raises on error
+  Same as eval/2, but raises on error.
   """
   @spec eval(String.t(), Environment.t()) :: any() | no_return
   def eval!(input, env \\ Environment.new()) when is_binary(input) do

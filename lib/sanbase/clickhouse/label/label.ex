@@ -231,8 +231,8 @@ defmodule Sanbase.Clickhouse.Label do
   end
 
   defp addresses_labels_query(slug, blockchain, addresses) do
-    sql = create_addresses_labels_query()
     params = %{addresses: addresses, slug: slug, blockchain: blockchain}
+    sql = create_addresses_labels_query(slug)
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
@@ -270,7 +270,7 @@ defmodule Sanbase.Clickhouse.Label do
     end)
   end
 
-  defp create_addresses_labels_query() do
+  defp create_addresses_labels_query(slug) do
     """
     -- Query using labeling framework v2
     SELECT
@@ -335,30 +335,33 @@ defmodule Sanbase.Clickhouse.Label do
                     WHERE
                         address IN [{{addresses}}] AND blockchain = {{blockchain}}
                 ) AS a
-            LEFT JOIN
-                (
-                    SELECT
-                        label_id,
-                        key,
-                        value,
-                        asset_name,
-                        multiIf(
-                            asset_name != {{slug}} AND key = 'whale', NULL,
-                            key
-                        ) AS filtered_key
-                    FROM
-                        label_metadata
-                ) AS m USING (label_id)
-            WHERE m.filtered_key IS NOT NULL
-            GROUP BY address
+            #{maybe_join_slug(slug)}
         )
     )
     """
   end
 
-  def generate_username(user_id) do
-    :crypto.hash(:sha256, to_string(user_id))
-    |> Base.encode16()
-    |> binary_part(0, 6)
+  defp maybe_join_slug(nil), do: ""
+
+  defp maybe_join_slug(slug) when not is_nil(slug) do
+    # TODO: Describe what this does exactly
+    """
+    LEFT JOIN
+    (
+        SELECT
+            label_id,
+            key,
+            value,
+            asset_name,
+            multiIf(
+                asset_name != {{slug}} AND key = 'whale', NULL,
+                key
+            ) AS filtered_key
+        FROM
+            label_metadata
+    ) AS m USING (label_id)
+    WHERE m.filtered_key IS NOT NULL
+    GROUP BY address
+    """
   end
 end

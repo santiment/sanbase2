@@ -153,8 +153,8 @@ defmodule Sanbase.TemplateEngine do
       message: """
       Error parsing the template. The template contains a key that is not present in the params map.
 
-      Template: #{inspect(template)}
       Key: #{inspect(key)}
+      Template: #{inspect(template)}
       Params: #{inspect(params)}
       Env: #{inspect(env)}
       """
@@ -190,19 +190,20 @@ defmodule Sanbase.TemplateEngine do
         [key, modifier] -> {key, modifier}
       end
 
-    case Map.has_key?(params, key) do
-      true ->
-        value = params[key]
-
-        value =
-          if modifier == "human_readable",
-            do: human_readable(value),
-            else: value
-
-        {:ok, value}
-
-      false ->
-        :no_value
+    case Map.get(params, key) do
+      nil -> :no_value
+      value -> {:ok, maybe_apply_modifier(value, key, modifier)}
     end
   end
+
+  defp maybe_apply_modifier(value, _key, "human_readable"), do: human_readable(value)
+  defp maybe_apply_modifier(value, _key, nil), do: value
+
+  defp maybe_apply_modifier(_, key, modifier),
+    do:
+      raise(TemplateEngineException,
+        message: """
+        Unsupported or mistyped modifier '#{modifier}' for key '#{key}'
+        """
+      )
 end

@@ -15,6 +15,7 @@ defmodule Sanbase.StripeApi do
         }
 
   def attach_payment_method_to_customer(user, payment_method_id) do
+    # Step 1: Attach payment method to the customer
     {:ok, user} = Billing.create_or_update_stripe_customer(user)
 
     params = %{
@@ -23,6 +24,13 @@ defmodule Sanbase.StripeApi do
     }
 
     Stripe.PaymentMethod.attach(params)
+
+    # Step 2: Set this payment method as default for the customer
+    update_params = %{
+      invoice_settings: %{default_payment_method: payment_method_id}
+    }
+
+    Stripe.Customer.update(user.stripe_customer_id, update_params)
   end
 
   # Stripe docs: https://stripe.com/docs/payments/setupintents/lifecycle

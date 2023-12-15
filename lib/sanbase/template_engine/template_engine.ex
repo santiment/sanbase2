@@ -106,6 +106,9 @@ defmodule Sanbase.TemplateEngine do
 
       iex> run_generate_positional_params("{{name}} is {% 20 + 8 %} years old", params: %{name: "Tom"})
       {:ok, {"?1 is ?2 years old", ["Tom", 28]}}
+
+      iex> run_generate_positional_params("param name is reused {{name}} {{name}} is {% 20 + 8 %} years old {{name}}", params: %{name: "Tom"})
+      {:ok, {"param name is reused ?1 ?1 is ?2 years old ?1", ["Tom", 28]}}
   """
   @spec run_generate_positional_params(String.t(), opts) :: {String.t(), list(any())}
   def run_generate_positional_params(template, opts) do

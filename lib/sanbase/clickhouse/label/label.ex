@@ -335,33 +335,24 @@ defmodule Sanbase.Clickhouse.Label do
                     WHERE
                         address IN [{{addresses}}] AND blockchain = {{blockchain}}
                 ) AS a
-            #{maybe_join_slug(slug)}
+            LEFT JOIN
+              (
+                  SELECT
+                      label_id,
+                      key,
+                      value,
+                      asset_name,
+                      multiIf(
+                          #{if slug, do: "asset_name != {{slug}} AND "} key = 'whale', NULL,
+                          key
+                      ) AS filtered_key
+                  FROM
+                      label_metadata
+              ) AS m USING (label_id)
+              WHERE m.filtered_key IS NOT NULL
+              GROUP BY address
         )
     )
-    """
-  end
-
-  defp maybe_join_slug(nil), do: ""
-
-  defp maybe_join_slug(slug) when not is_nil(slug) do
-    # TODO: Describe what this does exactly
-    """
-    LEFT JOIN
-    (
-        SELECT
-            label_id,
-            key,
-            value,
-            asset_name,
-            multiIf(
-                asset_name != {{slug}} AND key = 'whale', NULL,
-                key
-            ) AS filtered_key
-        FROM
-            label_metadata
-    ) AS m USING (label_id)
-    WHERE m.filtered_key IS NOT NULL
-    GROUP BY address
     """
   end
 end

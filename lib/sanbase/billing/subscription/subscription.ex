@@ -153,7 +153,7 @@ defmodule Sanbase.Billing.Subscription do
   """
   def subscribe2(user, plan, payment_method_id, coupon \\ nil) do
     with :ok <- has_active_subscriptions(user, plan),
-         {:ok, user} <- StripeApi.attach_payment_method_to_customer(user, payment_method_id),
+         {:ok, _} <- StripeApi.attach_payment_method_to_customer(user, payment_method_id),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       if db_subscription.status == :active do
@@ -252,6 +252,38 @@ defmodule Sanbase.Billing.Subscription do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  def pay_now(current_user, subscription_id) do
+    subscription = by_id(subscription_id)
+
+    case subscription.user_id != current_user.id do
+      true ->
+        {:error, "User is not authorized to pay for this subscription"}
+
+      false ->
+        pay_now(subscription)
+    end
+  end
+
+  def pay_now(subscription) do
+    case subscription.status do
+      :trialing -> end_trial(subscription)
+      _ -> {:error, "Subscription is not trialing"}
+    end
+  end
+
+  def end_trial(subscription) do
+    trial_end_unix = Timex.now() |> DateTime.to_unix()
+
+    with {:ok, stripe_subscription} <-
+           StripeApi.update_subscription(subscription.stripe_id, %{trial_end: trial_end_unix}),
+         {:ok, db_subscription} <-
+           sync_subscription_with_stripe(stripe_subscription, subscription) do
+      {:ok, db_subscription}
+    else
+      {:error, reason} -> {:error, reason}
     end
   end
 

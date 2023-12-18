@@ -194,6 +194,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       ) do
     with {:ok, result_string} <- Result.decode_and_decompress(compressed_query_execution_result),
          {:ok, query_execution_result} <- Result.from_json_string(result_string),
+         true <- Result.all_fields_present?(query_execution_result),
          {:ok, dashboard_cache} <-
            Dashboards.store_dashboard_query_execution(
              dashboard_id,
@@ -306,6 +307,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   end
 
   # Exectutions Histiory
+
+  def get_clickhouse_query_execution_stats(
+        _root,
+        %{clickhouse_query_id: clickhouse_query_id},
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    case Queries.QueryExecution.get_execution_stats(user.id, clickhouse_query_id) do
+      {:ok, %{execution_details: details} = result} ->
+        # For legacy reasons the API response is flat.
+        result = Map.delete(result, :execution_details) |> Map.merge(details)
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
 
   def get_query_execution(
         _root,

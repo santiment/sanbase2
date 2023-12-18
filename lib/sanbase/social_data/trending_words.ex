@@ -281,7 +281,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         bearish_summary,
         tuple(positive_ratio, neutral_ratio, negative_ratio) AS sentiment_ratios,
         tuple(positive_bb_ratio, neutral_bb_ratio, negative_bb_ratio) AS bb_sentiment_ratios
-      FROM #{@table}
+      FROM #{@table} FINAL
       WHERE
         dt >= toDateTime({{from}}) AND
         dt < toDateTime({{to}}) AND
@@ -362,7 +362,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   defp default_source do
     case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
       "prod" -> "reddit,telegram,twitter_crypto"
-      _ -> "4chan,reddit"
+      _ -> "4chan,reddit,telegram"
     end
   end
 end

@@ -16,6 +16,15 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
     end
 
     @desc ~s"""
+    Purchasing power parity settings for the user.
+    """
+    field :ppp_settings, :ppp_settings do
+      meta(access: :free)
+
+      resolve(&BillingResolver.ppp_settings/3)
+    end
+
+    @desc ~s"""
     List all user invoice payments.
     """
     field :payments, list_of(:payments) do
@@ -89,6 +98,14 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
       middleware(JWTAuth)
 
       resolve(&BillingResolver.subscribe/3)
+    end
+
+    field :pay_now, :subscription_plan do
+      arg(:subscription_id, non_null(:integer))
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.pay_now/3)
     end
 
     @desc ~s"""

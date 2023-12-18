@@ -1,69 +1,20 @@
-defmodule SanbaseWeb.UserController do
-  use SanbaseWeb, :controller
-
+defmodule SanbaseWeb.GenericAdmin.User do
   alias Sanbase.Accounts.User
-  alias SanbaseWeb.Router.Helpers, as: Routes
+  alias SanbaseWeb.GenericController
 
-  def index(conn, _params) do
-    users = User.all_users()
-    render(conn, "index.html", users: users)
-  end
+  @resource %{
+    "users" => %{
+      module: User,
+      admin_module: __MODULE__,
+      singular: "user",
+      index_fields: [:id, :name, :email, :username],
+      edit_fields: [:stripe_customer_id, :email],
+      show_fields: :all,
+      actions: [:show, :edit]
+    }
+  }
 
-  def search(conn, %{"user_search" => %{"user_search" => search_text}}) do
-    users =
-      case Integer.parse(search_text) do
-        {user_id, ""} -> search_by_id(user_id)
-        _ -> search_by_text(String.downcase(search_text))
-      end
-
-    render(conn, "index.html", users: users)
-  end
-
-  def show(conn, %{"id" => id}) do
-    {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
-
-    render(conn, "show.html",
-      user: user,
-      string_fields: string_fields(User),
-      belongs_to: belongs_to(user),
-      has_many: has_many(user)
-    )
-  end
-
-  def edit(conn, %{"id" => id}) do
-    {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
-    changeset = User.changeset(user, %{})
-    render(conn, "edit.html", user: user, changeset: changeset)
-  end
-
-  def update(conn, %{"id" => id, "user" => user_params}) do
-    {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
-
-    case User.changeset(user, user_params) |> Sanbase.Repo.update() do
-      {:ok, user} ->
-        conn
-        |> put_flash(:info, "User updated successfully.")
-        |> redirect(to: Routes.user_path(conn, :show, user))
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html", user: user, changeset: changeset)
-    end
-  end
-
-  def reset_api_call_limits(conn, %{"id" => id}) do
-    {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
-
-    Sanbase.ApiCallLimit.reset(user)
-
-    show(conn, %{"id" => user.id})
-  end
-
-  def reset_queries_credits_spent(conn, %{"id" => user_id}) do
-    Sanbase.Math.to_integer(user_id)
-    |> Sanbase.ModeratorQueries.reset_user_monthly_credits()
-
-    show(conn, %{"id" => user_id})
-  end
+  def resource, do: @resource
 
   def has_many(user) do
     user =
@@ -73,7 +24,7 @@ defmodule SanbaseWeb.UserController do
       %{
         model: "Subscriptions",
         rows: user.subscriptions,
-        fields: [:id, :plan, :status],
+        fields: [:id, :plan, :status, :type],
         funcs: %{
           plan: fn s -> s.plan.product.name <> "/" <> s.plan.name end
         }
@@ -152,31 +103,40 @@ defmodule SanbaseWeb.UserController do
           }
         ],
         actions: [:reset_queries_credits_spent]
+      },
+      %{
+        name: "SAN Staked in LP SAN/ETH",
+        fields: [
+          %{
+            field_name: "Eligible for free Liquidity Subscription",
+            data:
+              Sanbase.Billing.Subscription.LiquiditySubscription.eligible_for_liquidity_subscription?(
+                user.id
+              )
+          },
+          %{
+            field_name: "SAN Staked",
+            data: Sanbase.Accounts.User.UniswapStaking.fetch_uniswap_san_staked_user(user.id)
+          }
+        ],
+        actions: []
       }
     ]
   end
 
-  defp search_by_text(text) do
-    User.by_search_text(text)
+  def reset_api_call_limits(conn, %{id: id}) do
+    {:ok, user} = Sanbase.Math.to_integer(id) |> User.by_id()
+
+    Sanbase.ApiCallLimit.reset(user)
+
+    GenericController.show(conn, %{"resource" => "users", "id" => user.id})
   end
 
-  defp search_by_id(user_id) do
-    case Sanbase.Accounts.get_user(user_id) do
-      {:ok, user} -> [user]
-      _ -> []
-    end
-  end
+  def reset_queries_credits_spent(conn, %{id: user_id}) do
+    Sanbase.Math.to_integer(user_id)
+    |> Sanbase.ModeratorQueries.reset_user_monthly_credits()
 
-  def fields(module) do
-    module.__schema__(:fields)
-  end
-
-  defp string_fields(module) do
-    module
-    |> fields()
-
-    # |> Enum.filter(fn field -> module.__schema__(:type, field) in [:string, :naive_datetime, :utc_datetime] end)
-    # |> List.insert_at(0, [:id])
+    GenericController.show(conn, %{"resource" => "users", "id" => user_id})
   end
 
   defimpl String.Chars, for: Map do

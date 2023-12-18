@@ -294,15 +294,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{
           dashboard_id: dashboard_id,
           dashboard_query_mapping_id: mapping_id,
-          key: key
+          dashboard_parameter_key: dashboard_parameter_key
         },
         %{context: %{auth: %{current_user: user}}}
       ) do
-    Dashboards.add_global_parameter_override(
+    Dashboards.delete_global_parameter_override(
       dashboard_id,
       mapping_id,
       user.id,
-      key
+      dashboard_parameter_key: dashboard_parameter_key
     )
   end
 

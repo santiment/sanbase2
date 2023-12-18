@@ -650,6 +650,17 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       resolve(&QueriesResolver.add_dashboard_global_parameter_override/3)
     end
 
+    field :delete_dashboard_global_parameter_override, :dashboard do
+      arg(:dashboard_id, non_null(:integer))
+      arg(:dashboard_query_mapping_id, non_null(:string))
+
+      arg(:dashboard_parameter_key, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&QueriesResolver.delete_dashboard_global_parameter_override/3)
+    end
+
     field :add_dashboard_text_widget, :dashboard_text_widget_tuple do
       arg(:dashboard_id, non_null(:integer))
 

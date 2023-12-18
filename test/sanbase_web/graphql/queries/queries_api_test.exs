@@ -642,16 +642,18 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
              }
 
       # Add global parameter override for a query local parameter
+      param_override_args = %{
+        dashboard_id: dashboard.id,
+        dashboard_query_mapping_id: mapping["id"],
+        dashboard_parameter_key: "slug",
+        query_parameter_key: "slug"
+      }
+
       override =
         execute_global_parameter_mutation(
           context.conn,
           :add_dashboard_global_parameter_override,
-          %{
-            dashboard_id: dashboard.id,
-            dashboard_query_mapping_id: mapping["id"],
-            dashboard_parameter_key: "slug",
-            query_parameter_key: "slug"
-          }
+          param_override_args
         )
         |> get_in(["data", "addDashboardGlobalParameterOverride"])
 
@@ -665,6 +667,28 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                  }
                }
              }
+
+      # Delete global parameter override for a query local parameter
+      override =
+        execute_global_parameter_mutation(
+          context.conn,
+          :delete_dashboard_global_parameter_override,
+          param_override_args |> Map.delete(:query_parameter_key)
+        )
+        |> get_in(["data", "deleteDashboardGlobalParameterOverride"])
+
+      assert override == %{
+               "parameters" => %{
+                 "slug" => %{"overrides" => [], "value" => "santiment"}
+               }
+             }
+
+      # Add back the deleted param override
+      execute_global_parameter_mutation(
+        context.conn,
+        :add_dashboard_global_parameter_override,
+        param_override_args
+      )
 
       mock_fun =
         Sanbase.Mock.wrap_consecutives(

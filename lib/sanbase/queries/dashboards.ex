@@ -438,14 +438,17 @@ defmodule Sanbase.Dashboards do
           dashboard_id(),
           dashboard_query_mapping_id(),
           user_id(),
-          String.t()
+          Keyword.t()
         ) :: {:ok, Dashboard.t()} | {:error, String.t()}
   def delete_global_parameter_override(
         dashboard_id,
         dashboard_query_mapping_id,
         querying_user_id,
-        global_key
+        opts
       ) do
+    # query_key = Keyword.fetch!(opts, :query_parameter_key)
+    dashboard_key = Keyword.fetch!(opts, :dashboard_parameter_key)
+
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
       get_dashboard_by_mapping_id_for_mutation(
@@ -457,10 +460,10 @@ defmodule Sanbase.Dashboards do
     |> Ecto.Multi.run(
       :delete_global_parameter_override,
       fn _repo, %{get_dashboard_for_mutation: struct} ->
-        case Map.get(struct.parameters, global_key) do
+        case Map.get(struct.parameters, dashboard_key) do
           nil ->
             {:error,
-             "Parameter #{global_key} does not exist in dashboard with id #{dashboard_id}."}
+             "Parameter #{dashboard_key} does not exist in dashboard with id #{dashboard_id}."}
 
           %{} = map ->
             updated_overrides =
@@ -470,7 +473,7 @@ defmodule Sanbase.Dashboards do
               )
 
             updated_parameter_map = Map.put(map, "overrides", updated_overrides)
-            updated_parameters = Map.put(struct.parameters, global_key, updated_parameter_map)
+            updated_parameters = Map.put(struct.parameters, dashboard_key, updated_parameter_map)
             changeset = Dashboard.update_changeset(struct, %{parameters: updated_parameters})
 
             Repo.update(changeset)

@@ -303,15 +303,17 @@ defmodule Sanbase.Dashboards do
   @doc ~s"""
   Delete a global parameter
   """
-  @spec delete_global_parameter(dashboard_id(), user_id(), String.t()) ::
+  @spec delete_global_parameter(dashboard_id(), user_id(), Keyword.t()) ::
           {:ok, Dashboard.t()} | {:error, String.t()}
-  def delete_global_parameter(dashboard_id, querying_user_id, key) do
+  def delete_global_parameter(dashboard_id, querying_user_id, opts) do
+    dashboard_key = Keyword.fetch!(opts, :dashboard_parameter_key)
+
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
       get_dashboard_for_mutation(dashboard_id, querying_user_id)
     end)
     |> Ecto.Multi.run(:delete_global_parameter, fn _repo, %{get_dashboard_for_mutation: struct} ->
-      parameters = Map.delete(struct.parameters, key)
+      parameters = Map.delete(struct.parameters, dashboard_key)
       changeset = Dashboard.update_changeset(struct, %{parameters: parameters})
 
       Repo.update(changeset)
@@ -446,7 +448,6 @@ defmodule Sanbase.Dashboards do
         querying_user_id,
         opts
       ) do
-    # query_key = Keyword.fetch!(opts, :query_parameter_key)
     dashboard_key = Keyword.fetch!(opts, :dashboard_parameter_key)
 
     Ecto.Multi.new()

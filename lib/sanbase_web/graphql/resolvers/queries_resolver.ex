@@ -265,7 +265,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{dashboard_id: dashboard_id, key: key},
         %{context: %{auth: %{current_user: user}}}
       ) do
-    Dashboards.delete_global_parameter(dashboard_id, user.id, key)
+    Dashboards.delete_global_parameter(dashboard_id, user.id, dashboard_parameter_key: key)
   end
 
   # Dashboard Global parameter Overrides CRUD (without explicit read)

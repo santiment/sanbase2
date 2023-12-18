@@ -24,7 +24,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
       %{
         model: "Subscriptions",
         rows: user.subscriptions,
-        fields: [:id, :plan, :status],
+        fields: [:id, :plan, :status, :type],
         funcs: %{
           plan: fn s -> s.plan.product.name <> "/" <> s.plan.name end
         }
@@ -103,6 +103,23 @@ defmodule SanbaseWeb.GenericAdmin.User do
           }
         ],
         actions: [:reset_queries_credits_spent]
+      },
+      %{
+        name: "SAN Staked in LP SAN/ETH",
+        fields: [
+          %{
+            field_name: "Eligible for free Liquidity Subscription",
+            data:
+              Sanbase.Billing.Subscription.LiquiditySubscription.eligible_for_liquidity_subscription?(
+                user.id
+              )
+          },
+          %{
+            field_name: "SAN Staked",
+            data: Sanbase.Accounts.User.UniswapStaking.fetch_uniswap_san_staked_user(user.id)
+          }
+        ],
+        actions: []
       }
     ]
   end

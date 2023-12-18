@@ -194,6 +194,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       ) do
     with {:ok, result_string} <- Result.decode_and_decompress(compressed_query_execution_result),
          {:ok, query_execution_result} <- Result.from_json_string(result_string),
+         true <- Result.all_fields_present?(query_execution_result),
          {:ok, dashboard_cache} <-
            Dashboards.store_dashboard_query_execution(
              dashboard_id,

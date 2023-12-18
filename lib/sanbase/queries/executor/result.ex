@@ -77,6 +77,24 @@ defmodule Sanbase.Queries.Executor.Result do
     end
   end
 
+  def all_fields_present?(%__MODULE__{} = result) do
+    nil_fields =
+      result
+      |> Map.from_struct()
+      # The frontend won't provide compressed rows when caching the query,
+      # so if it's missing it should be ok.
+      |> Map.filter(fn {k, v} -> is_nil(v) and k != :compressed_rows end)
+      |> Enum.map(fn {k, _v} -> Inflex.camelize(k, :lower) end)
+
+    case nil_fields do
+      [] ->
+        true
+
+      _ ->
+        {:error, "The following result fields are not provided: #{Enum.join(nil_fields, ", ")}"}
+    end
+  end
+
   defp map_from_json(json) do
     with {:ok, map} <- Jason.decode(json) do
       # The JSON provided by the frontend to the API might include

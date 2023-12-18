@@ -109,7 +109,7 @@ defmodule Sanbase.Queries.ResolveParametersTest do
                dashboard.id,
                dashboard_query_mapping.id,
                user.id,
-               "slug"
+               dashboard_parameter_key: "slug"
              )
 
     assert {:ok, fetched_dashboard_query} =
@@ -135,7 +135,7 @@ defmodule Sanbase.Queries.ResolveParametersTest do
              Sanbase.Dashboards.delete_global_parameter(
                dashboard.id,
                user.id,
-               "slug"
+               dashboard_parameter_key: "slug"
              )
 
     assert {:ok, fetched_dashboard_query} =

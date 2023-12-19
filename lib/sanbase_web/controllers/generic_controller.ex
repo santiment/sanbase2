@@ -20,9 +20,15 @@ defmodule SanbaseWeb.GenericController do
     module = module_from_resource(resource)
 
     rows =
-      case Integer.parse(search_text) do
-        {id, ""} -> search_by_id(module, id)
-        _ -> search_by_text(module, String.downcase(search_text))
+      case parse_field_value(search_text) do
+        {:ok, field, value} ->
+          search_by_field_value(module, field, value)
+
+        :error ->
+          case Integer.parse(search_text) do
+            {id, ""} -> search_by_id(module, id)
+            _ -> search_by_text(module, String.downcase(search_text))
+          end
       end
 
     render(conn, "index.html", table: resource_to_table_params(resource, rows))
@@ -91,6 +97,8 @@ defmodule SanbaseWeb.GenericController do
   def resource_to_table_params(resource, rows \\ nil) do
     name = String.capitalize(resource)
     module = @resource_module_map[resource][:module]
+    preloads = @resource_module_map[resource][:preloads] || []
+    funcs = @resource_module_map[resource][:funcs] || %{}
 
     index_fields =
       case @resource_module_map[resource][:index_fields] do
@@ -102,20 +110,21 @@ defmodule SanbaseWeb.GenericController do
     %{
       resource: resource,
       resource_name: name,
-      rows: rows || all(module),
+      rows: rows || all(module, preloads),
       fields: index_fields,
-      funcs: %{},
+      funcs: funcs,
       actions: @resource_module_map[resource][:actions]
     }
   end
 
-  def all(module) do
+  def all(module, preloads \\ []) do
     from(
       m in module,
       order_by: [desc: m.id],
       limit: 10
     )
     |> Repo.all()
+    |> Repo.preload(preloads)
   end
 
   defp search_by_text(module, text) do
@@ -135,5 +144,29 @@ defmodule SanbaseWeb.GenericController do
 
   defp string_fields(module) do
     fields(module)
+  end
+
+  def parse_field_value(str) do
+    case Regex.run(~r/(\w+)\s*=\s*(\w+)/, str) do
+      [_, field, value] -> {:ok, field, value}
+      _ -> :error
+    end
+  end
+
+  def search_by_field_value(module, field, value) do
+    case Integer.parse(value) do
+      {id, ""} ->
+        search_by_id(module, id)
+
+      _ ->
+        value = String.strip(value)
+        search_text = "%" <> value <> "%"
+        field = String.to_existing_atom(field)
+
+        from(u in module,
+          where: like(field(u, ^field), ^search_text)
+        )
+        |> Repo.all()
+    end
   end
 end

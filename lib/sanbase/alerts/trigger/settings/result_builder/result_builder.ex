@@ -31,7 +31,7 @@ defmodule Sanbase.Alert.ResultBuilder do
           settings :: settings,
           template_kv_fun :: (map(), settings -> {String.t(), map()}),
           opts :: Keyword.t()
-        ) :: settings
+        ) :: {:ok, settings}
         when settings: map(), identifier: any()
   def build(
         data,
@@ -56,11 +56,13 @@ defmodule Sanbase.Alert.ResultBuilder do
         end
       end)
 
-    %{
+    settings = %{
       settings
       | triggered?: template_kv != %{},
         template_kv: template_kv
     }
+
+    {:ok, settings}
   end
 
   @doc ~s"""
@@ -106,24 +108,27 @@ defmodule Sanbase.Alert.ResultBuilder do
     added_items = (current_list -- previous_list) |> Enum.reject(&is_nil/1)
     removed_items = (previous_list -- current_list) |> Enum.reject(&is_nil/1)
 
-    case added_items != [] or removed_items != [] do
-      true ->
-        template_kv =
-          template_kv_fun.(
-            %{added_items_key => added_items, removed_items_key => removed_items},
+    settings =
+      case added_items != [] or removed_items != [] do
+        true ->
+          template_kv =
+            template_kv_fun.(
+              %{added_items_key => added_items, removed_items_key => removed_items},
+              settings
+            )
+
+          %{
             settings
-          )
+            | template_kv: %{"default" => template_kv},
+              state: %{state_list_key => current_list},
+              triggered?: true
+          }
 
-        %{
-          settings
-          | template_kv: %{"default" => template_kv},
-            state: %{state_list_key => current_list},
-            triggered?: true
-        }
+        false ->
+          %{settings | triggered?: false}
+      end
 
-      false ->
-        %{settings | triggered?: false}
-    end
+    {:ok, settings}
   end
 
   def build_state_difference(
@@ -163,11 +168,8 @@ defmodule Sanbase.Alert.ResultBuilder do
         end
       end)
 
-    %{
-      settings
-      | triggered?: template_kv != %{},
-        template_kv: template_kv
-    }
+    settings = %{settings | triggered?: template_kv != %{}, template_kv: template_kv}
+    {:ok, settings}
   end
 
   @doc ~s"""

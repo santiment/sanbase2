@@ -45,15 +45,21 @@ defmodule Sanbase.Alert.Evaluator do
     # in the first place and it is trated differently
     cache_key = {Trigger.cache_key(trigger), {last_triggered, cooldown}}
 
-    evaluated_trigger =
+    result =
       Cache.get_or_store(
         :alerts_evaluator_cache,
         cache_key,
         fn -> Trigger.evaluate(trigger) end
       )
 
-    fill_user_trigger_from_cached(user_trigger, evaluated_trigger)
-    |> emit_event(Trigger.triggered?(evaluated_trigger), :alert_triggered)
+    case result do
+      {:ok, evaluated_trigger} ->
+        fill_user_trigger_from_cached(user_trigger, evaluated_trigger)
+        |> emit_event(Trigger.triggered?(evaluated_trigger), :alert_triggered)
+
+      {:error, :disable_alert} ->
+        UserTrigger.update_is_active(user_trigger.id, user_trigger.user_id, false)
+    end
   end
 
   defp fill_user_trigger_from_cached(user_trigger, evaluated_trigger) do

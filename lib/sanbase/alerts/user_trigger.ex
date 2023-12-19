@@ -81,8 +81,8 @@ defmodule Sanbase.Alert.UserTrigger do
     |> validate_required([:user_id, :trigger])
   end
 
-  def update_is_active(user_trigger_id, user, is_active) do
-    update_user_trigger(user.id, %{
+  def update_is_active(user_trigger_id, user_id, is_active) do
+    update_user_trigger(user_id, %{
       id: user_trigger_id,
       is_active: is_active
     })

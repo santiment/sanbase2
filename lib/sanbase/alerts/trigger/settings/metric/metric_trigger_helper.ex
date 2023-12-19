@@ -33,26 +33,32 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
 
   def evaluate(%{} = settings, _trigger) do
     case get_data(settings) do
-      data when is_list(data) and data != [] ->
+      {:ok, data} when is_list(data) and data != [] ->
         build_result(data, settings)
 
       _ ->
-        %{settings | triggered?: false}
+        # TODO: Handle the error case
+        {:ok, %{settings | triggered?: false}}
     end
   end
 
   def get_data(%{} = settings) do
     %{filtered_target: %{list: target_list, type: type}} = settings
 
-    target_list
-    |> Enum.map(fn identifier ->
-      {identifier, fetch_metric(%{type => identifier}, settings)}
-    end)
-    |> Enum.reject(fn
-      {_, {:error, _}} -> true
-      {_, nil} -> true
-      _ -> false
-    end)
+    data =
+      target_list
+      |> Enum.map(fn identifier ->
+        {identifier, fetch_metric(%{type => identifier}, settings)}
+      end)
+      |> Enum.reject(fn
+        {_, {:error, _}} -> true
+        {_, nil} -> true
+        _ -> false
+      end)
+
+    # TODO: Return error on mistyped/no longer supported metric
+    # in order to disable the alert
+    {:ok, data}
   end
 
   # Private functions

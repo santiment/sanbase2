@@ -239,6 +239,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&BillingResolver.eligible_for_sanbase_trial?/3)
     end
 
+    field :is_eligible_for_api_trial, :boolean do
+      resolve(&BillingResolver.eligible_for_api_trial?/3)
+    end
+
     field :san_credit_balance, :float do
       resolve(&BillingResolver.san_credit_balance/3)
     end

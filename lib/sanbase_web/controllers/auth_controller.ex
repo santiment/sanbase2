@@ -23,10 +23,12 @@ defmodule SanbaseWeb.AuthController do
     # state sharing between the request and the callback phases, which gives us the
     # option to dynamically configure via parameters the redirect URLs and the real
     # origin URL
+
     referer_url = Plug.Conn.get_req_header(conn, "referer") |> List.first()
     referer_url = referer_url || SanbaseWeb.Endpoint.website_url()
 
     success_redirect_url = get_redirect_url(params, "success_redirect_url", referer_url)
+
     fail_redirect_url = get_redirect_url(params, "fail_redirect_url", referer_url)
 
     origin_url =
@@ -61,16 +63,20 @@ defmodule SanbaseWeb.AuthController do
     args = %{login_origin: :google, origin_url: origin_url}
 
     with true <- is_binary(email) and byte_size(email) > 0,
-         {:ok, user} <- User.find_or_insert_by(:email, email, args),
+         {:ok, %{first_login: first_login} = user} <- User.find_or_insert_by(:email, email, args),
          {:ok, _, user} <-
            Accounts.forward_registration(user, "google_oauth", args),
          {:ok, %{} = jwt_tokens_map} <-
            SanbaseWeb.Guardian.get_jwt_tokens(user, device_data) do
       emit_event({:ok, user}, :login_user, args)
 
+      redirect_url = get_session(conn, :__san_success_redirect_url)
+
+      redirect_url = extend_if_first_login(redirect_url, first_login)
+
       conn
       |> SanbaseWeb.Guardian.add_jwt_tokens_to_conn_session(jwt_tokens_map)
-      |> redirect(external: get_session(conn, :__san_success_redirect_url))
+      |> redirect(external: redirect_url)
     else
       _ ->
         conn
@@ -100,6 +106,19 @@ defmodule SanbaseWeb.AuthController do
       _ ->
         conn
         |> redirect(external: get_session(conn, :__san_fail_redirect_url))
+    end
+  end
+
+  defp extend_if_first_login(redirect_url, first_login) do
+    case first_login do
+      true ->
+        redirect_url
+        |> URI.parse()
+        |> URI.append_query("signup=true")
+        |> URI.to_string()
+
+      false ->
+        redirect_url
     end
   end
 

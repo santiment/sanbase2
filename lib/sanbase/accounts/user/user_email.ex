@@ -119,13 +119,13 @@ defmodule Sanbase.Accounts.User.Email do
         @token_valid_window_minutes
   end
 
-  def send_login_email(user, origin_host_parts, args \\ %{})
+  def send_login_email(user, first_login, origin_host_parts, args \\ %{})
 
-  def send_login_email(user, ["santiment", "net"] = origin_host_parts, args),
-    do: do_send_login_email(user, origin_host_parts, args)
+  def send_login_email(user, first_login, ["santiment", "net"] = origin_host_parts, args),
+    do: do_send_login_email(user, first_login, origin_host_parts, args)
 
-  def send_login_email(user, [_, "santiment", "net"] = origin_host_parts, args),
-    do: do_send_login_email(user, origin_host_parts, args)
+  def send_login_email(user, first_login, [_, "santiment", "net"] = origin_host_parts, args),
+    do: do_send_login_email(user, first_login, origin_host_parts, args)
 
   def send_verify_email(user) do
     verify_link = SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
@@ -134,18 +134,34 @@ defmodule Sanbase.Accounts.User.Email do
     Sanbase.TemplateMailer.send(user.email_candidate, template, %{verify_link: verify_link})
   end
 
-  defp do_send_login_email(user, origin_host_parts, args) do
+  defp do_send_login_email(user, first_login, origin_host_parts, args) do
     origin_url = "https://" <> Enum.join(origin_host_parts, ".")
 
-    template =
-      Sanbase.Email.Template.choose_login_template(origin_url, first_login?: user.first_login)
+    template = Sanbase.Email.Template.choose_login_template(origin_url, first_login?: first_login)
 
     Sanbase.TemplateMailer.send(user.email, template, %{
-      login_link: generate_login_link(user, origin_url, args)
+      login_link: generate_login_link(user, first_login, origin_url, args)
     })
   end
 
-  defp generate_login_link(user, origin_url, args) do
-    SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url, args)
+  defp generate_login_link(user, first_login, origin_url, args) do
+    # If this is the first login that also creates the user, then
+    # append signup=true to the query params
+    signup_map = if first_login, do: %{signup: true}, else: %{}
+
+    query_map =
+      signup_map
+      |> Map.merge(%{token: user.email_token, email: user.email})
+      |> Map.merge(Map.take(args, [:subscribe_to_weekly_newsletter]))
+
+    login_url = if is_binary(origin_url), do: origin_url, else: SanbaseWeb.Endpoint.frontend_url()
+
+    login_url =
+      login_url
+      |> Path.join("/email_login")
+
+    URI.parse(login_url)
+    |> URI.append_query(URI.encode_query(query_map))
+    |> URI.to_string()
   end
 end

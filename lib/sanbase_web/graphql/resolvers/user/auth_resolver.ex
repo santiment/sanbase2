@@ -91,7 +91,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
            User.find_or_insert_by(:email, email, %{username: args[:username]}),
          :ok <- EmailLoginAttempt.has_allowed_login_attempts(user, remote_ip),
          {:ok, user} <- User.Email.update_email_token(user, args[:consent]),
-         {:ok, user} <- User.Email.send_login_email(user, first_login, origin_host_parts, args),
+         {:ok, _res} <- User.Email.send_login_email(user, first_login, origin_host_parts, args),
          {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip),
          {:ok, _, user} <-
            Accounts.forward_registration(user, "send_login_email", %{"origin_url" => origin_url}) do

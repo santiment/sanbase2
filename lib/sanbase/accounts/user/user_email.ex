@@ -144,7 +144,7 @@ defmodule Sanbase.Accounts.User.Email do
     })
   end
 
-  defp generate_login_link(user, origin_url, args) do
+  defp generate_login_link(user, first_login, origin_url, args) do
     # If this is the first login that also creates the user, then
     # append signup=true to the query params
     signup_map = if first_login, do: %{signup: true}, else: %{}
@@ -154,10 +154,14 @@ defmodule Sanbase.Accounts.User.Email do
       |> Map.merge(%{token: user.email_token, email: user.email})
       |> Map.merge(Map.take(args, [:subscribe_to_weekly_newsletter]))
 
-    login_url = if origin_url, do: origin_url, else: frontend_url()
+    login_url = if is_binary(origin_url), do: origin_url, else: SanbaseWeb.Endpoint.frontend_url()
 
-    login_url
-    |> Path.join("/email_login")
+    login_url =
+      login_url
+      |> Path.join("/email_login")
+
+    URI.parse(login_url)
     |> URI.append_query(URI.encode_query(query_map))
+    |> URI.to_string()
   end
 end

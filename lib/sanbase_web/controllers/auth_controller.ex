@@ -111,8 +111,14 @@ defmodule SanbaseWeb.AuthController do
 
   defp extend_if_first_login(redirect_url, first_login) do
     case first_login do
-      true -> URI.append_query(redirect_url, "signup=true")
-      false -> redirect_url
+      true ->
+        redirect_url
+        |> URI.parse()
+        |> URI.append_query("signup=true")
+        |> URI.to_string()
+
+      false ->
+        redirect_url
     end
   end
 

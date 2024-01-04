@@ -109,15 +109,11 @@ defmodule SanbaseWeb.AuthController do
     end
   end
 
-  defp extend_if_first_login(redirect_url, false), do: redirect_url
-
-  defp extend_if_first_login(redirect_url, true) do
-    uri = URI.parse(redirect_url)
-    query_map = URI.decode_query(uri.query || "")
-    query_map = Map.put(query_map, "signup", "true")
-    uri = %{uri | query: URI.encode_query(query_map)}
-
-    URI.to_string(uri)
+  defp extend_if_first_login(redirect_url, first_login) do
+    case first_login do
+      true -> URI.append_query(redirect_url, "signup=true")
+      false -> redirect_url
+    end
   end
 
   defp twitter_login(email, twitter_id)

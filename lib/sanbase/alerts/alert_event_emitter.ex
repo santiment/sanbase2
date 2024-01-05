@@ -4,7 +4,7 @@ defmodule Sanbase.Alert.EventEmitter do
   @topic :alert_events
   def topic(), do: @topic
 
-  def handle_event({:error, _}, _), do: :ok
+  def handle_event({:error, _}, _even_type, _args), do: :ok
 
   def handle_event({:ok, alert}, event_type, _args)
       when event_type in [:create_alert, :delete_alert] do

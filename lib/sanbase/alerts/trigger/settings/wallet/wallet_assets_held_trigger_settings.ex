@@ -67,12 +67,14 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
     temp_settings =
       Map.put(settings, :filtered_target, Sanbase.Alert.Trigger.get_filtered_target(trigger))
 
-    {:ok, data} = get_data(temp_settings)
-    address_key_to_slugs_map = Map.new(data)
+    with {:ok, data} <- get_data(temp_settings) do
+      address_key_to_slugs_map = Map.new(data)
 
-    settings = %{settings | state: %{slugs_held_by_address: address_key_to_slugs_map}}
+      settings = %{settings | state: %{slugs_held_by_address: address_key_to_slugs_map}}
 
-    %{trigger | settings: settings}
+      trigger = %{trigger | settings: settings}
+      {:ok, trigger}
+    end
   end
 
   @doc ~s"""

@@ -388,10 +388,14 @@ defmodule Sanbase.Alert.UserTrigger do
         :nochange ->
           {:ok, user_trigger}
 
-        trigger ->
+        {:ok, trigger} ->
           user_trigger
           |> update_changeset(%{trigger: trigger |> Map.from_struct() |> clean_params()})
           |> Repo.update()
+
+        {:error, reason} ->
+          {:error,
+           "Cannot create an alert because the post create processing failed. Reason: #{inspect(reason)}"}
       end
     end
   end
@@ -404,10 +408,14 @@ defmodule Sanbase.Alert.UserTrigger do
         :nochange ->
           {:ok, user_trigger}
 
-        trigger ->
+        {:ok, trigger} ->
           user_trigger
           |> update_changeset(%{trigger: trigger |> Map.from_struct() |> clean_params()})
           |> Repo.update()
+
+        {:error, reason} ->
+          {:error,
+           "Cannot update an alert because the post update processing failed. Reason: #{inspect(reason)}"}
       end
     end
   end

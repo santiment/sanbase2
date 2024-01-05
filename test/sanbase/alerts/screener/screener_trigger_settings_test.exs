@@ -55,6 +55,63 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
     }
   end
 
+  test "wrong metric name disables the alert", context do
+    selector = %{
+      filters: [
+        %{
+          metric: "active_addresses_24h",
+          dynamicFrom: "1d",
+          dynamicTo: "now",
+          operator: :greater_than,
+          threshold: 500,
+          aggregation: :last
+        }
+      ]
+    }
+
+    settings_selector = %{
+      type: "screener_signal",
+      operation: %{selector: selector},
+      channel: "telegram"
+    }
+
+    mock_fun =
+      [
+        # Called in post_create_process when creating the alert
+        fn -> {:ok, []} end,
+        # Called when evaluating the alert fn ->
+        fn -> {:error, "The metric 'active_addresses_24h' is not supported or is mistyped."} end
+      ]
+      |> Sanbase.Mock.wrap_consecutives(arity: 6)
+
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :slugs_by_filter, mock_fun)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      {:ok, ut} =
+        UserTrigger.create_user_trigger(context.user, %{
+          title: "Generic title",
+          is_public: true,
+          cooldown: "1h",
+          settings: settings_selector
+        })
+
+      # Clear the result of the filter
+      Sanbase.Cache.clear_all()
+      Sanbase.Cache.clear_all(:alerts_evaluator_cache)
+
+      log =
+        capture_log(fn ->
+          assert [_] = Sanbase.Alert.Scheduler.run_alert(ScreenerTriggerSettings)
+        end)
+
+      assert log =~ "Disable alert"
+      assert log =~ "active_addresses_24h"
+      assert log =~ "metric used is not supported, deprecated or is mistyped"
+      {:ok, user_trigger} = Sanbase.Alert.UserTrigger.by_user_and_id(ut.user_id, ut.id)
+
+      assert user_trigger.trigger.is_active == false
+    end)
+  end
+
   test "enter/exit screener with selector", context do
     %{user: user, settings_selector: settings_selector, p1: p1, p2: p2, p3: p3, p4: p4, p5: p5} =
       context

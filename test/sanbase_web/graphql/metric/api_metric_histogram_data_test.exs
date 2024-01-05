@@ -93,7 +93,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
         ]
       } = get_histogram_metric(conn, metric, slug, from, to, "1d", 100)
 
-      assert error_message == "The metric '#{metric}' is not supported or is mistyped."
+      assert error_message ==
+               "The metric '#{metric}' is not supported, is deprecated or is mistyped."
     end
   end
 

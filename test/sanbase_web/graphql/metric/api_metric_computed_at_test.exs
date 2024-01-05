@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
       } = get_last_datetime_computed_at(conn, metric, %{slug: project.slug})
 
       assert error_message ==
-               "The metric '#{metric}' is not supported or is mistyped."
+               "The metric '#{metric}' is not supported, is deprecated or is mistyped."
     end
   end
 

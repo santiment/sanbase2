@@ -117,7 +117,7 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
   end
 
   defp handle_fetch_metric_error(error_msg, metric, selector) when is_binary(error_msg) do
-    if error_msg =~ "not supported or is mistyped" do
+    if error_msg =~ "not supported, is deprecated or is mistyped" do
       {:error, {:disable_alert, error_msg}}
     else
       {:error, "Cannot fetch #{metric} for #{inspect(selector)}. Reason: #{error_msg}"}

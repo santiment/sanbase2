@@ -57,7 +57,7 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
   def post_create_process(trigger), do: fill_current_state(trigger)
   def post_update_process(trigger), do: fill_current_state(trigger)
 
-  @missing_metric_error "The metric used is not supported, deprecated or is mistyped"
+  @missing_metric_error "The metric used is not supported, is deprecated or is mistyped"
   @doc ~s"""
   Return a list of the `settings.metric` values for the necessary time range
   """
@@ -68,7 +68,7 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
       {:ok, slugs}
     else
       {:error, error_msg} when is_binary(error_msg) ->
-        if error_msg =~ "is not supported or is mistyped",
+        if error_msg =~ "is not supported, is deprecated or is mistyped",
           do: {:error, {:disable_alert, @missing_metric_error}},
           else: {:ok, []}
 
@@ -82,7 +82,7 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
       {:ok, slugs}
     else
       {:error, error_msg} when is_binary(error_msg) ->
-        if error_msg =~ "is not supported or is mistyped",
+        if error_msg =~ "is not supported, is deprecated or is mistyped",
           do: {:error, {:disable_alert, @missing_metric_error}},
           else: {:ok, []}
 

@@ -339,7 +339,7 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
                      settings: trigger_settings
                    })
 
-                 assert error_msg =~ "not supported or is mistyped"
+                 assert error_msg =~ "not supported, is deprecated or is mistyped"
                end)
       end)
     end
@@ -358,7 +358,8 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
       mock_fun =
         [
           fn ->
-            {:error, "The metric 'active_addresses_24h' is not supported or is mistyped."}
+            {:error,
+             "The metric 'active_addresses_24h' is not supported, is deprecated or is mistyped."}
           end
         ]
         |> Sanbase.Mock.wrap_consecutives(arity: 4)
@@ -382,11 +383,9 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
             assert [_] = Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
           end)
 
-        IO.puts(log)
-
         assert log =~ "Auto disable alert"
         assert log =~ "active_addresses_24h"
-        assert log =~ "metric used is not supported, deprecated or is mistyped"
+        assert log =~ "not supported, is deprecated or is mistyped"
         {:ok, user_trigger} = Sanbase.Alert.UserTrigger.by_user_and_id(ut.user_id, ut.id)
 
         assert user_trigger.trigger.is_active == false

@@ -353,7 +353,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
         )
 
       assert error_message ==
-               "The metric '#{metric}' is not supported or is mistyped."
+               "The metric '#{metric}' is not supported, is deprecated or is mistyped."
     end
   end
 

@@ -42,7 +42,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalMetadataTest do
         ]
       } = get_signal_metadata(conn, signal)
 
-      assert error_message == "The signal '#{signal}' is not supported or is mistyped."
+      assert error_message ==
+               "The signal '#{signal}' is not supported, is deprecated or is mistyped."
     end
   end
 

@@ -171,7 +171,7 @@ defmodule Sanbase.Alert.DailyMetricTriggerSettingsTest do
                    settings: trigger_settings
                  })
 
-               assert error_msg =~ "not supported or is mistyped"
+               assert error_msg =~ "not supported, is deprecated or is mistyped"
              end)
     end)
   end

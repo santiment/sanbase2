@@ -720,7 +720,7 @@ defmodule Sanbase.Metric do
   defp metric_not_available_error_details(metric, type) do
     %{
       close: maybe_get_close_metric(metric, type),
-      error_msg: "The metric '#{metric}' is not supported or is mistyped."
+      error_msg: "The metric '#{metric}' is not supported, is deprecated or is mistyped."
     }
   end
 

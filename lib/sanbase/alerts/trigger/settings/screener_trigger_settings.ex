@@ -57,32 +57,49 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
   def post_create_process(trigger), do: fill_current_state(trigger)
   def post_update_process(trigger), do: fill_current_state(trigger)
 
+  @missing_metric_error "The metric used is not supported, is deprecated or is mistyped"
   @doc ~s"""
   Return a list of the `settings.metric` values for the necessary time range
   """
-  @spec get_data(ScreenerTriggerSettings.t()) :: list(String.t())
+  @spec get_data(ScreenerTriggerSettings.t()) :: {:ok, list(String.t())} | {:error, any()}
   def get_data(%__MODULE__{operation: %{selector: %{watchlist_id: watchlist_id}}}) do
-    {:ok, slugs} =
-      case Sanbase.UserList.by_id(watchlist_id, []) do
-        {:error, _} -> {:ok, []}
-        {:ok, watchlist} -> watchlist |> Sanbase.UserList.get_slugs()
-      end
+    with {:ok, watchlist} <- Sanbase.UserList.by_id(watchlist_id, []),
+         {:ok, slugs} <- Sanbase.UserList.get_slugs(watchlist) do
+      {:ok, slugs}
+    else
+      {:error, error_msg} when is_binary(error_msg) ->
+        if error_msg =~ "is not supported, is deprecated or is mistyped",
+          do: {:error, {:disable_alert, @missing_metric_error}},
+          else: {:ok, []}
 
-    slugs
+      {:error, _} ->
+        {:ok, []}
+    end
   end
 
   def get_data(%__MODULE__{operation: %{selector: _} = selector}) do
-    {:ok, %{slugs: slugs}} = Project.ListSelector.slugs(selector)
+    with {:ok, %{slugs: slugs}} <- Project.ListSelector.slugs(selector) do
+      {:ok, slugs}
+    else
+      {:error, error_msg} when is_binary(error_msg) ->
+        if error_msg =~ "is not supported, is deprecated or is mistyped",
+          do: {:error, {:disable_alert, @missing_metric_error}},
+          else: {:ok, []}
 
-    slugs
+      {:error, _} ->
+        {:ok, []}
+    end
   end
 
   defp fill_current_state(trigger) do
     %{settings: settings} = trigger
-    slugs = get_data(settings)
-    settings = %{settings | state: %{slugs_in_screener: slugs}}
 
-    %{trigger | settings: settings}
+    with {:ok, slugs} <- get_data(settings) do
+      settings = %{settings | state: %{slugs_in_screener: slugs}}
+
+      trigger = %{trigger | settings: settings}
+      {:ok, trigger}
+    end
   end
 
   defimpl Sanbase.Alert.Settings, for: ScreenerTriggerSettings do
@@ -91,14 +108,17 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
 
     def triggered?(%ScreenerTriggerSettings{triggered?: triggered}), do: triggered
 
-    @spec evaluate(ScreenerTriggerSettings.t(), any) :: ScreenerTriggerSettings.t()
     def evaluate(%ScreenerTriggerSettings{} = settings, trigger) do
       case ScreenerTriggerSettings.get_data(settings) do
-        data when is_list(data) and data != [] ->
+        {:ok, data} when is_list(data) and data != [] ->
           build_result(data, settings, trigger)
 
-        _ ->
-          %ScreenerTriggerSettings{settings | triggered?: false}
+        {:error, {:disable_alert, _reason}} = error ->
+          error
+
+        {:errpr, _error} ->
+          settings = %ScreenerTriggerSettings{settings | triggered?: false}
+          {:ok, settings}
       end
     end
 

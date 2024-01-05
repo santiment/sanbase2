@@ -107,8 +107,15 @@ defmodule Sanbase.MapUtils do
   # Private functions
 
   @compile {:inline, atomize: 1}
-  defp atomize(value) when is_atom(value) or is_binary(value),
-    do: value |> Inflex.underscore() |> String.to_existing_atom()
+  case Mix.env() == :test do
+    true ->
+      defp atomize(value) when is_atom(value) or is_binary(value),
+        do: value |> Inflex.underscore() |> String.to_atom()
+
+    false ->
+      defp atomize(value) when is_atom(value) or is_binary(value),
+        do: value |> Inflex.underscore() |> String.to_existing_atom()
+  end
 
   defp do_find_pair_path(map, key, value, path) when is_map(map) do
     keys = Map.keys(map)

@@ -87,7 +87,7 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
 
       Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
-      user = insert(:user)
+      user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
       Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
       project = Sanbase.Factory.insert(:random_project)
@@ -339,8 +339,56 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
                      settings: trigger_settings
                    })
 
-                 assert error_msg =~ "not supported or is mistyped"
+                 assert error_msg =~ "not supported, is deprecated or is mistyped"
                end)
+      end)
+    end
+
+    test "wrong metric name disables the alert", context do
+      trigger_settings = %{
+        type: "metric_signal",
+        metric: "active_addresses_24h",
+        target: %{slug: context.project.slug},
+        channel: "telegram",
+        operation: %{percent_up: 100}
+      }
+
+      # aggregated_timeseries_data should be called 2 times, but after the first call that returns
+      # error we go to the error handling phase, not calling anything else
+      mock_fun =
+        [
+          fn ->
+            {:error,
+             "The metric 'active_addresses_24h' is not supported, is deprecated or is mistyped."}
+          end
+        ]
+        |> Sanbase.Mock.wrap_consecutives(arity: 4)
+
+      Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        {:ok, ut} =
+          UserTrigger.create_user_trigger(context.user, %{
+            title: "title",
+            is_public: true,
+            cooldown: "1h",
+            settings: trigger_settings
+          })
+
+        # Clear the result of the filter
+        Sanbase.Cache.clear_all()
+        Sanbase.Cache.clear_all(:alerts_evaluator_cache)
+
+        log =
+          capture_log(fn ->
+            assert [_] = Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
+          end)
+
+        assert log =~ "Auto disable alert"
+        assert log =~ "active_addresses_24h"
+        assert log =~ "not supported, is deprecated or is mistyped"
+        {:ok, user_trigger} = Sanbase.Alert.UserTrigger.by_user_and_id(ut.user_id, ut.id)
+
+        assert user_trigger.trigger.is_active == false
       end)
     end
   end

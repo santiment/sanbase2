@@ -76,11 +76,15 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
   def get_data(%{} = settings) do
     %{filtered_target: %{list: target_list, type: _type}} = settings
 
-    {:ok, data} = fetch_signal(target_list, settings)
-    fired_slugs = Enum.map(data, & &1.slug)
+    with {:ok, data} <- fetch_signal(target_list, settings) do
+      fired_slugs = Enum.map(data, & &1.slug)
 
-    target_list
-    |> Enum.filter(fn slug -> slug in fired_slugs end)
+      data =
+        target_list
+        |> Enum.filter(fn slug -> slug in fired_slugs end)
+
+      {:ok, data}
+    end
   end
 
   defp fetch_signal(slug_or_slugs, settings) do
@@ -117,11 +121,13 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
 
     def evaluate(%RawSignalTriggerSettings{} = settings, _trigger) do
       case RawSignalTriggerSettings.get_data(settings) do
-        data when is_list(data) and data != [] ->
+        {:ok, data} when is_list(data) and data != [] ->
           build_result(data, settings)
 
         _ ->
-          %RawSignalTriggerSettings{settings | triggered?: false}
+          # TODO: Handle error case
+          settings = %RawSignalTriggerSettings{settings | triggered?: false}
+          {:ok, settings}
       end
     end
 
@@ -138,17 +144,20 @@ defmodule Sanbase.Alert.Trigger.RawSignalTriggerSettings do
           end
         end)
 
-      case template_kv != %{} do
-        true ->
-          %RawSignalTriggerSettings{
-            settings
-            | triggered?: true,
-              template_kv: template_kv
-          }
+      settings =
+        case template_kv != %{} do
+          true ->
+            %RawSignalTriggerSettings{
+              settings
+              | triggered?: true,
+                template_kv: template_kv
+            }
 
-        false ->
-          %RawSignalTriggerSettings{settings | triggered?: false}
-      end
+          false ->
+            %RawSignalTriggerSettings{settings | triggered?: false}
+        end
+
+      {:ok, settings}
     end
 
     def cache_key(%RawSignalTriggerSettings{} = settings) do

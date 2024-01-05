@@ -61,15 +61,18 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
   def get_data(%{} = settings) do
     %{filtered_target: %{list: target_list, type: type}} = settings
 
-    target_list
-    |> Enum.map(fn identifier ->
-      {identifier, fetch_signal(%{type => identifier}, settings)}
-    end)
-    |> Enum.reject(fn
-      {_, {:error, _}} -> true
-      {_, nil} -> true
-      _ -> false
-    end)
+    data =
+      target_list
+      |> Enum.map(fn identifier ->
+        {identifier, fetch_signal(%{type => identifier}, settings)}
+      end)
+      |> Enum.reject(fn
+        {_, {:error, _}} -> true
+        {_, nil} -> true
+        _ -> false
+      end)
+
+    {:ok, data}
   end
 
   defp fetch_signal(selector, settings) do
@@ -90,21 +93,9 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
 
     Cache.get_or_store(cache_key, fn ->
       with {:ok, %{^slug => value1}} <-
-             Signal.aggregated_timeseries_data(
-               signal,
-               selector,
-               first_start,
-               first_end,
-               []
-             ),
+             Signal.aggregated_timeseries_data(signal, selector, first_start, first_end, []),
            {:ok, %{^slug => value2}} <-
-             Signal.aggregated_timeseries_data(
-               signal,
-               selector,
-               second_start,
-               second_end,
-               []
-             ) do
+             Signal.aggregated_timeseries_data(signal, selector, second_start, second_end, []) do
         [
           %{datetime: first_start, value: value1},
           %{datetime: second_start, value: value2}
@@ -136,11 +127,13 @@ defmodule Sanbase.Alert.Trigger.SignalTriggerSettings do
 
     def evaluate(%SignalTriggerSettings{} = settings, _trigger) do
       case SignalTriggerSettings.get_data(settings) do
-        data when is_list(data) and data != [] ->
+        {:ok, data} when is_list(data) and data != [] ->
           build_result(data, settings)
 
         _ ->
-          %SignalTriggerSettings{settings | triggered?: false}
+          # TODO: Handle error
+          settings = %SignalTriggerSettings{settings | triggered?: false}
+          {:ok, settings}
       end
     end
 

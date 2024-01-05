@@ -152,7 +152,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
       %{"errors" => [%{"message" => error_message}]} =
         get_aggregated_timeseries_metric(conn, metric, %{slug: slug}, from, to, aggregation)
 
-      assert error_message == "The metric '#{metric}' is not supported or is mistyped."
+      assert error_message ==
+               "The metric '#{metric}' is not supported, is deprecated or is mistyped."
     end
   end
 

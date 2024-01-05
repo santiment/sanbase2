@@ -134,6 +134,8 @@ defmodule Sanbase.Alert.Scheduler do
     [#{info_map.run_uuid}] There are no active alerts of type #{info_map.type} \
     to be run.
     """)
+
+    []
   end
 
   defp run_batches(trigger_batches, info_map) do
@@ -215,10 +217,12 @@ defmodule Sanbase.Alert.Scheduler do
     total_count = length(user_triggers)
     frozen_count = total_count - length(filtered)
 
-    Logger.info("""
-    [#{run_uuid}] In total #{frozen_count}/#{total_count} active receivable alerts of type \
-    #{type} are frozen and won't be processed.
-    """)
+    if frozen_count > 0 do
+      Logger.info("""
+      [#{run_uuid}] In total #{frozen_count}/#{total_count} active receivable alerts of type \
+      #{type} are frozen and won't be processed.
+      """)
+    end
 
     filtered
   end
@@ -255,12 +259,14 @@ defmodule Sanbase.Alert.Scheduler do
     total_count = length(user_triggers)
     disabled_count = total_count - length(filtered)
 
-    Logger.info("""
-    [#{run_uuid}] In total #{disabled_count}/#{total_count} active alerts of type \
-    #{type} are not being computed because they cannot be sent. The owners of \
-    these alerts have disabled the notification channels or has no telegram/email \
-    linked to their account.
-    """)
+    if disabled_count > 0 do
+      Logger.info("""
+      [#{run_uuid}] In total #{disabled_count}/#{total_count} active alerts of type \
+      #{type} are not being computed because they cannot be sent. The owners of \
+      these alerts have disabled the notification channels or has no telegram/email \
+      linked to their account.
+      """)
+    end
 
     filtered
   end

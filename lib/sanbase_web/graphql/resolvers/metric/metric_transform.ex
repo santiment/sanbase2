@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricTransform do
         {:ok, transform}
 
       false ->
-        {:error, "Transform type '#{transform.type}' is not supported or mistyped.\
+        {:error, "Transform type '#{transform.type}' is not supported or is mistyped.\
         Supported types are: #{Enum.join(@transform_types, ", ")}"}
     end
   end
@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricTransform do
   end
 
   def calibrate_transform_params(%{type: type}, _from, _to, _interval) do
-    {:error, "The transform type '#{type}' is not supported or mistyped."}
+    {:error, "The transform type '#{type}' is not supported or is mistyped."}
   end
 
   def apply_transform(%{type: "none"}, data), do: {:ok, data}

@@ -54,7 +54,7 @@ defmodule Sanbase.Alert.Evaluator do
         |> emit_event(Trigger.triggered?(evaluated_trigger), :alert_triggered)
 
       {:error, {:disable_alert, reason}} ->
-        Logger.info("Disable alert with id #{user_trigger.id}. Reason: #{inspect(reason)}")
+        Logger.info("Auto disable alert with id #{user_trigger.id}. Reason: #{inspect(reason)}")
 
         _ = UserTrigger.update_is_active(user_trigger.id, user_trigger.user_id, false)
 

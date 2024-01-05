@@ -103,7 +103,7 @@ defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
           assert [_] = Sanbase.Alert.Scheduler.run_alert(ScreenerTriggerSettings)
         end)
 
-      assert log =~ "Disable alert"
+      assert log =~ "Auto disable alert"
       assert log =~ "active_addresses_24h"
       assert log =~ "metric used is not supported, deprecated or is mistyped"
       {:ok, user_trigger} = Sanbase.Alert.UserTrigger.by_user_and_id(ut.user_id, ut.id)

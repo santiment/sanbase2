@@ -47,8 +47,9 @@ defmodule Sanbase.ClickhouseRepo do
   @spec query_transform(String.t(), list(), (list() -> list())) ::
           {:ok, any()} | {:error, String.t()}
   def query_transform(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
-    %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
-    query_transform(sql, args, transform_fn)
+    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
+      query_transform(sql, args, transform_fn)
+    end
   end
 
   def query_transform(query, args, transform_fn) do
@@ -74,8 +75,9 @@ defmodule Sanbase.ClickhouseRepo do
   @spec query_transform_with_metadata(String.t(), list(), (list() -> list())) ::
           {:ok, Map.t()} | {:error, String.t()}
   def query_transform_with_metadata(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
-    %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
-    query_transform_with_metadata(sql, args, transform_fn)
+    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
+      query_transform_with_metadata(sql, args, transform_fn)
+    end
   end
 
   def query_transform_with_metadata(query, args, transform_fn) do
@@ -111,8 +113,9 @@ defmodule Sanbase.ClickhouseRepo do
           {:ok, Map.t()} | {:error, String.t()}
         when acc: any
   def query_reduce(%Sanbase.Clickhouse.Query{} = query, init, reducer) do
-    %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
-    query_reduce(sql, args, init, reducer)
+    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
+      query_reduce(sql, args, init, reducer)
+    end
   end
 
   def query_reduce(query, args, init, reducer) do

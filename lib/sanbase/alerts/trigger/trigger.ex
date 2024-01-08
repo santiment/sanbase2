@@ -103,11 +103,11 @@ defmodule Sanbase.Alert.Trigger do
   end
 
   def payload_to_string(%Trigger{settings: %{payload: {template, kv}}}) do
-    Sanbase.TemplateEngine.run(template, kv)
+    Sanbase.TemplateEngine.run!(template, params: kv)
   end
 
   def payload_to_string({template, kv}) do
-    Sanbase.TemplateEngine.run(template, kv)
+    Sanbase.TemplateEngine.run!(template, params: kv)
   end
 
   def get_filtered_target(%Trigger{settings: %{target: target}} = trigger) do

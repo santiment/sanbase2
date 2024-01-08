@@ -49,15 +49,13 @@ defmodule Sanbase.Signal.FileHandler do
 
       timebound_values
       |> Enum.map(fn timebound ->
+        params = %{timebound: timebound, timebound_human_readable: interval_to_str(timebound)}
+
         %{
           signal_map
-          | "name" => TemplateEngine.run(name, %{timebound: timebound}),
-            "signal" => TemplateEngine.run(signal, %{timebound: timebound}),
-            "human_readable_name" =>
-              TemplateEngine.run(
-                human_readable_name,
-                %{timebound_human_readable: interval_to_str(timebound)}
-              )
+          | "name" => TemplateEngine.run!(name, params: params),
+            "signal" => TemplateEngine.run!(signal, params: params),
+            "human_readable_name" => TemplateEngine.run!(human_readable_name, params: params)
         }
       end)
     end

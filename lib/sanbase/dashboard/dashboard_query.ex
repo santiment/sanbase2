@@ -1,5 +1,6 @@
 defmodule Sanbase.Dashboard.Query do
   alias Sanbase.Dashboard.Query
+  alias Sanbase.ClickhouseRepo
 
   @spec run(String.t(), Map.t(), Map.t()) ::
           {:ok, Query.Result.t()} | {:error, String.t()}
@@ -17,7 +18,7 @@ defmodule Sanbase.Dashboard.Query do
     # by the user. The ReadOnly repo is connecting to the database with
     # a different user that has read-only access. This is valid within
     # this process only.
-    Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
+    ClickhouseRepo.put_dynamic_repo(ClickhouseRepo.ReadOnly)
 
     query_metadata =
       query_metadata
@@ -29,28 +30,21 @@ defmodule Sanbase.Dashboard.Query do
         settings: "log_comment='#{Jason.encode!(query_metadata)}'"
       )
 
-    %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
-    sql = extend_sql(sql, query_metadata)
-
-    case Sanbase.ClickhouseRepo.query_transform_with_metadata(sql, args, &transform_result/1) do
-      {:ok, map} ->
-        {:ok,
-         %Query.Result{
-           clickhouse_query_id: map.query_id,
-           summary: map.summary,
-           rows: map.rows,
-           compressed_rows: compress_rows(map.rows),
-           columns: map.column_names,
-           column_types: map.column_types,
-           query_start_time: query_start_time,
-           query_end_time: DateTime.utc_now()
-         }}
-
-      {:error, error} ->
-        # This error is nice enough to be logged and returned to the user.
-        # The stacktrace is parsed and relevant error messages like
-        # `table X does not exist` are extracted
-        {:error, error}
+    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query),
+         sql = extend_sql(sql, query_metadata),
+         {:ok, map} <-
+           ClickhouseRepo.query_transform_with_metadata(sql, args, &transform_result/1) do
+      {:ok,
+       %Query.Result{
+         clickhouse_query_id: map.query_id,
+         summary: map.summary,
+         rows: map.rows,
+         compressed_rows: compress_rows(map.rows),
+         columns: map.column_names,
+         column_types: map.column_types,
+         query_start_time: query_start_time,
+         query_end_time: DateTime.utc_now()
+       }}
     end
   end
 

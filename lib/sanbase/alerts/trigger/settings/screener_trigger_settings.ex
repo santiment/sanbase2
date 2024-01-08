@@ -116,7 +116,8 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
         {:error, {:disable_alert, _reason}} = error ->
           error
 
-        {:errpr, _error} ->
+        _ ->
+          # {:error, _} or {:ok, []}
           settings = %ScreenerTriggerSettings{settings | triggered?: false}
           {:ok, settings}
       end

@@ -124,7 +124,7 @@ defmodule Sanbase.Mixfile do
       {:kafka_protocol,
        github: "santiment/kafka_protocol", branch: "working-version", override: true},
       {:libcluster, "~> 3.0"},
-      {:lz4b, github: "santiment/lz4b"},
+      {:lz4b, github: "kafka4beam/lz4b"},
       {:mint, "~> 1.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:mock, "~> 0.3"},

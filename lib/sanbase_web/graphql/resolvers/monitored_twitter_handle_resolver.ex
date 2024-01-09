@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MonitoredTwitterHandleResolver do
   alias Sanbase.MonitoredTwitterHandle
-  alias Sanbase.Billing.UserPromoCode
 
   def is_twitter_handle_monitored(_root, %{twitter_handle: handle}, _resolution) do
     MonitoredTwitterHandle.is_handle_monitored(handle)

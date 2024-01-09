@@ -6,8 +6,8 @@ defmodule Sanbase.Math do
   defguard float_eq?(l, r) when abs(l - r) <= @epsilon
 
   def round_float(f) when is_float(f) and (f >= 1 or f <= -1), do: Float.round(f, 2)
-  def round_float(f) when is_float(f) and f >= 0 and f <= @epsilon, do: 0.0
-  def round_float(f) when is_float(f) and f < 0 and f >= -@epsilon, do: 0.0
+  def round_float(f) when is_float(f) and f >= 0 and f <= @epsilon, do: +0.0
+  def round_float(f) when is_float(f) and f < 0 and f >= -@epsilon, do: +0.0
   def round_float(f) when is_float(f), do: Float.round(f, 6)
   def round_float(i) when is_integer(i), do: round(i * 1.0)
 
@@ -23,7 +23,7 @@ defmodule Sanbase.Math do
       5.0
 
       iex> Sanbase.Math.percent_change(0, 2.0)
-      0.0
+      +0.0
 
       iex> Sanbase.Math.percent_change(2.0, 1.0)
       -50.0
@@ -35,15 +35,15 @@ defmodule Sanbase.Math do
       -150.0
 
       iex> Sanbase.Math.percent_change(10.0, 10.0)
-      0.0
+      +0.0
   """
-  def percent_change(0, _current), do: 0.0
-  def percent_change(nil, _current), do: 0.0
-  def percent_change(_previous, nil), do: 0.0
+  def percent_change(0, _current), do: +0.0
+  def percent_change(nil, _current), do: +0.0
+  def percent_change(_previous, nil), do: +0.0
 
   def percent_change(previous, _current)
       when is_number(previous) and previous <= @epsilon,
-      do: 0.0
+      do: +0.0
 
   def percent_change(previous, current) when is_number(previous) and is_number(current) do
     ((current / previous - 1) * 100)
@@ -221,10 +221,10 @@ defmodule Sanbase.Math do
     5.0
 
     iex> Sanbase.Math.mean([])
-    0.0
+    +0.0
   """
   def mean(list, opts \\ [])
-  def mean([], _), do: 0.0
+  def mean([], _), do: +0.0
 
   def mean(values, opts) do
     mean = Enum.sum(values) / length(values)
@@ -293,7 +293,7 @@ defmodule Sanbase.Math do
     18.22
 
     iex> Sanbase.Math.variance([5, 5, 5])
-    0.0
+    +0.0
 
     iex> Sanbase.Math.variance([])
     nil
@@ -322,7 +322,7 @@ defmodule Sanbase.Math do
     4.26
 
     iex> Sanbase.Math.stdev([5, 5, 5])
-    0.0
+    +0.0
 
     iex> Sanbase.Math.stdev([])
     nil

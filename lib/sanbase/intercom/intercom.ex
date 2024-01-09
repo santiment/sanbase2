@@ -398,7 +398,7 @@ defmodule Sanbase.Intercom do
     if user.eth_accounts != [] do
       Sanbase.Math.to_float(user.san_balance)
     else
-      0.0
+      +0.0
     end
   end
 

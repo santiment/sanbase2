@@ -76,7 +76,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       }
       """
 
-      assert execute_query(conn, query, "currentUser")["sanBalance"] == 0.0
+      assert execute_query(conn, query, "currentUser")["sanBalance"] == +0.0
     end
 
     test "with Sanbase Pro subscription has spreadsheets permissions", context do

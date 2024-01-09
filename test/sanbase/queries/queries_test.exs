@@ -339,7 +339,7 @@ defmodule Sanbase.QueriesTest do
                    "read_compressed_gb" => 0.001111,
                    "read_gb" => 0.010879,
                    "read_rows" => 364_923,
-                   "result_gb" => 0.0,
+                   "result_gb" => +0.0,
                    "result_rows" => 2
                  },
                  credits_cost: 1
@@ -355,7 +355,7 @@ defmodule Sanbase.QueriesTest do
                    "read_compressed_gb" => 0.001111,
                    "read_gb" => 0.010879,
                    "read_rows" => 364_923,
-                   "result_gb" => 0.0,
+                   "result_gb" => +0.0,
                    "result_rows" => 2
                  },
                  credits_cost: 1
@@ -387,11 +387,11 @@ defmodule Sanbase.QueriesTest do
                  summary: %{
                    "read_bytes" => 408_534.0,
                    "read_rows" => 12667.0,
-                   "result_bytes" => 0.0,
-                   "result_rows" => 0.0,
+                   "result_bytes" => +0.0,
+                   "result_rows" => +0.0,
                    "total_rows_to_read" => 4475.0,
-                   "written_bytes" => 0.0,
-                   "written_rows" => 0.0
+                   "written_bytes" => +0.0,
+                   "written_rows" => +0.0
                  },
                  rows: [
                    [
@@ -439,11 +439,11 @@ defmodule Sanbase.QueriesTest do
                  summary: %{
                    "read_bytes" => 408_534.0,
                    "read_rows" => 12667.0,
-                   "result_bytes" => 0.0,
-                   "result_rows" => 0.0,
+                   "result_bytes" => +0.0,
+                   "result_rows" => +0.0,
                    "total_rows_to_read" => 4475.0,
-                   "written_bytes" => 0.0,
-                   "written_rows" => 0.0
+                   "written_bytes" => +0.0,
+                   "written_rows" => +0.0
                  },
                  rows: [
                    [
@@ -498,11 +498,11 @@ defmodule Sanbase.QueriesTest do
                  summary: %{
                    "read_bytes" => 408_534.0,
                    "read_rows" => 12667.0,
-                   "result_bytes" => 0.0,
-                   "result_rows" => 0.0,
+                   "result_bytes" => +0.0,
+                   "result_rows" => +0.0,
                    "total_rows_to_read" => 4475.0,
-                   "written_bytes" => 0.0,
-                   "written_rows" => 0.0
+                   "written_bytes" => +0.0,
+                   "written_rows" => +0.0
                  },
                  rows: [
                    [
@@ -658,11 +658,11 @@ defmodule Sanbase.QueriesTest do
                summary: %{
                  "read_bytes" => 408_534.0,
                  "read_rows" => 12667.0,
-                 "result_bytes" => 0.0,
-                 "result_rows" => 0.0,
+                 "result_bytes" => +0.0,
+                 "result_rows" => +0.0,
                  "total_rows_to_read" => 4475.0,
-                 "written_bytes" => 0.0,
-                 "written_rows" => 0.0
+                 "written_bytes" => +0.0,
+                 "written_rows" => +0.0
                },
                updated_at: _
              } = dashboard_cache.queries[dashboard_query_mapping.id]

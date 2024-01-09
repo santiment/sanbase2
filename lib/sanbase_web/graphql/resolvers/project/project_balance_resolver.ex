@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
             {address, selector}
           )
 
-        balance || 0.0
+        balance || +0.0
       end)
 
     {:ok, Enum.sum(balances)}

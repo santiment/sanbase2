@@ -62,7 +62,7 @@ defmodule Sanbase.Cache.RehydratingCache do
       refresh_time_delta seconds the cache will be recomputed and stored again.
       The count for ttl starts from 0 again when value is recomputed.
   """
-  @spec register_function((() -> any()), any(), pos_integer(), pos_integer()) ::
+  @spec register_function((-> any()), any(), pos_integer(), pos_integer()) ::
           :ok | {:error, :already_registered}
   def register_function(fun, key, ttl, refresh_time_delta, description \\ nil)
       when are_proper_function_arguments(fun, ttl, refresh_time_delta) do

@@ -1,4 +1,4 @@
-FROM santimentjenkins/elixir:1.14.4
+FROM santimentjenkins/elixir:1.16.0
 
 RUN apk add --no-cache make \
     g++ \

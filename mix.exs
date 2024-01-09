@@ -38,7 +38,7 @@ defmodule Sanbase.Mixfile do
         :os_mon,
         :event_bus
       ],
-      included_applications: [:kaffe, :brod, :ueberauth_twitter, :nostrum]
+      included_applications: [:kaffe, :ueberauth_twitter, :nostrum]
     ]
   end
 
@@ -63,7 +63,7 @@ defmodule Sanbase.Mixfile do
       {:absinthe_phoenix, "~> 2.0"},
       {:absinthe_plug, "~> 1.5"},
       {:absinthe, "~> 1.5"},
-      {:brod, "== 3.8.1", manager: :rebar3, override: true},
+      {:brod, "== 3.8.1", manager: :rebar3, override: true, runtime: false},
       {:browser, "~> 0.5"},
       {:cachex, "~> 3.4"},
       {:cidr, "~> 1.1"},

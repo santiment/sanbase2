@@ -3,12 +3,14 @@ defmodule Sanbase.Utils.Config do
   Module for reading configuration values from the application environment.
   """
 
+  @spec module_get(atom(), atom()) :: any()
   def module_get(module, key) do
     Application.fetch_env!(:sanbase, module)
     |> Keyword.get(key)
     |> parse_config_value()
   end
 
+  @spec module_get!(atom(), atom()) :: any() | no_return
   def module_get!(module, key) do
     Application.fetch_env!(:sanbase, module)
     |> Keyword.fetch!(key)

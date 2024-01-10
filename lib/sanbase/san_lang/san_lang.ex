@@ -1,6 +1,5 @@
 defmodule Sanbase.SanLang do
-  @doc ~s"""
-
+  @moduledoc ~s"""
   SanLang's function is to evaluate simple one-line expressions. These expressions can be used
   in Santiment Queries.
 

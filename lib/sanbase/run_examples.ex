@@ -770,11 +770,11 @@ defmodule Sanbase.RunExamples do
           summary: %{
             "read_bytes" => 1.0,
             "read_rows" => 1.0,
-            "result_bytes" => 0.0,
-            "result_rows" => 0.0,
-            "total_rows_to_read" => 0.0,
-            "written_bytes" => 0.0,
-            "written_rows" => 0.0
+            "result_bytes" => +0.0,
+            "result_rows" => +0.0,
+            "total_rows_to_read" => +0.0,
+            "written_bytes" => +0.0,
+            "written_rows" => +0.0
           },
           updated_at: _
         }

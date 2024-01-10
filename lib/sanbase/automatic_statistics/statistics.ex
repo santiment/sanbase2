@@ -89,7 +89,7 @@ defmodule Sanbase.Statistics do
       if users_with_watchlist_count > 0 do
         overall / users_with_watchlist_count
       else
-        0.0
+        +0.0
       end
       |> Float.round(2)
 

@@ -225,7 +225,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     Enum.reduce(prices_list, ranges_map, fn %{price: price, value: value}, acc ->
       key = price_to_range(price, min, bucket_size)
 
-      Map.update(acc, key, 0.0, fn curr_amount ->
+      Map.update(acc, key, +0.0, fn curr_amount ->
         Float.round(curr_amount + value, 2)
       end)
     end)

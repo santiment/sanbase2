@@ -4,10 +4,7 @@
     "name": "social_volume_total",
     "metric": "social_volume",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -24,10 +21,7 @@
     "name": "social_volume_ai_total",
     "metric": "social_metrics_volume_ai_total",
     "version": "2022-02-01",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
@@ -146,10 +140,7 @@
     "name": "social_volume_4chan",
     "metric": "social_volume_4chan",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -251,10 +242,7 @@
     "name": "social_volume_telegram",
     "metric": "social_volume_telegram",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -356,10 +344,7 @@
     "name": "social_volume_reddit",
     "metric": "social_volume_reddit",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -461,10 +446,7 @@
     "name": "social_volume_discord",
     "metric": "social_volume_discord",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -572,10 +554,7 @@
     "name": "social_volume_professional_traders_chat",
     "metric": "social_volume_professional_traders_chat",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -683,10 +662,7 @@
     "name": "social_volume_twitter",
     "metric": "social_volume_twitter",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -703,10 +679,7 @@
     "name": "social_volume_twitter_crypto",
     "metric": "social_volume_twitter_crypto",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -723,10 +696,7 @@
     "name": "social_volume_twitter_news",
     "metric": "social_volume_twitter_news",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -743,10 +713,7 @@
     "name": "social_volume_twitter_nft",
     "metric": "social_volume_twitter_nft",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1103,10 +1070,7 @@
     "name": "social_volume_youtube_videos",
     "metric": "social_volume_youtube_videos",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1208,10 +1172,7 @@
     "name": "social_volume_bitcointalk",
     "metric": "social_volume_bitcointalk",
     "version": "2020-07-31",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug", "text"],
     "min_plan": {
       "SANAPI": "free",
@@ -1721,10 +1682,7 @@
     "name": "trending_words_rank",
     "metric": "trending_rank",
     "version": "2019-01-01",
-    "access": {
-      "historical": "restricted",
-      "realtime": "free"
-    },
+    "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",

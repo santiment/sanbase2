@@ -33,16 +33,19 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
   end
 
   describe "SANBase product, No subscription" do
-    test "can access realtime data for social metrics", context do
+    test "cannot access realtime data for social metrics", context do
       {from, to} = from_to(2, 0)
       slug = context.project.slug
       metric = Enum.random(context.metrics)
       interval = "5m"
       query = metric_query(metric, slug, from, to, interval)
-      result = execute_query(context.conn, query, "getMetric")
 
-      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
-      assert result != nil
+      result = execute_query_with_error(context.conn, query, "getMetric")
+
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+
+      assert result =~
+               "Both `from` and `to` parameters are outside the allowed interval you can query"
     end
 
     test "cannot access historical data for social metrics", context do

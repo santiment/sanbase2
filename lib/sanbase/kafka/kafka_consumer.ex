@@ -13,7 +13,7 @@ defmodule Sanbase.Kafka.Consumer do
             # generate unique consumer group on boot
             consumer_group:
               consumer_group_basename() <>
-                "_" <> (:crypto.strong_rand_bytes(4) |> Base.encode64(case: :lower))
+                "_" <> (:crypto.strong_rand_bytes(4) |> Base.encode64(padding: false))
           )
 
         Application.put_env(:kaffe, :consumer, config)

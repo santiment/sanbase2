@@ -21,8 +21,8 @@ defmodule Sanbase.TemplateEngine.CodeEvaluation do
 
   # Private functions
 
-  defp do_eval("", _lang = "san", _env), do: {:ok, ""}
-  defp do_eval(input, _lang = "san", env), do: Sanbase.SanLang.eval(input, env)
+  defp do_eval("", "san" = _lang, _env), do: {:ok, ""}
+  defp do_eval(input, "san" = _lang, env), do: Sanbase.SanLang.eval(input, env)
 
   defp lang_supported?(%{lang: "san", lang_version: ver}) do
     case ver do

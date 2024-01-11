@@ -109,12 +109,16 @@ defmodule Sanbase.MapUtils do
   @compile {:inline, atomize: 1}
   case Mix.env() == :test do
     true ->
-      defp atomize(value) when is_atom(value) or is_binary(value),
-        do: value |> Inflex.underscore() |> String.to_atom()
+      defp atomize(value) when is_atom(value) or is_binary(value) do
+        # In :test env we can safely ignore this error
+        # credo:disable-for-next-line
+        value |> Inflex.underscore() |> String.to_atom()
+      end
 
     false ->
-      defp atomize(value) when is_atom(value) or is_binary(value),
-        do: value |> Inflex.underscore() |> String.to_existing_atom()
+      defp atomize(value) when is_atom(value) or is_binary(value) do
+        value |> Inflex.underscore() |> String.to_existing_atom()
+      end
   end
 
   defp do_find_pair_path(map, key, value, path) when is_map(map) do

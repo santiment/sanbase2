@@ -153,9 +153,7 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   defp social_volume_request(selector, from, to, interval, source, opts) do
     with {:ok, search_text} <- SocialHelper.social_metrics_selector_handler(selector) do
-      url =
-        Path.join([metrics_hub_url(), opts_to_metric(opts)])
-        |> IO.inspect(label: "URL")
+      url = Path.join([metrics_hub_url(), opts_to_metric(opts)])
 
       options =
         [
@@ -168,7 +166,6 @@ defmodule Sanbase.SocialData.SocialVolume do
             {"source", source}
           ]
         ]
-        |> IO.inspect(label: "OPTIONS")
 
       http_client().get(url, [], options)
     end

@@ -47,7 +47,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
       assert key == "coinmarketcap_santiment_2018-05-13T21:45:00.000000Z"
 
       assert value ==
-               "{\"marketcap_usd\":400,\"price_btc\":3.136261180345569e-5,\"price_usd\":0.292856,\"slug\":\"santiment\",\"source\":\"coinmarketcap\",\"timestamp\":1526247900,\"volume_usd\":500}"
+               "{\"timestamp\":1526247900,\"source\":\"coinmarketcap\",\"slug\":\"santiment\",\"price_usd\":0.292856,\"price_btc\":3.136261180345569e-5,\"volume_usd\":500,\"marketcap_usd\":400}"
     end
 
     test "convert price point without prices to tuple of json values", context do
@@ -55,7 +55,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
       assert key == "coinmarketcap_TOTAL_MARKET_2018-05-13T21:45:00.000000Z"
 
       assert value ==
-               "{\"marketcap_usd\":400,\"price_btc\":null,\"price_usd\":null,\"slug\":\"TOTAL_MARKET\",\"source\":\"coinmarketcap\",\"timestamp\":1526247900,\"volume_usd\":500}"
+               "{\"timestamp\":1526247900,\"source\":\"coinmarketcap\",\"slug\":\"TOTAL_MARKET\",\"price_usd\":null,\"price_btc\":null,\"volume_usd\":500,\"marketcap_usd\":400}"
     end
   end
 end

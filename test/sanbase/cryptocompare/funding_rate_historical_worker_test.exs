@@ -96,7 +96,7 @@ defmodule Sanbase.Cryptocompare.FundingRateHistoricalWorkerTest do
 
       for i <- (limit - 1)..0 do
         assert {"#{market}_#{instrument}_#{timestamp - i * 3600}",
-                "{\"close\":0.01,\"contract_currency\":\"ETH\",\"instrument\":\"#{instrument}\",\"mapped_instrument\":\"ETH-USDT-VANILLA-PERPETUAL\",\"market\":\"binance\",\"quote_currency\":\"USDT\",\"settlement_currency\":\"USDT\",\"timestamp\":#{timestamp - i * 3600}}"} in topic
+                "{\"close\":0.01,\"timestamp\":#{timestamp - i * 3600},\"instrument\":\"#{instrument}\",\"market\":\"binance\",\"contract_currency\":\"ETH\",\"mapped_instrument\":\"ETH-USDT-VANILLA-PERPETUAL\",\"quote_currency\":\"USDT\",\"settlement_currency\":\"USDT\"}"} in topic
       end
     end)
 

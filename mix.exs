@@ -86,7 +86,7 @@ defmodule Sanbase.Mixfile do
       {:ecto_psql_extras, "~> 0.3"},
       {:ecto_sql, "== 3.9.0"},
       # Our config breaks with the newest ecto version
-      {:ecto, "== 3.9.1"},
+      {:ecto, "== 3.9.5"},
       {:envy, "~> 1.1.1", only: [:dev, :test]},
       {:erlex, "~> 0.2.6", override: true},
       {:ethereumex, "~> 0.9"},

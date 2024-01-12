@@ -93,10 +93,11 @@ defmodule Sanbase.Cryptocompare.OpenInterestHistoricalWorkerTest do
       topic = state["open_interest_cryptocompare"]
 
       assert length(topic) == limit
+      topic = Enum.map(topic, fn {k, v} -> {k, Jason.decode!(v)} end)
 
       for i <- (limit - 1)..0 do
         assert {"#{market}_#{instrument}_#{timestamp - i * 3600}",
-                sort_json_keys(
+                Jason.decode!(
                   "{\"close_mark_price\":1332.98969276,\"close_quote\":187708030,\"close_settlement\":140817.31540725136,\"contract_currency\":\"USD\",\"instrument\":\"ETHUSD_PERP\",\"mapped_instrument\":\"#{instrument}\",\"market\":\"#{market}\",\"quote_currency\":\"USD\",\"settlement_currency\":\"ETH\",\"timestamp\":#{timestamp - i * 3600}}"
                 )} in topic
       end
@@ -169,14 +170,5 @@ defmodule Sanbase.Cryptocompare.OpenInterestHistoricalWorkerTest do
       String.to_integer(timestamp),
       String.to_integer(limit)
     )
-  end
-
-  defp sort_json_keys(json) do
-    map = Jason.decode!(json)
-
-    sorted_json =
-      ~s({"timestamp":#{map["timestamp"]},"instrument":"#{map["instrument"]}","market":"#{map["market"]}","close_mark_price":#{map["close_mark_price"]},"close_quote":#{map["close_quote"]},"close_settlement":#{map["close_settlement"]},"contract_currency":"#{map["contract_currency"]}","mapped_instrument":"#{map["mapped_instrument"]}","quote_currency":"#{map["quote_currency"]}","settlement_currency":"#{map["settlement_currency"]}"})
-
-    sorted_json
   end
 end

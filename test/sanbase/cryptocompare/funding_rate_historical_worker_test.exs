@@ -93,10 +93,13 @@ defmodule Sanbase.Cryptocompare.FundingRateHistoricalWorkerTest do
       topic = state["funding_rate_cryptocompare"]
 
       assert length(topic) == limit
+      topic = Enum.map(topic, fn {k, v} -> {k, Jason.decode!(v)} end)
 
       for i <- (limit - 1)..0 do
         assert {"#{market}_#{instrument}_#{timestamp - i * 3600}",
-                "{\"close\":0.01,\"timestamp\":#{timestamp - i * 3600},\"instrument\":\"#{instrument}\",\"market\":\"binance\",\"contract_currency\":\"ETH\",\"mapped_instrument\":\"ETH-USDT-VANILLA-PERPETUAL\",\"quote_currency\":\"USDT\",\"settlement_currency\":\"USDT\"}"} in topic
+                Jason.decode!(
+                  "{\"close\":0.01,\"timestamp\":#{timestamp - i * 3600},\"instrument\":\"#{instrument}\",\"market\":\"binance\",\"contract_currency\":\"ETH\",\"mapped_instrument\":\"ETH-USDT-VANILLA-PERPETUAL\",\"quote_currency\":\"USDT\",\"settlement_currency\":\"USDT\"}"
+                )} in topic
       end
     end)
 

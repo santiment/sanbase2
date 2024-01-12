@@ -111,7 +111,7 @@ defmodule Sanbase.TemplateEngine.Captures do
   end
 
   defp raise_lang_definition_error(definition) do
-    raise(Sanbase.TemplateEngine.TemplateEngineException,
+    raise(Sanbase.TemplateEngine.TemplateEngineError,
       message: """
       The lang definition is invalid: #{definition}.
       It must be in the format: lang=<lang>:<version> (eg. lang=san:1.0)
@@ -125,7 +125,7 @@ defmodule Sanbase.TemplateEngine.Captures do
         :ok
 
       %{key: key} ->
-        raise(Sanbase.TemplateEngine.TemplateEngineException,
+        raise(Sanbase.TemplateEngine.TemplateEngineError,
           message: """
           Error parsing the template. The template contains a key that itself contains
           { or }. This means that an opening or closing bracket is missing.

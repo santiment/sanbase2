@@ -96,6 +96,7 @@ defmodule Sanbase.SanLang.Interpreter do
     # We've already checked that the function name exists. Somethimes there are strange
     # errors during tests that :map_keys is not an existing atom, even though there is
     # such a function in the SanLang.Kernel module
+    # credo:disable-for-next-line
     apply(SanLang.Kernel, String.to_atom(function_name), args)
   end
 

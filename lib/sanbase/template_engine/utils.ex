@@ -43,7 +43,7 @@ defmodule Sanbase.TemplateEngine.Utils do
         Integer.to_string(data)
 
       true ->
-        raise(Sanbase.TemplateEngine.TemplateEngineException,
+        raise(Sanbase.TemplateEngine.TemplateEngineError,
           message: """
           Error transforming #{inspect(data)} of type #{Sanbase.Utils.get_type(data)} into a human readable format.
           The value's type is not supported. The supported types are: DateTime, integers, floats and strings

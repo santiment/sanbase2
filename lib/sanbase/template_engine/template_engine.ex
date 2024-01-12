@@ -27,7 +27,7 @@ defmodule Sanbase.TemplateEngine do
           key: String.t()
         }
 
-  defmodule TemplateEngineException do
+  defmodule TemplateEngineError do
     defexception [:message]
   end
 
@@ -152,7 +152,7 @@ defmodule Sanbase.TemplateEngine do
   end
 
   defp raise_positional_params_error(template, key, params, env) do
-    raise(TemplateEngineException,
+    raise(TemplateEngineError,
       message: """
       Error parsing the template. The template contains a key that is not present in the params map.
 
@@ -204,7 +204,7 @@ defmodule Sanbase.TemplateEngine do
 
   defp maybe_apply_modifier(_, key, modifier),
     do:
-      raise(TemplateEngineException,
+      raise(TemplateEngineError,
         message: """
         Unsupported or mistyped modifier '#{modifier}' for key '#{key}'
         """

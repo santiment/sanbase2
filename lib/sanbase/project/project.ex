@@ -81,6 +81,14 @@ defmodule Sanbase.Project do
       on_replace: :delete,
       on_delete: :delete_all
     )
+
+    many_to_many(
+      :ecosystems,
+      Sanbase.Ecosystem,
+      join_through: "project_ecosystem_mappings",
+      on_replace: :delete,
+      on_delete: :delete_all
+    )
   end
 
   def changeset(%Project{} = project, attrs \\ %{}) do
@@ -120,6 +128,7 @@ defmodule Sanbase.Project do
       :whitepaper_link
     ])
     |> cast_assoc(:market_segments)
+    |> cast_assoc(:ecosystems)
     |> validate_required([:name])
     |> unique_constraint(:slug)
   end

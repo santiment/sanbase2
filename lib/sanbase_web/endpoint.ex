@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Endpoint do
+  use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :sanbase
   use SanbaseWeb.Endpoint.ErrorHandler
   use Absinthe.Phoenix.Endpoint
@@ -21,14 +22,21 @@ defmodule SanbaseWeb.Endpoint do
       connect_info: [
         session: {SanbaseWeb.LiveViewUtils, :session_options, [@session_options]}
       ]
-    ]
+    ],
+    check_origin: false
   )
 
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phoenix.digest
   # when deploying your static files in production.
-  plug(Plug.Static, at: "/", from: :sanbase, gzip: false)
+  plug(Plug.Static,
+    at: "/",
+    from: :sanbase,
+    gzip: false,
+    only: SanbaseWeb.static_paths()
+  )
+
   plug(Plug.Static, at: "/kaffy", from: :kaffy, gzip: false, only: ~w(assets))
 
   # Prometheus /metrics endpoint
@@ -53,6 +61,8 @@ defmodule SanbaseWeb.Endpoint do
     pass: ["*/*"],
     json_decoder: Jason
   )
+
+  plug(Sentry.PlugContext)
 
   plug(Plug.MethodOverride)
   plug(Plug.Head)
@@ -146,19 +156,6 @@ defmodule SanbaseWeb.Endpoint do
 
   def api_url() do
     backend_url() <> "/graphql"
-  end
-
-  def login_url(token, email, origin_url, args \\ %{}) do
-    query_string =
-      Map.merge(%{token: token, email: email}, Map.take(args, [:subscribe_to_weekly_newsletter]))
-      |> URI.encode_query()
-
-    login_path = "/email_login?#{query_string}"
-
-    case origin_url do
-      nil -> frontend_url() <> login_path
-      origin_url -> origin_url <> login_path
-    end
   end
 
   def verify_url(email_candidate_token, email_candidate) do

@@ -18,6 +18,7 @@ defmodule Sanbase.Intercom do
 
   @user_events_url "https://api.intercom.io/events?type=user"
   @contacts_url "https://api.intercom.io/contacts"
+  @data_attributes_url "https://api.intercom.io/data_attributes"
 
   @batch_size 100
   @max_retries 5
@@ -111,6 +112,22 @@ defmodule Sanbase.Intercom do
     HTTPoison.post(@contacts_url, body, intercom_headers())
   end
 
+  def create_data_attribute(name, type) do
+    body =
+      %{
+        name: name,
+        model: "contact",
+        data_type: type
+      }
+      |> Jason.encode!()
+
+    HTTPoison.post(@data_attributes_url, body, intercom_headers())
+  end
+
+  def list_data_attributes() do
+    HTTPoison.get(@data_attributes_url <> "?model=contact", intercom_headers())
+  end
+
   def get_contact_by_user_id(user_id) do
     body =
       %{
@@ -134,7 +151,15 @@ defmodule Sanbase.Intercom do
   def update_contact(intercom_id, params) do
     body_json = Jason.encode!(params)
 
-    HTTPoison.put!("#{@contacts_url}/#{intercom_id}", body_json, intercom_headers())
+    HTTPoison.put("#{@contacts_url}/#{intercom_id}", body_json, intercom_headers())
+    |> case do
+      {:ok, response} ->
+        response
+
+      {:error, reason} ->
+        Logger.error("Error updating contact: #{inspect(reason)}")
+        {:error, reason}
+    end
   end
 
   def get_events_for_user(user_id, since \\ nil) do
@@ -145,6 +170,11 @@ defmodule Sanbase.Intercom do
   end
 
   def all_users_stats do
+    {:ok, users_used_api} = ApiCallData.users_used_api()
+    {:ok, users_used_sansheets} = ApiCallData.users_used_sansheets()
+    {:ok, api_calls_count_per_user} = ApiCallData.api_calls_count_per_user()
+    {:ok, all_user_subscriptions_map} = Subscription.Stats.all_user_subscriptions_map()
+
     %{
       paid_users: paid_users(),
       triggers_map: Statistics.resource_user_count_map(Sanbase.Alert.UserTrigger),
@@ -152,14 +182,18 @@ defmodule Sanbase.Intercom do
       watchlists_map: Statistics.resource_user_count_map(Sanbase.UserList),
       screeners_map: Statistics.user_screeners_count_map(),
       user_triggers_type_count: Statistics.user_triggers_type_count(),
-      users_used_api_list: ApiCallData.users_used_api(),
-      users_used_sansheets_list: ApiCallData.users_used_sansheets(),
-      api_calls_per_user_count: ApiCallData.api_calls_count_per_user(),
-      all_user_subscriptions_map: Subscription.Stats.all_user_subscriptions_map()
+      users_used_api_list: users_used_api,
+      users_used_sansheets_list: users_used_sansheets,
+      api_calls_per_user_count: api_calls_count_per_user,
+      all_user_subscriptions_map: all_user_subscriptions_map
     }
   end
 
   def all_users_stats(until) do
+    {:ok, users_used_api} = ApiCallData.users_used_api(until: until)
+    {:ok, users_used_sansheets} = ApiCallData.users_used_sansheets(until: until)
+    {:ok, api_calls_count_per_user} = ApiCallData.api_calls_count_per_user(until: until)
+
     %{
       paid_users: paid_users(),
       triggers_map: Statistics.resource_user_count_map(Sanbase.Alert.UserTrigger),
@@ -167,9 +201,9 @@ defmodule Sanbase.Intercom do
       watchlists_map: Statistics.resource_user_count_map(Sanbase.UserList),
       screeners_map: Statistics.user_screeners_count_map(),
       user_triggers_type_count: Statistics.user_triggers_type_count(),
-      users_used_api_list: ApiCallData.users_used_api(until: until),
-      users_used_sansheets_list: ApiCallData.users_used_sansheets(until: until),
-      api_calls_per_user_count: ApiCallData.api_calls_count_per_user(until: until),
+      users_used_api_list: users_used_api,
+      users_used_sansheets_list: users_used_sansheets,
+      api_calls_per_user_count: api_calls_count_per_user,
       all_user_subscriptions_map: Subscription.Stats.all_user_subscriptions_map()
     }
   end
@@ -180,13 +214,17 @@ defmodule Sanbase.Intercom do
   end
 
   def fetch_ch_data_user(user_id, date) do
-    query = """
+    sql = """
     SELECT dt, user_id, attributes
     FROM sanbase_user_intercom_attributes
-    WHERE (toStartOfDay(dt) = ?1) AND user_id = ?2
+    WHERE (toStartOfDay(dt) = {{date}}) AND user_id = {{user_id}}
     """
 
-    ClickhouseRepo.query_transform(query, [date, user_id], fn [dt, user_id, attributes] ->
+    params = %{date: date, user_id: user_id}
+
+    query_struct = Sanbase.Clickhouse.Query.new(sql, params)
+
+    ClickhouseRepo.query_transform(query_struct, fn [dt, user_id, attributes] ->
       %{
         dt: dt,
         user_id: user_id,
@@ -196,20 +234,23 @@ defmodule Sanbase.Intercom do
   end
 
   def fetch_ch_data(datetime, limit, offset) do
-    date = DateTime.to_date(datetime) |> Date.to_string()
-
-    offset = offset * limit
-
-    query = """
+    sql = """
     SELECT dt, user_id, attributes
     FROM sanbase_user_intercom_attributes
-    WHERE (toStartOfDay(dt) = ?1) AND user_id >= 87180
+    WHERE (toStartOfDay(dt) = {{date}}) AND user_id >= 87180
     ORDER BY user_id ASC
-    LIMIT ?2
-    OFFSET ?3
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
-    ClickhouseRepo.query_transform(query, [date, limit, offset], fn [dt, user_id, attributes] ->
+    params = %{
+      date: DateTime.to_date(datetime) |> Date.to_string(),
+      limit: limit,
+      offset: offset * limit
+    }
+
+    query_struct = Sanbase.Clickhouse.Query.new(sql, params)
+
+    ClickhouseRepo.query_transform(query_struct, fn [dt, user_id, attributes] ->
       %{
         dt: dt,
         user_id: user_id,
@@ -219,16 +260,19 @@ defmodule Sanbase.Intercom do
   end
 
   def fetch_all_synced_user_ids() do
-    query = """
+    sql = """
     SELECT user_id
     FROM sanbase_user_intercom_attributes
-    WHERE toStartOfDay(dt) = ?1
+    WHERE toStartOfDay(dt) = {{date}}
     ORDER BY user_id ASC
     """
 
     today = DateTime.to_date(DateTime.utc_now()) |> to_string
+    params = %{date: today}
 
-    {:ok, user_ids} = ClickhouseRepo.query_transform(query, [today], fn [user_id] -> user_id end)
+    query_struct = Sanbase.Clickhouse.Query.new(sql, params)
+
+    {:ok, user_ids} = ClickhouseRepo.query_transform(query_struct, fn [user_id] -> user_id end)
 
     user_ids
   end
@@ -354,7 +398,7 @@ defmodule Sanbase.Intercom do
     if user.eth_accounts != [] do
       Sanbase.Math.to_float(user.san_balance)
     else
-      0.0
+      +0.0
     end
   end
 

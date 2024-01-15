@@ -31,7 +31,7 @@ defmodule Sanbase.SocialData.SocialDominance do
       result =
         Enum.map(total_volume, fn %{datetime: datetime, mentions_count: total_mentions} ->
           text_mentions = Map.get(text_volume_map, datetime, 0)
-          dominance = Sanbase.Math.percent_of(text_mentions, total_mentions) || 0.0
+          dominance = Sanbase.Math.percent_of(text_mentions, total_mentions) || +0.0
 
           %{
             datetime: datetime,
@@ -80,7 +80,7 @@ defmodule Sanbase.SocialData.SocialDominance do
         |> Enum.map(fn {word, mentions} ->
           %{
             word: word,
-            social_dominance: Sanbase.Math.percent_of(mentions, total_mentions) || 0.0
+            social_dominance: Sanbase.Math.percent_of(mentions, total_mentions) || +0.0
           }
         end)
 
@@ -95,7 +95,7 @@ defmodule Sanbase.SocialData.SocialDominance do
     %{from: from, to: to, interval: interval, source: source} = social_dominance_args()
 
     with {:ok, trending_words} when trending_words != [] <-
-           SocialData.TrendingWords.get_currently_trending_words(@trending_words_size),
+           SocialData.TrendingWords.get_currently_trending_words(@trending_words_size, :all),
          words <- Enum.map(trending_words, & &1.word),
          {:ok, words_volume} <-
            SocialData.social_volume(%{words: words}, from, to, interval, source),
@@ -106,7 +106,7 @@ defmodule Sanbase.SocialData.SocialDominance do
 
       total_mentions = List.last(total_volume).mentions_count
 
-      dominance = Sanbase.Math.percent_of(words_mentions_sum, total_mentions) || 0.0
+      dominance = Sanbase.Math.percent_of(words_mentions_sum, total_mentions) || +0.0
 
       {:ok, dominance}
     else

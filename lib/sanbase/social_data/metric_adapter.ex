@@ -28,6 +28,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_volume_twitter_news",
     "social_volume_twitter_nft",
     "social_volume_youtube_videos",
+    "social_volume_newsapi_crypto",
     "social_volume_total",
     "nft_social_volume"
   ]
@@ -74,18 +75,10 @@ defmodule Sanbase.SocialData.MetricAdapter do
   # plan related - the plan is upcase string
   @min_plan_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, "FREE") end)
 
-  # restriction related - the restriction is atom :free or :restricted
-  @social_volume_metric_access_map @social_volume_timeseries_metrics
-                                   |> Enum.into(
-                                     %{},
-                                     &{&1, %{"historical" => :restricted, "realtime" => :free}}
-                                   )
-
-  @access_map (@metrics -- @social_volume_timeseries_metrics)
+  @access_map @metrics
               |> Enum.reduce(%{}, fn metric, acc ->
                 Map.put(acc, metric, :restricted)
               end)
-              |> Map.merge(@social_volume_metric_access_map)
 
   @required_selectors Enum.into(@metrics, %{}, &{&1, []})
                       |> Map.put("social_active_users", [[:source]])
@@ -254,14 +247,28 @@ defmodule Sanbase.SocialData.MetricAdapter do
     do: {:ok, Project.List.projects_slugs(preload?: false)}
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs("social_volume_" <> _source),
-    do: {:ok, Project.List.projects_slugs(preload?: false)}
+  def available_slugs(metric) do
+    slugs =
+      case metric do
+        "social_volume_" <> _source ->
+          Project.List.projects_slugs(preload?: false)
 
-  def available_slugs("social_dominance_" <> _source),
-    do: {:ok, Project.List.projects_slugs(preload?: false)}
+        "social_dominance_" <> _source ->
+          Project.List.projects_slugs(preload?: false)
 
-  def available_slugs("community_messages_count_" <> _source),
-    do: {:ok, Project.List.projects_by_non_null_field(:telegram_link) |> Enum.map(& &1.slug)}
+        "community_messages_count_" <> _source ->
+          Project.List.projects_by_non_null_field(:telegram_link) |> Enum.map(& &1.slug)
+
+        metric ->
+          {:ok, %{available_selectors: selectors}} = metadata(metric)
+
+          if :slug in selectors,
+            do: raise("available_slugs/1 not implemented for #{metric}"),
+            else: []
+      end
+
+    {:ok, slugs}
+  end
 
   @impl Sanbase.Metric.Behaviour
   def available_timeseries_metrics(), do: @timeseries_metrics
@@ -319,6 +326,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
       case metric do
         "community_messages_count" <> _ -> [:slug]
         "social_active_users" -> [:source]
+        "nft_social_volume" -> [:contract_address]
         _ -> [:slug, :text]
       end
 
@@ -331,8 +339,12 @@ defmodule Sanbase.SocialData.MetricAdapter do
        default_aggregation: :sum,
        available_aggregations: @aggregations,
        available_selectors: selectors,
+       required_selectors: [],
        data_type: :timeseries,
-       complexity_weight: @default_complexity_weight
+       complexity_weight: @default_complexity_weight,
+       hard_deprecate_after: nil,
+       is_deprecated: false,
+       is_timebound: false
      }}
   end
 
@@ -350,6 +362,12 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp source_first_datetime("total"), do: source_first_datetime("bitcointalk")
   defp source_first_datetime("telegram"), do: {:ok, ~U[2016-03-29 00:00:00Z]}
   defp source_first_datetime("twitter"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
+  defp source_first_datetime("twitter_crypto"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
+  defp source_first_datetime("twitter_news"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
+  defp source_first_datetime("twitter_nft"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
   defp source_first_datetime("reddit"), do: {:ok, ~U[2016-01-01 00:00:00Z]}
   defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2011-06-01 00:00:00Z]}
+  defp source_first_datetime("newsapi_crypto"), do: {:ok, ~U[2024-01-01 00:00:00Z]}
+  defp source_first_datetime("youtube_videos"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
+  defp source_first_datetime("4chan"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
 end

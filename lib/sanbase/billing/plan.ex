@@ -35,6 +35,10 @@ defmodule Sanbase.Billing.Plan do
     field(:is_deprecated, :boolean, default: false)
     # plans that customers can't subscribe on their own
     field(:is_private, :boolean)
+
+    # is plan for parity purchasing power
+    field(:is_ppp, :boolean, default: false)
+
     # order first by `order` field, then by id
     field(:order, :integer)
 
@@ -152,10 +156,16 @@ defmodule Sanbase.Billing.Plan do
   List all products with corresponding subscription plans
   """
   def product_with_plans do
-    product_with_plans =
-      Product
-      |> Repo.all()
-      |> Repo.preload(plans: from(p in __MODULE__, order_by: [desc: p.order, asc: p.id]))
+    query =
+      from(p in Product,
+        join: pl in __MODULE__,
+        on: pl.product_id == p.id,
+        where: not pl.is_ppp,
+        order_by: [desc: pl.order, asc: pl.id],
+        preload: [plans: pl]
+      )
+
+    product_with_plans = Repo.all(query)
 
     {:ok, product_with_plans}
   end

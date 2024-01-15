@@ -5,29 +5,29 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Sanbase</title>
-    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
-    <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/assets/app.css") %>"/>
+    <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/assets/app.js") %>"></script>
   </head>
   <body>
     <header>
     </header>
-    <%= if get_flash(@conn, :info) do %>
+    <%= if Phoenix.Flash.get(@flash, :info) do %>
     <div class="text-white px-6 py-4 border-0 rounded relative mb-4 bg-green-500">
       <span class="text-xl inline-block mr-5 align-middle">
         <i class="fas fa-bell" />
       </span>
       <span class="inline-block align-middle mr-8">
-        <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
+        <p class="alert alert-info" role="alert"><%= Phoenix.Flash.get(@flash, :info) %></p>
       </span>
     </div>
     <% end %>
-    <%= if get_flash(@conn, :error) do %>
+    <%= if Phoenix.Flash.get(@flash, :error) do %>
     <div class="text-white px-6 py-4 border-0 rounded relative mb-4 bg-red-500">
       <span class="text-xl inline-block mr-5 align-middle">
         <i class="fas fa-bell" />
       </span>
       <span class="inline-block align-middle mr-8">
-        <p class="alert alert-info" role="alert"><%= get_flash(@conn, :error) %></p>
+        <p class="alert alert-info" role="alert"><%= Phoenix.Flash.get(@flash, :error) %></p>
       </span>
     </div>
     <% end %>

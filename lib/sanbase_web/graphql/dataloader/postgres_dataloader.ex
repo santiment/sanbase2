@@ -18,6 +18,9 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
   def query(:dashboard_vote_stats, data), do: get_votes_stats(:dashboard, :dashboard_id, data)
   def query(:dashboard_voted_at, data), do: get_voted_at(:dashboard, :dashboard_id, data)
 
+  def query(:query_vote_stats, data), do: get_votes_stats(:query, :query_id, data)
+  def query(:query_voted_at, data), do: get_voted_at(:query, :query_id, data)
+
   def query(:timeline_event_vote_stats, data),
     do: get_votes_stats(:timeline_event, :timeline_event_id, data)
 

@@ -33,7 +33,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :api_metric_distribution,
           :assets_held_by_address,
           :blockchain_address_label_changes,
-          :blockchain_address_labels,
           :blockchain_address_transaction_volume_over_time,
           :blockchain_address_user_pair,
           :blockchain_address,
@@ -67,18 +66,21 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :fetch_public_watchlists,
           :fetch_user_lists,
           :fetch_watchlists,
+          :generate_title_by_query,
           :get_access_restrictions,
           :get_attributes_for_users,
           :get_auth_sessions,
           :get_available_blockchains,
           :get_available_clickhouse_tables,
-          :get_available_metrics,
           :get_available_metrics_for_selector,
+          :get_available_metrics,
           :get_available_signals,
           :get_blockchain_address_labels,
+          :get_cached_dashboard_queries_executions,
           :get_chart_configuration_shared_access_token,
           :get_clickhouse_database_metadata,
           :get_clickhouse_query_execution_stats,
+          :get_current_user_submitted_twitter_handles,
           :get_coupon,
           :get_dashboard_cache,
           :get_dashboard_panel_cache,
@@ -86,8 +88,11 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_dashboard_schema_history,
           :get_dashboard_schema,
           :get_events_for_users,
+          :get_free_form_json,
           :get_full_url,
+          :get_label_based_metric_owners,
           :get_market_exchanges,
+          :get_menu,
           :get_metric,
           :get_most_recent,
           :get_most_used,
@@ -97,8 +102,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_nft_trades,
           :get_presigned_s3_url,
           :get_primary_user,
-          :get_questionnaire,
           :get_questionnaire_user_answers,
+          :get_questionnaire,
           :get_raw_signals,
           :get_reports_by_tags,
           :get_reports,
@@ -107,6 +112,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_signal,
           :get_telegram_deep_link,
           :get_trigger_by_id,
+          :get_user_dashboards,
           :get_user,
           :get_webinars,
           :github_activity,
@@ -119,12 +125,14 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :insight_comments,
           :insight,
           :is_telegram_chat_id_valid,
+          :is_twitter_handle_monitored,
           :ohlc,
           :outgoing_transfers_summary,
           :payments,
           :popular_insight_authors,
           :popular_search_terms,
           :post,
+          :ppp_settings,
           :products_with_plans,
           :project_by_slug,
           :project,
@@ -146,14 +154,21 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :top_transfers,
           :transaction_volume_per_address,
           :twitter_data,
-          :uniswap_value_distribution,
-          :uniswap_who_claimed,
           :upcoming_invoice,
           :usd_value_address_change,
           :user_list,
           :watchlist,
           :watchlist_by_slug,
-          :words_social_dominance
+          :words_social_dominance,
+          # Queries 2.0
+          :get_dashboard,
+          :get_sql_query,
+          :get_public_queries,
+          :get_query_executions,
+          :get_user_queries,
+          :run_dashboard_sql_query,
+          :run_raw_sql_query,
+          :run_sql_query
         ]
         |> Enum.sort()
 
@@ -161,11 +176,11 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
     end
 
     test "restricted queries defined in the schema" do
-      basic_queries =
+      restricted_queries =
         Sanbase.Billing.ApiInfo.get_queries_with_access_level(:restricted)
         |> Enum.sort()
 
-      expected_basic_queries =
+      expected_restricted_queries =
         [
           :average_token_age_consumed_in_days,
           :burn_rate,
@@ -202,7 +217,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         ]
         |> Enum.sort()
 
-      assert basic_queries == expected_basic_queries
+      assert restricted_queries == expected_restricted_queries
     end
 
     test "forbidden queries from the schema" do

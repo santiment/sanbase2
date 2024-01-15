@@ -7,6 +7,7 @@ defmodule Sanbase.Cryptocompare.Supervisor do
 
   alias Sanbase.Cryptocompare.Price
   alias Sanbase.Cryptocompare.OpenInterest
+  alias Sanbase.Cryptocompare.FundingRate
 
   @spec start_link(Keyword.t()) :: Supervisor.on_start()
   def start_link(opts) when is_list(opts) do
@@ -73,6 +74,20 @@ defmodule Sanbase.Cryptocompare.Supervisor do
           end,
           fn -> OpenInterest.HistoricalScheduler.enabled?() end
         ),
+        # Kafka exporter for the funding rate scraper
+        start_if(
+          fn ->
+            Sanbase.KafkaExporter.child_spec(
+              id: :funding_rate_exporter,
+              name: :funding_rate_exporter,
+              topic: Config.module_get!(Sanbase.KafkaExporter, :funding_rate_topic),
+              buffering_max_messages: 5000,
+              can_send_after_interval: 250,
+              kafka_flush_timeout: 1000
+            )
+          end,
+          fn -> FundingRate.HistoricalScheduler.enabled?() end
+        ),
         # Websocket realtime price exporter
         start_if(
           fn -> Price.WebsocketScraper end,
@@ -87,6 +102,11 @@ defmodule Sanbase.Cryptocompare.Supervisor do
         start_if(
           fn -> OpenInterest.HistoricalScheduler end,
           fn -> OpenInterest.HistoricalScheduler.enabled?() end
+        ),
+        # Resume and pause on termination the funding rate historical queue
+        start_if(
+          fn -> FundingRate.HistoricalScheduler end,
+          fn -> FundingRate.HistoricalScheduler.enabled?() end
         )
       ]
       |> normalize_children()

@@ -70,6 +70,7 @@ defmodule Sanbase.Metric do
   @table_metric_to_module_map Helper.table_metric_to_module_map()
   @required_selectors_map Helper.required_selectors_map()
   @deprecated_metrics_map Helper.deprecated_metrics_map()
+  @soft_deprecated_metrics_map Helper.soft_deprecated_metrics_map()
 
   @doc ~s"""
   Check if `metric` is a valid metric name.
@@ -90,12 +91,14 @@ defmodule Sanbase.Metric do
   end
 
   def is_not_deprecated?(metric) do
-    case Map.get(@deprecated_metrics_map, metric) do
-      nil ->
-        true
+    now = DateTime.utc_now()
+    hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
 
-      %DateTime{} = deprecated_since ->
-        {:error, "The metric #{metric} is deprecated since #{deprecated_since}"}
+    # The metric is not deprecated if `hard_deprecate_after` is nil or if the the
+    # date is in the future
+    case is_nil(hard_deprecate_after) or DateTime.compare(now, hard_deprecate_after) == :lt do
+      true -> true
+      false -> {:error, "The metric #{metric} is deprecated since #{hard_deprecate_after}"}
     end
   end
 
@@ -421,7 +424,10 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module.metadata(metric)
+        case module.metadata(metric) do
+          {:ok, metadata} -> {:ok, extend_metadata(metadata, metric)}
+          error -> error
+        end
     end
   end
 
@@ -678,7 +684,7 @@ defmodule Sanbase.Metric do
   """
   @spec is_historical_data_freely_available?(metric) :: boolean
   def is_historical_data_freely_available?(metric) do
-    get_in(@access_map, [metric, "historical"]) == "FREE"
+    get_in(@access_map, [metric, "historical"]) == :free
   end
 
   @doc ~s"""
@@ -686,7 +692,7 @@ defmodule Sanbase.Metric do
   """
   @spec is_realtime_data_freely_available?(metric) :: boolean
   def is_realtime_data_freely_available?(metric) do
-    get_in(@access_map, [metric, "realtime"]) == "FREE"
+    get_in(@access_map, [metric, "realtime"]) == :free
   end
 
   @doc ~s"""
@@ -714,7 +720,7 @@ defmodule Sanbase.Metric do
   defp metric_not_available_error_details(metric, type) do
     %{
       close: maybe_get_close_metric(metric, type),
-      error_msg: "The metric '#{metric}' is not supported or is mistyped."
+      error_msg: "The metric '#{metric}' is not supported, is deprecated or is mistyped."
     }
   end
 
@@ -784,7 +790,14 @@ defmodule Sanbase.Metric do
   # When using slug, the social metrics are fetched from clickhouse
   # But when text selector is used, the metric should be fetched from Elasticsearch
   # as it cannot be precomputed due to the vast number of possible text arguments
-  defp maybe_change_module(module, metric, %{text: _text}, _opts) do
+  defp maybe_change_module(module, metric, %{text: _}, _opts) do
+    case metric in @social_metrics do
+      true -> Sanbase.SocialData.MetricAdapter
+      false -> module
+    end
+  end
+
+  defp maybe_change_module(module, metric, %{contract_address: _}, _opts) do
     case metric in @social_metrics do
       true -> Sanbase.SocialData.MetricAdapter
       false -> module
@@ -866,5 +879,16 @@ defmodule Sanbase.Metric do
       data_sorted_by_slug = Enum.sort_by(data, & &1.slug, :asc)
       %{elem | data: data_sorted_by_slug}
     end)
+  end
+
+  defp extend_metadata(metadata, metric) do
+    hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
+    is_soft_deprecated = Map.get(@soft_deprecated_metrics_map, metric)
+
+    is_deprecated = not is_nil(hard_deprecate_after) or not is_nil(is_soft_deprecated)
+
+    metadata
+    |> Map.put(:is_deprecated, is_deprecated)
+    |> Map.put(:hard_deprecate_after, hard_deprecate_after)
   end
 end

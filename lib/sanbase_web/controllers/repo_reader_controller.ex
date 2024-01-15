@@ -4,34 +4,34 @@ defmodule SanbaseWeb.RepoReaderController do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
-  def validator_webhook(conn, %{"secret" => secret} = params) do
-    case endpoint_secret() == secret do
-      true ->
-        changed_files = Map.get(params, "changed_files", [])
-        branch = Map.get(params, "branch", "main")
+  def validator_webhook(conn, params) do
+    Logger.info(
+      "[RepoReaderController] Received validator webhook with params: #{inspect(Map.delete(params, "secret"))}"
+    )
 
-        case Sanbase.RepoReader.validate_changes(branch, changed_files) do
-          :ok ->
-            conn
-            |> put_resp_header("content-type", "application/json; charset=utf-8")
-            |> put_status(200)
-            |> json(%{result: "OK"})
+    changed_files = Map.get(params, "changed_files", [])
+    branch = Map.get(params, "branch", "main")
 
-          {:error, error} ->
-            conn
-            |> put_resp_header("content-type", "application/json; charset=utf-8")
-            |> put_status(400)
-            |> json(%{error: error})
-        end
-
-      false ->
+    case Sanbase.RepoReader.validate_changes(branch, changed_files) do
+      :ok ->
         conn
-        |> send_resp(403, "Unauthorized")
-        |> halt()
+        |> put_resp_header("content-type", "application/json; charset=utf-8")
+        |> put_status(200)
+        |> json(%{result: "OK"})
+
+      {:error, error} ->
+        conn
+        |> put_resp_header("content-type", "application/json; charset=utf-8")
+        |> put_status(400)
+        |> json(%{error: error})
     end
   end
 
   def reader_webhook(conn, %{"secret" => secret} = params) do
+    Logger.info(
+      "[RepoReaderController] Received reader webhook with params: #{inspect(Map.delete(params, "secret"))}"
+    )
+
     case endpoint_secret() == secret do
       true ->
         changed_files = Map.get(params, "changed_files", [])

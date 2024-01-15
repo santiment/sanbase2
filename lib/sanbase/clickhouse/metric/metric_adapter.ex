@@ -8,7 +8,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Clickhouse.MetricAdapter.SqlQuery
-  import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 2]
+  import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 1]
 
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
@@ -39,6 +39,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @metric_to_names_map FileHandler.metric_to_names_map()
   @name_to_metric_map FileHandler.name_to_metric_map()
   @deprecated_metrics_map FileHandler.deprecated_metrics_map()
+  @soft_deprecated_metrics_map FileHandler.soft_deprecated_metrics_map()
   @timebound_flag_map FileHandler.timebound_flag_map()
   @default_complexity_weight 0.3
 
@@ -65,6 +66,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def deprecated_metrics_map(), do: @deprecated_metrics_map
+
+  @impl Sanbase.Metric.Behaviour
+  def soft_deprecated_metrics_map(), do: @soft_deprecated_metrics_map
 
   @impl Sanbase.Metric.Behaviour
   def access_map(), do: @access_map
@@ -96,10 +100,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
     filters = get_filters(metric, opts)
 
-    {query, args} =
-      timeseries_data_query(metric, selector, from, to, interval, aggregation, filters)
-
-    exec_timeseries_data_query(query, args)
+    timeseries_data_query(metric, selector, from, to, interval, aggregation, filters)
+    |> exec_timeseries_data_query()
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -107,12 +109,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
     filters = get_filters(metric, opts)
 
-    {query, args} =
-      timeseries_data_per_slug_query(metric, slug, from, to, interval, aggregation, filters)
-
-    ClickhouseRepo.query_reduce(
-      query,
-      args,
+    timeseries_data_per_slug_query(metric, slug, from, to, interval, aggregation, filters)
+    |> ClickhouseRepo.query_reduce(
       %{},
       fn [timestamp, slug, value], acc ->
         datetime = DateTime.from_unix!(timestamp)
@@ -151,10 +149,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
     filters = Keyword.get(opts, :additional_filters, [])
 
-    {query, args} =
-      slugs_by_filter_query(metric, from, to, operator, threshold, aggregation, filters)
-
-    ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+    slugs_by_filter_query(metric, from, to, operator, threshold, aggregation, filters)
+    |> ClickhouseRepo.query_transform(fn [slug, _value] -> slug end)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -162,8 +158,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
     filters = Keyword.get(opts, :additional_filters, [])
 
-    {query, args} = slugs_order_query(metric, from, to, direction, aggregation, filters)
-    ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+    slugs_order_query(metric, from, to, direction, aggregation, filters)
+    |> ClickhouseRepo.query_transform(fn [slug, _value] -> slug end)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -213,9 +209,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(selector) do
-    {query, args} = available_metrics_for_selector_query(selector)
-
-    ClickhouseRepo.query_transform(query, args, fn [metric] ->
+    available_metrics_for_selector_query(selector)
+    |> ClickhouseRepo.query_transform(fn [metric] ->
       Map.get(@metric_to_names_map, metric)
     end)
     |> maybe_apply_function(fn metrics ->
@@ -231,8 +226,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def available_slugs(), do: get_available_slugs()
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs(metric) when metric in @histogram_metrics_name_list,
-    do: HistogramMetric.available_slugs(metric)
+  def available_slugs(metric)
+      # otherwise age_distribution causes an infinite loop
+      when metric in @histogram_metrics_name_list and metric not in ["age_distribution"],
+      do: HistogramMetric.available_slugs(metric)
 
   def available_slugs(metric), do: get_available_slugs(metric)
 
@@ -244,9 +241,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     do: HistogramMetric.first_datetime(metric, selector)
 
   def first_datetime(metric, selector) do
-    {query, args} = first_datetime_query(metric, selector)
-
-    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+    first_datetime_query(metric, selector)
+    |> ClickhouseRepo.query_transform(fn [datetime] ->
       DateTime.from_unix!(datetime)
     end)
     |> maybe_unwrap_ok_value()
@@ -257,9 +253,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     do: HistogramMetric.last_datetime_computed_at(metric, selector)
 
   def last_datetime_computed_at(metric, selector) do
-    {query, args} = last_datetime_computed_at_query(metric, selector)
-
-    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+    last_datetime_computed_at_query(metric, selector)
+    |> ClickhouseRepo.query_transform(fn [datetime] ->
       DateTime.from_unix!(datetime)
     end)
     |> maybe_unwrap_ok_value()
@@ -270,15 +265,13 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   defp min_interval(metric), do: Map.get(@min_interval_map, metric)
 
   defp get_available_slugs() do
-    {query, args} = available_slugs_query()
-
-    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+    available_slugs_query()
+    |> ClickhouseRepo.query_transform(fn [slug] -> slug end)
   end
 
   defp get_available_slugs(metric) do
-    {query, args} = available_slugs_for_metric_query(metric)
-
-    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+    available_slugs_for_metric_query(metric)
+    |> ClickhouseRepo.query_transform(fn [slug] -> slug end)
   end
 
   defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters)
@@ -301,10 +294,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters)
        when is_list(slugs) do
-    {query, args} =
-      aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters)
+    query_struct = aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, value, has_changed], acc ->
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn [slug, value, has_changed], acc ->
       value = if has_changed == 1, do: value, else: nil
       Map.put(acc, slug, value)
     end)

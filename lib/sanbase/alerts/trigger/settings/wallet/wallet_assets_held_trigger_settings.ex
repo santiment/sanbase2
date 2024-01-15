@@ -67,11 +67,14 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
     temp_settings =
       Map.put(settings, :filtered_target, Sanbase.Alert.Trigger.get_filtered_target(trigger))
 
-    address_key_to_slugs_map = get_data(temp_settings) |> Map.new()
+    with {:ok, data} <- get_data(temp_settings) do
+      address_key_to_slugs_map = Map.new(data)
 
-    settings = %{settings | state: %{slugs_held_by_address: address_key_to_slugs_map}}
+      settings = %{settings | state: %{slugs_held_by_address: address_key_to_slugs_map}}
 
-    %{trigger | settings: settings}
+      trigger = %{trigger | settings: settings}
+      {:ok, trigger}
+    end
   end
 
   @doc ~s"""
@@ -81,26 +84,29 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
         filtered_target: %{list: target_list},
         selector: selector
       }) do
-    target_list
-    |> Enum.map(fn address ->
-      address = Sanbase.BlockchainAddress.to_internal_format(address)
+    data =
+      target_list
+      |> Enum.map(fn address ->
+        address = Sanbase.BlockchainAddress.to_internal_format(address)
 
-      selector = %{address: address, infrastructure: selector.infrastructure}
+        selector = %{address: address, infrastructure: selector.infrastructure}
 
-      with {:ok, result} when is_list(result) <- assets_held(selector) do
-        slugs_list = Enum.map(result, & &1.slug)
+        with {:ok, result} when is_list(result) <- assets_held(selector) do
+          slugs_list = Enum.map(result, & &1.slug)
 
-        {address, slugs_list}
-      else
-        result ->
-          raise("""
-          The result returned from assets_held in WalletAssetsHeldTriggerSettings has \
-          different format than the expected one.
-          Got: #{inspect(result)}
-          """)
-      end
-    end)
-    |> Enum.reject(&(match?({:error, _}, &1) or match?({:ok, []}, &1)))
+          {address, slugs_list}
+        else
+          result ->
+            raise("""
+            The result returned from assets_held in WalletAssetsHeldTriggerSettings has \
+            different format than the expected one.
+            Got: #{inspect(result)}
+            """)
+        end
+      end)
+      |> Enum.reject(&(match?({:error, _}, &1) or match?({:ok, []}, &1)))
+
+    {:ok, data}
   end
 
   defp assets_held(selector) do
@@ -108,7 +114,7 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
       {__MODULE__, :assets_held, selector, round_datetime(DateTime.utc_now())}
       |> Sanbase.Cache.hash()
 
-    Sanbase.Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->
+    Sanbase.Cache.get_or_store(cache_key, fn ->
       {:ok, _} = HistoricalBalance.assets_held_by_address(selector)
     end)
   end
@@ -123,11 +129,13 @@ defmodule Sanbase.Alert.Trigger.WalletAssetsHeldTriggerSettings do
 
     def evaluate(%WalletAssetsHeldTriggerSettings{} = settings, _trigger) do
       case WalletAssetsHeldTriggerSettings.get_data(settings) do
-        data when is_list(data) and data != [] ->
+        {:ok, data} when is_list(data) and data != [] ->
           build_result(data, settings)
 
         _ ->
-          %WalletAssetsHeldTriggerSettings{settings | triggered?: false}
+          # TODO: Handle errror case
+          settings = %WalletAssetsHeldTriggerSettings{settings | triggered?: false}
+          {:ok, settings}
       end
     end
 

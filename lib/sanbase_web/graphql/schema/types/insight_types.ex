@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
 
   import Absinthe.Resolution.Helpers
 
-  alias SanbaseWeb.Graphql.Resolvers.{InsightResolver, VoteResolver}
+  alias SanbaseWeb.Graphql.Resolvers.{InsightResolver, VoteResolver, UserResolver}
   alias SanbaseWeb.Graphql.SanbaseRepo
 
   object :metric_short_description do
@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:id, non_null(:integer))
 
     field :user, non_null(:public_user) do
-      resolve(&SanbaseWeb.Graphql.Resolvers.UserResolver.user_no_preloads/3)
+      resolve(&UserResolver.user_no_preloads/3)
     end
 
     field(:title, non_null(:sanitized_string_no_tags))

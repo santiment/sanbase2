@@ -132,23 +132,23 @@ defimpl Sanbase.Alert, for: Any do
                }
              }
            }
-         } = trigger,
+         } = user_trigger,
          %{"telegram" => max_alerts_to_send}
        )
        when is_integer(telegram_chat_id) and telegram_chat_id > 0 do
     fun = fn _identifier, payload ->
-      payload = transform_payload(payload, trigger.id, :telegram)
+      payload = transform_payload(payload, user_trigger.id, :telegram)
 
-      response = Sanbase.Telegram.send_message(trigger.user, payload)
+      response = Sanbase.Telegram.send_message(user_trigger.user, payload)
 
       # Deactivate the alert if the message is sent to telegram, telegram
       # is the only channel and the telegram bot is blocked by the user.
       # The function returns :ok or {:error, reason} which is used in the
       # caller.
-      deactivate_alert_if_bot_blocked(response, trigger)
+      deactivate_alert_if_bot_blocked(response, user_trigger)
     end
 
-    send_or_limit("telegram", trigger, max_alerts_to_send, fun)
+    send_or_limit("telegram", user_trigger, max_alerts_to_send, fun)
   end
 
   defp send_telegram(
@@ -161,7 +161,7 @@ defimpl Sanbase.Alert, for: Any do
                }
              }
            }
-         } = trigger,
+         } = user_trigger,
          _max_alerts_to_send
        )
        when is_integer(telegram_chat_id) and telegram_chat_id > 0 do
@@ -171,7 +171,7 @@ defimpl Sanbase.Alert, for: Any do
       trigger: %{
         settings: %{payload: payload_map}
       }
-    } = trigger
+    } = user_trigger
 
     Enum.map(payload_map, fn {identifier, _payload} ->
       {identifier,
@@ -184,12 +184,12 @@ defimpl Sanbase.Alert, for: Any do
     end)
   end
 
-  defp send_telegram(trigger, _max_alerts_to_send) do
+  defp send_telegram(user_trigger, _max_alerts_to_send) do
     %{
       id: trigger_id,
       user: %User{id: user_id},
       trigger: %{settings: %{payload: payload_map}}
-    } = trigger
+    } = user_trigger
 
     Enum.map(payload_map, fn {identifier, _payload} ->
       {identifier, {:error, %{reason: :no_telegram, user_id: user_id, trigger_id: trigger_id}}}
@@ -197,26 +197,26 @@ defimpl Sanbase.Alert, for: Any do
   end
 
   defp send_telegram_channel(
-         trigger,
+         user_trigger,
          channel,
          %{"telegram_channel" => max_alerts_to_send}
        ) do
     fun = fn _identifier, payload ->
-      payload = transform_payload(payload, trigger.id, :telegram_channel)
-      {payload, opts} = maybe_extend_payload_telegram_channel(payload, trigger, channel)
+      payload = transform_payload(payload, user_trigger.id, :telegram_channel)
+      {payload, opts} = maybe_extend_payload_telegram_channel(payload, user_trigger, channel)
 
       response = Sanbase.Telegram.send_message_to_chat_id(channel, payload)
       # Send a reply to the original message, if it was delived successfuly
       # It contains the chat preview image.
-      maybe_send_preview_image_as_reply(response, trigger, channel, opts)
+      maybe_send_preview_image_as_reply(response, user_trigger, channel, opts)
       # Deactivate the alert if the message is sent to telegram, telegram
       # is the only channel and the telegram bot is blocked by the user.
       # The function returns :ok or {:error, reason} which is used in the
       # caller.
-      deactivate_alert_if_bot_blocked(response, trigger)
+      deactivate_alert_if_bot_blocked(response, user_trigger)
     end
 
-    send_or_limit("telegram_channel", trigger, max_alerts_to_send, fun)
+    send_or_limit("telegram_channel", user_trigger, max_alerts_to_send, fun)
   end
 
   # For daily and intraday metric signals add preview image of the chart for metric + asset
@@ -237,15 +237,15 @@ defimpl Sanbase.Alert, for: Any do
 
   defp maybe_send_preview_image_as_reply(_, _, _, _), do: :ok
 
-  defp deactivate_alert_if_bot_blocked({:error, error}, trigger) do
+  defp deactivate_alert_if_bot_blocked({:error, error}, user_trigger) do
     case String.contains?(error, "blocked the telegram bot") do
       true ->
-        # In case the trigger does not have other channels but only telegram
+        # In case the user_trigger does not have other channels but only telegram
         # and the user has blocked our telegram bot, the alert is disabled
         # so it does not spend resources running
-        deactivate_if_telegram_channel_only(trigger)
+        deactivate_if_telegram_channel_only(user_trigger)
 
-        %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = trigger
+        %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = user_trigger
         {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}
 
       false ->
@@ -278,12 +278,12 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  defp deactivate_if_telegram_channel_only(trigger) do
-    case trigger do
+  defp deactivate_if_telegram_channel_only(user_trigger) do
+    case user_trigger do
       %{trigger: %{settings: %{channel: channel}}} when channel in ["telegram", ["telegram"]] ->
-        Logger.info("Deactivating user trigger with id #{trigger.id} because the user \
-        with id #{trigger.user.id} has blocked the telegram bot.")
-        Sanbase.Alert.UserTrigger.update_is_active(trigger.id, trigger.user, false)
+        Logger.info("Deactivating user trigger with id #{user_trigger.id} because the user \
+        with id #{user_trigger.user.id} has blocked the telegram bot.")
+        Sanbase.Alert.UserTrigger.update_is_active(user_trigger.id, user_trigger.user_id, false)
 
       _ ->
         :ok
@@ -325,12 +325,16 @@ defimpl Sanbase.Alert, for: Any do
   # when the alert is defined on a metric
   defp maybe_extend_payload_telegram_channel(
          payload,
-         %{trigger: %{settings: %{metric: metric} = settings}} = _user_trigger,
+         %{trigger: %{settings: %{metric: metric} = settings}} = user_trigger,
          channel
        )
        when channel in ["@test_san_bot86", "@sanr_signals"] do
     template_kv = settings.template_kv || %{}
     slugs = Map.keys(template_kv)
+
+    Logger.info(
+      "[maybe_extend_payload_telegram_channel_#{user_trigger.id}] [user_trigger: #{inspect(user_trigger)}] [payload: #{inspect(payload)}] [slugs: #{inspect(slugs)}]]"
+    )
 
     if length(slugs) > 0 do
       slug = hd(slugs)
@@ -346,6 +350,10 @@ defimpl Sanbase.Alert, for: Any do
             {"https://app.santiment.net/charts?slug=#{slug}?utm_source=telegram&utm_medium=signals",
              nil}
         end
+
+      Logger.info(
+        "[maybe_extend_payload_telegram_channel_#{user_trigger.id}] sanbase_link: #{inspect(sanbase_link)}] [short_url_id: #{inspect(short_url_id)}]"
+      )
 
       payload = """
       #{String.trim_trailing(payload)}

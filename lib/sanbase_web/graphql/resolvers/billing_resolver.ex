@@ -1,24 +1,48 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   alias Sanbase.Billing
-  alias Sanbase.Billing.{Subscription, Plan}
+  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.UserPromoCode
+  alias Sanbase.Billing.Plan.PurchasingPowerParity
+
   alias Sanbase.Accounts.User
 
   alias Sanbase.StripeApi
 
   require Logger
 
-  def products_with_plans(_root, _args, _resolution) do
+  def products_with_plans(_root, _args, %{context: %{remote_ip: remote_ip}}) do
+    remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
+    Sanbase.Geoip.Data.find_or_insert(remote_ip)
+
     Plan.product_with_plans()
+  end
+
+  def ppp_settings(_root, _args, %{context: %{remote_ip: remote_ip}}) do
+    remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
+
+    with {:ok, geoip_data} <- Sanbase.Geoip.Data.find_or_insert(remote_ip),
+         true <- PurchasingPowerParity.ip_eligible_for_ppp?(geoip_data.ip_address) do
+      {:ok, PurchasingPowerParity.ppp_settings(geoip_data)}
+    else
+      _ -> {:ok, %{is_eligible_for_ppp: false}}
+    end
   end
 
   def subscribe(_root, %{plan_id: plan_id} = args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    card_token = Map.get(args, :card_token)
+    payment_instrument = Map.take(args, [:card_token, :payment_method_id])
     coupon = Map.get(args, :coupon)
 
-    with {:plan?, %Plan{is_deprecated: false} = plan} <- {:plan?, Plan.by_id(plan_id)},
-         {:ok, subscription} <- Billing.subscribe(current_user, plan, card_token, coupon) do
+    with {_, %Plan{is_deprecated: false} = plan} <- {:plan?, Plan.by_id(plan_id)},
+         true <- UserPromoCode.is_coupon_usable(coupon, plan),
+         {:ok, subscription} <- route_subscription(current_user, plan, payment_instrument, coupon) do
+      # If the coupon exists in the user_promo_codes table, times_redeemed
+      # will be bumped by one. We don't check beforehand if the coupon exists and if it's valid,
+      # as the Stripe API will take care of this.
+      if coupon, do: UserPromoCode.use_coupon(coupon)
+
       {:ok, subscription}
     else
       result ->
@@ -27,6 +51,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
           "Subscription attempt failed",
           %{plan_id: plan_id}
         )
+    end
+  end
+
+  def pay_now(_root, %{subscription_id: subscription_id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    Subscription.pay_now(current_user, subscription_id)
+  end
+
+  def route_subscription(current_user, plan, payment_instrument, coupon) do
+    case payment_instrument do
+      %{card_token: card_token} when is_binary(card_token) ->
+        Billing.subscribe(current_user, plan, card_token, coupon)
+
+      %{payment_method_id: payment_method_id} when is_binary(payment_method_id) ->
+        Subscription.subscribe2(current_user, plan, payment_method_id, coupon)
+
+      _ ->
+        Billing.subscribe(current_user, plan, nil, coupon)
     end
   end
 
@@ -112,8 +155,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   end
 
   def get_coupon(_root, %{coupon: coupon}, _resolution) do
-    Sanbase.StripeApi.retrieve_coupon(coupon)
-    |> case do
+    case Sanbase.StripeApi.retrieve_coupon(coupon) do
       {:ok,
        %Stripe.Coupon{
          valid: valid,
@@ -216,12 +258,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
+  def create_stripe_setup_intent(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    case StripeApi.create_setup_intent(current_user) do
+      {:ok, setup_intent} ->
+        {:ok, %{client_secret: setup_intent.client_secret}}
+
+      {:error, %Stripe.Error{message: message} = reason} ->
+        log_error("Create setup intent: user=#{inspect(current_user)}", reason)
+        {:error, message}
+
+      _ ->
+        {:error, "Can't create setup intent"}
+    end
+  end
+
   def subscriptions(%User{} = user, _args, _resolution) do
     {:ok, Subscription.user_subscriptions_plus_incomplete(user)}
   end
 
   def eligible_for_sanbase_trial?(%User{} = user, _args, _resolution) do
     {:ok, Billing.eligible_for_sanbase_trial?(user.id)}
+  end
+
+  def eligible_for_api_trial?(%User{} = user, _args, _resolution) do
+    {:ok, Billing.eligible_for_api_trial?(user.id)}
   end
 
   def san_credit_balance(%User{} = user, _args, _resolution) do

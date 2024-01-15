@@ -44,6 +44,21 @@ defmodule Sanbase.Accounts.User do
              :consent_id
            ]}
 
+  @type t :: %__MODULE__{
+          email: String.t(),
+          username: String.t(),
+          name: String.t(),
+          first_login: boolean(),
+          avatar_url: String.t(),
+          registration_state: map(),
+          is_superuser: boolean(),
+          privacy_policy_accepted: boolean(),
+          marketing_accepted: boolean(),
+          user_settings: map(),
+          inserted_at: DateTime.t(),
+          updated_at: DateTime.t()
+        }
+
   schema "users" do
     field(:email, :string)
     field(:username, :string)
@@ -64,7 +79,7 @@ defmodule Sanbase.Accounts.User do
     field(:first_login, :boolean, default: false, virtual: true)
     field(:avatar_url, :string)
     field(:is_registered, :boolean, default: false)
-    field(:registration_state, :map, default: %{"state" => "init"})
+    field(:registration_state, :map)
     field(:is_superuser, :boolean, default: false)
     field(:twitter_id, :string)
 
@@ -143,7 +158,8 @@ defmodule Sanbase.Accounts.User do
       :test_san_balance,
       :twitter_id,
       :username,
-      :name
+      :name,
+      :registration_state
     ])
     |> normalize_user_identificator(:username, attrs[:username])
     |> normalize_user_identificator(:email, attrs[:email])
@@ -163,7 +179,11 @@ defmodule Sanbase.Accounts.User do
 
   def create(attrs) do
     attrs = if attrs[:salt], do: attrs, else: Map.put(attrs, :salt, generate_salt())
-    attrs = Map.put(attrs, :first_login, true)
+
+    attrs =
+      attrs
+      |> Map.put(:first_login, true)
+      |> Map.put_new(:registration_state, %{"state" => "init", "datetime" => DateTime.utc_now()})
 
     %__MODULE__{}
     |> changeset(attrs)
@@ -219,11 +239,13 @@ defmodule Sanbase.Accounts.User do
     |> Repo.all()
   end
 
+  @doc false
   def all_users() do
+    # Apparantly, it does not fetch all users.
     from(
       u in __MODULE__,
-      order_by: [desc: u.id],
-      limit: 10
+      order_by: [desc: u.updated_at],
+      limit: 2000
     )
     |> Repo.all()
   end

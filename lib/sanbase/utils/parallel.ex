@@ -19,7 +19,7 @@ defmodule Sanbase.Parallel do
     map_type = Keyword.get(opts, :map_type) || :map
 
     stream =
-      Task.Supervisor.async_stream_nolink(
+      Task.Supervisor.async_stream(
         Sanbase.TaskSupervisor,
         collection,
         func,
@@ -33,21 +33,15 @@ defmodule Sanbase.Parallel do
       :map ->
         stream
         |> Enum.map(fn
-          {:ok, elem} ->
-            elem
-
-          data ->
-            data
+          {:ok, elem} -> elem
+          data -> data
         end)
 
       :flat_map ->
         stream
         |> Enum.flat_map(fn
-          {:ok, elem} ->
-            elem
-
-          data ->
-            data
+          {:ok, elem} -> elem
+          data -> data
         end)
     end
   end

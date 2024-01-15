@@ -163,7 +163,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
       %{"errors" => [%{"message" => error_message}]} =
         get_timeseries_signal(conn, signal, slug, from, to, interval, aggregation)
 
-      assert error_message == "The signal '#{signal}' is not supported or is mistyped."
+      assert error_message ==
+               "The signal '#{signal}' is not supported, is deprecated or is mistyped."
     end
   end
 

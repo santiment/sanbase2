@@ -14,8 +14,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
   test "returns last datetime computed at for all available metric", context do
     %{conn: conn, project: project} = context
 
-    metrics = Metric.available_metrics() |> Enum.shuffle() |> Enum.take(100)
-
+    metrics = Metric.available_metrics() |> Enum.shuffle()
     datetime = ~U[2020-01-01 12:45:40Z]
     clickhouse_response = {:ok, %{rows: [[datetime |> DateTime.to_unix()]]}}
 
@@ -52,7 +51,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
       } = get_last_datetime_computed_at(conn, metric, %{slug: project.slug})
 
       assert error_message ==
-               "The metric '#{metric}' is not supported or is mistyped."
+               "The metric '#{metric}' is not supported, is deprecated or is mistyped."
     end
   end
 

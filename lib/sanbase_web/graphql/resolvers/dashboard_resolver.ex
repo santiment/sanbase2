@@ -11,8 +11,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
   require Logger
 
-  def get_clickhouse_database_metadata(_root, _args, _resolution) do
-    Dashboard.Autocomplete.get_data()
+  def get_clickhouse_database_metadata(_root, args, _resolution) do
+    opts = [functions_filter: args[:functions_filter]]
+    Dashboard.Autocomplete.get_data(opts)
   end
 
   def user_public_dashboards(%Sanbase.Accounts.User{} = user, _args, _resolution) do
@@ -98,7 +99,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   def store_dashboard_panel(_root, args, %{context: %{auth: %{current_user: user}}}) do
     %{dashboard_id: dashboard_id, panel_id: panel_id, panel: panel} = args
     # storing requires edit access, not just view access
-    compressed_rows = Dashboard.Query.rows_to_compressed_rows(panel.rows)
+    compressed_rows = Dashboard.Query.compress_rows(panel.rows)
     panel = Map.put(panel, :compressed_rows, compressed_rows)
 
     with true <- is_dashboard_owner?(dashboard_id, user.id),
@@ -106,37 +107,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
          {:ok, _} <- Dashboard.Cache.update_panel_cache(dashboard_id, panel_id, query_result) do
       panel_cache = Dashboard.Panel.Cache.from_query_result(query_result, panel_id, dashboard_id)
       {:ok, panel_cache}
-    end
-  end
-
-  def get_clickhouse_query_execution_stats(
-        _root,
-        %{clickhouse_query_id: clickhouse_query_id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    case Dashboard.QueryExecution.get_execution_stats(user.id, clickhouse_query_id) do
-      {:ok, stats} ->
-        execution_details = %{
-          cpu_time_microseconds: stats.execution_details["cpu_time_microseconds"],
-          memory_usage_gb: stats.execution_details["memory_usage_gb"],
-          query_duration_ms: stats.execution_details["query_duration_ms"],
-          read_compressed_gb: stats.execution_details["read_compressed_gb"],
-          read_gb: stats.execution_details["read_gb"],
-          read_rows: stats.execution_details["read_rows"],
-          result_gb: stats.execution_details["result_gb"],
-          result_rows: stats.execution_details["result_rows"]
-        }
-
-        result =
-          stats
-          |> Map.from_struct()
-          |> Map.take([:credits_cost, :query_start_time, :query_end_time])
-          |> Map.merge(execution_details)
-
-        {:ok, result}
-
-      {:error, error} ->
-        {:error, error}
     end
   end
 
@@ -219,6 +189,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end)
   end
 
+  def generate_title_by_query(_root, %{sql_query_text: sql_query_text}, _resolution) do
+    Sanbase.OpenAI.generate_from_sql(sql_query_text)
+  end
+
   # Private functions
 
   defp result_to_panel(%{panel: panel, dashboard: dashboard}) do
@@ -234,7 +208,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     case Dashboard.get_is_public_and_owner(id) do
       {:ok, %{user_id: ^user_id}} -> true
       {:ok, %{is_public: true}} -> true
-      _ -> {:error, "Dashboard is private or does not exist"}
+      _ -> {:error, "Dashboard does not exist or it's not owned by the user"}
     end
   end
 
@@ -244,7 +218,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
         true
 
       _ ->
-        {:error, "Dashboard does not exist or it's not owned by the user."}
+        {:error, "Dashboard does not exist or it's not owned by the user"}
     end
   end
 

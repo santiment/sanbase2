@@ -116,8 +116,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       historical_balance = json_response(result, 200)["data"]["historicalBalance"]
 
       assert historical_balance == [
-               %{"balance" => 0.0, "datetime" => "2017-05-11T00:00:00Z"},
-               %{"balance" => 0.0, "datetime" => "2017-05-12T00:00:00Z"},
+               %{"balance" => +0.0, "datetime" => "2017-05-11T00:00:00Z"},
+               %{"balance" => +0.0, "datetime" => "2017-05-12T00:00:00Z"},
                %{"balance" => 2000.0, "datetime" => "2017-05-13T00:00:00Z"},
                %{"balance" => 1800.0, "datetime" => "2017-05-14T00:00:00Z"},
                %{"balance" => 1800.0, "datetime" => "2017-05-15T00:00:00Z"},
@@ -259,8 +259,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       historical_balance = result["data"]["historicalBalance"]
 
       assert historical_balance == [
-               %{"balance" => 0.0, "datetime" => "2017-05-11T00:00:00Z"},
-               %{"balance" => 0.0, "datetime" => "2017-05-12T00:00:00Z"},
+               %{"balance" => +0.0, "datetime" => "2017-05-11T00:00:00Z"},
+               %{"balance" => +0.0, "datetime" => "2017-05-12T00:00:00Z"},
                %{"balance" => 2000.0, "datetime" => "2017-05-13T00:00:00Z"},
                %{"balance" => 1800.0, "datetime" => "2017-05-14T00:00:00Z"},
                %{"balance" => 1800.0, "datetime" => "2017-05-15T00:00:00Z"},

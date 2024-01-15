@@ -2,6 +2,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+  import Sanbase.Metric.SqlQuery.Helper, only: [asset_id_filter: 2]
 
   alias Sanbase.Metric
   alias Sanbase.ClickhouseRepo
@@ -38,9 +39,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   def histogram_data(metric, selector, from, to, interval, limit)
 
   def histogram_data("age_distribution" = metric, %{slug: slug}, from, to, interval, limit) do
-    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+    query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
+    ClickhouseRepo.query_transform(query_struct, fn [unix, value] ->
       range_from = unix |> DateTime.from_unix!()
 
       range_to =
@@ -56,9 +57,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   def histogram_data(metric, %{slug: slug}, from, to, interval, limit)
       when metric in @spent_coins_cost_histograms do
-    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+    query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query, args, fn [price, amount] ->
+    ClickhouseRepo.query_transform(query_struct, fn [price, amount] ->
       %{
         price: Sanbase.Math.to_float(price),
         value: Sanbase.Math.to_float(amount)
@@ -69,9 +70,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   def histogram_data(metric, %{slug: "ethereum" = slug}, from, to, interval, limit)
       when metric in @eth2_string_label_float_value_metrics do
-    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+    query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query, args, fn [label, amount] ->
+    ClickhouseRepo.query_transform(query_struct, fn [label, amount] ->
       %{
         label: label,
         value: Sanbase.Math.to_float(amount)
@@ -81,9 +82,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   def histogram_data(metric, %{slug: "ethereum" = slug}, from, to, interval, limit)
       when metric in @eth2_string_address_string_label_float_value_metrics do
-    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+    query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query, args, fn [address, label, amount] ->
+    ClickhouseRepo.query_transform(query_struct, fn [address, label, amount] ->
       %{
         address: address,
         label: label,
@@ -94,9 +95,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   def histogram_data(metric, %{slug: "ethereum" = slug}, from, to, interval, limit)
       when metric in @eth2_datetime_staking_pools_integer_valuation_list do
-    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+    query_struct = histogram_data_query(metric, slug, from, to, interval, limit)
 
-    ClickhouseRepo.query_transform(query, args, fn [timestamp, value] ->
+    ClickhouseRepo.query_transform(query_struct, fn [timestamp, value] ->
       %{
         datetime: DateTime.from_unix!(timestamp),
         value:
@@ -145,10 +146,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     sql = """
     SELECT max(dt)
     FROM distribution_deltas_5min
-    WHERE asset_id = (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT 1)
+    WHERE #{asset_id_filter(selector, argument_name: "selector")}
     """
 
-    params = %{selector: selector}
+    params = %{
+      selector: asset_filter_value(selector)
+    }
 
     Sanbase.Clickhouse.Query.new(sql, params)
     |> ClickhouseRepo.query_transform(fn [timestamp] -> DateTime.from_unix!(timestamp) end)
@@ -171,12 +174,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   def last_datetime_computed_at(metric, _selector, _opts)
       when metric in @eth2_metrics do
-    {query, args} = {"SELECT toUnixTimestamp(max(dt)) FROM eth2_staking_transfers_v2", []}
+    sql = "SELECT toUnixTimestamp(max(dt)) FROM eth2_staking_transfers_v2"
+    query_struct = Sanbase.Clickhouse.Query.new(sql, %{})
 
-    ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
+    ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
       DateTime.from_unix!(timestamp)
     end)
     |> maybe_unwrap_ok_value()
+  end
+
+  def available_slugs("age_distribution") do
+    Sanbase.Clickhouse.MetricAdapter.available_slugs("age_distribution")
   end
 
   def available_slugs(metric) when metric in @spent_coins_cost_histograms do
@@ -217,7 +225,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     Enum.reduce(prices_list, ranges_map, fn %{price: price, value: value}, acc ->
       key = price_to_range(price, min, bucket_size)
 
-      Map.update(acc, key, 0.0, fn curr_amount ->
+      Map.update(acc, key, +0.0, fn curr_amount ->
         Float.round(curr_amount + value, 2)
       end)
     end)
@@ -299,4 +307,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     |> Map.put([low, divider], Float.round(lower_half_amount, 2))
     |> Map.put([divider, high], Float.round(upper_half_amount, 2))
   end
+
+  defp asset_filter_value(%{slug: slug_or_slugs}), do: slug_or_slugs
+  defp asset_filter_value(_), do: nil
 end

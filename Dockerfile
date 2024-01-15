@@ -1,60 +1,123 @@
-# Elixir and phoenix assets build image
-FROM elixir:1.13.3-slim as code_builder
+ARG ELIXIR_VERSION=1.16.0
+ARG OTP_VERSION=25.3.2.8
+ARG DEBIAN_VERSION=bullseye-20231009-slim
 
-ENV MIX_ENV prod
+ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
+ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
-RUN apt-get update -y && apt-get install -y curl
+FROM ${BUILDER_IMAGE} as builder
 
-RUN curl https://sh.rustup.rs -sSf | \
-	sh -s -- --default-toolchain stable -y
-
-ENV RUSTFLAGS="-C target-feature=-crt-static"
-
-ENV PATH=/root/.cargo/bin:$PATH
-
-
-RUN apt-get install -y build-essential \
+# install build dependencies
+RUN apt-get update -y && apt-get install -y \
+	build-essential \
 	make \
 	g++ \
 	git \
 	nodejs \
 	npm \
 	openssl \
-	wget
+	wget \
+	ca-certificates \
+	gcc \
+	libc6-dev \
+	curl \
+	&& apt-get clean && rm -f /var/lib/apt/lists/*_*
 
-RUN mix local.hex --force
-RUN mix local.rebar --force
-
+# prepare build dir
+RUN mkdir /app
 WORKDIR /app
 
-COPY mix.lock /app/mix.lock
-COPY mix.exs /app/mix.exs
-RUN mix deps.get
+# Add rust version 1.69.0
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=1.69.0 -y
+
+ENV RUSTFLAGS="-C target-feature=-crt-static"
+
+ENV PATH=/root/.cargo/bin:$PATH
+
+# install hex + rebar
+RUN mix local.hex --force && \
+	mix local.rebar --force
+
+# set build ENV
+ENV MIX_ENV="prod"
+
+# install mix dependencies
+COPY mix.exs mix.lock ./
+RUN mix deps.get --only $MIX_ENV
+
+RUN mkdir config
+# copy compile-time config files before we compile dependencies
+# to ensure any relevant config change will trigger the dependencies
+# to be re-compiled.
+COPY config/config.exs \
+	config/ueberauth_config.exs \
+	config/ex_admin_config.exs \
+	config/notifications_config.exs \
+	config/scheduler_config.exs \
+	config/scrapers_config.exs \
+	config/stripe_config.exs \
+	config/${MIX_ENV}.exs \
+	config/
+
 RUN mix deps.compile
 
-COPY ./assets /app/assets
+COPY priv priv
+
+COPY lib lib
+
+COPY src src
+
+COPY assets assets
+
+# check that the code is formatted
+# RUN mix format --check-formatted
+
+# compile assets
 RUN cd assets && npm install
-RUN cd assets && npm run build:prod
+RUN mix assets.setup
+RUN mix assets.deploy
 
-# Copy all files only before compile so we can cache the deps fetching layer
-COPY . /app
-RUN mix format --check-formatted
-
+# Compile the release
 RUN mix compile
-RUN mix phx.digest
-RUN mix distillery.release
 
-# Release image
-FROM elixir:1.13.3-slim
+# Changes to config/runtime.exs don't require recompiling the code
+COPY config/runtime.exs config/
 
-ENV MIX_ENV prod
+COPY rel rel
+RUN mix release
 
-RUN apt-get update -y && apt-get install -y bash imagemagick git
+# start a new build stage so that the final image will only contain
+# the compiled release and other runtime necessities
+FROM ${RUNNER_IMAGE}
 
-WORKDIR /app
+RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales imagemagick git \
+	&& apt-get clean && rm -f /var/lib/apt/lists/*_*
 
-COPY --from=code_builder /app/_build/prod/rel/sanbase .
+# Set the locale
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-ENV REPLACE_OS_VARS=true
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 
-CMD bin/sanbase foreground
+WORKDIR "/app"
+
+# Necessary as k8s sets it to /root and this causes permission issues when
+# storing the cookie file during booting
+ENV HOME=/app
+
+RUN chown nobody /app
+
+# expect a build-time argument
+ARG GIT_COMMIT
+
+# set runner ENV vars
+ENV MIX_ENV="prod"
+ENV GIT_COMMIT=$GIT_COMMIT
+
+# Only copy the final release from the build stage
+COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/sanbase ./
+
+USER nobody
+
+CMD ["/bin/bash", "-c", "/app/bin/migrate && /app/bin/server"]

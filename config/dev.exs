@@ -15,15 +15,8 @@ config :sanbase, SanbaseWeb.Endpoint,
   code_reloader: true,
   check_origin: false,
   watchers: [
-    node: [
-      "node_modules/webpack/bin/webpack.js",
-      "--mode",
-      "development",
-      "--watch-stdin",
-      "--display",
-      "errors-only",
-      cd: Path.expand("../assets", __DIR__)
-    ]
+    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
   ]
 
 config :logger, level: :debug
@@ -84,7 +77,7 @@ config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
   username: "sanbase",
   password: "",
   timeout: 600_000,
-  pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "0"},
+  pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "1"},
   pool_overflow: 10,
   show_sensitive_data_on_connection_error: true
 

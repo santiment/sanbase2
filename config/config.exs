@@ -1,5 +1,27 @@
 import Config
 
+# Configure esbuild (the version is required)
+config :esbuild,
+  version: "0.17.11",
+  default: [
+    args:
+      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --external:/js/* --external:/css/*),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ]
+
+# Configure tailwind (the version is required)
+config :tailwind,
+  version: "3.2.7",
+  default: [
+    args: ~w(
+      --config=tailwind.config.js
+      --input=css/app.css
+      --output=../priv/static/assets/app.css
+    ),
+    cd: Path.expand("../assets", __DIR__)
+  ]
+
 # Latest version of timezone data (2019a) distributed by IANA has an error
 # Disable the autoupdate until it is fixed
 config :tzdata, :autoupdate, :disabled
@@ -61,6 +83,7 @@ config :sanbase, Sanbase.KafkaExporter,
   asset_ohlcv_price_pairs_topic:
     {:system, "KAFKA_ASSET_OHLCV_PRICE_POINTS_TOPIC", "asset_ohlcv_price_pairs"},
   open_interest_topic: {:system, "KAFKA_OPEN_INTEREST_TOPIC", "open_interest_cryptocompare"},
+  funding_rate_topic: {:system, "KAFKA_FUNDING_RATE_TOPIC", "funding_rate_cryptocompare"},
   api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"},
   twitter_followers_topic: {:system, "KAFKA_TWITTER_FOLLOWERS_TOPIC", "twitter_followers"}
 
@@ -76,12 +99,16 @@ config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
 config :sanbase, Sanbase.ClickhouseRepo,
   adapter: Ecto.Adapters.Postgres,
   queue_target: 10_000,
-  queue_interval: 2000
+  queue_interval: 2000,
+  max_overflow: 3,
+  scheme: :http
 
 config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
   adapter: Ecto.Adapters.Postgres,
   queue_target: 60_000,
-  queue_interval: 60_000
+  queue_interval: 60_000,
+  max_overflow: 3,
+  scheme: :http
 
 config :sanbase, Sanbase.Repo,
   loggers: [Ecto.LogEntry],
@@ -125,7 +152,9 @@ config :logger, :console,
 config :sentry,
   json_library: Jason,
   included_environments: [:prod],
-  environment_name: Mix.env()
+  environment_name: Mix.env(),
+  enable_source_code_context: true,
+  root_source_code_path: File.cwd!()
 
 config :earmark,
   # disable using parallel map die to timeout errors
@@ -144,8 +173,7 @@ config :hammer,
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 
 config :tesla,
-  adapter: Tesla.Adapter.Hackney,
-  recv_timeout: 30_000
+  adapter: {Tesla.Adapter.Hackney, recv_timeout: 30_000}
 
 config :sanbase, Sanbase.ApiCallLimit,
   quota_size: 100,

@@ -92,10 +92,7 @@ defmodule Sanbase.Dashboard.QueryExecution do
     %{credits_cost: credits_cost, execution_details: execution_details} =
       compute_credits_cost(query_result)
 
-    credits_cost =
-      [Float.round(credits_cost), 1]
-      |> Enum.max()
-      |> Kernel.trunc()
+    credits_cost = [credits_cost, 1] |> Enum.max() |> trunc()
 
     # credits_cost is stored outside the execution_details as it's not
     # really an execution detail, but a business logic detail. Also having
@@ -198,18 +195,18 @@ defmodule Sanbase.Dashboard.QueryExecution do
       end)
       |> Map.values()
       |> Enum.sum()
+      |> trunc()
 
     %{execution_details: execution_details, credits_cost: credits_cost}
   end
 
   defp get_execution_details(query_id, event_time_start) do
-    {query, args} = get_execution_details_query(query_id, event_time_start)
+    query_struct = get_execution_details_query(query_id, event_time_start)
 
     Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo)
 
     Sanbase.ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [
            read_compressed_gb,
            cpu_time_microseconds,
@@ -236,7 +233,7 @@ defmodule Sanbase.Dashboard.QueryExecution do
   end
 
   defp get_execution_details_query(query_id, event_time_start) do
-    query = """
+    sql = """
     SELECT
       ProfileEvents['ReadCompressedBytes'] / pow(2,30) AS read_compressed_gb,
       ProfileEvents['OSCPUVirtualTimeMicroseconds'] AS cpu_time_microseconds,
@@ -248,14 +245,17 @@ defmodule Sanbase.Dashboard.QueryExecution do
       result_bytes / pow(2, 30) AS result_gb
     FROM system.query_log_distributed
     PREWHERE
-      query_id = ?1 AND
+      query_id = {{query_id}} AND
       type = 'QueryFinish' AND
-      event_time >= toDateTime(?2) - INTERVAL 1 MINUTE AND
-      event_time <= toDateTime(?2) + INTERVAL 1 MINUTE
+      event_time >= toDateTime({{datetime}}) - INTERVAL 1 MINUTE AND
+      event_time <= toDateTime({{datetime}}) + INTERVAL 1 MINUTE
     """
 
-    args = [query_id, DateTime.to_unix(event_time_start)]
+    params = %{
+      query_id: query_id,
+      datetime: DateTime.to_unix(event_time_start)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

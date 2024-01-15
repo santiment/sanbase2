@@ -56,7 +56,10 @@ defmodule Sanbase.Github.TwitterApiTest do
   test "fetch current twitter followers", context do
     %{dt1: dt, project: project, conn: conn} = context
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: [[dt, 1000]]}})
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.ClickhouseRepo.query/2,
+      {:ok, %{rows: [[DateTime.to_unix(dt), 1000]]}}
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_current_twitter_followers(conn, project.slug)
@@ -92,7 +95,9 @@ defmodule Sanbase.Github.TwitterApiTest do
   test "fetching last twitter data for a project with invalid twitter link", context do
     %{conn: conn, project: project} = context
 
-    Sanbase.Project.changeset(project, %{twitter_link: "santiment"})
+    Sanbase.Project.changeset(project, %{
+      twitter_link: "not_a_link(should_be_starting_with_https://...)"
+    })
     |> Sanbase.Repo.update!()
 
     result =

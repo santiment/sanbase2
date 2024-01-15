@@ -11,6 +11,19 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     [user: user, conn: conn]
   end
 
+  test "deprecated metrics", %{conn: conn} do
+    get_access_restrictions(conn)
+    |> Enum.each(fn restriction ->
+      assert is_boolean(restriction["isDeprecated"]) == true
+
+      if not is_nil(restriction["hardDeprecateAfter"]) do
+        assert restriction["isDeprecated"] == true
+
+        assert {:ok, %DateTime{}, _} = DateTime.from_iso8601(restriction["hardDeprecateAfter"])
+      end
+    end)
+  end
+
   test "free sanbase user", %{conn: conn} do
     days_ago = Timex.shift(Timex.now(), days: -29)
     over_two_years_ago = Timex.shift(Timex.now(), days: -(2 * 365 + 1))
@@ -65,9 +78,13 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
       getAccessRestrictions{
         type
         name
+        minInterval
+        internalName
         isRestricted
         restrictedFrom
         restrictedTo
+        isDeprecated
+        hardDeprecateAfter
       }
     }
     """

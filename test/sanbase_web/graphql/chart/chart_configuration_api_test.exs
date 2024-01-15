@@ -585,6 +585,43 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config_id3 in config_ids
       assert config_id4 in config_ids
     end
+
+    test "get accessible chart configurations by list of chart configuration ids", context do
+      %{
+        conn: conn,
+        conn2: conn2,
+        project: project,
+        project2: project2,
+        settings: settings
+      } = context
+
+      public_settings = Map.put(settings, :is_public, true)
+      private_settings = Map.put(settings, :is_public, false)
+
+      config_ids =
+        [config_id1, config_id2, config_id3, config_id4, config_id5] =
+        [
+          create_chart_configuration(conn, %{public_settings | project_id: project.id}),
+          create_chart_configuration(conn, %{public_settings | project_id: project.id}),
+          create_chart_configuration(conn2, %{public_settings | project_id: project2.id}),
+          create_chart_configuration(conn2, %{private_settings | project_id: project2.id}),
+          create_chart_configuration(conn2, %{public_settings | project_id: project.id})
+        ]
+        |> Enum.map(&get_in(&1, ["data", "createChartConfiguration", "id"]))
+
+      config_ids =
+        get_chart_configurations(conn, chart_configuration_ids: config_ids)
+        |> get_in(["data", "chartConfigurations"])
+        |> Enum.map(& &1["id"])
+
+      assert length(config_ids) == 4
+      assert config_id1 in config_ids
+      assert config_id2 in config_ids
+      assert config_id3 in config_ids
+      # Requested, but it is private and owned by another user
+      assert config_id4 not in config_ids
+      assert config_id5 in config_ids
+    end
   end
 
   test "get chart events", context do
@@ -746,6 +783,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
     user_id = Keyword.get(opts, :user_id)
     project_id = Keyword.get(opts, :project_id)
     project_slug = Keyword.get(opts, :project_slug)
+    ids = Keyword.get(opts, :chart_configuration_ids)
 
     query = """
     {
@@ -753,6 +791,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         #{if user_id, do: "userId: #{user_id}"}
         #{if project_id, do: "projectId: #{project_id}"}
         #{if project_slug, do: "projectSlug: \"#{project_slug}\""}
+        #{if ids, do: "chartConfigurationIds: [#{Enum.join(ids, ", ")}]"}
       ) {
         id
         title

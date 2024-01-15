@@ -54,8 +54,21 @@ defmodule Sanbase.Twitter.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data_per_slug(metric, _selector, _from, _to, _interval, _opts) do
-    not_implemented_function_for_metric_error("timeseries_data_per_slug", metric)
+  def timeseries_data_per_slug(
+        "twitter_followers",
+        %{slug: [_ | _] = slugs},
+        from,
+        to,
+        interval,
+        _opts
+      ) do
+    with twitter_handles = Project.List.projects_twitter_handles_by_slugs(slugs),
+         {:ok, data} <-
+           Sanbase.Twitter.timeseries_data_per_handle(twitter_handles, from, to, interval) do
+      {:ok, data}
+    else
+      error -> error
+    end
   end
 
   @impl Sanbase.Metric.Behaviour

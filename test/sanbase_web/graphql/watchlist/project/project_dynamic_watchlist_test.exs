@@ -356,7 +356,7 @@ defmodule SanbaseWeb.Graphql.ProjectDynamicWatchlistTest do
 
   test "dynamic watchlist for currently trending projects", %{conn: conn} do
     with_mock(Sanbase.SocialData.TrendingWords,
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok,
          [
            %{word: "SAN", score: 5},

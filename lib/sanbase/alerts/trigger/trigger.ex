@@ -9,6 +9,7 @@ defprotocol Sanbase.Alert.Settings do
   - Add a map between the StructMapTransformation
   """
 
+  @spec evaluate(map(), map()) :: {:ok, map} | {:error, any()}
   def evaluate(trigger_settings, trigger)
 
   @spec triggered?(struct()) :: boolean()
@@ -102,11 +103,11 @@ defmodule Sanbase.Alert.Trigger do
   end
 
   def payload_to_string(%Trigger{settings: %{payload: {template, kv}}}) do
-    Sanbase.TemplateEngine.run(template, kv)
+    Sanbase.TemplateEngine.run!(template, params: kv)
   end
 
   def payload_to_string({template, kv}) do
-    Sanbase.TemplateEngine.run(template, kv)
+    Sanbase.TemplateEngine.run!(template, params: kv)
   end
 
   def get_filtered_target(%Trigger{settings: %{target: target}} = trigger) do
@@ -115,12 +116,16 @@ defmodule Sanbase.Alert.Trigger do
 
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
     filtered_target = remove_targets_on_cooldown(target, trigger)
+    trigger_settings = %{trigger_settings | filtered_target: filtered_target}
 
-    trigger_settings =
-      %{trigger_settings | filtered_target: filtered_target}
-      |> Sanbase.Alert.Settings.evaluate(trigger)
+    case Sanbase.Alert.Settings.evaluate(trigger_settings, trigger) do
+      {:ok, trigger_settings} ->
+        trigger = %Trigger{trigger | settings: trigger_settings}
+        {:ok, trigger}
 
-    %Trigger{trigger | settings: trigger_settings}
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   @spec historical_trigger_points(Sanbase.Alert.Trigger.t()) :: {:error, any} | {:ok, [any]}

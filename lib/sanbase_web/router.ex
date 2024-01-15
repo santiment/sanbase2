@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Router do
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_live_flash)
+    plug(:put_root_layout, {SanbaseWeb.Layouts, :root})
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
   end
@@ -57,17 +58,19 @@ defmodule SanbaseWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
+    live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
 
     get("/", CustomAdminController, :index)
-    post("/users", UserController, :search)
-    get("/users/reset_api_call_limits", UserController, :reset_api_call_limits)
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)
+
     resources("/reports", ReportController)
     resources("/sheets_templates", SheetsTemplateController)
     resources("/webinars", WebinarController)
     resources("/custom_plans", CustomPlanController)
-    resources("/users", UserController)
+    post("/generic/search", GenericController, :search)
+    get("/generic/show_action", GenericController, :show_action)
+    resources("/generic", GenericController)
   end
 
   scope "/" do
@@ -158,7 +161,7 @@ defmodule SanbaseWeb.Router do
     get("/cryptocompare_asset_mapping", CryptocompareAssetMappingController, :data)
     post("/stripe_webhook", StripeController, :webhook)
 
-    post("/projects_data_validator_webhook/:secret", RepoReaderController, :validator_webhook)
+    post("/projects_data_validator_webhook", RepoReaderController, :validator_webhook)
     post("/projects_data_reader_webhook/:secret", RepoReaderController, :reader_webhook)
   end
 

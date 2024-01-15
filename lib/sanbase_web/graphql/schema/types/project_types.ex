@@ -468,7 +468,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :coinmarketcap_id, :string do
-      resolve(fn %Project{slug: slug}, _, _ -> {:ok, slug} end)
+      resolve(fn %Project{coinmarketcap_id: coinmarketcap_id}, _, _ -> {:ok, coinmarketcap_id} end)
     end
 
     field :symbol, :string do

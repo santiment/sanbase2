@@ -92,6 +92,29 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
   end
 
+  object :user_promo_code do
+    field(:campaign, :string)
+    field(:coupon, :string)
+    field(:percent_off, :integer)
+    field(:redeem_by, :datetime)
+    field(:max_redemptions, :integer)
+    field(:times_redeemed, :integer)
+    field(:data, :json)
+  end
+
+  object :queries_executions_info do
+    field(:credits_availalbe_month, non_null(:integer))
+    field(:credits_spent_month, non_null(:integer))
+    field(:credits_remaining_month, non_null(:integer))
+    field(:queries_executed_month, non_null(:integer))
+    field(:queries_executed_day, non_null(:integer))
+    field(:queries_executed_hour, non_null(:integer))
+    field(:queries_executed_minute, non_null(:integer))
+    field(:queries_executed_day_limit, non_null(:integer))
+    field(:queries_executed_hour_limit, non_null(:integer))
+    field(:queries_executed_minute_limit, non_null(:integer))
+  end
+
   object :user do
     field(:id, non_null(:id))
     field(:email, :string)
@@ -103,6 +126,16 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:first_login, :boolean, default_value: false)
     field(:avatar_url, :string)
     field(:stripe_customer_id, :string)
+    field(:inserted_at, non_null(:datetime))
+    field(:updated_at, non_null(:datetime))
+
+    field :queries_executions_info, :queries_executions_info do
+      resolve(&UserResolver.queries_executions_info/3)
+    end
+
+    field :promo_codes, list_of(:user_promo_code) do
+      resolve(&UserResolver.user_promo_codes/3)
+    end
 
     field :is_moderator, :boolean do
       resolve(&UserResolver.is_moderator/3)
@@ -206,6 +239,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&BillingResolver.eligible_for_sanbase_trial?/3)
     end
 
+    field :is_eligible_for_api_trial, :boolean do
+      resolve(&BillingResolver.eligible_for_api_trial?/3)
+    end
+
     field :san_credit_balance, :float do
       resolve(&BillingResolver.san_credit_balance/3)
     end
@@ -265,14 +302,23 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:pulse_count, :integer)
   end
 
+  enum :access_restriction_filter_enum do
+    value(:metric)
+    value(:query)
+    value(:signal)
+  end
+
   object :access_restriction do
     field(:type, non_null(:string))
     field(:name, non_null(:string))
+    field(:internal_name, non_null(:string))
     field(:min_interval, :string)
     field(:is_restricted, non_null(:boolean))
     field(:is_accessible, non_null(:boolean))
     field(:restricted_from, :datetime)
     field(:restricted_to, :datetime)
+    field(:is_deprecated, non_null(:boolean))
+    field(:hard_deprecate_after, :datetime)
   end
 
   object :api_call_data do

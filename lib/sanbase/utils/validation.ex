@@ -81,7 +81,7 @@ defmodule Sanbase.Validation do
     else
       _ ->
         {:error,
-         "The metric #{inspect(metric)} is not supported or is mistyped or does not have min interval equal or less than to 5 minutes."}
+         "The metric #{inspect(metric)} is not supported, is deprecated or is mistyped or does not have min interval equal or less than to 5 minutes."}
     end
   end
 
@@ -93,7 +93,7 @@ defmodule Sanbase.Validation do
     else
       _ ->
         {:error,
-         "The metric #{inspect(metric)} is not supported or is mistyped or does not have min interval equal or bigger than to 1 day."}
+         "The metric #{inspect(metric)} is not supported, is deprecated or is mistyped or does not have min interval equal or bigger than to 1 day."}
     end
   end
 

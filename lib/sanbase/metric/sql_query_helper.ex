@@ -40,22 +40,65 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
 
   def aggregations(), do: @aggregations
 
+  def to_unix_timestamp(interval, dt_column, opts \\ [])
+
   def to_unix_timestamp(
         <<digit::utf8, _::binary>> = _interval,
         dt_column,
         opts
       )
       when digit in ?0..?9 do
-    arg_pos = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "toUnixTimestamp(intDiv(toUInt32(toDateTime(#{dt_column})), ?#{arg_pos}) * ?#{arg_pos})"
+    "toUnixTimestamp(intDiv(toUInt32(toDateTime(#{dt_column})), {{#{arg_name}}}) * {{#{arg_name}}})"
   end
 
   def to_unix_timestamp(function, dt_column, opts)
       when function in @supported_interval_functions do
-    arg_pos = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "if(?#{arg_pos} = ?#{arg_pos}, toUnixTimestamp(toDateTime(#{function}(#{dt_column}))), null)"
+    "if({{#{arg_name}}} = {{#{arg_name}}}, toUnixTimestamp(toDateTime(#{function}(#{dt_column}))), null)"
+  end
+
+  def to_unix_timestamp_from_number(interval_or_function, opts \\ [])
+
+  def to_unix_timestamp_from_number(<<digit::utf8, _::binary>> = _interval, opts)
+      when digit in ?0..?9 do
+    interval_name = Keyword.get(opts, :interval_argument_name, "interval")
+    from_name = Keyword.get(opts, :from_argument_name, "from")
+
+    "toUnixTimestamp(intDiv(toUInt32({{#{from_name}}} + number * {{#{interval_name}}}), {{#{interval_name}}}) * {{#{interval_name}}})"
+  end
+
+  def to_unix_timestamp_from_number(function, opts)
+      when function in @supported_interval_functions do
+    from_name = Keyword.get(opts, :from_argument_name, "from")
+
+    expression =
+      case function do
+        "toStartOfMonth" ->
+          "addMonths(toStartOfMonth(toDateTime({{#{from_name}}})), number)"
+
+        "toStartOfWeek" ->
+          "addDays(toStartOfWeek(toDateTime({{#{from_name}}})), number * 7)"
+
+        "toMonday" ->
+          "addDays(toMonday(toDateTime({{#{from_name}}})), number * 7)"
+
+        "toStartOfDay" ->
+          "addDays(toStartOfDay(toDateTime({{#{from_name}}})), number)"
+
+        "toStartOfQuarter" ->
+          "addQuarters(toStartOfQuarter(toDateTime({{#{from_name}}})), number)"
+
+        "toStartOfYear" ->
+          "addYears(toStartOfYear(toDateTime({{#{from_name}}})), number)"
+
+        "toStartOfHour" ->
+          "addHours(toStartOfHour(toDateTime({{#{from_name}}})), number)"
+      end
+
+    "toUnixTimestamp(toDateTime(#{expression}))"
   end
 
   def aggregation(:ohlc, value_column, dt_column) do
@@ -121,25 +164,25 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
       do: "#{column} < #{low} OR #{column} > #{high}"
 
   def asset_id_filter(%{slug: slug}, opts) when is_binary(slug) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{arg_position} LIMIT 1 )"
+    "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = {{#{arg_name}}} LIMIT 1 )"
   end
 
   def asset_id_filter(%{slug: slugs}, opts) when is_list(slugs) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN (?#{arg_position}) )"
+    "asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN ({{#{arg_name}}}) )"
   end
 
   def asset_id_filter(%{contract_address: contract_address}, opts)
       when is_binary(contract_address) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE has(contract_addresses, ?#{arg_position}) LIMIT 1 )"
+    "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE has(contract_addresses, {{#{arg_name}}}) LIMIT 1 )"
   end
 
-  def asset_id_filter(_, opts) do
+  def asset_id_filter(_arg, opts) do
     case Keyword.get(opts, :allow_missing_slug, false) do
       true -> "1 = 1"
       false -> raise("Missing slug in asset_id_filter")
@@ -147,55 +190,74 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
   end
 
   def metric_id_filter(metric, opts) when is_binary(metric) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?#{arg_position} LIMIT 1 )"
+    "metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{#{arg_name}}} LIMIT 1 )"
   end
 
   def metric_id_filter(metrics, opts) when is_list(metrics) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "metric_id IN ( SELECT DISTINCT(metric_id) FROM metric_metadata FINAL PREWHERE name IN (?#{arg_position}) )"
+    "metric_id IN ( SELECT DISTINCT(metric_id) FROM metric_metadata FINAL PREWHERE name IN ({{#{arg_name}}}) )"
+  end
+
+  def signal_id_filter(%{signal: signal}, opts) when is_binary(signal) do
+    arg_name = Keyword.fetch!(opts, :argument_name)
+
+    "signal_id = ( SELECT argMax(signal_id, version) FROM signal_metadata FINAL PREWHERE name = {{#{arg_name}}} LIMIT 1 )"
+  end
+
+  def signal_id_filter(%{signal: signals}, opts) when is_list(signals) do
+    arg_name = Keyword.fetch!(opts, :argument_name)
+
+    "signal_id IN ( SELECT DISTINCT(signal_id) FROM ( SELECT argMax(signal_id, version) FROM signal_metadata FINAL PREWHERE name IN ({{#{arg_name}}}) ) )"
+  end
+
+  def signal_id_filter(_, opts) do
+    case Keyword.get(opts, :allow_missing_signal, false) do
+      true -> "1 = 1"
+      false -> raise("Missing signal in signal_id_filter")
+    end
   end
 
   def label_id_by_label_fqn_filter(label_fqn, opts) when is_binary(label_fqn) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple(?#{arg_position}))"
+    "label_id = dictGetUInt64('default.labels_by_fqn', 'label_id', tuple({{#{arg_name}}}))"
   end
 
   def label_id_by_label_fqn_filter(label_fqns, opts) when is_list(label_fqns) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
     "label_id IN (
-      SELECT dictGetUInt64('default.label_ids_dict', 'label_id', tuple(fqn)) AS label_id
+      SELECT dictGetUInt64('default.labels_by_fqn', 'label_id', tuple(fqn)) AS label_id
       FROM system.one
-      ARRAY JOIN [?#{arg_position}] AS fqn
+      ARRAY JOIN [{{#{arg_name}}}] AS fqn
     )"
   end
 
   def label_id_by_label_key_filter(label_key, opts) when is_binary(label_key) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "label_id IN (SELECT label_id FROM label_metadata PREWHERE key = ?#{arg_position})"
+    "label_id IN (SELECT label_id FROM label_metadata PREWHERE key = {{#{arg_name}}})"
   end
 
   def label_id_by_label_key_filter(label_keys, opts) when is_list(label_keys) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
 
-    "label_id IN (SELECT label_id FROM label_metadata PREWHERE key IN (?#{arg_position}))"
+    "label_id IN (SELECT label_id FROM label_metadata PREWHERE key IN ({{#{arg_name}}}))"
   end
 
   # Add additional `=`/`in` filters to the query. This is mostly used with labeled
   # metrics where additional column filters must be applied.
-  def additional_filters([], args, _opts), do: {"", args}
+  def additional_filters([], params, _opts), do: {"", params}
 
-  def additional_filters(filters, args, opts) do
-    {filters_str_list, args} =
-      Enum.reduce(filters, {[], args}, fn {column, value}, {list_acc, args_acc} ->
-        {filter_str, updated_args} = do_additional_filters(column, value, args_acc)
+  def additional_filters(filters, params, opts) do
+    {filters_str_list, params} =
+      Enum.reduce(filters, {[], params}, fn {column, value}, {list_acc, params_acc} ->
+        {filter_str, updated_params} = do_additional_filters(column, value, params_acc)
 
-        {[filter_str | list_acc], updated_args}
+        {[filter_str | list_acc], updated_params}
       end)
 
     filters_string = filters_str_list |> Enum.reverse() |> Enum.join(" AND\n")
@@ -206,9 +268,10 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
         true -> filters_string <> " AND"
       end
 
-    {filters_string, args}
+    {filters_string, params}
   end
 
+  @spec dt_to_unix(:from | :to, DateTime.t()) :: integer()
   def dt_to_unix(:from, dt) do
     Enum.max([dt, ~U[2009-01-01 00:00:00Z]], DateTime) |> DateTime.to_unix()
   end
@@ -217,57 +280,83 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     Enum.min([dt, DateTime.utc_now()], DateTime) |> DateTime.to_unix()
   end
 
+  def timerange_parameters(from, to) do
+    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
+    from_unix = dt_to_unix(:from, from)
+    to_unix = dt_to_unix(:to, to)
+
+    {from_unix, to_unix}
+  end
+
+  def timerange_parameters(from, to, interval) do
+    from_unix = dt_to_unix(:from, from)
+    to_unix = dt_to_unix(:to, to)
+
+    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    span = div(to_unix - from_unix, interval_sec) |> max(1)
+
+    {from_unix, to_unix, interval_sec, span}
+  end
+
   # Private functions
 
-  defp do_additional_filters(:label_fqn, value, args) when is_binary(value) do
-    pos = length(args) + 1
+  defp do_additional_filters(:label_fqn, [value | _] = list, params) when is_binary(value) do
+    pos = map_size(params) + 1
+    label_fqn_key = "label_fqn_#{pos}"
+
     str = "label_id IN (
-      SELECT dictGetUInt64('default.label_ids_dict', 'label_id', tuple(fqn)) AS label_id
+      SELECT dictGetUInt64('default.labels_by_fqn', 'label_id', tuple(fqn)) AS label_id
       FROM system.one
-      ARRAY JOIN [?#{pos}] AS fqn
+      ARRAY JOIN [{{#{label_fqn_key}}}] AS fqn
     )"
-    args = args ++ [value]
-    {str, args}
+    {str, Map.put(params, label_fqn_key, list)}
   end
 
-  defp do_additional_filters(:label_fqn, [value | _] = list, args)
+  defp do_additional_filters(:label_fqn, value, params)
        when is_binary(value) do
-    pos = length(args) + 1
+    pos = map_size(params) + 1
+    label_fqn_key = "label_fqn_#{pos}"
 
-    str = "label_id = dictGetUInt64('default.label_ids_dict', 'label_id', tuple(?#{pos}))"
+    str =
+      "label_id = dictGetUInt64('default.labels_by_fqn', 'label_id', tuple({{#{label_fqn_key}}}))"
 
-    args = args ++ [list]
-    {str, args}
+    {str, Map.put(params, label_fqn_key, value)}
   end
 
-  defp do_additional_filters(column, [value | _] = list, args)
+  defp do_additional_filters(column, [value | _] = list, params)
        when is_binary(value) do
-    pos = length(args) + 1
-    str = "lower(#{column}) IN (?#{pos})"
+    pos = map_size(params) + 1
+    filter_key = "filter_#{column}_#{pos}"
+
+    str = "lower(#{column}) IN ({{#{filter_key}}})"
     list = Enum.map(list, &String.downcase/1)
-    args = args ++ [list]
-    {str, args}
+
+    {str, Map.put(params, filter_key, list)}
   end
 
-  defp do_additional_filters(column, [value | _] = list, args)
+  defp do_additional_filters(column, [value | _] = list, params)
        when is_number(value) do
-    pos = length(args) + 1
-    str = "#{column} IN (?#{pos})"
-    args = args ++ [list]
-    {str, args}
+    pos = map_size(params) + 1
+    filter_key = "filter_#{column}_#{pos}"
+
+    str = "#{column} IN ({{#{filter_key}}})"
+    {str, Map.put(params, filter_key, list)}
   end
 
-  defp do_additional_filters(column, value, args) when is_binary(value) do
-    pos = length(args) + 1
-    str = "lower(#{column}) = ?#{pos}"
-    args = args ++ [String.downcase(value)]
-    {str, args}
+  defp do_additional_filters(column, value, params) when is_binary(value) do
+    pos = map_size(params) + 1
+    filter_key = "filter_#{column}_#{pos}"
+
+    str = "lower(#{column}) = {{#{filter_key}}}"
+
+    {str, Map.put(params, filter_key, String.downcase(value))}
   end
 
-  defp do_additional_filters(column, value, args) when is_number(value) do
-    pos = length(args) + 1
-    str = "#{column} = ?#{pos}"
-    args = args ++ [value]
-    {str, args}
+  defp do_additional_filters(column, value, params) when is_number(value) do
+    pos = map_size(params) + 1
+    filter_key = "filter_#{column}_#{pos}"
+
+    str = "#{column} = {{#{filter_key}}}"
+    {str, Map.put(params, filter_key, value)}
   end
 end

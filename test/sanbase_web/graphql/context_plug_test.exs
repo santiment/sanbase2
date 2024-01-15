@@ -6,18 +6,16 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
   @moduletag capture_log: true
 
   alias Sanbase.Accounts.User
-  alias Sanbase.Repo
   alias SanbaseWeb.Graphql.{AuthPlug, ContextPlug}
   alias Sanbase.Accounts.Apikey
   alias Sanbase.Billing.{Subscription, Product}
 
   test "loading the user from the current token", %{conn: conn} do
-    user =
-      %User{
-        salt: User.generate_salt(),
-        privacy_policy_accepted: true
-      }
-      |> Repo.insert!()
+    {:ok, user} = User.create(%{privacy_policy_accepted: true})
+    # Do it like this, as the `user` from User.create/1 has `first_login: true`
+    # which won't correspond to the one from the AuthPlug as it will again
+    # fetch the user and it will no longer be the first login.
+    {:ok, user} = Sanbase.Accounts.get_user(user.id)
 
     conn =
       conn

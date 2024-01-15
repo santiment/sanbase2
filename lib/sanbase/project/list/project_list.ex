@@ -56,6 +56,17 @@ defmodule Sanbase.Project.List do
     |> Repo.all()
   end
 
+  def projects_twitter_handles_by_slugs(slugs, opts \\ []) do
+    opts = Keyword.put(opts, :preload?, false)
+
+    projects_query(opts)
+    |> where([p], p.slug in ^slugs)
+    |> select([p], p.twitter_link)
+    |> Repo.all()
+    |> Enum.map(&Sanbase.Project.TwitterData.link_to_handle/1)
+    |> Enum.reject(&is_nil/1)
+  end
+
   @doc ~s"""
   Return the slugs of all projects that are marked as hidden
 
@@ -213,6 +224,38 @@ defmodule Sanbase.Project.List do
     |> Repo.one()
   end
 
+  def projects_data_for_queries(opts \\ []) do
+    opts = Keyword.put(opts, :preload?, false)
+
+    projects_query(opts)
+    |> preload([:github_organizations, :contract_addresses])
+    |> join(:left, [p], orgs in assoc(p, :github_organizations), as: :orgs)
+    |> join(:left, [p], addresses in assoc(p, :contract_addresses), as: :addresses)
+    |> select([
+      :id,
+      :name,
+      :ticker,
+      :slug,
+      github_organizations: [:organization],
+      contract_addresses: [:address, :decimals, :label]
+    ])
+    |> Repo.all()
+    |> Enum.map(fn p ->
+      %{
+        "id" => p.id,
+        "name" => p.name,
+        "ticker" => p.ticker,
+        "slug" => p.slug,
+        "github_organizations" => Enum.map(p.github_organizations, & &1.organization),
+        "contract_addresses" =>
+          Enum.map(
+            p.contract_addresses,
+            &%{"address" => &1.address, "decimals" => &1.decimals, "label" => &1.label}
+          )
+      }
+    end)
+  end
+
   @doc ~s"""
   Returns `page_size` number of all projects from the `page` pages.
   Filtering out projects based on some conditions can be controled by the options.
@@ -261,7 +304,7 @@ defmodule Sanbase.Project.List do
     opts = Keyword.put(opts, :preload?, false)
 
     projects_query(opts)
-    |> join(:inner, [p], gl in Project.GithubOrganization)
+    |> join(:inner, [p], gl in Project.GithubOrganization, on: p.id == gl.project_id)
     |> select([p], p.slug)
     |> distinct(true)
     |> Repo.all()
@@ -529,7 +572,8 @@ defmodule Sanbase.Project.List do
   def currently_trending_projects(opts \\ [])
 
   def currently_trending_projects(opts) do
-    {:ok, trending_words} = Sanbase.SocialData.TrendingWords.get_currently_trending_words(10)
+    {:ok, trending_words} =
+      Sanbase.SocialData.TrendingWords.get_currently_trending_words(10, :all)
 
     trending_words
     |> Enum.map(&String.downcase(&1.word))

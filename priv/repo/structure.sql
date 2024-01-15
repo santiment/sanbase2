@@ -266,7 +266,24 @@ CREATE TABLE public.ai_context (
     question text,
     answer text,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    guild_id character varying(255),
+    guild_name character varying(255),
+    channel_id character varying(255),
+    channel_name character varying(255),
+    elapsed_time double precision,
+    tokens_request integer,
+    tokens_response integer,
+    tokens_total integer,
+    error_message text,
+    total_cost double precision,
+    command character varying(255),
+    prompt text,
+    user_is_pro boolean DEFAULT false,
+    thread_id character varying(255),
+    thread_name character varying(255),
+    votes jsonb DEFAULT '{}'::jsonb,
+    route jsonb DEFAULT '{}'::jsonb
 );
 
 
@@ -287,6 +304,81 @@ CREATE SEQUENCE public.ai_context_id_seq
 --
 
 ALTER SEQUENCE public.ai_context_id_seq OWNED BY public.ai_context.id;
+
+
+--
+-- Name: ai_gen_code; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_gen_code (
+    id bigint NOT NULL,
+    question text,
+    answer text,
+    parent_id bigint,
+    program text,
+    program_result text,
+    discord_user text,
+    guild_id text,
+    guild_name text,
+    channel_id text,
+    channel_name text,
+    elapsed_time integer,
+    changes text,
+    is_saved_vs boolean DEFAULT false,
+    is_from_vs boolean DEFAULT false,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: ai_gen_code_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ai_gen_code_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ai_gen_code_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ai_gen_code_id_seq OWNED BY public.ai_gen_code.id;
+
+
+--
+-- Name: alpha_naratives_emails; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.alpha_naratives_emails (
+    id bigint NOT NULL,
+    email character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: alpha_naratives_emails_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.alpha_naratives_emails_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: alpha_naratives_emails_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.alpha_naratives_emails_id_seq OWNED BY public.alpha_naratives_emails.id;
 
 
 --
@@ -595,14 +687,14 @@ ALTER SEQUENCE public.chart_configurations_id_seq OWNED BY public.chart_configur
 CREATE TABLE public.clickhouse_query_executions (
     id bigint NOT NULL,
     user_id bigint,
-    query_id character varying(255),
     clickhouse_query_id character varying(255) NOT NULL,
     execution_details jsonb NOT NULL,
     credits_cost integer NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     query_start_time timestamp(0) without time zone NOT NULL,
-    query_end_time timestamp(0) without time zone NOT NULL
+    query_end_time timestamp(0) without time zone NOT NULL,
+    query_id bigint
 );
 
 
@@ -829,6 +921,20 @@ ALTER SEQUENCE public.dashboard_comments_mapping_id_seq OWNED BY public.dashboar
 
 
 --
+-- Name: dashboard_query_mappings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dashboard_query_mappings (
+    id uuid NOT NULL,
+    dashboard_id bigint,
+    query_id bigint,
+    settings jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
 -- Name: dashboards; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -843,7 +949,9 @@ CREATE TABLE public.dashboards (
     updated_at timestamp without time zone NOT NULL,
     is_deleted boolean DEFAULT false,
     is_hidden boolean DEFAULT false,
-    parameters jsonb DEFAULT '{}'::jsonb
+    parameters jsonb DEFAULT '{}'::jsonb,
+    settings jsonb DEFAULT '{}'::jsonb,
+    text_widgets jsonb
 );
 
 
@@ -854,9 +962,10 @@ CREATE TABLE public.dashboards (
 CREATE TABLE public.dashboards_cache (
     id bigint NOT NULL,
     dashboard_id bigint,
-    panels jsonb NOT NULL,
+    panels jsonb DEFAULT '{}'::jsonb,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    queries jsonb DEFAULT '{}'::jsonb
 );
 
 
@@ -1111,7 +1220,8 @@ CREATE TABLE public.votes (
     watchlist_id bigint,
     user_trigger_id bigint,
     dashboard_id bigint,
-    CONSTRAINT only_one_fk CHECK (((((((
+    query_id bigint,
+    CONSTRAINT only_one_fk CHECK ((((((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
@@ -1134,6 +1244,10 @@ CASE
 END) +
 CASE
     WHEN (dashboard_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (query_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -1489,6 +1603,72 @@ ALTER SEQUENCE public.finished_oban_jobs_id_seq OWNED BY public.finished_oban_jo
 
 
 --
+-- Name: free_form_json_storage; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.free_form_json_storage (
+    id bigint NOT NULL,
+    key character varying(255),
+    value jsonb DEFAULT '{}'::jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: free_form_json_storage_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.free_form_json_storage_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: free_form_json_storage_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.free_form_json_storage_id_seq OWNED BY public.free_form_json_storage.id;
+
+
+--
+-- Name: geoip_data; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.geoip_data (
+    id bigint NOT NULL,
+    ip_address character varying(255) NOT NULL,
+    is_vpn boolean NOT NULL,
+    country_name character varying(255) NOT NULL,
+    country_code character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: geoip_data_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.geoip_data_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: geoip_data_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.geoip_data_id_seq OWNED BY public.geoip_data.id;
+
+
+--
 -- Name: github_organizations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1516,6 +1696,44 @@ CREATE SEQUENCE public.github_organizations_id_seq
 --
 
 ALTER SEQUENCE public.github_organizations_id_seq OWNED BY public.github_organizations.id;
+
+
+--
+-- Name: gpt_router; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gpt_router (
+    id bigint NOT NULL,
+    question text,
+    route character varying(255),
+    scores jsonb DEFAULT '{}'::jsonb,
+    error text,
+    elapsed_time integer,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    timeframe integer DEFAULT '-1'::integer,
+    sentiment boolean DEFAULT false,
+    projects character varying(255)[] DEFAULT ARRAY[]::character varying[]
+);
+
+
+--
+-- Name: gpt_router_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.gpt_router_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: gpt_router_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.gpt_router_id_seq OWNED BY public.gpt_router.id;
 
 
 --
@@ -1822,6 +2040,89 @@ ALTER SEQUENCE public.market_segments_id_seq OWNED BY public.market_segments.id;
 
 
 --
+-- Name: menu_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.menu_items (
+    id bigint NOT NULL,
+    parent_id bigint,
+    query_id bigint,
+    dashboard_id bigint,
+    menu_id bigint,
+    "position" integer,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    CONSTRAINT only_one_fk CHECK ((((
+CASE
+    WHEN (query_id IS NULL) THEN 0
+    ELSE 1
+END +
+CASE
+    WHEN (dashboard_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (menu_id IS NULL) THEN 0
+    ELSE 1
+END) = 1))
+);
+
+
+--
+-- Name: menu_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.menu_items_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: menu_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.menu_items_id_seq OWNED BY public.menu_items.id;
+
+
+--
+-- Name: menus; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.menus (
+    id bigint NOT NULL,
+    name character varying(255),
+    description character varying(255),
+    parent_id bigint,
+    user_id bigint,
+    is_global boolean DEFAULT false,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: menus_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.menus_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: menus_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.menus_id_seq OWNED BY public.menus.id;
+
+
+--
 -- Name: metrics; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1850,6 +2151,42 @@ CREATE SEQUENCE public.metrics_id_seq
 --
 
 ALTER SEQUENCE public.metrics_id_seq OWNED BY public.metrics.id;
+
+
+--
+-- Name: monitored_twitter_handles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.monitored_twitter_handles (
+    id bigint NOT NULL,
+    handle character varying(255) NOT NULL,
+    origin character varying(255) NOT NULL,
+    notes text,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    status character varying(255) DEFAULT 'pending_approval'::character varying,
+    comment text
+);
+
+
+--
+-- Name: monitored_twitter_handles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.monitored_twitter_handles_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: monitored_twitter_handles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.monitored_twitter_handles_id_seq OWNED BY public.monitored_twitter_handles.id;
 
 
 --
@@ -2068,7 +2405,8 @@ CREATE TABLE public.plans (
     "order" integer DEFAULT 0,
     is_private boolean DEFAULT false,
     has_custom_restrictions boolean DEFAULT false NOT NULL,
-    restrictions jsonb
+    restrictions jsonb,
+    is_ppp boolean DEFAULT false
 );
 
 
@@ -2739,6 +3077,48 @@ ALTER SEQUENCE public.pumpkins_id_seq OWNED BY public.pumpkins.id;
 
 
 --
+-- Name: queries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.queries (
+    id bigint NOT NULL,
+    uuid character varying(255) NOT NULL,
+    origin_id integer,
+    origin_uuid character varying(255),
+    name text,
+    description text,
+    is_public boolean DEFAULT true,
+    settings jsonb,
+    sql_query_text text DEFAULT ''::text,
+    sql_query_parameters jsonb DEFAULT '{}'::jsonb,
+    user_id bigint NOT NULL,
+    is_hidden boolean DEFAULT false,
+    is_deleted boolean DEFAULT false,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: queries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.queries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: queries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.queries_id_seq OWNED BY public.queries.id;
+
+
+--
 -- Name: questionnaire_answers; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2884,6 +3264,37 @@ CREATE SEQUENCE public.san_burn_credit_transactions_id_seq
 --
 
 ALTER SEQUENCE public.san_burn_credit_transactions_id_seq OWNED BY public.san_burn_credit_transactions.id;
+
+
+--
+-- Name: sanr_emails; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sanr_emails (
+    id bigint NOT NULL,
+    email character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: sanr_emails_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.sanr_emails_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: sanr_emails_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.sanr_emails_id_seq OWNED BY public.sanr_emails.id;
 
 
 --
@@ -3370,18 +3781,24 @@ CREATE TABLE public.telegram_user_tokens (
 CREATE TABLE public.thread_ai_context (
     id bigint NOT NULL,
     discord_user character varying(255),
-    guild_id bigint,
+    guild_id character varying(255),
     guild_name character varying(255),
-    channel_id bigint,
+    channel_id character varying(255),
     channel_name character varying(255),
-    thread_id bigint,
+    thread_id character varying(255),
     thread_name character varying(255),
     question text,
     answer text,
     votes_pos integer DEFAULT 0,
     votes_neg integer DEFAULT 0,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    elapsed_time double precision,
+    tokens_request integer,
+    tokens_response integer,
+    tokens_total integer,
+    error_message character varying(255),
+    total_cost double precision
 );
 
 
@@ -3648,6 +4065,46 @@ CREATE SEQUENCE public.user_lists_id_seq
 --
 
 ALTER SEQUENCE public.user_lists_id_seq OWNED BY public.user_lists.id;
+
+
+--
+-- Name: user_promo_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_promo_codes (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    coupon character varying(255) NOT NULL,
+    campaign character varying(255),
+    percent_off integer,
+    max_redemptions integer DEFAULT 1,
+    times_redeemed integer DEFAULT 0,
+    redeem_by timestamp(0) without time zone,
+    metadata jsonb,
+    extra_data jsonb,
+    valid boolean DEFAULT true NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_promo_codes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_promo_codes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_promo_codes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_promo_codes_id_seq OWNED BY public.user_promo_codes.id;
 
 
 --
@@ -4142,6 +4599,20 @@ ALTER TABLE ONLY public.ai_context ALTER COLUMN id SET DEFAULT nextval('public.a
 
 
 --
+-- Name: ai_gen_code id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_gen_code ALTER COLUMN id SET DEFAULT nextval('public.ai_gen_code_id_seq'::regclass);
+
+
+--
+-- Name: alpha_naratives_emails id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.alpha_naratives_emails ALTER COLUMN id SET DEFAULT nextval('public.alpha_naratives_emails_id_seq'::regclass);
+
+
+--
 -- Name: api_call_limits id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4324,10 +4795,31 @@ ALTER TABLE ONLY public.finished_oban_jobs ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
+-- Name: free_form_json_storage id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.free_form_json_storage ALTER COLUMN id SET DEFAULT nextval('public.free_form_json_storage_id_seq'::regclass);
+
+
+--
+-- Name: geoip_data id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.geoip_data ALTER COLUMN id SET DEFAULT nextval('public.geoip_data_id_seq'::regclass);
+
+
+--
 -- Name: github_organizations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.github_organizations ALTER COLUMN id SET DEFAULT nextval('public.github_organizations_id_seq'::regclass);
+
+
+--
+-- Name: gpt_router id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gpt_router ALTER COLUMN id SET DEFAULT nextval('public.gpt_router_id_seq'::regclass);
 
 
 --
@@ -4387,10 +4879,31 @@ ALTER TABLE ONLY public.market_segments ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: menu_items id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menu_items ALTER COLUMN id SET DEFAULT nextval('public.menu_items_id_seq'::regclass);
+
+
+--
+-- Name: menus id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menus ALTER COLUMN id SET DEFAULT nextval('public.menus_id_seq'::regclass);
+
+
+--
 -- Name: metrics id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.metrics ALTER COLUMN id SET DEFAULT nextval('public.metrics_id_seq'::regclass);
+
+
+--
+-- Name: monitored_twitter_handles id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitored_twitter_handles ALTER COLUMN id SET DEFAULT nextval('public.monitored_twitter_handles_id_seq'::regclass);
 
 
 --
@@ -4576,6 +5089,13 @@ ALTER TABLE ONLY public.pumpkins ALTER COLUMN id SET DEFAULT nextval('public.pum
 
 
 --
+-- Name: queries id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries ALTER COLUMN id SET DEFAULT nextval('public.queries_id_seq'::regclass);
+
+
+--
 -- Name: reports id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4594,6 +5114,13 @@ ALTER TABLE ONLY public.roles ALTER COLUMN id SET DEFAULT nextval('public.roles_
 --
 
 ALTER TABLE ONLY public.san_burn_credit_transactions ALTER COLUMN id SET DEFAULT nextval('public.san_burn_credit_transactions_id_seq'::regclass);
+
+
+--
+-- Name: sanr_emails id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanr_emails ALTER COLUMN id SET DEFAULT nextval('public.sanr_emails_id_seq'::regclass);
 
 
 --
@@ -4744,6 +5271,13 @@ ALTER TABLE ONLY public.user_lists ALTER COLUMN id SET DEFAULT nextval('public.u
 
 
 --
+-- Name: user_promo_codes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_promo_codes ALTER COLUMN id SET DEFAULT nextval('public.user_promo_codes_id_seq'::regclass);
+
+
+--
 -- Name: user_settings id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4855,6 +5389,22 @@ ALTER TABLE ONLY public.active_widgets
 
 ALTER TABLE ONLY public.ai_context
     ADD CONSTRAINT ai_context_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ai_gen_code ai_gen_code_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_gen_code
+    ADD CONSTRAINT ai_gen_code_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: alpha_naratives_emails alpha_naratives_emails_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.alpha_naratives_emails
+    ADD CONSTRAINT alpha_naratives_emails_pkey PRIMARY KEY (id);
 
 
 --
@@ -4986,6 +5536,14 @@ ALTER TABLE ONLY public.dashboard_comments_mapping
 
 
 --
+-- Name: dashboard_query_mappings dashboard_query_mappings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_query_mappings
+    ADD CONSTRAINT dashboard_query_mappings_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: dashboards_cache dashboards_cache_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5074,11 +5632,35 @@ ALTER TABLE ONLY public.finished_oban_jobs
 
 
 --
+-- Name: free_form_json_storage free_form_json_storage_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.free_form_json_storage
+    ADD CONSTRAINT free_form_json_storage_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: geoip_data geoip_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.geoip_data
+    ADD CONSTRAINT geoip_data_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: github_organizations github_organizations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.github_organizations
     ADD CONSTRAINT github_organizations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: gpt_router gpt_router_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gpt_router
+    ADD CONSTRAINT gpt_router_pkey PRIMARY KEY (id);
 
 
 --
@@ -5154,11 +5736,35 @@ ALTER TABLE ONLY public.market_segments
 
 
 --
+-- Name: menu_items menu_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menu_items
+    ADD CONSTRAINT menu_items_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: menus menus_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menus
+    ADD CONSTRAINT menus_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: metrics metrics_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.metrics
     ADD CONSTRAINT metrics_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: monitored_twitter_handles monitored_twitter_handles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitored_twitter_handles
+    ADD CONSTRAINT monitored_twitter_handles_pkey PRIMARY KEY (id);
 
 
 --
@@ -5378,6 +5984,14 @@ ALTER TABLE ONLY public.pumpkins
 
 
 --
+-- Name: queries queries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries
+    ADD CONSTRAINT queries_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: questionnaire_answers questionnaire_answers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5423,6 +6037,14 @@ ALTER TABLE ONLY public.roles
 
 ALTER TABLE ONLY public.san_burn_credit_transactions
     ADD CONSTRAINT san_burn_credit_transactions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sanr_emails sanr_emails_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanr_emails
+    ADD CONSTRAINT sanr_emails_pkey PRIMARY KEY (id);
 
 
 --
@@ -5626,6 +6248,14 @@ ALTER TABLE ONLY public.user_lists
 
 
 --
+-- Name: user_promo_codes user_promo_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_promo_codes
+    ADD CONSTRAINT user_promo_codes_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: user_roles user_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5754,6 +6384,13 @@ ALTER TABLE ONLY public.webinars
 
 
 --
+-- Name: alpha_naratives_emails_email_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX alpha_naratives_emails_email_index ON public.alpha_naratives_emails USING btree (email);
+
+
+--
 -- Name: api_call_limits_remote_ip_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5859,6 +6496,13 @@ CREATE INDEX chart_configurations_user_id_index ON public.chart_configurations U
 
 
 --
+-- Name: clickhouse_query_executions_query_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX clickhouse_query_executions_query_id_index ON public.clickhouse_query_executions USING btree (query_id);
+
+
+--
 -- Name: contract_addresses_project_id_address_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5891,6 +6535,20 @@ CREATE UNIQUE INDEX dashboard_comments_mapping_comment_id_index ON public.dashbo
 --
 
 CREATE INDEX dashboard_comments_mapping_dashboard_id_index ON public.dashboard_comments_mapping USING btree (dashboard_id);
+
+
+--
+-- Name: dashboard_query_mappings_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dashboard_query_mappings_dashboard_id_index ON public.dashboard_query_mappings USING btree (dashboard_id);
+
+
+--
+-- Name: dashboard_query_mappings_query_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dashboard_query_mappings_query_id_index ON public.dashboard_query_mappings USING btree (query_id);
 
 
 --
@@ -6041,6 +6699,20 @@ CREATE INDEX finished_oban_jobs_queue_index ON public.finished_oban_jobs USING b
 
 
 --
+-- Name: free_form_json_storage_key_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX free_form_json_storage_key_index ON public.free_form_json_storage USING btree (key);
+
+
+--
+-- Name: geoip_data_ip_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX geoip_data_ip_address_index ON public.geoip_data USING btree (ip_address);
+
+
+--
 -- Name: github_organizations_project_id_organization_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6118,10 +6790,24 @@ CREATE UNIQUE INDEX market_segments_name_index ON public.market_segments USING b
 
 
 --
+-- Name: menus_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX menus_user_id_index ON public.menus USING btree (user_id);
+
+
+--
 -- Name: metrics_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX metrics_name_index ON public.metrics USING btree (name);
+
+
+--
+-- Name: monitored_twitter_handles_handle_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX monitored_twitter_handles_handle_index ON public.monitored_twitter_handles USING btree (handle);
 
 
 --
@@ -6349,6 +7035,13 @@ CREATE INDEX pumpkins_user_id_index ON public.pumpkins USING btree (user_id);
 
 
 --
+-- Name: queries_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX queries_user_id_index ON public.queries USING btree (user_id);
+
+
+--
 -- Name: questionnaire_answers_question_uuid_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6360,6 +7053,13 @@ CREATE UNIQUE INDEX questionnaire_answers_question_uuid_user_id_index ON public.
 --
 
 CREATE INDEX san_burn_credit_transactions_trx_hash_index ON public.san_burn_credit_transactions USING btree (trx_hash);
+
+
+--
+-- Name: sanr_emails_email_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX sanr_emails_email_index ON public.sanr_emails USING btree (email);
 
 
 --
@@ -6594,6 +7294,13 @@ CREATE UNIQUE INDEX user_lists_slug_index ON public.user_lists USING btree (slug
 
 
 --
+-- Name: user_promo_codes_coupon_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_promo_codes_coupon_index ON public.user_promo_codes USING btree (coupon);
+
+
+--
 -- Name: user_roles_user_id_role_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6689,6 +7396,13 @@ CREATE INDEX votes_post_id_index ON public.votes USING btree (post_id);
 --
 
 CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (post_id, user_id);
+
+
+--
+-- Name: votes_query_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_query_id_user_id_index ON public.votes USING btree (query_id, user_id);
 
 
 --
@@ -6811,6 +7525,14 @@ CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE
 
 
 --
+-- Name: ai_gen_code ai_gen_code_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_gen_code
+    ADD CONSTRAINT ai_gen_code_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.ai_gen_code(id);
+
+
+--
 -- Name: api_call_limits api_call_limits_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6915,6 +7637,14 @@ ALTER TABLE ONLY public.chart_configurations
 
 
 --
+-- Name: clickhouse_query_executions clickhouse_query_executions_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clickhouse_query_executions
+    ADD CONSTRAINT clickhouse_query_executions_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id) ON DELETE SET NULL;
+
+
+--
 -- Name: clickhouse_query_executions clickhouse_query_executions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6968,6 +7698,22 @@ ALTER TABLE ONLY public.dashboard_comments_mapping
 
 ALTER TABLE ONLY public.dashboard_comments_mapping
     ADD CONSTRAINT dashboard_comments_mapping_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dashboard_query_mappings dashboard_query_mappings_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_query_mappings
+    ADD CONSTRAINT dashboard_query_mappings_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: dashboard_query_mappings dashboard_query_mappings_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dashboard_query_mappings
+    ADD CONSTRAINT dashboard_query_mappings_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id) ON DELETE CASCADE;
 
 
 --
@@ -7184,6 +7930,62 @@ ALTER TABLE ONLY public.list_items
 
 ALTER TABLE ONLY public.list_items
     ADD CONSTRAINT list_items_user_list_id_fkey FOREIGN KEY (user_list_id) REFERENCES public.user_lists(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menu_items menu_items_dashboard_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menu_items
+    ADD CONSTRAINT menu_items_dashboard_id_fkey FOREIGN KEY (dashboard_id) REFERENCES public.dashboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menu_items menu_items_menu_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menu_items
+    ADD CONSTRAINT menu_items_menu_id_fkey FOREIGN KEY (menu_id) REFERENCES public.menus(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menu_items menu_items_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menu_items
+    ADD CONSTRAINT menu_items_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.menus(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menu_items menu_items_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menu_items
+    ADD CONSTRAINT menu_items_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menus menus_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menus
+    ADD CONSTRAINT menus_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.menus(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menus menus_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.menus
+    ADD CONSTRAINT menus_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: monitored_twitter_handles monitored_twitter_handles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitored_twitter_handles
+    ADD CONSTRAINT monitored_twitter_handles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -7408,6 +8210,14 @@ ALTER TABLE ONLY public.promo_trials
 
 ALTER TABLE ONLY public.pumpkins
     ADD CONSTRAINT pumpkins_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: queries queries_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries
+    ADD CONSTRAINT queries_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -7691,6 +8501,14 @@ ALTER TABLE ONLY public.user_lists
 
 
 --
+-- Name: user_promo_codes user_promo_codes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_promo_codes
+    ADD CONSTRAINT user_promo_codes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_roles user_roles_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7768,6 +8586,14 @@ ALTER TABLE ONLY public.votes
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: votes votes_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id);
 
 
 --
@@ -8300,3 +9126,33 @@ INSERT INTO public."schema_migrations" (version) VALUES (20230210145707);
 INSERT INTO public."schema_migrations" (version) VALUES (20230216145219);
 INSERT INTO public."schema_migrations" (version) VALUES (20230224120026);
 INSERT INTO public."schema_migrations" (version) VALUES (20230327194228);
+INSERT INTO public."schema_migrations" (version) VALUES (20230516090551);
+INSERT INTO public."schema_migrations" (version) VALUES (20230516091348);
+INSERT INTO public."schema_migrations" (version) VALUES (20230519090827);
+INSERT INTO public."schema_migrations" (version) VALUES (20230522123937);
+INSERT INTO public."schema_migrations" (version) VALUES (20230523080400);
+INSERT INTO public."schema_migrations" (version) VALUES (20230526092048);
+INSERT INTO public."schema_migrations" (version) VALUES (20230608132801);
+INSERT INTO public."schema_migrations" (version) VALUES (20230616110252);
+INSERT INTO public."schema_migrations" (version) VALUES (20230626080554);
+INSERT INTO public."schema_migrations" (version) VALUES (20230713112639);
+INSERT INTO public."schema_migrations" (version) VALUES (20230803140335);
+INSERT INTO public."schema_migrations" (version) VALUES (20230810121200);
+INSERT INTO public."schema_migrations" (version) VALUES (20230829111631);
+INSERT INTO public."schema_migrations" (version) VALUES (20230904092357);
+INSERT INTO public."schema_migrations" (version) VALUES (20230904141409);
+INSERT INTO public."schema_migrations" (version) VALUES (20230908085236);
+INSERT INTO public."schema_migrations" (version) VALUES (20230915121540);
+INSERT INTO public."schema_migrations" (version) VALUES (20230925041216);
+INSERT INTO public."schema_migrations" (version) VALUES (20231003070443);
+INSERT INTO public."schema_migrations" (version) VALUES (20231012122039);
+INSERT INTO public."schema_migrations" (version) VALUES (20231012130814);
+INSERT INTO public."schema_migrations" (version) VALUES (20231019111320);
+INSERT INTO public."schema_migrations" (version) VALUES (20231023123140);
+INSERT INTO public."schema_migrations" (version) VALUES (20231026084628);
+INSERT INTO public."schema_migrations" (version) VALUES (20231101104145);
+INSERT INTO public."schema_migrations" (version) VALUES (20231110093800);
+INSERT INTO public."schema_migrations" (version) VALUES (20231206123012);
+INSERT INTO public."schema_migrations" (version) VALUES (20231211133112);
+INSERT INTO public."schema_migrations" (version) VALUES (20231213100958);
+INSERT INTO public."schema_migrations" (version) VALUES (20231213101042);

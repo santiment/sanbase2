@@ -2,6 +2,7 @@ defmodule Sanbase.Cryptocompare.Jobs do
   alias Sanbase.Project
   alias Sanbase.Cryptocompare.Price
   alias Sanbase.Cryptocompare.OpenInterest
+  alias Sanbase.Cryptocompare.FundingRate
 
   # Execute the function until the moved rows are 0 or up to 100 iterations.
   # The iterations are needed to avoid an infinite loop. If there is a task that
@@ -9,7 +10,17 @@ defmodule Sanbase.Cryptocompare.Jobs do
   # the job.
 
   def move_finished_jobs(opts \\ []) do
-    for queue <- [price_queue(), open_interest_queue()] do
+    queues =
+      [price_queue(), open_interest_queue(), funding_rate_queue()] ++
+        [
+          "cryptocompare_historical_add_jobs_queue",
+          "email_queue",
+          "twitter_followers_migration_queue"
+        ]
+
+    queues = Enum.uniq(queues)
+
+    for queue <- queues do
       do_move_finished_jobs(queue, opts)
     end
     |> Enum.reduce_while({:ok, 0}, fn
@@ -90,4 +101,5 @@ defmodule Sanbase.Cryptocompare.Jobs do
 
   defp price_queue(), do: Price.HistoricalScheduler.queue() |> to_string()
   defp open_interest_queue(), do: OpenInterest.HistoricalScheduler.queue() |> to_string()
+  defp funding_rate_queue(), do: FundingRate.HistoricalScheduler.queue() |> to_string()
 end

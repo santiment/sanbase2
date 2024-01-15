@@ -1,5 +1,15 @@
 defmodule Sanbase.Email.Template do
   @templates %{
+    "sanr-network-welcome" => %{
+      id: 5_078_949,
+      subject: "Sanr.Network Node Holder Application Form",
+      required_vars: []
+    },
+    "alpha-naratives-welcome" => %{
+      id: 5_087_218,
+      subject: "Thank you for joining the Alpha Narratives waiting list!",
+      required_vars: []
+    },
     "sanbase-sign-in-mail" => %{
       id: 4_128_976,
       subject: "Login link",

@@ -96,15 +96,94 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   end
 
   test "list products with plans", context do
-    query = products_with_plans_query()
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Geoip.fetch_geo_data/1,
+      {:ok,
+       %{
+         "country_name" => "Test Country",
+         "country_code" => "TC",
+         "security" => %{"is_proxy" => false, "proxy_type" => nil}
+       }}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      query = products_with_plans_query()
 
-    result =
-      context.conn
-      |> execute_query(query, "productsWithPlans")
-      |> hd()
+      result =
+        context.conn
+        |> execute_query(query, "productsWithPlans")
+        |> hd()
 
-    assert result["name"] == "Neuro by Santiment"
-    assert length(result["plans"]) == 9
+      assert result["name"] == "Neuro by Santiment"
+      assert length(result["plans"]) == 9
+    end)
+  end
+
+  describe "ppp settings" do
+    test "when eligible", context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Geoip.fetch_geo_data/1,
+        {:ok,
+         %{
+           "country_name" => "Turkey",
+           "country_code2" => "TR",
+           "security" => %{"is_proxy" => false, "proxy_type" => nil}
+         }}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = ppp_settings_query()
+
+        result =
+          context.conn
+          |> execute_query(query, "pppSettings")
+
+        assert result["isEligibleForPPP"] == true
+        assert result["country"] == "Turkey"
+        assert result["percentOff"] == 70
+        assert length(result["plans"]) == 4
+      end)
+    end
+
+    test "when not eligible", context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Geoip.fetch_geo_data/1,
+        {:ok,
+         %{
+           "country_name" => "Test Country",
+           "country_code2" => "TC",
+           "security" => %{"is_proxy" => false, "proxy_type" => nil}
+         }}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = ppp_settings_query()
+
+        result =
+          context.conn
+          |> execute_query(query, "pppSettings")
+
+        assert result["isEligibleForPPP"] == false
+      end)
+    end
+
+    test "when not eligible due to VPN", context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Geoip.fetch_geo_data/1,
+        {:ok,
+         %{
+           "country_name" => "Turkey",
+           "country_code2" => "TR",
+           "security" => %{"is_proxy" => true, "proxy_type" => "VPN"}
+         }}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = ppp_settings_query()
+
+        result =
+          context.conn
+          |> execute_query(query, "pppSettings")
+
+        assert result["isEligibleForPPP"] == false
+      end)
+    end
   end
 
   describe "#currentUser[subscriptions]" do
@@ -591,54 +670,77 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
   end
 
-  describe "annual discount eligibility" do
-    test "50% off", context do
-      insert(:subscription_pro_sanbase,
-        user: context.user,
-        status: "trialing",
-        trial_end: DateTime.add(Timex.now(), 10 * 24 * 3600)
-      )
+  # Removing annual discount eligibility temporally
 
-      res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-      assert res.is_eligible
-      assert res.discount.percent_off == 50
+  # describe "annual discount eligibility" do
+  #   test "50% off", context do
+  #     insert(:subscription_pro_sanbase,
+  #       user: context.user,
+  #       status: "trialing",
+  #       trial_end: DateTime.add(Timex.now(), 10 * 24 * 3600)
+  #     )
 
-      query = check_annual_discount_eligibility()
-      res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-      assert res["discount"]["percentOff"] == 50
-    end
+  #     res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
+  #     assert res.is_eligible
+  #     assert res.discount.percent_off == 50
 
-    test "35% off", context do
-      insert(:subscription_pro_sanbase,
-        user: context.user,
-        status: "trialing",
-        trial_end: DateTime.add(Timex.now(), -10 * 24 * 3600)
-      )
+  #     query = check_annual_discount_eligibility()
+  #     res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
+  #     assert res["discount"]["percentOff"] == 50
+  #   end
 
-      res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-      assert res.is_eligible
-      assert res.discount.percent_off == 35
+  #   test "35% off", context do
+  #     insert(:subscription_pro_sanbase,
+  #       user: context.user,
+  #       status: "trialing",
+  #       trial_end: DateTime.add(Timex.now(), -10 * 24 * 3600)
+  #     )
 
-      query = check_annual_discount_eligibility()
-      res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-      assert res["isEligible"]
-      assert res["discount"]["percentOff"] == 35
-    end
+  #     res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
+  #     assert res.is_eligible
+  #     assert res.discount.percent_off == 35
 
-    test "not eligible", context do
-      insert(:subscription_pro_sanbase,
-        user: context.user,
-        status: "trialing",
-        trial_end: DateTime.add(Timex.now(), -20 * 24 * 3600)
-      )
+  #     query = check_annual_discount_eligibility()
+  #     res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
+  #     assert res["isEligible"]
+  #     assert res["discount"]["percentOff"] == 35
+  #   end
 
-      res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-      refute res.is_eligible
+  #   test "not eligible", context do
+  #     insert(:subscription_pro_sanbase,
+  #       user: context.user,
+  #       status: "trialing",
+  #       trial_end: DateTime.add(Timex.now(), -20 * 24 * 3600)
+  #     )
 
-      query = check_annual_discount_eligibility()
-      res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-      refute res["isEligible"]
-    end
+  #     res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
+  #     refute res.is_eligible
+
+  #     query = check_annual_discount_eligibility()
+  #     res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
+  #     refute res["isEligible"]
+  #   end
+  # end
+
+  def ppp_settings_query() do
+    """
+    {
+      pppSettings {
+        isEligibleForPPP
+        country
+        percentOff
+        plans {
+          id
+          name
+          interval
+          amount
+          product {
+            name
+          }
+        }
+      }
+    }
+    """
   end
 
   defp check_coupon(coupon) do
@@ -794,17 +896,17 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
   end
 
-  defp check_annual_discount_eligibility() do
-    """
-    {
-      checkAnnualDiscountEligibility {
-        isEligible
-        discount {
-          percentOff
-          expireAt
-        }
-      }
-    }
-    """
-  end
+  # defp check_annual_discount_eligibility() do
+  #   """
+  #   {
+  #     checkAnnualDiscountEligibility {
+  #       isEligible
+  #       discount {
+  #         percentOff
+  #         expireAt
+  #       }
+  #     }
+  #   }
+  #   """
+  # end
 end

@@ -1,28 +1,63 @@
 {
-  "status": {
-    "timestamp": "2019-12-20T09:29:01.436Z",
-    "error_code": 0,
-    "error_message": null,
-    "elapsed": 9,
-    "credit_count": 1,
-    "notice": null
-  },
   "data": {
-    "2018-01-02T00:00:00.000Z": [
-      615633059840,
-      27340439552
-    ],
-    "2018-01-03T00:00:00.000Z": [
-      673426702336,
-      43249201152
-    ],
-    "2018-01-04T00:00:00.000Z": [
-      739147579392,
-      52711313408
-    ],
-    "2018-01-05T00:00:00.000Z": [
-      755427835904,
-      67713847296
+    "quotes": [
+      {
+        "timestamp": "2023-08-21T12:35:00.000Z",
+        "searchInterval": "5",
+        "btcDominance": 48.0836,
+        "ethDominance": 19.0837,
+        "activeCryptocurrencies": 9553,
+        "activeExchanges": 663,
+        "activeMarketPairs": 63424,
+        "quote": [
+          {
+            "name": "USD",
+            "timestamp": "2023-08-21T12:35:00.000Z",
+            "totalMarketCap": 1053345319615.14,
+            "totalVolume24H": 24975771712.74,
+            "totalVolume24HReported": 88842480163.87,
+            "altcoinVolume24H": 14141463173.83,
+            "altcoinVolume24HReported": 53743544558.18,
+            "altcoinMarketCap": 546859232684.86,
+            "originId": "1253416"
+          }
+        ],
+        "totalCryptocurrencies": 26575,
+        "totalExchanges": 6585,
+        "score": 1692621300000
+      },
+      {
+        "timestamp": "2023-08-21T12:40:00.000Z",
+        "searchInterval": "5",
+        "btcDominance": 48.0949,
+        "ethDominance": 19.088,
+        "activeCryptocurrencies": 9553,
+        "activeExchanges": 663,
+        "activeMarketPairs": 63424,
+        "quote": [
+          {
+            "name": "USD",
+            "timestamp": "2023-08-21T12:40:00.000Z",
+            "totalMarketCap": 1053950205502.36,
+            "totalVolume24H": 24998401100.74,
+            "totalVolume24HReported": 89033858863.01,
+            "altcoinVolume24H": 14156727577.48,
+            "altcoinVolume24HReported": 53805498718.86,
+            "altcoinMarketCap": 547053824537.45,
+            "originId": "1253421"
+          }
+        ],
+        "totalCryptocurrencies": 26575,
+        "totalExchanges": 6587,
+        "score": 1692621600000
+      }
     ]
+  },
+  "status": {
+    "timestamp": "2023-08-21T12:54:32.540Z",
+    "error_code": "0",
+    "error_message": "SUCCESS",
+    "elapsed": "30",
+    "credit_count": 0
   }
 }

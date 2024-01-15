@@ -7,9 +7,9 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   def exchange_names(blockchain, is_dex \\ nil)
 
   def exchange_names(blockchain, is_dex) when blockchain in @supported_blockchains do
-    {query, args} = exchange_names_query(blockchain, is_dex)
+    query_struct = exchange_names_query(blockchain, is_dex)
 
-    Sanbase.ClickhouseRepo.query_reduce(query, args, [], fn [owner], acc ->
+    Sanbase.ClickhouseRepo.query_reduce(query_struct, [], fn [owner], acc ->
       case is_binary(owner) and owner != "" do
         true -> [owner | acc]
         false -> acc
@@ -23,9 +23,9 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   def exchange_addresses(blockchain, limit \\ 1000)
 
   def exchange_addresses(blockchain, limit) when blockchain in @supported_blockchains do
-    {query, args} = exchange_addresses_query(blockchain, limit)
+    query_struct = exchange_addresses_query(blockchain, limit)
 
-    Sanbase.ClickhouseRepo.query_transform(query, args, fn [address, label, owner] ->
+    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [address, label, owner] ->
       %{
         address: address,
         is_dex: if(label == "decentralized_exchange", do: true, else: false),
@@ -40,9 +40,9 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
 
   def exchange_addresses_for_exchange(blockchain, owner, limit)
       when blockchain in @supported_blockchains do
-    {query, args} = exchange_addresses_for_exchange_query(blockchain, owner, limit)
+    query_struct = exchange_addresses_for_exchange_query(blockchain, owner, limit)
 
-    Sanbase.ClickhouseRepo.query_transform(query, args, fn [address] -> address end)
+    Sanbase.ClickhouseRepo.query_transform(query_struct, fn [address] -> address end)
   end
 
   def exchange_addresses_for_exchange(blockchain, _owner, _limit),
@@ -66,67 +66,99 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
         false -> :cex
       end
 
-    query = """
-    SELECT DISTINCT lower(JSONExtractString(metadata, 'owner')) AS exchange
-    FROM (
-      SELECT argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
-      FROM blockchain_address_labels
-      PREWHERE
-        blockchain = ?1 AND
-        #{exchange_type_filter(exchange_type)}
-      GROUP BY blockchain, asset_id, label, address
-      HAVING sign = 1
-    )
-    ORDER BY exchange
+    sql = """
+    SELECT DISTINCT dictGet('labels', 'value', label_id)
+    FROM current_label_addresses
+    WHERE
+      blockchain = {{blockchain}} AND
+      label_id IN ( SELECT label_id FROM label_metadata WHERE key = 'owner' ) AND
+      address IN (
+        SELECT DISTINCT address
+        FROM current_label_addresses
+        WHERE
+          blockchain = {{blockchain}} AND
+          #{exchange_type_filter(exchange_type)}
+      )
     """
 
-    args = [blockchain |> String.downcase()]
+    params = %{
+      blockchain: blockchain |> String.downcase()
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp exchange_addresses_query(blockchain, limit) do
-    query = """
-    SELECT DISTINCT(address), label, lower(JSONExtractString(metadata, 'owner')) AS owner
-    FROM(
-      SELECT address, label, argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
-      FROM blockchain_address_labels
-      PREWHERE blockchain = ?1 AND #{exchange_type_filter(:both)}
-      GROUP BY blockchain, asset_id, label, address
-      HAVING sign = 1
-    )
-    LIMIT ?2
+    sql = """
+    SELECT address, label, owner FROM (
+      SELECT address, owner FROM (
+        SELECT address, label_id FROM current_label_addresses
+        WHERE
+          label_id IN ( SELECT label_id FROM label_metadata WHERE key = 'owner' ) AND
+          blockchain = {{blockchain}}
+      ) INNER JOIN (
+          SELECT label_id, value AS owner
+          FROM label_metadata
+          WHERE key = 'owner'
+      ) USING label_id
+    ) INNER JOIN (
+        SELECT address, dictGet('labels', 'key', label_id) AS label
+        FROM current_label_addresses
+        WHERE #{exchange_type_filter(:both)}
+        AND blockchain = {{blockchain}}
+    ) USING address
+    LIMIT {{limit}}
     """
 
-    args = [blockchain |> String.downcase(), limit]
+    params = %{
+      blockchain: blockchain |> String.downcase(),
+      limit: limit
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp exchange_addresses_for_exchange_query(blockchain, owner, limit) do
-    query = """
-    SELECT DISTINCT(address), label, lower(JSONExtractString(metadata, 'owner')) AS owner
-    FROM(
-      SELECT address, label, argMax(metadata, version) AS metadata, argMax(sign, version) AS sign
-      FROM blockchain_address_labels
-      PREWHERE
-        blockchain = ?1 AND
-        lower(JSONExtractString(metadata, 'owner')) = ?2 AND
-        #{exchange_type_filter(:both)}
-      GROUP BY blockchain, asset_id, label, address
-      HAVING sign = 1
-    )
-    LIMIT ?3
+    sql = """
+    SELECT DISTINCT address FROM (
+      SELECT address, owner FROM (
+        SELECT address, label_id FROM current_label_addresses
+        WHERE
+          label_id IN ( SELECT label_id FROM label_metadata WHERE key = 'owner' AND value = {{owner}}) AND
+          blockchain = {{blockchain}}
+      ) INNER JOIN (
+          SELECT label_id, value AS owner
+          FROM label_metadata
+          WHERE key = 'owner'
+      ) USING label_id
+    ) INNER JOIN (
+        SELECT address, dictGet('labels', 'key', label_id) AS label
+        FROM current_label_addresses
+        WHERE #{exchange_type_filter(:both)}
+        AND blockchain = {{blockchain}}
+    ) USING address
+    LIMIT {{limit}}
     """
 
-    args = [blockchain |> String.downcase(), owner |> String.downcase(), limit]
+    params = %{
+      blockchain: blockchain |> String.downcase(),
+      owner: owner,
+      limit: limit
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  defp exchange_type_filter(:both),
-    do: "label IN ('centralized_exchange', 'decentralized_exchange')"
+  defp exchange_type_filter(type) when type in [:cex, :dex, :both] do
+    case type do
+      :cex ->
+        "label_id = (SELECT label_id FROM label_metadata WHERE key = 'centralized_exchange' LIMIT 1)"
 
-  defp exchange_type_filter(:dex), do: "label = 'decentralized_exchange'"
-  defp exchange_type_filter(:cex), do: "label = 'centralized_exchange'"
+      :dex ->
+        "label_id = (SELECT label_id FROM label_metadata WHERE key = 'decentralized_exchange' LIMIT 1)"
+
+      :both ->
+        "label_id IN (SELECT label_id FROM label_metadata WHERE key IN ('centralized_exchange', 'decentralized_exchange'))"
+    end
+  end
 end

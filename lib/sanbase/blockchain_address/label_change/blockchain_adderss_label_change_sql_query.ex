@@ -1,32 +1,35 @@
 defmodule Sanbase.BlockchainAddress.BlockchainAddressLabelChange.SqlQuery do
   def labels_list_query() do
-    query = """
+    sql = """
     SELECT fqn, display_name
     FROM label_metadata FINAL
     """
 
-    args = []
-
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, %{})
   end
 
   def label_changes_query(address, blockchain, from, to) do
-    query = """
+    sql = """
     SELECT
       toUnixTimestamp(dt),
       address,
-      dictGetString('default.labels_dict', 'fqn', label_id) AS label_fqn,
+      dictGetString('default.labels', 'fqn', label_id) AS label_fqn,
       sign
     FROM address_label_changes
     PREWHERE
-      address = ?1 AND
-      blockchain = ?2 AND
-      dt >= toDateTime(?3) AND
-      dt < toDateTime(?4)
+      address = {{address}} AND
+      blockchain = {{blockchain}} AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
     """
 
-    args = [address, blockchain, DateTime.to_unix(from), DateTime.to_unix(to)]
+    params = %{
+      address: address,
+      blockchain: blockchain,
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

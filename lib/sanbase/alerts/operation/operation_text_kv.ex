@@ -8,12 +8,12 @@ defmodule Sanbase.Alert.OperationText.KV do
     special_symbol = Keyword.get(opts, :special_symbol, "")
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
-    template = "Was: #{special_symbol}{{previous}}\nNow: #{special_symbol}{{value}}"
+    template =
+      "Was: #{special_symbol}{{previous:human_readable}}\nNow: #{special_symbol}{{value:human_readable}}"
 
     kv = %{
       value: transform_fun.(value),
-      previous: transform_fun.(previous),
-      __human_readable__: [:value, :previous]
+      previous: transform_fun.(previous)
     }
 
     {template, kv}
@@ -23,8 +23,8 @@ defmodule Sanbase.Alert.OperationText.KV do
     special_symbol = Keyword.get(opts, :special_symbol, "")
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
-    template = "Now: #{special_symbol}{{value}}"
-    kv = %{value: transform_fun.(value), __human_readable__: [:value]}
+    template = "Now: #{special_symbol}{{value:human_readable}}"
+    kv = %{value: transform_fun.(value)}
     {template, kv}
   end
 
@@ -54,14 +54,13 @@ defmodule Sanbase.Alert.OperationText.KV do
 
     template =
       case Keyword.get(opts, :negative, false) do
-        true -> "#{form} not #{op_to_text.(op_key)} #{special_symbol}{{#{op_key}}}"
-        false -> "#{form} #{op_to_text.(op_key)} #{special_symbol}{{#{op_key}}}"
+        true -> "#{form} not #{op_to_text.(op_key)} #{special_symbol}{{#{op_key}:human_readable}}"
+        false -> "#{form} #{op_to_text.(op_key)} #{special_symbol}{{#{op_key}:human_readable}}"
       end
 
     kv = %{
       op_key => transform_fun.(op_value),
-      value: transform_fun.(value),
-      __human_readable__: [op_key, :value]
+      value: transform_fun.(value)
     }
 
     {template, kv}
@@ -79,17 +78,16 @@ defmodule Sanbase.Alert.OperationText.KV do
     template =
       case Keyword.get(opts, :negative, false) do
         true ->
-          "#{form} not inside the [#{special_symbol}{{lower}}, #{special_symbol}{{upper}}] interval"
+          "#{form} not inside the [#{special_symbol}{{lower:human_readable}}, #{special_symbol}{{upper:human_readable}}] interval"
 
         false ->
-          "#{form} inside the [#{special_symbol}{{lower}}, #{special_symbol}{{upper}}] interval"
+          "#{form} inside the [#{special_symbol}{{lower:human_readable}}, #{special_symbol}{{upper:human_readable}}] interval"
       end
 
     kv = %{
       lower: transform_fun.(lower),
       upper: transform_fun.(upper),
-      value: transform_fun.(value),
-      __human_readable__: [:lower, :upper, :value]
+      value: transform_fun.(value)
     }
 
     {template, kv}
@@ -107,17 +105,16 @@ defmodule Sanbase.Alert.OperationText.KV do
     template =
       case Keyword.get(opts, :negative, false) do
         true ->
-          "#{form} not outside the [#{special_symbol}{{lower}}, #{special_symbol}{{upper}}] interval"
+          "#{form} not outside the [#{special_symbol}{{lower:human_readable}}, #{special_symbol}{{upper:human_readable}}] interval"
 
         false ->
-          "#{form} outside the [#{special_symbol}{{lower}}, #{special_symbol}{{upper}}] interval"
+          "#{form} outside the [#{special_symbol}{{lower:human_readable}}, #{special_symbol}{{upper:human_readable}}] interval"
       end
 
     kv = %{
       lower: transform_fun.(lower),
       upper: transform_fun.(upper),
-      value: transform_fun.(value),
-      __human_readable__: [:lower, :upper, :value]
+      value: transform_fun.(value)
     }
 
     {template, kv}
@@ -175,14 +172,16 @@ defmodule Sanbase.Alert.OperationText.KV do
 
     template =
       case Keyword.get(opts, :negative, false) do
-        true -> "did not increase by #{special_symbol}{{amount_change_up_required}}"
-        false -> "increased by #{special_symbol}{{amount_change_up}}"
+        true ->
+          "did not increase by #{special_symbol}{{amount_change_up_required:human_readable}}"
+
+        false ->
+          "increased by #{special_symbol}{{amount_change_up:human_readable}}"
       end
 
     kv = %{
       amount_change_up: transform_fun.(amount_change),
-      amount_change_up_required: transform_fun.(amount_up),
-      __human_readable__: [:amount_change_up, :amount_change_up_required]
+      amount_change_up_required: transform_fun.(amount_up)
     }
 
     {template, kv}
@@ -198,14 +197,16 @@ defmodule Sanbase.Alert.OperationText.KV do
 
     template =
       case Keyword.get(opts, :negative, false) do
-        true -> "did not decrease by #{special_symbol}{{amount_down_change_required}}"
-        false -> "decreased by #{special_symbol}{{amount_down_change}}"
+        true ->
+          "did not decrease by #{special_symbol}{{amount_down_change_required:human_readable}}"
+
+        false ->
+          "decreased by #{special_symbol}{{amount_down_change:human_readable}}"
       end
 
     kv = %{
       amount_down_change: transform_fun.(amount_change) |> abs(),
-      amount_down_change_required: transform_fun.(amount_down),
-      __human_readable__: [:amount_down_change, :amount_down_change_required]
+      amount_down_change_required: transform_fun.(amount_down)
     }
 
     {template, kv}

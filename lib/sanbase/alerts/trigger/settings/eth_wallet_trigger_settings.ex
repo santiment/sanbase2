@@ -71,56 +71,62 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
     to = Timex.now()
     from = Timex.shift(to, seconds: -str_to_sec(settings.time_window))
 
-    target_list
-    |> Enum.map(fn addr ->
-      case balance_change(addr, settings.asset.slug, from, to) do
-        {:ok, [%{address: ^addr} = result]} ->
-          {addr, from,
-           %{
-             balance_start: result.balance_start,
-             balance_end: result.balance_end,
-             balance_change: result.balance_change_amount
-           }}
+    data =
+      target_list
+      |> Enum.map(fn addr ->
+        case balance_change(addr, settings.asset.slug, from, to) do
+          {:ok, [%{address: ^addr} = result]} ->
+            {addr, from,
+             %{
+               balance_start: result.balance_start,
+               balance_end: result.balance_end,
+               balance_change: result.balance_change_amount
+             }}
 
-        _ ->
-          nil
-      end
-    end)
-    |> Enum.reject(&is_nil/1)
+          _ ->
+            nil
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    {:ok, data}
   end
 
   def get_data(%__MODULE__{filtered_target: %{list: target_list, type: :slug}} = settings) do
     to = Timex.now()
     from = Timex.shift(to, seconds: -str_to_sec(settings.time_window))
 
-    target_list
-    |> Project.by_slug()
-    |> Enum.map(fn %Project{} = project ->
-      {:ok, eth_addresses} = Project.eth_addresses(project)
+    data =
+      target_list
+      |> Project.by_slug()
+      |> Enum.map(fn %Project{} = project ->
+        {:ok, eth_addresses} = Project.eth_addresses(project)
 
-      {:ok, project_balance_data} =
-        eth_addresses
-        |> Enum.map(&String.downcase/1)
-        |> balance_change(settings.asset.slug, from, to)
+        {:ok, project_balance_data} =
+          eth_addresses
+          |> Enum.map(&String.downcase/1)
+          |> balance_change(settings.asset.slug, from, to)
 
-      {balance_start, balance_end, balance_change} =
-        project_balance_data
-        |> Enum.reduce({0, 0, 0}, fn
-          %{} = map, {start_acc, end_acc, change_acc} ->
-            {
-              start_acc + map.balance_start,
-              end_acc + map.balance_end,
-              change_acc + map.balance_change_amount
-            }
-        end)
+        {balance_start, balance_end, balance_change} =
+          project_balance_data
+          |> Enum.reduce({0, 0, 0}, fn
+            %{} = map, {start_acc, end_acc, change_acc} ->
+              {
+                start_acc + map.balance_start,
+                end_acc + map.balance_end,
+                change_acc + map.balance_change_amount
+              }
+          end)
 
-      {project, from,
-       %{
-         balance_start: balance_start,
-         balance_end: balance_end,
-         balance_change: balance_change
-       }}
-    end)
+        {project, from,
+         %{
+           balance_start: balance_start,
+           balance_end: balance_end,
+           balance_change: balance_change
+         }}
+      end)
+
+    {:ok, data}
   end
 
   defp balance_change(addresses, slug, from, to) do
@@ -144,11 +150,13 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
 
     def evaluate(%EthWalletTriggerSettings{} = settings, _trigger) do
       case EthWalletTriggerSettings.get_data(settings) do
-        list when is_list(list) and list != [] ->
+        {:ok, list} when is_list(list) and list != [] ->
           build_result(list, settings)
 
         _ ->
-          %EthWalletTriggerSettings{settings | triggered?: false}
+          # TODO: Handle error case
+          settings = %EthWalletTriggerSettings{settings | triggered?: false}
+          {:ok, settings}
       end
     end
 
@@ -172,11 +180,13 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
             end
         end)
 
-      %EthWalletTriggerSettings{
+      settings = %EthWalletTriggerSettings{
         settings
         | template_kv: template_kv,
           triggered?: template_kv != %{}
       }
+
+      {:ok, settings}
     end
 
     defp to_identifier(%Project{slug: slug}), do: slug

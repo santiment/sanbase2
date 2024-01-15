@@ -34,17 +34,10 @@ defmodule Sanbase.HTML do
     |> escape_whitespace_chars()
     |> String.split(" ")
     |> Enum.reduce_while({0, []}, fn word, {acc, words} ->
-      if acc >= max_words do
-        {:halt, {acc, words}}
-      else
-        case word do
-          "\\n" -> {:cont, {acc, ["\n" | words]}}
-          "\\t" -> {:cont, {acc, ["\t" | words]}}
-          "\\r" -> {:cont, {acc, ["\r" | words]}}
-          "\\f" -> {:cont, {acc, ["\f" | words]}}
-          "" -> {:cont, {acc, ["" | words]}}
-          _ -> {:cont, {acc + 1, [word | words]}}
-        end
+      cond do
+        acc >= max_words -> {:halt, {acc, words}}
+        word in ["\\n", "\\t", "\\r", "\\f", ""] -> {:cont, {acc, [word | words]}}
+        true -> {:cont, {acc + 1, [word | words]}}
       end
     end)
     |> elem(1)

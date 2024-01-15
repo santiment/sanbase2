@@ -18,11 +18,10 @@ defmodule Sanbase.Transfers.BtcTransfers do
         ) ::
           {:ok, list(transaction)} | {:error, String.t()}
   def top_transfers(from, to, page, page_size, excluded_addresses \\ []) do
-    {query, args} = top_transfers_query(from, to, page, page_size, excluded_addresses)
+    query_struct = top_transfers_query(from, to, page, page_size, excluded_addresses)
 
     Sanbase.ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [dt, to_address, value, trx_id] ->
         %{
           datetime: DateTime.from_unix!(dt),
@@ -48,9 +47,9 @@ defmodule Sanbase.Transfers.BtcTransfers do
     do: {:ok, []}
 
   def top_wallet_transfers(wallets, from, to, page, page_size, type) do
-    {query, args} = top_wallet_transfers_query(wallets, from, to, page, page_size, type)
+    query_struct = top_wallet_transfers_query(wallets, from, to, page, page_size, type)
 
-    ClickhouseRepo.query_transform(query, args, fn
+    ClickhouseRepo.query_transform(query_struct, fn
       [timestamp, address, trx_hash, balance, old_balance, abs_value] ->
         # if the new balance is bigger then the address is the receiver
         {from_address, to_address} =
@@ -72,7 +71,7 @@ defmodule Sanbase.Transfers.BtcTransfers do
   # Private functions
 
   defp top_wallet_transfers_query(wallets, from, to, page, page_size, type) do
-    query = """
+    sql = """
     SELECT
       toUnixTimestamp(dt),
       address,
@@ -83,65 +82,59 @@ defmodule Sanbase.Transfers.BtcTransfers do
     FROM (
       SELECT dt, address, txID, blockNumber, txPos, balance, oldBalance, balance - oldBalance AS absValue
       FROM btc_balances
-      PREWHERE dt >= toDateTime(?2) AND dt < toDateTime(?3) AND #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: false)}
+      WHERE
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
+        #{top_wallet_transfers_address_clause(type, argument_name: "wallets", trailing_and: false)}
     )
     GROUP BY dt, address, blockNumber, txPos
     ORDER BY absValue DESC
-    LIMIT ?4 OFFSET ?5
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
     {limit, offset} =
       Sanbase.Utils.Transform.opts_to_limit_offset(page: page, page_size: page_size)
 
-    args = [
-      wallets,
-      DateTime.to_unix(from),
-      DateTime.to_unix(to),
-      limit,
-      offset
-    ]
+    params = %{
+      wallets: wallets,
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      limit: limit,
+      offset: offset
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp top_wallet_transfers_address_clause(:in, opts) do
-    arg_position = Keyword.fetch!(opts, :arg_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
-    str = "address IN (?#{arg_position}) AND balance > oldBalance"
+    str = "address IN ({{#{arg_name}}}) AND balance > oldBalance"
     if trailing_and, do: str <> " AND", else: str
   end
 
   defp top_wallet_transfers_address_clause(:out, opts) do
-    arg_position = Keyword.fetch!(opts, :arg_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
-    str = "address IN (?#{arg_position}) AND balance < oldBalance"
+    str = "address IN ({{#{arg_name}}}) AND balance < oldBalance"
     if trailing_and, do: str <> " AND", else: str
   end
 
   defp top_wallet_transfers_address_clause(:all, opts) do
-    arg_position = Keyword.fetch!(opts, :arg_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
     str = """
-    address IN (?#{arg_position})
+    address IN ({{#{arg_name}}})
     """
 
     if trailing_and, do: str <> " AND", else: str
   end
 
   defp top_transfers_query(from, to, page, page_size, excluded_addresses) do
-    to_unix = DateTime.to_unix(to)
-    from_unix = DateTime.to_unix(from)
-
-    {limit, offset} =
-      Sanbase.Utils.Transform.opts_to_limit_offset(page: page, page_size: page_size)
-
-    # only > 100 BTC transfers if range is > 1 week, otherwise only bigger than 20
-    amount_filter = if Timex.diff(to, from, :days) > 7, do: 100, else: 20
-
-    query = """
+    sql = """
     SELECT
       toUnixTimestamp(dt),
       address,
@@ -151,28 +144,39 @@ defmodule Sanbase.Transfers.BtcTransfers do
       SELECT dt, address, blockNumber, txPos, txID,  balance, oldBalance, balance - oldBalance AS amount
       FROM btc_balances
       PREWHERE
-        amount >= ?1 AND
-        dt >= toDateTime(?2) AND
-        dt < toDateTime(?3)
-        #{maybe_exclude_addresses(excluded_addresses, arg_position: 6)}
+        amount >= {{amount_filter}} AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}})
+        #{maybe_exclude_addresses(excluded_addresses, argument_name: "excluded_addresses")}
     )
     GROUP BY dt, address, blockNumber, txPos
     ORDER BY amount DESC
-    LIMIT ?4 OFFSET ?5
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
-    args =
-      [amount_filter, from_unix, to_unix, limit, offset] ++
-        if excluded_addresses == [], do: [], else: [excluded_addresses]
+    {limit, offset} =
+      Sanbase.Utils.Transform.opts_to_limit_offset(page: page, page_size: page_size)
 
-    {query, args}
+    # only > 100 BTC transfers if range is > 1 week, otherwise only bigger than 20
+    amount_filter = if Timex.diff(to, from, :days) > 7, do: 100, else: 20
+
+    params = %{
+      amount_filter: amount_filter,
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      limit: limit,
+      offset: offset,
+      excluded_addresses: excluded_addresses
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp maybe_exclude_addresses([], _opts), do: ""
 
   defp maybe_exclude_addresses([_ | _], opts) do
-    arg_position = Keyword.get(opts, :arg_position)
+    arg_name = Keyword.get(opts, :argument_name)
 
-    "AND (from NOT IN (?#{arg_position}) AND to NOT IN (?#{arg_position}))"
+    "AND (from NOT IN ({{#{arg_name}}}) AND to NOT IN ({{#{arg_name}}}))"
   end
 end

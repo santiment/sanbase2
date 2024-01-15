@@ -405,7 +405,7 @@ defmodule SanbaseWeb.Graphql.AuthPlug do
       origin_url when is_binary(origin_url) ->
         # Strip trailing backslashes, ports, etc.
         %URI{host: origin_host} = origin_url |> URI.parse()
-        origin_host_parts = String.split(origin_host, ".")
+        origin_host_parts = String.split(origin_host || "", ".")
 
         %{
           origin_host: origin_host,

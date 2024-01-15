@@ -7,9 +7,6 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
-  object :vote_queries do
-  end
-
   object :vote_mutations do
     @desc """
     Vote for an insight. The user must logged in.
@@ -18,6 +15,7 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
       arg(:post_id, :integer, deprecate: "Use `insightId` instead")
       arg(:chart_configuration_id, :integer)
       arg(:dashboard_id, :integer)
+      arg(:query_id, :integer)
       arg(:insight_id, :integer)
       arg(:timeline_event_id, :integer)
       arg(:user_trigger_id, :integer)
@@ -34,6 +32,7 @@ defmodule SanbaseWeb.Graphql.Schema.VoteQueries do
       arg(:post_id, :integer, deprecate: "Use `insightId` instead")
       arg(:chart_configuration_id, :integer)
       arg(:dashboard_id, :integer)
+      arg(:query_id, :integer)
       arg(:insight_id, :integer)
       arg(:timeline_event_id, :integer)
       arg(:user_trigger_id, :integer)

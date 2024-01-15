@@ -78,7 +78,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
     end)
 
     with_mock Sanbase.SocialData.TrendingWords, [],
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok, top_words()}
       end do
       assert capture_log(fn ->
@@ -123,7 +123,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
     })
 
     with_mock Sanbase.SocialData.TrendingWords, [],
-      get_currently_trending_words: fn _ ->
+      get_currently_trending_words: fn _, _ ->
         {:ok, top_words()}
       end do
       assert capture_log(fn ->

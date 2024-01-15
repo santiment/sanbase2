@@ -7,10 +7,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
   alias Sanbase.Metric
 
   test "returns data for all available metric", %{conn: conn} do
-    metrics =
-      Metric.available_metrics()
-      |> Enum.shuffle()
-      |> Enum.take(100)
+    metrics = Metric.available_metrics() |> Enum.shuffle()
 
     aggregations = Metric.available_aggregations()
 
@@ -108,7 +105,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
       } = get_metric_metadata(conn, metric)
 
       assert error_message ==
-               "The metric '#{metric}' is not supported or is mistyped."
+               "The metric '#{metric}' is not supported, is deprecated or is mistyped."
     end
   end
 

@@ -1,7 +1,9 @@
 defmodule Sanbase.Balance.SqlQuery do
   import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Metric.SqlQuery.Helper, only: [generate_comparison_string: 3]
+
+  import Sanbase.Metric.SqlQuery.Helper,
+    only: [generate_comparison_string: 3, timerange_parameters: 3]
 
   def historical_balance_changes_query(
         addresses,
@@ -12,15 +14,10 @@ defmodule Sanbase.Balance.SqlQuery do
         to,
         interval
       ) do
-    interval = Sanbase.DateTimeUtils.str_to_sec(interval)
-    to_unix = DateTime.to_unix(to)
-    from_unix = DateTime.to_unix(from)
-    span = div(to_unix - from_unix, interval) |> max(1)
-
-    balance_changes_query = """
+    balance_changes_sql = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-      toFloat64(balance_change / ?5) AS balance_change
+      toUnixTimestamp(intDiv(toUInt32(dt), {{interval}}) * {{interval}}) AS time,
+      toFloat64(balance_change / {{decimals}}) AS balance_change
     FROM (
       SELECT
         dt,
@@ -34,52 +31,54 @@ defmodule Sanbase.Balance.SqlQuery do
           arrayDifference(balances) AS balance_changes
         FROM balances_aggregated
         WHERE
-          #{address_clause(addresses, argument_position: 2)} AND
-          blockchain = ?3 AND
-          asset_ref_id = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?4 LIMIT 1)
+          #{address_clause(addresses, argument_name: "addresses")} AND
+          blockchain = {{blockchain}} AND
+          asset_ref_id = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1)
         GROUP BY address
       )
       ARRAY JOIN dates AS dt, balance_changes AS balance_change
-      WHERE dt >= toDateTime(?6) AND dt < toDateTime(?7)
+      WHERE dt >= toDateTime({{from}}) AND dt < toDateTime({{to}})
     )
     """
 
-    query = """
+    sql = """
     SELECT time, SUM(balance_change)
       FROM (
         SELECT
-          toUnixTimestamp(intDiv(toUInt32(?6 + number * ?1), ?1) * ?1) AS time,
+          toUnixTimestamp(intDiv(toUInt32({{from}} + number * {{interval}}), {{interval}}) * {{interval}}) AS time,
           toFloat64(0) AS balance_change
-        FROM numbers(?8)
+        FROM numbers({{span}})
 
       UNION ALL
 
-      #{balance_changes_query}
+      #{balance_changes_sql}
     )
     GROUP BY time
     ORDER BY time
     """
 
-    args = [
-      interval,
-      addresses,
-      blockchain,
-      slug,
-      Sanbase.Math.ipow(10, decimals),
-      from_unix,
-      to_unix,
-      span
-    ]
+    {from, to, interval, span} = timerange_parameters(from, to, interval)
 
-    {query, args}
+    params = %{
+      interval: interval,
+      addresses: addresses,
+      blockchain: blockchain,
+      slug: slug,
+      decimals: Sanbase.Math.ipow(10, decimals),
+      from: from,
+      to: to,
+      span: span
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def balance_change_query(addresses, slug, decimals, blockchain, from, to) do
-    query = """
+    sql = """
     SELECT
       address,
-      argMaxIf(value, dt, dt <= ?4) / ?6 AS start_balance,
-      argMaxIf(value, dt, dt <= ?5) / ?6 AS end_balance,
+      argMaxIf(value, dt, dt <= {{from}}) / {{decimals}} AS start_balance,
+      argMaxIf(value, dt, dt <= {{to}}) / {{decimals}} AS end_balance,
       end_balance - start_balance AS diff
     FROM (
       SELECT
@@ -89,25 +88,25 @@ defmodule Sanbase.Balance.SqlQuery do
         values_merged.2 AS value
       FROM balances_aggregated
       WHERE
-        #{address_clause(addresses, argument_position: 1)} AND
-        blockchain = ?2 AND
-        asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?3 LIMIT 1 )
+        #{address_clause(addresses, argument_name: "addresses")} AND
+        blockchain = {{blockchain}} AND
+        asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1 )
       GROUP BY address
-      HAVING dt <= toDateTime(?5)
+      HAVING dt <= toDateTime({{to}})
     )
     GROUP BY address
     """
 
-    args = [
-      addresses,
-      blockchain,
-      slug,
-      DateTime.to_unix(from),
-      DateTime.to_unix(to),
-      Sanbase.Math.ipow(10, decimals)
-    ]
+    params = %{
+      addresses: addresses,
+      blockchain: blockchain,
+      slug: slug,
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      decimals: Sanbase.Math.ipow(10, decimals)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def historical_balance_query(
@@ -119,25 +118,20 @@ defmodule Sanbase.Balance.SqlQuery do
         to,
         interval
       ) do
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-    interval_sec = str_to_sec(interval)
-    span = div(to_unix - from_unix, interval_sec) |> max(1)
-
-    query = """
+    sql = """
      SELECT time, SUM(value), toUInt8(SUM(has_changed))
       FROM (
         SELECT
-          toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
+          toUnixTimestamp(intDiv(toUInt32({{from}} + number * {{interval}}), {{interval}}) * {{interval}}) AS time,
           toFloat64(0) AS value,
           toUInt8(0) AS has_changed
-        FROM numbers(?7)
+        FROM numbers({{span}})
 
       UNION ALL
 
       SELECT
-        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        toFloat64(argMax(value, dt)) / ?8 AS value,
+        toUnixTimestamp(intDiv(toUInt32(dt), {{interval}}) * {{interval}}) AS time,
+        toFloat64(argMax(value, dt)) / {{decimals}} AS value,
         toUInt8(1) AS has_changed
       FROM (
         SELECT
@@ -146,11 +140,11 @@ defmodule Sanbase.Balance.SqlQuery do
           values_merged.2 AS value
         FROM balances_aggregated
         WHERE
-          #{address_clause(address, argument_position: 2)} AND
-          blockchain = ?3 AND
-          asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?4 LIMIT 1 )
+          #{address_clause(address, argument_name: "address")} AND
+          blockchain = {{blockchain}} AND
+          asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1 )
         GROUP BY address, blockchain, asset_ref_id
-        HAVING dt >= toDateTime(?5) AND dt < toDateTime(?6)
+        HAVING dt >= toDateTime({{from}}) AND dt < toDateTime({{to}})
       )
       GROUP BY time
     )
@@ -158,18 +152,23 @@ defmodule Sanbase.Balance.SqlQuery do
     ORDER BY time
     """
 
-    args = [
-      interval_sec,
-      address,
-      blockchain,
-      slug,
-      from_unix,
-      to_unix,
-      span,
-      Sanbase.Math.ipow(10, decimals)
-    ]
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
+    interval_sec = str_to_sec(interval)
+    span = div(to_unix - from_unix, interval_sec) |> max(1)
 
-    {query, args}
+    params = %{
+      interval: interval_sec,
+      address: address,
+      blockchain: blockchain,
+      slug: slug,
+      from: from_unix,
+      to: to_unix,
+      span: span,
+      decimals: Sanbase.Math.ipow(10, decimals)
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def historical_balance_ohlc_query(
@@ -181,12 +180,7 @@ defmodule Sanbase.Balance.SqlQuery do
         to,
         interval
       ) do
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-    interval_sec = str_to_sec(interval)
-    span = div(to_unix - from_unix, interval_sec) |> max(1)
-
-    query = """
+    sql = """
     SELECT
       time, SUM(open) AS open,
       SUM(high) AS high,
@@ -195,22 +189,22 @@ defmodule Sanbase.Balance.SqlQuery do
       toUInt8(SUM(has_changed))
     FROM (
       SELECT
-        toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
+        toUnixTimestamp(intDiv(toUInt32({{from}} + number * {{interval}}), {{interval}}) * {{interval}}) AS time,
         toFloat64(0) AS open,
         toFloat64(0) AS high,
         toFloat64(0) AS low,
         toFloat64(0) AS close,
         toUInt8(0) AS has_changed
-      FROM numbers(?7)
+      FROM numbers({{span}})
 
       UNION ALL
 
       SELECT
-        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        toFloat64(argMin(value, dt)) / ?8 AS open,
-        toFloat64(max(value)) / ?8 AS high,
-        toFloat64(min(value)) / ?8 AS low,
-        toFloat64(argMax(value, dt)) / ?8 AS close,
+        toUnixTimestamp(intDiv(toUInt32(dt), {{interval}}) * {{interval}}) AS time,
+        toFloat64(argMin(value, dt)) / {{decimals}} AS open,
+        toFloat64(max(value)) / {{decimals}} AS high,
+        toFloat64(min(value)) / {{decimals}} AS low,
+        toFloat64(argMax(value, dt)) / {{decimals}} AS close,
         toUInt8(1) AS has_changed
       FROM (
         SELECT
@@ -219,11 +213,11 @@ defmodule Sanbase.Balance.SqlQuery do
           values_merged.2 AS value
         FROM balances_aggregated
         WHERE
-          #{address_clause(address, argument_position: 2)} AND
-          blockchain = ?3 AND
-          asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?4 LIMIT 1 )
+          #{address_clause(address, argument_name: "address")} AND
+          blockchain = {{blockchain}} AND
+          asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1 )
         GROUP BY address, blockchain, asset_ref_id
-        HAVING dt >= toDateTime(?5) AND dt < toDateTime(?6)
+        HAVING dt >= toDateTime({{from}}) AND dt < toDateTime({{to}})
       )
       GROUP BY time
     )
@@ -231,62 +225,30 @@ defmodule Sanbase.Balance.SqlQuery do
     ORDER BY time
     """
 
-    args = [
-      interval_sec,
-      address,
-      blockchain,
-      slug,
-      from_unix,
-      to_unix,
-      span,
-      Sanbase.Math.ipow(10, decimals)
-    ]
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
+    interval_sec = str_to_sec(interval)
+    span = div(to_unix - from_unix, interval_sec) |> max(1)
 
-    {query, args}
+    params = %{
+      interval: interval_sec,
+      address: address,
+      blockchain: blockchain,
+      slug: slug,
+      from: from_unix,
+      to: to_unix,
+      span: span,
+      decimals: Sanbase.Math.ipow(10, decimals)
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  # def current_balance_query(
-  #       addresses,
-  #       _slug = "ethereum",
-  #       decimals,
-  #       _blockchain,
-  #       table
-  #     ) do
-  #   query = """
-  #   SELECT address, argMax(balance, dt) / pow(10, ?2) AS balance
-  #   FROM #{table}
-  #   WHERE
-  #     #{address_clause(addresses, argument_position: 1)} AND
-  #     addressType = 'normal'
-  #   GROUP BY address
-  #   """
-
-  #   args = [addresses, decimals]
-
-  #   {query, args}
-  # end
-
-  # def current_balance_query(addresses, slug, decimals, _blockchain = "ethereum", table) do
-  #   query = """
-  #   SELECT address, argMax(balance, dt) / pow(10, ?3) AS balance
-  #   FROM #{table}
-  #   WHERE
-  #     #{address_clause(addresses, argument_position: 1)} AND
-  #     assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?2 LIMIT 1) AND
-  #     addressType = 'normal'
-  #   GROUP BY address
-  #   """
-
-  #   args = [addresses, slug, decimals]
-
-  #   {query, args}
-  # end
-
   def current_balance_query(addresses, slug, decimals, blockchain, _table) do
-    query = """
+    sql = """
     SELECT
       address,
-      argMax(value, dt) / ?4 AS balance
+      argMax(value, dt) / {{decimals}} AS balance
     FROM (
       SELECT
         address,
@@ -295,34 +257,41 @@ defmodule Sanbase.Balance.SqlQuery do
         values_merged.2 AS value
       FROM balances_aggregated
       WHERE
-        #{address_clause(addresses, argument_position: 1)} AND
-        blockchain = ?2 AND
-        asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?3 LIMIT 1 )
+        #{address_clause(addresses, argument_name: "addresses")} AND
+        blockchain = {{blockchain}} AND
+        asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1 )
       GROUP BY address
     )
     GROUP BY address
     """
 
-    args = [addresses, blockchain, slug, Sanbase.Math.ipow(10, decimals)]
+    params = %{
+      addresses: addresses,
+      blockchain: blockchain,
+      slug: slug,
+      decimals: Sanbase.Math.ipow(10, decimals)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def first_datetime_query(address, slug, blockchain) when is_binary(address) do
-    query = """
+    sql = """
     SELECT toUnixTimestamp(min(dt))
     FROM (
-      SELECT arrayJoin(groupArrayMerge(values)) AS values_merged, values_merged.1 AS dt
+      SELECT
+        arrayJoin(groupArrayMerge(values)) AS values_merged,
+        values_merged.1 AS dt
       FROM balances_aggregated
       WHERE
-        #{address_clause(address, argument_position: 1)} AND
-        blockchain = ?2 AND
-        asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?3 LIMIT 1 )
+        #{address_clause(address, argument_name: "address")} AND
+        blockchain = {{blockchain}} AND
+        asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1 )
     )
     """
 
-    args = [address, blockchain, slug]
-    {query, args}
+    params = %{address: address, blockchain: blockchain, slug: slug}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def addresses_by_filter_query(
@@ -333,10 +302,10 @@ defmodule Sanbase.Balance.SqlQuery do
         "eth_balances_realtime" = table,
         _opts
       ) do
-    query = """
+    sql = """
     SELECT address, balance
     FROM (
-      SELECT address, argMax(balance, dt) / pow(10, ?1) AS balance
+      SELECT address, argMax(balance, dt) / pow(10, {{decimals}}) AS balance
       FROM #{table}
       PREWHERE
         addressType = 'normal'
@@ -346,19 +315,21 @@ defmodule Sanbase.Balance.SqlQuery do
     LIMIT 10000
     """
 
-    args = [decimals]
+    params = %{decimals: decimals}
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def addresses_by_filter_query(slug, decimals, operator, threshold, table, _opts) do
-    query = """
+    sql = """
     SELECT address, balance
     FROM (
-      SELECT address, argMax(balance, dt) / pow(10, ?2) AS balance
+      SELECT
+        address,
+        argMax(balance, dt) / pow(10, {{decimals}}) AS balance
       FROM #{table}
       PREWHERE
-        assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?1 LIMIT 1) AND
+        assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1) AND
         addressType = 'normal'
       GROUP BY address
     )
@@ -366,9 +337,12 @@ defmodule Sanbase.Balance.SqlQuery do
     LIMIT 10000
     """
 
-    args = [slug, decimals]
+    params = %{
+      slug: slug,
+      decimals: decimals
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def top_addresses_query(_slug, decimals, blockchain, "eth_balances_realtime" = table, opts) do
@@ -377,26 +351,34 @@ defmodule Sanbase.Balance.SqlQuery do
 
     {limit, offset} = opts_to_limit_offset(opts)
     limit = Enum.min([limit, 10_000])
-    args = [decimals, limit, offset]
 
-    {labels_join_str, args} = maybe_join_labels(labels, blockchain, args)
+    params = %{decimals: decimals, limit: limit, offset: offset}
 
-    query = """
+    {labels_join_str, params} = maybe_join_labels(labels, blockchain, params)
+
+    sql = """
     SELECT address, balance
     FROM (
-      SELECT address, argMax(balance, dt) / pow(10, ?2) AS balance
-      FROM #{table}
-      PREWHERE
-        addressType = 'normal'
-      GROUP BY address
+        SELECT
+          ebr.address,
+          argMax(ebr.balance, ebr.dt) / pow(10, {{decimals}}) AS balance
+      FROM #{table} AS ebr
+      WHERE (ebr.address GLOBAL IN (
+        SELECT address
+        FROM eth_top_holders_daily
+        WHERE value > 1e10 AND(dt = toStartOfDay(today() - toIntervalDay(1))) AND (rank > 0)
+        ORDER BY value #{direction}
+        LIMIT {{limit}}*2
+      )) AND (ebr.addressType = 'normal')
+      GROUP BY ebr.address
     )
     #{labels_join_str}
-    WHERE balance > 1e-10
     ORDER BY balance #{direction}
-    LIMIT ?3 OFFSET ?4
+    LIMIT {{limit}}
+    OFFSET {{offset}}
     """
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def top_addresses_query(slug, decimals, blockchain, table, opts) do
@@ -405,52 +387,64 @@ defmodule Sanbase.Balance.SqlQuery do
 
     {limit, offset} = opts_to_limit_offset(opts)
     limit = Enum.min([limit, 10_000])
-    args = [slug, decimals, limit, offset]
 
-    {labels_join_str, args} = maybe_join_labels(labels, blockchain, args)
+    params = %{
+      slug: slug,
+      decimals: Sanbase.Math.ipow(10, decimals),
+      limit: limit,
+      offset: offset
+    }
 
-    query = """
+    {labels_join_str, params} = maybe_join_labels(labels, blockchain, params)
+
+    sql = """
     SELECT address, balance
     FROM (
-      SELECT address, argMax(balance, dt) / pow(10, ?2) AS balance
+      SELECT address, argMax(balance, dt) / {{decimals}}AS balance
       FROM #{table}
       PREWHERE
-        assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?1 LIMIT 1) AND
-        addressType = 'normal'
+        assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1) AND
+        addressType = 'normal' AND (dt > (now() - toIntervalDay(1)))
       GROUP BY address
     )
     #{labels_join_str}
     WHERE balance > 1e-10
     ORDER BY balance #{direction}
-    LIMIT ?3 OFFSET ?4
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  defp maybe_join_labels(:all, _blockchain, args), do: {"", args}
+  defp maybe_join_labels(:all, _blockchain, params), do: {"", params}
 
-  defp maybe_join_labels([_ | _] = labels, blockchain, args) do
-    args_length = length(args)
+  defp maybe_join_labels([_ | _] = labels, blockchain, params) do
+    params_count = map_size(params)
+    labels_key = "label_#{params_count + 1}"
+    blockchain_key = "blockchain_#{params_count + 2}"
 
-    str = """
+    join_str = """
     GLOBAL ANY INNER JOIN
     (
       SELECT address
-      FROM blockchain_address_labels
-      PREWHERE blockchain = ?#{args_length + 1} AND label IN (?#{args_length + 2})
+      FROM current_label_addresses
+      WHERE blockchain = {{#{blockchain_key}}} AND
+      label_id IN (
+        SELECT label_id FROM label_metadata WHERE key IN ({{#{labels_key}}})
+      )
     ) USING (address)
     """
 
     labels = Enum.map(labels, &String.downcase/1)
-    {str, args ++ [blockchain, labels]}
+    params = Map.merge(params, %{labels_key => labels, blockchain_key => blockchain})
+    {join_str, params}
   end
 
   def assets_held_by_address_changes_query(address, datetime) do
-    query = """
+    sql = """
     SELECT
       name,
-      greatest(argMaxIf(value, dt, dt <= toDateTime(?2)) / pow(10, decimals), 0) AS previous_balance,
+      greatest(argMaxIf(value, dt, dt <= toDateTime({{datetime}})) / pow(10, decimals), 0) AS previous_balance,
       greatest(argMax(value, dt) / pow(10, decimals), 0) AS current_balance,
       current_balance - previous_balance AS balance_change
     FROM (
@@ -462,7 +456,7 @@ defmodule Sanbase.Balance.SqlQuery do
         values_merged.2 AS value
       FROM balances_aggregated
       WHERE
-        #{address_clause(address, argument_position: 1)}
+        #{address_clause(address, argument_name: "address")}
       GROUP BY address, blockchain, asset_ref_id
     )
     INNER JOIN (
@@ -473,13 +467,13 @@ defmodule Sanbase.Balance.SqlQuery do
     HAVING previous_balance > 0 AND current_balance > 0
     """
 
-    args = [address, DateTime.to_unix(datetime)]
+    params = %{address: address, datetime: DateTime.to_unix(datetime)}
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def assets_held_by_address_query(address, opts \\ []) do
-    query = """
+    sql = """
     SELECT
       name,
       argMax(value, dt) / pow(10, decimals) AS balance
@@ -492,7 +486,7 @@ defmodule Sanbase.Balance.SqlQuery do
         values_merged.2 AS value
       FROM balances_aggregated
       WHERE
-        #{address_clause(address, argument_position: 1)}
+        #{address_clause(address, argument_name: "address")}
       GROUP BY address, blockchain, asset_ref_id
     )
     INNER JOIN (
@@ -503,16 +497,15 @@ defmodule Sanbase.Balance.SqlQuery do
     #{if Keyword.get(opts, :show_assets_with_zero_balance, false), do: "", else: "HAVING balance > 0"}
     """
 
-    args = [address]
+    params = %{address: address}
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   def usd_value_address_change_query(address, datetime) do
-    # It has `name` and `balance` as fields
-    {query, args} = assets_held_by_address_changes_query(address, datetime)
+    query_struct = assets_held_by_address_changes_query(address, datetime)
 
-    query = """
+    sql = """
     SELECT
       name,
       previous_balance,
@@ -522,53 +515,58 @@ defmodule Sanbase.Balance.SqlQuery do
       previous_balance * previous_price_usd AS previous_usd_value,
       current_balance * current_price_usd AS current_usd_value
     FROM (
-      #{query}
+      #{query_struct.sql}
     )
     INNER JOIN
     (
       SELECT slug AS name,
         argMax(price_usd, dt) AS current_price_usd,
-        argMaxIf(price_usd, dt, dt <= toDateTime(?2)) AS previous_price_usd
+        argMaxIf(price_usd, dt, dt <= toDateTime({{datetime}})) AS previous_price_usd
       FROM asset_prices_v3
-      PREWHERE (dt >= now() - interval 24 hour) OR (dt >= toDateTime(?2) - interval 24 hour AND dt <= toDateTime(?2))
+      WHERE
+        dt >= now() - INTERVAL 24 HOUR OR
+        (
+          dt >= toDateTime({{datetime}}) - INTERVAL 24 HOUR AND
+          dt <= toDateTime({{datetime}})
+        )
       GROUP BY name
     ) USING (name)
     """
 
-    {query, args}
+    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
   end
 
   def usd_value_held_by_address_query(address) do
-    # It has `name` and `balance` as fields
-    {query, args} = assets_held_by_address_query(address)
+    query_struct = assets_held_by_address_query(address)
 
-    query = """
+    sql = """
     SELECT
       name,
-      current_balance,
-      current_price_usd,
-      current_balance * current_price_usd AS current_usd_value
+      balance,
+      price_usd,
+      balance * price_usd AS usd_value
     FROM (
-      #{query}
+      #{query_struct.sql}
     )
     INNER JOIN
     (
-      SELECT slug AS name,
-        argMax(price_usd, dt) AS current_price_usd,
+      SELECT
+        slug AS name,
+        argMax(price_usd, dt) AS price_usd
       FROM asset_prices_v3
-      PREWHERE (dt >= now() - interval 24 hour)
+      WHERE dt >= now() - INTERVAL 24 HOUR
       GROUP BY name
     ) USING (name)
     """
 
-    {query, args}
+    Sanbase.Clickhouse.Query.put_sql(query_struct, sql)
   end
 
   def last_balance_before_query(addresses, slug, decimals, blockchain, datetime) do
-    query = """
+    sql = """
     SELECT
       address,
-      argMax(value, dt) / ?5 AS last_value_before
+      argMax(value, dt) / {{decimals}} AS last_value_before
     FROM (
       SELECT
         address,
@@ -577,33 +575,33 @@ defmodule Sanbase.Balance.SqlQuery do
         values_merged.2 AS value
       FROM balances_aggregated
       WHERE
-        #{address_clause(addresses, argument_position: 1)} AND
-        blockchain = ?2 AND
-        asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?3 LIMIT 1 )
+        #{address_clause(addresses, argument_name: "addresses")} AND
+        blockchain = {{blockchain}} AND
+        asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = {{slug}} LIMIT 1 )
       GROUP BY address, blockchain, asset_ref_id
-      HAVING dt < toDateTime(?4)
+      HAVING dt < toDateTime({{datetime}})
     )
     GROUP BY address
     """
 
-    args = [
-      addresses,
-      blockchain,
-      slug,
-      DateTime.to_unix(datetime),
-      Sanbase.Math.ipow(10, decimals)
-    ]
+    params = %{
+      addresses: addresses,
+      blockchain: blockchain,
+      slug: slug,
+      datetime: DateTime.to_unix(datetime),
+      decimals: Sanbase.Math.ipow(10, decimals)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp address_clause(address, opts) when is_binary(address) do
-    position = Keyword.fetch!(opts, :argument_position)
-    "address = ?#{position}"
+    arg_name = Keyword.fetch!(opts, :argument_name)
+    "address = {{#{arg_name}}}"
   end
 
   defp address_clause(addresses, opts) when is_list(addresses) do
-    position = Keyword.fetch!(opts, :argument_position)
-    "address IN (?#{position})"
+    arg_name = Keyword.fetch!(opts, :argument_name)
+    "address IN ({{#{arg_name}}})"
   end
 end

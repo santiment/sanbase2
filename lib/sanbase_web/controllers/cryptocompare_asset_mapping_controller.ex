@@ -15,9 +15,23 @@ defmodule SanbaseWeb.CryptocompareAssetMappingController do
 
   defp get_data() do
     Project.SourceSlugMapping.get_source_slug_mappings("cryptocompare")
+    |> sort_assets()
     |> Enum.map(fn {cpc_slug, san_slug} ->
       %{"base_asset" => cpc_slug, "slug" => san_slug} |> Jason.encode!()
     end)
     |> Enum.join("\n")
+  end
+
+  # xrp before ripple
+  # Ethereum asset before assets on other chains (with prefixes)
+  def sort_assets(list) do
+    list
+    |> Enum.sort_by(fn {_, value} ->
+      case String.split(value, "-", parts: 2) do
+        ["xrp" | _] -> {-1, value}
+        [prefix, _] when prefix in ["a", "p", "o", "bnb", "arb"] -> {1, value}
+        _ -> {0, value}
+      end
+    end)
   end
 end

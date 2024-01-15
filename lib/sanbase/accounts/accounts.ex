@@ -48,7 +48,7 @@ defmodule Sanbase.Accounts do
         {:ok, :keep_state, user}
 
       {:next_state, state, data} ->
-        registration_state = %{"state" => state, "data" => data}
+        registration_state = %{"state" => state, "data" => data, "datetime" => DateTime.utc_now()}
 
         case atomic_update(user.id, current_state, registration_state) do
           {1, [user]} -> {:ok, :evolve_state, user}

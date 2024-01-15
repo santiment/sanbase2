@@ -369,6 +369,18 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
       cache_resolve(&ClickhouseResolver.daily_active_deposits/3)
     end
 
+    @desc ~s"""
+    List all exchanges
+    """
+    field :get_label_based_metric_owners, list_of(:string) do
+      meta(access: :free)
+
+      arg(:metric, non_null(:string))
+      arg(:slug, :string)
+
+      cache_resolve(&ExchangeResolver.get_label_based_metric_owners/3)
+    end
+
     @desc "List all exchanges"
     field :all_exchanges, list_of(:string) do
       meta(access: :free)

@@ -270,22 +270,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       Registry.register(Sanbase.Registry, key, :running)
       Logger.info("Fetch and process prices for #{project.slug}")
 
-      case last_price_datetime(project) do
-        {:ok, datetime} ->
-          Logger.info(
-            "[CMC] Latest price datetime for #{Project.describe(project)} - #{datetime}"
-          )
-
-          WebApi.fetch_and_store_prices(project, datetime)
-
-          Registry.unregister(Sanbase.Registry, key)
-          :ok
-
-        _ ->
-          err_msg = "[CMC] Cannot fetch the last price datetime for project #{project.slug}"
-
-          Logger.warning(err_msg)
-          {:error, err_msg}
+      with {:ok, datetime} <- last_price_datetime(project),
+           :ok <- WebApi.fetch_and_store_prices(project, datetime) do
+        :ok = Registry.unregister(Sanbase.Registry, key)
+      else
+        error -> error
       end
     else
       Logger.info(
@@ -327,15 +316,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   defp fetch_total_market_data() do
-    case last_price_datetime("TOTAL_MARKET") do
-      {:ok, %DateTime{} = datetime} ->
-        WebApi.fetch_and_store_prices("TOTAL_MARKET", datetime)
-        :ok
-
-      _ ->
-        err_msg = "[CMC] Cannot fetch the last price datetime for TOTAL_MARKET"
-        Logger.warning(err_msg)
-        {:error, err_msg}
+    with {:ok, %DateTime{} = datetime} <- last_price_datetime("TOTAL_MARKET"),
+         :ok <- WebApi.fetch_and_store_prices("TOTAL_MARKET", datetime) do
+      :ok
+    else
+      error -> error
     end
   end
 

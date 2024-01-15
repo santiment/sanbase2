@@ -58,11 +58,10 @@ defmodule Sanbase.Metric.LatestMetric do
   def get_data(_table, _metrics, [], _opts), do: {:ok, []}
 
   def get_data(table, metrics, slugs, opts) do
-    {query, args} = get_data_query(table, metrics, slugs, opts)
+    query_struct = get_data_query(table, metrics, slugs, opts)
 
     Sanbase.ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [slug, metric, value, dt_unix, computed_at_unix] ->
         %{
           slug: slug,
@@ -84,7 +83,9 @@ defmodule Sanbase.Metric.LatestMetric do
 
   defp get_data_query(table, metrics, slugs, _opts)
        when table in ["intraday_metrics", "daily_metrics_v2"] do
-    query = """
+    metrics = Enum.map(metrics, &Map.get(FileHandler.name_to_metric_map(), &1))
+
+    sql = """
     SELECT
       get_asset_name(asset_id) AS slug,
       get_metric_name(metric_id) AS metric,
@@ -101,14 +102,18 @@ defmodule Sanbase.Metric.LatestMetric do
       FROM #{table}
       PREWHERE
         dt >= now() - INTERVAL 7 DAY AND dt <= now() AND dt < computed_at AND
-        #{metric_id_filter(metrics, argument_position: 1)} AND
-        #{asset_id_filter(%{slug: slugs}, argument_position: 2)}
+        #{metric_id_filter(metrics, argument_name: "metrics")} AND
+        #{asset_id_filter(%{slug: slugs}, argument_name: "slugs")}
     )
     GROUP BY asset_id, metric_id
     """
 
-    args = [Enum.map(metrics, &Map.get(FileHandler.name_to_metric_map(), &1)), slugs]
-    {query, args}
+    params = %{
+      metrics: metrics,
+      slugs: slugs
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp get_data_query("asset_prices_v3", metrics, slugs, opts) do
@@ -125,21 +130,36 @@ defmodule Sanbase.Metric.LatestMetric do
       toUnixTimestamp(max(dt)) AS dt2,
       #{metrics_aggregated_selector_str}
     FROM asset_prices_v3
-      PREWHERE slug IN (?1) AND
+    WHERE
+      slug IN ({{slugs}}) AND
       dt >= now() - INTERVAL 7 DAY AND dt <= now() AND
-      source = cast(?2, 'LowCardinality(String)')
+      source = cast({{source}}, 'LowCardinality(String)')
     GROUP BY slug
     """
 
     metrics_pairs_str = Enum.map(metrics, fn m -> "(#{m}, '#{m}')" end) |> Enum.join(",")
 
-    query = """
-    SELECT slugString, concat(tuple.2, ?3) AS metric, tuple.1 AS value, dt2 AS dt, dt2 AS computed_at FROM
-    ( SELECT slugString, arrayJoin([#{metrics_pairs_str}]) AS tuple, dt2 FROM (#{query}) )
+    sql = """
+    SELECT
+      slugString,
+      concat(tuple.2, {{metric_name_suffix}}) AS metric,
+      tuple.1 AS value,
+      dt2 AS dt,
+      dt2 AS computed_at
+    FROM (
+      SELECT slugString,
+        arrayJoin([#{metrics_pairs_str}]) AS tuple,
+        dt2
+      FROM (#{query})
+    )
     """
 
-    args = [slugs, source, metric_name_suffix]
+    params = %{
+      slugs: slugs,
+      source: source,
+      metric_name_suffix: metric_name_suffix
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

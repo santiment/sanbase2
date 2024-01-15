@@ -14,7 +14,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Labeled to Unlabeled Flow",
@@ -31,7 +32,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Unlabeled to Unlabeled Flow",
@@ -48,7 +50,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Labeled to Labeled Flow",
@@ -65,7 +68,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEX Traders to DEXes Flow",
@@ -82,7 +86,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEXes to DEX Traders Flow",
@@ -99,7 +104,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEX Traders DEX Balance",
@@ -116,7 +122,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEX Traders to CEXes Flow",
@@ -133,7 +140,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEXes to DEX Traders Flow",
@@ -150,7 +158,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEX Traders CEX Balance",
@@ -167,7 +176,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEX Traders to DeFi Flow",
@@ -184,7 +194,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi to DEX Traders Flow",
@@ -201,7 +212,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEX Traders DeFi Balance",
@@ -218,7 +230,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEX Traders to Whale Flow",
@@ -235,7 +248,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Whale to DEX Traders Flow",
@@ -252,7 +266,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEX Traders Whale Balance",
@@ -269,7 +284,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other to DEX Traders Flow",
@@ -286,7 +302,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "DEX Traders to Other Flow",
@@ -303,7 +320,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other DEX Traders Balance",
@@ -320,7 +338,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEX and DEX Traders to DEXes Flow",
@@ -337,7 +356,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEXes to CEX and DEX Traders Flow",
@@ -354,7 +374,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEX and DEX Traders DEX Balance",
@@ -371,7 +392,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEX and DEX Traders to CEXes Flow",
@@ -388,7 +410,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "CEXes to CEX and DEX Traders Flow",
@@ -405,7 +428,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEX and DEX Traders CEX Balance",
@@ -422,7 +446,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEX and DEX Traders to DeFi Flow",
@@ -439,7 +464,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi to CEX and DEX Traders Flow",
@@ -456,7 +482,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEX and DEX Traders DeFi Balance",
@@ -473,7 +500,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEX and DEX Traders to Whale Flow",
@@ -490,7 +518,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Whale to CEX and DEX Traders Flow",
@@ -507,7 +536,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "CEX and DEX Traders Whale Balance",
@@ -524,7 +554,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other to CEX and DEX Traders Flow",
@@ -541,7 +572,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEX and DEX Traders to Other Flow",
@@ -558,7 +590,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other CEX and DEX Traders Balance",
@@ -575,7 +608,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi to CEXes Flow",
@@ -592,7 +626,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEXes to DeFi Flow",
@@ -609,7 +644,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi CEX Balance",
@@ -626,7 +662,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Whale to CEXes Flow",
@@ -643,7 +680,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEXes to Whale Flow",
@@ -660,7 +698,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Whale CEX Balance",
@@ -677,7 +716,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEX to CEXes Flow",
@@ -694,7 +734,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "CEXes to DEX Flow",
@@ -711,7 +752,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEX CEX Balance",
@@ -728,7 +770,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other to CEXes Flow",
@@ -745,7 +788,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "CEXes to Other Flow",
@@ -762,7 +806,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other CEX Balance",
@@ -779,7 +824,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi to DEXes Flow",
@@ -796,7 +842,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "DEXes to DeFi Flow",
@@ -813,7 +860,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi DEX Balance",
@@ -830,7 +878,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Whale to DEXes Flow",
@@ -847,7 +896,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEXes to Whale Flow",
@@ -864,7 +914,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Whale DEX Balance",
@@ -881,7 +932,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other to DEXes Flow",
@@ -898,7 +950,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "DEXes to Other Flow",
@@ -915,7 +968,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other DEX Balance",
@@ -932,7 +986,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Whale to DeFi Flow",
@@ -949,7 +1004,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi to Whale Flow",
@@ -966,7 +1022,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Whale DeFi Balance",
@@ -983,7 +1040,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other to DeFi Flow",
@@ -1000,7 +1058,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-12-04T00:00:00Z"
   },
   {
     "human_readable_name": "DeFi to Other Flow",
@@ -1017,7 +1076,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other DeFi Balance",
@@ -1034,7 +1094,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other to Whales Flow",
@@ -1051,7 +1112,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Whales to Other Flow",
@@ -1068,7 +1130,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   },
   {
     "human_readable_name": "Other Whale Balance",
@@ -1085,6 +1148,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "hard_deprecate_after": "2023-11-26T00:00:00Z"
   }
 ]

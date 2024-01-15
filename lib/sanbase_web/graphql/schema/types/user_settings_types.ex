@@ -24,6 +24,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     # Fixme: backwards compatibility, should be removed when removed from frontend.
     # option is not used
     field(:newsletter_subscription, :string, default_value: "OFF")
+    field(:sanbase_version, :string)
 
     field :alerts_per_day_limit_left, :json do
       resolve(&UserSettingsResolver.alerts_per_dy_limit_left/3)
@@ -61,6 +62,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:is_subscribed_marketing_emails, :boolean)
     field(:is_subscribed_comments_emails, :boolean)
     field(:is_subscribed_likes_emails, :boolean)
+    field(:sanbase_version, :string)
 
     # Deprecated fields
     field(:signal_notify_telegram, :boolean)

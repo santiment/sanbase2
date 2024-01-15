@@ -1,5 +1,6 @@
 defmodule Sanbase.Dashboard.Query do
   alias Sanbase.Dashboard.Query
+  alias Sanbase.ClickhouseRepo
 
   @spec run(String.t(), Map.t(), Map.t()) ::
           {:ok, Query.Result.t()} | {:error, String.t()}
@@ -17,55 +18,48 @@ defmodule Sanbase.Dashboard.Query do
     # by the user. The ReadOnly repo is connecting to the database with
     # a different user that has read-only access. This is valid within
     # this process only.
-    Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
+    ClickhouseRepo.put_dynamic_repo(ClickhouseRepo.ReadOnly)
 
     query_metadata =
       query_metadata
       |> extend_query_metadata()
-      |> escape_single_quotes()
+      |> sanitize_metadata_values()
 
     query =
       Sanbase.Clickhouse.Query.new(sql, parameters,
         settings: "log_comment='#{Jason.encode!(query_metadata)}'"
       )
 
-    %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
-    sql = extend_sql(sql, query_metadata)
-
-    case Sanbase.ClickhouseRepo.query_transform_with_metadata(sql, args, &transform_result/1) do
-      {:ok, map} ->
-        {:ok,
-         %Query.Result{
-           clickhouse_query_id: map.query_id,
-           summary: map.summary,
-           rows: map.rows,
-           compressed_rows: rows_to_compressed_rows(map.rows),
-           columns: map.column_names,
-           column_types: map.column_types,
-           query_start_time: query_start_time,
-           query_end_time: DateTime.utc_now()
-         }}
-
-      {:error, error} ->
-        # This error is nice enough to be logged and returned to the user.
-        # The stacktrace is parsed and relevant error messages like
-        # `table X does not exist` are extracted
-        {:error, error}
+    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query),
+         sql = extend_sql(sql, query_metadata),
+         {:ok, map} <-
+           ClickhouseRepo.query_transform_with_metadata(sql, args, &transform_result/1) do
+      {:ok,
+       %Query.Result{
+         clickhouse_query_id: map.query_id,
+         summary: map.summary,
+         rows: map.rows,
+         compressed_rows: compress_rows(map.rows),
+         columns: map.column_names,
+         column_types: map.column_types,
+         query_start_time: query_start_time,
+         query_end_time: DateTime.utc_now()
+       }}
     end
   end
 
-  def rows_to_compressed_rows(rows) do
+  def compress_rows(rows) do
     rows
     |> :erlang.term_to_binary()
     |> :zlib.gzip()
     |> Base.encode64()
   end
 
-  def compressed_rows_to_rows(compressed_rows) do
+  def decompress_rows(compressed_rows) do
     compressed_rows
     |> Base.decode64!()
     |> :zlib.gunzip()
-    |> :erlang.binary_to_term()
+    |> Plug.Crypto.non_executable_binary_to_term([:safe])
   end
 
   def valid_sql?(args) do
@@ -85,7 +79,7 @@ defmodule Sanbase.Dashboard.Query do
   def valid_sql_query?(sql) do
     case Map.has_key?(sql, :query) and is_binary(sql[:query]) and String.length(sql[:query]) > 0 do
       true -> :ok
-      false -> {:error, "sql query must be a non-emmpty binary string"}
+      false -> {:error, "sql query must be a non-empty binary string"}
     end
   end
 
@@ -136,10 +130,11 @@ defmodule Sanbase.Dashboard.Query do
 
   defp handle_result_param(data), do: data
 
-  defp escape_single_quotes(map) do
+  defp sanitize_metadata_values(map) do
     Enum.map(map, fn {key, value} ->
       case is_binary(value) do
-        true -> {key, String.replace(value, "'", "")}
+        # Remove questionmarks and single-quotes
+        true -> {key, String.replace(value, ~r/['?]/, "")}
         false -> {key, value}
       end
     end)

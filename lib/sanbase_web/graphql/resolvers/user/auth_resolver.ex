@@ -85,11 +85,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
       }) do
     remote_ip = Sanbase.Utils.IP.ip_tuple_to_string(remote_ip)
 
-    with true <- allowed_origin?(origin_host_parts, origin_url),
-         {:ok, user} <- User.find_or_insert_by(:email, email, %{username: args[:username]}),
+    with true <- allowed_email_domain?(email),
+         true <- allowed_origin?(origin_host_parts, origin_url),
+         {:ok, %{first_login: first_login} = user} <-
+           User.find_or_insert_by(:email, email, %{username: args[:username]}),
          :ok <- EmailLoginAttempt.has_allowed_login_attempts(user, remote_ip),
          {:ok, user} <- User.Email.update_email_token(user, args[:consent]),
-         {:ok, _user} <- User.Email.send_login_email(user, origin_host_parts, args),
+         {:ok, _res} <- User.Email.send_login_email(user, first_login, origin_host_parts, args),
          {:ok, %EmailLoginAttempt{}} <- EmailLoginAttempt.create(user, remote_ip),
          {:ok, _, user} <-
            Accounts.forward_registration(user, "send_login_email", %{"origin_url" => origin_url}) do
@@ -188,6 +190,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
   defp allowed_origin?(_hosted_parts, origin_url),
     do: {:error, "Origin header #{origin_url} is not supported."}
+
+  @blocked_domains ["burpcollaborator.net"]
+  defp allowed_email_domain?(email) do
+    domain = String.split(email, "@") |> Enum.at(1)
+
+    case domain in @blocked_domains do
+      true -> {:error, "Email not supported."}
+      false -> true
+    end
+  end
 
   defp fetch_user(%{address: address}, nil) do
     # No EthAccount and no user logged in. This means that the address is used

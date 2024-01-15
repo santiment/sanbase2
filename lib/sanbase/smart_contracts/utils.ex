@@ -67,7 +67,7 @@ defmodule Sanbase.SmartContracts.Utils do
            Ethereumex.HttpClient.eth_call(%{data: "0x" <> function_signature, to: contract}) do
       hex_encoded_binary_response
       # Strip `0x` prefix
-      |> String.slice(2..-1)
+      |> String.slice(2..-1//1)
       |> Base.decode16!(case: :lower)
       |> case do
         "" -> :error
@@ -95,7 +95,7 @@ defmodule Sanbase.SmartContracts.Utils do
       Enum.map(result, fn {:ok, hex_encoded_binary_response} ->
         hex_encoded_binary_response
         # Strip `0x` prefix
-        |> String.slice(2..-1)
+        |> String.slice(2..-1//1)
         |> Base.decode16!(case: :lower)
         |> ABI.TypeDecoder.decode_raw(return_types)
       end)
@@ -111,7 +111,7 @@ defmodule Sanbase.SmartContracts.Utils do
   def format_address(address) do
     {:ok, address} =
       address
-      |> String.slice(2..-1)
+      |> String.slice(2..-1//1)
       |> Base.decode16(case: :mixed)
 
     address
@@ -124,7 +124,7 @@ defmodule Sanbase.SmartContracts.Utils do
   def address_strip_zeros(address) do
     address =
       address
-      |> String.slice(2..-1)
+      |> String.slice(2..-1//1)
       |> Integer.parse(16)
       |> elem(0)
       |> Integer.to_string(16)

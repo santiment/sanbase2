@@ -34,7 +34,15 @@ defmodule Sanbase.Metric.Behaviour do
           required_selectors: list(atom()),
           data_type: available_data_types(),
           complexity_weight: number(),
-          has_incomplete_data: boolean()
+          has_incomplete_data: boolean(),
+          is_timebound: boolean(),
+          # A metric can be deprecated, which means that it is marked
+          # as deprecated, but it is still accsessible. If hard_deprecate_after
+          # is not set, the deprecation is considered soft.
+          is_deprecated: boolean(),
+          # A metric can be hard-deprecated, which means that it will no
+          # longer be accessible after this datetime.
+          hard_deprecate_after: DateTime.t() | nil
         }
 
   @type histogram_value :: String.t() | float() | integer()
@@ -238,6 +246,8 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback deprecated_metrics_map() :: %{required(String.t()) => String.t()}
 
+  @callback soft_deprecated_metrics_map() :: %{required(String.t()) => String.t()}
+
   @callback access_map() :: map()
 
   @callback min_plan_map() :: map()
@@ -246,6 +256,7 @@ defmodule Sanbase.Metric.Behaviour do
     histogram_data: 6,
     table_data: 5,
     deprecated_metrics_map: 0,
+    soft_deprecated_metrics_map: 0,
     # If the adapter is working with assets, the following 2 callbacks are implemented
     slugs_by_filter: 6,
     slugs_order: 5,

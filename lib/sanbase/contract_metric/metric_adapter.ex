@@ -47,9 +47,8 @@ defmodule Sanbase.Contract.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, %{contract_address: contract_address}, from, to, interval, _opts)
       when is_binary(contract_address) do
-    {query, args} = timeseries_data_query(metric, contract_address, from, to, interval)
-
-    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
+    timeseries_data_query(metric, contract_address, from, to, interval)
+    |> ClickhouseRepo.query_transform(fn [unix, value] ->
       %{
         datetime: DateTime.from_unix!(unix),
         value: value
@@ -80,9 +79,9 @@ defmodule Sanbase.Contract.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def first_datetime(_metric, %{contract_address: contract_address})
       when is_binary(contract_address) do
-    {query, args} = first_datetime_query(contract_address)
+    query_struct = first_datetime_query(contract_address)
 
-    ClickhouseRepo.query_transform(query, args, fn [unix] ->
+    ClickhouseRepo.query_transform(query_struct, fn [unix] ->
       DateTime.from_unix!(unix)
     end)
     |> maybe_unwrap_ok_value()
@@ -91,9 +90,9 @@ defmodule Sanbase.Contract.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def last_datetime_computed_at(_metric, %{contract_address: contract_address})
       when is_binary(contract_address) do
-    {query, args} = last_datetime_computed_at_query(contract_address)
+    query_struct = last_datetime_computed_at_query(contract_address)
 
-    ClickhouseRepo.query_transform(query, args, fn [unix] -> DateTime.from_unix!(unix) end)
+    ClickhouseRepo.query_transform(query_struct, fn [unix] -> DateTime.from_unix!(unix) end)
     |> maybe_unwrap_ok_value()
   end
 

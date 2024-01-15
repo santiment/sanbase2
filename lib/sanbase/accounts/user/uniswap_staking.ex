@@ -105,7 +105,7 @@ defmodule Sanbase.Accounts.User.UniswapStaking do
   end
 
   defp calc_uniswap_san_staked_user(user) do
-    Enum.reduce(user.eth_accounts, 0.0, fn %EthAccount{address: address}, acc ->
+    Enum.reduce(user.eth_accounts, +0.0, fn %EthAccount{address: address}, acc ->
       UniswapPair.all_pair_contracts()
       |> Enum.map(&EthAccount.san_staked_address(address, &1))
       |> List.insert_at(-1, acc)

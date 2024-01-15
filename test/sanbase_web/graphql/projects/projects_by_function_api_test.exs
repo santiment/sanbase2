@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
   use SanbaseWeb.ConnCase, async: false
 
+  alias Sanbase.Clickhouse.MetricAdapter
+
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
@@ -86,6 +88,68 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
     {:ok, conn: conn, p1: p1, p2: p2, p3: p3, p4: p4}
   end
 
+  test "wrong metric name in order_by returns an error", context do
+    %{conn: conn, p1: p1} = context
+
+    function = %{
+      "name" => "selector",
+      "args" => %{
+        "pagination" => %{"page" => 1, "pageSize" => 2},
+        "orderBy" => %{
+          "metric" => "aily_active_addresses",
+          "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+          "to" => "#{Timex.now()}",
+          "aggregation" => "#{:last}",
+          "direction" => :asc
+        }
+      }
+    }
+
+    Sanbase.Mock.prepare_mock2(&MetricAdapter.slugs_by_filter/6, {:ok, [p1.slug]})
+    |> Sanbase.Mock.prepare_mock2(&MetricAdapter.slugs_order/5, {:ok, [p1.slug]})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      error_msg =
+        execute_query(conn, query(function))
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg =~
+               "The metric 'aily_active_addresses' is not supported, is deprecated or is mistyped"
+
+      assert error_msg =~ "Did you mean the timeseries metric 'daily_active_addresses'?"
+    end)
+  end
+
+  test "wrong metric name in filters returns an error", context do
+    %{conn: conn, p1: p1} = context
+
+    function = %{
+      "name" => "selector",
+      "args" => %{
+        "filters" => [
+          %{
+            "metric" => "rice_usd",
+            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+            "to" => "#{Timex.now()}",
+            "aggregation" => "#{:last}",
+            "operator" => "#{:greater_than_or_equal_to}",
+            "threshold" => 10
+          }
+        ]
+      }
+    }
+
+    Sanbase.Mock.prepare_mock2(&MetricAdapter.slugs_by_filter/6, {:ok, [p1.slug]})
+    |> Sanbase.Mock.prepare_mock2(&MetricAdapter.slugs_order/5, {:ok, [p1.slug]})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      error_msg =
+        execute_query(conn, query(function))
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg =~ "The metric 'rice_usd' is not supported, is deprecated or is mistyped"
+      assert error_msg =~ "Did you mean the timeseries metric 'price_usd'?"
+    end)
+  end
+
   test "projects by function for selector", context do
     %{conn: conn, p1: p1, p2: p2, p3: p3, p4: p4} = context
 
@@ -114,11 +178,11 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
     }
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
+      &MetricAdapter.slugs_by_filter/6,
       {:ok, [p1.slug, p2.slug, p3.slug, p4.slug]}
     )
     |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.slugs_order/5,
+      &MetricAdapter.slugs_order/5,
       {:ok, [p1.slug, p2.slug, p3.slug, p4.slug]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -165,7 +229,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :slugs_by_filter, fn
+    Sanbase.Mock.prepare_mock(MetricAdapter, :slugs_by_filter, fn
       "daily_active_addresses", _, _, _, _, _ -> {:ok, [p1.slug, p2.slug, p3.slug]}
       "nvt", _, _, _, _, _ -> {:ok, [p2.slug, p3.slug, p4.slug]}
     end)

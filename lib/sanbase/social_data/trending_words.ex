@@ -18,10 +18,10 @@ defmodule Sanbase.SocialData.TrendingWords do
   channels, including hundreds of telegram groups, subredits, discord groups,
   bitcointalk forums, etc.
   """
-  use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+  import Sanbase.Metric.SqlQuery.Helper, only: [to_unix_timestamp: 3, dt_to_unix: 2]
 
   alias Sanbase.ClickhouseRepo
 
@@ -50,45 +50,86 @@ defmodule Sanbase.SocialData.TrendingWords do
           datetme: DateTime.t(),
           position: position
         }
+  @table "trending_words_docs_v4"
 
-  @default_sources [:telegram, :reddit]
   # When calculating the trending now words fetch the data for the last
   # N hours to ensure that there is some data and we're not in the middle
   # of computing the latest data
-
   @hours_back_ensure_has_data 3
-
-  @table "trending_words_v4_top_500"
-  schema @table do
-    field(:dt, :utc_datetime)
-    field(:word, :string)
-    field(:volume, :float)
-    field(:volume_normalized, :float)
-    field(:unqiue_users, :integer)
-    field(:score, :float)
-    field(:source, :string)
-    # ticker_slug
-    field(:project, :string)
-    field(:computed_at, :string)
-  end
 
   @spec get_trending_words(
           DateTime.t(),
           DateTime.t(),
           interval,
           non_neg_integer,
-          list(atom())
+          atom(),
+          atom()
         ) ::
           {:ok, map()} | {:error, String.t()}
-  def get_trending_words(from, to, interval, size, sources \\ @default_sources) do
-    {query, args} = get_trending_words_query(from, to, interval, size, sources)
+  def get_trending_words(from, to, interval, size, source, word_type_filter \\ :all) do
+    source = if source == :all, do: default_source(), else: to_string(source)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn
-      [dt, word, _project, score], acc ->
+    query_struct = get_trending_words_query(from, to, interval, size, source, word_type_filter)
+
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn
+      [
+        dt,
+        word,
+        project,
+        score,
+        context,
+        summary,
+        bullish_summary,
+        bearish_summary,
+        sentiment_ratios,
+        bb_sentiment_ratios
+      ],
+      acc ->
+        slug = if project, do: String.split(project, "_", parts: 2) |> List.last()
         datetime = DateTime.from_unix!(dt)
-        elem = %{word: word, score: score}
+        # The percentage of the documents that mention the word that have
+        # postive, negative or netural sentiment. The values are in the range [0, 1]
+        # and add up to 1
+        [positive_sentiment, neutral_sentiment, negative_sentiment] = sentiment_ratios
+        [positive_bb_sentiment, neutral_bb_sentiment, negative_bb_sentiment] = bb_sentiment_ratios
+
+        summaries = [%{source: source, datetime: datetime, summary: summary}]
+        context = transform_context(context)
+
+        elem = %{
+          word: word,
+          slug: slug,
+          score: score,
+          context: context,
+          # Keep both summaries and summary for backwards compatibility. Remove summaries later
+          summary: summary,
+          bullish_summary: bullish_summary,
+          bearish_summary: bearish_summary,
+          summaries: summaries,
+          positive_sentiment_ratio: positive_sentiment,
+          negative_sentiment_ratio: negative_sentiment,
+          neutral_sentiment_ratio: neutral_sentiment,
+          positive_bb_sentiment_ratio: positive_bb_sentiment,
+          negative_bb_sentiment_ratio: negative_bb_sentiment,
+          neutral_bb_sentiment_ratio: neutral_bb_sentiment
+        }
+
         Map.update(acc, datetime, [elem], fn words -> [elem | words] end)
     end)
+  end
+
+  defp transform_context(context) do
+    context
+    |> Enum.map(fn c ->
+      %{"word" => word, "score" => score} =
+        c
+        |> String.replace("'", ~s|\"|)
+        |> Jason.decode!()
+
+      %{word: word, score: score}
+    end)
+    |> Enum.sort_by(& &1.score, :desc)
+    |> Enum.take(10)
   end
 
   @spec get_trending_projects(
@@ -96,13 +137,18 @@ defmodule Sanbase.SocialData.TrendingWords do
           DateTime.t(),
           interval,
           non_neg_integer,
-          list(atom())
+          atom()
         ) ::
           {:ok, map()} | {:error, String.t()}
-  def get_trending_projects(from, to, interval, size, sources \\ @default_sources) do
-    {query, args} = get_trending_words_query(from, to, interval, size, sources)
+  def get_trending_projects(from, to, interval, size, source) do
+    source = if source == :all, do: default_source(), else: to_string(source)
+    # The word_type_filter is :all for backwards compatibility. The logic is
+    # to find if any of the top `size` trending words are projects, not just
+    # taking the top 10 projects, regardless of their position in the overall
+    # ranking
+    query_struct = get_trending_words_query(from, to, interval, size, source, :all)
 
-    ClickhouseRepo.query_reduce(query, args, %{}, fn
+    ClickhouseRepo.query_reduce(query_struct, %{}, fn
       [_dt, _word, nil, _score], acc ->
         acc
 
@@ -117,23 +163,19 @@ defmodule Sanbase.SocialData.TrendingWords do
   @doc ~s"""
   Get a list of the currently trending words
   """
-  @spec get_currently_trending_words(non_neg_integer(), list(atom())) ::
+  @spec get_currently_trending_words(non_neg_integer(), atom()) ::
           {:ok, list(trending_word)} | {:error, String.t()}
-  def get_currently_trending_words(size, sources \\ @default_sources)
-
-  def get_currently_trending_words(size, sources) do
+  def get_currently_trending_words(size, source) do
+    source = if source == :all, do: default_source(), else: to_string(source)
     now = Timex.now()
     from = Timex.shift(now, hours: -@hours_back_ensure_has_data)
 
-    case get_trending_words(from, now, "1h", size, sources) do
+    case get_trending_words(from, now, "1h", size, source) do
       {:ok, %{} = empty_map} when map_size(empty_map) == 0 ->
         {:ok, []}
 
       {:ok, stats} ->
-        {_, words} =
-          stats
-          |> Enum.max_by(fn {dt, _} -> DateTime.to_unix(dt) end)
-
+        {_, words} = stats |> Enum.max_by(fn {dt, _} -> DateTime.to_unix(dt) end)
         {:ok, words}
 
       {:error, error} ->
@@ -144,20 +186,16 @@ defmodule Sanbase.SocialData.TrendingWords do
   @doc ~s"""
   Get a list of the currently trending projects
   """
-  @spec get_currently_trending_projects(non_neg_integer(), list(atom())) ::
+  @spec get_currently_trending_projects(non_neg_integer(), atom()) ::
           {:ok, list(trending_slug)} | {:error, String.t()}
-  def get_currently_trending_projects(size, sources \\ @default_sources)
-
-  def get_currently_trending_projects(size, sources) do
+  def get_currently_trending_projects(size, source) do
+    source = if source == :all, do: default_source(), else: to_string(source)
     now = Timex.now()
     from = Timex.shift(now, hours: -@hours_back_ensure_has_data)
 
-    case get_trending_projects(from, now, "1h", size, sources) do
+    case get_trending_projects(from, now, "1h", size, source) do
       {:ok, stats} ->
-        {_, projects} =
-          stats
-          |> Enum.max_by(fn {dt, _} -> DateTime.to_unix(dt) end)
-
+        {_, projects} = stats |> Enum.max_by(fn {dt, _} -> DateTime.to_unix(dt) end)
         {:ok, projects}
 
       {:error, error} ->
@@ -171,13 +209,14 @@ defmodule Sanbase.SocialData.TrendingWords do
           DateTime.t(),
           interval,
           non_neg_integer,
-          list(atom())
+          atom()
         ) ::
           {:ok, list(word_stat)} | {:error, String.t()}
-  def get_word_trending_history(word, from, to, interval, size, sources \\ @default_sources) do
-    {query, args} = word_trending_history_query(word, from, to, interval, size, sources)
+  def get_word_trending_history(word, from, to, interval, size, source) do
+    source = if source == :all, do: default_source(), else: to_string(source)
+    query_struct = word_trending_history_query(word, from, to, interval, size, source)
 
-    ClickhouseRepo.query_transform(query, args, fn [dt, position] ->
+    ClickhouseRepo.query_transform(query_struct, fn [dt, position] ->
       position = if position > 0, do: position
 
       %{
@@ -194,13 +233,14 @@ defmodule Sanbase.SocialData.TrendingWords do
           DateTime.t(),
           interval,
           non_neg_integer,
-          list(atom())
+          atom()
         ) ::
           {:ok, list(word_stat)} | {:error, String.t()}
-  def get_project_trending_history(slug, from, to, interval, size, sources \\ @default_sources) do
-    {query, args} = project_trending_history_query(slug, from, to, interval, size, sources)
+  def get_project_trending_history(slug, from, to, interval, size, source) do
+    source = if source == :all, do: default_source(), else: to_string(source)
+    query_struct = project_trending_history_query(slug, from, to, interval, size, source)
 
-    ClickhouseRepo.query_transform(query, args, fn [dt, position] ->
+    ClickhouseRepo.query_transform(query_struct, fn [dt, position] ->
       position = if position > 0, do: position
 
       %{
@@ -211,52 +251,82 @@ defmodule Sanbase.SocialData.TrendingWords do
     |> maybe_apply_function(fn result -> Enum.reject(result, &is_nil(&1.position)) end)
   end
 
-  defp get_trending_words_query(from, to, interval, size, sources) do
-    query = """
+  # Private functions
+
+  defp get_trending_words_query(from, to, interval, size, source, word_type_filter) do
+    sql = """
     SELECT
       t,
       word,
-      any(project) AS project,
-      SUM(score) / #{length(sources)} AS total_score
-    FROM(
-        SELECT
-          toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
-          word,
-          any(project) AS project,
-          argMax(score, dt) as score
-        FROM #{@table}
-        PREWHERE
-          dt >= toDateTime(?2) AND
-          dt < toDateTime(?3) AND
-          source IN (?4)
-        GROUP BY t, word, source
-        ORDER BY t, score DESC
+      project AS project2,
+      score,
+      context,
+      summary,
+      bullish_summary,
+      bearish_summary,
+      sentiment_ratios,
+      bb_sentiment_ratios
+    FROM
+    (
+      SELECT
+        #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
+        dt,
+        max(dt) OVER (PARTITION BY t) AS last_dt_in_group,
+        word,
+        project,
+        score / {{score_equalizer}} AS score,
+        words_context AS context,
+        summary,
+        bullish_summary,
+        bearish_summary,
+        tuple(positive_ratio, neutral_ratio, negative_ratio) AS sentiment_ratios,
+        tuple(positive_bb_ratio, neutral_bb_ratio, negative_bb_ratio) AS bb_sentiment_ratios
+      FROM #{@table} FINAL
+      WHERE
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}}) AND
+        source = {{source}}
+        #{word_type_filter_str(word_type_filter)}
     )
-    GROUP BY t, word
-    ORDER BY t, total_score DESC
-    LIMIT ?5 BY t
+    WHERE dt = last_dt_in_group
+    ORDER BY t, score DESC
+    LIMIT {{limit}} BY t
     """
 
-    sources = Enum.map(sources, &to_string/1)
-    args = [str_to_sec(interval), from, to, sources, size]
+    params = %{
+      interval: str_to_sec(interval),
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to),
+      source: source,
+      limit: size,
+      # The score equalizer is used to make sure that the score is comparable in absolute values
+      # no matter if the source is `reddit`, `4chat,reddit` or `reddit,telegram,twitter_crypto`
+      score_equalizer: length(String.split(source, ","))
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  defp word_trending_history_query(word, from, to, interval, size, sources) do
-    {query, args} = get_trending_words_query(from, to, interval, size, sources)
-    args_len = length(args)
-    next_pos = args_len + 1
+  defp word_type_filter_str(word_type_filter) do
+    case word_type_filter do
+      :all -> ""
+      :project -> "AND project IS NOT NULL"
+      :non_project -> "AND project IS NULL"
+    end
+  end
 
-    query =
+  defp word_trending_history_query(word, from, to, interval, size, source) do
+    query_struct = get_trending_words_query(from, to, interval, size, source, :all)
+
+    sql =
       [
         """
         SELECT
           t,
-          toUInt32(indexOf(groupArray(?#{args_len})(word), ?#{next_pos}))
+          toUInt32(indexOf(groupArray({{limit}})(word), {{word}}))
         FROM(
         """,
-        query,
+        query_struct.sql,
         """
         )
         GROUP BY t
@@ -265,35 +335,34 @@ defmodule Sanbase.SocialData.TrendingWords do
       ]
       |> to_string()
 
-    args = args ++ [word]
-    {query, args}
+    query_struct
+    |> Sanbase.Clickhouse.Query.put_sql(sql)
+    |> Sanbase.Clickhouse.Query.add_parameter(:word, word)
   end
 
-  defp project_trending_history_query(slug, from, to, interval, size, sources) do
-    {query, args} = get_trending_words_query(from, to, interval, size, sources)
-    args_len = length(args)
-    next_pos = args_len + 1
+  defp project_trending_history_query(slug, from, to, interval, size, source) do
+    query_struct = get_trending_words_query(from, to, interval, size, source, :all)
 
-    query =
-      [
-        """
-        SELECT
-          t,
-          toUInt32(indexOf(groupArray(?#{args_len})(project), ?#{next_pos}))
-        FROM(
-        """,
-        query,
-        """
-        )
-        GROUP BY t
-        ORDER BY t
-        """
-      ]
-      |> to_string()
+    sql = """
+    SELECT
+      t,
+      toUInt32(indexOf(groupArray({{limit}})(project2), {{ticker_slug}})) AS pos_in_top_n
+    FROM ( #{query_struct.sql} )
+    GROUP BY t
+    ORDER BY t
+    """
 
-    ticker = Sanbase.Project.ticker_by_slug(slug)
+    ticker_slug = Sanbase.Project.ticker_by_slug(slug) <> "_" <> slug
 
-    args = args ++ [ticker <> "_" <> slug]
-    {query, args}
+    query_struct
+    |> Sanbase.Clickhouse.Query.put_sql(sql)
+    |> Sanbase.Clickhouse.Query.add_parameter(:ticker_slug, ticker_slug)
+  end
+
+  defp default_source do
+    case Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) do
+      "prod" -> "reddit,telegram,twitter_crypto"
+      _ -> "4chan,reddit,telegram"
+    end
   end
 end

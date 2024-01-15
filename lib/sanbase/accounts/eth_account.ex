@@ -108,7 +108,7 @@ defmodule Sanbase.Accounts.EthAccount do
   end
 
   defp calculate_san_staked(address_staked_tokens, _data_map) when address_staked_tokens == 0.0 do
-    0.0
+    +0.0
   end
 
   defp calculate_san_staked(address_staked_tokens, data_map) do

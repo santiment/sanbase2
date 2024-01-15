@@ -62,8 +62,9 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
       arg(:size, non_null(:integer))
+      arg(:word_type_filter, :trending_word_type_filter)
 
-      arg(:sources, list_of(:trending_words_sources), default_value: [:reddit, :telegram])
+      arg(:source, :trending_words_source)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, %{allow_realtime_data: true})
@@ -132,7 +133,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       * source - one of the following:
         1. TELEGRAM
         2. REDDIT
-        3. ALL
+        3. TWITTER_CRYPTO
+        4. ALL
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     """
@@ -140,9 +142,9 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       meta(access: :restricted)
 
       arg(:word, non_null(:string))
-      arg(:source, non_null(:trending_words_sources))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
+      arg(:source, :trending_words_source)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, %{allow_realtime_data: true})
@@ -166,7 +168,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       meta(access: :restricted)
 
       arg(:word, :string)
-      arg(:source, non_null(:trending_words_sources))
+      arg(:source, non_null(:trending_words_source))
       arg(:size, non_null(:integer))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -180,7 +182,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       meta(access: :restricted)
 
       arg(:selector, :word_selector_input_object)
-      arg(:source, non_null(:trending_words_sources))
+      arg(:source, non_null(:trending_words_source))
       arg(:size, non_null(:integer))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))

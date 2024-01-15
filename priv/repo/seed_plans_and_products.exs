@@ -1,6 +1,4 @@
-alias Sanbase.Repo
-
-Repo.query!("""
+Sanbase.Repo.query!("""
 INSERT INTO products (id, name, code) VALUES
   (1, 'Neuro by Santiment', 'SANAPI'),
   (2, 'Sanbase by Santiment', 'SANBASE'),
@@ -9,7 +7,7 @@ INSERT INTO products (id, name, code) VALUES
   ON CONFLICT DO NOTHING
 """)
 
-Repo.query!("""
+Sanbase.Repo.query!("""
 INSERT INTO plans (id, name, product_id, amount, currency, interval, "order") VALUES
   (1,'FREE',1,0,'USD','month',13),
   (101,'ESSENTIAL',1,16000,'USD','month',12),
@@ -25,11 +23,15 @@ INSERT INTO plans (id, name, product_id, amount, currency, interval, "order") VA
   (7,'PRO',1,387720,'USD','year',2),
   (8,'PREMIUM',1,776520,'USD','year',1),
   (11,'FREE',2,0,'USD','month',9),
-  (205,'BASIC',2,2500,'USD','month',9)
+  (205,'BASIC',2,2500,'USD','month',9),
   (201,'PRO',2,4900,'USD','month',8),
   (203,'PRO_PLUS',2,24900,'USD','month',7),
   (202,'PRO',2,52900,'USD','year',6),
   (204,'PRO_PLUS',2,270000,'USD','year',5),
+  (206,'PRO',2,1500,'USD','month',0),
+  (207,'PRO',2,15900,'USD','year',0),
+  (208,'PRO_PLUS',2,7500,'USD','month',0),
+  (209,'PRO_PLUS',2,81000,'USD','year',0),
   (41,'BASIC',4,5000,'USD','month',0),
   (42,'PRO',4,14000,'USD','month',0),
   (43,'PREMIUM',4,29000,'USD','month',0),

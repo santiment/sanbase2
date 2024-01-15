@@ -100,15 +100,16 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     end
   end
 
-  test "create watchlist", %{user: user, conn: conn} do
-    project = insert(:project)
+  test "create watchlist with project id and project slug", %{user: user, conn: conn} do
+    project1 = insert(:random_erc20_project)
+    project2 = insert(:random_erc20_project)
 
     query = """
     mutation {
       createWatchlist(
         name: "My list"
         description: "Description"
-        listItems: [{project_id: #{project.id}}]
+        listItems: [{project_id: #{project1.id}}, {slug: "#{project2.slug}"}]
         isScreener: true
         color: BLACK) {
           id
@@ -136,14 +137,19 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     assert watchlist["color"] == "BLACK"
     assert watchlist["is_public"] == false
     assert watchlist["user"]["id"] == user.id |> to_string()
-    assert watchlist["listItems"] == [%{"project" => %{"id" => "#{project.id}"}}]
+    assert length(watchlist["listItems"]) == 2
+
+    assert %{"project" => %{"id" => "#{project1.id}"}} in watchlist["listItems"]
+    assert %{"project" => %{"id" => "#{project2.id}"}} in watchlist["listItems"]
   end
 
   test "update watchlist", %{user: user, conn: conn} do
     {:ok, watchlist} = UserList.create_user_list(user, %{name: "My Test List"})
 
-    project = insert(:project)
-    insert(:latest_cmc_data, %{coinmarketcap_id: project.slug, price_usd: 0.5})
+    project1 = insert(:random_erc20_project)
+    project2 = insert(:random_erc20_project)
+
+    insert(:latest_cmc_data, %{coinmarketcap_id: project1.slug, price_usd: 0.5})
 
     update_name = "My updated list"
     update_description = "My updated description"
@@ -155,7 +161,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
         name: "#{update_name}"
         description: "#{update_description}"
         color: BLACK
-        listItems: [{project_id: #{project.id}}]
+        listItems: [{slug: "#{project2.slug}"}, {project_id: #{project1.id}}]
         isMonitored: true
       ) {
         name
@@ -183,8 +189,14 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     assert watchlist["isPublic"] == false
     assert watchlist["isMonitored"] == true
 
-    assert watchlist["listItems"] == [
-             %{"project" => %{"id" => project.id |> to_string(), "priceUsd" => 0.5}}
+    assert length(watchlist["listItems"]) == 2
+
+    assert %{"project" => %{"id" => "#{project1.id}", "priceUsd" => 0.5}} in watchlist[
+             "listItems"
+           ]
+
+    assert %{"project" => %{"id" => "#{project2.id}", "priceUsd" => nil}} in watchlist[
+             "listItems"
            ]
   end
 

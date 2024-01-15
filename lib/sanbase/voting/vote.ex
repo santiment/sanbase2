@@ -15,7 +15,6 @@ defmodule Sanbase.Vote do
   alias Sanbase.UserList
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Alert.UserTrigger
-  alias Sanbase.Dashboard
 
   @type vote_params :: %{
           :user_id => non_neg_integer(),
@@ -24,7 +23,8 @@ defmodule Sanbase.Vote do
           optional(:timeline_event_id) => non_neg_integer(),
           optional(:chart_configuration_id) => non_neg_integer(),
           optional(:user_trigger_id) => non_neg_integer(),
-          optional(:dashboard_id) => non_neg_integer()
+          optional(:dashboard_id) => non_neg_integer(),
+          optional(:query_id) => non_neg_integer()
         }
 
   @type vote_option ::
@@ -35,6 +35,7 @@ defmodule Sanbase.Vote do
           | {:chart_configuration_id, non_neg_integer()}
           | {:user_trigger_id, non_neg_integer()}
           | {:dashboard_id, non_neg_integer()}
+          | {:query_id, non_neg_integer()}
   @type vote_kw_list_params :: [vote_option]
 
   @max_votes 20
@@ -51,7 +52,8 @@ defmodule Sanbase.Vote do
     belongs_to(:chart_configuration, Chart.Configuration, foreign_key: :chart_configuration_id)
 
     belongs_to(:user_trigger, UserTrigger, foreign_key: :user_trigger_id)
-    belongs_to(:dashboard, Dashboard.Schema, foreign_key: :dashboard_id)
+    belongs_to(:dashboard, Sanbase.Queries.Dashboard, foreign_key: :dashboard_id)
+    belongs_to(:query, Sanbase.Queries.Query, foreign_key: :query_id)
 
     timestamps()
   end
@@ -59,14 +61,15 @@ defmodule Sanbase.Vote do
   def changeset(%__MODULE__{} = vote, attrs \\ %{}) do
     vote
     |> cast(attrs, [
+      :user_id,
+      :count,
       :post_id,
       :timeline_event_id,
       :chart_configuration_id,
       :user_trigger_id,
       :watchlist_id,
       :dashboard_id,
-      :user_id,
-      :count
+      :query_id
     ])
     |> validate_required([:user_id])
     |> unique_constraint(:post_id, name: :votes_post_id_user_id_index)
@@ -77,6 +80,7 @@ defmodule Sanbase.Vote do
     |> unique_constraint(:watchlist_id, name: :votes_watchlist_id_user_id_index)
     |> unique_constraint(:user_trigger_id, name: :votes_user_trigger_id_user_id_index)
     |> unique_constraint(:dashboard_id, name: :votes_dashboard_id_index)
+    |> unique_constraint(:query_id, name: :votes_query_id_index)
   end
 
   @doc ~s"""

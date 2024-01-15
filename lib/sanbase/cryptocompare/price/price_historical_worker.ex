@@ -48,6 +48,9 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
             log_time_spent(t1, t2, t3)
             result
 
+          :snooze ->
+            {:snooze, 86_400}
+
           {:error, error} ->
             {:error, error}
         end
@@ -155,15 +158,22 @@ defmodule Sanbase.Cryptocompare.Price.HistoricalWorker do
   end
 
   defp csv_to_ohlcv_list(data) do
-    result =
-      data
-      |> String.trim()
-      |> NimbleCSV.RFC4180.parse_string()
-      |> Enum.map(&csv_line_to_point/1)
+    case Jason.decode(data) do
+      {:ok, %{"Response" => "Error"}} ->
+        # The result is either a JSON error or CSV ok result
+        :snooze
 
-    case Enum.find_index(result, &(&1 == :error)) do
-      nil -> {:ok, result}
-      _index -> {:error, "[Cryptocompare Historical] NaN values found in place of prices"}
+      _ ->
+        result =
+          data
+          |> String.trim()
+          |> NimbleCSV.RFC4180.parse_string()
+          |> Enum.map(&csv_line_to_point/1)
+
+        case Enum.find_index(result, &(&1 == :error)) do
+          nil -> {:ok, result}
+          _index -> {:error, "[Cryptocompare Historical] NaN values found in place of prices"}
+        end
     end
   end
 

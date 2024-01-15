@@ -21,41 +21,54 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
 
   alias Sanbase.Utils.Config
   alias Sanbase.Cryptocompare.OpenInterestPoint
-  alias Sanbase.Cryptocompare.HTTPHeaderUtils
   alias Sanbase.Cryptocompare.ExporterProgress
+  alias Sanbase.Cryptocompare.Handler
 
   require Logger
 
   @url "https://data-api.cryptocompare.com/futures/v1/historical/open-interest/minutes"
-  @limit 2000
+  @default_limit 2000
   @oban_conf_name :oban_scrapers
   @topic :open_interest_topic
 
   def queue(), do: @queue
   def conf_name(), do: @oban_conf_name
+  def default_limit(), do: @default_limit
+
+  def pause_resume_worker(),
+    do: Sanbase.Cryptocompare.OpenInterest.PauseResumeWorker
+
+  def historical_scheduler(),
+    do: Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
     %{"market" => market, "instrument" => instrument, "timestamp" => timestamp} = args
 
-    limit = Map.get(args, "limit", @limit)
+    limit = Map.get(args, "limit", @default_limit)
 
     case get_data(market, instrument, limit, timestamp) do
-      {:ok, data} ->
+      {:ok, min_timestamp, []} when is_integer(min_timestamp) ->
+        :ok = maybe_schedule_next_job(min_timestamp, args)
+
+        :ok
+
+      {:ok, _min_timestamp, []} ->
+        :ok
+
+      {:ok, min_timestamp, data} ->
         :ok = export_data(data)
 
-        if data != [] do
-          {min, max} = Enum.min_max_by(data, & &1.timestamp)
-          :ok = maybe_schedule_next_job(min.timestamp, args)
+        {min, max} = Enum.min_max_by(data, & &1.timestamp)
+        :ok = maybe_schedule_next_job(min_timestamp, args)
 
-          {:ok, _} =
-            ExporterProgress.create_or_update(
-              "#{market}_#{instrument}",
-              to_string(@queue),
-              min.timestamp,
-              max.timestamp
-            )
-        end
+        {:ok, _} =
+          ExporterProgress.create_or_update(
+            "#{market}_#{instrument}",
+            to_string(@queue),
+            min.timestamp,
+            max.timestamp
+          )
 
         :ok
 
@@ -74,7 +87,9 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
   # Private functions
 
   @spec get_data(String.t(), String.t(), non_neg_integer(), non_neg_integer()) ::
-          {:error, HTTPoison.Error.t()} | {:ok, any}
+          {:error, HTTPoison.Error.t()}
+          | {:error, :first_timestamp_reached}
+          | {:ok, non_neg_integer(), any()}
   def get_data(market, instrument, limit, timestamp) do
     query_params = [
       market: market,
@@ -83,27 +98,16 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
       limit: limit
     ]
 
-    headers = [{"authorization", "Apikey #{api_key()}"}]
+    case Handler.execute_http_request(@url, query_params) do
+      {:ok, %{status_code: 200} = http_response} ->
+        Sanbase.Cryptocompare.Handler.handle_http_response(http_response,
+          module: __MODULE__,
+          timestamps_key: "#{market}_#{instrument}",
+          process_function: &process_json_response/1,
+          remove_known_timestamps: true
+        )
 
-    url = @url <> "?" <> URI.encode_query(query_params)
-
-    case HTTPoison.get(url, headers, recv_timeout: 15_000) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body} = resp} ->
-        case HTTPHeaderUtils.rate_limited?(resp) do
-          false ->
-            timestamps =
-              ExporterProgress.get_timestamps(
-                "#{market}_#{instrument}",
-                to_string(@queue)
-              )
-
-            process_json_response(body, timestamps)
-
-          {:error_limited, %{value: rate_limited_seconds}} ->
-            handle_rate_limit(rate_limited_seconds)
-        end
-
-      {:ok, %HTTPoison.Response{status_code: 404}} ->
+      {:ok, %{status_code: 404}} ->
         # The error is No HOUR entries available on or before <timestamp>
         {:error, :first_timestamp_reached}
 
@@ -112,23 +116,9 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
     end
   end
 
-  defp handle_rate_limit(rate_limited_seconds) do
-    Sanbase.Cryptocompare.OpenInterest.HistoricalScheduler.pause()
-
+  defp process_json_response(http_response_body) do
     data =
-      %{"type" => "resume"}
-      |> Sanbase.Cryptocompare.OpenInterest.PauseResumeWorker.new(
-        schedule_in: rate_limited_seconds
-      )
-
-    Oban.insert(@oban_conf_name, data)
-
-    {:error, :rate_limit}
-  end
-
-  defp process_json_response(json, timestamps) do
-    data =
-      json
+      http_response_body
       |> Jason.decode!()
       |> get_in(["Data"])
       |> Enum.map(fn map ->
@@ -137,7 +127,6 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
           market: map["MARKET"],
           instrument: map["INSTRUMENT"],
           mapped_instrument: map["MAPPED_INSTRUMENT"],
-          index_underlying: map["INDEX_UNDERLYING"],
           quote_currency: map["QUOTE_CURRENCY"],
           settlement_currency: map["SETTLEMENT_CURRENCY"],
           contract_currency: map["CONTRACT_CURRENCY"],
@@ -145,18 +134,6 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
           close_mark_price: map["CLOSE_MARK_PRICE"],
           close_quote: map["CLOSE_QUOTE"]
         }
-      end)
-      |> then(fn list ->
-        # Filter out all the data points for which we already have data.
-        # This works with the assumption that the data is exported in a
-        # specific way. The API accepts a timestamp and a limit and returns
-        # `limit` number of data points before `timestamp`. When this is done
-        # a new job is scheduled with the timestamp of the earliest data point,
-        # thus going back in history.
-        case timestamps do
-          nil -> list
-          {min, max} -> list |> Enum.reject(&(&1.timestamp in min..max))
-        end
       end)
 
     # Create a new job with `first_timetamp`
@@ -182,7 +159,7 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
         "instrument" => args["instrument"],
         "schedule_next_job" => true,
         "timestamp" => min_timestamp,
-        "limit" => @limit
+        "limit" => @default_limit
       }
       |> Sanbase.Cryptocompare.OpenInterest.HistoricalWorker.new()
 
@@ -206,6 +183,4 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
     |> OpenInterestPoint.new()
     |> OpenInterestPoint.json_kv_tuple()
   end
-
-  defp api_key(), do: Config.module_get(Sanbase.Cryptocompare, :api_key)
 end

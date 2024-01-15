@@ -17,20 +17,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
   end
 
   defp get_projects(args, paged_fun, fun) do
-    page = Map.get(args, :page)
-    page_size = Map.get(args, :page_size)
-    opts = Project.ListSelector.args_to_opts(args)
+    with {:ok, opts} <- Project.ListSelector.args_to_opts(args) do
+      page = Map.get(args, :page)
+      page_size = Map.get(args, :page_size)
 
-    projects =
-      if page_arguments_valid?(page, page_size) do
-        apply(Project.List, paged_fun, [page, page_size, opts])
-      else
-        apply(Project.List, fun, [opts])
-      end
+      projects =
+        if page_arguments_valid?(page, page_size) do
+          apply(Project.List, paged_fun, [page, page_size, opts])
+        else
+          apply(Project.List, fun, [opts])
+        end
 
-    projects = Enum.uniq_by(projects, & &1.id)
+      projects = Enum.uniq_by(projects, & &1.id)
 
-    {:ok, projects}
+      {:ok, projects}
+    end
   end
 
   def all_projects_by_function(_root, %{function: function}, _resolution) do
@@ -57,14 +58,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
   end
 
   def projects_count(_root, args, _resolution) do
-    opts = Project.ListSelector.args_to_opts(args)
-
-    {:ok,
-     %{
-       erc20_projects_count: Project.List.erc20_projects_count(opts),
-       currency_projects_count: Project.List.currency_projects_count(opts),
-       projects_count: Project.List.projects_count(opts)
-     }}
+    with {:ok, opts} <- Project.ListSelector.args_to_opts(args) do
+      {:ok,
+       %{
+         erc20_projects_count: Project.List.erc20_projects_count(opts),
+         currency_projects_count: Project.List.currency_projects_count(opts),
+         projects_count: Project.List.projects_count(opts)
+       }}
+    end
   end
 
   # Private functions

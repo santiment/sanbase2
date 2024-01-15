@@ -4,10 +4,15 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  enum :trending_words_sources do
+  enum :trending_word_type_filter do
+    value(:project)
+    value(:non_project)
+    value(:all)
+  end
+
+  enum :trending_words_source do
     value(:telegram)
-    value(:twitter)
-    value(:bitcointalk)
+    value(:twitter_crypto)
     value(:reddit)
     value(:all)
   end
@@ -75,6 +80,12 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:dominance, :float)
   end
 
+  object :trending_word_summary do
+    field(:source, non_null(:string))
+    field(:datetime, non_null(:datetime))
+    field(:summary, non_null(:string))
+  end
+
   object :trending_words do
     field(:datetime, non_null(:datetime))
     field(:top_words, list_of(:word_with_context))
@@ -86,18 +97,31 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   end
 
   object :word_with_context do
-    field :context, list_of(:word_context) do
-      cache_resolve(&SocialDataResolver.word_context/3)
+    field(:context, list_of(:word_context))
+    field(:score, non_null(:float))
+    field(:word, non_null(:string))
+    field(:positive_sentiment_ratio, :float)
+    field(:negative_sentiment_ratio, :float)
+    field(:neutral_sentiment_ratio, :float)
+    # bearish/bullish sentiment ratios
+    field(:positive_bb_sentiment_ratio, :float)
+    field(:negative_bb_sentiment_ratio, :float)
+    field(:neutral_bb_sentiment_ratio, :float)
+
+    field :project, :project do
+      cache_resolve(&SocialDataResolver.project_from_root_slug/3)
     end
 
-    field(:score, :float)
-    field(:word, :string)
+    field(:summary, non_null(:string))
+    field(:bullish_summary, non_null(:string))
+    field(:bearish_summary, non_null(:string))
+    field(:summaries, list_of(:trending_word_summary))
   end
 
   object :word_trend_score do
     field(:datetime, non_null(:datetime))
     field(:score, non_null(:float))
-    field(:source, :trending_words_sources)
+    field(:source, :trending_words_source)
   end
 
   object :word_context do

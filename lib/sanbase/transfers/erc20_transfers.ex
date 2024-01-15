@@ -29,9 +29,9 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   def top_wallet_transfers(wallets, contract, from, to, decimals, page, page_size, type)
       when is_non_neg_integer(page) and is_non_neg_integer(page_size) do
     opts = [page: page, page_size: page_size]
-    {query, args} = top_wallet_transfers_query(wallets, contract, from, to, decimals, type, opts)
+    query_struct = top_wallet_transfers_query(wallets, contract, from, to, decimals, type, opts)
 
-    ClickhouseRepo.query_transform(query, args, fn
+    ClickhouseRepo.query_transform(query_struct, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
         %{
           datetime: DateTime.from_unix!(timestamp),
@@ -61,11 +61,10 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   def top_transfers(contract, from, to, decimals, page, page_size, excluded_addresses \\ [])
       when is_non_neg_integer(page) and is_non_neg_integer(page_size) do
     opts = [page: page, page_size: page_size]
-    {query, args} = top_transfers_query(contract, from, to, decimals, excluded_addresses, opts)
+    query_struct = top_transfers_query(contract, from, to, decimals, excluded_addresses, opts)
 
     ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [datetime, from_address, to_address, trx_hash, trx_value] ->
         %{
           datetime: DateTime.from_unix!(datetime),
@@ -86,7 +85,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         to,
         interval
       ) do
-    {query, args} =
+    query_struct =
       blockchain_address_transaction_volume_over_time_query(
         addresses,
         contract,
@@ -97,8 +96,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       )
 
     ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [unix, incoming, outgoing] ->
         %{
           datetime: DateTime.from_unix!(unix),
@@ -111,12 +109,11 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   end
 
   def blockchain_address_transaction_volume(addresses, contract, decimals, from, to) do
-    {query, args} =
+    query_struct =
       blockchain_address_transaction_volume_query(addresses, contract, decimals, from, to)
 
     ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [address, incoming, outgoing] ->
         %{
           address: address,
@@ -138,9 +135,9 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         ) ::
           {:ok, list(map())} | {:error, String.t()}
   def recent_transactions(address, opts) do
-    {query, args} = recent_transactions_query(address, opts)
+    query_struct = recent_transactions_query(address, opts)
 
-    ClickhouseRepo.query_transform(query, args, fn
+    ClickhouseRepo.query_transform(query_struct, fn
       [timestamp, from_address, to_address, trx_hash, trx_value, name, decimals] ->
         %{
           datetime: DateTime.from_unix!(timestamp),
@@ -165,11 +162,10 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   # Private functions
 
   defp execute_transfers_summary_query(type, address, contract, decimals, from, to, opts) do
-    {query, args} = transfers_summary_query(type, address, contract, decimals, from, to, opts)
+    query_struct = transfers_summary_query(type, address, contract, decimals, from, to, opts)
 
     ClickhouseRepo.query_transform(
-      query,
-      args,
+      query_struct,
       fn [last_transfer_datetime, address, transaction_volume, transfers_count] ->
         %{
           last_transfer_datetime: DateTime.from_unix!(last_transfer_datetime),
@@ -182,63 +178,63 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   end
 
   defp top_wallet_transfers_query(wallets, contract, from, to, decimals, type, opts) do
-    query = """
+    sql = """
     SELECT
       toUnixTimestamp(dt),
       from,
       to,
       transactionHash,
-      (any(value) / ?7) AS value
+      (any(value) / {{decimals}}) AS value
     FROM erc20_transfers
-    PREWHERE
-      #{top_wallet_transfers_address_clause(type, arg_position: 1, trailing_and: true)}
-      assetRefId = cityHash64('ETH_' || ?2) AND
-      dt >= toDateTime(?3) AND
-      dt < toDateTime(?4)
+    WHERE
+      #{top_wallet_transfers_address_clause(type, argument_name: "wallets", trailing_and: true)}
+      assetRefId = cityHash64('ETH_' || {{contract}}) AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
     GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
     ORDER BY value DESC
-    LIMIT ?5 OFFSET ?6
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
     {limit, offset} = opts_to_limit_offset(opts)
 
-    args = [
-      wallets,
-      contract,
-      DateTime.to_unix(from),
-      DateTime.to_unix(to),
-      limit,
-      offset,
-      Sanbase.Math.ipow(10, decimals)
-    ]
+    params = %{
+      wallets: wallets,
+      contract: contract,
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      limit: limit,
+      offset: offset,
+      decimals: Sanbase.Math.ipow(10, decimals)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp top_wallet_transfers_address_clause(:in, opts) do
-    arg_position = Keyword.fetch!(opts, :arg_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
-    str = "from NOT IN (?#{arg_position}) AND to IN (?#{arg_position})"
+    str = "from NOT IN ({{#{arg_name}}}) AND to IN ({{#{arg_name}}})"
     if trailing_and, do: str <> " AND", else: str
   end
 
   defp top_wallet_transfers_address_clause(:out, opts) do
-    arg_position = Keyword.fetch!(opts, :arg_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
-    str = "from IN (?#{arg_position}) AND to NOT IN (?#{arg_position})"
+    str = "from IN ({{#{arg_name}}}) AND to NOT IN ({{#{arg_name}}})"
     if trailing_and, do: str <> " AND", else: str
   end
 
   defp top_wallet_transfers_address_clause(:all, opts) do
-    arg_position = Keyword.fetch!(opts, :arg_position)
+    arg_name = Keyword.fetch!(opts, :argument_name)
     trailing_and = Keyword.fetch!(opts, :trailing_and)
 
     str = """
     (
-      (from IN (?#{arg_position}) AND NOT to IN (?#{arg_position})) OR
-      (NOT from IN (?#{arg_position}) AND to IN (?#{arg_position}))
+      (from IN ({{#{arg_name}}}) AND NOT to IN ({{#{arg_name}}})) OR
+      (NOT from IN ({{#{arg_name}}}) AND to IN ({{#{arg_name}}}))
     )
     """
 
@@ -246,43 +242,40 @@ defmodule Sanbase.Transfers.Erc20Transfers do
   end
 
   defp top_transfers_query(contract, from, to, decimals, excluded_addresses, opts) do
-    query = """
+    sql = """
     SELECT
       toUnixTimestamp(dt) AS datetime,
       from,
       to,
       transactionHash,
-      (any(value) / ?1) AS value
+      (any(value) / {{decimals}}) AS value
     FROM #{dt_ordered_table()}
-    PREWHERE
-      assetRefId = cityHash64('ETH_' || ?2) AND
-      dt >= toDateTime(?3) AND
-      dt < toDateTime(?4)
-      #{maybe_exclude_addresses(excluded_addresses, arg_position: 7)}
+    WHERE
+      assetRefId = cityHash64('ETH_' || {{contract}}) AND
+      dt >= toDateTime({{from}}) AND
+      dt < toDateTime({{to}})
+      #{maybe_exclude_addresses(excluded_addresses, argument_name: "excluded_addresses")}
     GROUP BY assetRefId, from, to, dt, transactionHash
     ORDER BY value DESC
-    LIMIT ?5 OFFSET ?6
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
     {limit, offset} = opts_to_limit_offset(opts)
 
-    maybe_extra_params = if excluded_addresses == [], do: [], else: [excluded_addresses]
+    params = %{
+      decimals: Sanbase.Math.ipow(10, decimals),
+      contract: contract,
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      limit: limit,
+      offset: offset,
+      excluded_addresses: excluded_addresses
+    }
 
-    args =
-      [
-        Sanbase.Math.ipow(10, decimals),
-        contract,
-        DateTime.to_unix(from),
-        DateTime.to_unix(to),
-        limit,
-        offset
-      ] ++ maybe_extra_params
-
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp recent_transactions_query(address, opts) do
-    {limit, offset} = opts_to_limit_offset(opts)
     only_sender = Keyword.get(opts, :only_sender, false)
 
     maybe_union_with_to_table =
@@ -293,11 +286,11 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         false ->
           """
           UNION DISTINCT
-          SELECT * FROM erc20_transfers_to PREWHERE to = ?1
+          SELECT * FROM erc20_transfers_to WHERE to = {{address}}
           """
       end
 
-    query = """
+    sql = """
     SELECT
       toUnixTimestamp(dt) AS datetime,
       from,
@@ -309,7 +302,7 @@ defmodule Sanbase.Transfers.Erc20Transfers do
     FROM (
       SELECT assetRefId, from, to, dt, transactionHash, any(value) AS value
       FROM (
-        SELECT * FROM erc20_transfers PREWHERE from = ?1
+        SELECT * FROM erc20_transfers WHERE from = {{address}}
         #{maybe_union_with_to_table}
       )
       GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
@@ -319,20 +312,26 @@ defmodule Sanbase.Transfers.Erc20Transfers do
       FROM asset_metadata FINAL
     ) USING (assetRefId)
     ORDER BY dt DESC
-    LIMIT ?2 OFFSET ?3
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
-    args = [String.downcase(address), limit, offset]
+    {limit, offset} = opts_to_limit_offset(opts)
 
-    {query, args}
+    params = %{
+      address: Sanbase.BlockchainAddress.to_internal_format(address),
+      limit: limit,
+      offset: offset
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp maybe_exclude_addresses([], _opts), do: ""
 
   defp maybe_exclude_addresses([_ | _], opts) do
-    arg_position = Keyword.get(opts, :arg_position)
+    arg_name = Keyword.get(opts, :argument_name)
 
-    "AND (from NOT IN (?#{arg_position}) AND to NOT IN (?#{arg_position}))"
+    "AND (from NOT IN ({{#{arg_name}}}) AND to NOT IN ({{#{arg_name}}}))"
   end
 
   defp decimals(decimals) when is_integer(decimals) and decimals >= 0 do
@@ -363,23 +362,22 @@ defmodule Sanbase.Transfers.Erc20Transfers do
          from,
          to
        ) do
-    query = """
-    WITH ( pow(10, ?3) ) AS expanded_decimals
+    sql = """
     SELECT
       address,
-      SUM(incoming) / expanded_decimals AS incoming,
-      SUM(outgoing) / expanded_decimals AS outgoing
+      SUM(incoming) / {{decimals}} AS incoming,
+      SUM(outgoing) / {{decimals}} AS outgoing
     FROM (
       SELECT
         from AS address,
         0 AS incoming,
         any(value) AS outgoing
       FROM erc20_transfers
-      PREWHERE
-        from IN (?1) AND
-        assetRefId = cityHash64('ETH_' || ?2) AND
-        dt >= toDateTime(?4) AND
-        dt < toDateTime(?5)
+      WHERE
+        from IN ({{addresses}}) AND
+        assetRefId = cityHash64('ETH_' || {{contract}}) AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}})
       GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
 
       UNION ALL
@@ -389,25 +387,25 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         any(value) AS incoming,
         0 AS outgoing
       FROM erc20_transfers_to
-      PREWHERE
-        to in (?1) AND
-        assetRefId = cityHash64('ETH_' || ?2) AND
-        dt >= toDateTime(?4) AND
-        dt < toDateTime(?5)
+      WHERE
+        to IN ({{from}}) AND
+        assetRefId = cityHash64('ETH_' || {{contract}}) AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}})
       GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
     )
     GROUP BY address
     """
 
-    args = [
-      addresses,
-      contract,
-      decimals,
-      DateTime.to_unix(from),
-      DateTime.to_unix(to)
-    ]
+    params = %{
+      addresses: addresses,
+      contract: contract,
+      decimals: Sanbase.Math.ipow(10, decimals),
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp blockchain_address_transaction_volume_over_time_query(
@@ -418,23 +416,22 @@ defmodule Sanbase.Transfers.Erc20Transfers do
          to,
          interval
        ) do
-    query = """
-    WITH ( pow(10, ?4) ) AS expanded_decimals
+    sql = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-      SUM(incoming) / expanded_decimals AS incoming,
-      SUM(outgoing) / expanded_decimals AS outgoing
+      toUnixTimestamp(intDiv(toUInt32(dt), {{interval}}) * {{interval}}) AS time,
+      SUM(incoming) / {{decimals}} AS incoming,
+      SUM(outgoing) / {{decimals}} AS outgoing
     FROM (
       SELECT
         dt,
         0 AS incoming,
         any(value) AS outgoing
       FROM erc20_transfers
-      PREWHERE
-        from IN (?2) AND
-        assetRefId = cityHash64('ETH_' || ?3) AND
-        dt >= toDateTime(?5) AND
-        dt < toDateTime(?6)
+      WHERE
+        from IN ({{addresses}}) AND
+        assetRefId = cityHash64('ETH_' || {{contract}}) AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}})
       GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
 
       UNION ALL
@@ -444,22 +441,26 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         any(value) AS incoming,
         0 AS outgoing
       FROM erc20_transfers_to
-      PREWHERE
-        to in (?2) AND
-        assetRefId = cityHash64('ETH_' || ?3) AND
-        dt >= toDateTime(?5) AND
-        dt < toDateTime(?6)
+      WHERE
+        to in ({{addresses}}) AND
+        assetRefId = cityHash64('ETH_' || {{contract}}) AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}})
       GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
     )
     GROUP BY time
     """
 
-    from = DateTime.to_unix(from)
-    to = DateTime.to_unix(to)
-    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
-    args = [interval_sec, addresses, contract, decimals, from, to]
+    params = %{
+      interval: Sanbase.DateTimeUtils.str_to_sec(interval),
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      addresses: addresses,
+      contract: contract,
+      decimals: Sanbase.Math.ipow(10, decimals)
+    }
 
-    {query, args}
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 
   defp transfers_summary_query(type, address, contract, decimals, from, to, opts) do
@@ -469,36 +470,45 @@ defmodule Sanbase.Transfers.Erc20Transfers do
         :transfers_count -> "transfers_count"
       end
 
-    {limit, offset} = opts_to_limit_offset(opts)
-
     {select_column, filter_column, table} =
       case type do
         :incoming -> {"from", "to", "erc20_transfers_to"}
         :outgoing -> {"to", "from", "erc20_transfers"}
       end
 
-    query = """
+    sql = """
     SELECT
       toUnixTimestamp(max(dt)) AS last_transfer_datetime,
       "#{select_column}" AS address,
-      SUM(value) / ?1 AS transaction_volume,
+      SUM(value) / {{decimals}} AS transaction_volume,
       COUNT(*) AS transfers_count
     FROM (
       SELECT dt, from, to, any(value) AS value
       FROM #{table}
-      assetRefId = cityHash64('ETH_' || ?2) AND
-      #{filter_column} = ?3 AND
-      dt >= toDateTime(?4) AND
-      dt < toDateTime(?5)
+      WHERE
+        assetRefId = cityHash64('ETH_' || {{contract}}) AND
+        #{filter_column} = {{address}} AND
+        dt >= toDateTime({{from}}) AND
+        dt < toDateTime({{to}})
       GROUP BY assetRefId, from, to, dt, transactionHash, logIndex, primaryKey
     )
     GROUP BY "#{select_column}"
     ORDER BY #{order_by_str} DESC
-    LIMIT ?6 OFFSET ?7
+    LIMIT {{limit}} OFFSET {{offset}}
     """
 
-    args = [Sanbase.Math.ipow(10, decimals), contract, address, from, to, limit, offset]
+    {limit, offset} = opts_to_limit_offset(opts)
 
-    {query, args}
+    params = %{
+      decimals: Sanbase.Math.ipow(10, decimals),
+      contract: contract,
+      address: address,
+      from: DateTime.to_unix(from),
+      to: DateTime.to_unix(to),
+      limit: limit,
+      offset: offset
+    }
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

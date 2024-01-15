@@ -70,9 +70,9 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
   end
 
   def fetch_burn_trxs do
-    {query, args} = fetch_san_burns_query()
+    query_struct = fetch_san_burns_query()
 
-    ClickhouseRepo.query_transform(query, args, fn [timestamp, address, value, trx_id] ->
+    ClickhouseRepo.query_transform(query_struct, fn [timestamp, address, value, trx_id] ->
       %{
         trx_datetime: DateTime.from_unix!(timestamp),
         address: address,
@@ -121,16 +121,18 @@ defmodule Sanbase.Billing.Subscription.SanBurnCreditTransaction do
     Sanbase.StripeApi.add_credit(user.stripe_customer_id, -amount * 100, burn_trx.trx_hash)
   end
 
-  def fetch_san_burns_query() do
-    query = """
+  defp fetch_san_burns_query() do
+    sql = """
     SELECT toUnixTimestamp(dt), from, value / pow(10, 18), transactionHash
     FROM erc20_transfers_to
     WHERE
       dt > now() - INTERVAL 1 DAY AND
-      contract = ?1 AND
-      to = ?2
+      contract = {{contract}} AND
+      to = {{to}}
     """
 
-    {query, [@san_contract, @san_burn_address]}
+    params = %{contract: @san_contract, to: @san_burn_address}
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

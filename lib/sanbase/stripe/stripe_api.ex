@@ -3,6 +3,7 @@ defmodule Sanbase.StripeApi do
   Module wrapping communication with Stripe.
   """
 
+  alias Sanbase.Billing
   alias Sanbase.Billing.{Product, Plan}
   alias Sanbase.Accounts.User
 
@@ -12,6 +13,43 @@ defmodule Sanbase.StripeApi do
           customer: String.t(),
           items: list(subscription_item)
         }
+
+  def attach_payment_method_to_customer(user, payment_method_id) do
+    # Step 1: Attach payment method to the customer
+    {:ok, user} = Billing.create_or_update_stripe_customer(user)
+
+    params = %{
+      customer: user.stripe_customer_id,
+      payment_method: payment_method_id
+    }
+
+    Stripe.PaymentMethod.attach(params)
+
+    # Step 2: Set this payment method as default for the customer
+    update_params = %{
+      invoice_settings: %{default_payment_method: payment_method_id}
+    }
+
+    Stripe.Customer.update(user.stripe_customer_id, update_params)
+  end
+
+  # Stripe docs: https://stripe.com/docs/payments/setupintents/lifecycle
+  # Stripe API: https://stripe.com/docs/api/setup_intents
+  def create_setup_intent(%User{} = user) do
+    case Billing.create_or_update_stripe_customer(user) do
+      {:ok, user} ->
+        Stripe.SetupIntent.create(%{
+          customer: user.stripe_customer_id,
+          usage: "off_session",
+          automatic_payment_methods: %{
+            enabled: true
+          }
+        })
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
   @spec create_customer(%User{}, nil | String.t()) ::
           {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
@@ -30,7 +68,7 @@ defmodule Sanbase.StripeApi do
     })
   end
 
-  @spec update_customer(%User{}, String.t()) ::
+  @spec update_customer(%User{stripe_customer_id: binary()}, String.t()) ::
           {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
   def update_customer(%User{stripe_customer_id: stripe_customer_id}, card_token)
       when is_binary(stripe_customer_id) do

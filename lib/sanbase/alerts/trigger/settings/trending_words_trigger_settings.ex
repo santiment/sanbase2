@@ -66,7 +66,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
 
   @spec get_data(%__MODULE__{}) :: TrendingWords.result()
   def get_data(%__MODULE__{}) do
-    TrendingWords.get_currently_trending_words(@trending_words_size)
+    TrendingWords.get_currently_trending_words(@trending_words_size, :all)
   end
 
   # private functions
@@ -79,7 +79,8 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%TrendingWordsTriggerSettings{filtered_target: %{list: []}} = settings, _trigger) do
-      %TrendingWordsTriggerSettings{settings | triggered?: false}
+      settings = %TrendingWordsTriggerSettings{settings | triggered?: false}
+      {:ok, settings}
     end
 
     def evaluate(%TrendingWordsTriggerSettings{} = settings, _trigger) do
@@ -88,7 +89,8 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
           build_result(top_words, settings)
 
         _ ->
-          %TrendingWordsTriggerSettings{settings | triggered?: false}
+          settings = %TrendingWordsTriggerSettings{settings | triggered?: false}
+          {:ok, settings}
       end
     end
 
@@ -104,14 +106,17 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       now = Time.utc_now()
       after_15_mins = Time.add(now, 15 * 60, :second)
 
-      case Sanbase.DateTimeUtils.time_in_range?(trigger_time, now, after_15_mins) do
-        true ->
-          template_kv = %{settings.target => template_kv(settings, top_words)}
-          %TrendingWordsTriggerSettings{settings | triggered?: true, template_kv: template_kv}
+      settings =
+        case Sanbase.DateTimeUtils.time_in_range?(trigger_time, now, after_15_mins) do
+          true ->
+            template_kv = %{settings.target => template_kv(settings, top_words)}
+            %TrendingWordsTriggerSettings{settings | triggered?: true, template_kv: template_kv}
 
-        false ->
-          %TrendingWordsTriggerSettings{settings | triggered?: false}
-      end
+          false ->
+            %TrendingWordsTriggerSettings{settings | triggered?: false}
+        end
+
+      {:ok, settings}
     end
 
     defp build_result(
@@ -124,14 +129,17 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
         MapSet.intersection(MapSet.new(top_words), MapSet.new(words))
         |> Enum.to_list()
 
-      case trending_words do
-        [] ->
-          %TrendingWordsTriggerSettings{settings | triggered?: false}
+      settings =
+        case trending_words do
+          [] ->
+            %TrendingWordsTriggerSettings{settings | triggered?: false}
 
-        [_ | _] = words ->
-          template_kv = %{words => template_kv(settings, words)}
-          %TrendingWordsTriggerSettings{settings | triggered?: true, template_kv: template_kv}
-      end
+          [_ | _] = words ->
+            template_kv = %{words => template_kv(settings, words)}
+            %TrendingWordsTriggerSettings{settings | triggered?: true, template_kv: template_kv}
+        end
+
+      {:ok, settings}
     end
 
     defp build_result(
@@ -152,27 +160,30 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
       trending_words_mapset =
         MapSet.intersection(MapSet.new(top_words), MapSet.new(project_words))
 
-      case Enum.empty?(trending_words_mapset) do
-        true ->
-          # If there are no trending words in the intersection there is no
-          # point of checking the projects separately
-          %TrendingWordsTriggerSettings{settings | triggered?: false}
+      settings =
+        case Enum.empty?(trending_words_mapset) do
+          true ->
+            # If there are no trending words in the intersection there is no
+            # point of checking the projects separately
+            %TrendingWordsTriggerSettings{settings | triggered?: false}
 
-        false ->
-          template_kv =
-            Enum.reduce(projects, %{}, fn project, acc ->
-              case Project.is_trending?(project, trending_words_mapset) do
-                true -> Map.put(acc, project.slug, template_kv(settings, project))
-                false -> acc
-              end
-            end)
+          false ->
+            template_kv =
+              Enum.reduce(projects, %{}, fn project, acc ->
+                case Project.is_trending?(project, trending_words_mapset) do
+                  true -> Map.put(acc, project.slug, template_kv(settings, project))
+                  false -> acc
+                end
+              end)
 
-          %TrendingWordsTriggerSettings{
-            settings
-            | triggered?: template_kv != %{},
-              template_kv: template_kv
-          }
-      end
+            %TrendingWordsTriggerSettings{
+              settings
+              | triggered?: template_kv != %{},
+                template_kv: template_kv
+            }
+        end
+
+      {:ok, settings}
     end
 
     defp template_kv(

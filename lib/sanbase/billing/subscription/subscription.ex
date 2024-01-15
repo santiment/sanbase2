@@ -25,13 +25,17 @@ defmodule Sanbase.Billing.Subscription do
   Please, contact administrator of the site for more information.
   """
   @product_sanbase Product.product_sanbase()
+  @product_api Product.product_api()
   @sanbase_basic_plan_id 205
   @preload_fields [:user, plan: [:product]]
-  @during_trial_discount_percent_off 50
-  @one_month_trial_discount_percent_off 35
-  @one_month_discount_days 30
   @trial_days 14
-  @annual_discount_plan_ids [202]
+
+  # Unused due to disabling of annual discounts
+  # @one_month_discount_days 30
+  # @during_trial_discount_percent_off 50
+
+  # @one_month_trial_discount_percent_off 35
+  # @annual_discount_plan_ids [202]
 
   schema "subscriptions" do
     field(:stripe_id, :string)
@@ -137,16 +141,42 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       if db_subscription.status == :active do
-        maybe_delete_trialing_subscriptions(user.id)
+        maybe_delete_trialing_subscriptions(user.id, plan)
       end
 
       {:ok, default_preload(db_subscription, force: true)}
     end
   end
 
-  def maybe_delete_trialing_subscriptions(user_id) do
+  @doc """
+  Subscribe user with payment_method_id to a plan.
+  """
+  def subscribe2(user, plan, payment_method_id, coupon \\ nil) do
+    with :ok <- has_active_subscriptions(user, plan),
+         {:ok, _} <- StripeApi.attach_payment_method_to_customer(user, payment_method_id),
+         {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
+         {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan) do
+      if db_subscription.status == :active do
+        maybe_delete_trialing_subscriptions(user.id, plan)
+      end
+
+      {:ok, default_preload(db_subscription, force: true)}
+    end
+  end
+
+  def maybe_delete_trialing_subscriptions(user_id, %Plan{product_id: product_id})
+      when product_id == @product_sanbase do
     __MODULE__
-    |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, Product.product_sanbase())
+    |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, @product_sanbase)
+    |> Repo.all()
+    |> Enum.filter(fn subscription -> subscription.status == :trialing end)
+    |> Enum.each(fn subscription -> StripeApi.delete_subscription(subscription.stripe_id) end)
+  end
+
+  def maybe_delete_trialing_subscriptions(user_id, %Plan{product_id: product_id})
+      when product_id == @product_api do
+    __MODULE__
+    |> __MODULE__.Query.user_has_any_subscriptions_for_product(user_id, @product_api)
     |> Repo.all()
     |> Enum.filter(fn subscription -> subscription.status == :trialing end)
     |> Enum.each(fn subscription -> StripeApi.delete_subscription(subscription.stripe_id) end)
@@ -159,7 +189,10 @@ defmodule Sanbase.Billing.Subscription do
   Stripe docs: https://stripe.com/docs/billing/subscriptions/upgrading-downgrading#switching
   """
   def update_subscription(%__MODULE__{} = db_subscription, plan) do
-    with {:ok, stripe_subscription} <- StripeApi.upgrade_downgrade(db_subscription, plan),
+    # don't allow upgrade/downgrade for incomplete and canceled subscriptions
+    with false <-
+           db_subscription.status in [:incomplete, :incomplete_expired, :canceled, :unpaid],
+         {:ok, stripe_subscription} <- StripeApi.upgrade_downgrade(db_subscription, plan),
          {:ok, db_subscription} <-
            sync_subscription_with_stripe(stripe_subscription, db_subscription),
          db_subscription <- default_preload(db_subscription, force: true) do
@@ -222,6 +255,38 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
+  def pay_now(current_user, subscription_id) do
+    subscription = by_id(subscription_id)
+
+    case subscription.user_id != current_user.id do
+      true ->
+        {:error, "User is not authorized to pay for this subscription"}
+
+      false ->
+        pay_now(subscription)
+    end
+  end
+
+  def pay_now(subscription) do
+    case subscription.status do
+      :trialing -> end_trial(subscription)
+      _ -> {:error, "Subscription is not trialing"}
+    end
+  end
+
+  def end_trial(subscription) do
+    trial_end_unix = Timex.now() |> DateTime.to_unix()
+
+    with {:ok, stripe_subscription} <-
+           StripeApi.update_subscription(subscription.stripe_id, %{trial_end: trial_end_unix}),
+         {:ok, db_subscription} <-
+           sync_subscription_with_stripe(stripe_subscription, subscription) do
+      {:ok, db_subscription}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @doc ~s"""
   50% off if customer buys annual subscription while trialing
   35% if customer buys annual subscription within 30 days of the trial start date
@@ -233,7 +298,9 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.one()
     |> case do
       %__MODULE__{trial_end: trial_end} when not is_nil(trial_end) ->
-        do_check_eligibility(trial_end)
+        # Removing annual discount eligibility temporally
+        # do_check_eligibility(trial_end)
+        %{is_eligible: false}
 
       _ ->
         %{is_eligible: false}
@@ -452,7 +519,8 @@ defmodule Sanbase.Billing.Subscription do
       |> percent_discount()
 
     # recalc percent off if customer buys annual subscription and is within 30 days from trial start date
-    percent_off = recalc_percent_off(user.id, plan.id) || percent_off
+    # comment temporarily until we decide to bring the annual discounts back
+    # percent_off = recalc_percent_off(user.id, plan.id) || percent_off
 
     subscription_defaults(user, plan)
     |> update_subscription_with_coupon(percent_off)
@@ -475,26 +543,24 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   defp subscription_defaults(user, %Plan{product_id: product_id} = plan)
-       when product_id == @product_sanbase do
+       when product_id in [@product_sanbase, @product_api] do
     defaults = %{
       customer: user.stripe_customer_id,
       items: [%{plan: plan.stripe_id}]
     }
 
-    defaults =
-      case Billing.eligible_for_sanbase_trial?(user.id) do
-        true ->
-          Map.put(
-            defaults,
-            :trial_end,
-            Sanbase.DateTimeUtils.days_after(14) |> DateTime.to_unix()
-          )
+    trial_end_unix = Sanbase.DateTimeUtils.days_after(@trial_days) |> DateTime.to_unix()
 
-        false ->
-          defaults
-      end
+    cond do
+      product_id == @product_sanbase and Billing.eligible_for_sanbase_trial?(user.id) ->
+        Map.put(defaults, :trial_end, trial_end_unix)
 
-    defaults
+      product_id == @product_api and Billing.eligible_for_api_trial?(user.id) ->
+        Map.put(defaults, :trial_end, trial_end_unix)
+
+      true ->
+        defaults
+    end
   end
 
   defp subscription_defaults(user, plan) do
@@ -556,39 +622,39 @@ defmodule Sanbase.Billing.Subscription do
   defp format_trial_end(nil), do: nil
   defp format_trial_end(trial_end), do: DateTime.from_unix!(trial_end)
 
-  defp do_check_eligibility(trial_end) do
-    now = DateTime.utc_now()
+  # defp do_check_eligibility(trial_end) do
+  #   now = DateTime.utc_now()
 
-    one_month_discount_expires_seconds = (@one_month_discount_days - @trial_days) * 24 * 3600
+  #   one_month_discount_expires_seconds = (@one_month_discount_days - @trial_days) * 24 * 3600
 
-    cond do
-      DateTime.diff(trial_end, now) > 0 ->
-        %{
-          is_eligible: true,
-          discount: %{percent_off: @during_trial_discount_percent_off, expire_at: trial_end}
-        }
+  #   cond do
+  #     DateTime.diff(trial_end, now) > 0 ->
+  #       %{
+  #         is_eligible: true,
+  #         discount: %{percent_off: @during_trial_discount_percent_off, expire_at: trial_end}
+  #       }
 
-      DateTime.diff(now, trial_end) < one_month_discount_expires_seconds ->
-        %{
-          is_eligible: true,
-          discount: %{
-            percent_off: @one_month_trial_discount_percent_off,
-            expire_at: DateTime.add(trial_end, one_month_discount_expires_seconds, :second)
-          }
-        }
+  #     DateTime.diff(now, trial_end) < one_month_discount_expires_seconds ->
+  #       %{
+  #         is_eligible: true,
+  #         discount: %{
+  #           percent_off: @one_month_trial_discount_percent_off,
+  #           expire_at: DateTime.add(trial_end, one_month_discount_expires_seconds, :second)
+  #         }
+  #       }
 
-      true ->
-        %{is_eligible: false}
-    end
-  end
+  #     true ->
+  #       %{is_eligible: false}
+  #   end
+  # end
 
-  defp recalc_percent_off(_user_id, plan_id) when plan_id not in @annual_discount_plan_ids,
-    do: nil
+  # defp recalc_percent_off(_user_id, plan_id) when plan_id not in @annual_discount_plan_ids,
+  #   do: nil
 
-  defp recalc_percent_off(user_id, plan_id) when plan_id in @annual_discount_plan_ids do
-    case annual_discount_eligibility(user_id) do
-      %{is_eligible: true, discount: %{percent_off: percent_off}} -> percent_off
-      %{is_eligible: false} -> nil
-    end
-  end
+  # defp recalc_percent_off(user_id, plan_id) when plan_id in @annual_discount_plan_ids do
+  #   case annual_discount_eligibility(user_id) do
+  #     %{is_eligible: true, discount: %{percent_off: percent_off}} -> percent_off
+  #     %{is_eligible: false} -> nil
+  #   end
+  # end
 end

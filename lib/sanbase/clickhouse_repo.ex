@@ -1,6 +1,12 @@
 defmodule Sanbase.ClickhouseRepo do
-  # Clickhouse tests are done only through mocking the results.
-  require Application
+  @moduledoc ~s"""
+  Module for interacting with the Clickhouse database.
+
+  In case a read-only user is needed (as when the query to be executed
+  is provided by an external user), dynamically switch the pool of
+  connections with the one of a user with RO permissions:
+  `Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)`
+  """
 
   env = Application.compile_env(:sanbase, :env)
   @adapter if env == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
@@ -41,14 +47,18 @@ defmodule Sanbase.ClickhouseRepo do
   @spec query_transform(String.t(), list(), (list() -> list())) ::
           {:ok, any()} | {:error, String.t()}
   def query_transform(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
-    %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
-    query_transform(sql, args, transform_fn)
+    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
+      query_transform(sql, args, transform_fn)
+    end
   end
 
   def query_transform(query, args, transform_fn) do
     case execute_query_transform(query, args) do
-      {:ok, result} -> {:ok, Enum.map(result.rows, transform_fn)}
-      {:error, error} -> {:error, error}
+      {:ok, result} ->
+        {:ok, Enum.map(result.rows, transform_fn)}
+
+      {:error, error} ->
+        {:error, error}
     end
   rescue
     e ->
@@ -65,8 +75,9 @@ defmodule Sanbase.ClickhouseRepo do
   @spec query_transform_with_metadata(String.t(), list(), (list() -> list())) ::
           {:ok, Map.t()} | {:error, String.t()}
   def query_transform_with_metadata(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
-    %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
-    query_transform_with_metadata(sql, args, transform_fn)
+    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
+      query_transform_with_metadata(sql, args, transform_fn)
+    end
   end
 
   def query_transform_with_metadata(query, args, transform_fn) do
@@ -102,8 +113,9 @@ defmodule Sanbase.ClickhouseRepo do
           {:ok, Map.t()} | {:error, String.t()}
         when acc: any
   def query_reduce(%Sanbase.Clickhouse.Query{} = query, init, reducer) do
-    %{sql: sql, args: args} = Sanbase.Clickhouse.Query.get_sql_args(query)
-    query_reduce(sql, args, init, reducer)
+    with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do
+      query_reduce(sql, args, init, reducer)
+    end
   end
 
   def query_reduce(query, args, init, reducer) do
@@ -113,8 +125,11 @@ defmodule Sanbase.ClickhouseRepo do
     maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
 
     case __MODULE__.query(sanitized_query, ordered_params) do
-      {:ok, result} -> {:ok, Enum.reduce(result.rows, init, reducer)}
-      {:error, error} -> log_and_return_error(error, "query_reduce/4")
+      {:ok, result} ->
+        {:ok, Enum.reduce(result.rows, init, reducer)}
+
+      {:error, error} ->
+        log_and_return_error(error, "query_reduce/4")
     end
   rescue
     e ->
@@ -183,7 +198,7 @@ defmodule Sanbase.ClickhouseRepo do
   end
 
   @doc ~s"""
-  Add artificial support for positional paramters. Extract all occurences of `?1`,
+  Add artificial support for positional parameters. Extract all occurences of `?1`,
   `?2`, etc. in the query and reorder and duplicate the params so every param
   in the list appears in order as if every positional param is just `?`
   """
@@ -228,7 +243,8 @@ defmodule Sanbase.ClickhouseRepo do
     end
   end
 
-  defp extract_error_from_error(%Clickhousex.Error{message: message}) do
+  # %Clickhousex.Error{} is causing some errors
+  defp extract_error_from_error(%_{message: message}) do
     transform_error_string(message)
   end
 
@@ -264,12 +280,12 @@ defmodule Sanbase.ClickhouseRepo do
 
   # If the `__store_executed_clickhouse_sql__` flag is set to true
   # from the MetricResolver module, store the executed SQL query
-  # after interpolating the paramters in it.
+  # after interpolating the parameters in it.
   defp maybe_store_executed_clickhouse_sql(query, params) do
     if Process.get(:__store_executed_clickhouse_sql__, false) do
       list = Process.get(:__executed_clickhouse_sql_list__, [])
 
-      # Interpolate the paramters inside the query so it is easy to copy-paste
+      # Interpolate the parameters inside the query so it is easy to copy-paste
       interpolated_query =
         Clickhousex.Codec.Values.encode(
           %Clickhousex.Query{param_count: length(params)},

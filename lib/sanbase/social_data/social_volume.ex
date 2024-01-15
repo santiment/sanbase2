@@ -94,6 +94,8 @@ defmodule Sanbase.SocialData.SocialVolume do
     end
   end
 
+  defp maybe_format_response(_data, [] = _words), do: %{}
+
   defp maybe_format_response(data, words) do
     # Metricshub returns different format when a single word is provided.
     # Unify both responses so the result is handled easily
@@ -153,16 +155,17 @@ defmodule Sanbase.SocialData.SocialVolume do
     with {:ok, search_text} <- SocialHelper.social_metrics_selector_handler(selector) do
       url = Path.join([metrics_hub_url(), opts_to_metric(opts)])
 
-      options = [
-        recv_timeout: @recv_timeout,
-        params: [
-          {"search_text", search_text},
-          {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
-          {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
-          {"interval", interval},
-          {"source", source}
+      options =
+        [
+          recv_timeout: @recv_timeout,
+          params: [
+            {"search_text", search_text},
+            {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+            {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+            {"interval", interval},
+            {"source", source}
+          ]
         ]
-      ]
 
       http_client().get(url, [], options)
     end

@@ -30,7 +30,8 @@ defmodule Sanbase.Entity do
   alias Sanbase.Chart
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
-  alias Sanbase.Dashboard
+  alias Sanbase.Queries.Query
+  alias Sanbase.Queries.Dashboard
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Accounts.Interaction
 
@@ -53,7 +54,8 @@ defmodule Sanbase.Entity do
     :screener,
     :chart_configuration,
     :user_trigger,
-    :dashboard
+    :dashboard,
+    :query
   ]
 
   @type entity_type ::
@@ -63,6 +65,7 @@ defmodule Sanbase.Entity do
           | :chart_configuration
           | :user_trigger
           | :dashboard
+          | :query
 
   @type option ::
           {:page, non_neg_integer()}
@@ -78,7 +81,8 @@ defmodule Sanbase.Entity do
           optional(:address_watchlist) => %UserTrigger{},
           optional(:chart_configuration) => %Chart.Configuration{},
           optional(:user_trigger) => %UserTrigger{},
-          optional(:dashboard) => %Dashboard.Schema{}
+          optional(:dashboard) => %Dashboard{},
+          optional(:query) => %Query{}
         }
 
   @doc ~s"""
@@ -178,6 +182,7 @@ defmodule Sanbase.Entity do
   def deduce_entity_vote_field(:screener), do: :watchlist_id
   def deduce_entity_vote_field(:chart_configuration), do: :chart_configuration_id
   def deduce_entity_vote_field(:dashboard), do: :dashboard_id
+  def deduce_entity_vote_field(:query), do: :query_id
   def deduce_entity_vote_field(:timeline_event), do: :timeline_event_id
 
   # This needs to stay here even though it's not a supported entity type by the
@@ -192,7 +197,8 @@ defmodule Sanbase.Entity do
   def deduce_entity_module(:user_trigger), do: UserTrigger
   def deduce_entity_module(:insight), do: Post
   def deduce_entity_module(:chart_configuration), do: Chart.Configuration
-  def deduce_entity_module(:dashboard), do: Dashboard.Schema
+  def deduce_entity_module(:dashboard), do: Dashboard
+  def deduce_entity_module(:query), do: Query
 
   def by_id(entity_type, entity_id) do
     module = deduce_entity_module(entity_type)
@@ -348,7 +354,8 @@ defmodule Sanbase.Entity do
           v.watchlist_id,
           v.chart_configuration_id,
           v.user_trigger_id,
-          v.dashboard_id
+          v.dashboard_id,
+          v.query_id
         ]
       )
       |> paginate(opts)
@@ -590,6 +597,7 @@ defmodule Sanbase.Entity do
     chart_configuration_ids = ids_map["chart_configuration"] || []
     user_trigger_ids = ids_map["user_trigger"] || []
     dashboard_ids = ids_map["dashboard"] || []
+    query_ids = ids_map["query"] || []
 
     from(v in query,
       where:
@@ -597,7 +605,8 @@ defmodule Sanbase.Entity do
           v.watchlist_id in ^watchlist_ids or
           v.chart_configuration_id in ^chart_configuration_ids or
           v.user_trigger_id in ^user_trigger_ids or
-          v.dashboard_id in ^dashboard_ids
+          v.dashboard_id in ^dashboard_ids or
+          v.query_id in ^query_ids
     )
   end
 
@@ -775,13 +784,32 @@ defmodule Sanbase.Entity do
 
     case {include_current_user_entities, include_public_entities} do
       {false, true} ->
-        Dashboard.Schema.public_entity_ids_query(entity_opts)
+        Dashboard.public_entity_ids_query(entity_opts)
 
       {true, false} ->
-        Dashboard.Schema.user_entity_ids_query(current_user_id, entity_opts)
+        Dashboard.user_entity_ids_query(current_user_id, entity_opts)
 
       {true, true} ->
-        Dashboard.Schema.public_and_user_entity_ids_query(current_user_id, entity_opts)
+        Dashboard.public_and_user_entity_ids_query(current_user_id, entity_opts)
+    end
+  end
+
+  defp entity_ids_query(:query, opts) do
+    entity_opts = Keyword.take(opts, @passed_opts)
+
+    current_user_id = Keyword.get(opts, :current_user_id)
+    include_current_user_entities = Keyword.fetch!(opts, :include_current_user_entities)
+    include_public_entities = Keyword.fetch!(opts, :include_public_entities)
+
+    case {include_current_user_entities, include_public_entities} do
+      {false, true} ->
+        Query.public_entity_ids_query(entity_opts)
+
+      {true, false} ->
+        Query.user_entity_ids_query(current_user_id, entity_opts)
+
+      {true, true} ->
+        Query.public_and_user_entity_ids_query(current_user_id, entity_opts)
     end
   end
 

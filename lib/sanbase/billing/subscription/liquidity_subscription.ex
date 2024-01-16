@@ -66,7 +66,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   @spec eligible_for_liquidity_subscription?(non_neg_integer()) :: boolean()
   def eligible_for_liquidity_subscription?(user_id) do
     !user_has_active_sanbase_subscriptions?(user_id) and
-      (user_staked_in_uniswap_v2(user_id) || user_staked_in_uniswap_v3(user_id))
+      (user_staked_in_uniswap_v2(user_id) or user_staked_in_uniswap_v3(user_id))
   end
 
   def user_staked_in_uniswap_v2(user_id) do

@@ -156,7 +156,7 @@ defmodule Sanbase.Mixfile do
       {:rexbug, ">= 1.0.0"},
       {:rustler, "~> 0.24"},
       {:san_exporter_ex, github: "santiment/san-exporter-ex"},
-      {:sentry, "~> 8.0"},
+      {:sentry, "~> 10.0"},
       {:snappyer, github: "zmstone/snappyer", override: true},
       {:stream_data, "~> 0.5", only: :test},
       {:stripity_stripe, "~> 2.9"},

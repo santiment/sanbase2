@@ -70,6 +70,5 @@ if config_env() == :prod do
     root_source_code_path: File.cwd!(),
     tags: %{
       env: "production"
-    },
-    included_environments: [:prod]
+    }
 end

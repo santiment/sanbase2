@@ -11,23 +11,6 @@ defmodule Sanbase.SmartContracts.UniswapV3 do
   }
   """
 
-  def get_all_deposited_san_tokens() do
-    get_uniswap_v3_nfts(%{first: 100, skip: 0})
-  end
-
-  defp get_uniswap_v3_nfts(%{first: first, skip: skip}, acc \\ []) do
-    case fetch(%{pool: @uniswap_v3_san_weth_pool, first: first, skip: skip}) do
-      {:ok, %{"positions" => []}} ->
-        acc
-
-      {:ok, %{"positions" => positions}} ->
-        get_uniswap_v3_nfts(%{first: first, skip: skip + first}, acc ++ positions)
-
-      _ ->
-        []
-    end
-  end
-
   def get_deposited_san_tokens(address) do
     address = String.downcase(address)
     positions = get_all_deposited_san_tokens()
@@ -45,6 +28,23 @@ defmodule Sanbase.SmartContracts.UniswapV3 do
       end)
 
     positions_map |> Map.get(address, 0)
+  end
+
+  def get_all_deposited_san_tokens() do
+    get_uniswap_v3_nfts(%{first: 100, skip: 0})
+  end
+
+  defp get_uniswap_v3_nfts(%{first: first, skip: skip}, acc \\ []) do
+    case fetch(%{pool: @uniswap_v3_san_weth_pool, first: first, skip: skip}) do
+      {:ok, %{"positions" => []}} ->
+        acc
+
+      {:ok, %{"positions" => positions}} ->
+        get_uniswap_v3_nfts(%{first: first, skip: skip + first}, acc ++ positions)
+
+      _ ->
+        []
+    end
   end
 
   def fetch(variables) do

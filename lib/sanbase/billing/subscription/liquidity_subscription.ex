@@ -11,6 +11,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   # SAN stake required for free subscription. We advertise 3000 SAN
   # but require >= 2000 due to possible fluctuations of staked amount in pools.
   @san_stake_required_liquidity_sub 2000
+  @san_stake_required_liquidity_sub_v3 2999
   @san_stake_free_plan Sanbase.Billing.Plan.Metadata.current_san_stake_plan()
 
   @spec create_liquidity_subscription(non_neg_integer()) ::
@@ -65,8 +66,22 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   @spec eligible_for_liquidity_subscription?(non_neg_integer()) :: boolean()
   def eligible_for_liquidity_subscription?(user_id) do
     !user_has_active_sanbase_subscriptions?(user_id) and
-      User.UniswapStaking.fetch_uniswap_san_staked_user(user_id) >=
-        @san_stake_required_liquidity_sub
+      (user_staked_in_uniswap_v2(user_id) || user_staked_in_uniswap_v3(user_id))
+  end
+
+  def user_staked_in_uniswap_v2(user_id) do
+    User.UniswapStaking.fetch_uniswap_san_staked_user(user_id) >=
+      @san_stake_required_liquidity_sub
+  end
+
+  def user_staked_in_uniswap_v3(user_id) do
+    addresses = Sanbase.Accounts.EthAccount.all_by_user(user_id) |> Enum.map(& &1.address)
+
+    addresses
+    |> Enum.any?(fn address ->
+      Sanbase.SmartContracts.UniswapV3.get_deposited_san_tokens(address) >=
+        @san_stake_required_liquidity_sub_v3
+    end)
   end
 
   @doc """

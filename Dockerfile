@@ -77,6 +77,9 @@ RUN cd assets && npm install
 RUN mix assets.setup
 RUN mix assets.deploy
 
+# Allow sentry to package source code when it reports errors
+RUN mix sentry.package_source_code
+
 # Compile the release
 RUN mix compile
 

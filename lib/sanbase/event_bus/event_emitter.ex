@@ -74,7 +74,7 @@ defmodule Sanbase.EventBus.EventEmitter do
       case Application.compile_env(:sanbase, :env) do
         :test ->
           defp maybe_wait(module, event_type, count \\ 5) do
-            ets_table = String.to_existing_atom("eb_ew_#{module.topic}")
+            ets_table = String.to_existing_atom("eb_ew_#{module.topic()}")
             # Until a better solution is present, introduce some milliseconds
             # sleep after the event is emitted so there's time for the subcribers
             # to pick it up and do the work.

@@ -70,7 +70,6 @@ defmodule Sanbase.Mixfile do
       {:clickhouse_ecto, github: "santiment/clickhouse_ecto", branch: "migrate-ecto-3"},
       {:clickhousex, github: "santiment/clickhousex", override: true},
       {:con_cache, "~> 1.0"},
-      {:corsica, "~> 1.0"},
       {:cowboy, "~> 2.0"},
       {:cowlib, "~> 2.11", hex: :remedy_cowlib, override: true},
       {:crc32cer, github: "zmstone/crc32cer", override: true},

@@ -164,8 +164,6 @@ defmodule Sanbase.Mixfile do
       {:sweet_xml, "~> 0.6"},
       {:swoosh, "~> 1.7"},
       {:table_rex, "~> 3.1"},
-      {:telemetry_metrics, "~> 0.5"},
-      {:telemetry_poller, "~> 1.0"},
       {:telemetry, "~> 1.1", override: true},
       {:temp, "~> 0.4"},
       {:tesla, "~> 1.0"},

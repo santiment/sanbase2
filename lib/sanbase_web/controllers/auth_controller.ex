@@ -170,7 +170,7 @@ defmodule SanbaseWeb.AuthController do
     end
   end
 
-  @valid_subomains ["app", "insights", "api", "sheets", "local"]
+  @valid_subomains ["app", "insights", "api", "queries", "sheets", "local"]
   @valid_redirect_hosts @valid_subomains
                         |> Enum.flat_map(&[&1, &1 <> "-stage"])
                         |> Enum.map(&(&1 <> ".santiment.net"))

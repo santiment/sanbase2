@@ -21,6 +21,7 @@ defmodule Sanbase.Queries.Authorization do
     case {product_code, plan_name} do
       {_, "FREE"} -> %{minute: 1, hour: 5, day: 10}
       {"SANBASE", "PRO"} -> %{minute: 10, hour: 100, day: 500}
+      {"SANBASE", "PRO_PLUS"} -> %{minute: 20, hour: 200, day: 1000}
       {"SANAPI", "BASIC"} -> %{minute: 20, hour: 200, day: 1000}
       {"SANAPI", "PRO"} -> %{minute: 50, hour: 600, day: 3000}
       {"SANAPI", "CUSTOM"} -> %{minute: 200, hour: 1000, day: 5000}
@@ -32,6 +33,7 @@ defmodule Sanbase.Queries.Authorization do
     case {product_code, plan_name} do
       {_, "FREE"} -> 5_000
       {"SANBASE", "PRO"} -> 1_000_000
+      {"SANBASE", "PRO_PLUS"} -> 2_000_000
       {"SANAPI", "BASIC"} -> 2_000_000
       {"SANAPI", "PRO"} -> 5_000_000
       {"SANAPI", "CUSTOM"} -> 20_000_000

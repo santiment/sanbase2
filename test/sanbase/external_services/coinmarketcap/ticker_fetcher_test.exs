@@ -62,14 +62,19 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
 
     state = Sanbase.InMemoryKafka.Producer.get_state()
     %{"asset_prices" => prices} = state
+    prices = Enum.map(prices, fn {k, v} -> {k, Jason.decode!(v)} end)
 
     expected_record1 =
       {"coinmarketcap_bitcoin_2018-08-17T08:55:37.000Z",
-       "{\"marketcap_usd\":111774707274,\"price_btc\":1.0,\"price_usd\":6493.02288075,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1534496137,\"volume_usd\":4858871494}"}
+       Jason.decode!(
+         "{\"timestamp\":1534496137,\"source\":\"coinmarketcap\",\"slug\":\"bitcoin\",\"price_usd\":6493.02288075,\"price_btc\":1.0,\"volume_usd\":4858871494,\"marketcap_usd\":111774707274}"
+       )}
 
     expected_record2 =
       {"coinmarketcap_ethereum_2018-08-17T08:54:55.000Z",
-       "{\"marketcap_usd\":30511368440,\"price_btc\":0.04633099381624731,\"price_usd\":300.96820061,\"slug\":\"ethereum\",\"source\":\"coinmarketcap\",\"timestamp\":1534496095,\"volume_usd\":1689698769}"}
+       Jason.decode!(
+         "{\"timestamp\":1534496095,\"source\":\"coinmarketcap\",\"slug\":\"ethereum\",\"price_usd\":300.96820061,\"price_btc\":0.04633099381624731,\"volume_usd\":1689698769,\"marketcap_usd\":30511368440}"
+       )}
 
     assert expected_record1 in prices
 

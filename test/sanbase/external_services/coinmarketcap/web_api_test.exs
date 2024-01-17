@@ -33,14 +33,19 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
 
     :ok = WebApi.fetch_and_store_prices(context.project, ~U[2023-07-19 00:00:00Z])
     prices = Sanbase.InMemoryKafka.Producer.get_state() |> Map.get("asset_prices")
+    prices = Enum.map(prices, fn {k, v} -> {k, Jason.decode!(v)} end)
 
     filtered_record =
       {"coinmarketcap_bitcoin_2023-07-19T00:00:05Z",
-       "{\"marketcap_usd\":580312507941,\"price_btc\":1.0,\"price_usd\":29862.047207949952,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1689724805,\"volume_usd\":null}"}
+       Jason.decode!(
+         "{\"timestamp\":1689724805,\"source\":\"coinmarketcap\",\"slug\":\"bitcoin\",\"price_usd\":29862.047207949952,\"price_btc\":1.0,\"volume_usd\":null,\"marketcap_usd\":580312507941}"
+       )}
 
     ok_record =
       {"coinmarketcap_bitcoin_2023-07-19T00:00:00Z",
-       "{\"marketcap_usd\":580312507941,\"price_btc\":1.0,\"price_usd\":29862.047207949952,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1689724800,\"volume_usd\":13140495959}"}
+       Jason.decode!(
+         "{\"timestamp\":1689724800,\"source\":\"coinmarketcap\",\"slug\":\"bitcoin\",\"price_usd\":29862.047207949952,\"price_btc\":1.0,\"volume_usd\":13140495959,\"marketcap_usd\":580312507941}"
+       )}
 
     assert filtered_record in prices
     assert ok_record in prices
@@ -60,10 +65,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
     state = Sanbase.InMemoryKafka.Producer.get_state()
     prices = state["asset_prices"]
     assert length(prices) > 0
+    prices = Enum.map(prices, fn {k, v} -> {k, Jason.decode!(v)} end)
 
     record =
       {"coinmarketcap_bitcoin_2023-07-19T00:00:00Z",
-       "{\"marketcap_usd\":580312507941,\"price_btc\":1.0,\"price_usd\":29862.047207949952,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1689724800,\"volume_usd\":13140495959}"}
+       Jason.decode!(
+         "{\"timestamp\":1689724800,\"source\":\"coinmarketcap\",\"slug\":\"bitcoin\",\"price_usd\":29862.047207949952,\"price_btc\":1.0,\"volume_usd\":13140495959,\"marketcap_usd\":580312507941}"
+       )}
 
     assert record in prices
   end
@@ -105,11 +113,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
     state = Sanbase.InMemoryKafka.Producer.get_state()
     prices = state["asset_prices"]
     assert length(prices) > 0
+    prices = Enum.map(prices, fn {k, v} -> {k, Jason.decode!(v)} end)
 
     assert {"coinmarketcap_TOTAL_MARKET_2023-08-21T12:35:00.000Z",
-            "{\"marketcap_usd\":1053345319615,\"price_btc\":null,\"price_usd\":null,\"slug\":\"TOTAL_MARKET\",\"source\":\"coinmarketcap\",\"timestamp\":1692621300,\"volume_usd\":24975771713}"} in prices
-
-    assert {"coinmarketcap_TOTAL_MARKET_2023-08-21T12:35:00.000Z",
-            "{\"marketcap_usd\":1053345319615,\"price_btc\":null,\"price_usd\":null,\"slug\":\"TOTAL_MARKET\",\"source\":\"coinmarketcap\",\"timestamp\":1692621300,\"volume_usd\":24975771713}"} in prices
+            Jason.decode!(
+              "{\"timestamp\":1692621300,\"source\":\"coinmarketcap\",\"slug\":\"TOTAL_MARKET\",\"price_usd\":null,\"price_btc\":null,\"volume_usd\":24975771713,\"marketcap_usd\":1053345319615}"
+            )} in prices
   end
 end

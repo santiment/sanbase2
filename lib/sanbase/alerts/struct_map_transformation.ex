@@ -5,7 +5,7 @@ defmodule Sanbase.Alert.StructMapTransformation do
 
   @alert_modules Sanbase.Alert.List.get()
 
-  @module_type_pairs for module <- @alert_modules, do: {module, module.type}
+  @module_type_pairs for module <- @alert_modules, do: {module, module.type()}
 
   # Use __struct__ instead of %module{} to avoid circular dependencies
   def trigger_in_struct(%{trigger: trigger, __struct__: Sanbase.Alert.UserTrigger} = user_trigger) do

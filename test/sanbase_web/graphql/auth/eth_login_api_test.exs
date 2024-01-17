@@ -15,7 +15,14 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
     Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.is_valid_signature?/2, true)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.EthAccount.san_staked_address/2, 0.0)
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Billing.Subscription.LiquiditySubscription.user_staked_in_uniswap_v2/1,
+      false
+    )
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Billing.Subscription.LiquiditySubscription.user_staked_in_uniswap_v3/1,
+      false
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         eth_login(context.conn, address, signature, message_hash)
@@ -27,8 +34,6 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
       assert is_integer(String.to_integer(result["user"]["id"]))
       assert is_binary(result["accessToken"])
       assert is_binary(result["refreshToken"])
-
-      assert called(Sanbase.Accounts.EthAccount.san_staked_address(:_, :_))
     end)
   end
 
@@ -42,7 +47,14 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
     Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.is_valid_signature?/2, true)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.EthAccount.san_staked_address/2, 0.0)
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Billing.Subscription.LiquiditySubscription.user_staked_in_uniswap_v2/1,
+      false
+    )
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Billing.Subscription.LiquiditySubscription.user_staked_in_uniswap_v3/1,
+      false
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       _ = eth_login(context.conn, address, signature, message_hash)
 
@@ -56,8 +68,6 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
       assert is_integer(String.to_integer(result["user"]["id"]))
       assert is_binary(result["accessToken"])
       assert is_binary(result["refreshToken"])
-
-      assert called(Sanbase.Accounts.EthAccount.san_staked_address(:_, :_))
     end)
   end
 
@@ -71,7 +81,14 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
     Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.is_valid_signature?/2, true)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Accounts.EthAccount.san_staked_address/2, 0.0)
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Billing.Subscription.LiquiditySubscription.user_staked_in_uniswap_v2/1,
+      false
+    )
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Billing.Subscription.LiquiditySubscription.user_staked_in_uniswap_v3/1,
+      false
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       user_id =
         eth_login(context.conn, address, signature, message_hash)

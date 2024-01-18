@@ -151,7 +151,6 @@ config :logger, :console,
 # Error tracking
 config :sentry,
   json_library: Jason,
-  included_environments: [:prod],
   environment_name: Mix.env(),
   enable_source_code_context: true,
   root_source_code_path: File.cwd!()

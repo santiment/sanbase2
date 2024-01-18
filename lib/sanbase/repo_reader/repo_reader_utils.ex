@@ -25,11 +25,11 @@ defmodule Sanbase.RepoReader.Utils do
   def clone_repo(path, opts) do
     # In case of validation, we clone the user's forked repo.
     # In case of update, we clone our own repo
-    cloned_repo = Keyword.get(opts, :fork_repo, @repository)
+    cloned_repo = Keyword.get(opts, :fork_repo, "santiment/#{@repository}")
     branch = Keyword.fetch!(opts, :branch)
     repository_url = repository_url(cloned_repo)
 
-    Logger.info("Cloning reposistory #{@repository}")
+    Logger.info("Cloning reposistory #{repository_url}")
 
     case System.cmd(
            "git",

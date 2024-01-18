@@ -32,6 +32,8 @@ defmodule Sanbase.RepoReader do
   """
   @spec validate_changes(String.t(), String.t(), String.t()) :: :ok | {:error, String.t()}
   def validate_changes(fork_repo, branch, changed_files_list) do
+    # Replace / with : so it is not interpreted as directories.
+    # fork_repo is in the form organization/repository
     path = Temp.mkdir!(String.replace(fork_repo, "/", ":"))
 
     try do

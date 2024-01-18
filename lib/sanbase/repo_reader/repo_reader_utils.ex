@@ -11,27 +11,38 @@ defmodule Sanbase.RepoReader.Utils do
 
   @doc ~s"""
   Clone the repository as specified by the module attribute and store
-  the files in the specified path
+  the files in the specified path.
+
+  The `path` argument defines the directory where the repository will be cloned.
+  After the work is finished, the caller deletes the contents of this pat.
+
+  Supported options:
+    - :fork_repo (optional) - If provided, changes the repository that is cloned. This is used
+      when validating changes submitted in a PR from a forked repo.
+    - :branch (required) - The branch that is used.
   """
   @spec clone_repo(String.t(), Keyword.t()) :: {:ok, Repository.t()} | {:error, String.t()}
   def clone_repo(path, opts) do
-    Logger.info("Cloning reposistory #{@repository}...")
-
-    fork_repo = Keyword.fetch!(opts, :fork_repo)
+    # In case of validation, we clone the user's forked repo.
+    # In case of update, we clone our own repo
+    cloned_repo = Keyword.get(opts, :fork_repo, @repository)
     branch = Keyword.fetch!(opts, :branch)
+    repository_url = repository_url(cloned_repo)
+
+    Logger.info("Cloning reposistory #{@repository}")
 
     case System.cmd(
            "git",
-           ["clone", "--single-branch", "--branch", branch, repository_url(fork_repo), path],
+           ["clone", "--single-branch", "--branch", branch, repository_url, path],
            stderr_to_stdout: true
          ) do
       {output, 0} ->
-        Logger.info("Cloned repository #{@repository}. Output: #{inspect(output)}")
+        Logger.info("Cloned repository #{repository_url}. Output: #{inspect(output)}")
         {:ok, %Repository{path: path}}
 
       {error, code} ->
         {:error,
-         "Error code #{inspect(code)} cloning repository #{@repository_url}: #{inspect(error)}"}
+         "Error code #{inspect(code)} cloning repository #{repository_url}: #{inspect(error)}"}
     end
   end
 

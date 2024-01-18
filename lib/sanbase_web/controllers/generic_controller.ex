@@ -18,15 +18,16 @@ defmodule SanbaseWeb.GenericController do
 
   def search(conn, %{"resource" => resource, "search" => %{"generic_search" => search_text}}) do
     module = module_from_resource(resource)
+    preloads = @resource_module_map[resource][:preloads] || []
 
     rows =
       case parse_field_value(search_text) do
         {:ok, field, value} ->
-          search_by_field_value(module, field, value)
+          search_by_field_value(module, field, value, preloads)
 
         :error ->
           case Integer.parse(search_text) do
-            {id, ""} -> search_by_id(module, id)
+            {id, ""} -> search_by_id(module, id, preloads)
             _ -> search_by_text(module, String.downcase(search_text))
           end
       end
@@ -131,10 +132,14 @@ defmodule SanbaseWeb.GenericController do
     module.by_search_text(text)
   end
 
-  defp search_by_id(module, id) do
+  defp search_by_id(module, id, preloads) do
     case Repo.get(module, id) do
-      nil -> []
-      result -> [result]
+      nil ->
+        []
+
+      result ->
+        result = Repo.preload(result, preloads)
+        [result]
     end
   end
 
@@ -153,13 +158,13 @@ defmodule SanbaseWeb.GenericController do
     end
   end
 
-  def search_by_field_value(module, field, value) do
+  def search_by_field_value(module, field, value, preloads) do
     case Integer.parse(value) do
       {id, ""} ->
-        search_by_id(module, id)
+        search_by_id(module, id, preloads)
 
       _ ->
-        value = String.strip(value)
+        value = String.trim(value)
         search_text = "%" <> value <> "%"
         field = String.to_existing_atom(field)
 

@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.Subscription do
   alias Sanbase.Billing.Subscription
-  alias SanbaseWeb.GenericController
   alias SanbaseWeb.GenericAdmin.SubscriptionHelper
 
   @resource %{
@@ -21,17 +20,18 @@ defmodule SanbaseWeb.GenericAdmin.Subscription do
 
   def resource, do: @resource
 
-  def has_many(subscription) do
+  def has_many(_subscription) do
     []
   end
 
-  def belongs_to(subscription) do
+  def belongs_to(_subscription) do
     []
   end
 end
 
 defmodule SanbaseWeb.GenericAdmin.SubscriptionHelper do
   def plan_func(row) do
+    IO.inspect(row)
     "#{row.plan.product.name}/#{row.plan.name}"
   end
 end

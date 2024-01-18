@@ -108,20 +108,21 @@ defmodule SanbaseWeb.GenericAdmin.User do
         name: "SAN Staked in LP SAN/ETH",
         fields: [
           %{
-            field_name: "Eligible for free Liquidity Subscription",
-            data:
-              Sanbase.Billing.Subscription.LiquiditySubscription.eligible_for_liquidity_subscription?(
-                user.id
-              )
-          },
-          %{
             field_name: "SAN Staked",
-            data: Sanbase.Accounts.User.UniswapStaking.fetch_uniswap_san_staked_user(user.id)
+            data: fetch_san_staked(user)
           }
         ],
         actions: []
       }
     ]
+  end
+
+  def fetch_san_staked(user) do
+    try do
+      Sanbase.Accounts.User.UniswapStaking.fetch_uniswap_san_staked_user(user.id)
+    rescue
+      _error -> 0.0
+    end
   end
 
   def reset_api_call_limits(conn, %{id: id}) do

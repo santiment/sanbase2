@@ -22,6 +22,9 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
   end
 
   test "create blockchain addresses watchlist", %{user: user, conn: conn} do
+    eth_infrastructure = Sanbase.Repo.get_by(Sanbase.Model.Infrastructure, code: "ETH")
+    insert(:project, slug: "ethereum", infrastructure: eth_infrastructure)
+
     query = """
     mutation {
       createWatchlist(
@@ -37,7 +40,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
           name
           description
           color
-          is_public
+          isPublic
           user { id }
           listItems {
             blockchainAddress {
@@ -74,7 +77,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       assert watchlist["name"] == "My list"
       assert watchlist["description"] == "Description"
       assert watchlist["color"] == "BLACK"
-      assert watchlist["is_public"] == false
+      assert watchlist["isPublic"] == false
       assert watchlist["user"]["id"] == user.id |> to_string()
 
       assert %{

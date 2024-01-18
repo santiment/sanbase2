@@ -48,7 +48,7 @@ defmodule Sanbase.Metric.Helper do
   Module.register_attribute(__MODULE__, :soft_deprecated_metrics_acc, accumulate: true)
 
   for module <- @metric_modules do
-    @required_selectors_map_acc module.required_selectors
+    @required_selectors_map_acc module.required_selectors()
     @aggregations_acc module.available_aggregations()
     @incomplete_metrics_acc module.incomplete_metrics()
     @free_metrics_acc module.free_metrics()

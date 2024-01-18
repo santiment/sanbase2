@@ -775,6 +775,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_dominance_bitcointalk_1h_moving_average",
         "social_dominance_bitcointalk_24h_moving_average",
         "social_volume_4chan",
+        "social_volume_newsapi_crypto",
         "social_volume_reddit",
         "social_volume_twitter",
         "social_volume_twitter_crypto",
@@ -1480,23 +1481,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       |> Enum.map(&elem(&1, 0))
       |> Enum.sort()
 
-    expected =
-      [
-        "nft_social_volume",
-        "social_volume_bitcointalk",
-        "social_volume_reddit",
-        "social_volume_4chan",
-        "social_volume_telegram",
-        "social_volume_total",
-        "social_volume_twitter",
-        "social_volume_twitter_crypto",
-        "social_volume_twitter_news",
-        "social_volume_twitter_nft",
-        "social_volume_youtube_videos",
-        "social_volume_ai_total",
-        "trending_words_rank"
-      ]
-      |> Enum.sort()
+    expected = []
 
     assert result == expected
   end

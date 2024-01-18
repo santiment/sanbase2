@@ -39,12 +39,12 @@ defmodule SanbaseWeb.Graphql.Alerts.TriggersStatsTest do
                %{
                  alert_types: ["Transaction volume"],
                  count: 1,
-                 percent_change: 0.0,
+                 percent_change: +0.0,
                  slug: "santiment"
                }
              ],
              total_fired: 1,
-             total_fired_percent_change: 0.0,
+             total_fired_percent_change: +0.0,
              total_fired_weekly_avg: 1.0
            }
 
@@ -54,12 +54,12 @@ defmodule SanbaseWeb.Graphql.Alerts.TriggersStatsTest do
                  "project" => %{"slug" => "santiment"},
                  "alertTypes" => ["Transaction volume"],
                  "count" => 1,
-                 "percentChange" => 0.0,
+                 "percentChange" => +0.0,
                  "slug" => "santiment"
                }
              ],
              "totalFired" => 1,
-             "totalFiredPercentChange" => 0.0,
+             "totalFiredPercentChange" => +0.0,
              "totalFiredWeeklyAvg" => 1.0
            }
   end

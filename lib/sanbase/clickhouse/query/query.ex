@@ -83,18 +83,19 @@ defmodule Sanbase.Clickhouse.Query do
     Adding/removing/reordering elements in this list will cause a database error, as
     the order is specific for the sql query.
   """
-  @spec get_sql_args(t()) :: %{sql: String.t(), args: list()}
+  @spec get_sql_args(t()) :: {:ok, %{sql: String.t(), args: list()}} | {:error, String.t()}
   def get_sql_args(%__MODULE__{} = query) do
     query = preprocess_query(query)
 
-    {sql, args} =
-      Sanbase.TemplateEngine.run_generate_positional_params(
-        query.sql,
-        query.parameters,
-        query.environment
-      )
-
-    %{sql: sql, args: args}
+    with {:ok, {sql, args}} <-
+           Sanbase.TemplateEngine.run_generate_positional_params(
+             query.sql,
+             params: query.parameters,
+             env: query.environment
+           ) do
+      result = %{sql: sql, args: args}
+      {:ok, result}
+    end
   end
 
   # Private functions

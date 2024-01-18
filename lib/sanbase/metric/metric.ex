@@ -684,7 +684,7 @@ defmodule Sanbase.Metric do
   """
   @spec is_historical_data_freely_available?(metric) :: boolean
   def is_historical_data_freely_available?(metric) do
-    get_in(@access_map, [metric, "historical"]) == "FREE"
+    get_in(@access_map, [metric, "historical"]) == :free
   end
 
   @doc ~s"""
@@ -692,7 +692,7 @@ defmodule Sanbase.Metric do
   """
   @spec is_realtime_data_freely_available?(metric) :: boolean
   def is_realtime_data_freely_available?(metric) do
-    get_in(@access_map, [metric, "realtime"]) == "FREE"
+    get_in(@access_map, [metric, "realtime"]) == :free
   end
 
   @doc ~s"""
@@ -720,7 +720,7 @@ defmodule Sanbase.Metric do
   defp metric_not_available_error_details(metric, type) do
     %{
       close: maybe_get_close_metric(metric, type),
-      error_msg: "The metric '#{metric}' is not supported or is mistyped."
+      error_msg: "The metric '#{metric}' is not supported, is deprecated or is mistyped."
     }
   end
 

@@ -36,7 +36,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
         funcs: %{
           plan: fn eth_account ->
             case Sanbase.Accounts.EthAccount.san_balance(eth_account) do
-              :error -> 0.0
+              :error -> +0.0
               san_balance -> san_balance
             end
           end

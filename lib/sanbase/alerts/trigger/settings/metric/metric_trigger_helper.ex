@@ -33,26 +33,43 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
 
   def evaluate(%{} = settings, _trigger) do
     case get_data(settings) do
-      data when is_list(data) and data != [] ->
+      {:ok, data} when is_list(data) and data != [] ->
         build_result(data, settings)
 
+      {:error, {:disable_alert, _}} = error ->
+        error
+
       _ ->
-        %{settings | triggered?: false}
+        {:ok, %{settings | triggered?: false}}
     end
   end
 
   def get_data(%{} = settings) do
     %{filtered_target: %{list: target_list, type: type}} = settings
 
-    target_list
-    |> Enum.map(fn identifier ->
-      {identifier, fetch_metric(%{type => identifier}, settings)}
-    end)
-    |> Enum.reject(fn
-      {_, {:error, _}} -> true
-      {_, nil} -> true
-      _ -> false
-    end)
+    data =
+      target_list
+      |> Enum.map(fn identifier ->
+        {identifier, fetch_metric(%{type => identifier}, settings)}
+      end)
+      |> Enum.reject(fn
+        {_, nil} -> true
+        _ -> false
+      end)
+
+    disable_alert_error = Enum.find(data, &match?({_, {:error, {:disable_alert, _}}}, &1))
+    any_alert_error = Enum.find(data, &match?({_, {:error, _}}, &1))
+
+    # If any of the errors is a disable_alert error, return it directly.
+    # If there is no disable_alert error, return the first error.
+    # If there are no errors at all, return ok
+    case disable_alert_error do
+      {_, {:error, {:disable_alert, reason}}} ->
+        {:error, {:disable_alert, reason}}
+
+      nil ->
+        if any_alert_error, do: any_alert_error, else: {:ok, data}
+    end
   end
 
   # Private functions
@@ -90,9 +107,21 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
            value2 when not is_nil(value2) <- to_value.(data2) do
         [%{datetime: first_start, value: value1}, %{datetime: second_start, value: value2}]
       else
-        _ -> {:error, "Cannot fetch #{metric} for #{inspect(selector)}"}
+        {:error, error} when is_binary(error) ->
+          handle_fetch_metric_error(error, metric, selector)
+
+        _ ->
+          {:error, "Cannot fetch #{metric} for #{inspect(selector)}"}
       end
     end)
+  end
+
+  defp handle_fetch_metric_error(error_msg, metric, selector) when is_binary(error_msg) do
+    if error_msg =~ "not supported, is deprecated or is mistyped" do
+      {:error, {:disable_alert, error_msg}}
+    else
+      {:error, "Cannot fetch #{metric} for #{inspect(selector)}. Reason: #{error_msg}"}
+    end
   end
 
   defp timerange_params(%MetricTriggerSettings{} = settings) do

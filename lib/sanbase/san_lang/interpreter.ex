@@ -17,6 +17,7 @@ defmodule Sanbase.SanLang.Interpreter do
   def eval({:env_var, _, _} = env_var, env), do: eval_env_var(env_var, env)
   def eval({:identifier, _, _} = identifier, env), do: eval_identifier(identifier, env)
   def eval({:lambda_fn, _args, _body} = lambda, env), do: eval_lambda_fn(lambda, env)
+  def eval({:list, _} = list, env), do: eval_list(list, env)
 
   def eval({{boolean_op, _}, _, _} = boolean_expr, env) when boolean_op in [:and, :or],
     do: eval_boolean_expr(boolean_expr, env)
@@ -35,12 +36,25 @@ defmodule Sanbase.SanLang.Interpreter do
     Map.get(env_var, key)
   end
 
+  # Comparison
+  def eval({{:comparison_expr, {op, _}}, lhs, rhs}, env) when op in ~w(== != < > <= >=)a,
+    do: apply(Kernel, op, [eval(lhs, env), eval(rhs, env)])
+
+  # Named Function Calls
+  def eval({:function_call, {:identifier, _, function_name}, args}, env) do
+    eval_function_call(function_name, args, env)
+  end
+
   def eval({:access_expr, env_var_or_identifier, key}, env) do
     # The acessed type is an env var or an identifier
     map = eval(env_var_or_identifier, env)
     # The key can be a string, or an identifier if used from inside a map/filter/reduce
     key = eval(key, env)
     Map.get(map, key)
+  end
+
+  def eval_list({:list, list_elements}, env) do
+    Enum.map(list_elements, fn x -> eval(x, env) end)
   end
 
   # Boolean expressions
@@ -58,15 +72,6 @@ defmodule Sanbase.SanLang.Interpreter do
       true ->
         apply(:erlang, op, [lhs, rhs])
     end
-  end
-
-  # Comparison
-  def eval({{:comparison_expr, {op, _}}, lhs, rhs}, env) when op in ~w(== != < > <= >=)a,
-    do: apply(Kernel, op, [eval(lhs, env), eval(rhs, env)])
-
-  # Named Function Calls
-  def eval({:function_call, {:identifier, _, function_name}, args}, env) do
-    eval_function_call(function_name, args, env)
   end
 
   @supported_functions SanLang.Kernel.__info__(:functions)
@@ -91,6 +96,7 @@ defmodule Sanbase.SanLang.Interpreter do
     # We've already checked that the function name exists. Somethimes there are strange
     # errors during tests that :map_keys is not an existing atom, even though there is
     # such a function in the SanLang.Kernel module
+    # credo:disable-for-next-line
     apply(SanLang.Kernel, String.to_atom(function_name), args)
   end
 

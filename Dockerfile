@@ -1,9 +1,9 @@
-ARG ELIXIR_VERSION=1.14.4
-ARG OTP_VERSION=25.3
-ARG DEBIAN_VERSION=bullseye-20230227-slim
+ARG ELIXIR_VERSION=1.16.0
+ARG OTP_VERSION=26.2.1
+ARG DEBIAN_VERSION=bullseye-20231009-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
-ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}" 
+ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} as builder
 
@@ -76,6 +76,9 @@ COPY assets assets
 RUN cd assets && npm install
 RUN mix assets.setup
 RUN mix assets.deploy
+
+# Allow sentry to package source code when it reports errors
+RUN mix sentry.package_source_code
 
 # Compile the release
 RUN mix compile

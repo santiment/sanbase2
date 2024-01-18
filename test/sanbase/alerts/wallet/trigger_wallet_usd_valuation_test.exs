@@ -97,7 +97,7 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
         usd_value_change: 145_335_176.40499604
       },
       %{
-        balance_change: 0.0,
+        balance_change: +0.0,
         current_balance: 14_600_299_531.569061,
         current_price_usd: 0.05163,
         current_usd_value: 753_813_464.8149107,
@@ -108,7 +108,7 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
         usd_value_change: 20_878_428.33014381
       },
       %{
-        balance_change: 0.0,
+        balance_change: +0.0,
         current_balance: 16_030_443.377157,
         current_price_usd: 1.6967803881577543,
         current_usd_value: 27_200_141.935833357,
@@ -119,7 +119,7 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
         usd_value_change: 7_925_206.538101718
       },
       %{
-        balance_change: 0.0,
+        balance_change: +0.0,
         current_balance: 75_000_002.05912834,
         current_price_usd: 0.9601,
         current_usd_value: 72_007_501.97696912,
@@ -130,7 +130,7 @@ defmodule Sanbase.Alert.WalletUsdValuationTriggerSettingsTest do
         usd_value_change: 2_745_000.075364098
       },
       %{
-        balance_change: 0.0,
+        balance_change: +0.0,
         current_balance: 500_000_057.10439026,
         current_price_usd: 0.28336596302872935,
         current_usd_value: 141_682_997.69580522,

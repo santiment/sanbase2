@@ -68,7 +68,7 @@ defmodule Sanbase.StripeApi do
     })
   end
 
-  @spec update_customer(%User{}, String.t()) ::
+  @spec update_customer(%User{stripe_customer_id: binary()}, String.t()) ::
           {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
   def update_customer(%User{stripe_customer_id: stripe_customer_id}, card_token)
       when is_binary(stripe_customer_id) do

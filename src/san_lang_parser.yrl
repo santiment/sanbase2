@@ -2,6 +2,7 @@ Nonterminals
   grammar
   expr
   value
+  list list_elements
   dual_arithmetic_op mult_arithmetic_op
   boolean_literal and_op or_op
   comparison_rel_op comparison_comp_op
@@ -61,6 +62,7 @@ value -> access_expr : '$1'.
 value -> function_call : '$1'.
 value -> identifier : '$1'.
 value -> boolean_literal : '$1'.
+value -> list : '$1'.
 
 %% booleans
 boolean_literal -> 'true' : '$1'.
@@ -89,6 +91,12 @@ comparison_rel_op -> '<' : {comparison_expr, '$1'}.
 comparison_rel_op -> '<=' : {comparison_expr, '$1'}.
 comparison_rel_op -> '>' : {comparison_expr, '$1'}.
 comparison_rel_op -> '>=' : {comparison_expr, '$1'}.
+
+%% Lists
+list -> '[' ']' : {list, []}.
+list -> '[' list_elements ']' : {list, '$2'}.
+list_elements -> value ',' list_elements : ['$1' | '$3'].
+list_elements -> value : ['$1'].
 
 %% Lambda function
 lambda_fn -> 'fn' lambda_args '->' expr 'end' : {lambda_fn, '$2', '$4'}.

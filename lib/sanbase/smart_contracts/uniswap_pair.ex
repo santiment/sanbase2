@@ -57,7 +57,7 @@ defmodule Sanbase.SmartContracts.UniswapPair do
     call_contract(contract, "balanceOf(address)", [address], [{:uint, 256}])
     |> case do
       [balance] -> format_number(balance, @decimals)
-      {:error, _} -> 0.0
+      {:error, _} -> +0.0
     end
   end
 

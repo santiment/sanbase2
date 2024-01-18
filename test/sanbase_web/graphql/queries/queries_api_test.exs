@@ -488,15 +488,15 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                  "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                  "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
                  "rows" => [
-                   [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
-                   [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                   [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                   [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
                  ],
                  "summary" => %{
-                   "read_bytes" => 0.0,
-                   "read_rows" => 0.0,
-                   "total_rows_to_read" => 0.0,
-                   "written_bytes" => 0.0,
-                   "written_rows" => 0.0
+                   "read_bytes" => +0.0,
+                   "read_rows" => +0.0,
+                   "total_rows_to_read" => +0.0,
+                   "written_bytes" => +0.0,
+                   "written_rows" => +0.0
                  }
                } = result
       end)
@@ -531,15 +531,15 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                  "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                  "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
                  "rows" => [
-                   [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
-                   [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                   [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                   [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
                  ],
                  "summary" => %{
-                   "read_bytes" => 0.0,
-                   "read_rows" => 0.0,
-                   "total_rows_to_read" => 0.0,
-                   "written_bytes" => 0.0,
-                   "written_rows" => 0.0
+                   "read_bytes" => +0.0,
+                   "read_rows" => +0.0,
+                   "total_rows_to_read" => +0.0,
+                   "written_bytes" => +0.0,
+                   "written_rows" => +0.0
                  }
                } = result
       end)
@@ -715,15 +715,15 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                  "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
                  "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
                  "rows" => [
-                   [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
-                   [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                   [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                   [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
                  ],
                  "summary" => %{
-                   "read_bytes" => 0.0,
-                   "read_rows" => 0.0,
-                   "total_rows_to_read" => 0.0,
-                   "written_bytes" => 0.0,
-                   "written_rows" => 0.0
+                   "read_bytes" => +0.0,
+                   "read_rows" => +0.0,
+                   "total_rows_to_read" => +0.0,
+                   "written_bytes" => +0.0,
+                   "written_rows" => +0.0
                  }
                } = result
       end)
@@ -866,8 +866,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                      "queryEndTime" => query_end_time,
                      "queryId" => ^query_id,
                      "rows" => [
-                       [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
-                       [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                       [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                       [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
                      ]
                    }
                  ]
@@ -891,8 +891,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                      "queryStartTime" => query_start_time,
                      "queryEndTime" => query_end_time,
                      "rows" => [
-                       [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
-                       [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                       [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                       [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
                      ]
                    }
                  ]
@@ -1327,8 +1327,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       num_rows: 2,
       query_id: "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
       rows: [
-        [2503, 250, ~N[2008-12-10 00:00:00], 0.0, ~N[2020-02-28 15:18:42]],
-        [2503, 250, ~N[2008-12-10 00:05:00], 0.0, ~N[2020-02-28 15:18:42]]
+        [2503, 250, ~N[2008-12-10 00:00:00], +0.0, ~N[2020-02-28 15:18:42]],
+        [2503, 250, ~N[2008-12-10 00:05:00], +0.0, ~N[2020-02-28 15:18:42]]
       ],
       summary: %{
         "read_bytes" => "0",

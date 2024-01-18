@@ -112,7 +112,9 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
         execute_query(conn, query(function))
         |> get_in(["errors", Access.at(0), "message"])
 
-      assert error_msg =~ "The metric 'aily_active_addresses' is not supported or is mistyped"
+      assert error_msg =~
+               "The metric 'aily_active_addresses' is not supported, is deprecated or is mistyped"
+
       assert error_msg =~ "Did you mean the timeseries metric 'daily_active_addresses'?"
     end)
   end
@@ -143,7 +145,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
         execute_query(conn, query(function))
         |> get_in(["errors", Access.at(0), "message"])
 
-      assert error_msg =~ "The metric 'rice_usd' is not supported or is mistyped"
+      assert error_msg =~ "The metric 'rice_usd' is not supported, is deprecated or is mistyped"
       assert error_msg =~ "Did you mean the timeseries metric 'price_usd'?"
     end)
   end

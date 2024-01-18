@@ -105,7 +105,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
       } = get_metric_metadata(conn, metric)
 
       assert error_message ==
-               "The metric '#{metric}' is not supported or is mistyped."
+               "The metric '#{metric}' is not supported, is deprecated or is mistyped."
     end
   end
 

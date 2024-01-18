@@ -171,7 +171,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
         ]
       } = get_table_metric(conn, metric, slugs, from, to)
 
-      assert error_message == "The metric '#{metric}' is not supported or is mistyped."
+      assert error_message ==
+               "The metric '#{metric}' is not supported, is deprecated or is mistyped."
     end
   end
 

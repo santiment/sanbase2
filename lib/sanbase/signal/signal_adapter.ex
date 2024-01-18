@@ -196,7 +196,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   defp signal_not_available_error_details(signal) do
     %{
       close: Enum.find(@signals_mapset, &(String.jaro_distance(signal, &1) > 0.8)),
-      error_msg: "The signal '#{signal}' is not supported or is mistyped."
+      error_msg: "The signal '#{signal}' is not supported, is deprecated or is mistyped."
     }
   end
 

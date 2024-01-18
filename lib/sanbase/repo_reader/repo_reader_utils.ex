@@ -17,9 +17,12 @@ defmodule Sanbase.RepoReader.Utils do
   def clone_repo(path, opts) do
     Logger.info("Cloning reposistory #{@repository}...")
 
+    fork_repo = Keyword.fetch!(opts, :fork_repo)
     branch = Keyword.fetch!(opts, :branch)
 
-    case System.cmd("git", ["clone", "--branch", branch, @repository_url, path],
+    case System.cmd(
+           "git",
+           ["clone", "--single-branch", "--branch", branch, repository_url(fork_repo), path],
            stderr_to_stdout: true
          ) do
       {output, 0} ->
@@ -30,6 +33,12 @@ defmodule Sanbase.RepoReader.Utils do
         {:error,
          "Error code #{inspect(code)} cloning repository #{@repository_url}: #{inspect(error)}"}
     end
+  end
+
+  defp repository_url(fork_repo) do
+    # People submit PRs from their own forks. In such case we should clone their repo,
+    # not ours.
+    "https://github.com/#{fork_repo}.git"
   end
 
   @doc ~s"""

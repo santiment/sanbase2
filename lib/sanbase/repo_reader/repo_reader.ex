@@ -30,14 +30,13 @@ defmodule Sanbase.RepoReader do
   or values, execute validate them by using jsonschema and custom
   validations
   """
-  @spec validate_changes(String.t(), list(String.t())) :: :ok | {:error, String.t()}
-  def validate_changes(branch, changed_files_list) do
-    path = Temp.mkdir!(@repository)
+  @spec validate_changes(String.t(), String.t(), String.t()) :: :ok | {:error, String.t()}
+  def validate_changes(fork_repo, branch, changed_files_list) do
+    path = Temp.mkdir!(String.replace(fork_repo, "/", ":"))
 
     try do
       changed_directories = files_to_directories(changed_files_list)
-
-      result = do_validate_changes(path, branch, changed_directories)
+      result = do_validate_changes(path, fork_repo, branch, changed_directories)
 
       File.rm_rf!(path)
 
@@ -87,8 +86,8 @@ defmodule Sanbase.RepoReader do
     end
   end
 
-  defp do_validate_changes(path, branch, changed_directories) do
-    with {:ok, %Repository{} = repo} <- clone_repo(path, branch: branch),
+  defp do_validate_changes(path, fork_repo, branch, changed_directories) do
+    with {:ok, %Repository{} = repo} <- clone_repo(path, fork_repo: fork_repo, branch: branch),
          {:ok, projects_map} <- read_files(repo, directories_to_read: changed_directories),
          :ok <- Validator.validate(projects_map) do
       :ok

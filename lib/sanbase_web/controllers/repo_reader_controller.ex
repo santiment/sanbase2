@@ -10,9 +10,10 @@ defmodule SanbaseWeb.RepoReaderController do
     )
 
     changed_files = Map.get(params, "changed_files", [])
-    branch = Map.get(params, "branch", "main")
+    branch = Map.fetch!(params, "branch")
+    fork_repo = Map.fetch!(params, "fork_repo")
 
-    case Sanbase.RepoReader.validate_changes(branch, changed_files) do
+    case Sanbase.RepoReader.validate_changes(fork_repo, branch, changed_files) do
       :ok ->
         conn
         |> put_resp_header("content-type", "application/json; charset=utf-8")

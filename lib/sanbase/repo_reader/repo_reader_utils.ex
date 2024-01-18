@@ -3,7 +3,7 @@ defmodule Sanbase.RepoReader.Utils do
 
   require Logger
 
-  @repository "projects_data"
+  @repository "projects"
   @repository_url "https://github.com/santiment/#{@repository}.git"
 
   def repository(), do: @repository

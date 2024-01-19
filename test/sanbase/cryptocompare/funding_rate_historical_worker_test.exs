@@ -127,7 +127,7 @@ defmodule Sanbase.Cryptocompare.FundingRateHistoricalWorkerTest do
     # Schedule 10 jobs each, scraping `limit` hours. Each job
     # is 1 hour after the previous. The expected number of
     # non-overlapped hours is limit + 10
-    for i <- 10..0 do
+    for i <- 10..0//-1 do
       FundingRate.HistoricalScheduler.add_job(
         market,
         instrument,

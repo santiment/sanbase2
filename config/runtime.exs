@@ -14,6 +14,11 @@ config :ueberauth, Ueberauth.Strategy.Twitter.OAuth,
   consumer_key: System.get_env("TWITTER_OAUTH_CONSUMER_KEY"),
   consumer_secret: System.get_env("TWITTER_OAUTH_CONSUMER_SECRET")
 
+config :sanbase, Sanbase.TemplateMailer,
+  adapter: Swoosh.Adapters.Mailjet,
+  api_key: System.get_env("MAILJET_API_KEY"),
+  secret: System.get_env("MAILJET_API_SECRET")
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

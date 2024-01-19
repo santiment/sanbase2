@@ -331,9 +331,17 @@ defmodule Sanbase.Entity do
           # In all cases the fields are the same except for insights. When
           # fetching user own insights, some of them might be drafts so they
           # won't have :published_at field and then :inserted_at shall be used.
-          Map.get(entity, creation_time_field) || Map.get(entity, creation_time_field_backup)
+          creation_time =
+            Map.get(entity, creation_time_field) || Map.get(entity, creation_time_field_backup)
+
+          creation_time_unix =
+            DateTime.from_naive!(creation_time, "Etc/UTC") |> DateTime.to_unix()
+
+          # Transform to unix timestamp so we can compare the tuples. Add the id as the secon
+          # element so in case of conflicts, we put the entity with higher id first (created later)
+          {creation_time_unix, Map.get(entity, :id)}
         end,
-        {:desc, NaiveDateTime}
+        :desc
       )
 
     {:ok, sorted_result}

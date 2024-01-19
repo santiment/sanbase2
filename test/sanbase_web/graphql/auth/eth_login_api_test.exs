@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.EthLoginApiTest do
   use SanbaseWeb.ConnCase
 
-  import Mock
   import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 

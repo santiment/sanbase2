@@ -31,7 +31,6 @@ end
 
 defmodule SanbaseWeb.GenericAdmin.SubscriptionHelper do
   def plan_func(row) do
-    IO.inspect(row)
     "#{row.plan.product.name}/#{row.plan.name}"
   end
 end

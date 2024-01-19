@@ -308,7 +308,6 @@ defmodule SanbaseWeb.Graphql.GetMostRecentApiTest do
         :user_trigger,
         :dashboard
       ])
-      |> IO.inspect()
 
     data = result["data"]
     stats = result["stats"]

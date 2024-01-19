@@ -79,10 +79,10 @@ defmodule Sanbase.Metric.Helper do
                                      )
 
     if function_exported?(module, :deprecated_metrics_map, 0),
-      do: @deprecated_metrics_acc(module.deprecated_metrics_map)
+      do: @deprecated_metrics_acc(module.deprecated_metrics_map())
 
     if function_exported?(module, :soft_deprecated_metrics_map, 0),
-      do: @soft_deprecated_metrics_acc(module.soft_deprecated_metrics_map)
+      do: @soft_deprecated_metrics_acc(module.soft_deprecated_metrics_map())
   end
 
   flat_unique = fn list -> list |> List.flatten() |> Enum.uniq() end

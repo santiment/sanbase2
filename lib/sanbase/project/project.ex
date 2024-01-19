@@ -16,7 +16,8 @@ defmodule Sanbase.Project do
     LatestCoinmarketcapData
   }
 
-  @preloads [:eth_addresses, :latest_coinmarketcap_data, :github_organizations]
+  @preloads [:eth_addresses, :latest_coinmarketcap_data, :github_organizations, :ecosystems]
+  def preloads(), do: @preloads
 
   schema "project" do
     field(:slug, :string)
@@ -398,8 +399,6 @@ defmodule Sanbase.Project do
     |> MapSet.intersection(trending_words_mapset)
     |> Enum.any?()
   end
-
-  def preloads(), do: @preloads
 
   def preload_assocs(projects, opts \\ []) do
     case Keyword.get(opts, :only_preload) do

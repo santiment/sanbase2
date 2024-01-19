@@ -78,6 +78,15 @@ defmodule Sanbase.Project.Selector do
     {:ok, Map.put(selector, :slug, slugs)}
   end
 
+  defp transform_selector(%{ecosystems: ecosystems} = selector) do
+    with {:ok, projects} <-
+           Sanbase.Ecosystem.get_projects_by_ecosystem_names(ecosystems, combinator: :all_of) do
+      slugs = projects |> Enum.map(& &1.slug)
+
+      {:ok, Map.put(selector, :slug, slugs)}
+    end
+  end
+
   defp transform_selector(%{contract_address: contract_address} = selector) do
     slugs =
       Sanbase.Project.List.by_contracts(List.wrap(contract_address))

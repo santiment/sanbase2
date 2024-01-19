@@ -552,7 +552,9 @@ defmodule Sanbase.RunExamples do
         "ETH",
         "ethereum",
         "eth_balances_realtime",
-        labels: ["whale_usd_balance"]
+        labels: ["whale_usd_balance"],
+        page: 1,
+        page_size: 10
       )
 
     {:ok, :success}

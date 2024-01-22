@@ -39,6 +39,15 @@ defmodule SanbaseWeb.TableComponent do
           <% end %>
         </tbody>
       </table>
+
+      <SanbaseWeb.PaginationComponent.pagination
+        resource={@resource}
+        rows_count={@rows_count}
+        page_size={@page_size}
+        current_page={@current_page}
+        action={@action}
+        search_text={@search_text}
+      />
     </div>
     """
   end
@@ -71,10 +80,12 @@ defmodule SanbaseWeb.TableComponent do
       </span>
       <.form
         :let={f}
+        method="get"
         for={%{}}
         as={:search}
         action={Routes.generic_path(SanbaseWeb.Endpoint, :search, resource: @resource)}
       >
+        <%= hidden_input(f, :resource, value: @resource) %>
         <%= text_input(f, :generic_search,
           value: @search_value,
           class:
@@ -98,5 +109,73 @@ defmodule SanbaseWeb.TableComponent do
     ~H"""
     <td class="px-5 py-5 text-sm bg-white border-b border-gray-200"><%= @value %></td>
     """
+  end
+end
+
+defmodule SanbaseWeb.PaginationComponent do
+  use Phoenix.Component
+
+  alias SanbaseWeb.Router.Helpers, as: Routes
+
+  def pagination(assigns) do
+    ~H"""
+    <div class="flex justify-between items-center p-4">
+      <.pagination_buttons
+        resource={@resource}
+        rows_count={@rows_count}
+        page_size={@page_size}
+        current_page={@current_page}
+        action={@action}
+        search_text={@search_text}
+      />
+      <span class="text-sm text-gray-700">
+        Showing <%= @current_page * @page_size + 1 %> to <%= Enum.min([
+          (@current_page + 1) * @page_size,
+          @rows_count
+        ]) %> of <%= @rows_count %> entries
+      </span>
+    </div>
+    """
+  end
+
+  def pagination_buttons(assigns) do
+    ~H"""
+    <div class="inline-flex">
+      <%= unless @current_page == 0 do %>
+        <.link
+          href={pagination_path(@resource, @action, @search_text, @current_page - 1)}
+          class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-300"
+        >
+          Previous
+        </.link>
+      <% end %>
+      <%= unless @current_page >= div(@rows_count - 1, @page_size) do %>
+        <.link
+          href={pagination_path(@resource, @action, @search_text, @current_page + 1)}
+          class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-300"
+        >
+          Next
+        </.link>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp pagination_path(resource, action, search_text, page_number) do
+    case action do
+      :index ->
+        Routes.generic_path(SanbaseWeb.Endpoint, action, %{resource: resource, page: page_number})
+
+      :search ->
+        Routes.generic_path(SanbaseWeb.Endpoint, action, %{
+          "resource" => resource,
+          "page" => page_number,
+          "search" => %{
+            "generic_search" => search_text,
+            "resource" => resource,
+            "page" => page_number
+          }
+        })
+    end
   end
 end

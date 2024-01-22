@@ -8,22 +8,32 @@ defmodule SanbaseWeb.GenericController do
 
   @resource_module_map SanbaseWeb.GenericAdmin.resource_module_map()
 
-  def index(conn, %{"resource" => resource}) do
-    render(conn, "index.html", table: resource_to_table_params(resource))
+  def index(conn, %{"resource" => resource} = params) do
+    page = params["page"] || 0
+    page_size = params["page_size"] || 10
+
+    render(conn, "index.html",
+      table: resource_to_table_params(resource, %{page: page, page_size: page_size})
+    )
   end
 
   def index(conn, _) do
     render(conn, "error.html")
   end
 
-  def search(conn, %{"resource" => resource, "search" => %{"generic_search" => search_text}}) do
+  def search(
+        conn,
+        %{"search" => %{"generic_search" => search_text, "resource" => resource}} = params
+      ) do
     module = module_from_resource(resource)
     preloads = @resource_module_map[resource][:preloads] || []
+    page = to_integer(params["page"] || 0)
+    page_size = to_integer(params["page_size"] || 10)
 
-    rows =
+    {total_rows, paginated_rows} =
       case parse_field_value(search_text) do
         {:ok, field, value} ->
-          search_by_field_value(module, field, value, preloads)
+          search_by_field_value(module, field, value, preloads, page, page_size)
 
         :error ->
           case Integer.parse(search_text) do
@@ -32,7 +42,16 @@ defmodule SanbaseWeb.GenericController do
           end
       end
 
-    render(conn, "index.html", table: resource_to_table_params(resource, rows))
+    render(conn, "index.html",
+      table:
+        resource_to_table_params(resource, %{
+          total_rows: total_rows,
+          rows: paginated_rows,
+          page: page,
+          page_size: page_size,
+          search_text: search_text
+        })
+    )
   end
 
   def show(conn, %{"resource" => resource, "id" => id}) do
@@ -95,11 +114,14 @@ defmodule SanbaseWeb.GenericController do
 
   def module_from_resource(resource), do: @resource_module_map[resource][:module]
 
-  def resource_to_table_params(resource, rows \\ nil) do
+  def resource_to_table_params(resource, params) do
     name = String.capitalize(resource)
     module = @resource_module_map[resource][:module]
     preloads = @resource_module_map[resource][:preloads] || []
     funcs = @resource_module_map[resource][:funcs] || %{}
+    rows = params[:rows]
+    page = to_integer(params[:page])
+    page_size = to_integer(params[:page_size])
 
     index_fields =
       case @resource_module_map[resource][:index_fields] do
@@ -108,13 +130,48 @@ defmodule SanbaseWeb.GenericController do
         fields when is_list(fields) -> fields
       end
 
+    total_count =
+      case rows do
+        nil -> Repo.aggregate(module, :count, :id)
+        _ -> params[:total_rows]
+      end
+
+    action =
+      case rows do
+        nil -> :index
+        _ -> :search
+      end
+
+    offset = page * page_size
+
+    fetched_rows =
+      case rows do
+        nil ->
+          Repo.all(
+            from(m in module,
+              order_by: [desc: m.id],
+              preload: ^preloads,
+              limit: ^page_size,
+              offset: ^offset
+            )
+          )
+
+        _ ->
+          rows
+      end
+
     %{
       resource: resource,
       resource_name: name,
-      rows: rows || all(module, preloads),
+      rows: fetched_rows,
+      rows_count: total_count,
       fields: index_fields,
       funcs: funcs,
-      actions: @resource_module_map[resource][:actions]
+      actions: @resource_module_map[resource][:actions],
+      current_page: page,
+      page_size: page_size,
+      action: action,
+      search_text: params[:search_text] || ""
     }
   end
 
@@ -152,26 +209,57 @@ defmodule SanbaseWeb.GenericController do
   end
 
   def parse_field_value(str) do
-    case Regex.run(~r/(\w+)\s*=\s*(\w+)/, str) do
+    case Regex.run(~r/(\S+)\s*=\s*(\S+)/, str) do
       [_, field, value] -> {:ok, field, value}
       _ -> :error
     end
   end
 
-  def search_by_field_value(module, field, value, preloads) do
+  def search_by_field_value(module, field, value, preloads, page, page_size) do
     case Integer.parse(value) do
       {id, ""} ->
         search_by_id(module, id, preloads)
 
       _ ->
         value = String.trim(value)
-        search_text = "%" <> value <> "%"
+
+        value = "%" <> value <> "%"
         field = String.to_existing_atom(field)
 
-        from(u in module,
-          where: like(field(u, ^field), ^search_text)
-        )
-        |> Repo.all()
+        field_type = module.__schema__(:type, field)
+
+        query =
+          if field_type == :string do
+            from(u in module,
+              where: like(field(u, ^field), ^value),
+              preload: ^preloads,
+              order_by: [desc: u.id]
+            )
+          else
+            from(u in module,
+              where: field(u, ^field) == ^value,
+              preload: ^preloads,
+              order_by: [desc: u.id]
+            )
+          end
+
+        total_rows = Repo.aggregate(query, :count, :id)
+
+        paginated_rows =
+          query
+          |> limit(^page_size)
+          |> offset(^(page_size * page))
+          |> Repo.all()
+
+        {total_rows, paginated_rows}
+    end
+  end
+
+  def to_integer(value) do
+    case value do
+      nil -> nil
+      value when is_integer(value) -> value
+      value when is_binary(value) -> String.to_integer(value)
     end
   end
 end

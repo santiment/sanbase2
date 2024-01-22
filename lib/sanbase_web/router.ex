@@ -68,7 +68,7 @@ defmodule SanbaseWeb.Router do
     resources("/sheets_templates", SheetsTemplateController)
     resources("/webinars", WebinarController)
     resources("/custom_plans", CustomPlanController)
-    post("/generic/search", GenericController, :search)
+    get("/generic/search", GenericController, :search)
     get("/generic/show_action", GenericController, :show_action)
     resources("/generic", GenericController)
   end

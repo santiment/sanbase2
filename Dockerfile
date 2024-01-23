@@ -70,7 +70,7 @@ COPY src src
 COPY assets assets
 
 # check that the code is formatted
-# RUN mix format --check-formatted
+RUN mix format --check-formatted
 
 # compile assets
 RUN cd assets && npm install

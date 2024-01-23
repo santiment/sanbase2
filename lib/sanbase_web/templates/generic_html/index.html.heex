@@ -1,2 +1,13 @@
-<SanbaseWeb.TableComponent.table resource={@table.resource} model={@table.resource_name} rows={@table.rows} 
-                                 fields={@table.fields} funcs={@table.funcs} actions={@table.actions} />
+<SanbaseWeb.TableComponent.table 
+  resource={@table.resource}
+  action={@table.action}
+  model={@table.resource_name} 
+  rows={@table.rows} 
+  rows_count={@table.rows_count}
+  page_size={@table.page_size} 
+  current_page={@table.current_page} 
+  fields={@table.fields} 
+  funcs={@table.funcs}
+  actions={@table.actions}
+  search_text={@table.search_text}
+/>

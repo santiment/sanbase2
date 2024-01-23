@@ -6709,7 +6709,7 @@ CREATE UNIQUE INDEX free_form_json_storage_key_index ON public.free_form_json_st
 -- Name: geoip_data_ip_address_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX geoip_data_ip_address_index ON public.geoip_data USING btree (ip_address);
+CREATE UNIQUE INDEX geoip_data_ip_address_index ON public.geoip_data USING btree (ip_address);
 
 
 --
@@ -9156,3 +9156,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231206123012);
 INSERT INTO public."schema_migrations" (version) VALUES (20231211133112);
 INSERT INTO public."schema_migrations" (version) VALUES (20231213100958);
 INSERT INTO public."schema_migrations" (version) VALUES (20231213101042);
+INSERT INTO public."schema_migrations" (version) VALUES (20240123102455);
+INSERT INTO public."schema_migrations" (version) VALUES (20240123102628);

@@ -18,6 +18,7 @@ defmodule Sanbase.Geoip.Data do
     geoip_data
     |> cast(attrs, [:ip_address, :is_vpn, :country_name, :country_code])
     |> validate_required([:ip_address, :is_vpn, :country_name, :country_code])
+    |> unique_constraint(:ip_address)
   end
 
   def country_code_by_ip(ip_address) do
@@ -31,18 +32,33 @@ defmodule Sanbase.Geoip.Data do
   end
 
   def find_or_insert(remote_ip) do
-    case Repo.get_by(__MODULE__, ip_address: remote_ip) do
-      nil ->
-        case Geoip.fetch_geo_data(remote_ip) do
-          {:ok, data} ->
-            create(remote_ip, data)
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_geoip, fn _repo, _changes ->
+      case Repo.get_by(__MODULE__, ip_address: remote_ip) do
+        nil -> {:ok, :not_found}
+        geoip_data -> {:ok, geoip_data}
+      end
+    end)
+    |> Ecto.Multi.run(:create_geoip, fn _repo, %{get_geoip: result} ->
+      case result do
+        :not_found ->
+          case Geoip.fetch_geo_data(remote_ip) do
+            {:ok, data} ->
+              create(remote_ip, data)
 
-          {:error, _} = error ->
-            error
-        end
+            {:error, _} = error ->
+              error
+          end
 
-      geoip_data ->
-        {:ok, geoip_data}
+        geoip_data ->
+          {:ok, geoip_data}
+      end
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{create_geoip: geoip_data}} -> {:ok, geoip_data}
+      {:error, :create_geoip, reason, _changes} -> reason
+      _ -> {:error, :unexpected_error}
     end
   end
 

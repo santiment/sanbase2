@@ -28,8 +28,8 @@ defmodule Sanbase.FailedTestFormatter do
               failure_counter: config.failure_counter + 1
           }
 
-        _ ->
-          IO.warn("Unexpected failed test format.")
+        e ->
+          IO.warn("Unexpected failed test format. Got: #{inspect(e)}")
           config
       end
 

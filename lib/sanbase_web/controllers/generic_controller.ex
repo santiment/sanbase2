@@ -147,9 +147,11 @@ defmodule SanbaseWeb.GenericController do
     fetched_rows =
       case rows do
         nil ->
+          sort_field = sort_field(module)
+
           Repo.all(
             from(m in module,
-              order_by: [desc: m.id],
+              order_by: [desc: field(m, ^sort_field)],
               preload: ^preloads,
               limit: ^page_size,
               offset: ^offset
@@ -218,7 +220,7 @@ defmodule SanbaseWeb.GenericController do
   def search_by_field_value(module, field, value, preloads, page, page_size) do
     case Integer.parse(value) do
       {id, ""} ->
-        search_by_id(module, id, preloads)
+        {1, search_by_id(module, id, preloads)}
 
       _ ->
         value = String.trim(value)
@@ -227,19 +229,20 @@ defmodule SanbaseWeb.GenericController do
         field = String.to_existing_atom(field)
 
         field_type = module.__schema__(:type, field)
+        sort_field = sort_field(module)
 
         query =
           if field_type == :string do
-            from(u in module,
-              where: like(field(u, ^field), ^value),
+            from(m in module,
+              where: like(field(m, ^field), ^value),
               preload: ^preloads,
-              order_by: [desc: u.id]
+              order_by: [desc: field(m, ^sort_field)]
             )
           else
-            from(u in module,
-              where: field(u, ^field) == ^value,
+            from(m in module,
+              where: field(m, ^field) == ^value,
               preload: ^preloads,
-              order_by: [desc: u.id]
+              order_by: [desc: field(m, ^sort_field)]
             )
           end
 
@@ -252,6 +255,16 @@ defmodule SanbaseWeb.GenericController do
           |> Repo.all()
 
         {total_rows, paginated_rows}
+    end
+  end
+
+  def sort_field(module) do
+    fields = fields(module)
+
+    cond do
+      :id in fields -> :id
+      :inserted_at in fields -> :inserted_at
+      true -> raise("Ecto schema module #{module} does not have :id or :inserted_at fields")
     end
   end
 

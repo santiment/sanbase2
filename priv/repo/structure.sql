@@ -6709,7 +6709,7 @@ CREATE UNIQUE INDEX free_form_json_storage_key_index ON public.free_form_json_st
 -- Name: geoip_data_ip_address_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX geoip_data_ip_address_index ON public.geoip_data USING btree (ip_address);
+CREATE UNIQUE INDEX geoip_data_ip_address_index ON public.geoip_data USING btree (ip_address);
 
 
 --

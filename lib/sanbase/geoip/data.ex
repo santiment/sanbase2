@@ -18,6 +18,7 @@ defmodule Sanbase.Geoip.Data do
     geoip_data
     |> cast(attrs, [:ip_address, :is_vpn, :country_name, :country_code])
     |> validate_required([:ip_address, :is_vpn, :country_name, :country_code])
+    |> unique_constraint(:ip_address)
   end
 
   def country_code_by_ip(ip_address) do

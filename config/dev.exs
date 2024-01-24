@@ -114,11 +114,6 @@ config :waffle,
   # is used instead of "/tmp/..."
   storage_dir_prefix: "/tmp/"
 
-config :ethereumex,
-  url: "http://erigon-hz.stage.san:30250/",
-  http_options: [timeout: 25_000, recv_timeout: 25_000],
-  http_headers: [{"Content-Type", "application/json"}]
-
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"
 end

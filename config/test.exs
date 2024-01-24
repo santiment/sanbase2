@@ -26,7 +26,7 @@ config :sanbase, Sanbase.PresignedS3Url.S3,
 # Print only warnings and errors during test. Do not log JSON in tests.
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
-  level: :warn
+  level: :warning
 
 config :sanbase, Sanbase.RepoReader, projects_data_endpoint_secret: "no_secret"
 

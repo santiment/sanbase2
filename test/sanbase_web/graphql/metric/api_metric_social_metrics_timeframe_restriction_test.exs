@@ -49,7 +49,7 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
     end
 
     test "cannot access historical data for social metrics", context do
-      {from, to} = from_to(5 * 365, 2 * 365)
+      {from, to} = from_to(5 * 365 - 1, 2 * 365)
       slug = context.project.slug
       metric = Enum.random(context.metrics)
       interval = "1d"
@@ -70,7 +70,7 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
     end
 
     test "can access realtime data for social metrics", context do
-      {from, to} = from_to(2, 0)
+      {from, to} = from_to(3, 0)
       slug = context.project.slug
       metric = Enum.random(context.metrics)
       interval = "5m"
@@ -82,7 +82,7 @@ defmodule Sanbase.Graphql.ApiMetricSocialMetricsTimeframeRestrictionTest do
     end
 
     test "can access historical data for social metrics", context do
-      {from, to} = from_to(5 * 365, 2 * 365)
+      {from, to} = from_to(5 * 365 - 2, 2 * 365)
       slug = context.project.slug
       metric = Enum.random(context.metrics)
       interval = "1d"

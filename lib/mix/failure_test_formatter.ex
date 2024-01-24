@@ -7,29 +7,30 @@ defmodule Sanbase.FailedTestFormatter do
   def init(_opts) do
     {:ok,
      %{
-       failed: [],
-       failure_counter: 0
+       :error => %{list: [], counter: 0},
+       :invalid => %{list: [], counter: 0}
      }}
   end
 
   def handle_cast({:test_finished, %ExUnit.Test{state: {:failed, _}} = test}, config) do
     config =
       case test do
-        %ExUnit.Test{state: {:failed, [{:error, _error, failures}]}} = test
-        when is_list(failures) ->
+        %ExUnit.Test{state: {:failed, [{kind, _error, _stacktrace}]}} = test
+        when kind in [:error, :invalid] ->
           # Add a leading dot so the file:line string can be copy-pasted in the
           # terminal to directly execute it
           file = String.replace_leading(test.tags.file, File.cwd!() <> "/", "")
           line = test.tags.line
+          test_identifier = "#{file}:#{line}"
 
-          %{
-            config
-            | failed: ["#{file}:#{line}" | config.failed],
-              failure_counter: config.failure_counter + 1
-          }
+          config
+          |> Map.update(kind, %{counter: 1, list: [test_identifier]}, fn map ->
+            map |> Map.update!(:counter, &(&1 + 1)) |> Map.update!(:list, &[test_identifier | &1])
+          end)
 
-        _ ->
-          IO.warn("Unexpected failed test format.")
+        # TODO: Support ExUnit.MultiError
+        test ->
+          IO.warn("Unexpected failed test format. Got: #{inspect(test)}")
           config
       end
 
@@ -46,13 +47,19 @@ defmodule Sanbase.FailedTestFormatter do
   end
 
   defp print_suite(config) do
-    if config.failure_counter > 0 do
-      message = config.failed |> Enum.map(&(" " <> &1)) |> Enum.join("\n")
+    for kind <- Map.keys(config) do
+      if (get_in(config, [kind, :counter]) || 0) > 0 do
+        # All tests that failed an assert will have `kind = :error`
+        error_tests_message =
+          get_in(config, [kind, :list]) |> Enum.map(&(" " <> &1)) |> Enum.join("\n")
 
-      formatted_message =
-        IO.ANSI.red() <> "\n\nFailed tests:\n" <> message <> "\n" <> IO.ANSI.reset()
+        formatted_message =
+          IO.ANSI.red() <>
+            "\n\n#{String.capitalize(to_string(kind))} tests:\n" <>
+            error_tests_message <> "\n" <> IO.ANSI.reset()
 
-      IO.puts(formatted_message)
+        IO.puts(formatted_message)
+      end
     end
   end
 end

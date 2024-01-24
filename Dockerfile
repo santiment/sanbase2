@@ -70,6 +70,7 @@ COPY src src
 COPY assets assets
 
 # check that the code is formatted
+COPY .formatter.exs ./
 RUN mix format --check-formatted
 
 # compile assets

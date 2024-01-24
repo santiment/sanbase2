@@ -15,13 +15,18 @@ defmodule Sanbase.FailedTestFormatter do
   def handle_cast({:test_finished, %ExUnit.Test{state: {:failed, _}} = test}, config) do
     config =
       case test do
-        %ExUnit.Test{state: {:failed, [{kind, _error, _stacktrace}]}} = test
-        when kind in [:error, :invalid] ->
+        %ExUnit.Test{state: {:failed, [{kind, error, _stacktrace}]}} = test
+        when kind in [:error, :invalid, :exit] ->
           # Add a leading dot so the file:line string can be copy-pasted in the
           # terminal to directly execute it
           file = String.replace_leading(test.tags.file, File.cwd!() <> "/", "")
           line = test.tags.line
-          test_identifier = "#{file}:#{line}"
+
+          # In case of :exit, the error tuple can contain more info, like :timeout, etc.
+          # In case of :error, the error is not a tuple, but a struct
+          reason = if kind == :exit and is_tuple(error), do: " (#{elem(error, 0)})", else: ""
+
+          test_identifier = "#{file}:#{line}#{reason}"
 
           config
           |> Map.update(kind, %{counter: 1, list: [test_identifier]}, fn map ->

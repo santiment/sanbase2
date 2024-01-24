@@ -26,6 +26,11 @@ config :tailwind,
 # Disable the autoupdate until it is fixed
 config :tzdata, :autoupdate, :disabled
 
+config :ethereumex,
+  url: "http://erigon-hz.stage.san:30250/",
+  http_options: [timeout: 25_000, recv_timeout: 25_000],
+  http_headers: [{"Content-Type", "application/json"}]
+
 config :event_bus,
   # Otherwise the `Base62` is reported as undefined
   id_generator: EventBus.Util.Base62

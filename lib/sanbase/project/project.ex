@@ -16,7 +16,13 @@ defmodule Sanbase.Project do
     LatestCoinmarketcapData
   }
 
-  @preloads [:eth_addresses, :latest_coinmarketcap_data, :github_organizations, :ecosystems]
+  @preloads [
+    :eth_addresses,
+    :latest_coinmarketcap_data,
+    :github_organizations,
+    :contract_addresses,
+    :ecosystems
+  ]
   def preloads(), do: @preloads
 
   schema "project" do

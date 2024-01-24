@@ -14,6 +14,14 @@ defmodule Sanbase.Ecosystem do
   alias Sanbase.ProjectEcosystemMapping
   alias Sanbase.Project
 
+  @type t :: %__MODULE__{
+          ecosystem: String.t(),
+          projects: list(Project.t()),
+          inserted_at: DateTime.t(),
+          updated_at: DateTime.t()
+        }
+
+  @timestamps_opts [type: :utc_datetime]
   schema "ecosystems" do
     field(:ecosystem, :string)
 
@@ -36,21 +44,54 @@ defmodule Sanbase.Ecosystem do
     |> unique_constraint(:ecosystem)
   end
 
+  @spec get_ecosystems() :: {:ok, list(String.t())}
   def get_ecosystems() do
     query = from(e in __MODULE__, select: e.ecosystem)
     {:ok, Sanbase.Repo.all(query)}
   end
 
+  def get_ecosystem_by_name(ecosystem) do
+    query = from(e in __MODULE__, where: e.ecosystem == ^ecosystem)
+
+    case Sanbase.Repo.one(query) do
+      nil -> {:error, "Ecosystem with name #{ecosystem} not found"}
+      %__MODULE__{} = e -> {:ok, e}
+    end
+  end
+
+  @spec get_ecosystems_with_projects() :: {:ok, list(map())}
+  def get_ecosystems_with_projects() do
+    with {:ok, ecosystems} <- get_ecosystems(),
+         {:ok, ecosystem_to_projects_map} <- get_projects(ecosystems) do
+      result =
+        Enum.map(ecosystems, fn e ->
+          %{name: e, projects: Map.get(ecosystem_to_projects_map, e)}
+        end)
+
+      {:ok, result}
+    end
+  end
+
+  @spec create_ecosystem(String.t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create_ecosystem(ecosystem) do
     %__MODULE__{}
     |> changeset(%{ecosystem: ecosystem})
     |> Sanbase.Repo.insert()
   end
 
-  def add_ecosystem_to_project(project_id, ecosystem_id) do
+  @spec add_ecosystem_to_project(non_neg_integer(), non_neg_integer() | String.t()) ::
+          {:ok, t()} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
+  def add_ecosystem_to_project(project_id, ecosystem) when is_binary(ecosystem) do
+    with {:ok, ecosystem} <- get_ecosystem_by_name(ecosystem) do
+      add_ecosystem_to_project(project_id, ecosystem.id)
+    end
+  end
+
+  def add_ecosystem_to_project(project_id, ecosystem_id) when is_integer(ecosystem_id) do
     ProjectEcosystemMapping.create(project_id, ecosystem_id)
   end
 
+  @spec get_project_ecosystems(non_neg_integer()) :: {:ok, list(String.t())}
   def get_project_ecosystems(project_id) do
     query =
       from(e in __MODULE__,
@@ -72,6 +113,8 @@ defmodule Sanbase.Ecosystem do
   - :any_of - Return all projects that have at least one of the provided ecosystems
 
   """
+  @spec get_projects_by_ecosystem_names(list(String.t()), Keyword.t()) ::
+          {:ok, list(Project.t())}
   def get_projects_by_ecosystem_names(ecosystems, opts \\ []) do
     preloads = Project.preloads()
 
@@ -113,5 +156,19 @@ defmodule Sanbase.Ecosystem do
           """
         )
     end
+  end
+
+  defp get_projects(ecosystems) do
+    projects = Sanbase.Project.List.projects()
+    init = Map.new(ecosystems, fn e -> {e, []} end)
+
+    ecosystem_to_projects_map =
+      Enum.reduce(projects, init, fn %Project{} = p, acc ->
+        Enum.reduce(p.ecosystems, acc, fn %__MODULE__{} = e, inner_acc ->
+          Map.update(inner_acc, e.ecosystem, [p], &[p | &1])
+        end)
+      end)
+
+    {:ok, ecosystem_to_projects_map}
   end
 end

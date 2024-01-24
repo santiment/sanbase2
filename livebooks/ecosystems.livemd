@@ -1,0 +1,52 @@
+# Santiment Ecosystems
+
+## Section
+
+```elixir
+# Add ecosystems
+for e <- ["ethereum", "bitcoin", "arbitrum", "cosmos"] do
+  # If the ecosystem exists, an error changeset is returned
+  Sanbase.Ecosystem.create_ecosystem(e)
+end
+
+{:ok, ecosystems} = Sanbase.Ecosystem.get_ecosystems()
+```
+
+```elixir
+# Add projects
+data = [
+  %{name: "Ethereum", ticker: "ETH", slug: "ethereum"},
+  %{name: "Bitcoin", ticker: "BTC", slug: "bitcoin"},
+  %{name: "Santiment", ticker: "SAN", slug: "santiment"},
+  %{name: "Maker", ticker: "MKR", slug: "maker"}
+]
+
+[eth, btc, san, mkr] =
+  for d <- data do
+    {:ok, p} =
+      Sanbase.Project.changeset(%Sanbase.Project{}, d)
+      |> Sanbase.Repo.insert(
+        on_conflict: {:replace, [:ticker, :name, :slug]},
+        conflict_target: :slug
+      )
+
+    p
+  end
+```
+
+```elixir
+# Add ecosystems to projects
+_ = Sanbase.Ecosystem.add_ecosystem_to_project(eth.id, "ethreum")
+_ = Sanbase.Ecosystem.add_ecosystem_to_project(eth.id, "santiment")
+_ = Sanbase.Ecosystem.add_ecosystem_to_project(btc.id, "bitcoin")
+```
+
+```elixir
+# Get the ecosystems
+{:ok, ecosystems} = Sanbase.Ecosystem.get_ecosystems()
+```
+
+```elixir
+# Get the ecosytems with the projects
+Sanbase.Ecosystem.get_ecosystems_with_projects()
+```

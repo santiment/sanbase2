@@ -33,6 +33,17 @@ defmodule SanbaseWeb.DataController do
     |> Plug.Conn.send_resp(200, data)
   end
 
+  def ecosystems_data(conn, _params) do
+    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+
+    {:ok, ecosystems_data} = Sanbase.Cache.get_or_store(cache_key, &get_ecosystems_data/0)
+
+    conn
+    |> put_resp_header("content-type", "application/json; charset=utf-8")
+    |> Plug.Conn.send_resp(200, ecosystems_data)
+  end
+
+  # Private functions
   defp get_santiment_team_members() do
     email_to_discord_id_map = get_email_to_discord_id_map()
 
@@ -54,6 +65,9 @@ defmodule SanbaseWeb.DataController do
       end)
 
     {:ok, data}
+  end
+
+  defp get_ecosystems_data() do
   end
 
   defp get_projects_data() do

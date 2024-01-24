@@ -104,7 +104,7 @@ defmodule Sanbase.Dashboards do
   When neededing to override a query local parameter with a global parameter, use the
   `add_global_parameter_override/4` function.
   """
-  @spec create_dashboard(user_id(), create_dashboard_args()) ::
+  @spec create_dashboard(create_dashboard_args(), user_id()) ::
           {:ok, Dashboard.t()} | {:error, String.t()}
   def create_dashboard(args, user_id) do
     args = args |> Map.merge(%{user_id: user_id})

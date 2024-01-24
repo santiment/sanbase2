@@ -1,0 +1,24 @@
+# Display charts for santiment metrics
+
+## Section
+
+```elixir
+{:ok, data} =
+  Sanbase.Metric.timeseries_data(
+    "price_usd",
+    %{slug: "bitcoin"},
+    ~U[2022-10-01 00:00:00Z],
+    ~U[2024-01-10 00:00:00Z],
+    "1d"
+  )
+```
+
+```elixir
+alias VegaLite, as: Vl
+
+Vl.new(width: 850, height: 400)
+|> Vl.data_from_values(data)
+|> Vl.encode_field(:x, "datetime", type: :temporal)
+|> Vl.encode_field(:y, "value", type: :quantitative)
+|> Vl.mark(:line)
+```

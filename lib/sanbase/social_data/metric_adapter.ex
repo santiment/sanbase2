@@ -48,19 +48,20 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_dominance_twitter_news",
     "social_dominance_twitter_nft",
     "social_dominance_youtube_videos",
+    "social_dominance_newsapi_crypto",
     "social_dominance_total",
     "social_dominance_ai_total"
   ]
 
+  # Exclude newsapi_crypto as sentiment metrics are not supported at the moment
+  sources = ["total"] ++ (SocialHelper.sources() -- [:newsapi_crypto])
+
   @sentiment_timeseries_metrics for name <- ["sentiment"],
+                                    source <- sources,
                                     type <- ["positive", "negative", "balance", "volume_consumed"],
-                                    source <-
-                                      ["total"] ++
-                                        Sanbase.SocialData.SocialHelper.sources(),
                                     do: "#{name}_#{type}_#{source}"
 
   @active_users_timeseries_metrics ["social_active_users"]
-
   @timeseries_metrics @social_dominance_timeseries_metrics ++
                         @social_volume_timeseries_metrics ++
                         @community_messages_count_timeseries_metrics ++

@@ -138,7 +138,7 @@ defmodule Sanbase.SocialVolumeTest do
       # if we add it to the sources list, it will define the sentiment
       # metrics and they are not supported. Fix when all newsapi_crypto
       # metrics are introduced
-      expected_sources = ["newsapi_crypto"] ++ expected_sources
+      expected_sources = expected_sources
 
       assert expected_sources |> Enum.sort() == sources |> Enum.sort()
     end

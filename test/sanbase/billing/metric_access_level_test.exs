@@ -750,6 +750,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_dominance_twitter_news",
         "social_dominance_twitter_nft",
         "social_dominance_youtube_videos",
+        "social_dominance_newsapi_crypto",
         "social_dominance_total",
         "social_dominance_ai_total",
         "social_dominance_total_1h_moving_average",

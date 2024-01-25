@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.EthLoginApiTest do
   use SanbaseWeb.ConnCase
 
+  alias Sanbase.Billing.Subscription.LiquiditySubscription
   import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -14,14 +15,10 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
 
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
     Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.is_valid_signature?/2, true)
-    |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Billing.Subscription.LiquiditySubscription.user_staked_in_uniswap_v2/1,
-      false
-    )
-    |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Billing.Subscription.LiquiditySubscription.user_staked_in_uniswap_v3/1,
-      false
-    )
+    |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v2/1, false)
+    |> Sanbase.Mock.prepare_mock2(&LiquiditySubscription.user_staked_in_uniswap_v3/1, false)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.SmartContracts.UniswapPair.total_supply/1, 10.00)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.SmartContracts.UniswapPair.get_san_position/1, 1)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         eth_login(context.conn, address, signature, message_hash)
@@ -47,11 +44,11 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
     Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.is_valid_signature?/2, true)
     |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Billing.Subscription.LiquiditySubscription.user_staked_in_uniswap_v2/1,
+      &LiquiditySubscription.user_staked_in_uniswap_v2/1,
       false
     )
     |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Billing.Subscription.LiquiditySubscription.user_staked_in_uniswap_v3/1,
+      &LiquiditySubscription.user_staked_in_uniswap_v3/1,
       false
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -81,11 +78,11 @@ defmodule SanbaseWeb.Graphql.EthLoginApiTest do
     # Mock the external call to Ethauth. Mock the call to trial subscription creation.
     Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.is_valid_signature?/2, true)
     |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Billing.Subscription.LiquiditySubscription.user_staked_in_uniswap_v2/1,
+      &LiquiditySubscription.user_staked_in_uniswap_v2/1,
       false
     )
     |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Billing.Subscription.LiquiditySubscription.user_staked_in_uniswap_v3/1,
+      &LiquiditySubscription.user_staked_in_uniswap_v3/1,
       false
     )
     |> Sanbase.Mock.run_with_mocks(fn ->

@@ -8,7 +8,6 @@ defmodule SanbaseWeb.GenericAdmin.Subscription do
       admin_module: __MODULE__,
       singular: "subscription",
       preloads: [:user, plan: [:product]],
-      index_fields: [:id, :plan, :status],
       edit_fields: [],
       show_fields: :all,
       actions: [:show, :edit],

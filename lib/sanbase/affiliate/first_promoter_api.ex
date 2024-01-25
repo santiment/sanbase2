@@ -1,4 +1,4 @@
-defmodule Sanbase.Promoters.FirstPromoterApi do
+defmodule Sanbase.Affiliate.FirstPromoterApi do
   @moduledoc """
   Wrapper for First Promoter promoters API: https://firstpromoter.com/api/v1/promoters/
   """

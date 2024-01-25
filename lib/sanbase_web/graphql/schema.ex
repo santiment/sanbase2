@@ -123,6 +123,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.SocialDataQueries)
   import_types(Graphql.Schema.TableConfigurationQueries)
   import_types(Graphql.Schema.TimelineQueries)
+  import_types(Graphql.Schema.UserAffiliateDetailsQueries)
   import_types(Graphql.Schema.UserListQueries)
   import_types(Graphql.Schema.UserQueries)
   import_types(Graphql.Schema.UserTriggerQueries)

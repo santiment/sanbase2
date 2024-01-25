@@ -1,7 +1,4 @@
 defmodule SanbaseWeb.Graphql.Schema.UserAffiliateDetailsQueries do
-  @moduledoc ~s"""
-  Queries and mutations for working with short urls
-  """
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Middlewares.UserAuth

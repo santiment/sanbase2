@@ -27,7 +27,7 @@ config :tailwind,
 config :tzdata, :autoupdate, :disabled
 
 config :ethereumex,
-  url: "http://erigon-hz.stage.san:30250/",
+  url: "https://ethereum.santiment.net",
   http_options: [timeout: 25_000, recv_timeout: 25_000],
   http_headers: [{"Content-Type", "application/json"}]
 

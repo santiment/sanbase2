@@ -308,7 +308,7 @@ defmodule SanbaseWeb.GenericController.LinkBuilder do
           else
             resource = module_to_resource_name(related_module)
             link = href(resource, field_value, "#{field_name}: #{field_value}")
-            Map.put(acc, to_string(assoc_name), link)
+            Map.put(acc, field_name, link)
           end
 
         _ ->

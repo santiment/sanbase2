@@ -3903,39 +3903,6 @@ ALTER SEQUENCE public.timeline_events_id_seq OWNED BY public.timeline_events.id;
 
 
 --
--- Name: user_affiliate_details; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_affiliate_details (
-    id bigint NOT NULL,
-    telegram_handle character varying(255),
-    marketing_channels text,
-    user_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: user_affiliate_details_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.user_affiliate_details_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: user_affiliate_details_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.user_affiliate_details_id_seq OWNED BY public.user_affiliate_details.id;
-
-
---
 -- Name: user_api_key_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5269,13 +5236,6 @@ ALTER TABLE ONLY public.timeline_events ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
--- Name: user_affiliate_details id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_affiliate_details ALTER COLUMN id SET DEFAULT nextval('public.user_affiliate_details_id_seq'::regclass);
-
-
---
 -- Name: user_api_key_tokens id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6237,14 +6197,6 @@ ALTER TABLE ONLY public.timeline_event_comments_mapping
 
 ALTER TABLE ONLY public.timeline_events
     ADD CONSTRAINT timeline_events_pkey PRIMARY KEY (id);
-
-
---
--- Name: user_affiliate_details user_affiliate_details_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_affiliate_details
-    ADD CONSTRAINT user_affiliate_details_pkey PRIMARY KEY (id);
 
 
 --
@@ -7262,13 +7214,6 @@ CREATE INDEX timeline_events_user_list_id_index ON public.timeline_events USING 
 --
 
 CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USING btree (user_trigger_id);
-
-
---
--- Name: user_affiliate_details_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX user_affiliate_details_user_id_index ON public.user_affiliate_details USING btree (user_id);
 
 
 --
@@ -8492,14 +8437,6 @@ ALTER TABLE ONLY public.timeline_events
 
 
 --
--- Name: user_affiliate_details user_affiliate_details_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_affiliate_details
-    ADD CONSTRAINT user_affiliate_details_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
 -- Name: user_api_key_tokens user_api_key_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9221,4 +9158,3 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231213100958);
 INSERT INTO public."schema_migrations" (version) VALUES (20231213101042);
 INSERT INTO public."schema_migrations" (version) VALUES (20240123102455);
 INSERT INTO public."schema_migrations" (version) VALUES (20240123102628);
-INSERT INTO public."schema_migrations" (version) VALUES (20240125095156);

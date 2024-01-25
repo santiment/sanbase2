@@ -661,6 +661,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       resolve(&QueriesResolver.delete_dashboard_global_parameter_override/3)
     end
 
+    # Text Widgets
     field :add_dashboard_text_widget, :dashboard_text_widget_tuple do
       arg(:dashboard_id, non_null(:integer))
 
@@ -693,6 +694,39 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       middleware(JWTAuth)
 
       resolve(&QueriesResolver.delete_dashboard_text_widget/3)
+    end
+
+    # Image Widgets
+    field :add_dashboard_image_widget, :dashboard_image_widget_tuple do
+      arg(:dashboard_id, non_null(:integer))
+
+      arg(:url, non_null(:string))
+      arg(:alt, :string)
+
+      middleware(JWTAuth)
+
+      resolve(&QueriesResolver.add_dashboard_image_widget/3)
+    end
+
+    field :update_dashboard_image_widget, :dashboard_image_widget_tuple do
+      arg(:dashboard_id, non_null(:integer))
+      arg(:image_widget_id, non_null(:string))
+
+      arg(:url, :string)
+      arg(:alt, :string)
+
+      middleware(JWTAuth)
+
+      resolve(&QueriesResolver.update_dashboard_image_widget/3)
+    end
+
+    field :delete_dashboard_image_widget, :dashboard_image_widget_tuple do
+      arg(:dashboard_id, non_null(:integer))
+      arg(:image_widget_id, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&QueriesResolver.delete_dashboard_image_widget/3)
     end
   end
 end

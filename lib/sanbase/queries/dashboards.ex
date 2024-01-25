@@ -9,6 +9,7 @@ defmodule Sanbase.Dashboards do
   alias Sanbase.Queries.DashboardQueryMapping
 
   alias Sanbase.Queries.TextWidget
+  alias Sanbase.Queries.ImageWidget
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
@@ -21,6 +22,8 @@ defmodule Sanbase.Dashboards do
   @type dashboard_query_mapping_id :: DashboardQueryMapping.dashboard_query_mapping_id()
   @type text_widget_id :: TextWidget.text_widget_id()
   @type text_widget_args :: TextWidget.text_widget_args()
+  @type image_widget_id :: ImageWidget.image_widget_id()
+  @type image_widget_args :: ImageWidget.image_widget_args()
 
   @type visibility_data :: %{
           user_id: user_id(),
@@ -615,6 +618,133 @@ defmodule Sanbase.Dashboards do
     end)
     |> Repo.transaction()
     |> process_transaction_result(:get_dashboard_and_text_widget)
+  end
+
+  @doc ~s"""
+  Add a image widget to the dashboard
+
+  A image widget is a static widget that can be used to display a single image on the dashboard.
+  A image widget has 3 image fields:
+    - url
+    - alt
+
+  A image widget has no parameters and is not executed against ClickHouse. But it can use the
+  dashboard global parameters and the environment variables.
+  """
+  @spec add_image_widget(dashboard_id(), user_id(), image_widget_args()) ::
+          {:ok, Dashboard.t()} | {:error, String.t()}
+  def add_image_widget(dashboard_id, querying_user_id, args) do
+    image_widget_id = UUID.uuid4()
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id, preload?: false)
+    end)
+    |> Ecto.Multi.run(:add_image_widget, fn _, %{get_dashboard_for_mutation: dashboard} ->
+      changeset =
+        ImageWidget.changeset(%ImageWidget{}, args)
+        |> Ecto.Changeset.put_change(:id, image_widget_id)
+
+      dashboard
+      |> Ecto.Changeset.change()
+      |> Ecto.Changeset.put_embed(:image_widgets, [changeset] ++ dashboard.image_widgets)
+      |> Repo.update()
+    end)
+    |> Ecto.Multi.run(:get_dashboard_and_image_widget, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
+        image_widget = Enum.find(dashboard.image_widgets, &(&1.id == image_widget_id))
+        {:ok, %{dashboard: dashboard, image_widget: image_widget}}
+      end
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:get_dashboard_and_image_widget)
+  end
+
+  @doc ~s"""
+  Update the image widget with the given id on a given dashboard.
+  """
+  @spec update_image_widget(dashboard_id(), image_widget_id(), user_id(), image_widget_args()) ::
+          {:ok, Dashboard.t()} | {:error, String.t()}
+  def update_image_widget(dashboard_id, image_widget_id, querying_user_id, args) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id, preload?: false)
+    end)
+    |> Ecto.Multi.run(:update_image_widget, fn _, %{get_dashboard_for_mutation: dashboard} ->
+      case Enum.find(dashboard.image_widgets, &(&1.id == image_widget_id)) do
+        nil ->
+          {:error, "Image widget with id #{image_widget_id} does not exist."}
+
+        image_widget ->
+          changeset = ImageWidget.changeset(image_widget, args)
+
+          image_widgets =
+            Enum.map(
+              dashboard.image_widgets,
+              fn
+                # Replace the image widget that has the same id
+                %{id: ^image_widget_id} -> changeset
+                elem -> elem
+              end
+            )
+
+          dashboard
+          |> Ecto.Changeset.change()
+          |> Ecto.Changeset.put_embed(:image_widgets, image_widgets)
+          |> Repo.update()
+      end
+    end)
+    |> Ecto.Multi.run(:get_dashboard_and_image_widget, fn _repo, _changes_so_far ->
+      # Get the dashboard so the queries are properly preloaded
+      with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
+        image_widget = Enum.find(dashboard.image_widgets, &(&1.id == image_widget_id))
+        {:ok, %{dashboard: dashboard, image_widget: image_widget}}
+      end
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:get_dashboard_and_image_widget)
+  end
+
+  @doc ~s"""
+  Delete a image widget with the given id on a given dashboard.
+  """
+  @spec delete_image_widget(dashboard_id(), image_widget_id(), user_id()) ::
+          {:ok, Dashboard.t()} | {:error, String.t()}
+  def delete_image_widget(dashboard_id, image_widget_id, querying_user_id) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      get_dashboard_for_mutation(dashboard_id, querying_user_id, preload?: false)
+    end)
+    |> Ecto.Multi.run(:delete_image_widget, fn _, %{get_dashboard_for_mutation: dashboard} ->
+      case Enum.find(dashboard.image_widgets, &(&1.id == image_widget_id)) do
+        nil ->
+          {:error, "Image widget with id #{image_widget_id} does not exist."}
+
+        image_widget ->
+          image_widgets =
+            Enum.reject(dashboard.image_widgets, fn %{id: id} -> id == image_widget_id end)
+
+          result =
+            dashboard
+            |> Ecto.Changeset.change()
+            |> Ecto.Changeset.put_embed(:image_widgets, image_widgets)
+            |> Repo.update()
+
+          case result do
+            {:ok, dashboard} -> {:ok, %{dashboard: dashboard, image_widget: image_widget}}
+            {:error, error} -> {:error, error}
+          end
+      end
+    end)
+    |> Ecto.Multi.run(:get_dashboard_and_image_widget, fn _repo, %{delete_image_widget: map} ->
+      # Get the dashboard so the queries are properly preloaded
+      with {:ok, dashboard} <- get_dashboard(dashboard_id, querying_user_id) do
+        {:ok, %{map | dashboard: dashboard}}
+      end
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:get_dashboard_and_image_widget)
   end
 
   @doc ~s"""

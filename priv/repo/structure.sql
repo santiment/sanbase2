@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 14.10 (Homebrew)
+-- Dumped by pg_dump version 14.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -951,7 +951,8 @@ CREATE TABLE public.dashboards (
     is_hidden boolean DEFAULT false,
     parameters jsonb DEFAULT '{}'::jsonb,
     settings jsonb DEFAULT '{}'::jsonb,
-    text_widgets jsonb
+    text_widgets jsonb,
+    image_widgets jsonb
 );
 
 
@@ -1086,6 +1087,37 @@ CREATE SEQUENCE public.discord_dashboards_id_seq
 --
 
 ALTER SEQUENCE public.discord_dashboards_id_seq OWNED BY public.discord_dashboards.id;
+
+
+--
+-- Name: ecosystems; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ecosystems (
+    id bigint NOT NULL,
+    ecosystem character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: ecosystems_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ecosystems_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ecosystems_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ecosystems_id_seq OWNED BY public.ecosystems.id;
 
 
 --
@@ -2831,6 +2863,38 @@ CREATE TABLE public.project (
     ecosystem character varying(255),
     ecosystem_full_path character varying(255)
 );
+
+
+--
+-- Name: project_ecosystem_mappings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_ecosystem_mappings (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    ecosystem_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: project_ecosystem_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_ecosystem_mappings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_ecosystem_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_ecosystem_mappings_id_seq OWNED BY public.project_ecosystem_mappings.id;
 
 
 --
@@ -4753,6 +4817,13 @@ ALTER TABLE ONLY public.discord_dashboards ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
+-- Name: ecosystems id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ecosystems ALTER COLUMN id SET DEFAULT nextval('public.ecosystems_id_seq'::regclass);
+
+
+--
 -- Name: email_login_attempts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5037,6 +5108,13 @@ ALTER TABLE ONLY public.products ALTER COLUMN id SET DEFAULT nextval('public.pro
 --
 
 ALTER TABLE ONLY public.project ALTER COLUMN id SET DEFAULT nextval('public.project_id_seq'::regclass);
+
+
+--
+-- Name: project_ecosystem_mappings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_mappings ALTER COLUMN id SET DEFAULT nextval('public.project_ecosystem_mappings_id_seq'::regclass);
 
 
 --
@@ -5576,6 +5654,14 @@ ALTER TABLE ONLY public.discord_dashboards
 
 
 --
+-- Name: ecosystems ecosystems_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ecosystems
+    ADD CONSTRAINT ecosystems_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: email_login_attempts email_login_attempts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5917,6 +6003,14 @@ ALTER TABLE ONLY public.processed_github_archives
 
 ALTER TABLE ONLY public.products
     ADD CONSTRAINT products_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_ecosystem_mappings project_ecosystem_mappings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_mappings
+    ADD CONSTRAINT project_ecosystem_mappings_pkey PRIMARY KEY (id);
 
 
 --
@@ -6594,6 +6688,13 @@ CREATE INDEX document_tokens_index ON public.posts USING gin (document_tokens);
 
 
 --
+-- Name: ecosystems_ecosystem_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ecosystems_ecosystem_index ON public.ecosystems USING btree (ecosystem);
+
+
+--
 -- Name: email_login_attempts_ip_address_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6955,6 +7056,13 @@ CREATE UNIQUE INDEX products_code_index ON public.products USING btree (code);
 --
 
 CREATE UNIQUE INDEX products_stripe_id_index ON public.products USING btree (stripe_id);
+
+
+--
+-- Name: project_ecosystem_mappings_project_id_ecosystem_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX project_ecosystem_mappings_project_id_ecosystem_id_index ON public.project_ecosystem_mappings USING btree (project_id, ecosystem_id);
 
 
 --
@@ -8141,6 +8249,22 @@ ALTER TABLE ONLY public.processed_github_archives
 
 
 --
+-- Name: project_ecosystem_mappings project_ecosystem_mappings_ecosystem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_mappings
+    ADD CONSTRAINT project_ecosystem_mappings_ecosystem_id_fkey FOREIGN KEY (ecosystem_id) REFERENCES public.ecosystems(id);
+
+
+--
+-- Name: project_ecosystem_mappings project_ecosystem_mappings_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_mappings
+    ADD CONSTRAINT project_ecosystem_mappings_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id);
+
+
+--
 -- Name: project_eth_address project_eth_address_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9156,5 +9280,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231206123012);
 INSERT INTO public."schema_migrations" (version) VALUES (20231211133112);
 INSERT INTO public."schema_migrations" (version) VALUES (20231213100958);
 INSERT INTO public."schema_migrations" (version) VALUES (20231213101042);
+INSERT INTO public."schema_migrations" (version) VALUES (20240115140319);
 INSERT INTO public."schema_migrations" (version) VALUES (20240123102455);
 INSERT INTO public."schema_migrations" (version) VALUES (20240123102628);
+INSERT INTO public."schema_migrations" (version) VALUES (20240125141406);

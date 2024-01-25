@@ -67,7 +67,7 @@ defmodule Sanbase.SmartContracts.Utils do
            Ethereumex.HttpClient.eth_call(%{data: "0x" <> function_signature, to: contract}) do
       hex_encoded_binary_response
       # Strip `0x` prefix
-      |> String.slice(2..-1//1)
+      |> String.trim_leading("0x")
       |> Base.decode16!(case: :lower)
       |> case do
         "" -> :error

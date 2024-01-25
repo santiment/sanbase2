@@ -11,7 +11,8 @@ defmodule Sanbase.SocialData.SocialHelper do
     :twitter_crypto,
     :twitter_news,
     :twitter_nft,
-    :youtube_videos
+    :youtube_videos,
+    :newsapi_crypto
   ]
 
   def sources(), do: @sources

@@ -28,7 +28,7 @@ defmodule Sanbase.Affiliate.UserAffiliateDetails do
   end
 
   def are_user_affiliate_datails_submitted?(user_id) do
-    case Repo.get_by(UserAffiliateDetails, user_id: user_id) do
+    case Repo.get_by(__MODULE__, user_id: user_id) do
       nil -> false
       _ -> true
     end

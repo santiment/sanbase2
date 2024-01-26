@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.10 (Homebrew)
--- Dumped by pg_dump version 14.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1087,37 +1087,6 @@ CREATE SEQUENCE public.discord_dashboards_id_seq
 --
 
 ALTER SEQUENCE public.discord_dashboards_id_seq OWNED BY public.discord_dashboards.id;
-
-
---
--- Name: ecosystems; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.ecosystems (
-    id bigint NOT NULL,
-    ecosystem character varying(255) NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: ecosystems_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.ecosystems_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: ecosystems_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.ecosystems_id_seq OWNED BY public.ecosystems.id;
 
 
 --
@@ -2866,38 +2835,6 @@ CREATE TABLE public.project (
 
 
 --
--- Name: project_ecosystem_mappings; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.project_ecosystem_mappings (
-    id bigint NOT NULL,
-    project_id bigint NOT NULL,
-    ecosystem_id bigint NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: project_ecosystem_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.project_ecosystem_mappings_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: project_ecosystem_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.project_ecosystem_mappings_id_seq OWNED BY public.project_ecosystem_mappings.id;
-
-
---
 -- Name: project_eth_address; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3967,6 +3904,39 @@ ALTER SEQUENCE public.timeline_events_id_seq OWNED BY public.timeline_events.id;
 
 
 --
+-- Name: user_affiliate_details; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_affiliate_details (
+    id bigint NOT NULL,
+    telegram_handle character varying(255) NOT NULL,
+    marketing_channels text,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_affiliate_details_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_affiliate_details_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_affiliate_details_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_affiliate_details_id_seq OWNED BY public.user_affiliate_details.id;
+
+
+--
 -- Name: user_api_key_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4817,13 +4787,6 @@ ALTER TABLE ONLY public.discord_dashboards ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
--- Name: ecosystems id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.ecosystems ALTER COLUMN id SET DEFAULT nextval('public.ecosystems_id_seq'::regclass);
-
-
---
 -- Name: email_login_attempts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5111,13 +5074,6 @@ ALTER TABLE ONLY public.project ALTER COLUMN id SET DEFAULT nextval('public.proj
 
 
 --
--- Name: project_ecosystem_mappings id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.project_ecosystem_mappings ALTER COLUMN id SET DEFAULT nextval('public.project_ecosystem_mappings_id_seq'::regclass);
-
-
---
 -- Name: project_eth_address id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5311,6 +5267,13 @@ ALTER TABLE ONLY public.timeline_event_comments_mapping ALTER COLUMN id SET DEFA
 --
 
 ALTER TABLE ONLY public.timeline_events ALTER COLUMN id SET DEFAULT nextval('public.timeline_events_id_seq'::regclass);
+
+
+--
+-- Name: user_affiliate_details id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_affiliate_details ALTER COLUMN id SET DEFAULT nextval('public.user_affiliate_details_id_seq'::regclass);
 
 
 --
@@ -5651,14 +5614,6 @@ ALTER TABLE ONLY public.dashboards
 
 ALTER TABLE ONLY public.discord_dashboards
     ADD CONSTRAINT discord_dashboards_pkey PRIMARY KEY (id);
-
-
---
--- Name: ecosystems ecosystems_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.ecosystems
-    ADD CONSTRAINT ecosystems_pkey PRIMARY KEY (id);
 
 
 --
@@ -6006,14 +5961,6 @@ ALTER TABLE ONLY public.products
 
 
 --
--- Name: project_ecosystem_mappings project_ecosystem_mappings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.project_ecosystem_mappings
-    ADD CONSTRAINT project_ecosystem_mappings_pkey PRIMARY KEY (id);
-
-
---
 -- Name: project_eth_address project_eth_address_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6291,6 +6238,14 @@ ALTER TABLE ONLY public.timeline_event_comments_mapping
 
 ALTER TABLE ONLY public.timeline_events
     ADD CONSTRAINT timeline_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_affiliate_details user_affiliate_details_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_affiliate_details
+    ADD CONSTRAINT user_affiliate_details_pkey PRIMARY KEY (id);
 
 
 --
@@ -6688,13 +6643,6 @@ CREATE INDEX document_tokens_index ON public.posts USING gin (document_tokens);
 
 
 --
--- Name: ecosystems_ecosystem_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX ecosystems_ecosystem_index ON public.ecosystems USING btree (ecosystem);
-
-
---
 -- Name: email_login_attempts_ip_address_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7059,13 +7007,6 @@ CREATE UNIQUE INDEX products_stripe_id_index ON public.products USING btree (str
 
 
 --
--- Name: project_ecosystem_mappings_project_id_ecosystem_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX project_ecosystem_mappings_project_id_ecosystem_id_index ON public.project_ecosystem_mappings USING btree (project_id, ecosystem_id);
-
-
---
 -- Name: project_eth_address_address_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7325,6 +7266,13 @@ CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USI
 
 
 --
+-- Name: user_affiliate_details_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_affiliate_details_user_id_index ON public.user_affiliate_details USING btree (user_id);
+
+
+--
 -- Name: user_api_key_tokens_token_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7486,10 +7434,10 @@ CREATE UNIQUE INDEX votes_chart_configuration_id_user_id_index ON public.votes U
 
 
 --
--- Name: votes_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: votes_dashboard_id_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX votes_dashboard_id_index ON public.votes USING btree (dashboard_id);
+CREATE INDEX votes_dashboard_id_user_id_index ON public.votes USING btree (dashboard_id, user_id);
 
 
 --
@@ -8249,22 +8197,6 @@ ALTER TABLE ONLY public.processed_github_archives
 
 
 --
--- Name: project_ecosystem_mappings project_ecosystem_mappings_ecosystem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.project_ecosystem_mappings
-    ADD CONSTRAINT project_ecosystem_mappings_ecosystem_id_fkey FOREIGN KEY (ecosystem_id) REFERENCES public.ecosystems(id);
-
-
---
--- Name: project_ecosystem_mappings project_ecosystem_mappings_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.project_ecosystem_mappings
-    ADD CONSTRAINT project_ecosystem_mappings_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id);
-
-
---
 -- Name: project_eth_address project_eth_address_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8558,6 +8490,14 @@ ALTER TABLE ONLY public.timeline_events
 
 ALTER TABLE ONLY public.timeline_events
     ADD CONSTRAINT timeline_events_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_affiliate_details user_affiliate_details_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_affiliate_details
+    ADD CONSTRAINT user_affiliate_details_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -9280,7 +9220,8 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231206123012);
 INSERT INTO public."schema_migrations" (version) VALUES (20231211133112);
 INSERT INTO public."schema_migrations" (version) VALUES (20231213100958);
 INSERT INTO public."schema_migrations" (version) VALUES (20231213101042);
-INSERT INTO public."schema_migrations" (version) VALUES (20240115140319);
 INSERT INTO public."schema_migrations" (version) VALUES (20240123102455);
 INSERT INTO public."schema_migrations" (version) VALUES (20240123102628);
+INSERT INTO public."schema_migrations" (version) VALUES (20240125095156);
 INSERT INTO public."schema_migrations" (version) VALUES (20240125141406);
+INSERT INTO public."schema_migrations" (version) VALUES (20240126133447);

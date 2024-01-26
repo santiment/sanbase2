@@ -7486,10 +7486,10 @@ CREATE UNIQUE INDEX votes_chart_configuration_id_user_id_index ON public.votes U
 
 
 --
--- Name: votes_dashboard_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: votes_dashboard_id_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX votes_dashboard_id_index ON public.votes USING btree (dashboard_id);
+CREATE UNIQUE INDEX votes_dashboard_id_user_id_index ON public.votes USING btree (dashboard_id, user_id);
 
 
 --
@@ -9284,3 +9284,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240115140319);
 INSERT INTO public."schema_migrations" (version) VALUES (20240123102455);
 INSERT INTO public."schema_migrations" (version) VALUES (20240123102628);
 INSERT INTO public."schema_migrations" (version) VALUES (20240125141406);
+INSERT INTO public."schema_migrations" (version) VALUES (20240126133441);

@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   end
 
   @desc ~s"""
-  TODO: Document this type
+  A widget that can be added to dashboards. It represents text data and is static.
   """
   object :text_widget do
     field(:id, non_null(:string))
@@ -63,7 +63,21 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:body, :string)
 
     # Timestamps
-    field(:created_at, non_null(:datetime))
+    field(:inserted_at, non_null(:datetime))
+    field(:updated_at, non_null(:datetime))
+  end
+
+  @desc ~s"""
+  A widget that is part of a dashboard. It represents an image by its URL and alt text.
+  Images can be uploaded via the uploadImage GraphQL mutation
+  """
+  object :image_widget do
+    field(:id, non_null(:string))
+    field(:url, non_null(:string))
+    field(:alt, :string)
+
+    # Timestamps
+    field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
   end
 
@@ -107,6 +121,8 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:queries, list_of(:sql_query))
 
     field(:text_widgets, list_of(:text_widget))
+
+    field(:image_widgets, list_of(:image_widget))
 
     field :user, non_null(:public_user) do
       resolve(&UserResolver.user_no_preloads/3)
@@ -257,6 +273,11 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
 
   object :dashboard_text_widget_tuple do
     field(:text_widget, non_null(:text_widget))
+    field(:dashboard, non_null(:dashboard))
+  end
+
+  object :dashboard_image_widget_tuple do
+    field(:image_widget, non_null(:image_widget))
     field(:dashboard, non_null(:dashboard))
   end
 end

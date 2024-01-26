@@ -16,6 +16,7 @@ defmodule Sanbase.Queries.Dashboard do
   alias Sanbase.Accounts.User
   alias Sanbase.Queries.Query
   alias Sanbase.Queries.TextWidget
+  alias Sanbase.Queries.ImageWidget
 
   @type t :: %__MODULE__{
           id: non_neg_integer(),
@@ -89,6 +90,7 @@ defmodule Sanbase.Queries.Dashboard do
     )
 
     embeds_many(:text_widgets, TextWidget, on_replace: :delete)
+    embeds_many(:image_widgets, ImageWidget, on_replace: :delete)
 
     # Keep for backwards compatibility reasons
     embeds_many(:panels, Sanbase.Dashboard.Panel, on_replace: :delete)

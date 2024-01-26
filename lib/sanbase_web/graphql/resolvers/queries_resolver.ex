@@ -368,6 +368,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Dashboards.delete_text_widget(dashboard_id, text_widget_id, user.id)
   end
 
+  # Image Widgets
+
+  def add_dashboard_image_widget(_root, %{dashboard_id: dashboard_id} = args, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    Dashboards.add_image_widget(dashboard_id, user.id, args)
+  end
+
+  def update_dashboard_image_widget(
+        _root,
+        %{dashboard_id: dashboard_id, image_widget_id: text_widget_id} = args,
+        %{
+          context: %{auth: %{current_user: user}}
+        }
+      ) do
+    Dashboards.update_image_widget(dashboard_id, text_widget_id, user.id, args)
+  end
+
+  def delete_dashboard_image_widget(
+        _root,
+        %{dashboard_id: dashboard_id, image_widget_id: text_widget_id},
+        %{
+          context: %{auth: %{current_user: user}}
+        }
+      ) do
+    Dashboards.delete_image_widget(dashboard_id, text_widget_id, user.id)
+  end
+
   # Private functions
 
   defp get_global_param_one_value(value_map) do

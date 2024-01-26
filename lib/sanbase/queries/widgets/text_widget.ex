@@ -1,7 +1,11 @@
 defmodule Sanbase.Queries.TextWidget do
   @moduledoc ~s"""
-  TODO
+  An embedded schema that represents a text widget.
+
+  The text widgets are embedded in the "dashboards" table.
   """
+
+  # TODO: Fix the module namespace -- it should not be under Queries.
   use Ecto.Schema
 
   import Ecto.Changeset

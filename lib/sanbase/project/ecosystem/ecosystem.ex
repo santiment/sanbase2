@@ -1,9 +1,12 @@
 defmodule Sanbase.Ecosystem do
   @moduledoc ~s"""
-  Module for managing the "github_organziations" postgres table
+  Module for managing the "ecosystems" postgres table
 
-  In order to have multiple github organizations per project we store
-  the github data in a separate table
+  There are many ecosystems and one project can belong to multiple ecosystems.
+  The mapping is done in the Sanbase.ProjectEcosystemMapping module.
+
+  This module provides functions for managing the ecosystems and fetching
+  ecosystems, projects in an ecosystem, ecosystems of a projects, etc.
   """
 
   use Ecto.Schema

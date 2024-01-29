@@ -98,9 +98,9 @@ defmodule Sanbase.WatchlistFunction do
   end
 
   def valid_function?(%__MODULE__{name: "ecosystems", args: args} = fun, opts) do
-    market_segment = Map.get(args, "ecosystems") || Map.fetch!(args, :ecosystems)
+    ecosystems = Map.get(args, "ecosystems") || Map.fetch!(args, :ecosystems)
 
-    case is_list(market_segment) and market_segment != [] do
+    case is_list(ecosystems) and ecosystems != [] do
       true -> maybe_check_evaluates(fun, opts)
       false -> {:error, "The ecosystems argument must be a non-empty list."}
     end
@@ -221,10 +221,7 @@ defmodule Sanbase.WatchlistFunction do
   end
 
   def evaluate(%__MODULE__{name: "ecosystems", args: args}) do
-    ecosystems =
-      Map.get(args, "ecosystems") ||
-        Map.fetch!(args, :ecosystems)
-        |> IO.inspect(label: "ecosystems")
+    ecosystems = Map.get(args, "ecosystems") || Map.fetch!(args, :ecosystems)
 
     with {:ok, projects} <-
            Sanbase.Ecosystem.get_projects_by_ecosystem_names(ecosystems, combinator: :all_of) do

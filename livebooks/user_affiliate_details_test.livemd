@@ -21,9 +21,9 @@ Sanbase.DevUtils.GraphQLQueryExecutor.execute_query(query, current_user)
 ```elixir
 mutation = """
 mutation {
-  addUserAffiliateDetails(telegramHandle: "@exampleHandle", marketingChannels: "Social Media")
+  addUserAffiliateDetails(telegramHandle: "@exampleHandle", marketingChannels: "test133")
 }
 """
 
-Sanbase.GraphQLQueryExecutor.execute_query(mutation, current_user)
+Sanbase.DevUtils.GraphQLQueryExecutor.execute_query(mutation, current_user)
 ```

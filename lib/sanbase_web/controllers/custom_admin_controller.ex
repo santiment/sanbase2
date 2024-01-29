@@ -3,7 +3,8 @@ defmodule SanbaseWeb.CustomAdminController do
 
   @resources [
     :users,
-    :subscriptions
+    :subscriptions,
+    :user_affiliate_details
   ]
 
   def index(conn, _params) do

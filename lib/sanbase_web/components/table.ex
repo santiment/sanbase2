@@ -27,7 +27,10 @@ defmodule SanbaseWeb.TableComponent do
             <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
               <%= for field <- @fields do %>
                 <.td value={
-                  if @funcs[field] != nil, do: @funcs[field].(row), else: Map.get(row, field)
+                  result =
+                    if @assocs[row.id][field], do: @assocs[row.id][field], else: Map.get(row, field)
+
+                  if @funcs[field] != nil, do: @funcs[field].(row), else: result
                 } />
               <% end %>
               <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">

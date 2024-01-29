@@ -1,0 +1,29 @@
+# Test user affiliates details API
+
+## Create a graphql query executor wrapper
+
+
+
+```elixir
+current_user = Sanbase.Accounts.get_user!(1)
+
+query = """
+{
+  currentUser {
+    areUserAffiliateDatailsSubmitted
+  } 
+}
+"""
+
+Sanbase.DevUtils.GraphQLQueryExecutor.execute_query(query, current_user)
+```
+
+```elixir
+mutation = """
+mutation {
+  addUserAffiliateDetails(telegramHandle: "@exampleHandle", marketingChannels: "Social Media")
+}
+"""
+
+Sanbase.GraphQLQueryExecutor.execute_query(mutation, current_user)
+```

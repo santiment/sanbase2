@@ -1,4 +1,4 @@
-defmodule Sanbase.Promoters.EventEmitter do
+defmodule Sanbase.Affiliate.EventEmitter do
   use Sanbase.EventBus.EventEmitter
 
   @topic :user_events

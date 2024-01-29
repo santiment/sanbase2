@@ -255,7 +255,7 @@ config :sanbase, Sanbase.GrafanaApi,
 
 config :sanbase, Sanbase.Intercom, api_key: {:system, "INTERCOM_API_KEY"}
 
-config :sanbase, Sanbase.Promoters.FirstPromoterApi,
+config :sanbase, Sanbase.Affiliate.FirstPromoterApi,
   api_id: {:system, "FIRST_PROMOTER_API_ID"},
   api_key: {:system, "FIRST_PROMOTER_API_KEY"}
 

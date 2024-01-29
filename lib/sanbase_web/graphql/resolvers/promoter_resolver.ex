@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PromoterResolver do
-  alias Sanbase.Promoters.FirstPromoter
+  alias Sanbase.Affiliate.FirstPromoter
 
   def create_promoter(_root, args, %{
         context: %{auth: %{current_user: current_user}}

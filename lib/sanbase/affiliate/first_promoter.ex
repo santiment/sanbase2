@@ -1,7 +1,7 @@
-defmodule Sanbase.Promoters.FirstPromoter do
-  import Sanbase.Promoters.EventEmitter, only: [emit_event: 3]
+defmodule Sanbase.Affiliate.FirstPromoter do
+  import Sanbase.Affiliate.EventEmitter, only: [emit_event: 3]
 
-  alias Sanbase.Promoters.FirstPromoterApi
+  alias Sanbase.Affiliate.FirstPromoterApi
   alias Sanbase.Accounts.{User, UserSettings}
 
   @type promoter_args :: %{

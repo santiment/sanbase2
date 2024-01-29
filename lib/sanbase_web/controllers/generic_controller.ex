@@ -63,8 +63,8 @@ defmodule SanbaseWeb.GenericController do
       resource: resource,
       data: data,
       string_fields: string_fields(module),
-      belongs_to: apply(admin_module, :belongs_to, [data]),
-      has_many: apply(admin_module, :has_many, [data])
+      belongs_to: call_module_function_or_default(admin_module, :belongs_to, data, []),
+      has_many: call_module_function_or_default(admin_module, :has_many, data, [])
     )
   end
 
@@ -162,6 +162,12 @@ defmodule SanbaseWeb.GenericController do
           rows
       end
 
+    assocs =
+      Enum.map(fetched_rows, fn row ->
+        {row.id, SanbaseWeb.GenericController.LinkBuilder.build_link(module, row)}
+      end)
+      |> Map.new()
+
     %{
       resource: resource,
       resource_name: name,
@@ -173,7 +179,8 @@ defmodule SanbaseWeb.GenericController do
       current_page: page,
       page_size: page_size,
       action: action,
-      search_text: params[:search_text] || ""
+      search_text: params[:search_text] || "",
+      assocs: assocs
     }
   end
 
@@ -274,5 +281,55 @@ defmodule SanbaseWeb.GenericController do
       value when is_integer(value) -> value
       value when is_binary(value) -> String.to_integer(value)
     end
+  end
+
+  def call_module_function_or_default(module, function, data, default_value) do
+    try do
+      apply(module, function, [data])
+    rescue
+      UndefinedFunctionError -> default_value
+    end
+  end
+end
+
+defmodule SanbaseWeb.GenericController.LinkBuilder do
+  def build_link(module, record) do
+    module.__schema__(:associations)
+    |> Enum.reduce(%{}, fn assoc_name, acc ->
+      assoc_info = module.__schema__(:association, assoc_name)
+
+      case assoc_info do
+        %Ecto.Association.BelongsTo{related: related_module} ->
+          field_name = :"#{assoc_name}_id"
+          field_value = Map.get(record, field_name)
+
+          if is_nil(field_value) do
+            Map.put(acc, to_string(assoc_name), nil)
+          else
+            resource = module_to_resource_name(related_module)
+            link = href(resource, field_value, "#{field_name}: #{field_value}")
+            Map.put(acc, field_name, link)
+          end
+
+        _ ->
+          acc
+      end
+    end)
+  end
+
+  defp href(resource, id, label) do
+    relative_url =
+      SanbaseWeb.Router.Helpers.generic_path(SanbaseWeb.Endpoint, :show, id, resource: resource)
+
+    Phoenix.HTML.Link.link(label, to: relative_url, class: "text-blue-600 hover:text-blue-800")
+  end
+
+  defp module_to_resource_name(module) do
+    module
+    |> Atom.to_string()
+    |> String.split(".")
+    |> List.last()
+    |> Macro.underscore()
+    |> Inflex.pluralize()
   end
 end

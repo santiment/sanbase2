@@ -85,7 +85,7 @@ defmodule Sanbase.KafkaExporter do
   end
 
   def flush(exporter \\ __MODULE__) do
-    GenServer.call(exporter, :flush)
+    GenServer.call(exporter, :flush, 30_000)
   end
 
   @doc ~s"""

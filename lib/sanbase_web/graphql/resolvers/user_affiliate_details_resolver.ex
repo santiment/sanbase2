@@ -8,13 +8,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserAffiliateDetailsResolver do
 
   def add_user_affiliate_details(
         _root,
-        %{telegram_handle: telegram_handle, marketing_channels: marketing_channels},
+        %{telegram_handle: telegram_handle} = args,
         %{context: %{auth: %{current_user: current_user}}}
       ) do
     UserAffiliateDetails.create(%{
       user_id: current_user.id,
       telegram_handle: telegram_handle,
-      marketing_channels: marketing_channels
+      marketing_channels: args[:marketing_channels]
     })
     |> case do
       {:ok, _} ->

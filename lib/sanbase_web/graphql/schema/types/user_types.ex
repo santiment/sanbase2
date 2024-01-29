@@ -18,7 +18,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     UserResolver,
     UserSettingsResolver,
     UserTriggerResolver,
-    SanbaseNFTResolver
+    SanbaseNFTResolver,
+    UserAffiliateDetailsResolver
   }
 
   enum :user_role do
@@ -272,6 +273,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       arg(:auth_method, :api_call_auth_method, default_value: :apikey)
 
       cache_resolve(&UserResolver.api_calls_count/3)
+    end
+
+    field :are_user_affiliate_datails_submitted, :boolean do
+      resolve(&UserAffiliateDetailsResolver.are_user_affiliate_datails_submitted/3)
     end
   end
 

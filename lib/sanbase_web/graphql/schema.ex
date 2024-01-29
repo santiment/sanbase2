@@ -187,7 +187,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:social_data_queries)
     import_fields(:table_configuration_queries)
     import_fields(:timeline_queries)
-    import_fields(:user_affiliate_details_queries)
     import_fields(:user_list_queries)
     import_fields(:user_queries)
     import_fields(:webinar_queries)

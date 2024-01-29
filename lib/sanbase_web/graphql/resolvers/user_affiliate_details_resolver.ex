@@ -1,10 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserAffiliateDetailsResolver do
   alias Sanbase.Affiliate.UserAffiliateDetails
+  alias Sanbase.Accounts.User
 
-  def are_user_affiliate_datails_submitted(_, _, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    {:ok, UserAffiliateDetails.are_user_affiliate_datails_submitted?(current_user.id)}
+  def are_user_affiliate_datails_submitted(%User{} = user, _, _) do
+    {:ok, UserAffiliateDetails.are_user_affiliate_datails_submitted?(user.id)}
   end
 
   def add_user_affiliate_details(

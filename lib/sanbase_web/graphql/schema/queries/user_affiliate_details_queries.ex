@@ -4,16 +4,6 @@ defmodule SanbaseWeb.Graphql.Schema.UserAffiliateDetailsQueries do
   alias SanbaseWeb.Graphql.Middlewares.UserAuth
   alias SanbaseWeb.Graphql.Resolvers.UserAffiliateDetailsResolver
 
-  object :user_affiliate_details_queries do
-    field :are_user_affiliate_datails_submitted, :boolean do
-      meta(access: :free)
-
-      middleware(UserAuth)
-
-      resolve(&UserAffiliateDetailsResolver.are_user_affiliate_datails_submitted/3)
-    end
-  end
-
   object :user_affiliate_details_mutations do
     field :add_user_affiliate_details, :boolean do
       meta(access: :free)

@@ -2,31 +2,6 @@
 
 ## Create a graphql query executor wrapper
 
-```elixir
-defmodule Sanbase.GraphQLQueryExecutor do
-  @doc """
-  Executes a GraphQL query with the given user credentials and returns the result.
-  """
-  def execute_query(query, current_user, opts \\ []) do
-    opts = List.wrap(opts)
-
-    # Construct the context
-    context = %{auth: %{current_user: current_user}}
-
-    opts = Keyword.merge(opts, context: context)
-
-    # Execute the query with the context
-    case Absinthe.run(query, SanbaseWeb.Graphql.Schema, opts) do
-      {:ok, result} ->
-        {:ok, result}
-
-      {:error, errors} ->
-        {:error, errors}
-    end
-  end
-end
-```
-
 
 
 ```elixir
@@ -34,11 +9,13 @@ current_user = Sanbase.Accounts.get_user!(1)
 
 query = """
 {
-  areUserAffiliateDatailsSubmitted
+  currentUser {
+    areUserAffiliateDatailsSubmitted
+  } 
 }
 """
 
-Sanbase.GraphQLQueryExecutor.execute_query(query, current_user)
+Sanbase.DevUtils.GraphQLQueryExecutor.execute_query(query, current_user)
 ```
 
 ```elixir
@@ -48,9 +25,5 @@ mutation {
 }
 """
 
-Sanbase.GraphQLQueryExecutor.execute_query(mutation, current_user)
-```
-
-```elixir
 Sanbase.GraphQLQueryExecutor.execute_query(mutation, current_user)
 ```

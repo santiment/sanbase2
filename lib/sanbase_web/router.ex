@@ -37,6 +37,10 @@ defmodule SanbaseWeb.Router do
     plug(SanbaseWeb.Plug.BotLoginPlug)
   end
 
+  pipeline :admin2 do
+    plug(:put_layout, html: {SanbaseWeb.Layouts, :admin2})
+  end
+
   use ExAdmin.Router
   use Kaffy.Routes, scope: "/admin3", pipe_through: [:admin_pod_only, :basic_auth]
 
@@ -54,7 +58,7 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/admin2", SanbaseWeb do
-    pipe_through([:admin_pod_only, :browser, :basic_auth])
+    pipe_through([:admin_pod_only, :browser, :basic_auth, :admin2])
     import Phoenix.LiveDashboard.Router
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])

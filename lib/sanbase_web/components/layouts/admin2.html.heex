@@ -1,0 +1,6 @@
+<nav class="bg-blue-500 p-4">
+  <%= link to: Routes.custom_admin_path(@conn, :index), class: "text-white hover:text-gray-300" do %>
+    Admin Home
+  <% end %>
+</nav>
+<%= @inner_content %>

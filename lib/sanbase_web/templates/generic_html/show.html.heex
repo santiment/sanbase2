@@ -1,20 +1,10 @@
 <div class="container mx-auto px-6 py-8">
-  <h1 class="text-4xl font-black mb-4">Show <%= @resource %></h1>
-
-  <div class="mt-6">
-    <div class="my-6 overflow-hidden bg-white rounded-md shadow">
-      <table class="w-full text-left border-collapse">
-        <tbody>
-          <%= for f <- @string_fields do %>
-          <tr class="hover:bg-gray-200">
-            <td class="px-6 py-4 text-lg text-gray-700 border-b"><%= to_string(f) %></td>
-            <td class="px-6 py-4 text-gray-500 border-b"><%= Map.get(@data, f) |> to_string() %></td>
-          </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <SanbaseWeb.TableComponent.kv_table 
+    resource={@resource}
+    data={@data}
+    fields={@string_fields}
+    assocs={@assocs}
+  />
 
   <span><%= link "Edit", to: Routes.generic_path(@conn, :edit, @data, resource: @resource), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"%></span>
   <span><%= link "Back", to: Routes.generic_path(@conn, :index, resource: @resource), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded" %></span>

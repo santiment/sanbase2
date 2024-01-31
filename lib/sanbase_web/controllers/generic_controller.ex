@@ -59,9 +59,16 @@ defmodule SanbaseWeb.GenericController do
     admin_module = @resource_module_map[resource][:admin_module]
     data = Repo.get(module, id)
 
+    assocs =
+      Enum.map([data], fn row ->
+        {row.id, SanbaseWeb.GenericController.LinkBuilder.build_link(module, row)}
+      end)
+      |> Map.new()
+
     render(conn, "show.html",
       resource: resource,
       data: data,
+      assocs: assocs,
       string_fields: string_fields(module),
       belongs_to: call_module_function_or_default(admin_module, :belongs_to, data, []),
       has_many: call_module_function_or_default(admin_module, :has_many, data, [])
@@ -77,7 +84,7 @@ defmodule SanbaseWeb.GenericController do
       resource: resource,
       data: data,
       action: Routes.generic_path(conn, :update, data, resource: resource),
-      edit_fields: @resource_module_map[resource][:edit_fields],
+      edit_fields: @resource_module_map[resource][:edit_fields] || [],
       changeset: changeset
     )
   end

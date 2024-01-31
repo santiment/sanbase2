@@ -4,6 +4,39 @@ defmodule SanbaseWeb.TableComponent do
 
   alias SanbaseWeb.Router.Helpers, as: Routes
 
+  def kv_table(assigns) do
+    ~H"""
+    <div class="mt-6">
+      <h3 class="text-3xl font-medium text-gray-700">Show <%= @resource %></h3>
+      <table class="table-auto border-collapse w-full mb-4">
+        <thead>
+          <tr
+            class="rounded-lg text-sm font-medium text-gray-700 text-left"
+            style="font-size: 0.9674rem"
+          >
+            <.th field="Field" />
+            <.th field="Value" />
+          </tr>
+        </thead>
+        <tbody class="text-sm font-normal text-gray-700">
+          <%= for field <- @fields do %>
+            <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
+              <.td value={to_string(field)} />
+              <.td value={
+                if @assocs[@data.id][field] do
+                  @assocs[@data.id][field]
+                else
+                  Map.get(@data, field) |> to_string()
+                end
+              } />
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    """
+  end
+
   def table(assigns) do
     ~H"""
     <.search resource={@resource} search_value="" />

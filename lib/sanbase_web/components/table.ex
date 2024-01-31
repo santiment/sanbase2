@@ -2,7 +2,82 @@ defmodule SanbaseWeb.TableComponent do
   use Phoenix.Component
   use Phoenix.HTML
 
+  import SanbaseWeb.CoreComponents
+
   alias SanbaseWeb.Router.Helpers, as: Routes
+
+  def edit_table(assigns) do
+    ~H"""
+    <div class="mt-6 p-4">
+      <h3 class="text-3xl font-medium text-gray-700">Edit <%= @resource %></h3>
+      <.form :let={f} method="patch" for={@changeset} as={@resource} action={@action}>
+        <%= if @changeset.action do %>
+          <div class="alert alert-danger">
+            <p>Oops, something went wrong! Please check the errors below:</p>
+            <ul>
+              <%= for {attr, message} <- Ecto.Changeset.traverse_errors(@changeset, &translate_error/1) do %>
+                <li class="text-red-500">
+                  <.icon name="hero-exclamation-circle-mini" class="mr-2" />
+                  <%= humanize(attr) %>: <%= Enum.join(message, ", ") %>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+        <%= for field <- @edit_fields do %>
+          <div class="m-4">
+            <.input
+              name={@resource <> "[" <> to_string(field) <> "]"}
+              id={@resource <> "_" <> to_string(field)}
+              label={humanize(field)}
+              type={
+                case Map.get(@field_type_map, field) do
+                  :string -> "text"
+                  :integer -> "number"
+                  :float -> "number"
+                  :boolean -> "checkbox"
+                  :date -> "text"
+                  :datetime -> "text"
+                  :time -> "text"
+                  :map -> "text"
+                  :list -> "text"
+                  :assoc -> "text"
+                  :binary -> "text"
+                  :any -> "text"
+                  _ -> "text"
+                end
+              }
+              value={
+                case Map.get(@field_type_map, field) do
+                  map_or_list when map_or_list in [:map, :list] ->
+                    Map.get(@changeset.data, field) |> Jason.encode!()
+
+                  _ ->
+                    Map.get(@changeset.data, field)
+                end
+              }
+            />
+          </div>
+        <% end %>
+        <div class="flex justify-end">
+          <.back_btn resource={@resource} action={:index} />
+          <.button type="submit" class="mt-4 p-4">Update</.button>
+        </div>
+      </.form>
+    </div>
+    """
+  end
+
+  def back_btn(assigns) do
+    ~H"""
+    <a
+      href={Routes.generic_path(SanbaseWeb.Endpoint, @action, resource: @resource)}
+      class="phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3 text-sm font-semibold leading-6 text-white active:text-white/80 mt-4 mr-2"
+    >
+      Back
+    </a>
+    """
+  end
 
   def kv_table(assigns) do
     ~H"""
@@ -133,19 +208,19 @@ defmodule SanbaseWeb.TableComponent do
     """
   end
 
-  def th(assigns) do
-    ~H"""
-    <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-      <%= @field %>
-    </th>
-    """
-  end
+  # def th(assigns) do
+  #   ~H"""
+  #   <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+  #     <%= @field %>
+  #   </th>
+  #   """
+  # end
 
-  def td(assigns) do
-    ~H"""
-    <td class="px-5 py-5 text-sm bg-white border-b border-gray-200"><%= @value %></td>
-    """
-  end
+  # def td(assigns) do
+  #   ~H"""
+  #   <td class="px-5 py-5 text-sm bg-white border-b border-gray-200"><%= @value %></td>
+  #   """
+  # end
 end
 
 defmodule SanbaseWeb.PaginationComponent do

@@ -2759,38 +2759,6 @@ ALTER SEQUENCE public.price_scraping_progress_id_seq OWNED BY public.price_scrap
 
 
 --
--- Name: processed_github_archives; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.processed_github_archives (
-    id bigint NOT NULL,
-    project_id bigint,
-    archive character varying(255) NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: processed_github_archives_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.processed_github_archives_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: processed_github_archives_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.processed_github_archives_id_seq OWNED BY public.processed_github_archives.id;
-
-
---
 -- Name: products; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5123,13 +5091,6 @@ ALTER TABLE ONLY public.price_scraping_progress ALTER COLUMN id SET DEFAULT next
 
 
 --
--- Name: processed_github_archives id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.processed_github_archives ALTER COLUMN id SET DEFAULT nextval('public.processed_github_archives_id_seq'::regclass);
-
-
---
 -- Name: products id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6027,14 +5988,6 @@ ALTER TABLE ONLY public.price_migration_tmp
 
 ALTER TABLE ONLY public.price_scraping_progress
     ADD CONSTRAINT price_scraping_progress_pkey PRIMARY KEY (id);
-
-
---
--- Name: processed_github_archives processed_github_archives_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.processed_github_archives
-    ADD CONSTRAINT processed_github_archives_pkey PRIMARY KEY (id);
 
 
 --
@@ -7083,13 +7036,6 @@ CREATE UNIQUE INDEX presigned_s3_urls_user_id_bucket_object_index ON public.pres
 --
 
 CREATE UNIQUE INDEX price_scraping_progress_identifier_source_index ON public.price_scraping_progress USING btree (identifier, source);
-
-
---
--- Name: processed_github_archives_project_id_archive_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX processed_github_archives_project_id_archive_index ON public.processed_github_archives USING btree (project_id, archive);
 
 
 --
@@ -8296,14 +8242,6 @@ ALTER TABLE ONLY public.presigned_s3_urls
 
 
 --
--- Name: processed_github_archives processed_github_archives_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.processed_github_archives
-    ADD CONSTRAINT processed_github_archives_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
-
-
---
 -- Name: project_ecosystem_mappings project_ecosystem_mappings_ecosystem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9349,3 +9287,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240123102628);
 INSERT INTO public."schema_migrations" (version) VALUES (20240125095156);
 INSERT INTO public."schema_migrations" (version) VALUES (20240125141406);
 INSERT INTO public."schema_migrations" (version) VALUES (20240126133441);
+INSERT INTO public."schema_migrations" (version) VALUES (20240131160724);

@@ -1,11 +1,4 @@
 defmodule Sanbase.Project.List do
-  @preloads [
-    :eth_addresses,
-    :latest_coinmarketcap_data,
-    :github_organizations,
-    :contract_addresses
-  ]
-
   @moduledoc ~s"""
   Provide functions for fetching different subsets of projects.
 
@@ -17,7 +10,7 @@ defmodule Sanbase.Project.List do
     - `:preload?` (boolean) - Do or do not preload associations. Control the list
        of associations to be preloaded with `:preload`
     - `:preload` (list) - A list of preloads if `:preload?` is true.
-       Defaults to `#{inspect(@preloads)}
+       Defaults to `#{inspect(Sanbase.Project.preloads())}
     - `:min_volume` (number) - Filter out all projects with smaller trading volume
     - `:include_hidden` (boolean) - Include the projects that are explictly
     hidden from lists. There are cases where a project needs to be removed
@@ -39,6 +32,7 @@ defmodule Sanbase.Project.List do
 
   See the "Shared options" section at the module documentation for more options.
   """
+  @spec projects(Keyword.t()) :: [%Project{}]
   def projects(opts \\ [])
 
   def projects(opts) do
@@ -730,7 +724,7 @@ defmodule Sanbase.Project.List do
   defp maybe_preload(query, opts) do
     case Keyword.get(opts, :preload?, true) do
       true ->
-        preloads = Keyword.get(opts, :preload, @preloads)
+        preloads = Keyword.get(opts, :preload, Project.preloads())
         query |> preload(^preloads)
 
       false ->

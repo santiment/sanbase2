@@ -187,8 +187,9 @@ defmodule Sanbase.Clickhouse.Github do
           DateTime.t(),
           String.t(),
           String.t(),
-          integer() | nil
+          nil | non_neg_integer()
         ) :: {:ok, list(t)} | {:error, String.t()}
+  def dev_activity(organizations, from, to, interval, transform, moving_average_base)
   def dev_activity([], _, _, _, _, _), do: {:ok, []}
 
   def dev_activity(organizations, from, to, interval, transform, ma_base)
@@ -231,8 +232,9 @@ defmodule Sanbase.Clickhouse.Github do
           DateTime.t(),
           String.t(),
           String.t(),
-          non_neg_integer()
+          nil | non_neg_integer()
         ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
+  def github_activity(organizations, from, to, interval, transform, moving_average_base)
   def github_activity([], _, _, _, _, _), do: {:ok, []}
 
   def github_activity(organizations, from, to, interval, "None", _) do

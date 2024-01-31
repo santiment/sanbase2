@@ -16,31 +16,6 @@ defmodule Sanbase.Queries.Query do
   @type query_id :: non_neg_integer()
   @type user_id :: non_neg_integer()
 
-  @type create_query_args :: %{
-          required(:user_id) => user_id(),
-          required(:uuid) => String.t(),
-          optional(:name) => String.t(),
-          optional(:description) => String.t(),
-          optional(:is_public) => boolean(),
-          optional(:settings) => map(),
-          optional(:sql_query_text) => String.t(),
-          optional(:sql_query_parameters) => Map.t(),
-          optional(:origin_id) => non_neg_integer()
-        }
-
-  @type update_query_args :: %{
-          optional(:name) => String.t(),
-          optional(:description) => String.t(),
-          optional(:is_public) => boolean(),
-          optional(:settings) => map(),
-          optional(:sql_query_text) => String.t(),
-          optional(:sql_query_parameters) => Map.t(),
-          optional(:origin_id) => non_neg_integer(),
-          # updatable by moderators only
-          optional(:is_deleted) => boolean(),
-          optional(:is_hidden) => boolean()
-        }
-
   @type t :: %__MODULE__{
           id: non_neg_integer(),
           uuid: String.t(),

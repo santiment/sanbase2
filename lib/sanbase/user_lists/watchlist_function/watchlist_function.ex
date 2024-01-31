@@ -97,6 +97,15 @@ defmodule Sanbase.WatchlistFunction do
     end
   end
 
+  def valid_function?(%__MODULE__{name: "ecosystems", args: args} = fun, opts) do
+    ecosystems = Map.get(args, "ecosystems") || Map.fetch!(args, :ecosystems)
+
+    case is_list(ecosystems) and ecosystems != [] do
+      true -> maybe_check_evaluates(fun, opts)
+      false -> {:error, "The ecosystems argument must be a non-empty list."}
+    end
+  end
+
   def valid_function?(%__MODULE__{name: name, args: args} = fun, opts)
       when name in ["top_all_projects", "top_erc20_projects"] do
     size = Map.get(args, "size") || Map.fetch!(args, :size)
@@ -209,6 +218,19 @@ defmodule Sanbase.WatchlistFunction do
        projects: projects,
        total_projects_count: length(projects)
      }}
+  end
+
+  def evaluate(%__MODULE__{name: "ecosystems", args: args}) do
+    ecosystems = Map.get(args, "ecosystems") || Map.fetch!(args, :ecosystems)
+
+    with {:ok, projects} <-
+           Sanbase.Ecosystem.get_projects_by_ecosystem_names(ecosystems, combinator: :all_of) do
+      {:ok,
+       %{
+         projects: projects,
+         total_projects_count: length(projects)
+       }}
+    end
   end
 
   def evaluate(%__MODULE__{name: "top_erc20_projects", args: args}) do

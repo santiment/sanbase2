@@ -16,7 +16,14 @@ defmodule Sanbase.Project do
     LatestCoinmarketcapData
   }
 
-  @preloads [:eth_addresses, :latest_coinmarketcap_data, :github_organizations]
+  @preloads [
+    :eth_addresses,
+    :latest_coinmarketcap_data,
+    :github_organizations,
+    :contract_addresses,
+    :ecosystems
+  ]
+  def preloads(), do: @preloads
 
   schema "project" do
     field(:slug, :string)
@@ -81,6 +88,14 @@ defmodule Sanbase.Project do
       on_replace: :delete,
       on_delete: :delete_all
     )
+
+    many_to_many(
+      :ecosystems,
+      Sanbase.Ecosystem,
+      join_through: "project_ecosystem_mappings",
+      on_replace: :delete,
+      on_delete: :delete_all
+    )
   end
 
   def changeset(%Project{} = project, attrs \\ %{}) do
@@ -120,6 +135,7 @@ defmodule Sanbase.Project do
       :whitepaper_link
     ])
     |> cast_assoc(:market_segments)
+    |> cast_assoc(:ecosystems)
     |> validate_required([:name])
     |> unique_constraint(:slug)
   end
@@ -389,8 +405,6 @@ defmodule Sanbase.Project do
     |> MapSet.intersection(trending_words_mapset)
     |> Enum.any?()
   end
-
-  def preloads(), do: @preloads
 
   def preload_assocs(projects, opts \\ []) do
     case Keyword.get(opts, :only_preload) do

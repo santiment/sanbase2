@@ -22,6 +22,29 @@ defmodule Sanbase.Queries do
   @type dashboard_id :: Dashboard.dashboard_id()
   @type dashboard_query_mapping_id :: DashboardQueryMapping.dashboard_query_mapping_id()
 
+  @type create_query_args :: %{
+          optional(:name) => String.t(),
+          optional(:description) => String.t(),
+          optional(:is_public) => boolean(),
+          optional(:settings) => map(),
+          optional(:sql_query_text) => String.t(),
+          optional(:sql_query_parameters) => Map.t(),
+          optional(:origin_id) => non_neg_integer()
+        }
+
+  @type update_query_args :: %{
+          optional(:name) => String.t(),
+          optional(:description) => String.t(),
+          optional(:is_public) => boolean(),
+          optional(:settings) => map(),
+          optional(:sql_query_text) => String.t(),
+          optional(:sql_query_parameters) => Map.t(),
+          optional(:origin_id) => non_neg_integer(),
+          # updatable by moderators only
+          optional(:is_deleted) => boolean(),
+          optional(:is_hidden) => boolean()
+        }
+
   @typedoc ~s"""
   Preload options
   """
@@ -235,7 +258,7 @@ defmodule Sanbase.Queries do
   are indicated by the syntax {{<key>}}. Example: WHERE address = {{address}}
   The parameters are provided as a map in the `sql_query_parameters` parameter.
   """
-  @spec create_query(Query.create_query_args(), user_id) ::
+  @spec create_query(create_query_args(), user_id) ::
           {:ok, Query.t()} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
   def create_query(args, user_id) do
     uuid = "query_" <> Uniq.UUID.uuid7()
@@ -266,7 +289,7 @@ defmodule Sanbase.Queries do
     is not deleted. This is done by moderators when some inappropriate content is shown on
     a public page.
   """
-  @spec update_query(query_id, Query.create_query_args(), user_id) ::
+  @spec update_query(query_id, update_query_args(), user_id) ::
           {:ok, Query.t()} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
   def update_query(query_id, attrs, querying_user_id) do
     Ecto.Multi.new()

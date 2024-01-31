@@ -32,6 +32,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:slugs)
     value(:ignored_slugs)
     value(:market_segments)
+    value(:ecosystems)
     value(:contract_address)
     # watchlist related
     value(:watchlist_slug)
@@ -72,6 +73,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:slug, :string)
     field(:slugs, list_of(:string))
     field(:market_segments, list_of(:string))
+    field(:ecosystems, list_of(:string))
     field(:contract_address, :string)
     field(:ignored_slugs, list_of(:string))
     # watchlist related

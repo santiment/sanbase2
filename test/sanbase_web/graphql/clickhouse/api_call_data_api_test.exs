@@ -10,6 +10,8 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
     project2 = insert(:random_project)
     insert(:subscription_pro_sanbase, user: user)
     conn = setup_jwt_auth(build_conn(), user)
+
+    Sanbase.InMemoryKafka.Producer.clear_state()
     %{conn: conn, project: project, project2: project2}
   end
 

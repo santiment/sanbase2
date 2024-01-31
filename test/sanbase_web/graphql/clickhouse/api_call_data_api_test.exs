@@ -13,8 +13,6 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
     %{conn: conn, project: project, project2: project2}
   end
 
-  @tag :skip
-  # TODO: fix this test. On CI it timeouts, locally also fails but with different error
   test "export get_metric api calls with the metric and slug as arguments", context do
     %{conn: conn, project: %{slug: slug}, project2: %{slug: slug2}} = context
 

@@ -104,7 +104,6 @@ defmodule Sanbase.Accounts.User do
     has_many(:promo_trials, Subscription.PromoTrial, on_delete: :delete_all)
     has_many(:triggers, Sanbase.Alert.UserTrigger, on_delete: :delete_all)
     has_many(:chart_configurations, Sanbase.Chart.Configuration, on_delete: :delete_all)
-    has_many(:user_attributes, Sanbase.Intercom.UserAttributes, on_delete: :delete_all)
     has_many(:user_events, Sanbase.Intercom.UserEvent, on_delete: :delete_all)
     has_many(:email_login_attempts, Sanbase.Accounts.EmailLoginAttempt, on_delete: :delete_all)
     has_many(:short_urls, Sanbase.ShortUrl, on_delete: :delete_all)

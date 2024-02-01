@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 14.10 (Homebrew)
+-- Dumped by pg_dump version 14.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -4082,6 +4082,38 @@ CREATE TABLE public.user_followers (
 
 
 --
+-- Name: user_intercom_attributes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_intercom_attributes (
+    id bigint NOT NULL,
+    properties jsonb,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_intercom_attributes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_intercom_attributes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_intercom_attributes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_intercom_attributes_id_seq OWNED BY public.user_intercom_attributes.id;
+
+
+--
 -- Name: user_lists_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -5304,6 +5336,13 @@ ALTER TABLE ONLY public.user_events ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: user_intercom_attributes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_intercom_attributes ALTER COLUMN id SET DEFAULT nextval('public.user_intercom_attributes_id_seq'::regclass);
+
+
+--
 -- Name: user_lists id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6285,6 +6324,14 @@ ALTER TABLE ONLY public.user_events
 
 ALTER TABLE ONLY public.user_followers
     ADD CONSTRAINT user_followers_pkey PRIMARY KEY (user_id, follower_id);
+
+
+--
+-- Name: user_intercom_attributes user_intercom_attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_intercom_attributes
+    ADD CONSTRAINT user_intercom_attributes_pkey PRIMARY KEY (id);
 
 
 --
@@ -7339,6 +7386,13 @@ CREATE INDEX user_events_user_id_index ON public.user_events USING btree (user_i
 --
 
 CREATE UNIQUE INDEX user_followers_user_id_follower_id_index ON public.user_followers USING btree (user_id, follower_id);
+
+
+--
+-- Name: user_intercom_attributes_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_intercom_attributes_user_id_index ON public.user_intercom_attributes USING btree (user_id);
 
 
 --
@@ -8548,6 +8602,14 @@ ALTER TABLE ONLY public.user_followers
 
 
 --
+-- Name: user_intercom_attributes user_intercom_attributes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_intercom_attributes
+    ADD CONSTRAINT user_intercom_attributes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: user_lists user_lists_table_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9226,4 +9288,3 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240125095156);
 INSERT INTO public."schema_migrations" (version) VALUES (20240125141406);
 INSERT INTO public."schema_migrations" (version) VALUES (20240126133441);
 INSERT INTO public."schema_migrations" (version) VALUES (20240131160724);
-INSERT INTO public."schema_migrations" (version) VALUES (20240201085929);

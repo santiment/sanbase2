@@ -182,6 +182,29 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     "asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE has(contract_addresses, {{#{arg_name}}}) LIMIT 1 )"
   end
 
+  def asset_id_filter(%{ecosystems: ecosystems}, opts) when is_list(ecosystems) do
+    arg_name = Keyword.fetch!(opts, :argument_name)
+
+    # TODO: When we update to ClickHouse 23.10 update this to arrayFold:
+    # WITH (SELECT groupArray(asset_ids) FROM ecosystem_assets_mapping WHERE ecosystem IN (..)) as arr
+    # SELECT arrayFold((acc,v) -> arrayIntersect(acc,v), arrayPopFront(arr), arr[1])
+    #
+    # The current solution returns all asset_ids that are seen exactly length(ecosystems)
+    clause = """
+    WITH q AS ( SELECT asset_ids FROM ecosystem_assets_mapping WHERE ecosystem in {{#{arg_name}}})
+    SELECT asset_ids
+    FROM ( SELECT * FROM q ARRAY JOIN asset_ids)
+    GROUP BY asset_ids
+    HAVING count(*) = arrayCount({{#{arg_name}}})
+    """
+
+    """
+    asset_id IN (
+      #{clause}
+    )
+    """
+  end
+
   def asset_id_filter(_arg, opts) do
     case Keyword.get(opts, :allow_missing_slug, false) do
       true -> "1 = 1"

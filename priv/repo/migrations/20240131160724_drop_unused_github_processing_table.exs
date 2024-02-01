@@ -2,7 +2,7 @@ defmodule Sanbase.Repo.Migrations.DropUnusedGithubProcessingTable do
   use Ecto.Migration
 
   def up do
-    drop(table(:processed_github_archives))
+    drop_if_exists(table(:processed_github_archives))
   end
 
   def down do

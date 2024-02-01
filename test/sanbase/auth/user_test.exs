@@ -103,9 +103,6 @@ defmodule Sanbase.Accounts.UserTest do
       chart_config = insert(:chart_configuration, user: user, is_public: true)
       :ok = Sanbase.FeaturedItem.update_item(chart_config, true)
 
-      # Intercom attributes
-      Sanbase.Intercom.UserAttributes.save(%{user_id: user.id, properties: %{}})
-
       # User intercom or other events
       Sanbase.Intercom.UserEvent.create(
         [

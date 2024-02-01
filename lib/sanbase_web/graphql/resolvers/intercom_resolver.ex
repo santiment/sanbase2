@@ -5,13 +5,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
   alias Sanbase.Intercom.UserEvent
   alias Sanbase.Clickhouse.ApiCallData
 
-  def get_attributes_for_users(_, %{users: users, days: days} = args, _) do
-    from = Map.get(args, :from, Sanbase.DateTimeUtils.days_ago(days))
-    to = Map.get(args, :to, Timex.now())
-
-    {:ok, Sanbase.Intercom.UserAttributes.get_attributes_for_users(users, from, to)}
-  end
-
   def get_events_for_users(_, %{users: users, days: days} = args, _) do
     from = Map.get(args, :from, Sanbase.DateTimeUtils.days_ago(days))
     to = Map.get(args, :to, Timex.now())

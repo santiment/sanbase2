@@ -10,8 +10,12 @@ defmodule SanbaseWeb.CustomAdminController do
   def index(conn, _params) do
     render(conn, :index,
       search_value: "",
-      routes: resources_to_routes() ++ custom_routes()
+      routes: all_routes()
     )
+  end
+
+  def all_routes do
+    resources_to_routes() ++ custom_routes()
   end
 
   def custom_routes do

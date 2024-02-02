@@ -250,8 +250,9 @@ defmodule SanbaseWeb.GenericController do
   end
 
   def search_by_field_value(module, field, value, preloads, page, page_size) do
-    case Integer.parse(value) do
-      {id, ""} ->
+    case field do
+      "id" ->
+        {id, ""} = Integer.parse(value)
         {1, search_by_id(module, id, preloads)}
 
       _ ->

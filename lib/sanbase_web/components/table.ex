@@ -10,7 +10,7 @@ defmodule SanbaseWeb.TableComponent do
     ~H"""
     <div class="mt-6 p-4">
       <h3 class="text-3xl font-medium text-gray-700">Edit <%= @resource %></h3>
-      <.form :let={f} method="patch" for={@changeset} as={@resource} action={@action}>
+      <.form method="patch" for={@changeset} as={@resource} action={@action}>
         <%= if @changeset.action do %>
           <div class="alert alert-danger">
             <p>Oops, something went wrong! Please check the errors below:</p>
@@ -116,7 +116,7 @@ defmodule SanbaseWeb.TableComponent do
     ~H"""
     <.search resource={@resource} search_value="" />
 
-    <div class="mt-6">
+    <div class="m-4">
       <h3 class="text-3xl font-medium text-gray-700"><%= @model %></h3>
       <table class="table-auto border-collapse w-full mb-4">
         <thead>
@@ -142,8 +142,9 @@ defmodule SanbaseWeb.TableComponent do
                 } />
               <% end %>
               <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
-                <%= for action <- @actions do %>
-                  <.a resource={@resource} action={action} row={row} /> |
+                <%= for {action, index} <- Enum.with_index(@actions) do %>
+                  <.a resource={@resource} action={action} row={row} />
+                  <%= if index < length(@actions) - 1, do: raw(" | ") %>
                 <% end %>
               </td>
             </tr>
@@ -176,19 +177,11 @@ defmodule SanbaseWeb.TableComponent do
 
   def search(assigns) do
     ~H"""
-    <div class="relative mx-4 lg:mx-0">
-      <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-        <svg class="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-          </path>
-        </svg>
-      </span>
+    <div class="relative mx-4 lg:mx-0 m-4 p-4">
+      <.icon
+        name="hero-magnifying-glass"
+        class="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400"
+      />
       <.form
         :let={f}
         method="get"
@@ -200,27 +193,14 @@ defmodule SanbaseWeb.TableComponent do
         <%= text_input(f, :generic_search,
           value: @search_value,
           class:
-            "w-32 pl-10 pr-4 text-indigo-600 border-gray-200 rounded-md sm:w-64 focus:border-indigo-600 focus:ring focus:ring-opacity-40 focus:ring-indigo-500"
+            "w-32 pl-8 pr-4 text-indigo-600 border-gray-200 rounded-md sm:w-64 focus:border-indigo-600 focus:ring focus:ring-opacity-40 focus:ring-indigo-500",
+          placeholder: "Search..."
         ) %>
-        <%= submit("Search") %>
+        <.button type="submit" class="mt-4 p-4">Search</.button>
       </.form>
     </div>
     """
   end
-
-  # def th(assigns) do
-  #   ~H"""
-  #   <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-  #     <%= @field %>
-  #   </th>
-  #   """
-  # end
-
-  # def td(assigns) do
-  #   ~H"""
-  #   <td class="px-5 py-5 text-sm bg-white border-b border-gray-200"><%= @value %></td>
-  #   """
-  # end
 end
 
 defmodule SanbaseWeb.PaginationComponent do
@@ -288,5 +268,77 @@ defmodule SanbaseWeb.PaginationComponent do
           }
         })
     end
+  end
+end
+
+defmodule SanbaseWeb.LiveSearch do
+  use SanbaseWeb, :live_view
+  import SanbaseWeb.CoreComponents
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="relative">
+      <.input
+        name="search"
+        value={@query}
+        phx-keyup="do-search"
+        phx-debounce="200"
+        phx-focus="hide-icon"
+        phx-blur="show-icon"
+        class="pl-20"
+      />
+      <%= if @show_icon do %>
+        <span class="absolute left-2 top-1/2 transform -translate-y-1/2">
+          <.icon name="hero-magnifying-glass" class="h-6 w-6 text-gray-500" />
+        </span>
+      <% end %>
+    </div>
+    <.results routes={@routes} />
+    """
+  end
+
+  @impl true
+  def mount(_params, _session, socket) do
+    {:ok,
+     socket
+     |> assign(:query, "")
+     |> assign(:routes, [])
+     |> assign(:show_icon, true)}
+  end
+
+  @impl true
+  def handle_event("do-search", %{"value" => query}, socket) do
+    query = String.downcase(query)
+    {:noreply, assign(socket, routes: search_routes(query), query: String.downcase(query))}
+  end
+
+  def handle_event("hide-icon", _, socket) do
+    {:noreply, assign(socket, :show_icon, false)}
+  end
+
+  def handle_event("show-icon", _, socket) do
+    {:noreply, assign(socket, :show_icon, true)}
+  end
+
+  def results(assigns) do
+    ~H"""
+    <ul>
+      <%= for {name, path} <- @routes do %>
+        <li>
+          <.link href={path} style="color: white;"><%= name %></.link>
+        </li>
+      <% end %>
+    </ul>
+    """
+  end
+
+  def search_routes("") do
+    []
+  end
+
+  def search_routes(query) do
+    SanbaseWeb.CustomAdminController.all_routes()
+    |> Enum.filter(fn {name, _path} -> String.contains?(String.downcase(name), query) end)
   end
 end

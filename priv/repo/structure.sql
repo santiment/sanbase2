@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.10 (Homebrew)
--- Dumped by pg_dump version 14.10 (Homebrew)
+-- Dumped from database version 15.1 (Homebrew)
+-- Dumped by pg_dump version 15.1 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2759,38 +2759,6 @@ ALTER SEQUENCE public.price_scraping_progress_id_seq OWNED BY public.price_scrap
 
 
 --
--- Name: processed_github_archives; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.processed_github_archives (
-    id bigint NOT NULL,
-    project_id bigint,
-    archive character varying(255) NOT NULL,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: processed_github_archives_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.processed_github_archives_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: processed_github_archives_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.processed_github_archives_id_seq OWNED BY public.processed_github_archives.id;
-
-
---
 -- Name: products; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4114,38 +4082,6 @@ CREATE TABLE public.user_followers (
 
 
 --
--- Name: user_intercom_attributes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_intercom_attributes (
-    id bigint NOT NULL,
-    properties jsonb,
-    user_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: user_intercom_attributes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.user_intercom_attributes_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: user_intercom_attributes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.user_intercom_attributes_id_seq OWNED BY public.user_intercom_attributes.id;
-
-
---
 -- Name: user_lists_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -5123,13 +5059,6 @@ ALTER TABLE ONLY public.price_scraping_progress ALTER COLUMN id SET DEFAULT next
 
 
 --
--- Name: processed_github_archives id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.processed_github_archives ALTER COLUMN id SET DEFAULT nextval('public.processed_github_archives_id_seq'::regclass);
-
-
---
 -- Name: products id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5372,13 +5301,6 @@ ALTER TABLE ONLY public.user_entity_interactions ALTER COLUMN id SET DEFAULT nex
 --
 
 ALTER TABLE ONLY public.user_events ALTER COLUMN id SET DEFAULT nextval('public.user_events_id_seq'::regclass);
-
-
---
--- Name: user_intercom_attributes id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_intercom_attributes ALTER COLUMN id SET DEFAULT nextval('public.user_intercom_attributes_id_seq'::regclass);
 
 
 --
@@ -6030,14 +5952,6 @@ ALTER TABLE ONLY public.price_scraping_progress
 
 
 --
--- Name: processed_github_archives processed_github_archives_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.processed_github_archives
-    ADD CONSTRAINT processed_github_archives_pkey PRIMARY KEY (id);
-
-
---
 -- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6371,14 +6285,6 @@ ALTER TABLE ONLY public.user_events
 
 ALTER TABLE ONLY public.user_followers
     ADD CONSTRAINT user_followers_pkey PRIMARY KEY (user_id, follower_id);
-
-
---
--- Name: user_intercom_attributes user_intercom_attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_intercom_attributes
-    ADD CONSTRAINT user_intercom_attributes_pkey PRIMARY KEY (id);
 
 
 --
@@ -7086,13 +6992,6 @@ CREATE UNIQUE INDEX price_scraping_progress_identifier_source_index ON public.pr
 
 
 --
--- Name: processed_github_archives_project_id_archive_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX processed_github_archives_project_id_archive_index ON public.processed_github_archives USING btree (project_id, archive);
-
-
---
 -- Name: products_code_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7440,13 +7339,6 @@ CREATE INDEX user_events_user_id_index ON public.user_events USING btree (user_i
 --
 
 CREATE UNIQUE INDEX user_followers_user_id_follower_id_index ON public.user_followers USING btree (user_id, follower_id);
-
-
---
--- Name: user_intercom_attributes_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX user_intercom_attributes_user_id_index ON public.user_intercom_attributes USING btree (user_id);
 
 
 --
@@ -8296,14 +8188,6 @@ ALTER TABLE ONLY public.presigned_s3_urls
 
 
 --
--- Name: processed_github_archives processed_github_archives_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.processed_github_archives
-    ADD CONSTRAINT processed_github_archives_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
-
-
---
 -- Name: project_ecosystem_mappings project_ecosystem_mappings_ecosystem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8661,14 +8545,6 @@ ALTER TABLE ONLY public.user_followers
 
 ALTER TABLE ONLY public.user_followers
     ADD CONSTRAINT user_followers_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: user_intercom_attributes user_intercom_attributes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_intercom_attributes
-    ADD CONSTRAINT user_intercom_attributes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -9349,3 +9225,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240123102628);
 INSERT INTO public."schema_migrations" (version) VALUES (20240125095156);
 INSERT INTO public."schema_migrations" (version) VALUES (20240125141406);
 INSERT INTO public."schema_migrations" (version) VALUES (20240126133441);
+INSERT INTO public."schema_migrations" (version) VALUES (20240131160724);
+INSERT INTO public."schema_migrations" (version) VALUES (20240201085929);

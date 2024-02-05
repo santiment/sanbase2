@@ -112,7 +112,10 @@ defmodule SanbaseWeb.DataController do
             |> Enum.reject(&is_nil/1)
             |> Enum.uniq()
 
-          github_organizations = Enum.flat_map(projects, & &1.github_organizations) |> Enum.uniq()
+          github_organizations =
+            Enum.flat_map(projects, & &1.github_organizations)
+            |> Enum.map(& &1.organization)
+            |> Enum.uniq()
 
           %{
             ecosystem: ecosystem,

@@ -1,24 +1,16 @@
 defmodule SanbaseWeb.GenericAdmin.Subscription do
-  alias Sanbase.Billing.Subscription
-  alias SanbaseWeb.GenericAdmin.SubscriptionHelper
+  def schema_module, do: Sanbase.Billing.Subscription
 
-  @resource %{
-    "subscriptions" => %{
-      module: Subscription,
-      admin_module: __MODULE__,
-      singular: "subscription",
+  def resource do
+    %{
       preloads: [:user, plan: [:product]],
-      edit_fields: [],
-      show_fields: :all,
       actions: [:show, :edit],
       funcs: %{
-        plan_id: &SubscriptionHelper.plan_func/1,
-        user_id: &SubscriptionHelper.user_func/1
+        plan_id: &__MODULE__.plan_func/1,
+        user_id: &__MODULE__.user_func/1
       }
     }
-  }
-
-  def resource, do: @resource
+  end
 
   def has_many(_subscription) do
     []
@@ -27,9 +19,7 @@ defmodule SanbaseWeb.GenericAdmin.Subscription do
   def belongs_to(_subscription) do
     []
   end
-end
 
-defmodule SanbaseWeb.GenericAdmin.SubscriptionHelper do
   def plan_func(row) do
     link_content = "#{row.plan.product.name}/#{row.plan.name}"
     href("plans", row.plan_id, link_content)

@@ -338,7 +338,7 @@ defmodule SanbaseWeb.LiveSearch do
   end
 
   def search_routes(query) do
-    SanbaseWeb.CustomAdminController.all_routes()
+    SanbaseWeb.GenericController.all_routes()
     |> Enum.filter(fn {name, _path} -> String.contains?(String.downcase(name), query) end)
   end
 end

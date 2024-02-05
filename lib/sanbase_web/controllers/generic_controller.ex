@@ -79,12 +79,16 @@ defmodule SanbaseWeb.GenericController do
     module = module_from_resource(resource)
     data = Repo.get(module, id)
     changeset = module.changeset(data, %{})
+    edit_fields = @resource_module_map[resource][:edit_fields] || []
+    action = Routes.generic_path(conn, :update, data, resource: resource)
+    field_type_map = field_type_map(module)
 
     render(conn, "edit.html",
       resource: resource,
       data: data,
-      action: Routes.generic_path(conn, :update, data, resource: resource),
-      edit_fields: @resource_module_map[resource][:edit_fields] || [],
+      action: action,
+      edit_fields: edit_fields,
+      field_type_map: field_type_map,
       changeset: changeset
     )
   end
@@ -92,8 +96,21 @@ defmodule SanbaseWeb.GenericController do
   def update(conn, %{"id" => id, "resource" => resource} = params) do
     module = module_from_resource(resource)
     data = Repo.get(module, id)
-    changes = params[@resource_module_map[resource][:singular]]
+    field_type_map = field_type_map(module)
+    changes = params[resource]
+
+    changes =
+      Enum.map(changes, fn {field, value} ->
+        case Map.get(field_type_map, String.to_existing_atom(field)) do
+          :map -> {field, Jason.decode!(value)}
+          _ -> {field, value}
+        end
+      end)
+      |> Enum.into(%{})
+
     changeset = module.changeset(data, changes)
+    edit_fields = @resource_module_map[resource][:edit_fields] || []
+    action = Routes.generic_path(conn, :update, data, resource: resource)
 
     case Sanbase.Repo.update(changeset) do
       {:ok, response_resource} ->
@@ -105,9 +122,10 @@ defmodule SanbaseWeb.GenericController do
         render(conn, "edit.html",
           resource: resource,
           data: data,
-          action: Routes.generic_path(conn, :update, data, resource: resource),
-          edit_fields: @resource_module_map[resource][:edit_fields],
-          changeset: changeset
+          action: action,
+          edit_fields: edit_fields,
+          changeset: changeset,
+          field_type_map: field_type_map
         )
     end
   end
@@ -232,14 +250,14 @@ defmodule SanbaseWeb.GenericController do
   end
 
   def search_by_field_value(module, field, value, preloads, page, page_size) do
-    case Integer.parse(value) do
-      {id, ""} ->
+    case field do
+      "id" ->
+        {id, ""} = Integer.parse(value)
         {1, search_by_id(module, id, preloads)}
 
       _ ->
         value = String.trim(value)
 
-        value = "%" <> value <> "%"
         field = String.to_existing_atom(field)
 
         field_type = module.__schema__(:type, field)
@@ -247,6 +265,8 @@ defmodule SanbaseWeb.GenericController do
 
         query =
           if field_type == :string do
+            value = "%" <> value <> "%"
+
             from(m in module,
               where: like(field(m, ^field), ^value),
               preload: ^preloads,
@@ -296,6 +316,12 @@ defmodule SanbaseWeb.GenericController do
     rescue
       UndefinedFunctionError -> default_value
     end
+  end
+
+  defp field_type_map(module) do
+    module.__schema__(:fields)
+    |> Enum.map(&{&1, module.__schema__(:type, &1)})
+    |> Enum.into(%{})
   end
 end
 

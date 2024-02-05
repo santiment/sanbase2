@@ -7,7 +7,8 @@ defmodule SanbaseWeb.GenericAdmin.UserAffiliateDetails do
       admin_module: __MODULE__,
       singular: "user_affiliate_details",
       preloads: [:user],
-      actions: [:show]
+      actions: [:show, :edit],
+      edit_fields: [:telegram_handle, :marketing_channels]
     }
   }
 

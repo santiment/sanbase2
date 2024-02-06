@@ -31,7 +31,9 @@ defmodule SanbaseWeb.GenericAdmin do
           singular: Inflex.singularize(resource_name),
           actions: [:show, :edit],
           index_fields: :all,
-          edit_fields: []
+          new_fields: [],
+          edit_fields: [],
+          funcs: %{}
         }
         |> Map.merge(call_module_function_or_default(admin_module, :resource, [], %{}))
     }

@@ -6,11 +6,18 @@ defmodule SanbaseWeb.TableComponent do
 
   alias SanbaseWeb.Router.Helpers, as: Routes
 
-  def edit_table(assigns) do
+  def form_table(assigns) do
     ~H"""
     <div class="mt-6 p-4">
-      <h3 class="text-3xl font-medium text-gray-700">Edit <%= @resource %></h3>
-      <.form method="patch" for={@changeset} as={@resource} action={@action}>
+      <h3 class="text-3xl font-medium text-gray-700">
+        <%= "#{String.capitalize(@type)} #{@resource}" %>
+      </h3>
+      <.form
+        method={if @type == "new", do: "post", else: "patch"}
+        for={@changeset}
+        as={@resource}
+        action={@action}
+      >
         <%= if @changeset.action do %>
           <div class="alert alert-danger">
             <p>Oops, something went wrong! Please check the errors below:</p>
@@ -24,44 +31,74 @@ defmodule SanbaseWeb.TableComponent do
             </ul>
           </div>
         <% end %>
-        <%= for field <- @edit_fields do %>
+        <%= for field <- @form_fields do %>
           <div class="m-4">
-            <.input
-              name={@resource <> "[" <> to_string(field) <> "]"}
-              id={@resource <> "_" <> to_string(field)}
-              label={humanize(field)}
-              type={
-                case Map.get(@field_type_map, field) do
-                  :string -> "text"
-                  :integer -> "number"
-                  :float -> "number"
-                  :boolean -> "checkbox"
-                  :date -> "text"
-                  :datetime -> "text"
-                  :time -> "text"
-                  :map -> "text"
-                  :list -> "text"
-                  :assoc -> "text"
-                  :binary -> "text"
-                  :any -> "text"
-                  _ -> "text"
-                end
-              }
-              value={
-                case Map.get(@field_type_map, field) do
-                  map_or_list when map_or_list in [:map, :list] ->
-                    Map.get(@changeset.data, field) |> Jason.encode!()
+            <%= if @belongs_to_fields[field] do %>
+              <.input
+                name={@resource <> "[" <> to_string(field) <> "_id" <> "]"}
+                id={@resource <> "_" <> to_string(field)}
+                label={humanize(field)}
+                type="select"
+                options={@belongs_to_fields[field]}
+                value={
+                  field_id = String.to_existing_atom(to_string(field) <> "_id")
 
-                  _ ->
-                    Map.get(@changeset.data, field)
-                end
-              }
-            />
+                  if @type == "new" do
+                    if @changeset.changes[field_id] do
+                      @changeset.changes[field_id]
+                    else
+                      nil
+                    end
+                  else
+                    Map.get(@changeset.changes, field_id) || Map.get(@changeset.data, field_id)
+                  end
+                }
+                prompt={"Select #{humanize(field)}"}
+              />
+            <% else %>
+              <.input
+                name={@resource <> "[" <> to_string(field) <> "]"}
+                id={@resource <> "_" <> to_string(field)}
+                label={humanize(field)}
+                type={
+                  case Map.get(@field_type_map, field) do
+                    :string -> "text"
+                    :integer -> "number"
+                    :float -> "number"
+                    :boolean -> "checkbox"
+                    :date -> "text"
+                    :datetime -> "text"
+                    :time -> "text"
+                    :map -> "text"
+                    :list -> "text"
+                    :assoc -> "text"
+                    :binary -> "text"
+                    :any -> "text"
+                    _ -> "text"
+                  end
+                }
+                value={
+                  if @type == "new" do
+                    ""
+                  else
+                    case Map.get(@field_type_map, field) do
+                      map_or_list when map_or_list in [:map, :list] ->
+                        Map.get(@changeset.data, field) |> Jason.encode!()
+
+                      _ ->
+                        Map.get(@changeset.changes, field) || Map.get(@changeset.data, field)
+                    end
+                  end
+                }
+              />
+            <% end %>
           </div>
         <% end %>
         <div class="flex justify-end">
           <.back_btn resource={@resource} action={:index} />
-          <.button type="submit" class="mt-4 p-4">Update</.button>
+          <.button type="submit" class="mt-4 p-4">
+            <%= if @type == "new", do: "Create", else: "Update" %>
+          </.button>
         </div>
       </.form>
     </div>
@@ -114,12 +151,20 @@ defmodule SanbaseWeb.TableComponent do
 
   def table(assigns) do
     ~H"""
-    <.search
-      resource={@resource}
-      search_value=""
-      placeholder="column=value (i.e. email=santiment)"
-      text_input_title="If the column is a string, the search looks for substrings, otherwise it tries exact matches"
-    />
+    <div>
+      <.search
+        resource={@resource}
+        search_value=""
+        placeholder="column=value (i.e. email=santiment)"
+        text_input_title="If the column is a string, the search looks for substrings, otherwise it tries exact matches"
+      />
+      <.link
+        href={Routes.generic_path(SanbaseWeb.Endpoint, :new, resource: @resource)}
+        class="underline relative mx-4 lg:mx-0 m-4 p-4"
+      >
+        New <%= Inflex.singularize(@resource) %>
+      </.link>
+    </div>
 
     <div class="m-4">
       <h3 class="text-3xl font-medium text-gray-700"><%= @model %></h3>

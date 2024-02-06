@@ -64,7 +64,6 @@ defmodule SanbaseWeb.Router do
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
     live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
 
-    get("/", CustomAdminController, :index)
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)
 
@@ -72,6 +71,8 @@ defmodule SanbaseWeb.Router do
     resources("/sheets_templates", SheetsTemplateController)
     resources("/webinars", WebinarController)
     resources("/custom_plans", CustomPlanController)
+
+    get("/", GenericController, :home)
     get("/generic/search", GenericController, :search)
     get("/generic/show_action", GenericController, :show_action)
     resources("/generic", GenericController)

@@ -5,8 +5,40 @@ defmodule SanbaseWeb.GenericController do
 
   alias SanbaseWeb.Router.Helpers, as: Routes
   alias Sanbase.Repo
+  alias SanbaseWeb.GenericAdmin
 
-  @resource_module_map SanbaseWeb.GenericAdmin.resource_module_map()
+  def resource_module_map() do
+    SanbaseWeb.GenericAdmin.resource_module_map()
+  end
+
+  def home(conn, _params) do
+    render(conn, :home,
+      search_value: "",
+      routes: all_routes()
+    )
+  end
+
+  def all_routes do
+    resources_to_routes() ++ custom_routes()
+  end
+
+  def custom_routes do
+    [
+      {"Webinars", ~p"/admin2/webinars"},
+      {"Sheets templates", ~p"/admin2/sheets_templates/"},
+      {"Reports", ~p"/admin2/reports"},
+      {"Custom plans", ~p"/admin2/custom_plans"},
+      {"Monitored Twitter Handles", ~p"/admin2/monitored_twitter_handle_live"}
+    ]
+  end
+
+  def resources_to_routes do
+    SanbaseWeb.GenericAdmin.resources()
+    |> Enum.map(fn resource ->
+      resource_name = String.capitalize(resource)
+      {resource_name, ~p"/admin2/generic?resource=#{resource}"}
+    end)
+  end
 
   def index(conn, %{"resource" => resource} = params) do
     page = params["page"] || 0
@@ -26,7 +58,7 @@ defmodule SanbaseWeb.GenericController do
         %{"search" => %{"generic_search" => search_text, "resource" => resource}} = params
       ) do
     module = module_from_resource(resource)
-    preloads = @resource_module_map[resource][:preloads] || []
+    preloads = resource_module_map()[resource][:preloads] || []
     page = to_integer(params["page"] || 0)
     page_size = to_integer(params["page_size"] || 10)
 
@@ -56,7 +88,7 @@ defmodule SanbaseWeb.GenericController do
 
   def show(conn, %{"resource" => resource, "id" => id}) do
     module = module_from_resource(resource)
-    admin_module = @resource_module_map[resource][:admin_module]
+    admin_module = resource_module_map()[resource][:admin_module]
     data = Repo.get(module, id)
 
     assocs =
@@ -70,8 +102,9 @@ defmodule SanbaseWeb.GenericController do
       data: data,
       assocs: assocs,
       string_fields: string_fields(module),
-      belongs_to: call_module_function_or_default(admin_module, :belongs_to, data, []),
-      has_many: call_module_function_or_default(admin_module, :has_many, data, [])
+      belongs_to:
+        GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
+      has_many: GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], [])
     )
   end
 
@@ -79,7 +112,7 @@ defmodule SanbaseWeb.GenericController do
     module = module_from_resource(resource)
     data = Repo.get(module, id)
     changeset = module.changeset(data, %{})
-    edit_fields = @resource_module_map[resource][:edit_fields] || []
+    edit_fields = resource_module_map()[resource][:edit_fields] || []
     action = Routes.generic_path(conn, :update, data, resource: resource)
     field_type_map = field_type_map(module)
 
@@ -109,7 +142,7 @@ defmodule SanbaseWeb.GenericController do
       |> Enum.into(%{})
 
     changeset = module.changeset(data, changes)
-    edit_fields = @resource_module_map[resource][:edit_fields] || []
+    edit_fields = resource_module_map()[resource][:edit_fields] || []
     action = Routes.generic_path(conn, :update, data, resource: resource)
 
     case Sanbase.Repo.update(changeset) do
@@ -131,25 +164,25 @@ defmodule SanbaseWeb.GenericController do
   end
 
   def show_action(conn, %{"action" => action, "resource" => resource, "id" => id}) do
-    admin_module = @resource_module_map[resource][:admin_module]
+    admin_module = resource_module_map()[resource][:admin_module]
     apply(admin_module, String.to_existing_atom(action), [conn, %{resource: resource, id: id}])
   end
 
   # private
 
-  def module_from_resource(resource), do: @resource_module_map[resource][:module]
+  def module_from_resource(resource), do: resource_module_map()[resource][:module]
 
   def resource_to_table_params(resource, params) do
     name = String.capitalize(resource)
-    module = @resource_module_map[resource][:module]
-    preloads = @resource_module_map[resource][:preloads] || []
-    funcs = @resource_module_map[resource][:funcs] || %{}
+    module = resource_module_map()[resource][:module]
+    preloads = resource_module_map()[resource][:preloads] || []
+    funcs = resource_module_map()[resource][:funcs] || %{}
     rows = params[:rows]
     page = to_integer(params[:page])
     page_size = to_integer(params[:page_size])
 
     index_fields =
-      case @resource_module_map[resource][:index_fields] do
+      case resource_module_map()[resource][:index_fields] do
         nil -> fields(module)
         :all -> fields(module)
         fields when is_list(fields) -> fields
@@ -200,7 +233,7 @@ defmodule SanbaseWeb.GenericController do
       rows_count: total_count,
       fields: index_fields,
       funcs: funcs,
-      actions: @resource_module_map[resource][:actions],
+      actions: resource_module_map()[resource][:actions],
       current_page: page,
       page_size: page_size,
       action: action,
@@ -307,14 +340,6 @@ defmodule SanbaseWeb.GenericController do
       nil -> nil
       value when is_integer(value) -> value
       value when is_binary(value) -> String.to_integer(value)
-    end
-  end
-
-  def call_module_function_or_default(module, function, data, default_value) do
-    try do
-      apply(module, function, [data])
-    rescue
-      UndefinedFunctionError -> default_value
     end
   end
 

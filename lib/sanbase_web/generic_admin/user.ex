@@ -2,19 +2,16 @@ defmodule SanbaseWeb.GenericAdmin.User do
   alias Sanbase.Accounts.User
   alias SanbaseWeb.GenericController
 
-  @resource %{
-    "users" => %{
-      module: User,
-      admin_module: __MODULE__,
-      singular: "user",
-      index_fields: [:id, :name, :email, :username],
-      edit_fields: [:stripe_customer_id, :email],
-      show_fields: :all,
-      actions: [:show, :edit]
-    }
-  }
+  @schema_module User
 
-  def resource, do: @resource
+  def schema_module, do: @schema_module
+
+  def resource do
+    %{
+      index_fields: [:id, :name, :email, :username],
+      edit_fields: [:stripe_customer_id, :email]
+    }
+  end
 
   def has_many(user) do
     user =

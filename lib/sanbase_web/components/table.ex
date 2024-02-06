@@ -9,8 +9,15 @@ defmodule SanbaseWeb.TableComponent do
   def edit_table(assigns) do
     ~H"""
     <div class="mt-6 p-4">
-      <h3 class="text-3xl font-medium text-gray-700">Edit <%= @resource %></h3>
-      <.form method="patch" for={@changeset} as={@resource} action={@action}>
+      <h3 class="text-3xl font-medium text-gray-700">
+        <%= "#{String.capitalize(@type)} #{@resource}" %>
+      </h3>
+      <.form
+        method={if @type == "new", do: "post", else: "patch"}
+        for={@changeset}
+        as={@resource}
+        action={@action}
+      >
         <%= if @changeset.action do %>
           <div class="alert alert-danger">
             <p>Oops, something went wrong! Please check the errors below:</p>
@@ -48,12 +55,16 @@ defmodule SanbaseWeb.TableComponent do
                 end
               }
               value={
-                case Map.get(@field_type_map, field) do
-                  map_or_list when map_or_list in [:map, :list] ->
-                    Map.get(@changeset.data, field) |> Jason.encode!()
+                if @type == "new" do
+                  ""
+                else
+                  case Map.get(@field_type_map, field) do
+                    map_or_list when map_or_list in [:map, :list] ->
+                      Map.get(@changeset.data, field) |> Jason.encode!()
 
-                  _ ->
-                    Map.get(@changeset.data, field)
+                    _ ->
+                      Map.get(@changeset.data, field)
+                  end
                 end
               }
             />
@@ -114,7 +125,15 @@ defmodule SanbaseWeb.TableComponent do
 
   def table(assigns) do
     ~H"""
-    <.search resource={@resource} search_value="" />
+    <div>
+      <.search resource={@resource} search_value="" />
+      <.link
+        href={Routes.generic_path(SanbaseWeb.Endpoint, :new, resource: @resource)}
+        class="underline relative mx-4 lg:mx-0 m-4 p-4"
+      >
+        New <%= Inflex.singularize(@resource) %>
+      </.link>
+    </div>
 
     <div class="m-4">
       <h3 class="text-3xl font-medium text-gray-700"><%= @model %></h3>

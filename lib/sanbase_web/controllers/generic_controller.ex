@@ -56,16 +56,57 @@ defmodule SanbaseWeb.GenericController do
   def new(conn, %{"resource" => resource}) do
     module = module_from_resource(resource)
     action = Routes.generic_path(conn, :create, resource: resource)
-    edit_fields = resource_module_map()[resource][:edit_fields] || []
+    form_fields = resource_module_map()[resource][:new_fields] || []
     field_type_map = field_type_map(module)
+    belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
+
+    changeset = module.changeset(struct(module), %{})
 
     render(conn, "new.html",
       resource: resource,
       action: action,
-      edit_fields: edit_fields,
+      form_fields: form_fields,
       field_type_map: field_type_map,
-      changeset: module.changeset(struct(module), %{})
+      changeset: changeset,
+      belongs_to_fields: belongs_to_fields
     )
+  end
+
+  def create(conn, %{"resource" => resource} = params) do
+    module = module_from_resource(resource)
+    field_type_map = field_type_map(module)
+    changes = params[resource]
+
+    changes =
+      Enum.map(changes, fn {field, value} ->
+        case Map.get(field_type_map, String.to_existing_atom(field)) do
+          :map -> {field, Jason.decode!(value)}
+          _ -> {field, value}
+        end
+      end)
+      |> Enum.into(%{})
+
+    changeset = module.changeset(struct(module), changes)
+    form_fields = resource_module_map()[resource][:new_fields] || []
+    action = Routes.generic_path(conn, :create, resource: resource)
+    belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
+
+    case Sanbase.Repo.insert(changeset) do
+      {:ok, response_resource} ->
+        conn
+        |> put_flash(:info, "#{resource} created successfully.")
+        |> redirect(to: Routes.generic_path(conn, :show, response_resource, resource: resource))
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        render(conn, "new.html",
+          resource: resource,
+          action: action,
+          form_fields: form_fields,
+          changeset: changeset,
+          field_type_map: field_type_map,
+          belongs_to_fields: belongs_to_fields
+        )
+    end
   end
 
   def search(
@@ -127,53 +168,20 @@ defmodule SanbaseWeb.GenericController do
     module = module_from_resource(resource)
     data = Repo.get(module, id)
     changeset = module.changeset(data, %{})
-    edit_fields = resource_module_map()[resource][:edit_fields] || []
+    form_fields = resource_module_map()[resource][:edit_fields] || []
     action = Routes.generic_path(conn, :update, data, resource: resource)
     field_type_map = field_type_map(module)
+    belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
 
     render(conn, "edit.html",
       resource: resource,
       data: data,
       action: action,
-      edit_fields: edit_fields,
+      form_fields: form_fields,
       field_type_map: field_type_map,
-      changeset: changeset
+      changeset: changeset,
+      belongs_to_fields: belongs_to_fields
     )
-  end
-
-  def create(conn, %{"resource" => resource} = params) do
-    module = module_from_resource(resource)
-    field_type_map = field_type_map(module)
-    changes = params[resource]
-
-    changes =
-      Enum.map(changes, fn {field, value} ->
-        case Map.get(field_type_map, String.to_existing_atom(field)) do
-          :map -> {field, Jason.decode!(value)}
-          _ -> {field, value}
-        end
-      end)
-      |> Enum.into(%{})
-
-    changeset = module.changeset(struct(module), changes)
-    edit_fields = resource_module_map()[resource][:edit_fields] || []
-    action = Routes.generic_path(conn, :create, resource: resource)
-
-    case Sanbase.Repo.insert(changeset) do
-      {:ok, response_resource} ->
-        conn
-        |> put_flash(:info, "#{resource} created successfully.")
-        |> redirect(to: Routes.generic_path(conn, :show, response_resource, resource: resource))
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "new.html",
-          resource: resource,
-          action: action,
-          edit_fields: edit_fields,
-          changeset: changeset,
-          field_type_map: field_type_map
-        )
-    end
   end
 
   def update(conn, %{"id" => id, "resource" => resource} = params) do
@@ -192,8 +200,9 @@ defmodule SanbaseWeb.GenericController do
       |> Enum.into(%{})
 
     changeset = module.changeset(data, changes)
-    edit_fields = resource_module_map()[resource][:edit_fields] || []
+    form_fields = resource_module_map()[resource][:edit_fields] || []
     action = Routes.generic_path(conn, :update, data, resource: resource)
+    belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
 
     case Sanbase.Repo.update(changeset) do
       {:ok, response_resource} ->
@@ -206,9 +215,10 @@ defmodule SanbaseWeb.GenericController do
           resource: resource,
           data: data,
           action: action,
-          edit_fields: edit_fields,
+          form_fields: form_fields,
           changeset: changeset,
-          field_type_map: field_type_map
+          field_type_map: field_type_map,
+          belongs_to_fields: belongs_to_fields
         )
     end
   end

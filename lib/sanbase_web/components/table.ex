@@ -152,7 +152,12 @@ defmodule SanbaseWeb.TableComponent do
   def table(assigns) do
     ~H"""
     <div>
-      <.search resource={@resource} search_value="" />
+      <.search
+        resource={@resource}
+        search_value=""
+        placeholder="column=value (i.e. email=santiment)"
+        text_input_title="If the column is a string, the search looks for substrings, otherwise it tries exact matches"
+      />
       <.link
         href={Routes.generic_path(SanbaseWeb.Endpoint, :new, resource: @resource)}
         class="underline relative mx-4 lg:mx-0 m-4 p-4"
@@ -220,6 +225,11 @@ defmodule SanbaseWeb.TableComponent do
     """
   end
 
+  attr(:placeholder, :string, default: "Search...")
+  attr(:resource, :string, required: true)
+  attr(:search_value, :string, required: true)
+  attr(:text_input_title, :string, default: "")
+
   def search(assigns) do
     ~H"""
     <div class="relative mx-4 lg:mx-0 m-4 p-4">
@@ -238,8 +248,9 @@ defmodule SanbaseWeb.TableComponent do
         <%= text_input(f, :generic_search,
           value: @search_value,
           class:
-            "w-64 pl-8 pr-4 text-indigo-600 border-gray-200 rounded-md sm:w-64 focus:border-indigo-600 focus:ring focus:ring-opacity-40 focus:ring-indigo-500",
-          placeholder: "email=user@example.com"
+            "w-full xl:w-96 sm:w-64 pl-8 pr-4 text-indigo-600 border-gray-200 rounded-md focus:border-indigo-600 focus:ring focus:ring-opacity-40 focus:ring-indigo-500",
+          placeholder: @placeholder,
+          title: @text_input_title
         ) %>
         <.button type="submit" class="mt-4 p-4">Search</.button>
       </.form>

@@ -1,16 +1,30 @@
 defmodule Sanbase.Ecosystem.Metric do
+  import Sanbase.DateTimeUtils, only: [maybe_str_to_sec: 1]
+
   import Sanbase.Metric.SqlQuery.Helper,
     only: [
       to_unix_timestamp: 3,
       aggregation: 3,
-      generate_comparison_string: 3,
-      asset_id_filter: 2,
-      additional_filters: 3,
       dt_to_unix: 2
     ]
 
-  def aggregated_timeseries_data(ecosystems, metric, from, to, aggregation) do
-    query = aggregated_timeseries_data(ecosystems, metric, from, to, aggregation)
+  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
+  @name_to_metric_map FileHandler.name_to_metric_map()
+  @aggregation_map FileHandler.aggregation_map()
+
+  def aggregated_timeseries_data(ecosystems, metric, from, to, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    query = aggregated_timeseries_data_query(ecosystems, metric, from, to, aggregation)
+
+    case Sanbase.ClickhouseRepo.query_transform(query, & &1) do
+      {:ok, result} -> {:ok, result}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def timeseries_data(ecosystems, metric, from, to, interval, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    query = timeseries_data_query(ecosystems, metric, from, to, interval, aggregation)
 
     case Sanbase.ClickhouseRepo.query_transform(query, & &1) do
       {:ok, result} -> {:ok, result}
@@ -21,50 +35,66 @@ defmodule Sanbase.Ecosystem.Metric do
   # Private functions
 
   defp aggregated_timeseries_data_query(ecosystems, metric, from, to, aggregation) do
+    params = %{
+      ecosystems: ecosystems,
+      metric: Map.get(@name_to_metric_map, metric),
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to)
+    }
+
     sql = """
-    WITH
-        ecosystem_assets AS (
-            SELECT ecosystem, asset_id
-            FROM ecosystem_assets_mapping
-            WHERE ecosystem IN {{ecosystems}}
-            ARRAY JOIN asset_ids AS asset_id
-        ),
-        asset_ids AS (SELECT asset_id FROM ecosystem_assets),
-        asset_dev_activity AS (
-            SELECT asset_id, sum(value) as dev_activity_sum_per_asset_id
-            FROM intraday_metrics
-            WHERE metric_id = (SELECT metric_id FROM metric_metadata WHERE name = 'dev_activity' LIMIT 1)
-              AND asset_id IN asset_ids
-              AND dt > {{from}} AND dt <= {{to}}
-            GROUP BY asset_id
-        ),
-        ecosystem_dev_activity AS (
-            SELECT *
-            FROM ecosystem_assets
-            INNER JOIN asset_dev_activity
-            USING asset_id
-        )
     SELECT
       ecosystem,
-      groupArray(asset_id) AS asset_ids,
-      sum(dev_activity_sum_per_asset_id) AS dev_activity_sum
-    FROM ecosystem_dev_activity
+      #{aggregation(aggregation, "value", "dt")} AS value
+    FROM(
+      SELECT dt, ecosystem, argMax(value, computed_at) AS value
+      FROM (
+        SELECT dt, ecosystem, metric_id, value, computed_at
+        FROM ecosystem_aggregated_metrics
+        WHERE
+          ecosystem IN ({{ecosystems}}) AND
+          metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 ) AND
+          dt >= toDateTime({{from}}) AND dt < toDateTime({{to}})
+        )
+        GROUP BY ecosystem, dt
+    )
     GROUP BY ecosystem
     """
-
-    params = %{ecosystems: ecosystems, from: dt_to_unix(:from, from), to: dt_to_unix(:to, to)}
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 
-  def timeseries_data(ecosystems, metric, from, to, interval, aggregation) do
-    sql = """
-
-
-    """
-
+  defp timeseries_data_query(ecosystems, metric, from, to, interval, aggregation) do
     params = %{
+      interval: maybe_str_to_sec(interval),
+      metric: Map.get(@name_to_metric_map, metric),
+      from: dt_to_unix(:from, from),
+      to: dt_to_unix(:to, to),
       ecosystems: ecosystems
     }
+
+    sql = """
+    SELECT
+      ecosystem,
+      #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
+      #{aggregation(aggregation, "value", "dt")} AS value
+    FROM(
+      SELECT
+        ecosystem,
+        dt,
+        argMax(value, computed_at) AS value
+      FROM ecosystem_aggregated_metrics
+      PREWHERE
+        ecosystem IN {{ecosystems}} AND
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 ) AND
+        dt >= {{from}} AND dt < {{to}}
+      GROUP BY ecosystem, dt
+    )
+    WHERE isNotNull(value) AND NOT isNaN(value)
+    GROUP BY ecosystem, t
+    ORDER BY t
+    """
+
+    Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

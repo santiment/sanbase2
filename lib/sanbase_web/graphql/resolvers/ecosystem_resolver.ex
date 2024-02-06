@@ -7,8 +7,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EcosystemResolver do
   end
 
   def aggregated_timeseries_data(%{name: ecosystem}, args, %{context: %{loader: loader}}) do
-    IO.inspect("CALLIGN THE DATALOADER")
-
     loader
     |> Dataloader.load(SanbaseDataloader, :ecosystem_aggregated_metric_data, {ecosystem, args})
     |> on_load(fn loader ->

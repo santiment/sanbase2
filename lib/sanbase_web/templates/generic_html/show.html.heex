@@ -1,13 +1,13 @@
 <div class="container mx-auto px-6 py-8">
-  <SanbaseWeb.TableComponent.kv_table 
+  <SanbaseWeb.TableComponent.show_table 
     resource={@resource}
     data={@data}
     fields={@string_fields}
     assocs={@assocs}
   />
 
-  <span><%= link "Edit", to: Routes.generic_path(@conn, :edit, @data, resource: @resource), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded"%></span>
-  <span><%= link "Back", to: Routes.generic_path(@conn, :index, resource: @resource), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded" %></span>
+  <SanbaseWeb.TableComponent.link_btn text="Edit" href={Routes.generic_path(@conn, :edit, @data, resource: @resource)} />
+  <SanbaseWeb.TableComponent.back_btn resource={@resource} action={:index} />
 
   <%= for bt <- @belongs_to do %>
   <div class="mt-4">
@@ -35,11 +35,13 @@
 <% end %>
 
 <%= for table <- @has_many do %>
-  <SanbaseWeb.CoreComponents.old_table
-    model={table.model}
+  <SanbaseWeb.TableComponent.has_many_table
+    resource={table.resource}
+    resource_name={table.resource_name}
     rows={table.rows}
     fields={table.fields}
     funcs={table.funcs}
+    create_link_kv={table.create_link_kv}
   />
 <% end %>
 </div>

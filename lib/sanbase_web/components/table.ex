@@ -53,7 +53,11 @@ defmodule SanbaseWeb.TableComponent do
                     Map.get(@changeset.changes, field_id) || Map.get(@changeset.data, field_id)
                   end
                 }
-                prompt={"Select #{humanize(field)}"}
+                prompt={
+                  if length(@belongs_to_fields[field]) == 1,
+                    do: nil,
+                    else: "Select #{humanize(field)}"
+                }
               />
             <% else %>
               <.input
@@ -116,24 +120,26 @@ defmodule SanbaseWeb.TableComponent do
     """
   end
 
-  def kv_table(assigns) do
+  def link_btn(assigns) do
+    ~H"""
+    <a
+      href={@href}
+      class="phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3 text-sm font-semibold leading-6 text-white active:text-white/80 mt-4 mr-2"
+    >
+      <%= @text %>
+    </a>
+    """
+  end
+
+  def show_table(assigns) do
     ~H"""
     <div class="mt-6">
-      <h3 class="text-3xl font-medium text-gray-700">Show <%= @resource %></h3>
-      <table class="table-auto border-collapse w-full mb-4">
-        <thead>
-          <tr
-            class="rounded-lg text-sm font-medium text-gray-700 text-left"
-            style="font-size: 0.9674rem"
-          >
-            <.th field="Field" />
-            <.th field="Value" />
-          </tr>
-        </thead>
+      <h3 class="text-3xl font-medium text-gray-700">Show <%= Inflex.singularize(@resource) %></h3>
+      <table class="table-auto border-collapse w-full mb-4 mt-4">
         <tbody class="text-sm font-normal text-gray-700">
           <%= for field <- @fields do %>
             <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
-              <.td value={to_string(field)} />
+              <.th field={to_string(field)} />
               <.td value={
                 if @assocs[@data.id][field] do
                   @assocs[@data.id][field]
@@ -210,6 +216,46 @@ defmodule SanbaseWeb.TableComponent do
         action={@action}
         search_text={@search_text}
       />
+    </div>
+    """
+  end
+
+  def has_many_table(assigns) do
+    ~H"""
+    <div class="mt-6">
+      <h3 class="text-3xl font-medium text-gray-700"><%= @resource_name %></h3>
+      <% kw_list = Keyword.merge([resource: @resource], @create_link_kv) %>
+      <.link
+        href={Routes.generic_path(SanbaseWeb.Endpoint, :new, kw_list)}
+        class="underline relative lg:mx-0 mt-4 mb-4 pt-4 pb-4"
+      >
+        New <%= Inflex.singularize(@resource_name) %>
+      </.link>
+      <table class="table-auto border-collapse w-full mb-4">
+        <thead>
+          <tr
+            class="rounded-lg text-sm font-medium text-gray-700 text-left"
+            style="font-size: 0.9674rem"
+          >
+            <%= for field <- @fields do %>
+              <.th field={field} />
+            <% end %>
+          </tr>
+        </thead>
+        <tbody class="text-sm font-normal text-gray-700">
+          <%= for row <- @rows do %>
+            <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
+              <%= for field <- @fields do %>
+                <.td
+                  row={row}
+                  field={field}
+                  value={if @funcs[field] != nil, do: @funcs[field].(row), else: Map.get(row, field)}
+                />
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
     </div>
     """
   end

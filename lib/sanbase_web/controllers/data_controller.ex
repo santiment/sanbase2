@@ -78,6 +78,18 @@ defmodule SanbaseWeb.DataController do
     |> Plug.Conn.send_resp(200, ecosystems_data)
   end
 
+  def ecosystem_github_organization_mapping(conn, _params) do
+    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+
+    {:ok, data} =
+      Sanbase.Cache.get_or_store(cache_key, &get_ecosystem_github_organization_mapping/0)
+      |> IO.inspect(label: "HERE")
+
+    conn
+    |> put_resp_header("content-type", "application/json; charset=utf-8")
+    |> Plug.Conn.send_resp(200, data)
+  end
+
   # Private functions
   defp get_santiment_team_members() do
     email_to_discord_id_map = get_email_to_discord_id_map()
@@ -126,6 +138,22 @@ defmodule SanbaseWeb.DataController do
           |> Jason.encode!()
         end)
         |> Enum.intersperse("\n")
+
+      {:ok, result}
+    end
+  end
+
+  defp get_ecosystem_github_organization_mapping() do
+    with {:ok, data} <- Sanbase.Ecosystem.get_ecosystems_with_projects() do
+      result =
+        for %{name: ecosystem, projects: projects} <- data,
+            %{github_organizations: github_organizations} <- projects,
+            %{organization: organization} <- github_organizations,
+            do:
+              %{ecosystem: ecosystem, github_organization: String.downcase(organization)}
+              |> Jason.encode!()
+
+      result = result |> Enum.uniq() |> Enum.intersperse("\n")
 
       {:ok, result}
     end

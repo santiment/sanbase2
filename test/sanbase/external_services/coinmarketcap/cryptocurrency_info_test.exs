@@ -43,11 +43,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfoTest do
 
     url_with_invalid_slugs =
       Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>
-        "v1/cryptocurrency/info?slug=bitcoin,ethereum,invalid0,invalid1"
+        "v2/cryptocurrency/info?slug=bitcoin,ethereum,invalid0,invalid1"
 
     url_with_cleaned_slugs =
       Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>
-        "v1/cryptocurrency/info?slug=bitcoin,ethereum"
+        "v2/cryptocurrency/info?slug=bitcoin,ethereum"
 
     mock(fn
       %{method: :get, url: ^url_with_invalid_slugs} ->

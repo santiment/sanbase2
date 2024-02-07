@@ -19,7 +19,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
 
       info_url =
         Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>
-          "v1/cryptocurrency/info?slug=#{bitcoin.slug},#{ethereum.slug}"
+          "v2/cryptocurrency/info?slug=#{bitcoin.slug},#{ethereum.slug}"
 
       mock(fn
         %{method: :get, url: ^info_url} ->
@@ -82,7 +82,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
 
       info_url =
         Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>
-          "v1/cryptocurrency/info?slug=bitcoin"
+          "v2/cryptocurrency/info?slug=bitcoin"
 
       mock(fn
         %{

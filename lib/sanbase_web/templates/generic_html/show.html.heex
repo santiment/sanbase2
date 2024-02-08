@@ -4,6 +4,7 @@
     data={@data}
     fields={@string_fields}
     assocs={@assocs}
+    funcs={@funcs}
   />
 
   <SanbaseWeb.TableComponent.link_btn text="Edit" href={Routes.generic_path(@conn, :edit, @data, resource: @resource)} />

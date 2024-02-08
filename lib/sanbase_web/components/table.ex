@@ -112,6 +112,17 @@ defmodule SanbaseWeb.TableComponent do
   def back_btn(assigns) do
     ~H"""
     <a
+      href="javascript:history.back()"
+      class="phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3 text-sm font-semibold leading-6 text-white active:text-white/80 mt-4 mr-2"
+    >
+      Back
+    </a>
+    """
+  end
+
+  def back_btn2(assigns) do
+    ~H"""
+    <a
       href={Routes.generic_path(SanbaseWeb.Endpoint, @action, resource: @resource)}
       class="phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3 text-sm font-semibold leading-6 text-white active:text-white/80 mt-4 mr-2"
     >
@@ -141,11 +152,12 @@ defmodule SanbaseWeb.TableComponent do
             <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
               <.th field={to_string(field)} />
               <.td value={
-                if @assocs[@data.id][field] do
-                  @assocs[@data.id][field]
-                else
-                  Map.get(@data, field) |> to_string()
-                end
+                result =
+                  if @assocs[@data.id][field],
+                    do: @assocs[@data.id][field],
+                    else: Map.get(@data, field)
+
+                if @funcs[field] != nil, do: @funcs[field].(@data), else: result
               } />
             </tr>
           <% end %>
@@ -190,16 +202,22 @@ defmodule SanbaseWeb.TableComponent do
           <%= for row <- @rows do %>
             <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
               <%= for field <- @fields do %>
-                <.td value={
-                  result =
-                    if @assocs[row.id][field], do: @assocs[row.id][field], else: Map.get(row, field)
+                <%= if field == :id do %>
+                  <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
+                    <.a resource={@resource} action={:show} row={row} label={Map.get(row, field)} />
+                  </td>
+                <% else %>
+                  <.td value={
+                    result =
+                      if @assocs[row.id][field], do: @assocs[row.id][field], else: Map.get(row, field)
 
-                  if @funcs[field] != nil, do: @funcs[field].(row), else: result
-                } />
+                    if @funcs[field] != nil, do: @funcs[field].(row), else: result
+                  } />
+                <% end %>
               <% end %>
               <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
                 <%= for {action, index} <- Enum.with_index(@actions) do %>
-                  <.a resource={@resource} action={action} row={row} />
+                  <.a resource={@resource} action={action} row={row} label={action} />
                   <%= if index < length(@actions) - 1, do: raw(" | ") %>
                 <% end %>
               </td>
@@ -224,13 +242,21 @@ defmodule SanbaseWeb.TableComponent do
     ~H"""
     <div class="mt-6">
       <h3 class="text-3xl font-medium text-gray-700"><%= @resource_name %></h3>
-      <% kw_list = Keyword.merge([resource: @resource], @create_link_kv) %>
-      <.link
-        href={Routes.generic_path(SanbaseWeb.Endpoint, :new, kw_list)}
-        class="underline relative lg:mx-0 mt-4 mb-4 pt-4 pb-4"
-      >
-        New <%= Inflex.singularize(@resource_name) %>
-      </.link>
+      <%= if @create_link_kv != [] do %>
+        <% kw_list = Keyword.merge([resource: @resource], @create_link_kv) %>
+        <.link
+          href={
+            Routes.generic_path(
+              SanbaseWeb.Endpoint,
+              :new,
+              Keyword.merge([resource: @resource], @create_link_kv)
+            )
+          }
+          class="underline relative lg:mx-0 mt-4 mb-4 pt-4 pb-4"
+        >
+          New <%= Inflex.singularize(@resource_name) %>
+        </.link>
+      <% end %>
       <table class="table-auto border-collapse w-full mb-4">
         <thead>
           <tr
@@ -246,11 +272,19 @@ defmodule SanbaseWeb.TableComponent do
           <%= for row <- @rows do %>
             <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
               <%= for field <- @fields do %>
-                <.td
-                  row={row}
-                  field={field}
-                  value={if @funcs[field] != nil, do: @funcs[field].(row), else: Map.get(row, field)}
-                />
+                <%= if field == :id do %>
+                  <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
+                    <.a resource={@resource} action={:show} row={row} label={Map.get(row, field)} />
+                  </td>
+                <% else %>
+                  <.td
+                    row={row}
+                    field={field}
+                    value={
+                      if @funcs[field] != nil, do: @funcs[field].(row), else: Map.get(row, field)
+                    }
+                  />
+                <% end %>
               <% end %>
             </tr>
           <% end %>
@@ -266,7 +300,7 @@ defmodule SanbaseWeb.TableComponent do
       href={Routes.generic_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}
       class="underline"
     >
-      <%= Atom.to_string(@action) %>
+      <%= @label %>
     </.link>
     """
   end

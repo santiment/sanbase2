@@ -20,6 +20,9 @@ defmodule Sanbase.Project.ContractAddress do
     contract
     |> cast(attrs, [:address, :decimals, :label, :description, :project_id])
     |> validate_required([:address, :project_id])
+    |> unique_constraint([:project_id, :address],
+      message: "The combination of project and contract address must be unique."
+    )
   end
 
   @doc ~s"""

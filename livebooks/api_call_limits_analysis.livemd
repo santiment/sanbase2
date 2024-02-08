@@ -1,0 +1,62 @@
+# API Calls Limits
+
+## Section
+
+```elixir
+import Ecto.Query
+alias Sanbase.Accounts.User
+
+email = "ivan.i@san"
+user_ids = []
+username = "<enter_username_here>"
+
+email = "%" <> email <> "%"
+username = "%" <> username <> "%"
+
+matching_users =
+  from(u in User,
+    where:
+      like(u.email, ^email) or
+        u.id in ^user_ids or
+        like(u.username, ^username)
+  )
+  |> Sanbase.Repo.all()
+```
+
+```elixir
+user_ids = Enum.map(matching_users, & &1.id)
+
+api_call_limits =
+  from(acl in Sanbase.ApiCallLimit, where: acl.user_id in ^user_ids, preload: :user)
+  |> Sanbase.Repo.all()
+
+data =
+  Enum.map(api_call_limits, fn acl ->
+    %{
+      user_id: acl.user.id,
+      email: acl.user.email,
+      username: acl.user.username,
+      has_limits: acl.has_limits,
+      has_limits_no_matter_plan: acl.has_limits_no_matter_plan,
+      plan: acl.api_calls_limit_plan,
+      api_calls_made: Enum.map(acl.api_calls, fn {k, v} -> "#{k}: #{v}" end) |> Enum.join(",")
+    }
+  end)
+```
+
+```elixir
+Kino.DataTable.new(data,
+  keys: [:user_id, :has_limits, :plan, :api_calls_made]
+)
+```
+
+```elixir
+Enum.each(data, fn map ->
+  IO.puts("#{map.user_id} | #{map.has_limits} | #{map.plan} | #{map.api_calls_made}")
+end)
+```
+
+```elixir
+# Uncomment and execute to clear api calls limits for the matched users
+# Enum.map(api_call_limits, &Sanbase.Repo.delete/1)
+```

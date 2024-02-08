@@ -27,7 +27,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
       Enum.map(projects, &Project.coinmarketcap_id/1)
       |> Enum.sort()
 
-    "v1/cryptocurrency/info?slug=#{Enum.join(coinmarketcap_ids, ",")}"
+    "v2/cryptocurrency/info?slug=#{Enum.join(coinmarketcap_ids, ",")}"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->

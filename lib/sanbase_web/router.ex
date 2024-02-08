@@ -163,6 +163,13 @@ defmodule SanbaseWeb.Router do
     get("/api_metric_name_mapping", MetricNameController, :api_metric_name_mapping)
     get("/projects_data", DataController, :projects_data)
     get("/ecosystems_data", DataController, :ecosystems_data)
+
+    get(
+      "/ecosystem_github_organization_mapping",
+      DataController,
+      :ecosystem_github_organization_mapping
+    )
+
     get("/santiment_team_members/:secret", DataController, :santiment_team_members)
     get("/cryptocompare_asset_mapping", CryptocompareAssetMappingController, :data)
     post("/stripe_webhook", StripeController, :webhook)

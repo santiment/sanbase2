@@ -1,0 +1,139 @@
+# BASIC plan usage stats
+
+## Section
+
+```elixir
+%{rows: [[sanapi_product_id]]} =
+  Sanbase.Repo.query!("SELECT id FROM products WHERE name LIKE '%SanAPI%'")
+
+IO.puts("SanAPI Product ID: #{sanapi_product_id}")
+
+%{rows: rows} =
+  Sanbase.Repo.query!(
+    """
+    SELECT id
+    FROM plans
+    WHERE product_id = $1::integer AND name = 'ESSENTIAL'
+    """,
+    [sanapi_product_id]
+  )
+
+plan_ids = List.flatten(rows)
+
+%{rows: rows} =
+  Sanbase.Repo.query!(
+    """
+    SELECT user_id
+    FROM subscriptions
+    WHERE plan_id = ANY($1::integer[]) AND status = 'active'
+    """,
+    [plan_ids]
+  )
+
+# Users with active SanAPI BASIC plan. In the DB it is named ESSENTIAL
+user_ids = List.flatten(rows)
+```
+
+```elixir
+query = """
+SELECT user_id, count(*) AS count
+FROM api_call_data
+WHERE
+  user_id in (?1) AND
+  auth_method = 'apikey' AND
+  dt >= '2023-07-01 00:00:00' AND dt <= '2024-01-31 23:59:59'
+GROUP BY user_id
+"""
+
+args = [user_ids]
+
+{:ok, data} = Sanbase.ClickhouseRepo.query_transform(query, args, & &1)
+users_with_api_calls = Enum.map(data, fn [user_id, _] -> user_id end)
+users_without_api_calls = user_ids -- users_with_api_calls
+
+IO.puts(
+  "Users with api calls (#{length(users_with_api_calls)}): #{inspect(users_with_api_calls)}"
+)
+
+IO.puts(
+  "Users without api calls (#{length(users_without_api_calls)}): #{inspect(users_without_api_calls)}"
+)
+```
+
+```elixir
+query = """
+SELECT user_id, max(api_calls)
+FROM(
+  SELECT user_id, toMonth(dt) AS month, count(*) AS api_calls
+  FROM api_call_data
+  WHERE
+    auth_method = 'apikey' AND
+    dt >= '2023-07-01 00:00:00' AND dt <= '2024-01-31 23:59:59' AND
+    user_id IN (?1)
+  GROUP BY user_id, month
+  HAVING api_calls > 0
+)
+GROUP BY user_id
+"""
+
+args = [user_ids]
+
+{:ok, data} = Sanbase.ClickhouseRepo.query_transform(query, args, & &1)
+```
+
+```elixir
+length(user_ids)
+```
+
+```elixir
+groups =
+  Enum.group_by(data, fn [_user_id, avg_api_calls] ->
+    div(avg_api_calls |> trunc(), 10_000) + 1
+  end)
+
+data =
+  Enum.map(groups, fn {k, v} -> {k, k * 10_000, length(v)} end)
+  |> Enum.sort_by(&elem(&1, 0), :asc)
+  |> Enum.map(fn {_k, range, users_count} -> %{x: range, y: users_count} end)
+```
+
+```elixir
+VegaLite.new(width: 600, height: 400)
+|> VegaLite.data_from_values(data, only: ["x", "y"])
+|> VegaLite.mark(:bar)
+|> VegaLite.encode_field(:x, "x", type: :quantitative)
+|> VegaLite.encode_field(:y, "y", type: :quantitative)
+```
+
+```elixir
+query = """
+  SELECT user_id, toStartOfHour(dt) AS hour, count(*) AS api_calls
+  FROM api_call_data
+  WHERE
+    auth_method = 'apikey' AND
+    dt >= '2023-07-01 00:00:00' AND dt <= '2024-01-31 23:59:59' AND
+    user_id IN (?1)
+  GROUP BY user_id, hour
+"""
+
+args = [user_ids]
+
+{:ok, data} = Sanbase.ClickhouseRepo.query_transform(query, args, & &1)
+
+data =
+  Enum.map(data, fn [user_id, _hour, api_calls] ->
+    %{x: user_id, y: trunc(api_calls)}
+  end)
+```
+
+```elixir
+VegaLite.new(width: 800, height: 700)
+|> VegaLite.data_from_values(data, only: ["x", "y"])
+|> VegaLite.mark(:boxplot, ticks: true, outliers: [])
+|> VegaLite.encode_field(:x, "x", type: :nominal, title: "User ID")
+|> VegaLite.encode_field(:y, "y",
+  type: :quantitative,
+  title: "API Calls Per Hour",
+  scale: %{zero: false, type: :log}
+)
+```

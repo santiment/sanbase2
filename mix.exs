@@ -122,6 +122,7 @@ defmodule Sanbase.Mixfile do
       {:kaffe, github: "santiment/kaffe", override: true},
       {:kafka_protocol,
        github: "santiment/kafka_protocol", branch: "working-version", override: true},
+      {:kino_db, "~> 0.2.2"},
       {:kino_vega_lite, "~> 0.1.9"},
       {:libcluster, "~> 3.0"},
       {:lz4b, github: "kafka4beam/lz4b"},

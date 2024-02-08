@@ -1,8 +1,10 @@
-# BASIC plan usage stats
+# SANAPI plan usage stats
 
 ## Section
 
 ```elixir
+plan_name = "PRO"
+
 %{rows: [[sanapi_product_id]]} =
   Sanbase.Repo.query!("SELECT id FROM products WHERE name LIKE '%SanAPI%'")
 
@@ -13,9 +15,9 @@ IO.puts("SanAPI Product ID: #{sanapi_product_id}")
     """
     SELECT id
     FROM plans
-    WHERE product_id = $1::integer AND name = 'ESSENTIAL'
+    WHERE product_id = $1::integer AND name = $2::varchar(255)
     """,
-    [sanapi_product_id]
+    [sanapi_product_id, plan_name]
   )
 
 plan_ids = List.flatten(rows)
@@ -32,6 +34,18 @@ plan_ids = List.flatten(rows)
 
 # Users with active SanAPI BASIC plan. In the DB it is named ESSENTIAL
 user_ids = List.flatten(rows)
+
+%{rows: rows} =
+  Sanbase.Repo.query!(
+    """
+    SELECT id
+    FROM users
+    WHERE id = ANY($1::integer[]) AND (email NOT LIKE '%santiment.net%' AND email NOT LIKE '%dino.ibisbegovic%' AND email NOT LIKE '%user.abc%')
+    """,
+    [user_ids]
+  )
+
+user_ids = List.flatten(rows)
 ```
 
 ```elixir
@@ -41,7 +55,7 @@ FROM api_call_data
 WHERE
   user_id in (?1) AND
   auth_method = 'apikey' AND
-  dt >= '2023-07-01 00:00:00' AND dt <= '2024-01-31 23:59:59'
+  dt >= '2023-11-01 00:00:00'
 GROUP BY user_id
 """
 
@@ -58,31 +72,47 @@ IO.puts(
 IO.puts(
   "Users without api calls (#{length(users_without_api_calls)}): #{inspect(users_without_api_calls)}"
 )
+
+import Ecto.Query
+
+users_no_calls =
+  from(u in Sanbase.Accounts.User,
+    where: u.id in ^users_without_api_calls,
+    select: {u.id, u.email, u.username}
+  )
+  |> Sanbase.Repo.all()
+
+Enum.each(users_no_calls, &IO.inspect/1)
 ```
 
 ```elixir
 query = """
-SELECT user_id, max(api_calls)
-FROM(
-  SELECT user_id, toMonth(dt) AS month, count(*) AS api_calls
+  SELECT user_id, toStartOfMonth(dt) AS month, count(*) AS api_calls
   FROM api_call_data
   WHERE
     auth_method = 'apikey' AND
     dt >= '2023-07-01 00:00:00' AND dt <= '2024-01-31 23:59:59' AND
     user_id IN (?1)
   GROUP BY user_id, month
-  HAVING api_calls > 0
-)
-GROUP BY user_id
 """
 
 args = [user_ids]
 
 {:ok, data} = Sanbase.ClickhouseRepo.query_transform(query, args, & &1)
+
+data = Enum.map(data, fn [user_id, _month, api_calls] -> %{x: user_id, y: api_calls} end)
 ```
 
 ```elixir
-length(user_ids)
+VegaLite.new(width: 800, height: 700)
+|> VegaLite.data_from_values(data, only: ["x", "y"])
+|> VegaLite.mark(:boxplot, ticks: true, outliers: [])
+|> VegaLite.encode_field(:x, "x", type: :nominal, title: "User ID")
+|> VegaLite.encode_field(:y, "y",
+  type: :quantitative,
+  title: "API Calls Per Month",
+  scale: %{zero: false, type: :linear}
+)
 ```
 
 ```elixir
@@ -134,6 +164,6 @@ VegaLite.new(width: 800, height: 700)
 |> VegaLite.encode_field(:y, "y",
   type: :quantitative,
   title: "API Calls Per Hour",
-  scale: %{zero: false, type: :log}
+  scale: %{zero: false, type: :linear}
 )
 ```

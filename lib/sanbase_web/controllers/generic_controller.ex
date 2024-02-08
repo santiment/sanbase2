@@ -53,12 +53,13 @@ defmodule SanbaseWeb.GenericController do
     render(conn, "error.html")
   end
 
-  def new(conn, %{"resource" => resource}) do
+  def new(conn, %{"resource" => resource} = params) do
     module = module_from_resource(resource)
     action = Routes.generic_path(conn, :create, resource: resource)
     form_fields = resource_module_map()[resource][:new_fields] || []
     field_type_map = field_type_map(module)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
+    belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
 
     changeset = module.changeset(struct(module), %{})
 
@@ -90,6 +91,7 @@ defmodule SanbaseWeb.GenericController do
     form_fields = resource_module_map()[resource][:new_fields] || []
     action = Routes.generic_path(conn, :create, resource: resource)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
+    belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
 
     case Sanbase.Repo.insert(changeset) do
       {:ok, response_resource} ->
@@ -145,7 +147,8 @@ defmodule SanbaseWeb.GenericController do
   def show(conn, %{"resource" => resource, "id" => id}) do
     module = module_from_resource(resource)
     admin_module = resource_module_map()[resource][:admin_module]
-    data = Repo.get(module, id)
+    data = Repo.get(module, id) |> Repo.preload(resource_module_map()[resource][:preloads] || [])
+    funcs = resource_module_map()[resource][:funcs] || %{}
 
     assocs =
       Enum.map([data], fn row ->
@@ -157,14 +160,15 @@ defmodule SanbaseWeb.GenericController do
       resource: resource,
       data: data,
       assocs: assocs,
-      string_fields: string_fields(module),
+      funcs: funcs,
+      string_fields: string_fields(module) |> Enum.sort(),
       belongs_to:
         GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
       has_many: GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], [])
     )
   end
 
-  def edit(conn, %{"resource" => resource, "id" => id}) do
+  def edit(conn, %{"resource" => resource, "id" => id} = params) do
     module = module_from_resource(resource)
     data = Repo.get(module, id)
     changeset = module.changeset(data, %{})
@@ -172,6 +176,7 @@ defmodule SanbaseWeb.GenericController do
     action = Routes.generic_path(conn, :update, data, resource: resource)
     field_type_map = field_type_map(module)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
+    belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
 
     render(conn, "edit.html",
       resource: resource,
@@ -203,6 +208,7 @@ defmodule SanbaseWeb.GenericController do
     form_fields = resource_module_map()[resource][:edit_fields] || []
     action = Routes.generic_path(conn, :update, data, resource: resource)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
+    belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
 
     case Sanbase.Repo.update(changeset) do
       {:ok, response_resource} ->
@@ -403,9 +409,24 @@ defmodule SanbaseWeb.GenericController do
     end
   end
 
-  defp field_type_map(module) do
+  def field_type_map(module) do
     module.__schema__(:fields)
     |> Enum.map(&{&1, module.__schema__(:type, &1)})
+    |> Enum.into(%{})
+  end
+
+  def transform_belongs_to(belongs_to_fields, params) do
+    Enum.map(belongs_to_fields, fn {field, %{query: query, transform: transform}} ->
+      query =
+        if params["linked_resource"] && params["linked_resource_id"] &&
+             params["linked_resource"] == to_string(field) do
+          query |> where([p], p.id == ^params["linked_resource_id"])
+        else
+          query
+        end
+
+      {field, Repo.all(query) |> transform.()}
+    end)
     |> Enum.into(%{})
   end
 end

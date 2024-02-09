@@ -636,11 +636,11 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                  "creditsRemainingMonth" => 4999,
                  "creditsSpentMonth" => 1,
                  "queriesExecutedDay" => 1,
-                 "queriesExecutedDayLimit" => 10,
+                 "queriesExecutedDayLimit" => 500,
                  "queriesExecutedHour" => 1,
-                 "queriesExecutedHourLimit" => 5,
+                 "queriesExecutedHourLimit" => 200,
                  "queriesExecutedMinute" => 1,
-                 "queriesExecutedMinuteLimit" => 1,
+                 "queriesExecutedMinuteLimit" => 20,
                  "queriesExecutedMonth" => 1
                }
       end)

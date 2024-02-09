@@ -57,7 +57,7 @@ defmodule SanbaseWeb.GenericController do
     module = module_from_resource(resource)
     action = Routes.generic_path(conn, :create, resource: resource)
     form_fields = resource_module_map()[resource][:new_fields] || []
-    field_type_map = field_type_map(module)
+    field_type_map = field_type_map(resource, module)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
     belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
 
@@ -75,7 +75,7 @@ defmodule SanbaseWeb.GenericController do
 
   def create(conn, %{"resource" => resource} = params) do
     module = module_from_resource(resource)
-    field_type_map = field_type_map(module)
+    field_type_map = field_type_map(resource, module)
     changes = params[resource]
 
     changes =
@@ -174,7 +174,7 @@ defmodule SanbaseWeb.GenericController do
     changeset = module.changeset(data, %{})
     form_fields = resource_module_map()[resource][:edit_fields] || []
     action = Routes.generic_path(conn, :update, data, resource: resource)
-    field_type_map = field_type_map(module)
+    field_type_map = field_type_map(resource, module)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
     belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
 
@@ -192,7 +192,7 @@ defmodule SanbaseWeb.GenericController do
   def update(conn, %{"id" => id, "resource" => resource} = params) do
     module = module_from_resource(resource)
     data = Repo.get(module, id)
-    field_type_map = field_type_map(module)
+    field_type_map = field_type_map(resource, module)
     changes = params[resource]
 
     changes =
@@ -407,6 +407,12 @@ defmodule SanbaseWeb.GenericController do
       value when is_integer(value) -> value
       value when is_binary(value) -> String.to_integer(value)
     end
+  end
+
+  def field_type_map(resource, module) do
+    field_type_map = field_type_map(module)
+    field_type_overwrite = resource_module_map()[resource][:field_types] || %{}
+    Map.merge(field_type_map, field_type_overwrite)
   end
 
   def field_type_map(module) do

@@ -74,6 +74,9 @@ defmodule SanbaseWeb.GenericAdmin.Project do
         :website_link,
         :whitepaper_link
       ],
+      field_types: %{
+        long_description: :text
+      },
       funcs: %{
         infrastructure_id: &__MODULE__.link/1
       }
@@ -344,6 +347,7 @@ defmodule SanbaseWeb.GenericAdmin.Ico do
 
   def resource() do
     %{
+      preloads: [:cap_currency, :project],
       new_fields: [
         :project,
         :start_date,
@@ -355,6 +359,9 @@ defmodule SanbaseWeb.GenericAdmin.Ico do
         :tokens_sold_at_ico,
         :minimal_cap_amount,
         :maximal_cap_amount,
+        :contract_block_number,
+        :contract_abi,
+        :cap_currency,
         :comments
       ],
       edit_fields: [
@@ -368,13 +375,27 @@ defmodule SanbaseWeb.GenericAdmin.Ico do
         :tokens_sold_at_ico,
         :minimal_cap_amount,
         :maximal_cap_amount,
+        :contract_block_number,
+        :contract_abi,
+        :cap_currency,
         :comments
       ],
+      field_types: %{
+        comments: :text,
+        contract_abi: :text
+      },
       belongs_to_fields: %{
         project: %{
           query: from(p in Sanbase.Project, order_by: p.id),
           transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end
+        },
+        cap_currency: %{
+          query: from(c in Sanbase.Model.Currency, order_by: c.code),
+          transform: fn rows -> Enum.map(rows, &{&1.code, &1.id}) end
         }
+      },
+      funcs: %{
+        project_id: &SanbaseWeb.GenericAdmin.Project.project_link/1
       }
     }
   end

@@ -8,8 +8,8 @@ defmodule SanbaseWeb.GenericAdmin.User do
 
   def resource do
     %{
-      index_fields: [:id, :name, :email, :username],
-      edit_fields: [:stripe_customer_id, :email]
+      index_fields: [:id, :username, :email, :twitter_id, :is_superuser, :san_balance],
+      edit_fields: [:is_superuser, :test_san_balance, :email, :stripe_customer_id]
     }
   end
 
@@ -19,15 +19,29 @@ defmodule SanbaseWeb.GenericAdmin.User do
 
     [
       %{
-        model: "Subscriptions",
+        resource: "subscriptions",
+        resource_name: "Subscriptions",
         rows: user.subscriptions,
-        fields: [:id, :plan, :status, :type],
+        fields: [
+          :id,
+          :stripe_id,
+          :plan,
+          :status,
+          :type,
+          :current_period_end,
+          :trial_end,
+          :cancel_at_period_end,
+          :inserted_at,
+          :updated_at
+        ],
         funcs: %{
           plan: fn s -> s.plan.product.name <> "/" <> s.plan.name end
-        }
+        },
+        create_link_kv: []
       },
       %{
-        model: "Eth Accounts",
+        resource: "eth_accounts",
+        resource_name: "Eth Accounts",
         rows: user.eth_accounts,
         fields: [:id, :address, :san_balance],
         funcs: %{
@@ -37,19 +51,24 @@ defmodule SanbaseWeb.GenericAdmin.User do
               san_balance -> san_balance
             end
           end
-        }
+        },
+        create_link_kv: []
       },
       %{
-        model: "Last 10 Published Insights",
+        resource: "posts",
+        resource_name: "Last 10 Published Insights",
         rows: Sanbase.Insight.Post.user_public_insights(user.id, page: 1, page_size: 10),
         fields: [:id, :title],
-        funcs: %{}
+        funcs: %{},
+        create_link_kv: []
       },
       %{
-        model: "Apikey tokens",
+        resource: "user_apikey_tokens",
+        resource_name: "Apikey tokens",
         rows: Sanbase.Accounts.UserApikeyToken.user_tokens_structs(user) |> elem(1),
         fields: [:id, :token],
-        funcs: %{}
+        funcs: %{},
+        create_link_kv: []
       }
     ]
   end

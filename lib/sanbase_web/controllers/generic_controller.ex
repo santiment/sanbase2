@@ -149,6 +149,7 @@ defmodule SanbaseWeb.GenericController do
     admin_module = resource_module_map()[resource][:admin_module]
     data = Repo.get(module, id) |> Repo.preload(resource_module_map()[resource][:preloads] || [])
     funcs = resource_module_map()[resource][:funcs] || %{}
+    field_type_map = field_type_map(resource, module)
 
     assocs =
       Enum.map([data], fn row ->
@@ -162,6 +163,7 @@ defmodule SanbaseWeb.GenericController do
       assocs: assocs,
       funcs: funcs,
       string_fields: string_fields(module) |> Enum.sort(),
+      field_type_map: field_type_map,
       belongs_to:
         GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
       has_many: GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], [])

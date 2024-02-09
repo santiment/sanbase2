@@ -67,6 +67,7 @@ defmodule SanbaseWeb.TableComponent do
                 type={
                   case Map.get(@field_type_map, field) do
                     :string -> "text"
+                    :text -> "textarea"
                     :integer -> "number"
                     :float -> "number"
                     :boolean -> "checkbox"
@@ -243,7 +244,6 @@ defmodule SanbaseWeb.TableComponent do
     <div class="mt-6">
       <h3 class="text-3xl font-medium text-gray-700"><%= @resource_name %></h3>
       <%= if @create_link_kv != [] do %>
-        <% kw_list = Keyword.merge([resource: @resource], @create_link_kv) %>
         <.link
           href={
             Routes.generic_path(

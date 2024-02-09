@@ -74,6 +74,9 @@ defmodule SanbaseWeb.GenericAdmin.Project do
         :website_link,
         :whitepaper_link
       ],
+      field_types: %{
+        long_description: :text
+      },
       funcs: %{
         infrastructure_id: &__MODULE__.link/1
       }

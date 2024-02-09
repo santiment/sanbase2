@@ -158,7 +158,14 @@ defmodule SanbaseWeb.TableComponent do
                     do: @assocs[@data.id][field],
                     else: Map.get(@data, field)
 
-                if @funcs[field] != nil, do: @funcs[field].(@data), else: result
+                result =
+                  if @funcs[field] != nil, do: @funcs[field].(@data), else: result
+
+                case Map.get(@field_type_map, field) do
+                  :map -> Jason.encode!(result)
+                  :list -> Jason.encode!(result)
+                  _ -> result
+                end
               } />
             </tr>
           <% end %>

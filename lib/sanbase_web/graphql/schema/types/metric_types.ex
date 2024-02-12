@@ -34,6 +34,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:market_segments)
     value(:ecosystems)
     value(:contract_address)
+    value(:contract_address_raw)
     # watchlist related
     value(:watchlist_slug)
     value(:watchlist_id)

@@ -42,9 +42,9 @@ defmodule Sanbase.ClickhouseRepo do
   @doc ~s"""
   Execute a query and apply `transform_fn/1` on each row of the result.
   """
-  @spec query_transform(Sanbase.Clickhouse.Query.t(), (list() -> list())) ::
+  @spec query_transform(Sanbase.Clickhouse.Query.t(), (list() -> any())) ::
           {:ok, any()} | {:error, String.t()}
-  @spec query_transform(String.t(), list(), (list() -> list())) ::
+  @spec query_transform(String.t(), list(), (list() -> any())) ::
           {:ok, any()} | {:error, String.t()}
   def query_transform(%Sanbase.Clickhouse.Query{} = query, transform_fn) do
     with {:ok, %{sql: sql, args: args}} <- Sanbase.Clickhouse.Query.get_sql_args(query) do

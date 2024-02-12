@@ -6,10 +6,10 @@ defmodule Sanbase.Queries do
   """
   alias Sanbase.Repo
   alias Sanbase.Queries.Query
-  alias Sanbase.Queries.Dashboard
   alias Sanbase.Queries.QueryMetadata
   alias Sanbase.Queries.QueryExecution
-  alias Sanbase.Queries.DashboardQueryMapping
+  alias Sanbase.Dashboards.Dashboard
+  alias Sanbase.Dashboards.DashboardQueryMapping
   alias Sanbase.Accounts.User
   alias Sanbase.Clickhouse.Query.Environment
 
@@ -166,10 +166,10 @@ defmodule Sanbase.Queries do
   to the API as a string and a map of parameters.
   """
   @spec get_ephemeral_query_struct(String.t(), Map.t(), User.t()) :: Query.t()
-  def get_ephemeral_query_struct(query, parameters, user) do
+  def get_ephemeral_query_struct(sql_query_text, sql_query_parameters, user) do
     %Query{
-      sql_query_text: query,
-      sql_query_parameters: parameters,
+      sql_query_text: sql_query_text,
+      sql_query_parameters: sql_query_parameters,
       user_id: user.id,
       user: user
     }

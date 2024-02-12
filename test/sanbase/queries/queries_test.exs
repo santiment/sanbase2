@@ -613,7 +613,7 @@ defmodule Sanbase.QueriesTest do
             user.id
           )
 
-        assert %Sanbase.Queries.DashboardCache{
+        assert %Sanbase.Dashboards.DashboardCache{
                  queries: %{},
                  inserted_at: _,
                  updated_at: _
@@ -624,7 +624,7 @@ defmodule Sanbase.QueriesTest do
       {:ok, dashboard_cache} =
         Sanbase.Dashboards.get_cached_dashboard_queries_executions(dashboard.id, user.id)
 
-      assert %Sanbase.Queries.DashboardCache{
+      assert %Sanbase.Dashboards.DashboardCache{
                queries: %{},
                inserted_at: _,
                updated_at: _

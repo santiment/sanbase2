@@ -756,7 +756,7 @@ defmodule Sanbase.RunExamples do
     dashboard_id = dashboard.id
     dashboard_query_mapping_id = mapping.id
 
-    %Sanbase.Queries.DashboardCache{
+    %Sanbase.Dashboards.DashboardCache{
       dashboard_id: ^dashboard_id,
       queries: %{
         ^dashboard_query_mapping_id => %{

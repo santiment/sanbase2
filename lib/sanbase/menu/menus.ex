@@ -40,7 +40,7 @@ defmodule Sanbase.Menus do
           required(:parent_id) => menu_id,
           optional(:position) => integer() | nil,
           optional(:query_id) => Sanbase.Queries.Query.query_id(),
-          optional(:dashboard_id) => Sanbase.Queries.Dashboard.dashboard_id(),
+          optional(:dashboard_id) => Sanbase.Dashboards.Dashboard.dashboard_id(),
           optional(:menu_id) => menu_id
         }
 

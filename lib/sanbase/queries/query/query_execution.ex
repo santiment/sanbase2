@@ -1,13 +1,21 @@
 defmodule Sanbase.Queries.QueryExecution do
   @moduledoc ~s"""
-  TODO
+  Store and retrieve the details of the query executions.
+
+  The details of the query execution are obtained from Clickhouse based on
+  the given clickhouse query_id. Clickhouse holds the executed queries stats
+  in memory and dumps them to the disk only once every 7500ms. This module
+  needs to account for this behavior.
+
+  The details with the addition of the credits spent comptued are then stored in Postgres,
+  from where user summaries are computed.
   """
   use Ecto.Schema
 
   import Ecto.Query
   import Ecto.Changeset
 
-  alias Sanbase.Dashboard
+  alias Sanbase.Queries.Executor.Result
   alias Sanbase.Accounts.User
 
   alias Sanbase.Queries.Query
@@ -74,15 +82,18 @@ defmodule Sanbase.Queries.QueryExecution do
   read from the disk, how big is the result, etc.
   """
   @spec credits_spent(user_id, DateTime.t(), DateTime.t()) ::
-          {:ok, credits_cost()}
+          {:ok, non_neg_integer}
   def credits_spent(user_id, from, to) do
-    from(
-      c in __MODULE__,
-      where:
-        c.user_id == ^user_id and c.inserted_at >= ^from and
-          c.inserted_at <= ^to,
-      select: sum(c.credits_cost)
-    )
+    query =
+      from(
+        c in __MODULE__,
+        where:
+          c.user_id == ^user_id and c.inserted_at >= ^from and
+            c.inserted_at <= ^to,
+        select: sum(c.credits_cost)
+      )
+
+    {:ok, Sanbase.Repo.one(query) || 0}
   end
 
   @doc ~s"""
@@ -141,7 +152,7 @@ defmodule Sanbase.Queries.QueryExecution do
 
   The data is stored in the system.query_log table
   """
-  @spec store_execution(Dashboard.Query.Result.t(), user_id, non_neg_integer()) ::
+  @spec store_execution(Result.t(), user_id, non_neg_integer()) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def store_execution(query_result, user_id, wait_fetching_details_ms, attempts_left \\ 3) do
     # The query_log needs 7.5 seconds to be flushed to disk. Trying to

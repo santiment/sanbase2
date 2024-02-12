@@ -1,4 +1,4 @@
-defmodule Sanbase.Queries.Dashboard do
+defmodule Sanbase.Dashboards.Dashboard do
   @moduledoc ~s"""
   Dashboard database schema and CRUD functions for working
   with it.
@@ -15,8 +15,8 @@ defmodule Sanbase.Queries.Dashboard do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
   alias Sanbase.Queries.Query
-  alias Sanbase.Queries.TextWidget
-  alias Sanbase.Queries.ImageWidget
+  alias Sanbase.Dashboards.TextWidget
+  alias Sanbase.Dashboards.ImageWidget
 
   @type t :: %__MODULE__{
           id: non_neg_integer(),

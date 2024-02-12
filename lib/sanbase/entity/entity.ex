@@ -31,7 +31,7 @@ defmodule Sanbase.Entity do
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
   alias Sanbase.Queries.Query
-  alias Sanbase.Queries.Dashboard
+  alias Sanbase.Dashboards.Dashboard
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Accounts.Interaction
 

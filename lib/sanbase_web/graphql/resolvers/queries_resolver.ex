@@ -98,12 +98,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   # Dashboard CRUD operations
 
-  def get_dashboard(
-        _root,
-        %{id: id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    Dashboards.get_dashboard(id, user.id)
+  def get_dashboard(_root, %{id: id}, resolution) do
+    querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
+    Dashboards.get_dashboard(id, querying_user_id)
   end
 
   def get_user_dashboards(
@@ -235,17 +232,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{dashboard_id: dashboard_id, key: key} = args,
         %{context: %{auth: %{current_user: user}}}
       ) do
-    opts =
-      args
-      |> Map.take([:new_key, :new_value])
-      |> Keyword.new()
-      |> Keyword.put(:key, key)
+    opts = args |> Map.take([:new_key, :new_value]) |> Keyword.new()
 
     case opts do
       [] ->
-        {:error, "Error update dashboard global parameter: neither new key nor value provided"}
+        {:error,
+         "Error update dashboard global parameter: neither new_key nor new_value provided"}
 
       [_ | _] ->
+        opts = Keyword.put(opts, :key, key)
         # If `new_value` is set, transform it to a single value.
         # If it is set, but with an error, `with` will return an error.
         # If `new_value` is not provided, the `else` branch will be executed.
@@ -345,6 +340,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   def add_dashboard_text_widget(_root, %{dashboard_id: dashboard_id} = args, %{
         context: %{auth: %{current_user: user}}
       }) do
+    args = Map.delete(args, :dashboard_id)
     Dashboards.add_text_widget(dashboard_id, user.id, args)
   end
 
@@ -355,6 +351,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
           context: %{auth: %{current_user: user}}
         }
       ) do
+    args = Map.drop(args, [:dashboard_id, :text_widget_id])
     Dashboards.update_text_widget(dashboard_id, text_widget_id, user.id, args)
   end
 

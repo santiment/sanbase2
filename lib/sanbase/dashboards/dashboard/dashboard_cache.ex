@@ -1,4 +1,4 @@
-defmodule Sanbase.Queries.DashboardCache do
+defmodule Sanbase.Dashboards.DashboardCache do
   @moduledoc ~s"""
   Holds the last computed result of dashboard's queries.
 
@@ -15,7 +15,7 @@ defmodule Sanbase.Queries.DashboardCache do
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
   alias Sanbase.Repo
-  alias Sanbase.Queries.Dashboard
+  alias Sanbase.Dashboards.Dashboard
   alias Sanbase.Queries.Executor.Result
   alias Sanbase.Queries.QueryCache
 

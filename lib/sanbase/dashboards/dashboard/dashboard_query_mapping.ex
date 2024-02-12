@@ -1,10 +1,10 @@
-defmodule Sanbase.Queries.DashboardQueryMapping do
+defmodule Sanbase.Dashboards.DashboardQueryMapping do
   use Ecto.Schema
 
   import Ecto.Query
   import Ecto.Changeset
 
-  alias Sanbase.Queries.Dashboard
+  alias Sanbase.Dashboards.Dashboard
   alias Sanbase.Queries.Query
 
   @type settings :: %{}

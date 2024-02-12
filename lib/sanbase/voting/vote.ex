@@ -52,7 +52,7 @@ defmodule Sanbase.Vote do
     belongs_to(:chart_configuration, Chart.Configuration, foreign_key: :chart_configuration_id)
 
     belongs_to(:user_trigger, UserTrigger, foreign_key: :user_trigger_id)
-    belongs_to(:dashboard, Sanbase.Queries.Dashboard, foreign_key: :dashboard_id)
+    belongs_to(:dashboard, Sanbase.Dashboards.Dashboard, foreign_key: :dashboard_id)
     belongs_to(:query, Sanbase.Queries.Query, foreign_key: :query_id)
 
     timestamps()

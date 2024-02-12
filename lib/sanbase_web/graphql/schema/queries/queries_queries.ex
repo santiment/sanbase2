@@ -126,7 +126,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       meta(access: :free)
 
       arg(:sql_query_text, non_null(:string))
-      arg(:sql_query_parameters, non_null(:json))
+      arg(:sql_query_parameters, non_null(:json), default_value: "{}")
 
       middleware(UserAuth)
 

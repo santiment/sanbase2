@@ -162,9 +162,19 @@ defmodule SanbaseWeb.TableComponent do
                   if @funcs[field] != nil, do: @funcs[field].(@data), else: result
 
                 case Map.get(@field_type_map, field) do
-                  :map -> Jason.encode!(result)
-                  :list -> Jason.encode!(result)
-                  _ -> result
+                  :map ->
+                    Jason.encode!(result)
+
+                  :list ->
+                    Jason.encode!(result)
+
+                  :boolean ->
+                    if result == true,
+                      do: ~H|<span class="hero-check-circle text-green-500" />|,
+                      else: ~H|<span class="hero-x-circle text-red-500" />|
+
+                  _ ->
+                    result
                 end
               } />
             </tr>
@@ -220,6 +230,16 @@ defmodule SanbaseWeb.TableComponent do
                       if @assocs[row.id][field], do: @assocs[row.id][field], else: Map.get(row, field)
 
                     if @funcs[field] != nil, do: @funcs[field].(row), else: result
+
+                    case Map.get(@field_type_map, field) do
+                      :boolean ->
+                        if result == true,
+                          do: ~H|<span class="hero-check-circle text-green-500" />|,
+                          else: ~H|<span class="hero-x-circle text-red-500" />|
+
+                      _ ->
+                        result
+                    end
                   } />
                 <% end %>
               <% end %>

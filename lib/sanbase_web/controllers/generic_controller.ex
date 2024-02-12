@@ -19,7 +19,7 @@ defmodule SanbaseWeb.GenericController do
   end
 
   def all_routes do
-    resources_to_routes() ++ custom_routes()
+    (resources_to_routes() ++ custom_routes()) |> Enum.sort()
   end
 
   def custom_routes do
@@ -162,7 +162,7 @@ defmodule SanbaseWeb.GenericController do
       data: data,
       assocs: assocs,
       funcs: funcs,
-      string_fields: string_fields(module) |> Enum.sort(),
+      fields: fields(module),
       field_type_map: field_type_map,
       belongs_to:
         GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
@@ -248,6 +248,7 @@ defmodule SanbaseWeb.GenericController do
     rows = params[:rows]
     page = to_integer(params[:page])
     page_size = to_integer(params[:page_size])
+    field_type_map = field_type_map(resource, module)
 
     index_fields =
       case resource_module_map()[resource][:index_fields] do
@@ -306,7 +307,8 @@ defmodule SanbaseWeb.GenericController do
       page_size: page_size,
       action: action,
       search_text: params[:search_text] || "",
-      assocs: assocs
+      assocs: assocs,
+      field_type_map: field_type_map
     }
   end
 

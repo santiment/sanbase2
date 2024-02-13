@@ -19,94 +19,134 @@ defmodule SanbaseWeb.TableComponent do
         action={@action}
       >
         <%= if @changeset.action do %>
-          <div class="alert alert-danger">
-            <p>Oops, something went wrong! Please check the errors below:</p>
-            <ul>
-              <%= for {attr, message} <- Ecto.Changeset.traverse_errors(@changeset, &translate_error/1) do %>
-                <li class="text-red-500">
-                  <.icon name="hero-exclamation-circle-mini" class="mr-2" />
-                  <%= humanize(attr) %>: <%= Enum.join(message, ", ") %>
-                </li>
-              <% end %>
-            </ul>
-          </div>
+          <.form_error changeset={@changeset} />
         <% end %>
+
         <%= for field <- @form_fields do %>
           <div class="m-4">
-            <%= if @belongs_to_fields[field] do %>
-              <.input
-                name={@resource <> "[" <> to_string(field) <> "_id" <> "]"}
-                id={@resource <> "_" <> to_string(field)}
-                label={humanize(field)}
-                type="select"
-                options={@belongs_to_fields[field]}
-                value={
-                  field_id = String.to_existing_atom(to_string(field) <> "_id")
-
-                  if @type == "new" do
-                    if @changeset.changes[field_id] do
-                      @changeset.changes[field_id]
-                    else
-                      nil
-                    end
-                  else
-                    Map.get(@changeset.changes, field_id) || Map.get(@changeset.data, field_id)
-                  end
-                }
-                prompt={
-                  if length(@belongs_to_fields[field]) == 1,
-                    do: nil,
-                    else: "Select #{humanize(field)}"
-                }
+            <%= if @belongs_to_fields[field] || @collections[field] do %>
+              <% belongs_to = if @belongs_to_fields[field], do: true, else: false %>
+              <.form_select
+                type={@type}
+                resource={@resource}
+                field={field}
+                changeset={@changeset}
+                options={@belongs_to_fields[field] || @collections[field]}
+                belongs_to={belongs_to}
               />
             <% else %>
-              <.input
-                name={@resource <> "[" <> to_string(field) <> "]"}
-                id={@resource <> "_" <> to_string(field)}
-                label={humanize(field)}
-                type={
-                  case Map.get(@field_type_map, field) do
-                    :string -> "text"
-                    :text -> "textarea"
-                    :integer -> "number"
-                    :float -> "number"
-                    :boolean -> "checkbox"
-                    :date -> "text"
-                    :datetime -> "text"
-                    :time -> "text"
-                    :map -> "text"
-                    :list -> "text"
-                    :assoc -> "text"
-                    :binary -> "text"
-                    :any -> "text"
-                    _ -> "text"
-                  end
-                }
-                value={
-                  if @type == "new" do
-                    ""
-                  else
-                    case Map.get(@field_type_map, field) do
-                      map_or_list when map_or_list in [:map, :list] ->
-                        Map.get(@changeset.data, field) |> Jason.encode!()
-
-                      _ ->
-                        Map.get(@changeset.changes, field) || Map.get(@changeset.data, field)
-                    end
-                  end
-                }
+              <.form_input
+                type={@type}
+                resource={@resource}
+                field={field}
+                changeset={@changeset}
+                field_type_map={@field_type_map}
               />
             <% end %>
           </div>
         <% end %>
-        <div class="flex justify-end">
-          <.back_btn resource={@resource} action={:index} />
-          <.button type="submit" class="mt-4 p-4">
-            <%= if @type == "new", do: "Create", else: "Update" %>
-          </.button>
-        </div>
+
+        <.form_nav type={@type} resource={@resource} action={@action} />
       </.form>
     </div>
+    """
+  end
+
+  def form_nav(assigns) do
+    ~H"""
+    <div class="flex justify-end">
+      <.back_btn2 resource={@resource} action={:index} />
+      <.button type="submit" class="mt-4 p-4">
+        <%= if @type == "new", do: "Create", else: "Update" %>
+      </.button>
+    </div>
+    """
+  end
+
+  def form_error(assigns) do
+    ~H"""
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below:</p>
+      <ul>
+        <%= for {attr, message} <- Ecto.Changeset.traverse_errors(@changeset, &translate_error/1) do %>
+          <li class="text-red-500">
+            <.icon name="hero-exclamation-circle-mini" class="mr-2" />
+            <%= humanize(attr) %>: <%= Enum.join(message, ", ") %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+    """
+  end
+
+  def form_input(assigns) do
+    ~H"""
+    <.input
+      name={@resource <> "[" <> to_string(@field) <> "]"}
+      id={@resource <> "_" <> to_string(@field)}
+      label={humanize(@field)}
+      type={
+        case Map.get(@field_type_map, @field) do
+          :string -> "text"
+          :text -> "textarea"
+          :integer -> "number"
+          :float -> "number"
+          :boolean -> "checkbox"
+          :date -> "text"
+          :datetime -> "text"
+          :time -> "text"
+          :map -> "text"
+          :list -> "text"
+          :assoc -> "text"
+          :binary -> "text"
+          :any -> "text"
+          _ -> "text"
+        end
+      }
+      value={
+        if @type == "new" do
+          ""
+        else
+          case Map.get(@field_type_map, @field) do
+            map_or_list when map_or_list in [:map, :list] ->
+              Map.get(@changeset.data, @field) |> Jason.encode!()
+
+            _ ->
+              Map.get(@changeset.changes, @field) || Map.get(@changeset.data, @field)
+          end
+        end
+      }
+    />
+    """
+  end
+
+  def form_select(assigns) do
+    ~H"""
+    <.input
+      name={@resource <> "[" <> to_string(@field) <> "_id" <> "]"}
+      id={@resource <> "_" <> to_string(@field)}
+      label={humanize(@field)}
+      type="select"
+      options={@options}
+      value={
+        field = if @belongs_to, do: String.to_existing_atom(to_string(@field) <> "_id"), else: @field
+
+        if @type == "new" do
+          if @changeset.changes[field] do
+            @changeset.changes[field]
+          else
+            nil
+          end
+        else
+          Map.get(@changeset.changes, field) || Map.get(@changeset.data, field)
+        end
+      }
+      prompt={
+        if length(@options) == 1,
+          do: nil,
+          else: "Select #{humanize(@field)}"
+      }
+    />
     """
   end
 
@@ -229,7 +269,8 @@ defmodule SanbaseWeb.TableComponent do
                     result =
                       if @assocs[row.id][field], do: @assocs[row.id][field], else: Map.get(row, field)
 
-                    if @funcs[field] != nil, do: @funcs[field].(row), else: result
+                    result =
+                      if @funcs[field] != nil, do: @funcs[field].(row), else: result
 
                     case Map.get(@field_type_map, field) do
                       :boolean ->

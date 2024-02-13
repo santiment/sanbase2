@@ -60,6 +60,7 @@ defmodule SanbaseWeb.GenericController do
     field_type_map = field_type_map(resource, module)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
     belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
+    collections = resource_module_map()[resource][:collections] || %{}
 
     changeset = module.changeset(struct(module), %{})
 
@@ -69,7 +70,8 @@ defmodule SanbaseWeb.GenericController do
       form_fields: form_fields,
       field_type_map: field_type_map,
       changeset: changeset,
-      belongs_to_fields: belongs_to_fields
+      belongs_to_fields: belongs_to_fields,
+      collections: collections
     )
   end
 
@@ -92,6 +94,7 @@ defmodule SanbaseWeb.GenericController do
     action = Routes.generic_path(conn, :create, resource: resource)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
     belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
+    collections = resource_module_map()[resource][:collections] || %{}
 
     case Sanbase.Repo.insert(changeset) do
       {:ok, response_resource} ->
@@ -106,7 +109,8 @@ defmodule SanbaseWeb.GenericController do
           form_fields: form_fields,
           changeset: changeset,
           field_type_map: field_type_map,
-          belongs_to_fields: belongs_to_fields
+          belongs_to_fields: belongs_to_fields,
+          collections: collections
         )
     end
   end
@@ -179,6 +183,7 @@ defmodule SanbaseWeb.GenericController do
     field_type_map = field_type_map(resource, module)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
     belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
+    collections = resource_module_map()[resource][:collections] || %{}
 
     render(conn, "edit.html",
       resource: resource,
@@ -187,7 +192,8 @@ defmodule SanbaseWeb.GenericController do
       form_fields: form_fields,
       field_type_map: field_type_map,
       changeset: changeset,
-      belongs_to_fields: belongs_to_fields
+      belongs_to_fields: belongs_to_fields,
+      collections: collections
     )
   end
 
@@ -211,6 +217,7 @@ defmodule SanbaseWeb.GenericController do
     action = Routes.generic_path(conn, :update, data, resource: resource)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
     belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
+    collections = resource_module_map()[resource][:collections] || %{}
 
     case Sanbase.Repo.update(changeset) do
       {:ok, response_resource} ->
@@ -226,7 +233,8 @@ defmodule SanbaseWeb.GenericController do
           form_fields: form_fields,
           changeset: changeset,
           field_type_map: field_type_map,
-          belongs_to_fields: belongs_to_fields
+          belongs_to_fields: belongs_to_fields,
+          collections: collections
         )
     end
   end
@@ -339,10 +347,6 @@ defmodule SanbaseWeb.GenericController do
 
   def fields(module) do
     module.__schema__(:fields)
-  end
-
-  defp string_fields(module) do
-    fields(module)
   end
 
   def parse_field_value(str) do

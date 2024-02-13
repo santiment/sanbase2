@@ -160,7 +160,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
     SanbaseWeb.GenericAdmin.Subscription.href(
       "users",
       row.user_id,
-      row.user.username
+      row.user.email || row.user.username
     )
   end
 

@@ -24,6 +24,9 @@ defmodule SanbaseWeb.GenericAdmin.Post do
         :state,
         :moderation_comment
       ],
+      field_types: %{
+        moderation_comment: :text
+      },
       collections: %{
         state:
           [

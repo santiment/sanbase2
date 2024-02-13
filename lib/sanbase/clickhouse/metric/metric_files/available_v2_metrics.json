@@ -720,6 +720,91 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Daily GitHub Activity",
+    "name": "github_activity_1d",
+    "metric": "github_activity",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily Development Ecosystem Activity",
+    "name": "dev_ecosystem_activity",
+    "metric": "dev_ecosystem_activity",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["ecosystem"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "ecosystem_aggregated_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily GitHub Ecosystem Activity",
+    "name": "github_ecosystem_activity",
+    "metric": "github_ecosystem_activity",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["ecosystem"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "ecosystem_aggregated_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily Development Activity Contributors Count",
+    "name": "dev_activity_contributors_count",
+    "metric": "dev_activity_contributors_count",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["ecosystem"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1w",
+    "table": "ecosystem_aggregated_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily GitHub Activity Contributors Count",
+    "name": "github_activity_contributors_count",
+    "metric": "github_activity_contributors_count",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["ecosystem"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1w",
+    "table": "ecosystem_aggregated_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Stock to Flow",
     "name": "stock_to_flow",
     "metric": "stock_to_flow_ratio",

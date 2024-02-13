@@ -782,7 +782,7 @@
       "SANBASE": "free"
     },
     "aggregation": "sum",
-    "min_interval": "1w",
+    "min_interval": "7d",
     "table": "ecosystem_aggregated_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
@@ -799,7 +799,7 @@
       "SANBASE": "free"
     },
     "aggregation": "sum",
-    "min_interval": "1w",
+    "min_interval": "7d",
     "table": "ecosystem_aggregated_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"

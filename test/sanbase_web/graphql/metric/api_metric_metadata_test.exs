@@ -41,7 +41,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
                "1h",
                "6h",
                "8h",
-               "1d"
+               "1d",
+               "7d"
              ]
 
       assert metadata["dataType"] in ["TIMESERIES", "HISTOGRAM", "TABLE"]

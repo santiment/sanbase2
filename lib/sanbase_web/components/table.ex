@@ -41,6 +41,7 @@ defmodule SanbaseWeb.TableComponent do
                 field={field}
                 changeset={@changeset}
                 field_type_map={@field_type_map}
+                data={@data}
               />
             <% end %>
           </div>
@@ -112,7 +113,8 @@ defmodule SanbaseWeb.TableComponent do
               Map.get(@changeset.data, @field) |> Jason.encode!()
 
             _ ->
-              Map.get(@changeset.changes, @field) || Map.get(@changeset.data, @field)
+              Map.get(@changeset.changes, @field) || Map.get(@changeset.data, @field) ||
+                Map.get(@data, @field)
           end
         end
       }
@@ -544,5 +546,120 @@ defmodule SanbaseWeb.LiveSearch do
   def search_routes(query) do
     SanbaseWeb.GenericController.all_routes()
     |> Enum.filter(fn {name, _path} -> String.contains?(String.downcase(name), query) end)
+  end
+end
+
+defmodule SanbaseWeb.LiveSelect do
+  use SanbaseWeb, :live_view
+  use Phoenix.HTML
+
+  import SanbaseWeb.CoreComponents
+  import Ecto.Query
+
+  def render(assigns) do
+    ~H"""
+    <div class="w-full">
+      <.input
+        type="text"
+        label={humanize(@session["field"])}
+        name={@session["parent_resource"] <> "[" <> to_string(@session["field"]) <> "_id" <> "]"}
+        value={@query}
+        list={"matches_" <> to_string(@session["field"])}
+        phx-keyup="suggest"
+        phx-debounce="200"
+        placeholder="Search..."
+      />
+      <datalist id={"matches_" <> to_string(@session["field"])}>
+        <%= for {id, match} <- @matches do %>
+          <option value={id}><%= match %></option>
+        <% end %>
+      </datalist>
+    </div>
+    """
+  end
+
+  def mount(_params, session, socket) do
+    {:ok,
+     assign(socket,
+       query: nil,
+       result: nil,
+       loading: false,
+       matches: [],
+       session: Map.take(session, ["resource", "search_fields", "field", "parent_resource"])
+     ), layout: false}
+  end
+
+  def handle_event("suggest", %{"value" => query} = params, socket) when byte_size(query) < 3 do
+    {:noreply, assign(socket, matches: [])}
+  end
+
+  def handle_event("suggest", %{"value" => query} = params, socket) when is_integer(query) do
+    session = socket.assigns[:session]
+    resource = session["resource"]
+    resource_module_map = SanbaseWeb.GenericAdmin.resource_module_map()
+    module = resource_module_map[resource][:module]
+
+    id_query = from(p in module, where: p.id == ^query)
+    results = Sanbase.Repo.all(id_query)
+
+    formatted_results =
+      Enum.map(results, fn result ->
+        formatted =
+          result
+          |> Enum.map(fn {key, value} -> "#{key}: #{value}" end)
+          |> Enum.join(", ")
+
+        {result.id, formatted}
+      end)
+
+    {:noreply, assign(socket, matches: formatted_results)}
+  end
+
+  def handle_event("suggest", %{"value" => query} = params, socket)
+      when byte_size(query) >= 2 and byte_size(query) <= 100 do
+    session = socket.assigns[:session]
+    resource = session["resource"]
+    search_fields = session["search_fields"]
+    resource_module_map = SanbaseWeb.GenericAdmin.resource_module_map()
+    module = resource_module_map[resource][:module]
+    value = "%" <> query <> "%"
+
+    base_query = from(m in module, select_merge: %{})
+
+    full_match_query =
+      Enum.reduce(search_fields, base_query, fn field, acc ->
+        or_where(acc, [p], field(p, ^field) == ^query)
+      end)
+      |> select_merge([p], map(p, [:id]))
+      |> select_merge([p], map(p, ^search_fields))
+      |> order_by([p], desc: p.id)
+
+    partial_match_query =
+      Enum.reduce(search_fields, base_query, fn field, acc ->
+        or_where(acc, [p], ilike(field(p, ^field), ^value))
+      end)
+      |> select_merge([p], map(p, [:id]))
+      |> select_merge([p], map(p, ^search_fields))
+      |> order_by([p], desc: p.id)
+
+    full_matches = Sanbase.Repo.all(full_match_query)
+    partial_matches = Sanbase.Repo.all(partial_match_query)
+
+    results =
+      (full_matches ++ partial_matches)
+      |> Enum.uniq_by(& &1.id)
+      |> Enum.take(10)
+
+    formatted_results =
+      Enum.map(results, fn result ->
+        formatted =
+          result
+          |> Enum.map(fn {key, value} -> "#{key}: #{value}" end)
+          |> Enum.join(", ")
+
+        {result.id, formatted}
+      end)
+
+    {:noreply, assign(socket, matches: formatted_results)}
   end
 end

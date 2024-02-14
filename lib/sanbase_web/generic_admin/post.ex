@@ -25,6 +25,7 @@ defmodule SanbaseWeb.GenericAdmin.Post do
         :moderation_comment
       ],
       field_types: %{
+        is_featured: :boolean,
         moderation_comment: :text
       },
       collections: %{
@@ -34,12 +35,23 @@ defmodule SanbaseWeb.GenericAdmin.Post do
             Post.approved_state(),
             Post.declined_state()
           ]
-          |> Enum.map(&{&1, &1})
+          |> Enum.map(&{&1, &1}),
+        ready_state: ~w[published draft],
+        prediction: ~w[heavy_bullish semi_bullish semi_bearish heavy_bearish unspecified none]
       },
       funcs: %{
         user_id: &SanbaseWeb.GenericAdmin.User.user_link/1
-      }
+      },
+      before: &__MODULE__.before/1,
+      after: &__MODULE__.after/1
     }
+  end
+
+  def before(item) do
+    item = Sanbase.Repo.preload(item, [:featured_item])
+    is_featured = if item.featured_item, do: true, else: false
+
+    %{item | is_featured: is_featured}
   end
 end
 

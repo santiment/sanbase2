@@ -47,9 +47,16 @@ defmodule Sanbase.Ecosystem do
     |> unique_constraint(:ecosystem)
   end
 
-  @spec get_ecosystems() :: {:ok, list(String.t())}
-  def get_ecosystems() do
+  @spec get_ecosystems(:all | list(String.t())) :: {:ok, list(String.t())}
+  def get_ecosystems(ecosystems_filter \\ :all) do
     query = from(e in __MODULE__, select: e.ecosystem)
+
+    query =
+      case ecosystems_filter do
+        :all -> query
+        ecosystems when is_list(ecosystems) -> query |> where([e], e.ecosystem in ^ecosystems)
+      end
+
     {:ok, Sanbase.Repo.all(query)}
   end
 
@@ -62,9 +69,9 @@ defmodule Sanbase.Ecosystem do
     end
   end
 
-  @spec get_ecosystems_with_projects() :: {:ok, list(map())}
-  def get_ecosystems_with_projects() do
-    with {:ok, ecosystems} <- get_ecosystems(),
+  @spec get_ecosystems_with_projects(:all | list(String.t())) :: {:ok, list(map())}
+  def get_ecosystems_with_projects(ecosystems_filter \\ :all) do
+    with {:ok, ecosystems} <- get_ecosystems(ecosystems_filter),
          {:ok, ecosystem_to_projects_map} <- get_projects(ecosystems) do
       result =
         Enum.map(ecosystems, fn e ->

@@ -25,7 +25,10 @@ defmodule SanbaseWeb.Graphql.EcosystemTypes do
       arg(:metric, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:interval))
       arg(:aggregation, :aggregation, default_value: nil)
+
+      resolve(&EcosystemResolver.timeseries_data/3)
     end
   end
 end

@@ -82,7 +82,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
 
   @postgres_dataloader @postgres_dataloader ++ @postgres_comments_dataloader
 
-  @ecosystem_dataloader [:ecosystem_aggregated_metric_data]
+  @ecosystem_dataloader [:ecosystem_aggregated_metric_data, :ecosystem_timeseries_metric_data]
 
   def query(queryable, args) do
     cond do

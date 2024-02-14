@@ -17,8 +17,14 @@ defmodule Sanbase.Ecosystem.Metric do
     query = aggregated_timeseries_data_query(ecosystems, metric, from, to, aggregation)
 
     case Sanbase.ClickhouseRepo.query_transform(query, & &1) do
-      {:ok, result} -> {:ok, result}
-      {:error, error} -> {:error, error}
+      {:ok, data} ->
+        result =
+          Enum.map(data, fn [ecosystem, value] -> %{ecosystem: ecosystem, value: value} end)
+
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -27,8 +33,16 @@ defmodule Sanbase.Ecosystem.Metric do
     query = timeseries_data_query(ecosystems, metric, from, to, interval, aggregation)
 
     case Sanbase.ClickhouseRepo.query_transform(query, & &1) do
-      {:ok, result} -> {:ok, result}
-      {:error, error} -> {:error, error}
+      {:ok, data} ->
+        result =
+          Enum.map(data, fn [ecosystem, dt, value] ->
+            %{ecosystem: ecosystem, datetime: DateTime.from_unix!(dt), value: value}
+          end)
+
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -85,12 +99,11 @@ defmodule Sanbase.Ecosystem.Metric do
         argMax(value, computed_at) AS value
       FROM ecosystem_aggregated_metrics
       PREWHERE
-        ecosystem IN {{ecosystems}} AND
+        ecosystem IN ({{ecosystems}}) AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 ) AND
-        dt >= {{from}} AND dt < {{to}}
+        dt >= toDateTime({{from}}) AND dt < toDateTime({{to}})
       GROUP BY ecosystem, dt
     )
-    WHERE isNotNull(value) AND NOT isNaN(value)
     GROUP BY ecosystem, t
     ORDER BY t
     """

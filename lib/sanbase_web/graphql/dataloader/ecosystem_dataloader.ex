@@ -16,19 +16,22 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
       fn {args, ecosystems} ->
         opts = [aggregation: args[:aggregation]]
 
-        Sanbase.Ecosystem.Metric.aggregated_timeseries_data(
-          ecosystems,
-          args.metric,
-          args.from,
-          args.to,
-          opts
-        )
+        {:ok, data} =
+          Sanbase.Ecosystem.Metric.aggregated_timeseries_data(
+            ecosystems,
+            args.metric,
+            args.from,
+            args.to,
+            opts
+          )
+
+        aggregated_transform_to_map(data, args)
       end,
       max_concurrency: 4,
       timeout: 60_000,
       ordered: false
     )
-    |> transform_to_map()
+    |> Enum.reduce(%{}, &Map.merge(&1, &2))
   end
 
   def query(:ecosystem_timeseries_metric_data, data) do
@@ -46,22 +49,38 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
       fn {args, ecosystems} ->
         opts = [aggregation: args[:aggregation]]
 
-        Sanbase.Ecosystem.Metric.aggregated_timeseries_data(
-          ecosystems,
-          args.metric,
-          args.from,
-          args.to,
-          opts
-        )
+        {:ok, data} =
+          Sanbase.Ecosystem.Metric.timeseries_data(
+            ecosystems,
+            args.metric,
+            args.from,
+            args.to,
+            args.interval,
+            opts
+          )
+
+        timeseries_transform_to_map(data, args)
       end,
       max_concurrency: 4,
       timeout: 60_000,
       ordered: false
     )
-    |> transform_to_map()
+    |> Enum.reduce(%{}, &Map.merge(&1, &2))
+    |> IO.inspect()
   end
 
-  defp transform_to_map(result) do
-    result
+  defp timeseries_transform_to_map(data, args) do
+    data
+    |> Enum.reduce(%{}, fn %{ecosystem: ecosystem, datetime: dt, value: v}, acc ->
+      elem = %{datetime: dt, value: v}
+      Map.update(acc, {ecosystem, args}, [elem], &[elem | &1])
+    end)
+  end
+
+  defp aggregated_transform_to_map(data, args) do
+    data
+    |> Enum.reduce(%{}, fn %{ecosystem: ecosystem, value: value}, acc ->
+      Map.put(acc, {ecosystem, args}, value)
+    end)
   end
 end

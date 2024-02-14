@@ -56,6 +56,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
                    "BLOCKCHAIN_ADDRESS",
                    "BLOCKCHAIN",
                    "CONTRACT_ADDRESS",
+                   "ECOSYSTEM",
                    "HOLDERS_COUNT",
                    "LABEL_FQN",
                    "LABEL_FQNS",

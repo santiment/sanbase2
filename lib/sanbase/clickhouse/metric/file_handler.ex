@@ -118,6 +118,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @external_resource path_to.("derivatives_metrics.json")
   @external_resource path_to.("eth2_metrics.json")
   @external_resource path_to.("exchange_metrics.json")
+  @external_resource path_to.("ecosystem_aggregated_metrics.json")
   @external_resource path_to.("histogram_metrics.json")
   @external_resource path_to.("holders_metrics.json")
   @external_resource path_to.("label_based_metric_metrics.json")

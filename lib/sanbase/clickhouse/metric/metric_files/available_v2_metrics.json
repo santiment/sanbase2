@@ -5,7 +5,9 @@
     "metric": "price_usd",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -22,7 +24,9 @@
     "metric": "daily_avg_marketcap_usd",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -39,7 +43,9 @@
     "metric": "daily_avg_price_usd",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -56,7 +62,9 @@
     "metric": "daily_closing_marketcap_usd",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -73,7 +81,9 @@
     "metric": "daily_closing_price_usd",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -90,7 +100,9 @@
     "metric": "daily_high_price_usd",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -107,7 +119,9 @@
     "metric": "daily_low_price_usd",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -124,7 +138,9 @@
     "metric": "daily_opening_price_usd",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -141,7 +157,9 @@
     "metric": "daily_trading_volume_usd",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -158,7 +176,9 @@
     "metric": "daily_active_addresses",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -175,14 +195,28 @@
     "metric": "active_addresses_{{sliding_window}}",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "parameters": [
-      { "sliding_window": "1h" },
-      { "sliding_window": "24h" },
-      { "sliding_window": "7d" },
-      { "sliding_window": "30d" },
-      { "sliding_window": "60d" },
-      { "sliding_window": "90d" }
+      {
+        "sliding_window": "1h"
+      },
+      {
+        "sliding_window": "24h"
+      },
+      {
+        "sliding_window": "7d"
+      },
+      {
+        "sliding_window": "30d"
+      },
+      {
+        "sliding_window": "60d"
+      },
+      {
+        "sliding_window": "90d"
+      }
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -200,7 +234,9 @@
     "metric": "mean_realized_price_usd_20y",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -216,22 +252,46 @@
     "name": "mean_realized_price_usd_{{timebound}}",
     "metric": "mean_realized_price_usd_{{timebound}}",
     "parameters": [
-      { "timebound": "1d" },
-      { "timebound": "7d" },
-      { "timebound": "30d" },
-      { "timebound": "60d" },
-      { "timebound": "90d" },
-      { "timebound": "180d" },
-      { "timebound": "365d" },
-      { "timebound": "2y" },
-      { "timebound": "3y" },
-      { "timebound": "5y" },
-      { "timebound": "10y" }
+      {
+        "timebound": "1d"
+      },
+      {
+        "timebound": "7d"
+      },
+      {
+        "timebound": "30d"
+      },
+      {
+        "timebound": "60d"
+      },
+      {
+        "timebound": "90d"
+      },
+      {
+        "timebound": "180d"
+      },
+      {
+        "timebound": "365d"
+      },
+      {
+        "timebound": "2y"
+      },
+      {
+        "timebound": "3y"
+      },
+      {
+        "timebound": "5y"
+      },
+      {
+        "timebound": "10y"
+      }
     ],
     "is_timebound": true,
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -248,7 +308,9 @@
     "metric": "mvrv_usd_long_short_diff",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -265,7 +327,9 @@
     "metric": "mvrv_usd_20y",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -281,22 +345,46 @@
     "name": "mvrv_usd_{{timebound}}",
     "metric": "mvrv_usd_{{timebound}}",
     "parameters": [
-      { "timebound": "1d" },
-      { "timebound": "7d" },
-      { "timebound": "30d" },
-      { "timebound": "60d" },
-      { "timebound": "90d" },
-      { "timebound": "180d" },
-      { "timebound": "365d" },
-      { "timebound": "2y" },
-      { "timebound": "3y" },
-      { "timebound": "5y" },
-      { "timebound": "10y" }
+      {
+        "timebound": "1d"
+      },
+      {
+        "timebound": "7d"
+      },
+      {
+        "timebound": "30d"
+      },
+      {
+        "timebound": "60d"
+      },
+      {
+        "timebound": "90d"
+      },
+      {
+        "timebound": "180d"
+      },
+      {
+        "timebound": "365d"
+      },
+      {
+        "timebound": "2y"
+      },
+      {
+        "timebound": "3y"
+      },
+      {
+        "timebound": "5y"
+      },
+      {
+        "timebound": "10y"
+      }
     ],
     "is_timebound": true,
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -313,7 +401,9 @@
     "metric": "mvrv_usd_intraday_20y",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -329,22 +419,46 @@
     "name": "mvrv_usd_intraday_{{timebound}}",
     "metric": "mvrv_usd_intraday_{{timebound}}",
     "parameters": [
-      { "timebound": "1d" },
-      { "timebound": "7d" },
-      { "timebound": "30d" },
-      { "timebound": "60d" },
-      { "timebound": "90d" },
-      { "timebound": "180d" },
-      { "timebound": "365d" },
-      { "timebound": "2y" },
-      { "timebound": "3y" },
-      { "timebound": "5y" },
-      { "timebound": "10y" }
+      {
+        "timebound": "1d"
+      },
+      {
+        "timebound": "7d"
+      },
+      {
+        "timebound": "30d"
+      },
+      {
+        "timebound": "60d"
+      },
+      {
+        "timebound": "90d"
+      },
+      {
+        "timebound": "180d"
+      },
+      {
+        "timebound": "365d"
+      },
+      {
+        "timebound": "2y"
+      },
+      {
+        "timebound": "3y"
+      },
+      {
+        "timebound": "5y"
+      },
+      {
+        "timebound": "10y"
+      }
     ],
     "is_timebound": true,
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -361,7 +475,9 @@
     "metric": "stack_circulation_20y",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -377,22 +493,46 @@
     "name": "circulation_{{timebound}}",
     "metric": "stack_circulation_{{timebound}}",
     "parameters": [
-      { "timebound": "1d" },
-      { "timebound": "7d" },
-      { "timebound": "30d" },
-      { "timebound": "60d" },
-      { "timebound": "90d" },
-      { "timebound": "180d" },
-      { "timebound": "365d" },
-      { "timebound": "2y" },
-      { "timebound": "3y" },
-      { "timebound": "5y" },
-      { "timebound": "10y" }
+      {
+        "timebound": "1d"
+      },
+      {
+        "timebound": "7d"
+      },
+      {
+        "timebound": "30d"
+      },
+      {
+        "timebound": "60d"
+      },
+      {
+        "timebound": "90d"
+      },
+      {
+        "timebound": "180d"
+      },
+      {
+        "timebound": "365d"
+      },
+      {
+        "timebound": "2y"
+      },
+      {
+        "timebound": "3y"
+      },
+      {
+        "timebound": "5y"
+      },
+      {
+        "timebound": "10y"
+      }
     ],
     "is_timebound": true,
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -409,15 +549,31 @@
     "metric": "dormant_circulation_{{timebound}}",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "parameters": [
-      { "timebound": "90d" },
-      { "timebound": "180d" },
-      { "timebound": "365d" },
-      { "timebound": "2y" },
-      { "timebound": "3y" },
-      { "timebound": "5y" },
-      { "timebound": "10y" }
+      {
+        "timebound": "90d"
+      },
+      {
+        "timebound": "180d"
+      },
+      {
+        "timebound": "365d"
+      },
+      {
+        "timebound": "2y"
+      },
+      {
+        "timebound": "3y"
+      },
+      {
+        "timebound": "5y"
+      },
+      {
+        "timebound": "10y"
+      }
     ],
     "is_timebound": true,
     "min_plan": {
@@ -436,7 +592,9 @@
     "metric": "stack_mean_age_days",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -454,7 +612,9 @@
     "metric": "stack_mean_age_dollar_days",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -472,7 +632,9 @@
     "metric": "stack_realized_cap_usd_20y",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -488,22 +650,46 @@
     "name": "realized_value_usd_{{timebound}}",
     "metric": "stack_realized_cap_usd_{{timebound}}",
     "parameters": [
-      { "timebound": "1d" },
-      { "timebound": "7d" },
-      { "timebound": "30d" },
-      { "timebound": "60d" },
-      { "timebound": "90d" },
-      { "timebound": "180d" },
-      { "timebound": "365d" },
-      { "timebound": "2y" },
-      { "timebound": "3y" },
-      { "timebound": "5y" },
-      { "timebound": "10y" }
+      {
+        "timebound": "1d"
+      },
+      {
+        "timebound": "7d"
+      },
+      {
+        "timebound": "30d"
+      },
+      {
+        "timebound": "60d"
+      },
+      {
+        "timebound": "90d"
+      },
+      {
+        "timebound": "180d"
+      },
+      {
+        "timebound": "365d"
+      },
+      {
+        "timebound": "2y"
+      },
+      {
+        "timebound": "3y"
+      },
+      {
+        "timebound": "5y"
+      },
+      {
+        "timebound": "10y"
+      }
     ],
     "is_timebound": true,
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -520,7 +706,9 @@
     "metric": "token_velocity",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -537,7 +725,9 @@
     "metric": "transaction_volume_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -554,7 +744,9 @@
     "metric": "transaction_volume_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -568,11 +760,15 @@
   {
     "human_readable_name": "Age Consumed",
     "name": "age_destroyed",
-    "aliases": ["age_consumed"],
+    "aliases": [
+      "age_consumed"
+    ],
     "metric": "stack_age_consumed_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -589,7 +785,9 @@
     "metric": "nvt",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -606,7 +804,9 @@
     "metric": "nvt_transaction_volume",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -623,7 +823,9 @@
     "metric": "network_growth",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -640,7 +842,9 @@
     "metric": "active_deposits",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -657,7 +861,9 @@
     "metric": "deposit_transactions",
     "version": "2020-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -674,7 +880,9 @@
     "metric": "active_withdrawals",
     "version": "2020-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -691,7 +899,9 @@
     "metric": "withdrawal_transactions",
     "version": "2020-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -708,7 +918,9 @@
     "metric": "dev_activity",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -725,7 +937,9 @@
     "metric": "github_activity",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -737,80 +951,14 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Daily Development Ecosystem Activity",
-    "name": "dev_ecosystem_activity",
-    "metric": "dev_ecosystem_activity",
-    "version": "2019-01-01",
-    "access": "free",
-    "selectors": ["ecosystem"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "1d",
-    "table": "ecosystem_aggregated_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Daily GitHub Ecosystem Activity",
-    "name": "github_ecosystem_activity",
-    "metric": "github_ecosystem_activity",
-    "version": "2019-01-01",
-    "access": "free",
-    "selectors": ["ecosystem"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "1d",
-    "table": "ecosystem_aggregated_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Daily Development Activity Contributors Count",
-    "name": "dev_activity_contributors_count",
-    "metric": "dev_activity_contributors_count",
-    "version": "2019-01-01",
-    "access": "free",
-    "selectors": ["ecosystem"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "7d",
-    "table": "ecosystem_aggregated_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Daily GitHub Activity Contributors Count",
-    "name": "github_activity_contributors_count",
-    "metric": "github_activity_contributors_count",
-    "version": "2019-01-01",
-    "access": "free",
-    "selectors": ["ecosystem"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "7d",
-    "table": "ecosystem_aggregated_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
     "human_readable_name": "Stock to Flow",
     "name": "stock_to_flow",
     "metric": "stock_to_flow_ratio",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -827,7 +975,9 @@
     "metric": "payment_count",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -844,7 +994,9 @@
     "metric": "transaction_count",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -861,7 +1013,9 @@
     "metric": "fees",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -878,7 +1032,9 @@
     "metric": "fees_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -895,7 +1051,9 @@
     "metric": "fees_intraday",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -912,7 +1070,9 @@
     "metric": "fees_usd_intraday",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -929,7 +1089,9 @@
     "metric": "avg_fees_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -946,7 +1108,9 @@
     "metric": "median_fees_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -963,7 +1127,9 @@
     "metric": "network_circulation_usd_1d",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -980,7 +1146,9 @@
     "metric": "fees_to_network_circulation_usd_1d",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -997,7 +1165,9 @@
     "metric": "daa_divergence",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1014,7 +1184,9 @@
     "metric": "adjusted_daa_divergence",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1031,7 +1203,9 @@
     "metric": "avg_gas",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1048,7 +1222,9 @@
     "metric": "network_profit_loss",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1065,7 +1241,9 @@
     "metric": "total_supply_in_profit",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1082,7 +1260,9 @@
     "metric": "percent_of_total_supply_in_profit",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1099,7 +1279,9 @@
     "metric": "active_deposits_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1116,7 +1298,9 @@
     "metric": "deposit_transactions_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1133,7 +1317,9 @@
     "metric": "active_withdrawals_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1150,7 +1336,9 @@
     "metric": "withdrawal_transactions_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1167,7 +1355,9 @@
     "metric": "avg_fees_usd_intraday",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1184,7 +1374,9 @@
     "metric": "median_fees_usd_intraday",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1201,7 +1393,9 @@
     "metric": "average_transfer_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1218,7 +1412,9 @@
     "metric": "median_transfer_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1235,7 +1431,9 @@
     "metric": "whale_transaction_count_more_than_100k_usd_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1252,7 +1450,9 @@
     "metric": "whale_transaction_count_more_than_1m_usd_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1269,7 +1469,9 @@
     "metric": "price_eth",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1286,7 +1488,9 @@
     "metric": "mvrv_z",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1300,11 +1504,15 @@
   {
     "human_readable_name": "Total Supply",
     "name": "total_supply",
-    "aliases": ["mcd_erc20_supply"],
+    "aliases": [
+      "mcd_erc20_supply"
+    ],
     "metric": "total_supply",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1321,7 +1529,9 @@
     "metric": "miner_supply",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1338,7 +1548,9 @@
     "metric": "rank",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1355,7 +1567,9 @@
     "metric": "nvt_intraday",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1372,7 +1586,9 @@
     "metric": "percent_of_whale_total_supply",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1387,10 +1603,14 @@
     "human_readable_name": "Binance Exchange Funding Rates (USDT)",
     "name": "usdt_bnb_funding_rates",
     "metric": "usdt_bnb_funding_rates",
-    "aliases": ["usdt_binance_funding_rate"],
+    "aliases": [
+      "usdt_binance_funding_rate"
+    ],
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1405,10 +1625,14 @@
     "human_readable_name": "Binance Exchange Funding Rates (BUSD)",
     "name": "busd_bnb_funding_rates",
     "metric": "busd_bnb_funding_rates",
-    "aliases": ["busd_binance_funding_rate"],
+    "aliases": [
+      "busd_binance_funding_rate"
+    ],
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1425,7 +1649,9 @@
     "metric": "ftx_funding_rates",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1442,7 +1668,9 @@
     "metric": "bitfinex_funding_rates",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1459,7 +1687,9 @@
     "metric": "dydx_funding_rates",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1476,7 +1706,9 @@
     "metric": "deribit_funding_rates",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1491,10 +1723,14 @@
     "human_readable_name": "Binance USDT Exchange Open Interest",
     "name": "usdt_bnb_open_interest",
     "metric": "usdt_bnb_open_interest",
-    "aliases": ["usdt_binance_open_interest"],
+    "aliases": [
+      "usdt_binance_open_interest"
+    ],
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1509,10 +1745,14 @@
     "human_readable_name": "Binance USDT Exchange Open Value",
     "name": "usdt_bnb_open_value",
     "metric": "usdt_bnb_open_value",
-    "aliases": ["usdt_binance_open_value"],
+    "aliases": [
+      "usdt_binance_open_value"
+    ],
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1527,10 +1767,14 @@
     "human_readable_name": "Binance BUSD Exchange Open Interest",
     "name": "busd_bnb_open_interest",
     "metric": "busd_bnb_open_interest",
-    "aliases": ["busd_binance_open_interest"],
+    "aliases": [
+      "busd_binance_open_interest"
+    ],
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1545,10 +1789,14 @@
     "human_readable_name": "Binance BUSD Exchange Open Value",
     "name": "busd_bnb_open_value",
     "metric": "busd_bnb_open_value",
-    "aliases": ["busd_binance_open_value"],
+    "aliases": [
+      "busd_binance_open_value"
+    ],
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1565,7 +1813,9 @@
     "metric": "huobi_funding_rates",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1582,7 +1832,9 @@
     "metric": "ftx_open_interest",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -1599,7 +1851,9 @@
     "metric": "transaction_volume_profit",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1616,7 +1870,9 @@
     "metric": "transaction_volume_loss",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1633,7 +1889,9 @@
     "metric": "transaction_volume_profit_loss_ratio",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1650,21 +1908,75 @@
     "metric": "spent_coins_age_band_{{db_metric}}",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "parameters": [
-      { "low": "0d", "high": "1d", "db_metric": "0d_to_1d" },
-      { "low": "1d", "high": "7d", "db_metric": "1d_to_7d" },
-      { "low": "7d", "high": "30d", "db_metric": "7d_to_30d" },
-      { "low": "30d", "high": "60d", "db_metric": "30d_to_60d" },
-      { "low": "60d", "high": "90d", "db_metric": "60d_to_90d" },
-      { "low": "90d", "high": "180d", "db_metric": "90d_to_180d" },
-      { "low": "180d", "high": "365d", "db_metric": "180d_to_365d" },
-      { "low": "365d", "high": "2y", "db_metric": "365d_to_2y" },
-      { "low": "2y", "high": "3y", "db_metric": "2y_to_3y" },
-      { "low": "3y", "high": "5y", "db_metric": "3y_to_5y" },
-      { "low": "5y", "high": "7y", "db_metric": "5y_to_7y" },
-      { "low": "7y", "high": "10y", "db_metric": "7y_to_10y" },
-      { "low": "10y", "high": "20y", "db_metric": "10y_to_inf" }
+      {
+        "low": "0d",
+        "high": "1d",
+        "db_metric": "0d_to_1d"
+      },
+      {
+        "low": "1d",
+        "high": "7d",
+        "db_metric": "1d_to_7d"
+      },
+      {
+        "low": "7d",
+        "high": "30d",
+        "db_metric": "7d_to_30d"
+      },
+      {
+        "low": "30d",
+        "high": "60d",
+        "db_metric": "30d_to_60d"
+      },
+      {
+        "low": "60d",
+        "high": "90d",
+        "db_metric": "60d_to_90d"
+      },
+      {
+        "low": "90d",
+        "high": "180d",
+        "db_metric": "90d_to_180d"
+      },
+      {
+        "low": "180d",
+        "high": "365d",
+        "db_metric": "180d_to_365d"
+      },
+      {
+        "low": "365d",
+        "high": "2y",
+        "db_metric": "365d_to_2y"
+      },
+      {
+        "low": "2y",
+        "high": "3y",
+        "db_metric": "2y_to_3y"
+      },
+      {
+        "low": "3y",
+        "high": "5y",
+        "db_metric": "3y_to_5y"
+      },
+      {
+        "low": "5y",
+        "high": "7y",
+        "db_metric": "5y_to_7y"
+      },
+      {
+        "low": "7y",
+        "high": "10y",
+        "db_metric": "7y_to_10y"
+      },
+      {
+        "low": "10y",
+        "high": "20y",
+        "db_metric": "10y_to_inf"
+      }
     ],
     "min_plan": {
       "SANAPI": "pro",
@@ -1682,21 +1994,75 @@
     "metric": "percent_of_spent_coins_age_band_{{db_metric}}",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "parameters": [
-      { "low": "0d", "high": "1d", "db_metric": "0d_to_1d" },
-      { "low": "1d", "high": "7d", "db_metric": "1d_to_7d" },
-      { "low": "7d", "high": "30d", "db_metric": "7d_to_30d" },
-      { "low": "30d", "high": "60d", "db_metric": "30d_to_60d" },
-      { "low": "60d", "high": "90d", "db_metric": "60d_to_90d" },
-      { "low": "90d", "high": "180d", "db_metric": "90d_to_180d" },
-      { "low": "180d", "high": "365d", "db_metric": "180d_to_365d" },
-      { "low": "365d", "high": "2y", "db_metric": "365d_to_2y" },
-      { "low": "2y", "high": "3y", "db_metric": "2y_to_3y" },
-      { "low": "3y", "high": "5y", "db_metric": "3y_to_5y" },
-      { "low": "5y", "high": "7y", "db_metric": "5y_to_7y" },
-      { "low": "7y", "high": "10y", "db_metric": "7y_to_10y" },
-      { "low": "10y", "high": "20y", "db_metric": "10y_to_inf" }
+      {
+        "low": "0d",
+        "high": "1d",
+        "db_metric": "0d_to_1d"
+      },
+      {
+        "low": "1d",
+        "high": "7d",
+        "db_metric": "1d_to_7d"
+      },
+      {
+        "low": "7d",
+        "high": "30d",
+        "db_metric": "7d_to_30d"
+      },
+      {
+        "low": "30d",
+        "high": "60d",
+        "db_metric": "30d_to_60d"
+      },
+      {
+        "low": "60d",
+        "high": "90d",
+        "db_metric": "60d_to_90d"
+      },
+      {
+        "low": "90d",
+        "high": "180d",
+        "db_metric": "90d_to_180d"
+      },
+      {
+        "low": "180d",
+        "high": "365d",
+        "db_metric": "180d_to_365d"
+      },
+      {
+        "low": "365d",
+        "high": "2y",
+        "db_metric": "365d_to_2y"
+      },
+      {
+        "low": "2y",
+        "high": "3y",
+        "db_metric": "2y_to_3y"
+      },
+      {
+        "low": "3y",
+        "high": "5y",
+        "db_metric": "3y_to_5y"
+      },
+      {
+        "low": "5y",
+        "high": "7y",
+        "db_metric": "5y_to_7y"
+      },
+      {
+        "low": "7y",
+        "high": "10y",
+        "db_metric": "7y_to_10y"
+      },
+      {
+        "low": "10y",
+        "high": "20y",
+        "db_metric": "10y_to_inf"
+      }
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -1714,20 +2080,70 @@
     "metric": "realized_cap_hodl_waves_{{db_metric}}",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "parameters": [
-      { "low": "0d", "high": "1d", "db_metric": "0d_to_1d" },
-      { "low": "1d", "high": "7d", "db_metric": "1d_to_7d" },
-      { "low": "7d", "high": "30d", "db_metric": "7d_to_30d" },
-      { "low": "30d", "high": "60d", "db_metric": "30d_to_60d" },
-      { "low": "60d", "high": "90d", "db_metric": "60d_to_90d" },
-      { "low": "90d", "high": "180d", "db_metric": "90d_to_180d" },
-      { "low": "180d", "high": "365d", "db_metric": "180d_to_365d" },
-      { "low": "365d", "high": "2y", "db_metric": "365d_to_2y" },
-      { "low": "2y", "high": "3y", "db_metric": "2y_to_3y" },
-      { "low": "3y", "high": "5y", "db_metric": "3y_to_5y" },
-      { "low": "5y", "high": "10y", "db_metric": "5y_to_10y" },
-      { "low": "10y", "high": "20y", "db_metric": "10y_to_20y" }
+      {
+        "low": "0d",
+        "high": "1d",
+        "db_metric": "0d_to_1d"
+      },
+      {
+        "low": "1d",
+        "high": "7d",
+        "db_metric": "1d_to_7d"
+      },
+      {
+        "low": "7d",
+        "high": "30d",
+        "db_metric": "7d_to_30d"
+      },
+      {
+        "low": "30d",
+        "high": "60d",
+        "db_metric": "30d_to_60d"
+      },
+      {
+        "low": "60d",
+        "high": "90d",
+        "db_metric": "60d_to_90d"
+      },
+      {
+        "low": "90d",
+        "high": "180d",
+        "db_metric": "90d_to_180d"
+      },
+      {
+        "low": "180d",
+        "high": "365d",
+        "db_metric": "180d_to_365d"
+      },
+      {
+        "low": "365d",
+        "high": "2y",
+        "db_metric": "365d_to_2y"
+      },
+      {
+        "low": "2y",
+        "high": "3y",
+        "db_metric": "2y_to_3y"
+      },
+      {
+        "low": "3y",
+        "high": "5y",
+        "db_metric": "3y_to_5y"
+      },
+      {
+        "low": "5y",
+        "high": "10y",
+        "db_metric": "5y_to_10y"
+      },
+      {
+        "low": "10y",
+        "high": "20y",
+        "db_metric": "10y_to_20y"
+      }
     ],
     "min_plan": {
       "SANAPI": "pro",
@@ -1739,14 +2155,16 @@
     "has_incomplete_data": true,
     "data_type": "timeseries"
   },
-
   {
     "human_readable_name": "Minimum daily price of nft collections in eth",
     "name": "nft_collection_min_price",
     "metric": "nft_collection_min_price",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address"],
+    "selectors": [
+      "slug",
+      "address"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1763,7 +2181,10 @@
     "metric": "nft_collection_max_price",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address"],
+    "selectors": [
+      "slug",
+      "address"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1780,7 +2201,10 @@
     "metric": "nft_collection_avg_price",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address"],
+    "selectors": [
+      "slug",
+      "address"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1797,7 +2221,10 @@
     "metric": "nft_collection_trades_count",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address"],
+    "selectors": [
+      "slug",
+      "address"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1814,7 +2241,10 @@
     "metric": "nft_collection_min_price_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address"],
+    "selectors": [
+      "slug",
+      "address"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1831,7 +2261,10 @@
     "metric": "nft_collection_max_price_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address"],
+    "selectors": [
+      "slug",
+      "address"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1848,7 +2281,10 @@
     "metric": "nft_collection_avg_price_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address"],
+    "selectors": [
+      "slug",
+      "address"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1865,7 +2301,11 @@
     "metric": "nft_token_id_price",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address", "token_id"],
+    "selectors": [
+      "slug",
+      "address",
+      "token_id"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1882,7 +2322,11 @@
     "metric": "nft_token_id_price_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address", "token_id"],
+    "selectors": [
+      "slug",
+      "address",
+      "token_id"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1899,7 +2343,10 @@
     "metric": "nft_market_volume",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address"],
+    "selectors": [
+      "slug",
+      "address"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1916,7 +2363,10 @@
     "metric": "nft_market_count",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address"],
+    "selectors": [
+      "slug",
+      "address"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1933,7 +2383,10 @@
     "metric": "nft_collection_holders_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address"],
+    "selectors": [
+      "slug",
+      "address"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1950,7 +2403,9 @@
     "metric": "nft_network_profit_loss",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1967,7 +2422,9 @@
     "metric": "nft_network_profit_loss_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -1984,7 +2441,10 @@
     "metric": "nft_collection_profit_loss",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address"],
+    "selectors": [
+      "slug",
+      "address"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2001,7 +2461,10 @@
     "metric": "nft_collection_profit_loss_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "address"],
+    "selectors": [
+      "slug",
+      "address"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2017,17 +2480,31 @@
     "name": "mean_age_{{timebound}}",
     "metric": "stack_mean_age_days_{{timebound}}",
     "parameters": [
-      { "timebound": "90d" },
-      { "timebound": "180d" },
-      { "timebound": "365d" },
-      { "timebound": "2y" },
-      { "timebound": "3y" },
-      { "timebound": "5y" }
+      {
+        "timebound": "90d"
+      },
+      {
+        "timebound": "180d"
+      },
+      {
+        "timebound": "365d"
+      },
+      {
+        "timebound": "2y"
+      },
+      {
+        "timebound": "3y"
+      },
+      {
+        "timebound": "5y"
+      }
     ],
     "is_timebound": true,
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -2044,17 +2521,31 @@
     "name": "mean_dollar_invested_age_{{timebound}}",
     "metric": "stack_mean_age_dollar_days_{{timebound}}",
     "parameters": [
-      { "timebound": "90d" },
-      { "timebound": "180d" },
-      { "timebound": "365d" },
-      { "timebound": "2y" },
-      { "timebound": "3y" },
-      { "timebound": "5y" }
+      {
+        "timebound": "90d"
+      },
+      {
+        "timebound": "180d"
+      },
+      {
+        "timebound": "365d"
+      },
+      {
+        "timebound": "2y"
+      },
+      {
+        "timebound": "3y"
+      },
+      {
+        "timebound": "5y"
+      }
     ],
     "is_timebound": true,
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -2072,7 +2563,9 @@
     "metric": "aavev2_action_deposits",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2089,7 +2582,9 @@
     "metric": "aavev2_action_liquidations",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2106,7 +2601,9 @@
     "metric": "aavev2_action_new_debt",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2123,7 +2620,9 @@
     "metric": "aavev2_action_repayments",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2140,7 +2639,9 @@
     "metric": "aavev2_action_deposits_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2157,7 +2658,9 @@
     "metric": "aavev2_action_liquidations_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2174,7 +2677,9 @@
     "metric": "aavev2_action_new_debt_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2191,7 +2696,9 @@
     "metric": "aavev2_action_repayments_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2208,7 +2715,9 @@
     "metric": "aavev2_total_deposits_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2225,7 +2734,9 @@
     "metric": "aavev2_total_liquidations_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2242,7 +2753,9 @@
     "metric": "aavev2_total_new_debt_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2259,7 +2772,9 @@
     "metric": "aavev2_total_repayments_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2276,7 +2791,9 @@
     "metric": "aavev2_total_supplied",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2293,7 +2810,9 @@
     "metric": "aavev2_total_supplied_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2310,7 +2829,9 @@
     "metric": "aavev2_total_borrowed",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2327,7 +2848,9 @@
     "metric": "aavev2_total_borrowed_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2344,7 +2867,9 @@
     "metric": "aavev2_total_protocol_supplied_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2361,7 +2886,9 @@
     "metric": "aavev2_total_protocol_borrowed_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2378,7 +2905,9 @@
     "metric": "aavev2_supply_apy",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2395,7 +2924,9 @@
     "metric": "aavev2_stable_borrow_apy",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2412,7 +2943,9 @@
     "metric": "aavev2_variable_borrow_apy",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2429,7 +2962,9 @@
     "metric": "aavev2_active_addresses",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2446,7 +2981,9 @@
     "metric": "aavev3_action_deposits",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2463,7 +3000,9 @@
     "metric": "aavev3_action_liquidations",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2480,7 +3019,9 @@
     "metric": "aavev3_action_new_debt",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2497,7 +3038,9 @@
     "metric": "aavev3_action_repayments",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2514,7 +3057,9 @@
     "metric": "aavev3_action_deposits_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2531,7 +3076,9 @@
     "metric": "aavev3_action_liquidations_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2548,7 +3095,9 @@
     "metric": "aavev3_action_new_debt_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2565,7 +3114,9 @@
     "metric": "aavev3_action_repayments_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2582,7 +3133,9 @@
     "metric": "aavev3_total_deposits_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2599,7 +3152,9 @@
     "metric": "aavev3_total_liquidations_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2616,7 +3171,9 @@
     "metric": "aavev3_total_new_debt_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2633,7 +3190,9 @@
     "metric": "aavev3_total_repayments_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2650,7 +3209,9 @@
     "metric": "aavev3_total_supplied",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2667,7 +3228,9 @@
     "metric": "aavev3_total_supplied_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2684,7 +3247,9 @@
     "metric": "aavev3_total_borrowed",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2701,7 +3266,9 @@
     "metric": "aavev3_total_borrowed_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2718,7 +3285,9 @@
     "metric": "aavev3_total_protocol_supplied_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2735,7 +3304,9 @@
     "metric": "aavev3_total_protocol_borrowed_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2752,7 +3323,9 @@
     "metric": "aavev3_supply_apy",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2769,7 +3342,9 @@
     "metric": "aavev3_variable_borrow_apy",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2786,7 +3361,9 @@
     "metric": "aavev3_active_addresses",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2803,7 +3380,9 @@
     "metric": "compound_action_deposits",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2820,7 +3399,9 @@
     "metric": "compound_action_liquidations",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2837,7 +3418,9 @@
     "metric": "compound_action_new_debt",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2854,7 +3437,9 @@
     "metric": "compound_action_repayments",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2871,7 +3456,9 @@
     "metric": "compound_action_deposits_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2888,7 +3475,9 @@
     "metric": "compound_action_liquidations_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2905,7 +3494,9 @@
     "metric": "compound_action_new_debt_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2922,7 +3513,9 @@
     "metric": "compound_action_repayments_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2939,7 +3532,9 @@
     "metric": "compound_total_deposits_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2956,7 +3551,9 @@
     "metric": "compound_total_liquidations_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2973,7 +3570,9 @@
     "metric": "compound_total_new_debt_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -2990,7 +3589,9 @@
     "metric": "compound_total_repayments_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3007,7 +3608,9 @@
     "metric": "compound_total_supplied",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3024,7 +3627,9 @@
     "metric": "compound_total_supplied_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3041,7 +3646,9 @@
     "metric": "compound_total_borrowed",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3058,7 +3665,9 @@
     "metric": "compound_total_borrowed_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3075,7 +3684,9 @@
     "metric": "compound_total_protocol_supplied_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3092,7 +3703,9 @@
     "metric": "compound_total_protocol_borrowed_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3109,7 +3722,9 @@
     "metric": "compound_supply_apy",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3126,7 +3741,9 @@
     "metric": "compound_borrow_apy",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3143,7 +3760,9 @@
     "metric": "compound_active_addresses",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3160,7 +3779,9 @@
     "metric": "compoundv3_action_deposits",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3177,7 +3798,9 @@
     "metric": "compoundv3_action_liquidations",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3194,7 +3817,9 @@
     "metric": "compoundv3_action_new_debt",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3211,7 +3836,9 @@
     "metric": "compoundv3_action_repayments",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3228,7 +3855,9 @@
     "metric": "compoundv3_action_deposits_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3245,7 +3874,9 @@
     "metric": "compoundv3_action_liquidations_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3262,7 +3893,9 @@
     "metric": "compoundv3_action_new_debt_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3279,7 +3912,9 @@
     "metric": "compoundv3_action_repayments_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3296,7 +3931,9 @@
     "metric": "compoundv3_total_deposits_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3313,7 +3950,9 @@
     "metric": "compoundv3_total_liquidations_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3330,7 +3969,9 @@
     "metric": "compoundv3_total_new_debt_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3347,7 +3988,9 @@
     "metric": "compoundv3_total_repayments_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3364,7 +4007,9 @@
     "metric": "compoundv3_total_supplied",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3381,7 +4026,9 @@
     "metric": "compoundv3_total_supplied_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3398,7 +4045,9 @@
     "metric": "compoundv3_total_borrowed",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3415,7 +4064,9 @@
     "metric": "compoundv3_total_borrowed_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3432,7 +4083,9 @@
     "metric": "compoundv3_total_protocol_supplied_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3449,7 +4102,9 @@
     "metric": "compoundv3_total_protocol_borrowed_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3466,7 +4121,9 @@
     "metric": "compoundv3_eth_market_supply_rate",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3483,7 +4140,9 @@
     "metric": "compoundv3_eth_market_borrow_rate",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3500,7 +4159,9 @@
     "metric": "compoundv3_usdc_market_supply_rate",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3517,7 +4178,9 @@
     "metric": "compoundv3_usdc_market_borrow_rate",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3534,7 +4197,9 @@
     "metric": "compoundv3_active_addresses",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3551,12 +4216,22 @@
     "metric": "price_volatility_{{sliding_window}}",
     "version": "2019-01-01",
     "access": "free",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "parameters": [
-      { "sliding_window": "1d" },
-      { "sliding_window": "1w" },
-      { "sliding_window": "2w" },
-      { "sliding_window": "4w" }
+      {
+        "sliding_window": "1d"
+      },
+      {
+        "sliding_window": "1w"
+      },
+      {
+        "sliding_window": "2w"
+      },
+      {
+        "sliding_window": "4w"
+      }
     ],
     "min_plan": {
       "SANAPI": "free",
@@ -3573,16 +4248,28 @@
     "name": "eth2_stakers_realized_value_usd_{{timebound}}",
     "metric": "stack_stakers_realized_cap_usd_{{timebound}}",
     "parameters": [
-      { "timebound": "365d" },
-      { "timebound": "2y" },
-      { "timebound": "3y" },
-      { "timebound": "5y" },
-      { "timebound": "10y" }
+      {
+        "timebound": "365d"
+      },
+      {
+        "timebound": "2y"
+      },
+      {
+        "timebound": "3y"
+      },
+      {
+        "timebound": "5y"
+      },
+      {
+        "timebound": "10y"
+      }
     ],
     "is_timebound": true,
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -3598,16 +4285,28 @@
     "name": "eth2_stakers_mvrv_usd_{{timebound}}",
     "metric": "stakers_mvrv_usd_{{timebound}}",
     "parameters": [
-      { "timebound": "365d" },
-      { "timebound": "2y" },
-      { "timebound": "3y" },
-      { "timebound": "5y" },
-      { "timebound": "10y" }
+      {
+        "timebound": "365d"
+      },
+      {
+        "timebound": "2y"
+      },
+      {
+        "timebound": "3y"
+      },
+      {
+        "timebound": "5y"
+      },
+      {
+        "timebound": "10y"
+      }
     ],
     "is_timebound": true,
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -3624,7 +4323,9 @@
     "metric": "daily_assets_issued",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3641,7 +4342,9 @@
     "metric": "total_assets_issued",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3658,7 +4361,9 @@
     "metric": "trustlines_count_delta",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3675,7 +4380,9 @@
     "metric": "trustlines_count",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3692,7 +4399,9 @@
     "metric": "dex_volume_in_xrp_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3709,7 +4418,9 @@
     "metric": "dex_volume_in_usd_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3726,7 +4437,9 @@
     "metric": "makerdao_action_deposits",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3743,7 +4456,9 @@
     "metric": "makerdao_action_liquidations",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3760,7 +4475,9 @@
     "metric": "makerdao_action_new_debt",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3777,7 +4494,9 @@
     "metric": "makerdao_action_repayments",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3794,7 +4513,9 @@
     "metric": "makerdao_action_deposits_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3811,7 +4532,9 @@
     "metric": "makerdao_action_liquidations_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3828,7 +4551,9 @@
     "metric": "makerdao_action_new_debt_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3845,7 +4570,9 @@
     "metric": "makerdao_action_repayments_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3862,7 +4589,9 @@
     "metric": "makerdao_total_deposits_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3879,7 +4608,9 @@
     "metric": "makerdao_total_liquidations_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3896,7 +4627,9 @@
     "metric": "makerdao_total_new_debt_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3913,7 +4646,9 @@
     "metric": "makerdao_total_repayments_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3930,7 +4665,9 @@
     "metric": "makerdao_total_supplied",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3947,7 +4684,9 @@
     "metric": "makerdao_total_supplied_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3964,7 +4703,9 @@
     "metric": "makerdao_total_borrowed",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3981,7 +4722,9 @@
     "metric": "makerdao_total_borrowed_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -3998,7 +4741,9 @@
     "metric": "makerdao_total_protocol_supplied_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4015,7 +4760,9 @@
     "metric": "makerdao_total_protocol_borrowed_usd",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4032,7 +4779,9 @@
     "metric": "makerdao_active_addresses",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4049,7 +4798,9 @@
     "metric": "ether_beacon_deposits",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4066,7 +4817,9 @@
     "metric": "ether_beacon_validator_withdrawals",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4083,7 +4836,9 @@
     "metric": "ether_beacon_reward_withdrawals",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4100,7 +4855,9 @@
     "metric": "fees_burnt_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4117,7 +4874,9 @@
     "metric": "fees_burnt_usd_5min",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4134,7 +4893,11 @@
     "metric": "exchange_open_interest",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": [
+      "slug",
+      "owner",
+      "label"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4151,7 +4914,11 @@
     "metric": "open_interest_per_settlement_currency",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": [
+      "slug",
+      "owner",
+      "label"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4168,7 +4935,9 @@
     "metric": "total_open_interest",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4185,7 +4954,11 @@
     "metric": "funding_rates_aggregated_per_exchange",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": [
+      "slug",
+      "owner",
+      "label"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4202,7 +4975,11 @@
     "metric": "funding_rates_aggregated_per_settlement_currency",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": [
+      "slug",
+      "owner",
+      "label"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4219,7 +4996,9 @@
     "metric": "total_funding_rates_aggregated_per_asset",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4236,7 +5015,9 @@
     "metric": "rsi_4h",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4253,7 +5034,9 @@
     "metric": "rsi_1d",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -4270,7 +5053,9 @@
     "metric": "rsi_7d",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug"],
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"

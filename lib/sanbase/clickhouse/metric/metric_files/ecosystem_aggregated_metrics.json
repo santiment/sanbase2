@@ -1,0 +1,78 @@
+[
+  {
+    "human_readable_name": "Ecosystem Daily Development Activity",
+    "name": "ecosystem_dev_activity",
+    "metric": "ecosystem_dev_activity",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "ecosystem"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "ecosystem_aggregated_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Ecosystem Daily GitHub Activity",
+    "name": "ecosystem_github_activity",
+    "metric": "ecosystem_github_activity",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "ecosystem"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "ecosystem_aggregated_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Ecosystem Daily Development Activity Contributors Count",
+    "name": "ecosystem_dev_activity_contributors_count",
+    "metric": "ecosystem_dev_activity_contributors_count",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "ecosystem"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "7d",
+    "table": "ecosystem_aggregated_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Ecosystem Daily GitHub Activity Contributors Count",
+    "name": "ecosystem_github_activity_contributors_count",
+    "metric": "ecosystem_github_activity_contributors_count",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "ecosystem"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "7d",
+    "table": "ecosystem_aggregated_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
+]

@@ -6,7 +6,7 @@ defmodule Sanbase.Menus.MenuItem do
 
   alias Sanbase.Menus.Menu
   alias Sanbase.Queries.Query
-  alias Sanbase.Queries.Dashboard
+  alias Sanbase.Dashboards.Dashboard
 
   @type t :: %__MODULE__{
           parent_id: Menu.menu_id(),

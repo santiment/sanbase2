@@ -23,16 +23,23 @@ defmodule Sanbase.Clickhouse.Query.Environment do
 
   alias Sanbase.Accounts.User
   alias Sanbase.Queries.Query
-  alias Sanbase.Queries.Dashboard
+  alias Sanbase.Dashboards.Dashboard
 
   defstruct owner: nil,
             executor: nil,
-            assets: nil
+            assets: []
 
   @type contract_address :: %{
           address: String.t(),
           decimals: non_neg_integer(),
           label: String.t()
+        }
+
+  @type user_subset :: %{
+          id: non_neg_integer(),
+          username: String.t() | nil,
+          email: String.t() | nil,
+          name: String.t() | nil
         }
 
   @type asset :: %{
@@ -44,7 +51,8 @@ defmodule Sanbase.Clickhouse.Query.Environment do
         }
 
   @type t :: %__MODULE__{
-          owner: User.t(),
+          owner: user_subset | nil,
+          executor: user_subset | nil,
           assets: [asset]
         }
 
@@ -121,6 +129,6 @@ defmodule Sanbase.Clickhouse.Query.Environment do
   defp user_subset(%User{} = user) do
     user
     |> Map.from_struct()
-    |> Map.take([:username, :email, :name])
+    |> Map.take([:id, :username, :email, :name])
   end
 end

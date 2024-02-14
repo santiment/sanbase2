@@ -1,0 +1,96 @@
+# Import ecosystems
+
+## Section
+
+```elixir
+csv =
+  "~/Downloads/ecosystems_mapping_v2.csv"
+  |> Path.expand()
+  |> File.read!()
+
+parse_ecosystems = fn str ->
+  str
+  |> String.split(",", trim: true)
+  |> Enum.map(&String.trim/1)
+  |> Enum.uniq()
+  |> Enum.reject(&(&1 == ""))
+end
+
+mapping =
+  csv
+  |> NimbleCSV.RFC4180.parse_string()
+  |> Enum.map(fn line ->
+    %{
+      slug: Enum.at(line, 0),
+      ecosystems: Enum.at(line, 2) |> then(parse_ecosystems)
+    }
+  end)
+  |> Map.new(fn map -> {map.slug, map.ecosystems} end)
+```
+
+```elixir
+# Create ecosystems
+ecosystems = Map.values(mapping) |> List.flatten() |> Enum.uniq() |> Enum.reject(&(&1 == ""))
+IO.puts("Ecosystems count: #{length(ecosystems)}")
+{:ok, existing_ecosystems} = Sanbase.Ecosystem.get_ecosystems()
+IO.puts("Ecosystems not present in the db: #{length(existing_ecosystems -- ecosystems)}")
+
+for e <- ecosystems, e not in existing_ecosystems do
+  Sanbase.Ecosystem.create_ecosystem(e)
+end
+```
+
+```elixir
+mapping_slugs = Map.keys(mapping) |> MapSet.new()
+projects = Sanbase.Repo.all(Sanbase.Project)
+
+existing_mappings =
+  Sanbase.Repo.all(Sanbase.ProjectEcosystemMapping)
+  |> Sanbase.Repo.preload(:ecosystem)
+  |> Enum.map(fn m -> {m.project_id, m.ecosystem.ecosystem} end)
+  |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+
+ecosystem_to_id =
+  Sanbase.Repo.all(Sanbase.Ecosystem)
+  |> Map.new(fn e -> {e.ecosystem, e.id} end)
+
+now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+to_insert =
+  for project <- projects, project.slug in mapping_slugs do
+    ecosystems = Map.get(mapping, project.slug, [])
+
+    if ecosystems != [] do
+      existing_ecosystems = existing_mappings[project.id] || []
+
+      for e <- ecosystems, e not in existing_ecosystems do
+        %{
+          project_id: project.id,
+          ecosystem_id: ecosystem_to_id[e],
+          inserted_at: now,
+          updated_at: now
+        }
+      end
+    end
+  end
+
+to_insert = List.flatten(to_insert) |> Enum.reject(&is_nil/1)
+```
+
+```elixir
+IO.puts("Will insert #{length(to_insert)} mappings")
+```
+
+```elixir
+# Insert the data. This only includes data that is currently not
+# present in our database
+
+to_insert
+|> Enum.chunk_every(500)
+|> Enum.with_index(1)
+|> Enum.each(fn {chunk, index} ->
+  IO.puts("Inserting chunk ##{index}...")
+  Sanbase.Repo.insert_all(Sanbase.ProjectEcosystemMapping, chunk)
+  IO.puts("Finished inserting chunk ##{index}")
+end)
+```

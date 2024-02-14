@@ -41,7 +41,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
                "1h",
                "6h",
                "8h",
-               "1d"
+               "1d",
+               "7d"
              ]
 
       assert metadata["dataType"] in ["TIMESERIES", "HISTOGRAM", "TABLE"]
@@ -55,6 +56,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
                    "BLOCKCHAIN_ADDRESS",
                    "BLOCKCHAIN",
                    "CONTRACT_ADDRESS",
+                   "ECOSYSTEM",
                    "HOLDERS_COUNT",
                    "LABEL_FQN",
                    "LABEL_FQNS",

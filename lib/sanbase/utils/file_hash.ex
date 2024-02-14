@@ -7,7 +7,7 @@ defmodule Sanbase.Utils.FileHash do
   def calculate(filepath) do
     try do
       hash =
-        File.stream!(filepath, [], 8192)
+        File.stream!(filepath, 8192, [])
         |> Enum.reduce(:crypto.hash_init(@hash_algorithm), fn line, acc ->
           :crypto.hash_update(acc, line)
         end)

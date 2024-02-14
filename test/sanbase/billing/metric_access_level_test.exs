@@ -186,6 +186,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "circulation_usd_180d",
         "holders_labeled_negative_distribution_total",
         "dev_activity_1d",
+        "github_activity_1d",
         "mean_realized_price_usd",
         "withdrawal_transactions_per_exchange",
         "percent_of_holders_distribution_1_to_10",
@@ -469,7 +470,12 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "dex_volume_in_usd_5m",
         "rsi_4h",
         "rsi_1d",
-        "rsi_7d"
+        "rsi_7d",
+        # ecosystem aggregated metrics
+        "ecosystem_dev_activity",
+        "ecosystem_github_activity",
+        "ecosystem_dev_activity_contributors_count",
+        "ecosystem_github_activity_contributors_count"
       ]
       |> Enum.sort()
 
@@ -487,7 +493,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       Sanbase.Billing.ApiInfo.get_with_access_level(access_map, :free)
       |> Enum.sort()
 
-    expected_free_metrics =
+    expected =
       [
         "active_addresses_60d",
         "active_addresses_90d",
@@ -507,10 +513,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "daily_trading_volume_usd",
         "dev_activity",
         "dev_activity_1d",
-        "30d_moving_avg_dev_activity_change_1d",
-        "github_activity",
+        "github_activity_1d",
         "dev_activity_contributors_count",
         "github_activity_contributors_count",
+        "30d_moving_avg_dev_activity_change_1d",
+        "github_activity",
         "historical_balance",
         "historical_balance_changes",
         "marketcap_usd",
@@ -573,11 +580,21 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "price_volatility_1d",
         "price_volatility_1w",
         "price_volatility_2w",
-        "price_volatility_4w"
+        "price_volatility_4w",
+        "ecosystem_dev_activity",
+        "ecosystem_github_activity",
+        "ecosystem_dev_activity_contributors_count",
+        "ecosystem_github_activity_contributors_count"
       ]
       |> Enum.sort()
 
-    assert free_metrics == expected_free_metrics
+    missing_expected_free = expected -- free_metrics
+    unexpected_free_metrics = free_metrics -- expected
+
+    # Asserting on the difference generates much more short and clear
+    # error messages
+    assert missing_expected_free == []
+    assert unexpected_free_metrics == []
   end
 
   test "restricted metrics", %{metric_access_map: access_map} do

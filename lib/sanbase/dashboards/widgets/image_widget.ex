@@ -1,6 +1,8 @@
-defmodule Sanbase.Queries.ImageWidget do
+defmodule Sanbase.Dashboards.ImageWidget do
   @moduledoc ~s"""
-  TODO
+  An embedded schema that represents a image widget.
+
+  The image widgets are embedded in the "dashboards" table.
   """
   use Ecto.Schema
 

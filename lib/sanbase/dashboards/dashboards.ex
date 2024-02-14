@@ -5,11 +5,11 @@ defmodule Sanbase.Dashboards do
 
   alias Sanbase.Repo
   alias Sanbase.Queries.Query
-  alias Sanbase.Queries.Dashboard
-  alias Sanbase.Queries.DashboardQueryMapping
+  alias Sanbase.Dashboards.Dashboard
+  alias Sanbase.Dashboards.DashboardQueryMapping
 
-  alias Sanbase.Queries.TextWidget
-  alias Sanbase.Queries.ImageWidget
+  alias Sanbase.Dashboards.TextWidget
+  alias Sanbase.Dashboards.ImageWidget
 
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
@@ -34,11 +34,15 @@ defmodule Sanbase.Dashboards do
   @doc ~s"""
   Get a dashboard by id.
 
-  The dashboard is returned if it exists and: is public, or if it is private
-  and owned by the querying user. The queries are preloaded. If the queries
-  should not be preloaded, provide `preload?: false` as an option.
+  The dashboard is returned if:
+  - It exists and is public;
+    - In this case, the querying_user_id can be any user or nil (anonymous user).
+  - It is private and owned by the querying user.
+
+  The queries are preloaded. If the queries should not be preloaded,
+  provide `preload?: false` as an option.
   """
-  @spec get_dashboard(dashboard_id(), user_id(), Keyword.t()) ::
+  @spec get_dashboard(dashboard_id(), user_id() | nil, Keyword.t()) ::
           {:ok, Dashboard.t()} | {:error, String.t()}
   def get_dashboard(dashboard_id, querying_user_id, opts \\ []) do
     # If empty, set the default options so the rest of the logic that depends on the defaults
@@ -924,7 +928,7 @@ defmodule Sanbase.Dashboards do
         query_result,
         user_id
       ) do
-    Sanbase.Queries.DashboardCache.update_query_cache(
+    Sanbase.Dashboards.DashboardCache.update_query_cache(
       dashboard_id,
       dashboard_query_mapping_id,
       query_result,
@@ -944,7 +948,7 @@ defmodule Sanbase.Dashboards do
         dashboard_id,
         user_id
       ) do
-    Sanbase.Queries.DashboardCache.by_dashboard_id(dashboard_id, user_id)
+    Sanbase.Dashboards.DashboardCache.by_dashboard_id(dashboard_id, user_id)
   end
 
   # Private functions

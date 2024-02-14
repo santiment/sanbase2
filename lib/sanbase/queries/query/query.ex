@@ -29,6 +29,7 @@ defmodule Sanbase.Queries.Query do
           user_id: non_neg_integer(),
           is_deleted: boolean(),
           is_hidden: boolean(),
+          dashboard_query_mapping_id: String.t() | nil,
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }

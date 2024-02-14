@@ -1,0 +1,63 @@
+# Queries Compression Comparisons
+
+## Section
+
+```elixir
+{:ok, user} = Sanbase.Accounts.User.by_email("ivan.i@santiment.net")
+
+sql = """
+SELECT *
+FROM eth_transfers
+LIMIT 10000
+"""
+
+params = %{}
+
+{:ok, query} =
+  Sanbase.Queries.create_query(
+    %{name: "Test Query", sql_query_text: sql, sql_query_parameters: params},
+    user.id
+  )
+
+query_metadata = Sanbase.Queries.QueryMetadata.from_local_dev(user.id)
+```
+
+```elixir
+{:ok, data} = Sanbase.Queries.run_query(query, user, query_metadata)
+```
+
+```elixir
+result = data
+
+mb_size = fn x ->
+  x |> byte_size() |> Kernel./(1024 * 1024) |> Float.round(2)
+end
+
+alias Sanbase.Queries.Executor.Result
+# Compute Query Sizes with different types of compression
+query_size_no_compression_mb = :erlang.term_to_binary(result) |> Base.encode64() |> then(mb_size)
+IO.puts("Query Result size without compression: #{query_size_no_compression_mb} MB")
+
+query_compressed_rows =
+  result
+  |> Map.put(:compressed_rows, Result.compress_rows(data.rows))
+  |> Map.put(:rows, nil)
+
+query_size_compression_mb =
+  :erlang.term_to_binary(query_compressed_rows) |> Base.encode64() |> then(mb_size)
+
+IO.puts("Query Result size with rows compression: #{query_size_compression_mb} MB")
+
+query_size_compress_whole_query_mb =
+  :erlang.term_to_binary(result) |> :zlib.gzip() |> Base.encode64() |> then(mb_size)
+
+IO.puts("Query Result size with gzip whole result: #{query_size_compress_whole_query_mb} MB")
+
+query_size_double_compression_mb =
+  :erlang.term_to_binary(query_compressed_rows)
+  |> :zlib.gzip()
+  |> Base.encode64()
+  |> then(mb_size)
+
+IO.puts("Query Result size double compression result: #{query_size_double_compression_mb} MB")
+```

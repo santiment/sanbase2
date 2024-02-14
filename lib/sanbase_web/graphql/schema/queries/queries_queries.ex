@@ -318,31 +318,18 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     @desc ~s"""
     Update the dashboard cache with the provided data.
 
-    This mutation, along with computeDashboardPanel, provides
-    the capabilities to compute and store dashboard panel results
-    separately. In contrast to computeAndStoreDashboardPanel, having
-    the methods separated allows users to compute many different panel
-    configurations and only store the result of the one that satisfies
-    the requirements.
-
-    All the panel fields are required.
-
-    The `rows` and `summary` fields must be JSON encoded.
+    The compressed_query_execution_result parameter contains the compressed query result.
+    The compressed result is created by taking the JSON representation of the result, gzipping it and
+    converting the result with base64 encoding.
+    For more information and examples, check here: https://github.com/santiment/sanbase2/pull/3937
 
     Example:
 
     mutation {
       storeDashboardPanel(
         dashboardId: 134
-        panelId: "c5a3b5dd-0e31-42ae-954a-83b741818a28"
-        panel: {
-            clickhouseQueryId: "177a5a3d-072b-48ac-8cf5-d8375c8314ef"
-            columns: ["asset_id", "metric_id", "dt", "value", "computed_at"]
-            columnTypes: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"]
-            queryEndTime: "2022-06-14T12:08:10Z"
-            queryStartTime: "2022-06-14T12:08:10Z"
-            rows: "[[2503,250,\"2008-12-10T00:00:00Z\",0.0,\"2020-02-28T15:18:42Z\"],[2503,250,\"2008-12-10T00:05:00Z\",0.0,\"2020-02-28T15:18:42Z\"]]"
-            summary: "{\"read_bytes\":\"0\",\"read_rows\":\"0\",\"total_rows_to_read\":\"0\",\"written_bytes\":\"0\",\"written_rows\":\"0\"}"
+        dashboardQueryMappingId: 5
+      compressedQueryExecutionResult: "The result string of the example above is: H4sIAAAAAAAAE3WOQWvEIBSE/4tnszyNsdFzW9jDHkrtpUtY3CjdgImp0Zal9L9X08AeSkFkmPfNMF+o9y6Nk7rOdkHyiF72U+QM4Zu419GqYbRZPjqv/5gb2OGtaq3Ry2LjaTD5PtoYhv5Xm5i/D+1SCfZ+nFO05qSLe9axvxQqFxm9XM5eB/OUbLge9DwP09veIDkl5zB6L+7DZNYBElGgdUVIBUIRkLWQdfOKNqqEyKafow7x3wwrmeA/y/wjYS3FhLMGIyLuoIJMEgUg15fJCna0aYELSltRMwLQMnxr5YpwCULSsgS67vsHMa3TkGgBAAA="
         }
       ){
         id
@@ -373,11 +360,34 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       resolve(&QueriesResolver.store_dashboard_query_execution/3)
     end
+
+    field :store_query_execution, :boolean do
+      arg(:query_id, non_null(:integer))
+
+      @desc ~s"""
+      This is the result of the query execution. The JSON obtained from
+      runSqlQuery/runRawSqlQuery/runDashboardSqlQuery is first stringified,
+      then gzipped and the encoded in base64. This is done to reduce the
+      size of the data sent from the frontend to the backend.
+      """
+      arg(:compressed_query_execution_result, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&QueriesResolver.store_query_execution/3)
+    end
   end
 
   object :dashboard_queries do
     @desc ~s"""
-    Get a dashboard.
+    Get a dashboard by id.
+
+    If the dashboard is public, everyone can fetch it, and if it is private
+    only its owner can fetch it.
+
+    If the dashboard contains private queries, the SQL query text and parameters
+    are redacted so they cannot be seen by other people. But the dashboard queries
+    can still be executed
     """
     field :get_dashboard, :dashboard do
       meta(access: :free)

@@ -180,6 +180,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Dashboards.remove_query_from_dashboard(dashboard_id, mapping_id, user.id)
   end
 
+  def store_query_execution(
+        _root,
+        %{
+          query_id: query_id,
+          compressed_query_execution_result: compressed_query_execution_result
+        },
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    with {:ok, result_string} <- Result.decode_and_decompress(compressed_query_execution_result),
+         {:ok, query_execution_result} <- Result.from_json_string(result_string),
+         true <- Result.all_fields_present?(query_execution_result),
+         {:ok, _} <-
+           Queries.store_dashboard_query_execution(query_id, query_execution_result, user.id) do
+      {:ok, true}
+    end
+  end
+
   def store_dashboard_query_execution(
         _root,
         %{

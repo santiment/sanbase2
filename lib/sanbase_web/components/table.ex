@@ -589,35 +589,44 @@ defmodule SanbaseWeb.LiveSelect do
      ), layout: false}
   end
 
-  def handle_event("suggest", %{"value" => query} = params, socket) when byte_size(query) < 3 do
-    {:noreply, assign(socket, matches: [])}
+  def handle_event("suggest", %{"value" => query}, socket) when byte_size(query) < 2 do
+    session = socket.assigns[:session]
+
+    Integer.parse(query)
+    |> case do
+      {id, ""} -> {:noreply, assign(socket, matches: search_matches_by_id(id, session))}
+      _ -> {:noreply, assign(socket, matches: [])}
+    end
   end
 
-  def handle_event("suggest", %{"value" => query} = params, socket) when is_integer(query) do
+  def handle_event("suggest", %{"value" => query}, socket)
+      when byte_size(query) >= 2 and byte_size(query) <= 100 do
     session = socket.assigns[:session]
+
+    Integer.parse(query)
+    |> case do
+      {id, ""} -> {:noreply, assign(socket, matches: search_matches_by_id(id, session))}
+      _ -> {:noreply, assign(socket, matches: search_matches(query, session))}
+    end
+  end
+
+  def search_matches_by_id(id, session) do
     resource = session["resource"]
+    search_fields = session["search_fields"]
     resource_module_map = SanbaseWeb.GenericAdmin.resource_module_map()
     module = resource_module_map[resource][:module]
 
-    id_query = from(p in module, where: p.id == ^query)
-    results = Sanbase.Repo.all(id_query)
+    full_match_query =
+      from(m in module, where: m.id == ^id, select_merge: %{})
+      |> select_merge([p], map(p, [:id]))
+      |> select_merge([p], map(p, ^search_fields))
 
-    formatted_results =
-      Enum.map(results, fn result ->
-        formatted =
-          result
-          |> Enum.map(fn {key, value} -> "#{key}: #{value}" end)
-          |> Enum.join(", ")
+    full_matches = Sanbase.Repo.all(full_match_query)
 
-        {result.id, formatted}
-      end)
-
-    {:noreply, assign(socket, matches: formatted_results)}
+    format_results(full_matches, []) |> IO.inspect()
   end
 
-  def handle_event("suggest", %{"value" => query} = params, socket)
-      when byte_size(query) >= 2 and byte_size(query) <= 100 do
-    session = socket.assigns[:session]
+  def search_matches(query, session) do
     resource = session["resource"]
     search_fields = session["search_fields"]
     resource_module_map = SanbaseWeb.GenericAdmin.resource_module_map()
@@ -626,40 +635,40 @@ defmodule SanbaseWeb.LiveSelect do
 
     base_query = from(m in module, select_merge: %{})
 
-    full_match_query =
-      Enum.reduce(search_fields, base_query, fn field, acc ->
-        or_where(acc, [p], field(p, ^field) == ^query)
-      end)
-      |> select_merge([p], map(p, [:id]))
-      |> select_merge([p], map(p, ^search_fields))
-      |> order_by([p], desc: p.id)
-
-    partial_match_query =
-      Enum.reduce(search_fields, base_query, fn field, acc ->
-        or_where(acc, [p], ilike(field(p, ^field), ^value))
-      end)
-      |> select_merge([p], map(p, [:id]))
-      |> select_merge([p], map(p, ^search_fields))
-      |> order_by([p], desc: p.id)
+    full_match_query = build_full_match_query(search_fields, base_query, query)
+    partial_match_query = build_partial_match_query(search_fields, base_query, value)
 
     full_matches = Sanbase.Repo.all(full_match_query)
     partial_matches = Sanbase.Repo.all(partial_match_query)
 
-    results =
-      (full_matches ++ partial_matches)
-      |> Enum.uniq_by(& &1.id)
-      |> Enum.take(10)
+    format_results(full_matches, partial_matches) |> IO.inspect()
+  end
 
-    formatted_results =
-      Enum.map(results, fn result ->
-        formatted =
-          result
-          |> Enum.map(fn {key, value} -> "#{key}: #{value}" end)
-          |> Enum.join(", ")
+  defp build_full_match_query(search_fields, base_query, value) do
+    Enum.reduce(search_fields, base_query, fn field, acc ->
+      or_where(acc, [p], field(p, ^field) == ^value)
+    end)
+    |> select_merge([p], map(p, [:id]))
+    |> select_merge([p], map(p, ^search_fields))
+    |> order_by([p], desc: p.id)
+  end
 
-        {result.id, formatted}
-      end)
+  defp build_partial_match_query(search_fields, base_query, value) do
+    Enum.reduce(search_fields, base_query, fn field, acc ->
+      or_where(acc, [p], ilike(field(p, ^field), ^value))
+    end)
+    |> select_merge([p], map(p, [:id]))
+    |> select_merge([p], map(p, ^search_fields))
+    |> order_by([p], desc: p.id)
+  end
 
-    {:noreply, assign(socket, matches: formatted_results)}
+  defp format_results(full_matches, partial_matches) do
+    (full_matches ++ partial_matches)
+    |> Enum.uniq_by(& &1.id)
+    |> Enum.take(10)
+    |> Enum.map(fn result ->
+      formatted = Enum.map(result, fn {key, value} -> "#{key}: #{value}" end) |> Enum.join(", ")
+      {result.id, formatted}
+    end)
   end
 end

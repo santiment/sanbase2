@@ -45,7 +45,9 @@ defmodule SanbaseWeb.GenericAdmin.Project do
       belongs_to_fields: %{
         infrastructure: %{
           query: from(i in Sanbase.Model.Infrastructure, order_by: i.code),
-          transform: fn rows -> Enum.map(rows, &{&1.code, &1.id}) end
+          transform: fn rows -> Enum.map(rows, &{&1.code, &1.id}) end,
+          resource: "infrastructures",
+          search_fields: [:code]
         }
       },
       edit_fields: [
@@ -223,7 +225,9 @@ defmodule SanbaseWeb.GenericAdmin.ContractAddress do
       belongs_to_fields: %{
         project: %{
           query: from(p in Sanbase.Project, order_by: p.id),
-          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end
+          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
+          resource: "projects",
+          search_fields: [:name, :slug, :ticker]
         }
       },
       funcs: %{
@@ -245,7 +249,9 @@ defmodule SanbaseWeb.GenericAdmin.GithubOrganization do
       belongs_to_fields: %{
         project: %{
           query: from(p in Sanbase.Project, order_by: p.id),
-          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end
+          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
+          resource: "projects",
+          search_fields: [:name, :slug, :ticker]
         }
       },
       funcs: %{
@@ -267,7 +273,9 @@ defmodule SanbaseWeb.GenericAdmin.ProjectEthAddress do
       belongs_to_fields: %{
         project: %{
           query: from(p in Sanbase.Project, order_by: p.id),
-          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end
+          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
+          resource: "projects",
+          search_fields: [:name, :slug, :ticker]
         }
       },
       funcs: %{
@@ -289,11 +297,15 @@ defmodule SanbaseWeb.GenericAdmin.ProjectMarketSegments do
       belongs_to_fields: %{
         market_segment: %{
           query: from(ms in Sanbase.Model.MarketSegment, order_by: ms.id),
-          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end
+          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
+          resource: "market_segments",
+          search_fields: [:name]
         },
         project: %{
           query: from(p in Sanbase.Project, order_by: p.id),
-          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end
+          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
+          resource: "projects",
+          search_fields: [:name, :slug, :ticker]
         }
       },
       funcs: %{
@@ -331,7 +343,9 @@ defmodule SanbaseWeb.GenericAdmin.SourceSlugMapping do
       belongs_to_fields: %{
         project: %{
           query: from(p in Sanbase.Project, order_by: p.id),
-          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end
+          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
+          resource: "projects",
+          search_fields: [:name, :slug, :ticker]
         }
       },
       funcs: %{
@@ -387,16 +401,30 @@ defmodule SanbaseWeb.GenericAdmin.Ico do
       belongs_to_fields: %{
         project: %{
           query: from(p in Sanbase.Project, order_by: p.id),
-          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end
+          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
+          resource: "projects",
+          search_fields: [:name, :slug, :ticker]
         },
         cap_currency: %{
           query: from(c in Sanbase.Model.Currency, order_by: c.code),
-          transform: fn rows -> Enum.map(rows, &{&1.code, &1.id}) end
+          transform: fn rows -> Enum.map(rows, &{&1.code, &1.id}) end,
+          resource: "currencies",
+          search_fields: [:code]
         }
       },
       funcs: %{
         project_id: &SanbaseWeb.GenericAdmin.Project.project_link/1
       }
+    }
+  end
+end
+
+defmodule SanbaseWeb.GenericAdmin.Currency do
+  def schema_module, do: Sanbase.Model.Currency
+
+  def resource() do
+    %{
+      actions: [:show]
     }
   end
 end

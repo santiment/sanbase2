@@ -156,6 +156,14 @@ defmodule SanbaseWeb.GenericAdmin.User do
     GenericController.show(conn, %{"resource" => "users", "id" => user_id})
   end
 
+  def user_link(row) do
+    SanbaseWeb.GenericAdmin.Subscription.href(
+      "users",
+      row.user_id,
+      row.user.email || row.user.username
+    )
+  end
+
   defimpl String.Chars, for: Map do
     def to_string(map) do
       inspect(map)

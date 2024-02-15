@@ -42,8 +42,6 @@ defmodule Sanbase.Insight.Post do
   @type opts :: [option]
 
   schema "posts" do
-    belongs_to(:user, User)
-
     field(:title, :string)
     field(:short_desc, :string)
     field(:text, :string)
@@ -59,8 +57,9 @@ defmodule Sanbase.Insight.Post do
     # Chart events are insights connected to specific chart configuration and datetime
     field(:is_chart_event, :boolean, default: false)
     field(:chart_event_datetime, :utc_datetime)
-    belongs_to(:chart_configuration_for_event, Configuration)
 
+    belongs_to(:user, User)
+    belongs_to(:chart_configuration_for_event, Configuration)
     belongs_to(:price_chart_project, Project)
 
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)

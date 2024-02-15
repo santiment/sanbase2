@@ -29,7 +29,7 @@ defmodule SanbaseWeb.GenericAdmin do
           module: schema_module,
           admin_module: admin_module,
           singular: Inflex.singularize(resource_name),
-          actions: [:show, :edit],
+          actions: [],
           index_fields: :all,
           new_fields: [],
           edit_fields: [],

@@ -4,7 +4,7 @@ defmodule SanbaseWeb.GenericAdmin.Subscription do
   def resource do
     %{
       preloads: [:user, plan: [:product]],
-      actions: [:show, :edit],
+      actions: [:edit],
       funcs: %{
         plan_id: &__MODULE__.plan_func/1,
         user_id: &__MODULE__.user_func/1

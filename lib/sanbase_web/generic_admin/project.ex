@@ -5,6 +5,7 @@ defmodule SanbaseWeb.GenericAdmin.Project do
 
   def resource() do
     %{
+      actions: [:new, :edit],
       preloads: [:infrastructure],
       index_fields: [
         :id,
@@ -207,6 +208,7 @@ defmodule SanbaseWeb.GenericAdmin.Infrastructure do
 
   def resource() do
     %{
+      actions: [:new, :edit],
       new_fields: [:code],
       edit_fields: [:code]
     }
@@ -219,6 +221,7 @@ defmodule SanbaseWeb.GenericAdmin.ContractAddress do
 
   def resource() do
     %{
+      actions: [:new, :edit],
       preloads: [:project],
       new_fields: [:project, :address, :label],
       edit_fields: [:project, :address, :label],
@@ -243,6 +246,7 @@ defmodule SanbaseWeb.GenericAdmin.GithubOrganization do
 
   def resource() do
     %{
+      actions: [:new, :edit],
       preloads: [:project],
       new_fields: [:project, :organization],
       edit_fields: [:project, :organization],
@@ -267,6 +271,7 @@ defmodule SanbaseWeb.GenericAdmin.ProjectEthAddress do
 
   def resource() do
     %{
+      actions: [:new, :edit],
       preloads: [:project],
       new_fields: [:project, :address],
       edit_fields: [:project, :address],
@@ -291,7 +296,8 @@ defmodule SanbaseWeb.GenericAdmin.ProjectMarketSegments do
 
   def resource() do
     %{
-      preloads: [:project],
+      actions: [:new, :edit],
+      preloads: [:project, :market_segment],
       new_fields: [:project, :market_segment],
       edit_fields: [:project, :market_segment],
       belongs_to_fields: %{
@@ -309,9 +315,18 @@ defmodule SanbaseWeb.GenericAdmin.ProjectMarketSegments do
         }
       },
       funcs: %{
-        project_id: &SanbaseWeb.GenericAdmin.Project.project_link/1
+        project_id: &SanbaseWeb.GenericAdmin.Project.project_link/1,
+        market_segment_id: &__MODULE__.market_segment_link/1
       }
     }
+  end
+
+  def market_segment_link(row) do
+    SanbaseWeb.GenericAdmin.Subscription.href(
+      "market_segments",
+      row.market_segment_id,
+      row.market_segment.name
+    )
   end
 end
 
@@ -321,6 +336,7 @@ defmodule SanbaseWeb.GenericAdmin.MarketSegments do
 
   def resource() do
     %{
+      actions: [:new, :edit],
       preloads: [:projects],
       new_fields: [:name, :type],
       edit_fields: [:name, :type]

@@ -8,6 +8,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
 
   def resource do
     %{
+      actions: [:edit],
       index_fields: [:id, :username, :email, :twitter_id, :is_superuser, :san_balance],
       edit_fields: [:is_superuser, :test_san_balance, :email, :stripe_customer_id]
     }
@@ -15,7 +16,13 @@ defmodule SanbaseWeb.GenericAdmin.User do
 
   def has_many(user) do
     user =
-      user |> Sanbase.Repo.preload([:eth_accounts, :posts, subscriptions: [plan: [:product]]])
+      user
+      |> Sanbase.Repo.preload([
+        :eth_accounts,
+        :user_settings,
+        :posts,
+        subscriptions: [plan: [:product]]
+      ])
 
     [
       %{
@@ -58,7 +65,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
         resource: "posts",
         resource_name: "Last 10 Published Insights",
         rows: Sanbase.Insight.Post.user_public_insights(user.id, page: 1, page_size: 10),
-        fields: [:id, :title],
+        fields: [:id, :title, :published_at],
         funcs: %{},
         create_link_kv: []
       },
@@ -67,6 +74,14 @@ defmodule SanbaseWeb.GenericAdmin.User do
         resource_name: "Apikey tokens",
         rows: Sanbase.Accounts.UserApikeyToken.user_tokens_structs(user) |> elem(1),
         fields: [:id, :token],
+        funcs: %{},
+        create_link_kv: []
+      },
+      %{
+        resource: "user_settings",
+        resource_name: "User Settings",
+        rows: [user.user_settings],
+        fields: [:id],
         funcs: %{},
         create_link_kv: []
       }
@@ -168,5 +183,69 @@ defmodule SanbaseWeb.GenericAdmin.User do
     def to_string(map) do
       inspect(map)
     end
+  end
+end
+
+defmodule SanbaseWeb.GenericAdmin.UserSettings do
+  @schema_module Sanbase.Accounts.UserSettings
+  def schema_module(), do: @schema_module
+
+  def resource do
+    %{
+      index_fields: [:id],
+      funcs: %{
+        settings: fn us ->
+          Map.from_struct(us.settings) |> Map.delete(:alerts_fired) |> Jason.encode!(pretty: true)
+        end
+      }
+    }
+  end
+end
+
+defmodule SanbaseWeb.GenericAdmin.UserList do
+  import Ecto.Query
+  def schema_module(), do: Sanbase.UserList
+
+  def resource do
+    %{
+      actions: [:edit],
+      preloads: [:user],
+      index_fields: [:id, :name, :slug, :type, :is_featured, :is_public, :user_id, :function],
+      edit_fields: [:name, :slug, :description, :type, :is_public, :is_featured],
+      search_fields: %{
+        is_featured:
+          from(
+            ul in Sanbase.UserList,
+            left_join: featured_item in Sanbase.FeaturedItem,
+            on: ul.id == featured_item.user_list_id,
+            where: not is_nil(featured_item.id),
+            preload: [:user]
+          )
+          |> distinct(true)
+      },
+      extra_show_fields: [:is_featured],
+      field_types: %{
+        is_featured: :boolean
+      },
+      funcs: %{
+        user_id: &SanbaseWeb.GenericAdmin.User.user_link/1,
+        function: fn ul -> Map.from_struct(ul.function) |> Jason.encode!(pretty: true) end
+      },
+      collections: %{
+        type: ~w[project blockchain_address]
+      }
+    }
+  end
+
+  def before_filter(user_list) do
+    user_list = Sanbase.Repo.preload(user_list, [:featured_item])
+    is_featured = if user_list.featured_item, do: true, else: false
+
+    %{user_list | is_featured: is_featured}
+  end
+
+  def after_filter(user_list, params) do
+    is_featured = params["is_featured"] |> String.to_existing_atom()
+    Sanbase.FeaturedItem.update_item(user_list, is_featured)
   end
 end

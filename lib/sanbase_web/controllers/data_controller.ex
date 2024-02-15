@@ -10,7 +10,7 @@ defmodule SanbaseWeb.DataController do
   The path is https://api.santiment.net/santiment_team_members/<the_real_secret>
   This contains information about santiment team users, so it cannot be publicly freely available
   """
-  def santiment_projects_twitter_handlesteam_members(conn, %{"secret" => secret}) do
+  def santiment_team_members(conn, %{"secret" => secret}) do
     case santiment_team_members_secret() == secret do
       true ->
         {:ok, data} = get_santiment_team_members()

@@ -12,6 +12,8 @@ defmodule SanbaseWeb.Graphql.Schema.EcosystemQueries do
     """
     field :get_ecosystems, list_of(:ecosystem) do
       meta(access: :free)
+
+      arg(:ecosystems, list_of(:string))
       resolve(&EcosystemResolver.get_ecosystems/3)
     end
   end

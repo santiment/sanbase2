@@ -15,6 +15,7 @@ defmodule Sanbase.ProjectEcosystemMapping do
     mapping
     |> cast(attrs, [:project_id, :ecosystem_id])
     |> validate_required([:project_id, :ecosystem_id])
+    |> unique_constraint([:project_id, :ecosystem_id])
   end
 
   def create(project_id, ecosystem_id) do

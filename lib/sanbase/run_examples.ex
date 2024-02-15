@@ -29,7 +29,8 @@ defmodule Sanbase.RunExamples do
     :san_burn_credit_transactions,
     :signals,
     :additional_filters,
-    :top_addresses
+    :top_addresses,
+    :ecosystem_metrics
   ]
 
   @from ~U[2023-01-01 00:00:00Z]
@@ -901,5 +902,21 @@ defmodule Sanbase.RunExamples do
     {:error, _} = Sanbase.Menus.get_menu(menu.id, user.id)
 
     {:ok, :success}
+  end
+
+  defp do_run(:ecosystem_metrics) do
+    args = %{
+      from: ~U[2024-02-04 13:57:36.452867Z],
+      to: ~U[2024-02-05 13:57:36.452912Z],
+      metric: "dev_activity_1d"
+    }
+
+    Sanbase.Ecosystem.Metric.aggregated_timeseries_data(
+      ["ethereum"],
+      args.from,
+      args.to,
+      args.metric,
+      :sum
+    )
   end
 end

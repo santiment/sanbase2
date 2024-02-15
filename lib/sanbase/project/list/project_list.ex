@@ -50,6 +50,15 @@ defmodule Sanbase.Project.List do
     |> Repo.all()
   end
 
+  def projects_twitter_handles(opts \\ []) do
+    opts = Keyword.put(opts, :preload?, false)
+
+    projects_query(opts)
+    |> select([p], p.twitter_link)
+    |> Repo.all()
+    |> twitter_links_to_handles()
+  end
+
   def projects_twitter_handles_by_slugs(slugs, opts \\ []) do
     opts = Keyword.put(opts, :preload?, false)
 
@@ -57,8 +66,7 @@ defmodule Sanbase.Project.List do
     |> where([p], p.slug in ^slugs)
     |> select([p], p.twitter_link)
     |> Repo.all()
-    |> Enum.map(&Sanbase.Project.TwitterData.link_to_handle/1)
-    |> Enum.reject(&is_nil/1)
+    |> twitter_links_to_handles()
   end
 
   @doc ~s"""
@@ -649,6 +657,12 @@ defmodule Sanbase.Project.List do
     query
     |> limit(^limit)
     |> offset(^offset)
+  end
+
+  defp twitter_links_to_handles(list) do
+    list
+    |> Enum.map(&Sanbase.Project.TwitterData.link_to_handle/1)
+    |> Enum.reject(&is_nil/1)
   end
 
   # Add an optional ordering by rank. If the project has no known rank, the project

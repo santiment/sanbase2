@@ -10,7 +10,7 @@ defmodule SanbaseWeb.DataController do
   The path is https://api.santiment.net/santiment_team_members/<the_real_secret>
   This contains information about santiment team users, so it cannot be publicly freely available
   """
-  def santiment_team_members(conn, %{"secret" => secret}) do
+  def santiment_projects_twitter_handlesteam_members(conn, %{"secret" => secret}) do
     case santiment_team_members_secret() == secret do
       true ->
         {:ok, data} = get_santiment_team_members()
@@ -48,6 +48,15 @@ defmodule SanbaseWeb.DataController do
   def projects_data(conn, _params) do
     cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
     {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_projects_data/0)
+
+    conn
+    |> put_resp_header("content-type", "application/json; charset=utf-8")
+    |> Plug.Conn.send_resp(200, data)
+  end
+
+  def projects_twitter_handles(conn, _params) do
+    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+    {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_twitter_handles_list/0)
 
     conn
     |> put_resp_header("content-type", "application/json; charset=utf-8")
@@ -157,6 +166,16 @@ defmodule SanbaseWeb.DataController do
 
       {:ok, result}
     end
+  end
+
+  defp get_twitter_handles_list() do
+    result =
+      Project.List.projects_twitter_handles()
+      |> Enum.uniq()
+      |> Enum.map(fn handle -> %{twitter_handle: handle} |> Jason.encode!() end)
+      |> Enum.intersperse("\n")
+
+    {:ok, result}
   end
 
   defp get_slug_to_asset_id_map() do

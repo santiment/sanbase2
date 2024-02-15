@@ -162,6 +162,7 @@ defmodule SanbaseWeb.Router do
   scope "/", SanbaseWeb do
     get("/api_metric_name_mapping", MetricNameController, :api_metric_name_mapping)
     get("/projects_data", DataController, :projects_data)
+    get("/projects_twitter_handles", DataController, :projects_twitter_handles)
     get("/ecosystems_data", DataController, :ecosystems_data)
 
     get(

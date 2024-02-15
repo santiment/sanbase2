@@ -90,7 +90,10 @@ defmodule SanbaseWeb.GenericController do
       end)
       |> Enum.into(%{})
 
-    changeset = module.changeset(struct(module), changes)
+    changeset_function =
+      if function_exported?(module, :create_changeset, 2), do: :create_changeset, else: :changeset
+
+    changeset = apply(module, changeset_function, [struct(module), changes])
     form_fields = resource_module_map()[resource][:new_fields] || []
     action = Routes.generic_path(conn, :create, resource: resource)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
@@ -156,6 +159,7 @@ defmodule SanbaseWeb.GenericController do
     data = Repo.get(module, id) |> Repo.preload(resource_module_map()[resource][:preloads] || [])
     funcs = resource_module_map()[resource][:funcs] || %{}
     field_type_map = field_type_map(resource, module)
+    extra_show_fields = resource_module_map()[resource][:extra_show_fields] || []
 
     assocs =
       Enum.map([data], fn row ->
@@ -164,14 +168,14 @@ defmodule SanbaseWeb.GenericController do
       |> Map.new()
 
     data =
-      GenericAdmin.call_module_function_or_default(admin_module, :before, [data], data)
+      GenericAdmin.call_module_function_or_default(admin_module, :before_filter, [data], data)
 
     render(conn, "show.html",
       resource: resource,
       data: data,
       assocs: assocs,
       funcs: funcs,
-      fields: fields(module),
+      fields: fields(module) ++ extra_show_fields,
       field_type_map: field_type_map,
       belongs_to:
         GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
@@ -192,7 +196,7 @@ defmodule SanbaseWeb.GenericController do
     collections = resource_module_map()[resource][:collections] || %{}
 
     data =
-      GenericAdmin.call_module_function_or_default(admin_module, :before, [data], data)
+      GenericAdmin.call_module_function_or_default(admin_module, :before_filter, [data], data)
 
     render(conn, "edit.html",
       resource: resource,
@@ -208,6 +212,7 @@ defmodule SanbaseWeb.GenericController do
 
   def update(conn, %{"id" => id, "resource" => resource} = params) do
     module = module_from_resource(resource)
+    admin_module = resource_module_map()[resource][:admin_module]
     data = Repo.get(module, id)
     field_type_map = field_type_map(resource, module)
     changes = params[resource]
@@ -221,7 +226,10 @@ defmodule SanbaseWeb.GenericController do
       end)
       |> Enum.into(%{})
 
-    changeset = module.changeset(data, changes)
+    changeset_function =
+      if function_exported?(module, :update_changeset, 2), do: :update_changeset, else: :changeset
+
+    changeset = apply(module, changeset_function, [data, changes])
     form_fields = resource_module_map()[resource][:edit_fields] || []
     action = Routes.generic_path(conn, :update, data, resource: resource)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
@@ -230,6 +238,13 @@ defmodule SanbaseWeb.GenericController do
 
     case Sanbase.Repo.update(changeset) do
       {:ok, response_resource} ->
+        GenericAdmin.call_module_function_or_default(
+          admin_module,
+          :after_filter,
+          [response_resource, changes],
+          :ok
+        )
+
         conn
         |> put_flash(:info, "#{resource} updated successfully.")
         |> redirect(to: Routes.generic_path(conn, :show, response_resource, resource: resource))
@@ -310,7 +325,7 @@ defmodule SanbaseWeb.GenericController do
     fetched_rows =
       Enum.map(
         fetched_rows,
-        &GenericAdmin.call_module_function_or_default(admin_module, :before, [&1], &1)
+        &GenericAdmin.call_module_function_or_default(admin_module, :before_filter, [&1], &1)
       )
 
     assocs =

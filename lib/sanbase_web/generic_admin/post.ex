@@ -24,6 +24,7 @@ defmodule SanbaseWeb.GenericAdmin.Post do
         :state,
         :moderation_comment
       ],
+      extra_show_fields: [:is_featured],
       field_types: %{
         is_featured: :boolean,
         moderation_comment: :text
@@ -41,24 +42,82 @@ defmodule SanbaseWeb.GenericAdmin.Post do
       },
       funcs: %{
         user_id: &SanbaseWeb.GenericAdmin.User.user_link/1
-      },
-      before: &__MODULE__.before/1,
-      after: &__MODULE__.after/1
+      }
     }
   end
 
-  def before(item) do
-    item = Sanbase.Repo.preload(item, [:featured_item])
-    is_featured = if item.featured_item, do: true, else: false
+  def has_many(post) do
+    post =
+      post
+      |> Sanbase.Repo.preload([:tags, :votes])
 
-    %{item | is_featured: is_featured}
+    [
+      %{
+        resource: "post_tags",
+        resource_name: "Tags",
+        rows: post.tags,
+        fields: [:name],
+        funcs: %{},
+        create_link_kv: [linked_resource: :post, linked_resource_id: post.id]
+      }
+    ]
+  end
+
+  def before_filter(post) do
+    post = Sanbase.Repo.preload(post, [:featured_item])
+    is_featured = if post.featured_item, do: true, else: false
+
+    %{post | is_featured: is_featured}
+  end
+
+  def after_filter(post, params) do
+    is_featured = params["is_featured"] |> String.to_existing_atom()
+    Sanbase.FeaturedItem.update_item(post, is_featured)
   end
 end
 
 defmodule SanbaseWeb.GenericAdmin.PostTags do
+  import Ecto.Query
   def schema_module, do: Sanbase.Insight.PostTag
 
   def resource do
-    %{}
+    %{
+      preloads: [:tag, :post],
+      index_fields: [:id, :post_id, :tag_id],
+      new_fields: [:post, :tag],
+      edit_fields: [:post, :tag],
+      belongs_to_fields: %{
+        post: %{
+          query: from(p in Sanbase.Insight.Post, order_by: [desc: p.id]),
+          transform: fn rows -> Enum.map(rows, &{&1.title, &1.id}) end,
+          resource: "posts",
+          search_fields: [:title]
+        },
+        tag: %{
+          query: from(t in Sanbase.Tag, order_by: [asc: t.name]),
+          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
+          resource: "tags",
+          search_fields: [:name]
+        }
+      },
+      field_types: %{},
+      funcs: %{}
+    }
+  end
+end
+
+defmodule SanbaseWeb.GenericAdmin.Tag do
+  alias Sanbase.Tag
+  def schema_module, do: Tag
+
+  def resource do
+    %{
+      preloads: [],
+      index_fields: [:id, :name],
+      new_fields: [:name],
+      edit_fields: [:name],
+      field_types: %{},
+      funcs: %{}
+    }
   end
 end

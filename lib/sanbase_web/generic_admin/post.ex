@@ -50,7 +50,7 @@ defmodule SanbaseWeb.GenericAdmin.Post do
   def has_many(post) do
     post =
       post
-      |> Sanbase.Repo.preload([:tags, :votes])
+      |> Sanbase.Repo.preload([:tags, :votes, :comments])
 
     [
       %{
@@ -58,6 +58,14 @@ defmodule SanbaseWeb.GenericAdmin.Post do
         resource_name: "Tags",
         rows: post.tags,
         fields: [:name],
+        funcs: %{},
+        create_link_kv: [linked_resource: :post, linked_resource_id: post.id]
+      },
+      %{
+        resource: "post_comments",
+        resource_name: "Post Comments",
+        rows: post.comments,
+        fields: [:id, :comment_id],
         funcs: %{},
         create_link_kv: [linked_resource: :post, linked_resource_id: post.id]
       }
@@ -74,6 +82,14 @@ defmodule SanbaseWeb.GenericAdmin.Post do
   def after_filter(post, params) do
     is_featured = params["is_featured"] |> String.to_existing_atom()
     Sanbase.FeaturedItem.update_item(post, is_featured)
+  end
+
+  def post_link(row) do
+    SanbaseWeb.GenericAdmin.Subscription.href(
+      "posts",
+      row.post_id,
+      row.post.title
+    )
   end
 end
 
@@ -122,5 +138,88 @@ defmodule SanbaseWeb.GenericAdmin.Tag do
       field_types: %{},
       funcs: %{}
     }
+  end
+end
+
+defmodule SanbaseWeb.GenericAdmin.PostComment do
+  import Ecto.Query
+  def schema_module, do: Sanbase.Comment.PostComment
+
+  def resource do
+    %{
+      actions: [:new, :edit],
+      preloads: [:comment, :post],
+      index_fields: [:id, :post_id, :comment_id],
+      new_fields: [:post, :comment],
+      edit_fields: [:post, :comment],
+      belongs_to_fields: %{
+        post: %{
+          query: from(p in Sanbase.Insight.Post, order_by: [desc: p.id]),
+          transform: fn rows -> Enum.map(rows, &{&1.title, &1.id}) end,
+          resource: "posts",
+          search_fields: [:title]
+        },
+        comment: %{
+          query: from(c in Sanbase.Comment, order_by: [desc: c.id]),
+          transform: fn rows -> Enum.map(rows, &{&1.content, &1.id}) end,
+          resource: "comments",
+          search_fields: [:content]
+        }
+      },
+      field_types: %{},
+      funcs: %{
+        post_id: &SanbaseWeb.GenericAdmin.Post.post_link/1,
+        comment_id: &SanbaseWeb.GenericAdmin.Comment.comment_link/1
+      }
+    }
+  end
+end
+
+defmodule SanbaseWeb.GenericAdmin.Comment do
+  import Ecto.Query
+  def schema_module, do: Sanbase.Comment
+
+  def resource do
+    %{
+      actions: [:new, :edit],
+      preloads: [:user],
+      index_fields: [:id, :user_id, :content],
+      new_fields: [:user, :content],
+      edit_fields: [:content, :edited_at, :parent_id, :root_parent_id, :subcomments_count, :user],
+      field_types: %{
+        content: :text
+      },
+      funcs: %{
+        user_id: &SanbaseWeb.GenericAdmin.User.user_link/1
+      },
+      belongs_to_fields: %{
+        user: %{
+          query: from(u in Sanbase.Accounts.User, order_by: [desc: u.id]),
+          transform: fn rows -> Enum.map(rows, &{&1.email, &1.id}) end,
+          resource: "users",
+          search_fields: [:email, :username]
+        },
+        parent_id: %{
+          query: from(c in Sanbase.Comment, where: is_nil(c.parent_id), order_by: [desc: c.id]),
+          transform: fn rows -> Enum.map(rows, &{&1.content, &1.id}) end,
+          resource: "comments",
+          search_fields: [:content]
+        },
+        root_parent_id: %{
+          query: from(c in Sanbase.Comment, where: is_nil(c.parent_id), order_by: [desc: c.id]),
+          transform: fn rows -> Enum.map(rows, &{&1.content, &1.id}) end,
+          resource: "comments",
+          search_fields: [:content]
+        }
+      }
+    }
+  end
+
+  def comment_link(comment) do
+    SanbaseWeb.GenericAdmin.Subscription.href(
+      "comments",
+      comment.comment_id,
+      comment.comment.content
+    )
   end
 end

@@ -139,10 +139,6 @@ defmodule Sanbase.Comment do
     )
   end
 
-  def create_changeset(user_id, content, parent_id \\ nil) do
-    changeset(%__MODULE__{}, %{user_id: user_id, content: content, parent_id: parent_id})
-  end
-
   @doc ~s"""
   Create a (top-level) comment.
 

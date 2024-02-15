@@ -4,6 +4,7 @@ defmodule SanbaseWeb.GenericAdmin.Post do
 
   def resource do
     %{
+      actions: [:edit],
       preloads: [:user, :price_chart_project],
       index_fields: [
         :id,
@@ -82,6 +83,7 @@ defmodule SanbaseWeb.GenericAdmin.PostTags do
 
   def resource do
     %{
+      actions: [:new, :edit],
       preloads: [:tag, :post],
       index_fields: [:id, :post_id, :tag_id],
       new_fields: [:post, :tag],
@@ -112,6 +114,7 @@ defmodule SanbaseWeb.GenericAdmin.Tag do
 
   def resource do
     %{
+      actions: [:new, :edit],
       preloads: [],
       index_fields: [:id, :name],
       new_fields: [:name],

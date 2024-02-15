@@ -132,7 +132,7 @@ defmodule SanbaseWeb.GenericController do
     {total_rows, paginated_rows} =
       case parse_field_value(search_text) do
         {:ok, field, value} ->
-          search_by_field_value(module, field, value, preloads, page, page_size)
+          search_by_field_value(module, resource, field, value, preloads, page, page_size)
 
         :error ->
           case Integer.parse(search_text) do
@@ -160,6 +160,7 @@ defmodule SanbaseWeb.GenericController do
     funcs = resource_module_map()[resource][:funcs] || %{}
     field_type_map = field_type_map(resource, module)
     extra_show_fields = resource_module_map()[resource][:extra_show_fields] || []
+    actions = resource_module_map()[resource][:actions] || []
 
     assocs =
       Enum.map([data], fn row ->
@@ -177,6 +178,7 @@ defmodule SanbaseWeb.GenericController do
       funcs: funcs,
       fields: fields(module) ++ extra_show_fields,
       field_type_map: field_type_map,
+      actions: actions,
       belongs_to:
         GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
       has_many: GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], [])
@@ -387,46 +389,62 @@ defmodule SanbaseWeb.GenericController do
     end
   end
 
-  def search_by_field_value(module, field, value, preloads, page, page_size) do
+  def search_by_field_value(module, resource, field, value, preloads, page, page_size) do
+    search_fields_map = resource_module_map()[resource][:search_fields] || %{}
+    search_fields = Map.keys(search_fields_map) |> Enum.map(&Atom.to_string/1)
+
     case field do
       "id" ->
         {id, ""} = Integer.parse(value)
         {1, search_by_id(module, id, preloads)}
 
-      _ ->
-        value = String.trim(value)
+      field ->
+        if field in search_fields do
+          query = search_fields_map[String.to_existing_atom(field)]
+          total_rows = Repo.aggregate(query, :count, :id)
 
-        field = String.to_existing_atom(field)
+          paginated_rows =
+            query
+            |> limit(^page_size)
+            |> offset(^(page_size * page))
+            |> Repo.all()
 
-        field_type = module.__schema__(:type, field)
-        sort_field = sort_field(module)
+          {total_rows, paginated_rows}
+        else
+          value = String.trim(value)
 
-        query =
-          if field_type == :string do
-            value = "%" <> value <> "%"
+          field = String.to_existing_atom(field)
 
-            from(m in module,
-              where: like(field(m, ^field), ^value),
-              preload: ^preloads,
-              order_by: [desc: field(m, ^sort_field)]
-            )
-          else
-            from(m in module,
-              where: field(m, ^field) == ^value,
-              preload: ^preloads,
-              order_by: [desc: field(m, ^sort_field)]
-            )
-          end
+          field_type = module.__schema__(:type, field)
+          sort_field = sort_field(module)
 
-        total_rows = Repo.aggregate(query, :count, :id)
+          query =
+            if field_type == :string do
+              value = "%" <> value <> "%"
 
-        paginated_rows =
-          query
-          |> limit(^page_size)
-          |> offset(^(page_size * page))
-          |> Repo.all()
+              from(m in module,
+                where: like(field(m, ^field), ^value),
+                preload: ^preloads,
+                order_by: [desc: field(m, ^sort_field)]
+              )
+            else
+              from(m in module,
+                where: field(m, ^field) == ^value,
+                preload: ^preloads,
+                order_by: [desc: field(m, ^sort_field)]
+              )
+            end
 
-        {total_rows, paginated_rows}
+          total_rows = Repo.aggregate(query, :count, :id)
+
+          paginated_rows =
+            query
+            |> limit(^page_size)
+            |> offset(^(page_size * page))
+            |> Repo.all()
+
+          {total_rows, paginated_rows}
+        end
     end
   end
 

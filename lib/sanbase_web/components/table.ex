@@ -248,12 +248,14 @@ defmodule SanbaseWeb.TableComponent do
           placeholder="column=value (i.e. email=santiment)"
           text_input_title="If the column is a string, the search looks for substrings, otherwise it tries exact matches"
         />
-        <.link
-          href={Routes.generic_path(SanbaseWeb.Endpoint, :new, resource: @resource)}
-          class="underline relative mx-4 lg:mx-0 m-4 p-4"
-        >
-          New <%= Inflex.singularize(@resource) %>
-        </.link>
+        <%= if :new in @actions do %>
+          <.link
+            href={Routes.generic_path(SanbaseWeb.Endpoint, :new, resource: @resource)}
+            class="underline relative mx-4 lg:mx-0 m-4 p-4"
+          >
+            New <%= Inflex.singularize(@resource) %>
+          </.link>
+        <% end %>
       </div>
 
       <div class="m-4">
@@ -301,9 +303,10 @@ defmodule SanbaseWeb.TableComponent do
                   <% end %>
                 <% end %>
                 <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
-                  <%= for {action, index} <- Enum.with_index(@actions) do %>
+                  <% index_actions = @actions -- [:new] %>
+                  <%= for {action, index} <- Enum.with_index(index_actions) do %>
                     <.a resource={@resource} action={action} row={row} label={action} />
-                    <%= if index < length(@actions) - 1, do: raw(" | ") %>
+                    <%= if index < length(index_actions) - 1, do: raw(" | ") %>
                   <% end %>
                 </td>
               </tr>
@@ -578,7 +581,7 @@ defmodule SanbaseWeb.LiveSelect do
         type="text"
         label={humanize(@session["field"])}
         name={@session["parent_resource"] <> "[" <> to_string(@session["field"]) <> "_id" <> "]"}
-        value={@query}
+        value={@query || @session["initial_value"]}
         list={"matches_" <> to_string(@session["field"])}
         phx-keyup="suggest"
         phx-debounce="200"
@@ -600,7 +603,14 @@ defmodule SanbaseWeb.LiveSelect do
        result: nil,
        loading: false,
        matches: [],
-       session: Map.take(session, ["resource", "search_fields", "field", "parent_resource"])
+       session:
+         Map.take(session, [
+           "resource",
+           "search_fields",
+           "field",
+           "parent_resource",
+           "initial_value"
+         ])
      ), layout: false}
   end
 

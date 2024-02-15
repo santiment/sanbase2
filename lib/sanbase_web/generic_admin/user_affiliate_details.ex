@@ -3,6 +3,7 @@ defmodule SanbaseWeb.GenericAdmin.UserAffiliateDetails do
 
   @schema_module UserAffiliateDetails
   @resource %{
+    actions: [:new, :edit],
     preloads: [:user],
     edit_fields: [:telegram_handle, :marketing_channels]
   }

@@ -123,6 +123,7 @@ defmodule Sanbase.ClickhouseRepo do
     sanitized_query = sanitize_query(query)
 
     maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
+    maybe_print_interpolated_query(sanitized_query, ordered_params)
 
     case __MODULE__.query(sanitized_query, ordered_params) do
       {:ok, result} ->
@@ -141,6 +142,7 @@ defmodule Sanbase.ClickhouseRepo do
     sanitized_query = sanitize_query(query)
 
     maybe_store_executed_clickhouse_sql(sanitized_query, ordered_params)
+    maybe_print_interpolated_query(sanitized_query, ordered_params)
 
     case __MODULE__.query(sanitized_query, ordered_params) do
       {:ok, result} ->
@@ -286,19 +288,46 @@ defmodule Sanbase.ClickhouseRepo do
       list = Process.get(:__executed_clickhouse_sql_list__, [])
 
       # Interpolate the parameters inside the query so it is easy to copy-paste
-      interpolated_query =
-        Clickhousex.Codec.Values.encode(
-          %Clickhousex.Query{param_count: length(params)},
-          query,
-          params
-        )
-        |> to_string()
-
+      interpolated_query = get_interpolated_query(query, params)
       Process.put(:__executed_clickhouse_sql_list__, [interpolated_query | list])
 
       :ok
     end
   rescue
     _ -> :ok
+  end
+
+  case Mix.env() do
+    :dev ->
+      defp maybe_print_interpolated_query(query, params) do
+        # In dev env, if the PRINT_CLICKHOUSE_SQL env var is set to true/1
+        # the interpolated query  is printed to the console.
+        # This makes it much easier to copy/paste the query and share it
+        # with other people, or directly run it for debugging purposes
+        if System.get_env("PRINT_INTERPOLATED_CLICKHOUSE_SQL") in ["true", "1"] do
+          IO.puts(
+            IO.ANSI.format([
+              :light_blue,
+              "---\n",
+              get_interpolated_query(query, params),
+              "\n---"
+            ])
+          )
+        end
+      end
+
+    _ ->
+      defp maybe_print_interpolated_query(_query, _params), do: :ok
+  end
+
+  defp get_interpolated_query(query, []), do: query
+
+  defp get_interpolated_query(query, params) do
+    Clickhousex.Codec.Values.encode(
+      %Clickhousex.Query{param_count: length(params)},
+      query,
+      params
+    )
+    |> to_string()
   end
 end

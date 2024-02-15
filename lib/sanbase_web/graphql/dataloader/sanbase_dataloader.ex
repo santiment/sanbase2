@@ -4,7 +4,8 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     ClickhouseDataloader,
     LabelsDataloader,
     PostgresDataloader,
-    PriceDataloader
+    PriceDataloader,
+    EcosystemDataloader
   }
 
   @spec data() :: Dataloader.KV.t()
@@ -81,6 +82,8 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
 
   @postgres_dataloader @postgres_dataloader ++ @postgres_comments_dataloader
 
+  @ecosystem_dataloader [:ecosystem_aggregated_metric_data, :ecosystem_timeseries_metric_data]
+
   def query(queryable, args) do
     cond do
       queryable in @labels_dataloader ->
@@ -97,6 +100,9 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
 
       queryable in @postgres_dataloader ->
         PostgresDataloader.query(queryable, args)
+
+      queryable in @ecosystem_dataloader ->
+        EcosystemDataloader.query(queryable, args)
 
       true ->
         raise(RuntimeError, "Unknown queryable provided to the dataloder: #{inspect(queryable)}")

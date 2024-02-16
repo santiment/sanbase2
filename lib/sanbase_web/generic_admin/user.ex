@@ -80,7 +80,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
       %{
         resource: "user_settings",
         resource_name: "User Settings",
-        rows: [user.user_settings],
+        rows: if(user.user_settings, do: [user.user_settings], else: []),
         fields: [:id],
         funcs: %{},
         create_link_kv: []

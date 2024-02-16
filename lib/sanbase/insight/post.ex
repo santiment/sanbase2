@@ -75,6 +75,8 @@ defmodule Sanbase.Insight.Post do
       on_delete: :delete_all
     )
 
+    has_many(:comments, Sanbase.Comment.PostComment)
+
     many_to_many(:metrics, MetricPostgresData,
       join_through: "posts_metrics",
       join_keys: [post_id: :id, metric_id: :id],

@@ -51,6 +51,7 @@ defmodule Sanbase.Alert.UserTrigger do
     # Virtual fields
     field(:views, :integer, virtual: true, default: 0)
     field(:is_featured, :boolean, virtual: true)
+    field(:is_public, :boolean, virtual: true)
 
     timestamps()
   end

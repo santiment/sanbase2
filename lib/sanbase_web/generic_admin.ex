@@ -21,7 +21,14 @@ defmodule SanbaseWeb.GenericAdmin do
 
   def generate_resource(admin_module) do
     schema_module = admin_module.schema_module()
-    resource_name = schema_to_resource_name(schema_module)
+
+    resource_name =
+      call_module_function_or_default(
+        admin_module,
+        :resource_name,
+        [],
+        schema_to_resource_name(schema_module)
+      )
 
     %{
       resource_name =>

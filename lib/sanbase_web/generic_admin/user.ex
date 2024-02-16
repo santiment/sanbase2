@@ -172,11 +172,15 @@ defmodule SanbaseWeb.GenericAdmin.User do
   end
 
   def user_link(row) do
-    SanbaseWeb.GenericAdmin.Subscription.href(
-      "users",
-      row.user_id,
-      row.user.email || row.user.username
-    )
+    if row.user_id do
+      SanbaseWeb.GenericAdmin.Subscription.href(
+        "users",
+        row.user_id,
+        row.user.email || row.user.username
+      )
+    else
+      ""
+    end
   end
 
   defimpl String.Chars, for: Map do
@@ -247,5 +251,17 @@ defmodule SanbaseWeb.GenericAdmin.UserList do
   def after_filter(user_list, params) do
     is_featured = params["is_featured"] |> String.to_existing_atom()
     Sanbase.FeaturedItem.update_item(user_list, is_featured)
+  end
+
+  def user_list_link(row) do
+    if row.user_list_id do
+      SanbaseWeb.GenericAdmin.Subscription.href(
+        "user_lists",
+        row.user_list_id,
+        row.user_list.name
+      )
+    else
+      ""
+    end
   end
 end

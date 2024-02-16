@@ -208,11 +208,13 @@ defmodule SanbaseWeb.GenericAdmin.Project do
   end
 
   def project_link(row) do
-    SanbaseWeb.GenericAdmin.Subscription.href(
-      "projects",
-      row.project_id,
-      row.project.name
-    )
+    if row.project_id do
+      SanbaseWeb.GenericAdmin.Subscription.href(
+        "projects",
+        row.project_id,
+        row.project.name
+      )
+    end
   end
 end
 

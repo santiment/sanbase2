@@ -114,7 +114,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
     sql = """
     SELECT min(dt)
     FROM distribution_deltas_5min
-    WHERE asset_id = (SELECT asset_id FROM asset_metadata WHERE name = {{slug}} LIMIT 1)
+    WHERE #{asset_id_filter(selector, argument_name: "selector")}
     """
 
     params = %{selector: selector}

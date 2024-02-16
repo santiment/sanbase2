@@ -188,12 +188,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         },
         %{context: %{auth: %{current_user: user}}}
       ) do
-    with {:ok, result_string} <- Result.decode_and_decompress(compressed_query_execution_result),
-         {:ok, query_execution_result} <- Result.from_json_string(result_string),
-         true <- Result.all_fields_present?(query_execution_result),
-         {:ok, _} <-
-           Queries.store_dashboard_query_execution(query_id, query_execution_result, user.id) do
-      {:ok, true}
+    # Delegate the validations to the called function
+    case Queries.cache_query_execution(query_id, compressed_query_execution_result, user.id) do
+      {:ok, _} -> true
+      {:error, error} -> {:error, error}
     end
   end
 

@@ -316,9 +316,10 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     end
 
     @desc ~s"""
-    Update the dashboard cache with the provided data.
+    Update a dashboard cache for a given query with the provided data.
 
     The compressed_query_execution_result parameter contains the compressed query result.
+
     The compressed result is created by taking the JSON representation of the result, gzipping it and
     converting the result with base64 encoding.
     For more information and examples, check here: https://github.com/santiment/sanbase2/pull/3937
@@ -326,21 +327,18 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
     Example:
 
     mutation {
-      storeDashboardPanel(
+      storeDashboardQueryExecution(
         dashboardId: 134
         dashboardQueryMappingId: 5
       compressedQueryExecutionResult: "The result string of the example above is: H4sIAAAAAAAAE3WOQWvEIBSE/4tnszyNsdFzW9jDHkrtpUtY3CjdgImp0Zal9L9X08AeSkFkmPfNMF+o9y6Nk7rOdkHyiF72U+QM4Zu419GqYbRZPjqv/5gb2OGtaq3Ry2LjaTD5PtoYhv5Xm5i/D+1SCfZ+nFO05qSLe9axvxQqFxm9XM5eB/OUbLge9DwP09veIDkl5zB6L+7DZNYBElGgdUVIBUIRkLWQdfOKNqqEyKafow7x3wwrmeA/y/wjYS3FhLMGIyLuoIJMEgUg15fJCna0aYELSltRMwLQMnxr5YpwCULSsgS67vsHMa3TkGgBAAA="
         }
       ){
-        id
-        clickhouseQueryId
-        dashboardId
-        columns
-        rows
-        summary
-        updatedAt
-        queryStartTime
-        queryEndTime
+        queries{
+          rows
+          columns
+          queryId
+          dashboardQueryMappingId
+        }
       }
     }
     """
@@ -361,6 +359,23 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       resolve(&QueriesResolver.store_dashboard_query_execution/3)
     end
 
+    @desc ~s"""
+    Update a query cache for a given user.
+
+    The compressed_query_execution_result parameter contains the compressed query result.
+
+    The compressed result is created by taking the JSON representation of the result, gzipping it and
+    converting the result with base64 encoding.
+    For more information and examples, check here: https://github.com/santiment/sanbase2/pull/3937
+
+    Example:
+
+    mutation {
+      storeQueryExecution(
+        queryId: 134
+      compressedQueryExecutionResult: "The result string of the example above is: H4sIAAAAAAAAE3WOQWvEIBSE/4tnszyNsdFzW9jDHkrtpUtY3CjdgImp0Zal9L9X08AeSkFkmPfNMF+o9y6Nk7rOdkHyiF72U+QM4Zu419GqYbRZPjqv/5gb2OGtaq3Ry2LjaTD5PtoYhv5Xm5i/D+1SCfZ+nFO05qSLe9axvxQqFxm9XM5eB/OUbLge9DwP09veIDkl5zB6L+7DZNYBElGgdUVIBUIRkLWQdfOKNqqEyKafow7x3wwrmeA/y/wjYS3FhLMGIyLuoIJMEgUg15fJCna0aYELSltRMwLQMnxr5YpwCULSsgS67vsHMa3TkGgBAAA=")
+    }
+    """
     field :store_query_execution, :boolean do
       arg(:query_id, non_null(:integer))
 

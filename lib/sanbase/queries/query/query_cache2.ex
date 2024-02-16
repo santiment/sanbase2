@@ -13,7 +13,7 @@ defmodule Sanbase.Queries.Cache do
   import Ecto.Changeset
   import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
-  alias Sanbase.Repo
+  alias Sanbase.Queries
   alias Sanbase.Queries.Query
   alias Sanbase.Accounts.User
   alias Sanbase.Queries.Executor.Result
@@ -40,30 +40,50 @@ defmodule Sanbase.Queries.Cache do
     timestamps()
   end
 
-  def get(query_id, user_id) do
-    query = from(qc in __MODULE__, where: qc.query_id == ^query_id and qc.user_id == ^user_id)
-    # Return the cache of the owner of the query, if there is no cache for the current user?
-    # Or allow only the query owner to cache it?
-    case Repo.one(query) do
-      nil -> {:error, "Query"}
+  def create_or_update_cache(query_id, compressed_and_encoded_result, user_id) do
+    with {:ok, query} <- Queries.get_query(query_id, user_id),
+         {:ok, result_string} <- Result.decode_and_decompress(compressed_and_encoded_result),
+         {:ok, %Result{} = result} <- Result.from_json_string(result_string),
+         true <- query_result_size_allowed?(result) do
+      case get(query_id, user_id) do
+        {:ok, cache} -> update(cache, query, compressed_and_encoded_result, user_id)
+        {:error, _} -> new(query, compressed_and_encoded_result, user_id)
+      end
     end
   end
 
   @doc ~s"""
-  Create a new empty record for the given query, result and user.
-  """
-  @spec new(Query.t(), String.t(), user_id) :: {:ok, t()} | {:error, any()}
-  def new(query, compressed_and_encoded_result, user_id) do
-    # Only to make sure that the provided JSON is ok to be stored
-    with {:ok, result_string} <- Result.decode_and_decompress(compressed_and_encoded_result),
-         {:ok, %Result{} = result} <- Result.from_json_string(result_string),
-         true <- query_result_size_allowed?(result) do
-      hash = Query.hash(query)
 
-      %__MODULE__{}
-      |> change(%{query_id: query.id, user_id: user_id, query_hash: hash, data: result})
-      |> Repo.insert()
+  """
+  def get(query_id, user_id) do
+    query = from(qc in __MODULE__, where: qc.query_id == ^query_id and qc.user_id == ^user_id)
+    # Return the cache of the owner of the query, if there is no cache for the current user?
+    # Or allow only the query owner to cache it?
+    case Sanbase.Repo.one(query) do
+      %__MODULE__{} = cache -> {:ok, cache}
+      nil -> {:error, "Query"}
     end
+  end
+
+  defp new(%Query{} = query, compressed_and_encoded_result, user_id) do
+    # Reaching here it is assumed that the result is validated and the user
+    # has access to the query
+    %__MODULE__{}
+    |> change(%{
+      query_id: query.id,
+      user_id: user_id,
+      query_hash: Query.hash(query),
+      data: compressed_and_encoded_result
+    })
+    |> Sanbase.Repo.insert()
+  end
+
+  defp update(%__MODULE__{} = cache, %Query{} = query, compressed_and_encoded_result, user_id) do
+    # Reaching here it is assumed that the result is validated and the user
+    # has access to the query
+    cache
+    |> change(%{query_hash: Query.hash(query), data: compressed_and_encoded_result})
+    |> Sanbase.Repo.update()
   end
 
   # The byte size of the compressed rows should not exceed the allowed limit.

@@ -379,6 +379,20 @@ defmodule Sanbase.Queries do
     end
   end
 
+  def cache_query_execution(
+        query_id,
+        query_result,
+        user_id
+      ) do
+    Queries.Cache.create_or_update_cache(
+      query_id,
+      query_result,
+      user_id
+    )
+  end
+
+  # Private functions
+
   defp get_for_mutation(query_id, querying_user_id) do
     query = Query.get_for_mutation(query_id, querying_user_id)
 

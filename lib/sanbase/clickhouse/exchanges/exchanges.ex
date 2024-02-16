@@ -144,6 +144,82 @@ defmodule Sanbase.Clickhouse.Exchanges do
     LIMIT {{limit}}
     """
 
+    sql = """
+    WITH
+    address_hashes AS (
+        SELECT cityHash64(address)
+        FROM current_label_addresses
+        WHERE
+            blockchain = 'ethereum'
+            AND label_id IN (
+                dictGet('default.labels_by_fqn', 'label_id', tuple('santiment/centralized_exchange:v1')),
+                dictGet('default.labels_by_fqn', 'label_id', tuple('santiment/decentralized_exchange:v1'))
+            )
+    ),
+    exchange_label_ids AS (
+        SELECT label_id
+        FROM current_label_addresses
+        WHERE
+            blockchain = 'ethereum'
+            AND label_id IN (SELECT label_id FROM label_metadata WHERE key = 'owner')
+            AND cityHash64(address) IN address_hashes
+            AND dictGet('labels', 'value', label_id) != ''
+    ),
+    interesting_metrics AS (
+        SELECT *
+        FROM labeled_intraday_metrics
+        WHERE
+            label_id IN (exchange_label_ids)
+            AND blockchain = 'ethereum'
+            AND #{asset_id_filter(%{slug: slug_or_slugs}, argument_name: "slug")}
+            AND metric_id = dictGet(metrics_by_name, 'metric_id', 'combined_labeled_balance')
+    ),
+    latest_balance AS (
+        SELECT label_id, argMax(value, dt) AS latest_balance
+        FROM interesting_metrics
+        WHERE dt >= today() - INTERVAL 7 DAY
+        GROUP BY label_id
+    ),
+    balance_1d AS (
+        SELECT label_id, argMin(value, dt) AS balance_1d
+        FROM interesting_metrics
+        WHERE dt >= today() - INTERVAL 1 DAY
+        GROUP BY label_id
+    ),
+    balance_7d AS (
+        SELECT label_id, argMin(value, dt) AS balance_7d
+        FROM interesting_metrics
+        WHERE dt >= today() - INTERVAL 7 DAY
+        GROUP BY label_id
+    ),
+    balance_30d AS (
+        SELECT label_id, argMin(value, dt) AS balance_30d
+        FROM interesting_metrics
+        WHERE dt >= today() - INTERVAL 30 DAY
+        GROUP BY label_id
+    ),
+    first_seen AS (
+        SELECT label_id, min(dt) AS first_seen
+        FROM interesting_metrics
+        GROUP BY label_id
+    )
+
+    SELECT
+        dictGet(labels, 'value', latest_balance.label_id) AS label,
+        latest_balance.latest_balance,
+        balance_1d.balance_1d - latest_balance AS balance_change_1d,
+        balance_7d.balance_7d - latest_balance AS balance_change_7d,
+        balance_30d.balance_30d - latest_balance AS balance_change_30d,
+        first_seen.first_seen
+    FROM latest_balance
+    LEFT JOIN balance_1d ON (balance_1d.label_id = latest_balance.label_id)
+    LEFT JOIN balance_7d ON (balance_7d.label_id = latest_balance.label_id)
+    LEFT JOIN balance_30d ON (balance_30d.label_id = latest_balance.label_id)
+    LEFT JOIN first_seen ON (first_seen.label_id = latest_balance.label_id)
+    ORDER BY latest_balance DESC
+    LIMIT 10;
+    """
+
     Sanbase.Clickhouse.Query.new(sql, params)
   end
 end

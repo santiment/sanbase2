@@ -54,14 +54,8 @@ defmodule Sanbase.Project.GithubOrganization do
   def link_to_organization(github_link) do
     github_link = github_link || ""
 
-    case Regex.run(~r{http(?:s)?://(?:www.)?github.com/(.+)}, github_link) do
-      [_, github_path] ->
-        org =
-          github_path
-          |> String.downcase()
-          |> String.split("/")
-          |> hd
-
+    case Regex.run(~r{http(?:s)?://(?:www.)?github.com/([^/]+)}, github_link) do
+      [_, org] ->
         {:ok, org}
 
       nil ->

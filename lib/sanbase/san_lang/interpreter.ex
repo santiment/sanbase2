@@ -10,6 +10,11 @@ defmodule Sanbase.SanLang.Interpreter do
     defexception [:message]
   end
 
+  @doc ~s"""
+  Evaluates a SanLang expression in the given environment.
+  """
+  @spec eval(tuple(), Environment.t()) :: any()
+  def eval(tuple, env)
   # Terminal values
   def eval({:int, _, value}, _env), do: value
   def eval({:float, _, value}, _env), do: value
@@ -52,6 +57,17 @@ defmodule Sanbase.SanLang.Interpreter do
     key = eval(key, env)
     Map.get(map, key)
   end
+
+  # Comparison
+  def eval({{:comparison_expr, {op, _}}, lhs, rhs}, env) when op in ~w(== != < > <= >=)a,
+    do: apply(Kernel, op, [eval(lhs, env), eval(rhs, env)])
+
+  # Named Function Calls
+  def eval({:function_call, {:identifier, _, function_name}, args}, env) do
+    eval_function_call(function_name, args, env)
+  end
+
+  ### Custom eval_* functions
 
   def eval_list({:list, list_elements}, env) do
     Enum.map(list_elements, fn x -> eval(x, env) end)

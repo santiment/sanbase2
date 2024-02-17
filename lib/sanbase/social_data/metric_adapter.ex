@@ -113,7 +113,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def timeseries_data("nft_social_volume", selector, _from, _to, _interval, _opts)
       when not is_supported_nft_sv_selector(selector) do
-    {:error, "The provided selector can't be used for metric: nft_social_volume"}
+    {:error,
+     """
+     The provided selector can't be used for metric: nft_social_volume.
+     The supported selector fields for nft_social_volume are "text" and "contractAddress"
+     """}
   end
 
   def timeseries_data(
@@ -350,6 +354,10 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def first_datetime("nft_social_volume", _selector) do
+    {:ok, ~U[2009-01-01 00:00:00Z]}
+  end
+
   def first_datetime(metric, _selector) do
     {_metric, source} = SocialHelper.split_by_source(metric)
     source |> source_first_datetime()

@@ -126,6 +126,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def available_since(_root, args, %{source: %{metric: metric}}) do
     with {:ok, selector} <- args_to_selector(args),
+         true <- all_required_selectors_present?(metric, selector),
          {:ok, opts} <- selector_args_to_opts(args),
          {:ok, first_datetime} <- Metric.first_datetime(metric, selector, opts) do
       {:ok, first_datetime}
@@ -141,6 +142,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def last_datetime_computed_at(_root, args, %{source: %{metric: metric}}) do
     with {:ok, selector} <- args_to_selector(args),
+         true <- all_required_selectors_present?(metric, selector),
          {:ok, opts} <- selector_args_to_opts(args),
          true <- valid_metric_selector_pair?(metric, selector) do
       Metric.last_datetime_computed_at(metric, selector, opts)
@@ -231,6 +233,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     with true <- valid_histogram_args?(metric, args),
          {:ok, selector} <- args_to_selector(args),
+         true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
          {:ok, data} <-
@@ -249,6 +252,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     with {:ok, selector} <- args_to_selector(args),
+         true <- all_required_selectors_present?(metric, selector),
          true <- valid_metric_selector_pair?(metric, selector),
          true <- valid_owners_labels_selection?(args),
          {:ok, data} <- Metric.table_data(metric, selector, from, to) do

@@ -45,12 +45,13 @@ defmodule SanbaseWeb.GenericController do
     page_size = params["page_size"] || 10
 
     render(conn, "index.html",
-      table: resource_to_table_params(resource, %{page: page, page_size: page_size})
+      table: resource_to_table_params(resource, %{page: page, page_size: page_size}),
+      routes: all_routes()
     )
   end
 
   def index(conn, _) do
-    render(conn, "error.html")
+    render(conn, "error.html", routes: all_routes())
   end
 
   def new(conn, %{"resource" => resource} = params) do
@@ -72,7 +73,8 @@ defmodule SanbaseWeb.GenericController do
       changeset: changeset,
       belongs_to_fields: belongs_to_fields,
       collections: collections,
-      data: %{}
+      data: %{},
+      routes: all_routes()
     )
   end
 
@@ -115,7 +117,8 @@ defmodule SanbaseWeb.GenericController do
           field_type_map: field_type_map,
           belongs_to_fields: belongs_to_fields,
           collections: collections,
-          data: %{}
+          data: %{},
+          routes: all_routes()
         )
     end
   end
@@ -149,7 +152,8 @@ defmodule SanbaseWeb.GenericController do
           page: page,
           page_size: page_size,
           search_text: search_text
-        })
+        }),
+      routes: all_routes()
     )
   end
 
@@ -181,7 +185,8 @@ defmodule SanbaseWeb.GenericController do
       actions: actions,
       belongs_to:
         GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
-      has_many: GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], [])
+      has_many: GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], []),
+      routes: all_routes()
     )
   end
 
@@ -208,7 +213,8 @@ defmodule SanbaseWeb.GenericController do
       field_type_map: field_type_map,
       changeset: changeset,
       belongs_to_fields: belongs_to_fields,
-      collections: collections
+      collections: collections,
+      routes: all_routes()
     )
   end
 
@@ -260,7 +266,8 @@ defmodule SanbaseWeb.GenericController do
           changeset: changeset,
           field_type_map: field_type_map,
           belongs_to_fields: belongs_to_fields,
-          collections: collections
+          collections: collections,
+          routes: all_routes()
         )
     end
   end

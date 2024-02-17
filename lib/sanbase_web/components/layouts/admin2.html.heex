@@ -1,7 +1,38 @@
-<nav class="bg-blue-500 p-4">
-  <%= link to: Routes.generic_path(@conn, :home), class: "text-white hover:text-gray-300" do %>
-    <.icon name="hero-home" class="mr-2" />
-    Admin Home
-  <% end %>
-</nav>
-<%= @inner_content %>
+<div x-data="{ isOpen: true }" class="min-h-screen flex flex-col">
+  <nav class="bg-blue-500 p-4">
+    <%= link to: Routes.generic_path(@conn, :home), class: "text-white hover:text-gray-300" do %>
+      <.icon name="hero-home" class="mr-2" />
+      Admin Home
+    <% end %>
+    <button @click="isOpen = !isOpen" class="top-0 left-0">
+      <SanbaseWeb.CoreComponents.icon name="hero-bars-3" />
+    </button>
+  </nav>
+  
+  <div class="flex flex-1 min-h-0">
+    <div id="sidebar" phx-update="ignore" class="flex-shrink-0 w-64 overflow-y-auto bg-gray-900 transition duration-300 transform lg:static" x-show="isOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full">
+      <div class="flex flex-col items-center justify-center mt-8">
+        <div class="flex items-center">
+          <img src="/images/emails/san-logo.svg" />
+          <span class="mx-2 text-2xl font-semibold text-white">Sanbase Admin</span>
+        </div>
+        <%= live_render(@conn, SanbaseWeb.LiveSearch) %>
+      </div>
+      <%= for {name, path} <- @routes do %>
+        <nav class="mt-1">
+          <span>
+            <%= link(name,
+              to: path,
+              class:
+                "flex items-center px-4 mt-1 duration-200 border-l-4 border-gray-900 text-gray-500 hover:bg-gray-600 hover:bg-opacity-25 hover:text-gray-100"
+            ) %>
+          </span>
+        </nav>
+      <% end %>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <%= @inner_content %>
+    </div>
+  </div>
+</div>

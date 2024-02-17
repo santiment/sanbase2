@@ -503,20 +503,7 @@ defmodule SanbaseWeb.LiveSearch do
   def render(assigns) do
     ~H"""
     <div class="relative">
-      <.input
-        name="search"
-        value={@query}
-        phx-keyup="do-search"
-        phx-debounce="200"
-        phx-focus="hide-icon"
-        phx-blur="show-icon"
-        class="pl-20"
-      />
-      <%= if @show_icon do %>
-        <span class="absolute left-2 top-1/2 transform -translate-y-1/2">
-          <.icon name="hero-magnifying-glass" class="h-6 w-6 text-gray-500" />
-        </span>
-      <% end %>
+      <.input name="search" value={@query} phx-keyup="do-search" phx-debounce="200" class="pl-20" />
     </div>
     <.results routes={@routes} />
     """
@@ -535,14 +522,6 @@ defmodule SanbaseWeb.LiveSearch do
   def handle_event("do-search", %{"value" => query}, socket) do
     query = String.downcase(query)
     {:noreply, assign(socket, routes: search_routes(query), query: String.downcase(query))}
-  end
-
-  def handle_event("hide-icon", _, socket) do
-    {:noreply, assign(socket, :show_icon, false)}
-  end
-
-  def handle_event("show-icon", _, socket) do
-    {:noreply, assign(socket, :show_icon, true)}
   end
 
   def results(assigns) do

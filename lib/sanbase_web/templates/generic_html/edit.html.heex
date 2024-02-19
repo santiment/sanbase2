@@ -18,9 +18,19 @@
         <%= if @belongs_to_fields[field] do %>
           <%= if @belongs_to_fields[field][:type] == :live_select do %>
             <% field_id = :"#{to_string(field)}_id" %>
-            <% initial_value = Map.get(@changeset.changes, field_id) || Map.get(@changeset.data, field_id) || Map.get(@data, field_id) %>
-            <%= live_render(@conn, SanbaseWeb.LiveSelect, session: %{"initial_value" => initial_value, "parent_resource" => @resource, "field" => field, "resource" => @belongs_to_fields[field][:resource], "search_fields" => @belongs_to_fields[field][:search_fields]}) %>
-          <% else %>    
+            <% initial_value =
+              Map.get(@changeset.changes, field_id) || Map.get(@changeset.data, field_id) ||
+                Map.get(@data, field_id) %>
+            <%= live_render(@conn, SanbaseWeb.LiveSelect,
+              session: %{
+                "initial_value" => initial_value,
+                "parent_resource" => @resource,
+                "field" => field,
+                "resource" => @belongs_to_fields[field][:resource],
+                "search_fields" => @belongs_to_fields[field][:search_fields]
+              }
+            ) %>
+          <% else %>
             <SanbaseWeb.TableComponent.form_select
               type={type}
               resource={@resource}

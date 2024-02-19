@@ -7,10 +7,12 @@ defmodule Sanbase.TemplateMailer do
 
   @sender_email "support@santiment.net"
   @sender_name "Santiment"
+  @post_sign_up_from {"Maksim from Santiment", "maksim.t@santiment.net"}
 
   def send(rcpt_email, template_slug, vars) do
     template = Sanbase.Email.Template.templates()[template_slug]
     vars = Map.put(vars, :current_year, Date.utc_today().year())
+    from = generate_from(template_slug)
 
     if template do
       subject =
@@ -21,7 +23,7 @@ defmodule Sanbase.TemplateMailer do
 
       new()
       |> to(rcpt_email)
-      |> from({@sender_name, @sender_email})
+      |> from(from)
       |> subject(subject)
       |> put_provider_option(:template_id, template[:id])
       |> put_provider_option(:template_error_deliver, false)
@@ -31,6 +33,13 @@ defmodule Sanbase.TemplateMailer do
     else
       Logger.info("Missing email template: #{template_slug}")
       :ok
+    end
+  end
+
+  def generate_from(template_slug) do
+    case template_slug do
+      "sanbase-post-registration-mail" -> @post_sign_up_from
+      _ -> {@sender_name, @sender_email}
     end
   end
 end

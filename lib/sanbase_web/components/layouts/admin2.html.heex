@@ -1,8 +1,8 @@
 <div x-data="{ isOpen: true }" class="min-h-screen flex flex-col">
   <nav class="bg-blue-500 p-4">
-    <%= link to: Routes.generic_path(@conn, :home), class: "text-white hover:text-gray-300" do %>
+    <.link href={~p"/admin2"} class="text-white hover:text-gray-300">
       <.icon name="hero-home" class="mr-2" /> Admin Home
-    <% end %>
+    </.link>
     <button @click="isOpen = !isOpen" class="top-0 left-0">
       <.icon name="hero-bars-3" />
     </button>

@@ -38,6 +38,7 @@ defmodule SanbaseWeb.Router do
   end
 
   pipeline :admin2 do
+    plug(SanbaseWeb.AssignRoutes)
     plug(:put_layout, html: {SanbaseWeb.Layouts, :admin2})
   end
 

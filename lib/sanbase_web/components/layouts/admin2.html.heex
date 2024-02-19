@@ -4,7 +4,7 @@
       <.icon name="hero-home" class="mr-2" /> Admin Home
     <% end %>
     <button @click="isOpen = !isOpen" class="top-0 left-0">
-      <SanbaseWeb.CoreComponents.icon name="hero-bars-3" />
+      <.icon name="hero-bars-3" />
     </button>
   </nav>
 
@@ -28,17 +28,16 @@
         </div>
         <%= live_render(@conn, SanbaseWeb.LiveSearch) %>
       </div>
-      <%= for {name, path} <- @routes do %>
-        <nav class="mt-1">
-          <span>
-            <%= link(name,
-              to: path,
-              class:
-                "flex items-center px-4 mt-1 duration-200 border-l-4 border-gray-900 text-gray-500 hover:bg-gray-600 hover:bg-opacity-25 hover:text-gray-100"
-            ) %>
-          </span>
-        </nav>
-      <% end %>
+      <div :for={{name, path} <- @routes} class="mt-1">
+        <span>
+          <.link
+            href={path}
+            class="flex items-center px-4 mt-1 duration-200 border-l-4 border-gray-900 text-gray-500 hover:bg-gray-600 hover:bg-opacity-25 hover:text-gray-100"
+          >
+            <%= name %>
+          </.link>
+        </span>
+      </div>
     </div>
 
     <div class="flex-1 overflow-y-auto">

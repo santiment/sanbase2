@@ -502,8 +502,24 @@ defmodule SanbaseWeb.LiveSearch do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="relative">
-      <.input name="search" value={@query} phx-keyup="do-search" phx-debounce="200" class="pl-20" />
+    <div class="relative" x-data="{ showIcon: true }">
+      <.input
+        name="search"
+        value={@query}
+        phx-keyup="do-search"
+        phx-debounce="200"
+        class="pl-20"
+        {
+          [
+            {"x-on:focus", "showIcon = false"},
+            {"x-on:keyup", "showIcon = false"},
+            {"x-on:blur", "showIcon = true"}
+          ]
+        }
+      />
+      <span class="absolute left-2 top-1/2 transform -translate-y-1/2" x-show="showIcon">
+        <.icon name="hero-magnifying-glass" class="h-6 w-6 text-gray-500" />
+      </span>
     </div>
     <.results routes={@routes} />
     """

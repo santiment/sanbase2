@@ -7,10 +7,10 @@ const path = require("path")
 
 module.exports = {
   content: [
-    './node_modules/flowbite/**/*.js',
+    "./node_modules/flowbite/**/*.js",
     "./js/**/*.js",
     "../lib/*_web.ex",
-    "../lib/*_web/**/*.*ex"
+    "../lib/*_web/**/*.*ex",
   ],
   theme: {
     extend: {

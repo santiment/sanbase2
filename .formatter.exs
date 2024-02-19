@@ -1,8 +1,8 @@
 [
   inputs: [
     "config/*.{ex,exs}",
-    "lib/*.{ex,exs}",
-    "lib/**/*.{ex,exs}",
+    "lib/*.{ex,exs,heex}",
+    "lib/**/*.{ex,exs,heex}",
     "test/*.{ex,exs}",
     "test/**/*.{ex,exs}",
     "priv/**/*.{ex,exs}",

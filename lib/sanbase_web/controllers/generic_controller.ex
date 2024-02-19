@@ -12,10 +12,7 @@ defmodule SanbaseWeb.GenericController do
   end
 
   def home(conn, _params) do
-    render(conn, :home,
-      search_value: "",
-      routes: all_routes()
-    )
+    render(conn, :home, search_value: "")
   end
 
   def all_routes do

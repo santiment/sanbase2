@@ -318,7 +318,7 @@ defmodule SanbaseWeb.GenericAdmin.UserTrigger do
       actions: [:edit],
       preloads: [:user],
       index_fields: [:id, :user_id, :trigger],
-      edit_fields: [:user_id, :is_public, :is_featured],
+      edit_fields: [:user, :is_public, :is_featured],
       extra_show_fields: [:is_featured, :is_public],
       field_types: %{
         is_featured: :boolean,

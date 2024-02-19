@@ -17,8 +17,15 @@
       <div class="m-4">
         <%= if @belongs_to_fields[field] do %>
           <%= if @belongs_to_fields[field][:type] == :live_select do %>
-            <%= live_render(@conn, SanbaseWeb.LiveSelect, session: %{"parent_resource" => @resource, "field" => field, "resource" => @belongs_to_fields[field][:resource], "search_fields" => @belongs_to_fields[field][:search_fields]}) %>
-          <% else %>    
+            <%= live_render(@conn, SanbaseWeb.LiveSelect,
+              session: %{
+                "parent_resource" => @resource,
+                "field" => field,
+                "resource" => @belongs_to_fields[field][:resource],
+                "search_fields" => @belongs_to_fields[field][:search_fields]
+              }
+            ) %>
+          <% else %>
             <SanbaseWeb.TableComponent.form_select
               type={type}
               resource={@resource}

@@ -123,7 +123,7 @@ defmodule SanbaseWeb.GenericController do
 
   def search(
         conn,
-        %{"resource" => resource, "field" => field, "value" => value} = params
+        %{"resource" => resource, "search" => %{"field" => field, "value" => value}} = params
       ) do
     module = module_from_resource(resource)
     preloads = resource_module_map()[resource][:preloads] || []
@@ -139,7 +139,8 @@ defmodule SanbaseWeb.GenericController do
           total_rows: total_rows,
           rows: paginated_rows,
           page: page,
-          page_size: page_size
+          page_size: page_size,
+          search: params["search"]
         })
     )
   end
@@ -349,9 +350,9 @@ defmodule SanbaseWeb.GenericController do
       current_page: page,
       page_size: page_size,
       action: action,
-      search_text: "",
       assocs: assocs,
-      field_type_map: field_type_map
+      field_type_map: field_type_map,
+      search: params[:search]
     }
   end
 
@@ -363,10 +364,6 @@ defmodule SanbaseWeb.GenericController do
     )
     |> Repo.all()
     |> Repo.preload(preloads)
-  end
-
-  defp search_by_text(module, text) do
-    module.by_search_text(text)
   end
 
   defp search_by_id(module, id, preloads) do

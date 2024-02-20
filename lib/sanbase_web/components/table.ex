@@ -242,7 +242,7 @@ defmodule SanbaseWeb.TableComponent do
     ~H"""
     <div class="table-responsive">
       <div>
-        <.search2 fields={@fields} resource={@resource} search_text={@search_text} />
+        <.search fields={@fields} resource={@resource} search={@search} />
 
         <%= if :new in @actions do %>
           <.link
@@ -316,7 +316,7 @@ defmodule SanbaseWeb.TableComponent do
           page_size={@page_size}
           current_page={@current_page}
           action={@action}
-          search_text={@search_text}
+          search={@search}
         />
       </div>
     </div>
@@ -389,48 +389,17 @@ defmodule SanbaseWeb.TableComponent do
     """
   end
 
-  attr(:placeholder, :string, default: "Search...")
-  attr(:resource, :string, required: true)
-  attr(:search_value, :string, required: true)
-  attr(:text_input_title, :string, default: "")
-
   def search(assigns) do
     ~H"""
-    <div class="relative mx-4 lg:mx-0 m-4 p-4">
-      <.icon
-        name="hero-magnifying-glass"
-        class="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400"
-      />
+    <div x-data={Jason.encode!(%{open: false, selectedField: @search["field"] || "Fields"})}>
       <.form
-        :let={f}
-        method="get"
         for={%{}}
         as={:search}
-        action={Routes.generic_path(SanbaseWeb.Endpoint, :search, resource: @resource)}
-      >
-        <%= hidden_input(f, :resource, value: @resource) %>
-        <%= text_input(f, :generic_search,
-          value: @search_value,
-          class:
-            "w-full xl:w-96 sm:w-64 pl-8 pr-4 text-indigo-600 border-gray-200 rounded-md focus:border-indigo-600 focus:ring focus:ring-opacity-40 focus:ring-indigo-500",
-          placeholder: @placeholder,
-          title: @text_input_title
-        ) %>
-        <.button type="submit" class="mt-4 p-4">Search</.button>
-      </.form>
-    </div>
-    """
-  end
-
-  def search2(assigns) do
-    ~H"""
-    <div x-data="{ open: false, selectedField: 'Fields' }">
-      <.form
         method="get"
         action={Routes.generic_path(SanbaseWeb.Endpoint, :search, resource: @resource)}
         class="max-w-lg mx-auto mt-2"
       >
-        <input type="hidden" name="field" x-bind:value="selectedField" />
+        <input type="hidden" name="search[field]" x-bind:value="selectedField" />
         <input type="hidden" name="resource" value={@resource} />
         <div class="flex">
           <button
@@ -483,12 +452,13 @@ defmodule SanbaseWeb.TableComponent do
           </div>
           <div class="relative w-full">
             <input
-              name="value"
+              name="search[value]"
               type="search"
               id="search-dropdown"
               class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-s-gray-700  dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500"
               placeholder="Search ..."
               required
+              value={@search["value"] || ""}
             />
             <button
               type="submit"
@@ -533,7 +503,7 @@ defmodule SanbaseWeb.PaginationComponent do
         page_size={@page_size}
         current_page={@current_page}
         action={@action}
-        search_text={@search_text}
+        search={@search}
       />
       <span class="text-sm text-gray-700">
         Showing <%= @current_page * @page_size + 1 %> to <%= Enum.min([
@@ -550,7 +520,7 @@ defmodule SanbaseWeb.PaginationComponent do
     <div class="inline-flex">
       <%= unless @current_page == 0 do %>
         <.link
-          href={pagination_path(@resource, @action, @search_text, @current_page - 1)}
+          href={pagination_path(@resource, @action, @search, @current_page - 1)}
           class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-300"
         >
           Previous
@@ -558,7 +528,7 @@ defmodule SanbaseWeb.PaginationComponent do
       <% end %>
       <%= unless @current_page >= div(@rows_count - 1, @page_size) do %>
         <.link
-          href={pagination_path(@resource, @action, @search_text, @current_page + 1)}
+          href={pagination_path(@resource, @action, @search, @current_page + 1)}
           class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-300"
         >
           Next
@@ -568,7 +538,7 @@ defmodule SanbaseWeb.PaginationComponent do
     """
   end
 
-  defp pagination_path(resource, action, search_text, page_number) do
+  defp pagination_path(resource, action, search, page_number) do
     case action do
       :index ->
         Routes.generic_path(SanbaseWeb.Endpoint, action, %{resource: resource, page: page_number})
@@ -577,11 +547,7 @@ defmodule SanbaseWeb.PaginationComponent do
         Routes.generic_path(SanbaseWeb.Endpoint, action, %{
           "resource" => resource,
           "page" => page_number,
-          "search" => %{
-            "generic_search" => search_text,
-            "resource" => resource,
-            "page" => page_number
-          }
+          "search" => search
         })
     end
   end

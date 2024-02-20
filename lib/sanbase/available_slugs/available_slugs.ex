@@ -10,15 +10,17 @@ defmodule Sanbase.AvailableSlugs do
 
   # There are 2 special cases that are not a project slug but refer to big groups
   # of projects and there is marketcap and volume data for them
-  @non_project_slugs ["TOTAL_MARKET", "TOTAL_ERC20"]
+  @group_of_slugs ["TOTAL_MARKET", "TOTAL_ERC20"]
+  @non_project_slugs ~w(s-and-p-500 gold crude-oil dxy gbtc ibit fbtc arkb btco bitb hodl)
 
+  def non_project_slugs(), do: @non_project_slugs
   @ets_table :available_projects_slugs_ets_table
   use GenServer
 
   @impl Sanbase.AvailableSlugs.Behaviour
   def valid_slug?(slug) do
     case :ets.lookup(@ets_table, slug) do
-      [] -> slug in @non_project_slugs
+      [] -> slug in @non_project_slugs or slug in @group_of_slugs
       _ -> true
     end
   end
@@ -49,12 +51,12 @@ defmodule Sanbase.AvailableSlugs do
     {:noreply, refill_slugs(state)}
   end
 
-  @non_project_slugs ["gold", "s-and-p-500", "crude-oil", "dxy"]
   defp refill_slugs(state) do
     %{ets_table: ets_table} = state
 
     slugs =
       @non_project_slugs ++
+        @group_of_slugs ++
         Sanbase.Project.List.projects_slugs(include_hidden: true)
 
     ets_slugs = :ets.tab2list(ets_table) |> Enum.map(&elem(&1, 0))

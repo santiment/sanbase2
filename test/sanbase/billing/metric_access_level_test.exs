@@ -86,7 +86,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "spent_coins_age_band_7y_to_10y",
         "nvt",
         "dev_activity_change_30d",
-        "price_usd_5m",
         "holders_labeled_distribution_combined_balance_1_to_10",
         "holders_labeled_negative_distribution_0.1_to_1",
         "holders_distribution_100k_to_1M",
@@ -475,7 +474,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "ecosystem_dev_activity",
         "ecosystem_github_activity",
         "ecosystem_dev_activity_contributors_count",
-        "ecosystem_github_activity_contributors_count"
+        "ecosystem_github_activity_contributors_count",
+        "gini_index",
+        "annual_inflation_rate"
       ]
       |> Enum.sort()
 
@@ -527,6 +528,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "price_eth",
         "price_usd_5m",
         "volume_usd",
+        "volume_usd_5m",
         "twitter_followers",
         "total_supply",
         "mcd_erc20_supply",
@@ -584,7 +586,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "ecosystem_dev_activity",
         "ecosystem_github_activity",
         "ecosystem_dev_activity_contributors_count",
-        "ecosystem_github_activity_contributors_count"
+        "ecosystem_github_activity_contributors_count",
+        "gini_index",
+        "annual_inflation_rate"
       ]
       |> Enum.sort()
 

@@ -248,6 +248,7 @@ defmodule SanbaseWeb.TableComponent do
           placeholder="column=value (i.e. email=santiment)"
           text_input_title="If the column is a string, the search looks for substrings, otherwise it tries exact matches"
         />
+
         <%= if :new in @actions do %>
           <.link
             href={Routes.generic_path(SanbaseWeb.Endpoint, :new, resource: @resource)}

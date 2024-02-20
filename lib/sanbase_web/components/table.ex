@@ -650,7 +650,16 @@ defmodule SanbaseWeb.LiveSearch do
 
   def search_routes(query) do
     SanbaseWeb.GenericController.all_routes()
-    |> Enum.filter(fn {name, _path} -> String.contains?(String.downcase(name), query) end)
+    |> Enum.map(fn {name, _path} = tuple ->
+      name = String.downcase(name)
+      query = String.downcase(query)
+
+      similarity = FuzzyCompare.similarity(query, name)
+      {tuple, similarity}
+    end)
+    |> Enum.filter(fn {_, similarity} -> similarity > 0.9 end)
+    |> Enum.sort_by(fn {_, similarity} -> similarity end, :desc)
+    |> Enum.map(fn {result, _similarity} -> result end)
   end
 end
 

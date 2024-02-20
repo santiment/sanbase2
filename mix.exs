@@ -107,6 +107,7 @@ defmodule Sanbase.Mixfile do
       {:faker, "~> 0.17", only: [:dev, :test]},
       {:finch, "~> 0.12", override: true},
       {:floki, "~> 0.20"},
+      {:fuzzy_compare, "~> 1.0"},
       {:gettext, "~> 0.11"},
       {:guardian_db, "~> 2.0"},
       {:guardian, "~> 2.0"},

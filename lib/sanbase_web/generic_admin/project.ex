@@ -238,8 +238,11 @@ defmodule SanbaseWeb.GenericAdmin.ContractAddress do
     %{
       actions: [:new, :edit],
       preloads: [:project],
-      new_fields: [:project, :address, :label],
-      edit_fields: [:project, :address, :label],
+      new_fields: [:project, :address, :decimals, :label, :description],
+      edit_fields: [:project, :address, :decimals, :label, :description],
+      field_types: %{
+        description: :text
+      },
       belongs_to_fields: %{
         project: %{
           query: from(p in Sanbase.Project, order_by: p.id),

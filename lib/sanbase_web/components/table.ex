@@ -532,7 +532,7 @@ defmodule SanbaseWeb.LiveSearch do
      socket
      |> assign(:query, "")
      |> assign(:routes, [])
-     |> assign(:show_icon, true)}
+     |> assign(:show_icon, true), layout: false}
   end
 
   @impl true

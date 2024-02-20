@@ -389,6 +389,7 @@ defmodule SanbaseWeb.TableComponent do
     """
   end
 
+  # The component was borrowed from: https://flowbite.com/docs/forms/search-input/#search-with-dropdown
   def search(assigns) do
     ~H"""
     <div x-data={Jason.encode!(%{open: false, selectedField: @search["field"] || "Fields"})}>

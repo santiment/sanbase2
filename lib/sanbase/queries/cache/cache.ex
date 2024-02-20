@@ -11,7 +11,6 @@ defmodule Sanbase.Queries.Cache do
 
   import Ecto.Query
   import Ecto.Changeset
-  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
   alias Sanbase.Queries
   alias Sanbase.Queries.Query

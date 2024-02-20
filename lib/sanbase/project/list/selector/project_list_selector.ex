@@ -264,6 +264,8 @@ defmodule Sanbase.Project.ListSelector do
   end
 
   defp slugs_by_filter(%{name: "metric", args: args}) do
+    args = Sanbase.Utils.ListSelector.Transform.maybe_shift_to_datetime(args)
+
     Sanbase.Metric.slugs_by_filter(
       args.metric,
       args.from,
@@ -275,6 +277,8 @@ defmodule Sanbase.Project.ListSelector do
   end
 
   defp slugs_by_filter(%{metric: _} = filter) do
+    filter = Sanbase.Utils.ListSelector.Transform.maybe_shift_to_datetime(filter)
+
     Sanbase.Metric.slugs_by_filter(
       filter.metric,
       filter.from,

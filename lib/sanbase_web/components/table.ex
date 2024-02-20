@@ -242,12 +242,7 @@ defmodule SanbaseWeb.TableComponent do
     ~H"""
     <div class="table-responsive">
       <div>
-        <.search
-          resource={@resource}
-          search_value=""
-          placeholder="column=value (i.e. email=santiment)"
-          text_input_title="If the column is a string, the search looks for substrings, otherwise it tries exact matches"
-        />
+        <.search fields={@fields} resource={@resource} search={@search} />
 
         <%= if :new in @actions do %>
           <.link
@@ -321,7 +316,7 @@ defmodule SanbaseWeb.TableComponent do
           page_size={@page_size}
           current_page={@current_page}
           action={@action}
-          search_text={@search_text}
+          search={@search}
         />
       </div>
     </div>
@@ -394,34 +389,73 @@ defmodule SanbaseWeb.TableComponent do
     """
   end
 
-  attr(:placeholder, :string, default: "Search...")
-  attr(:resource, :string, required: true)
-  attr(:search_value, :string, required: true)
-  attr(:text_input_title, :string, default: "")
-
+  # The component was borrowed from: https://flowbite.com/docs/forms/search-input/#search-with-dropdown
   def search(assigns) do
     ~H"""
-    <div class="relative mx-4 lg:mx-0 m-4 p-4">
-      <.icon
-        name="hero-magnifying-glass"
-        class="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400"
-      />
+    <div x-data={Jason.encode!(%{open: false, selectedField: @search["field"] || "Fields"})}>
       <.form
-        :let={f}
-        method="get"
         for={%{}}
         as={:search}
+        method="get"
         action={Routes.generic_path(SanbaseWeb.Endpoint, :search, resource: @resource)}
+        class="max-w-lg mx-auto mt-2"
       >
-        <%= hidden_input(f, :resource, value: @resource) %>
-        <%= text_input(f, :generic_search,
-          value: @search_value,
-          class:
-            "w-full xl:w-96 sm:w-64 pl-8 pr-4 text-indigo-600 border-gray-200 rounded-md focus:border-indigo-600 focus:ring focus:ring-opacity-40 focus:ring-indigo-500",
-          placeholder: @placeholder,
-          title: @text_input_title
-        ) %>
-        <.button type="submit" class="mt-4 p-4">Search</.button>
+        <input type="hidden" name="search[field]" x-bind:value="selectedField" />
+        <input type="hidden" name="resource" value={@resource} />
+        <div class="flex">
+          <button
+            @click="open = !open"
+            id="dropdown-button"
+            class="flex-shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900 bg-gray-100 border border-gray-300 rounded-s-lg hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600"
+            type="button"
+          >
+            <div class="flex items-center">
+              <span x-text="selectedField"></span>
+              <.icon name="hero-chevron-down" class="w-2.5 h-2.5 ms-2.5" />
+            </div>
+          </button>
+          <div
+            x-show="open"
+            @click.away="open = false"
+            id="dropdown"
+            class="mt-12 absolute z-20 bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700"
+          >
+            <ul
+              class="py-2 text-sm text-gray-700 dark:text-gray-200"
+              aria-labelledby="dropdown-button"
+            >
+              <%= for field <- @fields do %>
+                <li>
+                  <button
+                    @click="selectedField = $event.target.innerText; open = false"
+                    type="button"
+                    class="inline-flex w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                  >
+                    <%= field %>
+                  </button>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+          <div class="relative w-full">
+            <input
+              name="search[value]"
+              type="search"
+              id="search-dropdown"
+              class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-s-gray-700  dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500"
+              placeholder="Search ..."
+              required
+              value={@search["value"] || ""}
+            />
+            <button
+              type="submit"
+              class="absolute top-0 end-0 p-2.5 text-sm font-medium h-full text-white bg-blue-700 rounded-e-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            >
+              <.icon name="hero-magnifying-glass" class="w-4 h-4" />
+              <span class="sr-only">Search</span>
+            </button>
+          </div>
+        </div>
       </.form>
     </div>
     """
@@ -442,7 +476,7 @@ defmodule SanbaseWeb.PaginationComponent do
         page_size={@page_size}
         current_page={@current_page}
         action={@action}
-        search_text={@search_text}
+        search={@search}
       />
       <span class="text-sm text-gray-700">
         Showing <%= @current_page * @page_size + 1 %> to <%= Enum.min([
@@ -459,7 +493,7 @@ defmodule SanbaseWeb.PaginationComponent do
     <div class="inline-flex">
       <%= unless @current_page == 0 do %>
         <.link
-          href={pagination_path(@resource, @action, @search_text, @current_page - 1)}
+          href={pagination_path(@resource, @action, @search, @current_page - 1)}
           class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-300"
         >
           Previous
@@ -467,7 +501,7 @@ defmodule SanbaseWeb.PaginationComponent do
       <% end %>
       <%= unless @current_page >= div(@rows_count - 1, @page_size) do %>
         <.link
-          href={pagination_path(@resource, @action, @search_text, @current_page + 1)}
+          href={pagination_path(@resource, @action, @search, @current_page + 1)}
           class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-300"
         >
           Next
@@ -477,7 +511,7 @@ defmodule SanbaseWeb.PaginationComponent do
     """
   end
 
-  defp pagination_path(resource, action, search_text, page_number) do
+  defp pagination_path(resource, action, search, page_number) do
     case action do
       :index ->
         Routes.generic_path(SanbaseWeb.Endpoint, action, %{resource: resource, page: page_number})
@@ -486,11 +520,7 @@ defmodule SanbaseWeb.PaginationComponent do
         Routes.generic_path(SanbaseWeb.Endpoint, action, %{
           "resource" => resource,
           "page" => page_number,
-          "search" => %{
-            "generic_search" => search_text,
-            "resource" => resource,
-            "page" => page_number
-          }
+          "search" => search
         })
     end
   end

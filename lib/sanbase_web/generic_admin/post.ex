@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.GenericAdmin.Post do
+  import Ecto.Query
   alias Sanbase.Insight.Post
   def schema_module, do: Post
 
@@ -43,6 +44,17 @@ defmodule SanbaseWeb.GenericAdmin.Post do
       },
       funcs: %{
         user_id: &SanbaseWeb.GenericAdmin.User.user_link/1
+      },
+      search_fields: %{
+        is_featured:
+          from(
+            p in Post,
+            left_join: featured_item in Sanbase.FeaturedItem,
+            on: p.id == featured_item.post_id,
+            where: not is_nil(featured_item.id),
+            preload: [:user]
+          )
+          |> distinct(true)
       }
     }
   end

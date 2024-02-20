@@ -123,7 +123,7 @@ defmodule SanbaseWeb.GenericController do
 
   def search(
         conn,
-        %{"search" => %{"generic_search" => search_text, "resource" => resource}} = params
+        %{"resource" => resource, "search" => %{"field" => field, "value" => value}} = params
       ) do
     module = module_from_resource(resource)
     preloads = resource_module_map()[resource][:preloads] || []
@@ -131,16 +131,7 @@ defmodule SanbaseWeb.GenericController do
     page_size = to_integer(params["page_size"] || 10)
 
     {total_rows, paginated_rows} =
-      case parse_field_value(search_text) do
-        {:ok, field, value} ->
-          search_by_field_value(module, resource, field, value, preloads, page, page_size)
-
-        :error ->
-          case Integer.parse(search_text) do
-            {id, ""} -> search_by_id(module, id, preloads)
-            _ -> search_by_text(module, String.downcase(search_text))
-          end
-      end
+      search_by_field_value(module, resource, field, value, preloads, page, page_size)
 
     render(conn, "index.html",
       table:
@@ -149,7 +140,7 @@ defmodule SanbaseWeb.GenericController do
           rows: paginated_rows,
           page: page,
           page_size: page_size,
-          search_text: search_text
+          search: params["search"]
         })
     )
   end
@@ -359,9 +350,9 @@ defmodule SanbaseWeb.GenericController do
       current_page: page,
       page_size: page_size,
       action: action,
-      search_text: params[:search_text] || "",
       assocs: assocs,
-      field_type_map: field_type_map
+      field_type_map: field_type_map,
+      search: params[:search]
     }
   end
 
@@ -373,10 +364,6 @@ defmodule SanbaseWeb.GenericController do
     )
     |> Repo.all()
     |> Repo.preload(preloads)
-  end
-
-  defp search_by_text(module, text) do
-    module.by_search_text(text)
   end
 
   defp search_by_id(module, id, preloads) do

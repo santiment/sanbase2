@@ -22,9 +22,9 @@ defmodule SanbaseWeb.GenericController do
   def custom_routes do
     [
       {"Webinars", ~p"/admin2/webinars"},
-      {"Sheets templates", ~p"/admin2/sheets_templates/"},
+      {"Sheets Templates", ~p"/admin2/sheets_templates/"},
       {"Reports", ~p"/admin2/reports"},
-      {"Custom plans", ~p"/admin2/custom_plans"},
+      {"Custom Plans", ~p"/admin2/custom_plans"},
       {"Monitored Twitter Handles", ~p"/admin2/monitored_twitter_handle_live"}
     ]
   end
@@ -32,7 +32,11 @@ defmodule SanbaseWeb.GenericController do
   def resources_to_routes do
     SanbaseWeb.GenericAdmin.resources()
     |> Enum.map(fn resource ->
-      resource_name = String.capitalize(resource)
+      resource_name =
+        String.split(resource, [" ", "_", "-"])
+        |> Enum.map(&String.capitalize/1)
+        |> Enum.join(" ")
+
       {resource_name, ~p"/admin2/generic?resource=#{resource}"}
     end)
   end

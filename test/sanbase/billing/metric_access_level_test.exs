@@ -475,7 +475,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "ecosystem_dev_activity",
         "ecosystem_github_activity",
         "ecosystem_dev_activity_contributors_count",
-        "ecosystem_github_activity_contributors_count"
+        "ecosystem_github_activity_contributors_count",
+        "gini_index",
+        "annual_inflation_rate"
       ]
       |> Enum.sort()
 
@@ -584,7 +586,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "ecosystem_dev_activity",
         "ecosystem_github_activity",
         "ecosystem_dev_activity_contributors_count",
-        "ecosystem_github_activity_contributors_count"
+        "ecosystem_github_activity_contributors_count",
+        "gini_index",
+        "annual_inflation_rate"
       ]
       |> Enum.sort()
 

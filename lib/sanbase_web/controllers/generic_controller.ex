@@ -247,10 +247,21 @@ defmodule SanbaseWeb.GenericController do
           [response_resource, changes],
           :ok
         )
+        |> case do
+          {:error, error} ->
+            conn
+            |> put_flash(:error, "Some of the fields were not updated: #{error}")
+            |> redirect(
+              to: Routes.generic_path(conn, :show, response_resource, resource: resource)
+            )
 
-        conn
-        |> put_flash(:info, "#{resource} updated successfully.")
-        |> redirect(to: Routes.generic_path(conn, :show, response_resource, resource: resource))
+          _ ->
+            conn
+            |> put_flash(:info, "#{resource} updated successfully.")
+            |> redirect(
+              to: Routes.generic_path(conn, :show, response_resource, resource: resource)
+            )
+        end
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html",

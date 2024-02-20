@@ -5079,7 +5079,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,

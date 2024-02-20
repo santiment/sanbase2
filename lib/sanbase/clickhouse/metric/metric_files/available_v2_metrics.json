@@ -15,7 +15,26 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "USD Trading Volume",
+    "name": "volume_usd_5m",
+    "metric": "trading_volume",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {

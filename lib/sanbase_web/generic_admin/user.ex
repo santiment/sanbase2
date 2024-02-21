@@ -227,7 +227,7 @@ defmodule SanbaseWeb.GenericAdmin.UserList do
           )
           |> distinct(true)
       },
-      extra_show_fields: [:is_featured],
+      extra_fields: [:is_featured],
       field_types: %{
         is_featured: :boolean
       },

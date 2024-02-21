@@ -242,7 +242,7 @@ defmodule SanbaseWeb.TableComponent do
     ~H"""
     <div class="table-responsive">
       <div>
-        <.search fields={@fields} resource={@resource} search={@search} />
+        <.search fields={@search_fields} resource={@resource} search={@search} />
 
         <%= if :new in @actions do %>
           <.link

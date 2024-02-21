@@ -151,7 +151,7 @@ defmodule SanbaseWeb.GenericController do
     data = Repo.get(module, id) |> Repo.preload(resource_module_map()[resource][:preloads] || [])
     funcs = resource_module_map()[resource][:funcs] || %{}
     field_type_map = field_type_map(resource, module)
-    extra_show_fields = resource_module_map()[resource][:extra_show_fields] || []
+    extra_fields = resource_module_map()[resource][:extra_fields] || []
     actions = resource_module_map()[resource][:actions] || []
 
     assocs =
@@ -168,7 +168,7 @@ defmodule SanbaseWeb.GenericController do
       data: data,
       assocs: assocs,
       funcs: funcs,
-      fields: fields(module) ++ extra_show_fields,
+      fields: fields(module, extra_fields),
       field_type_map: field_type_map,
       actions: actions,
       belongs_to:
@@ -287,11 +287,12 @@ defmodule SanbaseWeb.GenericController do
     page = to_integer(params[:page])
     page_size = to_integer(params[:page_size])
     field_type_map = field_type_map(resource, module)
+    extra_fields = resource_module_map()[resource][:extra_fields] || []
 
     index_fields =
       case resource_module_map()[resource][:index_fields] do
-        nil -> fields(module)
-        :all -> fields(module)
+        nil -> fields(module, extra_fields)
+        :all -> fields(module, extra_fields)
         fields when is_list(fields) -> fields
       end
 
@@ -352,6 +353,7 @@ defmodule SanbaseWeb.GenericController do
       action: action,
       assocs: assocs,
       field_type_map: field_type_map,
+      search_fields: fields(module, extra_fields),
       search: params[:search]
     }
   end
@@ -377,8 +379,8 @@ defmodule SanbaseWeb.GenericController do
     end
   end
 
-  def fields(module) do
-    module.__schema__(:fields)
+  def fields(module, extra_fields \\ []) do
+    (module.__schema__(:fields) ++ extra_fields) |> Enum.uniq()
   end
 
   def parse_field_value(str) do

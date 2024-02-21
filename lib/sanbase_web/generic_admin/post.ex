@@ -26,7 +26,7 @@ defmodule SanbaseWeb.GenericAdmin.Post do
         :state,
         :moderation_comment
       ],
-      extra_show_fields: [:is_featured],
+      extra_fields: [:is_featured],
       field_types: %{
         is_featured: :boolean,
         moderation_comment: :text
@@ -331,7 +331,7 @@ defmodule SanbaseWeb.GenericAdmin.UserTrigger do
       preloads: [:user],
       index_fields: [:id, :user_id, :trigger],
       edit_fields: [:user, :is_public, :is_featured],
-      extra_show_fields: [:is_featured, :is_public],
+      extra_fields: [:is_featured, :is_public],
       field_types: %{
         is_featured: :boolean,
         is_public: :boolean

@@ -126,15 +126,19 @@ defmodule SanbaseWeb.TableComponent do
     ~H"""
     <.input
       name={
-        if @belongs_to do
-          @resource <> "[" <> to_string(@field) <> "_id" <> "]"
-        else
-          @resource <> "[" <> to_string(@field) <> "]"
-        end
+        name =
+          if @belongs_to do
+            @resource <> "[" <> to_string(@field) <> "_id" <> "]"
+          else
+            @resource <> "[" <> to_string(@field) <> "]"
+          end
+
+        if @select_type == :multiselect, do: name <> "[]", else: name
       }
       id={@resource <> "_" <> to_string(@field)}
       label={humanize(@field)}
       type="select"
+      multiple={if @select_type == :multiselect, do: true, else: false}
       options={@options}
       value={
         field = if @belongs_to, do: String.to_existing_atom(to_string(@field) <> "_id"), else: @field

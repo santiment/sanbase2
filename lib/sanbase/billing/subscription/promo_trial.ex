@@ -38,6 +38,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
     |> stringify_plans(attrs)
   end
 
+  def plan_id_name_map, do: @plan_id_name_map
   def promo_trial_plans, do: @promo_trial_plans
 
   def create_promo_trial(%{plans: plans, trial_days: trial_days, user_id: user_id})

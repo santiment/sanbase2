@@ -238,20 +238,25 @@ defmodule SanbaseWeb.TableComponent do
     """
   end
 
+  def new_resource_button(assigns) do
+    ~H"""
+    <button
+      type="button"
+      class="text-white bg-blue-500 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+    >
+      <.link href={Routes.generic_path(SanbaseWeb.Endpoint, :new, resource: @resource)}>
+        New <%= Inflex.singularize(@resource) %>
+      </.link>
+    </button>
+    """
+  end
+
   def table(assigns) do
     ~H"""
     <div class="table-responsive">
-      <div>
+      <div class="ml-4">
         <.search fields={@search_fields} resource={@resource} search={@search} />
-
-        <%= if :new in @actions do %>
-          <.link
-            href={Routes.generic_path(SanbaseWeb.Endpoint, :new, resource: @resource)}
-            class="underline relative mx-4 lg:mx-0 m-4 p-4"
-          >
-            New <%= Inflex.singularize(@resource) %>
-          </.link>
-        <% end %>
+        <.new_resource_button resource={@resource} />
       </div>
 
       <div class="m-4">
@@ -533,24 +538,20 @@ defmodule SanbaseWeb.LiveSearch do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="relative" x-data="{ showIcon: true }">
-      <.input
-        name="search"
+    <div class="relative ml-2 mt-2">
+      <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+        <.icon name="hero-magnifying-glass" />
+      </div>
+      <input
         value={@query}
         phx-keyup="do-search"
         phx-debounce="200"
-        class="pl-20"
-        {
-          [
-            {"x-on:focus", "showIcon = false"},
-            {"x-on:keyup", "showIcon = false"},
-            {"x-on:blur", "showIcon = true"}
-          ]
-        }
+        type="text"
+        id="simple-search"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        placeholder="Search resources..."
+        required
       />
-      <span class="absolute left-2 top-1/2 transform -translate-y-1/2" x-show="showIcon">
-        <.icon name="hero-magnifying-glass" class="h-6 w-6 text-gray-500" />
-      </span>
     </div>
     <.results routes={@routes} />
     """
@@ -573,12 +574,18 @@ defmodule SanbaseWeb.LiveSearch do
 
   def results(assigns) do
     ~H"""
-    <ul>
-      <%= for {name, path} <- @routes do %>
-        <li>
-          <.link href={path} style="color: white;"><%= name %></.link>
-        </li>
-      <% end %>
+    <ul
+      class="absolute py-2 text-sm text-gray-700 dark:text-gray-200 border shadow-xl bg-blue-50 rounded-xl"
+      aria-labelledby="dropdownDefaultButton"
+    >
+      <li :for={{name, path} <- @routes}>
+        <a
+          href={path}
+          class="block p-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white text-lg font-semibold"
+        >
+          <%= name %>
+        </a>
+      </li>
     </ul>
     """
   end

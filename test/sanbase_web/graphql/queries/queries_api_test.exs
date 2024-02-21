@@ -721,7 +721,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         compressed_result = Jason.encode!(result) |> :zlib.gzip() |> Base.encode64()
 
         stored =
-          store_dashboard_query_execution(context.conn, %{
+          cache_dashboard_query_execution(context.conn, %{
             dashboard_id: dashboard.id,
             dashboard_query_mapping_id: dashboard_query_mapping.id,
             compressed_query_execution_result: compressed_result
@@ -1063,7 +1063,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
     |> json_response(200)
   end
 
-  defp store_dashboard_query_execution(conn, args) do
+  defp cache_dashboard_query_execution(conn, args) do
     mutation = """
     mutation{
       storeDashboardQueryExecution(#{map_to_args(args)}){

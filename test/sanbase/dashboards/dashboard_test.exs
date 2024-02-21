@@ -157,7 +157,7 @@ defmodule Sanbase.DashboardsTest do
           Queries.run_query(query, user, query_metadata, store_execution_details: false)
 
         {:ok, dashboard_cache} =
-          Dashboards.store_dashboard_query_execution(
+          Dashboards.cache_dashboard_query_execution(
             dashboard.id,
             dashboard_query_mapping.id,
             result,

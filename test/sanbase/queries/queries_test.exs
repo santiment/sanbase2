@@ -495,6 +495,21 @@ defmodule Sanbase.QueriesTest do
 
   describe "Caching" do
     test "cache a query", context do
+      %{query: %{id: query_id} = query, user: user, query_metadata: query_metadata} = context
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        {:ok, result} =
+          Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
+
+        {:ok, _cache} = Sanbase.Queries.cache_query_execution(query_id, result, user.id)
+
+        {:ok, cached_result} = Sanbase.Queries.Cache.get(query_id, user.id)
+
+        result2 = Sanbase.Queries.Cache.decode_decompress_result(cached_result.data)
+
+        assert result == result2
+      end)
     end
   end
 

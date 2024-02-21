@@ -104,6 +104,10 @@ defmodule Sanbase.MapUtils do
 
   def atomize_keys(data), do: data
 
+  def atomize_keys_shallow(map) when is_map(map) do
+    Map.new(map, fn {key, value} -> {String.to_existing_atom(key), value} end)
+  end
+
   # Private functions
 
   @compile {:inline, atomize: 1}

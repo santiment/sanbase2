@@ -43,7 +43,7 @@ defmodule Sanbase.Application do
       |> Enum.uniq()
 
     # Add error tracking through sentry.
-    # Note: Sentry.LoggerBackend now allows to send non-exception erros to sentry, too.
+    # Note: Sentry.LoggerBackend now allows to send non-exception errors to sentry, too.
     # This is not enabled yet.
     {:ok, _} = Logger.add_backend(Sentry.LoggerBackend)
     Supervisor.start_link(children, opts)

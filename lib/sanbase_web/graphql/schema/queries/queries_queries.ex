@@ -330,7 +330,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       storeDashboardQueryExecution(
         dashboardId: 134
         dashboardQueryMappingId: 5
-      compressedQueryExecutionResult: "The result string of the example above is: H4sIAAAAAAAAE3WOQWvEIBSE/4tnszyNsdFzW9jDHkrtpUtY3CjdgImp0Zal9L9X08AeSkFkmPfNMF+o9y6Nk7rOdkHyiF72U+QM4Zu419GqYbRZPjqv/5gb2OGtaq3Ry2LjaTD5PtoYhv5Xm5i/D+1SCfZ+nFO05qSLe9axvxQqFxm9XM5eB/OUbLge9DwP09veIDkl5zB6L+7DZNYBElGgdUVIBUIRkLWQdfOKNqqEyKafow7x3wwrmeA/y/wjYS3FhLMGIyLuoIJMEgUg15fJCna0aYELSltRMwLQMnxr5YpwCULSsgS67vsHMa3TkGgBAAA="
+        compressedQueryExecutionResult: "H4sIAAAAAAAAE3WOQWvEIBSE/4tnszyNsdFzW9jDHkrtpUtY3CjdgImp0Zal9L9X08AeSkFkmPfNMF+o9y6Nk7rOdkHyiF72U+QM4Zu419GqYbRZPjqv/5gb2OGtaq3Ry2LjaTD5PtoYhv5Xm5i/D+1SCfZ+nFO05qSLe9axvxQqFxm9XM5eB/OUbLge9DwP09veIDkl5zB6L+7DZNYBElGgdUVIBUIRkLWQdfOKNqqEyKafow7x3wwrmeA/y/wjYS3FhLMGIyLuoIJMEgUg15fJCna0aYELSltRMwLQMnxr5YpwCULSsgS67vsHMa3TkGgBAAA="
         }
       ){
         queries{
@@ -342,7 +342,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       }
     }
     """
-    field :store_dashboard_query_execution, :dashboard_cached_executions do
+    field :cache_dashboard_query_execution, :dashboard_cached_executions do
       arg(:dashboard_id, non_null(:integer))
       arg(:dashboard_query_mapping_id, non_null(:string))
 
@@ -356,7 +356,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       middleware(JWTAuth)
 
-      resolve(&QueriesResolver.store_dashboard_query_execution/3)
+      resolve(&QueriesResolver.cache_dashboard_query_execution/3)
     end
 
     @desc ~s"""

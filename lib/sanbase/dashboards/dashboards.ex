@@ -918,14 +918,14 @@ defmodule Sanbase.Dashboards do
   @doc ~s"""
 
   """
-  @spec store_dashboard_query_execution(
+  @spec cache_dashboard_query_execution(
           dashboard_id(),
           dashboard_query_mapping_id(),
           map(),
           user_id()
         ) ::
           {:ok, DashboardQueryMappingCache.t()} | {:error, String.t()}
-  def store_dashboard_query_execution(
+  def cache_dashboard_query_execution(
         dashboard_id,
         dashboard_query_mapping_id,
         query_result,

@@ -46,6 +46,14 @@ defmodule Sanbase.Queries.Executor.Result do
       {:error, "The provided value is not a valid gzip binary"}
   end
 
+  def compress_and_encode(%__MODULE__{} = result) do
+    result
+    |> Map.from_struct()
+    |> Jason.encode!()
+    |> :zlib.gzip()
+    |> Base.encode64()
+  end
+
   @doc ~s"""
   Accept a string that is a stringified JSON object representing the result
   of executing an SQL query, and return a `Result` struct.

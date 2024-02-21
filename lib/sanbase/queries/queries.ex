@@ -5,6 +5,7 @@ defmodule Sanbase.Queries do
   TODO: Add more documentation
   """
   alias Sanbase.Repo
+  alias Sanbase.Queries
   alias Sanbase.Queries.Query
   alias Sanbase.Queries.QueryMetadata
   alias Sanbase.Queries.QueryExecution
@@ -95,7 +96,7 @@ defmodule Sanbase.Queries do
     query_metadata = Map.put_new(query_metadata, :sanbase_user_id, user.id)
 
     with {:ok, environment} <- Environment.new(query, user),
-         {:ok, result} <- Sanbase.Queries.Executor.run(query, query_metadata, environment) do
+         {:ok, result} <- Queries.Executor.run(query, query_metadata, environment) do
       maybe_store_execution_data_async(result, user.id, opts)
 
       {:ok, result}
@@ -117,7 +118,7 @@ defmodule Sanbase.Queries do
   """
   @spec user_can_execute_query(%User{}, String.t(), String.t()) :: :ok | {:error, String.t()}
   def user_can_execute_query(user, product_code, plan_name) do
-    Sanbase.Queries.Authorization.user_can_execute_query(user, product_code, plan_name)
+    Queries.Authorization.user_can_execute_query(user, product_code, plan_name)
   end
 
   @doc ~s"""
@@ -379,6 +380,11 @@ defmodule Sanbase.Queries do
     end
   end
 
+  @doc ~s"""
+  Cache a query execution
+  TODO: Add more documentation
+  """
+  @spec cache_query_execution(query_id, any(), user_id) :: any()
   def cache_query_execution(
         query_id,
         query_result,

@@ -1,0 +1,69 @@
+# Metrics Restrictions Plans Differences
+
+## Section
+
+```elixir
+metrics = Sanbase.Metric.available_metrics()
+```
+
+```elixir
+metadatas =
+  Map.new(metrics, fn m ->
+    {:ok, metadata} = Sanbase.Metric.metadata(m)
+
+    {m, metadata}
+  end)
+```
+
+```elixir
+metadatas["miners_balance"]
+```
+
+```elixir
+min_plans =
+  Sanbase.Metric.min_plan_map()
+  |> Enum.map(fn
+    {m, "FREE"} -> {m, %{"SANAPI" => "FREE", "SANBASE" => "FREE"}}
+    x -> x
+  end)
+
+metrics_min_plan_pro =
+  Enum.filter(min_plans, fn {_m, a} -> a["SANAPI"] == "PRO" end) |> Enum.map(&elem(&1, 0))
+
+metrics_min_plan_free =
+  Enum.filter(min_plans, fn {_m, a} -> a["SANAPI"] == "FREE" end) |> Enum.map(&elem(&1, 0))
+
+Enum.each(metrics_min_plan_pro, &IO.puts/1)
+```
+
+```elixir
+free_access_metrics = Sanbase.Metric.free_metrics()
+Enum.each(free_access_metrics, &IO.puts/1)
+```
+
+```elixir
+# The different types of min plan combinations
+Sanbase.Metric.min_plan_map() |> Map.values() |> Enum.uniq()
+```
+
+```elixir
+access_free_min_plan_free =
+  MapSet.intersection(
+    MapSet.new(free_access_metrics),
+    MapSet.new(metrics_min_plan_free)
+  )
+  |> Enum.to_list()
+
+Enum.each(access_free_min_plan_free, &IO.puts/1)
+```
+
+```elixir
+access_free_min_plan_free =
+  MapSet.intersection(
+    MapSet.new(free_access_metrics),
+    MapSet.new(metrics_min_plan_pro)
+  )
+  |> Enum.to_list()
+
+Enum.each(access_free_min_plan_free, &IO.puts/1)
+```

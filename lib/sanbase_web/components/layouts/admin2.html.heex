@@ -9,10 +9,33 @@
   </nav>
 
   <div class="flex flex-1 min-h-0">
-    <div
+    <button
+      data-drawer-target="sidebar"
+      data-drawer-toggle="sidebar"
+      aria-controls="sidebar"
+      type="button"
+      class="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+    >
+      <span class="sr-only">Open sidebar</span>
+      <svg
+        class="w-6 h-6"
+        aria-hidden="true"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          clip-rule="evenodd"
+          fill-rule="evenodd"
+          d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"
+        >
+        </path>
+      </svg>
+    </button>
+
+    <aside
       id="sidebar"
-      phx-update="ignore"
-      class="flex-shrink-0 w-64 overflow-y-auto bg-gray-900 transition duration-300 transform lg:static"
+      aria-label="Sidebar"
       x-show="isOpen"
       x-transition:enter="transition ease-out duration-300"
       x-transition:enter-start="-translate-x-full"
@@ -21,25 +44,20 @@
       x-transition:leave-start="translate-x-0"
       x-transition:leave-end="-translate-x-full"
     >
-      <div class="flex flex-col items-center justify-center mt-8">
-        <div class="flex items-center">
-          <img src="/images/emails/san-logo.svg" />
-          <span class="mx-2 text-2xl font-semibold text-white">Sanbase Admin</span>
-        </div>
-        <%= live_render(@conn, SanbaseWeb.LiveSearch) %>
+      <%= live_render(@conn, SanbaseWeb.LiveSearch) %>
+      <div class="h-full p-3 overflow-y-auto bg-gray-50 dark:bg-gray-800">
+        <ul class="space-y-2 font-medium">
+          <li :for={{name, path} <- @routes}>
+            <a
+              href={path}
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 group"
+            >
+              <span class="ms-3"><%= name %></span>
+            </a>
+          </li>
+        </ul>
       </div>
-      <div :for={{name, path} <- @routes} class="mt-1">
-        <span>
-          <.link
-            href={path}
-            class="flex items-center px-4 mt-1 duration-200 border-l-4 border-gray-900 text-gray-500 hover:bg-gray-600 hover:bg-opacity-25 hover:text-gray-100"
-          >
-            <%= name %>
-          </.link>
-        </span>
-      </div>
-    </div>
-
+    </aside>
     <div class="flex-1 overflow-y-auto">
       <.flash_group flash={@flash} />
       <%= @inner_content %>

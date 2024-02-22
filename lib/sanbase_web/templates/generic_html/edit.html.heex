@@ -49,6 +49,7 @@
               changeset={@changeset}
               options={@collections[field]}
               belongs_to={false}
+              select_type={@field_type_map[field] || :select}
             />
           <% else %>
             <SanbaseWeb.TableComponent.form_input

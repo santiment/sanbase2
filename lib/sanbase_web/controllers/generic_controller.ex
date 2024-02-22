@@ -79,6 +79,7 @@ defmodule SanbaseWeb.GenericController do
 
   def create(conn, %{"resource" => resource} = params) do
     module = module_from_resource(resource)
+    admin_module = resource_module_map()[resource][:admin_module]
     field_type_map = field_type_map(resource, module)
     changes = params[resource]
 
@@ -103,9 +104,30 @@ defmodule SanbaseWeb.GenericController do
 
     case Sanbase.Repo.insert(changeset) do
       {:ok, response_resource} ->
-        conn
-        |> put_flash(:info, "#{resource} created successfully.")
-        |> redirect(to: Routes.generic_path(conn, :show, response_resource, resource: resource))
+        GenericAdmin.call_module_function_or_default(
+          admin_module,
+          :after_filter,
+          [response_resource, changes],
+          :ok
+        )
+        |> case do
+          {:error, error} ->
+            conn
+            |> put_flash(
+              :error,
+              "#{resource} created successfully. There was some error after creation: #{error}"
+            )
+            |> redirect(
+              to: Routes.generic_path(conn, :show, response_resource, resource: resource)
+            )
+
+          _ ->
+            conn
+            |> put_flash(:info, "#{resource} created successfully.")
+            |> redirect(
+              to: Routes.generic_path(conn, :show, response_resource, resource: resource)
+            )
+        end
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html",

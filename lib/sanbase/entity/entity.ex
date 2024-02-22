@@ -692,6 +692,7 @@ defmodule Sanbase.Entity do
         [preload?: false, distinct?: true, ordered?: false]
 
     current_user_id = Keyword.get(opts, :current_user_id)
+
     include_current_user_entities = Keyword.fetch!(opts, :include_current_user_entities)
     include_public_entities = Keyword.fetch!(opts, :include_public_entities)
 
@@ -837,6 +838,14 @@ defmodule Sanbase.Entity do
   end
 
   defp update_opts(opts) do
+    # TODO: Make it so it errors or combines the values
+    # when user_role_data_only is provided
+    opts =
+      case Keyword.get(opts, :user_id_data_only) do
+        user_id when is_integer(user_id) -> Keyword.put(opts, :user_ids, [user_id])
+        _ -> opts
+      end
+
     opts =
       case Keyword.get(opts, :filter) do
         %{slugs: slugs} = filter ->

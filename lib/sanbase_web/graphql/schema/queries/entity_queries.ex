@@ -43,7 +43,19 @@ defmodule SanbaseWeb.Graphql.Schema.EntityQueries do
       arg(:page_size, :integer)
       arg(:is_featured_data_only, :boolean, default_value: false)
       arg(:user_role_data_only, :user_role)
+
+      @desc ~s"""
+      If true, return only entities created by the current user that
+      executes this query
+      """
       arg(:current_user_data_only, :boolean, default_value: false)
+
+      @desc ~s"""
+      If provide, return the public entities of the specified user.
+      If the specified user is the current user, only the public entities will be shown.
+      To see the private entities of the current user, use the `currentUserDataOnly` flag
+      """
+      arg(:user_id_data_only, :integer, default_value: nil)
       arg(:cursor, :cursor_input_no_order, default_value: nil)
       arg(:filter, :entity_filter)
 

@@ -114,8 +114,18 @@ defmodule SanbaseWeb.GenericAdmin.PromoTrial do
       },
       funcs: %{
         user_id: &SanbaseWeb.GenericAdmin.User.user_link/1,
-        plans: fn promo_trial -> Enum.join(promo_trial.plans, ",") end
+        plans: fn promo_trial ->
+          id_name_map = PromoTrial.plan_id_name_map()
+
+          promo_trial.plans
+          |> Enum.map(fn plan -> id_name_map[plan] || plan end)
+          |> Enum.join(",")
+        end
       }
     }
+  end
+
+  def after_filter(_promo_trial, params) do
+    PromoTrial.create_promo_trial(params)
   end
 end

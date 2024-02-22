@@ -12,13 +12,12 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
 
   @plan_id_name_map %{
     "3" => "SanAPI by Santiment / PRO",
-    "5" => "SanAPI by Santiment / PRO",
-    "201" => "Sanbase by Santiment / PRO",
-    "43" => "Sandata by Santiment / PREMIUM"
+    "5" => "SanAPI by Santiment / CUSTOM",
+    "201" => "Sanbase by Santiment / PRO"
   }
 
-  # API Pro, API custom, Sanbase Pro and Grafana Premium
-  @promo_trial_plans [3, 5, 201, 43]
+  # API Pro, API custom, Sanbase Pro
+  @promo_trial_plans [3, 5, 201]
 
   schema "promo_trials" do
     field(:trial_days, :integer)
@@ -41,8 +40,13 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   def plan_id_name_map, do: @plan_id_name_map
   def promo_trial_plans, do: @promo_trial_plans
 
+  def create_promo_trial(%{"plans" => plans, "trial_days" => trial_days, "user_id" => user_id}) do
+    create_promo_trial(%{plans: plans, trial_days: trial_days, user_id: user_id})
+  end
+
   def create_promo_trial(%{plans: plans, trial_days: trial_days, user_id: user_id})
       when is_list(plans) do
+    user_id = maybe_convert_to_integer(user_id)
     {:ok, user} = User.by_id(user_id)
     plans = Enum.map(plans, &maybe_convert_to_integer/1)
     trial_days = maybe_convert_to_integer(trial_days)

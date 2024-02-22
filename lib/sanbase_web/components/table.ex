@@ -249,7 +249,7 @@ defmodule SanbaseWeb.TableComponent do
       class="text-white bg-blue-500 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
     >
       <.link href={Routes.generic_path(SanbaseWeb.Endpoint, :new, resource: @resource)}>
-        New <%= Inflex.singularize(@resource) %>
+        <.icon name="hero-plus-circle" /> Add new <%= Inflex.singularize(@resource) %>
       </.link>
     </button>
     """
@@ -260,7 +260,9 @@ defmodule SanbaseWeb.TableComponent do
     <div class="table-responsive">
       <div class="ml-4">
         <.search fields={@search_fields} resource={@resource} search={@search} />
-        <.new_resource_button resource={@resource} />
+        <%= if :new in @actions do %>
+          <.new_resource_button resource={@resource} />
+        <% end %>
       </div>
 
       <div class="m-4">
@@ -547,7 +549,7 @@ defmodule SanbaseWeb.LiveSearch do
       @click="results_open = true"
       @click.outside="results_open = false"
     >
-      <div class="relative ml-2 mt-2">
+      <div class="relative m-3">
         <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
           <.icon name="hero-magnifying-glass" />
         </div>

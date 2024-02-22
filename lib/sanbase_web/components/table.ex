@@ -538,22 +538,42 @@ defmodule SanbaseWeb.LiveSearch do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="relative ml-2 mt-2">
-      <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-        <.icon name="hero-magnifying-glass" />
+    <div
+      x-data="{results_open: true}"
+      @click="results_open = true"
+      @click.outside="results_open = false"
+    >
+      <div class="relative ml-2 mt-2">
+        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+          <.icon name="hero-magnifying-glass" />
+        </div>
+        <input
+          value={@query}
+          phx-keyup="do-search"
+          phx-debounce="200"
+          type="text"
+          id="simple-search"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          placeholder="Search resources..."
+          required
+        />
       </div>
-      <input
-        value={@query}
-        phx-keyup="do-search"
-        phx-debounce="200"
-        type="text"
-        id="simple-search"
-        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        placeholder="Search resources..."
-        required
-      />
+      <ul
+        x-show="results_open"
+        x-transition
+        class="absolute ml-2 py-2 text-gray-700 dark:text-gray-200 border shadow-xl bg-blue-50 rounded-xl"
+        aria-labelledby="dropdownDefaultButton"
+      >
+        <li :for={{name, path} <- @routes}>
+          <a
+            href={path}
+            class="block p-4 hover:bg-blue-100 dark:hover:bg-gray-600 dark:hover:text-white text-md font-semibold"
+          >
+            <%= name %>
+          </a>
+        </li>
+      </ul>
     </div>
-    <.results routes={@routes} />
     """
   end
 
@@ -570,24 +590,6 @@ defmodule SanbaseWeb.LiveSearch do
   def handle_event("do-search", %{"value" => query}, socket) do
     query = String.downcase(query)
     {:noreply, assign(socket, routes: search_routes(query), query: String.downcase(query))}
-  end
-
-  def results(assigns) do
-    ~H"""
-    <ul
-      class="absolute py-2 text-sm text-gray-700 dark:text-gray-200 border shadow-xl bg-blue-50 rounded-xl"
-      aria-labelledby="dropdownDefaultButton"
-    >
-      <li :for={{name, path} <- @routes}>
-        <a
-          href={path}
-          class="block p-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white text-lg font-semibold"
-        >
-          <%= name %>
-        </a>
-      </li>
-    </ul>
-    """
   end
 
   def search_routes("") do

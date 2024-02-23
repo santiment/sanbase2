@@ -264,31 +264,26 @@ defmodule SanbaseWeb.TableComponent do
           <.new_resource_button resource={@resource} />
         <% end %>
       </div>
-
-      <div class="m-4">
-        <h3 class="text-3xl font-medium text-gray-700"><%= @model %></h3>
-        <table class="table-auto border-collapse w-full mb-4">
-          <thead>
-            <tr
-              class="rounded-lg text-sm font-medium text-gray-700 text-left"
-              style="font-size: 0.9674rem"
-            >
+      <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+          <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
               <%= for field <- @fields do %>
-                <.th field={field} />
+                <th scope="col" class="px-6 py-3"><%= field %></th>
               <% end %>
-              <.th field="Actions" />
+              <th scope="col" class="px-6 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody class="text-sm font-normal text-gray-700">
+          <tbody>
             <%= for row <- @rows do %>
-              <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
+              <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                 <%= for field <- @fields do %>
                   <%= if field == :id do %>
-                    <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
+                    <td class="px-6 py-4">
                       <.a resource={@resource} action={:show} row={row} label={Map.get(row, field)} />
                     </td>
                   <% else %>
-                    <.td value={
+                    <.td2 value={
                       result =
                         if @assocs[row.id][field],
                           do: @assocs[row.id][field],
@@ -309,7 +304,7 @@ defmodule SanbaseWeb.TableComponent do
                     } />
                   <% end %>
                 <% end %>
-                <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
+                <td class="px-6 py-4">
                   <% index_actions = @actions -- [:new] %>
                   <%= for {action, index} <- Enum.with_index(index_actions) do %>
                     <.a resource={@resource} action={action} row={row} label={action} />
@@ -320,15 +315,6 @@ defmodule SanbaseWeb.TableComponent do
             <% end %>
           </tbody>
         </table>
-
-        <SanbaseWeb.PaginationComponent.pagination
-          resource={@resource}
-          rows_count={@rows_count}
-          page_size={@page_size}
-          current_page={@current_page}
-          action={@action}
-          search={@search}
-        />
       </div>
     </div>
     """
@@ -386,6 +372,14 @@ defmodule SanbaseWeb.TableComponent do
         </tbody>
       </table>
     </div>
+    """
+  end
+
+  def td2(assigns) do
+    ~H"""
+    <td class="px-6 py-4">
+      <%= @value %>
+    </td>
     """
   end
 

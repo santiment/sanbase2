@@ -200,43 +200,47 @@ defmodule SanbaseWeb.TableComponent do
     <div class="mt-6">
       <h3 class="text-3xl font-medium text-gray-700">Show <%= Inflex.singularize(@resource) %></h3>
       <div class="table-responsive">
-        <table class="table-auto border-collapse w-full mb-4 mt-4 text-sm">
-          <tbody class="text-sm font-normal text-gray-700">
-            <%= for field <- @fields do %>
-              <tr class="hover:bg-gray-100 border border-gray-200 py-2">
-                <.th class="px-2" field={to_string(field)} />
-                <.td
-                  class="px-2"
-                  value={
-                    result =
-                      if @assocs[@data.id][field],
-                        do: @assocs[@data.id][field],
-                        else: Map.get(@data, field)
+        <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+          <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+            <tbody>
+              <%= for field <- @fields do %>
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-600">
+                  <th class="text-xs pl-2 text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 border-b border-gray-200">
+                    <%= to_string(field) %>
+                  </th>
+                  <.td3
+                    class="px-6 py-4 border-b border-gray-200"
+                    value={
+                      result =
+                        if @assocs[@data.id][field],
+                          do: @assocs[@data.id][field],
+                          else: Map.get(@data, field)
 
-                    result =
-                      if @funcs[field] != nil, do: @funcs[field].(@data), else: result
+                      result =
+                        if @funcs[field] != nil, do: @funcs[field].(@data), else: result
 
-                    case Map.get(@field_type_map, field) do
-                      :map ->
-                        Jason.encode!(result)
+                      case Map.get(@field_type_map, field) do
+                        :map ->
+                          Jason.encode!(result)
 
-                      :list ->
-                        Jason.encode!(result)
+                        :list ->
+                          Jason.encode!(result)
 
-                      :boolean ->
-                        if result == true,
-                          do: ~H|<span class="hero-check-circle text-green-500" />|,
-                          else: ~H|<span class="hero-x-circle text-red-500" />|
+                        :boolean ->
+                          if result == true,
+                            do: ~H|<span class="hero-check-circle text-green-500" />|,
+                            else: ~H|<span class="hero-x-circle text-red-500" />|
 
-                      _ ->
-                        result
-                    end
-                  }
-                />
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
+                        _ ->
+                          result
+                      end
+                    }
+                  />
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
     """
@@ -248,10 +252,34 @@ defmodule SanbaseWeb.TableComponent do
       type="button"
       class="text-white bg-blue-500 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
     >
-      <.link href={Routes.generic_path(SanbaseWeb.Endpoint, :new, resource: @resource)}>
+      <.link href={
+        if @create_link_kv,
+          do:
+            Routes.generic_path(
+              SanbaseWeb.Endpoint,
+              :new,
+              Keyword.merge([resource: @resource], @create_link_kv)
+            ),
+          else: Routes.generic_path(SanbaseWeb.Endpoint, :new, resource: @resource)
+      }>
         <.icon name="hero-plus-circle" /> Add new <%= Inflex.singularize(@resource) %>
       </.link>
     </button>
+    """
+  end
+
+  def thead(assigns) do
+    ~H"""
+    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+      <tr>
+        <%= for field <- @fields do %>
+          <th scope="col" class="px-6 py-3"><%= field %></th>
+        <% end %>
+        <%= if @actions do %>
+          <th scope="col" class="px-6 py-3">Actions</th>
+        <% end %>
+      </tr>
+    </thead>
     """
   end
 
@@ -261,116 +289,97 @@ defmodule SanbaseWeb.TableComponent do
       <div class="ml-4">
         <.search fields={@search_fields} resource={@resource} search={@search} />
         <%= if :new in @actions do %>
-          <.new_resource_button resource={@resource} />
+          <.new_resource_button resource={@resource} create_link_kv={[]} />
         <% end %>
       </div>
       <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
         <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-          <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-            <tr>
-              <%= for field <- @fields do %>
-                <th scope="col" class="px-6 py-3"><%= field %></th>
-              <% end %>
-              <th scope="col" class="px-6 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <%= for row <- @rows do %>
-              <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                <%= for field <- @fields do %>
-                  <%= if field == :id do %>
-                    <td class="px-6 py-4">
-                      <.a resource={@resource} action={:show} row={row} label={Map.get(row, field)} />
-                    </td>
-                  <% else %>
-                    <.td2 value={
-                      result =
-                        if @assocs[row.id][field],
-                          do: @assocs[row.id][field],
-                          else: Map.get(row, field)
-
-                      result =
-                        if @funcs[field] != nil, do: @funcs[field].(row), else: result
-
-                      case Map.get(@field_type_map, field) do
-                        :boolean ->
-                          if result == true,
-                            do: ~H|<span class="hero-check-circle text-green-500" />|,
-                            else: ~H|<span class="hero-x-circle text-red-500" />|
-
-                        _ ->
-                          result
-                      end
-                    } />
-                  <% end %>
-                <% end %>
-                <td class="px-6 py-4">
-                  <% index_actions = @actions -- [:new] %>
-                  <%= for {action, index} <- Enum.with_index(index_actions) do %>
-                    <.a resource={@resource} action={action} row={row} label={action} />
-                    <%= if index < length(index_actions) - 1, do: raw(" | ") %>
-                  <% end %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
+          <.thead fields={@fields} actions={@actions} />
+          <.tbody
+            resource={@resource}
+            rows={@rows}
+            fields={@fields}
+            assocs={@assocs}
+            field_type_map={@field_type_map}
+            actions={@actions}
+            funcs={@funcs}
+          />
         </table>
       </div>
     </div>
     """
   end
 
+  def tbody(assigns) do
+    ~H"""
+    <tbody>
+      <%= for row <- @rows do %>
+        <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+          <%= for field <- @fields do %>
+            <%= if field == :id do %>
+              <td class="px-6 py-4">
+                <.a resource={@resource} action={:show} row={row} label={Map.get(row, field)} />
+              </td>
+            <% else %>
+              <.td2 value={
+                result =
+                  if @assocs[row.id][field],
+                    do: @assocs[row.id][field],
+                    else: Map.get(row, field)
+
+                result =
+                  if @funcs[field] != nil, do: @funcs[field].(row), else: result
+
+                case Map.get(@field_type_map, field) do
+                  :boolean ->
+                    if result == true,
+                      do: ~H|<span class="hero-check-circle text-green-500" />|,
+                      else: ~H|<span class="hero-x-circle text-red-500" />|
+
+                  _ ->
+                    result
+                end
+              } />
+            <% end %>
+          <% end %>
+          <%= if @actions do %>
+            <td class="px-6 py-4">
+              <% index_actions = @actions -- [:new] %>
+              <%= for {action, index} <- Enum.with_index(index_actions) do %>
+                <.a resource={@resource} action={action} row={row} label={action} />
+                <%= if index < length(index_actions) - 1, do: raw(" | ") %>
+              <% end %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+    """
+  end
+
   def has_many_table(assigns) do
     ~H"""
-    <div class="mt-6">
-      <h3 class="text-3xl font-medium text-gray-700"><%= @resource_name %></h3>
-      <%= if @create_link_kv != [] do %>
-        <.link
-          href={
-            Routes.generic_path(
-              SanbaseWeb.Endpoint,
-              :new,
-              Keyword.merge([resource: @resource], @create_link_kv)
-            )
-          }
-          class="underline relative lg:mx-0 mt-4 mb-4 pt-4 pb-4"
-        >
-          New <%= Inflex.singularize(@resource_name) %>
-        </.link>
-      <% end %>
-      <table class="table-auto border-collapse w-full mb-4">
-        <thead>
-          <tr
-            class="rounded-lg text-sm font-medium text-gray-700 text-left"
-            style="font-size: 0.9674rem"
-          >
-            <%= for field <- @fields do %>
-              <.th field={field} />
-            <% end %>
-          </tr>
-        </thead>
-        <tbody class="text-sm font-normal text-gray-700">
-          <%= for row <- @rows do %>
-            <tr class="hover:bg-gray-100 border-b border-gray-200 py-4">
-              <%= for field <- @fields do %>
-                <%= if field == :id do %>
-                  <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
-                    <.a resource={@resource} action={:show} row={row} label={Map.get(row, field)} />
-                  </td>
-                <% else %>
-                  <.td
-                    row={row}
-                    field={field}
-                    value={
-                      if @funcs[field] != nil, do: @funcs[field].(row), else: Map.get(row, field)
-                    }
-                  />
-                <% end %>
-              <% end %>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+    <div class="table-responsive">
+      <div class="m-4">
+        <h3 class="text-3xl font-medium text-gray-700 mb-2"><%= @resource_name %></h3>
+        <%= if @create_link_kv != [] do %>
+          <.new_resource_button resource={@resource} create_link_kv={@create_link_kv} />
+        <% end %>
+      </div>
+      <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+          <.thead fields={@fields} actions={[]} />
+          <.tbody
+            resource={@resource}
+            rows={@rows}
+            fields={@fields}
+            assocs={%{}}
+            field_type_map={%{}}
+            actions={[]}
+            funcs={@funcs}
+          />
+        </table>
+      </div>
     </div>
     """
   end
@@ -378,6 +387,14 @@ defmodule SanbaseWeb.TableComponent do
   def td2(assigns) do
     ~H"""
     <td class="px-6 py-4">
+      <%= @value %>
+    </td>
+    """
+  end
+
+  def td3(assigns) do
+    ~H"""
+    <td class={@class}>
       <%= @value %>
     </td>
     """
@@ -397,7 +414,10 @@ defmodule SanbaseWeb.TableComponent do
   # The component was borrowed from: https://flowbite.com/docs/forms/search-input/#search-with-dropdown
   def search(assigns) do
     ~H"""
-    <div x-data={Jason.encode!(%{open: false, selectedField: @search["field"] || "Fields"})}>
+    <div
+      class="mb-4"
+      x-data={Jason.encode!(%{open: false, selectedField: @search["field"] || "Fields"})}
+    >
       <.form
         for={%{}}
         as={:search}

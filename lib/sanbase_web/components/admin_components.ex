@@ -499,7 +499,7 @@ defmodule SanbaseWeb.AdminComponents do
     <div class="table-responsive">
       <div class="m-4 flex flex-col md:flex-row md:items-center gap-y-2 md:gap-x-10">
         <%= if :new in @actions do %>
-          <.new_resource_button resource={@resource} create_link_kv={[]} />
+          <.new_resource_button resource={@resource} />
         <% end %>
         <.search fields={@search_fields} resource={@resource} search={@search} />
       </div>
@@ -637,6 +637,22 @@ defmodule SanbaseWeb.AdminComponents do
     """
   end
 
+  @doc """
+  Renders a button for creating a new resource.
+
+  ## Attributes
+  - `:resource` - The resource that the button is for.
+  - `:create_link_kv` - The key-value pairs for creating a new resource with prefilled data.
+
+  ## Example
+  ```elixir
+  <.new_resource_button resource="users" create_link_kv={[linked_resource: :project, linked_resource_id: 100]} />
+  ```
+  """
+
+  attr(:resource, :string, required: true)
+  attr(:create_link_kv, :list, required: false, default: [])
+
   def new_resource_button(assigns) do
     ~H"""
     <button
@@ -644,20 +660,37 @@ defmodule SanbaseWeb.AdminComponents do
       class="text-white w-fit p-2 bg-blue-500 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
     >
       <.link href={
-        if @create_link_kv,
-          do:
-            Routes.generic_admin_path(
-              SanbaseWeb.Endpoint,
-              :new,
-              Keyword.merge([resource: @resource], @create_link_kv)
-            ),
-          else: Routes.generic_admin_path(SanbaseWeb.Endpoint, :new, resource: @resource)
+        Routes.generic_admin_path(
+          SanbaseWeb.Endpoint,
+          :new,
+          Keyword.merge([resource: @resource], @create_link_kv)
+        )
       }>
         <.icon name="hero-plus-circle" /> Add new <%= Inflex.singularize(@resource) %>
       </.link>
     </button>
     """
   end
+
+  @doc """
+  Action button for the index table.
+
+  ## Attributes
+  - `:resource` - The resource that the button is for.
+  - `:action` - The action for the button. One of :edit, :show, :delete
+  - `:row` - The record in the row in the table.
+  - `:label` - The label for the button.
+
+  ## Example
+  ```elixir
+  <.index_action_btn resource="users" action={:edit} row={@user} label="Edit" />
+  ```
+  """
+
+  attr(:resource, :string, required: true)
+  attr(:action, :atom, required: true)
+  attr(:row, :map, required: true)
+  attr(:label, :string, required: true)
 
   def index_action_btn(assigns) do
     ~H"""
@@ -682,6 +715,11 @@ defmodule SanbaseWeb.AdminComponents do
     """
   end
 
+  attr(:resource, :string, required: true)
+  attr(:action, :atom, required: true)
+  attr(:label, :string, required: true)
+  attr(:color, :atom, required: true)
+
   def action_btn(assigns) do
     ~H"""
     <.btn
@@ -692,6 +730,8 @@ defmodule SanbaseWeb.AdminComponents do
     """
   end
 
+  attr(:value, :string, required: true)
+
   def td_index(assigns) do
     ~H"""
     <td class="px-6 py-4">
@@ -700,6 +740,9 @@ defmodule SanbaseWeb.AdminComponents do
     """
   end
 
+  attr(:value, :string, required: true)
+  attr(:class, :string, required: false, default: "")
+
   def td_show(assigns) do
     ~H"""
     <td class={@class}>
@@ -707,6 +750,11 @@ defmodule SanbaseWeb.AdminComponents do
     </td>
     """
   end
+
+  attr(:resource, :string, required: true)
+  attr(:action, :atom, required: true)
+  attr(:row, :map, required: true)
+  attr(:label, :string, required: true)
 
   def a(assigns) do
     ~H"""
@@ -727,8 +775,8 @@ defmodule SanbaseWeb.AdminComponents do
   - `:rows_count` - The total number of rows for the table.
   - `:page_size` - The page size for the table.
   - `:current_page` - The current page for the table.
-  - `:action` - The action for the table.
-  - `:search` - The search data for the table.
+  - `:action` - The action - :index or :search.
+  - `:search` - The search data for the table. Ex: %{"field" => "ticker", "value" => "SAN"}
 
   ## Example
   ```elixir
@@ -738,7 +786,7 @@ defmodule SanbaseWeb.AdminComponents do
     page_size=10
     current_page=1
     action=:index
-    search=%{}
+    search={%{"field" => "ticker", "value" => "SAN"}}
   />
   ```
   """
@@ -770,6 +818,13 @@ defmodule SanbaseWeb.AdminComponents do
     </div>
     """
   end
+
+  attr(:resource, :string, required: true)
+  attr(:action, :atom, required: true)
+  attr(:search, :map, required: true)
+  attr(:current_page, :integer, required: true)
+  attr(:rows_count, :integer, required: true)
+  attr(:page_size, :integer, required: true)
 
   def pagination_buttons(assigns) do
     ~H"""
@@ -811,7 +866,26 @@ defmodule SanbaseWeb.AdminComponents do
     end
   end
 
+  @doc """
   # The component was borrowed from: https://flowbite.com/docs/forms/search-input/#search-with-dropdown
+
+  Renders a search component with a dropdown for selecting the search field.
+
+  ## Attributes
+  - `:fields` - The fields to be displayed in the dropdown.
+  - `:resource` - The resource that the search is for.
+  - `:search` - The search data for the table.
+
+  ## Example
+  ```elixir
+  <.search resource="users" fields={[:name, :email]} />
+  ```
+  """
+
+  attr(:resource, :string, required: true)
+  attr(:fields, :list, required: true)
+  attr(:search, :map, required: false, default: %{})
+
   def search(assigns) do
     ~H"""
     <div x-data={Jason.encode!(%{open: false, selectedField: @search["field"] || "Fields"})}>

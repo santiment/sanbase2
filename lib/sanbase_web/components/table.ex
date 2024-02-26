@@ -214,7 +214,7 @@ defmodule SanbaseWeb.TableComponent do
   def has_many_table(assigns) do
     ~H"""
     <div class="table-responsive">
-      <div class="m-4">
+      <div class="m-4 flex flex-col gap-x-10">
         <h3 class="text-3xl font-medium text-gray-700 mb-2"><%= @resource_name %></h3>
         <%= if @create_link_kv != [] do %>
           <.new_resource_button resource={@resource} create_link_kv={@create_link_kv} />
@@ -241,11 +241,11 @@ defmodule SanbaseWeb.TableComponent do
   def table(assigns) do
     ~H"""
     <div class="table-responsive">
-      <div class="ml-4">
-        <.search fields={@search_fields} resource={@resource} search={@search} />
+      <div class="m-4 flex flex-col md:flex-row md:items-center gap-y-2 md:gap-x-10">
         <%= if :new in @actions do %>
           <.new_resource_button resource={@resource} create_link_kv={[]} />
         <% end %>
+        <.search fields={@search_fields} resource={@resource} search={@search} />
       </div>
       <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
         <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
@@ -376,7 +376,7 @@ defmodule SanbaseWeb.TableComponent do
     ~H"""
     <button
       type="button"
-      class="text-white bg-blue-500 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+      class="text-white w-fit p-2 bg-blue-500 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
     >
       <.link href={
         if @create_link_kv,
@@ -463,16 +463,13 @@ defmodule SanbaseWeb.TableComponent do
   # The component was borrowed from: https://flowbite.com/docs/forms/search-input/#search-with-dropdown
   def search(assigns) do
     ~H"""
-    <div
-      class="mb-4"
-      x-data={Jason.encode!(%{open: false, selectedField: @search["field"] || "Fields"})}
-    >
+    <div x-data={Jason.encode!(%{open: false, selectedField: @search["field"] || "Fields"})}>
       <.form
         for={%{}}
         as={:search}
         method="get"
         action={Routes.generic_path(SanbaseWeb.Endpoint, :search, resource: @resource)}
-        class="max-w-lg mx-auto mt-2"
+        class="max-w-lg md:w-96"
       >
         <input type="hidden" name="search[field]" x-bind:value="selectedField" />
         <input type="hidden" name="resource" value={@resource} />

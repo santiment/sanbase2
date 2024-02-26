@@ -42,3 +42,9 @@ INSERT INTO plans (id, name, product_id, amount, currency, interval, "order") VA
   (52,'EXTENSION',5,216000,'USD','year',0)
   ON CONFLICT DO NOTHING
 """)
+
+# Otherwise when we try to create a custom plan it will fail
+# as plans_id_seq will produce `1` as the next value
+Sanbase.Repo.query!("""
+ALTER SEQUENCE plans_id_seq RESTART WITH 1000;
+""")

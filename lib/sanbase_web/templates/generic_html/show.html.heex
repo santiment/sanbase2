@@ -1,5 +1,5 @@
 <div class="container mx-auto px-6 py-8">
-  <SanbaseWeb.TableComponent.show_table
+  <SanbaseWeb.AdminComponents.show_table
     resource={@resource}
     data={@data}
     fields={@fields}
@@ -10,12 +10,12 @@
 
   <div class="m-2">
     <%= if :edit in @actions do %>
-      <SanbaseWeb.TableComponent.btn
+      <SanbaseWeb.AdminComponents.btn
         label="Edit"
         href={Routes.generic_path(@conn, :edit, @data, resource: @resource)}
       />
     <% end %>
-    <SanbaseWeb.TableComponent.back_btn />
+    <SanbaseWeb.AdminComponents.back_btn />
   </div>
 
   <%= for bt <- @belongs_to do %>
@@ -49,7 +49,7 @@
   <% end %>
 
   <%= for table <- @has_many do %>
-    <SanbaseWeb.TableComponent.has_many_table
+    <SanbaseWeb.AdminComponents.has_many_table
       resource={table.resource}
       resource_name={table.resource_name}
       rows={table.rows}

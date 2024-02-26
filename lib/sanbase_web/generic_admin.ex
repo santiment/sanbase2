@@ -43,6 +43,7 @@ defmodule SanbaseWeb.GenericAdmin do
           funcs: %{}
         }
         |> Map.merge(call_module_function_or_default(admin_module, :resource, [], %{}))
+        |> Map.update(:actions, [], fn actions -> ([:show] ++ actions) |> Enum.uniq() end)
     }
   end
 

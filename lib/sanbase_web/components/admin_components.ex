@@ -797,10 +797,13 @@ defmodule SanbaseWeb.AdminComponents do
   defp pagination_path(resource, action, search, page_number) do
     case action do
       :index ->
-        Routes.generic_path(SanbaseWeb.Endpoint, action, %{resource: resource, page: page_number})
+        Routes.generic_admin_path(SanbaseWeb.Endpoint, action, %{
+          resource: resource,
+          page: page_number
+        })
 
       :search ->
-        Routes.generic_path(SanbaseWeb.Endpoint, action, %{
+        Routes.generic_admin_path(SanbaseWeb.Endpoint, action, %{
           "resource" => resource,
           "page" => page_number,
           "search" => search

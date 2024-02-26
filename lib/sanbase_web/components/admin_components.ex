@@ -1,10 +1,50 @@
-defmodule SanbaseWeb.TableComponent do
+defmodule SanbaseWeb.AdminComponents do
   use Phoenix.Component
   use Phoenix.HTML
 
   import SanbaseWeb.CoreComponents
 
   alias SanbaseWeb.Router.Helpers, as: Routes
+
+  @doc """
+  Renders a form with a table layout.
+
+  ## Attributes
+
+  - `:type` - The type of the form, either "new" or "edit".
+  - `:resource` - The resource that the form is for.
+  - `:changeset` - The changeset for the form data.
+  - `:action` - The action URL for the form.
+  - `:form_fields` - The fields to be included in the form.
+  - `:belongs_to_fields` - The fields that belong to this resource.
+  - `:collections` - The fields that are collections for this resource.
+  - `:field_type_map` - A map of field types for the form fields.
+  - `:data` - The data for the form fields.
+
+  ## Example
+
+  <.form_table
+    type="new"
+    resource="users"
+    changeset={@changeset}
+    action="/?resource=users"
+    form_fields={[:name, :email]}
+    belongs_to_fields=%{}
+    collections=%{}
+    field_type_map={%{name: :text}}
+    data=%{}
+  />
+  """
+
+  attr(:type, :string, required: true)
+  attr(:resource, :string, required: true)
+  attr(:changeset, :map, required: true)
+  attr(:action, :string, required: true)
+  attr(:form_fields, :list, required: true)
+  attr(:belongs_to_fields, :map, required: false, default: %{})
+  attr(:collections, :map, required: false, default: %{})
+  attr(:field_type_map, :map, required: false, default: %{})
+  attr(:data, :map, required: false, default: %{})
 
   def form_table(assigns) do
     ~H"""
@@ -47,13 +87,32 @@ defmodule SanbaseWeb.TableComponent do
           </div>
         <% end %>
 
-        <.form_nav type={@type} resource={@resource} action={@action} />
+        <.form_bottom_nav type={@type} resource={@resource} />
       </.form>
     </div>
     """
   end
 
-  def form_nav(assigns) do
+  @doc """
+  Renders a bottom navigation for a form.
+
+  ## Attributes
+
+  - `:resource` - The resource that the form is for.
+  - `:type` - The type of the form, either "new" or "edit".
+
+  ## Example
+
+  <.form_nav
+    resource="users"
+    type="new"
+  />
+  """
+
+  attr(:resource, :string, required: true)
+  attr(:type, :string, required: true)
+
+  def form_bottom_nav(assigns) do
     ~H"""
     <div class="flex justify-end">
       <.action_btn resource={@resource} action={:index} label="Back" color={:white} />
@@ -61,6 +120,22 @@ defmodule SanbaseWeb.TableComponent do
     </div>
     """
   end
+
+  @doc """
+  Renders an error message for a form.
+
+  ## Attributes
+
+  - `:changeset` - The changeset containing the form errors.
+
+  ## Example
+
+  <.form_error
+    changeset={@changeset}
+  />
+  """
+
+  attr(:changeset, :map, required: true)
 
   def form_error(assigns) do
     ~H"""
@@ -77,6 +152,38 @@ defmodule SanbaseWeb.TableComponent do
     </div>
     """
   end
+
+  @doc """
+  Renders an input field for a form.
+
+  ## Attributes
+
+  - `:resource` - The resource that the form is for.
+  - `:field` - The field name for the input.
+  - `:field_type_map` - A map of field types for the form fields.
+  - `:type` - The type of the form, either "new" or "edit".
+  - `:changeset` - The changeset containing the form data.
+  - `:data` - Additional data for the form.
+
+  ## Example
+
+
+  <.form_input
+    resource="users"
+    field={:name}
+    field_type_map={%{name: :text}}
+    type="new"
+    changeset={@changeset}
+    data=%{}
+  />
+  """
+
+  attr(:resource, :string, required: true)
+  attr(:field, :atom, required: true)
+  attr(:field_type_map, :map, required: true)
+  attr(:type, :string, required: true)
+  attr(:changeset, :map, required: true)
+  attr(:data, :map, required: false, default: %{})
 
   def form_input(assigns) do
     ~H"""
@@ -120,6 +227,40 @@ defmodule SanbaseWeb.TableComponent do
     """
   end
 
+  @doc """
+  Renders a select field for a form.
+
+  ## Attributes
+
+  - `:resource` - The resource that the form is for.
+  - `:field` - The field name for the select input.
+  - `:options` - The options for the select input.
+  - `:select_type` - The type of the select input, either `:select` or `:multiselect`.
+  - `:belongs_to` - Whether the field belongs to another resource.
+  - `:type` - The type of the form, either "new" or "edit".
+  - `:changeset` - The changeset containing the form data.
+
+  ## Example
+
+  <.form_select
+    resource="users"
+    field={:role}
+    options={[{1, "admin"}, {2, "user"}]}
+    select_type=:select
+    belongs_to=false
+    type="new"
+    changeset={@changeset}
+  />
+  """
+
+  attr(:resource, :string, required: true)
+  attr(:field, :atom, required: true)
+  attr(:options, :list, required: true)
+  attr(:select_type, :atom, required: false, default: :select)
+  attr(:belongs_to, :boolean, required: false, default: false)
+  attr(:type, :string, required: true)
+  attr(:changeset, :map, required: true)
+
   def form_select(assigns) do
     ~H"""
     <.input
@@ -159,6 +300,37 @@ defmodule SanbaseWeb.TableComponent do
     />
     """
   end
+
+  @doc """
+  Renders a table for displaying a resource.
+
+  ## Attributes
+
+  - `:resource` - The resource that the table is for.
+  - `:fields` - The fields to be displayed in the table.
+  - `:assocs` - The associations for the resource.
+  - `:data` - The data for the resource.
+  - `:funcs` - The functions to be applied to the data.
+  - `:field_type_map` - A map of field types for the table fields.
+
+  ## Example
+
+  <.show_table
+    resource="users"
+    fields={[:name, :email]}
+    assocs={%{}}
+    data={@user}
+    funcs={%{}}
+    field_type_map={%{name: :text}}
+  />
+  """
+
+  attr(:resource, :string, required: true)
+  attr(:fields, :list, required: true)
+  attr(:assocs, :map, required: false, default: %{})
+  attr(:data, :map, required: true)
+  attr(:funcs, :map, required: false, default: %{})
+  attr(:field_type_map, :map, required: true)
 
   def show_table(assigns) do
     ~H"""
@@ -211,6 +383,38 @@ defmodule SanbaseWeb.TableComponent do
     """
   end
 
+  @doc """
+  Renders a table for displaying a resource that has many associations.
+
+  ## Attributes
+
+  - `:resource` - The resource that the table is for.
+  - `:resource_name` - The name of the resource.
+  - `:create_link_kv` - The link for creating a new resource with prefilled data.
+  - `:fields` - The fields to be displayed in the table.
+  - `:rows` - The rows of data for the table.
+  - `:funcs` - The functions to be applied to the data.
+
+  ## Example
+
+  ```elixir
+  <.has_many_table
+    resource="users"
+    resource_name="Users"
+    create_link_kv={[]}
+    fields={[:name, :email]}
+    rows={@users}
+    funcs={%{}}
+  />
+  """
+
+  attr(:resource, :string, required: true)
+  attr(:resource_name, :string, required: true)
+  attr(:create_link_kv, :list, required: false, default: [])
+  attr(:fields, :list, required: true)
+  attr(:rows, :list, required: true)
+  attr(:funcs, :map, required: false, default: %{})
+
   def has_many_table(assigns) do
     ~H"""
     <div class="table-responsive">
@@ -238,6 +442,58 @@ defmodule SanbaseWeb.TableComponent do
     """
   end
 
+  @doc """
+  Renders a index table for displaying a resource.
+
+  ## Attributes
+  - `:resource` - The resource that the table is for.
+  - `:fields` - The fields to be displayed in the table.
+  - `:rows` - The rows of data for the table.
+  - `:assocs` - The associations for the resource.
+  - `:field_type_map` - A map of field types for the table fields.
+  - `:actions` - The actions to be displayed in the table.
+  - `:funcs` - The functions to be applied to the data.
+  - `:search_fields` - The fields to be searched in the table.
+  - `:search` - The search data for the table.
+  - `:rows_count` - The total number of rows for the table.
+  - `:page_size` - The page size for the table.
+  - `:current_page` - The current page for the table.
+  - `:action` - The action for the table.
+
+  ## Example
+  ```elixir
+
+  <.table
+    resource="users"
+    fields={[:name, :email]}
+    rows={@users}
+    assocs={%{}}
+    field_type_map={%{}}
+    actions=[:show, :edit, :delete]
+    funcs={%{}}
+    search_fields=[:name, :email]
+    search=%{}
+    rows_count=10
+    page_size=10
+    current_page=1
+  />
+  ```
+  """
+
+  attr(:resource, :string, required: true)
+  attr(:fields, :list, required: true)
+  attr(:rows, :list, required: true)
+  attr(:assocs, :map, required: false, default: %{})
+  attr(:field_type_map, :map, required: false, default: %{})
+  attr(:actions, :list, required: false, default: [])
+  attr(:funcs, :map, required: false, default: %{})
+  attr(:search_fields, :list, required: false, default: [])
+  attr(:search, :map, required: false, default: %{})
+  attr(:rows_count, :integer, required: false, default: 0)
+  attr(:page_size, :integer, required: false, default: 0)
+  attr(:current_page, :integer, required: false, default: 1)
+  attr(:action, :atom, required: false, default: :index)
+
   def table(assigns) do
     ~H"""
     <div class="table-responsive">
@@ -260,6 +516,15 @@ defmodule SanbaseWeb.TableComponent do
             funcs={@funcs}
           />
         </table>
+
+        <.pagination
+          resource={@resource}
+          rows_count={@rows_count}
+          page_size={@page_size}
+          current_page={@current_page}
+          action={@action}
+          search={@search}
+        />
       </div>
     </div>
     """
@@ -427,12 +692,6 @@ defmodule SanbaseWeb.TableComponent do
     """
   end
 
-  def link_btn(assigns) do
-    ~H"""
-    <.btn href={@href} label={@text} color={:blue} />
-    """
-  end
-
   def td_index(assigns) do
     ~H"""
     <td class="px-6 py-4">
@@ -458,6 +717,98 @@ defmodule SanbaseWeb.TableComponent do
       <%= @label %>
     </.link>
     """
+  end
+
+  @doc """
+  Renders a pagination component.
+
+  ## Attributes
+  - `:resource` - The resource that the pagination is for.
+  - `:rows_count` - The total number of rows for the table.
+  - `:page_size` - The page size for the table.
+  - `:current_page` - The current page for the table.
+  - `:action` - The action for the table.
+  - `:search` - The search data for the table.
+
+  ## Example
+  ```elixir
+  <.pagination
+    resource="users"
+    rows_count=10
+    page_size=10
+    current_page=1
+    action=:index
+    search=%{}
+  />
+  ```
+  """
+
+  attr(:resource, :string, required: true)
+  attr(:rows_count, :integer, required: true)
+  attr(:page_size, :integer, required: true)
+  attr(:current_page, :integer, required: true)
+  attr(:action, :atom, required: true)
+  attr(:search, :map, required: false, default: %{})
+
+  def pagination(assigns) do
+    ~H"""
+    <div class="flex justify-between items-center p-4">
+      <.pagination_buttons
+        resource={@resource}
+        rows_count={@rows_count}
+        page_size={@page_size}
+        current_page={@current_page}
+        action={@action}
+        search={@search}
+      />
+      <span class="text-sm text-gray-700">
+        Showing <%= @current_page * @page_size + 1 %> to <%= Enum.min([
+          (@current_page + 1) * @page_size,
+          @rows_count
+        ]) %> of <%= @rows_count %> entries
+      </span>
+    </div>
+    """
+  end
+
+  def pagination_buttons(assigns) do
+    ~H"""
+    <div class="inline-flex">
+      <%= unless @current_page == 0 do %>
+        <.link
+          href={pagination_path(@resource, @action, @search, @current_page - 1)}
+          class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-300"
+        >
+          Previous
+        </.link>
+      <% end %>
+      <%= unless @current_page >= div(@rows_count - 1, @page_size) do %>
+        <.link
+          href={pagination_path(@resource, @action, @search, @current_page + 1)}
+          class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-300"
+        >
+          Next
+        </.link>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp pagination_path(resource, action, search, page_number) do
+    case action do
+      :index ->
+        Routes.generic_admin_path(SanbaseWeb.Endpoint, action, %{
+          resource: resource,
+          page: page_number
+        })
+
+      :search ->
+        Routes.generic_admin_path(SanbaseWeb.Endpoint, action, %{
+          "resource" => resource,
+          "page" => page_number,
+          "search" => search
+        })
+    end
   end
 
   # The component was borrowed from: https://flowbite.com/docs/forms/search-input/#search-with-dropdown
@@ -530,73 +881,6 @@ defmodule SanbaseWeb.TableComponent do
       </.form>
     </div>
     """
-  end
-end
-
-defmodule SanbaseWeb.PaginationComponent do
-  use Phoenix.Component
-
-  alias SanbaseWeb.Router.Helpers, as: Routes
-
-  def pagination(assigns) do
-    ~H"""
-    <div class="flex justify-between items-center p-4">
-      <.pagination_buttons
-        resource={@resource}
-        rows_count={@rows_count}
-        page_size={@page_size}
-        current_page={@current_page}
-        action={@action}
-        search={@search}
-      />
-      <span class="text-sm text-gray-700">
-        Showing <%= @current_page * @page_size + 1 %> to <%= Enum.min([
-          (@current_page + 1) * @page_size,
-          @rows_count
-        ]) %> of <%= @rows_count %> entries
-      </span>
-    </div>
-    """
-  end
-
-  def pagination_buttons(assigns) do
-    ~H"""
-    <div class="inline-flex">
-      <%= unless @current_page == 0 do %>
-        <.link
-          href={pagination_path(@resource, @action, @search, @current_page - 1)}
-          class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-300"
-        >
-          Previous
-        </.link>
-      <% end %>
-      <%= unless @current_page >= div(@rows_count - 1, @page_size) do %>
-        <.link
-          href={pagination_path(@resource, @action, @search, @current_page + 1)}
-          class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-300"
-        >
-          Next
-        </.link>
-      <% end %>
-    </div>
-    """
-  end
-
-  defp pagination_path(resource, action, search, page_number) do
-    case action do
-      :index ->
-        Routes.generic_admin_path(SanbaseWeb.Endpoint, action, %{
-          resource: resource,
-          page: page_number
-        })
-
-      :search ->
-        Routes.generic_admin_path(SanbaseWeb.Endpoint, action, %{
-          "resource" => resource,
-          "page" => page_number,
-          "search" => search
-        })
-    end
   end
 end
 

@@ -10,7 +10,7 @@
     action={@action}
   >
     <%= if @changeset.action do %>
-      <SanbaseWeb.TableComponent.form_error changeset={@changeset} />
+      <SanbaseWeb.AdminComponents.form_error changeset={@changeset} />
     <% end %>
 
     <%= for field <- @form_fields do %>
@@ -31,7 +31,7 @@
               }
             ) %>
           <% else %>
-            <SanbaseWeb.TableComponent.form_select
+            <SanbaseWeb.AdminComponents.form_select
               type={type}
               resource={@resource}
               field={field}
@@ -43,7 +43,7 @@
           <% end %>
         <% else %>
           <%= if @collections[field] do %>
-            <SanbaseWeb.TableComponent.form_select
+            <SanbaseWeb.AdminComponents.form_select
               type={type}
               resource={@resource}
               field={field}
@@ -53,7 +53,7 @@
               select_type={@field_type_map[field] || :select}
             />
           <% else %>
-            <SanbaseWeb.TableComponent.form_input
+            <SanbaseWeb.AdminComponents.form_input
               type={type}
               resource={@resource}
               field={field}
@@ -66,6 +66,6 @@
       </div>
     <% end %>
 
-    <SanbaseWeb.TableComponent.form_nav type={type} resource={@resource} action={@action} />
+    <SanbaseWeb.AdminComponents.form_bottom_nav type={type} resource={@resource} />
   </.form>
 </div>

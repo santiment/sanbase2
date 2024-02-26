@@ -8,13 +8,15 @@
     field_type_map={@field_type_map}
   />
 
-  <%= if :edit in @actions do %>
-    <SanbaseWeb.TableComponent.link_btn
-      text="Edit"
-      href={Routes.generic_path(@conn, :edit, @data, resource: @resource)}
-    />
-  <% end %>
-  <SanbaseWeb.TableComponent.back_btn resource={@resource} action={:index} />
+  <div class="m-2">
+    <%= if :edit in @actions do %>
+      <SanbaseWeb.TableComponent.btn
+        label="Edit"
+        href={Routes.generic_path(@conn, :edit, @data, resource: @resource)}
+      />
+    <% end %>
+    <SanbaseWeb.TableComponent.back_btn />
+  </div>
 
   <%= for bt <- @belongs_to do %>
     <div class="mt-4">

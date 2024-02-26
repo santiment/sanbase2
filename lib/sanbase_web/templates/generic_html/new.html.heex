@@ -33,6 +33,7 @@
               changeset={@changeset}
               options={@belongs_to_fields[field][:data]}
               belongs_to={true}
+              select_type={@field_type_map[field] || :select}
             />
           <% end %>
         <% else %>

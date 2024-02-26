@@ -12,7 +12,7 @@
     <%= if :edit in @actions do %>
       <SanbaseWeb.TableComponent.btn
         label="Edit"
-        href={Routes.generic_path(@conn, :edit, @data, resource: @resource)}
+        href={Routes.generic_admin_path(@conn, :edit, @data, resource: @resource)}
       />
     <% end %>
     <SanbaseWeb.TableComponent.back_btn />
@@ -36,7 +36,7 @@
         <span>
           <%= link(to_string(action),
             to:
-              Routes.generic_path(SanbaseWeb.Endpoint, :show_action,
+              Routes.generic_admin_path(SanbaseWeb.Endpoint, :show_action,
                 action: action,
                 resource: @resource,
                 id: @data.id

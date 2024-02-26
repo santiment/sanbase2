@@ -32,7 +32,9 @@ defmodule SanbaseWeb.GenericAdmin.Subscription do
 
   def href(resource, id, label) do
     relative_url =
-      SanbaseWeb.Router.Helpers.generic_path(SanbaseWeb.Endpoint, :show, id, resource: resource)
+      SanbaseWeb.Router.Helpers.generic_admin_path(SanbaseWeb.Endpoint, :show, id,
+        resource: resource
+      )
 
     Phoenix.HTML.Link.link(label, to: relative_url, class: "text-blue-600 hover:text-blue-800")
   end

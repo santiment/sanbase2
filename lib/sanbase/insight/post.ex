@@ -268,7 +268,7 @@ defmodule Sanbase.Insight.Post do
 
   @impl Sanbase.Entity.Behaviour
   def by_ids(post_ids, opts) when is_list(post_ids) do
-    preload = Keyword.get(opts, :preload, [:featured_item])
+    preload = Keyword.get(opts, :preload, [:featured_item, :tags])
 
     result =
       from(p in base_query(),

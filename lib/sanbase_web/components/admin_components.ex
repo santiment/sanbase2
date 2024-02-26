@@ -646,12 +646,12 @@ defmodule SanbaseWeb.AdminComponents do
       <.link href={
         if @create_link_kv,
           do:
-            Routes.generic_path(
+            Routes.generic_admin_path(
               SanbaseWeb.Endpoint,
               :new,
               Keyword.merge([resource: @resource], @create_link_kv)
             ),
-          else: Routes.generic_path(SanbaseWeb.Endpoint, :new, resource: @resource)
+          else: Routes.generic_admin_path(SanbaseWeb.Endpoint, :new, resource: @resource)
       }>
         <.icon name="hero-plus-circle" /> Add new <%= Inflex.singularize(@resource) %>
       </.link>
@@ -670,7 +670,7 @@ defmodule SanbaseWeb.AdminComponents do
         end
       }
       size={:small}
-      href={Routes.generic_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}
+      href={Routes.generic_admin_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}
       label={@label}
     />
     """
@@ -685,7 +685,7 @@ defmodule SanbaseWeb.AdminComponents do
   def action_btn(assigns) do
     ~H"""
     <.btn
-      href={Routes.generic_path(SanbaseWeb.Endpoint, @action, resource: @resource)}
+      href={Routes.generic_admin_path(SanbaseWeb.Endpoint, @action, resource: @resource)}
       label={@label}
       color={@color}
     />
@@ -711,7 +711,7 @@ defmodule SanbaseWeb.AdminComponents do
   def a(assigns) do
     ~H"""
     <.link
-      href={Routes.generic_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}
+      href={Routes.generic_admin_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}
       class="underline"
     >
       <%= @label %>
@@ -816,7 +816,7 @@ defmodule SanbaseWeb.AdminComponents do
         for={%{}}
         as={:search}
         method="get"
-        action={Routes.generic_path(SanbaseWeb.Endpoint, :search, resource: @resource)}
+        action={Routes.generic_admin_path(SanbaseWeb.Endpoint, :search, resource: @resource)}
         class="max-w-lg md:w-96"
       >
         <input type="hidden" name="search[field]" x-bind:value="selectedField" />
@@ -886,6 +886,15 @@ defmodule SanbaseWeb.LiveSearch do
   import SanbaseWeb.CoreComponents
 
   @impl true
+  def mount(_params, _session, socket) do
+    {:ok,
+     socket
+     |> assign(:query, "")
+     |> assign(:routes, [])
+     |> assign(:show_icon, true), layout: false}
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div
@@ -928,15 +937,6 @@ defmodule SanbaseWeb.LiveSearch do
   end
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:query, "")
-     |> assign(:routes, [])
-     |> assign(:show_icon, true), layout: false}
-  end
-
-  @impl true
   def handle_event("do-search", %{"value" => query}, socket) do
     query = String.downcase(query)
     {:noreply, assign(socket, routes: search_routes(query), query: String.downcase(query))}
@@ -947,7 +947,7 @@ defmodule SanbaseWeb.LiveSearch do
   end
 
   def search_routes(query) do
-    SanbaseWeb.GenericController.all_routes()
+    SanbaseWeb.GenericAdminController.all_routes()
     |> Enum.map(fn {name, _path} = tuple ->
       name = String.downcase(name)
       query = String.downcase(query)

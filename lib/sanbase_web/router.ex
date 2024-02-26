@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Router do
   end
 
   pipeline :admin2 do
-    plug(SanbaseWeb.AssignRoutes)
+    plug(SanbaseWeb.GenericAdminAssignRoutes)
     plug(:put_layout, html: {SanbaseWeb.Layouts, :admin2})
   end
 
@@ -73,10 +73,10 @@ defmodule SanbaseWeb.Router do
     resources("/webinars", WebinarController)
     resources("/custom_plans", CustomPlanController)
 
-    get("/", GenericController, :home)
-    get("/generic/search", GenericController, :search)
-    get("/generic/show_action", GenericController, :show_action)
-    resources("/generic", GenericController)
+    get("/", GenericAdminController, :home)
+    get("/generic/search", GenericAdminController, :search)
+    get("/generic/show_action", GenericAdminController, :show_action)
+    resources("/generic", GenericAdminController)
   end
 
   scope "/" do

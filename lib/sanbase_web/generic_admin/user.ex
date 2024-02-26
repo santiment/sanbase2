@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.GenericAdmin.User do
   alias Sanbase.Accounts.User
-  alias SanbaseWeb.GenericController
+  alias SanbaseWeb.GenericAdminController
 
   @schema_module User
 
@@ -161,14 +161,14 @@ defmodule SanbaseWeb.GenericAdmin.User do
 
     Sanbase.ApiCallLimit.reset(user)
 
-    GenericController.show(conn, %{"resource" => "users", "id" => user.id})
+    GenericAdminController.show(conn, %{"resource" => "users", "id" => user.id})
   end
 
   def reset_queries_credits_spent(conn, %{id: user_id}) do
     Sanbase.Math.to_integer(user_id)
     |> Sanbase.ModeratorQueries.reset_user_monthly_credits()
 
-    GenericController.show(conn, %{"resource" => "users", "id" => user_id})
+    GenericAdminController.show(conn, %{"resource" => "users", "id" => user_id})
   end
 
   def user_link(row) do

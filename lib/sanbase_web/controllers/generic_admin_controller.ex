@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.GenericController do
+defmodule SanbaseWeb.GenericAdminController do
   use SanbaseWeb, :controller
 
   import Ecto.Query
@@ -56,7 +56,7 @@ defmodule SanbaseWeb.GenericController do
 
   def new(conn, %{"resource" => resource} = params) do
     module = module_from_resource(resource)
-    action = Routes.generic_path(conn, :create, resource: resource)
+    action = Routes.generic_admin_path(conn, :create, resource: resource)
     form_fields = resource_module_map()[resource][:new_fields] || []
     field_type_map = field_type_map(resource, module)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
@@ -97,7 +97,7 @@ defmodule SanbaseWeb.GenericController do
 
     changeset = apply(module, changeset_function, [struct(module), changes])
     form_fields = resource_module_map()[resource][:new_fields] || []
-    action = Routes.generic_path(conn, :create, resource: resource)
+    action = Routes.generic_admin_path(conn, :create, resource: resource)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
     belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
     collections = resource_module_map()[resource][:collections] || %{}
@@ -118,14 +118,14 @@ defmodule SanbaseWeb.GenericController do
               "#{resource} created successfully. There was some error after creation: #{error}"
             )
             |> redirect(
-              to: Routes.generic_path(conn, :show, response_resource, resource: resource)
+              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
             )
 
           _ ->
             conn
             |> put_flash(:info, "#{resource} created successfully.")
             |> redirect(
-              to: Routes.generic_path(conn, :show, response_resource, resource: resource)
+              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
             )
         end
 
@@ -178,7 +178,7 @@ defmodule SanbaseWeb.GenericController do
 
     assocs =
       Enum.map([data], fn row ->
-        {row.id, SanbaseWeb.GenericController.LinkBuilder.build_link(module, row)}
+        {row.id, SanbaseWeb.GenericAdminController.LinkBuilder.build_link(module, row)}
       end)
       |> Map.new()
 
@@ -205,7 +205,7 @@ defmodule SanbaseWeb.GenericController do
     data = Repo.get(module, id)
     changeset = module.changeset(data, %{})
     form_fields = resource_module_map()[resource][:edit_fields] || []
-    action = Routes.generic_path(conn, :update, data, resource: resource)
+    action = Routes.generic_admin_path(conn, :update, data, resource: resource)
     field_type_map = field_type_map(resource, module)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
     belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
@@ -247,7 +247,7 @@ defmodule SanbaseWeb.GenericController do
 
     changeset = apply(module, changeset_function, [data, changes])
     form_fields = resource_module_map()[resource][:edit_fields] || []
-    action = Routes.generic_path(conn, :update, data, resource: resource)
+    action = Routes.generic_admin_path(conn, :update, data, resource: resource)
     belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
     belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
     collections = resource_module_map()[resource][:collections] || %{}
@@ -265,14 +265,14 @@ defmodule SanbaseWeb.GenericController do
             conn
             |> put_flash(:error, "Some of the fields were not updated: #{error}")
             |> redirect(
-              to: Routes.generic_path(conn, :show, response_resource, resource: resource)
+              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
             )
 
           _ ->
             conn
             |> put_flash(:info, "#{resource} updated successfully.")
             |> redirect(
-              to: Routes.generic_path(conn, :show, response_resource, resource: resource)
+              to: Routes.generic_admin_path(conn, :show, response_resource, resource: resource)
             )
         end
 
@@ -358,7 +358,7 @@ defmodule SanbaseWeb.GenericController do
 
     assocs =
       Enum.map(fetched_rows, fn row ->
-        {row.id, SanbaseWeb.GenericController.LinkBuilder.build_link(module, row)}
+        {row.id, SanbaseWeb.GenericAdminController.LinkBuilder.build_link(module, row)}
       end)
       |> Map.new()
 
@@ -530,7 +530,7 @@ defmodule SanbaseWeb.GenericController do
   end
 end
 
-defmodule SanbaseWeb.GenericController.LinkBuilder do
+defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
   def build_link(module, record) do
     module.__schema__(:associations)
     |> Enum.reduce(%{}, fn assoc_name, acc ->
@@ -557,7 +557,9 @@ defmodule SanbaseWeb.GenericController.LinkBuilder do
 
   defp href(resource, id, label) do
     relative_url =
-      SanbaseWeb.Router.Helpers.generic_path(SanbaseWeb.Endpoint, :show, id, resource: resource)
+      SanbaseWeb.Router.Helpers.generic_admin_path(SanbaseWeb.Endpoint, :show, id,
+        resource: resource
+      )
 
     Phoenix.HTML.Link.link(label, to: relative_url, class: "text-blue-600 hover:text-blue-800")
   end

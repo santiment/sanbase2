@@ -384,16 +384,18 @@ defmodule Sanbase.Queries do
   Cache a query execution
   TODO: Add more documentation
   """
-  @spec cache_query_execution(query_id, any(), user_id) :: any()
+  @spec cache_query_execution(query_id, any(), user_id, Keyword.t()) :: any()
   def cache_query_execution(
         query_id,
         query_result,
-        user_id
+        user_id,
+        opts \\ []
       ) do
     Queries.Cache.create_or_update_cache(
       query_id,
       query_result,
-      user_id
+      user_id,
+      opts
     )
   end
 

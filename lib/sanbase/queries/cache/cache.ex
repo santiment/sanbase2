@@ -45,11 +45,12 @@ defmodule Sanbase.Queries.Cache do
 
   Each query has at most one cached version for a user.
   """
-  @spec create_or_update_cache(query_id, Result.t(), user_id) :: {:ok, t()} | {:error, String.t()}
-  def create_or_update_cache(query_id, query_result, user_id) do
+  @spec create_or_update_cache(query_id, Result.t(), user_id, Keyword.t()) ::
+          {:ok, t()} | {:error, String.t()}
+  def create_or_update_cache(query_id, query_result, user_id, opts) do
     with {:ok, query} <- Queries.get_query(query_id, user_id),
          {:ok, compressed_result} <- compress_encode_result(query_result),
-         true <- query_result_size_allowed?(compressed_result) do
+         true <- query_result_size_allowed?(compressed_result, opts) do
       Ecto.Multi.new()
       |> Ecto.Multi.run(:get_if_exists, fn _, _ ->
         case get(query_id, user_id) do
@@ -135,19 +136,21 @@ defmodule Sanbase.Queries.Cache do
   # Otherwise simple queries like `select * from intraday_metircs limit 9999999`
   # can be executed and fill the database with lots of data.
   @allowed_kb_size 500
-  defp query_result_size_allowed?(compressed_result) do
+  defp query_result_size_allowed?(compressed_result, opts) do
     kb_size = byte_size(compressed_result) / 1024
     kb_size = Float.round(kb_size, 2)
 
+    allowed_kb_size = Keyword.get(opts, :max_query_size_kb_allowed, @allowed_kb_size)
+
     case kb_size do
-      size when size <= @allowed_kb_size ->
+      size when size <= allowed_kb_size ->
         true
 
       size ->
         {:error,
          """
          Cannot cache the query because its compressed is #{size}KB \
-         which is over the limit of #{@allowed_kb_size}KB
+         which is over the limit of #{allowed_kb_size}KB
          """}
     end
   end

@@ -342,7 +342,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       }
     }
     """
-    field :cache_dashboard_query_execution, :dashboard_cached_executions do
+    field :store_dashboard_query_execution, :dashboard_cached_executions do
       arg(:dashboard_id, non_null(:integer))
       arg(:dashboard_query_mapping_id, non_null(:string))
 
@@ -361,6 +361,8 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
     @desc ~s"""
     Update a query cache for a given user.
+    A query can be cached by its owner, as well as by other users, if the query is public.
+    After that users can see the owner's cache and their own cache, but not caches of other people.
 
     The compressed_query_execution_result parameter contains the compressed query result.
 
@@ -389,7 +391,7 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       middleware(JWTAuth)
 
-      resolve(&QueriesResolver.store_query_execution/3)
+      resolve(&QueriesResolver.cache_query_execution/3)
     end
   end
 
@@ -432,6 +434,13 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
       arg(:dashboard_id, non_null(:integer))
 
       resolve(&QueriesResolver.get_cached_dashboard_queries_executions/3)
+    end
+
+    field :get_cached_query_executions, list_of(:query_cached_execution) do
+      meta(access: :free)
+      arg(:query_id, non_null(:integer))
+
+      resolve(&QueriesResolver.get_cached_query_executions/3)
     end
 
     @desc ~s"""

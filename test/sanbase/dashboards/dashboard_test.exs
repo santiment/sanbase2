@@ -236,7 +236,7 @@ defmodule Sanbase.DashboardsTest do
                  )
 
         assert {:error, error_msg} =
-                 Sanbase.Dashboards.store_dashboard_query_execution(
+                 Sanbase.Dashboards.cache_dashboard_query_execution(
                    dashboard.id,
                    dashboard_query_mapping.id,
                    result,

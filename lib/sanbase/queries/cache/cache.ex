@@ -13,7 +13,6 @@ defmodule Sanbase.Queries.Cache do
   import Ecto.Changeset
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
-  alias Sanbase.Queries
   alias Sanbase.Queries.Query
   alias Sanbase.Accounts.User
   alias Sanbase.Queries.Executor.Result
@@ -27,6 +26,7 @@ defmodule Sanbase.Queries.Cache do
           data: map()
         }
 
+  @timestamps_opts [type: :utc_datetime]
   schema "queries_cache" do
     belongs_to(:query, Query)
     belongs_to(:user, User)
@@ -45,15 +45,14 @@ defmodule Sanbase.Queries.Cache do
 
   Each query has at most one cached version for a user.
   """
-  @spec create_or_update_cache(query_id, Result.t(), user_id, Keyword.t()) ::
+  @spec create_or_update_cache(Query.t(), Result.t(), user_id, Keyword.t()) ::
           {:ok, t()} | {:error, String.t()}
-  def create_or_update_cache(query_id, query_result, user_id, opts) do
-    with {:ok, query} <- Queries.get_query(query_id, user_id),
-         {:ok, compressed_result} <- compress_encode_result(query_result),
+  def create_or_update_cache(query, query_result, user_id, opts) do
+    with {:ok, compressed_result} <- compress_encode_result(query_result),
          true <- query_result_size_allowed?(compressed_result, opts) do
       Ecto.Multi.new()
       |> Ecto.Multi.run(:get_if_exists, fn _, _ ->
-        case get(query_id, user_id) do
+        case get(query.id, user_id) do
           {:ok, cache} -> {:ok, cache}
           _ -> {:ok, nil}
         end
@@ -82,7 +81,7 @@ defmodule Sanbase.Queries.Cache do
   Fetch the cache record of a given query created by a given user
   """
   @spec get(query_id, user_id) :: {:ok, t()} | {:error, String.t()}
-  def get(query_id, user_id, opts \\ []) do
+  def get(query_id, user_id, _opts \\ []) do
     query = from(qc in __MODULE__, where: qc.query_id == ^query_id and qc.user_id == ^user_id)
     # Return the cache of the owner of the query, if there is no cache for the current user?
     # Or allow only the query owner to cache it?
@@ -103,6 +102,22 @@ defmodule Sanbase.Queries.Cache do
     {:ok, result}
   rescue
     e -> {:error, "Failed to compress and encode a query result: #{Exception.message(e)}"}
+  end
+
+  def get_cached_executions(query, querying_user_id) do
+    query =
+      from(
+        c in __MODULE__,
+        # everyone sees the owner's cache
+        # querying user see also their own cache
+        where:
+          c.query_id == ^query.id and
+            (c.user_id == ^query.user_id or c.user_id == ^querying_user_id),
+        preload: [:user]
+      )
+
+    result = Sanbase.Repo.all(query)
+    {:ok, result}
   end
 
   def decode_decompress_result(result) do

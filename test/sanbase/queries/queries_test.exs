@@ -13,6 +13,7 @@ defmodule Sanbase.QueriesTest do
     assert {:ok, query} =
              Queries.create_query(
                %{
+                 is_public: true,
                  sql_query_text: "SELECT * FROM metrics WHERE slug = {{slug}} LIMIT {{limit}}",
                  sql_query_parameters: %{"slug" => "ethereum", "limit" => 20}
                },
@@ -189,7 +190,7 @@ defmodule Sanbase.QueriesTest do
       mock_fun =
         Sanbase.Mock.wrap_consecutives(
           [
-            fn -> {:ok, result_mock()} end,
+            fn -> {:ok, ch_result_mock()} end,
             fn -> {:ok, execution_details_mock()} end
           ],
           arity: 2
@@ -276,7 +277,7 @@ defmodule Sanbase.QueriesTest do
         user: user
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, ch_result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         query =
           Sanbase.Queries.get_ephemeral_query_struct(sql_query_text, sql_query_parameters, user)
@@ -331,7 +332,7 @@ defmodule Sanbase.QueriesTest do
         query_metadata: query_metadata
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, ch_result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, result} =
           Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
@@ -383,7 +384,7 @@ defmodule Sanbase.QueriesTest do
         query_metadata: query_metadata
       } = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, ch_result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, %{id: query_id} = query} =
           Sanbase.Queries.get_dashboard_query(
@@ -458,7 +459,7 @@ defmodule Sanbase.QueriesTest do
           dashboard_parameter_key: "slug"
         )
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, ch_result_mock()})
       |> Sanbase.Mock.run_with_mocks(fn ->
         {:ok, standalone_query} =
           Sanbase.Queries.get_query(dashboard_query_mapping.query_id, user.id)
@@ -495,27 +496,144 @@ defmodule Sanbase.QueriesTest do
 
   describe "Caching" do
     test "cache a query", context do
-      %{query: %{id: query_id} = query, user: user, query_metadata: query_metadata} = context
+      %{query: query, user: user} = context
 
-      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        {:ok, result} =
-          Sanbase.Queries.run_query(query, user, query_metadata, store_execution_details: false)
+      result = query_result_mock()
+      {:ok, _cache} = Queries.cache_query_execution(query.id, result, user.id)
 
-        {:ok, _cache} = Sanbase.Queries.cache_query_execution(query_id, result, user.id)
+      {:ok, cached_result} = Queries.Cache.get(query.id, user.id)
 
-        {:ok, cached_result} = Sanbase.Queries.Cache.get(query_id, user.id)
+      result2 = Queries.Cache.decode_decompress_result(cached_result.data)
 
-        result2 = Sanbase.Queries.Cache.decode_decompress_result(cached_result.data)
+      assert result == result2
 
-        assert result == result2
-      end)
+      assert result2.rows == [
+               [
+                 1482,
+                 1645,
+                 ~U[1970-01-01 00:00:00Z],
+                 0.045183932486757644,
+                 ~U[2023-07-26 13:10:51Z]
+               ],
+               [
+                 1482,
+                 1647,
+                 ~U[1970-01-01 00:00:00Z],
+                 -0.13018891098082416,
+                 ~U[2023-07-25 20:27:06Z]
+               ]
+             ]
+
+      assert result2.columns == ["asset_id", "metric_id", "dt", "value", "computed_at"]
+      assert result2.column_types == ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"]
+    end
+
+    test "too big queries are rejected", context do
+      %{query: query, user: user} = context
+
+      result = query_result_mock()
+
+      assert {:error, error_msg} =
+               Queries.cache_query_execution(query.id, result, user.id,
+                 max_query_size_kb_allowed: 0
+               )
+
+      assert error_msg =~ "Cannot cache the query because its compressed is"
+      assert error_msg =~ "which is over the limit of 0KB"
+    end
+
+    test "get cached queries of owner and your own", context do
+      %{query: query, user: user, user2: user2} = context
+
+      user3 = insert(:user)
+      result = query_result_mock()
+      assert {:ok, _} = Queries.cache_query_execution(query.id, result, user.id)
+      assert {:ok, _} = Queries.cache_query_execution(query.id, result, user2.id)
+      assert {:ok, _} = Queries.cache_query_execution(query.id, result, user3.id)
+
+      # assert that the query is owned by user. we should see this user cache, too
+      assert query.user_id == user.id
+      {:ok, cached_queries} = Queries.get_cached_query_executions(query.id, user2.id)
+
+      assert length(cached_queries) == 2
+      own_cache = Enum.find(cached_queries, &(&1.user_id == user2.id))
+      owner_cache = Enum.find(cached_queries, &(&1.user_id == user.id))
+
+      own_cache_result = Queries.Cache.decode_decompress_result(own_cache.data)
+      owner_cache_result = Queries.Cache.decode_decompress_result(owner_cache.data)
+
+      # The decoded result is the same as the stored one
+      assert own_cache_result == query_result_mock()
+      assert owner_cache_result == query_result_mock()
+
+      # Check insertion time
+      assert Sanbase.TestUtils.datetime_close_to(own_cache.inserted_at, DateTime.utc_now(),
+               seconds: 2
+             )
+
+      assert Sanbase.TestUtils.datetime_close_to(owner_cache.inserted_at, DateTime.utc_now(),
+               seconds: 2
+             )
+
+      # Check owner
+      assert own_cache.user_id == user2.id
+      assert owner_cache.user_id == user.id
+
+      # Check if hashes match. They should as the query has not changed
+      assert own_cache.is_query_hash_matching == true
+      assert owner_cache.is_query_hash_matching == true
+    end
+
+    test "is_query_hash_matching changes if query is updated", context do
+      %{query: query, user: user} = context
+
+      assert {:ok, _} = Queries.cache_query_execution(query.id, query_result_mock(), user.id)
+
+      # If the query is not changed, the hashes are matching
+      assert {:ok, [cache]} = Queries.get_cached_query_executions(query.id, user.id)
+      assert cache.is_query_hash_matching == true
+
+      assert {:ok, _} =
+               Queries.update_query(
+                 query.id,
+                 %{sql_query_text: "SELECT * FROM github_v2 LIMIT 22"},
+                 user.id
+               )
+
+      # If the query is not changed, the hashes are matching
+      assert {:ok, [cache]} = Queries.get_cached_query_executions(query.id, user.id)
+      assert cache.is_query_hash_matching == false
     end
   end
 
   # MOCKS
 
-  defp result_mock() do
+  defp query_result_mock() do
+    %Sanbase.Queries.Executor.Result{
+      query_id: 1193,
+      clickhouse_query_id: "1774C4BC91E05698",
+      summary: %{
+        "read_bytes" => 408_534.0,
+        "read_rows" => 12667.0,
+        "result_bytes" => 0.0,
+        "result_rows" => 0.0,
+        "total_rows_to_read" => 4475.0,
+        "written_bytes" => 0.0,
+        "written_rows" => 0.0
+      },
+      rows: [
+        [1482, 1645, ~U[1970-01-01 00:00:00Z], 0.045183932486757644, ~U[2023-07-26 13:10:51Z]],
+        [1482, 1647, ~U[1970-01-01 00:00:00Z], -0.13018891098082416, ~U[2023-07-25 20:27:06Z]]
+      ],
+      compressed_rows: nil,
+      columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
+      column_types: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+      query_start_time: ~U[2024-02-29 15:36:55.493Z],
+      query_end_time: ~U[2024-02-29 15:36:55.498Z]
+    }
+  end
+
+  defp ch_result_mock() do
     %Clickhousex.Result{
       query_id: "1774C4BC91E05698",
       summary: %{

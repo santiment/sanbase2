@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.CommentsApiHelper
+  import SanbaseWeb.CommentsApiHelper
 
   @opts [entity_type: :insight, extra_fields: ["insightId"]]
 

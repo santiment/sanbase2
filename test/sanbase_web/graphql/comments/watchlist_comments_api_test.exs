@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.WatchlistCommentsApiTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.CommentsApiHelper
+  import SanbaseWeb.CommentsApiHelper
 
   @opts [entity_type: :watchlist, extra_fields: ["watchlistId"]]
   setup do

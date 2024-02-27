@@ -180,15 +180,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Dashboards.remove_query_from_dashboard(dashboard_id, mapping_id, user.id)
   end
 
-  defp validate_cache_input(data, user) do
+  defp transform_cache_input(data) do
     # data is the gzip compressed and base64 encoded query JSON
     with {:ok, result_string} <- Queries.Executor.Result.decode_and_decompress(data),
-         {:ok, %Result{} = result} <- Queries.Executor.Result.from_json_string(result_string) do
+         {:ok, %Result{} = result} <- Queries.Executor.Result.from_json_string(result_string),
+         true <- Result.all_fields_present?(result) do
       {:ok, result}
     end
   end
 
-  def store_query_execution(
+  def cache_query_execution(
         _root,
         %{
           query_id: query_id,
@@ -196,15 +197,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         },
         %{context: %{auth: %{current_user: user}}}
       ) do
-    # Delegate the validations to the called function
-    with {:ok, query} <- Queries.get_query(query_id, user.id),
-         {:ok, result_string} <- Result.decode_and_decompress(compressed_query_execution_result),
-         {:ok, %Result{} = result} <- Result.from_json_string(result_string) do
-      case Queries.cache_query_execution(query_id, result, user.id) do
-        {:ok, _} -> true
-        {:error, error} -> {:error, error}
-      end
+    with {:ok, result} <- transform_cache_input(compressed_query_execution_result),
+         {:ok, _} <- Queries.cache_query_execution(query_id, result, user.id) do
+      true
     end
+  end
+
+  def get_cached_query_executions(_root, %{query_id: query_id}, resolution) do
+    querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
+
+    caches = Sanbase.Queries.get_cached_query_executions(query_id, querying_user_id)
+  end
+
+  def is_hash_matching(root, _, _) do
+    root |> dbg()
+    {:ok, true}
   end
 
   def cache_dashboard_query_execution(
@@ -216,14 +223,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         },
         %{context: %{auth: %{current_user: user}}}
       ) do
-    with {:ok, result_string} <- Result.decode_and_decompress(compressed_query_execution_result),
-         {:ok, query_execution_result} <- Result.from_json_string(result_string),
-         true <- Result.all_fields_present?(query_execution_result),
+    with {:ok, result} <- transform_cache_input(compressed_query_execution_result),
          {:ok, dashboard_cache} <-
            Dashboards.cache_dashboard_query_execution(
              dashboard_id,
              mapping_id,
-             query_execution_result,
+             result,
              user.id
            ) do
       queries = Map.values(dashboard_cache.queries)

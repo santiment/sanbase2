@@ -97,7 +97,8 @@ defmodule SanbaseWeb.GenericAdmin.Project do
         :source_slug_mappings,
         :icos,
         :latest_coinmarketcap_data,
-        :social_volume_query
+        :social_volume_query,
+        :ecosystems
       ])
 
     [
@@ -130,6 +131,14 @@ defmodule SanbaseWeb.GenericAdmin.Project do
         resource_name: "Market Segments",
         rows: project.market_segments,
         fields: [:id, :name, :type],
+        funcs: %{},
+        create_link_kv: [linked_resource: :project, linked_resource_id: project.id]
+      },
+      %{
+        resource: "project_ecosystem_mappings",
+        resource_name: "Project Ecosystems",
+        rows: project.ecosystems,
+        fields: [:id, :ecosystem],
         funcs: %{},
         create_link_kv: [linked_resource: :project, linked_resource_id: project.id]
       },

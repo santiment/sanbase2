@@ -4,8 +4,13 @@ defmodule SanbaseWeb.GenericAdmin.Ecosystem do
   def resource() do
     %{
       actions: [:new, :edit],
+      index_fields: [:id, :ecosystem, :inserted_at, :updated_at],
       new_fields: [:ecosystem],
-      edit_fields: [:ecosystem]
+      edit_fields: [:ecosystem],
+      preloads: [:projects],
+      belongs_to_fields: %{},
+      field_types: %{},
+      funcs: %{}
     }
   end
 end

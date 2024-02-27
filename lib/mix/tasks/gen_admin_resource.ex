@@ -7,16 +7,15 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
 
   ## Examples
 
-    mix gen.admin.resource Sanbase.Ecosystem
+  mix gen.admin.resource Sanbase.Ecosystem
   """
 
   def run([schema_module | _] = args) do
-    # Determine the schema module and web root
     {web_root_dir, web_root_module} =
       case length(args) > 1 do
         true ->
           web_root_module = Enum.at(args, 1)
-          {to_snake_case(web_root_module), web_root_module}
+          {Macro.underscore(web_root_module), web_root_module}
 
         false ->
           guess_web_root()
@@ -26,6 +25,7 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
       Mix.shell().error("You must provide a schema module.")
     else
       schema_module = :"Elixir.#{schema_module}"
+      schema_module = Module.split(schema_module) |> Module.concat()
       content = generate_content(schema_module, web_root_module)
 
       schema_module_name = Module.split(schema_module) |> List.last()
@@ -33,8 +33,22 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
       file_path =
         "lib/#{String.downcase(web_root_dir)}/generic_admin/#{String.downcase(schema_module_name)}.ex"
 
-      File.write(file_path, content)
-      Mix.shell().info("Generated #{file_path}")
+      if File.exists?(file_path) do
+        IO.puts("#{file_path} already exists.")
+        IO.puts("Do you want to overwrite it? [Yn]")
+
+        case IO.gets("> ") do
+          "Y\n" ->
+            File.write!(file_path, content)
+            Mix.shell().info("Overwritten #{file_path}")
+
+          _ ->
+            Mix.shell().info("Skipped #{file_path}")
+        end
+      else
+        File.write!(file_path, content)
+        Mix.shell().info("Generated #{file_path}")
+      end
     end
   end
 
@@ -50,20 +64,8 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
 
       web_root ->
         web_root = Path.basename(web_root)
-        {web_root, to_camel_case(web_root)}
+        {web_root, Macro.camelize(web_root)}
     end
-  end
-
-  defp to_camel_case(str) do
-    str
-    |> String.split("_")
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.join()
-  end
-
-  defp to_snake_case(str) do
-    str
-    |> Macro.underscore()
   end
 
   defp generate_content(schema_module, web_root) do
@@ -73,7 +75,7 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
 
     """
     defmodule #{web_root}.GenericAdmin.#{Module.split(schema_module) |> List.last()} do
-      def schema_module, do: #{schema_module}
+      def schema_module, do: #{to_string(schema_module) |> String.replace_prefix("Elixir.", "")}
 
       def resource() do
         %{

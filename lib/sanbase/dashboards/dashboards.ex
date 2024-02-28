@@ -45,9 +45,12 @@ defmodule Sanbase.Dashboards do
   @spec get_dashboard(dashboard_id(), user_id() | nil, Keyword.t()) ::
           {:ok, Dashboard.t()} | {:error, String.t()}
   def get_dashboard(dashboard_id, querying_user_id, opts \\ []) do
-    # If empty, set the default options so the rest of the logic that depends on the defaults
-    # can still work
-    opts = if [] == opts, do: [preload?: true, preload: Dashboard.default_preload()], else: opts
+    # We put the preloads here, if they are missing, as the preload value
+    # is checked in this function, too.
+    opts =
+      opts
+      |> Keyword.put_new(:preload?, true)
+      |> Keyword.put_new(:preload, Dashboard.default_preload())
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:get_dashboard, fn _repo, _changes ->

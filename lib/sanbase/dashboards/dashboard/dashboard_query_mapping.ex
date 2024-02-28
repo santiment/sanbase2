@@ -21,7 +21,7 @@ defmodule Sanbase.Dashboards.DashboardQueryMapping do
   @type dashboard_id :: Dashboard.dashboard_id()
   @type user_id :: non_neg_integer()
 
-  @preload [:dashboard, :query, dashboard: :user, query: :user]
+  @preload [:dashboard, :query, [dashboard: :user, query: :user]]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "dashboard_query_mappings" do
@@ -48,11 +48,24 @@ defmodule Sanbase.Dashboards.DashboardQueryMapping do
     |> maybe_preload(opts)
   end
 
+  @doc ~s"""
+  Get all rows for a dashboard by its id.
+
+  When fetcing a dashboard and its queries, the queries are not preloaded directly.
+  This is because we need to populate the dashboard_query_mapping_id virutal field
+  for each query by using the id of the mapping here. This cannot be done via preload,
+  so instead of this we are fetching all the rows for that dashboard from the mapping table
+  here, building the `queries` list and putting it in the dashboard studcture.
+
+  NOTE: Because only the query from each row will be used, do not use the default preload
+  which will also preload rthe dashboard and the dashboard user, but preload only the query parts
+  """
+  @spec dashboard_id_rows(dashboard_id) :: Ecto.Query.t()
   def dashboard_id_rows(dashboard_id) do
     from(d in __MODULE__,
-      where: d.dashboard_id == ^dashboard_id,
-      preload: [:query]
+      where: d.dashboard_id == ^dashboard_id
     )
+    |> preload([:query, query: :user])
   end
 
   # Private functions

@@ -27,6 +27,10 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
 
   @pro_plus_plan_stats @pro_plan_stats |> Map.put(:alerts, %{limit: 1000})
 
+  @business_pro_plan_stats @pro_plus_plan_stats
+
+  @business_max_plan_stats @business_pro_plan_stats
+
   @basic_plan_stats Map.merge(@free_plan_stats, %{access_paywalled_insights: true})
 
   @custom_plan_stats @pro_plan_stats
@@ -50,8 +54,11 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
 
   def can_access_paywalled_insights?(subscription) do
     subscription.plan
+    |> IO.inspect()
     |> Plan.plan_name()
+    |> IO.inspect()
     |> plan_stats()
+    |> IO.inspect()
     |> Map.get(:access_paywalled_insights, false)
   end
 
@@ -61,6 +68,8 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
       "BASIC" -> @basic_plan_stats
       "PRO" -> @pro_plan_stats
       "PRO_PLUS" -> @pro_plus_plan_stats
+      "BUSINESS_PRO" -> @business_pro_plan_stats
+      "BUSINESS_MAX" -> @business_max_plan_stats
       "PREMIUM" -> @custom_plan_stats
       "CUSTOM" -> @custom_plan_stats
       "CUSTOM_" <> _ -> @custom_plan_stats

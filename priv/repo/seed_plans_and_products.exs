@@ -39,7 +39,11 @@ INSERT INTO plans (id, name, product_id, amount, currency, interval, "order") VA
   (45,'PRO',4,151200,'USD','year',0),
   (46,'PREMIUM',4,313200,'USD','year',0),
   (51,'EXTENSION',5,20000,'USD','month',0),
-  (52,'EXTENSION',5,216000,'USD','year',0)
+  (52,'EXTENSION',5,216000,'USD','year',0),
+  (105,'BUSINESS_PRO',1,42000,'USD','month',20),
+  (106,'BUSINESS_PRO',1,478800,'USD','year',21),
+  (107,'BUSINESS_MAX',1,99900,'USD','month',22),
+  (108,'BUSINESS_MAX',1,1138800,'USD','year',23)
   ON CONFLICT DO NOTHING
 """)
 

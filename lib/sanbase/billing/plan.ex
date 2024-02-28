@@ -119,7 +119,16 @@ defmodule Sanbase.Billing.Plan do
     %__MODULE__{name: "FREE"}
   end
 
-  @same_name_plans ["FREE", "BASIC", "PRO", "PRO_PLUS", "PREMIUM", "EXTENSION"]
+  @same_name_plans [
+    "FREE",
+    "BASIC",
+    "PRO",
+    "PRO_PLUS",
+    "BUSINESS_PRO",
+    "BUSINESS_MAX",
+    "PREMIUM",
+    "EXTENSION"
+  ]
   @enterprise_plans [
     "CUSTOM",
     "ENTERPRISE",

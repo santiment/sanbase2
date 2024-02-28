@@ -105,6 +105,8 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
 
   @spec plan_has_access?(plan_name, product_code, query_or_argument) :: boolean()
   def plan_has_access?(plan_name, product_code, query_or_argument) do
+    min_plan(product_code, query_or_argument)
+
     case min_plan(product_code, query_or_argument) do
       "FREE" -> true
       "BASIC" -> plan_name != "FREE"

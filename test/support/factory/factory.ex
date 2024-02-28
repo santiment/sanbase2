@@ -499,6 +499,46 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def plan_business_pro_monthly_factory() do
+    %Plan{
+      id: 105,
+      name: "BUSINESS_PRO",
+      amount: 42000,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
+  def plan_business_pro_yearly_factory() do
+    %Plan{
+      id: 106,
+      name: "BUSINESS_PRO",
+      amount: 478_800,
+      currency: "USD",
+      interval: "year"
+    }
+  end
+
+  def plan_business_max_monthly_factory() do
+    %Plan{
+      id: 107,
+      name: "BUSINESS_MAX",
+      amount: 99900,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
+  def plan_business_max_yearly_factory() do
+    %Plan{
+      id: 108,
+      name: "BUSINESS_MAX",
+      amount: 1_138_800,
+      currency: "USD",
+      interval: "year"
+    }
+  end
+
   def plan_free_sanbase_factory() do
     %Plan{
       id: 11,
@@ -638,6 +678,42 @@ defmodule Sanbase.Factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 5,
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
+    }
+  end
+
+  def subscription_business_pro_monthly_factory() do
+    %Subscription{
+      stripe_id: rand_str(),
+      plan_id: 105,
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
+    }
+  end
+
+  def subscription_business_pro_yearly_factory() do
+    %Subscription{
+      stripe_id: rand_str(),
+      plan_id: 106,
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
+    }
+  end
+
+  def subscription_business_max_monthly_factory() do
+    %Subscription{
+      stripe_id: rand_str(),
+      plan_id: 107,
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
+    }
+  end
+
+  def subscription_business_max_yearly_factory() do
+    %Subscription{
+      stripe_id: rand_str(),
+      plan_id: 107,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }

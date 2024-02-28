@@ -23,21 +23,24 @@ defmodule Sanbase.ApiCallLimit do
     "sanbase_pro" => 5000,
     "sanapi_free" => 1000,
     "sanapi_basic" => 300_000,
-    "sanapi_pro" => 600_000
+    "sanapi_pro" => 600_000,
+    "sanapi_business_max" => 1_200_000
   }
 
   @limits_per_hour %{
     "sanbase_pro" => 1000,
     "sanapi_free" => 500,
     "sanapi_basic" => 20_000,
-    "sanapi_pro" => 30_000
+    "sanapi_pro" => 30_000,
+    "sanapi_business_max" => 60_000
   }
 
   @limits_per_minute %{
     "sanbase_pro" => 100,
     "sanapi_free" => 100,
     "sanapi_basic" => 300,
-    "sanapi_pro" => 600
+    "sanapi_pro" => 600,
+    "sanapi_business_max" => 1200
   }
 
   @product_api_id Product.product_api()

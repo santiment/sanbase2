@@ -77,7 +77,7 @@ defmodule Sanbase.Dashboards do
           false -> dashboard
         end
 
-      {:ok, mask_dashboard_not_viewable_parts(dashboard)}
+      {:ok, mask_dashboard_not_viewable_parts(dashboard, querying_user_id)}
     end)
     |> Repo.transaction()
     |> process_transaction_result(:maybe_load_queries)
@@ -1006,22 +1006,22 @@ defmodule Sanbase.Dashboards do
     """
   end
 
-  defp mask_dashboard_not_viewable_parts(%Dashboard{} = dashboard) do
+  defp mask_dashboard_not_viewable_parts(%Dashboard{} = dashboard, querying_user_id) do
     # TODO: Make sure if this is the desired behavior.
     # When viewing a dashboard, hide the SQL query text and query parameters
     # if the query is private and the querying user is not the owner of the query
     masked_queries =
       dashboard.queries
-      |> Enum.map(&mask_query_not_viewable_parts(&1, dashboard.user_id))
+      |> Enum.map(&mask_query_not_viewable_parts(&1, querying_user_id))
 
     %Dashboard{dashboard | queries: masked_queries}
   end
 
   defp mask_query_not_viewable_parts(
          %Query{user_id: query_owner_user_id, is_public: false} = query,
-         dashboard_owner_user_id
+         querying_user_id
        )
-       when query_owner_user_id != dashboard_owner_user_id do
+       when query_owner_user_id != querying_user_id do
     %Query{
       query
       | sql_query_text: "<masked>",

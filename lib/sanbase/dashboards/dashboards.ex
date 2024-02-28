@@ -36,7 +36,7 @@ defmodule Sanbase.Dashboards do
 
   The dashboard is returned if:
   - It exists and is public;
-    - In this case, the querying_user_id can be any user or nil (anonymous user).
+  - In this case, the querying_user_id can be any user or nil (anonymous user).
   - It is private and owned by the querying user.
 
   The queries are preloaded. If the queries should not be preloaded,
@@ -931,12 +931,22 @@ defmodule Sanbase.Dashboards do
         query_result,
         user_id
       ) do
-    Sanbase.Dashboards.DashboardCache.update_query_cache(
-      dashboard_id,
-      dashboard_query_mapping_id,
-      query_result,
-      user_id
-    )
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_dashboard_for_mutation, fn _repo, _changes ->
+      # Just to check that the user can mutate the dashboard. Creating a
+      # cache for a dashboard is doable only by the owner.
+      get_dashboard_for_mutation(dashboard_id, user_id, preload?: false)
+    end)
+    |> Ecto.Multi.run(:update_query_cache, fn _repo, %{get_dashboard_for_mutation: _struct} ->
+      Sanbase.Dashboards.DashboardCache.update_query_cache(
+        dashboard_id,
+        dashboard_query_mapping_id,
+        query_result,
+        user_id
+      )
+    end)
+    |> Repo.transaction()
+    |> process_transaction_result(:update_query_cache)
   end
 
   @doc ~s"""

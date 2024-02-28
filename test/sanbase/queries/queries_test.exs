@@ -667,6 +667,34 @@ defmodule Sanbase.QueriesTest do
                updated_at: _
              } = dashboard_cache.queries[dashboard_query_mapping.id]
     end
+
+    test "cannot update other people dashboard cache", context do
+      %{
+        query: query,
+        dashboard_query_mapping: dashboard_query_mapping,
+        dashboard: dashboard,
+        user2: user2,
+        query_metadata: query_metadata
+      } = context
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, result_mock()})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert {:ok, result} =
+                 Sanbase.Queries.run_query(query, user2, query_metadata,
+                   store_execution_details: false
+                 )
+
+        assert {:error, error_msg} =
+                 Sanbase.Dashboards.store_dashboard_query_execution(
+                   dashboard.id,
+                   dashboard_query_mapping.id,
+                   result,
+                   user2.id
+                 )
+
+        assert error_msg =~ "Dashboard does not exist, or it is owner by another user."
+      end)
+    end
   end
 
   # MOCKS

@@ -3,58 +3,28 @@ defmodule SanbaseWeb.GenericAdmin.Post do
   alias Sanbase.Insight.Post
   def schema_module, do: Post
 
+  @index_fields ~w(id title is_featured is_pulse state ready_state moderation_comment user_id)a
+  @edit_fields ~w(is_featured is_pulse is_paywall_required ready_state prediction state moderation_comment)a
   def resource do
     %{
       actions: [:edit],
       preloads: [:user, :price_chart_project],
-      index_fields: [
-        :id,
-        :title,
-        :is_featured,
-        :is_pulse,
-        :state,
-        :ready_state,
-        :moderation_comment,
-        :user_id
-      ],
-      edit_fields: [
-        :is_featured,
-        :is_pulse,
-        :is_paywall_required,
-        :ready_state,
-        :prediction,
-        :state,
-        :moderation_comment
-      ],
+      index_fields: @index_fields,
+      edit_fields: @edit_fields,
       extra_fields: [:is_featured],
       field_types: %{
-        is_featured: :boolean,
-        moderation_comment: :text
+        is_featured: :boolean
       },
       collections: %{
-        state:
-          [
-            Post.awaiting_approval_state(),
-            Post.approved_state(),
-            Post.declined_state()
-          ]
-          |> Enum.map(&{&1, &1}),
-        ready_state: ~w[published draft],
-        prediction: ~w[heavy_bullish semi_bullish semi_bearish heavy_bearish unspecified none]
+        state: Post.states(),
+        ready_state: Post.ready_states(),
+        prediction: Post.predictions()
       },
       funcs: %{
         user_id: &SanbaseWeb.GenericAdmin.User.user_link/1
       },
       search_fields: %{
-        is_featured:
-          from(
-            p in Post,
-            left_join: featured_item in Sanbase.FeaturedItem,
-            on: p.id == featured_item.post_id,
-            where: not is_nil(featured_item.id),
-            preload: [:user]
-          )
-          |> distinct(true)
+        is_featured: Post.featured_posts_query()
       }
     }
   end

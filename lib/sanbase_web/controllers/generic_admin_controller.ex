@@ -538,7 +538,8 @@ defmodule SanbaseWeb.GenericAdminController.LinkBuilder do
 
       case assoc_info do
         %Ecto.Association.BelongsTo{related: related_module} ->
-          field_name = :"#{assoc_name}_id"
+          # credo:disable-for-next-line
+          field_name = String.to_atom("#{assoc_name}_id")
           field_value = Map.get(record, field_name)
 
           if is_nil(field_value) do

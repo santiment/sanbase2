@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Plans.BusinessMAXTest do
+defmodule SanbaseWeb.Plans.BusinessPlansTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
@@ -11,7 +11,32 @@ defmodule SanbaseWeb.Plans.BusinessMAXTest do
     {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
     apikey_conn = setup_apikey_auth(build_conn(), apikey)
 
-    [user: user, conn: conn, apikey: apikey, apikey_conn: apikey_conn]
+    business_pro_user = insert(:user, email: "test2@example.com")
+    insert(:subscription_business_pro_monthly, user: business_pro_user)
+    business_pro_conn = setup_jwt_auth(build_conn(), business_pro_user)
+    {:ok, business_pro_apikey} = Sanbase.Accounts.Apikey.generate_apikey(business_pro_user)
+    business_pro_apikey_conn = setup_apikey_auth(build_conn(), business_pro_apikey)
+
+    [
+      user: user,
+      conn: conn,
+      apikey: apikey,
+      apikey_conn: apikey_conn,
+      business_pro_user: business_pro_user,
+      business_pro_conn: business_pro_conn,
+      business_pro_apikey: business_pro_apikey,
+      business_pro_apikey_conn: business_pro_apikey_conn
+    ]
+  end
+
+  test "BUSINESS_PRO user has access to metrics with min_plan=PRO", _context do
+    api_pro_only_metric = fetch_api_metric_with_min_plan_pro()
+
+    assert Sanbase.Billing.Plan.AccessChecker.plan_has_access?(
+             "BUSINESS_PRO",
+             "SANAPI",
+             api_pro_only_metric
+           )
   end
 
   test "BUSINESS_MAX user has access to metrics with min_plan=PRO", _context do
@@ -22,6 +47,14 @@ defmodule SanbaseWeb.Plans.BusinessMAXTest do
              "SANAPI",
              api_pro_only_metric
            )
+  end
+
+  test "BUSINESS_PRO after api call remaining count", context do
+    make_api_call(context.business_pro_apikey_conn, [])
+    |> json_response(200)
+
+    {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, context.business_pro_user, :apikey)
+    assert quota.api_calls_remaining == %{month: 599_999, minute: 599, hour: 29999}
   end
 
   test "BUSINESS_MAX after api call remaining count", context do

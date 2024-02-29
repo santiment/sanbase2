@@ -14,15 +14,14 @@ defmodule Sanbase.ApiCallLimit do
 
   @plans_without_limits [
     "sanapi_enterprise",
-    "sanapi_custom",
-    "sanapi_enterprise_basic",
-    "sanapi_enterprise_plus"
+    "sanapi_custom"
   ]
   @limits_per_month %{
     "sanbase_pro" => 5000,
     "sanapi_free" => 1000,
     "sanapi_basic" => 300_000,
     "sanapi_pro" => 600_000,
+    "sanapi_business_pro" => 600_000,
     "sanapi_business_max" => 1_200_000
   }
 
@@ -31,6 +30,7 @@ defmodule Sanbase.ApiCallLimit do
     "sanapi_free" => 500,
     "sanapi_basic" => 20_000,
     "sanapi_pro" => 30_000,
+    "sanapi_business_pro" => 30_000,
     "sanapi_business_max" => 60_000
   }
 
@@ -39,6 +39,7 @@ defmodule Sanbase.ApiCallLimit do
     "sanapi_free" => 100,
     "sanapi_basic" => 300,
     "sanapi_pro" => 600,
+    "sanapi_business_pro" => 600,
     "sanapi_business_max" => 1200
   }
 

@@ -24,8 +24,7 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
     if schema_module in [nil, ""] or web_root_dir in [nil, ""] do
       Mix.shell().error("You must provide a schema module.")
     else
-      schema_module = :"Elixir.#{schema_module}"
-      schema_module = Module.split(schema_module) |> Module.concat()
+      schema_module = Module.safe_concat([schema_module])
       content = generate_content(schema_module, web_root_module)
 
       schema_module_name = Module.split(schema_module) |> List.last()

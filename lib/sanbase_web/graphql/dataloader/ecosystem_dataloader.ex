@@ -66,7 +66,6 @@ defmodule SanbaseWeb.Graphql.EcosystemDataloader do
       ordered: false
     )
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
-    |> IO.inspect()
   end
 
   defp timeseries_transform_to_map(data, args) do

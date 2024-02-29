@@ -92,7 +92,6 @@ defmodule SanbaseWeb.DataController do
 
     {:ok, data} =
       Sanbase.Cache.get_or_store(cache_key, &get_ecosystem_github_organization_mapping/0)
-      |> IO.inspect(label: "HERE")
 
     conn
     |> put_resp_header("content-type", "application/json; charset=utf-8")

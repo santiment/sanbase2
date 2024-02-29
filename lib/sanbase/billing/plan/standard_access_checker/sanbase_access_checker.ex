@@ -16,6 +16,10 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     sangraphs_access: false
   }
 
+  @basic_plan_stats Plan.upgrade_plan(@free_plan_stats,
+                      extends: %{access_paywalled_insights: true}
+                    )
+
   @pro_plan_stats %{
     realtime_data_cut_off_in_days: 0,
     alerts: %{
@@ -25,15 +29,10 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     sangraphs_access: true
   }
 
-  @pro_plus_plan_stats @pro_plan_stats |> Map.put(:alerts, %{limit: 1000})
-
-  @business_pro_plan_stats @pro_plus_plan_stats
-
-  @business_max_plan_stats @business_pro_plan_stats
-
-  @basic_plan_stats Map.merge(@free_plan_stats, %{access_paywalled_insights: true})
-
-  @custom_plan_stats @pro_plan_stats
+  @pro_plus_plan_stats Plan.upgrade_plan(@pro_plan_stats, extends: %{alerts: %{limit: 1000}})
+  @business_pro_plan_stats Plan.upgrade_plan(@pro_plus_plan_stats, extends: %{})
+  @business_max_plan_stats Plan.upgrade_plan(@business_pro_plan_stats, extends: %{})
+  @custom_plan_stats Plan.upgrade_plan(@business_max_plan_stats, extends: %{})
 
   def historical_data_in_days(plan, _query \\ nil) do
     plan_stats(plan)
@@ -54,11 +53,8 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
 
   def can_access_paywalled_insights?(subscription) do
     subscription.plan
-    |> IO.inspect()
     |> Plan.plan_name()
-    |> IO.inspect()
     |> plan_stats()
-    |> IO.inspect()
     |> Map.get(:access_paywalled_insights, false)
   end
 

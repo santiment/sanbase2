@@ -93,6 +93,10 @@ defmodule Sanbase.Billing.Plan do
     |> Sanbase.Repo.insert()
   end
 
+  def upgrade_plan(base_plan, extends: upgrades) do
+    Sanbase.MapUtils.merge_deep(base_plan, upgrades)
+  end
+
   def update_plan(plan, params) do
     plan
     |> changeset(params)

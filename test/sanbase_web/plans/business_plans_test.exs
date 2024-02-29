@@ -74,6 +74,22 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
     end
   end
 
+  test "BUSINESS_PRO user has 2 years historical data or and no realtime restrictions", context do
+    restricted =
+      get_access_restrictions(context.business_pro_apikey_conn)
+      |> Enum.filter(& &1["isRestricted"])
+
+    for access <- restricted do
+      assert is_nil(access["restrictedTo"])
+
+      {:ok, restricted_from, 0} = DateTime.from_iso8601(access["restrictedFrom"])
+      diff_in_days = DateTime.diff(DateTime.utc_now(), restricted_from, :day)
+
+      # ~2 years
+      assert diff_in_days >= 2 * 365 - 5 and diff_in_days <= 2 * 365 + 5
+    end
+  end
+
   defp fetch_api_metric_with_min_plan_pro do
     Sanbase.Billing.ApiInfo.min_plan_map()
     |> Enum.filter(fn {_, min_plan} -> min_plan["SANAPI"] == "PRO" end)

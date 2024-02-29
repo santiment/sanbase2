@@ -334,17 +334,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    # test "can access RESTRICTED signals for less than 7 years", context do
-    #   {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
-    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, "PRO")
-    #   slug = context.project.slug
-    #   query = signal_query(signal, slug, from, to)
-    #   result = execute_query(context.conn, query, "getSignal")
-
-    #   assert called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
-    #   assert result != nil
-    # end
-
     test "can access RESTRICTED queries for less than 7 years", context do
       {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
       query = network_growth_query(context.project.slug, from, to)
@@ -365,17 +354,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
-
-    # test "can access RESTRICTED signals for over 7 years", context do
-    #   {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
-    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, "PRO")
-    #   slug = context.project.slug
-    #   query = signal_query(signal, slug, from, to)
-    #   result = execute_query(context.conn, query, "getSignal")
-
-    #   assert_called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
-    #   assert result != nil
-    # end
 
     test "can access RESTRICTED queries for more than 7 years", context do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)

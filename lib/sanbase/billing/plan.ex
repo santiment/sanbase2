@@ -13,7 +13,7 @@ defmodule Sanbase.Billing.Plan do
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Subscription}
 
-  @plans_order [free: 0, basic: 1, pro: 2, premium: 3, custom: 4]
+  @plans_order [free: 0, basic: 1, pro: 2, custom: 4]
   @plans Keyword.keys(@plans_order)
 
   def plans(), do: @plans
@@ -130,19 +130,12 @@ defmodule Sanbase.Billing.Plan do
     "PRO_PLUS",
     "BUSINESS_PRO",
     "BUSINESS_MAX",
-    "PREMIUM",
-    "EXTENSION"
+    "CUSTOM"
   ]
-  @enterprise_plans [
-    "CUSTOM",
-    "ENTERPRISE",
-    "ENTERPRISE_BASIC",
-    "ENTERPRISE_PLUS"
-  ]
+
   def plan_name(%__MODULE__{} = plan) do
     case plan.name do
       name when name in @same_name_plans -> name
-      name when name in @enterprise_plans -> "CUSTOM"
       "ESSENTIAL" -> "BASIC"
       "CUSTOM_" <> _ = name -> name
     end

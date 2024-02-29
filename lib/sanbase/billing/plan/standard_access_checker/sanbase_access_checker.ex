@@ -66,7 +66,6 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
       "PRO_PLUS" -> @pro_plus_plan_stats
       "BUSINESS_PRO" -> @business_pro_plan_stats
       "BUSINESS_MAX" -> @business_max_plan_stats
-      "PREMIUM" -> @custom_plan_stats
       "CUSTOM" -> @custom_plan_stats
       "CUSTOM_" <> _ -> @custom_plan_stats
     end

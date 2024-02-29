@@ -41,7 +41,6 @@ defmodule SanbaseWeb.Graphql.Complexity do
       "BASIC" -> div(complexity, 4)
       "PRO" -> div(complexity, 5)
       "PRO_PLUS" -> div(complexity, 5)
-      "PREMIUM" -> div(complexity, 6)
       "CUSTOM" -> div(complexity, 7)
       # TODO: Move complexity reducer to restrictions map
       "CUSTOM_" <> _ -> div(complexity, 7)

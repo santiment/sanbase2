@@ -17,8 +17,7 @@ defmodule Sanbase.Accounts.UserPermissionsTest do
     assert User.Permissions.permissions(user) == %{
              api: true,
              sanbase: true,
-             spreadsheet: true,
-             sandata: false
+             spreadsheet: true
            }
   end
 end

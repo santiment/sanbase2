@@ -61,17 +61,6 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     end
   end
 
-  # Premium API users don't have restrictions
-  test "premium api user", %{user: user} do
-    insert(:subscription_premium, user: user)
-    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
-    apikey_conn = setup_apikey_auth(build_conn(), apikey)
-
-    for %{"isRestricted" => is_restrictred} <- get_access_restrictions(apikey_conn) do
-      assert is_restrictred == false
-    end
-  end
-
   defp get_access_restrictions(conn) do
     query = """
     {

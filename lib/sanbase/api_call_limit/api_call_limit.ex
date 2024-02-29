@@ -14,7 +14,6 @@ defmodule Sanbase.ApiCallLimit do
 
   @plans_without_limits [
     "sanapi_enterprise",
-    "sanapi_premium",
     "sanapi_custom",
     "sanapi_enterprise_basic",
     "sanapi_enterprise_plus"

@@ -8,8 +8,7 @@ defmodule Sanbase.Accounts.User.Permissions do
     %{
       api: Product.product_api() in user_subscriptions_product_ids,
       sanbase: Product.product_sanbase() in user_subscriptions_product_ids,
-      spreadsheet: Product.product_sanbase() in user_subscriptions_product_ids,
-      sandata: Product.product_sandata() in user_subscriptions_product_ids
+      spreadsheet: Product.product_sanbase() in user_subscriptions_product_ids
     }
   end
 
@@ -17,8 +16,7 @@ defmodule Sanbase.Accounts.User.Permissions do
     %{
       api: false,
       sanbase: false,
-      spreadsheet: false,
-      sandata: false
+      spreadsheet: false
     }
   end
 
@@ -26,8 +24,7 @@ defmodule Sanbase.Accounts.User.Permissions do
     %{
       api: true,
       sanbase: true,
-      spreadsheet: true,
-      sandata: true
+      spreadsheet: true
     }
   end
 end

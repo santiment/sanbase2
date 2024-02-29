@@ -105,13 +105,12 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
 
   @spec plan_has_access?(plan_name, product_code, query_or_argument) :: boolean()
   def plan_has_access?(plan_name, product_code, query_or_argument) do
-    min_plan(product_code, query_or_argument)
-
     case min_plan(product_code, query_or_argument) do
       "FREE" -> true
       "BASIC" -> plan_name != "FREE"
       "PRO" -> plan_name not in ["FREE", "BASIC"]
-      "PREMIUM" -> plan_name not in ["FREE", "BASIC", "PRO"]
+      "BUSINESS_PRO" -> plan_name not in ["FREE", "BASIC", "PRO"]
+      "BUSINESS_MAX" -> plan_name not in ["FREE", "BASIC", "PRO", "BUSINESS_PRO"]
       "CUSTOM" -> plan_name == "CUSTOM"
       _ -> true
     end

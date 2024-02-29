@@ -393,15 +393,11 @@ defmodule Sanbase.Factory do
   end
 
   def product_api_factory() do
-    %Product{id: 1, name: "Neuro by Santiment", code: "SANAPI"}
+    %Product{id: 1, name: "Sanapi by Santiment", code: "SANAPI"}
   end
 
   def product_sanbase_factory() do
     %Product{id: 2, name: "Sanbase by Santiment", code: "SANBASE"}
-  end
-
-  def product_sandata_factory() do
-    %Product{id: 4, name: "Sandata by Santiment", code: "SANDATA"}
   end
 
   def product_exchange_wallets_factory() do
@@ -439,16 +435,6 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_premium_factory() do
-    %Plan{
-      id: 4,
-      name: "PREMIUM",
-      amount: 75_900,
-      currency: "USD",
-      interval: "month"
-    }
-  end
-
   def plan_custom_factory() do
     %Plan{
       id: 5,
@@ -474,16 +460,6 @@ defmodule Sanbase.Factory do
       id: 7,
       name: "PRO",
       amount: 387_720,
-      currency: "USD",
-      interval: "year"
-    }
-  end
-
-  def plan_premium_yearly_factory() do
-    %Plan{
-      id: 8,
-      name: "PREMIUM",
-      amount: 819_720,
       currency: "USD",
       interval: "year"
     }
@@ -629,16 +605,6 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_pro_sandata_factory() do
-    %Plan{
-      id: 42,
-      name: "PRO",
-      amount: 14_000,
-      currency: "USD",
-      interval: "month"
-    }
-  end
-
   def subscription_factory() do
     %Subscription{
       stripe_id: rand_str(),
@@ -660,15 +626,6 @@ defmodule Sanbase.Factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 3,
-      current_period_end: Timex.shift(Timex.now(), days: 1),
-      status: "active"
-    }
-  end
-
-  def subscription_premium_factory() do
-    %Subscription{
-      stripe_id: rand_str(),
-      plan_id: 4,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }

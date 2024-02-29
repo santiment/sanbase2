@@ -11,7 +11,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     > free
     > basic
     > pro
-    > premium
     > custom
   """
   # Disable too many dependencies errors

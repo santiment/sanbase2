@@ -37,8 +37,7 @@ defmodule Sanbase.DataCase do
     {:ok,
      product_api: Map.get(product_and_plans, :product_api),
      product_sanbase: Map.get(product_and_plans, :product_sanbase),
-     product_sandata: Map.get(product_and_plans, :product_sandata),
-     plans: Map.delete(product_and_plans, [:product_api, :product_sanbase, :product_sandata])}
+     plans: Map.delete(product_and_plans, [:product_api, :product_sanbase])}
   end
 
   @doc """

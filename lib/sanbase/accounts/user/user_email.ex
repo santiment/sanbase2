@@ -154,6 +154,16 @@ defmodule Sanbase.Accounts.User.Email do
       |> Map.merge(%{token: user.email_token, email: user.email})
       |> Map.merge(Map.take(args, [:subscribe_to_weekly_newsletter]))
 
+    query_map =
+      if valid_redirect_url?(args[:success_redirect_url]),
+        do: Map.put(query_map, :success_redirect_url, args[:success_redirect_url]),
+        else: query_map
+
+    query_map =
+      if valid_redirect_url?(args[:fail_redirect_url]),
+        do: Map.put(query_map, :fail_redirect_url, args[:fail_redirect_url]),
+        else: query_map
+
     login_url = if is_binary(origin_url), do: origin_url, else: SanbaseWeb.Endpoint.frontend_url()
 
     login_url =
@@ -164,4 +174,17 @@ defmodule Sanbase.Accounts.User.Email do
     |> URI.append_query(URI.encode_query(query_map))
     |> URI.to_string()
   end
+
+  def valid_redirect_url?(url) when is_binary(url) do
+    case URI.parse(url).host do
+      nil -> false
+      host -> allowed_url?(String.split(host, "."))
+    end
+  end
+
+  def valid_redirect_url?(_), do: false
+
+  defp allowed_url?(["santiment", "net"]), do: true
+  defp allowed_url?([_app, "santiment", "net"]), do: true
+  defp allowed_url?(_), do: false
 end

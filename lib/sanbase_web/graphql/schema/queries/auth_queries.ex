@@ -108,6 +108,8 @@ defmodule SanbaseWeb.Graphql.Schema.AuthQueries do
       arg(:username, :string)
       arg(:consent, :string)
       arg(:subscribe_to_weekly_newsletter, :boolean)
+      arg(:success_redirect_url, :string)
+      arg(:fail_redirect_url, :string)
 
       resolve(&AuthResolver.send_email_login_email/2)
     end

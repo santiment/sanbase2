@@ -264,9 +264,10 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
       assert params["fail_redirect_url"] == "https://app.santiment.net/fail"
     end
 
-    test "emailLogin does not add success and fail redirects if link are not to domain santiment.net",
+    @tag capture_log: true
+    test "emailLogin return error if one of redirect urls is not from domain santiment.net",
          context do
-      result =
+      msg =
         context.conn
         |> Plug.Conn.put_req_header("origin", "https://santiment.net")
         |> email_login(%{
@@ -274,19 +275,11 @@ defmodule SanbaseWeb.Graphql.EmailLoginApiTest do
           success_redirect_url: "https://example.com/success",
           fail_redirect_url: "https://example.com/fail"
         })
-        |> get_in(["data", "emailLogin"])
+        |> Map.get("errors")
+        |> hd()
+        |> Map.get("message")
 
-      assert {:ok, %User{}} = User.by_email("john@example.com")
-      assert result["success"]
-
-      [{_pid, {Sanbase.TemplateMailer, :send, [_, _, %{login_link: login_link}]}, _}] =
-        call_history(Sanbase.TemplateMailer)
-
-      url = URI.parse(login_link)
-      params = URI.decode_query(url.query)
-
-      assert params["success_redirect_url"] == nil
-      assert params["fail_redirect_url"] == nil
+      assert msg =~ "Invalid success_redirect_url: https://example.com/success"
     end
 
     test "succeeds when different users login from the same ip not more than 20 times", context do

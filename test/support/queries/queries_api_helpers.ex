@@ -36,6 +36,41 @@ defmodule SanbaseWeb.QueriesApiHelpers do
     |> json_response(200)
   end
 
+  def execute_cache_query_execution_mutation(conn, args) do
+    mutation =
+      """
+      mutation{
+        storeQueryExecution(#{map_to_args(args)})
+      }
+      """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+  end
+
+  def execute_get_cached_query_executions_query(conn, args) do
+    query =
+      """
+      query{
+        getCachedQueryExecutions(#{map_to_args(args)}){
+          isQueryHashMatching
+          user { id }
+          insertedAt
+          result{
+            rows
+            columns
+            columnTypes
+          }
+        }
+      }
+      """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
   def run_sql_query(conn, query, args) do
     query_name = query |> Inflex.camelize(:lower)
 

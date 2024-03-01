@@ -199,19 +199,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       ) do
     with {:ok, result} <- transform_cache_input(compressed_query_execution_result),
          {:ok, _} <- Queries.cache_query_execution(query_id, result, user.id) do
-      true
+      {:ok, true}
     end
   end
 
   def get_cached_query_executions(_root, %{query_id: query_id}, resolution) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
 
-    caches = Sanbase.Queries.get_cached_query_executions(query_id, querying_user_id)
-  end
+    with {:ok, caches} <- Sanbase.Queries.get_cached_query_executions(query_id, querying_user_id) do
+      result =
+        Enum.map(caches, fn cache ->
+          %{
+            result: Sanbase.Queries.Cache.decode_decompress_result(cache.data),
+            user: cache.user,
+            inserted_at: cache.inserted_at,
+            is_query_hash_matching: cache.is_query_hash_matching
+          }
+        end)
 
-  def is_hash_matching(root, _, _) do
-    root |> dbg()
-    {:ok, true}
+      {:ok, result}
+    end
   end
 
   def cache_dashboard_query_execution(

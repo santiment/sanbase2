@@ -322,6 +322,60 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
   end
 
   describe "Caching" do
+    test "cache query executions", context do
+      Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
+
+      on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__store_execution_details__) end)
+
+      {:ok, query} = create_query(context.user.id)
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, mocked_clickhouse_result()}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          run_sql_query(context.conn, :run_sql_query, %{id: query.id})
+          |> get_in(["data", "runSqlQuery"])
+
+        compressed_and_encoded_result =
+          result |> Jason.encode!() |> :zlib.gzip() |> Base.encode64()
+
+        cache_result =
+          execute_cache_query_execution_mutation(context.conn, %{
+            query_id: query.id,
+            compressed_query_execution_result: compressed_and_encoded_result
+          })
+          |> get_in(["data", "storeQueryExecution"])
+
+        assert cache_result == true
+
+        caches =
+          execute_get_cached_query_executions_query(context.conn, %{query_id: query.id})
+          |> get_in(["data", "getCachedQueryExecutions"])
+
+        # Only we cached
+        assert length(caches) == 1
+
+        user_id = context.user.id |> to_string()
+
+        assert [
+                 %{
+                   "insertedAt" => _,
+                   "isQueryHashMatching" => true,
+                   "result" => %{
+                     "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+                     "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                     "rows" => [
+                       [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
+                       [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
+                     ]
+                   },
+                   "user" => %{"id" => ^user_id}
+                 }
+               ] = caches
+      end)
+    end
   end
 
   describe "get clickhouse database information" do
@@ -475,5 +529,30 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       },
       user_id
     )
+  end
+
+  defp query_result_mock() do
+    %Sanbase.Queries.Executor.Result{
+      query_id: 1193,
+      clickhouse_query_id: "1774C4BC91E05698",
+      summary: %{
+        "read_bytes" => 408_534.0,
+        "read_rows" => 12667.0,
+        "result_bytes" => 0.0,
+        "result_rows" => 0.0,
+        "total_rows_to_read" => 4475.0,
+        "written_bytes" => 0.0,
+        "written_rows" => 0.0
+      },
+      rows: [
+        [1482, 1645, ~U[1970-01-01 00:00:00Z], 0.045183932486757644, ~U[2023-07-26 13:10:51Z]],
+        [1482, 1647, ~U[1970-01-01 00:00:00Z], -0.13018891098082416, ~U[2023-07-25 20:27:06Z]]
+      ],
+      compressed_rows: nil,
+      columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
+      column_types: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+      query_start_time: ~U[2024-02-29 15:36:55.493Z],
+      query_end_time: ~U[2024-02-29 15:36:55.498Z]
+    }
   end
 end

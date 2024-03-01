@@ -270,7 +270,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     is extended to return one more column, the cache will no longer be
     valid.
     """
-    field(:is_hash_matching, non_null(:boolean))
+    field(:is_query_hash_matching, non_null(:boolean))
   end
 
   input_object :sql_query_execution_result_input_object do

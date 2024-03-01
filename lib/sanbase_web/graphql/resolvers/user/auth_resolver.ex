@@ -99,6 +99,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.AuthResolver do
 
       {:ok, %{success: true}}
     else
+      {:error, :invalid_redirect_url, message} ->
+        Logger.error(
+          "Login failed: #{message}. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"
+        )
+
+        {:error, message: message}
+
       {:error, :too_many_login_attempts} ->
         Logger.info(
           "Login failed: too many login attempts. Email: #{email}, IP Address: #{remote_ip}, Origin URL: #{origin_url}"

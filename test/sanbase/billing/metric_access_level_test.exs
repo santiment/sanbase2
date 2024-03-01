@@ -175,6 +175,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "compound_active_addresses",
         "compound_v3_active_addresses",
         "makerdao_active_addresses",
+        "liquity_active_addresses",
         "holders_distribution_total",
         "holders_distribution_over_100",
         "nft_collection_avg_price_usd",
@@ -476,7 +477,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "ecosystem_dev_activity_contributors_count",
         "ecosystem_github_activity_contributors_count",
         "gini_index",
-        "annual_inflation_rate"
+        "annual_inflation_rate",
+        # Social metrics
+        "unique_social_volume_total_1d"
       ]
       |> Enum.sort()
 
@@ -810,6 +813,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_volume_ai_total",
         "unique_social_volume_total_5m",
         "unique_social_volume_total_1h",
+        "unique_social_volume_total_1d",
         "sentiment_positive_4chan",
         "sentiment_positive_telegram",
         "sentiment_positive_reddit",
@@ -1419,6 +1423,21 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "compound_v3_usdc_market_supply_apy",
         "compound_v3_usdc_market_borrow_apy",
         "compound_v3_active_addresses",
+        # Liquity metrics
+        "liquity_action_deposits",
+        "liquity_action_liquidations",
+        "liquity_action_new_debt",
+        "liquity_action_repayments",
+        "liquity_action_deposits_usd",
+        "liquity_action_liquidations_usd",
+        "liquity_action_new_debt_usd",
+        "liquity_action_repayments_usd",
+        "liquity_total_supplied",
+        "liquity_total_supplied_usd",
+        "liquity_total_borrowed",
+        "liquity_total_borrowed_usd",
+        "liquity_borrow_fee",
+        "liquity_active_addresses",
         # Makerdao metrics
         "makerdao_action_deposits",
         "makerdao_action_liquidations",

@@ -810,6 +810,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_volume_ai_total",
         "unique_social_volume_total_5m",
         "unique_social_volume_total_1h",
+        "unique_social_volume_total_1d",
         "sentiment_positive_4chan",
         "sentiment_positive_telegram",
         "sentiment_positive_reddit",

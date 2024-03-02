@@ -86,8 +86,7 @@ defmodule Mix.Tasks.Gen.Admin.Resource do
           edit_fields: #{inspect(form_fields)},
           preloads: #{inspect(preloads)},
           belongs_to_fields: #{inspect(belongs_to_fields_map, pretty: true)}, #{if length(belongs_to_fields) > 0, do: "#TODO fill search_fields list with fields from the belongs_to resource", else: ""}
-          field_types: %{},
-          funcs: %{}
+          fields_override: %{}
         }
       end
     end

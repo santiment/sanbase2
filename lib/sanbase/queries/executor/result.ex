@@ -46,6 +46,14 @@ defmodule Sanbase.Queries.Executor.Result do
       {:error, "The provided value is not a valid gzip binary"}
   end
 
+  def compress_and_encode(%__MODULE__{} = result) do
+    result
+    |> Map.from_struct()
+    |> Jason.encode!()
+    |> :zlib.gzip()
+    |> Base.encode64()
+  end
+
   @doc ~s"""
   Accept a string that is a stringified JSON object representing the result
   of executing an SQL query, and return a `Result` struct.
@@ -77,14 +85,18 @@ defmodule Sanbase.Queries.Executor.Result do
     end
   end
 
+  # These fields are fields of the Result struct, but are not needed when checking
+  # if the compressed and encoded result for the cache are provided
+  @skippable_fields [:compressed_rows]
   def all_fields_present?(%__MODULE__{} = result) do
     nil_fields =
       result
       |> Map.from_struct()
       # The frontend won't provide compressed rows when caching the query,
       # so if it's missing it should be ok.
-      |> Map.filter(fn {k, v} -> is_nil(v) and k != :compressed_rows end)
+      |> Map.filter(fn {k, v} -> is_nil(v) and k not in @skippable_fields end)
       |> Enum.map(fn {k, _v} -> Inflex.camelize(k, :lower) end)
+      |> Enum.sort()
 
     case nil_fields do
       [] ->

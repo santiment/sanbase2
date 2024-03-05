@@ -90,9 +90,9 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
       else
         {:ok, [%{address: returned_address}]} ->
           raise("""
-          The address returned from balance_change in WalletTriggerSettings has \
-          different format than the provided address or it returned a completely \
-          different address. \
+          The address returned from balance_change in WalletTriggerSettings has
+          different format than the provided address or it returned a completely
+          different address.
           Got: #{inspect(returned_address)}, Expected: #{inspect(address)}
           """)
 

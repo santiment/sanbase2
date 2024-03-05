@@ -5,6 +5,7 @@ defmodule Sanbase.Queries do
   TODO: Add more documentation
   """
   alias Sanbase.Repo
+  alias Sanbase.Queries
   alias Sanbase.Queries.Query
   alias Sanbase.Queries.QueryMetadata
   alias Sanbase.Queries.QueryExecution
@@ -95,7 +96,7 @@ defmodule Sanbase.Queries do
     query_metadata = Map.put_new(query_metadata, :sanbase_user_id, user.id)
 
     with {:ok, environment} <- Environment.new(query, user),
-         {:ok, result} <- Sanbase.Queries.Executor.run(query, query_metadata, environment) do
+         {:ok, result} <- Queries.Executor.run(query, query_metadata, environment) do
       maybe_store_execution_data_async(result, user.id, opts)
 
       {:ok, result}
@@ -117,16 +118,16 @@ defmodule Sanbase.Queries do
   """
   @spec user_can_execute_query(%User{}, String.t(), String.t()) :: :ok | {:error, String.t()}
   def user_can_execute_query(user, product_code, plan_name) do
-    Sanbase.Queries.Authorization.user_can_execute_query(user, product_code, plan_name)
+    Queries.Authorization.user_can_execute_query(user, product_code, plan_name)
   end
 
   @doc ~s"""
   Get a query in order to read or run it.
   This can be done by owner or by anyone if the query is public.
   """
-  @spec get_query(query_id, user_id) :: {:ok, Query.t()} | {:error, String.t()}
-  def get_query(query_id, querying_user_id) do
-    query = Query.get_for_read(query_id, querying_user_id)
+  @spec get_query(query_id, user_id, Keyword.t()) :: {:ok, Query.t()} | {:error, String.t()}
+  def get_query(query_id, querying_user_id, opts \\ []) do
+    query = Query.get_for_read(query_id, querying_user_id, opts)
 
     case Repo.one(query) do
       %Query{} = query -> {:ok, query}
@@ -378,6 +379,56 @@ defmodule Sanbase.Queries do
       end
     end
   end
+
+  @doc ~s"""
+  Cache a query execution.
+  A query can be cached by its owner, as well as any other user who sees the query.
+  The query cache is stored under the (query_id, user_id) complex key, so the check is
+  only if the user can *read* the query, not mutate it.
+  """
+  @spec cache_query_execution(query_id, any(), user_id, Keyword.t()) :: any()
+  def cache_query_execution(query_id, query_result, user_id, opts \\ []) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_for_read, fn _, _ ->
+      # This serves the purpose of checking if the querying user has
+      # read access to the query. Only read access is needed to create
+      # a cache, as the cache is not a part of the query itself and is
+      # stored under the (query_id, user_id) complex key.
+      get_query(query_id, user_id, preload?: false)
+    end)
+    |> Ecto.Multi.run(:create_or_update_cache, fn _, %{get_for_read: query} ->
+      # This also executes a transaction inside it and it is ok as
+      # ecto transactions can be nested
+      Queries.Cache.create_or_update_cache(query, query_result, user_id, opts)
+    end)
+    |> Sanbase.Repo.transaction()
+    |> process_transaction_result(:create_or_update_cache)
+  end
+
+  def get_cached_query_executions(query_id, user_id) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_for_read, fn _, _ ->
+      get_query(query_id, user_id, preload?: false)
+    end)
+    |> Ecto.Multi.run(:get_cached_executions, fn _, %{get_for_read: query} ->
+      Queries.Cache.get_cached_executions(query, user_id)
+    end)
+    |> Ecto.Multi.run(:add_hash_match_field, fn _, changes ->
+      %{get_for_read: query, get_cached_executions: cached_executions} = changes
+      current_query_hash = Query.hash(query)
+
+      result =
+        Enum.map(cached_executions, fn execution ->
+          Map.put(execution, :is_query_hash_matching, execution.query_hash == current_query_hash)
+        end)
+
+      {:ok, result}
+    end)
+    |> Sanbase.Repo.transaction()
+    |> process_transaction_result(:add_hash_match_field)
+  end
+
+  # Private functions
 
   defp get_for_mutation(query_id, querying_user_id) do
     query = Query.get_for_mutation(query_id, querying_user_id)

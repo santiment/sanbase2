@@ -1,4 +1,4 @@
-defmodule Sanbase.CommentsApiHelper do
+defmodule SanbaseWeb.CommentsApiHelper do
   import SanbaseWeb.Graphql.TestHelpers
 
   def create_comment(conn, entity_id, content, opts \\ []) do

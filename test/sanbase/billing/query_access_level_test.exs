@@ -168,11 +168,16 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_user_queries,
           :run_dashboard_sql_query,
           :run_raw_sql_query,
-          :run_sql_query
+          :run_sql_query,
+          :get_cached_query_executions
         ]
         |> Enum.sort()
 
-      assert free_queries == expected_free_queries
+      unexpected_free_queries = free_queries -- expected_free_queries
+      assert unexpected_free_queries == []
+
+      missing_free_queries = expected_free_queries -- free_queries
+      assert missing_free_queries == []
     end
 
     test "restricted queries defined in the schema" do
@@ -217,7 +222,11 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         ]
         |> Enum.sort()
 
-      assert restricted_queries == expected_restricted_queries
+      unexpected_restricted_queries = restricted_queries -- expected_restricted_queries
+      assert unexpected_restricted_queries == []
+
+      missing_restricted_queries = expected_restricted_queries -- restricted_queries
+      assert missing_restricted_queries == []
     end
 
     test "forbidden queries from the schema" do

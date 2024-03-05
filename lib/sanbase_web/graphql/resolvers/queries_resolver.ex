@@ -75,6 +75,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{sql_query_text: query_text, sql_query_parameters: query_parameters},
         %{context: %{auth: %{current_user: user}} = context} = resolution
       ) do
+    # There is some issue with setting `%{}` as default parameters, so we continue to use
+    # "{}" and parse it properly here, before passing it on.
+    query_parameters = if query_parameters == "{}", do: %{}, else: query_parameters
+
     with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
          query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user) do
       query_metadata = QueryMetadata.from_resolution(resolution)

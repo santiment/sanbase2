@@ -75,6 +75,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         %{sql_query_text: query_text, sql_query_parameters: query_parameters},
         %{context: %{auth: %{current_user: user}} = context} = resolution
       ) do
+    # There is some issue with setting `%{}` as default parameters, so we continue to use
+    # "{}" and parse it properly here, before passing it on.
+    query_parameters = if query_parameters == "{}", do: %{}, else: query_parameters
+
     with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
          query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user) do
       query_metadata = QueryMetadata.from_resolution(resolution)
@@ -180,7 +184,48 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Dashboards.remove_query_from_dashboard(dashboard_id, mapping_id, user.id)
   end
 
-  def store_dashboard_query_execution(
+  defp transform_cache_input(data) do
+    # data is the gzip compressed and base64 encoded query JSON
+    with {:ok, result_string} <- Queries.Executor.Result.decode_and_decompress(data),
+         {:ok, %Result{} = result} <- Queries.Executor.Result.from_json_string(result_string),
+         true <- Result.all_fields_present?(result) do
+      {:ok, result}
+    end
+  end
+
+  def cache_query_execution(
+        _root,
+        %{
+          query_id: query_id,
+          compressed_query_execution_result: compressed_query_execution_result
+        },
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    with {:ok, result} <- transform_cache_input(compressed_query_execution_result),
+         {:ok, _} <- Queries.cache_query_execution(query_id, result, user.id) do
+      {:ok, true}
+    end
+  end
+
+  def get_cached_query_executions(_root, %{query_id: query_id}, resolution) do
+    querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
+
+    with {:ok, caches} <- Sanbase.Queries.get_cached_query_executions(query_id, querying_user_id) do
+      result =
+        Enum.map(caches, fn cache ->
+          %{
+            result: Sanbase.Queries.Cache.decode_decompress_result(cache.data),
+            user: cache.user,
+            inserted_at: cache.inserted_at,
+            is_query_hash_matching: cache.is_query_hash_matching
+          }
+        end)
+
+      {:ok, result}
+    end
+  end
+
+  def cache_dashboard_query_execution(
         _root,
         %{
           dashboard_id: dashboard_id,
@@ -189,14 +234,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
         },
         %{context: %{auth: %{current_user: user}}}
       ) do
-    with {:ok, result_string} <- Result.decode_and_decompress(compressed_query_execution_result),
-         {:ok, query_execution_result} <- Result.from_json_string(result_string),
-         true <- Result.all_fields_present?(query_execution_result),
+    with {:ok, result} <- transform_cache_input(compressed_query_execution_result),
          {:ok, dashboard_cache} <-
-           Dashboards.store_dashboard_query_execution(
+           Dashboards.cache_dashboard_query_execution(
              dashboard_id,
              mapping_id,
-             query_execution_result,
+             result,
              user.id
            ) do
       queries = Map.values(dashboard_cache.queries)

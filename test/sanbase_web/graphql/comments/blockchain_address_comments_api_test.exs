@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressCommentsApiTest do
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
 
-  import Sanbase.CommentsApiHelper
+  import SanbaseWeb.CommentsApiHelper
 
   @opts [entity_type: :blockchain_address, extra_fields: ["blockchainAddressId"]]
   setup do

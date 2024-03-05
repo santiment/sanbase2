@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationCommentsApiTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.CommentsApiHelper
+  import SanbaseWeb.CommentsApiHelper
 
   @opts [entity_type: :chart_configuration, extra_fields: ["chartConfigurationId"]]
 

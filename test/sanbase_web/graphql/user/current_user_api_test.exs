@@ -72,6 +72,26 @@ defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
     end
   end
 
+  describe "signupDatetime" do
+    test "when user is registered returns the signup datetime", _context do
+      registration_dt = DateTime.utc_now(:second)
+
+      user =
+        insert(:user, registration_state: %{"state" => "finished", "datetime" => registration_dt})
+
+      conn = setup_jwt_auth(build_conn(), user)
+      result = get_user(conn) |> get_in(["data", "currentUser"])
+      assert result["signupDatetime"] == DateTime.to_iso8601(registration_dt)
+    end
+
+    test "when user has no registration_state - returns nil", _context do
+      user = insert(:user)
+      conn = setup_jwt_auth(build_conn(), user)
+      result = get_user(conn) |> get_in(["data", "currentUser"])
+      assert result["signupDatetime"] == nil
+    end
+  end
+
   defp get_user(conn) do
     query = """
     {
@@ -87,6 +107,7 @@ defmodule SanbaseWeb.Graphql.CurrentUserApiTest do
         followers{ count users { id } }
         following{ count users { id } }
         isEligibleForSanbaseTrial
+        signupDatetime
       }
     }
     """

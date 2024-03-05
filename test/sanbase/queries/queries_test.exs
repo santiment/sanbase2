@@ -542,6 +542,16 @@ defmodule Sanbase.QueriesTest do
       assert error_msg =~ "which is over the limit of 0KB"
     end
 
+    test "cannot cache other user private query", context do
+      %{user: user, user2: user2} = context
+      {:ok, query} = Queries.create_query(%{is_public: false}, user.id)
+
+      assert {:error, error_msg} =
+               Queries.cache_query_execution(query.id, query_result_mock(), user2.id)
+
+      assert error_msg =~ "Query does not exist or you don't have access to it"
+    end
+
     test "get cached queries of owner and your own", context do
       %{query: query, user: user, user2: user2} = context
 

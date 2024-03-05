@@ -93,6 +93,7 @@ defmodule Sanbase.Queries.Executor.Result do
       # so if it's missing it should be ok.
       |> Map.filter(fn {k, v} -> is_nil(v) and k != :compressed_rows end)
       |> Enum.map(fn {k, _v} -> Inflex.camelize(k, :lower) end)
+      |> Enum.sort()
 
     case nil_fields do
       [] ->

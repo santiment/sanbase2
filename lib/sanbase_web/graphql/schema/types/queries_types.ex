@@ -5,8 +5,6 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
   alias SanbaseWeb.Graphql.Resolvers.VoteResolver
   alias SanbaseWeb.Graphql.Resolvers.DashboardResolver
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
-
   @desc ~s"""
   A GraphQL type that represents an SQL Query.
 

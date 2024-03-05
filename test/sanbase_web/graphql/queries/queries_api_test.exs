@@ -8,9 +8,11 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
   setup do
     user = insert(:user)
+    user2 = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
+    conn2 = setup_jwt_auth(build_conn(), user2)
 
-    %{conn: conn, user: user}
+    %{conn: conn, conn2: conn2, user: user, user2: user2}
   end
 
   describe "voting" do
@@ -341,6 +343,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         compressed_and_encoded_result =
           result |> Jason.encode!() |> :zlib.gzip() |> Base.encode64()
 
+        # The owner cache
+
         cache_result =
           execute_cache_query_execution_mutation(context.conn, %{
             query_id: query.id,
@@ -350,31 +354,99 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
 
         assert cache_result == true
 
+        # The user cache
+
+        cache_result =
+          execute_cache_query_execution_mutation(context.conn2, %{
+            query_id: query.id,
+            compressed_query_execution_result: compressed_and_encoded_result
+          })
+          |> get_in(["data", "storeQueryExecution"])
+
+        assert cache_result == true
+
+        # Get the user own cache the owner of the query cache
         caches =
-          execute_get_cached_query_executions_query(context.conn, %{query_id: query.id})
+          execute_get_cached_query_executions_query(context.conn2, %{query_id: query.id})
           |> get_in(["data", "getCachedQueryExecutions"])
 
         # Only we cached
-        assert length(caches) == 1
+        assert length(caches) == 2
 
-        user_id = context.user.id |> to_string()
+        owner_user_id = context.user.id |> to_string()
+        own_user_id = context.user.id |> to_string()
 
-        assert [
-                 %{
-                   "insertedAt" => _,
-                   "isQueryHashMatching" => true,
-                   "result" => %{
-                     "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
-                     "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
-                     "rows" => [
-                       [2503, 250, "2008-12-10T00:00:00Z", 0.0, "2020-02-28T15:18:42Z"],
-                       [2503, 250, "2008-12-10T00:05:00Z", 0.0, "2020-02-28T15:18:42Z"]
-                     ]
-                   },
-                   "user" => %{"id" => ^user_id}
-                 }
-               ] = caches
+        owner_cache = caches |> Enum.find(&(&1["user"]["id"] == owner_user_id))
+        own_cache = caches |> Enum.find(&(&1["user"]["id"] == own_user_id))
+
+        # Check the owner's cache of the query
+        assert %{
+                 "insertedAt" => _,
+                 "isQueryHashMatching" => true,
+                 "result" => %{
+                   "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+                   "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                   "rows" => [
+                     [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                     [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
+                   ]
+                 },
+                 "user" => %{"id" => ^owner_user_id}
+               } = owner_cache
+
+        # Check the querying user's cache of the query
+        assert %{
+                 "insertedAt" => _,
+                 "isQueryHashMatching" => true,
+                 "result" => %{
+                   "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+                   "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                   "rows" => [
+                     [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                     [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
+                   ]
+                 },
+                 "user" => %{"id" => ^own_user_id}
+               } = own_cache
       end)
+    end
+
+    test "Cannot cache another user private query", context do
+      {:ok, query} = Sanbase.Queries.create_query(%{is_public: false}, context.user2.id)
+
+      # Not a valid base64 encoded string
+      error_msg =
+        execute_cache_query_execution_mutation(context.conn, %{
+          query_id: query.id,
+          compressed_query_execution_result: "xxxxasd12309uaksdl!@876@#_тест_Тест"
+        })
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg =~ "The provided value is not a valid base64-encoded binary"
+
+      # Not a valid GZIP
+      error_msg =
+        execute_cache_query_execution_mutation(context.conn, %{
+          query_id: query.id,
+          compressed_query_execution_result: "hehe" |> Base.encode64()
+        })
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg =~ "The provided value is not a valid gzip binary"
+
+      # Valid gzip, but not valid query result
+      result =
+        %{columns: ["a"], rows: [2, 3]} |> Jason.encode!() |> :zlib.gzip() |> Base.encode64()
+
+      error_msg =
+        execute_cache_query_execution_mutation(context.conn, %{
+          query_id: query.id,
+          compressed_query_execution_result: result
+        })
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg ==
+               "The following result fields are not provided: clickhouseQueryId, columnTypes, queryEndTime, queryId, queryStartTime, summary"
     end
   end
 
@@ -529,30 +601,5 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       },
       user_id
     )
-  end
-
-  defp query_result_mock() do
-    %Sanbase.Queries.Executor.Result{
-      query_id: 1193,
-      clickhouse_query_id: "1774C4BC91E05698",
-      summary: %{
-        "read_bytes" => 408_534.0,
-        "read_rows" => 12667.0,
-        "result_bytes" => 0.0,
-        "result_rows" => 0.0,
-        "total_rows_to_read" => 4475.0,
-        "written_bytes" => 0.0,
-        "written_rows" => 0.0
-      },
-      rows: [
-        [1482, 1645, ~U[1970-01-01 00:00:00Z], 0.045183932486757644, ~U[2023-07-26 13:10:51Z]],
-        [1482, 1647, ~U[1970-01-01 00:00:00Z], -0.13018891098082416, ~U[2023-07-25 20:27:06Z]]
-      ],
-      compressed_rows: nil,
-      columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
-      column_types: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
-      query_start_time: ~U[2024-02-29 15:36:55.493Z],
-      query_end_time: ~U[2024-02-29 15:36:55.498Z]
-    }
   end
 end

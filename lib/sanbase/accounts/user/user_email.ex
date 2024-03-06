@@ -139,14 +139,21 @@ defmodule Sanbase.Accounts.User.Email do
 
     template = Sanbase.Email.Template.choose_login_template(origin_url, first_login?: first_login)
 
-    Sanbase.TemplateMailer.send(user.email, template, %{
-      login_link: generate_login_link(user, first_login, origin_url, args)
-    })
+    case generate_login_link(user, first_login, origin_url, args) do
+      {:ok, login_link} ->
+        Sanbase.TemplateMailer.send(user.email, template, %{login_link: login_link})
+
+      error ->
+        error
+    end
   end
 
   defp generate_login_link(user, first_login, origin_url, args) do
     # If this is the first login that also creates the user, then
     # append signup=true to the query params
+    login_url = if is_binary(origin_url), do: origin_url, else: SanbaseWeb.Endpoint.frontend_url()
+    login_url = Path.join(login_url, "/email_login")
+
     signup_map = if first_login, do: %{signup: true}, else: %{}
 
     query_map =
@@ -154,14 +161,36 @@ defmodule Sanbase.Accounts.User.Email do
       |> Map.merge(%{token: user.email_token, email: user.email})
       |> Map.merge(Map.take(args, [:subscribe_to_weekly_newsletter]))
 
-    login_url = if is_binary(origin_url), do: origin_url, else: SanbaseWeb.Endpoint.frontend_url()
+    with {:ok, query_map} <-
+           add_redirect_url(query_map, :success_redirect_url, args[:success_redirect_url]),
+         {:ok, query_map} <-
+           add_redirect_url(query_map, :fail_redirect_url, args[:fail_redirect_url]) do
+      login_link =
+        URI.parse(login_url)
+        |> URI.append_query(URI.encode_query(query_map))
+        |> URI.to_string()
 
-    login_url =
-      login_url
-      |> Path.join("/email_login")
-
-    URI.parse(login_url)
-    |> URI.append_query(URI.encode_query(query_map))
-    |> URI.to_string()
+      {:ok, login_link}
+    else
+      error -> error
+    end
   end
+
+  def add_redirect_url(query_map, _key, nil), do: {:ok, query_map}
+
+  def add_redirect_url(query_map, key, url) when is_binary(url) do
+    with parsed <- URI.parse(url),
+         "https" <- parsed.scheme,
+         true <- allowed_url?(String.split(parsed.host, ".")) do
+      {:ok, Map.put(query_map, key, url)}
+    else
+      _ -> {:error, :invalid_redirect_url, "Invalid #{key}: #{url}"}
+    end
+  end
+
+  def valid_redirect_url?(_), do: false
+
+  defp allowed_url?(["santiment", "net"]), do: true
+  defp allowed_url?([_, "santiment", "net"]), do: true
+  defp allowed_url?(_), do: false
 end

@@ -899,7 +899,7 @@ defmodule Sanbase.Dashboards do
       changeset = DashboardQueryMapping.changeset(struct, %{settings: settings})
       Repo.update(changeset)
     end)
-    |> Ecto.Multi.run(:add_preloads, fn _repo, %{add_query_to_dashboard: struct} ->
+    |> Ecto.Multi.run(:add_preloads, fn _repo, %{update_mapping: struct} ->
       # Do not preload the dashboard as it will be added in the next step
       {:ok, Repo.preload(struct, [:query])}
     end)
@@ -918,14 +918,14 @@ defmodule Sanbase.Dashboards do
   @doc ~s"""
 
   """
-  @spec store_dashboard_query_execution(
+  @spec cache_dashboard_query_execution(
           dashboard_id(),
           dashboard_query_mapping_id(),
           map(),
           user_id()
         ) ::
           {:ok, DashboardQueryMappingCache.t()} | {:error, String.t()}
-  def store_dashboard_query_execution(
+  def cache_dashboard_query_execution(
         dashboard_id,
         dashboard_query_mapping_id,
         query_result,

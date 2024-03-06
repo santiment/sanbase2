@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 14.10 (Homebrew)
+-- Dumped by pg_dump version 14.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -3132,6 +3132,40 @@ CREATE TABLE public.queries (
 
 
 --
+-- Name: queries_cache; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.queries_cache (
+    id bigint NOT NULL,
+    query_id bigint,
+    user_id bigint,
+    data text,
+    query_hash text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: queries_cache_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.queries_cache_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: queries_cache_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.queries_cache_id_seq OWNED BY public.queries_cache.id;
+
+
+--
 -- Name: queries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -5136,6 +5170,13 @@ ALTER TABLE ONLY public.queries ALTER COLUMN id SET DEFAULT nextval('public.quer
 
 
 --
+-- Name: queries_cache id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries_cache ALTER COLUMN id SET DEFAULT nextval('public.queries_cache_id_seq'::regclass);
+
+
+--
 -- Name: reports id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6029,6 +6070,14 @@ ALTER TABLE ONLY public.promo_trials
 
 ALTER TABLE ONLY public.pumpkins
     ADD CONSTRAINT pumpkins_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: queries_cache queries_cache_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries_cache
+    ADD CONSTRAINT queries_cache_pkey PRIMARY KEY (id);
 
 
 --
@@ -7087,6 +7136,13 @@ CREATE UNIQUE INDEX promo_coupons_email_index ON public.promo_coupons USING btre
 --
 
 CREATE INDEX pumpkins_user_id_index ON public.pumpkins USING btree (user_id);
+
+
+--
+-- Name: queries_cache_query_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX queries_cache_query_id_user_id_index ON public.queries_cache USING btree (query_id, user_id);
 
 
 --
@@ -8276,6 +8332,22 @@ ALTER TABLE ONLY public.pumpkins
 
 
 --
+-- Name: queries_cache queries_cache_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries_cache
+    ADD CONSTRAINT queries_cache_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id) ON DELETE CASCADE;
+
+
+--
+-- Name: queries_cache queries_cache_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queries_cache
+    ADD CONSTRAINT queries_cache_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: queries queries_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9228,3 +9300,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240126133441);
 INSERT INTO public."schema_migrations" (version) VALUES (20240131160724);
 INSERT INTO public."schema_migrations" (version) VALUES (20240201085929);
 INSERT INTO public."schema_migrations" (version) VALUES (20240228133210);
+INSERT INTO public."schema_migrations" (version) VALUES (20240212141517);

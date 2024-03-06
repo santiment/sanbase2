@@ -11,9 +11,7 @@ defmodule SanbaseWeb.GenericAdmin.ProjectEcosystemMapping do
       belongs_to_fields: %{
         project: %{resource: "projects", search_fields: [:name, :slug, :ticker]},
         ecosystem: %{resource: "ecosystems", search_fields: [:ecosystem]}
-      },
-      field_types: %{},
-      funcs: %{}
+      }
     }
   end
 end

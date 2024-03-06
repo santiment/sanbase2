@@ -7,13 +7,13 @@
     method={if type == "new", do: "post", else: "patch"}
     for={@changeset}
     as={@resource}
-    action={@action}
+    action={Routes.generic_admin_path(@conn, :update, @data, resource: @resource)}
   >
     <%= if @changeset.action do %>
       <SanbaseWeb.AdminComponents.form_error changeset={@changeset} />
     <% end %>
 
-    <%= for field <- @form_fields do %>
+    <%= for field <- @fields do %>
       <div class="m-4">
         <%= if @belongs_to_fields[field] do %>
           <%= if @belongs_to_fields[field][:type] == :live_select do %>

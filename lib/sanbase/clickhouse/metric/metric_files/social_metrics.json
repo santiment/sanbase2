@@ -1304,6 +1304,23 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Unique Social Volume Total (1d)",
+    "name": "unique_social_volume_total_1d",
+    "metric": "unique_social_volume_1d",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "1h Moving Average Of Social Dominance Total",
     "name": "social_dominance_total_1h_moving_average",
     "metric": "social_dominance_1h",

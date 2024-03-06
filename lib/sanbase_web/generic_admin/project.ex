@@ -77,11 +77,13 @@ defmodule SanbaseWeb.GenericAdmin.Project do
         :website_link,
         :whitepaper_link
       ],
-      field_types: %{
-        long_description: :text
-      },
-      funcs: %{
-        infrastructure_id: &__MODULE__.link/1
+      fields_override: %{
+        long_description: %{
+          type: :textarea
+        },
+        infrastructure_id: %{
+          value_modifier: &__MODULE__.link/1
+        }
       }
     }
   end
@@ -249,9 +251,6 @@ defmodule SanbaseWeb.GenericAdmin.ContractAddress do
       preloads: [:project],
       new_fields: [:project, :address, :decimals, :label, :description],
       edit_fields: [:project, :address, :decimals, :label, :description],
-      field_types: %{
-        description: :text
-      },
       belongs_to_fields: %{
         project: %{
           query: from(p in Sanbase.Project, order_by: p.id),
@@ -260,8 +259,13 @@ defmodule SanbaseWeb.GenericAdmin.ContractAddress do
           search_fields: [:name, :slug, :ticker]
         }
       },
-      funcs: %{
-        project_id: &SanbaseWeb.GenericAdmin.Project.project_link/1
+      fields_override: %{
+        description: %{
+          type: :text
+        },
+        project_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.Project.project_link/1
+        }
       }
     }
   end
@@ -285,8 +289,10 @@ defmodule SanbaseWeb.GenericAdmin.GithubOrganization do
           search_fields: [:name, :slug, :ticker]
         }
       },
-      funcs: %{
-        project_id: &SanbaseWeb.GenericAdmin.Project.project_link/1
+      fields_override: %{
+        project_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.Project.project_link/1
+        }
       }
     }
   end
@@ -341,9 +347,13 @@ defmodule SanbaseWeb.GenericAdmin.ProjectMarketSegments do
           search_fields: [:name, :slug, :ticker]
         }
       },
-      funcs: %{
-        project_id: &SanbaseWeb.GenericAdmin.Project.project_link/1,
-        market_segment_id: &__MODULE__.market_segment_link/1
+      fields_override: %{
+        project_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.Project.project_link/1
+        },
+        market_segment_id: %{
+          value_modifier: &__MODULE__.market_segment_link/1
+        }
       }
     }
   end
@@ -437,10 +447,6 @@ defmodule SanbaseWeb.GenericAdmin.Ico do
         :cap_currency,
         :comments
       ],
-      field_types: %{
-        comments: :text,
-        contract_abi: :text
-      },
       belongs_to_fields: %{
         project: %{
           query: from(p in Sanbase.Project, order_by: p.id),
@@ -455,8 +461,16 @@ defmodule SanbaseWeb.GenericAdmin.Ico do
           search_fields: [:code]
         }
       },
-      funcs: %{
-        project_id: &SanbaseWeb.GenericAdmin.Project.project_link/1
+      fields_override: %{
+        comments: %{
+          type: :textarea
+        },
+        contract_abi: %{
+          type: :textarea
+        },
+        project_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.Project.project_link/1
+        }
       }
     }
   end
@@ -500,8 +514,10 @@ defmodule SanbaseWeb.GenericAdmin.SocialVolumeQuery do
           search_fields: [:name, :slug, :ticker]
         }
       },
-      funcs: %{
-        project_id: &SanbaseWeb.GenericAdmin.Project.project_link/1
+      fields_override: %{
+        project_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.Project.project_link/1
+        }
       }
     }
   end

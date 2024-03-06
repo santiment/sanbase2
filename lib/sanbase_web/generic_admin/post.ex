@@ -11,20 +11,26 @@ defmodule SanbaseWeb.GenericAdmin.Post do
       preloads: [:user, :price_chart_project],
       index_fields: @index_fields,
       edit_fields: @edit_fields,
-      extra_fields: [:is_featured],
-      field_types: %{
-        is_featured: :boolean
-      },
-      collections: %{
-        state: Post.states(),
-        ready_state: Post.ready_states(),
-        prediction: Post.predictions()
-      },
-      funcs: %{
-        user_id: &SanbaseWeb.GenericAdmin.User.user_link/1
-      },
-      search_fields: %{
-        is_featured: Post.featured_posts_query()
+      fields_override: %{
+        is_featured: %{
+          type: :boolean,
+          search_query: Post.featured_posts_query()
+        },
+        user_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.User.user_link/1
+        },
+        state: %{
+          type: :select,
+          collection: Post.states()
+        },
+        ready_state: %{
+          type: :select,
+          collection: Post.ready_states()
+        },
+        prediction: %{
+          type: :select,
+          collection: Post.predictions()
+        }
       }
     }
   end
@@ -103,9 +109,7 @@ defmodule SanbaseWeb.GenericAdmin.PostTags do
           resource: "tags",
           search_fields: [:name]
         }
-      },
-      field_types: %{},
-      funcs: %{}
+      }
     }
   end
 end
@@ -120,9 +124,7 @@ defmodule SanbaseWeb.GenericAdmin.Tag do
       preloads: [],
       index_fields: [:id, :name],
       new_fields: [:name],
-      edit_fields: [:name],
-      field_types: %{},
-      funcs: %{}
+      edit_fields: [:name]
     }
   end
 end
@@ -152,10 +154,13 @@ defmodule SanbaseWeb.GenericAdmin.PostComment do
           search_fields: [:content]
         }
       },
-      field_types: %{},
-      funcs: %{
-        post_id: &SanbaseWeb.GenericAdmin.Post.post_link/1,
-        comment_id: &SanbaseWeb.GenericAdmin.Comment.comment_link/1
+      fields_override: %{
+        comment_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.Comment.comment_link/1
+        },
+        post_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.Post.post_link/1
+        }
       }
     }
   end
@@ -172,12 +177,6 @@ defmodule SanbaseWeb.GenericAdmin.Comment do
       index_fields: [:id, :user_id, :content],
       new_fields: [:user, :content],
       edit_fields: [:content, :edited_at, :parent_id, :root_parent_id, :subcomments_count, :user],
-      field_types: %{
-        content: :text
-      },
-      funcs: %{
-        user_id: &SanbaseWeb.GenericAdmin.User.user_link/1
-      },
       belongs_to_fields: %{
         user: %{
           query: from(u in Sanbase.Accounts.User, order_by: [desc: u.id]),
@@ -197,16 +196,28 @@ defmodule SanbaseWeb.GenericAdmin.Comment do
           resource: "comments",
           search_fields: [:content]
         }
+      },
+      fields_override: %{
+        content: %{
+          type: :text
+        },
+        user_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.User.user_link/1
+        }
       }
     }
   end
 
   def comment_link(comment) do
-    SanbaseWeb.GenericAdmin.Subscription.href(
-      "comments",
-      comment.comment_id,
-      comment.comment.content
-    )
+    if comment.comment do
+      SanbaseWeb.GenericAdmin.Subscription.href(
+        "comments",
+        comment.comment_id,
+        comment.comment.content
+      )
+    else
+      ""
+    end
   end
 end
 
@@ -243,11 +254,6 @@ defmodule SanbaseWeb.GenericAdmin.FeaturedItem do
         :table_configuration_id,
         :dashboard_id
       ],
-      field_types: %{},
-      funcs: %{
-        user_list_id: &SanbaseWeb.GenericAdmin.UserList.user_list_link/1,
-        post_id: &SanbaseWeb.GenericAdmin.Post.post_link/1
-      },
       belongs_to_fields: %{
         user_list_id: %{
           query: from(ul in Sanbase.UserList, order_by: [desc: ul.id]),
@@ -285,6 +291,14 @@ defmodule SanbaseWeb.GenericAdmin.FeaturedItem do
           resource: "dashboards",
           search_fields: [:name]
         }
+      },
+      fields_override: %{
+        post_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.Post.post_link/1
+        },
+        user_list_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.UserList.user_list_link/1
+        }
       }
     }
   end
@@ -301,21 +315,34 @@ defmodule SanbaseWeb.GenericAdmin.UserTrigger do
       preloads: [:user],
       index_fields: [:id, :user_id, :trigger],
       edit_fields: [:user, :is_public, :is_featured],
-      extra_fields: [:is_featured, :is_public],
-      field_types: %{
-        is_featured: :boolean,
-        is_public: :boolean
-      },
-      funcs: %{
-        user_id: &SanbaseWeb.GenericAdmin.User.user_link/1,
-        trigger: fn ut -> Map.from_struct(ut.trigger) |> Jason.encode!(pretty: true) end
-      },
       belongs_to_fields: %{
         user: %{
           query: from(u in Sanbase.Accounts.User, order_by: [desc: u.id]),
           transform: fn rows -> Enum.map(rows, &{&1.email, &1.id}) end,
           resource: "users",
           search_fields: [:email, :username]
+        }
+      },
+      fields_override: %{
+        user_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.User.user_link/1
+        },
+        trigger: %{
+          value_modifier: fn trigger ->
+            Map.from_struct(trigger) |> Jason.encode!(pretty: true)
+          end
+        },
+        is_featured: %{
+          type: :boolean,
+          search_query:
+            from(
+              ut in Sanbase.Alert.UserTrigger,
+              left_join: featured_item in Sanbase.FeaturedItem,
+              on: ut.id == featured_item.user_trigger_id,
+              where: not is_nil(featured_item.id),
+              preload: [:user]
+            )
+            |> distinct(true)
         }
       }
     }
@@ -356,12 +383,13 @@ defmodule SanbaseWeb.GenericAdmin.ChartConfiguration do
       index_fields: [:id, :title, :is_public, :user_id],
       new_fields: [:title, :is_public],
       edit_fields: [:title, :is_public],
-      field_types: %{
-        is_public: :boolean
-      },
-      funcs: %{
-        user_id: &SanbaseWeb.GenericAdmin.User.user_link/1,
-        project_id: &SanbaseWeb.GenericAdmin.Project.project_link/1
+      fields_override: %{
+        user_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.User.user_link/1
+        },
+        project_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.Project.project_link/1
+        }
       }
     }
   end
@@ -377,11 +405,10 @@ defmodule SanbaseWeb.GenericAdmin.TableConfiguration do
       index_fields: [:id, :title, :is_public, :user_id],
       new_fields: [:title, :is_public],
       edit_fields: [:title, :is_public],
-      field_types: %{
-        is_public: :boolean
-      },
-      funcs: %{
-        user_id: &SanbaseWeb.GenericAdmin.User.user_link/1
+      fields_override: %{
+        user_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.User.user_link/1
+        }
       }
     }
   end
@@ -397,11 +424,10 @@ defmodule SanbaseWeb.GenericAdmin.Dashboard do
       actions: [],
       preloads: [:user],
       index_fields: [:id, :name, :is_public, :user_id],
-      field_types: %{
-        is_public: :boolean
-      },
-      funcs: %{
-        user_id: &SanbaseWeb.GenericAdmin.User.user_link/1
+      fields_override: %{
+        user_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.User.user_link/1
+        }
       }
     }
   end

@@ -107,6 +107,26 @@
   },
 
   {
+    "human_readable_name": "Github activity Change ({{interval}})",
+    "name": "github_activity_change_{{interval}}",
+    "metric": "github_activity_change_{{interval}}",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "parameters": [
+      { "interval": "30d" }
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Market Capitalization Change ({{interval}})",
     "name": "marketcap_usd_change_{{interval}}",
     "metric": "marketcap_usd_change_{{interval}}",

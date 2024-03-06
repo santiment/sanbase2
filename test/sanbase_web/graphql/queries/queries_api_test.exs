@@ -2,48 +2,20 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
+  import Sanbase.QueriesMocks
   import SanbaseWeb.Graphql.TestHelpers
+  import SanbaseWeb.QueriesApiHelpers
 
   setup do
     user = insert(:user)
+    user2 = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
+    conn2 = setup_jwt_auth(build_conn(), user2)
 
-    %{conn: conn, user: user}
+    %{conn: conn, conn2: conn2, user: user, user2: user2}
   end
 
   describe "voting" do
-    test "dashboards ", context do
-      dashboard_id =
-        execute_dashboard_mutation(context.conn, :create_dashboard)
-        |> get_in(["data", "createDashboard", "id"])
-
-      vote = fn ->
-        vote_result =
-          context.conn
-          |> post(
-            "/graphql",
-            mutation_skeleton(
-              "mutation{ vote(dashboardId: #{dashboard_id}) { votedAt votes { totalVotes } } }"
-            )
-          )
-          |> json_response(200)
-          |> get_in(["data", "vote"])
-
-        vote_result
-      end
-
-      for i <- 1..10 do
-        vote = vote.()
-        assert %{"votedAt" => _, "votes" => %{"totalVotes" => ^i}} = vote
-      end
-
-      total_votes =
-        get_dashboard(context.conn, dashboard_id)
-        |> get_in(["data", "getDashboard", "votes", "totalVotes"])
-
-      assert total_votes == 10
-    end
-
     test "queries ", context do
       query_id =
         execute_sql_query_mutation(context.conn, :create_sql_query)
@@ -78,7 +50,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
   end
 
   describe "CRUD Queries APIs" do
-    test "create", context do
+    test "create query", context do
       sql_query =
         execute_sql_query_mutation(context.conn, :create_sql_query, %{
           name: "My Query",
@@ -105,7 +77,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
                     } = sql_query
     end
 
-    test "get", context do
+    test "get query", context do
       sql_query_id =
         execute_sql_query_mutation(context.conn, :create_sql_query)
         |> get_in(["data", "createSqlQuery", "id"])
@@ -129,7 +101,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
              } = sql_query
     end
 
-    test "update", context do
+    test "update query", context do
       sql_query_id =
         execute_sql_query_mutation(context.conn, :create_sql_query)
         |> get_in(["data", "createSqlQuery", "id"])
@@ -171,7 +143,7 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       assert fetched_query.sql_query_parameters == %{"limit" => 10}
     end
 
-    test "delete", context do
+    test "delete query", context do
       sql_query_id =
         execute_sql_query_mutation(context.conn, :create_sql_query)
         |> get_in(["data", "createSqlQuery", "id"])
@@ -184,147 +156,6 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       # query  no longer exists
       assert {:error, error_msg} = Sanbase.Queries.get_query(sql_query_id, context.user.id)
       assert error_msg =~ "Query does not exist or you don't have access to it"
-    end
-  end
-
-  describe "CRUD Dashboards APIs" do
-    test "create", context do
-      result =
-        execute_dashboard_mutation(context.conn, :create_dashboard, %{
-          name: "MyDashboard",
-          description: "some text",
-          is_public: true,
-          settings: %{"some_var" => [0, 1, 2, 3]}
-        })
-        |> get_in(["data", "createDashboard"])
-
-      user_id = context.user.id |> to_string()
-
-      assert %{
-               "name" => "MyDashboard",
-               "description" => "some text",
-               "queries" => [],
-               "user" => %{"id" => ^user_id}
-             } = result
-    end
-
-    test "get", context do
-      dashboard_id =
-        execute_dashboard_mutation(context.conn, :create_dashboard)
-        |> get_in(["data", "createDashboard", "id"])
-
-      dashboard =
-        get_dashboard(context.conn, dashboard_id)
-        |> get_in(["data", "getDashboard"])
-
-      assert %{
-               "description" => "some text",
-               "id" => _,
-               "isPublic" => true,
-               "name" => "MyDashboard",
-               "queries" => [],
-               "settings" => %{"some_key" => [0, 1, 2, 3]},
-               "votes" => %{"totalVotes" => 0}
-             } = dashboard
-    end
-
-    test "update", context do
-      dashboard_id =
-        execute_dashboard_mutation(context.conn, :create_dashboard)
-        |> get_in(["data", "createDashboard", "id"])
-
-      result =
-        execute_dashboard_mutation(context.conn, :update_dashboard, %{
-          id: dashboard_id,
-          name: "MyDashboard - update",
-          description: "some text - update",
-          is_public: false
-        })
-        |> get_in(["data", "updateDashboard"])
-
-      user_id = context.user.id |> to_string()
-
-      assert %{
-               "id" => ^dashboard_id,
-               "name" => "MyDashboard - update",
-               "description" => "some text - update",
-               "queries" => [],
-               "user" => %{"id" => ^user_id}
-             } = result
-    end
-
-    test "delete", context do
-      dashboard_id =
-        execute_dashboard_mutation(context.conn, :create_dashboard)
-        |> get_in(["data", "createDashboard", "id"])
-
-      execute_dashboard_mutation(context.conn, :delete_dashboard, %{id: dashboard_id})
-
-      assert {:error, error_msg} = Sanbase.Dashboards.get_dashboard(dashboard_id, context.user.id)
-      assert error_msg =~ "does not exist"
-    end
-
-    test "parameters", context do
-      {:ok, dashboard} =
-        Sanbase.Dashboards.create_dashboard(%{name: "My Dashboard"}, context.user.id)
-
-      # Add global parameters and override the query's local parameters
-      dashboard_with_params =
-        execute_global_parameter_mutation(
-          context.conn,
-          :add_dashboard_global_parameter,
-          %{
-            dashboard_id: dashboard.id,
-            key: "slug",
-            value: %{string: "santiment", map_as_input_object: true}
-          }
-        )
-        |> get_in(["data", "addDashboardGlobalParameter"])
-
-      assert dashboard_with_params == %{
-               "parameters" => %{"slug" => %{"overrides" => [], "value" => "santiment"}}
-             }
-
-      # Add another param
-      dashboard_with_params =
-        execute_global_parameter_mutation(
-          context.conn,
-          :add_dashboard_global_parameter,
-          %{
-            dashboard_id: dashboard.id,
-            key: "limit",
-            value: %{integer: 20, map_as_input_object: true}
-          }
-        )
-        |> get_in(["data", "addDashboardGlobalParameter"])
-
-      assert dashboard_with_params == %{
-               "parameters" => %{
-                 "slug" => %{"overrides" => [], "value" => "santiment"},
-                 "limit" => %{"overrides" => [], "value" => 20}
-               }
-             }
-
-      # Update parameter
-      dashboard_with_params =
-        execute_global_parameter_mutation(
-          context.conn,
-          :update_dashboard_global_parameter,
-          %{
-            dashboard_id: dashboard.id,
-            key: "slug",
-            new_key: "slug2",
-            new_value: %{string: "bitcoin", map_as_input_object: true}
-          }
-        )
-        |> get_in(["data", "updateDashboardGlobalParameter"])
-
-      assert dashboard_with_params == %{
-               "parameters" => %{
-                 "slug2" => %{"overrides" => [], "value" => "bitcoin"},
-                 "limit" => %{"overrides" => [], "value" => 20}
-               }
-             }
     end
   end
 
@@ -399,190 +230,6 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
           |> get_in(["data", "runSqlQuery"])
 
         # Use match `=` operator to avoid checking the queryStartTime and queryEndTime
-        assert %{
-                 "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
-                 "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
-                 "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
-                 "rows" => [
-                   [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
-                   [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
-                 ],
-                 "summary" => %{
-                   "read_bytes" => +0.0,
-                   "read_rows" => +0.0,
-                   "total_rows_to_read" => +0.0,
-                   "written_bytes" => +0.0,
-                   "written_rows" => +0.0
-                 }
-               } = result
-      end)
-    end
-
-    test "delete dashboard query", context do
-      {:ok, query} = create_query(context.user.id)
-
-      {:ok, dashboard} =
-        Sanbase.Dashboards.create_dashboard(%{name: "My Dashboard"}, context.user.id)
-
-      # Add a query to a dashboard
-      mapping =
-        execute_dashboard_query_mutation(context.conn, :create_dashboard_query, %{
-          dashboard_id: dashboard.id,
-          query_id: query.id,
-          settings: %{layout: [0, 1, 2, 3, 4]}
-        })
-        |> get_in(["data", "createDashboardQuery"])
-
-      # Assert that the dashboard has exactly 1 query added
-      assert {:ok, %{queries: [_]}} =
-               Sanbase.Dashboards.get_dashboard(dashboard.id, context.user.id)
-
-      result =
-        execute_dashboard_query_mutation(context.conn, :delete_dashboard_query, %{
-          dashboard_id: dashboard.id,
-          dashboard_query_mapping_id: mapping["id"]
-        })
-        |> get_in(["data", "deleteDashboardQuery"])
-
-      dashboard_query_mapping_id = mapping["id"]
-
-      query_id = query.id
-      dashboard_id = dashboard.id
-
-      assert %{
-               "dashboard" => %{"id" => ^dashboard_id, "parameters" => %{}},
-               "id" => ^dashboard_query_mapping_id,
-               "query" => %{
-                 "id" => ^query_id,
-                 "sqlQueryParameters" => %{"limit" => 10, "slug" => "bitcoin"},
-                 "sqlQueryText" =>
-                   "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}}) LIMIT {{limit}}"
-               },
-               "settings" => %{"layout" => [0, 1, 2, 3, 4]}
-             } = result
-
-      # Assert that the dashboard has no queries
-
-      assert {:ok, %{queries: []}} =
-               Sanbase.Dashboards.get_dashboard(dashboard_id, context.user.id)
-    end
-
-    test "run dashboard query (resolve global params)", context do
-      # In test env the storing runs not async and there's a 7500ms sleep
-      Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
-
-      on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__store_execution_details__) end)
-
-      {:ok, query} = create_query(context.user.id)
-
-      {:ok, dashboard} =
-        Sanbase.Dashboards.create_dashboard(%{name: "My Dashboard"}, context.user.id)
-
-      query_id = query.id
-      dashboard_id = dashboard.id
-
-      # Add a query to a dashboard
-      mapping =
-        execute_dashboard_query_mutation(context.conn, :create_dashboard_query, %{
-          dashboard_id: dashboard.id,
-          query_id: query.id,
-          settings: %{layout: [0, 1, 2, 3, 4]}
-        })
-        |> get_in(["data", "createDashboardQuery"])
-
-      assert %{
-               "dashboard" => %{"id" => ^dashboard_id, "parameters" => %{}},
-               "id" => _,
-               "query" => %{"id" => ^query_id},
-               "settings" => %{"layout" => [0, 1, 2, 3, 4]}
-             } = mapping
-
-      # Add global parameters and override the query's local parameters
-      dashboard_with_params =
-        execute_global_parameter_mutation(
-          context.conn,
-          :add_dashboard_global_parameter,
-          %{
-            dashboard_id: dashboard.id,
-            key: "slug",
-            value: %{string: "santiment", map_as_input_object: true}
-          }
-        )
-        |> get_in(["data", "addDashboardGlobalParameter"])
-
-      assert dashboard_with_params == %{
-               "parameters" => %{"slug" => %{"overrides" => [], "value" => "santiment"}}
-             }
-
-      # Add global parameter override for a query local parameter
-      param_override_args = %{
-        dashboard_id: dashboard.id,
-        dashboard_query_mapping_id: mapping["id"],
-        dashboard_parameter_key: "slug",
-        query_parameter_key: "slug"
-      }
-
-      override =
-        execute_global_parameter_mutation(
-          context.conn,
-          :add_dashboard_global_parameter_override,
-          param_override_args
-        )
-        |> get_in(["data", "addDashboardGlobalParameterOverride"])
-
-      assert override == %{
-               "parameters" => %{
-                 "slug" => %{
-                   "overrides" => [
-                     %{"dashboard_query_mapping_id" => mapping["id"], "parameter" => "slug"}
-                   ],
-                   "value" => "santiment"
-                 }
-               }
-             }
-
-      # Delete global parameter override for a query local parameter
-      override =
-        execute_global_parameter_mutation(
-          context.conn,
-          :delete_dashboard_global_parameter_override,
-          param_override_args |> Map.delete(:query_parameter_key)
-        )
-        |> get_in(["data", "deleteDashboardGlobalParameterOverride"])
-
-      assert override == %{
-               "parameters" => %{
-                 "slug" => %{"overrides" => [], "value" => "santiment"}
-               }
-             }
-
-      # Add back the deleted param override
-      execute_global_parameter_mutation(
-        context.conn,
-        :add_dashboard_global_parameter_override,
-        param_override_args
-      )
-
-      mock_fun =
-        Sanbase.Mock.wrap_consecutives(
-          [
-            fn -> {:ok, mocked_clickhouse_result()} end,
-            fn -> {:ok, mocked_execution_details_result()} end
-          ],
-          arity: 2
-        )
-
-      # Run a dashboard query. Expect the dashboard parameter to override
-      # the query local parameter
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
-          run_sql_query(context.conn, :run_dashboard_sql_query, %{
-            dashboard_id: dashboard.id,
-            dashboard_query_mapping_id: mapping["id"]
-          })
-          |> get_in(["data", "runDashboardSqlQuery"])
-
         assert %{
                  "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
                  "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
@@ -677,112 +324,129 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
   end
 
   describe "Caching" do
-    test "cache queries on a dashboard", context do
-      # In test env the storing runs not async and there's a 7500ms sleep
+    test "cache query executions", context do
       Application.put_env(:__sanbase_queries__, :__store_execution_details__, false)
 
       on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__store_execution_details__) end)
 
-      {:ok, query} = Sanbase.Queries.create_query(%{name: "Query"}, context.user.id)
+      {:ok, query} = create_query(context.user.id)
 
-      {:ok, dashboard} =
-        Sanbase.Dashboards.create_dashboard(%{name: "Dashboard"}, context.user.id)
-
-      {:ok, dashboard_query_mapping} =
-        Sanbase.Dashboards.add_query_to_dashboard(
-          dashboard.id,
-          query.id,
-          context.user.id
-        )
-
-      mock_fun =
-        Sanbase.Mock.wrap_consecutives(
-          [
-            fn -> {:ok, mocked_clickhouse_result()} end,
-            fn -> {:ok, mocked_execution_details_result()} end
-          ],
-          arity: 2
-        )
-
-      # Run a dashboard query. Expect the dashboard parameter to override
-      # the query local parameter
-      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.ClickhouseRepo.query/2,
+        {:ok, mocked_clickhouse_result()}
+      )
       |> Sanbase.Mock.run_with_mocks(fn ->
-        dashboard_query_mapping_id = dashboard_query_mapping.id
-        query_id = query.id
-
         result =
-          run_sql_query(context.conn, :run_dashboard_sql_query, %{
-            dashboard_id: dashboard.id,
-            dashboard_query_mapping_id: dashboard_query_mapping.id
+          run_sql_query(context.conn, :run_sql_query, %{id: query.id})
+          |> get_in(["data", "runSqlQuery"])
+
+        compressed_and_encoded_result =
+          result |> Jason.encode!() |> :zlib.gzip() |> Base.encode64()
+
+        # The owner cache
+
+        cache_result =
+          execute_cache_query_execution_mutation(context.conn, %{
+            query_id: query.id,
+            compressed_query_execution_result: compressed_and_encoded_result
           })
-          |> get_in(["data", "runDashboardSqlQuery"])
+          |> get_in(["data", "storeQueryExecution"])
 
-        compressed_result = Jason.encode!(result) |> :zlib.gzip() |> Base.encode64()
+        assert cache_result == true
 
-        stored =
-          store_dashboard_query_execution(context.conn, %{
-            dashboard_id: dashboard.id,
-            dashboard_query_mapping_id: dashboard_query_mapping.id,
-            compressed_query_execution_result: compressed_result
+        # The user cache
+
+        cache_result =
+          execute_cache_query_execution_mutation(context.conn2, %{
+            query_id: query.id,
+            compressed_query_execution_result: compressed_and_encoded_result
           })
-          |> get_in(["data", "storeDashboardQueryExecution"])
+          |> get_in(["data", "storeQueryExecution"])
 
+        assert cache_result == true
+
+        # Get the user own cache the owner of the query cache
+        caches =
+          execute_get_cached_query_executions_query(context.conn2, %{query_id: query.id})
+          |> get_in(["data", "getCachedQueryExecutions"])
+
+        # Only we cached
+        assert length(caches) == 2
+
+        owner_user_id = context.user.id |> to_string()
+        own_user_id = context.user.id |> to_string()
+
+        owner_cache = caches |> Enum.find(&(&1["user"]["id"] == owner_user_id))
+        own_cache = caches |> Enum.find(&(&1["user"]["id"] == own_user_id))
+
+        # Check the owner's cache of the query
         assert %{
-                 "queries" => [
-                   %{
-                     "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
-                     "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
-                     "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
-                     "dashboardQueryMappingId" => ^dashboard_query_mapping_id,
-                     "queryStartTime" => query_start_time,
-                     "queryEndTime" => query_end_time,
-                     "queryId" => ^query_id,
-                     "rows" => [
-                       [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
-                       [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
-                     ]
-                   }
-                 ]
-               } = stored
+                 "insertedAt" => _,
+                 "isQueryHashMatching" => true,
+                 "result" => %{
+                   "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+                   "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                   "rows" => [
+                     [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                     [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
+                   ]
+                 },
+                 "user" => %{"id" => ^owner_user_id}
+               } = owner_cache
 
-        assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_start_time))
-        assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_end_time))
-
-        cache =
-          get_cached_dashboard_queries_executions(context.conn, %{dashboard_id: dashboard.id})
-          |> get_in(["data", "getCachedDashboardQueriesExecutions"])
-
+        # Check the querying user's cache of the query
         assert %{
-                 "queries" => [
-                   %{
-                     "queryId" => ^query_id,
-                     "dashboardQueryMappingId" => ^dashboard_query_mapping_id,
-                     "clickhouseQueryId" => "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
-                     "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
-                     "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
-                     "queryStartTime" => query_start_time,
-                     "queryEndTime" => query_end_time,
-                     "rows" => [
-                       [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
-                       [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
-                     ]
-                   }
-                 ]
-               } = cache
-
-        assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_start_time))
-        assert datetime_close_to_now?(Sanbase.DateTimeUtils.from_iso8601!(query_end_time))
+                 "insertedAt" => _,
+                 "isQueryHashMatching" => true,
+                 "result" => %{
+                   "columnTypes" => ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
+                   "columns" => ["asset_id", "metric_id", "dt", "value", "computed_at"],
+                   "rows" => [
+                     [2503, 250, "2008-12-10T00:00:00Z", +0.0, "2020-02-28T15:18:42Z"],
+                     [2503, 250, "2008-12-10T00:05:00Z", +0.0, "2020-02-28T15:18:42Z"]
+                   ]
+                 },
+                 "user" => %{"id" => ^own_user_id}
+               } = own_cache
       end)
     end
 
-    defp datetime_close_to_now?(dt) do
-      Sanbase.TestUtils.datetime_close_to(
-        Timex.now(),
-        dt,
-        2,
-        :seconds
-      )
+    test "Cannot cache another user private query", context do
+      {:ok, query} = Sanbase.Queries.create_query(%{is_public: false}, context.user2.id)
+
+      # Not a valid base64 encoded string
+      error_msg =
+        execute_cache_query_execution_mutation(context.conn, %{
+          query_id: query.id,
+          compressed_query_execution_result: "xxxxasd12309uaksdl!@876@#_тест_Тест"
+        })
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg =~ "The provided value is not a valid base64-encoded binary"
+
+      # Not a valid GZIP
+      error_msg =
+        execute_cache_query_execution_mutation(context.conn, %{
+          query_id: query.id,
+          compressed_query_execution_result: "hehe" |> Base.encode64()
+        })
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg =~ "The provided value is not a valid gzip binary"
+
+      # Valid gzip, but not valid query result
+      result =
+        %{columns: ["a"], rows: [2, 3]} |> Jason.encode!() |> :zlib.gzip() |> Base.encode64()
+
+      error_msg =
+        execute_cache_query_execution_mutation(context.conn, %{
+          query_id: query.id,
+          compressed_query_execution_result: result
+        })
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg ==
+               "The following result fields are not provided: clickhouseQueryId, columnTypes, queryEndTime, queryId, queryStartTime, summary"
     end
   end
 
@@ -937,306 +601,5 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       },
       user_id
     )
-  end
-
-  defp execute_dashboard_mutation(conn, mutation, args \\ nil) do
-    args =
-      args ||
-        %{
-          name: "MyDashboard",
-          description: "some text",
-          is_public: true,
-          settings: %{"some_key" => [0, 1, 2, 3]}
-        }
-
-    mutation_name = mutation |> Inflex.camelize(:lower)
-
-    mutation = """
-    mutation {
-      #{mutation_name}(#{map_to_args(args)}) {
-        id
-        name
-        description
-        user { id }
-        queries { id }
-        textWidgets { id name description body }
-        settings
-      }
-    }
-    """
-
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
-  end
-
-  defp execute_sql_query_mutation(conn, mutation, args \\ nil) do
-    args =
-      args ||
-        %{
-          name: "MyQuery",
-          description: "some desc",
-          is_public: true,
-          sql_query_text:
-            "SELECT * FROM intraday_metrics WHERE asset_id = get_asset_id({{slug}})",
-          sql_query_parameters: %{slug: "bitcoin"},
-          settings: %{"some_key" => [0, 1, 2, 3]}
-        }
-
-    mutation_name = mutation |> Inflex.camelize(:lower)
-
-    mutation = """
-    mutation {
-      #{mutation_name}(#{map_to_args(args)}){
-        id
-        name
-        description
-        user{ id }
-        sqlQueryText
-        sqlQueryParameters
-        settings
-      }
-    }
-    """
-
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
-  end
-
-  defp execute_global_parameter_mutation(conn, mutation, args) do
-    mutation_name = mutation |> Inflex.camelize(:lower)
-
-    mutation = """
-    mutation{
-      #{mutation_name}(#{map_to_args(args)}){
-        parameters
-      }
-    }
-    """
-
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
-  end
-
-  defp execute_dashboard_query_mutation(conn, mutation, args) do
-    mutation_name = mutation |> Inflex.camelize(:lower)
-
-    mutation = """
-    mutation {
-      #{mutation_name}(#{map_to_args(args)}){
-        id
-        query{ id sqlQueryText sqlQueryParameters }
-        dashboard { id parameters }
-        settings
-      }
-    }
-    """
-
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
-  end
-
-  defp run_sql_query(conn, query, args) do
-    query_name = query |> Inflex.camelize(:lower)
-
-    mutation = """
-    {
-      #{query_name}(#{map_to_args(args)}){
-        queryId
-        dashboardQueryMappingId
-        clickhouseQueryId
-        columnTypes
-        columns
-        rows
-        summary
-        queryStartTime
-        queryEndTime
-      }
-    }
-    """
-
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
-  end
-
-  defp store_dashboard_query_execution(conn, args) do
-    mutation = """
-    mutation{
-      storeDashboardQueryExecution(#{map_to_args(args)}){
-        queries{
-          queryId
-          dashboardQueryMappingId
-          clickhouseQueryId
-          columns
-          rows
-          columnTypes
-          queryStartTime
-          queryEndTime
-        }
-      }
-    }
-    """
-
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
-  end
-
-  defp get_cached_dashboard_queries_executions(conn, args) do
-    query = """
-    {
-      getCachedDashboardQueriesExecutions(#{map_to_args(args)}){
-        queries{
-          queryId
-          dashboardQueryMappingId
-          clickhouseQueryId
-          columnTypes
-          columns
-          rows
-          queryStartTime
-          queryEndTime
-        }
-      }
-    }
-    """
-
-    conn
-    |> post("/graphql", query_skeleton(query))
-    |> json_response(200)
-  end
-
-  defp get_dashboard(conn, dashboard_id) do
-    query = """
-    {
-      getDashboard(id: #{dashboard_id}){
-        id
-        name
-        description
-        isPublic
-        settings
-        user{ id }
-        queries {
-          id
-          sqlQueryText
-          sqlQueryParameters
-          settings
-          user{ id }
-        }
-        votes {
-          totalVotes
-        }
-      }
-    }
-    """
-
-    conn
-    |> post("/graphql", query_skeleton(query))
-    |> json_response(200)
-  end
-
-  defp get_sql_query(conn, query_id) do
-    query = """
-    {
-      getSqlQuery(id: #{query_id}){
-        id
-        name
-        description
-        isPublic
-        settings
-        user{ id }
-        sqlQueryText
-        sqlQueryParameters
-        votes {
-          totalVotes
-        }
-      }
-    }
-    """
-
-    conn
-    |> post("/graphql", query_skeleton(query))
-    |> json_response(200)
-  end
-
-  defp mocked_clickhouse_result() do
-    %Clickhousex.Result{
-      columns: ["asset_id", "metric_id", "dt", "value", "computed_at"],
-      column_types: ["UInt64", "UInt64", "DateTime", "Float64", "DateTime"],
-      command: :selected,
-      num_rows: 2,
-      query_id: "177a5a3d-072b-48ac-8cf5-d8375c8314ef",
-      rows: [
-        [2503, 250, ~N[2008-12-10 00:00:00], +0.0, ~N[2020-02-28 15:18:42]],
-        [2503, 250, ~N[2008-12-10 00:05:00], +0.0, ~N[2020-02-28 15:18:42]]
-      ],
-      summary: %{
-        "read_bytes" => "0",
-        "read_rows" => "0",
-        "total_rows_to_read" => "0",
-        "written_bytes" => "0",
-        "written_rows" => "0"
-      }
-    }
-  end
-
-  defp mocked_execution_details_result() do
-    %Clickhousex.Result{
-      query_id: "1774C4BC91E058D4",
-      summary: %{
-        "read_bytes" => "5069080",
-        "read_rows" => "167990",
-        "result_bytes" => "0",
-        "result_rows" => "0",
-        "total_rows_to_read" => "167990",
-        "written_bytes" => "0",
-        "written_rows" => "0"
-      },
-      command: :selected,
-      columns: [
-        "read_compressed_gb",
-        "cpu_time_microseconds",
-        "query_duration_ms",
-        "memory_usage_gb",
-        "read_rows",
-        "read_gb",
-        "result_rows",
-        "result_gb"
-      ],
-      column_types: [
-        "Float64",
-        "UInt64",
-        "UInt64",
-        "Float64",
-        "UInt64",
-        "Float64",
-        "UInt64",
-        "Float64"
-      ],
-      rows: [
-        [
-          # read_compressed_gb
-          0.001110738143324852,
-          # cpu_time_microseconds
-          101_200,
-          # query_duration_ms
-          47,
-          # memory_usage_gb
-          0.03739274851977825,
-          # read_rows
-          364_923,
-          # read_gb
-          0.01087852381169796,
-          # result_rows
-          2,
-          # result_gb
-          2.980232238769531e-7
-        ]
-      ],
-      num_rows: 1
-    }
   end
 end

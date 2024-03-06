@@ -562,8 +562,7 @@ defmodule Sanbase.Price do
   def has_data?(slug) do
     query_struct = select_any_record_query(slug)
 
-    ClickhouseRepo.query_transform(query_struct, & &1)
-    |> case do
+    case ClickhouseRepo.query_transform(query_struct, & &1) do
       {:ok, [_]} -> {:ok, true}
       {:ok, []} -> {:ok, false}
       {:error, error} -> {:error, error}

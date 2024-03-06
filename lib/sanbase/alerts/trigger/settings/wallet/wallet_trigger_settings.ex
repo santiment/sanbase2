@@ -213,7 +213,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
         %{
           type: WalletTriggerSettings.type(),
           operation: settings.operation,
-          address: settings.target.address
+          address: values.identifier
         }
         |> OperationText.merge_kvs(operation_kv)
         |> OperationText.merge_kvs(curr_value_kv)

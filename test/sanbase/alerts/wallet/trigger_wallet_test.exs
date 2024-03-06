@@ -21,12 +21,16 @@ defmodule Sanbase.Alert.WalletTriggerTest do
 
     # Provide this mixed case (both lower and upper case letters) to the trigger settings
     # to test the behavior of transform to some internal format.
-    address = "0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98"
+    address =
+      Sanbase.BlockchainAddress.to_internal_format("0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98")
+
+    address2 =
+      Sanbase.BlockchainAddress.to_internal_format("0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE")
 
     project =
       Sanbase.Factory.insert(:random_erc20_project,
         eth_addresses: [
-          build(:project_eth_address, address: "0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98")
+          build(:project_eth_address, address: address)
         ]
       )
 
@@ -42,7 +46,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
     trigger_settings2 = %{
       type: "wallet_movement",
       selector: %{infrastructure: "ETH", slug: "some-weird-token"},
-      target: %{address: "0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98"},
+      target: %{address: address},
       channel: "telegram",
       time_window: "1d",
       operation: %{amount_up: 200.0}
@@ -51,7 +55,7 @@ defmodule Sanbase.Alert.WalletTriggerTest do
     trigger_settings3 = %{
       type: "wallet_movement",
       selector: %{infrastructure: "XRP", currency: "BTC"},
-      target: %{address: "0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98"},
+      target: %{address: [address, address2]},
       channel: "telegram",
       time_window: "1d",
       operation: %{amount_down: 50.0}
@@ -83,7 +87,8 @@ defmodule Sanbase.Alert.WalletTriggerTest do
 
     [
       project: project,
-      address: address
+      address: address,
+      address2: address2
     ]
   end
 
@@ -91,17 +96,17 @@ defmodule Sanbase.Alert.WalletTriggerTest do
     with_mocks [
       {Sanbase.Telegram, [:passthrough], send_message: fn _user, _text -> {:ok, "OK"} end},
       {HistoricalBalance, [:passthrough],
-       balance_change: fn _, _, _, _ ->
+       balance_change: fn _, addresses, _, _ ->
          {:ok,
-          [
+          for address <- List.wrap(addresses) do
             %{
-              address: Sanbase.BlockchainAddress.to_internal_format(context.address),
+              address: Sanbase.BlockchainAddress.to_internal_format(address),
               balance_start: 20,
               balance_end: 300,
               balance_change_amount: 280,
               balance_change_percent: 1400.0
             }
-          ]}
+          end}
        end}
     ] do
       assert capture_log(fn -> Scheduler.run_alert(WalletTriggerSettings) end) =~
@@ -124,17 +129,17 @@ defmodule Sanbase.Alert.WalletTriggerTest do
          {:ok, "OK"}
        end},
       {HistoricalBalance, [:passthrough],
-       balance_change: fn _, _, _, _ ->
+       balance_change: fn _, addresses, _, _ ->
          {:ok,
-          [
+          for address <- List.wrap(addresses) do
             %{
-              address: Sanbase.BlockchainAddress.to_internal_format(context.address),
+              address: Sanbase.BlockchainAddress.to_internal_format(address),
               balance_start: 20,
               balance_end: 70,
               balance_change_amount: 50,
               balance_change_percent: 250.0
             }
-          ]}
+          end}
        end}
     ] do
       Scheduler.run_alert(WalletTriggerSettings)
@@ -158,17 +163,17 @@ defmodule Sanbase.Alert.WalletTriggerTest do
          {:ok, "OK"}
        end},
       {HistoricalBalance, [:passthrough],
-       balance_change: fn _, _, _, _ ->
+       balance_change: fn _, addresses, _, _ ->
          {:ok,
-          [
+          for address <- List.wrap(addresses) do
             %{
-              address: Sanbase.BlockchainAddress.to_internal_format(context.address),
+              address: Sanbase.BlockchainAddress.to_internal_format(address),
               balance_start: 20,
               balance_end: 300,
               balance_change_amount: 280,
               balance_change_percent: 1400.0
             }
-          ]}
+          end}
        end}
     ] do
       Scheduler.run_alert(WalletTriggerSettings)
@@ -202,27 +207,35 @@ defmodule Sanbase.Alert.WalletTriggerTest do
          {:ok, "OK"}
        end},
       {HistoricalBalance, [:passthrough],
-       balance_change: fn _, _, _, _ ->
+       balance_change: fn _, addresses, _, _ ->
          {:ok,
-          [
+          for address <- List.wrap(addresses) do
             %{
-              address: Sanbase.BlockchainAddress.to_internal_format(context.address),
+              address: Sanbase.BlockchainAddress.to_internal_format(address),
               balance_start: 100,
               balance_end: 0,
               balance_change_amount: -100,
               balance_change_percent: -100.0
             }
-          ]}
+          end}
        end}
     ] do
       Scheduler.run_alert(WalletTriggerSettings)
 
-      assert_receive({:telegram_to_self, message})
+      assert_receive({:telegram_to_self, m1})
+      assert_receive({:telegram_to_self, m2})
 
-      assert message =~
+      message1 = Enum.find([m1, m2], &(&1 =~ context.address))
+      message2 = Enum.find([m1, m2], &(&1 =~ context.address2))
+
+      assert message1 =~
                "The address #{context.address}'s BTC balance on the XRP Ledger blockchain has decreased by 100"
 
-      assert message =~ "Was: 100\nNow: 0"
+      assert message2 =~
+               "The address #{context.address2}'s BTC balance on the XRP Ledger blockchain has decreased by 100"
+
+      assert message1 =~ "Was: 100\nNow: 0"
+      assert message2 =~ "Was: 100\nNow: 0"
     end
   end
 

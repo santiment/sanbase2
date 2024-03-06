@@ -290,6 +290,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     {:ok, []}
   end
 
+  def signup_datetime(_root, _args, %{context: %{auth: %{current_user: user}}}) do
+    {:ok, User.get_signup_dt(user)}
+  end
+
+  def signup_datetime(%User{} = user, _args, _resolution) do
+    {:ok, User.get_signup_dt(user)}
+  end
+
   def user_no_preloads(%{user_id: user_id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :users_by_id, user_id)

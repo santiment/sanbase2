@@ -119,6 +119,16 @@ defmodule Sanbase.Accounts.User do
     user.email || user.username || user.twitter_id || "id_#{user.id}"
   end
 
+  def get_signup_dt(%__MODULE__{registration_state: registration_state}) do
+    case registration_state do
+      %{"datetime" => datetime, "state" => "finished"} when is_binary(datetime) ->
+        Sanbase.DateTimeUtils.from_iso8601!(datetime)
+
+      _ ->
+        nil
+    end
+  end
+
   def describe(%__MODULE__{} = user) do
     cond do
       user.username != nil -> "User with username #{user.username}"

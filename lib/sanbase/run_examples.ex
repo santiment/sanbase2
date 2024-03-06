@@ -746,7 +746,7 @@ defmodule Sanbase.RunExamples do
       Sanbase.Queries.run_query(q, user, query_metadata, store_execution_details: false)
 
     {:ok, stored} =
-      Sanbase.Dashboards.store_dashboard_query_execution(
+      Sanbase.Dashboards.cache_dashboard_query_execution(
         dashboard.id,
         mapping.id,
         result,

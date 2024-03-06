@@ -56,31 +56,25 @@ defmodule SanbaseWeb.GenericAdminController do
 
   def new(conn, %{"resource" => resource} = params) do
     module = module_from_resource(resource)
-    action = Routes.generic_admin_path(conn, :create, resource: resource)
-    form_fields = resource_module_map()[resource][:new_fields] || []
-    field_type_map = field_type_map(resource, module)
-    belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
-    belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
-    collections = resource_module_map()[resource][:collections] || %{}
-
     changeset = module.changeset(struct(module), %{})
 
-    render(conn, "new.html",
-      resource: resource,
-      action: action,
-      form_fields: form_fields,
-      field_type_map: field_type_map,
-      changeset: changeset,
-      belongs_to_fields: belongs_to_fields,
-      collections: collections,
-      data: %{}
-    )
+    args =
+      %{
+        changeset: changeset,
+        data: %{}
+      }
+      |> Map.merge(resource_params(resource, :new, params))
+      |> Keyword.new()
+
+    render(conn, "new.html", args)
   end
 
   def create(conn, %{"resource" => resource} = params) do
     module = module_from_resource(resource)
     admin_module = resource_module_map()[resource][:admin_module]
-    field_type_map = field_type_map(resource, module)
+    resource_params = resource_params(resource, :new, params)
+
+    field_type_map = resource_params.field_type_map
     changes = params[resource]
 
     changes =
@@ -96,11 +90,6 @@ defmodule SanbaseWeb.GenericAdminController do
       if function_exported?(module, :create_changeset, 2), do: :create_changeset, else: :changeset
 
     changeset = apply(module, changeset_function, [struct(module), changes])
-    form_fields = resource_module_map()[resource][:new_fields] || []
-    action = Routes.generic_admin_path(conn, :create, resource: resource)
-    belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
-    belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
-    collections = resource_module_map()[resource][:collections] || %{}
 
     case Sanbase.Repo.insert(changeset) do
       {:ok, response_resource} ->
@@ -130,16 +119,15 @@ defmodule SanbaseWeb.GenericAdminController do
         end
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "new.html",
-          resource: resource,
-          action: action,
-          form_fields: form_fields,
-          changeset: changeset,
-          field_type_map: field_type_map,
-          belongs_to_fields: belongs_to_fields,
-          collections: collections,
-          data: %{}
-        )
+        args =
+          %{
+            changeset: changeset,
+            data: %{}
+          }
+          |> Map.merge(resource_params(resource, :create, params))
+          |> Keyword.new()
+
+        render(conn, "new.html", args)
     end
   end
 
@@ -168,13 +156,10 @@ defmodule SanbaseWeb.GenericAdminController do
   end
 
   def show(conn, %{"resource" => resource, "id" => id}) do
+    resource_config = resource_module_map()[resource]
     module = module_from_resource(resource)
-    admin_module = resource_module_map()[resource][:admin_module]
-    data = Repo.get(module, id) |> Repo.preload(resource_module_map()[resource][:preloads] || [])
-    funcs = resource_module_map()[resource][:funcs] || %{}
-    field_type_map = field_type_map(resource, module)
-    extra_fields = resource_module_map()[resource][:extra_fields] || []
-    actions = resource_module_map()[resource][:actions] || []
+    admin_module = resource_config[:admin_module]
+    data = Repo.get(module, id) |> Repo.preload(resource_config[:preloads] || [])
 
     assocs =
       Enum.map([data], fn row ->
@@ -185,18 +170,19 @@ defmodule SanbaseWeb.GenericAdminController do
     data =
       GenericAdmin.call_module_function_or_default(admin_module, :before_filter, [data], data)
 
-    render(conn, "show.html",
-      resource: resource,
-      data: data,
-      assocs: assocs,
-      funcs: funcs,
-      fields: fields(module, extra_fields),
-      field_type_map: field_type_map,
-      actions: actions,
-      belongs_to:
-        GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
-      has_many: GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], [])
-    )
+    args =
+      %{
+        data: data,
+        assocs: assocs,
+        belongs_to:
+          GenericAdmin.call_module_function_or_default(admin_module, :belongs_to, [data], []),
+        has_many:
+          GenericAdmin.call_module_function_or_default(admin_module, :has_many, [data], [])
+      }
+      |> Map.merge(resource_params(resource, :show))
+      |> Keyword.new()
+
+    render(conn, "show.html", args)
   end
 
   def edit(conn, %{"resource" => resource, "id" => id} = params) do
@@ -204,33 +190,27 @@ defmodule SanbaseWeb.GenericAdminController do
     admin_module = resource_module_map()[resource][:admin_module]
     data = Repo.get(module, id)
     changeset = module.changeset(data, %{})
-    form_fields = resource_module_map()[resource][:edit_fields] || []
-    action = Routes.generic_admin_path(conn, :update, data, resource: resource)
-    field_type_map = field_type_map(resource, module)
-    belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
-    belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
-    collections = resource_module_map()[resource][:collections] || %{}
 
     data =
       GenericAdmin.call_module_function_or_default(admin_module, :before_filter, [data], data)
 
-    render(conn, "edit.html",
-      resource: resource,
-      data: data,
-      action: action,
-      form_fields: form_fields,
-      field_type_map: field_type_map,
-      changeset: changeset,
-      belongs_to_fields: belongs_to_fields,
-      collections: collections
-    )
+    args =
+      %{
+        changeset: changeset,
+        data: data
+      }
+      |> Map.merge(resource_params(resource, :edit, params))
+      |> Keyword.new()
+
+    render(conn, "edit.html", args)
   end
 
   def update(conn, %{"id" => id, "resource" => resource} = params) do
     module = module_from_resource(resource)
     admin_module = resource_module_map()[resource][:admin_module]
+    resource_params = resource_params(resource, :update, params)
     data = Repo.get(module, id)
-    field_type_map = field_type_map(resource, module)
+    field_type_map = resource_params.field_type_map
     changes = params[resource]
 
     changes =
@@ -246,11 +226,6 @@ defmodule SanbaseWeb.GenericAdminController do
       if function_exported?(module, :update_changeset, 2), do: :update_changeset, else: :changeset
 
     changeset = apply(module, changeset_function, [data, changes])
-    form_fields = resource_module_map()[resource][:edit_fields] || []
-    action = Routes.generic_admin_path(conn, :update, data, resource: resource)
-    belongs_to_fields = resource_module_map()[resource][:belongs_to_fields] || %{}
-    belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
-    collections = resource_module_map()[resource][:collections] || %{}
 
     case Sanbase.Repo.update(changeset) do
       {:ok, response_resource} ->
@@ -277,16 +252,15 @@ defmodule SanbaseWeb.GenericAdminController do
         end
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html",
-          resource: resource,
-          data: data,
-          action: action,
-          form_fields: form_fields,
-          changeset: changeset,
-          field_type_map: field_type_map,
-          belongs_to_fields: belongs_to_fields,
-          collections: collections
-        )
+        args =
+          %{
+            changeset: changeset,
+            data: data
+          }
+          |> Map.merge(resource_params(resource, :update, params))
+          |> Keyword.new()
+
+        render(conn, "edit.html", args)
     end
   end
 
@@ -300,23 +274,13 @@ defmodule SanbaseWeb.GenericAdminController do
   def module_from_resource(resource), do: resource_module_map()[resource][:module]
 
   def resource_to_table_params(resource, params) do
-    name = String.capitalize(resource)
-    module = resource_module_map()[resource][:module]
-    admin_module = resource_module_map()[resource][:admin_module]
-    preloads = resource_module_map()[resource][:preloads] || []
-    funcs = resource_module_map()[resource][:funcs] || %{}
+    resource_config = resource_module_map()[resource]
+    module = resource_config[:module]
+    admin_module = resource_config[:admin_module]
+    preloads = resource_config[:preloads] || []
     rows = params[:rows]
     page = to_integer(params[:page])
     page_size = to_integer(params[:page_size])
-    field_type_map = field_type_map(resource, module)
-    extra_fields = resource_module_map()[resource][:extra_fields] || []
-
-    index_fields =
-      case resource_module_map()[resource][:index_fields] do
-        nil -> fields(module, extra_fields)
-        :all -> fields(module, extra_fields)
-        fields when is_list(fields) -> fields
-      end
 
     total_count =
       case rows do
@@ -363,21 +327,70 @@ defmodule SanbaseWeb.GenericAdminController do
       |> Map.new()
 
     %{
-      resource: resource,
-      resource_name: name,
       rows: fetched_rows,
       rows_count: total_count,
-      fields: index_fields,
-      funcs: funcs,
-      actions: resource_module_map()[resource][:actions],
       current_page: page,
       page_size: page_size,
       action: action,
       assocs: assocs,
-      field_type_map: field_type_map,
-      search_fields: fields(module, extra_fields),
       search: params[:search]
     }
+    |> Map.merge(resource_params(resource, action))
+  end
+
+  def resource_params(resource, action, params \\ %{}) do
+    resource_config = resource_module_map()[resource]
+    resource_name = String.capitalize(resource)
+    module = resource_config[:module]
+
+    fields_override = resource_config[:fields_override] || %{}
+    field_type_map = field_type_map(module, fields_override)
+    extra_fields = Map.keys(fields_override)
+    funcs = field_key_map(fields_override, :value_modifier)
+    collections = field_key_map(fields_override, :collection)
+    belongs_to_fields = resource_config[:belongs_to_fields] || %{}
+    belongs_to_fields = transform_belongs_to(belongs_to_fields, params)
+
+    fields =
+      case action do
+        action when action in [:index, :search] ->
+          case resource_config[:index_fields] do
+            nil -> fields(module, extra_fields)
+            :all -> fields(module, extra_fields)
+            fields when is_list(fields) -> fields
+          end
+
+        action when action == :show ->
+          fields(module, extra_fields)
+
+        action when action in [:new, :create] ->
+          resource_config[:new_fields] || []
+
+        action when action in [:edit, :update] ->
+          resource_config[:edit_fields] || []
+
+        _ ->
+          fields(module, extra_fields)
+      end
+
+    %{
+      resource: resource,
+      resource_name: resource_name,
+      fields: fields,
+      funcs: funcs,
+      actions: resource_config[:actions],
+      field_type_map: field_type_map,
+      search_fields: fields(module, extra_fields),
+      collections: collections,
+      belongs_to_fields: belongs_to_fields
+    }
+  end
+
+  def field_key_map(fields_override, key) do
+    fields_override
+    |> Map.filter(fn {_field, data} -> Map.has_key?(data, key) end)
+    |> Enum.map(fn {field, data} -> {field, Map.get(data, key)} end)
+    |> Enum.into(%{})
   end
 
   def all(module, preloads \\ []) do
@@ -489,14 +502,20 @@ defmodule SanbaseWeb.GenericAdminController do
     end
   end
 
-  def field_type_map(resource, module) do
+  def field_type_map(module, fields_override) do
     field_type_map = field_type_map(module)
-    field_type_overwrite = resource_module_map()[resource][:field_types] || %{}
-    Map.merge(field_type_map, field_type_overwrite)
+
+    fields_override =
+      fields_override
+      |> Enum.filter(fn {_field, data} -> Map.has_key?(data, :type) end)
+      |> Enum.map(fn {field, data} -> {field, data.type} end)
+      |> Enum.into(%{})
+
+    Map.merge(field_type_map, fields_override)
   end
 
   def field_type_map(module) do
-    module.__schema__(:fields)
+    fields(module)
     |> Enum.map(&{&1, module.__schema__(:type, &1)})
     |> Enum.into(%{})
   end

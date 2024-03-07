@@ -86,13 +86,14 @@ defmodule Sanbase.Alert.WalletTriggerTest do
       })
 
     [
+      user: user,
       project: project,
       address: address,
       address2: address2
     ]
   end
 
-  test "signal setting cooldown works for wallet movement", context do
+  test "signal setting cooldown works for wallet movement", _context do
     with_mocks [
       {Sanbase.Telegram, [:passthrough], send_message: fn _user, _text -> {:ok, "OK"} end},
       {HistoricalBalance, [:passthrough],
@@ -236,6 +237,70 @@ defmodule Sanbase.Alert.WalletTriggerTest do
 
       assert message1 =~ "Was: 100\nNow: 0"
       assert message2 =~ "Was: 100\nNow: 0"
+    end
+  end
+
+  test "use_combined_balance: true flag", context do
+    trigger_settings = %{
+      type: "wallet_movement",
+      selector: %{infrastructure: "XRP", currency: "BTC"},
+      target: %{address: [context.address, context.address2], use_combined_balance: true},
+      channel: "telegram",
+      time_window: "1d",
+      operation: %{amount_up: 5000.0}
+    }
+
+    Sanbase.Repo.delete_all(Sanbase.Alert.UserTrigger)
+
+    {:ok, _} =
+      UserTrigger.create_user_trigger(context.user, %{
+        title: "Generic title",
+        is_public: true,
+        cooldown: "12h",
+        settings: trigger_settings
+      })
+
+    # This one won't be triggered, as it is not using the combined balance
+    {:ok, _} =
+      UserTrigger.create_user_trigger(context.user, %{
+        title: "Generic title",
+        is_public: true,
+        cooldown: "12h",
+        settings: put_in(trigger_settings, [:target, :use_combined_balance], false)
+      })
+
+    test_pid = self()
+
+    with_mocks [
+      {Sanbase.Telegram, [:passthrough],
+       send_message: fn _user, text ->
+         send(test_pid, {:telegram_to_self, text})
+         {:ok, "OK"}
+       end},
+      {HistoricalBalance, [:passthrough],
+       balance_change: fn _, addresses, _, _ ->
+         {:ok,
+          for address <- List.wrap(addresses) do
+            %{
+              address: Sanbase.BlockchainAddress.to_internal_format(address),
+              balance_start: 20,
+              balance_end: 2800,
+              balance_change_amount: 2780,
+              balance_change_percent: 13_900.0
+            }
+          end}
+       end}
+    ] do
+      # The individual balance change is not over 5000, but the combined is.
+      Scheduler.run_alert(WalletTriggerSettings)
+
+      assert_receive({:telegram_to_self, message})
+
+      assert message =~ "BTC balance on the XRP Ledger blockchain has increased by 5,560.00"
+      assert message =~ context.address
+      assert message =~ context.address2
+
+      assert message =~ "Was: 40\nNow: 5,600"
     end
   end
 

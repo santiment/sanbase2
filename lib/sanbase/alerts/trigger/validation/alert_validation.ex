@@ -6,6 +6,7 @@ defmodule Sanbase.Alert.Validation do
 
   defdelegate valid_target?(target), to: Target
   defdelegate valid_crypto_address?(target), to: Target
+  defdelegate valid_combine_balances_flag?(target), to: Target
   defdelegate valid_eth_wallet_target?(target), to: Target
   defdelegate valid_historical_balance_selector?(target), to: Target
   defdelegate valid_infrastructure_selector?(target), to: Target

@@ -64,6 +64,7 @@ defmodule SanbaseWeb.Router do
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
     live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
+    live("/add_ecosystems_labels_live", AddEcosystemLabelsLive)
 
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)

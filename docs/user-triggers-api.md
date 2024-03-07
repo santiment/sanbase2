@@ -211,6 +211,29 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 ```
 
 ```json
+// The combined bitcoin balances of the addresses px1234 and px5678 is above 1000
+{
+  "type": "wallet_movement",
+  "channel": "telegram",
+  "target": { "address": ["px1234", "px5678"], "use_combined_balance": true },
+  "selector": { "infrastructure": "BTC" },
+  "operation": { "above": 1000 }
+}
+```
+
+```json
+// The bitcoin balances of any of the addresses px1234 and px5678 is above 1000.
+// If both addresses have balance over 1000, two sepparate alert messages are received.
+{
+  "type": "wallet_movement",
+  "channel": "telegram",
+  "target": { "address": ["px1234", "px5678"], "use_combined_balance": false },
+  "selector": { "infrastructure": "BTC" },
+  "operation": { "above": 1000 }
+}
+```
+
+```json
 // The bitcoin cash balance of the address px1234 is below 500
 {
   "type": "wallet_movement",

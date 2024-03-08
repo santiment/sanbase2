@@ -565,6 +565,16 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def plan_max_sanbase_factory() do
+    %Plan{
+      id: 210,
+      name: "MAX",
+      amount: 24900,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
   def plan_pro_70off_sanbase_factory() do
     %Plan{
       id: 206,
@@ -695,6 +705,14 @@ defmodule Sanbase.Factory do
   def subscription_pro_plus_sanbase_factory() do
     %Subscription{
       plan_id: 203,
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
+    }
+  end
+
+  def subscription_max_sanbase_factory() do
+    %Subscription{
+      plan_id: 210,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }

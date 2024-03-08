@@ -128,6 +128,7 @@ defmodule Sanbase.Billing.Plan do
     "BASIC",
     "PRO",
     "PRO_PLUS",
+    "MAX",
     "BUSINESS_PRO",
     "BUSINESS_MAX",
     "CUSTOM"

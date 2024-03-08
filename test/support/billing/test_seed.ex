@@ -29,6 +29,7 @@ defmodule Sanbase.Billing.TestSeed do
           plan_basic_sanbase: insert(:plan_basic_sanbase, product: product_sanbase),
           plan_pro_sanbase: insert(:plan_pro_sanbase, product: product_sanbase),
           plan_pro_plus_sanbase: insert(:plan_pro_plus_sanbase, product: product_sanbase),
+          plan_max_sanbase: insert(:plan_max_sanbase, product: product_sanbase),
           plan_pro_sanbase_yearly: insert(:plan_pro_sanbase_yearly, product: product_sanbase),
           plan_pro_70off_sanbase: insert(:plan_pro_70off_sanbase, product: product_sanbase),
           plan_pro_70off_yearly_sanbase:

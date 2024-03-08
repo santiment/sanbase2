@@ -29,6 +29,113 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
     ]
   end
 
+  describe "API Limits per plan" do
+    test "when anonymous user", _context do
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:remote_ip, "1.1.1.1", :apikey)
+      assert quota.api_calls_limits == %{month: 1000, minute: 100, hour: 500}
+    end
+
+    test "when plan is FREE", _context do
+      user = insert(:user, email: "free@example.com")
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
+      assert quota.api_calls_limits == %{month: 1000, minute: 100, hour: 500}
+    end
+
+    test "when plan is Sanbase BASIC", _context do
+      user = insert(:user, email: "sanbase_basic@example.com")
+      insert(:subscription_basic_sanbase, user: user)
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
+      assert quota.api_calls_limits == %{month: 1000, minute: 100, hour: 500}
+    end
+
+    test "when plan is Sanbase PRO", _context do
+      user = insert(:user, email: "sanbase_pro@example.com")
+      insert(:subscription_pro_sanbase, user: user)
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
+      assert quota.api_calls_limits == %{month: 5000, minute: 100, hour: 1000}
+    end
+
+    test "when plan is Sanbase PRO+", _context do
+      user = insert(:user, email: "sanbase_pro_plus@example.com")
+      insert(:subscription_pro_plus_sanbase, user: user)
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
+      assert quota.api_calls_limits == %{month: 80000, minute: 100, hour: 4000}
+    end
+
+    test "when plan is Sanbase MAX", _context do
+      user = insert(:user, email: "sanbase_max@example.com")
+      insert(:subscription_max_sanbase, user: user)
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
+      assert quota.api_calls_limits == %{month: 80000, minute: 100, hour: 4000}
+    end
+
+    test "when plan is Sanapi PRO", _context do
+      user = insert(:user, email: "api_pro@example.com")
+      insert(:subscription_pro, user: user)
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
+      assert quota.api_calls_limits == %{month: 600_000, minute: 600, hour: 30000}
+    end
+
+    test "when plan is BUSINESS_PRO", _context do
+      user = insert(:user, email: "api_business_pro@example.com")
+      insert(:subscription_business_pro_monthly, user: user)
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
+      assert quota.api_calls_limits == %{month: 600_000, minute: 600, hour: 30000}
+    end
+
+    test "when plan is BUSINESS_MAX", _context do
+      user = insert(:user, email: "api_business_max@example.com")
+      insert(:subscription_business_max_monthly, user: user)
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
+      assert quota.api_calls_limits == %{month: 1_200_000, minute: 1200, hour: 60000}
+    end
+
+    test "when plan is Sanapi CUSTOM", _context do
+      user = insert(:user, email: "api_custom@example.com")
+      insert(:subscription_custom, user: user)
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
+      assert quota == %{quota: :infinity}
+    end
+  end
+
+  describe "API restrictions per plan" do
+    test "Anonymous user has 1 year historical data or and last 30 days missing", context do
+      # Sanbase.Billing.Plan.Restrictions.get({:metric, "aave_v3_active_addresses"}, "FREE", "SANAPI")
+      restrictions = get_access_restrictions(build_conn())
+      restricted = restrictions
+
+      for access <- restricted do
+        restricted_from = Sanbase.DateTimeUtils.from_iso8601!(access["restrictedFrom"])
+        restricted_to = Sanbase.DateTimeUtils.from_iso8601!(access["restrictedTo"])
+
+        diff_in_days = DateTime.diff(DateTime.utc_now(), restricted_from, :day)
+        diff_in_days_to = DateTime.diff(DateTime.utc_now(), restricted_to, :day)
+
+        # ~1 year
+        assert diff_in_days >= 1 * 365 - 1 and diff_in_days <= 1 * 365 + 1
+        # ~30 days
+        assert diff_in_days_to >= 30 - 1 and diff_in_days_to <= 30 + 1
+      end
+    end
+
+    test "BUSINESS_PRO user has 2 years historical data or and no realtime restrictions",
+         context do
+      restricted =
+        get_access_restrictions(context.business_pro_apikey_conn)
+        |> Enum.filter(& &1["isRestricted"])
+
+      for access <- restricted do
+        assert is_nil(access["restrictedTo"])
+
+        {:ok, restricted_from, 0} = DateTime.from_iso8601(access["restrictedFrom"])
+        diff_in_days = DateTime.diff(DateTime.utc_now(), restricted_from, :day)
+
+        # ~2 years
+        assert diff_in_days >= 2 * 365 - 5 and diff_in_days <= 2 * 365 + 5
+      end
+    end
+  end
+
   test "BUSINESS_PRO user has access to metrics with min_plan=PRO", _context do
     api_pro_only_metric = fetch_api_metric_with_min_plan_pro()
 

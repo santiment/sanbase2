@@ -9,7 +9,7 @@ defmodule Sanbase.Billing.Plan.CustomPlan.Loader do
   alias Sanbase.Billing.ApiInfo
 
   @doc ~s"""
-  The plans restrictions are checked on every request, so they need to have
+  The plans restrictions are chcked on every request, so they need to have
   constant access. Once the restrictions are stored for a plan, they are not
   updated.
   """

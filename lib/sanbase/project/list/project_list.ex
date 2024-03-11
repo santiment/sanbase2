@@ -258,6 +258,14 @@ defmodule Sanbase.Project.List do
     end)
   end
 
+  def projects_data_for_ecosystems(opts \\ []) do
+    opts = Keyword.put(opts, :preload?, true) |> Keyword.put(:preload, [:ecosystems])
+
+    projects_query(opts)
+    |> select([:id, :name, :ticker, :slug])
+    |> Repo.all()
+  end
+
   @doc ~s"""
   Returns `page_size` number of all projects from the `page` pages.
   Filtering out projects based on some conditions can be controled by the options.

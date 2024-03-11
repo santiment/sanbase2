@@ -8,3 +8,11 @@
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
+.scroll-bar-custom::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll-bar-custom::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 0.375rem;
+}

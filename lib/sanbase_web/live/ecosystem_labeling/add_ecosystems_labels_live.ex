@@ -3,21 +3,25 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    projects = Sanbase.Project.List.projects()
+    # Loads only id, name, ticker, slug and ecosystems
+    projects = Sanbase.Project.List.projects_data_for_ecosystems()
     # TODO: Do not call repo
     ecosystems = Sanbase.Repo.all(Sanbase.Ecosystem)
-    selected_project = Enum.find(projects, &(&1.slug == "santiment"))
 
     {:ok,
      socket
      |> assign(
        projects: projects,
-       selected_project: selected_project,
-       search_result: [],
+       selected_project: nil,
+       stored_project_ecosystems: [],
+       new_project_ecosystems: [],
+       removed_project_ecosystems: [],
+       search_result: projects,
        ecosystems: ecosystems
      )}
   end
 
+  @impl true
   def handle_params(params, _url, socket) do
     socket =
       case Map.get(params, "selected_project") do
@@ -25,8 +29,17 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
           socket
 
         slug ->
+          project = Enum.find(socket.assigns.projects, &(&1.slug == slug))
+          stored_ecosystems = project.ecosystems
+
           socket
-          |> assign(selected_project: Enum.find(socket.assigns.projects, &(&1.slug == slug)))
+          |> assign(
+            selected_project: project,
+            stored_project_ecosystems: stored_ecosystems,
+            new_project_ecosystems: [],
+            removed_project_ecosystems: [],
+            ecosystems: order_ecosystems(socket.assigns.ecosystems, stored_ecosystems)
+          )
       end
 
     {:noreply, socket}
@@ -35,45 +48,101 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="border border-red-500">
-      <h1 class="text-lg mb-10">Update the Ecosystem Labels of a project</h1>
+    <div class="border border-red-200 border-opacity-30 mx-auto max-w-3xl p-6 rounded-xl shadow-md min-h-96">
+      <h1 class="text-2xl mb-10">Update the Ecosystem Labels of a project</h1>
 
       <.select_project search_result={@search_result} />
 
-      <div :if={@selected_project} class="mt-10">
-        <h2 class="text-md"><%= @selected_project.name %>'s Ecosystems</h2>
-        <ul class="mt-2">
-          <li :for={ecosystem <- @selected_project.ecosystems} class="text-sm">
-            <%= ecosystem.ecosystem %>
-          </li>
-        </ul>
-      </div>
+      <.selected_project_details
+        selected_project={@selected_project}
+        new_project_ecosystems={@new_project_ecosystems}
+        removed_project_ecosystems={@removed_project_ecosystems}
+      />
 
       <div :if={@selected_project}>
         <h2 class="text-md mt-10">Edit the ecosystems of the project</h2>
-        <.checkbox_dropdown ecosystems={@ecosystems} selected_project={@selected_project} />
+        <.checkbox_dropdown
+          ecosystems={@ecosystems}
+          selected_project={@selected_project}
+          stored_project_ecosystems={@stored_project_ecosystems}
+        />
       </div>
+
+      <.ecosystem_button text="Submit Suggestion" phx-submit="submit_suggestions" />
     </div>
     """
   end
 
   @impl true
   def handle_event("search_project", %{"value" => search}, socket) do
-    search = String.downcase(search)
+    search = search |> String.downcase() |> String.trim()
 
     search_result =
       case search do
         "" ->
-          []
+          socket.assigns.projects
 
         _ ->
           Enum.filter(socket.assigns.projects, fn p ->
             String.downcase(p.name) =~ search or String.downcase(p.ticker) =~ search or
               String.downcase(p.slug) =~ search
           end)
+          |> Enum.sort_by(
+            fn p -> String.jaro_distance(String.downcase(p.name), search) end,
+            :desc
+          )
       end
 
     {:noreply, assign(socket, search_result: search_result)}
+  end
+
+  def handle_event("update_selected_ecosystems", params, socket) do
+    stored = socket.assigns.stored_project_ecosystems |> Enum.map(& &1.ecosystem)
+    new = socket.assigns.new_project_ecosystems
+    removed = socket.assigns.removed_project_ecosystems
+
+    {new, removed} =
+      case params do
+        %{"value" => "on", "ecosystem" => e} ->
+          new =
+            case e in stored do
+              # Append to the back so it looks better in the UI
+              false -> (new ++ [e]) |> Enum.uniq()
+              true -> new
+            end
+
+          removed = removed -- [e]
+          {new, removed}
+
+        %{"ecosystem" => e} ->
+          new = new -- [e]
+
+          removed =
+            case e in stored do
+              true -> (removed ++ [e]) |> Enum.uniq()
+              false -> removed
+            end
+
+          {new, removed}
+      end
+
+    {:noreply,
+     assign(socket,
+       new_project_ecosystems: new,
+       removed_project_ecosystems: removed
+     )}
+  end
+
+  def handle_event("submit_suggestions", _params, socket) do
+    {:noreply, socket}
+  end
+
+  defp order_ecosystems(ecosystems, stored) do
+    stored = Enum.map(stored, & &1.ecosystem)
+
+    ecosystems
+    |> Enum.sort(:asc)
+    |> Enum.sort_by(fn e -> if e.ecosystem in stored, do: 1, else: 2 end, :asc)
   end
 
   def select_project(assigns) do
@@ -94,29 +163,28 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
           phx-keyup="search_project"
           phx-debounce="200"
           phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
+          autocomplete="off"
           required
         />
-        <button
-          type="submit"
-          class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2"
-        >
-          Search
-        </button>
         <div
-          :if={@search_result != []}
           id="search-result-suggestions"
           phx-click-away={JS.add_class("hidden", to: "#search-result-suggestions")}
-          phx-click-
-          class="absolute bg-white mt-1"
+          phx-key={JS.add_class("hidden", to: "#search-result-suggestions")}
+          phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
+          class="hidden absolute bg-white mt-1 w-full"
         >
-          <ul class="min-w-96 border border-gray-300 rounded-xl px-2 py-2">
-            <li :for={project <- @search_result}>
+          <ul class="relative z-20 justify-between min-w-96 text-sm max-h-96 overflow-y-scroll scroll-bar-custom bg-white border border-gray-200 rounded-md">
+            <li class="flex flex-row justify-between text-gray-600 sticky top-0 bg-white px-3 py-2 rounded-md">
+              <span>Project</span>
+              <span>Ecosystems</span>
+            </li>
+            <li :for={project <- @search_result} class="mx-2 last:pb-4">
               <.link
                 phx-click={JS.add_class("hidden", to: "#search-result-suggestions")}
                 patch={~p"/admin2/add_ecosystems_labels_live?selected_project=#{project.slug}"}
                 class="block p-3 hover:bg-gray-200 rounded-xl"
               >
-                <%= project.name %>
+                <.project_info project={project} />
               </.link>
             </li>
           </ul>
@@ -126,56 +194,100 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
     """
   end
 
+  def selected_project_details(assigns) do
+    ~H"""
+    <div :if={@selected_project} class="mt-10 min-h-48 ">
+      <div class="border border-gray-100 rounded-sm px-8 py-4">
+        <h2 class="text-xl">Selected asset:</h2>
+        <div class="flex flex-col">
+          <div>
+            Name:
+            <.link
+              href={"#{project_link(@selected_project)}"}
+              class="text-blue-600 underline"
+              target="_blank"
+            >
+              <%= @selected_project.name %>
+            </.link>
+          </div>
+          <div>
+            Ecosystems:
+            <div class="flex flex-col md:flex-row gap-1 flex-wrap">
+              <.ecosystem_span
+                :for={ecosystem <- @selected_project.ecosystems}
+                ecosystem={ecosystem.ecosystem}
+                class="bg-blue-100 text-blue-800"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div :if={@new_project_ecosystems != []} class="px-8 py-4 border border-gray-100 rounded-sm">
+        <h2>Newly added Ecosystems:</h2>
+        <div class="flex flex-col md:flex-row gap-1 flex-wrap">
+          <.ecosystem_span
+            :for={ecosystem <- @new_project_ecosystems}
+            ecosystem={ecosystem}
+            class="bg-green-100 text-green-800"
+          />
+        </div>
+      </div>
+      <div :if={@removed_project_ecosystems != []} class="px-8 py-4 border border-gray-100 rounded-sm">
+        <h2>Removed Ecosystems:</h2>
+        <div class="flex flex-col md:flex-row gap-1 flex-wrap">
+          <.ecosystem_span
+            :for={ecosystem <- @removed_project_ecosystems}
+            ecosystem={ecosystem}
+            class="bg-red-100 text-red-800"
+          />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   def checkbox_dropdown(assigns) do
     ~H"""
     <div x-data="{
       search: '',
       selected: [],
       show_item(el) {
-        console.log(this.search)
-        return this.search === '' || el.querySelector('div').textContent.includes(this.search)
+        return this.search === '' || el.textContent.includes(this.search)
       }
     }">
-      <div class="flex flex-col md:flex-row">
-        <button
-          id="dropdownSearchButton"
-          data-dropdown-toggle="dropdownSearch"
-          class="inline-flex items-center px-4 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 "
-          type="button"
-        >
-          <span>Edit Ecosystems List</span>
-          <.icon name="hero-chevron-down" />
-        </button>
-      </div>
       <!-- Dropdown menu -->
-      <div id="dropdownSearch" class="z-10 hidden bg-white rounded-lg shadow w-60">
+      <div id="dropdownSearch" class="z-10 border border-gray-100 rounded-sm">
         <div class="p-3">
           <label for="input-group-search" class="sr-only">Search</label>
-          <div class="relative">
-            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none text-gray-600">
-              <.icon name="hero-magnifying-glass" />
+          <div>
+            <div class="relative">
+              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none text-gray-600">
+                <.icon name="hero-magnifying-glass" />
+              </div>
+              <input
+                type="text"
+                id="input-group-search"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full ps-10 p-2.5"
+                placeholder="Search ecosystem"
+                x-model="search"
+              />
             </div>
-            <input
-              type="text"
-              id="input-group-search"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full ps-10 p-2.5"
-              placeholder="Search ecosystem"
-              x-model="search"
-            />
           </div>
         </div>
         <ul
-          class="h-96 px-3 pb-3 overflow-y-auto text-sm text-gray-700"
+          class="h-48 px-3 pb-3 overflow-y-auto text-sm text-gray-700"
           aria-labelledby="dropdownSearchButton"
         >
           <!-- li element that is shown if the search text is matching it -->
-          <li :for={ecosystem <- @ecosystems} x-show="show_item($el)">
-            <div class="flex items-center p-2 rounded hover:bg-gray-100">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <li :for={ecosystem <- @ecosystems} x-show="show_item($el)">
               <input
                 id={"checkbox-item-#{ecosystem.id}"}
                 type="checkbox"
                 checked={project_ecosystem?(@selected_project, ecosystem)}
-                value=""
+                name={ecosystem.ecosystem}
+                phx-value-ecosystem={ecosystem.ecosystem}
+                phx-click="update_selected_ecosystems"
                 class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
               />
               <label
@@ -184,15 +296,81 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
               >
                 <%= ecosystem.ecosystem %>
               </label>
-            </div>
-          </li>
+            </li>
+          </div>
         </ul>
       </div>
     </div>
     """
   end
 
+  attr(:ecosystem, :map, required: true)
+  attr(:class, :string, required: false, default: nil)
+
+  def ecosystem_span(assigns) do
+    ~H"""
+    <span class={[
+      "text-md font-medium me-2 px-2.5 py-1 rounded",
+      @class
+    ]}>
+      <%= @ecosystem %>
+    </span>
+    """
+  end
+
+  def project_info(assigns) do
+    ecosystems = Enum.map(assigns.project.ecosystems, & &1.ecosystem)
+    ecosystems_len = length(ecosystems)
+
+    ecosystems_string =
+      cond do
+        ecosystems_len == 0 ->
+          "none"
+
+        ecosystems_len <= 3 ->
+          Enum.join(ecosystems, ", ")
+
+        true ->
+          [e1, e2 | rest] = ecosystems
+          "#{e1}, #{e2} and #{length(rest)} more"
+      end
+
+    assigns = assign(assigns, :ecosystems_string, ecosystems_string)
+
+    ~H"""
+    <div class="flex flex-row items-start justify-between">
+      <div>
+        <span><%= @project.name %></span>
+        <span class="ml-4 text-gray-500"><%= @project.ticker %></span>
+      </div>
+      <span class="text-gray-500"><%= @ecosystems_string %></span>
+    </div>
+    """
+  end
+
+  attr(:text, :string, required: true)
+  attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
+
+  def ecosystem_button(assigns) do
+    ~H"""
+    <button
+      type="submit"
+      class="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2 mt-4"
+      {@rest}
+    >
+      <%= @text %>
+    </button>
+    """
+  end
+
   defp project_ecosystem?(project, ecosystem) do
     Enum.any?(project.ecosystems, fn pe -> pe.id == ecosystem.id end)
+  end
+
+  defp project_link(%{slug: slug}) do
+    Path.join([
+      SanbaseWeb.Endpoint.frontend_url(),
+      "charts?slug=#{slug}"
+    ])
   end
 end

@@ -21,7 +21,7 @@
     },
     "aggregation": "last",
     "min_interval": "15m",
-    "table": "labeled_intraday_metrics",
+    "table": "labeled_intraday_metrics_v2",
     "has_incomplete_data": false,
     "data_type": "timeseries"
   },
@@ -47,7 +47,7 @@
     },
     "aggregation": "sum",
     "min_interval": "15m",
-    "table": "labeled_intraday_metrics",
+    "table": "labeled_intraday_metrics_v2",
     "has_incomplete_data": false,
     "data_type": "timeseries"
   }

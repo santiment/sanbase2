@@ -887,11 +887,7 @@ defmodule SanbaseWeb.LiveSearch do
   @impl true
   def render(assigns) do
     ~H"""
-    <div
-      x-data="{results_open: true}"
-      @click="results_open = true"
-      @click.outside="results_open = false"
-    >
+    <div>
       <div class="relative m-3">
         <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
           <.icon name="hero-magnifying-glass" />
@@ -901,23 +897,24 @@ defmodule SanbaseWeb.LiveSearch do
           phx-keyup="do-search"
           phx-debounce="200"
           type="text"
-          id="simple-search"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          placeholder="Search resources..."
+          id="search-input"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full ps-10 p-2.5 "
+          placeholder="Type / to search"
+          phx-hook="FocusInput"
+          phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
+          phx-click-away={JS.add_class("hidden", to: "#search-result-suggestions")}
           required
         />
       </div>
       <ul
-        x-show="results_open"
+        :if={@routes != []}
+        id="search-result-suggestions"
         x-transition
-        class="absolute ml-2 py-2 text-gray-700 dark:text-gray-200 border shadow-xl bg-blue-50 rounded-xl"
+        class="absolute z-20 ml-2 py-2 min-w-96 text-gray-700 border shadow-xl bg-gray-50 rounded-lg"
         aria-labelledby="dropdownDefaultButton"
       >
         <li :for={{name, path} <- @routes}>
-          <a
-            href={path}
-            class="block p-4 hover:bg-blue-100 dark:hover:bg-gray-600 dark:hover:text-white text-md font-semibold"
-          >
+          <a href={path} class="block p-4 hover:bg-gray-100 text-sm font-semibold">
             <%= name %>
           </a>
         </li>

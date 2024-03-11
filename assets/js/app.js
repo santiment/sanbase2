@@ -5,13 +5,15 @@ import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import Alpine from 'alpinejs'
 import "flowbite/dist/flowbite.phoenix.js";
+import { FocusInput } from "./focus_input"
 
 window.Alpine = Alpine
 Alpine.start()
-
+const Hooks = { FocusInput: FocusInput }
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken },
+  hooks: Hooks,
   dom: {
     onBeforeElUpdated(from, to) {
       if (from._x_dataStack) {

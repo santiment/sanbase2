@@ -143,6 +143,8 @@ defmodule Sanbase.Ecosystem do
     {:ok, projects}
   end
 
+  # Private functions
+
   defp apply_combinator(list, ecosystems, opts) do
     case Keyword.get(opts, :combinator, :all_of) do
       :any_of ->

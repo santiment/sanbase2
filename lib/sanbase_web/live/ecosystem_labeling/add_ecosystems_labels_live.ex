@@ -16,6 +16,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
        stored_project_ecosystems: [],
        new_project_ecosystems: [],
        removed_project_ecosystems: [],
+       notes: "",
        search_result: projects,
        ecosystems: ecosystems
      )}
@@ -48,27 +49,38 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="border border-red-200 border-opacity-30 mx-auto max-w-3xl p-6 rounded-xl shadow-md min-h-96">
-      <h1 class="text-2xl mb-10">Update the Ecosystem Labels of a project</h1>
+    <div class="border border-gray-100 mx-auto max-w-3xl p-6 rounded-xl shadow-sm min-h-96">
+      <h1 class="text-2xl mb-6">Update the Ecosystem Labels of a project</h1>
 
       <.select_project search_result={@search_result} />
 
-      <.selected_project_details
-        selected_project={@selected_project}
-        new_project_ecosystems={@new_project_ecosystems}
-        removed_project_ecosystems={@removed_project_ecosystems}
-      />
-
       <div :if={@selected_project}>
-        <h2 class="text-md mt-10">Edit the ecosystems of the project</h2>
-        <.checkbox_dropdown
+        <.selected_project_details
+          selected_project={@selected_project}
+          new_project_ecosystems={@new_project_ecosystems}
+          removed_project_ecosystems={@removed_project_ecosystems}
+        />
+
+        <h2 class="text-lg mt-10">Edit the ecosystems of the project</h2>
+        <p class="text-sm text-gray-600">
+          The currently stored ecosystems are preselected. Deselect ecosystems to suggest removing them and select new ecosystems to suggest adding them.
+        </p>
+        <.checkbox_select_ecosystems
           ecosystems={@ecosystems}
           selected_project={@selected_project}
           stored_project_ecosystems={@stored_project_ecosystems}
         />
-      </div>
 
-      <.ecosystem_button text="Submit Suggestion" phx-submit="submit_suggestions" />
+        <.notes_textarea />
+
+        <.submit_suggestions_button
+          text="Submit Suggestion"
+          phx-submit="submit_suggestions"
+          new_project_ecosystems={@new_project_ecosystems}
+          removed_project_ecosystems={@removed_project_ecosystems}
+          notes={@notes}
+        />
+      </div>
     </div>
     """
   end
@@ -133,6 +145,10 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
      )}
   end
 
+  def handle_event("update_notes", %{"notes" => notes}, socket) do
+    {:noreply, assign(socket, notes: notes)}
+  end
+
   def handle_event("submit_suggestions", _params, socket) do
     {:noreply, socket}
   end
@@ -147,8 +163,8 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
 
   def select_project(assigns) do
     ~H"""
-    <form class="max-w-2xl mx-autck">
-      <label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only">
+    <form class="max-w-3xl">
+      <label for="default-search" class="text-sm font-medium text-gray-900 sr-only">
         Select an asset
       </label>
       <div class="relative">
@@ -158,7 +174,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
         <input
           type="search"
           id="default-search"
-          class="block w-full p-4 ps-10 outline-none text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
+          class="w-full p-4 ps-10 outline-none text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
           placeholder="Select an asset"
           phx-keyup="search_project"
           phx-debounce="200"
@@ -196,22 +212,21 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
 
   def selected_project_details(assigns) do
     ~H"""
-    <div :if={@selected_project} class="mt-10 min-h-48 ">
+    <div class="mt-10 min-h-48 ">
       <div class="border border-gray-100 rounded-sm px-8 py-4">
-        <h2 class="text-xl">Selected asset:</h2>
-        <div class="flex flex-col">
+        <span class="text-xl">
+          Selected Asset:
+          <.link
+            href={"#{project_link(@selected_project)}"}
+            class="text-blue-600 underline"
+            target="_blank"
+          >
+            <%= @selected_project.name %>
+          </.link>
+        </span>
+        <div class="flex flex-col mt-2">
           <div>
-            Name:
-            <.link
-              href={"#{project_link(@selected_project)}"}
-              class="text-blue-600 underline"
-              target="_blank"
-            >
-              <%= @selected_project.name %>
-            </.link>
-          </div>
-          <div>
-            Ecosystems:
+            <span class="text-lg leading-4">Current Ecosystems:</span>
             <div class="flex flex-col md:flex-row gap-1 flex-wrap">
               <.ecosystem_span
                 :for={ecosystem <- @selected_project.ecosystems}
@@ -223,7 +238,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
         </div>
       </div>
       <div :if={@new_project_ecosystems != []} class="px-8 py-4 border border-gray-100 rounded-sm">
-        <h2>Newly added Ecosystems:</h2>
+        <span class="text-lg">Added Ecosystems:</span>
         <div class="flex flex-col md:flex-row gap-1 flex-wrap">
           <.ecosystem_span
             :for={ecosystem <- @new_project_ecosystems}
@@ -233,7 +248,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
         </div>
       </div>
       <div :if={@removed_project_ecosystems != []} class="px-8 py-4 border border-gray-100 rounded-sm">
-        <h2>Removed Ecosystems:</h2>
+        <span class="text-lg">Removed Ecosystems:</span>
         <div class="flex flex-col md:flex-row gap-1 flex-wrap">
           <.ecosystem_span
             :for={ecosystem <- @removed_project_ecosystems}
@@ -246,7 +261,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
     """
   end
 
-  def checkbox_dropdown(assigns) do
+  def checkbox_select_ecosystems(assigns) do
     ~H"""
     <div x-data="{
       search: '',
@@ -349,17 +364,46 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
   end
 
   attr(:text, :string, required: true)
+  attr(:notes, :string, required: true)
+  attr(:new_project_ecosystems, :list, required: true)
+  attr(:removed_project_ecosystems, :list, required: true)
   attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
 
-  def ecosystem_button(assigns) do
+  def submit_suggestions_button(assigns) do
+    is_disabled =
+      assigns.new_project_ecosystems == [] and assigns.removed_project_ecosystems == [] and
+        assigns.notes == ""
+
+    assigns = assign(assigns, :is_disabled, is_disabled)
+
     ~H"""
     <button
       type="submit"
-      class="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2 mt-4"
+      class="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2 mt-4 disabled:bg-slate-500 disabled:cursor-not-allowed"
+      disabled={@is_disabled}
+      title={
+        if @is_disabled,
+          do:
+            "You need to propose changes to the ecosystems or leave a note in order to submit your proposal"
+      }
       {@rest}
     >
       <%= @text %>
     </button>
+    """
+  end
+
+  def notes_textarea(assigns) do
+    ~H"""
+    <form phx-change="update_notes">
+      <textarea
+        name="notes"
+        rows="4"
+        class="block my-3 p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300"
+        placeholder="Tell us why these changes are proposed. You can share links, or just leave some comments."
+        phx-debounce="1000"
+      ></textarea>
+    </form>
     """
   end
 

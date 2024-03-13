@@ -541,6 +541,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "total_supply",
         "mcd_erc20_supply",
         "rank",
+        "etf_volume_usd_5m",
         # change metrics
         "volume_usd_change_1d",
         "volume_usd_change_7d",

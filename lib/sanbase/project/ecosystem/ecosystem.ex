@@ -47,6 +47,16 @@ defmodule Sanbase.Ecosystem do
     |> unique_constraint(:ecosystem)
   end
 
+  @spec get_id_by_name(String.t()) :: {:ok, non_neg_integer()} | {:error, String.t(0)}
+  def get_id_by_name(ecosystem) do
+    query = from(e in __MODULE__, where: e.ecosystem == ^ecosystem, select: e.id)
+
+    case Sanbase.Repo.one(query) do
+      nil -> {:error, "Ecosystem with name #{ecosystem} not found"}
+      id -> {:ok, id}
+    end
+  end
+
   @spec get_ecosystems(:all | list(String.t())) :: {:ok, list(String.t())}
   def get_ecosystems(ecosystems_filter \\ :all) do
     query = from(e in __MODULE__, select: e.ecosystem)

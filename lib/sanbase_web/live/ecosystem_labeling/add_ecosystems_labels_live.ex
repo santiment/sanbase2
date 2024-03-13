@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.AddEcosystemLabelsLive do
   use SanbaseWeb, :live_view
+  alias SanbaseWeb.EcosystemComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -116,6 +117,8 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
     {new, removed} =
       case params do
         %{"value" => "on", "ecosystem" => e} ->
+          IO.inspect(e, label: "ADDED")
+
           new =
             case e in stored do
               # Append to the back so it looks better in the UI
@@ -150,7 +153,36 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
   end
 
   def handle_event("submit_suggestions", _params, socket) do
-    {:noreply, socket}
+    attrs = %{
+      project_id: socket.assigns.selected_project.id,
+      added_ecosystems: socket.assigns.new_project_ecosystems,
+      removed_ecosystems: socket.assigns.removed_project_ecosystems,
+      notes: socket.assigns.notes
+    }
+
+    case Sanbase.Ecosystem.ChangeSuggestion.create(attrs) do
+      {:ok, _} ->
+        socket =
+          socket
+          |> assign(
+            selected_project: nil,
+            added_ecosystems: [],
+            removed_ecosystems: [],
+            notes: ""
+          )
+          |> put_flash(:info, "Suggestions successfully submitted!")
+
+        {:noreply, socket}
+
+      {:error, changeset} ->
+        errors = Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)
+
+        socket =
+          socket
+          |> put_flash(:error, "Error submitting suggestions. Reason: #{errors}")
+
+        {:noreply, socket}
+    end
   end
 
   defp order_ecosystems(ecosystems, stored) do
@@ -217,7 +249,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
         <span class="text-xl">
           Selected Asset:
           <.link
-            href={"#{project_link(@selected_project)}"}
+            href={SanbaseWeb.Endpoint.project_url(@selected_project.slug)}
             class="text-blue-600 underline"
             target="_blank"
           >
@@ -227,25 +259,19 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
         <div class="flex flex-col mt-2">
           <div>
             <span class="text-lg leading-4">Current Ecosystems:</span>
-            <div class="flex flex-col md:flex-row gap-1 flex-wrap">
-              <.ecosystem_span
-                :for={ecosystem <- @selected_project.ecosystems}
-                ecosystem={ecosystem.ecosystem}
-                class="bg-blue-100 text-blue-800"
-              />
-            </div>
+            <EcosystemComponents.ecosystems_group
+              ecosystems={@selected_project.ecosystems |> Enum.map(& &1.ecosystem)}
+              ecosystem_colors_class="bg-blue-100 text-blue-800"
+            />
           </div>
         </div>
       </div>
       <div :if={@new_project_ecosystems != []} class="px-8 py-4 border border-gray-100 rounded-sm">
         <span class="text-lg">Added Ecosystems:</span>
-        <div class="flex flex-col md:flex-row gap-1 flex-wrap">
-          <.ecosystem_span
-            :for={ecosystem <- @new_project_ecosystems}
-            ecosystem={ecosystem}
-            class="bg-green-100 text-green-800"
-          />
-        </div>
+        <EcosystemComponents.ecosystems_group
+          ecosystems={@new_project_ecosystems}
+          ecosystem_colors_class="bg-green-100 text-green-800"
+        />
       </div>
       <div :if={@removed_project_ecosystems != []} class="px-8 py-4 border border-gray-100 rounded-sm">
         <span class="text-lg">Removed Ecosystems:</span>
@@ -378,6 +404,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
 
     ~H"""
     <button
+      phx-click="submit_suggestions"
       type="submit"
       class="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2 mt-4 disabled:bg-slate-500 disabled:cursor-not-allowed"
       disabled={@is_disabled}
@@ -409,12 +436,5 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
 
   defp project_ecosystem?(project, ecosystem) do
     Enum.any?(project.ecosystems, fn pe -> pe.id == ecosystem.id end)
-  end
-
-  defp project_link(%{slug: slug}) do
-    Path.join([
-      SanbaseWeb.Endpoint.frontend_url(),
-      "charts?slug=#{slug}"
-    ])
   end
 end

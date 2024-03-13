@@ -2839,6 +2839,41 @@ CREATE TABLE public.project (
 
 
 --
+-- Name: project_ecosystem_labels_change_suggestions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_ecosystem_labels_change_suggestions (
+    id bigint NOT NULL,
+    project_id bigint,
+    added_ecosystems character varying(255)[],
+    removed_ecosystems character varying(255)[],
+    notes text,
+    status character varying(255) DEFAULT 'pending_approval'::character varying,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: project_ecosystem_labels_change_suggestions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_ecosystem_labels_change_suggestions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_ecosystem_labels_change_suggestions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_ecosystem_labels_change_suggestions_id_seq OWNED BY public.project_ecosystem_labels_change_suggestions.id;
+
+
+--
 -- Name: project_ecosystem_mappings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5112,6 +5147,13 @@ ALTER TABLE ONLY public.project ALTER COLUMN id SET DEFAULT nextval('public.proj
 
 
 --
+-- Name: project_ecosystem_labels_change_suggestions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_labels_change_suggestions ALTER COLUMN id SET DEFAULT nextval('public.project_ecosystem_labels_change_suggestions_id_seq'::regclass);
+
+
+--
 -- Name: project_ecosystem_mappings id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6003,6 +6045,14 @@ ALTER TABLE ONLY public.price_scraping_progress
 
 ALTER TABLE ONLY public.products
     ADD CONSTRAINT products_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_ecosystem_labels_change_suggestions project_ecosystem_labels_change_suggestions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_labels_change_suggestions
+    ADD CONSTRAINT project_ecosystem_labels_change_suggestions_pkey PRIMARY KEY (id);
 
 
 --
@@ -8264,6 +8314,14 @@ ALTER TABLE ONLY public.presigned_s3_urls
 
 
 --
+-- Name: project_ecosystem_labels_change_suggestions project_ecosystem_labels_change_suggestions_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_labels_change_suggestions
+    ADD CONSTRAINT project_ecosystem_labels_change_suggestions_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
 -- Name: project_ecosystem_mappings project_ecosystem_mappings_ecosystem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9320,4 +9378,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240126133441);
 INSERT INTO public."schema_migrations" (version) VALUES (20240131160724);
 INSERT INTO public."schema_migrations" (version) VALUES (20240201085929);
 INSERT INTO public."schema_migrations" (version) VALUES (20240212141517);
+INSERT INTO public."schema_migrations" (version) VALUES (20240311143940);
 INSERT INTO public."schema_migrations" (version) VALUES (20240315090002);

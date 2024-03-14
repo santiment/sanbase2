@@ -269,6 +269,8 @@ defmodule Sanbase.Dashboards.Dashboard do
     |> where([ul], ul.user_id == ^user_id)
   end
 
+  def is_public?(dashboard), do: dashboard.is_public
+
   # Private functions
 
   defp base_query() do

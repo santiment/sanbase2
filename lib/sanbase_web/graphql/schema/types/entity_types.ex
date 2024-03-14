@@ -19,6 +19,7 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
     value(:address_watchlist)
     value(:chart_configuration)
     value(:dashboard)
+    value(:query)
     value(:insight)
     value(:project_watchlist)
     value(:screener)
@@ -35,7 +36,8 @@ defmodule SanbaseWeb.Graphql.EntityTypes do
   object :single_entity_result do
     field(:address_watchlist, :user_list)
     field(:chart_configuration, :chart_configuration)
-    field(:dashboard, :dashboard_schema)
+    field(:dashboard, :dashboard)
+    field(:query, :sql_query)
     field(:insight, :post)
     field(:project_watchlist, :user_list)
     field(:screener, :user_list)

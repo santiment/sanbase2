@@ -50,7 +50,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     end
 
     # Timestamps
-    field(:created_at, non_null(:datetime))
+    field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
   end
 

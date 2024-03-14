@@ -107,6 +107,7 @@ defmodule Sanbase.Entity.Query do
         WHEN chart_configuration_id IS NOT NULL THEN chart_configuration_id
         WHEN user_trigger_id IS NOT NULL THEN user_trigger_id
         WHEN dashboard_id IS NOT NULL THEN dashboard_id
+        WHEN query_id IS NOT NULL THEN query_id
       END
       """)
     end
@@ -122,6 +123,7 @@ defmodule Sanbase.Entity.Query do
         WHEN chart_configuration_id IS NOT NULL THEN 'chart_configuration'
         WHEN user_trigger_id IS NOT NULL THEN 'user_trigger'
         WHEN dashboard_id IS NOT NULL THEN 'dashboard'
+        WHEN query_id IS NOT NULL THEN 'query'
       END
       """)
     end

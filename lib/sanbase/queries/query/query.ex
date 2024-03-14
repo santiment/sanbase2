@@ -65,6 +65,10 @@ defmodule Sanbase.Queries.Query do
     # Support a virutal field, so we can add this id to the query struct.
     field(:dashboard_query_mapping_id, :string, virtual: true)
 
+    # Virtual fields
+    field(:views, :integer, virtual: true, default: 0)
+    # field(:is_featured, :boolean, virtual: true)
+
     timestamps()
   end
 
@@ -230,6 +234,8 @@ defmodule Sanbase.Queries.Query do
     # |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> Sanbase.Entity.Query.maybe_filter_min_title_length(opts, :name)
+    |> Sanbase.Entity.Query.maybe_filter_min_description_length(opts, :description)
     |> select([ul], ul.id)
   end
 

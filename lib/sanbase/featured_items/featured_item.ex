@@ -15,7 +15,7 @@ defmodule Sanbase.FeaturedItem do
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Chart.Configuration, as: ChartConfiguration
   alias Sanbase.TableConfiguration
-  alias Sanbase.Dashboard
+  alias Sanbase.Dashboards.Dashboard
 
   @table "featured_items"
   schema @table do
@@ -24,7 +24,7 @@ defmodule Sanbase.FeaturedItem do
     belongs_to(:user_trigger, UserTrigger)
     belongs_to(:chart_configuration, ChartConfiguration)
     belongs_to(:table_configuration, TableConfiguration)
-    belongs_to(:dashboard, Dashboard.Schema)
+    belongs_to(:dashboard, Dashboard)
 
     timestamps()
   end
@@ -156,8 +156,8 @@ defmodule Sanbase.FeaturedItem do
     end
   end
 
-  def update_item(%Dashboard.Schema{} = dashboard, featured?) do
-    case Dashboard.Schema.is_public?(dashboard) || featured? == false do
+  def update_item(%Dashboard{} = dashboard, featured?) do
+    case Dashboard.is_public?(dashboard) || featured? == false do
       true -> update_item(:dashboard_id, dashboard.id, featured?)
       false -> {:error, "Private table dashboards cannot be made featured."}
     end

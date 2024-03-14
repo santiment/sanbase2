@@ -394,7 +394,8 @@ defmodule Sanbase.Entity do
       )
 
     result =
-      Sanbase.Repo.all(query)
+      query
+      |> Sanbase.Repo.all()
       |> fetch_entities_by_ids_preserve_order_rewrite_keys()
 
     {:ok, result}
@@ -405,12 +406,14 @@ defmodule Sanbase.Entity do
     # be lost once we split the result into different entity type groups is
     # order to fetch them. In order to preserve the order, we need to record it
     # beforehand. This is done by making a map where the keys are {entity_type,
-    # entity_id} and the value is the position in the original result. NOTE 1:
+    # entity_id} and the value is the position in the original result.
+    # NOTE 1:
     # As we are recording the position in the original result, we need to sort
-    # the result in ASCENDING order at the end. NOTE 2: The db_result from here
-    # includes only the entity id and entity type. This is not enough to
-    # distinguish between screener and watchlist. This will be done once the
-    # full objects are returned.
+    # the result in ASCENDING order at the end.
+    # NOTE 2:
+    # The db_result from here includes only the entity id and entity type.
+    # This is not enough to distinguish between screener and watchlist. This will
+    # be done once the full objects are returned.
     ordering =
       db_result
       |> Enum.with_index()
@@ -638,11 +641,15 @@ defmodule Sanbase.Entity do
     end)
   end
 
-  defp transform_entity(entity) do
+  defp transform_entity(%{featured_item: featured_item} = entity) do
     # Populate the `is_featured` boolean value from the `featured_item` assoc
-    is_featured = if entity.featured_item, do: true, else: false
+    is_featured = if featured_item, do: true, else: false
 
     %{entity | is_featured: is_featured}
+  end
+
+  defp transform_entity(entity) do
+    entity
   end
 
   defp rewrite_keys(list) do

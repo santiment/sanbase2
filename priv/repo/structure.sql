@@ -1554,7 +1554,8 @@ CREATE TABLE public.featured_items (
     chart_configuration_id bigint,
     table_configuration_id bigint,
     dashboard_id bigint,
-    CONSTRAINT only_one_fk CHECK (((((((
+    query_id bigint,
+    CONSTRAINT only_one_fk CHECK ((((((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
@@ -1577,6 +1578,10 @@ CASE
 END) +
 CASE
     WHEN (dashboard_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (query_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -6761,6 +6766,13 @@ CREATE UNIQUE INDEX featured_items_post_id_index ON public.featured_items USING 
 
 
 --
+-- Name: featured_items_query_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX featured_items_query_id_index ON public.featured_items USING btree (query_id);
+
+
+--
 -- Name: featured_items_table_configuration_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7921,6 +7933,14 @@ ALTER TABLE ONLY public.featured_items
 
 ALTER TABLE ONLY public.featured_items
     ADD CONSTRAINT featured_items_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: featured_items featured_items_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.featured_items
+    ADD CONSTRAINT featured_items_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id);
 
 
 --
@@ -9300,3 +9320,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240126133441);
 INSERT INTO public."schema_migrations" (version) VALUES (20240131160724);
 INSERT INTO public."schema_migrations" (version) VALUES (20240201085929);
 INSERT INTO public."schema_migrations" (version) VALUES (20240212141517);
+INSERT INTO public."schema_migrations" (version) VALUES (20240315090002);

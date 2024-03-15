@@ -221,89 +221,6 @@ defmodule SanbaseWeb.GenericAdmin.Comment do
   end
 end
 
-defmodule SanbaseWeb.GenericAdmin.FeaturedItem do
-  import Ecto.Query
-
-  def schema_module, do: Sanbase.FeaturedItem
-
-  def resource do
-    %{
-      actions: [:edit],
-      preloads: [
-        :post,
-        :user_list,
-        :user_trigger,
-        :chart_configuration,
-        :table_configuration,
-        :dashboard
-      ],
-      index_fields: [
-        :id,
-        :post_id,
-        :user_list_id,
-        :user_trigger_id,
-        :chart_configuration_id,
-        :table_configuration_id,
-        :dashboard_id
-      ],
-      edit_fields: [
-        :post_id,
-        :user_list_id,
-        :user_trigger_id,
-        :chart_configuration_id,
-        :table_configuration_id,
-        :dashboard_id
-      ],
-      belongs_to_fields: %{
-        user_list_id: %{
-          query: from(ul in Sanbase.UserList, order_by: [desc: ul.id]),
-          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
-          resource: "user_lists",
-          search_fields: [:name]
-        },
-        post_id: %{
-          query: from(p in Sanbase.Insight.Post, order_by: [desc: p.id]),
-          transform: fn rows -> Enum.map(rows, &{&1.title, &1.id}) end,
-          resource: "posts",
-          search_fields: [:title]
-        },
-        user_trigger_id: %{
-          query: from(ut in Sanbase.Alert.UserTrigger, order_by: [desc: ut.id]),
-          transform: fn rows -> Enum.map(rows, &{&1.id, &1.id}) end,
-          resource: "user_triggers",
-          search_fields: []
-        },
-        chart_configuration_id: %{
-          query: from(cc in Sanbase.Chart.Configuration, order_by: [desc: cc.id]),
-          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
-          resource: "chart_configurations",
-          search_fields: [:name]
-        },
-        table_configuration_id: %{
-          query: from(tc in Sanbase.TableConfiguration, order_by: [desc: tc.id]),
-          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
-          resource: "table_configurations",
-          search_fields: [:name]
-        },
-        dashboard_id: %{
-          query: from(d in Sanbase.Dashboard.Schema, order_by: [desc: d.id]),
-          transform: fn rows -> Enum.map(rows, &{&1.name, &1.id}) end,
-          resource: "dashboards",
-          search_fields: [:name]
-        }
-      },
-      fields_override: %{
-        post_id: %{
-          value_modifier: &SanbaseWeb.GenericAdmin.Post.post_link/1
-        },
-        user_list_id: %{
-          value_modifier: &SanbaseWeb.GenericAdmin.UserList.user_list_link/1
-        }
-      }
-    }
-  end
-end
-
 defmodule SanbaseWeb.GenericAdmin.UserTrigger do
   import Ecto.Query
 
@@ -405,25 +322,6 @@ defmodule SanbaseWeb.GenericAdmin.TableConfiguration do
       index_fields: [:id, :title, :is_public, :user_id],
       new_fields: [:title, :is_public],
       edit_fields: [:title, :is_public],
-      fields_override: %{
-        user_id: %{
-          value_modifier: &SanbaseWeb.GenericAdmin.User.user_link/1
-        }
-      }
-    }
-  end
-end
-
-# create for dashboard
-defmodule SanbaseWeb.GenericAdmin.Dashboard do
-  def schema_module, do: Sanbase.Dashboard.Schema
-  def resource_name, do: "dashboards"
-
-  def resource do
-    %{
-      actions: [],
-      preloads: [:user],
-      index_fields: [:id, :name, :is_public, :user_id],
       fields_override: %{
         user_id: %{
           value_modifier: &SanbaseWeb.GenericAdmin.User.user_link/1

@@ -55,8 +55,8 @@ defmodule Sanbase.Queries.Query do
     belongs_to(:user, User)
 
     # Fields related to timeline hiding and reversible-deletion
-    field(:is_deleted, :boolean)
-    field(:is_hidden, :boolean)
+    field(:is_deleted, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
 
     # Queries can be added to Dashboards. One query can be added
     # multiple times and the dashboard_query_mappings table has an id
@@ -99,6 +99,8 @@ defmodule Sanbase.Queries.Query do
     binary = {sql_query_text, query.sql_query_parameters} |> :erlang.term_to_binary()
     :crypto.hash(:sha256, binary) |> Base.encode64() |> binary_part(0, 32)
   end
+
+  def is_public?(%__MODULE__{} = query), do: query.is_public
 
   def normalize(text) do
     text

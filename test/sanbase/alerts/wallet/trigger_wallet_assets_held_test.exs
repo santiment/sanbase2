@@ -121,11 +121,11 @@ defmodule Sanbase.Alert.WalletAssetsHeldTriggerSettingsTest do
                "🔔 The address 0x77Fd8239ECf7aBcEaF9F2c14F5aCAE950e7B3e98 assets held has changed"
 
       assert message =~ "5 Newcomers:"
-      assert message =~ "[#ETH | Ethereum](http://localhost:4000/projects/ethereum)"
-      assert message =~ "[#BTC | Bitcoin](http://localhost:4000/projects/bitcoin)"
-      assert message =~ "[#MKR | Maker](http://localhost:4000/projects/maker)"
-      assert message =~ "[#STJ | Storj](http://localhost:4000/projects/storj)"
-      assert message =~ "[#UNI | Uniswap](http://localhost:4000/projects/uniswap)"
+      assert message =~ "[#ETH | Ethereum](https://app-stage.santiment.net/projects/ethereum)"
+      assert message =~ "[#BTC | Bitcoin](https://app-stage.santiment.net/projects/bitcoin)"
+      assert message =~ "[#MKR | Maker](https://app-stage.santiment.net/projects/maker)"
+      assert message =~ "[#STJ | Storj](https://app-stage.santiment.net/projects/storj)"
+      assert message =~ "[#UNI | Uniswap](https://app-stage.santiment.net/projects/uniswap)"
       assert message =~ "--"
       assert message =~ "0 Leavers:"
     end)

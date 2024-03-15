@@ -262,7 +262,7 @@ defmodule Sanbase.Project.List do
     opts = Keyword.put(opts, :preload?, true) |> Keyword.put(:preload, [:ecosystems])
 
     projects_query(opts)
-    |> select([:id, :name, :ticker, :slug])
+    |> select([:id, :name, :ticker, :slug, :logo_url])
     |> Repo.all()
   end
 

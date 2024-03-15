@@ -246,14 +246,14 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
     ~H"""
     <div class="mt-10 min-h-48 ">
       <div class="border border-gray-100 rounded-sm px-8 py-4">
-        <span class="text-xl">
-          Selected Asset:
+        <span class="flex flex-col  md:flex-row text-xl items-center">
+          Selected Asset: <img src={@selected_project.logo_url} class="m-2 size-7" />
           <.link
             href={SanbaseWeb.Endpoint.project_url(@selected_project.slug)}
-            class="text-blue-600 underline"
+            class="text-blue-800 underline"
             target="_blank"
           >
-            <%= @selected_project.name %>
+            <%= @selected_project.name %> (#<%= @selected_project.ticker %>)
           </.link>
         </span>
         <div class="flex flex-col mt-2">

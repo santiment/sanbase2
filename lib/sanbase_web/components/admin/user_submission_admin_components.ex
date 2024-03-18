@@ -19,6 +19,12 @@ defmodule SanbaseWeb.Admin.UserSubmissionAdminComponents do
     """
   end
 
+  attr(:name, :string, required: true)
+  attr(:value, :string, required: true)
+  attr(:display_text, :string, required: true)
+  attr(:class, :string, required: true)
+  attr(:disabled, :boolean, default: false)
+
   def update_status_button(assigns) do
     ~H"""
     <button
@@ -28,6 +34,7 @@ defmodule SanbaseWeb.Admin.UserSubmissionAdminComponents do
         "phx-submit-loading:opacity-75 rounded-lg my-1 py-2 px-3 text-sm font-semibold leading-6 text-white",
         @class
       ]}
+      disabled={@disabled}
     >
       <%= @display_text %>
     </button>

@@ -60,8 +60,8 @@ defmodule Sanbase.ProjectEcosystemMapping do
         where: m.project_id == ^project_id and m.ecosystem_id == ^ecosystem_id
       )
 
-    {_, nil} = Sanbase.Repo.delete_all(query)
-    :ok
+    {count, nil} = Sanbase.Repo.delete_all(query)
+    {:ok, "Removed #{count} records"}
   end
 
   def remove(project_id, ecosystem) when is_binary(ecosystem) do

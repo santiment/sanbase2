@@ -44,35 +44,100 @@ defmodule Sanbase.Ecosystem.ChangeSuggestion do
   end
 
   @doc ~s"""
+  Undo an approved or declined suggestion.
+  Approved suggestion is undone by undoing the proposed changes and changing the status back to pending_approval
+  Declined suggestion is undone by just setting the status back to pending_approval
+  """
+  def undo_suggestion(id) when is_integer(id) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_record, fn _, _ ->
+      case get_record(id) do
+        {:ok, %{status: status}} when status == "pending_approval" ->
+          {:error, "Record with id #{id} is not approved or declined, so it cannot be undone"}
+
+        {:ok, record} ->
+          {:ok, record}
+
+        {:error, error} ->
+          {:error, error}
+      end
+    end)
+    |> Ecto.Multi.run(:undo_changes, fn _, %{get_record: record} ->
+      case record.status do
+        # Undoing an approved suggestion reverts the applied changes
+        "approved" ->
+          suggestion = %{
+            record
+            | added_ecosystems: record.removed_ecosystems,
+              removed_ecosystems: record.added_ecosystems
+          }
+
+          apply_suggestions(suggestion)
+
+        # Undoing a declined suggestion does not apply any changes, only
+        # updates the status
+        "declined" ->
+          {:ok, :noop}
+      end
+    end)
+    |> Ecto.Multi.run(:make_status_pending, fn _, %{get_record: record} ->
+      do_update_status(record, "pending_approval")
+    end)
+    |> Sanbase.Repo.transaction()
+    |> case do
+      {:ok, %{make_status_pending: record}} -> {:ok, record}
+      {:error, _name, error, _changes_so_far} -> {:error, error}
+    end
+  end
+
+  @doc ~s"""
   Update the status by a moderator
   """
-  def update_status(id, new_status) when new_status in @statuses do
-    record = Sanbase.Repo.get!(__MODULE__, id)
+  def update_status(id, new_status) when is_integer(id) and new_status in @statuses do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:get_record, fn _, _ -> get_record(id) end)
+    |> Ecto.Multi.run(:maybe_apply_suggestions, fn _, %{get_record: record} ->
+      if new_status == "approved" and record.status == "pending_approval",
+        do: apply_suggestions(record),
+        else: {:ok, :noop}
+    end)
+    |> Ecto.Multi.run(:update_status, fn _, %{get_record: record} ->
+      do_update_status(record, new_status)
+    end)
+    |> Sanbase.Repo.transaction()
+    |> case do
+      {:ok, %{update_status: record}} -> {:ok, record}
+      {:error, _name, error, _changes_so_far} -> {:error, error}
+    end
+  end
 
+  defp get_record(id) do
+    case Sanbase.Repo.get(__MODULE__, id) do
+      nil -> {:error, "Record with id #{id} not found"}
+      record -> {:ok, record}
+    end
+  end
+
+  defp do_update_status(%__MODULE__{} = record, new_status) do
     record
     |> changeset(%{status: new_status})
     |> Sanbase.Repo.update()
-    |> then(fn result ->
-      if new_status == "approved" and record.status == "pending_approval",
-        do: maybe_apply_changes(result)
-    end)
   end
 
-  defp maybe_apply_changes({:ok, suggestion}) do
-    # Add
-    for ecosystem <- suggestion.added_ecosystems do
-      {:ok, _} = Sanbase.ProjectEcosystemMapping.create(suggestion.project_id, ecosystem)
+  defp apply_suggestions(suggestion) do
+    added =
+      for ecosystem <- suggestion.added_ecosystems do
+        Sanbase.ProjectEcosystemMapping.create(suggestion.project_id, ecosystem)
+      end
+
+    removed =
+      for ecosystem <- suggestion.removed_ecosystems do
+        Sanbase.ProjectEcosystemMapping.remove(suggestion.project_id, ecosystem)
+      end
+
+    case Enum.any?(added ++ removed, &match?({:error, _}, &1)) do
+      false -> {:ok, suggestion}
+      true -> {:error, "Failed to apply changes"}
     end
-
-    # Remove
-    for ecosystem <- suggestion.removed_ecosystems do
-      {:ok, _} = Sanbase.ProjectEcosystemMapping.remove(suggestion.project_id, ecosystem)
-    end
-
-    {:ok, suggestion}
-  end
-
-  defp maybe_apply_changes({:error, changeset}) do
-    {:error, changeset}
   end
 end

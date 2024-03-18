@@ -49,14 +49,35 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
               <UserSubmissionAdminComponents.update_status_button
                 name="status"
                 value="approved"
-                class="bg-green-600 hover:bg-green-800"
+                class={
+                  if row.status == "pending_approval",
+                    do: "bg-green-600 hover:bg-green-800",
+                    else: "bg-gray-300"
+                }
+                disabled={row.status != "pending_approval"}
                 display_text="Approve"
               />
               <UserSubmissionAdminComponents.update_status_button
                 name="status"
                 value="declined"
-                class="bg-red-600 hover:bg-red-800"
+                class={
+                  if row.status == "pending_approval",
+                    do: "bg-red-600 hover:bg-red-800",
+                    else: "bg-gray-300"
+                }
+                disabled={row.status != "pending_approval"}
                 display_text="Decline"
+              />
+              <UserSubmissionAdminComponents.update_status_button
+                name="status"
+                value="undo"
+                class={
+                  if row.status != "pending_approval",
+                    do: "bg-yellow-400 hover:bg-yellow-800",
+                    else: "bg-gray-300"
+                }
+                disabled={row.status == "pending_approval"}
+                display_text="Undo"
               />
             </.form>
           </:action>
@@ -64,6 +85,27 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
       </div>
     </div>
     """
+  end
+
+  @impl true
+  def handle_event("update_status", %{"status" => "undo", "record_id" => record_id}, socket) do
+    record_id = String.to_integer(record_id)
+
+    case Sanbase.Ecosystem.ChangeSuggestion.undo_suggestion(record_id) do
+      {:ok, record} ->
+        rows =
+          update_assigns_row(socket.assigns.rows, record_id, record.status)
+
+        socket =
+          socket
+          |> assign(:rows, rows)
+          |> put_flash(:info, "Successfully reverted the approved suggested changes!")
+
+        {:noreply, socket}
+
+      {:error, changeset} ->
+        {:noreply, add_changeset_error_flash(socket, changeset)}
+    end
   end
 
   @impl true
@@ -82,19 +124,27 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
         socket =
           socket
           |> assign(:rows, rows)
-          |> put_flash(:info, "Successfully accepted the suggested changes!")
+          |> put_flash(:info, "Successfully #{status} the suggested changes!")
 
         {:noreply, socket}
 
       {:error, changeset} ->
-        errors = Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)
-
-        socket =
-          socket
-          |> put_flash(:error, "Error accepting the suggested changes.\n Reason: #{errors}!")
-
-        {:noreply, socket}
+        {:noreply, add_changeset_error_flash(socket, changeset)}
     end
+  end
+
+  defp add_changeset_error_flash(socket, changeset_or_error) do
+    error_msg =
+      case changeset_or_error do
+        %Ecto.Changeset{} = changeset ->
+          Sanbase.Utils.ErrorHandling.changeset_errors_string(changeset)
+
+        error when is_binary(error) ->
+          error
+      end
+
+    socket
+    |> put_flash(:error, "Error accepting the suggested changes.\n Reason: #{error_msg}!")
   end
 
   defp update_assigns_row(rows, record_id, status) do

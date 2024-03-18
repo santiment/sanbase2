@@ -5400,5 +5400,24 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "USD Trading Volume For ETF Shares",
+    "name": "etf_volume_usd_5m",
+    "metric": "etf_trading_volume",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
   }
 ]

@@ -91,8 +91,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED metrics within 2 years and 30 days interval", context do
-      {from, to} = from_to(2 * 365 - 1, 32)
+    test "can access RESTRICTED metrics within 1 years and 30 days interval", context do
+      {from, to} = from_to(1 * 365 - 1, 32)
 
       for _ <- 1..5 do
         metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
@@ -475,6 +475,22 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
+  end
+
+  test "with Sanbase PRO plan and apikey", context do
+    user = insert(:user, email: "sanbase_pro@example.com")
+    insert(:subscription_pro_sanbase, user: user)
+    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+    apikey_conn = setup_apikey_auth(build_conn(), apikey)
+
+    {from, to} = from_to(300, 11)
+    metric = "mean_age"
+    slug = context.project.slug
+    selector = %{slug: slug}
+    query = metric_query(metric, selector, from, to)
+    result = execute_query(apikey_conn, query, "getMetric")
+    assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+    assert result != nil
   end
 
   # Private functions

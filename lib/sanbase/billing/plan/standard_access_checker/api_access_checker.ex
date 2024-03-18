@@ -12,9 +12,16 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
   alias Sanbase.Billing.Plan
 
   @free_plan_stats %{
-    historical_data_in_days: 2 * 365,
+    historical_data_in_days: 1 * 365,
     realtime_data_cut_off_in_days: 30
   }
+
+  @sanbase_pro_plan_stats Plan.upgrade_plan(@free_plan_stats,
+                            extends: %{
+                              realtime_data_cut_off_in_days: 10,
+                              historical_data_in_days: 5 * 365
+                            }
+                          )
 
   @basic_plan_stats Plan.upgrade_plan(@free_plan_stats,
                       extends: %{realtime_data_cut_off_in_days: 0}
@@ -38,7 +45,14 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
 
   @custom_plan_stats Plan.upgrade_plan(@business_max_plan_stats, extends: %{})
 
-  def historical_data_in_days(plan, _query) do
+  def historical_data_in_days(subscription_product, plan) do
+    case subscription_product do
+      "SANAPI" -> historical_data_in_days_api(plan)
+      "SANBASE" -> historical_data_in_days_sanbase(plan)
+    end
+  end
+
+  def historical_data_in_days_api(plan) do
     case plan do
       "FREE" -> @free_plan_stats[:historical_data_in_days]
       "BASIC" -> @basic_plan_stats[:historical_data_in_days]
@@ -49,7 +63,20 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
     end
   end
 
-  def realtime_data_cut_off_in_days(plan, _query) do
+  def historical_data_in_days_sanbase(plan) do
+    case plan do
+      "PRO" -> @free_plan_stats[:historical_data_in_days]
+    end
+  end
+
+  def realtime_data_cut_off_in_days(subscription_product, plan) do
+    case subscription_product do
+      "SANAPI" -> realtime_data_cut_off_in_days_api(plan)
+      "SANBASE" -> realtime_data_cut_off_in_days_sanbase(plan)
+    end
+  end
+
+  def realtime_data_cut_off_in_days_api(plan) do
     case plan do
       "FREE" -> @free_plan_stats[:realtime_data_cut_off_in_days]
       "BASIC" -> @basic_plan_stats[:realtime_data_cut_off_in_days]
@@ -57,6 +84,12 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
       "BUSINESS_PRO" -> @business_pro_plan_stats[:realtime_data_cut_off_in_days]
       "BUSINESS_MAX" -> @business_max_plan_stats[:realtime_data_cut_off_in_days]
       "CUSTOM" -> @custom_plan_stats[:realtime_data_cut_off_in_days]
+    end
+  end
+
+  def realtime_data_cut_off_in_days_sanbase(plan) do
+    case plan do
+      "PRO" -> @sanbase_pro_plan_stats[:realtime_data_cut_off_in_days]
     end
   end
 end

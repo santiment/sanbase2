@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     assert conn_context.auth == %{
              auth_method: :user_token,
              current_user: user,
-             subscription: Subscription.free_subscription(),
+             subscription: nil,
              plan: "FREE"
            }
 
@@ -184,7 +184,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
   end
 
   describe "product is set in context" do
-    test "when no authorization and Origin sanbase - product is SANBase" do
+    test "when no authorization and Origin sanbase - product is Sanbase" do
       conn =
         build_conn()
         |> get("/get_routed_conn")
@@ -197,19 +197,25 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product_id == Product.product_sanbase()
+      assert conn_context.requested_product_id == Product.product_sanbase()
+      assert conn_context.requested_product == "SANBASE"
+      assert conn_context.subscription_product_id == nil
+      assert conn_context.subscription_product == nil
     end
 
-    test "when no authorization and other Origin - product is SanAPI" do
+    test "when no authorization and other Origin - product is Sanapi" do
       conn =
         build_conn() |> get("/get_routed_conn") |> AuthPlug.call(%{}) |> ContextPlug.call(%{})
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product_id == Product.product_api()
+      assert conn_context.requested_product_id == Product.product_api()
+      assert conn_context.requested_product == "SANAPI"
+      assert conn_context.subscription_product_id == nil
+      assert conn_context.subscription_product == nil
     end
 
-    test "when JWT auth - product is SANBase" do
+    test "when JWT auth - product is Sanbase" do
       user = insert(:user)
 
       conn =
@@ -221,7 +227,29 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product_id == Product.product_sanbase()
+      assert conn_context.requested_product_id == Product.product_sanbase()
+      assert conn_context.requested_product == "SANBASE"
+      assert conn_context.subscription_product_id == nil
+      assert conn_context.subscription_product == nil
+    end
+
+    test "when JWT auth with API Business plan" do
+      user = insert(:user, email: "test@example.com")
+      insert(:subscription_business_max_monthly, user: user)
+
+      conn =
+        build_conn()
+        |> get("/get_routed_conn")
+        |> setup_jwt_auth(user)
+        |> AuthPlug.call(%{})
+        |> ContextPlug.call(%{})
+
+      conn_context = conn.private.absinthe.context
+
+      assert conn_context.requested_product_id == Product.product_sanbase()
+      assert conn_context.requested_product == "SANBASE"
+      assert conn_context.subscription_product_id == Product.product_api()
+      assert conn_context.subscription_product == "SANAPI"
     end
 
     test "when Apikey and User-Agent is from sheets - product is sanbase" do
@@ -241,10 +269,13 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product_id == Product.product_sanbase()
+      assert conn_context.requested_product_id == Product.product_sanbase()
+      assert conn_context.requested_product == "SANBASE"
+      assert conn_context.subscription_product_id == Product.product_sanbase()
+      assert conn_context.subscription_product == "SANBASE"
     end
 
-    test "when Apikey and other User-Agent - product is SanAPI" do
+    test "when Apikey and other User-Agent - product is Sanapi" do
       user = insert(:user)
       {:ok, apikey} = Apikey.generate_apikey(user)
 
@@ -257,7 +288,30 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product_id == Product.product_api()
+      assert conn_context.requested_product_id == Product.product_api()
+      assert conn_context.requested_product == "SANAPI"
+      assert conn_context.subscription_product_id == nil
+      assert conn_context.subscription_product == nil
+    end
+
+    test "when Apikey with Sanbase PRO plan" do
+      user = insert(:user)
+      insert(:subscription_pro_sanbase, user: user)
+      {:ok, apikey} = Apikey.generate_apikey(user)
+
+      conn =
+        build_conn()
+        |> get("/get_routed_conn")
+        |> setup_apikey_auth(apikey)
+        |> AuthPlug.call(%{})
+        |> ContextPlug.call(%{})
+
+      conn_context = conn.private.absinthe.context
+
+      assert conn_context.requested_product_id == Product.product_api()
+      assert conn_context.requested_product == "SANAPI"
+      assert conn_context.subscription_product_id == Product.product_sanbase()
+      assert conn_context.subscription_product == "SANBASE"
     end
   end
 end

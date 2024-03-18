@@ -34,12 +34,12 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   @business_max_plan_stats Plan.upgrade_plan(@business_pro_plan_stats, extends: %{})
   @custom_plan_stats Plan.upgrade_plan(@business_max_plan_stats, extends: %{})
 
-  def historical_data_in_days(plan, _query \\ nil) do
+  def historical_data_in_days(_subscription_product, plan) do
     plan_stats(plan)
     |> Map.get(:historical_data_in_days)
   end
 
-  def realtime_data_cut_off_in_days(plan, _query \\ nil) do
+  def realtime_data_cut_off_in_days(_subscription_product, plan) do
     plan_stats(plan)
     |> Map.get(:realtime_data_cut_off_in_days)
   end

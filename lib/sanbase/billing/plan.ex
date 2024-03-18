@@ -120,7 +120,7 @@ defmodule Sanbase.Billing.Plan do
   end
 
   def free_plan() do
-    %__MODULE__{name: "FREE"}
+    %__MODULE__{name: "FREE", product_id: 1}
   end
 
   @same_name_plans [

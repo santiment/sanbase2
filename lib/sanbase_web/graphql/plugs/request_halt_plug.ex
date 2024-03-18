@@ -84,7 +84,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
 
   def halt_api_call_limit_reached?(conn, %{
         rate_limiting_enabled: true,
-        product_code: "SANAPI",
+        requested_product: "SANAPI",
         auth: %{current_user: user, auth_method: auth_method}
       }) do
     case ApiCallLimit.get_quota(:user, user, auth_method) do
@@ -117,7 +117,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
         conn,
         %{
           rate_limiting_enabled: true,
-          product_code: "SANAPI",
+          requested_product: "SANAPI",
           remote_ip: remote_ip
         } = context
       ) do

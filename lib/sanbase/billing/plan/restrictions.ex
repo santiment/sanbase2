@@ -20,18 +20,18 @@ defmodule Sanbase.Billing.Plan.Restrictions do
         }
 
   @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
-  @spec get(query_or_argument, String.t(), String.t()) :: restriction()
-  def get({type, name} = query_or_argument, plan_name, product_code)
+  @spec get(query_or_argument, String.t(), String.t(), String.t()) :: restriction()
+  def get({type, name} = query_or_argument, requested_product, subscription_product, plan_name)
       when type in [:metric, :signal, :query] do
     type_str = to_string(type)
     name_str = construct_name(type, name)
 
-    case AccessChecker.plan_has_access?(plan_name, product_code, query_or_argument) do
+    case AccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name) do
       false ->
         no_access_map(type_str, name_str)
 
       true ->
-        case AccessChecker.is_restricted?(plan_name, product_code, query_or_argument) do
+        case AccessChecker.is_restricted?(query_or_argument) do
           false ->
             not_restricted_access_map(type_str, name_str)
 
@@ -40,7 +40,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
               type_str,
               name_str,
               plan_name,
-              product_code,
+              requested_product,
               query_or_argument
             )
         end
@@ -61,7 +61,9 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     # elements are {:metric, <string>} or {:query, <atom>} or {:signal, <string>}
     result =
       (queries ++ metrics ++ signals)
-      |> Enum.map(fn query_or_argument -> get(query_or_argument, plan_name, product_code) end)
+      |> Enum.map(fn query_or_argument ->
+        get(query_or_argument, product_code, product_code, plan_name)
+      end)
 
     (get_extra_queries(plan_name, product_code) ++ result)
     |> Enum.uniq_by(& &1.name)
@@ -114,13 +116,23 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     now = Timex.now()
 
     restricted_from =
-      case AccessChecker.historical_data_in_days(plan_name, product_code, query_or_metric) do
+      case AccessChecker.historical_data_in_days(
+             query_or_metric,
+             product_code,
+             product_code,
+             plan_name
+           ) do
         nil -> nil
         days -> Timex.shift(now, days: -days)
       end
 
     restricted_to =
-      case AccessChecker.realtime_data_cut_off_in_days(plan_name, product_code, query_or_metric) do
+      case AccessChecker.realtime_data_cut_off_in_days(
+             query_or_metric,
+             product_code,
+             product_code,
+             plan_name
+           ) do
         nil -> nil
         0 -> nil
         days -> Timex.shift(now, days: -days)

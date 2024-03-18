@@ -158,18 +158,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   end
 
   defp resolution_to_signal_restrictions(resolution) do
-    %{context: %{product_id: product_id, auth: %{plan: plan_name}}} = resolution
+    %{context: %{requested_product: requested_product, auth: %{plan: plan_name}}} = resolution
     %{source: %{signal: signal}} = resolution
-    product_code = Sanbase.Billing.Product.code_by_id(product_id)
 
-    Restrictions.get({:signal, signal}, plan_name, product_code)
+    Restrictions.get({:signal, signal}, requested_product, requested_product, plan_name)
   end
 
   defp resolution_to_all_signals_restrictions(resolution) do
-    %{context: %{product_id: product_id, auth: %{plan: plan_name}}} = resolution
-    product_code = Sanbase.Billing.Product.code_by_id(product_id)
+    %{context: %{requested_product: requested_product, auth: %{plan: plan_name}}} = resolution
 
-    Restrictions.get_all(plan_name, product_code)
+    Restrictions.get_all(plan_name, requested_product)
     |> Enum.filter(&(&1.type == "signal"))
   end
 end

@@ -90,7 +90,7 @@ defmodule Sanbase.Comments.NotificationTest do
                  avatar_url: @default_avatar,
                  entity: "insight",
                  entity_id: insight2.id,
-                 link: "http://localhost:4000/read/#{insight2.id}",
+                 link: "https://app-stage.santiment.net/read/#{insight2.id}",
                  rest: false,
                  title: insight2.title,
                  usernames: "@#{user5.username}",

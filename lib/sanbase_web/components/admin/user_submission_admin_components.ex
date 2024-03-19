@@ -41,13 +41,33 @@ defmodule SanbaseWeb.Admin.UserSubmissionAdminComponents do
     """
   end
 
+  slot(:inner_block, required: true)
+
+  def forms_list_container(assigns) do
+    ~H"""
+    <div class="flex flex-col border border-gray-100 mx-auto max-w-3xl p-6 rounded-xl shadow-sm divide-y divide-solid">
+      <%= render_slot(@inner_block) %>
+    </div>
+    """
+  end
+
+  attr(:title, :string, required: true)
+
+  def forms_list_title(assigns) do
+    ~H"""
+    <h1 class="py-6 text-3xl font-extrabold leading-none tracking-tight text-gray-900">
+      <%= @title %>
+    </h1>
+    """
+  end
+
   attr(:title, :string, required: true)
   attr(:description, :string, required: true)
   attr(:link, :string, required: true)
 
-  def form_link(assigns) do
+  def form_info(assigns) do
     ~H"""
-    <div class="flex flex-col md:flex-row not-last:border-b border-slate-300 not-last:mb-8 pb-8 items-center justify-between">
+    <div class="flex flex-col md:flex-row py-8 items-center justify-between">
       <!-- Title and description -->
       <div class="w-3/4">
         <span class="text-2xl mb-6"><%= @title %></span>

@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.FormsLive do
   use SanbaseWeb, :live_view
 
-  alias SanbaseWeb.UserSubmissionAdminComponents
+  alias SanbaseWeb.Admin.UserSubmissionAdminComponents
 
   def mount(_params, _session, socket) do
     {:ok,
@@ -14,17 +14,15 @@ defmodule SanbaseWeb.FormsLive do
 
   def render(assigns) do
     ~H"""
-    <div class="border border-gray-100 mx-auto max-w-3xl p-6 rounded-xl shadow-sm">
-      <h1 class="mb-6 text-3xl font-extrabold leading-none tracking-tight text-gray-900">
-        Forms
-      </h1>
-      <UserSubmissionAdminComponents.form_link
+    <UserSubmissionAdminComponents.forms_list_container>
+      <UserSubmissionAdminComponents.forms_list_title title="Forms" />
+      <UserSubmissionAdminComponents.form_info
         :for={form_info <- @forms_info}
         title={form_info.title}
         description={form_info.description}
         link={form_info.link}
       />
-    </div>
+    </UserSubmissionAdminComponents.forms_list_container>
     """
   end
 

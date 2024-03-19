@@ -100,7 +100,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     %{
       context: %{
         requested_product: requested_product,
-        subcription_product: subcription_product,
+        subscription_product: subcription_product,
         auth: %{plan: plan_name}
       }
     } = resolution

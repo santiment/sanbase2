@@ -8,9 +8,6 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
 
   # The default endpoint for testing
   @endpoint SanbaseWeb.Endpoint
-  @custom_access_metrics Sanbase.Billing.Plan.MVRVAccess.get()
-                         |> Enum.filter(&match?({{:metric, _}, _}, &1))
-                         |> Enum.map(fn {{_, name}, _} -> name end)
 
   def v2_restricted_metric_for_plan(position, product, plan_name) do
     fully_restricted_metrics_for_plan(product, plan_name)
@@ -21,7 +18,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   def fully_restricted_metrics_for_plan(product, plan_name) do
     fully_restricted = Metric.restricted_metrics() -- restricted_metrics_with_free_realtime()
 
-    (fully_restricted -- @custom_access_metrics)
+    fully_restricted
     |> Enum.filter(&AccessChecker.plan_has_access?(plan_name, product, {:metric, &1}))
   end
 

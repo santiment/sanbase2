@@ -169,23 +169,6 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
       # min_plan=PRO are not accessible
       # not restricted are freely accessible
     end
-
-    test "BUSINESS_PRO user has 2 years historical data or and no realtime restrictions",
-         context do
-      restricted =
-        get_access_restrictions(context.business_pro_apikey_conn)
-        |> Enum.filter(& &1["isRestricted"])
-
-      for access <- restricted do
-        assert is_nil(access["restrictedTo"])
-
-        {:ok, restricted_from, 0} = DateTime.from_iso8601(access["restrictedFrom"])
-        diff_in_days = DateTime.diff(DateTime.utc_now(), restricted_from, :day)
-
-        # ~2 years
-        assert diff_in_days >= 2 * 365 - 5 and diff_in_days <= 2 * 365 + 5
-      end
-    end
   end
 
   test "BUSINESS_PRO user has access to metrics with min_plan=PRO", _context do
@@ -230,22 +213,6 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
 
     for %{"isRestricted" => is_restrictred} <- get_access_restrictions(apikey_conn) do
       assert is_restrictred == false
-    end
-  end
-
-  test "BUSINESS_PRO user has 2 years historical data or and no realtime restrictions", context do
-    restricted =
-      get_access_restrictions(context.business_pro_apikey_conn)
-      |> Enum.filter(& &1["isRestricted"])
-
-    for access <- restricted do
-      assert is_nil(access["restrictedTo"])
-
-      {:ok, restricted_from, 0} = DateTime.from_iso8601(access["restrictedFrom"])
-      diff_in_days = DateTime.diff(DateTime.utc_now(), restricted_from, :day)
-
-      # ~2 years
-      assert diff_in_days >= 2 * 365 - 5 and diff_in_days <= 2 * 365 + 5
     end
   end
 

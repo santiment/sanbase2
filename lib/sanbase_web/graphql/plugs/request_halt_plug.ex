@@ -56,7 +56,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
     end
   end
 
-  def halt_sansheets_request?(conn, %{auth: %{subscription: %{plan: %{name: plan_name}}} = auth}) do
+  def halt_sansheets_request?(conn, %{auth: %{plan: plan_name} = auth}) do
     case is_sansheets_request(conn) and plan_name == "FREE" do
       true ->
         user_id = get_in(auth, [:current_user, Access.key(:id)])

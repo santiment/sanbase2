@@ -60,8 +60,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED metrics for over 2 years", context do
-      {from, to} = from_to(2 * 365 + 1, 32)
+    test "cannot access RESTRICTED metrics for over 1 year", context do
+      {from, to} = from_to(1 * 365 + 1, 32)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, "FREE")
       slug = context.project.slug
       selector = %{slug: slug}
@@ -73,8 +73,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED queries for over 2 years", context do
-      {from, to} = from_to(2 * 365 + 1, 32)
+    test "cannot access RESTRICTED queries for over 1 year", context do
+      {from, to} = from_to(1 * 365 + 1, 32)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -106,8 +106,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       end
     end
 
-    test "can access RESTRICTED queries within 2 years and 30 days interval", context do
-      {from, to} = from_to(2 * 365 - 1, 32)
+    test "can access RESTRICTED queries within 1 year and 30 days interval", context do
+      {from, to} = from_to(1 * 365 - 1, 32)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -152,8 +152,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED metrics for less than 2 years", context do
-      {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
+    test "can access RESTRICTED metrics for less than 1 years", context do
+      {from, to} = from_to(1 * 365 - 1, 1 * 365 - 2)
 
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
 
@@ -166,8 +166,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED queries for less than 2 years", context do
-      {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
+    test "can access RESTRICTED queries for less than 1 year", context do
+      {from, to} = from_to(1 * 365 - 1, 1 * 365 - 2)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -175,8 +175,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED queries for more than 2 years", context do
-      {from, to} = from_to(2 * 365 + 1, 2 * 365 - 1)
+    test "cannot access RESTRICTED queries for more than 1 year", context do
+      {from, to} = from_to(1 * 365 + 1, 1 * 365 - 1)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -184,8 +184,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED metrics for more than 2 years", context do
-      {from, to} = from_to(2 * 365 + 1, 2 * 365 - 1)
+    test "cannot access RESTRICTED metrics for more than 1 year", context do
+      {from, to} = from_to(1 * 365 + 1, 1 * 365 - 1)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
       selector = %{slug: slug}

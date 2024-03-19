@@ -47,6 +47,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
 
   def historical_data_in_days(subscription_product, plan) do
     case subscription_product do
+      nil -> historical_data_in_days_api(plan)
       "SANAPI" -> historical_data_in_days_api(plan)
       "SANBASE" -> historical_data_in_days_sanbase(plan)
     end
@@ -71,6 +72,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
 
   def realtime_data_cut_off_in_days(subscription_product, plan) do
     case subscription_product do
+      nil -> realtime_data_cut_off_in_days_api(plan)
       "SANAPI" -> realtime_data_cut_off_in_days_api(plan)
       "SANBASE" -> realtime_data_cut_off_in_days_sanbase(plan)
     end

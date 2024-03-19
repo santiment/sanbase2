@@ -75,9 +75,11 @@ defmodule SanbaseWeb.Admin.UserSubmissionAdminComponents do
       </div>
       <!-- Link to form -->
       <div>
-        <button class="bg-blue-600 px-6 hover:bg-blue-900 rounded-xl text-white py-2">
-          <.link href={@link} target="_blank"> Open </.link>
-        </button>
+        <.link href={@link} target="_blank">
+          <button class="bg-blue-600 px-6 hover:bg-blue-900 rounded-xl text-white py-2">
+            Open
+          </button>
+        </.link>
       </div>
     </div>
     """

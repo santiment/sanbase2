@@ -41,6 +41,28 @@ defmodule SanbaseWeb.Admin.UserSubmissionAdminComponents do
     """
   end
 
+  attr(:title, :string, required: true)
+  attr(:description, :string, required: true)
+  attr(:link, :string, required: true)
+
+  def form_link(assigns) do
+    ~H"""
+    <div class="flex flex-col md:flex-row not-last:border-b border-slate-300 not-last:mb-8 pb-8 items-center justify-between">
+      <!-- Title and description -->
+      <div class="w-3/4">
+        <span class="text-2xl mb-6"><%= @title %></span>
+        <p class="text-sm text-gray-500"><%= @description %></p>
+      </div>
+      <!-- Link to form -->
+      <div>
+        <button class="bg-blue-600 px-6 hover:bg-blue-900 rounded-xl text-white py-2">
+          <.link href={@link} target="_blank"> Open </.link>
+        </button>
+      </div>
+    </div>
+    """
+  end
+
   defp status_to_color("approved"), do: "text-green-600"
   defp status_to_color("declined"), do: "text-red-600"
   defp status_to_color("pending_approval"), do: "text-yellow-600"

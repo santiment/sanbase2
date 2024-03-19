@@ -87,9 +87,9 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "cannot access RESTRICTED queries for over 2 years", context do
       {from, to} = from_to(2 * 365 + 1, 31)
       slug = context.project.slug
-      query = network_growth_query(slug, from, to)
+      query = gas_used_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "networkGrowth")
+      result = execute_query(context.conn, query, "gasUsed")
 
       assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
       refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
@@ -128,9 +128,9 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "cannot access RESTRICTED queries for the past 30 days", context do
       {from, to} = from_to(31, 29)
       slug = context.project.slug
-      query = network_growth_query(slug, from, to)
+      query = gas_used_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "networkGrowth")
+      result = execute_query(context.conn, query, "gasUsed")
 
       refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
@@ -140,9 +140,9 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
          context do
       {from, to} = from_to(20, 10)
       slug = context.project.slug
-      query = network_growth_query(slug, from, to)
+      query = gas_used_query(slug, from, to)
 
-      result = execute_query_with_error(context.conn, query, "networkGrowth")
+      result = execute_query_with_error(context.conn, query, "gasUsed")
 
       refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
@@ -151,9 +151,9 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access RESTRICTED queries within 2 years and 30 day ago interval", context do
       {from, to} = from_to(2 * 365 - 2, 32)
       slug = context.project.slug
-      query = network_growth_query(slug, from, to)
+      query = gas_used_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "networkGrowth")
+      result = execute_query(context.conn, query, "gasUsed")
 
       assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
@@ -228,24 +228,12 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       assert result != nil
     end
 
-    # test "can access RESTRICTED signals for all time", context do
-    #   {from, to} = from_to(4000, 10)
-    #   slug = context.project.slug
-    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, "PRO")
-    #   query = signal_query(signal, slug, from, to)
-
-    #   result = execute_query(context.conn, query, "getSignal")
-
-    #   assert_called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
-    #   assert result != nil
-    # end
-
     test "can access RESTRICTED queries for all time", context do
       {from, to} = from_to(4000, 10)
       slug = context.project.slug
-      query = network_growth_query(slug, from, to)
+      query = gas_used_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "networkGrowth")
+      result = execute_query(context.conn, query, "gasUsed")
 
       assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
@@ -254,9 +242,9 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access RESTRICTED metrics realtime", context do
       {from, to} = from_to(10, 0)
       slug = context.project.slug
-      query = network_growth_query(slug, from, to)
+      query = gas_used_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "networkGrowth")
+      result = execute_query(context.conn, query, "gasUsed")
 
       assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
@@ -265,9 +253,9 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access RESTRICTED queries realtime", context do
       {from, to} = from_to(10, 0)
       slug = context.project.slug
-      query = network_growth_query(slug, from, to)
+      query = gas_used_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "networkGrowth")
+      result = execute_query(context.conn, query, "gasUsed")
 
       assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
@@ -283,9 +271,9 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access RESTRICTED metrics realtime", context do
       {from, to} = from_to(10, 0)
       slug = context.project.slug
-      query = network_growth_query(slug, from, to)
+      query = gas_used_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "networkGrowth")
+      result = execute_query(context.conn, query, "gasUsed")
 
       assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
@@ -577,12 +565,12 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     """
   end
 
-  defp network_growth_query(slug, from, to) do
+  defp gas_used_query(slug, from, to) do
     """
       {
-        networkGrowth(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "1d"){
+        gasUsed(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "1d"){
           datetime
-          newAddresses
+          gasUsed
         }
       }
     """

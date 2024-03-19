@@ -170,10 +170,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
     end
   end
 
-  def available_repos(_root, _args, _resolution) do
-    {:ok, Project.List.slugs_with_github_organization()}
-  end
-
   # Private functions
   defp get_dev_activity_many_slugs(slugs, args, root, resolution) do
     result =

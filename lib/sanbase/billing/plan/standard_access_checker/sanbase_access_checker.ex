@@ -30,6 +30,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   }
 
   @pro_plus_plan_stats Plan.upgrade_plan(@pro_plan_stats, extends: %{alerts: %{limit: 1000}})
+  @sanbase_max_plan_stats Plan.upgrade_plan(@pro_plus_plan_stats, extends: %{})
   @business_pro_plan_stats Plan.upgrade_plan(@pro_plus_plan_stats, extends: %{})
   @business_max_plan_stats Plan.upgrade_plan(@business_pro_plan_stats, extends: %{})
   @custom_plan_stats Plan.upgrade_plan(@business_max_plan_stats, extends: %{})
@@ -64,6 +65,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
       "BASIC" -> @basic_plan_stats
       "PRO" -> @pro_plan_stats
       "PRO_PLUS" -> @pro_plus_plan_stats
+      "MAX" -> @sanbase_max_plan_stats
       "BUSINESS_PRO" -> @business_pro_plan_stats
       "BUSINESS_MAX" -> @business_max_plan_stats
       "CUSTOM" -> @custom_plan_stats

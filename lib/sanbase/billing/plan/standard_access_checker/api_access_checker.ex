@@ -16,13 +16,16 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
     realtime_data_cut_off_in_days: 30
   }
 
-  @sanbase_pro_plan_stats Plan.upgrade_plan(@free_plan_stats,
+  # Sanbase plans access to API product
+  @sanbase_pro_plan_stats @free_plan_stats
+  @sanbase_max_plan_stats Plan.upgrade_plan(@sanbase_pro_plan_stats,
                             extends: %{
-                              realtime_data_cut_off_in_days: 10,
-                              historical_data_in_days: 5 * 365
+                              historical_data_in_days: 2 * 365,
+                              realtime_data_cut_off_in_days: 0
                             }
                           )
 
+  # API plans access to API product
   @basic_plan_stats Plan.upgrade_plan(@free_plan_stats,
                       extends: %{realtime_data_cut_off_in_days: 0}
                     )
@@ -36,7 +39,10 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
                   )
 
   @business_pro_plan_stats Plan.upgrade_plan(@free_plan_stats,
-                             extends: %{realtime_data_cut_off_in_days: 0}
+                             extends: %{
+                               historical_data_in_days: 2 * 365,
+                               realtime_data_cut_off_in_days: 0
+                             }
                            )
   # no limit
   @business_max_plan_stats Plan.upgrade_plan(@business_pro_plan_stats,
@@ -66,7 +72,9 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
 
   def historical_data_in_days_sanbase(plan) do
     case plan do
+      "BASIC" -> @free_plan_stats[:historical_data_in_days]
       "PRO" -> @free_plan_stats[:historical_data_in_days]
+      "MAX" -> @sanbase_max_plan_stats[:historical_data_in_days]
     end
   end
 
@@ -91,7 +99,9 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
 
   def realtime_data_cut_off_in_days_sanbase(plan) do
     case plan do
+      "BASIC" -> @free_plan_stats[:realtime_data_cut_off_in_days]
       "PRO" -> @sanbase_pro_plan_stats[:realtime_data_cut_off_in_days]
+      "MAX" -> @sanbase_max_plan_stats[:realtime_data_cut_off_in_days]
     end
   end
 end

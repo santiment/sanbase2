@@ -477,20 +477,182 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
   end
 
-  test "with Sanbase PRO plan and apikey", context do
-    user = insert(:user, email: "sanbase_pro@example.com")
-    insert(:subscription_pro_sanbase, user: user)
+  defp setup_subscription(product_plan) do
+    user =
+      case product_plan do
+        "SANBASE_PRO" ->
+          user = insert(:user, email: "sanbase_pro@example.com")
+          insert(:subscription_pro_sanbase, user: user)
+          user
+
+        "SANBASE_MAX" ->
+          user = insert(:user, email: "sanbase_max@example.com")
+          insert(:subscription_max_sanbase, user: user)
+          user
+
+        "BUSINESS_PRO" ->
+          user = insert(:user, email: "business_pro@example.com")
+          insert(:subscription_business_pro_monthly, user: user)
+          user
+
+        "BUSINESS_MAX" ->
+          user = insert(:user, email: "business_max@example.com")
+          insert(:subscription_business_max_monthly, user: user)
+          user
+
+        "FREE" ->
+          insert(:user, email: "free@example.com")
+      end
+
     {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
     apikey_conn = setup_apikey_auth(build_conn(), apikey)
 
-    {from, to} = from_to(300, 11)
-    metric = "mean_age"
-    slug = context.project.slug
-    selector = %{slug: slug}
-    query = metric_query(metric, selector, from, to)
-    result = execute_query(apikey_conn, query, "getMetric")
-    assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
-    assert result != nil
+    %{user: user, apikey: apikey, apikey_conn: apikey_conn}
+  end
+
+  # V2 plans are the plans that remain and user can subscribe to - FREE, SANBASE_PRO, SANBASE_MAX, BUSINESS_PRO, BUSINESS_MAX
+  # V1 plans are the plans that are deprecated and user can't subscribe to but still exist
+  describe "API access V2 plans" do
+    test "FREE has 1 year of historical data and 30 days realtime cutoff API access", context do
+      data = setup_subscription("FREE")
+      {from, to} = from_to(360, 31)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "FREE plan cannot access more than 365 days historical data", context do
+      data = setup_subscription("FREE")
+      {from, to} = from_to(366, 31)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "FREE plan cannot access data more recent than 30 days", context do
+      data = setup_subscription("FREE")
+      {from, to} = from_to(364, 29)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Sanbase PRO has 1 years of historical data and 30 days realtime cutoff API access",
+         context do
+      data = setup_subscription("SANBASE_PRO")
+      {from, to} = from_to(360, 31)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Sanbase PRO plan cannot access more than 365 days historical data", context do
+      data = setup_subscription("SANBASE_PRO")
+      {from, to} = from_to(366, 31)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Sanbase PRO plan cannot access data more recent than 30 days", context do
+      data = setup_subscription("SANBASE_PRO")
+      {from, to} = from_to(364, 29)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Sanbase MAX has 2 years of historical data and no realtime cutoff API access",
+         context do
+      data = setup_subscription("SANBASE_MAX")
+      {from, to} = from_to(2 * 360, 1)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Sanbase MAX plan cannot access more than 2 years historical data", context do
+      data = setup_subscription("SANBASE_MAX")
+      {from, to} = from_to(2 * 365 + 1, 1)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Business PRO has 2 years of historical data and no realtime cutoff API access",
+         context do
+      data = setup_subscription("BUSINESS_PRO")
+      {from, to} = from_to(2 * 360, 1)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Business PRO plan cannot access more than 2 years historical data", context do
+      data = setup_subscription("BUSINESS_PRO")
+      {from, to} = from_to(2 * 365 + 1, 1)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Business MAX has not historica or realtime restrictions API access", context do
+      data = setup_subscription("BUSINESS_MAX")
+      {from, to} = from_to(5 * 360, 1)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
   end
 
   # Private functions

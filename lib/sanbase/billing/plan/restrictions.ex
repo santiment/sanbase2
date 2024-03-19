@@ -41,6 +41,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
               name_str,
               plan_name,
               requested_product,
+              subscription_product,
               query_or_argument
             )
         end
@@ -112,14 +113,21 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     |> Map.merge(additional_data)
   end
 
-  defp maybe_restricted_access_map(type_str, name_str, plan_name, product_code, query_or_metric) do
+  defp maybe_restricted_access_map(
+         type_str,
+         name_str,
+         plan_name,
+         requested_product,
+         subscription_product,
+         query_or_metric
+       ) do
     now = Timex.now()
 
     restricted_from =
       case AccessChecker.historical_data_in_days(
              query_or_metric,
-             product_code,
-             product_code,
+             requested_product,
+             subscription_product,
              plan_name
            ) do
         nil -> nil
@@ -129,8 +137,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     restricted_to =
       case AccessChecker.realtime_data_cut_off_in_days(
              query_or_metric,
-             product_code,
-             product_code,
+             requested_product,
+             subscription_product,
              plan_name
            ) do
         nil -> nil

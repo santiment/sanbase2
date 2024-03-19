@@ -39,36 +39,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   def create_trigger(_root, args, %{
         context: %{auth: %{current_user: current_user} = auth}
       }) do
-    # Can be "FREE", "PRO" or "PRO_PLUS. If we reach here then the
-    # authentication has been done via the JWT token, using the
-    # JWTAuth middleware, so the plan is a sanbase plan
-    sanbase_plan = auth[:plan]
+    plan_name = auth[:plan]
 
-    case user_can_create_trigger?(current_user, sanbase_plan) do
+    case user_can_create_trigger?(current_user, plan_name) do
       true -> do_create_trigger(current_user, args)
       {:error, error} -> {:error, error}
     end
   end
 
-  defp user_can_create_trigger?(user, sanbase_plan) do
+  defp user_can_create_trigger?(user, plan_name) do
     triggers_count = UserTrigger.triggers_count_for(user.id)
 
-    cond do
-      sanbase_plan == "FREE" and triggers_count >= SanbaseAccessChecker.alerts_limit("FREE") ->
-        {:error,
-         "Sanbase FREE plan has a limit of #{SanbaseAccessChecker.alerts_limit("FREE")} alerts."}
-
-      sanbase_plan == "PRO" and triggers_count >= SanbaseAccessChecker.alerts_limit("PRO") ->
-        {:error,
-         "Sanbase PRO plan has a limit of #{SanbaseAccessChecker.alerts_limit("PRO")} alerts."}
-
-      sanbase_plan == "PRO_PLUS" and
-          triggers_count >= SanbaseAccessChecker.alerts_limit("PRO_PLUS") ->
-        {:error,
-         "Sanbase PRO+ plan has a limit of #{triggers_count >= SanbaseAccessChecker.alerts_limit("PRO_PLUS")} alerts."}
-
+    case triggers_count < SanbaseAccessChecker.alerts_limit(plan_name) do
       true ->
         true
+
+      false ->
+        {:error,
+         "You have reached the limit of alerts for your plan (#{SanbaseAccessChecker.alerts_limit(plan_name)}).Please upgrade your plan to create more alerts."}
     end
   end
 

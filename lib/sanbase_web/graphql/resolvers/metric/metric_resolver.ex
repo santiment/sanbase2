@@ -100,17 +100,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     %{
       context: %{
         requested_product: requested_product,
-        product_id: product_id,
+        subcription_product: subcription_product,
         auth: %{plan: plan_name}
       }
     } = resolution
 
-    product_code = Sanbase.Billing.Product.code_by_id(product_id)
-
     case Metric.metadata(metric) do
       {:ok, metadata} ->
         access_restrictions =
-          Restrictions.get({:metric, metric}, requested_product, requested_product, plan_name)
+          Restrictions.get({:metric, metric}, requested_product, subcription_product, plan_name)
 
         {:ok, Map.merge(access_restrictions, metadata)}
 

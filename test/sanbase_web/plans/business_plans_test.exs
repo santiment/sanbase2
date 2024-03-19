@@ -257,4 +257,12 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
     |> json_response(200)
     |> get_in(["data", "getAccessRestrictions"])
   end
+
+  defp metric_resp() do
+    {:ok,
+     [
+       %{value: 10.0, datetime: ~U[2019-01-01 00:00:00Z]},
+       %{value: 20.0, datetime: ~U[2019-01-02 00:00:00Z]}
+     ]}
+  end
 end

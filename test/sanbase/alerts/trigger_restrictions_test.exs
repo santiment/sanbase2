@@ -62,7 +62,9 @@ defmodule Sanbase.Alert.TriggerRestrictionsTest do
     end
 
     error_msg = create_trigger(conn) |> get_in(["errors", Access.at(0), "message"])
-    assert error_msg =~ "Sanbase FREE plan has a limit of 3 alerts"
+
+    assert error_msg =~
+             "You have reached the limit of alerts for your plan (3).Please upgrade your plan to create more alerts."
   end
 
   test "sanbase pro user has a limit of 20 alerts" do
@@ -77,7 +79,9 @@ defmodule Sanbase.Alert.TriggerRestrictionsTest do
     end
 
     error_msg = create_trigger(conn) |> get_in(["errors", Access.at(0), "message"])
-    assert error_msg =~ "Sanbase PRO plan has a limit of 20 alerts"
+
+    assert error_msg =~
+             "You have reached the limit of alerts for your plan (20).Please upgrade your plan to create more alerts."
   end
 
   test "sanbase pro+ user has no limits" do

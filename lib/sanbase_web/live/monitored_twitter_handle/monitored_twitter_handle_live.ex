@@ -27,13 +27,13 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
             <.form for={@form} phx-submit="update_status">
               <.input type="text" class="" field={@form[:comment]} placeholder="Comment..." />
               <input type="hidden" name="record_id" value={row.id} />
-              <UserSubmissionAdminComponents.update_status_button
+              <UserSubmissionAdminComponents.button
                 name="status"
                 value="approved"
                 class="bg-green-600 hover:bg-green-800"
                 display_text="Approve"
               />
-              <UserSubmissionAdminComponents.update_status_button
+              <UserSubmissionAdminComponents.button
                 name="status"
                 value="declined"
                 class="bg-red-600 hover:bg-red-800"

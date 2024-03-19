@@ -26,7 +26,8 @@ defmodule SanbaseWeb.GenericAdminController do
       {"Reports", ~p"/admin2/reports"},
       {"Custom Plans", ~p"/admin2/custom_plans"},
       {"Monitored Twitter Handles", ~p"/admin2/monitored_twitter_handle_live"},
-      {"Ecosystem Project Labels Suggestions", ~p"/admin2/add_ecosystems_labels_admin_live"}
+      {"Ecosystem Project Labels Suggestions", ~p"/admin2/add_ecosystems_labels_admin_live"},
+      {"User Forms", ~p"/admin2/forms"}
     ]
   end
 

@@ -63,6 +63,7 @@ defmodule SanbaseWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
+    live("/forms", FormsLive)
     live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
     live("/add_ecosystems_labels_live", AddEcosystemLabelsLive)
     live("/add_ecosystems_labels_admin_live", ProjectEcosystemLabelingAdminLive)

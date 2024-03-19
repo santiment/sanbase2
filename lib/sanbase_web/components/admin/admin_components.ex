@@ -99,43 +99,55 @@ defmodule SanbaseWeb.AdminComponents do
   attr(:data, :map, required: false, default: %{})
 
   def form_input(assigns) do
+    # If this is a form for creating a new entity, value is empty
+    # Otherwise it is taken from the changeset or data fields
+    value =
+      if assigns.type == "new" do
+        ""
+      else
+        case Map.get(assigns.field_type_map, assigns.field) do
+          map_or_list when map_or_list in [:map, :list] ->
+            Map.get(assigns.changeset.data, assigns.field) |> Jason.encode!()
+
+          _ ->
+            Map.get(assigns.changeset.changes, assigns.field) ||
+              Map.get(assigns.changeset.data, assigns.field) ||
+              Map.get(assigns.data, assigns.field)
+        end
+      end
+
+    # type of the <input> html tag
+    type =
+      case Map.get(assigns.field_type_map, assigns.field) do
+        :string -> "text"
+        :text -> "textarea"
+        :integer -> "number"
+        :float -> "number"
+        :boolean -> "checkbox"
+        :date -> "text"
+        :datetime -> "text"
+        :time -> "text"
+        :map -> "text"
+        :list -> "text"
+        :assoc -> "text"
+        :binary -> "text"
+        :any -> "text"
+        _ -> "text"
+      end
+
+    assigns =
+      assign(assigns,
+        value: value,
+        type: type
+      )
+
     ~H"""
     <.input
       name={@resource <> "[" <> to_string(@field) <> "]"}
       id={@resource <> "_" <> to_string(@field)}
       label={humanize(@field)}
-      type={
-        case Map.get(@field_type_map, @field) do
-          :string -> "text"
-          :text -> "textarea"
-          :integer -> "number"
-          :float -> "number"
-          :boolean -> "checkbox"
-          :date -> "text"
-          :datetime -> "text"
-          :time -> "text"
-          :map -> "text"
-          :list -> "text"
-          :assoc -> "text"
-          :binary -> "text"
-          :any -> "text"
-          _ -> "text"
-        end
-      }
-      value={
-        if @type == "new" do
-          ""
-        else
-          case Map.get(@field_type_map, @field) do
-            map_or_list when map_or_list in [:map, :list] ->
-              Map.get(@changeset.data, @field) |> Jason.encode!()
-
-            _ ->
-              Map.get(@changeset.changes, @field) || Map.get(@changeset.data, @field) ||
-                Map.get(@data, @field)
-          end
-        end
-      }
+      type={@type}
+      value={@value}
     />
     """
   end

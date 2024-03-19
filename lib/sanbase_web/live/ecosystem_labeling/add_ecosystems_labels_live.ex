@@ -12,6 +12,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
     {:ok,
      socket
      |> assign(
+       page_title: "Suggest asset ecosystems changes",
        projects: projects,
        selected_project: nil,
        stored_project_ecosystems: [],
@@ -51,7 +52,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
   def render(assigns) do
     ~H"""
     <div class="border border-gray-100 mx-auto max-w-3xl p-6 rounded-xl shadow-sm min-h-96">
-      <h1 class="text-2xl mb-6">Update the Ecosystem Labels of a project</h1>
+      <h1 class="text-2xl mb-6">Update the ecosystem labels of an asset</h1>
 
       <.select_project search_result={@search_result} />
 
@@ -62,7 +63,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
           removed_project_ecosystems={@removed_project_ecosystems}
         />
 
-        <h2 class="text-lg mt-10">Edit the ecosystems of the project</h2>
+        <h2 class="text-lg mt-10">Edit the ecosystems of the asset</h2>
         <p class="text-sm text-gray-600">
           The currently stored ecosystems are preselected. Deselect ecosystems to suggest removing them and select new ecosystems to suggest adding them.
         </p>
@@ -223,7 +224,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
         >
           <ul class="relative z-20 justify-between min-w-96 text-sm max-h-96 overflow-y-scroll scroll-bar-custom bg-white border border-gray-200 rounded-md">
             <li class="flex flex-row justify-between text-gray-600 sticky top-0 bg-white px-3 py-2 rounded-md">
-              <span>Project</span>
+              <span>Asset</span>
               <span>Ecosystems</span>
             </li>
             <li :for={project <- @search_result} class="mx-2 last:pb-4">

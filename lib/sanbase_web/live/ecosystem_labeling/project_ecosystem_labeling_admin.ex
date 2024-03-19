@@ -46,7 +46,7 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
           <:action :let={row}>
             <.form for={@form} phx-submit="update_status">
               <input type="hidden" name="record_id" value={row.id} />
-              <UserSubmissionAdminComponents.update_status_button
+              <UserSubmissionAdminComponents.button
                 name="status"
                 value="approved"
                 class={
@@ -57,7 +57,7 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
                 disabled={row.status != "pending_approval"}
                 display_text="Approve"
               />
-              <UserSubmissionAdminComponents.update_status_button
+              <UserSubmissionAdminComponents.button
                 name="status"
                 value="declined"
                 class={
@@ -68,7 +68,7 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
                 disabled={row.status != "pending_approval"}
                 display_text="Decline"
               />
-              <UserSubmissionAdminComponents.update_status_button
+              <UserSubmissionAdminComponents.button
                 name="status"
                 value="undo"
                 class={

@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Admin.UserSubmissionAdminComponents do
   attr(:class, :string, required: true)
   attr(:disabled, :boolean, default: false)
 
-  def update_status_button(assigns) do
+  def button(assigns) do
     ~H"""
     <button
       name={@name}

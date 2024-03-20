@@ -29,7 +29,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     sangraphs_access: true
   }
 
-  @pro_plus_plan_stats Plan.upgrade_plan(@pro_plan_stats, extends: %{alerts: %{limit: 1000}})
+  @pro_plus_plan_stats Plan.upgrade_plan(@pro_plan_stats, extends: %{alerts: %{limit: 50}})
   @sanbase_max_plan_stats Plan.upgrade_plan(@pro_plus_plan_stats, extends: %{})
   @business_pro_plan_stats Plan.upgrade_plan(@pro_plus_plan_stats, extends: %{})
   @business_max_plan_stats Plan.upgrade_plan(@business_pro_plan_stats, extends: %{})

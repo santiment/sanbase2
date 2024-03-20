@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
   alias Sanbase.Accounts.User
   alias SanbaseWeb.Graphql.{AuthPlug, ContextPlug}
   alias Sanbase.Accounts.Apikey
-  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Billing.Product
 
   test "loading the user from the current token", %{conn: conn} do
     {:ok, user} = User.create(%{privacy_policy_accepted: true})

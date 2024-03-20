@@ -11,7 +11,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   @triggers_free_limit_count 3
   @triggers_pro_limit_count 20
-  @triggers_max_business_limit_count 1000
+  @triggers_max_business_limit_count 50
 
   @product "SANBASE"
 

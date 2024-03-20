@@ -89,10 +89,9 @@ defmodule Sanbase.Alert.TriggerRestrictionsTest do
     _ = insert(:subscription_pro_sanbase, user: user)
     conn = setup_jwt_auth(build_conn(), user)
 
-    assert Sanbase.Billing.Plan.SanbaseAccessChecker.alerts_limit("PRO_PLUS") == 1000
+    assert Sanbase.Billing.Plan.SanbaseAccessChecker.alerts_limit("PRO_PLUS") == 50
 
-    # Creating 1000 would be too slow
-    for _ <- 1..30 do
+    for _ <- 1..49 do
       assert %{"data" => %{"createTrigger" => _}} = create_trigger(conn)
     end
   end

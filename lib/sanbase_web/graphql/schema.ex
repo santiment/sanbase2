@@ -162,7 +162,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:entity_queries)
     import_fields(:exchange_queries)
     import_fields(:free_form_json_storage_queries)
-    import_fields(:featured_queries)
+    import_fields(:featured_item_queries)
     import_fields(:github_queries)
     import_fields(:historical_balance_queries)
     import_fields(:insight_queries)

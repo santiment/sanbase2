@@ -145,8 +145,18 @@ defmodule Sanbase.Factory do
   end
 
   def dashboard_factory() do
-    %Sanbase.Dashboard.Schema{
+    %Sanbase.Dashboards.Dashboard{
       name: "My Dashboard",
+      user: build(:user)
+    }
+  end
+
+  def query_factory() do
+    %Sanbase.Queries.Query{
+      uuid: Sanbase.Queries.generate_uuid(),
+      name: "My Dashboard",
+      sql_query_text: "SELECT * FROM intraday_metrics LIMIT {{limit}}",
+      sql_query_parameters: %{"limit" => 10},
       user: build(:user)
     }
   end

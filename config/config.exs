@@ -138,7 +138,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   # should be removed after app.santiment.net migration
   website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},
   backend_url: {:system, "BACKEND_URL", "http://localhost:4000"},
-  frontend_url: {:system, "FRONTEND_URL", "http://localhost:4000"},
+  frontend_url: {:system, "FRONTEND_URL", "https://app-stage.santiment.net"},
   insights_url: {:system, "INSIGHTS_URL", "https://insights.santiment.net"},
   pubsub_server: Sanbase.PubSub,
   live_view: [signing_salt: "not_secret_FkOgrxfW5aw3HjLOoxCVMvB0py5+Uk5+"]

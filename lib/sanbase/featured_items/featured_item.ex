@@ -15,7 +15,8 @@ defmodule Sanbase.FeaturedItem do
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Chart.Configuration, as: ChartConfiguration
   alias Sanbase.TableConfiguration
-  alias Sanbase.Dashboard
+  alias Sanbase.Dashboards.Dashboard
+  alias Sanbase.Queries.Query
 
   @table "featured_items"
   schema @table do
@@ -24,7 +25,8 @@ defmodule Sanbase.FeaturedItem do
     belongs_to(:user_trigger, UserTrigger)
     belongs_to(:chart_configuration, ChartConfiguration)
     belongs_to(:table_configuration, TableConfiguration)
-    belongs_to(:dashboard, Dashboard.Schema)
+    belongs_to(:dashboard, Dashboard)
+    belongs_to(:query, Query)
 
     timestamps()
   end
@@ -42,7 +44,8 @@ defmodule Sanbase.FeaturedItem do
       :user_trigger_id,
       :chart_configuration_id,
       :table_configuration_id,
-      :dashboard_id
+      :dashboard_id,
+      :query_id
     ])
     |> unique_constraint(:post_id)
     |> unique_constraint(:user_list_id)
@@ -50,6 +53,7 @@ defmodule Sanbase.FeaturedItem do
     |> unique_constraint(:chart_configuration_id)
     |> unique_constraint(:table_configuration_id)
     |> unique_constraint(:dashboard_id)
+    |> unique_constraint(:query_id)
     |> check_constraint(:one_featured_item_per_row, name: :only_one_fk)
   end
 
@@ -72,41 +76,53 @@ defmodule Sanbase.FeaturedItem do
     is_screener = Map.get(args, :is_screener, false)
 
     watchlists_query()
-    |> join(:inner, [fi], fi in assoc(fi, :user_list))
-    |> where([_fi, user_list], user_list.type == ^type)
-    |> where([_fi, user_list], user_list.is_screener == ^is_screener)
-    |> select([_fi, user_list], user_list)
+    |> join(:inner, [fi], fi in assoc(fi, :user_list), as: :user_list)
+    |> where([_fi, user_list: ul], ul.type == ^type)
+    |> where([_fi, user_list: ul], ul.is_screener == ^is_screener)
+    |> select([_fi, user_list: ul], ul)
     |> Repo.all()
     |> Repo.preload([:user, :list_items])
   end
 
   def user_triggers() do
     user_triggers_query()
-    |> join(:inner, [fi], fi in assoc(fi, :user_trigger))
-    |> select([_fi, trigger], trigger)
+    |> join(:inner, [fi], fi in assoc(fi, :user_trigger), as: :user_trigger)
+    |> select([_fi, user_trigger: ut], ut)
     |> Repo.all()
     |> Repo.preload([:user, :tags])
   end
 
   def chart_configurations() do
     chart_configurations_query()
-    |> join(:inner, [fi], fi in assoc(fi, :chart_configuration))
-    |> select([_fi, config], config)
+    |> join(:inner, [fi], fi in assoc(fi, :chart_configuration), as: :chart_configuration)
+    |> select([_fi, chart_configuration: config], config)
     |> Repo.all()
   end
 
   def table_configurations() do
     table_configurations_query()
-    |> join(:inner, [fi], fi in assoc(fi, :table_configuration))
-    |> select([_fi, config], config)
+    |> join(:inner, [fi], fi in assoc(fi, :table_configuration), as: :table_configuration)
+    |> select([_fi, table_configuration: config], config)
     |> Repo.all()
   end
 
   def dashboards() do
     dashboards_query()
-    |> join(:inner, [fi], fi in assoc(fi, :dashboard))
-    |> select([_fi, dashboard], dashboard)
+    |> join(:inner, [fi], fi in assoc(fi, :dashboard), as: :dashboard)
+    |> order_by([fi, _], desc: fi.inserted_at, desc: fi.id)
+    |> select([_fi, dashboard: dashboard], dashboard)
     |> Repo.all()
+    |> Repo.preload([:user])
+  end
+
+  def queries() do
+    queries_query()
+    |> join(:inner, [fi], fi in assoc(fi, :query), as: :query)
+    |> order_by([fi, _], desc: fi.inserted_at, desc: fi.id)
+    # TODO: If we name the binding here `query`, it gives a strange error
+    |> select([_fi, query: q], q)
+    |> Repo.all()
+    |> Repo.preload([:user])
   end
 
   @doc ~s"""
@@ -156,10 +172,17 @@ defmodule Sanbase.FeaturedItem do
     end
   end
 
-  def update_item(%Dashboard.Schema{} = dashboard, featured?) do
-    case Dashboard.Schema.is_public?(dashboard) || featured? == false do
+  def update_item(%Dashboard{} = dashboard, featured?) do
+    case Dashboard.is_public?(dashboard) || featured? == false do
       true -> update_item(:dashboard_id, dashboard.id, featured?)
       false -> {:error, "Private table dashboards cannot be made featured."}
+    end
+  end
+
+  def update_item(%Query{} = query, featured?) do
+    case Query.is_public?(query) || featured? == false do
+      true -> update_item(:query_id, query.id, featured?)
+      false -> {:error, "Private table queries cannot be made featured."}
     end
   end
 
@@ -187,13 +210,12 @@ defmodule Sanbase.FeaturedItem do
   defp insights_query(), do: from(fi in __MODULE__, where: not is_nil(fi.post_id))
   defp watchlists_query(), do: from(fi in __MODULE__, where: not is_nil(fi.user_list_id))
   defp user_triggers_query(), do: from(fi in __MODULE__, where: not is_nil(fi.user_trigger_id))
+  defp dashboards_query(), do: from(fi in __MODULE__, where: not is_nil(fi.dashboard_id))
+  defp queries_query(), do: from(fi in __MODULE__, where: not is_nil(fi.query_id))
 
   defp chart_configurations_query(),
     do: from(fi in __MODULE__, where: not is_nil(fi.chart_configuration_id))
 
   defp table_configurations_query(),
     do: from(fi in __MODULE__, where: not is_nil(fi.table_configuration_id))
-
-  defp dashboards_query(),
-    do: from(fi in __MODULE__, where: not is_nil(fi.dashboard_id))
 end

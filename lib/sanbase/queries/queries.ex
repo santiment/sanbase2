@@ -262,8 +262,7 @@ defmodule Sanbase.Queries do
   @spec create_query(create_query_args(), user_id) ::
           {:ok, Query.t()} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
   def create_query(args, user_id) do
-    uuid = "query_" <> Uniq.UUID.uuid7()
-    args = args |> Map.merge(%{user_id: user_id, uuid: uuid})
+    args = args |> Map.merge(%{user_id: user_id, uuid: generate_uuid()})
 
     changeset = Query.create_changeset(%Query{}, args)
 
@@ -276,6 +275,8 @@ defmodule Sanbase.Queries do
         {:error, changeset_errors_string(changeset)}
     end
   end
+
+  def generate_uuid(), do: "query_" <> Uniq.UUID.uuid7()
 
   @doc ~s"""
   Update a query.

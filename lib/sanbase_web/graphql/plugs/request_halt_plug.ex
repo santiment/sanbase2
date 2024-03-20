@@ -85,7 +85,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
   def halt_api_call_limit_reached?(conn, %{
         rate_limiting_enabled: true,
         requested_product: "SANAPI",
-        auth: %{current_user: user, auth_method: auth_method}
+        auth: %{current_user: user, auth_method: auth_method, plan: plan_name}
       }) do
     case ApiCallLimit.get_quota(:user, user, auth_method) do
       {:error, %{blocked_for_seconds: _} = rate_limit_map} ->
@@ -97,7 +97,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
 
         Logger.info("[RequestHaltPlug] Rate limited user id #{user.id}")
 
-        {true, conn, rate_limit_map_to_error_map(rate_limit_map)}
+        {true, conn, rate_limit_map_to_error_map(rate_limit_map, user, plan_name)}
 
       {:ok, %{quota: :infinity}} ->
         {false, put_private(conn, :has_api_call_limit_quota_infinity, true)}
@@ -134,7 +134,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
 
         Logger.info("[RequestHaltPlug] Rate limit remote ip #{remote_ip}}")
 
-        {true, conn, rate_limit_map_to_error_map(rate_limit_map)}
+        {true, conn, rate_limit_map_to_error_map(rate_limit_map, _user = nil, _plan = "FREE")}
 
       {:ok, %{quota: :infinity}} ->
         {false, put_private(conn, :has_api_call_limit_quota_infinity, true)}
@@ -151,14 +151,6 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
   end
 
   def halt_api_call_limit_reached?(conn, _context), do: {false, conn}
-
-  defp rate_limit_error_message(%{blocked_for_seconds: seconds}) do
-    human_duration = Sanbase.DateTimeUtils.seconds_to_human_readable(seconds)
-
-    """
-    API Rate Limit Reached. Try again in #{seconds} seconds (#{human_duration})
-    """
-  end
 
   defp rate_limit_headers(map) do
     %{
@@ -199,10 +191,34 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
     end
   end
 
-  defp rate_limit_map_to_error_map(rate_limit_map) do
+  defp rate_limit_map_to_error_map(rate_limit_map, user_or_nil, plan_name) do
     %{
-      error_msg: rate_limit_error_message(rate_limit_map),
+      error_msg: rate_limit_error_message(rate_limit_map, user_or_nil, plan_name),
       error_code: 429
     }
+  end
+
+  defp rate_limit_error_message(%{blocked_for_seconds: seconds}, user, plan_name) do
+    human_duration = Sanbase.DateTimeUtils.seconds_to_human_readable(seconds)
+
+    message_details =
+      case user do
+        nil ->
+          """
+          The request is made without user authentication. If this is not expected, check the authorization logic of your code."
+          """
+
+        %Sanbase.Accounts.User{} ->
+          """
+          The request is made by user with id #{user.id} using plan #{plan_name}
+          You can update your subscription plan or you can contact Santiment Support if you
+          made a mistake and exhausted your API calls and you want Santiment to reset your limits.
+          """
+      end
+
+    """
+    API Rate Limit Reached. Try again in #{seconds} seconds (#{human_duration}).
+    #{message_details}
+    """
   end
 end

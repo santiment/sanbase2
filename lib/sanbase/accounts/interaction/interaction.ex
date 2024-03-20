@@ -33,6 +33,7 @@ defmodule Sanbase.Accounts.Interaction do
     :address_watchlist,
     :chart_configuration,
     :dashboard,
+    :query,
     :insight,
     :project_watchlist,
     :screener,
@@ -44,7 +45,8 @@ defmodule Sanbase.Accounts.Interaction do
     "insight",
     "chart_configuration",
     "user_trigger",
-    "dashboard"
+    "dashboard",
+    "query"
   ]
 
   @type t :: %__MODULE__{

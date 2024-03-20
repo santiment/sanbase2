@@ -55,8 +55,8 @@ defmodule Sanbase.Queries.Query do
     belongs_to(:user, User)
 
     # Fields related to timeline hiding and reversible-deletion
-    field(:is_deleted, :boolean)
-    field(:is_hidden, :boolean)
+    field(:is_deleted, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
 
     # Queries can be added to Dashboards. One query can be added
     # multiple times and the dashboard_query_mappings table has an id
@@ -64,6 +64,10 @@ defmodule Sanbase.Queries.Query do
     # of the query. Each instance can have a different set of parameters overrides.
     # Support a virutal field, so we can add this id to the query struct.
     field(:dashboard_query_mapping_id, :string, virtual: true)
+
+    # Virtual fields
+    field(:views, :integer, virtual: true, default: 0)
+    # field(:is_featured, :boolean, virtual: true)
 
     timestamps()
   end
@@ -95,6 +99,8 @@ defmodule Sanbase.Queries.Query do
     binary = {sql_query_text, query.sql_query_parameters} |> :erlang.term_to_binary()
     :crypto.hash(:sha256, binary) |> Base.encode64() |> binary_part(0, 32)
   end
+
+  def is_public?(%__MODULE__{} = query), do: query.is_public
 
   def normalize(text) do
     text
@@ -230,6 +236,8 @@ defmodule Sanbase.Queries.Query do
     # |> Sanbase.Entity.Query.maybe_filter_is_featured_query(opts, :user_trigger_id)
     |> Sanbase.Entity.Query.maybe_filter_by_users(opts)
     |> Sanbase.Entity.Query.maybe_filter_by_cursor(:inserted_at, opts)
+    |> Sanbase.Entity.Query.maybe_filter_min_title_length(opts, :name)
+    |> Sanbase.Entity.Query.maybe_filter_min_description_length(opts, :description)
     |> select([ul], ul.id)
   end
 

@@ -70,7 +70,7 @@ defmodule Sanbase.TemplateEngine do
     params = Keyword.get(opts, :params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
     env = Keyword.get(opts, :env, Sanbase.SanLang.Environment.new())
 
-    with {:ok, captures} <- TemplateEngine.Captures.get(template) do
+    with {:ok, captures} <- TemplateEngine.Captures.extract_captures(template) do
       template =
         Enum.reduce(captures, template, fn
           %{code?: false} = map, template_acc ->
@@ -115,8 +115,8 @@ defmodule Sanbase.TemplateEngine do
     params = Keyword.get(opts, :params, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end)
     env = Keyword.get(opts, :env, Sanbase.SanLang.Environment.new())
 
-    with {:ok, captures} <- TemplateEngine.Captures.get(template) do
-      result = do_run_generate_positional_params(template, captures, params, env)
+    with {:ok, captures} <- TemplateEngine.Captures.extract_captures(template),
+         {:ok, result} <- do_run_generate_positional_params(template, captures, params, env) do
       {:ok, result}
     end
   end
@@ -124,44 +124,53 @@ defmodule Sanbase.TemplateEngine do
   # Private
 
   defp do_run_generate_positional_params(template, captures, params, env) do
-    {sql, args, _position} =
+    {sql, args, errors, _position} =
       Enum.reduce(
         captures,
-        {template, _args = [], _position = 1},
+        {template, _args = [], _errors = [], _position = 1},
         fn
-          %{code?: false} = capture_map, {template_acc, args_acc, position} ->
+          %{code?: false} = capture_map, {template_acc, args_acc, errors, position} ->
             case get_value_from_params(capture_map.inner_content, params) do
               {:ok, value} ->
                 template_acc = String.replace(template_acc, capture_map.key, "?#{position}")
                 args_acc = [value | args_acc]
-                {template_acc, args_acc, position + 1}
+                {template_acc, args_acc, errors, position + 1}
 
               :no_value ->
-                raise_positional_params_error(template, capture_map.inner_content, params, env)
+                error = %{
+                  error: :missing_parameter,
+                  key: capture_map.key
+                }
+
+                errors = [error | errors]
+                {template_acc, args_acc, errors, position + 1}
             end
 
-          %{code?: true} = capture_map, {template_acc, args_acc, position} ->
+          %{code?: true} = capture_map, {template_acc, args_acc, errors, position} ->
             execution_result = CodeEvaluation.eval(capture_map, env)
             template_acc = String.replace(template_acc, capture_map.key, "?#{position}")
             args_acc = [execution_result | args_acc]
-            {template_acc, args_acc, position + 1}
+            {template_acc, args_acc, errors, position + 1}
         end
       )
 
-    {sql, Enum.reverse(args)}
-  end
+    case errors do
+      [] ->
+        {:ok, {sql, Enum.reverse(args)}}
 
-  defp raise_positional_params_error(template, key, params, env) do
-    raise(TemplateEngineError,
-      message: """
-      Error parsing the template. The template contains a key that is not present in the params map.
+      _ ->
+        missing_keys = Enum.map(errors, & &1.key) |> Enum.join(", ")
+        params_keys = Map.keys(params)
+        params_keys = if params_keys == [], do: "none", else: Enum.join(params_keys, ", ")
 
-      Key: #{inspect(key)}
-      Template: #{inspect(template)}
-      Params: #{inspect(params)}
-      Env: #{inspect(env)}
-      """
-    )
+        error_str =
+          """
+          One or more of the {{<key>}} templates in the query text do not correspond to any of the parameters.
+          Template keys missing from the parameters: #{missing_keys}. Parameters' keys defined: #{params_keys}
+          """
+
+        {:error, error_str}
+    end
   end
 
   defp replace_template_key_with_value(

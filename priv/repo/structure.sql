@@ -1554,7 +1554,8 @@ CREATE TABLE public.featured_items (
     chart_configuration_id bigint,
     table_configuration_id bigint,
     dashboard_id bigint,
-    CONSTRAINT only_one_fk CHECK (((((((
+    query_id bigint,
+    CONSTRAINT only_one_fk CHECK ((((((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
@@ -1577,6 +1578,10 @@ CASE
 END) +
 CASE
     WHEN (dashboard_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (query_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -2831,6 +2836,41 @@ CREATE TABLE public.project (
     ecosystem character varying(255),
     ecosystem_full_path character varying(255)
 );
+
+
+--
+-- Name: project_ecosystem_labels_change_suggestions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_ecosystem_labels_change_suggestions (
+    id bigint NOT NULL,
+    project_id bigint,
+    added_ecosystems character varying(255)[],
+    removed_ecosystems character varying(255)[],
+    notes text,
+    status character varying(255) DEFAULT 'pending_approval'::character varying,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: project_ecosystem_labels_change_suggestions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_ecosystem_labels_change_suggestions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_ecosystem_labels_change_suggestions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_ecosystem_labels_change_suggestions_id_seq OWNED BY public.project_ecosystem_labels_change_suggestions.id;
 
 
 --
@@ -5107,6 +5147,13 @@ ALTER TABLE ONLY public.project ALTER COLUMN id SET DEFAULT nextval('public.proj
 
 
 --
+-- Name: project_ecosystem_labels_change_suggestions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_labels_change_suggestions ALTER COLUMN id SET DEFAULT nextval('public.project_ecosystem_labels_change_suggestions_id_seq'::regclass);
+
+
+--
 -- Name: project_ecosystem_mappings id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6001,6 +6048,14 @@ ALTER TABLE ONLY public.products
 
 
 --
+-- Name: project_ecosystem_labels_change_suggestions project_ecosystem_labels_change_suggestions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_labels_change_suggestions
+    ADD CONSTRAINT project_ecosystem_labels_change_suggestions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: project_ecosystem_mappings project_ecosystem_mappings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6758,6 +6813,13 @@ CREATE UNIQUE INDEX featured_items_dashboard_id_index ON public.featured_items U
 --
 
 CREATE UNIQUE INDEX featured_items_post_id_index ON public.featured_items USING btree (post_id);
+
+
+--
+-- Name: featured_items_query_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX featured_items_query_id_index ON public.featured_items USING btree (query_id);
 
 
 --
@@ -7924,6 +7986,14 @@ ALTER TABLE ONLY public.featured_items
 
 
 --
+-- Name: featured_items featured_items_query_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.featured_items
+    ADD CONSTRAINT featured_items_query_id_fkey FOREIGN KEY (query_id) REFERENCES public.queries(id);
+
+
+--
 -- Name: featured_items featured_items_table_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8241,6 +8311,14 @@ ALTER TABLE ONLY public.posts
 
 ALTER TABLE ONLY public.presigned_s3_urls
     ADD CONSTRAINT presigned_s3_urls_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: project_ecosystem_labels_change_suggestions project_ecosystem_labels_change_suggestions_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_ecosystem_labels_change_suggestions
+    ADD CONSTRAINT project_ecosystem_labels_change_suggestions_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
 
 
 --
@@ -9301,3 +9379,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240131160724);
 INSERT INTO public."schema_migrations" (version) VALUES (20240201085929);
 INSERT INTO public."schema_migrations" (version) VALUES (20240212141517);
 INSERT INTO public."schema_migrations" (version) VALUES (20240228133210);
+INSERT INTO public."schema_migrations" (version) VALUES (20240311143940);
+INSERT INTO public."schema_migrations" (version) VALUES (20240315090002);

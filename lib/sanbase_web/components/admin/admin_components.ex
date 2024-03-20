@@ -99,43 +99,55 @@ defmodule SanbaseWeb.AdminComponents do
   attr(:data, :map, required: false, default: %{})
 
   def form_input(assigns) do
+    # If this is a form for creating a new entity, value is empty
+    # Otherwise it is taken from the changeset or data fields
+    value =
+      if assigns.type == "new" do
+        ""
+      else
+        case Map.get(assigns.field_type_map, assigns.field) do
+          map_or_list when map_or_list in [:map, :list] ->
+            Map.get(assigns.changeset.data, assigns.field) |> Jason.encode!()
+
+          _ ->
+            Map.get(assigns.changeset.changes, assigns.field) ||
+              Map.get(assigns.changeset.data, assigns.field) ||
+              Map.get(assigns.data, assigns.field)
+        end
+      end
+
+    # type of the <input> html tag
+    type =
+      case Map.get(assigns.field_type_map, assigns.field) do
+        :string -> "text"
+        :text -> "textarea"
+        :integer -> "number"
+        :float -> "number"
+        :boolean -> "checkbox"
+        :date -> "text"
+        :datetime -> "text"
+        :time -> "text"
+        :map -> "text"
+        :list -> "text"
+        :assoc -> "text"
+        :binary -> "text"
+        :any -> "text"
+        _ -> "text"
+      end
+
+    assigns =
+      assign(assigns,
+        value: value,
+        type: type
+      )
+
     ~H"""
     <.input
       name={@resource <> "[" <> to_string(@field) <> "]"}
       id={@resource <> "_" <> to_string(@field)}
       label={humanize(@field)}
-      type={
-        case Map.get(@field_type_map, @field) do
-          :string -> "text"
-          :text -> "textarea"
-          :integer -> "number"
-          :float -> "number"
-          :boolean -> "checkbox"
-          :date -> "text"
-          :datetime -> "text"
-          :time -> "text"
-          :map -> "text"
-          :list -> "text"
-          :assoc -> "text"
-          :binary -> "text"
-          :any -> "text"
-          _ -> "text"
-        end
-      }
-      value={
-        if @type == "new" do
-          ""
-        else
-          case Map.get(@field_type_map, @field) do
-            map_or_list when map_or_list in [:map, :list] ->
-              Map.get(@changeset.data, @field) |> Jason.encode!()
-
-            _ ->
-              Map.get(@changeset.changes, @field) || Map.get(@changeset.data, @field) ||
-                Map.get(@data, @field)
-          end
-        end
-      }
+      type={@type}
+      value={@value}
     />
     """
   end
@@ -868,216 +880,5 @@ defmodule SanbaseWeb.AdminComponents do
       </.form>
     </div>
     """
-  end
-end
-
-defmodule SanbaseWeb.LiveSearch do
-  use SanbaseWeb, :live_view
-  import SanbaseWeb.CoreComponents
-
-  @impl true
-  def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:query, "")
-     |> assign(:routes, [])
-     |> assign(:show_icon, true), layout: false}
-  end
-
-  @impl true
-  def render(assigns) do
-    ~H"""
-    <div
-      x-data="{results_open: true}"
-      @click="results_open = true"
-      @click.outside="results_open = false"
-    >
-      <div class="relative m-3">
-        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-          <.icon name="hero-magnifying-glass" />
-        </div>
-        <input
-          value={@query}
-          phx-keyup="do-search"
-          phx-debounce="200"
-          type="text"
-          id="simple-search"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          placeholder="Search resources..."
-          required
-        />
-      </div>
-      <ul
-        x-show="results_open"
-        x-transition
-        class="absolute ml-2 py-2 text-gray-700 dark:text-gray-200 border shadow-xl bg-blue-50 rounded-xl"
-        aria-labelledby="dropdownDefaultButton"
-      >
-        <li :for={{name, path} <- @routes}>
-          <a
-            href={path}
-            class="block p-4 hover:bg-blue-100 dark:hover:bg-gray-600 dark:hover:text-white text-md font-semibold"
-          >
-            <%= name %>
-          </a>
-        </li>
-      </ul>
-    </div>
-    """
-  end
-
-  @impl true
-  def handle_event("do-search", %{"value" => query}, socket) do
-    query = String.downcase(query)
-    {:noreply, assign(socket, routes: search_routes(query), query: String.downcase(query))}
-  end
-
-  def search_routes("") do
-    []
-  end
-
-  def search_routes(query) do
-    SanbaseWeb.GenericAdminController.all_routes()
-    |> Enum.map(fn {name, _path} = tuple ->
-      name = String.downcase(name)
-      query = String.downcase(query)
-
-      similarity = FuzzyCompare.similarity(query, name)
-      {tuple, similarity}
-    end)
-    |> Enum.filter(fn {_, similarity} -> similarity > 0.9 end)
-    |> Enum.sort_by(fn {_, similarity} -> similarity end, :desc)
-    |> Enum.map(fn {result, _similarity} -> result end)
-  end
-end
-
-defmodule SanbaseWeb.LiveSelect do
-  use SanbaseWeb, :live_view
-  use Phoenix.HTML
-
-  import SanbaseWeb.CoreComponents
-  import Ecto.Query
-
-  def render(assigns) do
-    ~H"""
-    <div class="w-full">
-      <.input
-        type="text"
-        label={humanize(@session["field"])}
-        name={@session["parent_resource"] <> "[" <> to_string(@session["field"]) <> "_id" <> "]"}
-        value={@query || @session["initial_value"]}
-        list={"matches_" <> to_string(@session["field"])}
-        phx-keyup="suggest"
-        phx-debounce="200"
-        placeholder="Search..."
-      />
-      <datalist id={"matches_" <> to_string(@session["field"])}>
-        <%= for {id, match} <- @matches do %>
-          <option value={id}><%= match %></option>
-        <% end %>
-      </datalist>
-    </div>
-    """
-  end
-
-  def mount(_params, session, socket) do
-    {:ok,
-     assign(socket,
-       query: nil,
-       result: nil,
-       loading: false,
-       matches: [],
-       session:
-         Map.take(session, [
-           "resource",
-           "search_fields",
-           "field",
-           "parent_resource",
-           "initial_value"
-         ])
-     ), layout: false}
-  end
-
-  def handle_event("suggest", %{"value" => query}, socket) when byte_size(query) < 2 do
-    session = socket.assigns[:session]
-
-    Integer.parse(query)
-    |> case do
-      {id, ""} -> {:noreply, assign(socket, matches: search_matches_by_id(id, session))}
-      _ -> {:noreply, assign(socket, matches: [])}
-    end
-  end
-
-  def handle_event("suggest", %{"value" => query}, socket)
-      when byte_size(query) >= 2 and byte_size(query) <= 100 do
-    session = socket.assigns[:session]
-
-    Integer.parse(query)
-    |> case do
-      {id, ""} -> {:noreply, assign(socket, matches: search_matches_by_id(id, session))}
-      _ -> {:noreply, assign(socket, matches: search_matches(query, session))}
-    end
-  end
-
-  def search_matches_by_id(id, session) do
-    resource = session["resource"]
-    search_fields = session["search_fields"]
-    resource_module_map = SanbaseWeb.GenericAdmin.resource_module_map()
-    module = resource_module_map[resource][:module]
-
-    full_match_query =
-      from(m in module, where: m.id == ^id, select_merge: %{})
-      |> select_merge([p], map(p, [:id]))
-      |> select_merge([p], map(p, ^search_fields))
-
-    full_matches = Sanbase.Repo.all(full_match_query)
-
-    format_results(full_matches, [])
-  end
-
-  def search_matches(query, session) do
-    resource = session["resource"]
-    search_fields = session["search_fields"]
-    resource_module_map = SanbaseWeb.GenericAdmin.resource_module_map()
-    module = resource_module_map[resource][:module]
-    value = "%" <> query <> "%"
-
-    base_query = from(m in module, select_merge: %{})
-
-    full_match_query = build_full_match_query(search_fields, base_query, query)
-    partial_match_query = build_partial_match_query(search_fields, base_query, value)
-
-    full_matches = Sanbase.Repo.all(full_match_query)
-    partial_matches = Sanbase.Repo.all(partial_match_query)
-
-    format_results(full_matches, partial_matches)
-  end
-
-  defp build_full_match_query(search_fields, base_query, value) do
-    Enum.reduce(search_fields, base_query, fn field, acc ->
-      or_where(acc, [p], field(p, ^field) == ^value)
-    end)
-    |> select_merge([p], map(p, [:id]))
-    |> select_merge([p], map(p, ^search_fields))
-    |> order_by([p], desc: p.id)
-  end
-
-  defp build_partial_match_query(search_fields, base_query, value) do
-    Enum.reduce(search_fields, base_query, fn field, acc ->
-      or_where(acc, [p], ilike(field(p, ^field), ^value))
-    end)
-    |> select_merge([p], map(p, [:id]))
-    |> select_merge([p], map(p, ^search_fields))
-    |> order_by([p], desc: p.id)
-  end
-
-  defp format_results(full_matches, partial_matches) do
-    (full_matches ++ partial_matches)
-    |> Enum.uniq_by(& &1.id)
-    |> Enum.take(10)
-    |> Enum.map(fn result ->
-      formatted = Enum.map(result, fn {key, value} -> "#{key}: #{value}" end) |> Enum.join(", ")
-      {result.id, formatted}
-    end)
   end
 end

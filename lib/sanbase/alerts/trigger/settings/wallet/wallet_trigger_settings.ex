@@ -51,6 +51,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
 
   validates(:channel, &valid_notification_channel?/1)
   validates(:target, &valid_crypto_address?/1)
+  validates(:target, &valid_combine_balances_flag?/1)
   validates(:selector, &valid_historical_balance_selector?/1)
   validates(:operation, &valid_operation?/1)
   validates(:time_window, &valid_time_window?/1)
@@ -101,6 +102,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
       end
     end)
     |> Enum.reject(&(match?({:error, _}, &1) or match?({:ok, []}, &1)))
+    |> maybe_combine_balances(settings)
   end
 
   def get_data(
@@ -137,6 +139,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
       end
     end)
     |> Enum.reject(&match?({:error, _}, &1))
+    |> maybe_combine_balances(settings)
   end
 
   defp get_timeseries_params(%{time_window: time_window}) do
@@ -213,7 +216,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
         %{
           type: WalletTriggerSettings.type(),
           operation: settings.operation,
-          address: settings.target.address
+          address: values.identifier
         }
         |> OperationText.merge_kvs(operation_kv)
         |> OperationText.merge_kvs(curr_value_kv)
@@ -266,6 +269,36 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
         "BCH" -> %{asset: "bitcoin-cash", target_blockchain: "Bitcoin Cash"}
         "LTC" -> %{asset: "litecoin", target_blockchain: "Litecoin"}
       end
+    end
+  end
+
+  defp maybe_combine_balances([], _settings), do: []
+
+  defp maybe_combine_balances(data, settings) do
+    case Map.get(settings.target, :use_combined_balance, false) do
+      false ->
+        data
+
+      true ->
+        [{_addr, first_balance} | rest] =
+          data
+
+        combined_balance =
+          Enum.reduce(rest, first_balance, fn {_addr, balances}, acc ->
+            [%{datetime: from, balance: balance_start}, %{datetime: to, balance: balance_end}] =
+              acc
+
+            [%{balance: addr_balance_start}, %{balance: addr_balance_end}] = balances
+
+            [
+              %{datetime: from, balance: balance_start + addr_balance_start},
+              %{datetime: to, balance: balance_end + addr_balance_end}
+            ]
+          end)
+
+        combined_addresses = Enum.map(data, &elem(&1, 0)) |> Enum.join(", ")
+        combined_addresses = "(combined balances of) " <> combined_addresses
+        [{combined_addresses, combined_balance}]
     end
   end
 end

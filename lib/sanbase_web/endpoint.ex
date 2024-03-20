@@ -102,6 +102,10 @@ defmodule SanbaseWeb.Endpoint do
     Config.module_get(__MODULE__, :website_url)
   end
 
+  def project_url(slug) when is_binary(slug) do
+    Path.join([frontend_url(), "charts?slug=#{slug}"])
+  end
+
   def sonar_url() do
     website_url()
     |> Path.join("alerts")

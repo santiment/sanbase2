@@ -951,6 +951,25 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Development Activity Weekly Contributors Count",
+    "name": "dev_activity_contributors_count_7d",
+    "metric": "dev_activity_contributors_count",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "7d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Daily GitHub Activity",
     "name": "github_activity_1d",
     "metric": "github_activity",
@@ -965,6 +984,25 @@
     },
     "aggregation": "sum",
     "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Github Activity Weekly Contributors Count",
+    "name": "github_activity_contributors_count_7d",
+    "metric": "github_activity_contributors_count",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "7d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
@@ -5361,6 +5399,25 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "USD Trading Volume For ETF Shares",
+    "name": "etf_volume_usd_5m",
+    "metric": "etf_trading_volume",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   }
 ]

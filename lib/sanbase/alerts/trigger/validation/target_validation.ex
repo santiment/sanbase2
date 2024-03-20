@@ -98,6 +98,17 @@ defmodule Sanbase.Alert.Validation.Target do
 
   def valid_crypto_address?(data), do: {:error, "#{inspect(data)} is not a valid crypto address"}
 
+  def valid_combine_balances_flag?(data) do
+    case Map.get(data, :use_combined_balance, false) do
+      value when is_boolean(value) ->
+        true
+
+      value ->
+        {:error,
+         "The value of use_combined_balance must be a boolean. Got #{inspect(value)} instead"}
+    end
+  end
+
   def valid_historical_balance_selector?(selector) when is_map(selector) do
     case Sanbase.Clickhouse.HistoricalBalance.selector_to_args(selector) do
       %{module: _, blockchain: _, asset: _, decimals: _, slug: _} -> :ok

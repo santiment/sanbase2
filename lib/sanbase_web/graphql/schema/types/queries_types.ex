@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     field(:sql_query_parameters, non_null(:json))
 
     # User
-    field(:user, :user)
+    field(:user, :public_user)
 
     # Cached value. Store the last run of the query along with
     # some metadata - when it was computed, how long it took, etc.
@@ -50,7 +50,7 @@ defmodule SanbaseWeb.Graphql.QueriesTypes do
     end
 
     # Timestamps
-    field(:created_at, non_null(:datetime))
+    field(:inserted_at, non_null(:datetime))
     field(:updated_at, non_null(:datetime))
   end
 

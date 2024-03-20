@@ -22,8 +22,8 @@ defmodule Sanbase.TemplateEngine.Captures do
   @doc ~s"""
   Extract the captures from the template. The captures are the keys that are enclosed in {{}}
   """
-  @spec get(String.t()) :: {:ok, list(CaptureMap.t())}
-  def get(template) do
+  @spec extract_captures(String.t()) :: {:ok, list(CaptureMap.t())}
+  def extract_captures(template) do
     captures =
       template
       |> get_regex_captures()

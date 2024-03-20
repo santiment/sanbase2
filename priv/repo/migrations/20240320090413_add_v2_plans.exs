@@ -1,4 +1,4 @@
-defmodule Sanbase.Repo.Migrations.AddBusinessPlans do
+defmodule Sanbase.Repo.Migrations.AddV2Plans do
   use Ecto.Migration
 
   def up do

@@ -9378,6 +9378,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240126133441);
 INSERT INTO public."schema_migrations" (version) VALUES (20240131160724);
 INSERT INTO public."schema_migrations" (version) VALUES (20240201085929);
 INSERT INTO public."schema_migrations" (version) VALUES (20240212141517);
-INSERT INTO public."schema_migrations" (version) VALUES (20240228133210);
 INSERT INTO public."schema_migrations" (version) VALUES (20240311143940);
 INSERT INTO public."schema_migrations" (version) VALUES (20240315090002);
+INSERT INTO public."schema_migrations" (version) VALUES (20240320090413);

@@ -6,7 +6,6 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.SocialData
-  alias Sanbase.DateTimeUtils
 
   @error_response "Error executing query. See logs for details."
 

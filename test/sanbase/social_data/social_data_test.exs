@@ -2,7 +2,6 @@ defmodule Sanbase.SocialDataTest do
   use Sanbase.DataCase, async: false
 
   import Mockery
-  import ExUnit.CaptureLog
 
   alias Sanbase.SocialData
 

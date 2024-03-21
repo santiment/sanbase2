@@ -487,7 +487,7 @@ defmodule Sanbase.Factory do
 
   def plan_business_pro_monthly_factory() do
     %Plan{
-      id: 105,
+      id: 107,
       name: "BUSINESS_PRO",
       amount: 42000,
       currency: "USD",
@@ -497,7 +497,7 @@ defmodule Sanbase.Factory do
 
   def plan_business_pro_yearly_factory() do
     %Plan{
-      id: 106,
+      id: 108,
       name: "BUSINESS_PRO",
       amount: 478_800,
       currency: "USD",
@@ -507,7 +507,7 @@ defmodule Sanbase.Factory do
 
   def plan_business_max_monthly_factory() do
     %Plan{
-      id: 107,
+      id: 109,
       name: "BUSINESS_MAX",
       amount: 99900,
       currency: "USD",
@@ -517,7 +517,7 @@ defmodule Sanbase.Factory do
 
   def plan_business_max_yearly_factory() do
     %Plan{
-      id: 108,
+      id: 110,
       name: "BUSINESS_MAX",
       amount: 1_138_800,
       currency: "USD",

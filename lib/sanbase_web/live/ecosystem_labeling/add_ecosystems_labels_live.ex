@@ -118,8 +118,6 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
     {new, removed} =
       case params do
         %{"value" => "on", "ecosystem" => e} ->
-          IO.inspect(e, label: "ADDED")
-
           new =
             case e in stored do
               # Append to the back so it looks better in the UI

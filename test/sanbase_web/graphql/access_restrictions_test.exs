@@ -61,6 +61,25 @@ defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
     end
   end
 
+  test "pro+ sanbase user", %{conn: conn, user: user} do
+    insert(:subscription_pro_plus_sanbase, user: user)
+    one_hour_ago = Timex.shift(Timex.now(), hours: -1)
+    over_five_years_ago = Timex.shift(Timex.now(), days: -(5 * 365 + 1))
+
+    for %{"isRestricted" => true} = restriction <- get_access_restrictions(conn) do
+      from = restriction["restrictedFrom"]
+      to = restriction["restrictedTo"]
+
+      assert is_nil(from) ||
+               Sanbase.DateTimeUtils.from_iso8601!(from)
+               |> DateTime.compare(over_five_years_ago) == :gt
+
+      assert is_nil(to) ||
+               Sanbase.DateTimeUtils.from_iso8601!(to)
+               |> DateTime.compare(one_hour_ago) == :lt
+    end
+  end
+
   defp get_access_restrictions(conn) do
     query = """
     {

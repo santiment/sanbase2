@@ -374,10 +374,4 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
       }
     } | |> String.replace(~r|\"|, ~S|\\"|) |> String.replace(~r|'|, ~S|"|)
   end
-
-  defp execute_query(conn, query) do
-    conn
-    |> post("/graphql", query_skeleton(query))
-    |> json_response(200)
-  end
 end

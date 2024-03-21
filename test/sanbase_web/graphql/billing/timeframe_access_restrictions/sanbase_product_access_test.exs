@@ -9,15 +9,16 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   alias Sanbase.Metric
   alias Sanbase.Signal
 
-  @triggers_limit_count 10
+  @triggers_free_limit_count 3
+  @triggers_pro_limit_count 20
+  @triggers_max_business_limit_count 50
+
   @product "SANBASE"
 
   setup_all_with_mocks([
     {Sanbase.Price, [:passthrough], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
     {Sanbase.Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]},
-    {Sanbase.Signal, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> signal_resp() end]},
-    {Sanbase.Alert.UserTrigger, [:passthrough],
-     [triggers_count_for: fn _ -> @triggers_limit_count end]}
+    {Sanbase.Signal, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> signal_resp() end]}
   ]) do
     []
   end
@@ -291,39 +292,252 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
   end
 
-  describe "for SANbase when alerts limit reached" do
-    test "user with BASIC plan can create new trigger", context do
-      insert(:subscription_pro_sanbase, user: context.user)
+  defp setup_subscription(product_plan) do
+    user =
+      case product_plan do
+        "SANBASE_PRO" ->
+          user = insert(:user, email: "sanbase_pro@example.com")
+          insert(:subscription_pro_sanbase, user: user)
+          user
 
-      assert create_trigger_mutation(context)["trigger"]["id"] != nil
+        "SANBASE_MAX" ->
+          user = insert(:user, email: "sanbase_max@example.com")
+          insert(:subscription_max_sanbase, user: user)
+          user
+
+        "BUSINESS_PRO" ->
+          user = insert(:user, email: "business_pro@example.com")
+          insert(:subscription_business_pro_monthly, user: user)
+          user
+
+        "BUSINESS_MAX" ->
+          user = insert(:user, email: "business_max@example.com")
+          insert(:subscription_business_max_monthly, user: user)
+          user
+
+        "FREE" ->
+          insert(:user, email: "free@example.com")
+      end
+
+    jwt_conn = setup_jwt_auth(build_conn(), user)
+
+    %{user: user, jwt_conn: jwt_conn}
+  end
+
+  describe "API access V2 plans" do
+    test "FREE 30 days realtime cutoff API access", context do
+      data = setup_subscription("FREE")
+      {from, to} = from_to(2 * 360, 31)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.jwt_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
     end
 
-    test "user with PRO plan can create new trigger", context do
-      insert(:subscription_pro_sanbase, user: context.user)
+    test "FREE plan cannot access more than 2 years historical data", context do
+      data = setup_subscription("FREE")
+      {from, to} = from_to(2 * 365 + 1, 31)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.jwt_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
 
-      assert create_trigger_mutation(context)["trigger"]["id"] != nil
+    test "FREE plan cannot access data more recent than 30 days", context do
+      data = setup_subscription("FREE")
+      {from, to} = from_to(364, 29)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.jwt_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Sanbase PRO has no restrictions", context do
+      data = setup_subscription("SANBASE_PRO")
+      {from, to} = from_to(3 * 360, 1)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.jwt_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Sanbase MAX has no restrictions", context do
+      data = setup_subscription("SANBASE_MAX")
+      {from, to} = from_to(5 * 360, 1)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.jwt_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Business PRO has no restrictions", context do
+      data = setup_subscription("BUSINESS_PRO")
+      {from, to} = from_to(5 * 360, 1)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.jwt_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Business MAX has restrictions", context do
+      data = setup_subscription("BUSINESS_MAX")
+      {from, to} = from_to(5 * 360, 1)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.jwt_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
     end
   end
 
-  # describe "for FREE plan when alerts limits not reached" do
-  #   # Override the setup_all mock
-  #   setup_with_mocks([
-  #     {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count - 1 end]}
-  #   ]) do
-  #     []
-  #   end
+  describe "Triggers limits for FREE plan" do
+    test "When limit not reached - user can create new trigger", _context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
+        @triggers_free_limit_count - 1
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        data = setup_subscription("FREE")
+        assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] != nil
+      end)
+    end
 
-  #   test "user can create new trigger", context do
-  #     assert create_trigger_mutation(context)["trigger"]["id"] != nil
-  #   end
-  # end
+    test "When limit reached - user cannot create new trigger", _context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
+        @triggers_free_limit_count
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        data = setup_subscription("FREE")
+        assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] == nil
+      end)
+    end
+  end
+
+  describe "Triggers limits for PRO plan" do
+    test "When limit not reached - user can create new trigger", _context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
+        @triggers_pro_limit_count - 1
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        data = setup_subscription("SANBASE_PRO")
+        assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] != nil
+      end)
+    end
+
+    test "When limit reached - user cannot create new trigger", _context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
+        @triggers_pro_limit_count
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        data = setup_subscription("SANBASE_PRO")
+        assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] == nil
+      end)
+    end
+  end
+
+  describe "Triggers limits for Sanbase MAX plan" do
+    test "When limit not reached - user can create new trigger", _context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
+        @triggers_max_business_limit_count - 1
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        data = setup_subscription("SANBASE_MAX")
+        assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] != nil
+      end)
+    end
+
+    test "When limit reached - user cannot create new trigger", _context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
+        @triggers_max_business_limit_count
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        data = setup_subscription("SANBASE_MAX")
+        assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] == nil
+      end)
+    end
+  end
+
+  describe "Triggers limits for BUSINESS PRO plan" do
+    test "When limit not reached - user can create new trigger", _context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
+        @triggers_max_business_limit_count - 1
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        data = setup_subscription("BUSINESS_PRO")
+        assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] != nil
+      end)
+    end
+
+    test "When limit reached - user cannot create new trigger", _context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
+        @triggers_max_business_limit_count
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        data = setup_subscription("BUSINESS_PRO")
+        assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] == nil
+      end)
+    end
+  end
+
+  describe "Triggers limits for BUSINESS MAX plan" do
+    test "When limit not reached - user can create new trigger", _context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
+        @triggers_max_business_limit_count - 1
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        data = setup_subscription("BUSINESS_MAX")
+        assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] != nil
+      end)
+    end
+
+    test "When limit reached - user cannot create new trigger", _context do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Alert.UserTrigger.triggers_count_for/1,
+        @triggers_max_business_limit_count
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        data = setup_subscription("BUSINESS_MAX")
+        assert create_trigger_mutation(data.jwt_conn)["trigger"]["id"] == nil
+      end)
+    end
+  end
 
   # Private functions
 
-  defp create_trigger_mutation(context) do
+  defp create_trigger_mutation(conn) do
     query = create_trigger_mutation()
 
-    execute_mutation(context.conn, query, "createTrigger")
+    execute_mutation(conn, query, "createTrigger")
   end
 
   defp metric_query(metric, selector, from, to) do

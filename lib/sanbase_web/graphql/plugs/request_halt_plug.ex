@@ -56,7 +56,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
     end
   end
 
-  def halt_sansheets_request?(conn, %{auth: %{subscription: %{plan: %{name: plan_name}}} = auth}) do
+  def halt_sansheets_request?(conn, %{auth: %{plan: plan_name} = auth}) do
     case is_sansheets_request(conn) and plan_name == "FREE" do
       true ->
         user_id = get_in(auth, [:current_user, Access.key(:id)])
@@ -84,7 +84,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
 
   def halt_api_call_limit_reached?(conn, %{
         rate_limiting_enabled: true,
-        product_code: "SANAPI",
+        requested_product: "SANAPI",
         auth: %{current_user: user, auth_method: auth_method, plan: plan_name}
       }) do
     case ApiCallLimit.get_quota(:user, user, auth_method) do
@@ -117,7 +117,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
         conn,
         %{
           rate_limiting_enabled: true,
-          product_code: "SANAPI",
+          requested_product: "SANAPI",
           remote_ip: remote_ip
         } = context
       ) do

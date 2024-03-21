@@ -79,7 +79,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
          conn,
          %{
            rate_limiting_enabled: true,
-           product_code: "SANAPI",
+           requested_product: "SANAPI",
            auth: %{current_user: user, auth_method: auth_method}
          },
          count
@@ -92,7 +92,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
          conn,
          %{
            rate_limiting_enabled: true,
-           product_code: "SANAPI",
+           requested_product: "SANAPI",
            remote_ip: remote_ip
          } = context,
          count

@@ -209,7 +209,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
   end
 
   test "returns error when sansheets user with API key is not Pro" do
-    user = insert(:user)
+    user = insert(:user, email: "a@example.com")
     {:ok, apikey} = Apikey.generate_apikey(user)
 
     conn =

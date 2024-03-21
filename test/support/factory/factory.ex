@@ -403,15 +403,11 @@ defmodule Sanbase.Factory do
   end
 
   def product_api_factory() do
-    %Product{id: 1, name: "Neuro by Santiment", code: "SANAPI"}
+    %Product{id: 1, name: "Sanapi by Santiment", code: "SANAPI"}
   end
 
   def product_sanbase_factory() do
     %Product{id: 2, name: "Sanbase by Santiment", code: "SANBASE"}
-  end
-
-  def product_sandata_factory() do
-    %Product{id: 4, name: "Sandata by Santiment", code: "SANDATA"}
   end
 
   def product_exchange_wallets_factory() do
@@ -449,16 +445,6 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_premium_factory() do
-    %Plan{
-      id: 4,
-      name: "PREMIUM",
-      amount: 75_900,
-      currency: "USD",
-      interval: "month"
-    }
-  end
-
   def plan_custom_factory() do
     %Plan{
       id: 5,
@@ -489,21 +475,51 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_premium_yearly_factory() do
-    %Plan{
-      id: 8,
-      name: "PREMIUM",
-      amount: 819_720,
-      currency: "USD",
-      interval: "year"
-    }
-  end
-
   def plan_custom_yearly_factory() do
     %Plan{
       id: 9,
       name: "CUSTOM",
       amount: 0,
+      currency: "USD",
+      interval: "year"
+    }
+  end
+
+  def plan_business_pro_monthly_factory() do
+    %Plan{
+      id: 105,
+      name: "BUSINESS_PRO",
+      amount: 42000,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
+  def plan_business_pro_yearly_factory() do
+    %Plan{
+      id: 106,
+      name: "BUSINESS_PRO",
+      amount: 478_800,
+      currency: "USD",
+      interval: "year"
+    }
+  end
+
+  def plan_business_max_monthly_factory() do
+    %Plan{
+      id: 107,
+      name: "BUSINESS_MAX",
+      amount: 99900,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
+  def plan_business_max_yearly_factory() do
+    %Plan{
+      id: 108,
+      name: "BUSINESS_MAX",
+      amount: 1_138_800,
       currency: "USD",
       interval: "year"
     }
@@ -559,6 +575,16 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def plan_max_sanbase_factory() do
+    %Plan{
+      id: 210,
+      name: "MAX",
+      amount: 24900,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
   def plan_pro_70off_sanbase_factory() do
     %Plan{
       id: 206,
@@ -599,16 +625,6 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_pro_sandata_factory() do
-    %Plan{
-      id: 42,
-      name: "PRO",
-      amount: 14_000,
-      currency: "USD",
-      interval: "month"
-    }
-  end
-
   def subscription_factory() do
     %Subscription{
       stripe_id: rand_str(),
@@ -635,19 +651,46 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def subscription_premium_factory() do
+  def subscription_custom_factory() do
     %Subscription{
       stripe_id: rand_str(),
-      plan_id: 4,
+      plan_id: 5,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_custom_factory() do
+  def subscription_business_pro_monthly_factory() do
     %Subscription{
       stripe_id: rand_str(),
-      plan_id: 5,
+      plan_id: 105,
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
+    }
+  end
+
+  def subscription_business_pro_yearly_factory() do
+    %Subscription{
+      stripe_id: rand_str(),
+      plan_id: 106,
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
+    }
+  end
+
+  def subscription_business_max_monthly_factory() do
+    %Subscription{
+      stripe_id: rand_str(),
+      plan_id: 107,
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
+    }
+  end
+
+  def subscription_business_max_yearly_factory() do
+    %Subscription{
+      stripe_id: rand_str(),
+      plan_id: 107,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }
@@ -672,6 +715,14 @@ defmodule Sanbase.Factory do
   def subscription_pro_plus_sanbase_factory() do
     %Subscription{
       plan_id: 203,
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
+    }
+  end
+
+  def subscription_max_sanbase_factory() do
+    %Subscription{
+      plan_id: 210,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }

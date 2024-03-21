@@ -121,7 +121,7 @@ defmodule Sanbase.Billing.Plan.CustomPlanTest do
     restrictions_args = %{
       name: "CUSTOM_PLAN_FOR_TEST",
       restricted_access_as_plan: "PRO",
-      product_code: "SANAPI",
+      requested_product: "SANAPI",
       api_call_limits: %{"minute" => 1000, "hour" => 100_000, "month" => 3_000_000},
       historical_data_in_days: 365,
       realtime_data_cut_off_in_days: 0,

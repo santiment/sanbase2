@@ -27,14 +27,15 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
   as we have different restrictions.
   """
 
-  @type plan_name :: String.t()
-  @type product_code :: String.t()
   @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, Atom.t()}
+  @type requested_product :: String.t()
+  @type subscription_product :: String.t()
+  @type product_code :: String.t()
+  @type plan_name :: String.t()
 
   alias Sanbase.Billing.ApiInfo
 
   alias Sanbase.Billing.Plan.{
-    MVRVAccess,
     ApiAccessChecker,
     SanbaseAccessChecker
   }
@@ -64,52 +65,23 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
 
   @all_query_or_argument @free_query_or_argument ++ @restricted_query_or_argument
 
-  @custom_access_queries_stats MVRVAccess.get()
-  @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
-  @custom_access_queries_mapset MapSet.new(@custom_access_queries)
-
   @min_plan_map ApiInfo.min_plan_map()
-
-  # Raise an error if there are queries with custom access logic that are marked
-  # as free. If there are such queries the access restriction logic will never
-  # be applied
-
-  free_and_custom_intersection =
-    MapSet.intersection(@custom_access_queries_mapset, @free_query_or_argument_mapset)
-
-  case Enum.empty?(free_and_custom_intersection) do
-    true ->
-      :ok
-
-    false ->
-      require Sanbase.Break, as: Break
-
-      Break.break("""
-      There are queries with access level `FREE` that are defined in the
-      CustomAccess module. These queries custom access logic will never be
-      executed.
-
-      Queries defined in the CustomAccess module but do not have the `:restricted`
-      access level field: #{inspect(free_and_custom_intersection |> Enum.to_list())}
-      """)
-  end
 
   @doc ~s"""
   Check if a query full access is given only to users with a plan higher than free.
   A query can be restricted but still accessible by not-paid users or users with
   lower plans. In this case historical and/or realtime data access can be cut off
   """
-  @spec is_restricted?(plan_name, product_code, query_or_argument) :: boolean()
-  def is_restricted?(_plan_name, _product_code, query_or_argument),
+  @spec is_restricted?(query_or_argument) :: boolean()
+  def is_restricted?(query_or_argument),
     do: query_or_argument not in @free_query_or_argument_mapset
 
-  @spec plan_has_access?(plan_name, product_code, query_or_argument) :: boolean()
-  def plan_has_access?(plan_name, product_code, query_or_argument) do
-    case min_plan(product_code, query_or_argument) do
+  @spec plan_has_access?(query_or_argument, requested_product, plan_name) :: boolean()
+  def plan_has_access?(query_or_argument, requested_product, plan_name) do
+    case min_plan(requested_product, query_or_argument) do
       "FREE" -> true
       "BASIC" -> plan_name != "FREE"
       "PRO" -> plan_name not in ["FREE", "BASIC"]
-      "PREMIUM" -> plan_name not in ["FREE", "BASIC", "PRO"]
       "CUSTOM" -> plan_name == "CUSTOM"
       _ -> true
     end
@@ -128,15 +100,14 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
     case restriction_type do
       :free -> @free_query_or_argument
       :restricted -> @restricted_query_or_argument
-      :custom -> @custom_access_queries
       :all -> @all_query_or_argument
     end
     |> Stream.filter(&match?({:metric, _}, &1))
-    |> Stream.filter(&plan_has_access?(plan_name, product_code, &1))
+    |> Stream.filter(&plan_has_access?(&1, product_code, plan_name))
     |> Enum.map(fn {_, name} -> name end)
   end
 
-  def is_historical_data_freely_available?(_plan_name, _product_code, query_or_argument) do
+  def is_historical_data_freely_available?(query_or_argument) do
     case query_or_argument do
       {:metric, metric} ->
         Sanbase.Metric.is_historical_data_freely_available?(metric)
@@ -149,7 +120,7 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
     end
   end
 
-  def is_realtime_data_freely_available?(_plan_name, _product_name, query_or_argument) do
+  def is_realtime_data_freely_available?(query_or_argument) do
     case query_or_argument do
       {:metric, metric} ->
         Sanbase.Metric.is_realtime_data_freely_available?(metric)
@@ -171,25 +142,23 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
   If the result from this function is nil, then no restrictions are applied.
   Respectively the `restrictedFrom` field has a value of nil as well.
   """
-  @spec historical_data_in_days(plan_name, product_code, query_or_argument()) ::
+  @spec historical_data_in_days(
+          query_or_argument(),
+          requested_product,
+          subscription_product,
+          plan_name
+        ) ::
           non_neg_integer() | nil
-  def historical_data_in_days(plan_name, product_code, query_or_argument)
-      when query_or_argument in @custom_access_queries do
-    if not is_historical_data_freely_available?(plan_name, product_code, query_or_argument) do
-      Map.get(@custom_access_queries_stats, query_or_argument)
-      |> get_in([:plan_access, plan_name, :historical_data_in_days])
-    end
-  end
-
-  for {product_code, module} <- @product_to_access_module do
-    def historical_data_in_days(plan_name, unquote(product_code), query_or_argument) do
-      if not is_historical_data_freely_available?(
-           plan_name,
-           unquote(product_code),
-           query_or_argument
-         ) do
+  for {requested_product, module} <- @product_to_access_module do
+    def historical_data_in_days(
+          query_or_argument,
+          unquote(requested_product),
+          subscription_product,
+          plan_name
+        ) do
+      if not is_historical_data_freely_available?(query_or_argument) do
         # product_code is not needed as these modules are named Api* and Sanbase*
-        unquote(module).historical_data_in_days(plan_name, query_or_argument)
+        unquote(module).historical_data_in_days(subscription_product, plan_name)
       end
     end
   end
@@ -198,25 +167,24 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
   If the result from this function is nil, then no restrictions are applied.
   Respectively the `restrictedTo` field has a value of nil as well.
   """
-  @spec realtime_data_cut_off_in_days(plan_name, product_code, query_or_argument()) ::
+  @spec realtime_data_cut_off_in_days(
+          query_or_argument(),
+          requested_product,
+          subscription_product,
+          plan_name
+        ) ::
           non_neg_integer() | nil
-  def realtime_data_cut_off_in_days(plan_name, product_code, query_or_argument)
-      when query_or_argument in @custom_access_queries do
-    if not is_realtime_data_freely_available?(plan_name, product_code, query_or_argument) do
-      Map.get(@custom_access_queries_stats, query_or_argument)
-      |> get_in([:plan_access, plan_name, :realtime_data_cut_off_in_days])
-    end
-  end
 
-  for {product_code, module} <- @product_to_access_module do
-    def realtime_data_cut_off_in_days(plan_name, unquote(product_code), query_or_argument) do
-      if not is_realtime_data_freely_available?(
-           plan_name,
-           unquote(product_code),
-           query_or_argument
-         ) do
+  for {requested_product, module} <- @product_to_access_module do
+    def realtime_data_cut_off_in_days(
+          query_or_argument,
+          unquote(requested_product),
+          subscription_product,
+          plan_name
+        ) do
+      if not is_realtime_data_freely_available?(query_or_argument) do
         # product_code is not needed as these modules are named Api* and Sanbase*
-        unquote(module).realtime_data_cut_off_in_days(plan_name, query_or_argument)
+        unquote(module).realtime_data_cut_off_in_days(subscription_product, plan_name)
       end
     end
   end

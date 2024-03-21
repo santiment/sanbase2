@@ -5,11 +5,15 @@ defmodule Sanbase.Accounts.User.Permissions do
   def permissions(%User{} = user) do
     user_subscriptions_product_ids = Subscription.user_subscriptions_product_ids(user)
 
+    # Sanbase or API plan subscription gives access to all products
+    has_access =
+      Product.product_api() in user_subscriptions_product_ids ||
+        Product.product_sanbase() in user_subscriptions_product_ids
+
     %{
-      api: Product.product_api() in user_subscriptions_product_ids,
-      sanbase: Product.product_sanbase() in user_subscriptions_product_ids,
-      spreadsheet: Product.product_sanbase() in user_subscriptions_product_ids,
-      sandata: Product.product_sandata() in user_subscriptions_product_ids
+      api: has_access,
+      sanbase: has_access,
+      spreadsheet: has_access
     }
   end
 
@@ -17,8 +21,7 @@ defmodule Sanbase.Accounts.User.Permissions do
     %{
       api: false,
       sanbase: false,
-      spreadsheet: false,
-      sandata: false
+      spreadsheet: false
     }
   end
 
@@ -26,8 +29,7 @@ defmodule Sanbase.Accounts.User.Permissions do
     %{
       api: true,
       sanbase: true,
-      spreadsheet: true,
-      sandata: true
+      spreadsheet: true
     }
   end
 end

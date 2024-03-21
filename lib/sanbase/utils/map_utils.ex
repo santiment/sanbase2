@@ -108,6 +108,85 @@ defmodule Sanbase.MapUtils do
     Map.new(map, fn {key, value} -> {String.to_existing_atom(key), value} end)
   end
 
+  @doc ~s"""
+
+  Merge two maps deeply. If a key exists in both maps and the value is a map, the
+  function will merge the two maps recursively. If the value is not a map, the
+  value from the second map will be used.
+
+  #### Examples:
+
+    iex> map1 = %{
+    ...>   a: 1,
+    ...>   b: %{
+    ...>     c: 2,
+    ...>     d: %{
+    ...>       e: 3
+    ...>     }
+    ...>   }
+    ...> }
+    iex> map2 = %{
+    ...>   a: 2,
+    ...>   b: %{
+    ...>     c: 3,
+    ...>     d: %{
+    ...>       e: 4
+    ...>     }
+    ...>   }
+    ...> }
+    iex> Sanbase.MapUtils.merge_deep(map1, map2)
+    %{
+      a: 2,
+      b: %{
+        c: 3,
+        d: %{
+          e: 4
+        }
+      }
+    }
+
+    iex> map1 = %{
+    ...>   a: 1,
+    ...>   b: %{
+    ...>     c: 2,
+    ...>     d: %{
+    ...>       e: 3
+    ...>     }
+    ...>   }
+    ...> }
+    iex> map2 = %{
+    ...>   a: 2,
+    ...>   b: %{
+    ...>     c: 3,
+    ...>     d: %{
+    ...>       e: 4,
+    ...>       f: 5
+    ...>     }
+    ...>   }
+    ...> }
+    iex> Sanbase.MapUtils.merge_deep(map1, map2)
+    %{
+      a: 2,
+      b: %{
+        c: 3,
+        d: %{
+          e: 4,
+          f: 5
+        }
+      }
+    }
+  """
+  def merge_deep(map1, map2) do
+    map2
+    |> Enum.reduce(map1, fn {key, val}, acc ->
+      if Map.has_key?(acc, key) and is_map(val) and is_map(Map.get(acc, key)) do
+        Map.put(acc, key, merge_deep(Map.get(acc, key), val))
+      else
+        Map.put(acc, key, val)
+      end
+    end)
+  end
+
   # Private functions
 
   @compile {:inline, atomize: 1}

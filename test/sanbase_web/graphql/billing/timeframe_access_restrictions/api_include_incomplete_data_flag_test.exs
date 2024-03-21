@@ -19,7 +19,7 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
 
   setup do
     user = insert(:user)
-    insert(:subscription_premium, user: user)
+    insert(:subscription_custom, user: user)
 
     project = insert(:random_erc20_project)
 

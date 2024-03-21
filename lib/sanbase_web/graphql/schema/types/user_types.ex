@@ -365,7 +365,6 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:api, non_null(:boolean))
     field(:sanbase, non_null(:boolean))
     field(:spreadsheet, non_null(:boolean))
-    field(:sandata, non_null(:boolean))
   end
 
   object :follower_data do

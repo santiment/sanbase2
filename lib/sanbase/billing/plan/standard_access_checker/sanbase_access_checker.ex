@@ -16,6 +16,10 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     sangraphs_access: false
   }
 
+  @basic_plan_stats Plan.upgrade_plan(@free_plan_stats,
+                      extends: %{access_paywalled_insights: true}
+                    )
+
   @pro_plan_stats %{
     realtime_data_cut_off_in_days: 0,
     alerts: %{
@@ -25,18 +29,18 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     sangraphs_access: true
   }
 
-  @pro_plus_plan_stats @pro_plan_stats |> Map.put(:alerts, %{limit: 1000})
+  @pro_plus_plan_stats Plan.upgrade_plan(@pro_plan_stats, extends: %{alerts: %{limit: 50}})
+  @sanbase_max_plan_stats Plan.upgrade_plan(@pro_plus_plan_stats, extends: %{})
+  @business_pro_plan_stats Plan.upgrade_plan(@pro_plus_plan_stats, extends: %{})
+  @business_max_plan_stats Plan.upgrade_plan(@business_pro_plan_stats, extends: %{})
+  @custom_plan_stats Plan.upgrade_plan(@business_max_plan_stats, extends: %{})
 
-  @basic_plan_stats Map.merge(@free_plan_stats, %{access_paywalled_insights: true})
-
-  @custom_plan_stats @pro_plan_stats
-
-  def historical_data_in_days(plan, _query \\ nil) do
+  def historical_data_in_days(_subscription_product, plan) do
     plan_stats(plan)
     |> Map.get(:historical_data_in_days)
   end
 
-  def realtime_data_cut_off_in_days(plan, _query \\ nil) do
+  def realtime_data_cut_off_in_days(_subscription_product, plan) do
     plan_stats(plan)
     |> Map.get(:realtime_data_cut_off_in_days)
   end
@@ -61,7 +65,9 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
       "BASIC" -> @basic_plan_stats
       "PRO" -> @pro_plan_stats
       "PRO_PLUS" -> @pro_plus_plan_stats
-      "PREMIUM" -> @custom_plan_stats
+      "MAX" -> @sanbase_max_plan_stats
+      "BUSINESS_PRO" -> @business_pro_plan_stats
+      "BUSINESS_MAX" -> @business_max_plan_stats
       "CUSTOM" -> @custom_plan_stats
       "CUSTOM_" <> _ -> @custom_plan_stats
     end

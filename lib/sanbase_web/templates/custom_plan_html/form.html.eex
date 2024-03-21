@@ -68,7 +68,7 @@
     </div>
 
     <div class="mb-4 relative">
-      <%= textarea ff, :restricted_access_as_plan, id: "restricted_access_as_plan", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Restricted Access As Plan (One of: FREE, BASIC, PRO, PREMIUM). This controls how the min_plan field is applied." %>
+      <%= textarea ff, :restricted_access_as_plan, id: "restricted_access_as_plan", class: "input border border-gray-400 appearance-none rounded w-full px-3 py-3 pt-5 pb-2 focus focus:border-indigo-600 focus:outline-none active:outline-none active:border-indigo-600", placeholder: "Restricted Access As Plan (One of: FREE, BASIC, PRO). This controls how the min_plan field is applied." %>
       <%= error_tag ff, :restricted_access_as_plan %>
     </div>
 

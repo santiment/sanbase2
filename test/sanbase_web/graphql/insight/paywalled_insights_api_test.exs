@@ -64,6 +64,51 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
       assert insight["text"] == context.post.text
     end
 
+    test "with logged in user with SANBASE MAX subscription", context do
+      subscription =
+        insert(:subscription_max_sanbase, user: context.user)
+        |> Sanbase.Repo.preload(:plan)
+
+      assert Sanbase.Billing.Plan.SanbaseAccessChecker.can_access_paywalled_insights?(
+               subscription
+             )
+
+      insight = execute_query(context.conn, context.query, "insight")
+
+      assert insight["isPaywallRequired"]
+      assert insight["text"] == context.post.text
+    end
+
+    test "with logged in user with BUSINESS_PRO subscription", context do
+      subscription =
+        insert(:subscription_business_pro_monthly, user: context.user)
+        |> Sanbase.Repo.preload(:plan)
+
+      assert Sanbase.Billing.Plan.SanbaseAccessChecker.can_access_paywalled_insights?(
+               subscription
+             )
+
+      insight = execute_query(context.conn, context.query, "insight")
+
+      assert insight["isPaywallRequired"]
+      assert insight["text"] == context.post.text
+    end
+
+    test "with logged in user with BUSINESS_MAX subscription", context do
+      subscription =
+        insert(:subscription_business_max_monthly, user: context.user)
+        |> Sanbase.Repo.preload(:plan)
+
+      assert Sanbase.Billing.Plan.SanbaseAccessChecker.can_access_paywalled_insights?(
+               subscription
+             )
+
+      insight = execute_query(context.conn, context.query, "insight")
+
+      assert insight["isPaywallRequired"]
+      assert insight["text"] == context.post.text
+    end
+
     test "with not logged in user", context do
       insight = execute_query(build_conn(), context.query, "insight")
 

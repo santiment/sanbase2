@@ -11,7 +11,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     > free
     > basic
     > pro
-    > premium
     > custom
   """
   # Disable too many dependencies errors
@@ -93,7 +92,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.ChartConfigurationQueries)
   import_types(Graphql.Schema.CommentQueries)
   import_types(Graphql.Schema.DashboardQueries)
-  import_types(Graphql.Schema.DiscordQueries)
   import_types(Graphql.Schema.EmailQueries)
   import_types(Graphql.Schema.EcosystemQueries)
   import_types(Graphql.Schema.EntityQueries)
@@ -205,7 +203,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:dashboard_queries_interaction_mutations)
     import_fields(:old_dashboard_mutations)
     import_fields(:comment_mutations)
-    import_fields(:discord_mutations)
     import_fields(:email_mutations)
     import_fields(:entity_mutations)
     import_fields(:free_form_json_storage_mutations)

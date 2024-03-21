@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
 
-    %{user: user2} = insert(:subscription_premium, user: insert(:user))
+    %{user: user2} = insert(:subscription_custom, user: insert(:user))
     conn2 = setup_jwt_auth(build_conn(), user2)
 
     %{conn: conn, conn2: conn2, user: user, user2: user2}

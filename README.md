@@ -42,7 +42,7 @@ The API server powers a set of services:
     - Trending words
     - Chart layouts
     - etc.
-- Sanapi - https://neuro.santiment.net
+- Sanapi - https://api.santiment.net
   - Sanapi gives access to the raw GraphQL API and is aimed to users who have
     development skills.
 - Sansheets - https://sheets.santiment.net

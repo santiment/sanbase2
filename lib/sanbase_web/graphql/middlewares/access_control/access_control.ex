@@ -189,7 +189,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
     token_has_access? = token_has_access?(token, query_or_argument, arguments[:slug])
 
-    plan_has_access? = AccessChecker.plan_has_access?(plan_name, product_code, query_or_argument)
+    plan_has_access? = AccessChecker.plan_has_access?(query_or_argument, product_code, plan_name)
 
     plan_has_access? and token_has_access?
   end
@@ -215,18 +215,18 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       context: %{__query_argument_atom_name__: query_or_argument} = context
     } = resolution
 
-    {plan_name, product_code} = context_to_plan_name_product_code(context)
+    %{
+      plan_name: plan_name,
+      requested_product: requested_product,
+      subscription_product: subscription_product
+    } = context_to_plan_name_product_code(context)
 
-    case AccessChecker.plan_has_access?(
-           plan_name,
-           product_code,
-           query_or_argument
-         ) do
+    case AccessChecker.plan_has_access?(query_or_argument, requested_product, plan_name) do
       true ->
         resolution
 
       false ->
-        min_plan = AccessChecker.min_plan(product_code, query_or_argument)
+        min_plan = AccessChecker.min_plan(query_or_argument, requested_product)
         {argument, argument_name} = query_or_argument
 
         Resolution.put_result(
@@ -234,7 +234,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
           {:error,
            """
            The #{argument} #{argument_name} is not accessible with the currently used \
-           #{product_code} #{plan_name} subscription. Please upgrade to #{product_code} #{min_plan} subscription \
+           #{subscription_product || requested_product} #{plan_name} subscription. Please upgrade to #{requested_product} #{min_plan} subscription \
            or a Custom Plan that has access to it.
 
            If you have a subscription for one product but attempt to fetch data using \
@@ -258,18 +258,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # different functions if there are `from` and `to` parameters
   defp maybe_apply_restrictions(
          %Resolution{
-           context: %{__query_argument_atom_name__: query_or_argument} = context,
+           context: %{__query_argument_atom_name__: query_or_argument},
            arguments: %{from: _from, to: _to}
          } = resolution,
          middleware_args
        ) do
-    {plan_name, product_code} = context_to_plan_name_product_code(context)
-
-    if Plan.AccessChecker.is_restricted?(
-         plan_name,
-         product_code,
-         query_or_argument
-       ) do
+    if Plan.AccessChecker.is_restricted?(query_or_argument) do
       restricted_query(resolution, middleware_args, query_or_argument)
     else
       not_restricted_query(resolution, middleware_args)
@@ -344,20 +338,26 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          middleware_args,
          query_or_argument
        ) do
-    {plan_name, product_code} = context_to_plan_name_product_code(context)
+    %{
+      plan_name: plan_name,
+      requested_product: requested_product,
+      subscription_product: subscription_product
+    } = context_to_plan_name_product_code(context)
 
     historical_data_in_days =
       AccessChecker.historical_data_in_days(
-        plan_name,
-        product_code,
-        query_or_argument
+        query_or_argument,
+        requested_product,
+        subscription_product,
+        plan_name
       )
 
     realtime_data_cut_off_in_days =
       AccessChecker.realtime_data_cut_off_in_days(
-        plan_name,
-        product_code,
-        query_or_argument
+        query_or_argument,
+        requested_product,
+        subscription_product,
+        plan_name
       )
 
     case query_or_argument do
@@ -374,17 +374,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       {_, _} ->
         middleware_args = %{
           allow_historical_data:
-            AccessChecker.is_historical_data_freely_available?(
-              plan_name,
-              product_code,
-              query_or_argument
-            ),
-          allow_realtime_data:
-            AccessChecker.is_realtime_data_freely_available?(
-              plan_name,
-              product_code,
-              query_or_argument
-            )
+            AccessChecker.is_historical_data_freely_available?(query_or_argument),
+          allow_realtime_data: AccessChecker.is_realtime_data_freely_available?(query_or_argument)
         }
 
         %{
@@ -473,15 +464,20 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         # If we reach here the first time we checked `to < from` was not true
         # This means that the middleware rewrote the params in a way that this is
         # now true. If that happens - both from and to are outside the allowed interval
-        {plan_name, product_code} = context_to_plan_name_product_code(context)
+        %{
+          plan_name: plan_name,
+          requested_product: requested_product,
+          subscription_product: subscription_product
+        } = context_to_plan_name_product_code(context)
 
         query_or_argument = context[:__query_argument_atom_name__]
 
         %{restricted_from: restricted_from, restricted_to: restricted_to} =
           Sanbase.Billing.Plan.Restrictions.get(
             query_or_argument,
-            plan_name,
-            product_code
+            requested_product,
+            subscription_product,
+            plan_name
           )
 
         resolution
@@ -489,7 +485,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
           {:error,
            """
            Both `from` and `to` parameters are outside the allowed interval you can query \
-           #{query_or_argument |> elem(1)} with your current subscription #{product_code} #{plan_name}. \
+           #{query_or_argument |> elem(1)} with your current subscription #{subscription_product || requested_product} #{plan_name}. \
            Upgrade to a higher tier in order to access more data.
 
            Allowed time restrictions:
@@ -555,9 +551,15 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   defp context_to_plan_name_product_code(context) do
     plan_name = context[:auth][:plan] || "FREE"
-    product_id = context[:product_id] || Product.product_api()
-    product_code = Product.code_by_id(product_id)
+    requested_product_id = context[:requested_product_id] || Product.product_api()
+    requested_product = Product.code_by_id(requested_product_id)
+    subscription_product_id = context[:subscription_product_id]
+    subscription_product = Product.code_by_id(subscription_product_id)
 
-    {plan_name, product_code}
+    %{
+      plan_name: plan_name,
+      requested_product: requested_product,
+      subscription_product: subscription_product
+    }
   end
 end

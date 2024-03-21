@@ -113,8 +113,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         |> execute_query(query, "productsWithPlans")
         |> hd()
 
-      assert result["name"] == "Neuro by Santiment"
-      assert length(result["plans"]) == 9
+      assert result["name"] == "Sanapi by Santiment"
+      assert length(result["plans"]) == 11
     end)
   end
 
@@ -669,58 +669,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       end
     end
   end
-
-  # Removing annual discount eligibility temporally
-
-  # describe "annual discount eligibility" do
-  #   test "50% off", context do
-  #     insert(:subscription_pro_sanbase,
-  #       user: context.user,
-  #       status: "trialing",
-  #       trial_end: DateTime.add(Timex.now(), 10 * 24 * 3600)
-  #     )
-
-  #     res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-  #     assert res.is_eligible
-  #     assert res.discount.percent_off == 50
-
-  #     query = check_annual_discount_eligibility()
-  #     res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-  #     assert res["discount"]["percentOff"] == 50
-  #   end
-
-  #   test "35% off", context do
-  #     insert(:subscription_pro_sanbase,
-  #       user: context.user,
-  #       status: "trialing",
-  #       trial_end: DateTime.add(Timex.now(), -10 * 24 * 3600)
-  #     )
-
-  #     res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-  #     assert res.is_eligible
-  #     assert res.discount.percent_off == 35
-
-  #     query = check_annual_discount_eligibility()
-  #     res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-  #     assert res["isEligible"]
-  #     assert res["discount"]["percentOff"] == 35
-  #   end
-
-  #   test "not eligible", context do
-  #     insert(:subscription_pro_sanbase,
-  #       user: context.user,
-  #       status: "trialing",
-  #       trial_end: DateTime.add(Timex.now(), -20 * 24 * 3600)
-  #     )
-
-  #     res = Sanbase.Billing.Subscription.annual_discount_eligibility(context.user.id)
-  #     refute res.is_eligible
-
-  #     query = check_annual_discount_eligibility()
-  #     res = execute_query(context.conn, query, "checkAnnualDiscountEligibility")
-  #     refute res["isEligible"]
-  #   end
-  # end
 
   def ppp_settings_query() do
     """

@@ -46,7 +46,6 @@ defmodule SanbaseWeb.ConnCase do
      conn: conn,
      product_api: Map.get(product_and_plans, :product_api),
      product_sanbase: Map.get(product_and_plans, :product_sanbase),
-     product_sandata: Map.get(product_and_plans, :product_sandata),
      plans: Map.delete(product_and_plans, :product),
      next_integer: fn -> :erlang.unique_integer([:monotonic, :positive]) end}
   end

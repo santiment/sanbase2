@@ -14,30 +14,42 @@ defmodule Sanbase.ApiCallLimit do
 
   @plans_without_limits [
     "sanapi_enterprise",
-    "sanapi_premium",
-    "sanapi_custom",
-    "sanapi_enterprise_basic",
-    "sanapi_enterprise_plus"
+    "sanapi_custom"
   ]
   @limits_per_month %{
+    "sanbase_basic" => 1000,
     "sanbase_pro" => 5000,
+    "sanbase_pro_plus" => 80_000,
+    "sanbase_max" => 80_000,
     "sanapi_free" => 1000,
     "sanapi_basic" => 300_000,
-    "sanapi_pro" => 600_000
+    "sanapi_pro" => 600_000,
+    "sanapi_business_pro" => 600_000,
+    "sanapi_business_max" => 1_200_000
   }
 
   @limits_per_hour %{
+    "sanbase_basic" => 500,
     "sanbase_pro" => 1000,
+    "sanbase_pro_plus" => 4000,
+    "sanbase_max" => 4000,
     "sanapi_free" => 500,
     "sanapi_basic" => 20_000,
-    "sanapi_pro" => 30_000
+    "sanapi_pro" => 30_000,
+    "sanapi_business_pro" => 30_000,
+    "sanapi_business_max" => 60_000
   }
 
   @limits_per_minute %{
+    "sanbase_basic" => 100,
     "sanbase_pro" => 100,
+    "sanbase_pro_plus" => 100,
+    "sanbase_max" => 100,
     "sanapi_free" => 100,
     "sanapi_basic" => 300,
-    "sanapi_pro" => 600
+    "sanapi_pro" => 600,
+    "sanapi_business_pro" => 600,
+    "sanapi_business_max" => 1200
   }
 
   @product_api_id Product.product_api()
@@ -265,7 +277,7 @@ defmodule Sanbase.ApiCallLimit do
         "sanapi_#{Subscription.plan_name(subscription)}" |> String.downcase()
 
       %Subscription{plan: %{product: %{id: @product_sanbase_id}}} ->
-        "sanbase_pro"
+        "sanbase_#{Subscription.plan_name(subscription)}" |> String.downcase()
 
       _ ->
         "sanapi_free"

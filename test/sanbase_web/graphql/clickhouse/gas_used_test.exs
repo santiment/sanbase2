@@ -197,13 +197,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
     json_response(response, 200)["data"]["gasUsed"]
   end
 
-  defp execute_query(slug, context) do
-    query = gas_used_query(slug, context.from, context.to, context.interval)
-
-    context.conn
-    |> post("/graphql", query_skeleton(query, "gasUsed"))
-  end
-
   defp gas_used_query(slug, from, to, interval) do
     """
       {

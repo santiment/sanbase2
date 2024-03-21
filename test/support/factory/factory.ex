@@ -663,7 +663,7 @@ defmodule Sanbase.Factory do
   def subscription_business_pro_monthly_factory() do
     %Subscription{
       stripe_id: rand_str(),
-      plan_id: 105,
+      plan_id: 107,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }
@@ -672,7 +672,7 @@ defmodule Sanbase.Factory do
   def subscription_business_pro_yearly_factory() do
     %Subscription{
       stripe_id: rand_str(),
-      plan_id: 106,
+      plan_id: 108,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }
@@ -681,7 +681,7 @@ defmodule Sanbase.Factory do
   def subscription_business_max_monthly_factory() do
     %Subscription{
       stripe_id: rand_str(),
-      plan_id: 107,
+      plan_id: 109,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }
@@ -690,7 +690,7 @@ defmodule Sanbase.Factory do
   def subscription_business_max_yearly_factory() do
     %Subscription{
       stripe_id: rand_str(),
-      plan_id: 107,
+      plan_id: 110,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }

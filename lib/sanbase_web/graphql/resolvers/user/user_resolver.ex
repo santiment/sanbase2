@@ -146,14 +146,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   end
 
   def queries_executions_info(_root, _args, %{context: %{auth: %{current_user: user}} = context}) do
-    product_code = context.product_code
+    subscription_product = context.subscription_product
     plan_name = context.auth.plan
 
     with {:ok, details} <- Sanbase.Queries.user_executions_summary(user.id) do
-      credits_limit = Sanbase.Queries.Authorization.credits_limit(product_code, plan_name)
+      credits_limit = Sanbase.Queries.Authorization.credits_limit(subscription_product, plan_name)
 
       executions_limit =
-        Sanbase.Queries.Authorization.query_executions_limit(product_code, plan_name)
+        Sanbase.Queries.Authorization.query_executions_limit(subscription_product, plan_name)
 
       result = %{
         credits_availalbe_month: credits_limit,

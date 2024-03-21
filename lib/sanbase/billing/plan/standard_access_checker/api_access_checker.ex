@@ -18,6 +18,12 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
 
   # Sanbase plans access to API product
   @sanbase_pro_plan_stats @free_plan_stats
+  @sanbase_pro_plus_plan_stats Plan.upgrade_plan(@sanbase_pro_plan_stats,
+                                 extends: %{
+                                   historical_data_in_days: 2 * 365,
+                                   realtime_data_cut_off_in_days: 0
+                                 }
+                               )
   @sanbase_max_plan_stats Plan.upgrade_plan(@sanbase_pro_plan_stats,
                             extends: %{
                               historical_data_in_days: 2 * 365,
@@ -74,6 +80,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
     case plan do
       "BASIC" -> @free_plan_stats[:historical_data_in_days]
       "PRO" -> @free_plan_stats[:historical_data_in_days]
+      "PRO_PLUS" -> @sanbase_pro_plus_plan_stats[:historical_data_in_days]
       "MAX" -> @sanbase_max_plan_stats[:historical_data_in_days]
     end
   end
@@ -101,6 +108,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
     case plan do
       "BASIC" -> @free_plan_stats[:realtime_data_cut_off_in_days]
       "PRO" -> @sanbase_pro_plan_stats[:realtime_data_cut_off_in_days]
+      "PRO_PLUS" -> @sanbase_pro_plus_plan_stats[:realtime_data_cut_off_in_days]
       "MAX" -> @sanbase_max_plan_stats[:realtime_data_cut_off_in_days]
     end
   end

@@ -30,10 +30,10 @@ INSERT INTO plans (id, name, product_id, amount, currency, interval, "order") VA
   (209,'PRO_PLUS',2,81000,'USD','year',0),
   (210,'MAX',2,24900,'USD','month',0),
   (211,'MAX',2,270000,'USD','year',0),
-  (105,'BUSINESS_PRO',1,42000,'USD','month',20),
-  (106,'BUSINESS_PRO',1,478800,'USD','year',21),
-  (107,'BUSINESS_MAX',1,99900,'USD','month',22),
-  (108,'BUSINESS_MAX',1,1138800,'USD','year',23)
+  (107,'BUSINESS_PRO',1,42000,'USD','month',20),
+  (108,'BUSINESS_PRO',1,478800,'USD','year',21),
+  (109,'BUSINESS_MAX',1,99900,'USD','month',22),
+  (110,'BUSINESS_MAX',1,1138800,'USD','year',23)
   ON CONFLICT DO NOTHING
 """)
 

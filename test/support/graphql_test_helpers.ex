@@ -169,10 +169,9 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   def map_to_args(%{} = map, opts \\ []) do
     map_as_input_object? = Keyword.get(opts, :map_as_input_object, false)
 
-    map = Map.delete(map, :map_as_input_object)
-    map = Map.new(map, fn {k, v} -> {Inflex.camelize(k, :lower), v} end)
-
     key = fn k -> Inflex.camelize(k, :lower) end
+    map = Map.delete(map, :map_as_input_object)
+    map = Map.new(map, fn {k, v} -> {key.(k), v} end)
 
     Enum.map(map, fn
       {k, [%{} | _] = l} ->

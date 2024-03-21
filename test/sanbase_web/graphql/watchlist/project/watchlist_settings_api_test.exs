@@ -19,7 +19,13 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
     %{"id" => watchlist_id} = create_watchlist(conn, title: rand_str())
 
     settings = get_watchlist_settings(conn, watchlist_id)
-    assert settings == %{"pageSize" => 20, "timeWindow" => "180d", "tableColumns" => %{}}
+
+    assert settings == %{
+             "pageSize" => 20,
+             "timeWindow" => "180d",
+             "tableColumns" => %{},
+             "jsonData" => %{}
+           }
   end
 
   test "cannot fetch settings of not own private watchlist", %{conn: conn, conn2: conn2} do
@@ -101,7 +107,8 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
     update_watchlist_settings(conn, watchlist_id,
       page_size: 50,
       time_window: "60d",
-      table_columns: %{shown_columns: [1, 2, 3]}
+      table_columns: %{shown_columns: [1, 2, 3]},
+      json_data: %{x: 12}
     )
 
     settings = get_watchlist_settings(conn2, watchlist_id)
@@ -109,7 +116,8 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
     assert settings == %{
              "pageSize" => 50,
              "tableColumns" => %{"shown_columns" => [1, 2, 3]},
-             "timeWindow" => "60d"
+             "timeWindow" => "60d",
+             "jsonData" => %{"x" => 12}
            }
   end
 
@@ -122,13 +130,15 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
     update_watchlist_settings(conn2, watchlist_id,
       page_size: 10,
       time_window: "30d",
-      table_columns: %{shown_columns: [2, 3]}
+      table_columns: %{shown_columns: [2, 3]},
+      json_data: %{some_key: "foo"}
     )
 
     update_watchlist_settings(conn, watchlist_id,
       page_size: 50,
       time_window: "60d",
-      table_columns: %{shown_columns: [1, 2, 3]}
+      table_columns: %{shown_columns: [1, 2, 3]},
+      json_data: %{some_key: "bar"}
     )
 
     settings = get_watchlist_settings(conn2, watchlist_id)
@@ -136,7 +146,8 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
     assert settings == %{
              "pageSize" => 10,
              "tableColumns" => %{"shown_columns" => [2, 3]},
-             "timeWindow" => "30d"
+             "timeWindow" => "30d",
+             "jsonData" => %{"some_key" => "foo"}
            }
   end
 
@@ -147,14 +158,21 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
       update_watchlist_settings(conn, watchlist_id,
         page_size: 20,
         time_window: "180d",
-        table_columns: %{}
+        table_columns: %{},
+        json_data: %{}
       )
 
     updated_settings = result["data"]["updateWatchlistSettings"]
 
     watchlist_settings = get_watchlist_settings(conn, watchlist_id)
     # default settings
-    assert updated_settings == %{"pageSize" => 20, "timeWindow" => "180d", "tableColumns" => %{}}
+    assert updated_settings == %{
+             "pageSize" => 20,
+             "timeWindow" => "180d",
+             "tableColumns" => %{},
+             "jsonData" => %{}
+           }
+
     assert updated_settings == watchlist_settings
   end
 
@@ -164,18 +182,26 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
     update_watchlist_settings(conn, watchlist_id,
       page_size: 50,
       time_window: "280d",
-      table_columns: %{shown: [1, 2, 3]}
+      table_columns: %{shown: [1, 2, 3]},
+      json_data: %{a: 1}
     )
 
     result =
       update_watchlist_settings(conn, watchlist_id,
         page_size: 20,
         time_window: "180d",
-        table_columns: %{}
+        table_columns: %{},
+        json_data: %{b: 2}
       )
 
     updated_settings = result["data"]["updateWatchlistSettings"]
-    assert updated_settings == %{"pageSize" => 20, "timeWindow" => "180d", "tableColumns" => %{}}
+
+    assert updated_settings == %{
+             "pageSize" => 20,
+             "timeWindow" => "180d",
+             "tableColumns" => %{},
+             "jsonData" => %{"b" => 2}
+           }
   end
 
   test "update page_size watchlist settings twice", %{conn: conn} do
@@ -184,7 +210,8 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
     update_watchlist_settings(conn, watchlist_id,
       page_size: 50,
       time_window: "280d",
-      table_columns: %{shown: [1, 2, 3]}
+      table_columns: %{shown: [1, 2, 3]},
+      json_data: %{x: 2}
     )
 
     result = update_watchlist_settings(conn, watchlist_id, page_size: 20)
@@ -194,7 +221,8 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
     assert updated_settings == %{
              "pageSize" => 20,
              "tableColumns" => %{"shown" => [1, 2, 3]},
-             "timeWindow" => "280d"
+             "timeWindow" => "280d",
+             "jsonData" => %{"x" => 2}
            }
   end
 
@@ -204,7 +232,8 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
     update_watchlist_settings(conn, watchlist_id,
       page_size: 50,
       time_window: "280d",
-      table_columns: %{shown: [1, 2, 3]}
+      table_columns: %{shown: [1, 2, 3]},
+      json_data: %{a: 1}
     )
 
     result = update_watchlist_settings(conn, watchlist_id, time_window: "20d")
@@ -214,7 +243,8 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
     assert updated_settings == %{
              "pageSize" => 50,
              "tableColumns" => %{"shown" => [1, 2, 3]},
-             "timeWindow" => "20d"
+             "timeWindow" => "20d",
+             "jsonData" => %{"a" => 1}
            }
   end
 
@@ -243,6 +273,7 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
            pageSize
            tableColumns
            timeWindow
+           jsonData
          }
       }
     }
@@ -257,30 +288,19 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
   end
 
   defp update_watchlist_settings(conn, watchlist_id, opts) do
-    page_size = if val = Keyword.get(opts, :page_size), do: "pageSize: #{val}"
-    time_window = if val = Keyword.get(opts, :time_window), do: "timeWindow: '#{val}'"
-
-    table_columns =
-      if val = Keyword.get(opts, :table_columns), do: "tableColumns: '#{val |> Jason.encode!()}'"
+    map = opts |> Map.new()
 
     mutation =
-      ~s|
+      ~s"""
       mutation {
-        updateWatchlistSettings(
-          id: #{watchlist_id},
-          settings: {
-            #{page_size}
-            #{time_window}
-            #{table_columns}
-          }) {
-            pageSize
-            tableColumns
-            timeWindow
-          }
+        updateWatchlistSettings(id: #{watchlist_id}, settings: #{map_to_input_object_str(map)}){
+          pageSize
+          tableColumns
+          timeWindow
+          jsonData
+        }
       }
-      |
-      |> String.replace(~r|\"|, ~S|\\"|)
-      |> String.replace(~r|'|, ~S|"|)
+      """
 
     conn
     |> post("/graphql", mutation_skeleton(mutation))

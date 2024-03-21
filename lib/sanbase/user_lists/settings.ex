@@ -21,22 +21,25 @@ defmodule Sanbase.UserList.Settings do
     @type t :: %{
             page_size: non_neg_integer(),
             table_columns: map(),
-            time_window: String.t()
+            time_window: String.t(),
+            json_data: map()
           }
 
     @default_page_size 20
     @default_time_window "180d"
     @default_table_columns %{}
+    @default_json_data %{}
 
     embedded_schema do
       field(:page_size, :integer, default: @default_page_size)
       field(:time_window, :string, default: @default_time_window)
       field(:table_columns, :map, default: @default_table_columns)
+      field(:json_data, :map, default: @default_json_data)
     end
 
     def changeset(%__MODULE__{} = settings, attrs \\ %{}) do
       settings
-      |> cast(attrs, [:page_size, :time_window, :table_columns])
+      |> cast(attrs, [:page_size, :time_window, :table_columns, :json_data])
       |> validate_number(:page_size, greater_than: 0)
       |> validate_change(:time_window, &valid_time_window?/2)
     end
@@ -45,7 +48,8 @@ defmodule Sanbase.UserList.Settings do
       %{
         page_size: @default_page_size,
         time_window: @default_time_window,
-        table_columns: @default_table_columns
+        table_columns: @default_table_columns,
+        json_data: @default_json_data
       }
     end
 

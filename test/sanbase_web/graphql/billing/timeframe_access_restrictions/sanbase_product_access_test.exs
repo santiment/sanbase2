@@ -8,6 +8,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   alias Sanbase.Metric
   alias Sanbase.Signal
+  alias Sanbase.Clickhouse.TopHolders
 
   @triggers_free_limit_count 3
   @triggers_pro_limit_count 20
@@ -18,7 +19,10 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   setup_all_with_mocks([
     {Sanbase.Price, [:passthrough], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
     {Sanbase.Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]},
-    {Sanbase.Signal, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> signal_resp() end]}
+    {Sanbase.Signal, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> signal_resp() end]},
+    {TopHolders, [], [top_holders: fn _, _, _, _ -> top_holders_resp() end]},
+    {Sanbase.Alert.UserTrigger, [:passthrough],
+     [triggers_count_for: fn _ -> @triggers_free_limit_count end]}
   ]) do
     []
   end
@@ -87,12 +91,12 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "cannot access RESTRICTED queries for over 2 years", context do
       {from, to} = from_to(2 * 365 + 1, 31)
       slug = context.project.slug
-      query = gas_used_query(slug, from, to)
+      query = restricted_access_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "gasUsed")
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
-      refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert_called(TopHolders.top_holders(slug, :_, :_, :_))
+      refute called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
@@ -128,11 +132,10 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "cannot access RESTRICTED queries for the past 30 days", context do
       {from, to} = from_to(31, 29)
       slug = context.project.slug
-      query = gas_used_query(slug, from, to)
+      query = restricted_access_query(slug, from, to)
+      result = execute_query(context.conn, query)
 
-      result = execute_query(context.conn, query, "gasUsed")
-
-      refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      refute called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
@@ -140,22 +143,21 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
          context do
       {from, to} = from_to(20, 10)
       slug = context.project.slug
-      query = gas_used_query(slug, from, to)
+      query = restricted_access_query(slug, from, to)
+      result = execute_query_with_error(context.conn, query)
 
-      result = execute_query_with_error(context.conn, query, "gasUsed")
-
-      refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      refute called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED queries within 2 years and 30 day ago interval", context do
       {from, to} = from_to(2 * 365 - 2, 32)
       slug = context.project.slug
-      query = gas_used_query(slug, from, to)
+      query = restricted_access_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "gasUsed")
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
@@ -231,33 +233,33 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access RESTRICTED queries for all time", context do
       {from, to} = from_to(4000, 10)
       slug = context.project.slug
-      query = gas_used_query(slug, from, to)
+      query = restricted_access_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "gasUsed")
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED metrics realtime", context do
       {from, to} = from_to(10, 0)
       slug = context.project.slug
-      query = gas_used_query(slug, from, to)
+      query = restricted_access_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "gasUsed")
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED queries realtime", context do
       {from, to} = from_to(10, 0)
       slug = context.project.slug
-      query = gas_used_query(slug, from, to)
+      query = restricted_access_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "gasUsed")
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
   end
@@ -271,11 +273,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access RESTRICTED metrics realtime", context do
       {from, to} = from_to(10, 0)
       slug = context.project.slug
-      query = gas_used_query(slug, from, to)
+      query = restricted_access_query(slug, from, to)
 
-      result = execute_query(context.conn, query, "gasUsed")
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
   end
@@ -565,12 +567,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     """
   end
 
-  defp gas_used_query(slug, from, to) do
+  defp restricted_access_query(slug, from, to) do
     """
       {
-        gasUsed(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "1d"){
+        topHolders(slug: "#{slug}", from: "#{from}", to: "#{to}"){
           datetime
-          gasUsed
         }
       }
     """
@@ -627,6 +628,26 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
      ]}
   end
 
+  defp top_holders_resp() do
+    {:ok,
+     [
+       %{
+         value: 29_470_056.221214663,
+         address: "0x00000000219ab540356cbb839cbe05303d7705fa",
+         labels: [
+           %{name: "Whale", origin: "santiment", metadata: ""},
+           %{name: "Cex Withdrawal", origin: "santiment", metadata: ""},
+           %{name: "Whale Usd Balance", origin: "santiment", metadata: ""},
+           %{name: "Contract", origin: "santiment", metadata: ""},
+           %{name: "Withdrawn From", origin: "santiment", metadata: "kucoin"}
+         ],
+         datetime: ~U[2023-09-07 00:00:00Z],
+         part_of_total: 0.2363491088191249,
+         value_usd: 48_178_498_145.437546
+       }
+     ]}
+  end
+
   defp create_trigger_mutation() do
     trigger_settings = %{
       type: "metric_signal",
@@ -639,21 +660,21 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
     trigger_settings_json = trigger_settings |> Jason.encode!()
 
-    ~s|
-  mutation {
-    createTrigger(
-      settings: '#{trigger_settings_json}'
-      title: 'Generic title'
-      cooldown: '23h'
-    ) {
-      trigger{
-        id
-        cooldown
-        settings
-      }
-    }
-  }
-  |
+    ~s"""
+     mutation {
+       createTrigger(
+         settings: '#{trigger_settings_json}'
+         title: 'Generic title'
+         cooldown: '23h'
+       ) {
+         trigger{
+           id
+           cooldown
+           settings
+         }
+       }
+     }
+    """
     |> format_interpolated_json()
   end
 

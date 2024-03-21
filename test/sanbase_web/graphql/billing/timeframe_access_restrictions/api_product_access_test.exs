@@ -372,7 +372,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       query = restricted_access_query(slug, from, to)
       result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data(slug, from, to, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
@@ -390,10 +390,11 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED queries realtime", context do
       {from, to} = from_to(10, 0)
+      slug = context.project.slug
       query = restricted_access_query(context.project.slug, from, to)
       result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
@@ -459,10 +460,11 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED queries for all time & realtime", context do
       {from, to} = from_to(2500, 0)
-      query = restricted_access_query(context.project.slug, from, to)
+      slug = context.project.slug
+      query = restricted_access_query(slug, from, to)
       result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 

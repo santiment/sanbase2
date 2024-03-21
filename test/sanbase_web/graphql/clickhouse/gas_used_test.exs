@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers, except: [execute_query: 2]
   import Mock
   import ExUnit.CaptureLog
   import Sanbase.Factory
@@ -195,6 +195,13 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
 
   defp parse_response(response) do
     json_response(response, 200)["data"]["gasUsed"]
+  end
+
+  defp execute_query(slug, context) do
+    query = gas_used_query(slug, context.from, context.to, context.interval)
+
+    context.conn
+    |> post("/graphql", query_skeleton(query, "gasUsed"))
   end
 
   defp gas_used_query(slug, from, to, interval) do

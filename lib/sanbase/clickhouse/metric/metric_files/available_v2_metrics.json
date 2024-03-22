@@ -951,7 +951,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Development Activity Weekly Contributors Count",
+    "human_readable_name": "Development Activity Weekly Contributors Count (Sliding Window)",
     "name": "dev_activity_contributors_count_7d",
     "metric": "dev_activity_contributors_count",
     "version": "2019-01-01",
@@ -964,7 +964,7 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
-    "min_interval": "7d",
+    "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
@@ -989,7 +989,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Github Activity Weekly Contributors Count",
+    "human_readable_name": "Github Activity Weekly Contributors Count (Sliding Window)",
     "name": "github_activity_contributors_count_7d",
     "metric": "github_activity_contributors_count",
     "version": "2019-01-01",
@@ -1002,7 +1002,7 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
-    "min_interval": "7d",
+    "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"

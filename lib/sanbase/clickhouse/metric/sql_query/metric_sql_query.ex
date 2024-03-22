@@ -385,22 +385,35 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   defp maybe_convert_to_date(:after, metric, dt_column, sql_dt_description) do
     table = Map.get(@table_map, metric)
     min_interval = Map.get(@min_interval_map, metric)
+    min_interval_seconds = Sanbase.DateTimeUtils.str_to_sec(min_interval)
 
     cond do
-      String.starts_with?(table, "daily") -> "#{dt_column} >= toDate(#{sql_dt_description})"
-      min_interval == "1d" -> "toDate(#{dt_column}) >= toDate(#{sql_dt_description})"
-      true -> "#{dt_column} >= #{sql_dt_description}"
+      String.starts_with?(table, "daily") ->
+        "#{dt_column} >= toDate(#{sql_dt_description})"
+
+      # There are daily metrics (with min_interval that is 1d, 7d, etc.) in intraday_metrics table
+      rem(min_interval_seconds, 86_400) == 0 ->
+        "toDate(#{dt_column}) >= toDate(#{sql_dt_description})"
+
+      true ->
+        "#{dt_column} >= #{sql_dt_description}"
     end
   end
 
   defp maybe_convert_to_date(:before, metric, dt_column, sql_dt_description) do
     table = Map.get(@table_map, metric)
     min_interval = Map.get(@min_interval_map, metric)
+    min_interval_seconds = Sanbase.DateTimeUtils.str_to_sec(min_interval)
 
     cond do
-      String.starts_with?(table, "daily") -> "#{dt_column} <= toDate(#{sql_dt_description})"
-      min_interval == "1d" -> "toDate(#{dt_column}) <= toDate(#{sql_dt_description})"
-      true -> "#{dt_column} < #{sql_dt_description}"
+      String.starts_with?(table, "daily") ->
+        "#{dt_column} <= toDate(#{sql_dt_description})"
+
+      rem(min_interval_seconds, 86_400) == 0 ->
+        "toDate(#{dt_column}) <= toDate(#{sql_dt_description})"
+
+      true ->
+        "#{dt_column} < #{sql_dt_description}"
     end
   end
 

@@ -41,6 +41,13 @@ defmodule SanbaseWeb.AdminFormsLive do
         Approve or decline submissions for changes to the list of ecosystems for each asset
         """,
         link: ~p"/admin2/add_ecosystems_labels_admin_live"
+      },
+      %{
+        title: "Image Uploader",
+        description: """
+        Upload an image that can be used for avatars, project logos, etc.
+        """,
+        link: ~p"/admin2/upload_image_live"
       }
     ]
   end

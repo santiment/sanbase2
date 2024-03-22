@@ -14,7 +14,7 @@
     <% end %>
 
     <%= for field <- @fields do %>
-      <div class="m-4">
+      <div class="mx-4 grid items-center" style="grid-template-columns: 200px 1fr" }>
         <%= if @belongs_to_fields[field] do %>
           <%= if @belongs_to_fields[field][:type] == :live_select do %>
             <% field_id = :"#{to_string(field)}_id" %>

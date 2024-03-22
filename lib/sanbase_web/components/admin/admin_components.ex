@@ -142,7 +142,7 @@ defmodule SanbaseWeb.AdminComponents do
       )
 
     ~H"""
-    <.input
+    <SanbaseWeb.Admin.GriddableInputComponents.input
       name={@resource <> "[" <> to_string(@field) <> "]"}
       id={@resource <> "_" <> to_string(@field)}
       label={humanize(@field)}

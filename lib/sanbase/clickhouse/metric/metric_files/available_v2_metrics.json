@@ -4508,6 +4508,57 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MakerDAO DSR (DAI Savings Rate) deposits",
+    "name": "makerdao_dsr_deposits",
+    "metric": "makerdao_dsr_deposits",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MakerDAO DSR (DAI Savings Rate) withdrawals",
+    "name": "makerdao_dsr_withdrawals",
+    "metric": "makerdao_dsr_withdrawals",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MakerDAO DSR (DAI Savings Rate) total supplied",
+    "name": "makerdao_dsr_total_supplied",
+    "metric": "makerdao_dsr_total_supplied",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Price volatility for the last {{sliding_window:human_readable}}",
     "name": "price_volatility_{{sliding_window}}",
     "metric": "price_volatility_{{sliding_window}}",

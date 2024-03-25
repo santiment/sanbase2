@@ -4508,7 +4508,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "MakerDAO DSR deposits",
+    "human_readable_name": "MakerDAO DSR (DAI Savings Rate) deposits",
     "name": "makerdao_dsr_deposits",
     "metric": "makerdao_dsr_deposits",
     "version": "2019-01-01",
@@ -4525,7 +4525,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "MakerDAO DSR withdrawals",
+    "human_readable_name": "MakerDAO DSR (DAI Savings Rate) withdrawals",
     "name": "makerdao_dsr_withdrawals",
     "metric": "makerdao_dsr_withdrawals",
     "version": "2019-01-01",
@@ -4542,7 +4542,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "MakerDAO DSR total supplied",
+    "human_readable_name": "MakerDAO DSR (DAI Savings Rate) total supplied",
     "name": "makerdao_dsr_total_supplied",
     "metric": "makerdao_dsr_total_supplied",
     "version": "2019-01-01",

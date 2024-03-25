@@ -1465,6 +1465,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "makerdao_protocol_total_supplied_usd",
         "makerdao_protocol_total_borrowed_usd",
         "makerdao_active_addresses",
+        # Makerdao DSR metrics
+        "makerdao_dsr_deposits",
+        "makerdao_dsr_withdrawals",
+        "makerdao_dsr_total_supplied",
         # ETH 2.0 stakers MVRV metrics
         "eth2_stakers_realized_value_usd_365d",
         "eth2_stakers_realized_value_usd_2y",

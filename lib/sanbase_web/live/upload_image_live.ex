@@ -1,9 +1,6 @@
 defmodule SanbaseWeb.UploadImageLive do
   use SanbaseWeb, :live_view
 
-  alias SanbaseWeb.EcosystemComponents
-  alias SanbaseWeb.Admin.UserSubmissionAdminComponents
-
   @impl true
   def mount(_params, _session, socket) do
     socket =
@@ -14,7 +11,10 @@ defmodule SanbaseWeb.UploadImageLive do
         max_entries: 1,
         max_file_size: 10_000_000
       )
-      |> assign(:form, to_form(%{}))
+      |> assign(
+        form: to_form(%{}),
+        uploaded_file_url: nil
+      )
 
     {:ok, socket}
   end
@@ -22,16 +22,16 @@ defmodule SanbaseWeb.UploadImageLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="border border-gray-100 mx-auto max-w-3xl p-6 rounded-xl shadow-sm min-h-96">
+    <div class="border border-gray-100 mx-auto max-w-2xl p-6 rounded-xl shadow-sm min-h-96">
       <.form
         for={@form}
-        phx-submit="save"
         phx-change="validate"
-        class="bg-white px-8 py-6 mb-6 shadow rounded-lg mx-auto w-full max-w-xl"
+        phx-submit="save"
+        class="bg-white rounded-lg mx-auto w-full"
       >
         <.input
           field={@form[:name]}
-          placeholder="Name"
+          placeholder="Name. Leave empty to use the name of the uploaded file"
           class="mb-4 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md transition duration-150 ease-in-out;"
         />
 
@@ -88,53 +88,74 @@ defmodule SanbaseWeb.UploadImageLive do
         </div>
         <.input
           type="checkbox"
-          name="transform_logo"
+          name="transform_to_logo"
           value="transform_to_logo"
           label="Transform to project logo format"
         />
+        <p class="text-xs text-gray-500 ml-8">
+          Logo images are resized to 64x64 and they are placed in the logo64 S3 scope, so the URL will start with logo64_ automatically.
+          If you give a custom name to the logo image, there is no need to start with 'logo_'.
+        </p>
         <.button
           phx-disable-with="Uploading..."
-          class="mt-4 w-full py-2 px-4 border border-transparent font-medium rounded-md text-white bg-indigo-600 transition duration-150 ease-in-out hover:bg-indigo-500 active:bg-indigo-700 "
+          class="mt-6 w-full !bg-violet-700 hover:!bg-violet-500"
         >
           Upload
         </.button>
       </.form>
+
+      <div :if={@uploaded_file_url} class="break-words mt-6 text-sm text-gray-600">
+        S3 URL of the uploaded file:
+        <p class="underline text-blue-700"><%= @uploaded_file_url %></p>
+      </div>
     </div>
     """
   end
 
-  @impl true
-  def handle_event("validate", %{}, socket) do
+  def handle_event("validate", _, socket) do
     {:noreply, socket}
   end
 
-  def handle_event("save", %{} = params, socket) do
-    params |> dbg()
-
-    [image_location] =
+  @impl true
+  def handle_event("save", %{"name" => name} = params, socket) do
+    image_locations =
       consume_uploaded_entries(socket, :images, fn meta, entry ->
-        dest = Path.join(["priv", "static", "uploads", "#{entry.uuid}-#{entry.client_name}"])
+        # Create a destination folder and file name
+        filename =
+          gen_filename(name, entry)
+          |> dbg()
 
-        File.mkdir_p!(Path.dirname(dest))
-        File.cp!(meta.path, dest)
+        dest = Temp.mkdir!("image_upload_live")
+        filepath = Path.join(dest, filename)
 
-        url_path = static_path(socket, "/uploads/#{Path.basename(dest)}")
+        # If the transform_to_logo checkbox is checked, transform the image
+        # to a 64x64 image, so it is consistent with the logos we have
+        transform_to_logo = params["transform_to_logo"] == "true"
+        {:ok, filepath} = maybe_resize_image(meta.path, filepath, transform_to_logo)
+        # Upload the image to S3
+        scope = if transform_to_logo, do: "logo64", else: "image"
+        {:ok, s3_url} = Sanbase.FileStore.Image.upload_to_s3(filepath, scope)
 
-        {:ok, url_path}
+        File.rm_rf!(dest)
+        {:ok, s3_url}
       end)
 
-    # params = Map.put(params, "photo_locations", photo_locations)
+    case image_locations do
+      [image_location] ->
+        socket =
+          socket
+          |> put_flash(:info, "Successfully uploaded file!")
+          |> assign(:uploaded_file_url, image_location)
 
-    # case Desks.create_desk(params) do
-    #   {:ok, _desk} ->
-    #     changeset = Desks.change_desk(%Desk{})
-    #     {:noreply, assign_form(socket, changeset)}
+        {:noreply, socket}
 
-    #   {:error, %Ecto.Changeset{} = changeset} ->
-    #     {:noreply, assign_form(socket, changeset)}
-    # end
+      [] ->
+        socket =
+          socket
+          |> put_flash(:error, "Attach an image before trying to upload")
 
-    {:noreply, socket}
+        {:noreply, socket}
+    end
   end
 
   def handle_event("cancel", %{"ref" => ref}, socket) do
@@ -143,6 +164,31 @@ defmodule SanbaseWeb.UploadImageLive do
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     assign(socket, :form, to_form(changeset))
+  end
+
+  def gen_filename(name, entry) do
+    "image/" <> extension = entry.client_type
+    client_name = String.trim_trailing(entry.client_name, Path.extname(entry.client_name))
+    # Do not use Base64 as it contains '/', which can mess up the paths
+    rand_part = :crypto.strong_rand_bytes(5) |> Base.encode32()
+
+    # The client_name and name are both stripepd of extensions
+    name = if name == "", do: client_name, else: name
+
+    name <> "_" <> rand_part <> "." <> extension
+  end
+
+  defp maybe_resize_image(path, filepath, transform_to_logo) do
+    if transform_to_logo do
+      Mogrify.open(path)
+      |> Mogrify.resize("64x64")
+      |> Mogrify.custom("type", "PaletteAlpha")
+      |> Mogrify.save(path: filepath)
+    else
+      File.cp!(path, filepath)
+    end
+
+    {:ok, filepath}
   end
 
   defp error_to_string(:too_large), do: "Gulp! File too large (max 10 MB)."

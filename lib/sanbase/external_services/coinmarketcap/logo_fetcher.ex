@@ -102,11 +102,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     end
   end
 
-  defp resize_image(source_filepath, dest_dir_path, filename) do
-    dest_filepath = dest_dir_path <> "/" <> filename
+  defp resize_image(source_path, dest_path, filename) do
+    dest_filepath = dest_path <> "/" <> filename
 
     try do
-      Mogrify.open(source_filepath)
+      Mogrify.open(source_path)
       |> Mogrify.resize("#{@size}x#{@size}")
       |> Mogrify.custom("type", "PaletteAlpha")
       |> Mogrify.save(path: dest_filepath)

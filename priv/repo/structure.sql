@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.1 (Homebrew)
--- Dumped by pg_dump version 15.1 (Homebrew)
+-- Dumped from database version 14.10 (Homebrew)
+-- Dumped by pg_dump version 14.10 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1863,6 +1863,39 @@ CREATE SEQUENCE public.icos_id_seq
 --
 
 ALTER SEQUENCE public.icos_id_seq OWNED BY public.icos.id;
+
+
+--
+-- Name: images; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.images (
+    id bigint NOT NULL,
+    url text NOT NULL,
+    name character varying(255) NOT NULL,
+    notes text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: images_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.images_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.images_id_seq OWNED BY public.images.id;
 
 
 --
@@ -4951,6 +4984,13 @@ ALTER TABLE ONLY public.icos ALTER COLUMN id SET DEFAULT nextval('public.icos_id
 
 
 --
+-- Name: images id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.images ALTER COLUMN id SET DEFAULT nextval('public.images_id_seq'::regclass);
+
+
+--
 -- Name: infrastructures id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5821,6 +5861,14 @@ ALTER TABLE ONLY public.ico_currencies
 
 ALTER TABLE ONLY public.icos
     ADD CONSTRAINT icos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: images images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.images
+    ADD CONSTRAINT images_pkey PRIMARY KEY (id);
 
 
 --
@@ -9381,3 +9429,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240212141517);
 INSERT INTO public."schema_migrations" (version) VALUES (20240311143940);
 INSERT INTO public."schema_migrations" (version) VALUES (20240315090002);
 INSERT INTO public."schema_migrations" (version) VALUES (20240320090413);
+INSERT INTO public."schema_migrations" (version) VALUES (20240325154734);

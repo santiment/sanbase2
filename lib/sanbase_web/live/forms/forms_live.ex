@@ -20,7 +20,7 @@ defmodule SanbaseWeb.FormsLive do
         :for={form_info <- @forms_info}
         title={form_info.title}
         description={form_info.description}
-        link={form_info.link}
+        buttons={form_info.buttons}
       />
     </UserSubmissionAdminComponents.forms_list_container>
     """
@@ -34,7 +34,7 @@ defmodule SanbaseWeb.FormsLive do
         Suggest changes to the ecosystem labels of an asset. One asset can have many ecosystems, which indicate which blockchain ecosystem this project contributes to.
         The ecosystems are used when computing metrics for whole ecosystems, like Development activity data per ecosystem.
         """,
-        link: ~p"/admin2/add_ecosystems_labels_live"
+        buttons: [%{url: ~p"/admin2/add_ecosystems_labels_live", text: "Open"}]
       }
     ]
   end

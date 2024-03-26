@@ -203,6 +203,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 300)
     end
 
+    field :available_metrics_extended, list_of(:metric_metadata_subset) do
+      cache_resolve(&ProjectMetricsResolver.available_metrics_extended/3, ttl: 300)
+    end
+
     @desc ~s"""
     Returns a subset of the availableMetrics that are fetchable by getMetric's
     timeseriesData

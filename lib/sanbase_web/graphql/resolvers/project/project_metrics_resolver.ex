@@ -26,6 +26,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     maybe_register_and_get(cache_key, fun, slug, query)
   end
 
+  def available_metrics_extended(%Project{} = project, args, resolution) do
+    with {:ok, metrics} <- available_metrics(project, args, resolution) do
+      list =
+        Enum.map(metrics, fn m ->
+          {:ok, m} = Metric.metadata(m)
+
+          m
+        end)
+
+      {:ok, list}
+    end
+  end
+
   def available_timeseries_metrics(%Project{slug: slug}, _args, _resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
     {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})

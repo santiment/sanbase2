@@ -339,7 +339,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_article": "https://academy.santiment.net/metrics/mvrv"
+    "docs_link": "https://academy.santiment.net/metrics/mvrv"
   },
   {
     "human_readable_name": "MVRV",
@@ -359,7 +359,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_article": "https://academy.santiment.net/metrics/mvrv"
+    "docs_link": "https://academy.santiment.net/metrics/mvrv"
   },
   {
     "human_readable_name": "MVRV for coins that moved in the past {{timebound:human_readable}}",
@@ -415,7 +415,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_article": "https://academy.santiment.net/metrics/mvrv"
+    "docs_link": "https://academy.santiment.net/metrics/mvrv"
   },
   {
     "human_readable_name": "MVRV",
@@ -435,7 +435,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_article": "https://academy.santiment.net/metrics/mvrv"
+    "docs_link": "https://academy.santiment.net/metrics/mvrv"
   },
   {
     "human_readable_name": "MVRV Intraday for coins that moved in the past {{timebound:human_readable}}",
@@ -491,7 +491,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_article": "https://academy.santiment.net/metrics/mvrv"
+    "docs_link": "https://academy.santiment.net/metrics/mvrv"
   },
   {
     "human_readable_name": "Circulation",
@@ -511,7 +511,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_article": "https://academy.santiment.net/metrics/circulation"
+    "docs_link": "https://academy.santiment.net/metrics/circulation"
   },
   {
     "human_readable_name": "Circulation for coins that moved in the past {{timebound:human_readable}}",
@@ -567,7 +567,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_article": "https://academy.santiment.net/metrics/circulation"
+    "docs_link": "https://academy.santiment.net/metrics/circulation"
   },
   {
     "human_readable_name": "Circulation for coins that have not moved in the past {{timebound:human_readable}}",
@@ -611,7 +611,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_article": "https://academy.santiment.net/metrics/dormant-circulation"
+    "docs_link": "https://academy.santiment.net/metrics/dormant-circulation"
   },
   {
     "human_readable_name": "Mean Age in days",
@@ -632,7 +632,7 @@
     "has_incomplete_data": true,
     "data_type": "timeseries",
     "unit": "days",
-    "docs_article": "https://academy.santiment.net/metrics/mean-coin-age"
+    "docs_link": "https://academy.santiment.net/metrics/mean-coin-age"
   },
   {
     "human_readable_name": "Mean Dollar Invested Age in days for coins that moved",
@@ -653,7 +653,7 @@
     "has_incomplete_data": true,
     "data_type": "timeseries",
     "unit": "days",
-    "docs_article": "https://academy.santiment.net/metrics/mean-coin-age"
+    "docs_link": "https://academy.santiment.net/metrics/mean-coin-age"
   },
   {
     "human_readable_name": "Realized Value",
@@ -673,7 +673,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_article": "https://academy.santiment.net/metrics/realized-value"
+    "docs_link": "https://academy.santiment.net/metrics/realized-value"
   },
   {
     "human_readable_name": "Realized Value for coins that moved in the past {{timebound:human_readable}}",
@@ -729,7 +729,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_article": "https://academy.santiment.net/metrics/realized-value"
+    "docs_link": "https://academy.santiment.net/metrics/realized-value"
   },
   {
     "human_readable_name": "Velocity",
@@ -749,7 +749,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_article": "https://academy.santiment.net/metrics/velocity"
+    "docs_link": "https://academy.santiment.net/metrics/velocity"
   },
   {
     "human_readable_name": "On-Chain Transaction Volume",
@@ -769,7 +769,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_article": "https://academy.santiment.net/metrics/transaction-volume"
+    "docs_link": "https://academy.santiment.net/metrics/transaction-volume"
   },
   {
     "human_readable_name": "On-Chain Transaction Volume in USD",

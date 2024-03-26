@@ -20,7 +20,7 @@ defmodule SanbaseWeb.AdminFormsLive do
         :for={form_info <- @forms_info}
         title={form_info.title}
         description={form_info.description}
-        link={form_info.link}
+        buttons={form_info.buttons}
       />
     </UserSubmissionAdminComponents.forms_list_container>
     """
@@ -33,14 +33,28 @@ defmodule SanbaseWeb.AdminFormsLive do
         description: """
         Approve or decline submissions for new Twitter handles to be monitored, suggested by users.
         """,
-        link: ~p"/admin2/monitored_twitter_handle_live"
+        buttons: [
+          %{url: ~p"/admin2/monitored_twitter_handle_live", text: "Open"}
+        ]
       },
       %{
         title: "Ecosystem Asset Labels Change Submissions",
         description: """
         Approve or decline submissions for changes to the list of ecosystems for each asset
         """,
-        link: ~p"/admin2/add_ecosystems_labels_admin_live"
+        buttons: [
+          %{url: ~p"/admin2/add_ecosystems_labels_admin_live", text: "Open"}
+        ]
+      },
+      %{
+        title: "Image Uploader",
+        description: """
+        Upload an image that can be used for avatars, project logos, etc.
+        """,
+        buttons: [
+          %{url: ~p"/admin2/upload_image_live", text: "Upload an image"},
+          %{url: ~p"/admin2/uploaded_images", text: "List uploads"}
+        ]
       }
     ]
   end

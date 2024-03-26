@@ -68,6 +68,8 @@ defmodule SanbaseWeb.Router do
     live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
     live("/add_ecosystems_labels_live", AddEcosystemLabelsLive)
     live("/add_ecosystems_labels_admin_live", ProjectEcosystemLabelingAdminLive)
+    live("/upload_image_live", UploadImageLive)
+    live("/uploaded_images", UploadedImagesLive)
 
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)

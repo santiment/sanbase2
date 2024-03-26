@@ -21,7 +21,7 @@ defmodule SanbaseWeb.EcosystemComponents do
 
   def ecosystems_group(assigns) do
     ~H"""
-    <div class="flex flex-col md:flex-row gap-1 flex-wrap">
+    <div class="flex flex-col lg:flex-row gap-1 flex-wrap">
       <.ecosystem_span
         :for={ecosystem <- @ecosystems}
         ecosystem={ecosystem}

@@ -63,7 +63,7 @@ defmodule SanbaseWeb.Admin.UserSubmissionAdminComponents do
 
   attr(:title, :string, required: true)
   attr(:description, :string, required: true)
-  attr(:link, :string, required: true)
+  attr(:buttons, :list, required: true)
 
   def form_info(assigns) do
     ~H"""
@@ -74,10 +74,10 @@ defmodule SanbaseWeb.Admin.UserSubmissionAdminComponents do
         <p class="text-sm text-gray-500"><%= @description %></p>
       </div>
       <!-- Link to form -->
-      <div>
-        <.link href={@link} target="_blank">
-          <button class="bg-blue-600 px-6 hover:bg-blue-900 rounded-xl text-white py-2">
-            Open
+      <div class="flex flex-col space-y-2 ">
+        <.link :for={button <- @buttons} href={button.url} target="_blank">
+          <button class="bg-blue-600 w-full px-6 hover:bg-blue-900 rounded-xl text-white py-2">
+            <%= button.text %>
           </button>
         </.link>
       </div>

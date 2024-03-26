@@ -16,7 +16,7 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
   def render(assigns) do
     ~H"""
     <div>
-      <div class="flex-1 p:2 sm:p-6 justify-evenly flex flex-col-reverse scrolling-auto">
+      <div class="flex-1 p:2 sm:p-6 justify-evenly">
         <.table id="ecosystem_changes_suggestions" rows={@rows}>
           <:col :let={row} label="Status">
             <UserSubmissionAdminComponents.status status={row.status} />
@@ -44,7 +44,11 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
           </:col>
           <:col :let={row} label="Notes"><%= row.notes %></:col>
           <:action :let={row}>
-            <.form for={@form} phx-submit="update_status">
+            <.form
+              for={@form}
+              phx-submit="update_status"
+              class="flex flex-col lg:flex-row space-y-2 lg:space-y-0 md:space-x-2"
+            >
               <input type="hidden" name="record_id" value={row.id} />
               <UserSubmissionAdminComponents.button
                 name="status"

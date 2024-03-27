@@ -120,6 +120,12 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> put_req_header("authorization", "Basic " <> token)
   end
 
+  def execute_query(conn, query) do
+    conn
+    |> post("/graphql", query_skeleton(query, ""))
+    |> json_response(200)
+  end
+
   def execute_query(conn, query, query_name) do
     conn
     |> post("/graphql", query_skeleton(query, query_name))
@@ -127,7 +133,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> get_in(["data", query_name])
   end
 
-  def execute_query_with_error(conn, query, query_name) do
+  def execute_query_with_error(conn, query, query_name \\ "") do
     conn
     |> post("/graphql", query_skeleton(query, query_name))
     |> json_response(200)

@@ -9,41 +9,10 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:fees, non_null(:float))
   end
 
-  object :active_addresses do
-    field(:datetime, non_null(:datetime))
-    field(:active_addresses, non_null(:float))
-  end
-
-  object :active_deposits do
-    field(:datetime, non_null(:datetime))
-    field(:active_deposits, non_null(:float))
-  end
-
   object :gas_used do
     field(:datetime, non_null(:datetime))
     field(:eth_gas_used, :float, deprecate: "Use gasUsed")
     field(:gas_used, :float)
-  end
-
-  object :mvrv_ratio do
-    field(:datetime, non_null(:datetime))
-    field(:ratio, :float)
-  end
-
-  object :network_growth do
-    field(:datetime, non_null(:datetime))
-    field(:new_addresses, :float)
-  end
-
-  object :nvt_ratio do
-    field(:datetime, non_null(:datetime))
-    field(:nvt_ratio_circulation, :float)
-    field(:nvt_ratio_tx_volume, :float)
-  end
-
-  object :realized_value do
-    field(:datetime, non_null(:datetime))
-    field(:realized_value, :float)
   end
 
   object :percent_of_token_supply_on_exchanges do

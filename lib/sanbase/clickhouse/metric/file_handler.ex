@@ -181,6 +181,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
               )
 
   @table_map Helper.name_to_field_map(@metrics_json, "table")
+  @docs_links_map Helper.name_to_field_map(@metrics_json, "docs_link", required?: false)
+
   @aggregation_map Helper.name_to_field_map(@metrics_json, "aggregation",
                      transform_fn: &String.to_atom/1
                    )
@@ -264,6 +266,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   def min_interval_map(), do: @min_interval_map |> transform()
   def min_plan_map(), do: @min_plan_map |> transform()
   def name_to_metric_map(), do: @name_to_metric_map |> transform()
+  def docs_links_map(), do: @docs_links_map |> transform()
 
   def metric_to_names_map(),
     do: @metric_to_names_map |> transform(metric_name_in_map_value_list: true)

@@ -292,6 +292,14 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:values, list_of(list_of(:float)))
   end
 
+  @desc ~s"""
+  Check the metric_metadata type for description
+  """
+  object :metric_metadata_subset do
+    field(:metric, non_null(:string))
+    field(:docs_link, :string)
+  end
+
   object :metric_metadata do
     @desc ~s"""
     The public name of the metric. The public name is the name that is used
@@ -402,6 +410,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
         a range and a value.
     """
     field(:data_type, :metric_data_type)
+
+    @desc ~s"""
+    A link to the documentation of the metric
+    """
+    field(:docs_link, :string)
 
     @desc ~s"""
     A metric is considered timebound, if it is computed on the set of coins/tokens

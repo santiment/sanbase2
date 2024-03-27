@@ -338,7 +338,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": "https://academy.santiment.net/metrics/mvrv"
   },
   {
     "human_readable_name": "MVRV",
@@ -357,7 +358,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": "https://academy.santiment.net/metrics/mvrv"
   },
   {
     "human_readable_name": "MVRV for coins that moved in the past {{timebound:human_readable}}",
@@ -412,7 +414,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": "https://academy.santiment.net/metrics/mvrv"
   },
   {
     "human_readable_name": "MVRV",
@@ -431,7 +434,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": "https://academy.santiment.net/metrics/mvrv"
   },
   {
     "human_readable_name": "MVRV Intraday for coins that moved in the past {{timebound:human_readable}}",
@@ -486,7 +490,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": "https://academy.santiment.net/metrics/mvrv"
   },
   {
     "human_readable_name": "Circulation",
@@ -505,7 +510,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": "https://academy.santiment.net/metrics/circulation"
   },
   {
     "human_readable_name": "Circulation for coins that moved in the past {{timebound:human_readable}}",
@@ -560,7 +566,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": "https://academy.santiment.net/metrics/circulation"
   },
   {
     "human_readable_name": "Circulation for coins that have not moved in the past {{timebound:human_readable}}",
@@ -603,7 +610,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": "https://academy.santiment.net/metrics/dormant-circulation"
   },
   {
     "human_readable_name": "Mean Age in days",
@@ -623,7 +631,8 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "unit": "days"
+    "unit": "days",
+    "docs_link": "https://academy.santiment.net/metrics/mean-coin-age"
   },
   {
     "human_readable_name": "Mean Dollar Invested Age in days for coins that moved",
@@ -643,7 +652,8 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "unit": "days"
+    "unit": "days",
+    "docs_link": "https://academy.santiment.net/metrics/mean-coin-age"
   },
   {
     "human_readable_name": "Realized Value",
@@ -662,7 +672,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": "https://academy.santiment.net/metrics/realized-value"
   },
   {
     "human_readable_name": "Realized Value for coins that moved in the past {{timebound:human_readable}}",
@@ -717,7 +728,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": "https://academy.santiment.net/metrics/realized-value"
   },
   {
     "human_readable_name": "Velocity",
@@ -736,7 +748,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": "https://academy.santiment.net/metrics/velocity"
   },
   {
     "human_readable_name": "On-Chain Transaction Volume",
@@ -755,7 +768,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": "https://academy.santiment.net/metrics/transaction-volume"
   },
   {
     "human_readable_name": "On-Chain Transaction Volume in USD",

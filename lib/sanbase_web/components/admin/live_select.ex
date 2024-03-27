@@ -2,28 +2,25 @@ defmodule SanbaseWeb.LiveSelect do
   use SanbaseWeb, :live_view
   use Phoenix.HTML
 
-  import SanbaseWeb.CoreComponents
   import Ecto.Query
 
   def render(assigns) do
     ~H"""
-    <div class="w-full">
-      <.input
-        type="text"
-        label={humanize(@session["field"])}
-        name={@session["parent_resource"] <> "[" <> to_string(@session["field"]) <> "_id" <> "]"}
-        value={@query || @session["initial_value"]}
-        list={"matches_" <> to_string(@session["field"])}
-        phx-keyup="suggest"
-        phx-debounce="200"
-        placeholder="Search..."
-      />
-      <datalist id={"matches_" <> to_string(@session["field"])}>
-        <%= for {id, match} <- @matches do %>
-          <option value={id}><%= match %></option>
-        <% end %>
-      </datalist>
-    </div>
+    <SanbaseWeb.Admin.GriddableInputComponents.input
+      type="text"
+      label={humanize(@session["field"])}
+      name={@session["parent_resource"] <> "[" <> to_string(@session["field"]) <> "_id" <> "]"}
+      value={@query || @session["initial_value"]}
+      list={"matches_" <> to_string(@session["field"])}
+      phx-keyup="suggest"
+      phx-debounce="200"
+      placeholder="Search..."
+    />
+    <datalist id={"matches_" <> to_string(@session["field"])}>
+      <%= for {id, match} <- @matches do %>
+        <option value={id}><%= match %></option>
+      <% end %>
+    </datalist>
     """
   end
 

@@ -181,7 +181,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
               )
 
   @table_map Helper.name_to_field_map(@metrics_json, "table")
-  @docs_links_map Helper.name_to_field_map(@metrics_json, "docs_link", required?: false)
+  @docs_links_map Helper.name_to_field_map(@metrics_json, "docs_links",
+                    required?: false,
+                    transform_fn: fn list -> Enum.map(list, fn l -> %{link: l} end) end
+                  )
 
   @aggregation_map Helper.name_to_field_map(@metrics_json, "aggregation",
                      transform_fn: &String.to_atom/1

@@ -1,0 +1,74 @@
+# Flat rate and metered usage
+
+## Section
+
+```elixir
+defmodule StripeSubscription do
+  alias Stripe.{Plan, Subscription}
+
+  def create_flat_rate_price(product_id) do
+    flat_rate =
+      Plan.create(%{
+        # $1,000 in cents
+        amount: 100_000,
+        currency: "usd",
+        interval: "month",
+        product: product_id
+      })
+
+    flat_rate
+  end
+
+  def create_tiered_price(product_id) do
+    tiered_price =
+      Plan.create(%{
+        currency: "usd",
+        product: product_id,
+        interval: "month",
+        billing_scheme: "tiered",
+        usage_type: "metered",
+        tiers_mode: "volume",
+        tiers: [
+          %{up_to: "inf", unit_amount: 4}
+        ]
+      })
+
+    tiered_price
+  end
+
+  def create_subscription(flate_rate_price_id, tiered_price_id, customer_id) do
+    case Subscription.create(%{
+           customer: customer_id,
+           items: [%{price: flate_rate_price_id}, %{price: tiered_price_id}]
+         }) do
+      {:ok, subscription} -> subscription
+      {:error, reason} -> IO.puts("Stripe Error: #{reason}")
+    end
+  end
+end
+```
+
+```elixir
+customer_id = "cus_FJqsEj8guLgsw7"
+product_id = "prod_FVP32YJFf8FEs7"
+{:ok, flat_rate} = StripeSubscription.create_flat_rate_price(product_id)
+{:ok, tiered_plan} = StripeSubscription.create_tiered_price(product_id)
+tiered_plan
+```
+
+```elixir
+subscription = StripeSubscription.create_subscription(flat_rate.id, tiered_plan.id, customer_id)
+```
+
+```elixir
+params = %{quantity: 1000, timestamp: :os.system_time(:second), action: "increment"}
+```
+
+```elixir
+[item1, tiered_item] = subscription.items.data
+tiered_item
+```
+
+```elixir
+Stripe.SubscriptionItem.Usage.create(tiered_item.id, params)
+```

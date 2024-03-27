@@ -184,7 +184,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
        data_type: Map.get(@metrics_data_type_map, metric),
        is_timebound: Map.get(@timebound_flag_map, metric),
        complexity_weight: @default_complexity_weight,
-       docs_link: Map.get(@docs_links_map, metric)
+       docs: Map.get(@docs_links_map, metric)
      }}
   end
 

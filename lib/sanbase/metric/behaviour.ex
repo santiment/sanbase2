@@ -42,7 +42,9 @@ defmodule Sanbase.Metric.Behaviour do
           is_deprecated: boolean(),
           # A metric can be hard-deprecated, which means that it will no
           # longer be accessible after this datetime.
-          hard_deprecate_after: DateTime.t() | nil
+          hard_deprecate_after: DateTime.t() | nil,
+          # A link to documentation, most cases should be links to our academy
+          docs: list(map()) | nil
         }
 
   @type histogram_value :: String.t() | float() | integer()

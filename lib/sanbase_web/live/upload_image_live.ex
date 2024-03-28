@@ -162,10 +162,6 @@ defmodule SanbaseWeb.UploadImageLive do
     {:noreply, cancel_upload(socket, :images, ref)}
   end
 
-  defp assign_form(socket, %Ecto.Changeset{} = changeset) do
-    assign(socket, :form, to_form(changeset))
-  end
-
   def gen_filename(name, entry) do
     "image/" <> extension = entry.client_type
     client_name = String.trim_trailing(entry.client_name, Path.extname(entry.client_name))

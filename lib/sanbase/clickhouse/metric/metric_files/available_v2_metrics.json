@@ -1379,7 +1379,6 @@
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/supply-in-profit"]
   },
-  },
   {
     "human_readable_name": "Active Deposits",
     "name": "active_deposits_5m",
@@ -1731,7 +1730,8 @@
     "min_interval": "8h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/binance-derivatives/usdt-binance-funding-rate"]
   },
   {
     "human_readable_name": "Binance Exchange Funding Rates (BUSD)",
@@ -1753,7 +1753,8 @@
     "min_interval": "8h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/binance-derivatives/busd-binance-funding-rate"]
   },
   {
     "human_readable_name": "FTX Exchange Funding Rates",
@@ -1791,7 +1792,8 @@
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/bitfinex-derivatives/bitfinex-perpetual-funding-rate"]
   },
   {
     "human_readable_name": "DyDx Exchange Funding Rates",
@@ -1851,7 +1853,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/binance-derivatives/usdt-binance-perpetual-open-interest-value"]
   },
   {
     "human_readable_name": "Binance USDT Exchange Open Value",
@@ -1873,7 +1876,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/binance-derivatives/busd-binance-perpetual-open-interest-value"]
   },
   {
     "human_readable_name": "Binance BUSD Exchange Open Interest",
@@ -1895,7 +1899,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/binance-derivatives/busd-binance-perpetual-open-interest-value"]
   },
   {
     "human_readable_name": "Binance BUSD Exchange Open Value",
@@ -1917,7 +1922,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/binance-derivatives/busd-binance-perpetual-open-interest-value"]
   },
   {
     "human_readable_name": "Huobi Exchange Funding Rates",
@@ -5486,7 +5492,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/gini-index"]
   },
   {
     "human_readable_name": "Annual Inflation Rate",
@@ -5505,7 +5512,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/annual-inflation-rate"]
   },
   {
     "human_readable_name": "USD Trading Volume For ETF Shares",

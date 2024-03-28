@@ -86,6 +86,20 @@ defmodule Sanbase.MonitoredTwitterHandle do
     end
   end
 
+  def list_all_approved() do
+    # Requested by the social data team -- do not include handles that are approved, but with a
+    # comment. These could be handles that are sharing content not in english, not crypto, or
+    # crypto and english, but self-promotion. The only times comments are used are to provide
+    # info why the handle should not end up in our social data pipelines
+    query =
+      from(
+        m in __MODULE__,
+        where: m.status == "approved" and m.comment == ""
+      )
+
+    Repo.all(query)
+  end
+
   def list_all_submissions() do
     query = from(m in __MODULE__, where: m.origin == "graphql_api", preload: [:user])
 

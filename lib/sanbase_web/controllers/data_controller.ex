@@ -63,6 +63,23 @@ defmodule SanbaseWeb.DataController do
     |> Plug.Conn.send_resp(200, data)
   end
 
+  def monitored_twitter_handles(conn, %{"secret" => secret}) do
+    case santiment_team_members_secret() == secret do
+      true ->
+        cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+        {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_monitored_twitter_handles_list/0)
+
+        conn
+        |> put_resp_header("content-type", "application/json; charset=utf-8")
+        |> Plug.Conn.send_resp(200, data)
+
+      false ->
+        conn
+        |> send_resp(403, "Unauthorized")
+        |> halt()
+    end
+  end
+
   @doc ~s"""
   Return a list of data about the ecosystems.
   This data is used to build the ecosystems_data clickhouse dictionary.
@@ -171,6 +188,18 @@ defmodule SanbaseWeb.DataController do
     result =
       Project.List.projects_twitter_handles()
       |> Enum.uniq()
+      |> Enum.map(fn handle -> %{twitter_handle: handle} |> Jason.encode!() end)
+      |> Enum.intersperse("\n")
+
+    {:ok, result}
+  end
+
+  defp get_monitored_twitter_handles_list() do
+    projects_handles = Project.List.projects_twitter_handles()
+    submitted_handles = Sanbase.MonitoredTwitterHandle.list_all_approved()
+
+    result =
+      Enum.uniq(projects_handles ++ submitted_handles)
       |> Enum.map(fn handle -> %{twitter_handle: handle} |> Jason.encode!() end)
       |> Enum.intersperse("\n")
 

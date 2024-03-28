@@ -59,6 +59,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
 
   def projects_count(_root, args, _resolution) do
     with {:ok, opts} <- Project.ListSelector.args_to_opts(args) do
+      # Remove ordered_slugs from opts in case we need only the count
+      opts = Keyword.replace(opts, :ordered_slugs, nil)
+
       {:ok,
        %{
          erc20_projects_count: Project.List.erc20_projects_count(opts),

@@ -57,7 +57,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Average USD Price",
@@ -76,7 +77,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Closing USD Marketcap",
@@ -95,7 +97,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Closing USD Price",
@@ -114,7 +117,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily High USD Price",
@@ -133,7 +137,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Low USD Price",
@@ -152,7 +157,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Opening USD Price",
@@ -171,7 +177,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Trading USD Volume",
@@ -190,7 +197,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Active Addresses",
@@ -209,7 +217,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_link": ["https://academy.santiment.net/metrics/daily-active-addresses"]
   },
   {
     "human_readable_name": "Active Addresses for the last {{sliding_window:human_readable}}",
@@ -792,7 +801,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-volume"]
   },
   {
     "human_readable_name": "Age Consumed",
@@ -814,7 +824,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/age-consumed"]
   },
   {
     "human_readable_name": "NVT (Using Circulation)",
@@ -833,7 +844,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nvt"]
   },
   {
     "human_readable_name": "NVT (Using Transaction Volume)",
@@ -852,7 +864,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nvt"]
   },
   {
     "human_readable_name": "Network Growth",
@@ -871,7 +884,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/network-growth"]
   },
   {
     "human_readable_name": "Active Deposits",
@@ -890,7 +904,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/daily-active-deposits"]
   },
   {
     "human_readable_name": "Deposit Transactions",
@@ -966,7 +981,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/development-activity"]
   },
   {
     "human_readable_name": "Development Activity Weekly Contributors Count (Sliding Window)",
@@ -985,7 +1001,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/development-activity-contributors-count"]
   },
   {
     "human_readable_name": "Daily GitHub Activity",
@@ -1004,7 +1021,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/github-activity"]
   },
   {
     "human_readable_name": "Github Activity Weekly Contributors Count (Sliding Window)",
@@ -1023,7 +1041,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/github-activity-contributors-count"]
   },
   {
     "human_readable_name": "Stock to Flow",
@@ -1042,7 +1061,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/stock-to-flow"]
   },
   {
     "human_readable_name": "Number of Non-Zero Transfers Moving ",
@@ -1080,7 +1100,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-count"]
   },
   {
     "human_readable_name": "Fees Paid in ETH",
@@ -1099,7 +1120,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethereum-fees"]
   },
   {
     "human_readable_name": "Fees Paid in USD",
@@ -1118,7 +1140,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethereum-fees"]
   },
   {
     "human_readable_name": "Fees Paid in ETH",
@@ -1137,7 +1160,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethereum-fees"]
   },
   {
     "human_readable_name": "Fees Paid in USD",
@@ -1156,7 +1180,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethereum-fees"]
   },
   {
     "human_readable_name": "Average Fees Paid in USD",
@@ -1175,7 +1200,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethereum-fees"]
   },
   {
     "human_readable_name": "Median Fees Paid in USD",
@@ -1194,7 +1220,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethereum-fees"]
   },
   {
     "human_readable_name": "Daily Network Circulation in USD",
@@ -1232,7 +1259,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethereum-fees"]
   },
   {
     "human_readable_name": "Price - DAA divergence",
@@ -1308,7 +1336,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/network-profit-loss"]
   },
   {
     "human_readable_name": "Total Supply in profit",
@@ -1327,7 +1356,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-in-profit"]
   },
   {
     "human_readable_name": "Percent of Total Supply in profit",
@@ -1346,7 +1376,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-in-profit"]
   },
   {
     "human_readable_name": "Active Deposits",
@@ -1441,7 +1472,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethereum-fees"]
   },
   {
     "human_readable_name": "Median Fees Paid in USD",
@@ -1460,7 +1492,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethereum-fees"]
   },
   {
     "human_readable_name": "Average Transfer",
@@ -1555,7 +1588,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/price"]
   },
   {
     "human_readable_name": "Daily MVRV-Z Score",
@@ -1596,7 +1630,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
   {
     "human_readable_name": "Total Supply Held by Miner Addresses",
@@ -1653,7 +1688,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nvt"]
   },
   {
     "human_readable_name": "Percent of Stablecoin Total Supply held by Whales with more than 5 million USD",
@@ -1694,7 +1730,8 @@
     "min_interval": "8h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/binance-derivatives/usdt-binance-funding-rate"]
   },
   {
     "human_readable_name": "Binance Exchange Funding Rates (BUSD)",
@@ -1716,7 +1753,8 @@
     "min_interval": "8h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/binance-derivatives/busd-binance-funding-rate"]
   },
   {
     "human_readable_name": "FTX Exchange Funding Rates",
@@ -1754,7 +1792,8 @@
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/bitfinex-derivatives/bitfinex-perpetual-funding-rate"]
   },
   {
     "human_readable_name": "DyDx Exchange Funding Rates",
@@ -1814,7 +1853,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/binance-derivatives/usdt-binance-perpetual-open-interest-value"]
   },
   {
     "human_readable_name": "Binance USDT Exchange Open Value",
@@ -1836,7 +1876,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/binance-derivatives/busd-binance-perpetual-open-interest-value"]
   },
   {
     "human_readable_name": "Binance BUSD Exchange Open Interest",
@@ -1858,7 +1899,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/binance-derivatives/busd-binance-perpetual-open-interest-value"]
   },
   {
     "human_readable_name": "Binance BUSD Exchange Open Value",
@@ -1880,7 +1922,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/binance-derivatives/busd-binance-perpetual-open-interest-value"]
   },
   {
     "human_readable_name": "Huobi Exchange Funding Rates",
@@ -5449,7 +5492,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/gini-index"]
   },
   {
     "human_readable_name": "Annual Inflation Rate",
@@ -5468,7 +5512,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/annual-inflation-rate"]
   },
   {
     "human_readable_name": "USD Trading Volume For ETF Shares",

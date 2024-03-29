@@ -76,6 +76,7 @@ defmodule SanbaseWeb.Router do
     live("/suggest_github_organizations_admin_live", SuggestGithubOrganizationsAdminLive)
     live("/upload_image_live", UploadImageLive)
     live("/uploaded_images_live", UploadedImagesLive)
+    live("/available_metrics_live", AvailableMetricsLive)
 
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)

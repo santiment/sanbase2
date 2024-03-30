@@ -14,7 +14,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao"]
   },
   {
     "human_readable_name": "WETH Locked in Single-Collateral CDPs",
@@ -31,7 +32,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao"]
   },
   {
     "human_readable_name": "Collateralization Ratio for BAT and USDC in Multi-Collateral CDPs",
@@ -48,7 +50,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao"]
   },
   {
     "human_readable_name": "Collateralization Ratio for WETH in Multi-Collateral CDPs",
@@ -65,7 +68,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao"]
   },
   {
     "human_readable_name": "Collateralization Ratio for SAI in Multi-Collateral CDPs",
@@ -82,7 +86,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao"]
   },
   {
     "human_readable_name": "Collateralization Ratio for Single-Collateral CDPs",
@@ -99,7 +104,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao"]
   },
   {
     "human_readable_name": "Multi-Collateral DAI in DSR Saving Annual Rate",
@@ -116,7 +122,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao"]
   },
   {
     "human_readable_name": "Multi-Collateral Stability Fee",
@@ -133,7 +140,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao"]
   },
   {
     "human_readable_name": "Multi-Collateral DAI Created",
@@ -150,7 +158,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao"]
   },
   {
     "human_readable_name": "Multi-Collateral DAI Repaid",
@@ -167,7 +176,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao"]
   },
   {
     "human_readable_name": "Makerdao Collateral Liquidation Amounts",
@@ -184,7 +194,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao"]
   },
   {
     "human_readable_name": "Total Multi-Collateral DAI Created",
@@ -201,6 +212,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao"]
   }
 ]

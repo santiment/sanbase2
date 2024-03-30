@@ -1672,7 +1672,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Circulation NVT",
+    "human_readable_name": "Intraday NVT (Using Circulation)",
     "name": "nvt_5min",
     "metric": "nvt_intraday",
     "version": "2019-01-01",
@@ -1812,7 +1812,8 @@
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/dydx-derivatives/dydx-perpetual-funding-rate"]
   },
   {
     "human_readable_name": "Deribit Exchange Funding Rates",
@@ -1942,7 +1943,8 @@
     "min_interval": "8h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/huobi-derivatives/huobi-perpetual-funding-rate"]
   },
   {
     "human_readable_name": "FTX Exchange Open Interest",
@@ -2473,7 +2475,8 @@
     "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-market-volume"]
   },
   {
     "human_readable_name": "Daily market buy/sell count for NFT collections",
@@ -2493,7 +2496,8 @@
     "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-market-volume"]
   },
   {
     "human_readable_name": "Daily NFT collection holders average balance",
@@ -2513,7 +2517,8 @@
     "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-collection-holders-balance"]
   },
   {
     "human_readable_name": "NFT network realized profit/loss for all NFTs in ETH",
@@ -2532,7 +2537,8 @@
     "min_interval": "5m",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-network-profit-loss"]
   },
   {
     "human_readable_name": "NFT network realized profit/loss for all NFTs in USD",
@@ -5397,7 +5403,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/funding-rates-aggregated"]
   },
   {
     "human_readable_name": "Total Funding Rates Aggregated by Asset",
@@ -5416,7 +5423,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/funding-rates-aggregated"]
   },
   {
     "human_readable_name": "Relative Strength Index 4h",

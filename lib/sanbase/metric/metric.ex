@@ -163,6 +163,7 @@ defmodule Sanbase.Metric do
             interval,
             opts
           )
+          |> maybe_round_floats(:timeseries_data)
         end
 
         execute_if_aggregation_valid(fun, metric, aggregation)
@@ -202,6 +203,7 @@ defmodule Sanbase.Metric do
             interval,
             opts
           )
+          |> maybe_round_floats(:timeseries_data_per_slug)
         end
 
         execute_if_aggregation_valid(fun, metric, aggregation)
@@ -239,6 +241,7 @@ defmodule Sanbase.Metric do
             to,
             opts
           )
+          |> maybe_round_floats(:aggregated_timeseries_data)
         end
 
         execute_if_aggregation_valid(fun, metric, aggregation)
@@ -891,4 +894,35 @@ defmodule Sanbase.Metric do
     |> Map.put(:is_deprecated, is_deprecated)
     |> Map.put(:hard_deprecate_after, hard_deprecate_after)
   end
+
+  defp maybe_round_floats({:error, error}, _), do: {:error, error}
+
+  defp maybe_round_floats({:ok, result}, :timeseries_data) do
+    result =
+      Enum.map(result, fn m ->
+        Map.update!(m, :value, &round_value/1)
+      end)
+
+    {:ok, result}
+  end
+
+  defp maybe_round_floats({:ok, result}, :aggregated_timeseries_data) do
+    result = Map.new(result, fn {k, v} -> {k, round_value(v)} end)
+    {:ok, result}
+  end
+
+  defp maybe_round_floats({:ok, result}, :timeseries_data_per_slug) do
+    result =
+      Enum.map(result, fn %{data: data} = map ->
+        # Each element is %{datetime: dt, [%{slug: slug, value: value}]}
+        data = Enum.map(data, fn m -> Map.update!(m, :value, &round_value/1) end)
+
+        %{map | data: data}
+      end)
+
+    {:ok, result}
+  end
+
+  defp round_value(num) when is_float(num), do: Float.round(num, 6)
+  defp round_value(num), do: num
 end

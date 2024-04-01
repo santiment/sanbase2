@@ -22,6 +22,29 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     ]
   end
 
+  @tag capture_log: true
+  test "missing required selector", context do
+    query = """
+    {
+      getMetric(metric: "exchange_balance_per_exchange"){
+        timeseriesData(slug: "#{context.slug}" from: "utc_now-7d" to: "utc_now" interval: "1d"){
+          datetime
+          value
+        }
+      }
+    }
+    """
+
+    error_msg =
+      context.conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+      |> get_in(["errors", Access.at(0), "message"])
+
+    assert error_msg =~
+             "must have at least one of the following fields in the selector: owner, label"
+  end
+
   test "price_usd when the source is cryptocompare", context do
     # Test that when the source is cryptocompare the prices are served from the
     # PricePair module instead of the Price module

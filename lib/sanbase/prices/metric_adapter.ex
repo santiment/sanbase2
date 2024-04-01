@@ -86,7 +86,8 @@ defmodule Sanbase.Price.MetricAdapter do
        required_selectors: [:slug],
        data_type: :timeseries,
        is_timebound: false,
-       complexity_weight: @default_complexity_weight
+       complexity_weight: @default_complexity_weight,
+       docs: docs_links(metric) |> Enum.map(fn link -> %{link: link} end)
      }}
   end
 
@@ -166,5 +167,16 @@ defmodule Sanbase.Price.MetricAdapter do
   # Private functions
   defp update_opts(opts) do
     Keyword.update(opts, :aggregation, @default_aggregation, &(&1 || @default_aggregation))
+  end
+
+  defp docs_links(metric) do
+    case metric do
+      "price_usd" -> ["https://academy.santiment.net/metrics/price"]
+      "price_btc" -> ["https://academy.santiment.net/metrics/price"]
+      "price_eth" -> ["https://academy.santiment.net/metrics/price"]
+      "marketcap_usd" -> ["https://academy.santiment.net/metrics/marketcap"]
+      "volume_usd" -> ["https://academy.santiment.net/metrics/trading-volume"]
+      _ -> []
+    end
   end
 end

@@ -83,7 +83,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-balance"]
   },
   {
     "human_readable_name": "Exchange Outflow per Exchange",
@@ -101,7 +102,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-balance"]
   },
   {
     "human_readable_name": "Balance per Label and Owner (Inflow - Outflow) Delta",
@@ -119,7 +121,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-balance"]
   },
   {
     "human_readable_name": "Balance per Owner (Inflow - Outflow)",
@@ -136,7 +139,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-balance"]
   },
   {
     "human_readable_name": "Total Trade Volume by DEX",
@@ -153,7 +157,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "ETH-Based Tokens Trade Volume by DEX",
@@ -170,7 +175,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Stablecoin Trade Volume by DEX",
@@ -187,7 +193,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Other Token Trade Volume by DEX",
@@ -204,7 +211,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Total Trade Amount by DEX",
@@ -221,7 +229,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "ETH-Based Tokens Trade Amount by DEX",
@@ -238,7 +247,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Stablecoin Trade Amount by DEX",
@@ -255,7 +265,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Other Token Trade Amount by DEX",
@@ -272,7 +283,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "ETH-Based Token Trade Volume by Token",
@@ -289,7 +301,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Stablecoin Trade Volume by Token",
@@ -306,7 +319,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Token ETH Price by DEX",
@@ -323,7 +337,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/decentralized-exchange-metrics"]
   },
   {
     "human_readable_name": "Total NFT Trades Count",

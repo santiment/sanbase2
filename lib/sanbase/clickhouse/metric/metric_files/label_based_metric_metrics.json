@@ -6,6 +6,7 @@
     "version": "2019-12-22",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -23,6 +24,7 @@
     "version": "2019-12-22",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -40,6 +42,7 @@
     "version": "2019-12-22",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -57,6 +60,7 @@
     "version": "2019-12-22",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -75,6 +79,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -94,6 +99,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -113,6 +119,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -131,6 +138,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
+    "required_selectors": ["slug", "owner|label"],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"

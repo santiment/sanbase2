@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
   def get_trending_words(
         _root,
         %{from: from, to: to, interval: interval, size: size} = args,
-        _resolution
+        resolution
       ) do
     source = Map.get(args, :source, :all)
     filter = Map.get(args, :word_type_filter, :all)
@@ -73,7 +73,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
           |> Enum.map(fn {datetime, top_words} ->
             %{
               datetime: datetime,
-              top_words: Enum.sort_by(top_words, & &1.score, :desc)
+              top_words: sort_and_mask_trending_words(top_words, resolution.context.auth.plan)
             }
           end)
           |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
@@ -185,5 +185,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   def social_dominance_trending_words(_, _, _) do
     Sanbase.SocialData.SocialDominance.social_dominance_trending_words()
+  end
+
+  # private
+
+  # FREE user doesn't see first 3 trending words
+  defp sort_and_mask_trending_words(top_words, subscription_plan) do
+    Enum.sort_by(top_words, & &1.score, :desc)
+    |> Enum.with_index()
+    |> Enum.map(fn {word, index} ->
+      if subscription_plan == "FREE" and index < 3 do
+        %{word | word: "***"}
+      else
+        word
+      end
+    end)
   end
 end

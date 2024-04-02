@@ -16,7 +16,8 @@
     "min_interval": "1d",
     "table": "ecosystem_aggregated_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/development-activity"]
   },
   {
     "human_readable_name": "Ecosystem Daily GitHub Activity",
@@ -35,7 +36,8 @@
     "min_interval": "1d",
     "table": "ecosystem_aggregated_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/github-activity"]
   },
   {
     "human_readable_name": "Ecosystem Daily Development Activity Contributors Count",
@@ -54,7 +56,8 @@
     "min_interval": "7d",
     "table": "ecosystem_aggregated_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/development-activity-contributors-count"]
   },
   {
     "human_readable_name": "Ecosystem Daily GitHub Activity Contributors Count",
@@ -73,6 +76,8 @@
     "min_interval": "7d",
     "table": "ecosystem_aggregated_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/github-activity-contributors-count"]
+
   }
 ]

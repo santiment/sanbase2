@@ -258,6 +258,22 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     end
   end
 
+  defp add_missing_selector(:owner, selector) do
+    Map.put(
+      selector,
+      :owner,
+      "binance"
+    )
+  end
+
+  defp add_missing_selector(:label, selector) do
+    Map.put(
+      selector,
+      :label,
+      "centralized_exchange"
+    )
+  end
+
   defp add_missing_selector(:contract_address, selector),
     do:
       Map.put(

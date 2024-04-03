@@ -82,8 +82,8 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
 
         # Add keys that can affect the data the user can have access to
         additional_keys_hash =
-          {context.permissions, context.product_id, context.auth.subscription, context.auth.plan,
-           context.auth.auth_method}
+          {context.permissions, context.requested_product_id, context.auth.subscription,
+           context.auth.plan, context.auth.auth_method}
           |> Sanbase.Cache.hash()
 
         # The ttl/max_ttl_offset might be rewritten in case `caching_params`

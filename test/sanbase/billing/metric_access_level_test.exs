@@ -477,8 +477,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         # ecosystem aggregated metrics
         "ecosystem_dev_activity",
         "ecosystem_github_activity",
-        "ecosystem_dev_activity_contributors_count",
-        "ecosystem_github_activity_contributors_count",
+        "ecosystem_dev_activity_contributors_count_7d",
+        "ecosystem_github_activity_contributors_count_7d",
         "gini_index",
         "annual_inflation_rate",
         # Social metrics
@@ -595,8 +595,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "price_volatility_4w",
         "ecosystem_dev_activity",
         "ecosystem_github_activity",
-        "ecosystem_dev_activity_contributors_count",
-        "ecosystem_github_activity_contributors_count",
+        "ecosystem_dev_activity_contributors_count_7d",
+        "ecosystem_github_activity_contributors_count_7d",
         "gini_index",
         "annual_inflation_rate"
       ]

@@ -40,8 +40,8 @@
     "docs_links": ["https://academy.santiment.net/metrics/development-activity/github-activity"]
   },
   {
-    "human_readable_name": "Ecosystem Daily Development Activity Contributors Count",
-    "name": "ecosystem_dev_activity_contributors_count",
+    "human_readable_name": "Ecosystem 7 Day Development Activity Contributors Count",
+    "name": "ecosystem_dev_activity_contributors_count_7d",
     "metric": "ecosystem_dev_activity_contributors_count",
     "version": "2019-01-01",
     "access": "free",
@@ -60,8 +60,8 @@
     "docs_links": ["https://academy.santiment.net/metrics/development-activity/development-activity-contributors-count"]
   },
   {
-    "human_readable_name": "Ecosystem Daily GitHub Activity Contributors Count",
-    "name": "ecosystem_github_activity_contributors_count",
+    "human_readable_name": "Ecosystem 7 Day GitHub Activity Contributors Count",
+    "name": "ecosystem_github_activity_contributors_count_7d",
     "metric": "ecosystem_github_activity_contributors_count",
     "version": "2019-01-01",
     "access": "free",

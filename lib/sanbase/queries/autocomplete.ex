@@ -17,7 +17,7 @@ defmodule Sanbase.Clickhouse.Autocomplete do
     sql = """
     SELECT name, engine, partition_key, sorting_key, primary_key
     FROM system.tables
-    WHERE database = 'default'
+    WHERE database = 'default' AND name NOT LIKE '%_shard%'
     """
 
     query_struct = Sanbase.Clickhouse.Query.new(sql, %{})

@@ -76,7 +76,7 @@ defmodule Sanbase.Mixfile do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:csv, "~> 3.0"},
       {:csvlixir, "~> 2.0", override: true},
-      {:dataloader, "~> 1.0.0"},
+      {:dataloader, "~> 2.0.0"},
       {:db_connection, "~> 2.2", override: true},
       {:decimal, "~> 2.0", override: true},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},

@@ -546,7 +546,8 @@ defmodule Sanbase.Billing.Subscription do
        when product_id in [@product_sanbase, @product_api] do
     defaults = %{
       customer: user.stripe_customer_id,
-      items: [%{plan: plan.stripe_id}]
+      items: [%{plan: plan.stripe_id}],
+      off_session: true
     }
 
     trial_end_unix = Sanbase.DateTimeUtils.days_after(@trial_days) |> DateTime.to_unix()
@@ -566,7 +567,8 @@ defmodule Sanbase.Billing.Subscription do
   defp subscription_defaults(user, plan) do
     %{
       customer: user.stripe_customer_id,
-      items: [%{plan: plan.stripe_id}]
+      items: [%{plan: plan.stripe_id}],
+      off_session: true
     }
   end
 

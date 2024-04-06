@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
     metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
-    metrics = Enum.sort(metrics, :asc)
+    metrics = metrics |> Enum.uniq() |> Enum.sort(:asc)
     {:ok, metrics}
   end
 
@@ -62,7 +62,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     metrics = Metric.available_metrics()
     metrics = maybe_filter_incomplete_metrics(metrics, args[:has_incomplete_data])
     metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
-    metrics = Enum.sort(metrics, :asc)
+    metrics = metrics |> Enum.uniq() |> Enum.sort(:asc)
 
     {:ok, metrics}
   end
@@ -77,7 +77,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
       {:nocache, {:ok, metrics}} ->
         metrics = maybe_apply_regex_filter(metrics, args[:name_regex_filter])
-        metrics = Enum.sort(metrics, :asc)
+        metrics = metrics |> Enum.uniq() |> Enum.sort(:asc)
 
         {:nocache, {:ok, metrics}}
     end

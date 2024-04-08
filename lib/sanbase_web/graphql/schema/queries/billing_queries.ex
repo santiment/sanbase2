@@ -81,7 +81,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
       resolve(&BillingResolver.check_annual_discount_eligibility/3)
     end
 
-    field :get_subscription_with_payment_intent, :payment_intent do
+    field :get_subscription_with_payment_intent, :subscription_plan do
       meta(access: :free)
 
       arg(:subscription_id, non_null(:id))

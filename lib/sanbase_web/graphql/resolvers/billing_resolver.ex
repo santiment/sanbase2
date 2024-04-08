@@ -95,7 +95,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def fetch_subscription_with_payment_intent(_root, %{subscription_id: subscription_id}, %{
+  def get_subscription_with_payment_intent(_root, %{subscription_id: subscription_id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
     user_id = current_user.id

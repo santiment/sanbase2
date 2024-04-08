@@ -81,14 +81,14 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
       resolve(&BillingResolver.check_annual_discount_eligibility/3)
     end
 
-    field :fetch_subscription_with_payment_intent, :payment_intent do
+    field :get_subscription_with_payment_intent, :payment_intent do
       meta(access: :free)
 
       arg(:subscription_id, non_null(:id))
 
       middleware(JWTAuth)
 
-      resolve(&BillingResolver.fetch_subscription_with_payment_intent/3)
+      resolve(&BillingResolver.get_subscription_with_payment_intent/3)
     end
   end
 

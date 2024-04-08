@@ -103,7 +103,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     with {_, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Subscription.by_id(subscription_id)},
          {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription.stripe_id) do
-      {:ok, Subscription.sync_subscription_with_stripe(stripe_subscription, subscription)}
+      Subscription.sync_subscription_with_stripe(stripe_subscription, subscription)
     else
       result ->
         handle_subscription_error_result(

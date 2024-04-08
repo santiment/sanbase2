@@ -95,6 +95,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
+  def fetch_subscription_with_payment_intent(_root, %{subscription_id: subscription_id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    user_id = current_user.id
+
+    with {_, %Subscription{user_id: ^user_id} = subscription} <-
+           {:subscription?, Subscription.by_id(subscription_id)},
+         {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription.stripe_id) do
+      {:ok, Subscription.sync_subscription_with_stripe(stripe_subscription, subscription)}
+    else
+      result ->
+        handle_subscription_error_result(
+          result,
+          "Fetching latest payment intent failed",
+          %{user_id: user_id, subscription_id: subscription_id}
+        )
+    end
+  end
+
   def cancel_subscription(_root, %{subscription_id: subscription_id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do

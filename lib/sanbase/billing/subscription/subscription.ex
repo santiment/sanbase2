@@ -45,6 +45,8 @@ defmodule Sanbase.Billing.Subscription do
     field(:trial_end, :utc_datetime)
     field(:type, SubscriptionType)
 
+    field(:payment_intent, :map, virtual: true)
+
     belongs_to(:user, User)
     belongs_to(:plan, Plan)
 
@@ -115,6 +117,7 @@ defmodule Sanbase.Billing.Subscription do
       inserted_at: DateTime.from_unix!(stripe_subscription.created) |> DateTime.to_naive()
     }
     |> create(on_conflict: :nothing)
+    |> add_payment_intent(stripe_subscription)
   end
 
   def update_subscription_db(subscription, params) do
@@ -612,7 +615,22 @@ defmodule Sanbase.Billing.Subscription do
     }
 
     update_subscription_db(db_subscription, args)
+    |> add_payment_intent(stripe_subscription)
   end
+
+  def add_payment_intent({:ok, db_subscription}, stripe_subscription) do
+    case stripe_subscription.latest_invoice do
+      nil ->
+        {:ok, db_subscription}
+
+      latest_invoice ->
+        payment_intent = latest_invoice.payment_intent
+        db_subscription = %{db_subscription | payment_intent: payment_intent}
+        {:ok, db_subscription}
+    end
+  end
+
+  def add_payment_intent(result, _), do: result
 
   defp fetch_plan_id(db_subscription, stripe_subscription) do
     case Plan.by_stripe_id(stripe_subscription.plan.id) do

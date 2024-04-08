@@ -76,7 +76,6 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
 
   alias Sanbase.Utils.Config
 
-  @contract_goerly "0x7f985e8ad29438907a2cc8ff3d526d9a1693442c"
   @contract_mainnet "0x211E14C8cc67F9EF05cC84F80Dc036Ff2F548949"
 
   @json_file "sanbase_nft_abi.json"
@@ -86,12 +85,7 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
   # test address with subscriptions: 0x89c276d6e0fda36d7796af0d27a08176cc0f1976
   def abi(), do: @abi
 
-  def contract() do
-    case is_dev_or_stage?() do
-      true -> @contract_goerly
-      false -> @contract_mainnet
-    end
-  end
+  def contract(), do: @contract_mainnet
 
   def nft_subscriptions_data(address) do
     tokens_count = balance_of(address)
@@ -150,8 +144,6 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
         function_abi(function_name).returns
       )
     end
-
-    maybe_replace_goerly(contract_call)
   end
 
   def execute_batch(function_name, args) do
@@ -164,37 +156,5 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
         transform_args_list_fun: fn list -> list ++ ["latest"] end
       )
     end
-
-    maybe_replace_goerly(contract_call)
-  end
-
-  defp maybe_replace_goerly(func) do
-    maybe_put_goerly_url()
-
-    try do
-      func.()
-    rescue
-      e ->
-        Logger.error("Error occurred while executing smart contract call: #{inspect(e)}")
-        {:error, "Error occurred while executing smart contract call."}
-    after
-      maybe_put_eth_mainnet_url()
-    end
-  end
-
-  defp maybe_put_goerly_url() do
-    if is_dev_or_stage?() do
-      Application.put_env(:ethereumex, :url, System.get_env("GOERLY_URL"))
-    end
-  end
-
-  defp maybe_put_eth_mainnet_url() do
-    if is_dev_or_stage?() do
-      Application.put_env(:ethereumex, :url, System.get_env("PARITY_URL"))
-    end
-  end
-
-  defp is_dev_or_stage?() do
-    Config.module_get(Sanbase, :deployment_env) in ["dev", "stage"]
   end
 end

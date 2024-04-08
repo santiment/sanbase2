@@ -102,11 +102,11 @@ defmodule Sanbase.StripeApi do
   @spec create_subscription(subscription) ::
           {:ok, %Stripe.Subscription{}} | {:error, %Stripe.Error{}}
   def create_subscription(%{customer: _customer, items: _items} = subscription) do
-    Stripe.Subscription.create(subscription)
+    Stripe.Subscription.create(subscription, expand: ["latest_invoice.payment_intent"])
   end
 
   def update_subscription(stripe_id, params) do
-    Stripe.Subscription.update(stripe_id, params)
+    Stripe.Subscription.update(stripe_id, params, expand: ["latest_invoice.payment_intent"])
   end
 
   def cancel_subscription(stripe_id) do
@@ -135,7 +135,7 @@ defmodule Sanbase.StripeApi do
   end
 
   def retrieve_subscription(stripe_id) do
-    Stripe.Subscription.retrieve(stripe_id)
+    Stripe.Subscription.retrieve(stripe_id, expand: ["latest_invoice.payment_intent"])
   end
 
   def create_coupon(%{percent_off: percent_off, duration: duration}) do

@@ -112,6 +112,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_secondary_users,
           :get_sheets_templates,
           :get_signal,
+          :get_subscription_with_payment_intent,
           :get_telegram_deep_link,
           :get_trigger_by_id,
           :get_user_dashboards,

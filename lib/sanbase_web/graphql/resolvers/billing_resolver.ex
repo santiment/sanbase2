@@ -253,7 +253,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
       {:ok, pm} = Stripe.PaymentMethod.retrieve(pm_id)
       pm.card
     else
-      customer.default_source |> Map.from_struct()
+      customer.default_source && Map.from_struct(customer.default_source)
     end
   end
 

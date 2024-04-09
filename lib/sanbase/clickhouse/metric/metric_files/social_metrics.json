@@ -71,6 +71,7 @@
     "human_readable_name": "Sentiment Volume Consumed Total",
     "name": "sentiment_volume_consumed_total",
     "metric": "sentiment_volume_consumed_1d",
+    "aliases": ["sentiment_weighted_total"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -173,6 +174,7 @@
     "human_readable_name": "Sentiment Volume Consumed 4chan",
     "name": "sentiment_volume_consumed_4chan",
     "metric": "sentiment_volume_consumed_4chan",
+    "aliases": ["sentiment_weighted_4chan"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -275,6 +277,7 @@
     "human_readable_name": "Sentiment Volume Consumed Telegram",
     "name": "sentiment_volume_consumed_telegram",
     "metric": "sentiment_volume_consumed_telegram",
+    "aliases": ["sentiment_weighted_telegram"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -377,6 +380,7 @@
     "human_readable_name": "Sentiment Volume Consumed Reddit",
     "name": "sentiment_volume_consumed_reddit",
     "metric": "sentiment_volume_consumed_reddit",
+    "aliases": ["sentiment_weighted_reddit"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -689,7 +693,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Social Volume Twitter News",
@@ -723,7 +728,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Social Dominance Twitter",
@@ -757,7 +763,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Social Dominance Twitter News",
@@ -791,12 +798,14 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Volume Consumed Twitter",
     "name": "sentiment_volume_consumed_twitter",
     "metric": "sentiment_volume_consumed_twitter",
+    "aliases": ["sentiment_weighted_twitter"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -825,7 +834,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Volume Consumed Twitter News",
@@ -842,7 +852,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Volume Consumed Twitter NFT",
@@ -859,7 +870,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Positive Twitter",
@@ -893,7 +905,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Positive Twitter News",
@@ -910,7 +923,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Positive Twitter NFT",
@@ -927,7 +941,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Negative Twitter",
@@ -961,7 +976,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Negative Twitter News",
@@ -995,7 +1011,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Balance Twitter",
@@ -1029,7 +1046,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Balance Twitter News",
@@ -1063,7 +1081,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Social Volume Youtube",
@@ -1103,6 +1122,7 @@
     "human_readable_name": "Sentiment Volume Consumed Youtube",
     "name": "sentiment_volume_consumed_youtube_videos",
     "metric": "sentiment_volume_consumed_youtube_videos",
+    "aliases": ["sentiment_weighted_youtube_videos"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1205,6 +1225,7 @@
     "human_readable_name": "Sentiment Volume Consumed Bitcointalk",
     "name": "sentiment_volume_consumed_bitcointalk",
     "metric": "sentiment_volume_consumed_bitcointalk",
+    "aliases": ["sentiment_weighted_bitcointalk"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1539,7 +1560,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance Twitter Crypto",
@@ -1556,7 +1578,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Twitter News",
@@ -1607,7 +1630,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance Twitter NFT",
@@ -1624,7 +1648,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Youtube",

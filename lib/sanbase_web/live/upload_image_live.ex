@@ -121,9 +121,7 @@ defmodule SanbaseWeb.UploadImageLive do
     image_locations =
       consume_uploaded_entries(socket, :images, fn meta, entry ->
         # Create a destination folder and file name
-        filename =
-          gen_filename(name, entry)
-          |> dbg()
+        filename = gen_filename(name, entry)
 
         dest = Temp.mkdir!("image_upload_live")
         filepath = Path.join(dest, filename)

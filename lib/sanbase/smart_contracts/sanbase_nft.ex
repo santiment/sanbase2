@@ -136,25 +136,21 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
   end
 
   def execute(function_name, args) do
-    contract_call = fn ->
-      call_contract(
-        contract(),
-        function_abi(function_name),
-        args,
-        function_abi(function_name).returns
-      )
-    end
+    call_contract(
+      contract(),
+      function_abi(function_name),
+      args,
+      function_abi(function_name).returns
+    )
   end
 
   def execute_batch(function_name, args) do
-    contract_call = fn ->
-      call_contract_batch(
-        contract(),
-        function_abi(function_name),
-        args,
-        function_abi(function_name).returns,
-        transform_args_list_fun: fn list -> list ++ ["latest"] end
-      )
-    end
+    call_contract_batch(
+      contract(),
+      function_abi(function_name),
+      args,
+      function_abi(function_name).returns,
+      transform_args_list_fun: fn list -> list ++ ["latest"] end
+    )
   end
 end

@@ -335,6 +335,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "realized_value_usd_365d",
         "holders_distribution_combined_balance_over_100",
         "sentiment_volume_consumed_total",
+        "sentiment_weighted_total",
         "holders_labeled_negative_distribution_combined_balance_10k_to_100k",
         "nft_market_volume",
         "nft_market_count",
@@ -851,6 +852,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_balance_youtube_videos",
         "sentiment_balance_bitcointalk",
         "sentiment_balance_total",
+        # old volume_consumed metrics
         "sentiment_volume_consumed_4chan",
         "sentiment_volume_consumed_telegram",
         "sentiment_volume_consumed_reddit",
@@ -861,6 +863,14 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_volume_consumed_youtube_videos",
         "sentiment_volume_consumed_bitcointalk",
         "sentiment_volume_consumed_total",
+        # volume_consumed gets renamed to weighted
+        "sentiment_weighted_4chan",
+        "sentiment_weighted_telegram",
+        "sentiment_weighted_reddit",
+        "sentiment_weighted_twitter",
+        "sentiment_weighted_youtube_videos",
+        "sentiment_weighted_bitcointalk",
+        "sentiment_weighted_total",
         "social_active_users",
         "trending_words_rank",
         # histogram metrics

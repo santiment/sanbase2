@@ -577,7 +577,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         # histogram metrics
         "eth2_staked_amount_per_label",
         "eth2_staked_address_count_per_label",
-        "eth2_unlabeled_staker_inflow_sources",
         "eth2_top_stakers",
         "eth2_staking_pools",
         "eth2_staking_pools_usd",

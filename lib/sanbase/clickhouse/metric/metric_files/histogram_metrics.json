@@ -124,25 +124,6 @@
   },
   {
     "human_readable_name": "ETH2 Staked Amount",
-    "name": "eth2_unlabeled_staker_inflow_sources",
-    "metric": "eth2_unlabeled_staker_inflow_sources",
-    "version": "2019-01-01",
-    "access": "free",
-    "selectors": [
-      "slug"
-    ],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "eth2_staking_transfers_v2",
-    "has_incomplete_data": false,
-    "data_type": "histogram"
-  },
-  {
-    "human_readable_name": "ETH2 Staked Amount",
     "name": "eth2_top_stakers",
     "metric": "eth2_top_stakers",
     "version": "2019-01-01",

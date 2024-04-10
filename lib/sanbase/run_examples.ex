@@ -583,7 +583,6 @@ defmodule Sanbase.RunExamples do
           "age_distribution",
           "spent_coins_cost",
           "eth2_staked_amount_per_label",
-          "eth2_unlabeled_staker_inflow_sources",
           "eth2_staking_pools_usd",
           "eth2_staking_pools_validators_count_over_time",
           "eth2_top_stakers"

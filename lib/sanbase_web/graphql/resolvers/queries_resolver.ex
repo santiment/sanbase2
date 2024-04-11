@@ -8,8 +8,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   # Query CRUD operations
 
-  def get_query(_root, %{id: id}, %{context: %{auth: %{current_user: user}}}) do
-    Queries.get_query(id, user.id)
+  def get_query(_root, %{id: id}, resolution) do
+    querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
+    Queries.get_query(id, querying_user_id)
   end
 
   def create_query(_root, %{} = args, %{context: %{auth: %{current_user: user}}}) do

@@ -45,10 +45,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EcosystemResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, key, {ecosystem, args})
     |> on_load(fn loader ->
-      result = Dataloader.get(loader, SanbaseDataloader, key, {ecosystem, args})
+      result = Dataloader.get(loader, SanbaseDataloader, key, {ecosystem, args}) || []
 
       with {:ok, result} <- MetricTransform.apply_transform(args.transform, result),
-           {:ok, result} <- fit_from_datetime(result, args) do
+           {:ok, result} <- fit_from_datetime(result, %{args | from: args.original_from}) do
         {:ok, result}
       end
     end)

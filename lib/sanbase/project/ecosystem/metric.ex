@@ -105,7 +105,7 @@ defmodule Sanbase.Ecosystem.Metric do
       GROUP BY ecosystem, dt
     )
     GROUP BY ecosystem, t
-    ORDER BY t
+    ORDER BY t ASC
     """
 
     Sanbase.Clickhouse.Query.new(sql, params)

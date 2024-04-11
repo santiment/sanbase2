@@ -65,6 +65,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
       ) do
     with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
          {:ok, query} <- Queries.get_query(query_id, user.id) do
+      Process.put(
+        :queries_dynamic_repo,
+        Queries.user_plan_to_dynamic_repo(context.product_code, context.auth.plan)
+      )
+
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user, query_metadata)
     end
@@ -81,6 +86,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
     with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
          query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user) do
+      Process.put(
+        :queries_dynamic_repo,
+        Queries.user_plan_to_dynamic_repo(context.product_code, context.auth.plan)
+      )
+
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user, query_metadata)
     end
@@ -95,6 +105,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     # query's local parameter being overriden by the dashboard global parameters
     with :ok <- Queries.user_can_execute_query(user, context.product_code, context.auth.plan),
          {:ok, query} <- Queries.get_dashboard_query(dashboard_id, mapping_id, user.id) do
+      Process.put(
+        :queries_dynamic_repo,
+        Queries.user_plan_to_dynamic_repo(context.product_code, context.auth.plan)
+      )
+
       query_metadata = QueryMetadata.from_resolution(resolution)
       Queries.run_query(query, user, query_metadata)
     end

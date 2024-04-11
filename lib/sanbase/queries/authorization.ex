@@ -17,6 +17,40 @@ defmodule Sanbase.Queries.Authorization do
     end
   end
 
+  def user_plan_to_dynamic_repo(product_code, plan_name) do
+    case {product_code, plan_name} do
+      {_, "FREE"} ->
+        Sanbase.ClickhouseRepo.FreeUser
+
+      {"SANBASE", "PRO"} ->
+        Sanbase.ClickhouseRepo.SanbaseProUser
+
+      {"SANBASE", "PRO_PLUS"} ->
+        Sanbase.ClickhouseRepo.SanbaseMaxUser
+
+      {"SANBASE", "MAX"} ->
+        Sanbase.ClickhouseRepo.SanbaseMaxUser
+
+      {"SANAPI", "BASIC"} ->
+        Sanbase.ClickhouseRepo.FreeUser
+
+      {"SANAPI", "PRO"} ->
+        Sanbase.ClickhouseRepo.BusinessProUser
+
+      {"SANAPI", "BUSINESS_PRO"} ->
+        Sanbase.ClickhouseRepo.BusinessProUser
+
+      {"SANAPI", "BUSINESS_MAX"} ->
+        Sanbase.ClickhouseRepo.BusinessMaxUser
+
+      {"SANAPI", "CUSTOM"} ->
+        Sanbase.ClickhouseRepo.ReadOnly
+
+      {"SANAPI", "CUSTOM_" <> _ = custom_plan} ->
+        user_plan_to_dynamic_repo("SANAPI", fetch_base_plan_for_custom(custom_plan))
+    end
+  end
+
   def query_executions_limit(product_code, plan_name) do
     case {product_code, plan_name} do
       {_, "FREE"} ->

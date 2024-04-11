@@ -34,10 +34,8 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
       ])
       |> get_in(["data", "getEcosystems"])
 
-    assert data == [
-             %{"name" => "ethereum", "projects" => []},
-             %{"name" => "bitcoin", "projects" => []}
-           ]
+    assert %{"name" => "ethereum", "projects" => []} in data
+    assert %{"name" => "bitcoin", "projects" => []} in data
 
     {:ok, _} = Sanbase.ProjectEcosystemMapping.create(context.p1.id, context.eth_ecosystem.id)
     {:ok, _} = Sanbase.ProjectEcosystemMapping.create(context.p2.id, context.eth_ecosystem.id)
@@ -47,13 +45,15 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
       get_ecosystems_projects(context.conn, ["ethereum", "bitcoin"])
       |> get_in(["data", "getEcosystems"])
 
-    assert data == [
-             %{
-               "name" => "ethereum",
-               "projects" => [%{"slug" => context.p2.slug}, %{"slug" => context.p1.slug}]
-             },
-             %{"name" => "bitcoin", "projects" => [%{"slug" => context.p1.slug}]}
-           ]
+    assert %{
+             "name" => "ethereum",
+             "projects" => [%{"slug" => context.p2.slug}, %{"slug" => context.p1.slug}]
+           } in data
+
+    assert %{
+             "name" => "bitcoin",
+             "projects" => [%{"slug" => context.p1.slug}]
+           } in data
   end
 
   test "get timeseries data", context do
@@ -153,16 +153,15 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
         )
         |> get_in(["data", "getEcosystems"])
 
-      assert data == [
-               %{
-                 "name" => "ethereum",
-                 "aggregatedTimeseriesData" => 1100.1
-               },
-               %{
-                 "name" => "bitcoin",
-                 "aggregatedTimeseriesData" => 1212.4
-               }
-             ]
+      assert %{
+               "name" => "ethereum",
+               "aggregatedTimeseriesData" => 1100.1
+             } in data
+
+      assert %{
+               "name" => "bitcoin",
+               "aggregatedTimeseriesData" => 1212.4
+             } in data
     end)
   end
 

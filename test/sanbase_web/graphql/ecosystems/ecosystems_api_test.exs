@@ -29,8 +29,8 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
   test "get the projects in an ecosystem", context do
     data =
       get_ecosystems_projects(context.conn, [
-        context.eth_ecosystem.ecosystem,
-        context.btc_ecosystem.ecosystem
+        "ethereum",
+        "bitcoin"
       ])
       |> get_in(["data", "getEcosystems"])
 
@@ -44,10 +44,7 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
     {:ok, _} = Sanbase.ProjectEcosystemMapping.create(context.p1.id, context.btc_ecosystem.id)
 
     data =
-      get_ecosystems_projects(context.conn, [
-        context.eth_ecosystem.ecosystem,
-        context.btc_ecosystem.ecosystem
-      ])
+      get_ecosystems_projects(context.conn, ["ethereum", "bitcoin"])
       |> get_in(["data", "getEcosystems"])
 
     assert data == [
@@ -72,7 +69,7 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       data =
-        get_ecosystems_timeseries_data(context.conn, [context.eth_ecosystem.ecosystem], %{
+        get_ecosystems_timeseries_data(context.conn, ["ethereum"], %{
           from: ~U[2024-04-08 00:00:00Z],
           to: ~U[2024-04-11 00:00:00Z],
           interval: "1d",
@@ -110,7 +107,7 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       data =
-        get_ecosystems_timeseries_data(context.conn, [context.eth_ecosystem.ecosystem], %{
+        get_ecosystems_timeseries_data(context.conn, ["ethereum"], %{
           from: ~U[2024-04-08 00:00:00Z],
           to: ~U[2024-04-11 00:00:00Z],
           interval: "1d",
@@ -128,6 +125,42 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
                    %{"datetime" => "2024-04-10T00:00:00Z", "value" => 7121.0},
                    %{"datetime" => "2024-04-11T00:00:00Z", "value" => 5114.0}
                  ]
+               }
+             ]
+    end)
+  end
+
+  test "get aggregated timeseries data", context do
+    {:ok, _} = Sanbase.ProjectEcosystemMapping.create(context.p1.id, context.eth_ecosystem.id)
+    {:ok, _} = Sanbase.ProjectEcosystemMapping.create(context.p2.id, context.eth_ecosystem.id)
+
+    rows = [
+      ["ethereum", 1100.1],
+      ["bitcoin", 1212.4]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      data =
+        get_ecosystems_aggregated_timeseries_data(
+          context.conn,
+          ["ethereum", "bitcoin"],
+          %{
+            from: ~U[2024-04-08 00:00:00Z],
+            to: ~U[2024-04-11 00:00:00Z],
+            metric: "ecosystem_github_activity"
+          }
+        )
+        |> get_in(["data", "getEcosystems"])
+
+      assert data == [
+               %{
+                 "name" => "ethereum",
+                 "aggregatedTimeseriesData" => 1100.1
+               },
+               %{
+                 "name" => "bitcoin",
+                 "aggregatedTimeseriesData" => 1212.4
                }
              ]
     end)
@@ -160,6 +193,22 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
               }
             }
           }
+      """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
+  defp get_ecosystems_aggregated_timeseries_data(conn, ecosystems, args) do
+    query =
+      """
+      {
+        getEcosystems(#{map_to_args(%{ecosystems: ecosystems})}){
+          name
+          aggregatedTimeseriesData(#{map_to_args(args)})
+        }
+      }
       """
 
     conn

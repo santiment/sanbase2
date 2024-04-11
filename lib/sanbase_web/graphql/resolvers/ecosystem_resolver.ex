@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EcosystemResolver do
           SanbaseDataloader,
           :ecosystem_aggregated_metric_data,
           {ecosystem, args}
-        )
+        ) || 0
 
       {:ok, data}
     end)

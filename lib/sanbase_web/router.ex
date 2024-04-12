@@ -62,6 +62,7 @@ defmodule SanbaseWeb.Router do
     pipe_through(:browser)
     live("/", FormsLive)
     live("/suggest_ecosystems", AddEcosystemLabelsLive)
+    live("/suggest_github_organizations", SuggestGithubOrganizationsLive)
   end
 
   scope "/admin2", SanbaseWeb do

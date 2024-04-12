@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.AdminFormsLive do
   use SanbaseWeb, :live_view
 
-  alias SanbaseWeb.Admin.UserSubmissionAdminComponents
+  alias SanbaseWeb.AdminFormsComponents
 
   def mount(_params, _session, socket) do
     {:ok,
@@ -14,15 +14,15 @@ defmodule SanbaseWeb.AdminFormsLive do
 
   def render(assigns) do
     ~H"""
-    <UserSubmissionAdminComponents.forms_list_container>
-      <UserSubmissionAdminComponents.forms_list_title title="Admin Forms" />
-      <UserSubmissionAdminComponents.form_info
+    <AdminFormsComponents.forms_list_container>
+      <AdminFormsComponents.forms_list_title title="Admin Forms" />
+      <AdminFormsComponents.form_info
         :for={form_info <- @forms_info}
         title={form_info.title}
         description={form_info.description}
         buttons={form_info.buttons}
       />
-    </UserSubmissionAdminComponents.forms_list_container>
+    </AdminFormsComponents.forms_list_container>
     """
   end
 
@@ -53,7 +53,7 @@ defmodule SanbaseWeb.AdminFormsLive do
         """,
         buttons: [
           %{url: ~p"/admin2/upload_image_live", text: "Upload an image"},
-          %{url: ~p"/admin2/uploaded_images", text: "List uploads"}
+          %{url: ~p"/admin2/uploaded_images_live", text: "List uploads"}
         ]
       }
     ]

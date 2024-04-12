@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
   use SanbaseWeb, :live_view
 
-  alias SanbaseWeb.EcosystemComponents
-  alias SanbaseWeb.Admin.UserSubmissionAdminComponents
+  alias SanbaseWeb.UserFormsComponents
+  alias SanbaseWeb.AdminFormsComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -19,7 +19,7 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
       <div class="flex-1 p:2 sm:p-6 justify-evenly">
         <.table id="ecosystem_changes_suggestions" rows={@rows}>
           <:col :let={row} label="Status">
-            <UserSubmissionAdminComponents.status status={row.status} />
+            <AdminFormsComponents.status status={row.status} />
           </:col>
           <:col :let={row} label="Asset">
             <.link
@@ -31,13 +31,13 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
             </.link>
           </:col>
           <:col :let={row} label="Added Ecosystems">
-            <EcosystemComponents.ecosystems_group
+            <UserFormsComponents.ecosystems_group
               ecosystems={row.added_ecosystems}
               ecosystem_colors_class="bg-green-100 text-green-800"
             />
           </:col>
           <:col :let={row} label="Removed Ecosystems">
-            <EcosystemComponents.ecosystems_group
+            <UserFormsComponents.ecosystems_group
               ecosystems={row.removed_ecosystems}
               ecosystem_colors_class="bg-red-100 text-red-800"
             />
@@ -50,7 +50,7 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
               class="flex flex-col lg:flex-row space-y-2 lg:space-y-0 md:space-x-2"
             >
               <input type="hidden" name="record_id" value={row.id} />
-              <UserSubmissionAdminComponents.button
+              <AdminFormsComponents.button
                 name="status"
                 value="approved"
                 class={
@@ -61,7 +61,7 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
                 disabled={row.status != "pending_approval"}
                 display_text="Approve"
               />
-              <UserSubmissionAdminComponents.button
+              <AdminFormsComponents.button
                 name="status"
                 value="declined"
                 class={
@@ -72,7 +72,7 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
                 disabled={row.status != "pending_approval"}
                 display_text="Decline"
               />
-              <UserSubmissionAdminComponents.button
+              <AdminFormsComponents.button
                 name="status"
                 value="undo"
                 class={

@@ -258,9 +258,13 @@ defmodule Sanbase.Project.List do
     end)
   end
 
-  def projects_data_for_ecosystems(opts \\ []) do
-    opts = Keyword.put(opts, :preload?, true) |> Keyword.put(:preload, [:ecosystems])
+  @doc ~s"""
+  Return only the id, name, ticker, slug and logo_url fields.
+  Additionaly, add all the preloads defined in the opts.
 
+  Example: projects_base_info_only([preload?: true, preload: :github_organizations])
+  """
+  def projects_base_info_only(opts \\ []) do
     projects_query(opts)
     |> select([:id, :name, :ticker, :slug, :logo_url])
     |> Repo.all()

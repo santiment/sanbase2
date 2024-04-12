@@ -1,27 +1,24 @@
-defmodule SanbaseWeb.AddEcosystemLabelsLive do
+defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
   use SanbaseWeb, :live_view
   alias SanbaseWeb.UserFormsComponents
 
   @impl true
   def mount(_params, _session, socket) do
-    # Loads only id, name, ticker, slug and ecosystems
-    opts = [preload?: true, preload: [:ecosystems]]
+    # Loads only id, name, ticker, slug and github_organizations
+    opts = [preload?: true, preload: [:github_organizations]]
     projects = Sanbase.Project.List.projects_base_info_only(opts)
-    # TODO: Do not call repo
-    ecosystems = Sanbase.Repo.all(Sanbase.Ecosystem)
 
     {:ok,
      socket
      |> assign(
-       page_title: "Suggest asset ecosystems changes",
+       page_title: "Suggest asset Github Organizations changes",
        projects: projects,
        selected_project: nil,
-       stored_project_ecosystems: [],
-       new_project_ecosystems: [],
-       removed_project_ecosystems: [],
+       stored_project_organizations: [],
+       new_project_organizations: [],
+       removed_project_organizations: [],
        notes: "",
-       search_result: projects,
-       ecosystems: ecosystems
+       search_result: projects
      )}
   end
 
@@ -34,15 +31,14 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
 
         slug ->
           project = Enum.find(socket.assigns.projects, &(&1.slug == slug))
-          stored_ecosystems = project.ecosystems
+          stored_organizations = project.github_organizations
 
           socket
           |> assign(
             selected_project: project,
-            stored_project_ecosystems: stored_ecosystems,
-            new_project_ecosystems: [],
-            removed_project_ecosystems: [],
-            ecosystems: order_ecosystems(socket.assigns.ecosystems, stored_ecosystems)
+            stored_project_organizations: stored_organizations,
+            new_project_organizations: [],
+            removed_project_organizations: []
           )
       end
 
@@ -53,34 +49,37 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
   def render(assigns) do
     ~H"""
     <div class="border border-gray-100 mx-auto max-w-3xl p-6 rounded-xl shadow-sm min-h-96">
-      <h1 class="text-2xl mb-6">Update the ecosystem labels of an asset</h1>
+      <h1 class="text-2xl mb-6">Update the Github Organizations of an asset</h1>
 
       <.select_project search_result={@search_result} />
 
       <div :if={@selected_project}>
         <.selected_project_details
           selected_project={@selected_project}
-          new_project_ecosystems={@new_project_ecosystems}
-          removed_project_ecosystems={@removed_project_ecosystems}
+          new_project_organizations={@new_project_organizations}
+          removed_project_organizations={@removed_project_organizations}
         />
 
-        <h2 class="text-lg mt-10">Edit the ecosystems of the asset</h2>
+        <h2 class="text-lg mt-10">Edit the Github Organizations of the asset</h2>
         <p class="text-sm text-gray-600">
-          The currently stored ecosystems are preselected. Deselect ecosystems to suggest removing them and select new ecosystems to suggest adding them.
+          The currently stored github organizations are preselected. Deselect an organization to suggest removing it.
         </p>
-        <.checkbox_select_ecosystems
-          ecosystems={@ecosystems}
+        <.checkbox_select_organizations
+          organizations={@stored_project_organizations}
           selected_project={@selected_project}
-          stored_project_ecosystems={@stored_project_ecosystems}
+          stored_project_organizations={@stored_project_organizations}
+          removed_project_organizations={@removed_project_organizations}
         />
+
+        <.add_gitub_organization />
 
         <.notes_textarea />
 
         <.submit_suggestions_button
           text="Submit Suggestion"
           phx-submit="submit_suggestions"
-          new_project_ecosystems={@new_project_ecosystems}
-          removed_project_ecosystems={@removed_project_ecosystems}
+          new_project_organizations={@new_project_organizations}
+          removed_project_organizations={@removed_project_organizations}
           notes={@notes}
         />
       </div>
@@ -111,14 +110,14 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
     {:noreply, assign(socket, search_result: search_result)}
   end
 
-  def handle_event("update_selected_ecosystems", params, socket) do
-    stored = socket.assigns.stored_project_ecosystems |> Enum.map(& &1.ecosystem)
-    new = socket.assigns.new_project_ecosystems
-    removed = socket.assigns.removed_project_ecosystems
+  def handle_event("update_selected_organizations", params, socket) do
+    stored = socket.assigns.stored_project_organizations |> Enum.map(& &1.organization)
+    new = socket.assigns.new_project_organizations
+    removed = socket.assigns.removed_project_organizations
 
     {new, removed} =
       case params do
-        %{"value" => "on", "ecosystem" => e} ->
+        %{"value" => "on", "organization" => e} ->
           new =
             case e in stored do
               # Append to the back so it looks better in the UI
@@ -129,7 +128,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
           removed = removed -- [e]
           {new, removed}
 
-        %{"ecosystem" => e} ->
+        %{"organization" => e} ->
           new = new -- [e]
 
           removed =
@@ -143,8 +142,8 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
 
     {:noreply,
      assign(socket,
-       new_project_ecosystems: new,
-       removed_project_ecosystems: removed
+       new_project_organizations: new,
+       removed_project_organizations: removed
      )}
   end
 
@@ -155,8 +154,8 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
   def handle_event("submit_suggestions", _params, socket) do
     attrs = %{
       project_id: socket.assigns.selected_project.id,
-      added_ecosystems: socket.assigns.new_project_ecosystems,
-      removed_ecosystems: socket.assigns.removed_project_ecosystems,
+      added_organizations: socket.assigns.new_project_organizations,
+      removed_organizations: socket.assigns.removed_project_organizations,
       notes: socket.assigns.notes
     }
 
@@ -166,8 +165,8 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
           socket
           |> assign(
             selected_project: nil,
-            added_ecosystems: [],
-            removed_ecosystems: [],
+            added_organizations: [],
+            removed_organizations: [],
             notes: ""
           )
           |> put_flash(:info, "Suggestions successfully submitted!")
@@ -185,12 +184,29 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
     end
   end
 
-  defp order_ecosystems(ecosystems, stored) do
-    stored = Enum.map(stored, & &1.ecosystem)
+  def add_gitub_organization(assigns) do
+    ~H"""
+    <div class="relative">
+      <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+        <.icon name="hero-plus" class="text-gray-600" />
+      </div>
+      <input
+        type="search"
+        id="default-search"
+        class="w-full p-4 ps-10 outline-none text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
+        placeholder="Suggest a new Github Organization"
+        autocomplete="off"
+        required
+      />
 
-    ecosystems
-    |> Enum.sort(:asc)
-    |> Enum.sort_by(fn e -> if e.ecosystem in stored, do: 1, else: 2 end, :asc)
+      <button
+        type="submit"
+        class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+      >
+        Add Github Organization
+      </button>
+    </div>
+    """
   end
 
   def select_project(assigns) do
@@ -224,12 +240,12 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
           <ul class="relative z-20 justify-between min-w-96 text-sm max-h-96 overflow-y-scroll scroll-bar-custom bg-white border border-gray-200 rounded-md">
             <li class="flex flex-row justify-between text-gray-600 sticky top-0 bg-white px-3 py-2 rounded-md">
               <span>Asset</span>
-              <span>Ecosystems</span>
+              <span>Github Organizations</span>
             </li>
             <li :for={project <- @search_result} class="mx-2 last:pb-4">
               <.link
                 phx-click={JS.add_class("hidden", to: "#search-result-suggestions")}
-                patch={~p"/forms/suggest_ecosystems?selected_project=#{project.slug}"}
+                patch={~p"/forms/suggest_github_organizations?selected_project=#{project.slug}"}
                 class="block p-3 hover:bg-gray-200 rounded-xl"
               >
                 <.project_info project={project} />
@@ -258,122 +274,94 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
         </span>
         <div class="flex flex-col mt-2">
           <div>
-            <span class="text-lg leading-4">Current Ecosystems:</span>
-            <UserFormsComponents.ecosystems_group
-              ecosystems={@selected_project.ecosystems |> Enum.map(& &1.ecosystem)}
-              ecosystem_colors_class="bg-blue-100 text-blue-800"
+            <span class="text-lg leading-4">Current Github Organizations:</span>
+            <UserFormsComponents.github_organizations_group
+              github_organizations={
+                @selected_project.github_organizations |> Enum.map(& &1.organization)
+              }
+              github_organization_colors_class="bg-blue-100 text-blue-800"
             />
           </div>
         </div>
       </div>
-      <div :if={@new_project_ecosystems != []} class="px-8 py-4 border border-gray-100 rounded-sm">
-        <span class="text-lg">Added Ecosystems:</span>
-        <UserFormsComponents.ecosystems_group
-          ecosystems={@new_project_ecosystems}
-          ecosystem_colors_class="bg-green-100 text-green-800"
+      <div :if={@new_project_organizations != []} class="px-8 py-4 border border-gray-100 rounded-sm">
+        <span class="text-lg">Added Github Organizationss:</span>
+        <UserFormsComponents.github_organizations_group
+          github_organizations={@new_project_organizations}
+          github_organization_colors_class="bg-green-100 text-green-800"
         />
       </div>
-      <div :if={@removed_project_ecosystems != []} class="px-8 py-4 border border-gray-100 rounded-sm">
-        <span class="text-lg">Removed Ecosystems:</span>
-        <UserFormsComponents.ecosystems_group
-          ecosystems={@removed_project_ecosystems}
-          ecosystem_colors_class="bg-red-100 text-red-800"
+      <div
+        :if={@removed_project_organizations != []}
+        class="px-8 py-4 border border-gray-100 rounded-sm"
+      >
+        <span class="text-lg">Removed Organizations:</span>
+        <UserFormsComponents.github_organizations_group
+          github_organizations={@removed_project_organizations}
+          github_organization_colors_class="bg-red-100 text-red-800"
         />
       </div>
     </div>
     """
   end
 
-  def checkbox_select_ecosystems(assigns) do
+  def checkbox_select_organizations(assigns) do
     ~H"""
-    <div x-data="{
-      search: '',
-      selected: [],
-      show_item(el) {
-        return this.search === '' || el.textContent.includes(this.search)
-      }
-    }">
-      <!-- Dropdown menu -->
-      <div id="dropdownSearch" class="z-10 border border-gray-100 rounded-sm">
-        <div class="p-3">
-          <label for="input-group-search" class="sr-only">Search</label>
-          <div>
-            <div class="relative">
-              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none text-gray-600">
-                <.icon name="hero-magnifying-glass" />
-              </div>
-              <input
-                type="text"
-                id="input-group-search"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full ps-10 p-2.5"
-                placeholder="Search ecosystem"
-                x-model="search"
-              />
-            </div>
-          </div>
+    <!-- Dropdown menu -->
+    <div>
+      <ul
+        class="h-48 px-3 pb-3 overflow-y-auto text-sm text-gray-700"
+        aria-labelledby="dropdownSearchButton"
+      >
+        <!-- li element that is shown if the search text is matching it -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          <li :for={organization <- @stored_project_organizations}>
+            <input
+              id={"checkbox-item-#{organization.id}"}
+              type="checkbox"
+              checked={
+                checked_organization?(
+                  @stored_project_organizations,
+                  @removed_project_organizations,
+                  organization.organization
+                )
+              }
+              name={organization.organization}
+              phx-value-organization={organization.organization}
+              phx-click="update_selected_organizations"
+              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
+            />
+            <label
+              for={"checkbox-item-#{organization.id}"}
+              class="w-full ms-2 text-sm font-medium text-gray-900 rounded"
+            >
+              <%= organization.organization %>
+            </label>
+          </li>
         </div>
-        <ul
-          class="h-48 px-3 pb-3 overflow-y-auto text-sm text-gray-700"
-          aria-labelledby="dropdownSearchButton"
-        >
-          <!-- li element that is shown if the search text is matching it -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            <li :for={ecosystem <- @ecosystems} x-show="show_item($el)">
-              <input
-                id={"checkbox-item-#{ecosystem.id}"}
-                type="checkbox"
-                checked={project_ecosystem?(@selected_project, ecosystem)}
-                name={ecosystem.ecosystem}
-                phx-value-ecosystem={ecosystem.ecosystem}
-                phx-click="update_selected_ecosystems"
-                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-              />
-              <label
-                for={"checkbox-item-#{ecosystem.id}"}
-                class="w-full ms-2 text-sm font-medium text-gray-900 rounded"
-              >
-                <%= ecosystem.ecosystem %>
-              </label>
-            </li>
-          </div>
-        </ul>
-      </div>
+      </ul>
     </div>
-    """
-  end
-
-  attr(:ecosystem, :map, required: true)
-  attr(:class, :string, required: false, default: nil)
-
-  def ecosystem_span(assigns) do
-    ~H"""
-    <span class={[
-      "text-md font-medium me-2 px-2.5 py-1 rounded",
-      @class
-    ]}>
-      <%= @ecosystem %>
-    </span>
     """
   end
 
   def project_info(assigns) do
-    ecosystems = Enum.map(assigns.project.ecosystems, & &1.ecosystem)
-    ecosystems_len = length(ecosystems)
+    organizations = Enum.map(assigns.project.github_organizations, & &1.organization)
+    organizations_len = length(organizations)
 
-    ecosystems_string =
+    organizations_string =
       cond do
-        ecosystems_len == 0 ->
+        organizations_len == 0 ->
           "none"
 
-        ecosystems_len <= 3 ->
-          Enum.join(ecosystems, ", ")
+        organizations_len <= 3 ->
+          Enum.join(organizations, ", ")
 
         true ->
-          [e1, e2 | rest] = ecosystems
+          [e1, e2 | rest] = organizations
           "#{e1}, #{e2} and #{length(rest)} more"
       end
 
-    assigns = assign(assigns, :ecosystems_string, ecosystems_string)
+    assigns = assign(assigns, :organizations_string, organizations_string)
 
     ~H"""
     <div class="flex flex-row items-start justify-between">
@@ -381,20 +369,20 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
         <span><%= @project.name %></span>
         <span class="ml-4 text-gray-500"><%= @project.ticker %></span>
       </div>
-      <span class="text-gray-500"><%= @ecosystems_string %></span>
+      <span class="text-gray-500"><%= @organizations_string %></span>
     </div>
     """
   end
 
   attr(:text, :string, required: true)
   attr(:notes, :string, required: true)
-  attr(:new_project_ecosystems, :list, required: true)
-  attr(:removed_project_ecosystems, :list, required: true)
+  attr(:new_project_organizations, :list, required: true)
+  attr(:removed_project_organizations, :list, required: true)
   attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
 
   def submit_suggestions_button(assigns) do
     is_disabled =
-      assigns.new_project_ecosystems == [] and assigns.removed_project_ecosystems == [] and
+      assigns.new_project_organizations == [] and assigns.removed_project_organizations == [] and
         assigns.notes == ""
 
     assigns = assign(assigns, :is_disabled, is_disabled)
@@ -408,7 +396,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
       title={
         if @is_disabled,
           do:
-            "You need to propose changes to the ecosystems or leave a note in order to submit your proposal"
+            "You need to propose changes to the github organizations or leave a note in order to submit your proposal"
       }
       {@rest}
     >
@@ -431,7 +419,8 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
     """
   end
 
-  defp project_ecosystem?(project, ecosystem) do
-    Enum.any?(project.ecosystems, fn pe -> pe.id == ecosystem.id end)
+  defp checked_organization?(stored, removed, organization) do
+    Enum.any?(stored, fn org -> org.organization == organization end) and
+      organization not in removed
   end
 end

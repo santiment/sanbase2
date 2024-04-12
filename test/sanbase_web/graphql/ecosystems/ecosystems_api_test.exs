@@ -45,10 +45,10 @@ defmodule SanbaseWeb.Graphql.EcosystemsApiTest do
       get_ecosystems_projects(context.conn, ["ethereum", "bitcoin"])
       |> get_in(["data", "getEcosystems"])
 
-    assert %{
-             "name" => "ethereum",
-             "projects" => [%{"slug" => context.p2.slug}, %{"slug" => context.p1.slug}]
-           } in data
+    eth_ecosystem = Enum.find(data, &(&1["name"] == "ethereum"))
+    # Make it so the order of the projects does not matter
+    assert %{"slug" => context.p2.slug} in eth_ecosystem["projects"]
+    assert %{"slug" => context.p1.slug} in eth_ecosystem["projects"]
 
     assert %{
              "name" => "bitcoin",

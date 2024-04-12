@@ -60,6 +60,7 @@ defmodule SanbaseWeb.Router do
 
   scope "/forms", SanbaseWeb do
     pipe_through(:browser)
+    live("/", FormsLive)
     live("/suggest_ecosystems", AddEcosystemLabelsLive)
   end
 
@@ -68,10 +69,8 @@ defmodule SanbaseWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
-    live("/forms", FormsLive)
     live("/admin_forms", AdminFormsLive)
     live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
-    live("/add_ecosystems_labels_live", AddEcosystemLabelsLive)
     live("/add_ecosystems_labels_admin_live", ProjectEcosystemLabelingAdminLive)
     live("/upload_image_live", UploadImageLive)
     live("/uploaded_images_live", UploadedImagesLive)

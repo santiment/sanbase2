@@ -34,7 +34,7 @@ defmodule SanbaseWeb.FormsLive do
         Suggest changes to the ecosystem labels of an asset. One asset can have many ecosystems, which indicate which blockchain ecosystem this project contributes to.
         The ecosystems are used when computing metrics for whole ecosystems, like Development activity data per ecosystem.
         """,
-        buttons: [%{url: ~p"/admin2/add_ecosystems_labels_live", text: "Open"}]
+        buttons: [%{url: ~p"/forms/suggest_ecosystems", text: "Open"}]
       }
     ]
   end

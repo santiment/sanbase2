@@ -228,7 +228,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
             <li :for={project <- @search_result} class="mx-2 last:pb-4">
               <.link
                 phx-click={JS.add_class("hidden", to: "#search-result-suggestions")}
-                patch={~p"/admin2/add_ecosystems_labels_live?selected_project=#{project.slug}"}
+                patch={~p"/forms/suggest_ecosystems?selected_project=#{project.slug}"}
                 class="block p-3 hover:bg-gray-200 rounded-xl"
               >
                 <.project_info project={project} />

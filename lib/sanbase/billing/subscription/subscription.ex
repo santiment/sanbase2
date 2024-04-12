@@ -559,7 +559,9 @@ defmodule Sanbase.Billing.Subscription do
       product_id == @product_sanbase and Billing.eligible_for_sanbase_trial?(user.id) ->
         Map.put(defaults, :trial_end, trial_end_unix)
 
-      product_id == @product_api and Billing.eligible_for_api_trial?(user.id) ->
+      # BUSINESS plans are excluded from API trial
+      product_id == @product_api and plan.name not in ~w(BUSINESS_PRO BUSINESS_MAX) and
+          Billing.eligible_for_api_trial?(user.id) ->
         Map.put(defaults, :trial_end, trial_end_unix)
 
       true ->

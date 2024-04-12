@@ -261,7 +261,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     end
   end
 
-  defp get_query_metadata(%{context: %{product_code: product_code, auth: %{current_user: user}}}) do
+  defp get_query_metadata(%{
+         context: %{requested_product: product_code, auth: %{current_user: user}}
+       }) do
     %{sanbase_user_id: user.id, product: String.downcase(to_string(product_code))}
   end
 end

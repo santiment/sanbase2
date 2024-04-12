@@ -66,6 +66,12 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def ecosystem_factory() do
+    %Sanbase.Ecosystem{
+      ecosystem: "ethereum"
+    }
+  end
+
   def insights_fallback_user_factory() do
     %User{
       salt: User.generate_salt(),

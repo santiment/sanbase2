@@ -69,7 +69,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
          {:ok, query} <- Queries.get_query(query_id, user.id) do
       Process.put(
         :queries_dynamic_repo,
-        Queries.user_plan_to_dynamic_repo(context.product_code, context.auth.plan)
+        Queries.user_plan_to_dynamic_repo(context.subscription_product, context.auth.plan)
       )
 
       query_metadata = QueryMetadata.from_resolution(resolution)
@@ -91,7 +91,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
          query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user) do
       Process.put(
         :queries_dynamic_repo,
-        Queries.user_plan_to_dynamic_repo(context.product_code, context.auth.plan)
+        Queries.user_plan_to_dynamic_repo(context.subscription_product, context.auth.plan)
       )
 
       query_metadata = QueryMetadata.from_resolution(resolution)
@@ -111,7 +111,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
          {:ok, query} <- Queries.get_dashboard_query(dashboard_id, mapping_id, user.id) do
       Process.put(
         :queries_dynamic_repo,
-        Queries.user_plan_to_dynamic_repo(context.product_code, context.auth.plan)
+        Queries.user_plan_to_dynamic_repo(context.subscription_product, context.auth.plan)
       )
 
       query_metadata = QueryMetadata.from_resolution(resolution)

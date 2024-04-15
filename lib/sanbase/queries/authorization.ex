@@ -17,6 +17,10 @@ defmodule Sanbase.Queries.Authorization do
     end
   end
 
+  @doc ~s"""
+  Convert the user's plan to a dynamic Clickhouse repo.
+  """
+  @spec user_plan_to_dynamic_repo(String.t(), String.t()) :: module()
   def user_plan_to_dynamic_repo(product_code, plan_name) do
     case {product_code, plan_name} do
       {_, "FREE"} ->
@@ -32,7 +36,7 @@ defmodule Sanbase.Queries.Authorization do
         Sanbase.ClickhouseRepo.SanbaseMaxUser
 
       {"SANAPI", "BASIC"} ->
-        Sanbase.ClickhouseRepo.FreeUser
+        Sanbase.ClickhouseRepo.SanbaseMaxUser
 
       {"SANAPI", "PRO"} ->
         Sanbase.ClickhouseRepo.BusinessProUser

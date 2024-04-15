@@ -16,7 +16,7 @@ defmodule Sanbase.Queries.QueryMetadata do
   """
   @spec from_resolution(Absinthe.Resolution.t()) ::
           Sanbase.Queries.QueryMetadata.t() | no_return()
-  def from_resolution(%{context: %{product_code: product_code, auth: %{current_user: user}}}) do
+  def from_resolution(%{context: %{requested_product: product_code, auth: %{current_user: user}}}) do
     %{
       sanbase_user_id: user.id,
       product: product_code |> to_string() |> String.downcase(),

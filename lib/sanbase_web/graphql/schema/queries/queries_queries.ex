@@ -26,8 +26,6 @@ defmodule SanbaseWeb.Graphql.Schema.QueriesQueries do
 
       arg(:id, non_null(:integer))
 
-      middleware(UserAuth)
-
       resolve(&QueriesResolver.get_query/3)
     end
 

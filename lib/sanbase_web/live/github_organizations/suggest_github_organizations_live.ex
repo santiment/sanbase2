@@ -14,9 +14,10 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
        page_title: "Suggest asset Github Organizations changes",
        projects: projects,
        selected_project: nil,
-       stored_project_organizations: [],
-       new_project_organizations: [],
-       removed_project_organizations: [],
+       stored_organizations: [],
+       seen_organizations: [],
+       new_organizations: [],
+       removed_organizations: [],
        notes: "",
        search_result: projects
      )}
@@ -31,14 +32,15 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
 
         slug ->
           project = Enum.find(socket.assigns.projects, &(&1.slug == slug))
-          stored_organizations = project.github_organizations
+          stored_organizations = project.github_organizations |> Enum.map(& &1.organization)
 
           socket
           |> assign(
             selected_project: project,
-            stored_project_organizations: stored_organizations,
-            new_project_organizations: [],
-            removed_project_organizations: []
+            stored_organizations: stored_organizations,
+            seen_organizations: stored_organizations,
+            new_organizations: [],
+            removed_organizations: []
           )
       end
 
@@ -56,19 +58,22 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
       <div :if={@selected_project}>
         <.selected_project_details
           selected_project={@selected_project}
-          new_project_organizations={@new_project_organizations}
-          removed_project_organizations={@removed_project_organizations}
+          new_organizations={@new_organizations}
+          removed_organizations={@removed_organizations}
         />
 
         <h2 class="text-lg mt-10">Edit the Github Organizations of the asset</h2>
         <p class="text-sm text-gray-600">
-          The currently stored github organizations are preselected. Deselect an organization to suggest removing it.
+          The selected organizations are going to be preserved or added, if they are not part of the current ones.
+          The deselected organizations are going to be removed, if they are part of the current ones.
         </p>
         <.checkbox_select_organizations
-          organizations={@stored_project_organizations}
+          organizations={@stored_organizations}
           selected_project={@selected_project}
-          stored_project_organizations={@stored_project_organizations}
-          removed_project_organizations={@removed_project_organizations}
+          stored_organizations={@stored_organizations}
+          new_organizations={@new_organizations}
+          removed_organizations={@removed_organizations}
+          seen_organizations={@seen_organizations}
         />
 
         <.add_gitub_organization />
@@ -78,8 +83,8 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
         <.submit_suggestions_button
           text="Submit Suggestion"
           phx-submit="submit_suggestions"
-          new_project_organizations={@new_project_organizations}
-          removed_project_organizations={@removed_project_organizations}
+          new_organizations={@new_organizations}
+          removed_organizations={@removed_organizations}
           notes={@notes}
         />
       </div>
@@ -111,40 +116,68 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
   end
 
   def handle_event("update_selected_organizations", params, socket) do
-    stored = socket.assigns.stored_project_organizations |> Enum.map(& &1.organization)
-    new = socket.assigns.new_project_organizations
-    removed = socket.assigns.removed_project_organizations
+    stored = socket.assigns.stored_organizations
+    new = socket.assigns.new_organizations
+    removed = socket.assigns.removed_organizations
+    seen = socket.assigns.seen_organizations
 
-    {new, removed} =
+    {new, removed, seen} =
       case params do
-        %{"value" => "on", "organization" => e} ->
+        %{"value" => "on", "organization" => org} ->
           new =
-            case e in stored do
+            case org in stored do
               # Append to the back so it looks better in the UI
-              false -> (new ++ [e]) |> Enum.uniq()
+              false -> (new ++ [org]) |> Enum.uniq()
               true -> new
             end
 
-          removed = removed -- [e]
-          {new, removed}
+          removed = removed -- [org]
+          {new, removed, (seen ++ [org]) |> Enum.uniq()}
 
-        %{"organization" => e} ->
-          new = new -- [e]
+        %{"organization" => org} ->
+          new = new -- [org]
 
           removed =
-            case e in stored do
-              true -> (removed ++ [e]) |> Enum.uniq()
+            case org in stored do
+              true -> (removed ++ [org]) |> Enum.uniq()
               false -> removed
             end
 
-          {new, removed}
+          {new, removed, seen}
       end
 
     {:noreply,
      assign(socket,
-       new_project_organizations: new,
-       removed_project_organizations: removed
+       new_organizations: new,
+       removed_organizations: removed,
+       seen_organizations: seen
      )}
+  end
+
+  def handle_event("add_github_organization", %{"github_organization" => org}, socket) do
+    %{
+      new_organizations: new,
+      removed_organizations: removed,
+      stored_organizations: stored,
+      seen_organizations: seen
+    } = socket.assigns
+
+    {new, removed} =
+      cond do
+        org in new or org in stored -> {new, removed}
+        org in removed -> {new ++ [org], removed -- [org]}
+        true -> {new ++ [org], removed}
+      end
+
+    socket =
+      socket
+      |> assign(
+        new_organizations: new,
+        removed_organizations: removed,
+        seen_organizations: (seen ++ [org]) |> Enum.uniq()
+      )
+
+    {:noreply, socket}
   end
 
   def handle_event("update_notes", %{"notes" => notes}, socket) do
@@ -154,12 +187,12 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
   def handle_event("submit_suggestions", _params, socket) do
     attrs = %{
       project_id: socket.assigns.selected_project.id,
-      added_organizations: socket.assigns.new_project_organizations,
-      removed_organizations: socket.assigns.removed_project_organizations,
+      added_organizations: socket.assigns.new_organizations,
+      removed_organizations: socket.assigns.removed_organizations,
       notes: socket.assigns.notes
     }
 
-    case Sanbase.Ecosystem.ChangeSuggestion.create(attrs) do
+    case Sanbase.Project.GithubOrganization.ChangeSuggestion.create(attrs) do
       {:ok, _} ->
         socket =
           socket
@@ -167,6 +200,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
             selected_project: nil,
             added_organizations: [],
             removed_organizations: [],
+            seen_organizations: [],
             notes: ""
           )
           |> put_flash(:info, "Suggestions successfully submitted!")
@@ -186,26 +220,28 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
 
   def add_gitub_organization(assigns) do
     ~H"""
-    <div class="relative">
-      <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-        <.icon name="hero-plus" class="text-gray-600" />
-      </div>
-      <input
-        type="search"
-        id="default-search"
-        class="w-full p-4 ps-10 outline-none text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
-        placeholder="Suggest a new Github Organization"
-        autocomplete="off"
-        required
-      />
+    <form phx-submit="add_github_organization">
+      <div class="relative">
+        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+          <.icon name="hero-plus" class="text-gray-600" />
+        </div>
+        <input
+          type="search"
+          name="github_organization"
+          class="w-full p-4 ps-10 outline-none text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
+          placeholder="Suggest a new Github Organization"
+          autocomplete="off"
+          required
+        />
 
-      <button
-        type="submit"
-        class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-      >
-        Add Github Organization
-      </button>
-    </div>
+        <button
+          type="submit"
+          class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+        >
+          Add Github Organization
+        </button>
+      </div>
+    </form>
     """
   end
 
@@ -225,7 +261,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
           class="w-full p-4 ps-10 outline-none text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
           placeholder="Select an asset"
           phx-keyup="search_project"
-          phx-debounce="200"
+          phx-debounce="50"
           phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
           autocomplete="off"
           required
@@ -284,20 +320,17 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
           </div>
         </div>
       </div>
-      <div :if={@new_project_organizations != []} class="px-8 py-4 border border-gray-100 rounded-sm">
+      <div :if={@new_organizations != []} class="px-8 py-4 border border-gray-100 rounded-sm">
         <span class="text-lg">Added Github Organizationss:</span>
         <UserFormsComponents.github_organizations_group
-          github_organizations={@new_project_organizations}
+          github_organizations={@new_organizations}
           github_organization_colors_class="bg-green-100 text-green-800"
         />
       </div>
-      <div
-        :if={@removed_project_organizations != []}
-        class="px-8 py-4 border border-gray-100 rounded-sm"
-      >
+      <div :if={@removed_organizations != []} class="px-8 py-4 border border-gray-100 rounded-sm">
         <span class="text-lg">Removed Organizations:</span>
         <UserFormsComponents.github_organizations_group
-          github_organizations={@removed_project_organizations}
+          github_organizations={@removed_organizations}
           github_organization_colors_class="bg-red-100 text-red-800"
         />
       </div>
@@ -307,35 +340,34 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
 
   def checkbox_select_organizations(assigns) do
     ~H"""
-    <!-- Dropdown menu -->
     <div>
       <ul
         class="h-48 px-3 pb-3 overflow-y-auto text-sm text-gray-700"
         aria-labelledby="dropdownSearchButton"
       >
-        <!-- li element that is shown if the search text is matching it -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          <li :for={organization <- @stored_project_organizations}>
+          <li :for={organization <- @seen_organizations}>
             <input
-              id={"checkbox-item-#{organization.id}"}
+              id={"checkbox-item-#{organization}"}
               type="checkbox"
               checked={
                 checked_organization?(
-                  @stored_project_organizations,
-                  @removed_project_organizations,
-                  organization.organization
+                  @stored_organizations,
+                  @new_organizations,
+                  @removed_organizations,
+                  organization
                 )
               }
-              name={organization.organization}
-              phx-value-organization={organization.organization}
+              name={organization}
+              phx-value-organization={organization}
               phx-click="update_selected_organizations"
               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
             />
             <label
-              for={"checkbox-item-#{organization.id}"}
+              for={"checkbox-item-#{organization}"}
               class="w-full ms-2 text-sm font-medium text-gray-900 rounded"
             >
-              <%= organization.organization %>
+              <%= organization %>
             </label>
           </li>
         </div>
@@ -376,13 +408,13 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
 
   attr(:text, :string, required: true)
   attr(:notes, :string, required: true)
-  attr(:new_project_organizations, :list, required: true)
-  attr(:removed_project_organizations, :list, required: true)
+  attr(:new_organizations, :list, required: true)
+  attr(:removed_organizations, :list, required: true)
   attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
 
   def submit_suggestions_button(assigns) do
     is_disabled =
-      assigns.new_project_organizations == [] and assigns.removed_project_organizations == [] and
+      assigns.new_organizations == [] and assigns.removed_organizations == [] and
         assigns.notes == ""
 
     assigns = assign(assigns, :is_disabled, is_disabled)
@@ -419,8 +451,8 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
     """
   end
 
-  defp checked_organization?(stored, removed, organization) do
-    Enum.any?(stored, fn org -> org.organization == organization end) and
+  defp checked_organization?(stored, new, removed, organization) do
+    (organization in stored or organization in new) and
       organization not in removed
   end
 end

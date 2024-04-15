@@ -40,10 +40,19 @@ defmodule SanbaseWeb.AdminFormsLive do
       %{
         title: "Ecosystem Asset Labels Change Submissions",
         description: """
-        Approve or decline submissions for changes to the list of ecosystems for each asset
+        Approve or decline submissions for changes to the list of ecosystems for an asset
         """,
         buttons: [
-          %{url: ~p"/admin2/add_ecosystems_labels_admin_live", text: "Open"}
+          %{url: ~p"/admin2/suggest_ecosystems_admin_live", text: "Open"}
+        ]
+      },
+      %{
+        title: "Github Organizations Asset Change Submissions",
+        description: """
+        Approve or decline submissions for changes to the list of github organizations for an asset
+        """,
+        buttons: [
+          %{url: ~p"/admin2/suggest_github_organizations_admin_live", text: "Open"}
         ]
       },
       %{

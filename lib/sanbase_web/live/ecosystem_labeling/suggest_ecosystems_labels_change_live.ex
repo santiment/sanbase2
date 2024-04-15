@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.AddEcosystemLabelsLive do
+defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
   use SanbaseWeb, :live_view
   alias SanbaseWeb.UserFormsComponents
 
@@ -209,7 +209,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
           class="w-full p-4 ps-10 outline-none text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
           placeholder="Select an asset"
           phx-keyup="search_project"
-          phx-debounce="200"
+          phx-debounce="50"
           phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
           autocomplete="off"
           required

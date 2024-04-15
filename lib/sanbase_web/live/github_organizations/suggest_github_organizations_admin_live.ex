@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
+defmodule SanbaseWeb.SuggestGithubOrganizationsAdminLive do
   use SanbaseWeb, :live_view
 
   alias SanbaseWeb.UserFormsComponents
@@ -17,7 +17,7 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
     ~H"""
     <div>
       <div class="flex-1 p:2 sm:p-6 justify-evenly">
-        <.table id="ecosystem_changes_suggestions" rows={@rows}>
+        <.table id="github_organizations_changes_suggestions" rows={@rows}>
           <:col :let={row} label="Status">
             <AdminFormsComponents.status status={row.status} />
           </:col>
@@ -30,16 +30,16 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
               <%= row.project_name %>
             </.link>
           </:col>
-          <:col :let={row} label="Added Ecosystems">
-            <UserFormsComponents.ecosystems_group
-              ecosystems={row.added_ecosystems}
-              ecosystem_colors_class="bg-green-100 text-green-800"
+          <:col :let={row} label="Added Github Organizations">
+            <UserFormsComponents.github_organizations_group
+              github_organizations={row.added_organizations}
+              github_organization_colors_class="bg-green-100 text-green-800"
             />
           </:col>
-          <:col :let={row} label="Removed Ecosystems">
-            <UserFormsComponents.ecosystems_group
-              ecosystems={row.removed_ecosystems}
-              ecosystem_colors_class="bg-red-100 text-red-800"
+          <:col :let={row} label="Removed Github Organizations">
+            <UserFormsComponents.github_organizations_group
+              github_organizations={row.removed_organizations}
+              github_organization_colors_class="bg-red-100 text-red-800"
             />
           </:col>
           <:col :let={row} label="Notes"><%= row.notes %></:col>
@@ -95,7 +95,7 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
   def handle_event("update_status", %{"status" => "undo", "record_id" => record_id}, socket) do
     record_id = String.to_integer(record_id)
 
-    case Sanbase.Ecosystem.ChangeSuggestion.undo_suggestion(record_id) do
+    case Sanbase.Project.GithubOrganization.ChangeSuggestion.undo_suggestion(record_id) do
       {:ok, record} ->
         rows =
           update_assigns_row(socket.assigns.rows, record_id, record.status)
@@ -121,7 +121,7 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
       when status in ["approved", "declined"] do
     record_id = String.to_integer(record_id)
 
-    case Sanbase.Ecosystem.ChangeSuggestion.update_status(record_id, status) do
+    case Sanbase.Project.GithubOrganization.ChangeSuggestion.update_status(record_id, status) do
       {:ok, _} ->
         rows = update_assigns_row(socket.assigns.rows, record_id, status)
 
@@ -165,7 +165,7 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
   end
 
   defp list_all_submissions() do
-    Sanbase.Ecosystem.ChangeSuggestion.list_all_submissions()
+    Sanbase.Project.GithubOrganization.ChangeSuggestion.list_all_submissions()
     |> Enum.map(fn struct ->
       %{
         id: struct.id,
@@ -174,8 +174,8 @@ defmodule SanbaseWeb.ProjectEcosystemLabelingAdminLive do
         status: struct.status,
         notes: struct.notes,
         inserted_at: struct.inserted_at,
-        added_ecosystems: struct.added_ecosystems,
-        removed_ecosystems: struct.removed_ecosystems
+        added_organizations: struct.added_organizations,
+        removed_organizations: struct.removed_organizations
       }
     end)
     |> order_records()

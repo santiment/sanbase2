@@ -56,8 +56,8 @@ defmodule SanbaseWeb.DashboardsApiHelpers do
     mutation {
       #{mutation_name}(#{map_to_args(args)}){
         id
-        query{ id sqlQueryText sqlQueryParameters }
-        dashboard { id parameters }
+        query{ id sqlQueryText sqlQueryParameters user { id } }
+        dashboard { id parameters user { id } }
         settings
       }
     }

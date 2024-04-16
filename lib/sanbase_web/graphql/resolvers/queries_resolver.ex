@@ -108,7 +108,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
   def get_dashboard(_root, %{id: id}, resolution) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
-    Dashboards.get_dashboard(id, querying_user_id)
+
+    with {:ok, dashboard} <- Dashboards.get_dashboard(id, querying_user_id),
+         # For backwards compatibility, properly provide the panels.
+         # The Frontend will migrate to queries once they detect panels
+         dashboard = atomize_dashboard_panels_sql_keys(dashboard) do
+      {:ok, dashboard}
+    end
   end
 
   def get_user_dashboards(
@@ -449,6 +455,38 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     else
       {:error,
        "Error adding dashboard global parameter: the `value` input object must set only a single field"}
+    end
+  end
+
+  defp atomize_dashboard_panels_sql_keys(struct) do
+    panels = Enum.map(struct.panels, &atomize_panel_sql_keys/1)
+
+    struct
+    |> Map.put(:panels, panels)
+  end
+
+  defp atomize_panel_sql_keys(panel) do
+    case panel do
+      %{sql: %{} = sql} ->
+        atomized_sql =
+          Map.new(sql, fn
+            {k, v} when is_binary(k) ->
+              # Ignore old, no longer existing keys like san_query_id
+              try do
+                {String.to_existing_atom(k), v}
+              rescue
+                _ -> {nil, nil}
+              end
+
+            {k, v} ->
+              {k, v}
+          end)
+          |> Map.delete(nil)
+
+        %{panel | sql: atomized_sql}
+
+      panel ->
+        panel
     end
   end
 end

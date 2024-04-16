@@ -25,7 +25,7 @@ defmodule Sanbase.MetricRoundingTest do
         )
 
       assert data == [
-               %{value: 830_224.712939, datetime: ~U[2024-03-30 00:00:00Z]},
+               %{value: 830_224.7129387193, datetime: ~U[2024-03-30 00:00:00Z]},
                %{value: 696_766.0123, datetime: ~U[2024-03-31 00:00:00Z]},
                %{value: 469_393.1, datetime: ~U[2024-04-01 00:00:00Z]}
              ]

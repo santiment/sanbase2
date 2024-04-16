@@ -1,6 +1,7 @@
 defmodule Sanbase.Project.GithubOrganization.ChangeSuggestion do
   @moduledoc ~s"""
-
+  Store and apply (or reject, or undo) change suggestions to the github organizations of a project
+  submitted by users.
   """
   use Ecto.Schema
 

@@ -19,7 +19,8 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
        new_organizations: [],
        removed_organizations: [],
        notes: "",
-       search_result: projects
+       search_result: projects,
+       github_organization_input_error: "Organization name cannot be empty"
      )}
   end
 
@@ -63,7 +64,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
         />
 
         <h2 class="text-lg mt-10">Edit the Github Organizations of the asset</h2>
-        <p class="text-sm text-gray-600">
+        <p class="text-sm text-gray-600 mt-1 mb-2">
           The selected organizations are going to be preserved or added, if they are not part of the current ones.
           The deselected organizations are going to be removed, if they are part of the current ones.
         </p>
@@ -76,7 +77,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
           seen_organizations={@seen_organizations}
         />
 
-        <.add_gitub_organization />
+        <.add_gitub_organization error={@github_organization_input_error} />
 
         <.notes_textarea />
 
@@ -218,9 +219,33 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
     end
   end
 
+  def handle_event("validate_github_organization", %{"github_organization" => org}, socket) do
+    error =
+      cond do
+        org in [nil, ""] ->
+          "Organization name cannot be empty"
+
+        String.starts_with?(org, ["http://", "https://", "www.", "github.com"]) ->
+          "Do not add a URL, just the organization name"
+
+        Regex.match?(~r{[^a-zA-Z0-9\-]}, org) ->
+          "Organization name can only contain letters, numbers and hyphens"
+
+        true ->
+          nil
+      end
+
+    {:noreply, assign(socket, github_organization_input_error: error)}
+  end
+
   def add_gitub_organization(assigns) do
     ~H"""
-    <form phx-submit="add_github_organization">
+    <form phx-submit="add_github_organization" phx-change="validate_github_organization">
+      <h2 class="text-lg mt-10">Suggest a new Github Organization</h2>
+      <p class="text-sm text-gray-600 mt-1 mb-2">
+        Provide only the name of the Github Organization, not the full URL. <br />
+        The Github URLs have the following structure: https://github.com/organization/repository
+      </p>
       <div class="relative">
         <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
           <.icon name="hero-plus" class="text-gray-600" />
@@ -231,12 +256,15 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
           class="w-full p-4 ps-10 outline-none text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
           placeholder="Suggest a new Github Organization"
           autocomplete="off"
+          phx-debounce="200"
           required
         />
 
         <button
           type="submit"
-          class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+          disabled={@error}
+          title={@error}
+          class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2 disabled:bg-slate-500 disabled:cursor-not-allowed"
         >
           Add Github Organization
         </button>
@@ -321,7 +349,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
         </div>
       </div>
       <div :if={@new_organizations != []} class="px-8 py-4 border border-gray-100 rounded-sm">
-        <span class="text-lg">Added Github Organizationss:</span>
+        <span class="text-lg">Added Github Organizations:</span>
         <UserFormsComponents.github_organizations_group
           github_organizations={@new_organizations}
           github_organization_colors_class="bg-green-100 text-green-800"
@@ -445,7 +473,7 @@ defmodule SanbaseWeb.SuggestGithubOrganizationsLive do
         rows="4"
         class="block my-3 p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300"
         placeholder="Tell us why these changes are proposed. You can share links, or just leave some comments."
-        phx-debounce="1000"
+        phx-debounce="500"
       ></textarea>
     </form>
     """

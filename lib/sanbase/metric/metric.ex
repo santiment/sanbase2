@@ -933,6 +933,6 @@ defmodule Sanbase.Metric do
     end)
   end
 
-  defp round_value(num) when is_float(num), do: Float.round(num, 6)
+  defp round_value(num) when is_float(num), do: Float.round(num, 12)
   defp round_value(num), do: num
 end

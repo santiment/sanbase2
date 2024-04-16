@@ -1320,6 +1320,25 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Total Gas Used",
+    "name": "total_gas_used",
+    "metric": "total_gas_used",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Network Realized Profit or Loss in USD",
     "name": "network_profit_loss",
     "metric": "network_profit_loss",

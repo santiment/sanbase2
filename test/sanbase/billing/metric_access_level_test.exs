@@ -745,6 +745,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "network_circulation_usd_1d",
         "fees_to_network_circulation_usd_1d",
         "avg_gas_used",
+        "total_gas_used",
         "network_profit_loss",
         "total_supply_in_profit",
         "percent_of_total_supply_in_profit",

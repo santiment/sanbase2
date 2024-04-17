@@ -104,7 +104,55 @@ defmodule Sanbase.Queries.Cache do
     e -> {:error, "Failed to compress and encode a query result: #{Exception.message(e)}"}
   end
 
+  # This should not be called without a user and private query.
   def get_cached_executions(query, querying_user_id) do
+    with {:ok, query} <- get_cached_executions_query(query, querying_user_id),
+         result = Sanbase.Repo.all(query) do
+      {:ok, result}
+    end
+  end
+
+  def decode_decompress_result(result) do
+    result
+    |> Base.decode64!()
+    |> :zlib.gunzip()
+    |> :erlang.binary_to_term()
+    |> then(&struct!(Result, &1))
+    |> then(&maybe_transform_datetimes/1)
+  end
+
+  # Private functions
+
+  defp maybe_transform_datetimes(%Result{} = result) do
+    result
+    |> Map.update!(:query_start_time, &to_datetime/1)
+    |> Map.update!(:query_end_time, &to_datetime/1)
+  end
+
+  defp to_datetime(dt) when is_binary(dt) do
+    Sanbase.DateTimeUtils.from_iso8601!(dt)
+  end
+
+  defp to_datetime(dt), do: dt
+
+  defp get_cached_executions_query(%{is_public: true} = query, nil) do
+    query =
+      from(
+        c in __MODULE__,
+        # everyone sees the owner's cache
+        # querying user see also their own cache
+        where: c.query_id == ^query.id and c.user_id == ^query.user_id,
+        preload: [:user]
+      )
+
+    {:ok, query}
+  end
+
+  defp get_cached_executions_query(%{is_public: false}, nil) do
+    {:error, "Trying to fetch the cached executions of a private query without being logged in"}
+  end
+
+  defp get_cached_executions_query(query, querying_user_id) when is_integer(querying_user_id) do
     query =
       from(
         c in __MODULE__,
@@ -116,19 +164,8 @@ defmodule Sanbase.Queries.Cache do
         preload: [:user]
       )
 
-    result = Sanbase.Repo.all(query)
-    {:ok, result}
+    {:ok, query}
   end
-
-  def decode_decompress_result(result) do
-    result
-    |> Base.decode64!()
-    |> :zlib.gunzip()
-    |> :erlang.binary_to_term()
-    |> then(&struct!(Result, &1))
-  end
-
-  # Private functions
 
   defp new(%Query{} = query, compressed_result, user_id) do
     %__MODULE__{}

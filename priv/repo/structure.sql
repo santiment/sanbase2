@@ -2971,6 +2971,41 @@ ALTER SEQUENCE public.project_eth_address_id_seq OWNED BY public.project_eth_add
 
 
 --
+-- Name: project_github_organizations_change_suggestions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_github_organizations_change_suggestions (
+    id bigint NOT NULL,
+    project_id bigint,
+    added_organizations character varying(255)[],
+    removed_organizations character varying(255)[],
+    notes text,
+    status character varying(255) DEFAULT 'pending_approval'::character varying,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: project_github_organizations_change_suggestions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_github_organizations_change_suggestions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_github_organizations_change_suggestions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_github_organizations_change_suggestions_id_seq OWNED BY public.project_github_organizations_change_suggestions.id;
+
+
+--
 -- Name: project_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -5208,6 +5243,13 @@ ALTER TABLE ONLY public.project_eth_address ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: project_github_organizations_change_suggestions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_github_organizations_change_suggestions ALTER COLUMN id SET DEFAULT nextval('public.project_github_organizations_change_suggestions_id_seq'::regclass);
+
+
+--
 -- Name: project_market_segments id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6117,6 +6159,14 @@ ALTER TABLE ONLY public.project_ecosystem_mappings
 
 ALTER TABLE ONLY public.project_eth_address
     ADD CONSTRAINT project_eth_address_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_github_organizations_change_suggestions project_github_organizations_change_suggestions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_github_organizations_change_suggestions
+    ADD CONSTRAINT project_github_organizations_change_suggestions_pkey PRIMARY KEY (id);
 
 
 --
@@ -8394,6 +8444,14 @@ ALTER TABLE ONLY public.project_eth_address
 
 
 --
+-- Name: project_github_organizations_change_suggestions project_github_organizations_change_suggestions_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_github_organizations_change_suggestions
+    ADD CONSTRAINT project_github_organizations_change_suggestions_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
 -- Name: project project_infrastructure_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9430,3 +9488,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240311143940);
 INSERT INTO public."schema_migrations" (version) VALUES (20240315090002);
 INSERT INTO public."schema_migrations" (version) VALUES (20240320090413);
 INSERT INTO public."schema_migrations" (version) VALUES (20240325154734);
+INSERT INTO public."schema_migrations" (version) VALUES (20240415100155);

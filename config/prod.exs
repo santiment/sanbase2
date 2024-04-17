@@ -37,7 +37,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "25"},
   pool_overflow: 5
 
-config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
+clickhouse_read_only_opts = [
   adapter: ClickhouseEcto,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   hostname: "clickhouse",
@@ -48,6 +48,13 @@ config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
   timeout: 600_000,
   pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "0"},
   pool_overflow: 10
+]
+
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.FreeUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.SanbaseProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.SanbaseMaxUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessProUser, clickhouse_read_only_opts
 
 # Do not print debug messages in production
 config :logger, level: :info

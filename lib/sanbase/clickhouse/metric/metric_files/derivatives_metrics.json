@@ -86,7 +86,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/bitmex-derivatives/price-index"]
   },
   {
     "human_readable_name": "Bitmex Perpetual Open Interest",
@@ -103,7 +104,8 @@
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/bitmex-derivatives/perpetual-contracts-open-interest-value"]
   },
   {
     "human_readable_name": "Bitmex Perpetual Open Value",
@@ -120,6 +122,7 @@
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/bitmex-derivatives/perpetual-contracts-open-interest-value"]
   }
 ]

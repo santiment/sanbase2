@@ -15,7 +15,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-exchange"]
   },
   {
     "human_readable_name": "Active Withdrawals per Exchange",
@@ -33,7 +34,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-exchange"]
   },
   {
     "human_readable_name": "Deposit Transactions per Exchange",
@@ -51,7 +53,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-exchange"]
   },
   {
     "human_readable_name": "Withdrawals Transactions per Exchange",
@@ -69,7 +72,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labeled-exchange"]
   },
   {
     "human_readable_name": "Exchange Inflow per Exchange",
@@ -363,7 +367,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-trades-count"]
   },
   {
     "human_readable_name": "Total NFT Trades Volume In USD",
@@ -380,7 +385,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-trade-volume-usd"]
   },
   {
     "human_readable_name": "Amount of Uniq Addresses Bought More Than 100k USD of NFTs",
@@ -397,7 +403,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-trades-count"]
   },
   {
     "human_readable_name": "Total Volume For NFT Worth More Than 100k USD",
@@ -414,7 +421,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-trade-volume-usd"]
   },
   {
     "human_readable_name": "Amount of Uniq Addresses Bought Less Than 1k USD of NFTs",
@@ -431,7 +439,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-trades-count"]
   },
   {
     "human_readable_name": "Total Volume For NFT Worth Less Than 1k USD",
@@ -448,6 +457,7 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-trade-volume-usd"]
   }
 ]

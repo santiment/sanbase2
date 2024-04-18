@@ -14,7 +14,8 @@
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/defi"]
   },
   {
     "human_readable_name": "Total value locked in DeFi projects in USD",
@@ -31,6 +32,7 @@
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/defi"]
   }
 ]

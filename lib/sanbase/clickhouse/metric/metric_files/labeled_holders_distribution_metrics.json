@@ -1,8 +1,8 @@
 [
   {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 0 and 0.001",
-    "name": "holders_labeled_distribution_0_to_0.001",
-    "metric": "holders_distribution_labeled_1e_3",
+    "human_readable_name": "Amount Of Labeled Holders With Balance Between {{lower}} and {{upper}}",
+    "name": "holders_labeled_distribution_{{lower}}_to_{{upper}}",
+    "metric": "holders_distribution_labeled_{{metric_suffix}}",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
@@ -10,193 +10,20 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 0.001 and 0.01",
-    "name": "holders_labeled_distribution_0.001_to_0.01",
-    "metric": "holders_distribution_labeled_1e_2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 0.01 and 0.1",
-    "name": "holders_labeled_distribution_0.01_to_0.1",
-    "metric": "holders_distribution_labeled_1e_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 0.1 and 1",
-    "name": "holders_labeled_distribution_0.1_to_1",
-    "metric": "holders_distribution_labeled_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 1 and 10",
-    "name": "holders_labeled_distribution_1_to_10",
-    "metric": "holders_distribution_labeled_1e1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 10 and 100",
-    "name": "holders_labeled_distribution_10_to_100",
-    "metric": "holders_distribution_labeled_1e2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 100 and 1k",
-    "name": "holders_labeled_distribution_100_to_1k",
-    "metric": "holders_distribution_labeled_1e3",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 1k and 10k",
-    "name": "holders_labeled_distribution_1k_to_10k",
-    "metric": "holders_distribution_labeled_1e4",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 10k and 100k",
-    "name": "holders_labeled_distribution_10k_to_100k",
-    "metric": "holders_distribution_labeled_1e5",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 100k and 1M",
-    "name": "holders_labeled_distribution_100k_to_1M",
-    "metric": "holders_distribution_labeled_1e6",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 1M and 10M",
-    "name": "holders_labeled_distribution_1M_to_10M",
-    "metric": "holders_distribution_labeled_1e7",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Over 10M",
-    "name": "holders_labeled_distribution_10M_to_inf",
-    "metric": "holders_distribution_labeled_inf",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
+    "parameters": [
+      {"lower": "0", "upper": "0.001", "metric_suffix": "1e_3"},
+      {"lower": "0.001", "upper": "0.01", "metric_suffix": "1e_2"},
+      {"lower": "0.01", "upper": "0.1", "metric_suffix": "1e_1"},
+      {"lower": "0.1", "upper": "1", "metric_suffix": "1"},
+      {"lower": "1", "upper": "10", "metric_suffix": "1e1"},
+      {"lower": "10", "upper": "100", "metric_suffix": "1e2"},
+      {"lower": "100", "upper": "1k", "metric_suffix": "1e3"},
+      {"lower": "1k", "upper": "10k", "metric_suffix": "1e4"},
+      {"lower": "10k", "upper": "100k", "metric_suffix": "1e5"},
+      {"lower": "100k", "upper": "1M", "metric_suffix": "1e6"},
+      {"lower": "1M", "upper": "10M", "metric_suffix": "1e7"},
+      {"lower": "10M", "upper": "inf", "metric_suffix": "inf"}
+    ],
     "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
@@ -221,9 +48,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 0 and 0.001",
-    "name": "holders_labeled_distribution_combined_balance_0_to_0.001",
-    "metric": "holders_distribution_amount_labeled_1e_3",
+    "human_readable_name": "Combined Balance Of Holders With Balance Between {{lower}} and {{upper}}",
+    "name": "holders_labeled_distribution_combined_balance_{{lower}}_to_{{upper}}",
+    "metric": "holders_distribution_amount_labeled_{{metric_suffix}}",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
@@ -231,193 +58,20 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 0.001 and 0.01",
-    "name": "holders_labeled_distribution_combined_balance_0.001_to_0.01",
-    "metric": "holders_distribution_amount_labeled_1e_2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 0.01 and 0.1",
-    "name": "holders_labeled_distribution_combined_balance_0.01_to_0.1",
-    "metric": "holders_distribution_amount_labeled_1e_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 0.1 and 1",
-    "name": "holders_labeled_distribution_combined_balance_0.1_to_1",
-    "metric": "holders_distribution_amount_labeled_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 1 and 10",
-    "name": "holders_labeled_distribution_combined_balance_1_to_10",
-    "metric": "holders_distribution_amount_labeled_1e1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 10 and 100",
-    "name": "holders_labeled_distribution_combined_balance_10_to_100",
-    "metric": "holders_distribution_amount_labeled_1e2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 100 and 1k",
-    "name": "holders_labeled_distribution_combined_balance_100_to_1k",
-    "metric": "holders_distribution_amount_labeled_1e3",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 1k and 10k",
-    "name": "holders_labeled_distribution_combined_balance_1k_to_10k",
-    "metric": "holders_distribution_amount_labeled_1e4",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 10k and 100k",
-    "name": "holders_labeled_distribution_combined_balance_10k_to_100k",
-    "metric": "holders_distribution_amount_labeled_1e5",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 100k and 1M",
-    "name": "holders_labeled_distribution_combined_balance_100k_to_1M",
-    "metric": "holders_distribution_amount_labeled_1e6",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 1M and 10M",
-    "name": "holders_labeled_distribution_combined_balance_1M_to_10M",
-    "metric": "holders_distribution_amount_labeled_1e7",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance 10M",
-    "name": "holders_labeled_distribution_combined_balance_10M_to_inf",
-    "metric": "holders_distribution_amount_labeled_inf",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
+    "parameters": [
+      {"lower": "0", "upper": "0.001", "metric_suffix": "1e_3"},
+      {"lower": "0.001", "upper": "0.01", "metric_suffix": "1e_2"},
+      {"lower": "0.01", "upper": "0.1", "metric_suffix": "1e_1"},
+      {"lower": "0.1", "upper": "1", "metric_suffix": "1"},
+      {"lower": "1", "upper": "10", "metric_suffix": "1e1"},
+      {"lower": "10", "upper": "100", "metric_suffix": "1e2"},
+      {"lower": "100", "upper": "1k", "metric_suffix": "1e3"},
+      {"lower": "1k", "upper": "10k", "metric_suffix": "1e4"},
+      {"lower": "10k", "upper": "100k", "metric_suffix": "1e5"},
+      {"lower": "100k", "upper": "1M", "metric_suffix": "1e6"},
+      {"lower": "1M", "upper": "10M", "metric_suffix": "1e7"},
+      {"lower": "10M", "upper": "inf", "metric_suffix": "inf"}
+    ],
     "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
@@ -442,9 +96,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 0 and 0.001",
-    "name": "holders_labeled_negative_distribution_0_to_0.001",
-    "metric": "holders_distribution_negative_labeled_1e_3",
+    "human_readable_name": "Amount Of Labeled Holders With Balance Between {{lower}} and {{upper}}",
+    "name": "holders_labeled_negative_distribution_{{lower}}_to_{{upper}}",
+    "metric": "holders_distribution_negative_labeled_{{metric_suffix}}",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
@@ -452,193 +106,20 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 0.001 and 0.01",
-    "name": "holders_labeled_negative_distribution_0.001_to_0.01",
-    "metric": "holders_distribution_negative_labeled_1e_2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 0.01 and 0.1",
-    "name": "holders_labeled_negative_distribution_0.01_to_0.1",
-    "metric": "holders_distribution_negative_labeled_1e_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 0.1 and 1",
-    "name": "holders_labeled_negative_distribution_0.1_to_1",
-    "metric": "holders_distribution_negative_labeled_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 1 and 10",
-    "name": "holders_labeled_negative_distribution_1_to_10",
-    "metric": "holders_distribution_negative_labeled_1e1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 10 and 100",
-    "name": "holders_labeled_negative_distribution_10_to_100",
-    "metric": "holders_distribution_negative_labeled_1e2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 100 and 1k",
-    "name": "holders_labeled_negative_distribution_100_to_1k",
-    "metric": "holders_distribution_negative_labeled_1e3",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 1k and 10k",
-    "name": "holders_labeled_negative_distribution_1k_to_10k",
-    "metric": "holders_distribution_negative_labeled_1e4",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 10k and 100k",
-    "name": "holders_labeled_negative_distribution_10k_to_100k",
-    "metric": "holders_distribution_negative_labeled_1e5",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 100k and 1M",
-    "name": "holders_labeled_negative_distribution_100k_to_1M",
-    "metric": "holders_distribution_negative_labeled_1e6",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Between 1M and 10M",
-    "name": "holders_labeled_negative_distribution_1M_to_10M",
-    "metric": "holders_distribution_negative_labeled_1e7",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Amount Of Labeled Holders With Balance Over 10M",
-    "name": "holders_labeled_negative_distribution_10M_to_inf",
-    "metric": "holders_distribution_negative_labeled_inf",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
+    "parameters": [
+      {"lower": "0", "upper": "0.001", "metric_suffix": "1e_3"},
+      {"lower": "0.001", "upper": "0.01", "metric_suffix": "1e_2"},
+      {"lower": "0.01", "upper": "0.1", "metric_suffix": "1e_1"},
+      {"lower": "0.1", "upper": "1", "metric_suffix": "1"},
+      {"lower": "1", "upper": "10", "metric_suffix": "1e1"},
+      {"lower": "10", "upper": "100", "metric_suffix": "1e2"},
+      {"lower": "100", "upper": "1k", "metric_suffix": "1e3"},
+      {"lower": "1k", "upper": "10k", "metric_suffix": "1e4"},
+      {"lower": "10k", "upper": "100k", "metric_suffix": "1e5"},
+      {"lower": "100k", "upper": "1M", "metric_suffix": "1e6"},
+      {"lower": "1M", "upper": "10M", "metric_suffix": "1e7"},
+      {"lower": "10M", "upper": "inf", "metric_suffix": "inf"}
+    ],
     "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
@@ -663,9 +144,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 0 and 0.001",
-    "name": "holders_labeled_negative_distribution_combined_balance_0_to_0.001",
-    "metric": "holders_distribution_amount_negative_labeled_1e_3",
+    "human_readable_name": "Combined Balance Of Holders With Balance Between {{lower}} and {{upper}}",
+    "name": "holders_labeled_negative_distribution_combined_balance_{{lower}}_to_{{upper}}",
+    "metric": "holders_distribution_amount_negative_labeled_{{metric_suffix}}",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
@@ -673,193 +154,20 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 0.001 and 0.01",
-    "name": "holders_labeled_negative_distribution_combined_balance_0.001_to_0.01",
-    "metric": "holders_distribution_amount_negative_labeled_1e_2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 0.01 and 0.1",
-    "name": "holders_labeled_negative_distribution_combined_balance_0.01_to_0.1",
-    "metric": "holders_distribution_amount_negative_labeled_1e_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 0.1 and 1",
-    "name": "holders_labeled_negative_distribution_combined_balance_0.1_to_1",
-    "metric": "holders_distribution_amount_negative_labeled_1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 1 and 10",
-    "name": "holders_labeled_negative_distribution_combined_balance_1_to_10",
-    "metric": "holders_distribution_amount_negative_labeled_1e1",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 10 and 100",
-    "name": "holders_labeled_negative_distribution_combined_balance_10_to_100",
-    "metric": "holders_distribution_amount_negative_labeled_1e2",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 100 and 1k",
-    "name": "holders_labeled_negative_distribution_combined_balance_100_to_1k",
-    "metric": "holders_distribution_amount_negative_labeled_1e3",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 1k and 10k",
-    "name": "holders_labeled_negative_distribution_combined_balance_1k_to_10k",
-    "metric": "holders_distribution_amount_negative_labeled_1e4",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 10k and 100k",
-    "name": "holders_labeled_negative_distribution_combined_balance_10k_to_100k",
-    "metric": "holders_distribution_amount_negative_labeled_1e5",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 100k and 1M",
-    "name": "holders_labeled_negative_distribution_combined_balance_100k_to_1M",
-    "metric": "holders_distribution_amount_negative_labeled_1e6",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance Between 1M and 10M",
-    "name": "holders_labeled_negative_distribution_combined_balance_1M_to_10M",
-    "metric": "holders_distribution_amount_negative_labeled_1e7",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_label_based_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Combined Balance Of Holders With Balance 10M",
-    "name": "holders_labeled_negative_distribution_combined_balance_10M_to_inf",
-    "metric": "holders_distribution_amount_negative_labeled_inf",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
+    "parameters": [
+      {"lower": "0", "upper": "0.001", "metric_suffix": "1e_3"},
+      {"lower": "0.001", "upper": "0.01", "metric_suffix": "1e_2"},
+      {"lower": "0.01", "upper": "0.1", "metric_suffix": "1e_1"},
+      {"lower": "0.1", "upper": "1", "metric_suffix": "1"},
+      {"lower": "1", "upper": "10", "metric_suffix": "1e1"},
+      {"lower": "10", "upper": "100", "metric_suffix": "1e2"},
+      {"lower": "100", "upper": "1k", "metric_suffix": "1e3"},
+      {"lower": "1k", "upper": "10k", "metric_suffix": "1e4"},
+      {"lower": "10k", "upper": "100k", "metric_suffix": "1e5"},
+      {"lower": "100k", "upper": "1M", "metric_suffix": "1e6"},
+      {"lower": "1M", "upper": "10M", "metric_suffix": "1e7"},
+      {"lower": "10M", "upper": "inf", "metric_suffix": "inf"}
+    ],
     "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_label_based_metrics",

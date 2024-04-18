@@ -92,6 +92,13 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:source, :string)
   end
 
+  object :label_fqn do
+    field(:label_fqn, non_null(:string))
+    field(:owner, non_null(:string))
+    field(:version, non_null(:string))
+    field(:display_name, non_null(:string))
+  end
+
   object :metric_anomalies do
     field(:metric, :string)
     field(:anomalies, list_of(:string))
@@ -200,11 +207,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 300)
+      cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 600)
     end
 
     field :available_metrics_extended, list_of(:metric_metadata_subset) do
-      cache_resolve(&ProjectMetricsResolver.available_metrics_extended/3, ttl: 300)
+      cache_resolve(&ProjectMetricsResolver.available_metrics_extended/3, ttl: 600)
+    end
+
+    field :available_label_fqns, list_of(:label_fqn) do
+      cache_resolve(&ProjectMetricsResolver.available_label_fqns/3, ttl: 600)
     end
 
     @desc ~s"""

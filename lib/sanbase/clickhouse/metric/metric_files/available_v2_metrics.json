@@ -58,7 +58,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
+    "docs_links": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Average USD Price",
@@ -78,7 +78,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
+    "docs_links": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Closing USD Marketcap",
@@ -98,7 +98,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
+    "docs_links": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Closing USD Price",
@@ -118,7 +118,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
+    "docs_links": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily High USD Price",
@@ -138,7 +138,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
+    "docs_links": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Low USD Price",
@@ -158,7 +158,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
+    "docs_links": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Opening USD Price",
@@ -178,7 +178,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
+    "docs_links": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Trading USD Volume",
@@ -198,7 +198,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_link": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
+    "docs_links": ["https://academy.santiment.net/metrics/daily-aggregated-financial-metrics"]
   },
   {
     "human_readable_name": "Daily Active Addresses",
@@ -218,7 +218,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "docs_link": ["https://academy.santiment.net/metrics/daily-active-addresses"]
+    "docs_links": ["https://academy.santiment.net/metrics/daily-active-addresses"]
   },
   {
     "human_readable_name": "Active Addresses for the last {{sliding_window:human_readable}}",

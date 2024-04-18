@@ -15,6 +15,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   @refresh_time_delta 1800
   @refresh_time_max_offset 1800
 
+  def available_label_fqns(%Project{slug: slug}, _args, _resolution) do
+    Sanbase.Clickhouse.Label.label_fqns_with_asset(slug)
+  end
+
   def available_metrics(%Project{slug: slug}, _args, _resolution) do
     # TEMP 02.02.2023: Handle ripple -> xrp rename
     {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})

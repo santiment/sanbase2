@@ -28,7 +28,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/amount-of-labeled-holders"]
   },
   {
     "human_readable_name": "Amount Of Labeled Holders Total",
@@ -45,7 +46,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/amount-of-labeled-holders"]
   },
   {
     "human_readable_name": "Combined Balance Of Holders With Balance Between {{lower}} and {{upper}}",
@@ -76,7 +78,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/combined-balance-of-labeled-holders/"]
   },
   {
     "human_readable_name": "Combined Balance Of Holders Total",
@@ -93,7 +96,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/combined-balance-of-labeled-holders/"]
   },
   {
     "human_readable_name": "Amount Of Labeled Holders With Balance Between {{lower}} and {{upper}}",
@@ -124,7 +128,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/amount-of-labeled-holders"]
   },
   {
     "human_readable_name": "Amount Of Labeled Holders Total",
@@ -141,7 +146,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/amount-of-labeled-holders"]
   },
   {
     "human_readable_name": "Combined Balance Of Holders With Balance Between {{lower}} and {{upper}}",
@@ -172,7 +178,8 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/combined-balance-of-labeled-holders"]
   },
   {
     "human_readable_name": "Combined Balance Of Holders Total",
@@ -189,6 +196,7 @@
     "min_interval": "1d",
     "table": "daily_label_based_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/combined-balance-of-labeled-holders"]
   }
 ]

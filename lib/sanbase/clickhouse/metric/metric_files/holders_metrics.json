@@ -30,7 +30,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/amount-of-holders/"]
   },
   {
     "human_readable_name": "Amount Of Holders Total",
@@ -47,7 +48,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/amount-of-holders/"]
   },
   {
     "human_readable_name": "Combined Balance Of Holders With Balance Between {{lower}} and {{upper}}",
@@ -80,7 +82,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/combined-balance-of-holders/"]
   },
   {
     "human_readable_name": "Combined Balance Of Holders Total",
@@ -97,7 +100,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/combined-balance-of-holders/"]
   },
   {
     "human_readable_name": "Amount Of Holders With Balance Over {{threshold}}",
@@ -123,7 +127,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/amount-of-holders/"]
   },
   {
     "human_readable_name": "Combined Balance Of Holders With Balance Over {{threshold}}",
@@ -149,7 +154,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/combined-balance-of-holders/"]
   },
   {
     "human_readable_name": "Percent Of Holders With Balance Between {{lower}} and {{upper}}",
@@ -182,7 +188,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/amount-of-holders/"]
   },
 
   {
@@ -216,6 +223,7 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-distribution/combined-balance-of-holders/"]
   }
 ]

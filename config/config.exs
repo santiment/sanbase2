@@ -121,6 +121,7 @@ config :sanbase, Sanbase.ClickhouseRepo.FreeUser, clickhouse_read_only_opts
 config :sanbase, Sanbase.ClickhouseRepo.SanbaseProUser, clickhouse_read_only_opts
 config :sanbase, Sanbase.ClickhouseRepo.SanbaseMaxUser, clickhouse_read_only_opts
 config :sanbase, Sanbase.ClickhouseRepo.BusinessProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessMaxUser, clickhouse_read_only_opts
 
 config :sanbase, Sanbase.Repo,
   loggers: [Ecto.LogEntry],

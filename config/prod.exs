@@ -47,7 +47,8 @@ clickhouse_read_only_opts = [
   password: "",
   timeout: 600_000,
   pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "0"},
-  pool_overflow: 10
+  pool_overflow: 3,
+  max_overflow: 5
 ]
 
 config :sanbase, Sanbase.ClickhouseRepo.ReadOnly, clickhouse_read_only_opts
@@ -55,6 +56,7 @@ config :sanbase, Sanbase.ClickhouseRepo.FreeUser, clickhouse_read_only_opts
 config :sanbase, Sanbase.ClickhouseRepo.SanbaseProUser, clickhouse_read_only_opts
 config :sanbase, Sanbase.ClickhouseRepo.SanbaseMaxUser, clickhouse_read_only_opts
 config :sanbase, Sanbase.ClickhouseRepo.BusinessProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessMaxUser, clickhouse_read_only_opts
 
 # Do not print debug messages in production
 config :logger, level: :info

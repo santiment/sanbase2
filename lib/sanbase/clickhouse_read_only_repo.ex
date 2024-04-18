@@ -34,6 +34,7 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
       opts
       |> Keyword.put(:url, System.get_env("CLICKHOUSE_READONLY_DATABASE_URL"))
       |> Keyword.put(:pool_size, pool_size)
+      |> Keyword.put(:username, "sql_dashboard_user")
 
     {:ok, opts}
   end

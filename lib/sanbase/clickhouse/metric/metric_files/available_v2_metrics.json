@@ -924,7 +924,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/daily-active-deposits"]
   },
   {
     "human_readable_name": "Active Withdrawals",
@@ -943,7 +944,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/active-withdrawals"]
   },
   {
     "human_readable_name": "Withdrawal Transactions",
@@ -962,7 +964,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/active-withdrawals"]
   },
   {
     "human_readable_name": "Daily Development Activity",
@@ -1417,7 +1420,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/active-deposits"]
   },
   {
     "human_readable_name": "Deposit Transactions",
@@ -1436,7 +1440,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/daily-active-deposits"]
   },
   {
     "human_readable_name": "Active Withdrawals",
@@ -1455,7 +1460,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/active-withdrawals"]
   },
   {
     "human_readable_name": "Withdrawal Transactions",
@@ -1474,7 +1480,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/active-withdrawals"]
   },
   {
     "human_readable_name": "Average Fees Paid in USD",

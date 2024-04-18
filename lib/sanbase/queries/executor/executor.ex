@@ -15,7 +15,7 @@ defmodule Sanbase.Queries.Executor do
   def run(%Query{} = query, %{} = query_metadata, %{} = environment) do
     query_start_time = DateTime.utc_now() |> DateTime.truncate(:millisecond)
 
-    _ = put_read_only_repo()
+    _ = put_dynamic_repo()
 
     %Sanbase.Clickhouse.Query{} =
       clickhouse_query = create_clickhouse_query(query, query_metadata, environment)
@@ -51,13 +51,15 @@ defmodule Sanbase.Queries.Executor do
     Map.new(summary, fn {k, v} -> {k, Sanbase.Math.to_float(v)} end)
   end
 
-  defp put_read_only_repo() do
+  defp put_dynamic_repo() do
     # Use the pool defined by the ReadOnly repo. This is used only here
     # as this is the only place where we need to execute queries written
     # by the user. The ReadOnly repo is connecting to the database with
     # a different user that has read-only access. This is valid within
     # this process only.
-    Sanbase.ClickhouseRepo.put_dynamic_repo(Sanbase.ClickhouseRepo.ReadOnly)
+
+    dynamic_repo = Process.get(:queries_dynamic_repo, Sanbase.ClickhouseRepo.ReadOnly)
+    Sanbase.ClickhouseRepo.put_dynamic_repo(dynamic_repo)
   end
 
   defp create_clickhouse_query(query, query_metadata, environment) do

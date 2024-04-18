@@ -68,7 +68,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "3"},
   show_sensitive_data_on_connection_error: true
 
-config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
+clickhouse_read_only_opts = [
   adapter: ClickhouseEcto,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   hostname: "clickhouse",
@@ -77,9 +77,18 @@ config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
   username: "sanbase",
   password: "",
   timeout: 600_000,
-  pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "3"},
-  pool_overflow: 10,
+  pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "1"},
+  pool_overflow: 3,
+  max_overflow: 5,
   show_sensitive_data_on_connection_error: true
+]
+
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.FreeUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.SanbaseProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.SanbaseMaxUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessMaxUser, clickhouse_read_only_opts
 
 # These are not the values that are used in production. They are set to some
 # default values. When running the app locally these values are overridden by

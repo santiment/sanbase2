@@ -74,8 +74,6 @@ defmodule Sanbase.SmartContracts.SanbaseNFT do
 
   require Logger
 
-  alias Sanbase.Utils.Config
-
   @contract_mainnet "0x211E14C8cc67F9EF05cC84F80Dc036Ff2F548949"
 
   @json_file "sanbase_nft_abi.json"

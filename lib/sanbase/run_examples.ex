@@ -719,6 +719,7 @@ defmodule Sanbase.RunExamples do
 
   defp do_run(:santiment_queries) do
     user = Sanbase.Factory.insert(:user)
+    Process.put(:queries_dynamic_repo, Sanbase.ClickhouseRepo.FreeUser)
 
     {:ok, query} =
       Sanbase.Queries.create_query(

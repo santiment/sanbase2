@@ -293,6 +293,53 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
       end)
     end
 
+    test "get dynamic repo and credits stats after run for business max user", context do
+      insert(:subscription_business_max_monthly, user: context.user)
+      # In test env the storing runs not async and there's a 7500ms sleep, put it to 0
+      # we need to store it here so we can later retrieve the executions info
+      Application.put_env(:__sanbase_queries__, :__wait_fetching_details_ms_, 0)
+
+      on_exit(fn -> Application.delete_env(:__sanbase_queries__, :__wait_fetching_details_ms_) end)
+
+      mock_fun =
+        Sanbase.Mock.wrap_consecutives(
+          [
+            fn -> {:ok, mocked_clickhouse_result()} end,
+            fn -> {:ok, mocked_execution_details_result()} end
+          ],
+          arity: 2
+        )
+
+      Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        args = %{
+          sql_query_text: "SELECT * FROM intraday_metrics LIMIT {{limit}}",
+          sql_query_parameters: %{limit: 2}
+        }
+
+        run_sql_query(context.conn, :run_raw_sql_query, args)
+
+        stats =
+          get_current_user_credits_stats(context.conn)
+          |> get_in(["data", "currentUser", "queriesExecutionsInfo"])
+
+        assert Process.get(:queries_dynamic_repo) == Sanbase.ClickhouseRepo.BusinessMaxUser
+
+        assert stats == %{
+                 "creditsAvailalbeMonth" => 5_000_000,
+                 "creditsRemainingMonth" => 4_999_999,
+                 "creditsSpentMonth" => 1,
+                 "queriesExecutedDay" => 1,
+                 "queriesExecutedDayLimit" => 15000,
+                 "queriesExecutedHour" => 1,
+                 "queriesExecutedHourLimit" => 3000,
+                 "queriesExecutedMinute" => 1,
+                 "queriesExecutedMinuteLimit" => 100,
+                 "queriesExecutedMonth" => 1
+               }
+      end)
+    end
+
     defp get_current_user_credits_stats(conn) do
       conn
       |> post(

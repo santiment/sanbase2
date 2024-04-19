@@ -19,7 +19,6 @@
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/price"]
   },
-
   {
     "human_readable_name": "USD Trading Volume",
     "name": "volume_usd_5m",
@@ -277,7 +276,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mean-realized-price"]
   },
   {
     "human_readable_name": "Mean Realized USD Price for coins that moved in the past {{timebound:human_readable}}",
@@ -332,7 +332,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mean-realized-price"]
   },
   {
     "human_readable_name": "MVRV Long/Short Difference",
@@ -1084,7 +1085,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-count"]
   },
   {
     "human_readable_name": "Number of Payments for a Given Day",
@@ -1243,7 +1245,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethereum-fees"]
   },
   {
     "human_readable_name": "Fees in USD to Daily Network Circulation in USD",
@@ -1540,7 +1543,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-size"]
   },
   {
     "human_readable_name": "Median Transfer",
@@ -1559,7 +1563,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-size"]
   },
   {
     "human_readable_name": "Number of Transactions Transferring More Than 100k USD",
@@ -1578,7 +1583,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/whale-transaction-count"]
   },
   {
     "human_readable_name": "Number of Transactions Transferring More Than 1 million USD",
@@ -1597,7 +1603,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/whale-transaction-count"]
   },
   {
     "human_readable_name": "Price in ETH",
@@ -1636,7 +1643,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
   {
     "human_readable_name": "Total Supply",
@@ -1801,7 +1809,8 @@
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ftx-derivatives/ftx-perpetual-funding-rate"]
   },
   {
     "human_readable_name": "BitFinex Exchange Funding Rates",
@@ -1860,7 +1869,8 @@
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/deribit-derivatives/deribit-perpetual-funding-rate"]
   },
   {
     "human_readable_name": "Binance USDT Exchange Open Interest",
@@ -2010,7 +2020,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-volume-in-profit-or-loss"]
   },
   {
     "human_readable_name": "Daily On-Chain Transaction Volume in Loss",
@@ -2029,7 +2040,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-volume-in-profit-or-loss"]
   },
   {
     "human_readable_name": "The Ratio of Daily On-Chain Transaction Volume in Profit to Loss",
@@ -2048,7 +2060,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-volume-in-profit-or-loss"]
   },
   {
     "human_readable_name": "The Spent Coins Age Band for coins {{low:human_readable}} and {{high:human_readable}} old",
@@ -2134,7 +2147,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/spent-coins-age-band"]
   },
   {
     "human_readable_name": "The percentage of Spent Coins Age Band for coins between {{low:human_readable}} and {{high:human_readable}} old",
@@ -2220,7 +2234,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/spent-coins-age-band"]
   },
   {
     "human_readable_name": "The Realized Cap Hodl Waves for coins between {{low:human_readable}} and {{high:human_readable}}",
@@ -2301,7 +2316,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/realized-market-capitalization-hodl-waves"]
   },
   {
     "human_readable_name": "Minimum daily price of nft collections in eth",
@@ -2321,7 +2337,8 @@
     "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-collection-price"]
   },
   {
     "human_readable_name": "Maximum daily price of nft collections in eth",
@@ -2341,7 +2358,8 @@
     "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-collection-price"]
   },
   {
     "human_readable_name": "Average daily price of nft collections in eth",
@@ -2361,7 +2379,8 @@
     "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-collection-price"]
   },
   {
     "human_readable_name": "Daily trade count of nft collections",
@@ -2381,7 +2400,8 @@
     "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-collection-price"]
   },
   {
     "human_readable_name": "Minimum daily price of nft collections in usd",
@@ -2401,7 +2421,8 @@
     "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-collection-price"]
   },
   {
     "human_readable_name": "Maximum daily price of nft collections in usd",
@@ -2421,7 +2442,8 @@
     "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-collection-price"]
   },
   {
     "human_readable_name": "Average daily price of nft collections in usd",
@@ -2441,7 +2463,8 @@
     "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-collection-price"]
   },
   {
     "human_readable_name": "Price in eth for specific token ids in NFT collection",
@@ -2605,7 +2628,8 @@
     "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-network-profit-loss"]
   },
   {
     "human_readable_name": "NFT network realized profit/loss for each NFT collection separately in USD",
@@ -2625,7 +2649,8 @@
     "min_interval": "1d",
     "table": "intraday_nft_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/nft-network-profit-loss"]
   },
   {
     "human_readable_name": "Mean Age in days for the past {{timebound:human_readable}}",
@@ -2666,7 +2691,8 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "unit": "days"
+    "unit": "days",
+    "docs_links": ["https://academy.santiment.net/metrics/mean-coin-age"]
   },
   {
     "human_readable_name": "Mean Dollar Invested Age in days for the past {{timebound:human_readable}}",
@@ -2707,7 +2733,8 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries",
-    "unit": "days"
+    "unit": "days",
+    "docs_links": ["https://academy.santiment.net/metrics/mean-coin-age"]
   },
   {
     "human_readable_name": "Aave v2 deposits",
@@ -2726,7 +2753,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 liquidations",
@@ -2745,7 +2773,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 new debt",
@@ -2764,7 +2793,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 repayments",
@@ -2783,7 +2813,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 deposits in USD",
@@ -2802,7 +2833,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 liquidations in USD",
@@ -2821,7 +2853,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 new debt in USD",
@@ -2840,7 +2873,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 repayments in USD",
@@ -2859,7 +2893,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 total deposits in USD",
@@ -2878,7 +2913,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 total liquidations in USD",
@@ -2897,7 +2933,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 total new debt in USD",
@@ -2916,7 +2953,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 total repayments in USD",
@@ -2935,7 +2973,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 total supplied",
@@ -2954,7 +2993,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 total supplied in USD",
@@ -2973,7 +3013,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 total borrowed",
@@ -2992,7 +3033,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 total borrowed in USD",
@@ -3011,7 +3053,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 protocol total supplied in USD",
@@ -3030,7 +3073,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 protocol total borrowed in USD",
@@ -3049,7 +3093,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 supply APY",
@@ -3068,7 +3113,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 stable borrow APY",
@@ -3087,7 +3133,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v2 variable borrow APY",
@@ -3106,7 +3153,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Daily Active Addresses on Aave v2",
@@ -3125,7 +3173,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
     "human_readable_name": "Aave v3 deposits",
@@ -3144,7 +3193,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 liquidations",
@@ -3163,7 +3213,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 new debt",
@@ -3182,7 +3233,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 repayments",
@@ -3201,7 +3253,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 deposits in USD",
@@ -3220,7 +3273,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 liquidations in USD",
@@ -3239,7 +3293,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 new debt in USD",
@@ -3258,7 +3313,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 repayments in USD",
@@ -3277,7 +3333,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 total deposits in USD",
@@ -3296,7 +3353,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 total liquidations in USD",
@@ -3315,7 +3373,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 total new debt in USD",
@@ -3334,7 +3393,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 total repayments in USD",
@@ -3353,7 +3413,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 total supplied",
@@ -3372,7 +3433,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 total supplied in USD",
@@ -3391,7 +3453,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 total borrowed",
@@ -3410,7 +3473,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 total borrowed in USD",
@@ -3429,7 +3493,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 protocol total supplied in USD",
@@ -3448,7 +3513,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 protocol total borrowed in USD",
@@ -3467,7 +3533,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 supply APY",
@@ -3486,7 +3553,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Aave v3 variable borrow APY",
@@ -3505,7 +3573,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Daily Active Addresses on Aave v3",
@@ -3524,7 +3593,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v3"]
   },
   {
     "human_readable_name": "Compound deposits",
@@ -3543,7 +3613,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound liquidations",
@@ -3562,7 +3633,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound new debt",
@@ -3581,7 +3653,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound repayments",
@@ -3600,7 +3673,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound deposits in USD",
@@ -3619,7 +3693,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound liquidations in USD",
@@ -3638,7 +3713,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound new debt in USD",
@@ -3657,7 +3733,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound repayments in USD",
@@ -3676,7 +3753,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound total deposits in USD",
@@ -3695,7 +3773,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound total liquidations in USD",
@@ -3714,7 +3793,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound total new debt in USD",
@@ -3733,7 +3813,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound total repayments in USD",
@@ -3752,7 +3833,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound total supplied",
@@ -3771,7 +3853,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound total supplied in USD",
@@ -3790,7 +3873,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound total borrowed",
@@ -3809,7 +3893,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound total borrowed in USD",
@@ -3828,7 +3913,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound protocol total supplied in USD",
@@ -3847,7 +3933,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound protocol total borrowed in USD",
@@ -3866,7 +3953,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound supply APY",
@@ -3885,7 +3973,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound borrow APY",
@@ -3904,7 +3993,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Daily Active Addresses on Compound",
@@ -3923,7 +4013,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
     "human_readable_name": "Compound v3 deposits",
@@ -3942,7 +4033,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 liquidations",
@@ -3961,7 +4053,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 new debt",
@@ -3980,7 +4073,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 repayments",
@@ -3999,7 +4093,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 deposits in USD",
@@ -4018,7 +4113,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 liquidations in USD",
@@ -4037,7 +4133,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 new debt in USD",
@@ -4056,7 +4153,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 repayments in USD",
@@ -4075,7 +4173,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 total deposits in USD",
@@ -4094,7 +4193,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 total liquidations in USD",
@@ -4113,7 +4213,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 total new debt in USD",
@@ -4132,7 +4233,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 total repayments in USD",
@@ -4151,7 +4253,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 total supplied",
@@ -4170,7 +4273,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 total supplied in USD",
@@ -4189,7 +4293,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 total borrowed",
@@ -4208,7 +4313,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 total borrowed in USD",
@@ -4227,7 +4333,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 protocol total supplied in USD",
@@ -4246,7 +4353,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 protocol total borrowed in USD",
@@ -4265,7 +4373,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 ETH market supply APY",
@@ -4284,7 +4393,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 ETH market borrow APY",
@@ -4303,7 +4413,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 USDC market supply APY",
@@ -4322,7 +4433,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Compound v3 USDC market borrow APY",
@@ -4341,7 +4453,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Daily Active Addresses on Compound v3",
@@ -4360,7 +4473,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound-v3"]
   },
   {
     "human_readable_name": "Liquity deposits",
@@ -4377,7 +4491,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Liquity liquidations",
@@ -4394,7 +4509,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Liquity new debt",
@@ -4411,7 +4527,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Liquity repayments",
@@ -4428,7 +4545,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Liquity deposits in USD",
@@ -4445,7 +4563,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Liquity liquidations in USD",
@@ -4462,7 +4581,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Liquity new debt in USD",
@@ -4479,7 +4599,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Liquity repayments in USD",
@@ -4496,7 +4617,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Liquity total supplied",
@@ -4513,7 +4635,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Liquity total supplied in USD",
@@ -4530,7 +4653,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Liquity total borrowed",
@@ -4547,7 +4671,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Liquity total borrowed in USD",
@@ -4564,7 +4689,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Liquity borrow fee",
@@ -4583,7 +4709,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "Daily Active Addresses on Liquity",
@@ -4600,7 +4727,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
     "human_readable_name": "MakerDAO DSR (DAI Savings Rate) deposits",
@@ -4617,7 +4745,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao-dai-savings-rate"]
   },
   {
     "human_readable_name": "MakerDAO DSR (DAI Savings Rate) withdrawals",
@@ -4634,7 +4763,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao-dai-savings-rate"]
   },
   {
     "human_readable_name": "MakerDAO DSR (DAI Savings Rate) total supplied",
@@ -4651,7 +4781,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/makerdao-dai-savings-rate"]
   },
   {
     "human_readable_name": "Price volatility for the last {{sliding_window:human_readable}}",
@@ -4684,7 +4815,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/price-volatility"]
   },
   {
     "human_readable_name": "ETH 2.0 stakers realized Value for coins that moved in the past {{timebound:human_readable}}",
@@ -4721,7 +4853,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/eth-2"]
   },
   {
     "human_readable_name": "ETH 2.0 stakers MVRV for coins that moved in the past {{timebound:human_readable}}",
@@ -4758,7 +4891,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/eth-2"]
   },
   {
     "human_readable_name": "Daily new XRPL assets issued",
@@ -4777,7 +4911,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/assets-issued"]
   },
   {
     "human_readable_name": "Total amount of XRPL assets issued",
@@ -4796,7 +4931,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/assets-issued"]
   },
   {
     "human_readable_name": "Daily amount of XRPL trustlines created or closed",
@@ -4815,7 +4951,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/trustline-count"]
   },
   {
     "human_readable_name": "Total amount of XRPL trustlines created",
@@ -4834,7 +4971,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/trustline-count"]
   },
   {
     "human_readable_name": "DEX volume in XRP",
@@ -4872,7 +5010,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/dex-volume-in-usd"]
   },
   {
     "human_readable_name": "MakerDAO deposits",
@@ -4891,7 +5030,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO liquidations",
@@ -4910,7 +5050,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO new debt",
@@ -4929,7 +5070,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO repayments",
@@ -4948,7 +5090,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO deposits in USD",
@@ -4967,7 +5110,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO liquidations in USD",
@@ -4986,7 +5130,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO new debt in USD",
@@ -5005,7 +5150,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO repayments in USD",
@@ -5024,7 +5170,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO total deposits in USD",
@@ -5043,7 +5190,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO total liquidations in USD",
@@ -5062,7 +5210,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO total new debt in USD",
@@ -5081,7 +5230,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO total repayments in USD",
@@ -5100,7 +5250,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO total supplied",
@@ -5119,7 +5270,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO total supplied in USD",
@@ -5138,7 +5290,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO total borrowed",
@@ -5157,7 +5310,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO total borrowed in USD",
@@ -5176,7 +5330,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO protocol total supplied in USD",
@@ -5195,7 +5350,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "MakerDAO protocol total borrowed in USD",
@@ -5214,7 +5370,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "Daily Active Addresses on MakerDAO",
@@ -5233,7 +5390,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/makerdao"]
   },
   {
     "human_readable_name": "Beacon chain ether deposits",
@@ -5252,7 +5410,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/eth-2"]
   },
   {
     "human_readable_name": "Beacon chain validator withdrawals - 32 ETH",
@@ -5271,7 +5430,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/eth-2"]
   },
   {
     "human_readable_name": "Beacon chain validator rewards withdrawals",
@@ -5290,7 +5450,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/eth-2"]
   },
   {
     "human_readable_name": "Etheruem Fees burnt",
@@ -5309,7 +5470,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethereum-fees"]
   },
   {
     "human_readable_name": "Etheruem Fees burnt in USD",
@@ -5328,7 +5490,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/ethereum-fees"]
   },
   {
     "human_readable_name": "Open Interest in USD per Exchange",
@@ -5349,7 +5512,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/open-interest"]
   },
   {
     "human_readable_name": "Open Interest in USD per Settlement Currency",
@@ -5370,7 +5534,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/open-interest"]
   },
   {
     "human_readable_name": "Total Open Interest in USD",
@@ -5389,7 +5554,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/open-interest"]
   },
   {
     "human_readable_name": "Funding Rates Aggregated by Exchange",
@@ -5410,7 +5576,8 @@
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/funding-rates-aggregated"]
   },
   {
     "human_readable_name": "Funding Rates Aggregated by Settlement Currency",
@@ -5471,7 +5638,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/rsi"]
   },
   {
     "human_readable_name": "Relative Strength Index 1d",
@@ -5490,7 +5658,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/rsi"]
   },
   {
     "human_readable_name": "Relative Strength Index 7d",
@@ -5509,7 +5678,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/rsi"]
   },
   {
     "human_readable_name": "Gini Index",
@@ -5568,6 +5738,7 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/bitcoin-etf-volume"]
   }
 ]

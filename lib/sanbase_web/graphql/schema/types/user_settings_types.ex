@@ -27,6 +27,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:sanbase_version, :string)
 
     field(:self_api_rate_limits_reset_at, :datetime)
+    field(:can_self_reset_api_rate_limits, :boolean)
+    field(:can_self_reset_api_rate_limits_at, :datetime)
 
     field :alerts_per_day_limit_left, :json do
       resolve(&UserSettingsResolver.alerts_per_dy_limit_left/3)

@@ -150,10 +150,12 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   def reset(%User{} = user) do
-    Repo.get_by(__MODULE__, user_id: user.id)
-    |> Repo.delete()
+    if struct = Repo.get_by(__MODULE__, user_id: user.id), do: Repo.delete(struct)
 
-    create(:user, user)
+    case create(:user, user) do
+      {:ok, acl} -> {:ok, acl}
+      {:error, _} -> {:error, "Failed to reset the API call limits of user #{user.id}"}
+    end
   end
 
   # Private functions

@@ -6,6 +6,8 @@ defmodule Sanbase.Accounts.UserSettings do
   alias Sanbase.Repo
   alias Sanbase.Billing.{Subscription, Product}
 
+  @self_reset_api_rate_limits_cooldown 90
+
   schema "user_settings" do
     belongs_to(:user, User)
     embeds_one(:settings, Settings, on_replace: :update)
@@ -23,30 +25,45 @@ defmodule Sanbase.Accounts.UserSettings do
 
   def settings_for(user, opts \\ [])
 
-  def settings_for(%User{user_settings: %{settings: %Settings{}}} = user, opts) do
-    user =
-      case Keyword.get(opts, :force, false) do
-        false -> user
-        true -> Repo.preload(user, [:user_settings], force: true)
-      end
-
-    user.user_settings
+  def settings_for(user, opts) do
+    user_settings_for(user, opts)
     |> modify_settings()
   end
 
-  def settings_for(%User{id: user_id}, _opts) do
-    user_settings =
-      Repo.get_by(__MODULE__, user_id: user_id)
-      |> case do
-        nil ->
-          changeset(%__MODULE__{}, %{user_id: user_id, settings: %{}})
-          |> Repo.insert!()
+  @doc ~s"""
+  Returns a boolean whether or not the user can self-reset their API calls limits.
+  The rate limits can be reset by the user once every #{@self_reset_api_rate_limits_cooldown} days.
+  Giving the ability of users to self reset their rate limits once in a while can help them resolve
+  the issue much quicker, instead of waiting for Santiment support.
+  Rate limits might need resetting due to development bugs, or the user just needing to upgrade to a
+  higher plan. Both things might take some to fix/upgrade, so having the option to unblock yourself
+  until the issues are resolved is required.k
+  """
+  def can_self_reset_api_rate_limits?(user) do
+    %{self_api_rate_limits_reset_at: self_reset_at} = settings_for(user)
 
-        %__MODULE__{} = us ->
-          us
-      end
+    dt_threshold = DateTime.utc_now() |> DateTime.add(-@self_reset_api_rate_limits_cooldown, :day)
 
-    user_settings |> modify_settings()
+    most_recent_reset_too_soon? =
+      is_struct(self_reset_at, DateTime) and DateTime.compare(self_reset_at, dt_threshold) == :gt
+
+    case most_recent_reset_too_soon? do
+      false ->
+        true
+
+      true ->
+        {:error,
+         """
+         Cannot self reset the API calls rate limits.
+         The last reset was less than #{@self_reset_api_rate_limits_cooldown} days ago on #{self_reset_at}
+         """}
+    end
+  end
+
+  def update_self_reset_api_rate_limits_datetime(user, dt) do
+    user_settings_for(user, force: true)
+    |> changeset(%{user_id: user.id, settings: %{self_api_rate_limits_reset_at: dt}})
+    |> Sanbase.Repo.update()
   end
 
   @spec max_alerts_to_send(%User{}) :: {:ok, %{required(channel) => count}}
@@ -194,5 +211,26 @@ defmodule Sanbase.Accounts.UserSettings do
     us.settings
     |> Map.put(:has_telegram_connected, us.settings.telegram_chat_id != nil)
     |> Map.put(:alerts_per_day_limit, alerts_per_day_limit)
+  end
+
+  defp user_settings_for(%{user_settings: %{settings: _}} = user, opts) do
+    user =
+      case Keyword.get(opts, :force, false) do
+        false -> user
+        true -> Repo.preload(user, [:user_settings], force: true)
+      end
+
+    user.user_settings
+  end
+
+  defp user_settings_for(%User{id: user_id}, _opts) do
+    case Repo.get_by(__MODULE__, user_id: user_id) do
+      nil ->
+        changeset(%__MODULE__{}, %{user_id: user_id, settings: %{}})
+        |> Repo.insert!()
+
+      %__MODULE__{} = us ->
+        us
+    end
   end
 end

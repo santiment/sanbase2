@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers, except: [execute_query: 2]
   import Mock
   import ExUnit.CaptureLog
   import Sanbase.Factory

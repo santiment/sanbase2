@@ -8,12 +8,6 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   object :github_queries do
-    @desc "Returns a list of slugs of the projects that have a github link"
-    field :github_availables_repos, list_of(:string) do
-      meta(access: :free)
-      cache_resolve(&GithubResolver.available_repos/3)
-    end
-
     @desc ~s"""
     Returns a list of github activity for a given slug and time interval.
 

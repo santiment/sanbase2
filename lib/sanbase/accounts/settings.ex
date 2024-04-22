@@ -43,6 +43,9 @@ defmodule Sanbase.Accounts.Settings do
     field(:is_subscribed_monthly_newsletter, :boolean, default: true)
     field(:is_subscribed_biweekly_report, :boolean, default: false)
 
+    # Rate Limits Settings
+    field(:self_api_rate_limits_reset_at, :utc_datetime, default: nil)
+
     field(:sanbase_version, :string)
   end
 
@@ -68,7 +71,8 @@ defmodule Sanbase.Accounts.Settings do
       :is_subscribed_marketing_emails,
       :is_subscribed_comments_emails,
       :is_subscribed_likes_emails,
-      :sanbase_version
+      :sanbase_version,
+      :self_api_rate_limits_reset_at
     ])
   end
 

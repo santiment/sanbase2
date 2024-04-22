@@ -533,6 +533,37 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     end
   end
 
+  describe "execute mutation to self reset rate limits" do
+    test "self reset", context do
+      {:ok, quota} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
+
+      for _ <- 1..25, do: make_api_call(context.apikey_conn, [])
+
+      {:ok, quota2} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
+
+      assert quota2.api_calls_remaining.month < quota.api_calls_remaining.month
+
+      Process.sleep(50)
+
+      result =
+        self_reset_api_calls(context.apikey_conn)
+        |> get_in(["data", "selfResetApiRateLimits"])
+
+      assert result["id"] |> String.to_integer() == context.user.id
+
+      {:ok, quota3} = Sanbase.ApiCallLimit.get_quota_db(:user, context.user)
+
+      assert quota3.api_calls_remaining.month == quota.api_calls_remaining.month
+
+      error_msg =
+        self_reset_api_calls(context.apikey_conn)
+        |> get_in(["errors", Access.at(0), "message"])
+
+      assert error_msg =~ "Cannot self reset the API calls rate limits"
+      assert error_msg =~ "The last reset was less than 90 days ago on"
+    end
+  end
+
   defp make_api_call(conn, extra_headers) do
     query = """
     { allProjects { slug } }
@@ -541,5 +572,22 @@ defmodule SanbaseWeb.ApiCallLimitTest do
     conn
     |> Sanbase.Utils.Conn.put_extra_req_headers(extra_headers)
     |> post("/graphql", query_skeleton(query))
+  end
+
+  defp self_reset_api_calls(conn) do
+    mutation = """
+     mutation {
+       selfResetApiRateLimits {
+         id
+         settings {
+           selfApiRateLimitsResetAt
+         }
+       }
+     }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
   end
 end

@@ -174,8 +174,8 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeAdminLive do
         status: struct.status,
         notes: struct.notes,
         inserted_at: struct.inserted_at,
-        added_ecosystems: struct.added_ecosystems,
-        removed_ecosystems: struct.removed_ecosystems
+        added_ecosystems: struct.added_ecosystems || [],
+        removed_ecosystems: struct.removed_ecosystems || []
       }
     end)
     |> order_records()

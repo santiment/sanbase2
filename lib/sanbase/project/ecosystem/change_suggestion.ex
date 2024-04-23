@@ -126,12 +126,12 @@ defmodule Sanbase.Ecosystem.ChangeSuggestion do
 
   defp apply_suggestions(suggestion) do
     added =
-      for ecosystem <- suggestion.added_ecosystems do
+      for ecosystem <- suggestion.added_ecosystems || [] do
         Sanbase.ProjectEcosystemMapping.create(suggestion.project_id, ecosystem)
       end
 
     removed =
-      for ecosystem <- suggestion.removed_ecosystems do
+      for ecosystem <- suggestion.removed_ecosystems || [] do
         Sanbase.ProjectEcosystemMapping.remove(suggestion.project_id, ecosystem)
       end
 

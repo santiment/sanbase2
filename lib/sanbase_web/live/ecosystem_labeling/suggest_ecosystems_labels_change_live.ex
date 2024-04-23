@@ -155,8 +155,8 @@ defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
   def handle_event("submit_suggestions", _params, socket) do
     attrs = %{
       project_id: socket.assigns.selected_project.id,
-      added_ecosystems: socket.assigns.new_project_ecosystems,
-      removed_ecosystems: socket.assigns.removed_project_ecosystems,
+      added_ecosystems: socket.assigns.new_project_ecosystems || [],
+      removed_ecosystems: socket.assigns.removed_project_ecosystems || [],
       notes: socket.assigns.notes
     }
 

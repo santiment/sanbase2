@@ -21,8 +21,10 @@ defmodule SanbaseWeb.AvailableMetricsLive do
       <div class="grid">
         <.controls />
         <.table id="available_metrics" rows={Map.take(@metrics_map, @visible_metrics) |> Map.values()}>
-          <:col :let={row} label="API Name"><%= row.api_name %></:col>
-          <:col :let={row} label="Internal Name"><%= row.internal_name %></:col>
+          <:col :let={row} label="API Name" min_width_class="min-w-[550px]"><%= row.api_name %></:col>
+          <:col :let={row} label="Internal Name" min_width_class="min-w-[550px]">
+            <%= row.internal_name %>
+          </:col>
           <:col :let={row} label="Docs">
             <.docs_links docs={row.docs} />
           </:col>

@@ -13,11 +13,13 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   @plan_id_name_map %{
     "3" => "SanAPI by Santiment / PRO",
     "5" => "SanAPI by Santiment / CUSTOM",
-    "201" => "Sanbase by Santiment / PRO"
+    "107" => "Sanapi by Santiment / BUSINESS_PRO",
+    "109" => "Sanapi by Santiment / BUSINESS_MAX",
+    "201" => "Sanbase by Santiment / PRO",
+    "210" => "Sanbase by Santiment / MAX"
   }
 
-  # API Pro, API custom, Sanbase Pro
-  @promo_trial_plans [3, 5, 201]
+  @promo_trial_plans [3, 5, 107, 109, 201, 210]
 
   schema "promo_trials" do
     field(:trial_days, :integer)

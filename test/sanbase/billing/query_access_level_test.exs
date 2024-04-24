@@ -185,7 +185,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
       expected_restricted_queries =
         [
-          :exchange_funds_flow,
           :get_latest_metric_data,
           :gas_used,
           :get_project_trending_history,

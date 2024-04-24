@@ -10,25 +10,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
   alias SanbaseWeb.Graphql.Middlewares.{AccessControl, BasicAuth}
 
   object :blockchain_metric_queries do
-    @desc ~s"""
-    Fetch the flow of funds into and out of an exchange wallet.
-    This query returns the difference IN-OUT calculated for each interval.
-    """
-    field :exchange_funds_flow, list_of(:exchange_funds_flow) do
-      # TODO: Remove after migrating sansheets to not use this
-      deprecate(~s/Use getMetric(metric: "exchange_balance") instead./)
-      meta(access: :restricted)
-
-      arg(:slug, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :interval, default_value: "1d")
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-      cache_resolve(&ClickhouseResolver.exchange_funds_flow/3)
-    end
-
     @desc "Returns what percent of token supply is on exchanges"
     field :percent_of_token_supply_on_exchanges, list_of(:percent_of_token_supply_on_exchanges) do
       meta(access: :restricted)

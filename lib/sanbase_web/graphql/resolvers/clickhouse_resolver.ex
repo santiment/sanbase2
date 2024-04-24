@@ -7,27 +7,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
-  alias Sanbase.Clickhouse.{
-    GasUsed,
-    TopHolders
-  }
+  alias Sanbase.Clickhouse.TopHolders
 
   require Logger
 
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
-
-  @doc ~S"""
-  Return the amount of tokens that were transacted in or out of an exchange wallet for a given slug
-  and time period
-  """
-  def exchange_funds_flow(root, %{slug: _, from: _, to: _, interval: _} = args, resolution) do
-    MetricResolver.timeseries_data(
-      root,
-      args,
-      Map.put(resolution, :source, %{metric: "exchange_balance"})
-    )
-    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :in_out_difference)
-  end
 
   def realtime_top_holders(_root, %{slug: slug, page: page, page_size: page_size}, _resolution) do
     opts = [page: page, page_size: page_size]
@@ -74,14 +58,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def gas_used(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
-    case GasUsed.gas_used(slug, from, to, interval) do
-      {:ok, gas_used} ->
-        {:ok, gas_used}
-
-      {:error, error} ->
-        {:error, handle_graphql_error("Gas Used", slug, error)}
-    end
+  def gas_used(root, args, resolution) do
+    MetricResolver.timeseries_data(
+      root,
+      args,
+      Map.put(resolution, :source, %{metric: "total_gas_used"})
+    )
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :gas_used)
   end
 
   @doc ~S"""

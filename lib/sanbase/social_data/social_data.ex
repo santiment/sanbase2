@@ -33,6 +33,7 @@ defmodule Sanbase.SocialData do
     to: Community
 
   def word_context(words, source, size, from_datetime, to_datetime) when is_list(words) do
+    words = Enum.reject(words, &(&1 == "***"))
     words_str = Enum.join(words, ",")
 
     words_context_request(words, source, size, from_datetime, to_datetime)

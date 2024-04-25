@@ -63,7 +63,7 @@ defmodule Sanbase.SocialData.SocialDominance do
   end
 
   def words_social_dominance(word_or_words) do
-    words = List.wrap(word_or_words)
+    words = List.wrap(word_or_words) |> Enum.reject(&(&1 == "***"))
     %{from: from, to: to, interval: interval, source: source} = social_dominance_args()
 
     with {:ok, words_volume} <-

@@ -146,8 +146,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     Enum.sort_by(top_words, & &1.score, :desc)
     |> Enum.with_index()
     |> Enum.map(fn {word, index} ->
-      if subscription_plan == "FREE" and index < 3 do
-        %{word | word: "***"}
+      # Add a feature flag to mask first 3 words for free users
+      if System.get_env("MASK_FIRST_3_WORDS_FREE_USER") in ["true", "1"] and
+           subscription_plan == "FREE" and index < 3 do
+        %{word | word: "***", summary: "***", bullish_summary: "***", bearish_summary: "***"}
       else
         word
       end

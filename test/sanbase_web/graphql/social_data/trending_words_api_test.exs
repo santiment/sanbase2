@@ -122,6 +122,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
     end
 
     test "Free user see masked first 3 words" do
+      System.put_env("MASK_FIRST_3_WORDS_FREE_USER", "true")
       now = DateTime.utc_now(:second)
       from = DateTime.add(now, -2, :day)
       context = %{dt1: from, dt3: now}
@@ -148,9 +149,9 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                            ],
                            "project" => nil,
                            "score" => 82.0,
-                           "summary" => "Third summary",
-                           "bullishSummary" => "Bullish summary",
-                           "bearishSummary" => "Bearish summary",
+                           "summary" => "***",
+                           "bullishSummary" => "***",
+                           "bearishSummary" => "***",
                            "word" => "***",
                            "negativeSentimentRatio" => 0.35,
                            "neutralSentimentRatio" => 0.15,
@@ -166,9 +167,9 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                            ],
                            "project" => %{"slug" => "bitcoin"},
                            "score" => 74.5,
-                           "summary" => "Another summary",
-                           "bullishSummary" => "Bullish summary",
-                           "bearishSummary" => "Bearish summary",
+                           "summary" => "***",
+                           "bullishSummary" => "***",
+                           "bearishSummary" => "***",
                            "word" => "***",
                            "negativeSentimentRatio" => 0.1,
                            "neutralSentimentRatio" => 0.1,
@@ -184,9 +185,9 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                            ],
                            "project" => %{"slug" => "ethereum"},
                            "score" => 72.4,
-                           "summary" => "The summary",
-                           "bullishSummary" => "Bullish summary",
-                           "bearishSummary" => "Bearish summary",
+                           "summary" => "***",
+                           "bullishSummary" => "***",
+                           "bearishSummary" => "***",
                            "word" => "***",
                            "negativeSentimentRatio" => 0.5,
                            "neutralSentimentRatio" => 0.3,

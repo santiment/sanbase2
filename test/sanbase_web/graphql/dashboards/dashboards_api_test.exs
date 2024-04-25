@@ -223,7 +223,7 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         })
         |> get_in(["data", "createDashboardQuery"])
 
-      dashboard_query_mapping =
+      mapping =
         execute_dashboard_query_mutation(context.conn, :update_dashboard_query, %{
           dashboard_id: dashboard.id,
           dashboard_query_mapping_id: mapping["id"],
@@ -231,9 +231,13 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         })
         |> get_in(["data", "updateDashboardQuery"])
 
-      assert %{"id" => ^dashboard_id} = dashboard_query_mapping["dashboard"]
-      assert %{"id" => ^query_id} = dashboard_query_mapping["query"]
-      assert %{"settings" => %{"layout" => [1, 2, 1, 0]}} = dashboard_query_mapping
+      # The user is properly preloaded
+      assert is_binary(mapping["query"]["user"]["id"])
+      assert is_binary(mapping["dashboard"]["user"]["id"])
+
+      assert %{"id" => ^dashboard_id} = mapping["dashboard"]
+      assert %{"id" => ^query_id} = mapping["query"]
+      assert %{"settings" => %{"layout" => [1, 2, 1, 0]}} = mapping
     end
 
     test "delete dashboard query", context do
@@ -251,6 +255,10 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
         })
         |> get_in(["data", "createDashboardQuery"])
 
+      # The user is properly preloaded
+      assert is_binary(mapping["query"]["user"]["id"])
+      assert is_binary(mapping["dashboard"]["user"]["id"])
+
       # Assert that the dashboard has exactly 1 query added
       assert {:ok, %{queries: [_]}} =
                Sanbase.Dashboards.get_dashboard(dashboard.id, context.user.id)
@@ -261,6 +269,10 @@ defmodule SanbaseWeb.Graphql.DashboardsApiTest do
           dashboard_query_mapping_id: mapping["id"]
         })
         |> get_in(["data", "deleteDashboardQuery"])
+
+      # The user is properly preloaded
+      assert is_binary(result["query"]["user"]["id"])
+      assert is_binary(result["dashboard"]["user"]["id"])
 
       dashboard_query_mapping_id = mapping["id"]
 

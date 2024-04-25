@@ -48,6 +48,7 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:cancel_at_period_end, :boolean)
     field(:status, :billing_status)
     field(:trial_end, :datetime)
+    field(:payment_intent, :payment_intent)
   end
 
   object :subscription_cancellation do
@@ -109,5 +110,11 @@ defmodule SanbaseWeb.Graphql.BillingTypes do
     field(:country, :string)
     field(:plans, list_of(:plan))
     field(:percent_off, :integer)
+  end
+
+  object :payment_intent do
+    field(:id, non_null(:string))
+    field(:status, non_null(:string))
+    field(:client_secret, non_null(:string))
   end
 end

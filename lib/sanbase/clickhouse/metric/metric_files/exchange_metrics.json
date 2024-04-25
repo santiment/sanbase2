@@ -14,7 +14,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Exchange Inflow in USD",
@@ -31,7 +32,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Exchange Outflow",
@@ -48,7 +50,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Exchange Outflow in USD",
@@ -65,7 +68,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Exchange Balance (Inflow - Outflow)",
@@ -82,7 +86,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Tokens/Coins On Exchanges",
@@ -99,7 +104,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-on-or-outside-exchanges"]
   },
   {
     "human_readable_name": "Tokens/Coins On Exchanges",
@@ -116,7 +122,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-on-or-outside-exchanges"]
   },
   {
     "human_readable_name": "Percent Of Total Supply On Exchanges",
@@ -133,6 +140,7 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-on-or-outside-exchanges"]
   }
 ]

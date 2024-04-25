@@ -387,11 +387,18 @@ defmodule SanbaseWeb.GenericAdmin.SourceSlugMapping do
 
   def resource() do
     %{
+      actions: [:new, :edit],
       preloads: [:project],
       new_fields: [:project, :source, :slug],
       edit_fields: [:project, :source, :slug],
-      collections: %{
-        source: ["cryptocompare", "coinmarketcap", "binance"] |> Enum.map(&{&1, &1})
+      fields_override: %{
+        project_id: %{
+          value_modifier: &SanbaseWeb.GenericAdmin.Project.project_link/1
+        },
+        source: %{
+          collection: ["cryptocompare", "coinmarketcap", "binance"],
+          type: :select
+        }
       },
       belongs_to_fields: %{
         project: %{
@@ -400,9 +407,6 @@ defmodule SanbaseWeb.GenericAdmin.SourceSlugMapping do
           resource: "projects",
           search_fields: [:name, :slug, :ticker]
         }
-      },
-      funcs: %{
-        project_id: &SanbaseWeb.GenericAdmin.Project.project_link/1
       }
     }
   end

@@ -33,12 +33,13 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
   test "`from` later than `to` datetime", context do
     query = """
      {
-      transactionVolume(
+      gasUsed(
         slug: "santiment",
         from: "#{Timex.now()}",
         to: "#{Timex.shift(Timex.now(), days: -10)}"
         interval: "30m") {
-          transactionVolume
+          datetime
+          gasUsed
       }
     }
     """
@@ -63,13 +64,13 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
   test "returns error when `from` param is before 2009 year", context do
     query = """
      {
-      transactionVolume(
+      gasUsed(
         slug: "santiment",
         from: "#{~U[2008-12-31 23:59:59Z]}",
         to: "#{~U[2009-01-02 00:00:00Z]}"
         interval: "1d") {
           datetime
-          transactionVolume
+          gasUsed
       }
     }
     """
@@ -87,13 +88,13 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
   test "returns error when `from` and `to` params are both before 2009 year", context do
     query = """
      {
-      transactionVolume(
+      gasUsed(
         slug: "santiment",
         from: "#{~U[2008-12-30 23:59:59Z]}",
         to: "#{~U[2008-12-31 23:59:59Z]}"
         interval: "1d") {
           datetime
-          transactionVolume
+          gasUsed
       }
     }
     """

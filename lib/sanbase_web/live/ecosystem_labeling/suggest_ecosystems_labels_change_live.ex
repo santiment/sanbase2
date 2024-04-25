@@ -1,11 +1,12 @@
-defmodule SanbaseWeb.AddEcosystemLabelsLive do
+defmodule SanbaseWeb.SuggestEcosystemLabelsChangeLive do
   use SanbaseWeb, :live_view
-  alias SanbaseWeb.EcosystemComponents
+  alias SanbaseWeb.UserFormsComponents
 
   @impl true
   def mount(_params, _session, socket) do
     # Loads only id, name, ticker, slug and ecosystems
-    projects = Sanbase.Project.List.projects_data_for_ecosystems()
+    opts = [preload?: true, preload: [:ecosystems]]
+    projects = Sanbase.Project.List.projects_base_info_only(opts)
     # TODO: Do not call repo
     ecosystems = Sanbase.Repo.all(Sanbase.Ecosystem)
 
@@ -154,8 +155,8 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
   def handle_event("submit_suggestions", _params, socket) do
     attrs = %{
       project_id: socket.assigns.selected_project.id,
-      added_ecosystems: socket.assigns.new_project_ecosystems,
-      removed_ecosystems: socket.assigns.removed_project_ecosystems,
+      added_ecosystems: socket.assigns.new_project_ecosystems || [],
+      removed_ecosystems: socket.assigns.removed_project_ecosystems || [],
       notes: socket.assigns.notes
     }
 
@@ -208,7 +209,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
           class="w-full p-4 ps-10 outline-none text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
           placeholder="Select an asset"
           phx-keyup="search_project"
-          phx-debounce="200"
+          phx-debounce="50"
           phx-click={JS.remove_class("hidden", to: "#search-result-suggestions")}
           autocomplete="off"
           required
@@ -228,7 +229,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
             <li :for={project <- @search_result} class="mx-2 last:pb-4">
               <.link
                 phx-click={JS.add_class("hidden", to: "#search-result-suggestions")}
-                patch={~p"/admin2/add_ecosystems_labels_live?selected_project=#{project.slug}"}
+                patch={~p"/forms/suggest_ecosystems?selected_project=#{project.slug}"}
                 class="block p-3 hover:bg-gray-200 rounded-xl"
               >
                 <.project_info project={project} />
@@ -258,7 +259,7 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
         <div class="flex flex-col mt-2">
           <div>
             <span class="text-lg leading-4">Current Ecosystems:</span>
-            <EcosystemComponents.ecosystems_group
+            <UserFormsComponents.ecosystems_group
               ecosystems={@selected_project.ecosystems |> Enum.map(& &1.ecosystem)}
               ecosystem_colors_class="bg-blue-100 text-blue-800"
             />
@@ -267,20 +268,17 @@ defmodule SanbaseWeb.AddEcosystemLabelsLive do
       </div>
       <div :if={@new_project_ecosystems != []} class="px-8 py-4 border border-gray-100 rounded-sm">
         <span class="text-lg">Added Ecosystems:</span>
-        <EcosystemComponents.ecosystems_group
+        <UserFormsComponents.ecosystems_group
           ecosystems={@new_project_ecosystems}
           ecosystem_colors_class="bg-green-100 text-green-800"
         />
       </div>
       <div :if={@removed_project_ecosystems != []} class="px-8 py-4 border border-gray-100 rounded-sm">
         <span class="text-lg">Removed Ecosystems:</span>
-        <div class="flex flex-col md:flex-row gap-1 flex-wrap">
-          <.ecosystem_span
-            :for={ecosystem <- @removed_project_ecosystems}
-            ecosystem={ecosystem}
-            class="bg-red-100 text-red-800"
-          />
-        </div>
+        <UserFormsComponents.ecosystems_group
+          ecosystems={@removed_project_ecosystems}
+          ecosystem_colors_class="bg-red-100 text-red-800"
+        />
       </div>
     </div>
     """

@@ -10,8 +10,13 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
 
   # Run every 10 minutes
   def run do
-    maybe_create()
-    maybe_remove()
+    # Only run on prod
+    if is_dev_or_stage?() do
+      :ok
+    else
+      maybe_create()
+      maybe_remove()
+    end
   end
 
   def maybe_create do
@@ -81,15 +86,11 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
     |> Repo.all()
   end
 
-  # Sleep because testnet goerly alchemy node is unreliable
   defp balances(addresses) do
-    if is_dev_or_stage?(), do: Process.sleep(1000)
     SanbaseNFT.balances_of(addresses)
   end
 
-  # Sleep because testnet goerly alchemy node is unreliable
   defp nft_subscriptions(user_id) do
-    if is_dev_or_stage?(), do: Process.sleep(1000)
     SanbaseNFTInterface.nft_subscriptions(user_id)
   end
 

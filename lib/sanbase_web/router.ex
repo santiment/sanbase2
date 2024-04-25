@@ -58,18 +58,24 @@ defmodule SanbaseWeb.Router do
     admin_routes()
   end
 
+  scope "/forms", SanbaseWeb do
+    pipe_through(:browser)
+    live("/", FormsLive)
+    live("/suggest_ecosystems", SuggestEcosystemLabelsChangeLive)
+    live("/suggest_github_organizations", SuggestGithubOrganizationsLive)
+  end
+
   scope "/admin2", SanbaseWeb do
     pipe_through([:admin_pod_only, :browser, :basic_auth, :admin2])
     import Phoenix.LiveDashboard.Router
 
     live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry, ecto_repos: [Sanbase.Repo])
-    live("/forms", FormsLive)
     live("/admin_forms", AdminFormsLive)
     live("/monitored_twitter_handle_live", MonitoredTwitterHandleLive)
-    live("/add_ecosystems_labels_live", AddEcosystemLabelsLive)
-    live("/add_ecosystems_labels_admin_live", ProjectEcosystemLabelingAdminLive)
+    live("/suggest_ecosystems_admin_live", SuggestEcosystemLabelsChangeAdminLive)
+    live("/suggest_github_organizations_admin_live", SuggestGithubOrganizationsAdminLive)
     live("/upload_image_live", UploadImageLive)
-    live("/uploaded_images", UploadedImagesLive)
+    live("/uploaded_images_live", UploadedImagesLive)
 
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)

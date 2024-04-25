@@ -4,8 +4,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1, changeset_errors_string: 1]
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Utils, only: [requested_fields: 1]
+
   alias Sanbase.InternalServices.Ethauth
-  alias Sanbase.Accounts.{User, UserFollower}
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserFollower
+  alias Sanbase.Accounts.UserSettings
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def is_moderator(_root, _args, %{context: %{is_moderator: is_moderator}}) do
@@ -213,6 +216,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
           :error,
           message: "Cannot change the avatar", details: changeset_errors(changeset)
         }
+    end
+  end
+
+  def self_reset_api_rate_limits(_root, _args, %{context: %{auth: %{current_user: user}}}) do
+    user = Sanbase.Repo.preload(user, :user_settings)
+
+    with true <- UserSettings.can_self_reset_api_rate_limits?(user),
+         {:ok, _acl} <- Sanbase.ApiCallLimit.reset(user),
+         {:ok, _settings} <-
+           UserSettings.update_self_reset_api_rate_limits_datetime(user, DateTime.utc_now()) do
+      user = Sanbase.Repo.preload(user, :user_settings, force: true)
+      {:ok, user}
     end
   end
 

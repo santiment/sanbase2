@@ -149,6 +149,13 @@ defmodule Sanbase.StripeApiTestResponse do
        discount: nil,
        ended_at: nil,
        id: stripe_id,
+       latest_invoice: %Stripe.Invoice{
+         payment_intent: %Stripe.PaymentIntent{
+           id: "pi_3P2EB3CA0hGU8IEV1cR1uQIR",
+           status: "paid",
+           client_secret: "pi_3P2EB3CA0hGU8IEV1cR1uQIR_secret_8J9Z3101101010"
+         }
+       },
        items: %Stripe.List{
          data: [
            %Stripe.SubscriptionItem{

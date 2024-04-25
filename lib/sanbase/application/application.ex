@@ -245,6 +245,27 @@ defmodule Sanbase.Application do
   """
   @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
   def common_children() do
+    clickhouse_repos = [
+      Sanbase.ClickhouseRepo,
+      Sanbase.ClickhouseRepo.ReadOnly,
+      Sanbase.ClickhouseRepo.FreeUser,
+      Sanbase.ClickhouseRepo.SanbaseProUser,
+      Sanbase.ClickhouseRepo.SanbaseMaxUser,
+      Sanbase.ClickhouseRepo.BusinessProUser,
+      Sanbase.ClickhouseRepo.BusinessMaxUser
+    ]
+
+    clickhouse_children =
+      for repo <- clickhouse_repos do
+        start_if(
+          fn -> repo end,
+          fn ->
+            Application.get_env(:sanbase, :env) in [:dev, :prod] and
+              Sanbase.ClickhouseRepo.enabled?()
+          end
+        )
+      end
+
     [
       # Start the PubSub
       {Phoenix.PubSub, name: Sanbase.PubSub},
@@ -264,21 +285,8 @@ defmodule Sanbase.Application do
       # Telemetry metrics
       SanbaseWeb.Telemetry,
 
-      # Start the Clickhouse Repo
-      start_if(
-        fn -> Sanbase.ClickhouseRepo end,
-        fn ->
-          Application.get_env(:sanbase, :env) in [:dev, :prod] and
-            Sanbase.ClickhouseRepo.enabled?()
-        end
-      ),
-      start_if(
-        fn -> Sanbase.ClickhouseRepo.ReadOnly end,
-        fn ->
-          Application.get_env(:sanbase, :env) in [:dev, :prod] and
-            Sanbase.ClickhouseRepo.enabled?()
-        end
-      ),
+      # Start the Clickhouse Repos
+      clickhouse_children,
 
       # Star the API call service
       Sanbase.ApiCallLimit.ETS,
@@ -310,9 +318,10 @@ defmodule Sanbase.Application do
       start_in(Sanbase.AvailableSlugs, [:dev, :prod]),
 
       # Process that starts test-only deps
-      start_in(Sanbase.TestSetupService, [:test])
-    ] ++
+      start_in(Sanbase.TestSetupService, [:test]),
       Sanbase.EventBus.children()
+    ]
+    |> List.flatten()
   end
 
   def config_change(changed, _new, removed) do

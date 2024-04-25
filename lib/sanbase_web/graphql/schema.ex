@@ -43,7 +43,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.CommentTypes)
   import_types(Graphql.DashboardTypes)
   import_types(Graphql.EntityTypes)
-  import_types(Graphql.EtherbiTypes)
   import_types(Graphql.EcosystemTypes)
   import_types(Graphql.ExchangeTypes)
   import_types(Graphql.FreeFormJsonStorageTypes)

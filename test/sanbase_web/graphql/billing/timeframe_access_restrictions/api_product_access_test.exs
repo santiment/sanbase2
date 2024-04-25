@@ -7,15 +7,18 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   import Mock
 
   alias Sanbase.Accounts.Apikey
+  alias Sanbase.Price
   alias Sanbase.Metric
   alias Sanbase.Signal
+  alias Sanbase.Clickhouse.TopHolders
 
   @product "SANAPI"
 
   setup_all_with_mocks([
-    {Sanbase.Price, [], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
-    {Sanbase.Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]},
-    {Sanbase.Signal, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> signal_resp() end]}
+    {Price, [], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
+    {Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]},
+    {TopHolders, [], [top_holders: fn _, _, _, _ -> top_holders_resp() end]},
+    {Signal, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> signal_resp() end]}
   ]) do
     []
   end
@@ -46,7 +49,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       slug = context.project.slug
       query = history_price_query(slug, from, to)
       result = execute_query(context.conn, query, "historyPrice")
-      assert_called(Sanbase.Price.timeseries_data(slug, from, to, :_))
+      assert_called(Price.timeseries_data(slug, from, to, :_))
       assert result != nil
     end
 
@@ -74,20 +77,22 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "cannot access RESTRICTED queries for over 1 year", context do
+      slug = context.project.slug
       {from, to} = from_to(1 * 365 + 1, 32)
-      query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
+      query = restricted_access_query(slug, from, to)
+      result = execute_query(context.conn, query)
 
-      refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      refute called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
     test "cannot access RESTRICTED queries last 30 days", context do
       {from, to} = from_to(31, 29)
-      query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
+      slug = context.project.slug
+      query = restricted_access_query(slug, from, to)
+      result = execute_query(context.conn, query)
 
-      refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      refute called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
@@ -108,10 +113,11 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED queries within 1 year and 30 days interval", context do
       {from, to} = from_to(1 * 365 - 1, 32)
-      query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
+      slug = context.project.slug
+      query = restricted_access_query(slug, from, to)
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
   end
@@ -138,7 +144,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       slug = context.project.slug
       query = history_price_query(slug, from, to)
       result = execute_query(context.conn, query, "historyPrice")
-      assert_called(Sanbase.Price.timeseries_data(slug, from, to, :_))
+      assert_called(Price.timeseries_data(slug, from, to, :_))
       assert result != nil
     end
 
@@ -168,19 +174,22 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED queries for less than 1 year", context do
       {from, to} = from_to(1 * 365 - 1, 1 * 365 - 2)
-      query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
+      slug = context.project.slug
+      query = restricted_access_query(slug, from, to)
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
     test "cannot access RESTRICTED queries for more than 1 year", context do
       {from, to} = from_to(1 * 365 + 1, 1 * 365 - 1)
-      query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
+      slug = context.project.slug
+      query = restricted_access_query(context.project.slug, from, to)
+      result = execute_query(context.conn, query)
 
-      refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      refute called(TopHolders.top_holders(slug, from, to, :_))
+      assert_called(TopHolders.top_holders(slug, :_, :_, :_))
       assert result != nil
     end
 
@@ -224,10 +233,11 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED queries realtime", context do
       {from, to} = from_to(10, 0)
-      query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
+      slug = context.project.slug
+      query = restricted_access_query(slug, from, to)
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
@@ -308,7 +318,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       slug = context.project.slug
       query = history_price_query(slug, from, to)
       result = execute_query(context.conn, query, "historyPrice")
-      assert_called(Sanbase.Price.timeseries_data(slug, from, to, :_))
+      assert_called(Price.timeseries_data(slug, from, to, :_))
       assert result != nil
     end
 
@@ -336,10 +346,11 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED queries for less than 7 years", context do
       {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
-      query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
+      slug = context.project.slug
+      query = restricted_access_query(slug, from, to)
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
@@ -357,10 +368,11 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED queries for more than 7 years", context do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
-      query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
+      slug = context.project.slug
+      query = restricted_access_query(slug, from, to)
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
@@ -378,23 +390,13 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED queries realtime", context do
       {from, to} = from_to(10, 0)
-      query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
+      slug = context.project.slug
+      query = restricted_access_query(context.project.slug, from, to)
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
-
-    # test "can access RESTRICTED signals realtime", context do
-    #   {from, to} = from_to(10, 0)
-    #   signal = restricted_signal_for_plan(context.next_integer.(), @product, "PRO")
-    #   slug = context.project.slug
-    #   query = signal_query(signal, slug, from, to)
-    #   result = execute_query(context.conn, query, "getSignal")
-
-    #   assert called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
-    #   assert result != nil
-    # end
 
     test "can access metric with min plan PRO", context do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
@@ -431,7 +433,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       slug = context.project.slug
       query = history_price_query(slug, from, to)
       result = execute_query(context.conn, query, "historyPrice")
-      assert_called(Sanbase.Price.timeseries_data(slug, from, to, :_))
+      assert_called(Price.timeseries_data(slug, from, to, :_))
       assert result != nil
     end
 
@@ -458,10 +460,11 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED queries for all time & realtime", context do
       {from, to} = from_to(2500, 0)
-      query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
+      slug = context.project.slug
+      query = restricted_access_query(slug, from, to)
+      result = execute_query(context.conn, query)
 
-      assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
+      assert_called(TopHolders.top_holders(slug, from, to, :_))
       assert result != nil
     end
 
@@ -694,12 +697,11 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     """
   end
 
-  defp network_growth_query(slug, from, to) do
+  defp restricted_access_query(slug, from, to) do
     """
       {
-        networkGrowth(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "1d"){
+        topHolders(slug: "#{slug}", from: "#{from}", to: "#{to}"){
           datetime
-          newAddresses
         }
       }
     """
@@ -721,6 +723,26 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
      [
        %{value: 10.0, datetime: ~U[2019-01-01 00:00:00Z]},
        %{value: 20.0, datetime: ~U[2019-01-02 00:00:00Z]}
+     ]}
+  end
+
+  defp top_holders_resp() do
+    {:ok,
+     [
+       %{
+         value: 29_470_056.221214663,
+         address: "0x00000000219ab540356cbb839cbe05303d7705fa",
+         labels: [
+           %{name: "Whale", origin: "santiment", metadata: ""},
+           %{name: "Cex Withdrawal", origin: "santiment", metadata: ""},
+           %{name: "Whale Usd Balance", origin: "santiment", metadata: ""},
+           %{name: "Contract", origin: "santiment", metadata: ""},
+           %{name: "Withdrawn From", origin: "santiment", metadata: "kucoin"}
+         ],
+         datetime: ~U[2023-09-07 00:00:00Z],
+         part_of_total: 0.2363491088191249,
+         value_usd: 48_178_498_145.437546
+       }
      ]}
   end
 

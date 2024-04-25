@@ -62,11 +62,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
 
   def route_subscription(current_user, plan, payment_instrument, coupon) do
     case payment_instrument do
-      %{card_token: card_token} when is_binary(card_token) ->
-        Billing.subscribe(current_user, plan, card_token, coupon)
-
       %{payment_method_id: payment_method_id} when is_binary(payment_method_id) ->
         Subscription.subscribe2(current_user, plan, payment_method_id, coupon)
+
+      %{card_token: card_token} when is_binary(card_token) ->
+        Billing.subscribe(current_user, plan, card_token, coupon)
 
       _ ->
         Billing.subscribe(current_user, plan, nil, coupon)
@@ -91,6 +91,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
           result,
           "Upgrade/Downgrade failed",
           %{user_id: user_id, subscription_id: subscription_id, plan_id: plan_id}
+        )
+    end
+  end
+
+  def get_subscription_with_payment_intent(_root, %{subscription_id: subscription_id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    user_id = current_user.id
+
+    with {_, %Subscription{user_id: ^user_id} = subscription} <-
+           {:subscription?, Subscription.by_id(subscription_id)},
+         {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription.stripe_id) do
+      Subscription.sync_subscription_with_stripe(stripe_subscription, subscription)
+    else
+      result ->
+        handle_subscription_error_result(
+          result,
+          "Fetching latest payment intent failed",
+          %{user_id: user_id, subscription_id: subscription_id}
         )
     end
   end
@@ -202,11 +221,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
         context: %{auth: %{current_user: current_user}}
       }) do
     with {:ok, customer} <- StripeApi.fetch_default_card(current_user),
-         {:card?, card} when not is_nil(card) <- {:card?, customer.default_source} do
+         {:card?, card} when not is_nil(card) <- {:card?, choose_default_card(customer)} do
       {:ok,
        %{
          last4: card.last4,
-         dynamic_last4: card.dynamic_last4,
+         # dynamic_last4 might not be present
+         dynamic_last4: card[:dynamic_last4],
          exp_year: card.exp_year,
          exp_month: card.exp_month,
          brand: card.brand,
@@ -222,6 +242,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
 
       _ ->
         {:error, "Can't fetch the default payment instrument"}
+    end
+  end
+
+  # default card can be either a card token or a payment method
+  # they are stored in different places in the customer object
+  defp choose_default_card(customer) do
+    if is_map(customer.invoice_settings) and customer.invoice_settings.default_payment_method do
+      pm_id = customer.invoice_settings.default_payment_method
+      {:ok, pm} = Stripe.PaymentMethod.retrieve(pm_id)
+      pm.card
+    else
+      customer.default_source && Map.from_struct(customer.default_source)
     end
   end
 

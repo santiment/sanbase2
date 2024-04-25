@@ -108,12 +108,20 @@ config :sanbase, Sanbase.ClickhouseRepo,
   max_overflow: 3,
   scheme: :http
 
-config :sanbase, Sanbase.ClickhouseRepo.ReadOnly,
+clickhouse_read_only_opts = [
   adapter: Ecto.Adapters.Postgres,
   queue_target: 60_000,
   queue_interval: 60_000,
   max_overflow: 3,
   scheme: :http
+]
+
+config :sanbase, Sanbase.ClickhouseRepo.ReadOnly, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.FreeUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.SanbaseProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.SanbaseMaxUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessProUser, clickhouse_read_only_opts
+config :sanbase, Sanbase.ClickhouseRepo.BusinessMaxUser, clickhouse_read_only_opts
 
 config :sanbase, Sanbase.Repo,
   loggers: [Ecto.LogEntry],

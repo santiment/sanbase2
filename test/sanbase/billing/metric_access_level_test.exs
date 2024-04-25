@@ -335,6 +335,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "realized_value_usd_365d",
         "holders_distribution_combined_balance_over_100",
         "sentiment_volume_consumed_total",
+        "sentiment_weighted_total",
         "holders_labeled_negative_distribution_combined_balance_10k_to_100k",
         "nft_market_volume",
         "nft_market_count",
@@ -477,8 +478,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         # ecosystem aggregated metrics
         "ecosystem_dev_activity",
         "ecosystem_github_activity",
-        "ecosystem_dev_activity_contributors_count",
-        "ecosystem_github_activity_contributors_count",
+        "ecosystem_dev_activity_contributors_count_7d",
+        "ecosystem_github_activity_contributors_count_7d",
         "gini_index",
         "annual_inflation_rate",
         # Social metrics
@@ -576,7 +577,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         # histogram metrics
         "eth2_staked_amount_per_label",
         "eth2_staked_address_count_per_label",
-        "eth2_unlabeled_staker_inflow_sources",
         "eth2_top_stakers",
         "eth2_staking_pools",
         "eth2_staking_pools_usd",
@@ -595,8 +595,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "price_volatility_4w",
         "ecosystem_dev_activity",
         "ecosystem_github_activity",
-        "ecosystem_dev_activity_contributors_count",
-        "ecosystem_github_activity_contributors_count",
+        "ecosystem_dev_activity_contributors_count_7d",
+        "ecosystem_github_activity_contributors_count_7d",
         "gini_index",
         "annual_inflation_rate"
       ]
@@ -745,6 +745,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "network_circulation_usd_1d",
         "fees_to_network_circulation_usd_1d",
         "avg_gas_used",
+        "total_gas_used",
         "network_profit_loss",
         "total_supply_in_profit",
         "percent_of_total_supply_in_profit",
@@ -851,6 +852,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_balance_youtube_videos",
         "sentiment_balance_bitcointalk",
         "sentiment_balance_total",
+        # old volume_consumed metrics
         "sentiment_volume_consumed_4chan",
         "sentiment_volume_consumed_telegram",
         "sentiment_volume_consumed_reddit",
@@ -861,6 +863,14 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_volume_consumed_youtube_videos",
         "sentiment_volume_consumed_bitcointalk",
         "sentiment_volume_consumed_total",
+        # volume_consumed gets renamed to weighted
+        "sentiment_weighted_4chan",
+        "sentiment_weighted_telegram",
+        "sentiment_weighted_reddit",
+        "sentiment_weighted_twitter",
+        "sentiment_weighted_youtube_videos",
+        "sentiment_weighted_bitcointalk",
+        "sentiment_weighted_total",
         "social_active_users",
         "trending_words_rank",
         # histogram metrics

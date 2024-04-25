@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
   }
 
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Middlewares.UserAuth
 
   object :user_queries do
     @desc "Returns the user currently logged in."
@@ -201,6 +202,11 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
       middleware(JWTAuth)
       resolve(&UserResolver.change_avatar/3)
+    end
+
+    field :self_reset_api_rate_limits, :user do
+      middleware(UserAuth)
+      resolve(&UserResolver.self_reset_api_rate_limits/3)
     end
   end
 end

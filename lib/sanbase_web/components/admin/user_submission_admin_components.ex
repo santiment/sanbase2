@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Admin.UserSubmissionAdminComponents do
+defmodule SanbaseWeb.AdminFormsComponents do
   use Phoenix.Component
 
   @moduledoc ~s"""

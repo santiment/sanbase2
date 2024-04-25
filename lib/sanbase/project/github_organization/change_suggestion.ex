@@ -1,6 +1,7 @@
-defmodule Sanbase.Ecosystem.ChangeSuggestion do
+defmodule Sanbase.Project.GithubOrganization.ChangeSuggestion do
   @moduledoc ~s"""
-
+  Store and apply (or reject, or undo) change suggestions to the github organizations of a project
+  submitted by users.
   """
   use Ecto.Schema
 
@@ -11,9 +12,9 @@ defmodule Sanbase.Ecosystem.ChangeSuggestion do
 
   @statuses ["pending_approval", "approved", "declined"]
 
-  schema "project_ecosystem_labels_change_suggestions" do
-    field(:added_ecosystems, {:array, :string})
-    field(:removed_ecosystems, {:array, :string})
+  schema "project_github_organizations_change_suggestions" do
+    field(:added_organizations, {:array, :string})
+    field(:removed_organizations, {:array, :string})
     field(:notes, :string)
     field(:status, :string, default: "pending_approval")
 
@@ -25,7 +26,7 @@ defmodule Sanbase.Ecosystem.ChangeSuggestion do
   @doc false
   def changeset(%__MODULE__{} = suggestion, attrs) do
     suggestion
-    |> cast(attrs, [:project_id, :added_ecosystems, :removed_ecosystems, :notes, :status])
+    |> cast(attrs, [:project_id, :added_organizations, :removed_organizations, :notes, :status])
     |> validate_required([:project_id])
     |> validate_inclusion(:status, @statuses)
   end
@@ -68,8 +69,8 @@ defmodule Sanbase.Ecosystem.ChangeSuggestion do
         "approved" ->
           suggestion = %{
             record
-            | added_ecosystems: record.removed_ecosystems,
-              removed_ecosystems: record.added_ecosystems
+            | added_organizations: record.removed_organizations,
+              removed_organizations: record.added_organizations
           }
 
           apply_suggestions(suggestion)
@@ -126,13 +127,13 @@ defmodule Sanbase.Ecosystem.ChangeSuggestion do
 
   defp apply_suggestions(suggestion) do
     added =
-      for ecosystem <- suggestion.added_ecosystems || [] do
-        Sanbase.ProjectEcosystemMapping.create(suggestion.project_id, ecosystem)
+      for org <- suggestion.added_organizations do
+        Sanbase.Project.GithubOrganization.add_github_organization(suggestion.project_id, org)
       end
 
     removed =
-      for ecosystem <- suggestion.removed_ecosystems || [] do
-        Sanbase.ProjectEcosystemMapping.remove(suggestion.project_id, ecosystem)
+      for org <- suggestion.removed_organizations do
+        Sanbase.Project.GithubOrganization.remove_github_organization(suggestion.project_id, org)
       end
 
     case Enum.any?(added ++ removed, &match?({:error, _}, &1)) do

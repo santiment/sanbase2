@@ -230,13 +230,13 @@
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
-    "min_interval": "5m",
-    "table": "signals",
-    "data_type": "timeseries",
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
-    }
+    },
+    "min_interval": "5m",
+    "table": "signals",
+    "data_type": "timeseries"
   },
   {
     "human_readable_name": "Anomaly Active Withdrawals",

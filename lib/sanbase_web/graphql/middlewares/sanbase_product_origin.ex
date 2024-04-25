@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.SanbaseProductOrigin do
 
   alias Absinthe.Resolution
 
-  def call(%Resolution{context: %{product_id: @product_id_sanbase}} = resolution, _) do
+  def call(%Resolution{context: %{requested_product_id: @product_id_sanbase}} = resolution, _) do
     resolution
   end
 

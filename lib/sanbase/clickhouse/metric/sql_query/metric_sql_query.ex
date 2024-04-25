@@ -27,6 +27,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   @name_to_metric_map FileHandler.name_to_metric_map()
   @table_map FileHandler.table_map()
   @min_interval_map FileHandler.min_interval_map()
+  @selectors_map FileHandler.selectors_map()
 
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
@@ -45,7 +46,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       selector: asset_filter_value(selector)
     }
 
-    {additional_filters, params} = additional_filters(filters, params, trailing_and: true)
+    {additional_filters, params} =
+      maybe_get_additional_filters(metric, filters, params, trailing_and: true)
 
     sql = """
     SELECT
@@ -139,7 +141,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       to: dt_to_unix(:to, to)
     }
 
-    {additional_filters, params} = additional_filters(filters, params, trailing_and: true)
+    {additional_filters, params} =
+      maybe_get_additional_filters(metric, filters, params, trailing_and: true)
 
     sql = """
     SELECT slug, SUM(value), toUInt32(SUM(has_changed))
@@ -227,7 +230,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       to: dt_to_unix(:to, to)
     }
 
-    {additional_filters, params} = additional_filters(filters, params, trailing_and: true)
+    {additional_filters, params} =
+      maybe_get_additional_filters(metric, filters, params, trailing_and: true)
 
     sql = """
     SELECT
@@ -415,6 +419,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       true ->
         "#{dt_column} < #{sql_dt_description}"
     end
+  end
+
+  defp maybe_get_additional_filters(metric, filters, params, opts) do
+    # If the filters in `filters` are not specified in the available selectors
+    # it will cause an error or not expected behavior if we proceed with them.
+    relevant_filters = relevant_filters_for_metric(metric, filters)
+    additional_filters(relevant_filters, params, opts)
+  end
+
+  defp relevant_filters_for_metric(metric, filters) do
+    selectors = Map.get(@selectors_map, metric, [])
+    Enum.filter(filters, fn {filter, _} -> filter in selectors end)
   end
 
   defp asset_filter_value(%{slug: slug_or_slugs}), do: slug_or_slugs

@@ -14,7 +14,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-volume"]
   },
   {
     "human_readable_name": "Social Volume AI Total Beta",
@@ -31,7 +32,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-volume-ai"]
   },
   {
     "human_readable_name": "Social Dominance Total",
@@ -48,7 +50,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
   {
     "human_readable_name": "Social Dominance AI Total",
@@ -71,6 +74,7 @@
     "human_readable_name": "Sentiment Volume Consumed Total",
     "name": "sentiment_volume_consumed_total",
     "metric": "sentiment_volume_consumed_1d",
+    "aliases": ["sentiment_weighted_total"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -99,7 +103,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Negative Total",
@@ -116,7 +121,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Balance Total",
@@ -133,7 +139,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Social Volume 4chan",
@@ -173,6 +180,7 @@
     "human_readable_name": "Sentiment Volume Consumed 4chan",
     "name": "sentiment_volume_consumed_4chan",
     "metric": "sentiment_volume_consumed_4chan",
+    "aliases": ["sentiment_weighted_4chan"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -201,7 +209,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Negative 4chan",
@@ -218,7 +227,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Balance 4chan",
@@ -235,7 +245,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Social Volume Telegram",
@@ -252,7 +263,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-volume"]
   },
   {
     "human_readable_name": "Social Dominance Telegram",
@@ -269,12 +281,14 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
   {
     "human_readable_name": "Sentiment Volume Consumed Telegram",
     "name": "sentiment_volume_consumed_telegram",
     "metric": "sentiment_volume_consumed_telegram",
+    "aliases": ["sentiment_weighted_telegram"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -303,7 +317,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Negative Telegram",
@@ -320,7 +335,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Balance Telegram",
@@ -337,7 +353,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Social Volume Reddit",
@@ -377,6 +394,7 @@
     "human_readable_name": "Sentiment Volume Consumed Reddit",
     "name": "sentiment_volume_consumed_reddit",
     "metric": "sentiment_volume_consumed_reddit",
+    "aliases": ["sentiment_weighted_reddit"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -405,7 +423,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Negative Reddit",
@@ -422,7 +441,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Balance Reddit",
@@ -439,7 +459,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Social Volume Discord",
@@ -689,7 +710,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Social Volume Twitter News",
@@ -723,7 +745,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Social Dominance Twitter",
@@ -757,7 +780,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Social Dominance Twitter News",
@@ -791,12 +815,14 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Volume Consumed Twitter",
     "name": "sentiment_volume_consumed_twitter",
     "metric": "sentiment_volume_consumed_twitter",
+    "aliases": ["sentiment_weighted_twitter"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -825,7 +851,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Volume Consumed Twitter News",
@@ -842,7 +869,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Volume Consumed Twitter NFT",
@@ -859,7 +887,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Positive Twitter",
@@ -876,7 +905,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Positive Twitter Crypto",
@@ -893,7 +923,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Positive Twitter News",
@@ -910,7 +941,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Positive Twitter NFT",
@@ -927,7 +959,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Negative Twitter",
@@ -944,7 +977,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Negative Twitter Crypto",
@@ -961,7 +995,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Negative Twitter News",
@@ -995,7 +1030,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Balance Twitter",
@@ -1012,7 +1048,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Balance Twitter Crypto",
@@ -1029,7 +1066,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Sentiment Balance Twitter News",
@@ -1063,7 +1101,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "Social Volume Youtube",
@@ -1103,6 +1142,7 @@
     "human_readable_name": "Sentiment Volume Consumed Youtube",
     "name": "sentiment_volume_consumed_youtube_videos",
     "metric": "sentiment_volume_consumed_youtube_videos",
+    "aliases": ["sentiment_weighted_youtube_videos"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1131,7 +1171,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Negative Youtube",
@@ -1148,7 +1189,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Balance Youtube",
@@ -1165,7 +1207,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Social Volume Bitcointalk",
@@ -1205,6 +1248,7 @@
     "human_readable_name": "Sentiment Volume Consumed Bitcointalk",
     "name": "sentiment_volume_consumed_bitcointalk",
     "metric": "sentiment_volume_consumed_bitcointalk",
+    "aliases": ["sentiment_weighted_bitcointalk"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug", "text"],
@@ -1233,7 +1277,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Negative Bitcointalk",
@@ -1250,7 +1295,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Sentiment Balance Bitcointalk",
@@ -1267,7 +1313,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
     "human_readable_name": "Unique Social Volume Total (5m)",
@@ -1284,7 +1331,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
   },
   {
     "human_readable_name": "Unique Social Volume Total (1h)",
@@ -1301,7 +1349,8 @@
     "min_interval": "1h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
   },
   {
     "human_readable_name": "Unique Social Volume Total (1d)",
@@ -1318,7 +1367,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/unique-social-volume"]
   },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Total",
@@ -1331,7 +1381,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1348,7 +1398,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1365,7 +1415,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1382,7 +1432,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1399,7 +1449,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1416,7 +1466,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1433,7 +1483,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1450,7 +1500,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1467,7 +1517,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1484,7 +1534,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1501,7 +1551,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1518,7 +1568,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1535,11 +1585,12 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance Twitter Crypto",
@@ -1552,11 +1603,12 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Twitter News",
@@ -1569,7 +1621,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1586,7 +1638,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1603,11 +1655,12 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance Twitter NFT",
@@ -1620,11 +1673,12 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "is_deprecated": true
   },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Youtube",
@@ -1637,7 +1691,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1654,7 +1708,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1671,7 +1725,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1688,7 +1742,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -1709,6 +1763,7 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/trending-words-rank"]
   }
 ]

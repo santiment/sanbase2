@@ -820,7 +820,7 @@ defmodule Sanbase.Dashboards do
     end)
     |> Ecto.Multi.run(:add_preloads, fn _repo, %{add_query_to_dashboard: struct} ->
       # Do not preload the dashboard as it will be added in the next step
-      {:ok, Repo.preload(struct, [:query])}
+      {:ok, Repo.preload(struct, [:query, query: :user])}
     end)
     |> Ecto.Multi.run(:fetch_dashboard_queries, fn _repo, %{add_preloads: struct} ->
       # Refetch the dashboard so it has queries properly preloaded
@@ -860,7 +860,7 @@ defmodule Sanbase.Dashboards do
     end)
     |> Ecto.Multi.run(:add_preloads, fn _repo, %{remove_dashboard_query_mapping: struct} ->
       # Do not preload the dashboard as it will be added in the next step
-      {:ok, Repo.preload(struct, [:query])}
+      {:ok, Repo.preload(struct, [:query, query: :user])}
     end)
     |> Ecto.Multi.run(:fetch_dashboard_queries, fn _repo, %{add_preloads: struct} ->
       # Refetch the dashboard so it has queries properly preloaded
@@ -901,7 +901,7 @@ defmodule Sanbase.Dashboards do
     end)
     |> Ecto.Multi.run(:add_preloads, fn _repo, %{update_mapping: struct} ->
       # Do not preload the dashboard as it will be added in the next step
-      {:ok, Repo.preload(struct, [:query])}
+      {:ok, Repo.preload(struct, [:query, query: :user])}
     end)
     |> Ecto.Multi.run(:fetch_dashboard_queries, fn _repo, %{add_preloads: struct} ->
       # Refetch the dashboard so it has queries properly preloaded

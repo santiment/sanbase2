@@ -2,7 +2,7 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
   use SanbaseWeb, :live_view
 
   alias Sanbase.MonitoredTwitterHandle
-  alias SanbaseWeb.Admin.UserSubmissionAdminComponents
+  alias SanbaseWeb.AdminFormsComponents
 
   @impl true
   def render(assigns) do
@@ -11,7 +11,7 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
       <div class="flex-1 p:2 sm:p-6 justify-evenly flex flex-col-reverse scrolling-auto">
         <.table id="monitored_twitter_handles" rows={@handles}>
           <:col :let={row} label="Status">
-            <UserSubmissionAdminComponents.status status={row.status} />
+            <AdminFormsComponents.status status={row.status} />
           </:col>
           <:col :let={row} label="Twitter Handle (Clickable link)">
             <.link class="underline text-blue-600" href={"https://x.com/#{row.handle}"}>
@@ -27,13 +27,13 @@ defmodule SanbaseWeb.MonitoredTwitterHandleLive do
             <.form for={@form} phx-submit="update_status">
               <.input type="text" class="" field={@form[:comment]} placeholder="Comment..." />
               <input type="hidden" name="record_id" value={row.id} />
-              <UserSubmissionAdminComponents.button
+              <AdminFormsComponents.button
                 name="status"
                 value="approved"
                 class="bg-green-600 hover:bg-green-800"
                 display_text="Approve"
               />
-              <UserSubmissionAdminComponents.button
+              <AdminFormsComponents.button
                 name="status"
                 value="declined"
                 class="bg-red-600 hover:bg-red-800"

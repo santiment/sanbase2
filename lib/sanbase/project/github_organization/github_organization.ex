@@ -25,14 +25,40 @@ defmodule Sanbase.Project.GithubOrganization do
     |> validate_required([:organization])
   end
 
+  def get(project_id, organization) do
+    query =
+      from(go in __MODULE__,
+        where: go.project_id == ^project_id and go.organization == ^organization
+      )
+
+    case Repo.all(query) do
+      [%__MODULE__{} = org] ->
+        {:ok, org}
+
+      [] ->
+        {:error,
+         "The project with id #{project_id} does not have a github organization #{organization}"}
+    end
+  end
+
   def add_github_organization(%Project{} = project, organization) do
-    changeset(%__MODULE__{}, %{organization: organization, project_id: project.id})
-    |> Repo.insert()
+    add_github_organization(project.id, organization)
   end
 
   def add_github_organization(project_id, organization) do
     changeset(%__MODULE__{}, %{organization: organization, project_id: project_id})
     |> Repo.insert()
+  end
+
+  def remove_github_organization(%Project{} = project, organization) do
+    remove_github_organization(project.id, organization)
+  end
+
+  def remove_github_organization(project_id, organization) do
+    with {:ok, record} <- get(project_id, organization),
+         {:ok, record} <- Repo.delete(record) do
+      {:ok, record}
+    end
   end
 
   def organizations_of(%Project{} = project) do
@@ -51,9 +77,9 @@ defmodule Sanbase.Project.GithubOrganization do
     "https://github.com/#{organization}"
   end
 
-  def link_to_organization(github_link) do
-    github_link = github_link || ""
+  def link_to_organization(nil), do: {:error, "Github link not valid. Got: nil"}
 
+  def link_to_organization(github_link) when is_binary(github_link) do
     case Regex.run(~r{http(?:s)?://(?:www.)?github.com/(.+)}, github_link) do
       [_, github_path] ->
         org =
@@ -65,7 +91,7 @@ defmodule Sanbase.Project.GithubOrganization do
         {:ok, org}
 
       nil ->
-        {:error, "Github link not valid "}
+        {:error, "Github link not valid. Got: #{github_link}"}
     end
   end
 

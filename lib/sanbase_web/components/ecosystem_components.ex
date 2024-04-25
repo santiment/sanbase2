@@ -1,19 +1,4 @@
-defmodule SanbaseWeb.EcosystemComponents do
-  @moduledoc """
-  Provides core UI components.
-
-  At the first glance, this module may seem daunting, but its goal is
-  to provide some core building blocks in your application, such modals,
-  tables, and forms. The components are mostly markup and well documented
-  with doc strings and declarative assigns. You may customize and style
-  them in any way you want, based on your application growth and needs.
-
-  The default components use Tailwind CSS, a utility-first CSS framework.
-  See the [Tailwind CSS documentation](https://tailwindcss.com) to learn
-  how to customize them or feel free to swap in another framework altogether.
-
-  Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage.
-  """
+defmodule SanbaseWeb.UserFormsComponents do
   use Phoenix.Component
 
   attr(:ecosystems, :list, required: true)
@@ -41,6 +26,35 @@ defmodule SanbaseWeb.EcosystemComponents do
       @class
     ]}>
       <%= @ecosystem %>
+    </span>
+    """
+  end
+
+  attr(:github_organizations, :list, required: true)
+  attr(:github_organization_colors_class, :string, default: "bg-blue-100 text-blue-800")
+
+  def github_organizations_group(assigns) do
+    ~H"""
+    <div class="flex flex-col lg:flex-row gap-1 flex-wrap">
+      <.github_organization_span
+        :for={github_organization <- @github_organizations}
+        github_organization={github_organization}
+        class={@github_organization_colors_class}
+      />
+    </div>
+    """
+  end
+
+  attr(:github_organization, :map, required: true)
+  attr(:class, :string, required: false, default: nil)
+
+  def github_organization_span(assigns) do
+    ~H"""
+    <span class={[
+      "text-md font-medium me-2 px-2.5 py-1 rounded",
+      @class
+    ]}>
+      <%= @github_organization %>
     </span>
     """
   end

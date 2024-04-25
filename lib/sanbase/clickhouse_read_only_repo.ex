@@ -34,7 +34,58 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
       opts
       |> Keyword.put(:url, System.get_env("CLICKHOUSE_READONLY_DATABASE_URL"))
       |> Keyword.put(:pool_size, pool_size)
+      |> Keyword.put(:username, "sql_dashboard_user")
 
     {:ok, opts}
+  end
+end
+
+defmodule Sanbase.ClickhouseRepo.FreeUser do
+  use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
+
+  def init(do_init, opts) do
+    {:ok, default_opts} = Sanbase.ClickhouseRepo.ReadOnly.init(do_init, opts)
+    new_opts = Keyword.put(default_opts, :username, "free_user")
+    {:ok, new_opts}
+  end
+end
+
+defmodule Sanbase.ClickhouseRepo.SanbaseProUser do
+  use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
+
+  def init(do_init, opts) do
+    {:ok, default_opts} = Sanbase.ClickhouseRepo.ReadOnly.init(do_init, opts)
+    new_opts = Keyword.put(default_opts, :username, "sanbase_pro_user")
+    {:ok, new_opts}
+  end
+end
+
+defmodule Sanbase.ClickhouseRepo.SanbaseMaxUser do
+  use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
+
+  def init(do_init, opts) do
+    {:ok, default_opts} = Sanbase.ClickhouseRepo.ReadOnly.init(do_init, opts)
+    new_opts = Keyword.put(default_opts, :username, "sanbase_max_user")
+    {:ok, new_opts}
+  end
+end
+
+defmodule Sanbase.ClickhouseRepo.BusinessProUser do
+  use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
+
+  def init(do_init, opts) do
+    {:ok, default_opts} = Sanbase.ClickhouseRepo.ReadOnly.init(do_init, opts)
+    new_opts = Keyword.put(default_opts, :username, "business_pro_user")
+    {:ok, new_opts}
+  end
+end
+
+defmodule Sanbase.ClickhouseRepo.BusinessMaxUser do
+  use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto, read_only: true
+
+  def init(do_init, opts) do
+    {:ok, default_opts} = Sanbase.ClickhouseRepo.ReadOnly.init(do_init, opts)
+    new_opts = Keyword.put(default_opts, :username, "business_max_user")
+    {:ok, new_opts}
   end
 end

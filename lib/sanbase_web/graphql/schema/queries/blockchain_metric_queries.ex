@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
   alias SanbaseWeb.Graphql.Resolvers.ExchangeResolver
 
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Middlewares.{AccessControl, BasicAuth}
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   object :blockchain_metric_queries do
     @desc "Returns what percent of token supply is on exchanges"

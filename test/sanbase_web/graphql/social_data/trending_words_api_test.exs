@@ -23,56 +23,10 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
   end
 
   describe "get trending words api" do
-    test "success", context do
+    test "Sanbase PRO user sees all words", context do
       %{dt1: dt1, dt3: dt3} = context
 
-      rows = [
-        [
-          DateTime.to_unix(dt1),
-          "eth",
-          "ETH_ethereum",
-          72.4,
-          [
-            "{'word': 'btc', 'score': 0.85}",
-            "{'word': 'halving', 'score': 1.0}"
-          ],
-          "The summary",
-          "Bullish summary",
-          "Bearish summary",
-          [0.2, 0.3, 0.5],
-          [0.2, 0.3, 0.5]
-        ],
-        [
-          DateTime.to_unix(dt1),
-          "btc",
-          "BTC_bitcoin",
-          74.5,
-          [
-            "{'word': 'eth', 'score': 0.63}",
-            "{'word': 'bitcoin', 'score': 1.0}"
-          ],
-          "Another summary",
-          "Bullish summary",
-          "Bearish summary",
-          [0.8, 0.1, 0.1],
-          [0.8, 0.1, 0.1]
-        ],
-        [
-          DateTime.to_unix(dt1),
-          "word",
-          nil,
-          82.0,
-          [
-            "{'word': 'short', 'score': 0.82}",
-            "{'word': 'tight', 'score': 1.0}"
-          ],
-          "Third summary",
-          "Bullish summary",
-          "Bearish summary",
-          [0.5, 0.15, 0.35],
-          [0.5, 0.15, 0.35]
-        ]
-      ]
+      rows = trending_words_rows(context)
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -140,6 +94,125 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                            "negativeBbSentimentRatio" => 0.5,
                            "neutralBbSentimentRatio" => 0.3,
                            "positiveBbSentimentRatio" => 0.2
+                         },
+                         %{
+                           "context" => [
+                             %{"score" => 1.0, "word" => "tight"},
+                             %{"score" => 0.82, "word" => "short"}
+                           ],
+                           "project" => nil,
+                           "score" => 70.0,
+                           "summary" => "Third summary",
+                           "bullishSummary" => "Bullish summary",
+                           "bearishSummary" => "Bearish summary",
+                           "word" => "word2",
+                           "negativeSentimentRatio" => 0.35,
+                           "neutralSentimentRatio" => 0.15,
+                           "positiveSentimentRatio" => 0.5,
+                           "negativeBbSentimentRatio" => 0.35,
+                           "neutralBbSentimentRatio" => 0.15,
+                           "positiveBbSentimentRatio" => 0.5
+                         }
+                       ]
+                     }
+                   ]
+                 }
+               }
+      end)
+    end
+
+    test "Free user see masked first 3 words" do
+      System.put_env("MASK_FIRST_3_WORDS_FREE_USER", "true")
+      now = DateTime.utc_now(:second)
+      from = DateTime.add(now, -2, :day)
+      context = %{dt1: from, dt3: now}
+
+      rows = trending_words_rows(context)
+
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        args = %{from: from, to: now, interval: "1d", size: 2}
+
+        query = trending_words_query(args)
+        result = execute(build_conn(), query)
+
+        assert result == %{
+                 "data" => %{
+                   "getTrendingWords" => [
+                     %{
+                       "datetime" => DateTime.to_iso8601(from),
+                       "topWords" => [
+                         %{
+                           "context" => [
+                             %{"score" => 1.0, "word" => "tight"},
+                             %{"score" => 0.82, "word" => "short"}
+                           ],
+                           "project" => nil,
+                           "score" => 82.0,
+                           "summary" => "***",
+                           "bullishSummary" => "***",
+                           "bearishSummary" => "***",
+                           "word" => "***",
+                           "negativeSentimentRatio" => 0.35,
+                           "neutralSentimentRatio" => 0.15,
+                           "positiveSentimentRatio" => 0.5,
+                           "negativeBbSentimentRatio" => 0.35,
+                           "neutralBbSentimentRatio" => 0.15,
+                           "positiveBbSentimentRatio" => 0.5
+                         },
+                         %{
+                           "context" => [
+                             %{"score" => 1.0, "word" => "bitcoin"},
+                             %{"score" => 0.63, "word" => "eth"}
+                           ],
+                           "project" => %{"slug" => "bitcoin"},
+                           "score" => 74.5,
+                           "summary" => "***",
+                           "bullishSummary" => "***",
+                           "bearishSummary" => "***",
+                           "word" => "***",
+                           "negativeSentimentRatio" => 0.1,
+                           "neutralSentimentRatio" => 0.1,
+                           "positiveSentimentRatio" => 0.8,
+                           "negativeBbSentimentRatio" => 0.1,
+                           "neutralBbSentimentRatio" => 0.1,
+                           "positiveBbSentimentRatio" => 0.8
+                         },
+                         %{
+                           "context" => [
+                             %{"score" => 1.0, "word" => "halving"},
+                             %{"score" => 0.85, "word" => "btc"}
+                           ],
+                           "project" => %{"slug" => "ethereum"},
+                           "score" => 72.4,
+                           "summary" => "***",
+                           "bullishSummary" => "***",
+                           "bearishSummary" => "***",
+                           "word" => "***",
+                           "negativeSentimentRatio" => 0.5,
+                           "neutralSentimentRatio" => 0.3,
+                           "positiveSentimentRatio" => 0.2,
+                           "negativeBbSentimentRatio" => 0.5,
+                           "neutralBbSentimentRatio" => 0.3,
+                           "positiveBbSentimentRatio" => 0.2
+                         },
+                         %{
+                           "context" => [
+                             %{"score" => 1.0, "word" => "tight"},
+                             %{"score" => 0.82, "word" => "short"}
+                           ],
+                           "project" => nil,
+                           "score" => 70.0,
+                           "summary" => "Third summary",
+                           "bullishSummary" => "Bullish summary",
+                           "bearishSummary" => "Bearish summary",
+                           "word" => "word2",
+                           "negativeSentimentRatio" => 0.35,
+                           "neutralSentimentRatio" => 0.15,
+                           "positiveSentimentRatio" => 0.5,
+                           "negativeBbSentimentRatio" => 0.35,
+                           "neutralBbSentimentRatio" => 0.15,
+                           "positiveBbSentimentRatio" => 0.5
                          }
                        ]
                      }
@@ -269,6 +342,71 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
         assert error_msg =~ "Something went wrong"
       end
     end
+  end
+
+  defp trending_words_rows(context) do
+    [
+      [
+        DateTime.to_unix(context.dt1),
+        "eth",
+        "ETH_ethereum",
+        72.4,
+        [
+          "{'word': 'btc', 'score': 0.85}",
+          "{'word': 'halving', 'score': 1.0}"
+        ],
+        "The summary",
+        "Bullish summary",
+        "Bearish summary",
+        [0.2, 0.3, 0.5],
+        [0.2, 0.3, 0.5]
+      ],
+      [
+        DateTime.to_unix(context.dt1),
+        "btc",
+        "BTC_bitcoin",
+        74.5,
+        [
+          "{'word': 'eth', 'score': 0.63}",
+          "{'word': 'bitcoin', 'score': 1.0}"
+        ],
+        "Another summary",
+        "Bullish summary",
+        "Bearish summary",
+        [0.8, 0.1, 0.1],
+        [0.8, 0.1, 0.1]
+      ],
+      [
+        DateTime.to_unix(context.dt1),
+        "word",
+        nil,
+        82.0,
+        [
+          "{'word': 'short', 'score': 0.82}",
+          "{'word': 'tight', 'score': 1.0}"
+        ],
+        "Third summary",
+        "Bullish summary",
+        "Bearish summary",
+        [0.5, 0.15, 0.35],
+        [0.5, 0.15, 0.35]
+      ],
+      [
+        DateTime.to_unix(context.dt1),
+        "word2",
+        nil,
+        70.0,
+        [
+          "{'word': 'short', 'score': 0.82}",
+          "{'word': 'tight', 'score': 1.0}"
+        ],
+        "Third summary",
+        "Bullish summary",
+        "Bearish summary",
+        [0.5, 0.15, 0.35],
+        [0.5, 0.15, 0.35]
+      ]
+    ]
   end
 
   defp trending_words_query(args) do

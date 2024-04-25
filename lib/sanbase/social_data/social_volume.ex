@@ -37,6 +37,8 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   def social_volume(%{words: words} = selector, from, to, interval, source, opts)
       when is_list(words) do
+    selector = %{selector | words: Enum.reject(words, &(&1 == "***"))}
+
     social_volume_list_request(selector, from, to, interval, source, opts)
     |> handle_words_social_volume_response(selector)
   end

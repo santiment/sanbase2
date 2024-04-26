@@ -201,5 +201,4 @@ defmodule SanbaseWeb.Router do
 
   get("/", SanbaseWeb.RootController, :healthcheck)
   get("/healthcheck", SanbaseWeb.RootController, :healthcheck)
-  get("/sleep", SanbaseWeb.RootController, :sleep)
 end

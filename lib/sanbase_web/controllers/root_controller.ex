@@ -18,19 +18,6 @@ defmodule SanbaseWeb.RootController do
     |> send_resp(200, "")
   end
 
-  def sleep(conn, params) do
-    sleep_time_ms = (params["time"] |> String.to_integer()) * 1000
-    Process.sleep(sleep_time_ms)
-
-    Logger.info(
-      "******************************** After sleeping for #{sleep_time_ms} ms ********************************"
-    )
-
-    conn
-    |> put_resp_content_type("text/plain")
-    |> send_resp(200, "OK")
-  end
-
   defp path(file) do
     Application.app_dir(:sanbase)
     |> Path.join(file)

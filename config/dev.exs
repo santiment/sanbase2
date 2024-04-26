@@ -9,7 +9,13 @@ import Config
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", "https://app-stage.santiment.net"}
 
 config :sanbase, SanbaseWeb.Endpoint,
-  http: [port: 4000],
+  http: [
+    port: 4000,
+    protocol_options: [
+      # Bump up cowboy2's timeout to 100 seconds
+      idle_timeout: 100_000
+    ]
+  ],
   url: [host: "0.0.0.0"],
   debug_errors: true,
   code_reloader: true,

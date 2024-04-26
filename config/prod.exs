@@ -7,7 +7,9 @@ config :sanbase, SanbaseWeb.Endpoint,
       max_header_name_length: 64,
       max_header_value_length: 8192,
       max_request_line_length: 16_384,
-      max_headers: 100
+      max_headers: 100,
+      # Bump up cowboy2's timeout to 100 seconds
+      idle_timeout: 100_000
     ]
   ],
   url: [host: "localhost", port: {:system, "PORT"}],
@@ -33,7 +35,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   database: "not_secret_default",
   username: "not_secret_default",
   password: "",
-  timeout: 60_000,
+  timeout: 100_000,
   pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "25"},
   pool_overflow: 5
 
@@ -45,7 +47,7 @@ clickhouse_read_only_opts = [
   database: "not_secret_default",
   username: "not_secret_default",
   password: "",
-  timeout: 600_000,
+  timeout: 100_000,
   pool_size: {:system, "CLICKHOUSE_READONLY_POOL_SIZE", "0"},
   pool_overflow: 3,
   max_overflow: 5

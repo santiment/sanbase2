@@ -493,6 +493,11 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
           insert(:subscription_max_sanbase, user: user)
           user
 
+        "SANAPI_PRO" ->
+          user = insert(:user, email: "sanapi_pro@example.com")
+          insert(:subscription_pro, user: user)
+          user
+
         "BUSINESS_PRO" ->
           user = insert(:user, email: "business_pro@example.com")
           insert(:subscription_business_pro_monthly, user: user)

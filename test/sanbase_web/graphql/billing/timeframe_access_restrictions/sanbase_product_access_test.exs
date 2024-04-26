@@ -295,6 +295,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
           insert(:subscription_max_sanbase, user: user)
           user
 
+        "SANAPI_PRO" ->
+          user = insert(:user, email: "sanapi_pro@example.com")
+          insert(:subscription_pro, user: user)
+          user
+
         "BUSINESS_PRO" ->
           user = insert(:user, email: "business_pro@example.com")
           insert(:subscription_business_pro_monthly, user: user)
@@ -367,6 +372,18 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
     test "Sanbase MAX has no restrictions", context do
       data = setup_subscription("SANBASE_MAX")
+      {from, to} = from_to(5 * 360, 1)
+      metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.jwt_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Sanapi PRO has no restrictions", context do
+      data = setup_subscription("SANAPI_PRO")
       {from, to} = from_to(5 * 360, 1)
       metric = "mean_age"
       slug = context.project.slug

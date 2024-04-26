@@ -64,6 +64,21 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
       assert insight["text"] == context.post.text
     end
 
+    test "with logged in user with Sanapi PRO subscription", context do
+      subscription =
+        insert(:subscription_pro, user: context.user)
+        |> Sanbase.Repo.preload(:plan)
+
+      assert Sanbase.Billing.Plan.SanbaseAccessChecker.can_access_paywalled_insights?(
+               subscription
+             )
+
+      insight = execute_query(context.conn, context.query, "insight")
+
+      assert insight["isPaywallRequired"]
+      assert insight["text"] == context.post.text
+    end
+
     test "with logged in user with SANBASE MAX subscription", context do
       subscription =
         insert(:subscription_max_sanbase, user: context.user)

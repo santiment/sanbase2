@@ -90,7 +90,8 @@ defmodule SanbaseWeb.Endpoint do
            max_header_name_length: 64,
            max_header_value_length: 8192,
            max_request_line_length: 16_384,
-           max_headers: 100
+           max_headers: 100,
+           idle_timeout: 100_000
          ]
        ])}
     else

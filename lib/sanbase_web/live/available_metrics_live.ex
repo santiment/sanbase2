@@ -18,7 +18,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex justify-center">
+    <div class="flex justify-center w-7/8">
       <div class="grid">
         <.filters metrics_map={@metrics_map} visible_metrics={@visible_metrics} filter={@filter} />
         <div class="text-gray-400 text-sm py-2">
@@ -28,17 +28,15 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           id="available_metrics"
           rows={Map.take(@metrics_map, @visible_metrics) |> Map.values() |> Enum.sort(:asc)}
         >
-          <:col :let={row} label="API Name" min_width_class="md:min-w-[550px] break-words">
+          <:col :let={row} label="API Name" min_width_class="md:min-w-[530px] break-words">
             <%= row.metric %>
           </:col>
-          <:col :let={row} label="Internal Name" min_width_class="md:min-w-[550px] break-words">
+          <:col :let={row} label="Internal Name" min_width_class="md:min-w-[510px] break-words">
             <%= row.internal_name %>
           </:col>
           <:col :let={row} label="Docs">
             <.docs_links docs={row.docs} />
           </:col>
-          <:col :let={row} label="Sanbase Access"><%= row.sanbase_access %></:col>
-          <:col :let={row} label="SanAPI Access"><%= row.sanapi_access %></:col>
           <:col :let={row} label="Frequency"><%= row.frequency %></:col>
           <:col :let={row} label="Available Assets" min_width_class="max-w-[200px]">
             <.available_assets assets={row.available_assets} />
@@ -113,7 +111,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
             id="metric-name-search"
             value={@filter["match_metric_name"] || ""}
             name="match_metric_name"
-            class="block w-80 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
+            class="block w-70 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
             placeholder="Filter by metric name"
             phx-debounce="200"
           />
@@ -125,7 +123,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
             id="metric-name-search"
             value={@filter["metric_supports_asset"] || ""}
             name="metric_supports_asset"
-            class="block w-80 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
+            class="block w-70 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
             placeholder="Metric with supported asset"
             phx-debounce="200"
           />
@@ -147,18 +145,18 @@ defmodule SanbaseWeb.AvailableMetricsLive do
   end
 
   defp available_assets(assigns) do
-    {first_3, rest} = Enum.split(assigns.assets, 3)
-    first_3_str = Enum.join(first_3, ", ")
+    {first_2, rest} = Enum.split(assigns.assets, 2)
+    first_2_str = Enum.join(first_2, ", ")
 
     rest_str = if rest != [], do: " and #{length(rest)} more", else: ""
 
     assigns =
       assigns
-      |> assign(first_3_str: first_3_str, rest_str: rest_str)
+      |> assign(first_2_str: first_2_str, rest_str: rest_str)
 
     ~H"""
     <span>
-      <%= @first_3_str %>
+      <%= @first_2_str %>
       <span class="text-gray-400"><%= @rest_str %></span>
     </span>
     """

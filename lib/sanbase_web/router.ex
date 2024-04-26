@@ -76,7 +76,6 @@ defmodule SanbaseWeb.Router do
     live("/suggest_github_organizations_admin_live", SuggestGithubOrganizationsAdminLive)
     live("/upload_image_live", UploadImageLive)
     live("/uploaded_images_live", UploadedImagesLive)
-    live("/available_metrics_live", AvailableMetricsLive)
 
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)
@@ -192,6 +191,11 @@ defmodule SanbaseWeb.Router do
 
     post("/projects_data_validator_webhook", RepoReaderController, :validator_webhook)
     post("/projects_data_reader_webhook/:secret", RepoReaderController, :reader_webhook)
+
+    # A LiveView for exploring the available metrics and a GET
+    # REST endpoint for downloading a CSV with the available metrics
+    live("/available_metrics_live", AvailableMetricsLive)
+    get("/export_available_metrics", AvailableMetricsController, :export)
   end
 
   scope "/", SanbaseWeb do

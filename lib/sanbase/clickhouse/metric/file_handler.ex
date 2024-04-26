@@ -137,6 +137,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                                    (File.read!(file) |> Jason.decode!()) ++ acc
                                  end)
 
+  def pre_alias(), do: @metrics_json_pre_alias_expand
   # Allow the same metric to be defined more than once if it differs in the `data_type`
   Enum.group_by(
     @metrics_json_pre_alias_expand,

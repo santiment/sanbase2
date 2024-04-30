@@ -62,7 +62,8 @@ defmodule SanbaseWeb.DataControllerTest do
       "slug" => project.slug,
       "name" => project.name,
       "infrastructure" => infrastructure.code,
-      "github_organizations" => github_organizations |> Enum.sort() |> Enum.join(",")
+      "github_organizations" => github_organizations |> Enum.sort() |> Enum.join(","),
+      "coinmarketcap_id" => project.coinmarketcap_id
     }
     |> Map.merge(new_fields)
   end

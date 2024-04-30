@@ -41,7 +41,8 @@ defmodule SanbaseWeb.DataController do
     "infrastructure": "ETH",
     "telegram_chat_id": null,
     "github_organizations": "ethereum",
-    "social_volume_query": "eth OR ether OR ethereum NOT cash NOT gold NOT classic"
+    "social_volume_query": "eth OR ether OR ethereum NOT cash NOT gold NOT classic",
+    "coinmarketcap_id": "ethereum"
   }
   """
   @spec projects_data(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -250,7 +251,8 @@ defmodule SanbaseWeb.DataController do
             decimals: decimals,
             social_volume_query: social_volume_query,
             rank: rank,
-            telegram_chat_id: project.telegram_chat_id
+            telegram_chat_id: project.telegram_chat_id,
+            coinmarketcap_id: project.coinmarketcap_id
           }
           |> Jason.encode!()
 

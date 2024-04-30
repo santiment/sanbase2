@@ -41,7 +41,8 @@ defmodule Sanbase.Mix.GenerateProjectsData do
         blog: p.blog_link,
         github_organizations: github,
         contract_addresses: contract,
-        latest_cmc: latest_cmc
+        latest_cmc: latest_cmc,
+        coinmarketcap_id: p.coinmarketcap_id
       }
     )
     |> Sanbase.Repo.all()

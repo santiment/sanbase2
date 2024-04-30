@@ -42,7 +42,7 @@ defmodule Sanbase.Mix.GenerateProjectsData do
         github_organizations: github,
         contract_addresses: contract,
         latest_cmc: latest_cmc,
-        project_id: p.coinmarketcap_id
+        coinmarketcap_id: p.coinmarketcap_id
       }
     )
     |> Sanbase.Repo.all()

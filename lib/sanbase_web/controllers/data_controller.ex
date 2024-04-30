@@ -29,7 +29,6 @@ defmodule SanbaseWeb.DataController do
   @doc ~s"""
   Return a list of data about the projects.
   This data is used to build the projects_data clickhouse dictionary.
-  project_id means cmc_id, but because we expose this data to Queries we don't use cmc_id.
 
   Each line of the response is a valid JSON object in the following format:
   {
@@ -43,7 +42,7 @@ defmodule SanbaseWeb.DataController do
     "telegram_chat_id": null,
     "github_organizations": "ethereum",
     "social_volume_query": "eth OR ether OR ethereum NOT cash NOT gold NOT classic",
-    "project_id": "ethereum"
+    "coinmarketcap_id": "ethereum"
   }
   """
   @spec projects_data(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -253,7 +252,7 @@ defmodule SanbaseWeb.DataController do
             social_volume_query: social_volume_query,
             rank: rank,
             telegram_chat_id: project.telegram_chat_id,
-            project_id: project.coinmarketcap_id
+            coinmarketcap_id: project.coinmarketcap_id
           }
           |> Jason.encode!()
 

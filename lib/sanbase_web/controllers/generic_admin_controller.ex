@@ -267,6 +267,27 @@ defmodule SanbaseWeb.GenericAdminController do
     end
   end
 
+  def delete(conn, %{"id" => id, "resource" => resource}) do
+    resource_config = resource_module_map()[resource]
+    module = module_from_resource(resource)
+
+    if :delete in resource_config[:actions] do
+      Repo.get(module, id)
+      |> Repo.delete()
+      |> case do
+        {:ok, _} ->
+          conn
+          |> put_flash(:info, "#{resource} item deleted successfully.")
+          |> redirect(to: Routes.generic_admin_path(conn, :index, resource: resource))
+
+        {:error, changeset} ->
+          conn
+          |> put_flash(:error, "Error deleting #{resource}: #{inspect(changeset.errors)}")
+          |> redirect(to: Routes.generic_admin_path(conn, :show, id, resource: resource))
+      end
+    end
+  end
+
   def show_action(conn, %{"action" => action, "resource" => resource, "id" => id}) do
     admin_module = resource_module_map()[resource][:admin_module]
     apply(admin_module, String.to_existing_atom(action), [conn, %{resource: resource, id: id}])

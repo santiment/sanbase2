@@ -277,7 +277,7 @@ defmodule SanbaseWeb.GenericAdmin.GithubOrganization do
 
   def resource() do
     %{
-      actions: [:new, :edit],
+      actions: [:new, :edit, :delete],
       preloads: [:project],
       new_fields: [:project, :organization],
       edit_fields: [:project, :organization],
@@ -387,7 +387,7 @@ defmodule SanbaseWeb.GenericAdmin.SourceSlugMapping do
 
   def resource() do
     %{
-      actions: [:new, :edit],
+      actions: [:new, :edit, :delete],
       preloads: [:project],
       new_fields: [:project, :source, :slug],
       edit_fields: [:project, :source, :slug],

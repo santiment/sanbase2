@@ -617,6 +617,21 @@ defmodule SanbaseWeb.AdminComponents do
   attr(:row, :map, required: true)
   attr(:label, :string, required: true)
 
+  def index_action_btn(%{action: :delete} = assigns) do
+    ~H"""
+    <.form
+      for={%{}}
+      action={Routes.generic_admin_path(SanbaseWeb.Endpoint, @action, @row, resource: @resource)}
+      method="post"
+      class="inline"
+      data-confirm="Are you sure you want to delete this?"
+    >
+      <input type="hidden" name="_method" value="delete" />
+      <.btn color={:red} size={:small} type="submit" href="#" label={@label} />
+    </.form>
+    """
+  end
+
   def index_action_btn(assigns) do
     ~H"""
     <.btn

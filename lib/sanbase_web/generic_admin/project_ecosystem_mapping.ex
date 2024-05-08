@@ -3,7 +3,7 @@ defmodule SanbaseWeb.GenericAdmin.ProjectEcosystemMapping do
 
   def resource() do
     %{
-      actions: [:new, :edit],
+      actions: [:new, :edit, :delete],
       index_fields: [:id, :project_id, :ecosystem_id, :inserted_at, :updated_at],
       new_fields: [:project, :ecosystem],
       edit_fields: [:project, :ecosystem],

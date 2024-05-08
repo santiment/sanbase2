@@ -1,7 +1,10 @@
 defmodule Sanbase.AvailableMetrics do
   use Ecto.Schema
 
+  import Ecto.Query
   import Ecto.Changeset
+
+  require Logger
 
   schema "available_metrics_data" do
     field(:metric, :string)
@@ -24,8 +27,12 @@ defmodule Sanbase.AvailableMetrics do
     metrics = Sanbase.Metric.available_metrics()
 
     for metric <- metrics do
-      {:ok, slugs} = Sanbase.Metric.available_slugs(metric)
-      {:ok, _} = create_or_update(%{metric: metric, available_slugs: slugs})
+      try do
+        {:ok, slugs} = Sanbase.Metric.available_slugs(metric)
+        {:ok, _} = create_or_update(%{metric: metric, available_slugs: slugs})
+      rescue
+        e -> Logger.error("Error updating available slugs for #{metric}: #{Exception.message(e)}")
+      end
     end
   end
 

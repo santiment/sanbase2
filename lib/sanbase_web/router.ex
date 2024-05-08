@@ -176,7 +176,8 @@ defmodule SanbaseWeb.Router do
     pipe_through([:browser])
     # A LiveView for exploring the available metrics and a GET
     # REST endpoint for downloading a CSV with the available metrics
-    live("/available_metrics_live", AvailableMetricsLive)
+    live("/available_metrics", AvailableMetricsLive)
+    live("/available_metrics/:metric", MetricDetailsLive)
     get("/export_available_metrics", AvailableMetricsController, :export)
   end
 

@@ -61,6 +61,15 @@ defmodule Sanbase.AvailableMetrics do
     |> Map.new(fn m -> {m.metric, m} end)
   end
 
+  def get_metric_available_slugs(metric) do
+    query = from(am in __MODULE__, where: am.metric == ^metric, select: am.available_slugs)
+
+    case Sanbase.Repo.one(query) do
+      nil -> {:error, "No record for available slugs for #{metric} found"}
+      available_slugs -> {:ok, available_slugs}
+    end
+  end
+
   def apply_filters(metrics_map, filters) do
     metrics_map
     |> Map.values()

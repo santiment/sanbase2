@@ -41,6 +41,9 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           <:col :let={row} label="Available Assets" min_width_class="max-w-[200px]">
             <.available_assets assets={row.available_assets} />
           </:col>
+          <:col :let={row}>
+            <.metric_details_button metric={row.metric} />
+          </:col>
         </.table>
       </div>
     </div>
@@ -120,7 +123,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
         <div>
           <input
             type="search"
-            id="metric-name-search"
+            id="metric-supports_asset"
             value={@filter["metric_supports_asset"] || ""}
             name="metric_supports_asset"
             class="block w-70 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
@@ -129,12 +132,8 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           />
         </div>
 
-        <button
-          type="button"
-          class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
-        >
+        <button <button class={button_style()}>
           <.icon name="hero-arrow-down-tray" />
-
           <.link href={~p"/export_available_metrics?#{%{filter: Jason.encode!(@filter)}}"}>
             Download as CSV
           </.link>
@@ -170,5 +169,20 @@ defmodule SanbaseWeb.AvailableMetricsLive do
       </a>
     </div>
     """
+  end
+
+  defp metric_details_button(assigns) do
+    ~H"""
+    <button class={button_style()}>
+      <.icon name="hero-arrow-top-right-on-square" class="text-gray-500" />
+      <.link href={~p"/available_metrics/#{@metric}"}>
+        Open
+      </.link>
+    </button>
+    """
+  end
+
+  defp button_style() do
+    "text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
   end
 end

@@ -132,12 +132,13 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           />
         </div>
 
-        <button <button class={button_style()}>
+        <.link
+          href={~p"/export_available_metrics?#{%{filter: Jason.encode!(@filter)}}"}
+          class={button_style()}
+        >
           <.icon name="hero-arrow-down-tray" />
-          <.link href={~p"/export_available_metrics?#{%{filter: Jason.encode!(@filter)}}"}>
-            Download as CSV
-          </.link>
-        </button>
+          <span>Download as CSV</span>
+        </.link>
       </form>
     </div>
     """
@@ -173,12 +174,10 @@ defmodule SanbaseWeb.AvailableMetricsLive do
 
   defp metric_details_button(assigns) do
     ~H"""
-    <button class={button_style()}>
+    <.link href={~p"/available_metrics/#{@metric}"} class={button_style()}>
       <.icon name="hero-arrow-top-right-on-square" class="text-gray-500" />
-      <.link href={~p"/available_metrics/#{@metric}"}>
-        Open
-      </.link>
-    </button>
+      <span>Open</span>
+    </.link>
     """
   end
 

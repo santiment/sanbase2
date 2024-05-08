@@ -56,20 +56,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   def watchlist(_root, %{id: id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
+    Process.put(:do_not_cache_query, true)
     UserList.user_list(id, current_user)
   end
 
   def watchlist(_root, %{id: id}, _resolution) do
+    Process.put(:do_not_cache_query, true)
     UserList.user_list(id, %User{id: nil})
   end
 
   def watchlist_by_slug(_root, %{slug: slug}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
+    Process.put(:do_not_cache_query, true)
     UserList.user_list_by_slug(slug, current_user)
   end
 
   def watchlist_by_slug(_root, %{slug: slug}, _resolution) do
+    Process.put(:do_not_cache_query, true)
     UserList.user_list_by_slug(slug, %User{id: nil})
   end
 

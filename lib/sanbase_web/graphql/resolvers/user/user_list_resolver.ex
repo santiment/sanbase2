@@ -56,6 +56,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   def watchlist(_root, %{id: id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
+    # TODO: Added since `settings` is under cache_resolve and updating the settings and refetching the watchlist result
+    # in fetching stale data. Need to find a better way to handle this.
     Process.put(:do_not_cache_query, true)
     UserList.user_list(id, current_user)
   end

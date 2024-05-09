@@ -44,36 +44,34 @@ defmodule SanbaseWeb.AvailableMetricsLive do
       )
 
     ~H"""
-    <div class="flex justify-center w-7/8">
-      <div class="grid">
-        <.filters filter={@filter} />
-        <div class="text-gray-400 text-sm py-2">
-          <div>
-            Showing <%= length(@visible_metrics) %> metrics
-          </div>
-          <div>
-            In total <%= to_string(@assets_count) %> assets are supported by at least one of the visible filtered metrics
-          </div>
+    <div class="flex flex-col items-start justify-evenly">
+      <.filters filter={@filter} />
+      <div class="text-gray-400 text-sm py-2">
+        <div>
+          Showing <%= length(@visible_metrics) %> metrics
         </div>
-        <.table id="available_metrics" rows={@ordered_visible_metrics}>
-          <:col :let={row} label="API Name" min_width_class="md:min-w-[530px] break-words">
-            <%= row.metric %>
-          </:col>
-          <:col :let={row} label="Internal Name" min_width_class="md:min-w-[510px] break-words">
-            <%= row.internal_name %>
-          </:col>
-          <:col :let={row} label="Frequency"><%= row.frequency %></:col>
-          <:col :let={row} label="Available Assets" min_width_class="max-w-[200px]">
-            <.available_assets assets={row.available_assets} />
-          </:col>
-          <:col :let={row} label="Docs">
-            <.docs_links docs={row.docs} />
-          </:col>
-          <:col :let={row} label="Metric Details">
-            <.metric_details_button metric={row.metric} />
-          </:col>
-        </.table>
+        <div>
+          In total <%= to_string(@assets_count) %> assets are supported by at least one of the visible filtered metrics
+        </div>
       </div>
+      <.table id="available_metrics" rows={@ordered_visible_metrics}>
+        <:col :let={row} label="API Name">
+          <%= row.metric %>
+        </:col>
+        <:col :let={row} label="Internal Name">
+          <%= row.internal_name %>
+        </:col>
+        <:col :let={row} label="Frequency"><%= row.frequency %></:col>
+        <:col :let={row} label="Available Assets" col_class="max-w-[200px]">
+          <.available_assets assets={row.available_assets} />
+        </:col>
+        <:col :let={row} label="Docs">
+          <.docs_links docs={row.docs} />
+        </:col>
+        <:col :let={row} label="Metric Details">
+          <.metric_details_button metric={row.metric} />
+        </:col>
+      </.table>
     </div>
     """
   end
@@ -96,7 +94,10 @@ defmodule SanbaseWeb.AvailableMetricsLive do
   defp filters(assigns) do
     ~H"""
     <div>
-      <form phx-change="apply_filters" class="flex space-x-8 items-center justify-start">
+      <form
+        phx-change="apply_filters"
+        class="flex flex-col flex-wrap space-y-2 items-start md:flex-row md:items-center md:gap-x-8"
+      >
         <div class="flex items-center">
           <input
             id="with-assets-checkbox"
@@ -204,7 +205,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     ~H"""
     <.link href={~p"/available_metrics/#{@metric}"} class={button_style()}>
       <.icon name="hero-arrow-top-right-on-square" class="text-gray-500" />
-      <span>Metric Details</span>
+      <span>Details</span>
     </.link>
     """
   end

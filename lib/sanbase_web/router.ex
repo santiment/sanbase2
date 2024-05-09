@@ -173,6 +173,15 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/", SanbaseWeb do
+    pipe_through([:browser])
+    # A LiveView for exploring the available metrics and a GET
+    # REST endpoint for downloading a CSV with the available metrics
+    live("/available_metrics", AvailableMetricsLive)
+    live("/available_metrics/:metric", MetricDetailsLive)
+    get("/export_available_metrics", AvailableMetricsController, :export)
+  end
+
+  scope "/", SanbaseWeb do
     get("/api_metric_name_mapping", MetricNameController, :api_metric_name_mapping)
     get("/projects_data", DataController, :projects_data)
     get("/projects_twitter_handles", DataController, :projects_twitter_handles)

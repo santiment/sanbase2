@@ -174,5 +174,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     manage_pinecone_index: [
       schedule: "15 * * * *",
       task: {Sanbase.DiscordBot.AiServer, :manage_pinecone_index, []}
+    ],
+    renew_available_metrics_slugs: [
+      schedule: "@daily",
+      task: {Sanbase.AvailableMetrics, :update_all, []}
     ]
   ]

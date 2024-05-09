@@ -451,6 +451,38 @@ ALTER SEQUENCE public.asset_exchange_pairs_id_seq OWNED BY public.asset_exchange
 
 
 --
+-- Name: available_metrics_data; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.available_metrics_data (
+    id bigint NOT NULL,
+    metric character varying(255) NOT NULL,
+    available_slugs character varying(255)[],
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: available_metrics_data_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.available_metrics_data_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: available_metrics_data_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.available_metrics_data_id_seq OWNED BY public.available_metrics_data.id;
+
+
+--
 -- Name: blockchain_address_comments_mapping; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4802,6 +4834,13 @@ ALTER TABLE ONLY public.asset_exchange_pairs ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: available_metrics_data id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.available_metrics_data ALTER COLUMN id SET DEFAULT nextval('public.available_metrics_data_id_seq'::regclass);
+
+
+--
 -- Name: blockchain_address_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5631,6 +5670,14 @@ ALTER TABLE ONLY public.api_call_limits
 
 ALTER TABLE ONLY public.asset_exchange_pairs
     ADD CONSTRAINT asset_exchange_pairs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: available_metrics_data available_metrics_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.available_metrics_data
+    ADD CONSTRAINT available_metrics_data_pkey PRIMARY KEY (id);
 
 
 --
@@ -6673,6 +6720,13 @@ CREATE UNIQUE INDEX asset_exchange_pairs_base_asset_quote_asset_exchange_source_
 --
 
 CREATE INDEX asset_exchange_pairs_exchange_index ON public.asset_exchange_pairs USING btree (exchange);
+
+
+--
+-- Name: available_metrics_data_metric_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX available_metrics_data_metric_index ON public.available_metrics_data USING btree (metric);
 
 
 --
@@ -9489,3 +9543,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240315090002);
 INSERT INTO public."schema_migrations" (version) VALUES (20240320090413);
 INSERT INTO public."schema_migrations" (version) VALUES (20240325154734);
 INSERT INTO public."schema_migrations" (version) VALUES (20240415100155);
+INSERT INTO public."schema_migrations" (version) VALUES (20240424082842);

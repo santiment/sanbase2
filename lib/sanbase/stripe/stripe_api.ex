@@ -33,6 +33,16 @@ defmodule Sanbase.StripeApi do
     Stripe.Customer.update(user.stripe_customer_id, update_params)
   end
 
+  def detach_payment_method(stripe_customer_id) do
+    with {:ok, customer} <- Stripe.Customer.retrieve(stripe_customer_id),
+         {:ok, %Stripe.PaymentMethod{}} <-
+           Stripe.PaymentMethod.detach(%{
+             payment_method: customer.invoice_settings.default_payment_method
+           }) do
+      :ok
+    end
+  end
+
   # Stripe docs: https://stripe.com/docs/payments/setupintents/lifecycle
   # Stripe API: https://stripe.com/docs/api/setup_intents
   def create_setup_intent(%User{} = user) do
@@ -173,13 +183,30 @@ defmodule Sanbase.StripeApi do
   def delete_default_card(%User{stripe_customer_id: stripe_customer_id})
       when is_binary(stripe_customer_id) do
     with {:ok, customer} <- Stripe.Customer.retrieve(stripe_customer_id),
-         {:ok, %Stripe.Card{}} <-
-           Stripe.Card.delete(customer.default_source, %{customer: stripe_customer_id}) do
+         {:ok, _} <- delete_card(customer) do
       :ok
     end
   end
 
   def delete_default_card(_), do: {:error, "Customer has no default card"}
+
+  # This function is used to delete the default card of a customer
+  # First try to delete default_source, if it fails, try to delete default_payment_method
+  # Old customers have default_source, new customers have default_payment_method - that is due to changes in the way payments are handled.
+  def delete_card(customer) do
+    cond do
+      is_binary(customer.default_source) ->
+        Stripe.Card.delete(customer.default_source, %{customer: customer.id})
+
+      is_binary(customer.invoice_settings.default_payment_method) ->
+        Stripe.PaymentMethod.detach(%{
+          payment_method: customer.invoice_settings.default_payment_method
+        })
+
+      true ->
+        {:error, "Customer has no default card"}
+    end
+  end
 
   def add_credit(customer_id, amount, trx_id) do
     Stripe.CustomerBalanceTransaction.create(customer_id, %{

@@ -4,30 +4,58 @@ defmodule SanbaseWeb.AvailableMetricsLive do
   @impl true
   def mount(_params, _session, socket) do
     metrics_map = Sanbase.AvailableMetrics.get_metrics_map()
-    visible_metrics = metrics_map |> Map.keys()
+
+    default_filter = %{"only_with_non_empty_available_assets" => "on", "only_with_docs" => "on"}
+
+    visible_metrics =
+      metrics_map
+      |> Sanbase.AvailableMetrics.apply_filters(default_filter)
+      |> Enum.map(& &1.metric)
 
     {:ok,
      socket
      |> assign(
        visible_metrics: visible_metrics,
        metrics_map: metrics_map,
-       filter: %{}
+       filter: default_filter
      )}
   end
 
   @impl true
   def render(assigns) do
+    ordered_visible_metrics =
+      Map.take(assigns.metrics_map, assigns.visible_metrics)
+      |> Map.values()
+      |> Enum.sort_by(& &1.metric, :asc)
+
+    total_assets_with_metrics =
+      Enum.reduce(
+        ordered_visible_metrics,
+        MapSet.new(),
+        &MapSet.union(MapSet.new(&1.available_assets), &2)
+      )
+      |> MapSet.size()
+
+    assigns =
+      assigns
+      |> assign(
+        ordered_visible_metrics: ordered_visible_metrics,
+        assets_count: total_assets_with_metrics
+      )
+
     ~H"""
     <div class="flex justify-center w-7/8">
       <div class="grid">
-        <.filters metrics_map={@metrics_map} visible_metrics={@visible_metrics} filter={@filter} />
+        <.filters filter={@filter} />
         <div class="text-gray-400 text-sm py-2">
-          Showing <%= length(@visible_metrics) %> metrics
+          <div>
+            Showing <%= length(@visible_metrics) %> metrics
+          </div>
+          <div>
+            In total <%= to_string(@assets_count) %> assets are supported by at least one of the visible filtered metrics
+          </div>
         </div>
-        <.table
-          id="available_metrics"
-          rows={Map.take(@metrics_map, @visible_metrics) |> Map.values() |> Enum.sort(:asc)}
-        >
+        <.table id="available_metrics" rows={@ordered_visible_metrics}>
           <:col :let={row} label="API Name" min_width_class="md:min-w-[530px] break-words">
             <%= row.metric %>
           </:col>
@@ -114,8 +142,8 @@ defmodule SanbaseWeb.AvailableMetricsLive do
             id="metric-name-search"
             value={@filter["match_metric_name"] || ""}
             name="match_metric_name"
-            class="block w-70 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
-            placeholder="Filter by metric name"
+            class="block w-64 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
+            placeholder="Filter by metric"
             phx-debounce="200"
           />
         </div>
@@ -126,8 +154,8 @@ defmodule SanbaseWeb.AvailableMetricsLive do
             id="metric-supports_asset"
             value={@filter["metric_supports_asset"] || ""}
             name="metric_supports_asset"
-            class="block w-70 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
-            placeholder="Metric with supported asset"
+            class="block w-64 ps-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white"
+            placeholder="Filter by supported asset"
             phx-debounce="200"
           />
         </div>

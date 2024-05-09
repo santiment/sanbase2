@@ -68,20 +68,20 @@ defmodule SanbaseWeb.MetricDetailsLive do
   end
 
   defp formatted_value(%{key: "Available Slugs"} = assigns) do
-    str = assigns.value |> Enum.join(", ")
-
-    assigns = assigns |> assign(available_slugs: str)
+    last_slug = Enum.at(assigns.value, -1)
+    assigns = assign(assigns, :last_slug, last_slug)
 
     ~H"""
     <div class="w-1/2">
-      <%= @available_slugs %>
+      <a :for={slug <- @value} href={SanbaseWeb.Endpoint.project_url(slug)}>
+        <!-- Keep the template and span glued, otherwise there will be a white space -->
+        <%= slug %><span :if={slug != @last_slug}>,</span>
+      </a>
     </div>
     """
   end
 
   defp formatted_value(%{key: "Docs"} = assigns) do
-    assigns |> dbg()
-
     ~H"""
     <div class="flex flex-row">
       <a :for={doc <- assigns.value} href={doc.link} target="_blank">

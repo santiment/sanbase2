@@ -62,14 +62,14 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           <:col :let={row} label="Internal Name" min_width_class="md:min-w-[510px] break-words">
             <%= row.internal_name %>
           </:col>
-          <:col :let={row} label="Docs">
-            <.docs_links docs={row.docs} />
-          </:col>
           <:col :let={row} label="Frequency"><%= row.frequency %></:col>
           <:col :let={row} label="Available Assets" min_width_class="max-w-[200px]">
             <.available_assets assets={row.available_assets} />
           </:col>
-          <:col :let={row}>
+          <:col :let={row} label="Docs">
+            <.docs_links docs={row.docs} />
+          </:col>
+          <:col :let={row} label="Metric Details">
             <.metric_details_button metric={row.metric} />
           </:col>
         </.table>
@@ -164,7 +164,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
           href={~p"/export_available_metrics?#{%{filter: Jason.encode!(@filter)}}"}
           class={button_style()}
         >
-          <.icon name="hero-arrow-down-tray" />
+          <.icon name="hero-arrow-down-tray" class="text-gray-500" />
           <span>Download as CSV</span>
         </.link>
       </form>
@@ -193,8 +193,8 @@ defmodule SanbaseWeb.AvailableMetricsLive do
   defp docs_links(assigns) do
     ~H"""
     <div class="flex flex-row">
-      <a :for={doc <- assigns.docs} href={doc.link} target="_blank">
-        Open Docs
+      <a :for={doc <- assigns.docs} href={doc.link} target="_blank" class={button_style()}>
+        <.icon name="hero-clipboard-document-list" class="text-gray-500" /> Docs
       </a>
     </div>
     """
@@ -204,7 +204,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     ~H"""
     <.link href={~p"/available_metrics/#{@metric}"} class={button_style()}>
       <.icon name="hero-arrow-top-right-on-square" class="text-gray-500" />
-      <span>Open</span>
+      <span>Metric Details</span>
     </.link>
     """
   end

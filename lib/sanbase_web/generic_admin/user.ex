@@ -10,7 +10,23 @@ defmodule SanbaseWeb.GenericAdmin.User do
     %{
       actions: [:edit],
       index_fields: [:id, :username, :email, :twitter_id, :is_superuser, :san_balance],
-      edit_fields: [:is_superuser, :test_san_balance, :email, :stripe_customer_id]
+      edit_fields: [:is_superuser, :test_san_balance, :email, :stripe_customer_id],
+      fields_override: %{
+        stripe_customer_id: %{
+          value_modifier: fn user ->
+            case user.stripe_customer_id do
+              nil ->
+                nil
+
+              stripe_customer_id ->
+                Phoenix.HTML.Link.link(stripe_customer_id,
+                  to: "https://dashboard.stripe.com/customers/#{stripe_customer_id}",
+                  class: "text-blue-600 hover:text-blue-800"
+                )
+            end
+          end
+        }
+      }
     }
   end
 

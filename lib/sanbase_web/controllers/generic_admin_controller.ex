@@ -483,7 +483,7 @@ defmodule SanbaseWeb.GenericAdminController do
               value = "%" <> value <> "%"
 
               from(m in module,
-                where: like(field(m, ^field), ^value),
+                where: ilike(field(m, ^field), ^value),
                 preload: ^preloads,
                 order_by: [desc: field(m, ^sort_field)]
               )

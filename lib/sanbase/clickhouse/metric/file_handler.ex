@@ -340,7 +340,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
 
   defp remove_hard_deprecated(metrics, _opts) when is_map(metrics) do
     now = DateTime.utc_now()
-
     Map.reject(metrics, fn {metric, _} -> is_hard_deprecated(metric, now) end)
   end
 
@@ -348,6 +347,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     # Provide `now` as a parameter so it's not calling DateTime.utc_now/0 each time
     # when this is invoked over an enumerable
     hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
+
     not is_nil(hard_deprecate_after) and DateTime.compare(hard_deprecate_after, now) == :lt
   end
 end

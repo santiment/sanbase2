@@ -24,9 +24,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_volume_reddit",
     "social_volume_twitter",
     "social_volume_bitcointalk",
-    "social_volume_twitter_crypto",
-    "social_volume_twitter_news",
-    "social_volume_twitter_nft",
     "social_volume_youtube_videos",
     "social_volume_newsapi_crypto",
     "social_volume_total",
@@ -44,9 +41,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_dominance_4chan",
     "social_dominance_telegram",
     "social_dominance_reddit",
-    "social_dominance_twitter_crypto",
-    "social_dominance_twitter_news",
-    "social_dominance_twitter_nft",
     "social_dominance_youtube_videos",
     "social_dominance_newsapi_crypto",
     "social_dominance_total",
@@ -371,9 +365,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp source_first_datetime("total"), do: source_first_datetime("bitcointalk")
   defp source_first_datetime("telegram"), do: {:ok, ~U[2016-03-29 00:00:00Z]}
   defp source_first_datetime("twitter"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
-  defp source_first_datetime("twitter_crypto"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
-  defp source_first_datetime("twitter_news"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
-  defp source_first_datetime("twitter_nft"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
   defp source_first_datetime("reddit"), do: {:ok, ~U[2016-01-01 00:00:00Z]}
   defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2011-06-01 00:00:00Z]}
   defp source_first_datetime("newsapi_crypto"), do: {:ok, ~U[2024-01-01 00:00:00Z]}

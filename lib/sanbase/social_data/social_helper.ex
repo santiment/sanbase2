@@ -8,8 +8,7 @@ defmodule Sanbase.SocialData.SocialHelper do
     :reddit,
     :twitter,
     :bitcointalk,
-    :youtube_videos,
-    :newsapi_crypto
+    :youtube_videos
   ]
 
   def sources(), do: @sources

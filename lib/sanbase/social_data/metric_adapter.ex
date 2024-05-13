@@ -25,7 +25,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_volume_twitter",
     "social_volume_bitcointalk",
     "social_volume_youtube_videos",
-    "social_volume_newsapi_crypto",
     "social_volume_total",
     "nft_social_volume"
   ]
@@ -42,13 +41,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_dominance_telegram",
     "social_dominance_reddit",
     "social_dominance_youtube_videos",
-    "social_dominance_newsapi_crypto",
     "social_dominance_total",
     "social_dominance_ai_total"
   ]
 
-  # Exclude newsapi_crypto as sentiment metrics are not supported at the moment
-  sources = ["total"] ++ (SocialHelper.sources() -- [:newsapi_crypto])
+  sources = ["total"] ++ SocialHelper.sources()
 
   @sentiment_timeseries_metrics for name <- ["sentiment"],
                                     source <- sources,
@@ -367,7 +364,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp source_first_datetime("twitter"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
   defp source_first_datetime("reddit"), do: {:ok, ~U[2016-01-01 00:00:00Z]}
   defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2011-06-01 00:00:00Z]}
-  defp source_first_datetime("newsapi_crypto"), do: {:ok, ~U[2024-01-01 00:00:00Z]}
   defp source_first_datetime("youtube_videos"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
   defp source_first_datetime("4chan"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
 end

@@ -3177,6 +3177,86 @@
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
+    "human_readable_name": "Daily Aave v2 Revenue",
+    "name": "aave_v2_revenue",
+    "metric": "aavev2_revenue",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
+  },
+  {
+    "human_readable_name": "Daily Aave v2 Revenue in USD",
+    "name": "aave_v2_revenue_usd",
+    "metric": "aavev2_revenue_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
+  },
+  {
+    "human_readable_name": "Daily Aave v2 Total Revenue",
+    "name": "aave_v2_total_revenue_usd",
+    "metric": "aavev2_total_revenue_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
+  },
+  {
+    "human_readable_name": "Daily Aave v2 Total Cumulative Revenue",
+    "name": "aave_v2_total_cumulative_revenue_usd",
+    "metric": "aavev2_total_cumulative_revenue_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
+  },
+  {
     "human_readable_name": "Aave v3 deposits",
     "name": "aave_v3_action_deposits",
     "metric": "aavev3_action_deposits",

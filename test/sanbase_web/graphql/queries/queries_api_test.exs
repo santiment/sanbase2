@@ -279,8 +279,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
           |> get_in(["data", "currentUser", "queriesExecutionsInfo"])
 
         assert stats == %{
-                 "creditsAvailalbeMonth" => 5000,
-                 "creditsRemainingMonth" => 4999,
+                 "creditsAvailalbeMonth" => 500,
+                 "creditsRemainingMonth" => 499,
                  "creditsSpentMonth" => 1,
                  "queriesExecutedDay" => 1,
                  "queriesExecutedDayLimit" => 500,
@@ -326,8 +326,8 @@ defmodule SanbaseWeb.Graphql.QueriesApiTest do
         assert Process.get(:queries_dynamic_repo) == Sanbase.ClickhouseRepo.BusinessMaxUser
 
         assert stats == %{
-                 "creditsAvailalbeMonth" => 5_000_000,
-                 "creditsRemainingMonth" => 4_999_999,
+                 "creditsAvailalbeMonth" => 500_000,
+                 "creditsRemainingMonth" => 499_999,
                  "creditsSpentMonth" => 1,
                  "queriesExecutedDay" => 1,
                  "queriesExecutedDayLimit" => 15000,

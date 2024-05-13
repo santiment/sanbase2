@@ -92,31 +92,31 @@ defmodule Sanbase.Queries.Authorization do
   def credits_limit(product_code, plan_name) do
     case {product_code, plan_name} do
       {_, "FREE"} ->
-        5_000
+        500
 
       {"SANBASE", "PRO"} ->
-        1_000_000
+        10_000
 
       {"SANBASE", "PRO_PLUS"} ->
-        2_000_000
+        20_000
 
       {"SANBASE", "MAX"} ->
-        2_000_000
+        20_000
 
       {"SANAPI", "BASIC"} ->
-        2_000_000
+        20_000
 
       {"SANAPI", "PRO"} ->
-        5_000_000
+        50_000
 
       {"SANAPI", "BUSINESS_PRO"} ->
-        5_000_000
+        50_000
 
       {"SANAPI", "BUSINESS_MAX"} ->
-        5_000_000
+        500_000
 
       {"SANAPI", "CUSTOM"} ->
-        20_000_000
+        500_000
 
       {"SANAPI", "CUSTOM_" <> _ = custom_plan} ->
         credits_limit("SANAPI", fetch_base_plan_for_custom(custom_plan))

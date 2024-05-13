@@ -204,6 +204,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
        default_aggregation: :sum,
        available_aggregations: @aggregations,
        available_selectors: [:slug],
+       required_selectors: @required_selectors[metric],
        data_type: :timeseries,
        is_timebound: false,
        complexity_weight: @default_complexity_weight,

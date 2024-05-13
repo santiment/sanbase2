@@ -61,7 +61,9 @@ defmodule Sanbase.AvailableMetrics do
         frequency: m.min_interval,
         frequency_seconds: Sanbase.DateTimeUtils.str_to_sec(m.min_interval),
         sanbase_access: "free",
-        sanapi_access: "free"
+        sanapi_access: "free",
+        available_selectors: m.available_selectors,
+        required_selectors: m.required_selectors
       }
     end)
     |> Enum.sort_by(& &1.metric, :asc)

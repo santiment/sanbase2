@@ -23,7 +23,8 @@
     "min_interval": "15m",
     "table": "labeled_intraday_metrics_v2",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labelled-historical-balance"]
   },
   {
     "human_readable_name": "Labelled Historical Balance Changes",
@@ -49,6 +50,7 @@
     "min_interval": "15m",
     "table": "labeled_intraday_metrics_v2",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/labelled-historical-balance"]
   }
 ]

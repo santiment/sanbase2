@@ -1744,7 +1744,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/total-supply"]
   },
   {
     "human_readable_name": "Binance Exchange Funding Rates (USDT)",
@@ -5071,7 +5072,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/xrpl-metrics/dex-volume"]
   },
   {
     "human_readable_name": "DEX volume in USD",

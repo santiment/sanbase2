@@ -19,7 +19,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-volume"]
   },
   {
     "human_readable_name": "Price in USD Change ({{interval}})",
@@ -41,7 +42,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/price"]
   },
   {
     "human_readable_name": "Active Addresses For The Last 24h Change ({{interval}})",
@@ -63,7 +65,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/active-addresses-24h"]
   },
   {
     "human_readable_name": "30 Days Moving Average Of Development Activity Change ({{interval}})",
@@ -81,7 +84,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/development-activity"]
   },
   {
     "human_readable_name": "Development activity Change ({{interval}})",
@@ -103,7 +107,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/development-activity"]
   },
 
   {
@@ -124,7 +129,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/development-activity/github-activity"]
   },
   {
     "human_readable_name": "Market Capitalization Change ({{interval}})",
@@ -146,7 +152,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/marketcap"]
   },
   {
     "human_readable_name": "Network Growth Change ({{interval}})",
@@ -168,7 +175,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/network-growth"]
   },
   {
     "human_readable_name": "Exchange Inflow Change ({{interval}})",
@@ -190,7 +198,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Exchange Outflow Change ({{interval}})",
@@ -212,7 +221,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Exchange Balance (Inflow - Outflow) Change ({{interval}})",
@@ -234,7 +244,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "On-Chain Transaction Volume Change ({{interval}})",
@@ -256,7 +267,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-volume"]
   },
   {
     "human_readable_name": "On-Chain Transaction Volume in USD Change ({{interval}})",
@@ -278,7 +290,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/transaction-volume"]
   },
   {
     "human_readable_name": "Circulation for coins that have not moved in the past 1 year Change ({{interval}})",
@@ -300,7 +313,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/dormant-circulation"]
   },
 
   {
@@ -323,7 +337,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/circulation"]
   },
 
   {
@@ -346,7 +361,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/circulation"]
   },
 
   {
@@ -369,7 +385,8 @@
     "min_interval": "8h",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/bitmex-derivatives/perpetual-contract-funding-rate"]
   },
 
   {
@@ -392,7 +409,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
 
   {
@@ -415,7 +433,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
 
   {
@@ -438,7 +457,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
 
   {
@@ -461,7 +481,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
   {
     "human_readable_name": "MVRV for coins that moved in the past 180 days Change ({{interval}})",
@@ -483,7 +504,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
 
   {
@@ -506,7 +528,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
   {
     "human_readable_name": "MVRV Change ({{interval}})",
@@ -528,7 +551,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mvrv"]
   },
   {
     "human_readable_name": "Mean Dollar Invested Age in days for coins that moved Change ({{interval}})",
@@ -550,7 +574,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/mean-coin-age"]
   },
   {
     "human_readable_name": "Age Consumed Change ({{interval}})",
@@ -573,7 +598,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/age-consumed"]
   },
   {
     "human_readable_name": "Percent Of Total Supply On Exchanges Change ({{interval}})",
@@ -595,7 +621,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/supply-on-or-outside-exchanges"]
   },
   {
     "human_readable_name": "Circulation for coins that moved in the past 180 days in USD",
@@ -612,7 +639,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/circulation"]
   },
   {
     "human_readable_name": "Circulation for coins that moved in the past 180 days in USD Change ({{interval}})",
@@ -634,7 +662,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/circulation"]
   },
   {
     "human_readable_name": "Circulation for coins that have not moved in the past 180 days in USD",
@@ -651,7 +680,8 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/dormant-circulation"]
   },
   {
     "human_readable_name": "Circulation for coins that have not moved in the past 180 days in USD Change ({{interval}})",
@@ -673,7 +703,8 @@
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/dormant-circulation"]
   },
   {
     "human_readable_name": "Exchange Inflow in USD Change ({{interval}})",
@@ -695,7 +726,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Exchange Outflow in USD Change ({{interval}})",
@@ -717,7 +749,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/exchange-funds-flow"]
   },
   {
     "human_readable_name": "Social Volume Change ({{interval}})",
@@ -739,7 +772,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-volume"]
   },
   {
     "human_readable_name": "DEX Traders to DEXes Flow Change ({{interval}})",
@@ -1543,7 +1577,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
   {
     "human_readable_name": "Sentiment Balance Change ({{interval}})",
@@ -1587,7 +1622,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/price"]
   },
   {
     "human_readable_name": "Price in USD Change (1h)",
@@ -1604,7 +1640,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/price"]
   },
   {
     "human_readable_name": "Price in BTC Change ({{interval}})",
@@ -1626,7 +1663,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/price"]
   },
   {
     "human_readable_name": "Network Realized Profit or Loss in USD Change ({{interval}})",
@@ -1648,7 +1686,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/network-profit-loss"]
   },
   {
     "human_readable_name": "Number of Transactions Transferring More Than 100k USD Change ({{interval}})",
@@ -1670,7 +1709,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/whale-transaction-count"]
   },
   {
     "human_readable_name": "Number of Transactions Transferring More Than 1 million USD Change ({{interval}})",
@@ -1692,7 +1732,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/whale-transaction-count"]
   },
   {
     "human_readable_name": "1h Moving Average Of Social Dominance Change ({{interval}})",
@@ -1714,7 +1755,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
   {
     "human_readable_name": "24h Moving Average Of Social Dominance Change ({{interval}})",
@@ -1736,7 +1778,8 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
   {
     "human_readable_name": "Sentiment Volume Consumed Total Change ({{interval}})",

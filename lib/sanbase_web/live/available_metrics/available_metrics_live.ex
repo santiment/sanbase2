@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.AvailableMetricsLive do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AvailableMetricsComponents
+
   @impl true
   def mount(_params, _session, socket) do
     metrics_map = Sanbase.AvailableMetrics.get_metrics_map()
@@ -160,14 +162,11 @@ defmodule SanbaseWeb.AvailableMetricsLive do
             phx-debounce="200"
           />
         </div>
-
-        <.link
+        <.available_metrics_button
+          text="Download as CSV"
+          icon="hero-arrow-down-tray"
           href={~p"/export_available_metrics?#{%{filter: Jason.encode!(@filter)}}"}
-          class={button_style()}
-        >
-          <.icon name="hero-arrow-down-tray" class="text-gray-500" />
-          <span>Download as CSV</span>
-        </.link>
+        />
       </form>
     </div>
     """
@@ -194,23 +193,23 @@ defmodule SanbaseWeb.AvailableMetricsLive do
   defp docs_links(assigns) do
     ~H"""
     <div class="flex flex-row">
-      <a :for={doc <- assigns.docs} href={doc.link} target="_blank" class={button_style()}>
-        <.icon name="hero-clipboard-document-list" class="text-gray-500" /> Docs
-      </a>
+      <.available_metrics_button
+        :for={doc <- assigns.docs}
+        href={doc.link}
+        text="Docs"
+        icon="hero-clipboard-document-list"
+      />
     </div>
     """
   end
 
   defp metric_details_button(assigns) do
     ~H"""
-    <.link href={~p"/available_metrics/#{@metric}"} class={button_style()}>
-      <.icon name="hero-arrow-top-right-on-square" class="text-gray-500" />
-      <span>Details</span>
-    </.link>
+    <.available_metrics_button
+      text="Details"
+      href={~p"/available_metrics/#{@metric}"}
+      icon="hero-arrow-top-right-on-square"
+    />
     """
-  end
-
-  defp button_style() do
-    "text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center gap-x-2"
   end
 end

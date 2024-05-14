@@ -449,7 +449,7 @@ defmodule Sanbase.Comments.Notification do
   end
 
   defp deduce_entity_link(insight_id, :insight) do
-    SanbaseWeb.Endpoint.frontend_url() <> "/read/#{insight_id}"
+    SanbaseWeb.Endpoint.frontend_url() <> "/insights/read/#{insight_id}"
   end
 
   defp deduce_entity_link(_chart_configuration, :timeline_event) do

@@ -25,7 +25,7 @@ defmodule Sanbase.Twitter.MetricAdapter do
   @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
                       |> Enum.map(&elem(&1, 0))
 
-  @required_selectors Enum.into(@metrics, %{}, &{&1, [:slug]})
+  @required_selectors Enum.into(@metrics, %{}, &{&1, [[:slug]]})
 
   @default_complexity_weight 1
 

@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.MetricDetailsLive do
   use SanbaseWeb, :live_view
 
+  import SanbaseWeb.AvailableMetricsComponents
+
   @impl true
   def mount(%{"metric" => metric}, _session, socket) do
     rows = get_rows(metric)
@@ -17,8 +19,15 @@ defmodule SanbaseWeb.MetricDetailsLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center w-7/8">
-      <div class="text-gray-800 text-lg">
-        Showing details for <%= @metric %>
+      <h1 class="text-gray-800 text-2xl">
+        Showing details for <span class="text-blue-700"><%= @metric %></span>
+      </h1>
+      <div class="my-4">
+        <.available_metrics_button
+          text="Back to Available Metrics"
+          href={~p"/available_metrics"}
+          icon="hero-arrow-uturn-left"
+        />
       </div>
       <.table id="available_metrics" rows={@rows}>
         <:col :let={row} col_class="min-w-[200px]">
@@ -32,7 +41,7 @@ defmodule SanbaseWeb.MetricDetailsLive do
             <div
               id={Map.get(row, :popover_target)}
               role="tooltip"
-              class="absolute top-0 right-10 z-10 invisible inline-block px-8 py-6 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm opacity-0 popover"
+              class="absolute top-4 right-10 z-10 invisible inline-block px-8 py-6 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm opacity-0 popover sans"
             >
               <span><%= Map.get(row, :popover_target_text) %></span>
               <div class="popover-arrow" data-popper-arrow></div>
@@ -63,15 +72,15 @@ defmodule SanbaseWeb.MetricDetailsLive do
      )}
   end
 
-  defp formatted_value(%{key: "Available Slugs"} = assigns) do
-    last_slug = Enum.at(assigns.value, -1)
-    assigns = assign(assigns, :last_slug, last_slug)
+  defp formatted_value(%{key: "Available Assets"} = assigns) do
+    last_asset = Enum.at(assigns.value, -1)
+    assigns = assign(assigns, :last_asset, last_asset)
 
     ~H"""
     <div class="w-3/4">
-      <a :for={slug <- @value} href={SanbaseWeb.Endpoint.project_url(slug)}>
+      <a :for={asset <- @value} href={SanbaseWeb.Endpoint.project_url(asset)}>
         <!-- Keep the template and span glued, otherwise there will be a white space -->
-        <%= slug %><span :if={slug != @last_slug}>,</span>
+        <%= asset %><span :if={asset != @last_asset}>,</span>
       </a>
     </div>
     """
@@ -80,9 +89,12 @@ defmodule SanbaseWeb.MetricDetailsLive do
   defp formatted_value(%{key: "Docs"} = assigns) do
     ~H"""
     <div class="flex flex-row">
-      <a :for={doc <- assigns.value} href={doc.link} target="_blank">
-        Open Docs
-      </a>
+      <.available_metrics_button
+        :for={doc <- assigns.value}
+        href={doc.link}
+        text="Docs"
+        icon="hero-clipboard-document-list"
+      />
     </div>
     """
   end
@@ -95,12 +107,28 @@ defmodule SanbaseWeb.MetricDetailsLive do
     """
   end
 
+  defp stringify(ll) do
+    ll
+    |> List.wrap()
+    |> Enum.map(fn x -> x |> to_string() |> String.upcase() end)
+    |> Enum.join(", ")
+  end
+
+  defp stringify_required_selectors(l) when is_list(l) do
+    Enum.map(l, fn
+      ll when is_list(ll) ->
+        str = Enum.map(ll, fn x -> x |> to_string() |> String.upcase() end) |> Enum.join(" or ")
+        if length(ll) > 1, do: "(#{str})", else: str
+
+      x ->
+        x |> to_string() |> String.upcase()
+    end)
+    |> Enum.join(" and ")
+  end
+
   defp get_rows(metric) do
     {:ok, metadata} = Sanbase.Metric.metadata(metric)
-    {:ok, slugs} = Sanbase.AvailableMetrics.get_metric_available_slugs(metric)
-
-    transform_atom = fn atom when is_atom(atom) -> atom |> to_string() |> String.upcase() end
-    transform_atoms = fn atoms -> Enum.map(atoms, transform_atom) |> Enum.join(", ") end
+    {:ok, assets} = Sanbase.AvailableMetrics.get_metric_available_slugs(metric)
 
     rows = [
       %{
@@ -133,14 +161,38 @@ defmodule SanbaseWeb.MetricDetailsLive do
         popover_target: "popover-incomplete-data",
         popover_target_text: get_popover_text(%{key: "Has Incomplete Data"})
       },
-      %{key: "Default Aggregation", value: transform_atom.(metadata.default_aggregation)},
-      %{key: "Is Timebound", value: metadata.is_timebound},
-      %{key: "Available Aggregations", value: transform_atoms.(metadata.available_aggregations)},
-      %{key: "Available Selectors", value: transform_atoms.(metadata.available_selectors)},
-      %{key: "Required Selectors", value: transform_atoms.(metadata.required_selectors)},
-      %{key: "Complexity Weight", value: metadata.complexity_weight},
+      %{
+        key: "Default Aggregation",
+        value: stringify(metadata.default_aggregation),
+        popover_target: "popover-default-aggregation",
+        popover_target_text: get_popover_text(%{key: "Default Aggregation"})
+      },
+      %{
+        key: "Is Timebound",
+        value: metadata.is_timebound,
+        popover_target: "popover-timebound",
+        popover_target_text: get_popover_text(%{key: "Is Timebound"})
+      },
+      %{
+        key: "Available Aggregations",
+        value: stringify(metadata.available_aggregations),
+        popover_target: "popover-available-aggregations",
+        popover_target_text: get_popover_text(%{key: "Available Aggregations"})
+      },
+      %{
+        key: "Available Selectors",
+        value: stringify(metadata.available_selectors),
+        popover_target: "popover-available-selectors",
+        popover_target_text: get_popover_text(%{key: "Available Selectors"})
+      },
+      %{
+        key: "Required Selectors",
+        value: stringify_required_selectors(metadata.required_selectors),
+        popover_target: "popover-required-selectors",
+        popover_target_text: get_popover_text(%{key: "Required Selectors"})
+      },
       %{key: "Data Type", value: metadata.data_type},
-      %{key: "Available Slugs", value: slugs}
+      %{key: "Available Assets", value: assets}
     ]
 
     # If there are no required selectors, do not include this row
@@ -161,8 +213,8 @@ defmodule SanbaseWeb.MetricDetailsLive do
     Example:
 
       {
-        getMetric(metric: "price_usd"){
-          timeseriesData(slug: "ethereum" from: "utc_now-90d" to: "utc_now" interval: "1d"){
+        getMetric(<b>metric: "price_usd"</b>){
+          timeseriesData(asset: "ethereum" from: "utc_now-90d" to: "utc_now" interval: "1d"){
             datetime
             value
           }
@@ -179,7 +231,7 @@ defmodule SanbaseWeb.MetricDetailsLive do
     The database tables are accessed through Santiment Queries when the
     user interacts with the data via SQL.
 
-    How to use Santiment Queries, check <.link href="https://academy.santiment.net/santiment-queries" class="underline text-blue-600">this link</.link>
+    How to use Santiment Queries, check <.link href={"https://academy.santiment.net/santiment-queries"} class="underline text-blue-600">this link</.link>
     </pre>
     """
   end
@@ -188,6 +240,8 @@ defmodule SanbaseWeb.MetricDetailsLive do
     ~H"""
     <pre>
     The minimum interval at which the metric is updated.
+
+    For more details check <.link href="https://academy.santiment.net/metrics/details/frequency" class="underline text-blue-600">this link</.link>
     </pre>
     """
   end
@@ -204,6 +258,118 @@ defmodule SanbaseWeb.MetricDetailsLive do
     ~H"""
     <pre>
     A boolean that indicates whether the metric has incomplete data.
+    Only daily metrics (metrics with Frequency of 1d or bigger) can have incomplete data.
+
+    In some cases, if the day is not yet complete, the current value can be misleading.
+    For instance, fetching daily active addresses at 12pm UTC would
+    include only half a day's data, potentially making the metric value for that day appear too low.
+
+    By default the incomplete data is not returned by the API.
+    To obtain this last incomplete data point, provide the `includeIncompleteData` flag
+    Example:
+      {
+        getMetric(metric: "daily_active_addresses"){
+          timeseriesData(
+          slug: "bitcoin"
+          from: "utc_now-3d"
+          to: "utc_now"
+          <b>includeIncompleteData: true</b>){
+            datetime
+            value
+          }
+        }
+      }
+    </pre>
+    """
+  end
+
+  defp get_popover_text(%{key: "Is Timebound"} = assigns) do
+    ~H"""
+    <pre>
+    A boolean that indicates whether the metric is timebound.
+    </pre>
+    """
+  end
+
+  defp get_popover_text(%{key: "Available Aggregations"} = assigns) do
+    ~H"""
+    <pre>
+    The available aggregations for the metric.
+
+    The aggregation controls how multiple data points are combined into one.
+
+    For example, if the metric is `price_usd`, the aggregation is `LAST`, and the
+    interval is `1d`, then each data point will be represented by the last price in the
+    given day.
+    </pre>
+    """
+  end
+
+  defp get_popover_text(%{key: "Default Aggregation"} = assigns) do
+    ~H"""
+    <pre>
+    The default aggregation for the metric.
+
+    The default aggregation is hand picked so it makes most sense for the given metric.
+
+    For example, the default aggregation for `price_usd` is `LAST`, as other aggregations like
+    `SUM` do not make sense for that metric.
+
+    To override the default aggregation, provide the `aggregation` parameter.
+
+    Example:
+      {
+        getMetric(metric: "price_usd"){
+          timeseriesData(
+          slug: "bitcoin"
+          from: "utc_now-90d"
+          to: "utc_now"
+          <b>aggregation: MAX</b>){
+            datetime
+            value
+          }
+        }
+      }
+    </pre>
+    """
+  end
+
+  defp get_popover_text(%{key: "Available Selectors"} = assigns) do
+    ~H"""
+    <pre>
+    The available selectors for the metric.
+
+    The selectors control what entity the data is fetched for.
+    For example, if the metric is `price_usd`, the selector is `asset`, and the
+    value is `ethereum`, then the data will be fetched for.
+    </pre>
+    """
+  end
+
+  defp get_popover_text(%{key: "Required Selectors"} = assigns) do
+    ~H"""
+    <pre>
+    The required selectors for the metric.
+
+    This list includes the selectors that must be provided in order to get data.
+    Not providing the required selectors will lead to an error and no data will be returned.
+
+    To provide any selector other than `slug`, use the `selector` input parameter.
+
+    Example:
+
+    Example:
+      {
+        getMetric(metric: "active_withdrawals_per_exchange"){
+          timeseriesData(
+          <b>selector: { slug: "bitcoin" owner: "binance" }</b>
+          from: "utc_now-90d"
+          to: "utc_now"){
+            datetime
+            value
+          }
+        }
+      }
     </pre>
     """
   end

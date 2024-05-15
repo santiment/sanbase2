@@ -373,7 +373,7 @@ defmodule SanbaseWeb.GenericAdmin.MarketSegments do
 
   def resource() do
     %{
-      actions: [:new, :edit],
+      actions: [:new, :edit, :delete],
       preloads: [:projects],
       new_fields: [:name, :type],
       edit_fields: [:name, :type]

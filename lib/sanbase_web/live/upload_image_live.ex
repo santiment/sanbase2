@@ -7,7 +7,7 @@ defmodule SanbaseWeb.UploadImageLive do
       allow_upload(
         socket,
         :images,
-        accept: ~w(.png .jpg .jpeg),
+        accept: ~w(.png .jpg .jpeg .mp4),
         max_entries: 1,
         max_file_size: 10_000_000
       )
@@ -161,7 +161,7 @@ defmodule SanbaseWeb.UploadImageLive do
   end
 
   def gen_filename(name, entry) do
-    "image/" <> extension = entry.client_type
+    [_, extension] = String.split(entry.client_type, "/", parts: 2)
     client_name = String.trim_trailing(entry.client_name, Path.extname(entry.client_name))
     # Do not use Base64 as it contains '/', which can mess up the paths
     rand_part = :crypto.strong_rand_bytes(5) |> Base.encode32()

@@ -3,8 +3,8 @@ defmodule Sanbase.FileStore do
 
   @versions [:original]
   @acl :public_read
-  @extension_whitelist ~w(.jpg .jpeg .gif .png .pdf .csv)
-  @max_file_size 5 * 1024 * 1024
+  @extension_whitelist ~w(.jpg .jpeg .gif .png .pdf .csv .mp4)
+  @max_file_size 10 * 1024 * 1024
   @cache_max_age 2_592_000
   @doc ~s"""
     Whitelist file extensions. Now allowing only images.

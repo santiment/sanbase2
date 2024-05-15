@@ -495,7 +495,35 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "gini_index",
         "annual_inflation_rate",
         # Social metrics
-        "unique_social_volume_total_1d"
+        "unique_social_volume_total_1d",
+        "sentiment_balance_total_v2",
+        "sentiment_balance_telegram_v2",
+        "sentiment_balance_twitter_v2",
+        "sentiment_balance_reddit_v2",
+        "sentiment_balance_bitcointalk_v2",
+        "sentiment_balance_youtube_videos_v2",
+        "sentiment_balance_4chan_v2",
+        "sentiment_volume_consumed_total_v2",
+        "sentiment_volume_consumed_total_1h_v2",
+        "sentiment_volume_consumed_total_1d_v2",
+        "sentiment_volume_consumed_telegram_v2",
+        "sentiment_volume_consumed_telegram_1h_v2",
+        "sentiment_volume_consumed_telegram_1d_v2",
+        "sentiment_volume_consumed_twitter_v2",
+        "sentiment_volume_consumed_twitter_1h_v2",
+        "sentiment_volume_consumed_twitter_1h_v2",
+        "sentiment_volume_consumed_reddit_v2",
+        "sentiment_volume_consumed_reddit_1h_v2",
+        "sentiment_volume_consumed_reddit_1d_v2",
+        "sentiment_volume_consumed_bitcointalk_v2",
+        "sentiment_volume_consumed_bitcointalk_1h_v2",
+        "sentiment_volume_consumed_bitcointalk_1d_v2",
+        "sentiment_volume_consumed_youtube_videos_v2",
+        "sentiment_volume_consumed_youtube_videos_1h_v2",
+        "sentiment_volume_consumed_youtube_videos_1d_v2",
+        "sentiment_volume_consumed_4chan_v2",
+        "sentiment_volume_consumed_4chan_1h_v2",
+        "sentiment_volume_consumed_4chan_1d_v2"
       ]
       |> Enum.sort()
 

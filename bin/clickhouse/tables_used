@@ -11,7 +11,7 @@ daily_metrics_v2
 distribution_deltas_5min
 erc20_balances - still present, not used
 eth_balances - still present, not used
-eth_top_holders_daily_union
+eth_top_holders_daily
 eth2_staking_transfers_v2
 github_v2
 intraday_label_based_metrics

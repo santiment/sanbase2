@@ -19,7 +19,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def supported_infrastructures(), do: @supported_infrastructures
 
   @infrastructure_to_table %{
-    "ETH" => "eth_top_holders_daily_union",
+    "ETH" => "eth_top_holders_daily",
     "BNB" => "bnb_top_holders",
     "BEP2" => "bnb_top_holders"
   }
@@ -177,6 +177,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          true <- chain_supported?(infr, slug, metric) do
       table = Map.get(@infrastructure_to_table, infr)
+      table = if slug != "ethereum" and infr == "ETH", do: "erc20_top_holders_daily", else: table
       query_struct = first_datetime_query(table, contract)
 
       ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
@@ -191,6 +192,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          true <- chain_supported?(infr, slug, metric) do
       table = Map.get(@infrastructure_to_table, infr)
+      table = if slug != "ethereum" and infr == "ETH", do: "erc20_top_holders_daily", else: table
       query_struct = last_datetime_computed_at_query(table, contract)
 
       ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->

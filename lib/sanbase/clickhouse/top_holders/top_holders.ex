@@ -11,7 +11,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
   import Sanbase.Utils.Transform, only: [opts_to_limit_offset: 1]
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
 
-  @table "eth_top_holders_daily_union"
+  @table "eth_top_holders_daily"
 
   @type percent_of_total_supply :: %{
           datetime: DateTime.t(),

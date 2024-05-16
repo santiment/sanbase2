@@ -162,16 +162,16 @@ defmodule SanbaseWeb.MetricDetailsLive do
         popover_target_text: get_popover_text(%{key: "Has Incomplete Data"})
       },
       %{
-        key: "Default Aggregation",
-        value: stringify(metadata.default_aggregation),
-        popover_target: "popover-default-aggregation",
-        popover_target_text: get_popover_text(%{key: "Default Aggregation"})
-      },
-      %{
         key: "Is Timebound",
         value: metadata.is_timebound,
         popover_target: "popover-timebound",
         popover_target_text: get_popover_text(%{key: "Is Timebound"})
+      },
+      %{
+        key: "Default Aggregation",
+        value: stringify(metadata.default_aggregation),
+        popover_target: "popover-default-aggregation",
+        popover_target_text: get_popover_text(%{key: "Default Aggregation"})
       },
       %{
         key: "Available Aggregations",
@@ -312,7 +312,41 @@ defmodule SanbaseWeb.MetricDetailsLive do
     interval is `1d`, then each data point will be represented by the last price in the
     given day.
 
-    Check the information for `Default Aggregation` for an example.
+
+    All aggregations except `OHLC` are queried the same way:
+
+    Example:
+      {
+        getMetric(metric: "price_usd"){
+          timeseriesData(
+          slug: "bitcoin"
+          from: "utc_now-90d"
+          to: "utc_now"
+          <b>aggregation: MAX</b>){
+            datetime
+            value
+          }
+        }
+      }
+
+    When `OHLC` aggregation is used, the result is fetched in a different way.
+    Instead of `value` use `valueOhlc`:
+
+    Example:
+      {
+        getMetric(metric: "price_usd"){
+          timeseriesData(
+          slug: "bitcoin"
+          from: "utc_now-90d"
+          to: "utc_now"
+          <b>aggregation: OHLC</b>){
+            datetime
+            <b>valueOhlc {
+              open high close low
+            }</b>
+          }
+        }
+      }
     </pre>
     """
   end

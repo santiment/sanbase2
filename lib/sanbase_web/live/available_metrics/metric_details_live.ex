@@ -355,22 +355,7 @@ defmodule SanbaseWeb.MetricDetailsLive do
     For example, if the metric is `price_usd`, the selector is `asset`, and the
     value is `ethereum`, then the data will be fetched for.
 
-    Check the information for `Required Selector` for an example.
-    </pre>
-    """
-  end
-
-  defp get_popover_text(%{key: "Required Selectors"} = assigns) do
-    ~H"""
-    <pre>
-    The required selectors for the metric.
-
-    This list includes the selectors that must be provided in order to get data.
-    Not providing the required selectors will lead to an error and no data will be returned.
-
     To provide any selector other than `slug`, use the `selector` input parameter.
-
-    Example:
 
     Example:
       {
@@ -384,6 +369,19 @@ defmodule SanbaseWeb.MetricDetailsLive do
           }
         }
       }
+    </pre>
+    """
+  end
+
+  defp get_popover_text(%{key: "Required Selectors"} = assigns) do
+    ~H"""
+    <pre>
+    The required selectors for the metric.
+
+    This list includes the selectors that must be provided in order to get data.
+    Not providing the required selectors will lead to an error and no data will be returned.
+
+    Check the information for `Available Selectors` for an example.
     </pre>
     """
   end

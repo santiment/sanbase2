@@ -115,9 +115,7 @@ defmodule Sanbase.AvailableMetrics do
     |> Enum.filter(&Enum.member?(&1.available_assets, str))
   end
 
-  defp maybe_apply_filter(metrics, :only_asset_metrics, %{
-         "only_asset_metrics" => "on"
-       }) do
+  defp maybe_apply_filter(metrics, :only_asset_metrics, %{"only_asset_metrics" => "on"}) do
     metrics
     |> Enum.filter(&(&1.available_assets != [] and :slug in &1.available_selectors))
   end

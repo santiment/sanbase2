@@ -117,7 +117,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
       />
       <label
         for={@input_id}
-        class="ms-2 text-sm font-medium text-gray-900 border-b border-dotted"
+        class="ms-2 text-sm font-medium text-gray-900 border-b border-dotted hover:cursor-pointer"
         data-popover-target={@popover_target}
         data-popover-style="light"
       >

@@ -7,7 +7,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
   def mount(_params, _session, socket) do
     metrics_map = Sanbase.AvailableMetrics.get_metrics_map()
 
-    default_filter = %{"only_with_non_empty_available_assets" => "on", "only_with_docs" => "on"}
+    default_filter = %{"only_asset_metrics" => "on", "only_with_docs" => "on"}
 
     visible_metrics =
       metrics_map
@@ -60,10 +60,13 @@ defmodule SanbaseWeb.AvailableMetricsLive do
         <:col :let={row} label="API Name">
           <%= row.metric %>
         </:col>
-        <:col :let={row} label="Internal Name">
+        <:col :let={row} :if={@filter["show_internal_name"] == "on"} label="Internal Name">
           <%= row.internal_name %>
         </:col>
         <:col :let={row} label="Frequency"><%= row.frequency %></:col>
+        <:col :let={row} label="Selectors">
+          <.available_selectors selectors={row.available_selectors} />
+        </:col>
         <:col :let={row} label="Available Assets" col_class="max-w-[200px]">
           <.available_assets assets={row.available_assets} />
         </:col>
@@ -93,6 +96,45 @@ defmodule SanbaseWeb.AvailableMetricsLive do
      )}
   end
 
+  attr :popover_text, :string, required: true
+  attr :popover_target, :string, required: true
+  attr :input_id, :string, required: true
+  attr :input_name, :string, required: true
+  attr :input_checked, :boolean, required: true
+  attr :input_label, :string, required: true
+
+  def checkbox_with_popover(assigns) do
+    ~H"""
+    <div class="relative flex items-center">
+      <input
+        id={@input_id}
+        type="checkbox"
+        name={@input_name}
+        checked={@input_checked}
+        class="w-4 h-4 border-gray-300 rounded hover:cursor-pointer"
+        data-popover-target={@popover_target}
+        data-popover-style="light"
+      />
+      <label
+        for={@input_id}
+        class="ms-2 text-sm font-medium text-gray-900 border-b border-dotted hover:cursor-pointer"
+        data-popover-target={@popover_target}
+        data-popover-style="light"
+      >
+        <%= @input_label %>
+      </label>
+      <div
+        id={@popover_target}
+        role="tooltip"
+        class="absolute top-4 right-10 z-10 w-80 text-justify invisible inline-block px-8 py-6 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm opacity-0 popover sans"
+      >
+        <span><%= @popover_text %></span>
+        <div class="popover-arrow" data-popper-arrow></div>
+      </div>
+    </div>
+    """
+  end
+
   defp filters(assigns) do
     ~H"""
     <div>
@@ -100,44 +142,31 @@ defmodule SanbaseWeb.AvailableMetricsLive do
         phx-change="apply_filters"
         class="flex flex-col flex-wrap space-y-2 items-start md:flex-row md:items-center md:gap-x-8"
       >
-        <div class="flex items-center">
-          <input
-            id="with-assets-checkbox"
-            type="checkbox"
-            name="only_with_non_empty_available_assets"
-            checked={@filter["only_with_non_empty_available_assets"] == "on"}
-            class="w-4 h-4 border-gray-300 rounded"
-          />
-          <label for="with-assets-checkbox" class="ms-2 text-sm font-medium text-gray-900">
-            Only with non-empty available metrics
-          </label>
-        </div>
+        <.checkbox_with_popover
+          popover_text="Show the metrics that are available for assets. Exlude metrics that are computed only for other selectors like ecosystem, contracts, etc."
+          popover_target="popover-with-assets"
+          input_id="with-assets-checkbox"
+          input_name="only_asset_metrics"
+          input_checked={@filter["only_asset_metrics"] == "on"}
+          input_label="Filter asset metrics"
+        />
 
-        <div class="flex items-center">
-          <input
-            id="with-docs-checkbox"
-            type="checkbox"
-            name="only_with_docs"
-            checked={@filter["only_with_docs"] == "on"}
-            class="w-4 h-4 border-gray-300 rounded"
-          />
-          <label for="with-docs-checkbox" class="ms-2 text-sm font-medium text-gray-900">
-            Only with docs
-          </label>
-        </div>
-
-        <div class="flex items-center">
-          <input
-            id="with-intraday-checkbox"
-            type="checkbox"
-            name="only_intraday_metrics"
-            checked={@filter["only_intraday_metrics"] == "on"}
-            class="w-4 h-4 border-gray-300 rounded"
-          />
-          <label for="with-intraday-checkbox" class="ms-2 text-sm font-medium text-gray-900">
-            Only with intraday frequency
-          </label>
-        </div>
+        <.checkbox_with_popover
+          popover_text="Show only the metrics that have documentation"
+          popover_target="popover-with-docs"
+          input_id="with-docs-checkbox"
+          input_name="only_with_docs"
+          input_checked={@filter["only_with_docs"] == "on"}
+          input_label="Only with docs"
+        />
+        <.checkbox_with_popover
+          popover_text="The internal name is the name of the metric used in the databse tables. This is of interest only for Santiment Queries"
+          popover_target="popover-show-internal-name"
+          input_id="show-internal-name"
+          input_name="show_internal_name"
+          input_checked={@filter["show_internal_name"] == "on"}
+          input_label="Show internal name"
+        />
 
         <div>
           <input
@@ -210,6 +239,17 @@ defmodule SanbaseWeb.AvailableMetricsLive do
       href={~p"/available_metrics/#{@metric}"}
       icon="hero-arrow-top-right-on-square"
     />
+    """
+  end
+
+  defp available_selectors(assigns) do
+    ~H"""
+    <pre>
+    <%= @selectors
+    |> List.wrap()
+    |> Enum.map(fn x -> x |> to_string() |> String.upcase() end)
+    |> Enum.join("\n") %>
+    </pre>
     """
   end
 end

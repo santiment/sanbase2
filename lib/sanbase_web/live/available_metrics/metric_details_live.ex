@@ -43,7 +43,7 @@ defmodule SanbaseWeb.MetricDetailsLive do
               role="tooltip"
               class="absolute top-4 right-10 z-10 invisible inline-block px-8 py-6 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm opacity-0 popover sans"
             >
-              <span><%= Map.get(row, :popover_target_text) %></span>
+              <span class="[&>pre]:font-sans"><%= Map.get(row, :popover_target_text) %></span>
               <div class="popover-arrow" data-popper-arrow></div>
             </div>
           </div>
@@ -191,8 +191,18 @@ defmodule SanbaseWeb.MetricDetailsLive do
         popover_target: "popover-required-selectors",
         popover_target_text: get_popover_text(%{key: "Required Selectors"})
       },
-      %{key: "Data Type", value: metadata.data_type},
-      %{key: "Available Assets", value: assets}
+      %{
+        key: "Data Type",
+        value: metadata.data_type,
+        popover_target: "popover-data-type",
+        popover_target_text: get_popover_text(%{key: "Data Type"})
+      },
+      %{
+        key: "Available Assets",
+        value: assets,
+        popover_target: "popover-available-assets",
+        popover_target_text: get_popover_text(%{key: "Available Assets"})
+      }
     ]
 
     # If there are no required selectors, do not include this row
@@ -270,13 +280,13 @@ defmodule SanbaseWeb.MetricDetailsLive do
       {
         getMetric(metric: "daily_active_addresses"){
           timeseriesData(
-          slug: "bitcoin"
-          from: "utc_now-3d"
-          to: "utc_now"
-          <b>includeIncompleteData: true</b>){
-            datetime
-            value
-          }
+            slug: "bitcoin"
+            from: "utc_now-3d"
+            to: "utc_now"
+            <b>includeIncompleteData: true</b>){
+              datetime
+              value
+            }
         }
       }
     </pre>
@@ -301,6 +311,8 @@ defmodule SanbaseWeb.MetricDetailsLive do
     For example, if the metric is `price_usd`, the aggregation is `LAST`, and the
     interval is `1d`, then each data point will be represented by the last price in the
     given day.
+
+    Check the information for `Default Aggregation` for an example.
     </pre>
     """
   end
@@ -342,6 +354,8 @@ defmodule SanbaseWeb.MetricDetailsLive do
     The selectors control what entity the data is fetched for.
     For example, if the metric is `price_usd`, the selector is `asset`, and the
     value is `ethereum`, then the data will be fetched for.
+
+    Check the information for `Required Selector` for an example.
     </pre>
     """
   end
@@ -368,6 +382,57 @@ defmodule SanbaseWeb.MetricDetailsLive do
             datetime
             value
           }
+        }
+      }
+    </pre>
+    """
+  end
+
+  defp get_popover_text(%{key: "Data Type"} = assigns) do
+    ~H"""
+    <pre>
+    The data type of the metric.
+    The data type is used to determine how the data is stored and fetched.
+
+    All metrics with `timeseries` data type are fetched in a generic way using `timeseriesData` field.
+
+    Example:
+      {
+        getMetric(metric: "price_usd"){
+          <b>timeseriesData</b>(
+            slug: "bitcoin"
+            from: "utc_now-90d"
+            to: "utc_now"){
+              datetime
+              value
+            }
+        }
+      }
+
+    The metrics with `histogram` data type are fetched in different ways as their result format
+    could differ. Check the documentation of each such metric to see an example.
+    </pre>
+    """
+  end
+
+  defp get_popover_text(%{key: "Available Assets"} = assigns) do
+    ~H"""
+    <pre>
+    The assets for which the metric is available.
+    The metric can be fetched for any of the listed assets.
+
+    Each asset is uniquely identified by its `slug`:
+
+    Example:
+      {
+        getMetric(metric: "daily_active_addresses"){
+          timeseriesData(
+            <b>slug: "bitcoin"</b>
+            from: "utc_now-90d"
+            to: "utc_now"){
+              datetime
+              value
+            }
         }
       }
     </pre>

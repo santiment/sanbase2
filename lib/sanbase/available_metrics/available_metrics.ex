@@ -86,7 +86,7 @@ defmodule Sanbase.AvailableMetrics do
     |> maybe_apply_filter(:only_intraday_metrics, filters)
     |> maybe_apply_filter(:match_metric_name, filters)
     |> maybe_apply_filter(:metric_supports_asset, filters)
-    |> maybe_apply_filter(:only_with_non_empty_available_assets, filters)
+    |> maybe_apply_filter(:only_asset_metrics, filters)
   end
 
   defp maybe_apply_filter(metrics, :only_with_docs, %{"only_with_docs" => "on"}) do
@@ -115,11 +115,9 @@ defmodule Sanbase.AvailableMetrics do
     |> Enum.filter(&Enum.member?(&1.available_assets, str))
   end
 
-  defp maybe_apply_filter(metrics, :only_with_non_empty_available_assets, %{
-         "only_with_non_empty_available_assets" => "on"
-       }) do
+  defp maybe_apply_filter(metrics, :only_asset_metrics, %{"only_asset_metrics" => "on"}) do
     metrics
-    |> Enum.filter(&(&1.available_assets != []))
+    |> Enum.filter(&(&1.available_assets != [] and :slug in &1.available_selectors))
   end
 
   defp maybe_apply_filter(metrics, _, _), do: metrics

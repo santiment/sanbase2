@@ -88,7 +88,7 @@ defmodule Sanbase.Clickhouse.Fees do
             ANY LEFT JOIN
             (
                 SELECT transactionHash, contract, assetRefId
-                FROM erc20_transfers_union
+                FROM erc20_transfers
                 WHERE dt >= toDateTime({{from}}) and dt < toDateTime({{to}})
             ) USING (transactionHash)
             GROUP BY assetRefId, contract

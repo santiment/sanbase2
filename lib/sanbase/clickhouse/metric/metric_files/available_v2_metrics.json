@@ -1384,7 +1384,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/supply-in-profit"]
+    "docs_links": ["https://academy.santiment.net/metrics/total-supply"]
   },
   {
     "human_readable_name": "Percent of Total Supply in profit",
@@ -1404,7 +1404,7 @@
     "table": "daily_metrics_v2",
     "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_links": ["https://academy.santiment.net/metrics/supply-in-profit"]
+    "docs_links": ["https://academy.santiment.net/metrics/total-supply"]
   },
   {
     "human_readable_name": "Active Deposits",

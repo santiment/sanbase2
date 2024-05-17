@@ -9,6 +9,8 @@ defmodule Sanbase.SocialData.SocialVolume do
   alias Sanbase.Project
   alias Sanbase.Clickhouse.NftTrade
 
+  @lucene_exclude_words ["***", "NOT", "OR", "AND"]
+
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000
@@ -37,7 +39,7 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   def social_volume(%{words: words} = selector, from, to, interval, source, opts)
       when is_list(words) do
-    selector = %{selector | words: Enum.reject(words, &(&1 == "***"))}
+    selector = %{selector | words: Enum.reject(words, &(&1 in @lucene_exclude_words))}
 
     social_volume_list_request(selector, from, to, interval, source, opts)
     |> handle_words_social_volume_response(selector)

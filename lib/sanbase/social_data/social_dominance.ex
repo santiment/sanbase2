@@ -13,6 +13,7 @@ defmodule Sanbase.SocialData.SocialDominance do
   @recv_timeout 15_000
   @hours_back_ensure_has_data 3
   @trending_words_size 10
+  @lucene_exclude_words ["***", "NOT", "OR", "AND"]
 
   def social_dominance(selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
@@ -63,7 +64,7 @@ defmodule Sanbase.SocialData.SocialDominance do
   end
 
   def words_social_dominance(word_or_words) do
-    words = List.wrap(word_or_words) |> Enum.reject(&(&1 == "***"))
+    words = List.wrap(word_or_words) |> Enum.reject(&(&1 in @lucene_exclude_words))
     %{from: from, to: to, interval: interval, source: source} = social_dominance_args()
 
     with {:ok, words_volume} <-

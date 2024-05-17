@@ -176,8 +176,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def first_datetime(metric, %{slug: slug}) do
     with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          true <- chain_supported?(infr, slug, metric) do
-      table = Map.get(@infrastructure_to_table, infr)
-      table = if slug != "ethereum" and infr == "ETH", do: "erc20_top_holders_daily", else: table
+      table = to_table(contract, infr)
       query_struct = first_datetime_query(table, contract)
 
       ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
@@ -191,8 +190,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def last_datetime_computed_at(metric, %{slug: slug}) do
     with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          true <- chain_supported?(infr, slug, metric) do
-      table = Map.get(@infrastructure_to_table, infr)
-      table = if slug != "ethereum" and infr == "ETH", do: "erc20_top_holders_daily", else: table
+      table = to_table(contract, infr)
+      query_struct = first_datetime_query(table, contract)
       query_struct = last_datetime_computed_at_query(table, contract)
 
       ClickhouseRepo.query_transform(query_struct, fn [timestamp] ->
@@ -259,7 +258,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     params = %{
       contract: contract,
       blockchain: Map.get(@infrastructure_to_blockchain, infr),
-      table: Map.get(@infrastructure_to_table, infr),
+      table: to_table(contract, infr),
       count: Map.get(selector, :holders_count, @default_holders_count),
       from: from,
       to: to,
@@ -270,5 +269,15 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     }
 
     {:ok, params}
+  end
+
+  defp to_table(contract, infrastructure) do
+    table = Map.get(@infrastructure_to_table, infrastructure)
+
+    cond do
+      contract == "ETH" and infrastructure == "ETH" -> table
+      contract != "ETH" and infrastructure == "ETH" -> "erc20_top_holders_daily"
+      true -> table
+    end
   end
 end

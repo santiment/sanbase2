@@ -57,7 +57,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
         </div>
       </div>
       <.table id="available_metrics" rows={@ordered_visible_metrics}>
-        <:col :let={row} label="API Name">
+        <:col :let={row} label="Name">
           <%= row.metric %>
         </:col>
         <:col :let={row} :if={@filter["show_internal_name"] == "on"} label="Internal Name">
@@ -66,6 +66,9 @@ defmodule SanbaseWeb.AvailableMetricsLive do
         <:col :let={row} label="Frequency"><%= row.frequency %></:col>
         <:col :let={row} label="Selectors">
           <.available_selectors selectors={row.available_selectors} />
+        </:col>
+        <:col :let={row} label="Default Aggregation">
+          <%= row.default_aggregation |> to_string() |> String.upcase() %>
         </:col>
         <:col :let={row} label="Available Assets" col_class="max-w-[200px]">
           <.available_assets assets={row.available_assets} />

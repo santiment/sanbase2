@@ -76,5 +76,13 @@ if config_env() == :prod do
     root_source_code_path: File.cwd!(),
     tags: %{
       env: "production"
-    }
+    },
+    integrations: [
+      oban: [
+        # Capture errors:
+        capture_errors: true,
+        # Monitor cron jobs:
+        cron: [enabled: true]
+      ]
+    ]
 end

@@ -1,0 +1,52 @@
+# Untitled notebook
+
+## Section
+
+```elixir
+import Ecto.Query
+
+# Maybe drop existing?
+# from(m in Sanbase.ProjectEcosystemMapping) |> Sanbase.Repo.delete_all()
+# from(e in Ecosystem) |> Sanbase.Repo.delete_all()w
+```
+
+```elixir
+alias Sanbase.Project
+alias Sanbase.Repo
+alias Sanbase.Ecosystem
+
+import Ecto.Query
+
+csv_file = "put_csv_file"
+data = File.read!(csv_file) |> NimbleCSV.RFC4180.parse_string()
+
+slug_ecosystems =
+  data
+  |> Enum.map(fn row -> [Enum.at(row, 0), Enum.at(row, 10)] end)
+  |> Enum.take(500)
+  |> Enum.map(fn [slug, ecosystems_str] ->
+    ecosystems = String.split(ecosystems_str, ",", trim: true) |> Enum.map(&String.trim/1)
+    [slug, ecosystems]
+  end)
+
+slug_to_id = from(p in Project, select: {p.slug, p.id}) |> Repo.all() |> Map.new()
+
+ecosystems =
+  Enum.map(slug_ecosystems, &Enum.at(&1, 1))
+  |> List.flatten()
+  |> MapSet.new()
+
+for e <- ecosystems do
+  Ecosystem.create_ecosystem(e)
+end
+
+ecosystem_to_id =
+  from(p in Ecosystem, select: {p.ecosystem, p.id}) |> Repo.all() |> Map.new()
+
+for [slug, ecosystems] <- slug_ecosystems, e <- ecosystems do
+  project_id = Map.get(slug_to_id, slug)
+  ecosystem_id = Map.get(ecosystem_to_id, e)
+
+  create(project_id, ecosystem_id)
+end
+```

@@ -4098,6 +4098,86 @@
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
   },
   {
+    "human_readable_name": "Daily Compound Revenue",
+    "name": "compound_revenue",
+    "metric": "compound_revenue",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
+  },
+  {
+    "human_readable_name": "Daily Compound Revenue in USD",
+    "name": "compound_revenue_usd",
+    "metric": "compound_revenue_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
+  },
+  {
+    "human_readable_name": "Daily Compound Total Revenue",
+    "name": "compound_total_revenue_usd",
+    "metric": "compound_total_revenue_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
+  },
+  {
+    "human_readable_name": "Daily Compound Total Cumulative Revenue",
+    "name": "compound_total_cumulative_revenue_usd",
+    "metric": "compound_total_cumulative_revenue_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
+  },
+  {
     "human_readable_name": "Compound v3 deposits",
     "name": "compound_v3_action_deposits",
     "metric": "compoundv3_action_deposits",

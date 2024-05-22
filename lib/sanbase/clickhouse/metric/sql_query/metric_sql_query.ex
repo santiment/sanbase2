@@ -18,6 +18,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       aggregation: 3,
       generate_comparison_string: 3,
       asset_id_filter: 2,
+      metric_id_filter: 2,
       additional_filters: 3,
       dt_to_unix: 2
     ]
@@ -37,7 +38,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     field(:computed_at, :utc_datetime)
   end
 
-  def timeseries_data_query(metric, selector, from, to, interval, aggregation, filters) do
+  def timeseries_data_query(metric, selector, from, to, interval, aggregation, filters, opts) do
     params = %{
       interval: maybe_str_to_sec(interval),
       metric: Map.get(@name_to_metric_map, metric),
@@ -49,6 +50,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     {additional_filters, params} =
       maybe_get_additional_filters(metric, filters, params, trailing_and: true)
 
+    {fixed_parameters_str, params} =
+      maybe_get_fixed_parameters(metric, selector, params, opts ++ [trailing_and: true])
+
     sql = """
     SELECT
       #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
@@ -59,11 +63,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         argMax(value, computed_at) AS value
       FROM #{Map.get(@table_map, metric)}
       PREWHERE
+        #{fixed_parameters_str}
         #{additional_filters}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
         #{asset_id_filter(selector, argument_name: "selector", allow_missing_slug: true)} AND
-        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 )
+        #{metric_id_filter(metric, argument_name: "metric")}
         GROUP BY asset_id, dt
     )
     WHERE isNotNull(value) AND NOT isNaN(value)
@@ -72,6 +77,46 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     """
 
     Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  defp maybe_get_fixed_parameters(metric, selector, params, opts) do
+    case opts[:fixed_parameters] do
+      %{"labels" => %{"group" => group, "label_key" => label_key} = map} ->
+        asset_name_filter =
+          if "asset_name" in Map.get(map, "__parametrized__", []) do
+            if not is_binary(selector[:slug]),
+              do: raise(ArgumentError, "The selector slug must be a binary")
+
+            "asset_name = {{selector}} AND"
+          else
+            ""
+          end
+
+        sql = """
+        label_id = (
+          SELECT label_id
+          FROM label_metadata
+          WHERE
+            fqn = (
+              SELECT fqn
+              FROM test_anatolii_labeled_balances_filtered_2
+              WHERE
+                #{asset_name_filter}
+                group = {{group}} AND
+                label_key = {{label_key}} AND
+                #{metric_id_filter(metric, argument_name: "metric")}
+            )
+        )
+        """
+
+        params = Map.merge(params, %{"group" => group, "label_key" => label_key})
+
+        sql = if opts[:trailing_and], do: sql <> " AND", else: sql
+        {sql, params}
+
+      _ ->
+        {"", params}
+    end
   end
 
   def timeseries_data_per_slug_query(
@@ -110,7 +155,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
         isNotNull(value) AND NOT isNaN(value) AND
         #{asset_id_filter(%{slug: slug_or_slugs}, argument_name: "selector")} AND
-        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 )
+        #{metric_id_filter(metric, argument_name: "metric")}
       GROUP BY asset_id, dt
     )
     GROUP BY t, asset_id
@@ -166,7 +211,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
           PREWHERE
             #{additional_filters}
             #{asset_id_filter(%{slug: slugs}, argument_name: "slugs")} AND
-            metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 ) AND
+          #{metric_id_filter(metric, argument_name: "metric")} AND
             isNotNull(value) AND NOT isNaN(value) AND
             #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
             #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")}
@@ -244,7 +289,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         FROM #{Map.get(@table_map, metric)}
         PREWHERE
           #{additional_filters}
-          metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 ) AND
+          #{metric_id_filter(metric, argument_name: "metric")} AND
           isNotNull(value) AND NOT isNaN(value) AND
           #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
           #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")}
@@ -253,6 +298,57 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       GROUP BY asset_id
     )
     """
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  def available_label_fqns_query(metric, %{"labels" => labels}) do
+    columns_map = Map.take(labels, ["label_key", "parent_label_key", "group"])
+
+    where_clause =
+      Enum.map(columns_map, fn {key, _} -> "#{key} = {{#{key}}}" end)
+      |> Enum.join(" AND ")
+
+    sql = """
+    SELECT DISTINCT(fqn)
+    FROM test_anatolii_labeled_balances_filtered_2
+    WHERE
+      #{metric_id_filter(metric, argument_name: "metric")} AND
+      #{where_clause}
+    """
+
+    params =
+      %{metric: Map.get(@name_to_metric_map, metric)}
+      |> Map.merge(columns_map)
+
+    Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  def available_label_fqns_query(metric, slug, %{
+        "labels" => labels
+      }) do
+    columns_map = Map.take(labels, ["label_key", "parent_label_key", "group"])
+
+    where_clause =
+      Enum.map(columns_map, fn {key, _} -> "#{key} = {{#{key}}}" end)
+      |> Enum.join(" AND ")
+
+    sql = """
+    SELECT DISTINCT(fqn)
+    FROM test_anatolii_labeled_balances_filtered_2
+    WHERE
+      #{metric_id_filter(metric, argument_name: "metric")} AND
+      #{where_clause} AND
+      asset_name = {{slug}}
+      )
+    """
+
+    params =
+      %{
+        metric: Map.get(@name_to_metric_map, metric),
+        slug: slug
+      }
+      |> Map.merge(columns_map)
 
     Sanbase.Clickhouse.Query.new(sql, params)
   end
@@ -281,7 +377,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       SELECT DISTINCT(asset_id)
       FROM available_metrics
       PREWHERE
-        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 ) AND
+        #{metric_id_filter(metric, argument_name: "metric")} AND
         end_dt > now() - INTERVAL 14 DAY
     )
     """
@@ -296,7 +392,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     SELECT toUnixTimestamp(argMax(computed_at, dt))
     FROM #{Map.get(@table_map, metric)} FINAL
     PREWHERE
-      metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 ) AND
+      #{metric_id_filter(metric, argument_name: "metric")} AND
       #{asset_id_filter(selector, argument_name: "selector")}
     """
 
@@ -314,7 +410,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       toUnixTimestamp(start_dt)
     FROM available_metrics FINAL
     PREWHERE
-      metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 )
+      #{metric_id_filter(metric, argument_name: "metric")}
     """
 
     params = %{metric: Map.get(@name_to_metric_map, metric)}
@@ -329,7 +425,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     FROM available_metrics
     PREWHERE
       #{asset_id_filter(selector, argument_name: "selector")} AND
-      metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = {{metric}} LIMIT 1 )
+      #{metric_id_filter(metric, argument_name: "metric")}
     """
 
     params = %{

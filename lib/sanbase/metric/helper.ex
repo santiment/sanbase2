@@ -46,6 +46,7 @@ defmodule Sanbase.Metric.Helper do
   Module.register_attribute(__MODULE__, :required_selectors_map_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :deprecated_metrics_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :soft_deprecated_metrics_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :fixed_labels_parameters_metrics_acc, accumulate: true)
 
   for module <- @metric_modules do
     @required_selectors_map_acc module.required_selectors()
@@ -83,6 +84,9 @@ defmodule Sanbase.Metric.Helper do
 
     if function_exported?(module, :soft_deprecated_metrics_map, 0),
       do: @soft_deprecated_metrics_acc(module.soft_deprecated_metrics_map())
+
+    if function_exported?(module, :fixed_labels_parameters_metrics, 0),
+      do: @fixed_labels_parameters_metrics_acc(module.fixed_labels_parameters_metrics())
   end
 
   flat_unique = fn list -> list |> List.flatten() |> Enum.uniq() end
@@ -90,6 +94,8 @@ defmodule Sanbase.Metric.Helper do
   @incomplete_metrics @incomplete_metrics_acc |> then(flat_unique)
   @free_metrics @free_metrics_acc |> then(flat_unique)
   @restricted_metrics @restricted_metrics_acc |> then(flat_unique)
+  @fixed_labels_parameters_metrics @fixed_labels_parameters_metrics_acc |> then(flat_unique)
+
   @timeseries_metric_module_mapping @timeseries_metric_module_mapping_acc |> then(flat_unique)
   @table_metric_module_mapping @table_metric_module_mapping_acc |> then(flat_unique)
   @histogram_metric_module_mapping @histogram_metric_module_mapping_acc |> then(flat_unique)
@@ -115,6 +121,10 @@ defmodule Sanbase.Metric.Helper do
   @required_selectors_map @required_selectors_map_acc
                           |> then(reduce_merge)
 
+  # the JSON files can define `"access": "free"`
+  # or `"access": {"historical": "free", "realtime": "restricted"}`
+  # both are resolved to a map where the realtime and historical restrictions
+  # are explicitly stated
   resolve_restrictions = fn
     restrictions when is_map(restrictions) ->
       restrictions
@@ -168,6 +178,7 @@ defmodule Sanbase.Metric.Helper do
   def min_plan_map(), do: @min_plan_map |> transform()
   def restricted_metrics(), do: @restricted_metrics |> transform()
   def table_metrics(), do: @table_metrics |> transform()
+  def fixed_labels_parameters_metrics(), do: @fixed_labels_parameters_metrics |> transform()
   def table_metrics_mapset(), do: @table_metrics_mapset |> transform()
   def table_metric_module_mapping(), do: @table_metric_module_mapping |> transform()
   def table_metric_to_module_map(), do: @table_metric_to_module_map |> transform()

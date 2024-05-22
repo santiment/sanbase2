@@ -1,0 +1,156 @@
+[
+  {
+    "human_readable_name": "Combined Historical Balance of Funds",
+    "name": "combined_historical_balance_funds",
+    "metric": "combined_labeled_balance",
+    "fixed_parameters": {
+      "labels": {
+        "group": "funds",
+        "label_key": "fund",
+        "__parametrized__": ["asset_name"]
+      }
+    },
+    "version": "2020-05-27",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "required_selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1h",
+    "table": "labeled_intraday_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["TBD"]
+  },
+  {
+    "human_readable_name": "Historical Balance of Whales in USD",
+    "name": "historical_balance_whales_usd",
+    "metric": "combined_labeled_balance",
+    "fixed_parameters": {
+      "labels": {
+        "group": "whales",
+        "label_key": "whale_usd_balance",
+        "__parametrized__": ["asset_name"]
+      }
+    },
+    "version": "2020-05-27",
+    "access": "restricted",
+    "selectors": ["slug", "label_fqn", "label_fqns"],
+    "required_selectors": ["slug", "label_fqn|label_fqns"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1h",
+    "table": "labeled_intraday_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["TBD"]
+  },
+  {
+    "human_readable_name": "Combined Historical Balance of Centralized Exchanges",
+    "name": "combined_historical_balance_centralized_exchanges",
+    "metric": "combined_labeled_balance",
+    "fixed_parameters": {
+      "labels": {
+        "group": "exchanges",
+        "label_key": "centralized_exchange"
+      }
+    },
+    "version": "2020-05-27",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "required_selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1h",
+    "table": "labeled_intraday_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["TBD"]
+  },
+  {
+    "human_readable_name": "Combined Historical Balance of Centralized Exchanges",
+    "name": "historical_balance_centralized_exchange",
+    "metric": "combined_labeled_balance",
+    "fixed_parameters": {
+      "labels": {
+        "group": "exchanges",
+        "parent_label_key": "centralized_exchange",
+        "label_key": "owner"
+      }
+    },
+    "version": "2020-05-27",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "required_selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1h",
+    "table": "labeled_intraday_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["TBD"]
+  },
+  {
+    "human_readable_name": "Combined Historical Balance of Decentralized Exchanges",
+    "name": "combined_historical_balance_decentralized_exchanges",
+    "metric": "combined_labeled_balance",
+    "fixed_parameters": {
+      "labels": {
+        "group": "exchanges",
+        "label_key": "decentralized_exchange"
+      }
+    },
+    "version": "2020-05-27",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "required_selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1h",
+    "table": "labeled_intraday_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["TBD"]
+  },
+  {
+    "human_readable_name": "Historical Balance of Decentralized Exchanges",
+    "name": "historical_balance_decentralized_exchanges",
+    "metric": "combined_labeled_balance",
+    "fixed_parameters": {
+      "labels": {
+        "group": "exchanges",
+        "label_key": "owner",
+        "parent_label_key": "decentralized_exchange"
+      }
+    },
+    "version": "2020-05-27",
+    "access": "restricted",
+    "selectors": ["slug", "label_fqn"],
+    "required_selectors": ["slug", "label_fqn"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1h",
+    "table": "labeled_intraday_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["TBD"]
+  }
+]

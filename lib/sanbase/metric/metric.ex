@@ -506,6 +506,20 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @spec available_label_fqns(metric, opts) :: Type.available_label_fqns_result()
+
+  def available_label_fqns(metric, opts \\ [])
+
+  def available_label_fqns(metric, _opts) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      module when is_atom(module) ->
+        nil
+    end
+  end
+
   @doc ~s"""
   Get all available aggregations
   """

@@ -135,6 +135,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @external_resource path_to.("uniswap_metrics.json")
   @external_resource path_to.("labeled_holders_distribution_metrics.json")
   @external_resource path_to.("active_holders_metrics.json")
+  @external_resource path_to.("fixed_parameters_labelled_balance_metrics.json")
 
   # Deprecated metrics
   @external_resource path_to_deprecated.("deprecated_change_metrics.json")
@@ -146,15 +147,24 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                                    @external_resource,
                                    [],
                                    fn file, acc ->
-                                     (File.read!(file) |> Jason.decode!()) ++ acc
+                                     try do
+                                       (File.read!(file) |> Jason.decode!()) ++ acc
+                                     rescue
+                                       e in [Jason.DecodeError] ->
+                                         IO.warn("Jason decoding error in file #{file}")
+                                         reraise e, __STACKTRACE__
+                                     end
                                    end
                                  )
 
   def pre_alias(), do: @metrics_json_pre_alias_expand
-  # Allow the same metric to be defined more than once if it differs in the `data_type`
+  # Allow the same metric to be defined more than once if it differs in the `data_type`.
+  # Also allow the same metric to be used if different `fixed_parameters` are provided.
+  # In this case the metric is exposed with some of the parameters (like labels) already fixed,
+  # like: balance of funds, balance of whales, etc.
   Enum.group_by(
     @metrics_json_pre_alias_expand,
-    fn metric -> {metric["metric"], metric["data_type"]} end
+    fn metric -> {metric["metric"], metric["data_type"], metric["fixed_parameters"]} end
   )
   |> Map.values()
   |> Enum.filter(fn grouped_metrics -> Enum.count(grouped_metrics) > 1 end)
@@ -220,6 +230,18 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
                    "selectors",
                    transform_fn: &Enum.map(&1, fn s -> String.to_atom(s) end)
                  )
+
+  @fixed_labels_parameters_metrics_mapset @metrics_json
+                                          # The `labels` may change. Come up with a better naming convetion
+                                          |> Enum.filter(fn metric ->
+                                            metric["fixed_parameters"]["labels"]
+                                          end)
+                                          |> Enum.map(fn %{"name" => name} -> name end)
+                                          |> MapSet.new()
+
+  @fixed_parameters_map Helper.name_to_field_map(@metrics_json, "fixed_parameters",
+                          required?: false
+                        )
 
   # The `required_selectors` field contains a list of strings that represent the
   # required selectors for the metric. If one of a few selectors must be present,
@@ -307,6 +329,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     |> Enum.map(&elem(&1, 0))
   end
 
+  def fixed_labels_parameters_metrics_mapset(),
+    do: @fixed_labels_parameters_metrics_mapset |> transform()
+
+  def fixed_parameters_map(), do: @fixed_parameters_map |> transform()
+
   def metrics_with_data_type(type) do
     @metrics_data_type_map
     |> Enum.filter(fn {_metric, data_type} -> data_type == type end)
@@ -326,21 +353,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     if Keyword.get(opts, :remove_hard_deprecated, true),
       do: remove_hard_deprecated(metrics, opts),
       else: metrics
-  end
-
-  defp remove_hard_deprecated(metrics, opts) when is_list(metrics) do
-    now = DateTime.utc_now()
-
-    case Keyword.get(opts, :metric_name_in_map_value_list, false) do
-      false ->
-        Enum.reject(metrics, &is_hard_deprecated(&1, now))
-
-      true ->
-        Enum.map(metrics, fn {key, metric_names} ->
-          {key, Enum.reject(metric_names, &is_hard_deprecated(&1, now))}
-        end)
-        |> Map.reject(fn {_k, v} -> v == [] end)
-    end
   end
 
   defp remove_hard_deprecated(%MapSet{} = metrics, _opts) do

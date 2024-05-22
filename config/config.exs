@@ -272,7 +272,7 @@ config :sanbase, Sanbase.Affiliate.FirstPromoterApi,
 
 config :sanbase, Oban.Web,
   repo: Sanbase.Repo,
-  queues: [email_queue: 5],
+  queues: [email_queue: 5, refresh_queries: 1],
   name: :oban_web
 
 config :kaffy,

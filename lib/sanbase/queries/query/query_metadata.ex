@@ -43,6 +43,14 @@ defmodule Sanbase.Queries.QueryMetadata do
     }
   end
 
+  def from_refresh_job() do
+    %{
+      sanbase_user_id: 0,
+      product: "REFRESH",
+      query_ran_from_prod_marker: @is_prod
+    }
+  end
+
   def sanitize(map) do
     Map.new(map, fn {key, value} ->
       case is_binary(value) do

@@ -9,17 +9,18 @@ defmodule Sanbase.Queries.RefreshWorker do
   @one_day 24 * 60 * 60
 
   @impl Oban.Worker
-
-  def perform(%Oban.Job{args: %{"user_id" => user_id, "query_id" => query_id} = args, attempt: 1}) do
-    # Schedule a new job to refresh the query
-    next_refresh_in_seconds = args["next_refresh_in_seconds"] || @one_day
-    data = new(args, schedule_in: next_refresh_in_seconds)
-    Oban.insert!(@oban_conf_name, data)
+  def perform(%Oban.Job{args: %{"user_id" => user_id, "query_id" => query_id}} = job) do
+    # Schedule a new job to refresh the query on the first attempt
+    if job.attempt == 1, do: schedule_next_refresh(job)
 
     Refresh.refresh_query(query_id, user_id)
   end
 
-  def perform(%Oban.Job{args: %{"user_id" => user_id, "query_id" => query_id}}) do
-    Refresh.refresh_query(query_id, user_id)
+  # private
+
+  defp schedule_next_refresh(%Oban.Job{args: args}) do
+    next_refresh_in_seconds = args["next_refresh_in_seconds"] || @one_day
+    data = new(args, schedule_in: next_refresh_in_seconds)
+    Oban.insert!(@oban_conf_name, data)
   end
 end

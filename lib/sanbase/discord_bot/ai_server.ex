@@ -4,6 +4,31 @@ defmodule Sanbase.DiscordBot.AiServer do
   alias Sanbase.DiscordBot.AiContext
   alias Sanbase.DiscordBot.AiGenCode
 
+  def summarize_channel(channel) do
+    do_summarize(%{channel: channel})
+  end
+
+  def summarize_thread(thread) do
+    do_summarize(%{thread: thread})
+  end
+
+  def do_summarize(params) do
+    url = "#{ai_server_url()}/summarize"
+
+    do_request_ai_server(url, params)
+    |> case do
+      {:ok, result} ->
+        if result["error"] do
+          {:error, result["error"]}
+        else
+          {:ok, result["summary"]}
+        end
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   # current version of bot
   def answer(question, discord_metadata \\ %{}) do
     url = "#{ai_server_url()}/question"

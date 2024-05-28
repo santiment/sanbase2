@@ -12,23 +12,15 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   alias Sanbase.ClickhouseRepo
 
-  @supported_infrastructures ["ETH", "BNB", "BEP2"]
+  @supported_infrastructures ["ETH"]
 
   @default_complexity_weight 0.3
 
   def supported_infrastructures(), do: @supported_infrastructures
 
-  @infrastructure_to_table %{
-    "ETH" => "eth_top_holders_daily",
-    "BNB" => "bnb_top_holders",
-    "BEP2" => "bnb_top_holders"
-  }
+  @infrastructure_to_table %{"ETH" => "eth_top_holders_daily"}
 
-  @infrastructure_to_blockchain %{
-    "ETH" => "ethereum",
-    "BNB" => "binance-coin",
-    "BEP2" => "binance-coin"
-  }
+  @infrastructure_to_blockchain %{"ETH" => "ethereum"}
 
   @default_aggregation :last
   @aggregations [:last, :min, :max, :first]

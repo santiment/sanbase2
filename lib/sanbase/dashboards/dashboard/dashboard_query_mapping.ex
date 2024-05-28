@@ -68,6 +68,13 @@ defmodule Sanbase.Dashboards.DashboardQueryMapping do
     |> preload([:query, query: :user])
   end
 
+  def dashboards_by_query_and_user(query_id, user_id) do
+    from(m in __MODULE__,
+      join: d in assoc(m, :dashboard),
+      where: m.query_id == ^query_id and d.user_id == ^user_id
+    )
+  end
+
   # Private functions
 
   defp maybe_preload(query, opts) do

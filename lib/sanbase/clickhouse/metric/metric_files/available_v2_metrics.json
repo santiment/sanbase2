@@ -3218,8 +3218,8 @@
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
-    "human_readable_name": "Daily Aave v2 Total Revenue",
-    "name": "aave_v2_total_revenue_usd",
+    "human_readable_name": "Daily Aave v2 Total Protocol Revenue",
+    "name": "aave_v2_total_protocol_revenue_usd",
     "metric": "aavev2_total_revenue_usd",
     "version": "2019-01-01",
     "access": "restricted",
@@ -3238,8 +3238,8 @@
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/aave-v2"]
   },
   {
-    "human_readable_name": "Daily Aave v2 Total Cumulative Revenue",
-    "name": "aave_v2_total_cumulative_revenue_usd",
+    "human_readable_name": "Daily Aave v2 Total Protocol Cumulative Revenue",
+    "name": "aave_v2_total_protocol_cumulative_revenue_usd",
     "metric": "aavev2_total_cumulative_revenue_usd",
     "version": "2019-01-01",
     "access": "restricted",
@@ -4091,6 +4091,86 @@
       "SANBASE": "free"
     },
     "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
+  },
+  {
+    "human_readable_name": "Daily Compound Revenue",
+    "name": "compound_revenue",
+    "metric": "compound_revenue",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
+  },
+  {
+    "human_readable_name": "Daily Compound Revenue in USD",
+    "name": "compound_revenue_usd",
+    "metric": "compound_revenue_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
+  },
+  {
+    "human_readable_name": "Daily Compound Total Protocol Revenue",
+    "name": "compound_total_protocol_revenue_usd",
+    "metric": "compound_total_revenue_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/compound"]
+  },
+  {
+    "human_readable_name": "Daily Compound Total Protocol Cumulative Revenue",
+    "name": "compound_total_protocol_cumulative_revenue_usd",
+    "metric": "compound_total_cumulative_revenue_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,

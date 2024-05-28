@@ -19,6 +19,53 @@ defmodule Sanbase.DiscordBot.CodeHandler do
     end
   end
 
+  def handle_interaction("summary", interaction, metadata) do
+    Utils.interaction_ack_visible(interaction)
+
+    case metadata.is_thread do
+      false ->
+        case AiServer.summarize_channel(metadata.channel_name) do
+          {:ok, summary} ->
+            content = """
+            📝 Summary for channel: #{metadata.channel_name}
+
+            #{summary}
+            """
+
+            Utils.edit_interaction_response(interaction, content, [])
+
+          {:error, error} ->
+            Logger.error(
+              "Failed to summarize channel: #{metadata.channel_name}, #{inspect(error)}"
+            )
+
+            generic_error_message(interaction)
+        end
+
+      true ->
+        case AiServer.summarize_thread(metadata.channel) do
+          {:ok, summary} ->
+            content = """
+            📝 Summary for thread: #{metadata.channel_name}
+
+            #{summary}
+            """
+
+            Utils.edit_interaction_response(interaction, content, [])
+
+          {:error, error} ->
+            Logger.error(
+              "Failed to summarize thread: #{metadata.channel_name}, #{inspect(error)}"
+            )
+
+            generic_error_message(interaction)
+        end
+
+      _ ->
+        generic_error_message(interaction)
+    end
+  end
+
   @spec handle_interaction(
           String.t(),
           Nostrum.Struct.Interaction.t(),
@@ -175,6 +222,8 @@ defmodule Sanbase.DiscordBot.CodeHandler do
   end
 
   def discord_metadata(interaction) do
+    IO.inspect(interaction)
+
     {guild_name, channel_name} =
       Sanbase.DiscordBot.LegacyCommandHandler.get_guild_channel(
         interaction.guild_id,
@@ -199,6 +248,7 @@ defmodule Sanbase.DiscordBot.CodeHandler do
       channel: to_string(interaction.channel_id),
       guild_id: to_string(interaction.guild_id),
       channel_name: channel_name,
+      is_thread: is_thread?(interaction.channel),
       guild_name: guild_name,
       discord_user: interaction.user.username <> interaction.user.discriminator,
       user_is_team_member: user_is_team_member
@@ -206,6 +256,12 @@ defmodule Sanbase.DiscordBot.CodeHandler do
   end
 
   # helpers
+
+  defp is_thread?(%Nostrum.Struct.Channel{type: 11}) do
+    true
+  end
+
+  defp is_thread?(_), do: false
 
   defp create_modal(interaction, id) do
     changes_input =

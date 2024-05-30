@@ -4,12 +4,14 @@ defmodule Sanbase.DiscordBot.AiServer do
   alias Sanbase.DiscordBot.AiContext
   alias Sanbase.DiscordBot.AiGenCode
 
-  def summarize_channel(channel) do
-    do_summarize(%{channel: channel})
+  def summarize_channel(channel, args) do
+    args = Map.merge(%{channel: channel}, args)
+    do_summarize(args)
   end
 
-  def summarize_thread(thread) do
-    do_summarize(%{thread: thread})
+  def summarize_thread(thread, args) do
+    args = Map.merge(%{thread: thread}, args)
+    do_summarize(args)
   end
 
   def do_summarize(params) do

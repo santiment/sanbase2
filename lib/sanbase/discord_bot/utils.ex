@@ -12,9 +12,30 @@ defmodule Sanbase.DiscordBot.Utils do
         ) :: {:ok, Nostrum.Struct.Message.t()} | {:error, any()}
   def edit_interaction_response(interaction, content, components) do
     Nostrum.Api.edit_interaction_response(interaction, %{
-      content: trim_message(content),
+      content: trim_message(content, 1950),
       components: components
     })
+  end
+
+  def handle_interaction_response(interaction, content, components) do
+    messages = split_message(content, 1950)
+
+    case messages do
+      [first_message | remaining_messages] ->
+        # Send the initial interaction response
+        Nostrum.Api.edit_interaction_response(interaction, %{
+          content: first_message,
+          components: components
+        })
+
+        # Send the follow-up messages
+        Enum.each(remaining_messages, fn message ->
+          Nostrum.Api.create_followup_message(interaction.token, %{
+            content: message,
+            components: components
+          })
+        end)
+    end
   end
 
   @spec interaction_ack_visible(Nostrum.Struct.Interaction.t()) :: {:ok} | {:error, any()}
@@ -44,5 +65,11 @@ defmodule Sanbase.DiscordBot.Utils do
     else
       message
     end
+  end
+
+  @spec split_message(String.t(), pos_integer()) :: list(String.t())
+  def split_message(content, max_length) do
+    Regex.scan(~r/.{1,#{max_length}}/s, content)
+    |> Enum.map(&Enum.at(&1, 0))
   end
 end

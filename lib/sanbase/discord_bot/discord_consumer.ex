@@ -16,21 +16,29 @@ defmodule Sanbase.DiscordConsumer do
     },
     %{
       name: "summary",
-      description: "Summarize a channel or thread"
-      # options: [
-      #   %{
-      #     type: 3,
-      #     name: "channel",
-      #     description: "channel",
-      #     required: false
-      #   },
-      #   %{
-      #     type: 3,
-      #     name: "thread",
-      #     description: "thread",
-      #     required: false
-      #   }
-      # ]
+      description: "Summarize a channel or thread",
+      options: [
+        %{
+          type: 7,
+          name: "channel_or_thread",
+          description: "channel or thread",
+          required: true
+        },
+        %{
+          type: 3,
+          name: "from_dt",
+          description: "From date",
+          required: true,
+          autocomplete: true
+        },
+        %{
+          type: 3,
+          name: "to_dt",
+          description: "To date",
+          required: true,
+          autocomplete: true
+        }
+      ]
     },
     %{
       name: "query",
@@ -73,6 +81,8 @@ defmodule Sanbase.DiscordConsumer do
       ]
     }
   ]
+
+  def commands, do: @commands
 
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
     cond do

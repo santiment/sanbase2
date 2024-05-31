@@ -19,7 +19,7 @@ defmodule Sanbase.Ecosystem do
 
   @type t :: %__MODULE__{
           ecosystem: String.t(),
-          projects: list(Project.t()),
+          projects: list(%Project{}),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -134,7 +134,7 @@ defmodule Sanbase.Ecosystem do
 
   """
   @spec get_projects_by_ecosystem_names(list(String.t()), Keyword.t()) ::
-          {:ok, list(Project.t())}
+          {:ok, list(%Project{})}
   def get_projects_by_ecosystem_names(ecosystems, opts \\ []) do
     preloads = Project.preloads()
 

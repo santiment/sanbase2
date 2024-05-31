@@ -21,7 +21,8 @@ defmodule Sanbase.Project do
     :latest_coinmarketcap_data,
     :github_organizations,
     :contract_addresses,
-    :ecosystems
+    :ecosystems,
+    :multichain_ecosystem
   ]
   def preloads(), do: @preloads
 
@@ -61,6 +62,10 @@ defmodule Sanbase.Project do
 
     field(:ecosystem, :string)
     field(:ecosystem_full_path, :string)
+
+    ### Fields related to multi-chain support
+    field(:multichain_project_group_key, :string)
+    belongs_to(:multichain_ecosystem, Sanbase.Ecosystem)
 
     has_one(:social_volume_query, Project.SocialVolumeQuery)
 
@@ -136,11 +141,12 @@ defmodule Sanbase.Project do
       :total_supply,
       :twitter_link,
       :website_link,
-      :whitepaper_link
+      :whitepaper_link,
+      :multichain_project_group_key,
+      :multichain_ecosystem_id
     ])
     |> cast_assoc(:market_segments)
     |> cast_assoc(:ecosystems)
-    |> validate_required([:name])
     |> unique_constraint(:slug)
   end
 

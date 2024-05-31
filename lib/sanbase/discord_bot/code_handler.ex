@@ -104,94 +104,6 @@ defmodule Sanbase.DiscordBot.CodeHandler do
     end
   end
 
-  def metadata_from_options(options_map) do
-    {:ok, channel} = Nostrum.Api.get_channel(options_map["channel_or_thread"])
-    now = DateTime.utc_now()
-
-    tranform_fns = %{
-      "yesterday" => fn now -> Timex.shift(now, days: -1) end,
-      "now" => fn now -> now end,
-      "1 day ago" => fn now -> Timex.shift(now, days: -1) end,
-      "2 days ago" => fn now -> Timex.shift(now, days: -2) end,
-      "3 days ago" => fn now -> Timex.shift(now, days: -3) end,
-      "4 days ago" => fn now -> Timex.shift(now, days: -4) end,
-      "5 days ago" => fn now -> Timex.shift(now, days: -5) end,
-      "6 days ago" => fn now -> Timex.shift(now, days: -6) end,
-      "last week" => fn now -> Timex.shift(now, weeks: -1) end,
-      "last 2 weeks" => fn now -> Timex.shift(now, weeks: -14) end,
-      "last month" => fn now -> Timex.shift(now, months: -1) end
-    }
-
-    cond do
-      options_map["from_dt"] not in Map.keys(tranform_fns) ->
-        {:error, "Invalid `from` datetime option"}
-
-      options_map["to_dt"] not in Map.keys(tranform_fns) ->
-        {:error, "Invalid `to` datetime option"}
-
-      options_map["from_dt"] in Map.keys(tranform_fns) and
-          options_map["to_dt"] in Map.keys(tranform_fns) ->
-        from_dt = tranform_fns[options_map["from_dt"]].(now)
-        to_dt = tranform_fns[options_map["to_dt"]].(now)
-
-        {:ok,
-         %{
-           channel: channel.id,
-           channel_name: channel.name,
-           is_thread: is_thread?(channel),
-           is_thread: false,
-           from_dt: DateTime.to_unix(from_dt),
-           to_dt: DateTime.to_unix(to_dt)
-         }}
-    end
-  end
-
-  def autocomplete(interaction, "from_dt") do
-    choices = [
-      "yesterday",
-      "2 days ago",
-      "3 days ago",
-      "4 days ago",
-      "5 days ago",
-      "6 days ago",
-      "last week",
-      "2 weeks ago",
-      "last month"
-    ]
-
-    do_autocomplete(interaction, choices)
-  end
-
-  def autocomplete(interaction, "to_dt") do
-    choices = [
-      "now",
-      "yesterday",
-      "2 days ago",
-      "3 days ago",
-      "4 days ago",
-      "5 days ago",
-      "6 days ago",
-      "last week",
-      "2 weeks ago",
-      "last month"
-    ]
-
-    do_autocomplete(interaction, choices)
-  end
-
-  def do_autocomplete(interaction, choices) do
-    choices = choices |> Enum.map(fn choice -> %{name: choice, value: choice} end)
-
-    response = %{
-      type: 8,
-      data: %{
-        choices: choices
-      }
-    }
-
-    Nostrum.Api.create_interaction_response(interaction, response)
-  end
-
   @spec handle_interaction(
           String.t(),
           Nostrum.Struct.Interaction.t(),
@@ -348,8 +260,6 @@ defmodule Sanbase.DiscordBot.CodeHandler do
   end
 
   def discord_metadata(interaction) do
-    IO.inspect(interaction)
-
     {guild_name, channel_name} =
       Sanbase.DiscordBot.LegacyCommandHandler.get_guild_channel(
         interaction.guild_id,
@@ -379,6 +289,93 @@ defmodule Sanbase.DiscordBot.CodeHandler do
       discord_user: interaction.user.username <> interaction.user.discriminator,
       user_is_team_member: user_is_team_member
     }
+  end
+
+  def metadata_from_options(options_map) do
+    {:ok, channel} = Nostrum.Api.get_channel(options_map["channel_or_thread"])
+    now = DateTime.utc_now()
+
+    tranform_fns = %{
+      "yesterday" => fn now -> Timex.shift(now, days: -1) end,
+      "now" => fn now -> now end,
+      "1 day ago" => fn now -> Timex.shift(now, days: -1) end,
+      "2 days ago" => fn now -> Timex.shift(now, days: -2) end,
+      "3 days ago" => fn now -> Timex.shift(now, days: -3) end,
+      "4 days ago" => fn now -> Timex.shift(now, days: -4) end,
+      "5 days ago" => fn now -> Timex.shift(now, days: -5) end,
+      "6 days ago" => fn now -> Timex.shift(now, days: -6) end,
+      "last week" => fn now -> Timex.shift(now, weeks: -1) end,
+      "last 2 weeks" => fn now -> Timex.shift(now, weeks: -14) end,
+      "last month" => fn now -> Timex.shift(now, months: -1) end
+    }
+
+    cond do
+      options_map["from_dt"] not in Map.keys(tranform_fns) ->
+        {:error, "Invalid `from` datetime option"}
+
+      options_map["to_dt"] not in Map.keys(tranform_fns) ->
+        {:error, "Invalid `to` datetime option"}
+
+      options_map["from_dt"] in Map.keys(tranform_fns) and
+          options_map["to_dt"] in Map.keys(tranform_fns) ->
+        from_dt = tranform_fns[options_map["from_dt"]].(now)
+        to_dt = tranform_fns[options_map["to_dt"]].(now)
+
+        {:ok,
+         %{
+           channel: channel.id,
+           channel_name: channel.name,
+           is_thread: is_thread?(channel),
+           from_dt: DateTime.to_unix(from_dt),
+           to_dt: DateTime.to_unix(to_dt)
+         }}
+    end
+  end
+
+  def autocomplete(interaction, "from_dt") do
+    choices = [
+      "yesterday",
+      "2 days ago",
+      "3 days ago",
+      "4 days ago",
+      "5 days ago",
+      "6 days ago",
+      "last week",
+      "2 weeks ago",
+      "last month"
+    ]
+
+    do_autocomplete(interaction, choices)
+  end
+
+  def autocomplete(interaction, "to_dt") do
+    choices = [
+      "now",
+      "yesterday",
+      "2 days ago",
+      "3 days ago",
+      "4 days ago",
+      "5 days ago",
+      "6 days ago",
+      "last week",
+      "2 weeks ago",
+      "last month"
+    ]
+
+    do_autocomplete(interaction, choices)
+  end
+
+  def do_autocomplete(interaction, choices) do
+    choices = choices |> Enum.map(fn choice -> %{name: choice, value: choice} end)
+
+    response = %{
+      type: 8,
+      data: %{
+        choices: choices
+      }
+    }
+
+    Nostrum.Api.create_interaction_response(interaction, response)
   end
 
   # helpers

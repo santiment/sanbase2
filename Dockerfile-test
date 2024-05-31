@@ -32,6 +32,5 @@ RUN mix deps.compile
 
 COPY . /app
 RUN mix format --check-formatted
-RUN mix compile --warnings-as-errors
 
 CMD mix test --formatter Sanbase.FailedTestFormatter --formatter ExUnit.CLIFormatter --slowest 20

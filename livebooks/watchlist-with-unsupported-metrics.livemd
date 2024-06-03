@@ -7,6 +7,10 @@ watchlists = Sanbase.Repo.all(Sanbase.UserList)
 ```
 
 ```elixir
+watchlists = watchlists |> Enum.reject(& &1.is_deleted)
+```
+
+```elixir
 metrics = Sanbase.Metric.available_metrics() |> MapSet.new()
 ```
 
@@ -40,6 +44,10 @@ list_with_deprecated_metrics =
   Enum.filter(list_with_metrics, fn l ->
     Enum.any?(l.metrics, &(&1 not in metrics))
   end)
+```
+
+```elixir
+length(list_with_deprecated_metrics)
 ```
 
 ```elixir

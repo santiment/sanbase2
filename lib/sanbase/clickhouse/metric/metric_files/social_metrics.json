@@ -91,8 +91,8 @@
     "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/weighted-sentiment-metrics"]
   },
   {
-    "human_readable_name": "Sentiment Volume Consumed Total V2",
-    "name": "sentiment_volume_consumed_total_v2",
+    "human_readable_name": "Sentiment Weighted Total V2",
+    "name": "sentiment_weighted_total_v2",
     "metric": "sentiment_volume_consumed_v2",
     "aliases": ["sentiment_weighted_total_v2"],
     "version": "2020-07-31",

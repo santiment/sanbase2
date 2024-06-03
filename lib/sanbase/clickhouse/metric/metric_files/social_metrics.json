@@ -105,7 +105,7 @@
     "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/weighted-sentiment-metrics"]
   },
@@ -124,7 +124,7 @@
     "aggregation": "avg",
     "min_interval": "1h",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/weighted-sentiment-metrics"]
   },
@@ -324,7 +324,7 @@
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -504,7 +504,7 @@
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -684,7 +684,7 @@
     "aggregation": "avg",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -1195,7 +1195,7 @@
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/deprecated-metrics"]
   },
@@ -1584,7 +1584,7 @@
     "aggregation": "avg",
     "min_interval": "1h",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -1602,7 +1602,7 @@
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -1782,7 +1782,7 @@
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {

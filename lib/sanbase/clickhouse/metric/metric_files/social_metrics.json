@@ -94,7 +94,6 @@
     "human_readable_name": "Sentiment Weighted Total V2",
     "name": "sentiment_weighted_total_v2",
     "metric": "sentiment_volume_consumed_v2",
-    "aliases": ["sentiment_weighted_total_v2"],
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": ["slug"],
@@ -131,7 +130,7 @@
   {
     "human_readable_name": "Sentiment Volume Consumed Total V2 Daily",
     "name": "sentiment_volume_consumed_total_1d_v2",
-    "metric": "sentiment_volume_consumed_v2_1d",
+    "metric": "sentiment_weighted_v2_1d",
     "aliases": ["sentiment_weighted_total_1d_v2"],
     "version": "2020-07-31",
     "access": "restricted",

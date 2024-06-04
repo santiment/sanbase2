@@ -8,7 +8,7 @@ defmodule SanbaseWeb.GenericAdmin.User do
 
   def resource do
     %{
-      actions: [:edit],
+      actions: [:edit, :delete],
       index_fields: [:id, :username, :email, :twitter_id, :is_superuser, :san_balance],
       edit_fields: [:is_superuser, :test_san_balance, :email, :stripe_customer_id],
       fields_override: %{

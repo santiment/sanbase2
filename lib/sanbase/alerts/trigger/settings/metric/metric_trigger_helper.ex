@@ -72,6 +72,7 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
     Enum.map(data1, fn {k, v} ->
       {k, [%{datetime: dt1, value: v}, %{datetime: dt2, value: Map.get(data2, k)}]}
     end)
+    |> Enum.reject(fn {_k, [%{value: v1}, %{value: v2}]} -> is_nil(v1) or is_nil(v2) end)
   end
 
   # Return a list of the `settings.metric` values for the necessary time range

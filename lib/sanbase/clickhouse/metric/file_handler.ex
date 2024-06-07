@@ -110,7 +110,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   #  only the coins/tokens that moved in the past N days/years
 
   # @external_resource is registered with `accumulate: true`, so it holds all files
-  path_to = fn file -> Path.join(__DIR__, "metric_files/" <> file) end
+  path_to = fn file -> Path.join([__DIR__, "metric_files", file]) end
+  path_to_deprecated = fn file -> Path.join([__DIR__, "metric_files", "deprecated", file]) end
 
   @external_resource path_to.("available_v2_metrics.json")
   @external_resource path_to.("change_metrics.json")
@@ -124,8 +125,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @external_resource path_to.("label_based_metric_metrics.json")
   @external_resource path_to.("labeled_balance_metrics.json")
   @external_resource path_to.("labeled_intraday_metrics.json")
-  @external_resource path_to.("labeled_between_labels_flow_metrics.json")
-  @external_resource path_to.("labeled_exchange_flow_metrics.json")
   @external_resource path_to.("makerdao_metrics.json")
   @external_resource path_to.("social_metrics.json")
   @external_resource path_to.("table_structured_metrics.json")
@@ -133,9 +132,19 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @external_resource path_to.("labeled_holders_distribution_metrics.json")
   @external_resource path_to.("active_holders_metrics.json")
 
-  @metrics_json_pre_alias_expand Enum.reduce(@external_resource, [], fn file, acc ->
-                                   (File.read!(file) |> Jason.decode!()) ++ acc
-                                 end)
+  # Deprecated metrics
+  @external_resource path_to_deprecated.("deprecated_change_metrics.json")
+  @external_resource path_to_deprecated.("deprecated_labeled_between_labels_flow_metrics.json")
+  @external_resource path_to_deprecated.("deprecated_labeled_exchange_flow_metrics.json")
+  @external_resource path_to_deprecated.("deprecated_social_metrics.json")
+
+  @metrics_json_pre_alias_expand Enum.reduce(
+                                   @external_resource,
+                                   [],
+                                   fn file, acc ->
+                                     (File.read!(file) |> Jason.decode!()) ++ acc
+                                   end
+                                 )
 
   def pre_alias(), do: @metrics_json_pre_alias_expand
   # Allow the same metric to be defined more than once if it differs in the `data_type`

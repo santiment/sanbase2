@@ -35,6 +35,14 @@ config :phoenix,
   stacktrace_depth: 20,
   plug_init_mode: :runtime
 
+# Disable the Oban.Web jobs in local env.
+# When testing Oban.Web jobs locally comment out these 2 lines
+config :sanbase, Oban.Web, queues: false
+
+# Disable the Oban.Scrapers jobs in local env.
+# When testing Oban.Scrapers jobs locally comment out these 2 lines
+config :sanbase, Oban.Scrapers, queues: false
+
 config :sanbase, Sanbase.Notifications.Insight, enabled: "false"
 
 config :sanbase, Sanbase.KafkaExporter,

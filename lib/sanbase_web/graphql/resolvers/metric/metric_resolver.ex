@@ -93,6 +93,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
+  def get_available_label_fqns(_root, _args, %{source: %{metric: metric}}) do
+    Metric.available_label_fqns(metric)
+  end
+
   def get_human_readable_name(_root, _args, %{source: %{metric: metric}}),
     do: Metric.human_readable_name(metric)
 

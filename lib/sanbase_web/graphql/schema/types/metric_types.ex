@@ -357,6 +357,10 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       cache_resolve(&MetricResolver.get_available_projects/3, ttl: 300)
     end
 
+    field :available_label_fqns, list_of(:string) do
+      cache_resolve(&MetricResolver.get_available_label_fqns/3, ttl: 300)
+    end
+
     @desc ~s"""
     The minimal granularity for which the data is available.
     """

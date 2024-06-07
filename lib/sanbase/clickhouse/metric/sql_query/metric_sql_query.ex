@@ -98,7 +98,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
           FROM label_metadata
           WHERE
             fqn = (
-              SELECT fqn
+              SELECT DISTINCT(fqn)
               FROM test_anatolii_labeled_balances_filtered_2
               WHERE
                 #{asset_name_filter}

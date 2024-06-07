@@ -516,7 +516,7 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        nil
+        module.available_label_fqns(metric)
     end
   end
 

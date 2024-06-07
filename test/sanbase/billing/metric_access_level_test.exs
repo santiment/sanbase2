@@ -495,7 +495,16 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "gini_index",
         "annual_inflation_rate",
         # Social metrics
-        "unique_social_volume_total_1d"
+        "unique_social_volume_total_1d",
+        # Sentiment V2 metrics
+        "sentiment_weighted_4chan_1d_v2",
+        "sentiment_weighted_bitcointalk_1d_v2",
+        "sentiment_weighted_reddit_1d_v2",
+        "sentiment_weighted_telegram_1d_v2",
+        "sentiment_weighted_total_1d_v2",
+        "sentiment_weighted_twitter_1d_v2",
+        "sentiment_weighted_youtube_videos_1d_v2",
+        "sentiment_weighted_youtube_videos_1h_v2"
       ]
       |> Enum.sort()
 
@@ -857,6 +866,37 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_weighted_youtube_videos",
         "sentiment_weighted_bitcointalk",
         "sentiment_weighted_total",
+        # Social metrics V2
+        "sentiment_balance_4chan_v2",
+        "sentiment_balance_bitcointalk_v2",
+        "sentiment_balance_reddit_v2",
+        "sentiment_balance_telegram_v2",
+        "sentiment_balance_total_v2",
+        "sentiment_balance_twitter_v2",
+        "sentiment_balance_youtube_videos_v2",
+        "sentiment_weighted_4chan_1d_v2",
+        "sentiment_weighted_4chan_1h_v2",
+        "sentiment_weighted_4chan_v2",
+        "sentiment_weighted_bitcointalk_1d_v2",
+        "sentiment_weighted_bitcointalk_1h_v2",
+        "sentiment_weighted_bitcointalk_v2",
+        "sentiment_weighted_reddit_1d_v2",
+        "sentiment_weighted_reddit_1h_v2",
+        "sentiment_weighted_reddit_v2",
+        "sentiment_weighted_telegram_1d_v2",
+        "sentiment_weighted_telegram_1h_v2",
+        "sentiment_weighted_telegram_v2",
+        "sentiment_weighted_total_1d_v2",
+        "sentiment_weighted_total_1h_v2",
+        "sentiment_weighted_total_v2",
+        "sentiment_weighted_twitter_1d_v2",
+        "sentiment_weighted_twitter_1h_v2",
+        "sentiment_weighted_twitter_v2",
+        "sentiment_weighted_youtube_videos_1d_v2",
+        "sentiment_weighted_youtube_videos_1h_v2",
+        "sentiment_weighted_youtube_videos_v2",
+        # social v2 metrics
+        "unique_social_volume_total_1d",
         "social_active_users",
         "trending_words_rank",
         # histogram metrics

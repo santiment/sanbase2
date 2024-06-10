@@ -85,7 +85,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         asset_name_filter =
           if "asset_name" in Map.get(map, "__parametrized__", []) do
             if not is_binary(selector[:slug]),
-              do: raise(ArgumentError, "The selector slug must be a binary")
+              do:
+                raise(Sanbase.Metric.CatchableError,
+                  message: """
+                  When using the metric #{metric} the provided parameters needs to be a string 'slug', \
+                  or selector that contains a 'slug' argument that is a string, not a list. \
+                  Got '#{inspect(selector)}' instead"
+                  """
+                )
 
             "asset_name = {{selector}} AND"
           else

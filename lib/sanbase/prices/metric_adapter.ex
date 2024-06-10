@@ -87,7 +87,10 @@ defmodule Sanbase.Price.MetricAdapter do
        data_type: :timeseries,
        is_timebound: false,
        complexity_weight: @default_complexity_weight,
-       docs: docs_links(metric) |> Enum.map(fn link -> %{link: link} end)
+       docs: docs_links(metric) |> Enum.map(fn link -> %{link: link} end),
+       is_deprecated: false,
+       hard_deprecate_after: nil,
+       is_label_fqn_metric: false
      }}
   end
 

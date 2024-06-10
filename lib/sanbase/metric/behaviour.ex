@@ -35,6 +35,7 @@ defmodule Sanbase.Metric.Behaviour do
           data_type: available_data_types(),
           complexity_weight: number(),
           has_incomplete_data: boolean(),
+          is_label_fqn_metric: boolean(),
           is_timebound: boolean(),
           # A metric can be deprecated, which means that it is marked
           # as deprecated, but it is still accsessible. If hard_deprecate_after

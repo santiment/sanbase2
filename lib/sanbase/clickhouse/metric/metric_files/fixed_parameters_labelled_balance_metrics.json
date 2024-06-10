@@ -58,7 +58,8 @@
     "fixed_parameters": {
       "labels": {
         "group": "exchanges",
-        "label_key": "centralized_exchange"
+        "label_key": "centralized_exchange",
+        "__parametrized__": ["asset_name"]
       }
     },
     "version": "2020-05-27",
@@ -84,7 +85,8 @@
       "labels": {
         "group": "exchanges",
         "parent_label_key": "centralized_exchange",
-        "label_key": "owner"
+        "label_key": "owner",
+        "__parametrized__": ["asset_name"]
       }
     },
     "version": "2020-05-27",
@@ -109,7 +111,8 @@
     "fixed_parameters": {
       "labels": {
         "group": "exchanges",
-        "label_key": "decentralized_exchange"
+        "label_key": "decentralized_exchange",
+        "__parametrized__": ["asset_name"]
       }
     },
     "version": "2020-05-27",
@@ -135,7 +138,8 @@
       "labels": {
         "group": "exchanges",
         "label_key": "owner",
-        "parent_label_key": "decentralized_exchange"
+        "parent_label_key": "decentralized_exchange",
+        "__parametrized__": ["asset_name"]
       }
     },
     "version": "2020-05-27",

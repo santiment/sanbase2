@@ -55,20 +55,7 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
           settings: trigger_settings
         })
 
-      # Return a fun with arity 5 that will return different results
-      # for consecutive calls
-      mock_fun =
-        [
-          fn -> {:ok, %{value: 100}} end,
-          fn -> {:ok, %{value: 5000}} end
-        ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 5)
-
-      Sanbase.Mock.prepare_mock(
-        Sanbase.SocialData.MetricAdapter,
-        :aggregated_timeseries_data,
-        mock_fun
-      )
+      Sanbase.Mock.prepare_mock(HTTPoison, :get, mock_fun())
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()
@@ -77,6 +64,26 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
 
         assert triggered.id == trigger.id
       end)
+    end
+
+    defp mock_fun() do
+      [
+        fn ->
+          {:ok,
+           %HTTPoison.Response{
+             status_code: 200,
+             body: "{\"data\":{\"2024-06-07T00:00:00Z\":100}}"
+           }}
+        end,
+        fn ->
+          {:ok,
+           %HTTPoison.Response{
+             status_code: 200,
+             body: "{\"data\":{\"2024-06-07T00:00:00Z\":5000}}"
+           }}
+        end
+      ]
+      |> Sanbase.Mock.wrap_consecutives(arity: 3)
     end
   end
 

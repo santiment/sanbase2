@@ -119,7 +119,9 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
            link:
              "https://academy.santiment.net/metrics/deprecated-metrics/deprecated-uniswap-metrics"
          }
-       ]
+       ],
+       complexity_weight: @default_complexity_weight,
+       is_label_fqn_metric: false
      }}
   end
 

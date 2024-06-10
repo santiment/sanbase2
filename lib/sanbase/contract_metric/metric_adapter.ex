@@ -111,9 +111,10 @@ defmodule Sanbase.Contract.MetricAdapter do
        data_type: :timeseries,
        is_timebound: false,
        complexity_weight: @default_complexity_weight,
+       docs: [],
+       is_label_fqn_metric: false,
        is_deprecated: false,
-       hard_deprecate_after: nil,
-       docs: []
+       hard_deprecate_after: nil
      }}
   end
 

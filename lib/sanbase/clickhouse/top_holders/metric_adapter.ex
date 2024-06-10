@@ -108,7 +108,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
        complexity_weight: @default_complexity_weight,
        is_deprecated: false,
        hard_deprecate_after: nil,
-       docs: []
+       docs: [],
+       is_label_fqn_metric: false
      }}
   end
 

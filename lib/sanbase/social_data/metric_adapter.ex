@@ -329,10 +329,12 @@ defmodule Sanbase.SocialData.MetricAdapter do
        required_selectors: [],
        data_type: :timeseries,
        complexity_weight: @default_complexity_weight,
+       docs: [],
        hard_deprecate_after: nil,
        is_deprecated: false,
        is_timebound: false,
-       docs: Enum.map(docs_links(metric), fn link -> %{link: link} end)
+       docs: Enum.map(docs_links(metric), fn link -> %{link: link} end),
+       is_label_fqn_metric: false
      }}
   end
 

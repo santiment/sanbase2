@@ -187,6 +187,7 @@ defmodule SanbaseWeb.Router do
     get("/projects_twitter_handles", DataController, :projects_twitter_handles)
     get("/monitored_twitter_handles/:secret", DataController, :monitored_twitter_handles)
     get("/ecosystems_data", DataController, :ecosystems_data)
+    get("/clickhouse_metrics_metadata", DataController, :clickhouse_metrics_metadata)
 
     get(
       "/ecosystem_github_organization_mapping",

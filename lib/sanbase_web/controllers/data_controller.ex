@@ -116,7 +116,51 @@ defmodule SanbaseWeb.DataController do
     |> Plug.Conn.send_resp(200, data)
   end
 
+  @doc ~s"""
+  Return a list of metadata about the Clickhouse metrics.
+
+  {
+    "name": "age_consumed",
+    "internal_name": "stack_age_consumed_5min",
+    "min_interval": "5m",
+    "min_interval_seconds": 300
+    "table":  "intraday_metrics"
+  }
+  """
+  @spec clickhouse_metrics_metadata(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def clickhouse_metrics_metadata(conn, _params) do
+    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+
+    {:ok, data} = Sanbase.Cache.get_or_store(cache_key, &get_clickhouse_metrics_metadata/0)
+
+    conn
+    |> put_resp_header("content-type", "application/json; charset=utf-8")
+    |> Plug.Conn.send_resp(200, data)
+  end
+
   # Private functions
+
+  defp get_clickhouse_metrics_metadata() do
+    table_map = Sanbase.Clickhouse.MetricAdapter.FileHandler.table_map()
+
+    data =
+      for metric <- Sanbase.Clickhouse.MetricAdapter.available_metrics() do
+        {:ok, metadata} = Sanbase.Metric.metadata(metric)
+
+        %{
+          public_name: metric,
+          name: metadata.internal_metric,
+          min_interval: metadata.min_interval,
+          min_interval_seconds: Sanbase.DateTimeUtils.str_to_sec(metadata.min_interval),
+          table: Map.get(table_map, metric)
+        }
+        |> Jason.encode!()
+      end
+      |> Enum.intersperse("\n")
+
+    {:ok, data}
+  end
+
   defp get_santiment_team_members() do
     email_to_discord_id_map = get_email_to_discord_id_map()
 

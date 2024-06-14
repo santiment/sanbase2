@@ -307,6 +307,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     @metrics_data_type_map
     |> Enum.filter(fn {_metric, data_type} -> data_type == type end)
     |> Enum.map(&elem(&1, 0))
+    |> transform()
   end
 
   def name_to_metric(name), do: Map.get(@name_to_metric_map, name)
@@ -318,12 +319,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     # hard deprecated metrics. The `deprecated_metrics_map` contains the metric
     # as a key and a datetime as a value. If the current time is after that value,
     # the metric is excluded
-    metrics
-    |> then(fn metrics ->
-      if Keyword.get(opts, :remove_hard_deprecated, true),
-        do: remove_hard_deprecated(metrics, opts),
-        else: metrics
-    end)
+    if Keyword.get(opts, :remove_hard_deprecated, true),
+      do: remove_hard_deprecated(metrics, opts),
+      else: metrics
   end
 
   defp remove_hard_deprecated(metrics, opts) when is_list(metrics) do

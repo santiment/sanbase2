@@ -71,6 +71,7 @@ defmodule Sanbase.Metric do
   @required_selectors_map Helper.required_selectors_map()
   @deprecated_metrics_map Helper.deprecated_metrics_map()
   @soft_deprecated_metrics_map Helper.soft_deprecated_metrics_map()
+  @implemented_optional_functions Helper.implemented_optional_functions()
 
   @doc ~s"""
   Check if `metric` is a valid metric name.
@@ -513,7 +514,13 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module.available_label_fqns(metric)
+        # Only one module implements this function
+        # For all the rest return empty list
+        if Map.get(@implemented_optional_functions, :available_label_fqns) do
+          module.available_label_fqns(metric)
+        else
+          {:ok, []}
+        end
     end
   end
 
@@ -524,7 +531,13 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module.available_label_fqns(metric, selector)
+        # Only one module implements this function
+        # For all the rest return empty list
+        if Map.get(@implemented_optional_functions, :available_label_fqns) do
+          module.available_label_fqns(metric, selector)
+        else
+          {:ok, []}
+        end
     end
   end
 

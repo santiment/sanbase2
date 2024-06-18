@@ -21,9 +21,9 @@
     "aggregation": "last",
     "min_interval": "1h",
     "table": "labeled_intraday_metrics_v2",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_links": ["TBD"]
+    "docs_links": []
   },
   {
     "human_readable_name": "Historical Balance of Whales in USD",
@@ -47,9 +47,9 @@
     "aggregation": "last",
     "min_interval": "1h",
     "table": "labeled_intraday_metrics_v2",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_links": ["TBD"]
+    "docs_links": []
   },
   {
     "human_readable_name": "Combined Historical Balance of Centralized Exchanges",
@@ -73,9 +73,9 @@
     "aggregation": "last",
     "min_interval": "1h",
     "table": "labeled_intraday_metrics_v2",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_links": ["TBD"]
+    "docs_links": []
   },
   {
     "human_readable_name": "Combined Historical Balance of Centralized Exchanges",
@@ -100,9 +100,9 @@
     "aggregation": "last",
     "min_interval": "1h",
     "table": "labeled_intraday_metrics_v2",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_links": ["TBD"]
+    "docs_links": []
   },
   {
     "human_readable_name": "Combined Historical Balance of Decentralized Exchanges",
@@ -126,9 +126,9 @@
     "aggregation": "last",
     "min_interval": "1h",
     "table": "labeled_intraday_metrics_v2",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_links": ["TBD"]
+    "docs_links": []
   },
   {
     "human_readable_name": "Historical Balance of Decentralized Exchanges",
@@ -153,8 +153,8 @@
     "aggregation": "last",
     "min_interval": "1h",
     "table": "labeled_intraday_metrics_v2",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries",
-    "docs_links": ["TBD"]
+    "docs_links": []
   }
 ]

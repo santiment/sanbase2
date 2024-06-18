@@ -115,7 +115,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
       filters,
       opts
     ]
-    |> dbg()
 
     timeseries_data_query(metric, selector, from, to, interval, aggregation, filters, opts)
     |> exec_timeseries_data_query()
@@ -186,6 +185,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def metadata(metric) do
     min_interval = min_interval(metric)
     default_aggregation = Map.get(@aggregation_map, metric)
+    is_label_fqn_metric = :label_fqn in Map.get(@selectors_map, metric, [])
 
     {:ok,
      %{
@@ -203,7 +203,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
        docs: Map.get(@docs_links_map, metric),
        is_deprecated: false,
        hard_deprecate_after: nil,
-       is_label_fqn_metric: false
+       is_label_fqn_metric: is_label_fqn_metric
      }}
   end
 

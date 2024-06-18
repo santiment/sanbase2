@@ -1636,7 +1636,14 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "dex_volume_in_usd_5m",
         # Some balance metrics
         "all_known_balance",
-        "unlabeled_balance"
+        "unlabeled_balance",
+        # Labeled historical balance "fake" metrics
+        "combined_historical_balance_centralized_exchanges",
+        "combined_historical_balance_decentralized_exchanges",
+        "combined_historical_balance_funds",
+        "historical_balance_centralized_exchanges",
+        "historical_balance_decentralized_exchanges",
+        "historical_balance_whales_usd"
       ]
       |> Enum.sort()
 

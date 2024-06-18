@@ -53,30 +53,44 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     {fixed_parameters_str, params} =
       maybe_get_fixed_parameters(metric, selector, params, opts ++ [trailing_and: true])
 
-    sql = """
-    SELECT
-      #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
-      #{aggregation(aggregation, "value", "dt")}
-    FROM(
+    sql =
+      """
       SELECT
-        dt,
-        argMax(value, computed_at) AS value
-      FROM #{Map.get(@table_map, metric)}
-      PREWHERE
-        #{fixed_parameters_str}
-        #{additional_filters}
-        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
-        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
-        #{asset_id_filter(selector, argument_name: "selector", allow_missing_slug: true)} AND
-        #{metric_id_filter(metric, argument_name: "metric")}
-        GROUP BY asset_id, dt
-    )
-    WHERE isNotNull(value) AND NOT isNaN(value)
-    GROUP BY t
-    ORDER BY t
-    """
+        #{to_unix_timestamp(interval, "dt", argument_name: "interval")} AS t,
+        #{aggregation(aggregation, "value", "dt")}
+      FROM(
+        SELECT
+          dt,
+          argMax(value, computed_at) AS value
+        FROM #{Map.get(@table_map, metric)}
+        PREWHERE
+          #{fixed_parameters_str}
+          #{additional_filters}
+          #{maybe_convert_to_date(:after, metric, "dt", "toDateTime({{from}})")} AND
+          #{maybe_convert_to_date(:before, metric, "dt", "toDateTime({{to}})")} AND
+          #{asset_id_filter(selector, argument_name: "selector", allow_missing_slug: true)} AND
+          #{metric_id_filter(metric, argument_name: "metric")}
+          GROUP BY asset_id, dt
+      )
+      WHERE isNotNull(value) AND NOT isNaN(value)
+      GROUP BY t
+      ORDER BY t
+      """
 
     Sanbase.Clickhouse.Query.new(sql, params)
+  end
+
+  defp maybe_get_fixed_parameters(_metric, selector, params, _opts)
+       when is_map_key(selector, :label_fqn) or is_map_key(selector, :label_fqns) do
+    # In some cases like 'historical_balance_centralized_exchanges' the
+    # fixed parameters are used to properly list the available label_fqns.
+    # When the metric is queried and this label_fqn is provided, the fixed parameters
+    # do not need to be used anymore.
+    # In other cases like `combined_historical_balance_centralized_exchanges` the client
+    # does not provide a label_fqn parameter, as the metric itself already encompasses all
+    # centralized exchanges. The user provides only the asset in interest, and the fixed
+    # parameters needs to be usued to pin the label_fqn that is to be used (the function below)
+    {"", params}
   end
 
   defp maybe_get_fixed_parameters(metric, selector, params, opts) do

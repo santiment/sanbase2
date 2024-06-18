@@ -361,7 +361,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       #{metric_id_filter(metric, argument_name: "metric")} AND
       #{where_clause} AND
       asset_name = {{slug}}
-      )
     """
 
     params =

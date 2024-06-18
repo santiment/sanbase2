@@ -371,6 +371,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     end
 
     field :available_label_fqns, list_of(:string) do
+      arg(:slug, :string)
       cache_resolve(&MetricResolver.get_available_label_fqns/3, ttl: 300)
     end
 

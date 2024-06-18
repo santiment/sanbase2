@@ -506,17 +506,25 @@ defmodule Sanbase.Metric do
     end
   end
 
-  @spec available_label_fqns(metric, opts) :: Type.available_label_fqns_result()
-
-  def available_label_fqns(metric, opts \\ [])
-
-  def available_label_fqns(metric, _opts) do
+  @spec available_label_fqns(metric) :: Type.available_label_fqns_result()
+  def available_label_fqns(metric) do
     case Map.get(@metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
         module.available_label_fqns(metric)
+    end
+  end
+
+  @spec available_label_fqns(metric, selector) :: Type.available_label_fqns_result()
+  def available_label_fqns(metric, selector) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      module when is_atom(module) ->
+        module.available_label_fqns(metric, selector)
     end
   end
 

@@ -93,8 +93,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  def get_available_label_fqns(_root, _args, %{source: %{metric: metric}}) do
-    Metric.available_label_fqns(metric)
+  def get_available_label_fqns(_root, args, %{source: %{metric: metric}}) do
+    case args[:slug] do
+      nil -> Metric.available_label_fqns(metric)
+      slug when is_binary(slug) -> Metric.available_label_fqns(metric, %{slug: slug})
+    end
   end
 
   def get_human_readable_name(_root, _args, %{source: %{metric: metric}}),

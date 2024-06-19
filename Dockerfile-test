@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.16.0-erlang-26.2.1-debian-bullseye-20231009-slim
+FROM hexpm/elixir:1.17.1-erlang-26.2.5-debian-bullseye-20240612-slim
 
 RUN apt-get update -y && apt-get install -y curl
 

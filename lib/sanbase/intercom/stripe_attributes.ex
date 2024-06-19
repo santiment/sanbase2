@@ -52,7 +52,7 @@ defmodule Sanbase.Intercom.StripeAttributes do
       rescue
         exception ->
           Logger.error(
-            "stripe_attributes_intercom: An error occurred processing user_id: #{user_id} - #{exception.message}"
+            "stripe_attributes_intercom: An error occurred processing user_id: #{user_id} - #{Exception.message(exception)}"
           )
       end
     end)

@@ -1,4 +1,4 @@
-FROM santimentjenkins/elixir:1.16.0
+FROM hexpm/elixir:1.17.1-erlang-26.2.5-debian-bullseye-20240612-slim
 
 RUN apk add --no-cache make \
     g++ \

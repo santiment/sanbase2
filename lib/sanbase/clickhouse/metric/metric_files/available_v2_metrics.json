@@ -4972,6 +4972,286 @@
     "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/liquity"]
   },
   {
+    "human_readable_name": "Fraxlend deposits",
+    "name": "fraxlend_action_deposits",
+    "metric": "fraxlend_action_deposits",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend liquidations",
+    "name": "fraxlend_action_liquidations",
+    "metric": "fraxlend_action_liquidations",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend new debt",
+    "name": "fraxlend_action_new_debt",
+    "metric": "fraxlend_action_new_debt",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend repayments",
+    "name": "fraxlend_action_repayments",
+    "metric": "fraxlend_action_repayments",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend deposits in USD",
+    "name": "fraxlend_action_deposits_usd",
+    "metric": "fraxlend_action_deposits_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend liquidations in USD",
+    "name": "fraxlend_action_liquidations_usd",
+    "metric": "fraxlend_action_liquidations_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend new debt in USD",
+    "name": "fraxlend_action_new_debt_usd",
+    "metric": "fraxlend_action_new_debt_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend repayments in USD",
+    "name": "fraxlend_action_repayments_usd",
+    "metric": "fraxlend_action_repayments_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend total deposits in USD",
+    "name": "fraxlend_total_deposits_usd",
+    "metric": "fraxlend_total_deposits_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend total liquidations in USD",
+    "name": "fraxlend_total_liquidations_usd",
+    "metric": "fraxlend_total_liquidations_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend total new debt in USD",
+    "name": "fraxlend_total_new_debt_usd",
+    "metric": "fraxlend_total_new_debt_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend total repayments in USD",
+    "name": "fraxlend_total_repayments_usd",
+    "metric": "fraxlend_total_repayments_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Fraxlend borrow APY",
+    "name": "fraxlend_borrow_apy",
+    "metric": "fraxlend_borrow_apy",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
+    "human_readable_name": "Daily Active Addresses on Fraxlend",
+    "name": "fraxlend_active_addresses",
+    "metric": "fraxlend_active_addresses",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/lending-and-borrowing-protocols/fraxlend"]
+  },
+  {
     "human_readable_name": "MakerDAO DSR (DAI Savings Rate) deposits",
     "name": "makerdao_dsr_deposits",
     "metric": "makerdao_dsr_deposits",

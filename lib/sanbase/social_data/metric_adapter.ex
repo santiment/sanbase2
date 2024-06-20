@@ -14,20 +14,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
   alias Sanbase.Project
 
   @aggregations [:sum]
-
-  @social_volume_timeseries_metrics [
-    # Social volume counts the mentions of a given word or words describing as subject
-    # A project can be addressed by different words.
-    # Example: `btc` and `bitcoin` refer to bitcoin
-    "social_volume_4chan",
-    "social_volume_telegram",
-    "social_volume_reddit",
-    "social_volume_twitter",
-    "social_volume_bitcointalk",
-    "social_volume_youtube_videos",
-    "social_volume_total",
-    "nft_social_volume"
-  ]
+  @sources ["total"] ++ SocialHelper.sources()
+  @social_volume_timeseries_metrics ["nft_social_volume"] ++
+                                      Enum.map(@sources, fn source ->
+                                        "social_volume_#{source}"
+                                      end)
 
   @community_messages_count_timeseries_metrics [
     ## Community messages count counts the total amount of messages in a project's
@@ -36,20 +27,20 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "community_messages_count_total"
   ]
 
-  @social_dominance_timeseries_metrics [
-    "social_dominance_4chan",
-    "social_dominance_telegram",
-    "social_dominance_reddit",
-    "social_dominance_youtube_videos",
-    "social_dominance_total",
-    "social_dominance_ai_total"
-  ]
-
-  sources = ["total"] ++ SocialHelper.sources()
+  @social_dominance_timeseries_metrics ["social_dominance_ai_total"] ++
+                                         Enum.map(@sources, fn source ->
+                                           "social_dominance_#{source}"
+                                         end)
 
   @sentiment_timeseries_metrics for name <- ["sentiment"],
-                                    source <- sources,
-                                    type <- ["positive", "negative", "balance", "volume_consumed"],
+                                    source <- @sources,
+                                    type <- [
+                                      "positive",
+                                      "negative",
+                                      "balance",
+                                      "volume_consumed",
+                                      "weighted"
+                                    ],
                                     do: "#{name}_#{type}_#{source}"
 
   @active_users_timeseries_metrics ["social_active_users"]

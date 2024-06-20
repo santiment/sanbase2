@@ -8,7 +8,8 @@ defmodule Sanbase.SocialData.SocialHelper do
     :reddit,
     :twitter,
     :bitcointalk,
-    :youtube_videos
+    :youtube_videos,
+    :farcaster
   ]
 
   def sources(), do: @sources
@@ -56,17 +57,17 @@ defmodule Sanbase.SocialData.SocialHelper do
     {:error, "Invalid argument please input a slug or search_text"}
   end
 
+  @doc ~s"""
+  Get a string balance_twitter and split it into two parts -- a source (twitter, telegram, etc.)
+  and everything before the source
+  """
   def split_by_source(str) do
-    get_first_part = fn splitter, binary ->
-      String.split(binary, splitter) |> hd |> String.trim_trailing("_")
-    end
-
     source =
       (sources() ++ [:total])
-      |> Enum.map(fn source -> Atom.to_string(source) end)
+      |> Enum.map(&to_string/1)
       |> Enum.find(&String.ends_with?(str, &1))
 
-    type = get_first_part.(source, str)
+    type = String.trim_trailing(str, "_#{source}")
 
     {type, source}
   end

@@ -565,6 +565,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mcd_erc20_supply",
         "rank",
         "etf_volume_usd_5m",
+        "dex_amm_volume_in_xrp_5min",
+        "dex_amm_volume_in_usd_5min",
         # change metrics
         "volume_usd_change_1d",
         "volume_usd_change_7d",
@@ -1121,6 +1123,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "nft_whale_trade_volume_usd",
         "nft_retail_trades_count",
         "nft_retail_trade_volume_usd",
+        "liquidity_in_amm_pools_by_pair",
+        "liquidity_in_amm_pools_by_asset",
         # nft collection metrics
         "nft_collection_min_price",
         "nft_collection_max_price",

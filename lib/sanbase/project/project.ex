@@ -411,13 +411,12 @@ defmodule Sanbase.Project do
   end
 
   def preload_assocs(projects, opts \\ []) do
-    case Keyword.get(opts, :only_preload) do
+    case Keyword.get(opts, :preload) do
       preloads when is_list(preloads) ->
         Repo.preload(projects, preloads)
 
       nil ->
-        additional_preloads = Keyword.get(opts, :additional_preloads, [])
-        Repo.preload(projects, additional_preloads ++ @preloads)
+        Repo.preload(projects, @preloads)
     end
   end
 
@@ -438,16 +437,14 @@ defmodule Sanbase.Project do
         query
 
       true ->
-        case Keyword.get(opts, :only_preload) do
+        case Keyword.get(opts, :preload) do
           preloads when is_list(preloads) ->
             query
             |> preload(^preloads)
 
           nil ->
-            additional_preloads = Keyword.get(opts, :additional_preloads, [])
-
             query
-            |> preload(^(additional_preloads ++ @preloads))
+            |> preload(^@preloads)
         end
     end
   end

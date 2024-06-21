@@ -94,7 +94,7 @@ defmodule Sanbase.Project.ContractData do
   def contract_info_infrastructure_by_slug(slug, opts) do
     Project.by_slug(slug,
       preload?: true,
-      only_preload: [:contract_addresses, :infrastructure]
+      preload: [:contract_addresses, :infrastructure]
     )
     |> case do
       %Project{contract_addresses: [_ | _] = list, infrastructure: %{code: infr_code}} ->

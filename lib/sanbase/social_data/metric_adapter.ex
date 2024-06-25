@@ -287,8 +287,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
           false -> @metrics -- @community_messages_count_timeseries_metrics
         end
 
-      # The metric is available only for `source`, not for `slug`
-      {:ok, metrics -- ["social_active_users"]}
+      # These two metrics are not available for `slug` but for other selectors
+      {:ok, metrics -- ["social_active_users", "nft_social_volume"]}
     end
   end
 

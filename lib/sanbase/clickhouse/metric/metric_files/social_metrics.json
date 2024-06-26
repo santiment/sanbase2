@@ -448,7 +448,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted 4chan Farcaster",
+    "human_readable_name": "Sentiment Weighted Farcaster Hourly",
     "name": "sentiment_weighted_farcaster_1h",
     "metric": "sentiment_volume_consumed_farcaster_v2_1h",
     "version": "2020-07-31",
@@ -518,7 +518,7 @@
     "docs_links": ["https://academy.santiment.net/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
   },
   {
-    "human_readable_name": "Sentiment Balance Farcaster V2",
+    "human_readable_name": "Sentiment Balance Farcaster",
     "name": "sentiment_balance_farcaster",
     "metric": "sentiment_balance_farcaster_v2",
     "version": "2020-07-31",

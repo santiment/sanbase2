@@ -413,7 +413,7 @@
     "docs_links": ["https://academy.santiment.net/metrics/social-volume"]
   },
   {
-    "human_readable_name": "Social Dominance Farcaster V2",
+    "human_readable_name": "Social Dominance Farcaster",
     "name": "social_dominance_farcaster",
     "metric": "social_dominance_farcaster_v2",
     "version": "2020-07-31",
@@ -431,7 +431,7 @@
     "docs_links": ["https://academy.santiment.net/metrics/social-dominance"]
   },
   {
-    "human_readable_name": "Sentiment Weighted Farcaster V2",
+    "human_readable_name": "Sentiment Weighted Farcaster",
     "name": "sentiment_weighted_farcaster",
     "metric": "sentiment_volume_consumed_farcaster_v2",
     "version": "2020-07-31",
@@ -448,8 +448,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted 4chan Farcaster V2",
-    "name": "sentiment_weighted_farcaster_1h_v2",
+    "human_readable_name": "Sentiment Weighted 4chan Farcaster",
+    "name": "sentiment_weighted_farcaster_1h",
     "metric": "sentiment_volume_consumed_farcaster_v2_1h",
     "version": "2020-07-31",
     "access": "restricted",
@@ -465,8 +465,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Sentiment Weighted Farcaster Daily V2",
-    "name": "sentiment_weighted_farcaster_1d_v2",
+    "human_readable_name": "Sentiment Weighted Farcaster Daily",
+    "name": "sentiment_weighted_farcaster_1d",
     "metric": "sentiment_volume_consumed_farcaster_v2_1d",
     "version": "2020-07-31",
     "access": "restricted",

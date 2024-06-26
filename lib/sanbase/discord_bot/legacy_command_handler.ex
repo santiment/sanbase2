@@ -641,11 +641,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
          components,
          embeds
        ) do
-    Sanbase.Dashboard.QueryExecution.get_execution_stats(
-      sanbase_bot_id(),
-      exec_result.clickhouse_query_id
-    )
-    |> case do
+    case Sanbase.Dashboard.QueryExecution.get_execution_stats(exec_result.clickhouse_query_id) do
       {:ok, qe} ->
         stats = get_execution_summary(qe)
 
@@ -664,11 +660,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
          components,
          embeds
        ) do
-    Sanbase.Dashboard.QueryExecution.get_execution_stats(
-      sanbase_bot_id(),
-      exec_result.clickhouse_query_id
-    )
-    |> case do
+    case Sanbase.Dashboard.QueryExecution.get_execution_stats(exec_result.clickhouse_query_id) do
       {:ok, qe} ->
         stats = get_execution_summary(qe)
 

@@ -374,9 +374,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   def get_clickhouse_query_execution_stats(
         _root,
         %{clickhouse_query_id: clickhouse_query_id},
-        %{context: %{auth: %{current_user: user}}}
+        _resolution
       ) do
-    case Queries.QueryExecution.get_execution_stats(user.id, clickhouse_query_id) do
+    case Queries.QueryExecution.get_execution_stats(clickhouse_query_id) do
       {:ok, %{execution_details: details} = result} ->
         # For legacy reasons the API response is flat.
         result = Map.delete(result, :execution_details) |> Map.merge(details)

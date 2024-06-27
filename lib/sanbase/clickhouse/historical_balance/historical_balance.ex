@@ -25,6 +25,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @type selector :: %{
           optional(:infrastructure) => String.t(),
           optional(:currency) => String.t(),
+          optional(:issuer) => String.t(),
           optional(:slug) => String.t(),
           optional(:contract) => String.t(),
           optional(:decimals) => non_neg_integer()
@@ -253,10 +254,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def selector_to_args(%{infrastructure: "XRP"} = selector) do
     %{
       module: XrpBalance,
-      asset: Map.get(selector, :currency, "XRP"),
+      asset: %{
+        currency: Map.get(selector, :currency, "XRP"),
+        issuer: Map.get(selector, :issuer, "XRP")
+      },
       currency: Map.get(selector, :currency, "XRP"),
+      issuer: Map.get(selector, :issuer, "XRP"),
       blockchain: BlockchainAddress.blockchain_from_infrastructure("XRP"),
-      slug: "xrp",
+      slug: Map.get(selector, :slug, "xrp"),
       decimals: 0
     }
   end
@@ -353,7 +358,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     data
   end
 
-  defp get_project_details(%{slug: slug}) do
+  defp get_project_details(%{slug: slug} = m) do
+    IO.inspect(m)
+
     with {:ok, contract, decimals, infrastructure} <-
            Project.contract_info_infrastructure_by_slug(slug) do
       %{

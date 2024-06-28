@@ -379,7 +379,7 @@ defmodule Sanbase.Alert.Scheduler do
       send_results_list
       |> Enum.reduce({last_triggered, _total = 0, _failed = 0}, fn
         {identifier_or_list, _result = :ok}, {acc, total, failed} ->
-          # Example: {["elem1", "elem2"], :ok} or {"0x123", :ok}
+          # Example: {["elem1", "elem2"], :ok} or {"0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", :ok}
           # This case happens when multiple identifiers (for example emerging words)
           # are handled in one notification.
           list = identifier_or_list |> List.wrap()

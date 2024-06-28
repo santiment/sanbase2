@@ -24,11 +24,14 @@ defmodule Sanbase.BlockchainAddress do
     "polygon"
   ]
 
+  # XRP addresses exclude zero and capital O, as well as capital I and lowercase l
+  @xrp_regex ~r/^([r])([1-9A-HJ-NP-Za-km-z]{24,34})$/
   @ethereum_regex ~r/^0x([A-Fa-f0-9]{40})$/
   @bitcoin_regex ~r/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/
 
   def ethereum_regex(), do: @ethereum_regex
   def bitcoin_regex(), do: @bitcoin_regex
+  def xrp_regex(), do: @xrp_regex
 
   schema "blockchain_addresses" do
     field(:address, :string)

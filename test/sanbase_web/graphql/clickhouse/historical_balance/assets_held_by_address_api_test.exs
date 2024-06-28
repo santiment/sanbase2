@@ -37,7 +37,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
       {:ok, %{eth_project.slug => ethereum_usd_price}}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      query = assets_held_by_address_query("0x123", "ETH")
+      query = assets_held_by_address_query("0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", "ETH")
 
       result =
         conn
@@ -72,7 +72,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
       {:ok, %{btc_project.slug => bitcoin_usd_price}}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      query = assets_held_by_address_query("0x123", "BTC")
+      query = assets_held_by_address_query("0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", "BTC")
 
       result =
         conn
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
     Sanbase.Mock.prepare_mock2(&Sanbase.Balance.assets_held_by_address/2, {:ok, data_btc})
     |> Sanbase.Mock.prepare_mock2(&Sanbase.Metric.aggregated_timeseries_data/5, {:ok, %{}})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      query = assets_held_by_address_query("0x123", "BTC")
+      query = assets_held_by_address_query("0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", "BTC")
 
       result =
         conn
@@ -125,7 +125,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
   test "historical balances returns empty list", context do
     Sanbase.Mock.prepare_mock2(&Sanbase.Balance.assets_held_by_address/2, {:ok, []})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      address = "0x123"
+      address = "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"
 
       query = assets_held_by_address_query(address, "ETH")
 
@@ -140,15 +140,15 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
 
   defp assets_held_by_address_query(address, infrastructure) do
     """
-      {
-        assetsHeldByAddress(
-          selector: {infrastructure: "#{infrastructure}", address: "#{address}"}
-        ){
-            slug
-            balance
-            balanceUsd
-        }
+    {
+      assetsHeldByAddress(
+        selector: {infrastructure: "#{infrastructure}", address: "#{address}"}
+      ){
+          slug
+          balance
+          balanceUsd
       }
+    }
     """
   end
 end

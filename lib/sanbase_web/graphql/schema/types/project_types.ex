@@ -360,6 +360,17 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:token_decimals, :integer)
 
     @desc ~s"""
+    A full list of all the ecosystem this project contributes to
+    in one or more ways:
+    - Deployed on that ecosystem
+    - Provides data and analytics tool for that ecosystem
+    - Provides interoperability between different ecosystems
+    - Provides liqudity and DeFi integrations
+    - etc.
+    """
+    field(:ecosystems, list_of(:ecosystem))
+
+    @desc ~s"""
     Projects with the same slug but different prefix like a-tether, arb-tether,
     o-tether, etc. refer to the same project's versions on different blockchains.
     These are considered multichain projects. This grouping can be used so we can
@@ -373,6 +384,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     """
     field(:multichain_project_group_key, :string)
 
+    @desc ~s"""
+    If the project has a multichain_project_group_key, this field will return the ecosystem
+    on which this project is deployed
+    """
     field(:multichain_ecosystem, :ecosystem)
 
     field :traded_on_exchanges, list_of(:string) do

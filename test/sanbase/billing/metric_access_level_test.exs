@@ -508,7 +508,14 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_weighted_total_1d_v2",
         "sentiment_weighted_twitter_1d_v2",
         "sentiment_weighted_youtube_videos_1d_v2",
-        "sentiment_weighted_youtube_videos_1h_v2"
+        "sentiment_weighted_youtube_videos_1h_v2",
+        "sentiment_weighted_farcaster_1d",
+        "unique_social_volume_4chan_1d",
+        "unique_social_volume_bitcointalk_1d",
+        "unique_social_volume_farcaster_1d",
+        "unique_social_volume_reddit_1d",
+        "unique_social_volume_telegram_1d",
+        "unique_social_volume_twitter_1d"
       ]
       |> Enum.sort()
 
@@ -1366,6 +1373,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_volume_total_change_1d",
         "social_volume_total_change_7d",
         "social_volume_total_change_30d",
+        "sentiment_weighted_farcaster_1d",
+        "sentiment_weighted_farcaster_1h",
+        "social_dominance_farcaster_1h_moving_average",
+        "social_dominance_farcaster_24h_moving_average",
         "sentiment_balance_total_change_1d",
         "sentiment_balance_total_change_7d",
         "sentiment_balance_total_change_30d",

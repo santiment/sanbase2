@@ -190,6 +190,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "makerdao_active_addresses",
         "liquity_active_addresses",
         "fraxlend_active_addresses",
+        "ethena_staking_deposits",
+        "ethena_staking_withdrawals",
+        "ethena_staking_apy",
         "holders_distribution_total",
         "holders_distribution_over_100",
         "nft_collection_avg_price_usd",
@@ -1569,6 +1572,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "makerdao_dsr_deposits",
         "makerdao_dsr_withdrawals",
         "makerdao_dsr_total_supplied",
+        # Ethena staking metrics
+        "ethena_staking_deposits",
+        "ethena_staking_withdrawals",
+        "ethena_staking_apy",
         # ETH 2.0 stakers MVRV metrics
         "eth2_stakers_realized_value_usd_365d",
         "eth2_stakers_realized_value_usd_2y",

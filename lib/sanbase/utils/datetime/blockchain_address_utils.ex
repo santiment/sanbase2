@@ -6,15 +6,15 @@ defmodule Sanbase.Utils.BlockchainAddressUtils do
   Additionally, the provided `infrastructure` is added as a key to every map
 
     ## Example
-    iex> Sanbase.Utils.BlockchainAddressUtils.transform_address_to_map([%{address: "0x123"}, %{address: "0x1234"}], "ETH")
-    [%{address: %{address: "0x123", infrastructure: "ETH"}}, %{address: %{address: "0x1234", infrastructure: "ETH"}}]
+    iex> Sanbase.Utils.BlockchainAddressUtils.transform_address_to_map([%{address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"}, %{address: "0x1234"}], "ETH")
+    [%{address: %{address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", infrastructure: "ETH"}}, %{address: %{address: "0x1234", infrastructure: "ETH"}}]
 
-    iex> Sanbase.Utils.BlockchainAddressUtils.transform_address_to_map([%{from_address: "0x123"}, %{from_address: "0x1234"}], "ETH")
-    [%{from_address: %{address: "0x123", infrastructure: "ETH"}}, %{from_address: %{address: "0x1234", infrastructure: "ETH"}}]
+    iex> Sanbase.Utils.BlockchainAddressUtils.transform_address_to_map([%{from_address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"}, %{from_address: "0x1234"}], "ETH")
+    [%{from_address: %{address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", infrastructure: "ETH"}}, %{from_address: %{address: "0x1234", infrastructure: "ETH"}}]
 
 
-    iex> Sanbase.Utils.BlockchainAddressUtils.transform_address_to_map([%{to_address: "0x123"}, %{to_address: "0x1234"}], "ETH")
-    [%{to_address: %{address: "0x123", infrastructure: "ETH"}}, %{to_address: %{address: "0x1234", infrastructure: "ETH"}}]
+    iex> Sanbase.Utils.BlockchainAddressUtils.transform_address_to_map([%{to_address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"}, %{to_address: "0x1234"}], "ETH")
+    [%{to_address: %{address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", infrastructure: "ETH"}}, %{to_address: %{address: "0x1234", infrastructure: "ETH"}}]
   """
   def transform_address_to_map(list, infrastructure \\ nil) do
     address_to_map =

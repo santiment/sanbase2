@@ -47,7 +47,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressLabelChangesApiTest do
       result =
         blockchain_address_label_changes(
           context.conn,
-          %{address: "0x123", infrastructure: "ETH"},
+          %{address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", infrastructure: "ETH"},
           ~U[2015-01-01 00:00:00Z],
           ~U[2021-05-01 00:00:00Z]
         )

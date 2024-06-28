@@ -358,9 +358,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     data
   end
 
-  defp get_project_details(%{slug: slug} = m) do
-    IO.inspect(m)
-
+  defp get_project_details(%{slug: slug}) do
     with {:ok, contract, decimals, infrastructure} <-
            Project.contract_info_infrastructure_by_slug(slug) do
       %{

@@ -61,7 +61,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
           description: "selector"
         )
       end)
-      |> dbg()
     end
   end
 
@@ -119,8 +118,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
       selector ->
         selector |> Map.put(:address, args[:address]) |> Map.put(:addresses, args[:addresses])
     end
-    |> IO.inspect()
     |> validate_historical_balance_selector()
+    |> case do
+      {:ok, selector} -> {:ok, Map.drop(selector, [:address, :addresses])}
+      {:error, error} -> {:error, error}
+    end
   end
 
   defp args_to_address_selector(args) do
@@ -128,10 +130,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
       nil ->
         address = args.address
         infrastructure = Sanbase.BlockchainAddress.to_infrastructure(address)
-        %{infrastructure: infrastructure, address: address}
+        selector = %{infrastructure: infrastructure, address: address}
+        {:ok, selector}
 
       selector ->
         selector
+        {:ok, selector}
     end
   end
 
@@ -165,8 +169,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   end
 
   defp validate_historical_balance_selector(%{infrastructure: "BTC"} = selector) do
-    IO.inspect(selector)
-
     cond do
       not Regex.match?(Sanbase.BlockchainAddress.bitcoin_regex(), selector.address) ->
         {:error, "Invalid Bitcoin address: #{selector.address}"}

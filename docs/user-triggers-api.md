@@ -50,7 +50,7 @@ These are the fields describing a trigger.
 ### Settings fields
 
 - **type** Defines the type of the trigger. Can be one of: `["trending_words", "metric_signal", "daily_metric_signal", "wallet_movement", "signal_data"]`
-- **target**: Slug or list of slugs or watchlist or ethereum addresses or list of ethereum addresses - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"watchlist_id": watchlsit_id} | {"eth_address": "0x123"} | {"eth_address": ["0x123", "0x234"]}`.
+- **target**: Slug or list of slugs or watchlist or ethereum addresses or list of ethereum addresses - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"watchlist_id": watchlsit_id} | {"eth_address": "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"} | {"eth_address": ["0x4efb548a2cb8f0af7c591cef21053f6875b5d38f", "0x234"]}`.
 - **channel**: A channel where the alert is sent. Can be one of `"telegram" | "email" | "web_push" | {"webhook": <webhook_url>}` | `{"telegram_channel": "@<channel_name>"}` or a list of any combination. In case of telegram_channel, the bot must be an admin that has post messages priviliges.
 - **time_window**: `1d`, `4w`, `1h` - Time string we use throughout the API for `interval`
 - **operation** - A map describing the operation that triggers the alert. Check the examples.

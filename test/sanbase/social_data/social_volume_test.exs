@@ -13,7 +13,7 @@ defmodule Sanbase.SocialVolumeTest do
       insert(:project, %{
         slug: "santiment",
         ticker: "SAN",
-        main_contract_address: "0x123"
+        main_contract_address: "0x4efb548a2cb8f0af7c591cef21053f6875b5d38f"
       })
 
     [

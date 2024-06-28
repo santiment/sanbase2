@@ -155,9 +155,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
     PREWHERE
       address = {{address}} AND
       currency = {{currency}} AND
-      issuerCurrency = {{issuer_currency}} AND
-      dt <= toDateTime({{datetime}}) AND
-      dt >= toDateTime({{datetime}}) - INTERVAL 3 YEAR
+      assetRefId = cityHash64('XRP_' || {{issuer_currency}}) AND
+      dt <= toDateTime({{datetime}})
     ORDER BY dt DESC
     LIMIT 1
     """

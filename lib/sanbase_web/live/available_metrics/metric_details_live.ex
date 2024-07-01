@@ -30,9 +30,13 @@ defmodule SanbaseWeb.MetricDetailsLive do
         />
       </div>
       <.table id="available_metrics" rows={@rows}>
-        <:col :let={row} col_class="min-w-[200px]">
+        <:col :let={row} col_class="w-40">
           <div class="relative">
-            <div data-popover-target={Map.get(row, :popover_target)} data-popover-style="light">
+            <div
+              data-popover-target={Map.get(row, :popover_target)}
+              data-popover-style="light"
+              data-popover-placement="right"
+            >
               <span class="border-b border-dotted border-gray-500 hover:cursor-pointer">
                 <%= row.key %>
               </span>
@@ -41,10 +45,9 @@ defmodule SanbaseWeb.MetricDetailsLive do
             <div
               id={Map.get(row, :popover_target)}
               role="tooltip"
-              class="absolute top-4 right-10 z-10 invisible inline-block px-8 py-6 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm opacity-0 popover sans"
+              class="absolute max-h-[580px] min-w-[860px] overflow-y-auto z-10 invisible inline-block px-8 py-6 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg shadow-2xl sans"
             >
               <span class="[&>pre]:font-sans"><%= Map.get(row, :popover_target_text) %></span>
-              <div class="popover-arrow" data-popper-arrow></div>
             </div>
           </div>
         </:col>
@@ -162,16 +165,16 @@ defmodule SanbaseWeb.MetricDetailsLive do
         popover_target_text: get_popover_text(%{key: "Has Incomplete Data"})
       },
       %{
-        key: "Is Timebound",
-        value: metadata.is_timebound,
-        popover_target: "popover-timebound",
-        popover_target_text: get_popover_text(%{key: "Is Timebound"})
-      },
-      %{
         key: "Default Aggregation",
         value: stringify(metadata.default_aggregation),
         popover_target: "popover-default-aggregation",
         popover_target_text: get_popover_text(%{key: "Default Aggregation"})
+      },
+      %{
+        key: "Is Timebound",
+        value: metadata.is_timebound,
+        popover_target: "popover-timebound",
+        popover_target_text: get_popover_text(%{key: "Is Timebound"})
       },
       %{
         key: "Available Aggregations",
@@ -329,8 +332,8 @@ defmodule SanbaseWeb.MetricDetailsLive do
         }
       }
 
-    When `OHLC` aggregation is used, the result is fetched in a different way.
-    Instead of `value` use `valueOhlc`:
+    When `OHLC` aggregation is used, the result is fetched in a different way -
+    use `valueOhlc` instead of `value`:
 
     Example:
       {

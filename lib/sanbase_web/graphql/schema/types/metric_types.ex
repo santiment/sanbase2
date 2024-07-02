@@ -17,6 +17,9 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:free)
     value(:basic)
     value(:pro)
+    value(:max)
+    value(:business_pro)
+    value(:business_max)
     value(:custom)
   end
 

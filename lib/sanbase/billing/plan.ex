@@ -13,7 +13,7 @@ defmodule Sanbase.Billing.Plan do
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Subscription}
 
-  @plans_order [free: 0, basic: 1, pro: 2, custom: 4]
+  @plans_order [free: 0, basic: 1, pro: 2, business_pro: 3, max: 4, business_max: 5, custom: 6]
   @plans Keyword.keys(@plans_order)
 
   def plans(), do: @plans

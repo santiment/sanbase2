@@ -210,15 +210,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
       ) do
     async(fn ->
       with {:ok, %{projects: projects}} <- UserList.get_projects(user_list),
+           {:ok, projects} <- deduplicate_multichain_projects(projects),
            slugs when is_list(slugs) <- Enum.map(projects, & &1.slug),
            {:ok, result} <- Sanbase.Price.combined_marketcap_and_volume(slugs, from, to, interval) do
         {:ok, result}
       else
         {:error, error} ->
           {:error, "Can't fetch historical stats for a watchlist. Reason: #{inspect(error)}"}
-
-        _ ->
-          {:error, "Can't fetch historical stats for a watchlist."}
       end
     end)
   end
@@ -383,6 +381,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   end
 
   # Private functions
+
+  defp deduplicate_multichain_projects(projects) do
+    # For all projects that have multichain_project_group_key set, leave only one
+    # of them in the list, so when combined marketcap/volume is computed, there are
+    # no duplicates
+    {not_multichain, multichain} =
+      Enum.split_with(projects, fn p -> is_nil(p.multichain_project_group_key) end)
+
+    deduplicated_multichain =
+      Enum.uniq_by(multichain, & &1.multichain_project_group_key)
+
+    {:ok, not_multichain ++ deduplicated_multichain}
+  end
 
   defp has_permissions?(watchlist, %User{id: user_id}, action) do
     case watchlist do

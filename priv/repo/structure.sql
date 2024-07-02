@@ -2899,7 +2899,9 @@ CREATE TABLE public.project (
     telegram_chat_id integer,
     discord_link character varying(255),
     ecosystem character varying(255),
-    ecosystem_full_path character varying(255)
+    ecosystem_full_path character varying(255),
+    multichain_project_group_key character varying(255) DEFAULT NULL::character varying,
+    multichain_ecosystem_id bigint
 );
 
 
@@ -8538,6 +8540,14 @@ ALTER TABLE ONLY public.project_market_segments
 
 
 --
+-- Name: project project_multichain_ecosystem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project
+    ADD CONSTRAINT project_multichain_ecosystem_id_fkey FOREIGN KEY (multichain_ecosystem_id) REFERENCES public.ecosystems(id);
+
+
+--
 -- Name: project project_project_transparency_status_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9544,3 +9554,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240320090413);
 INSERT INTO public."schema_migrations" (version) VALUES (20240325154734);
 INSERT INTO public."schema_migrations" (version) VALUES (20240415100155);
 INSERT INTO public."schema_migrations" (version) VALUES (20240424082842);
+INSERT INTO public."schema_migrations" (version) VALUES (20240531121027);

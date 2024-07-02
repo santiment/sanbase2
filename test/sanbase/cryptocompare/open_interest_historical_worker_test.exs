@@ -95,7 +95,7 @@ defmodule Sanbase.Cryptocompare.OpenInterestHistoricalWorkerTest do
       assert length(topic) == limit
       topic = Enum.map(topic, fn {k, v} -> {k, Jason.decode!(v)} end)
 
-      for i <- (limit - 1)..0 do
+      for i <- (limit - 1)..0//-1 do
         assert {"#{market}_#{instrument}_#{timestamp - i * 3600}",
                 Jason.decode!(
                   "{\"close_mark_price\":1332.98969276,\"close_quote\":187708030,\"close_settlement\":140817.31540725136,\"contract_currency\":\"USD\",\"instrument\":\"ETHUSD_PERP\",\"mapped_instrument\":\"#{instrument}\",\"market\":\"#{market}\",\"quote_currency\":\"USD\",\"settlement_currency\":\"ETH\",\"timestamp\":#{timestamp - i * 3600}}"

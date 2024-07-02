@@ -32,7 +32,7 @@ defmodule Sanbase.Metric.Helper do
     Sanbase.BlockchainAddress.MetricAdapter,
     Sanbase.Contract.MetricAdapter
   ]
-
+  Module.register_attribute(__MODULE__, :implemented_optional_functions_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :aggregations_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :aggregations_per_metric_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :incomplete_metrics_acc, accumulate: true)
@@ -46,6 +46,7 @@ defmodule Sanbase.Metric.Helper do
   Module.register_attribute(__MODULE__, :required_selectors_map_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :deprecated_metrics_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :soft_deprecated_metrics_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :fixed_labels_parameters_metrics_acc, accumulate: true)
 
   for module <- @metric_modules do
     @required_selectors_map_acc module.required_selectors()
@@ -78,11 +79,33 @@ defmodule Sanbase.Metric.Helper do
                                        fn metric -> %{metric: metric, module: module} end
                                      )
 
-    if function_exported?(module, :deprecated_metrics_map, 0),
-      do: @deprecated_metrics_acc(module.deprecated_metrics_map())
+    if function_exported?(module, :available_label_fqns, 1) and
+         function_exported?(module, :available_label_fqns, 2) do
+      @implemented_optional_functions_acc {:available_label_fqns, module, true}
+    else
+      @implemented_optional_functions_acc {:available_label_fqns, module, false}
+    end
 
-    if function_exported?(module, :soft_deprecated_metrics_map, 0),
-      do: @soft_deprecated_metrics_acc(module.soft_deprecated_metrics_map())
+    if function_exported?(module, :deprecated_metrics_map, 0) do
+      @deprecated_metrics_acc module.deprecated_metrics_map()
+      @implemented_optional_functions_acc {:deprecated_metrics_map, module, true}
+    else
+      @implemented_optional_functions_acc {:deprecated_metrics_map, module, false}
+    end
+
+    if function_exported?(module, :soft_deprecated_metrics_map, 0) do
+      @soft_deprecated_metrics_acc module.soft_deprecated_metrics_map()
+      @implemented_optional_functions_acc {:soft_deprecated_metrics_map, module, true}
+    else
+      @implemented_optional_functions_acc {:soft_deprecated_metrics_map, module, false}
+    end
+
+    if function_exported?(module, :fixed_labels_parameters_metrics, 0) do
+      @fixed_labels_parameters_metrics_acc module.fixed_labels_parameters_metrics()
+      @implemented_optional_functions_acc {:fixed_labels_parameters_metrics, module, true}
+    else
+      @implemented_optional_functions_acc {:fixed_labels_parameters_metrics, module, false}
+    end
   end
 
   flat_unique = fn list -> list |> List.flatten() |> Enum.uniq() end
@@ -90,6 +113,8 @@ defmodule Sanbase.Metric.Helper do
   @incomplete_metrics @incomplete_metrics_acc |> then(flat_unique)
   @free_metrics @free_metrics_acc |> then(flat_unique)
   @restricted_metrics @restricted_metrics_acc |> then(flat_unique)
+  @fixed_labels_parameters_metrics @fixed_labels_parameters_metrics_acc |> then(flat_unique)
+
   @timeseries_metric_module_mapping @timeseries_metric_module_mapping_acc |> then(flat_unique)
   @table_metric_module_mapping @table_metric_module_mapping_acc |> then(flat_unique)
   @histogram_metric_module_mapping @histogram_metric_module_mapping_acc |> then(flat_unique)
@@ -115,6 +140,17 @@ defmodule Sanbase.Metric.Helper do
   @required_selectors_map @required_selectors_map_acc
                           |> then(reduce_merge)
 
+  @implemented_optional_functions Enum.reduce(
+                                    @implemented_optional_functions_acc,
+                                    %{},
+                                    fn {module, fun, bool}, acc ->
+                                      Map.put(acc, {module, fun}, bool)
+                                    end
+                                  )
+  # the JSON files can define `"access": "free"`
+  # or `"access": {"historical": "free", "realtime": "restricted"}`
+  # both are resolved to a map where the realtime and historical restrictions
+  # are explicitly stated
   resolve_restrictions = fn
     restrictions when is_map(restrictions) ->
       restrictions
@@ -168,6 +204,7 @@ defmodule Sanbase.Metric.Helper do
   def min_plan_map(), do: @min_plan_map |> transform()
   def restricted_metrics(), do: @restricted_metrics |> transform()
   def table_metrics(), do: @table_metrics |> transform()
+  def fixed_labels_parameters_metrics(), do: @fixed_labels_parameters_metrics |> transform()
   def table_metrics_mapset(), do: @table_metrics_mapset |> transform()
   def table_metric_module_mapping(), do: @table_metric_module_mapping |> transform()
   def table_metric_to_module_map(), do: @table_metric_to_module_map |> transform()
@@ -176,6 +213,7 @@ defmodule Sanbase.Metric.Helper do
   def timeseries_metrics_mapset(), do: @timeseries_metrics_mapset |> transform()
   def timeseries_metrics(), do: @timeseries_metrics |> transform()
   def required_selectors_map(), do: @required_selectors_map |> transform()
+  def implemented_optional_functions(), do: @implemented_optional_functions
 
   # Private functions
 

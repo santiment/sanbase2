@@ -105,7 +105,10 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
        required_selectors: [:slug],
        data_type: data_type,
        is_timebound: false,
-       complexity_weight: @default_complexity_weight
+       complexity_weight: @default_complexity_weight,
+       is_deprecated: false,
+       hard_deprecate_after: nil,
+       docs: []
      }}
   end
 

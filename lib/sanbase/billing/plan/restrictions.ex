@@ -16,7 +16,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
           restricted_from: DateTime.t() | nil,
           restricted_to: DateTime.t() | nil,
           is_deprecated: boolean(),
-          hard_deprecate_after: DateTime.t() | nil
+          hard_deprecate_after: DateTime.t() | nil,
+          docs: list(String.t())
         }
 
   @type query_or_argument :: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
@@ -154,7 +155,9 @@ defmodule Sanbase.Billing.Plan.Restrictions do
       is_accessible: true,
       is_restricted: not is_nil(restricted_from) or not is_nil(restricted_to),
       restricted_from: restricted_from,
-      restricted_to: restricted_to
+      restricted_to: restricted_to,
+      # The metric additional data will override the docs field
+      docs: []
     }
     |> Map.merge(additional_data)
   end
@@ -170,7 +173,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
           min_interval: metadata.min_interval,
           internal_name: metadata.internal_metric,
           is_deprecated: metadata.is_deprecated,
-          hard_deprecate_after: metadata.hard_deprecate_after
+          hard_deprecate_after: metadata.hard_deprecate_after,
+          docs: metadata.docs
         }
 
       {:error, error} ->

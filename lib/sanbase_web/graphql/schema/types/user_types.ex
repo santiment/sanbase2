@@ -317,6 +317,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     value(:signal)
   end
 
+  object :docs_object do
+    field(:link, non_null(:string))
+  end
+
   object :access_restriction do
     field(:type, non_null(:string))
     field(:name, non_null(:string))
@@ -328,6 +332,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:restricted_to, :datetime)
     field(:is_deprecated, non_null(:boolean))
     field(:hard_deprecate_after, :datetime)
+    field(:docs, list_of(:docs_object))
   end
 
   object :api_call_data do

@@ -116,7 +116,10 @@ defmodule Sanbase.Twitter.MetricAdapter do
        required_selectors: @required_selectors[metric],
        data_type: :timeseries,
        is_timebound: false,
-       complexity_weight: @default_complexity_weight
+       complexity_weight: @default_complexity_weight,
+       is_deprecated: false,
+       hard_deprecate_after: nil,
+       docs: []
      }}
   end
 

@@ -100,7 +100,10 @@ defmodule Sanbase.PricePair.MetricAdapter do
        required_selectors: [:slug],
        data_type: :timeseries,
        is_timebound: false,
-       complexity_weight: @default_complexity_weight
+       complexity_weight: @default_complexity_weight,
+       is_deprecated: false,
+       hard_deprecate_after: nil,
+       docs: [%{link: "https://academy.santiment.net/metrics/price"}]
      }}
   end
 

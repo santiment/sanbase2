@@ -134,7 +134,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
         {:ok, selector}
 
       selector ->
-        selector
         {:ok, selector}
     end
   end

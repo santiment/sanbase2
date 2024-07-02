@@ -331,7 +331,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
        complexity_weight: @default_complexity_weight,
        hard_deprecate_after: nil,
        is_deprecated: false,
-       is_timebound: false
+       is_timebound: false,
+       docs: Enum.map(docs_links(metric), fn link -> %{link: link} end)
      }}
   end
 
@@ -357,4 +358,29 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2011-06-01 00:00:00Z]}
   defp source_first_datetime("youtube_videos"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
   defp source_first_datetime("4chan"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
+
+  defp docs_links(metric) do
+    list =
+      cond do
+        "nft_social_volume" == metric ->
+          ["/metrics/nft-social-volume"]
+
+        String.contains?(metric, ["sentiment_weighted", "sentiment_volume_consumed"]) ->
+          ["/metrics/sentiment-metrics/weighted-sentiment-metrics"]
+
+        String.contains?(metric, ["sentiment_positive", "sentiment_negative", "sentiment_balance"]) ->
+          ["/metrics/sentiment-metrics/positive-negative-sentiment-metrics"]
+
+        String.contains?(metric, "social_dominance") ->
+          ["/metrics/social-dominance"]
+
+        String.contains?(metric, "social_volume") ->
+          ["/metrics/social-volume"]
+
+        true ->
+          []
+      end
+
+    Enum.map(list, &Path.join(["https://academy.santiment.net", &1]))
+  end
 end

@@ -43,10 +43,10 @@ defmodule Sanbase.Queries.QueryMetadata do
     }
   end
 
-  def from_refresh_job() do
+  def from_refresh_job(user_id) do
     %{
-      sanbase_user_id: 0,
-      product: "REFRESH",
+      sanbase_user_id: user_id,
+      product: "REFRESH_JOB",
       query_ran_from_prod_marker: @is_prod
     }
   end

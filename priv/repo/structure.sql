@@ -2901,7 +2901,7 @@ CREATE TABLE public.project (
     ecosystem character varying(255),
     ecosystem_full_path character varying(255),
     multichain_project_group_key character varying(255) DEFAULT NULL::character varying,
-    multichain_ecosystem_id bigint
+    deployed_on_ecosystem_id bigint
 );
 
 
@@ -8468,6 +8468,14 @@ ALTER TABLE ONLY public.presigned_s3_urls
 
 
 --
+-- Name: project project_deployed_on_ecosystem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project
+    ADD CONSTRAINT project_deployed_on_ecosystem_id_fkey FOREIGN KEY (deployed_on_ecosystem_id) REFERENCES public.ecosystems(id);
+
+
+--
 -- Name: project_ecosystem_labels_change_suggestions project_ecosystem_labels_change_suggestions_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8537,14 +8545,6 @@ ALTER TABLE ONLY public.project_market_segments
 
 ALTER TABLE ONLY public.project_market_segments
     ADD CONSTRAINT project_market_segments_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id);
-
-
---
--- Name: project project_multichain_ecosystem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.project
-    ADD CONSTRAINT project_multichain_ecosystem_id_fkey FOREIGN KEY (multichain_ecosystem_id) REFERENCES public.ecosystems(id);
 
 
 --

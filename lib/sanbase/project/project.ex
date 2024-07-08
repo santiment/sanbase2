@@ -22,7 +22,7 @@ defmodule Sanbase.Project do
     :github_organizations,
     :contract_addresses,
     :ecosystems,
-    :multichain_ecosystem
+    :deployed_on_ecosystem
   ]
   def preloads(), do: @preloads
 
@@ -65,7 +65,7 @@ defmodule Sanbase.Project do
 
     ### Fields related to multi-chain support
     field(:multichain_project_group_key, :string)
-    belongs_to(:multichain_ecosystem, Sanbase.Ecosystem)
+    belongs_to(:deployed_on_ecosystem, Sanbase.Ecosystem)
 
     has_one(:social_volume_query, Project.SocialVolumeQuery)
 
@@ -143,7 +143,7 @@ defmodule Sanbase.Project do
       :website_link,
       :whitepaper_link,
       :multichain_project_group_key,
-      :multichain_ecosystem_id
+      :deployed_on_ecosystem_id
     ])
     |> cast_assoc(:market_segments)
     |> cast_assoc(:ecosystems)

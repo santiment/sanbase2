@@ -388,7 +388,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     If the project has a multichain_project_group_key, this field will return the ecosystem
     on which this project is deployed
     """
-    field(:multichain_ecosystem, :ecosystem)
+    field(:deployed_on_ecosystem, :ecosystem)
 
     field :traded_on_exchanges, list_of(:string) do
       cache_resolve(&ProjectResolver.traded_on_exchanges/3)

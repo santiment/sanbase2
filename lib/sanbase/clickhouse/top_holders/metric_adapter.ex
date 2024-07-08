@@ -150,7 +150,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   def available_metrics(%{slug: slug}) do
-    with %Project{} = project <- Project.by_slug(slug, only_preload: [:infrastructure]),
+    with %Project{} = project <- Project.by_slug(slug, preload: [:infrastructure]),
          {:ok, infr} <- Project.infrastructure_real_code(project) do
       if infr in @supported_infrastructures and Project.has_contract_address?(project) do
         # Until we have Binance exchange addresses remove exchange metrics for it.

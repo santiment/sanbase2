@@ -132,6 +132,7 @@ defmodule SanbaseWeb.MetricDetailsLive do
   defp get_rows(metric) do
     {:ok, metadata} = Sanbase.Metric.metadata(metric)
     {:ok, assets} = Sanbase.AvailableMetrics.get_metric_available_slugs(metric)
+    access_map = Sanbase.Metric.access_map()
 
     rows = [
       %{
@@ -169,6 +170,12 @@ defmodule SanbaseWeb.MetricDetailsLive do
         value: stringify(metadata.default_aggregation),
         popover_target: "popover-default-aggregation",
         popover_target_text: get_popover_text(%{key: "Default Aggregation"})
+      },
+      %{
+        key: "Access",
+        value: simplify_access(Map.get(access_map, metric)),
+        popover_target: "popover-access",
+        popover_target_text: get_popover_text(%{key: "Access"})
       },
       %{
         key: "Is Timebound",
@@ -473,4 +480,27 @@ defmodule SanbaseWeb.MetricDetailsLive do
     </pre>
     """
   end
+
+  defp get_popover_text(%{key: "Access"} = assigns) do
+    ~H"""
+    <pre>
+    <b>FREE</b> - The metrics labeled <b>FREE</b> have their entire historical data and realtime data
+    available without any restrictions. These metrics are available to all users, regardless of their
+    subscription level.
+
+    <b>RESTRICTED</b> - The metrics labeled <b>RESTRICTED</b> have their historical and realtime data
+    restricted based on the subscription plan of the user.
+
+    To see how much of the historical and realtime data is restricted, check the restrictions
+    at the <.link class="underline text-blue-600" href="https://app.santiment.net/pricing?plans=business">pricing page</.link>.
+    The documentation about the restriction is avaialble at <.link class="underline text-blue-600" href="https://academy.santiment.net/sanapi/historical-and-realtime-data-restrictions">this Academy page</.link>.
+
+    </pre>
+    """
+  end
+
+  defp simplify_access(%{"historical" => :free, "realtime" => :free}), do: "FREE"
+
+  defp simplify_access(%{"historical" => :restricted, "realtime" => :restricted}),
+    do: "RESTRICTED"
 end

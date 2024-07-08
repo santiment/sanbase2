@@ -23,6 +23,10 @@ defmodule Sanbase.Application.Web do
       # Start GraphQL subscriptions
       {Absinthe.Subscription, SanbaseWeb.Endpoint},
 
+      # This child is required so the Absinthe uses
+      # the persistent_term backend
+      {Absinthe.Schema, SanbaseWeb.Graphql.Schema},
+
       # Start the graphQL in-memory cache
       SanbaseWeb.Graphql.Cache.child_spec(
         id: :graphql_api_cache,

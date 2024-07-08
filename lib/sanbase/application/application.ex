@@ -333,6 +333,8 @@ defmodule Sanbase.Application do
 
       # Process that starts test-only deps
       start_in(Sanbase.TestSetupService, [:test]),
+
+      # Start the Event Bus
       Sanbase.EventBus.children()
     ]
     |> List.flatten()

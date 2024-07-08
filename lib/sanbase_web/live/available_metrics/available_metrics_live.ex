@@ -70,6 +70,7 @@ defmodule SanbaseWeb.AvailableMetricsLive do
         <:col :let={row} label="Default Aggregation">
           <%= row.default_aggregation |> to_string() |> String.upcase() %>
         </:col>
+        <:col :let={row} label="Access"><.metric_access access={row.access} /></:col>
         <:col :let={row} label="Available Assets" col_class="max-w-[200px]">
           <.available_assets assets={row.available_assets} />
         </:col>
@@ -253,6 +254,21 @@ defmodule SanbaseWeb.AvailableMetricsLive do
     |> Enum.map(fn x -> x |> to_string() |> String.upcase() end)
     |> Enum.join("\n") %>
     </pre>
+    """
+  end
+
+  defp metric_access(assigns) do
+    access_string =
+      case assigns.access do
+        %{"historical" => :free, "realtime" => :free} -> "FREE"
+        _ -> "RESTRICTED"
+      end
+
+    assigns =
+      assigns |> assign(:access_string, access_string)
+
+    ~H"""
+    <span><%= @access_string %></span>
     """
   end
 end

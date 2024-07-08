@@ -48,6 +48,7 @@ defmodule Sanbase.AvailableMetrics do
   def get_metrics_map() do
     metrics = Sanbase.Metric.available_metrics()
     metric_to_supported_assets_map = metric_to_available_slugs_maps()
+    access_map = Sanbase.Metric.Helper.access_map()
 
     metrics
     |> Enum.map(fn metric ->
@@ -64,7 +65,8 @@ defmodule Sanbase.AvailableMetrics do
         sanbase_access: "free",
         sanapi_access: "free",
         available_selectors: m.available_selectors,
-        required_selectors: m.required_selectors
+        required_selectors: m.required_selectors,
+        access: Map.get(access_map, metric)
       }
     end)
     |> Enum.sort_by(& &1.metric, :asc)

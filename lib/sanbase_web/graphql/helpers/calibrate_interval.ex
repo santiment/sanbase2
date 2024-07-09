@@ -28,7 +28,12 @@ defmodule SanbaseWeb.Graphql.Helpers.CalibrateInterval do
   end
 
   def calibrate(module, metric, slug, from, to, "", min_seconds, max_data_points) do
-    {:ok, first_datetime} = module.first_datetime(metric, slug)
+    {:ok, first_datetime} =
+      if function_exported?(module, :first_datetime, 3) do
+        module.first_datetime(metric, slug, [])
+      else
+        module.first_datetime(metric, slug)
+      end
 
     first_datetime = first_datetime || from
 

@@ -1,4 +1,6 @@
-# Sanbase WebSocket APIs
+#  DEPRECATED
+
+## Sanbase WebSocket APIs
 
 Sanbase Websocket endpoints are built on top of the Phoenix library and make a
 heavy use of the Phoenix Channels. This means that once a websocket connection
@@ -81,7 +83,7 @@ that include, but are not limited to:
 - The username is not too short
 - The username does not contain profanities
 - The username is not already taken
-  
+
 ```js
 const channel = socket.channel(`users:common`, {})
 channel.join()
@@ -124,7 +126,7 @@ channel
     .receive('ok', ({users}) => {
        for (let {username, id, name, avatarUrl} of users){
          console.log(`id: ${id}, username: ${username}, name: ${name}, avatarUrl: ${avatarUrl}`)
-       }  
+       }
     })
 ```
 

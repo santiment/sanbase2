@@ -3,8 +3,6 @@ defmodule Sanbase.Application.Web do
   require Logger
 
   def init() do
-    # Overwrite kaffe consumer group with a new name
-    Sanbase.Kafka.Consumer.init()
     :ok
   end
 
@@ -47,17 +45,6 @@ defmodule Sanbase.Application.Web do
            [name: Sanbase.ClusterSupervisor]
          ]},
         [:prod]
-      ),
-      # Start the Kaffe Kafka Consumer group member supervisor
-      start_if(
-        fn ->
-          %{
-            id: Kaffe.GroupMemberSupervisor,
-            start: {Kaffe.GroupMemberSupervisor, :start_link, []},
-            type: :supervisor
-          }
-        end,
-        fn -> Sanbase.Kafka.Consumer.enabled?() end
       )
     ]
 

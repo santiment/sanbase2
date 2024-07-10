@@ -38,7 +38,7 @@ defmodule Sanbase.Mixfile do
         :os_mon,
         :event_bus
       ],
-      included_applications: [:kaffe, :ueberauth_twitter, :nostrum]
+      included_applications: [:ueberauth_twitter, :nostrum]
     ]
   end
 
@@ -63,7 +63,7 @@ defmodule Sanbase.Mixfile do
       {:absinthe_phoenix, "~> 2.0"},
       {:absinthe_plug, "~> 1.5"},
       {:absinthe, "~> 1.5"},
-      {:brod, "== 3.8.1", manager: :rebar3, override: true, runtime: false},
+      {:brod, "~> 3.16", runtime: false},
       {:browser, "~> 0.5"},
       {:cachex, "~> 3.4"},
       {:cidr, "~> 1.1"},
@@ -118,13 +118,9 @@ defmodule Sanbase.Mixfile do
       {:inflex, "~> 2.0", override: true},
       {:jason, "~> 1.2"},
       {:jose, "~> 1.11"},
-      {:kaffe, github: "santiment/kaffe", override: true},
-      {:kafka_protocol,
-       github: "santiment/kafka_protocol", branch: "working-version", override: true},
       {:kino_db, "~> 0.2.2"},
       {:kino_vega_lite, "~> 0.1.9"},
       {:libcluster, "~> 3.0"},
-      {:lz4b, github: "kafka4beam/lz4b"},
       {:mint, "~> 1.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:mock, "~> 0.3"},
@@ -155,7 +151,6 @@ defmodule Sanbase.Mixfile do
       {:remote_ip, "~> 1.0"},
       {:rexbug, ">= 1.0.0"},
       {:rustler, "~> 0.24"},
-      {:san_exporter_ex, github: "santiment/san-exporter-ex"},
       {:sentry, "~> 10.0"},
       {:snappyer, github: "zmstone/snappyer", override: true},
       {:stream_data, "~> 1.1", only: :test, override: true},

@@ -77,8 +77,6 @@ config :sanbase, Sanbase.Kafka,
   kafka_port: {:system, "KAFKA_PORT", "9092"}
 
 config :sanbase, Sanbase.KafkaExporter,
-  supervisor: SanExporterEx.Producer.Supervisor,
-  producer: SanExporterEx.Producer,
   kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
   kafka_port: {:system, "KAFKA_PORT", "9092"},
   prices_topic: {:system, "KAFKA_PRICES_TOPIC", "asset_prices"},
@@ -274,19 +272,6 @@ config :sanbase, Oban.Web,
   repo: Sanbase.Repo,
   queues: [email_queue: 5, refresh_queries: 1],
   name: :oban_web
-
-config :sanbase, Sanbase.Kafka.Consumer,
-  enabled?: {:system, "KAFKA_CONSUMER_ENABLED", false},
-  metrics_stream_topic: {:system, "KAFKA_METRIC_STREAM_TOPIC", "sanbase_combined_metrics"},
-  consumer_group_basename: {:system, "KAFKA_CONSUMER_GROUP_BASENAME", "sanbase_kafka_consumer"}
-
-config :kaffe,
-  consumer: [
-    message_handler: Sanbase.Kafka.MessageProcessor,
-    async_message_ack: false,
-    start_with_earliest_message: false,
-    offset_reset_policy: :reset_to_latest
-  ]
 
 config :nostrum,
   token: {:system, "DISCORD_BOT_QUERY_TOKEN"},

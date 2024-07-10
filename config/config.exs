@@ -77,6 +77,7 @@ config :sanbase, Sanbase.Kafka,
   kafka_port: {:system, "KAFKA_PORT", "9092"}
 
 config :sanbase, Sanbase.KafkaExporter,
+  producer: Sanbase.Kafka.Implementation.Producer,
   kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
   kafka_port: {:system, "KAFKA_PORT", "9092"},
   prices_topic: {:system, "KAFKA_PRICES_TOPIC", "asset_prices"},

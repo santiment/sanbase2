@@ -171,9 +171,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "9-59/10 * * * *",
       task: {Sanbase.Billing.Subscription.NFTSubscription, :run, []}
     ],
-    manage_pinecone_index: [
+    manage_postgres_index: [
       schedule: "15 * * * *",
-      task: {Sanbase.DiscordBot.AiServer, :manage_pinecone_index, []}
+      task: {Sanbase.DiscordBot.AiServer, :manage_postgres_index, []}
     ],
     renew_available_metrics_slugs: [
       schedule: "@daily",

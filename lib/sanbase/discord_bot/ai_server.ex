@@ -182,10 +182,10 @@ defmodule Sanbase.DiscordBot.AiServer do
     end
   end
 
-  # pinecone indexing
-  def manage_pinecone_index() do
+  # postgres indexing
+  def manage_postgres_index() do
     if is_prod?() do
-      url = "#{ai_server_url()}/pinecone/index"
+      url = "#{ai_server_url()}/postgres/index"
       HTTPoison.put(url, Jason.encode!(%{hours: 1}), [{"Content-Type", "application/json"}])
     end
 

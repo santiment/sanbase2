@@ -37,8 +37,6 @@ defmodule SanbaseWeb.Endpoint do
     only: SanbaseWeb.static_paths()
   )
 
-  plug(Plug.Static, at: "/kaffy", from: :kaffy, gzip: false, only: ~w(assets))
-
   # Prometheus /metrics endpoint
   plug(PromEx.Plug, prom_ex_module: SanbaseWeb.Prometheus)
 

@@ -275,11 +275,6 @@ config :sanbase, Oban.Web,
   queues: [email_queue: 5, refresh_queries: 1],
   name: :oban_web
 
-config :kaffy,
-  otp_app: :sanbase,
-  ecto_repo: Sanbase.Repo,
-  router: SanbaseWeb.Router
-
 config :sanbase, Sanbase.Kafka.Consumer,
   enabled?: {:system, "KAFKA_CONSUMER_ENABLED", false},
   metrics_stream_topic: {:system, "KAFKA_METRIC_STREAM_TOPIC", "sanbase_combined_metrics"},

@@ -17,9 +17,6 @@ defmodule Sanbase.OpenAI do
     SQL: SELECT * FROM users WHERE age >= 21;
     {"title": "Fetch Adult Users", "description": "Retrieve all users who are 21 years old or above"}
 
-    SQL: SELECT timestamp, from_address, to_address, amount from eth_transactions;
-    {"title": "Retrieve Ethereum Transaction Details", "description": "Retrieve the timestamp, from_address, to_address, and amount details from all Ethereum transactions"}
-
     SQL: #{sql};
     """
 

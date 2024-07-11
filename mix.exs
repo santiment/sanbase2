@@ -118,7 +118,6 @@ defmodule Sanbase.Mixfile do
       {:inflex, "~> 2.0", override: true},
       {:jason, "~> 1.2"},
       {:jose, "~> 1.11"},
-      {:kaffy, github: "santiment/kaffy"},
       {:kaffe, github: "santiment/kaffe", override: true},
       {:kafka_protocol,
        github: "santiment/kafka_protocol", branch: "working-version", override: true},

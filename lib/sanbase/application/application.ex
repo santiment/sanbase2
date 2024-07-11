@@ -169,6 +169,13 @@ defmodule Sanbase.Application do
         },
         [:dev, :prod]
       ),
+      start_in(
+        %{
+          id: :sanbase_in_memory_kafka,
+          start: {Sanbase.InMemoryKafka.Producer, :start_link, []}
+        },
+        [:test]
+      ),
 
       # API Calls exporter is started only in `web` and `all` pods.
       start_if(
@@ -319,12 +326,5 @@ defmodule Sanbase.Application do
   def config_change(changed, _new, removed) do
     SanbaseWeb.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  defp kafka_endpoint() do
-    url = Config.module_get!(Sanbase.Kafka, :kafka_url) |> to_charlist()
-    port = Config.module_get_integer!(Sanbase.Kafka, :kafka_port)
-
-    [{url, port}]
   end
 end

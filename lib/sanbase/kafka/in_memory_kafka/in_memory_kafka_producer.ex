@@ -12,7 +12,7 @@ defmodule Sanbase.InMemoryKafka.Producer do
 
   @kafka_producer :test_kafka_in_memory_producer
 
-  def start_link() do
+  def start_producer(_topic) do
     Agent.start_link(fn -> %{} end, name: @kafka_producer)
   end
 

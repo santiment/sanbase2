@@ -3,6 +3,10 @@ defmodule Sanbase.Kafka.Implementation.Producer do
 
   require Logger
 
+  def start_producer(topic) do
+    :brod.start_producer(@client_name, topic, _producer_config = [])
+  end
+
   def produce_sync(topic, list) when is_list(list) do
     if Enum.any?(list, &(not match?({<<_::binary>>, _}, &1))) do
       raise ArgumentError, "Invalid list format. Each element should be a tuple {key, value}"

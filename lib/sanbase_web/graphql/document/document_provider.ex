@@ -241,7 +241,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
 
     # This is equivalent to X -- (X -- Y) because the `--` operator
     # has right to left associativity
-    common_parts = selections -- selections -- ["timeseries_data", "aggregated_timeseries_data"]
+    common_parts = selections -- (selections -- ["timeseries_data", "aggregated_timeseries_data"])
 
     Enum.map(common_parts, fn _ -> metric end)
   end

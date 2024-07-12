@@ -169,13 +169,6 @@ defmodule Sanbase.Application do
         },
         [:dev, :prod]
       ),
-      start_in(
-        %{
-          id: :sanbase_in_memory_kafka,
-          start: {Sanbase.InMemoryKafka.Producer, :start_link, []}
-        },
-        [:test]
-      ),
 
       # API Calls exporter is started only in `web` and `all` pods.
       start_if(

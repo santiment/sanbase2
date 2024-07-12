@@ -35,8 +35,9 @@ kafka_endpoints =
 config :brod,
   clients: [
     kafka_client: [
-      endpoints: kafka_endpoints,
-      auto_start_producers: true
+      endpoints: kafka_endpoints
+      # Sanbase.KafkaExporter calls :brod.start_producer/2 when needed
+      # auto_start_producers: true
     ]
   ]
 

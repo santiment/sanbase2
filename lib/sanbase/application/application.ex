@@ -167,21 +167,8 @@ defmodule Sanbase.Application do
           start: {:brod_sup, :start_link, []},
           type: :supervisor
         },
-        # Start manually in dev and prod. SanExporterEx won't start its
-        # brod supervisor because of the `start_brod_supervisor: false` option
         [:dev, :prod]
       ),
-
-      # SanExporterEx is the module that handles the data pushing to Kafka. As other
-      # parts can be started that also require :brod_sup, :brod_sup will be started
-      # separately and `start_brod_supervisor: false` is provided to
-      # SanExporterEx
-      {SanExporterEx,
-       [
-         kafka_producer_module: Config.module_get!(Sanbase.KafkaExporter, :supervisor),
-         kafka_endpoint: kafka_endpoint(),
-         start_brod_supervisor: false
-       ]},
 
       # API Calls exporter is started only in `web` and `all` pods.
       start_if(
@@ -327,12 +314,5 @@ defmodule Sanbase.Application do
   def config_change(changed, _new, removed) do
     SanbaseWeb.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  defp kafka_endpoint() do
-    url = Config.module_get!(Sanbase.Kafka, :kafka_url) |> to_charlist()
-    port = Config.module_get_integer!(Sanbase.Kafka, :kafka_port)
-
-    [{url, port}]
   end
 end

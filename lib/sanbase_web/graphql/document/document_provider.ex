@@ -239,10 +239,8 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
     # `timeseries_data_complexity` won't go through that path.
     # `histogram_data` does not have complexity checks right now.
 
-    # This is equivalent to X -- (X -- Y) because the `--` operator
-    # has right to left associativity
-    common_parts = selections -- selections -- ["timeseries_data", "aggregated_timeseries_data"]
-
+    temp = selections -- ["timeseries_data", "aggregated_timeseries_data"]
+    common_parts = selections -- temp
     Enum.map(common_parts, fn _ -> metric end)
   end
 end

@@ -158,7 +158,7 @@ defmodule Sanbase.Mixfile do
       {:san_exporter_ex, github: "santiment/san-exporter-ex"},
       {:sentry, "~> 10.0"},
       {:snappyer, github: "zmstone/snappyer", override: true},
-      {:stream_data, "~> 0.5", only: :test},
+      {:stream_data, "~> 1.1", only: :test, override: true},
       {:stripity_stripe, "~> 2.9"},
       {:supervisor3, "~> 1.1", manager: :rebar3, override: true},
       {:sweet_xml, "~> 0.6"},

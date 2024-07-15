@@ -19,14 +19,17 @@ config :sanbase, Sanbase.TemplateMailer,
   api_key: System.get_env("MAILJET_API_KEY"),
   secret: System.get_env("MAILJET_API_SECRET")
 
+kafka_url = System.get_env("KAFKA_URL", "blockchain-kafka-kafka")
+kafka_port = System.get_env("KAFKA_PORT", "9092")
+
 kafka_endpoints =
-  if not is_nil(System.get_env("KAFKA_URL")) and not is_nil(System.get_env("KAFKA_PORT")) do
+  if not is_nil(kafka_url) and not is_nil(kafka_port) do
     # Locally KAFKA_PORT can be '30911, 30912, 30913'
-    System.get_env("KAFKA_PORT")
+    kafka_port
     |> String.split(",", trim: true)
     |> Enum.map(&String.trim/1)
     |> Enum.map(fn port ->
-      {System.get_env("KAFKA_URL"), String.to_integer(port)}
+      {kafka_url, String.to_integer(port)}
     end)
   else
     []

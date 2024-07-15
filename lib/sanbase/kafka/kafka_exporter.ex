@@ -46,19 +46,14 @@ defmodule Sanbase.KafkaExporter do
 
   @spec init(options) :: {:ok, state} when state: map()
   def init(opts) do
-    topic = Keyword.fetch!(opts, :topic)
-
     kafka_flush_timeout = Keyword.get(opts, :kafka_flush_timeout, 30_000)
     buffering_max_messages = Keyword.get(opts, :buffering_max_messages, 1000)
-
     can_send_after_interval = Keyword.get(opts, :can_send_after_interval, 1000)
     Process.send_after(self(), :flush, kafka_flush_timeout)
 
-    @producer.start_producer(topic)
-
     {:ok,
      %{
-       topic: topic,
+       topic: Keyword.fetch!(opts, :topic),
        data: [],
        size: 0,
        kafka_flush_timeout: kafka_flush_timeout,
@@ -164,13 +159,13 @@ defmodule Sanbase.KafkaExporter do
   # at all
   defp send_data(data, %{topic: topic, can_send_after_interval: 0, size: size}) do
     Logger.info("Sending #{size} events to Kafka topic: #{topic}")
-    @producer.produce_sync(topic, data)
+    @producer.send_data(topic, data)
   end
 
   defp send_data(data, %{topic: topic, can_send_after: can_send_after, size: size}) do
     Sanbase.DateTimeUtils.sleep_until(can_send_after)
     Logger.info("Sending #{size} events to Kafka topic: #{topic}")
-    @producer.produce_sync(topic, data)
+    @producer.send_data(topic, data)
   end
 
   defp send_data_immediately([], _), do: :ok
@@ -178,6 +173,6 @@ defmodule Sanbase.KafkaExporter do
 
   defp send_data_immediately(data, %{topic: topic, size: size}) do
     Logger.info("Sending #{size} events to Kafka topic: #{topic}")
-    @producer.produce_sync(topic, data)
+    @producer.send_data(topic, data)
   end
 end

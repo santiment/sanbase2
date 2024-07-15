@@ -1,5 +1,8 @@
 defmodule Sanbase.InMemoryKafka.Producer do
   @moduledoc ~s"""
+  In-memory implementation of the SanExporterEx.ProducerBehaviour used in dev
+  and test environments.
+
   This modulue is used by default in dev and test environments so there is no
   need for a Kafka node to be connected. It is implemented as an Agent that has
   different topics representned as fields in a map data structure.
@@ -10,13 +13,16 @@ defmodule Sanbase.InMemoryKafka.Producer do
 
   use Agent
 
+  @behaviour SanExporterEx.ProducerBehaviour
+
   @kafka_producer :test_kafka_in_memory_producer
 
-  def start_producer(_topic) do
+  def start_link(_initial_value) do
     Agent.start_link(fn -> %{} end, name: @kafka_producer)
   end
 
-  def produce_sync(producer \\ @kafka_producer, topic, data) do
+  @impl SanExporterEx.ProducerBehaviour
+  def send_data(producer \\ @kafka_producer, topic, data) do
     Agent.update(
       producer,
       fn state ->
@@ -26,6 +32,12 @@ defmodule Sanbase.InMemoryKafka.Producer do
       end,
       30_000
     )
+  end
+
+  @impl SanExporterEx.ProducerBehaviour
+  def send_data_async(producer \\ @kafka_producer, topic, data) do
+    {:ok, _} = Task.start(fn -> send_data(producer, topic, data) end)
+    :ok
   end
 
   def get_state(producer \\ @kafka_producer) do

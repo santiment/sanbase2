@@ -1,4 +1,4 @@
-## Sanbase WebSocket APIs
+# Sanbase WebSocket APIs
 
 Sanbase Websocket endpoints are built on top of the Phoenix library and make a
 heavy use of the Phoenix Channels. This means that once a websocket connection
@@ -81,7 +81,7 @@ that include, but are not limited to:
 - The username is not too short
 - The username does not contain profanities
 - The username is not already taken
-
+  
 ```js
 const channel = socket.channel(`users:common`, {})
 channel.join()
@@ -124,7 +124,7 @@ channel
     .receive('ok', ({users}) => {
        for (let {username, id, name, avatarUrl} of users){
          console.log(`id: ${id}, username: ${username}, name: ${name}, avatarUrl: ${avatarUrl}`)
-       }
+       }  
     })
 ```
 
@@ -156,3 +156,70 @@ channel
     })
 ```
 
+### The `metrics:*` channels
+
+The `metrics:price` channel is accessible to anonymous users.
+
+The metrics channels are used to receive newly computed metrics without asking
+for them. Users can use subtopics like `price`, `all` or a specific metric like
+`active_addresses_24h`. When the channel is joined, the user will automatically
+start receiving all the new data points that appear in our databases withou
+making request for that.
+
+```js
+const channel = socket.channel(`metrics:price`, {})
+// The metrics:* channels differ from the previosuly shown channels in that
+// here the backend pushes new metric data without the user asking for it
+// with messages.
+channel.on('metric_data', ({metric, slug, datetime, value}) => {
+    console.log(`Received new metric: ${datetime}, ${metric}, ${slug}, ${value}`)
+})
+
+channel.join()
+    .receive('ok', () => { console.log("Success") })
+    .receive('error', () => { console.log("Error") })
+    .receive('timeout', () => { console.log("Timeout") })
+
+```
+
+The channel has two optional arguments - `slugs` and `metrics`. This way you can
+control and receive only data only for some of the slugs and the metrics:
+```js
+// Subscribe to all price-related metrics, all slugs and all sources
+const channel = socket.channel(`metrics:price`, {})
+// Subscribe to the given metrics and slugs and all sources
+const channel = socket.channel(`metrics:price`, {metrics: ['price_usd', 'price_btc'], slugs: ['bitcoin', 'ethereum']})
+// Subscribe to all slugs and metrics and get only the data with source='cryptocompare'
+const channel = socket.channel(`metrics:price`, {sources: ['cryptocompare']})
+// Create a channel without subscribing to anything. This requires further calls
+// to subscribe_slugs/metrics/sources.
+const channel = socket.channel(`metrics:price`, {slugs: [], metrics: [], sources: []})
+```
+
+By default, if no arguments are provided, all metrics, slugs and sources are
+streamed to the user.
+
+The slugs/metrics can be added/removed after the channel is joined with the
+messages:
+- `subscribe_slugs`/`unsubscribe_slugs`
+- `subscribe_metrics`/`unsubscribe_metrics`
+- `subscribe_sources`/`unsubscribe_sources`
+
+
+```js
+// Subscribe to all metrics, all sources and only bitcoin and ethereum slugs
+channel.push('subscribe_slugs', {slugs: ['bitcoin', 'ethereum']}, 10000)
+channel.push('subscribe_slugs', {slugs: ['bitcoin', 'ethereum']}, 10000)
+channel.push('subscribe_metrics', {metrics: ['price_usd', 'price_btc']}, 10000)
+channel.push('subscribe_metrics', {metrics: ['price_usd', 'price_btc']}, 10000)
+channel.push('subscribe_sources', {sources: ['cryptocompare']}, 10000)
+channel.push('unsubscribe_sources', {sources: ['cryptocompare']}, 10000)
+```
+
+If no arguments are provided on channel creation, then all slugs/metrics/sources
+are considered subscribed. In this case calling `subscribe_*` will have no
+effect as all entities are already followed. If `unsubscribe_*` is called, the
+data for all entities without the unsubscribed ones will be returned. If you
+want to subscribe only to a small number of slugs/metrics/sources then initiate
+the channel with these lists. These lists can be manipulated after creation by
+sending messages. It is allowed to provide an empty list.

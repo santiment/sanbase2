@@ -8,6 +8,9 @@ defmodule SanbaseWeb.UserSocket do
   channel("users:*", SanbaseWeb.UserChannel)
   channel("open_restricted_tabs:*", SanbaseWeb.OpenRestrictedTabChannel)
 
+  # Metrics-related channels
+  channel("metrics:*", SanbaseWeb.MetricChannel)
+
   def connect(params, socket)
       when is_map_key(params, "jti") or is_map_key(params, "access_token") do
     with {:ok, user} <- params_to_user(params) do

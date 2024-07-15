@@ -45,7 +45,9 @@ config :sanbase, Oban.Scrapers, queues: false
 
 config :sanbase, Sanbase.Notifications.Insight, enabled: "false"
 
-config :sanbase, Sanbase.KafkaExporter, producer: Sanbase.InMemoryKafka.Producer
+config :sanbase, Sanbase.KafkaExporter,
+  supervisor: Sanbase.InMemoryKafka.Supervisor,
+  producer: Sanbase.InMemoryKafka.Producer
 
 # Configure the postgres database access. These values are default values that
 # are used locally when developing. These are not the values that are used in

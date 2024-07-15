@@ -21,9 +21,10 @@ config :sanbase, Sanbase.TemplateMailer,
 
 kafka_url = System.get_env("KAFKA_URL", "blockchain-kafka-kafka")
 kafka_port = System.get_env("KAFKA_PORT", "9092")
+kafka_enabled = System.get_env("REAL_KAFKA_ENABLED", "true")
 
 kafka_endpoints =
-  if not is_nil(kafka_url) and not is_nil(kafka_port) do
+  if kafka_enabled == "true" do
     # Locally KAFKA_PORT can be '30911, 30912, 30913'
     kafka_port
     |> String.split(",", trim: true)

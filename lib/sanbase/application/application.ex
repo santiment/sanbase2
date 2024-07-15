@@ -161,13 +161,18 @@ defmodule Sanbase.Application do
   """
   def prepended_children(container_type) do
     [
-      start_in(
-        %{
-          id: :sanbase_brod_sup_id,
-          start: {:brod_sup, :start_link, []},
-          type: :supervisor
-        },
-        [:dev, :prod]
+      start_in_and_if(
+        fn ->
+          %{
+            id: :sanbase_brod_sup_id,
+            start: {:brod_sup, :start_link, []},
+            type: :supervisor
+          }
+        end,
+        [:dev, :prod],
+        fn ->
+          System.get_env("REAL_KAFKA_ENABLED") == "true"
+        end
       ),
 
       # API Calls exporter is started only in `web` and `all` pods.
@@ -179,7 +184,9 @@ defmodule Sanbase.Application do
             topic: Config.module_get!(Sanbase.KafkaExporter, :api_call_data_topic)
           )
         end,
-        fn -> container_type in ["all", "web"] end
+        fn ->
+          container_type in ["all", "web"]
+        end
       ),
 
       # sanbase_user_intercom_attributes exporter is started only in `scrapers` and `all` pods.

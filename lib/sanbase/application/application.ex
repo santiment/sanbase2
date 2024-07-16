@@ -259,7 +259,7 @@ defmodule Sanbase.Application do
         start_in_and_if(
           fn -> repo end,
           [:dev, :prod],
-          fn -> container_type() in ["web"] and Sanbase.ClickhouseRepo.enabled?() end
+          fn -> container_type() in ["web", "all"] and Sanbase.ClickhouseRepo.enabled?() end
         )
       end
 

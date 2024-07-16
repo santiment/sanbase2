@@ -152,7 +152,6 @@ defmodule Sanbase.Mixfile do
       {:rexbug, ">= 1.0.0"},
       {:rustler, "~> 0.24"},
       {:sentry, "~> 10.0"},
-      {:snappyer, github: "zmstone/snappyer", override: true},
       {:stream_data, "~> 1.1", only: :test, override: true},
       {:stripity_stripe, "~> 2.9"},
       {:supervisor3, "~> 1.1", manager: :rebar3, override: true},

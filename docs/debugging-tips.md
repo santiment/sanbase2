@@ -84,7 +84,7 @@ Crash dump is being written to: erl_crash.dump...done
 [os_mon] memory supervisor port (memsup): Erlang has closed
 ```
 
-There is no indication what is wrong.
+There is no indication what is wrong and what child crashed during starting.
 
 But the Stack Dump of the `application_controller` process has the following:
 ```erlang

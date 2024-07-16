@@ -46,6 +46,26 @@ defmodule Sanbase.ApplicationUtils do
   end
 
   @doc ~s"""
+  Combination of start_in and start_if.
+  Starts a worker/supervisor (whatever the expression returns) if both the environent (:dev, :test, :prod) is correct
+  and the condition is met
+  """
+  @spec start_in_and_if((-> any), [atom()], (-> boolean)) :: nil | any
+  def start_in_and_if(expr, environments, condition)
+      when is_function(condition, 0) and is_function(expr, 0) do
+    env = Config.module_get(Sanbase, :env)
+
+    if condition.() and env in environments do
+      expr.()
+    end
+  rescue
+    error ->
+      Logger.error("Caught error in start_if/2. Reason: #{Exception.message(error)}")
+
+      reraise error, __STACKTRACE__
+  end
+
+  @doc ~s"""
   If `start_in/2` is used it can place `nil` in the place of a worker/supervisor.
   Passing the children through `normalize_children/1` will remove these records.
   """

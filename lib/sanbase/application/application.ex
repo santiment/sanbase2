@@ -257,11 +257,14 @@ defmodule Sanbase.Application do
 
     clickhouse_children =
       for repo <- clickhouse_repos do
-        start_if(
+        start_in_and_if(
           fn -> repo end,
           fn ->
             Application.get_env(:sanbase, :env) in [:dev, :prod] and
               Sanbase.ClickhouseRepo.enabled?()
+          end,
+          fn ->
+            container_type() in ["web"]
           end
         )
       end

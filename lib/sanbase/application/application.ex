@@ -171,7 +171,7 @@ defmodule Sanbase.Application do
         end,
         [:dev, :prod],
         fn ->
-          System.get_env("REAL_KAFKA_ENABLED") == "true"
+          System.get_env("REAL_KAFKA_ENABLED", "true") == "true"
         end
       ),
 

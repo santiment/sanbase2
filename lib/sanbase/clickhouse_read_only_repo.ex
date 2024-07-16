@@ -15,7 +15,7 @@ defmodule Sanbase.ClickhouseRepo.ReadOnly do
   env = Mix.env()
 
   default_dynamic_repo =
-    if env == :test, do: Sanbase.ClickhouseRepo, else: Sanbase.Clickhouse.ReadOnly
+    if env == :test, do: Sanbase.ClickhouseRepo, else: Sanbase.ClickhouseRepo.ReadOnly
 
   adapter = if env == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
 

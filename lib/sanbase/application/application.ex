@@ -246,7 +246,6 @@ defmodule Sanbase.Application do
   @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
   def common_children() do
     clickhouse_repos = [
-      Sanbase.ClickhouseRepo,
       Sanbase.ClickhouseRepo.ReadOnly,
       Sanbase.ClickhouseRepo.FreeUser,
       Sanbase.ClickhouseRepo.SanbaseProUser,
@@ -282,6 +281,14 @@ defmodule Sanbase.Application do
 
       # Telemetry metrics
       SanbaseWeb.Telemetry,
+
+      # Start the main ClickhouseRepo. This is started in all
+      # pods as each pod will need it.
+      start_in_and_if(
+        fn -> Sanbase.ClickhouseRepo end,
+        [:dev, :prod],
+        fn -> Sanbase.ClickhouseRepo.enabled?() end
+      ),
 
       # Start the Clickhouse Repos
       clickhouse_children,

@@ -18,7 +18,7 @@ defmodule Sanbase.ApplicationUtils do
 
   INPORTANT NOTE: If you use it, you must use `normalize_children` on the children list.
   """
-  @spec start_in(any(), list[atom()]) :: nil | any
+  @spec start_in(any(), [atom()]) :: nil | any
   def start_in(expr, environments) do
     env = Config.module_get(Sanbase, :env)
 

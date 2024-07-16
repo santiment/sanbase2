@@ -19,6 +19,32 @@ config :sanbase, Sanbase.TemplateMailer,
   api_key: System.get_env("MAILJET_API_KEY"),
   secret: System.get_env("MAILJET_API_SECRET")
 
+kafka_url = System.get_env("KAFKA_URL", "blockchain-kafka-kafka")
+kafka_port = System.get_env("KAFKA_PORT", "9092")
+kafka_enabled = System.get_env("REAL_KAFKA_ENABLED", "true")
+
+kafka_endpoints =
+  if kafka_enabled == "true" do
+    # Locally KAFKA_PORT can be '30911, 30912, 30913'
+    kafka_port
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.map(fn port ->
+      {kafka_url, String.to_integer(port)}
+    end)
+  else
+    []
+  end
+
+config :brod,
+  clients: [
+    kafka_client: [
+      endpoints: kafka_endpoints
+      # Sanbase.KafkaExporter calls :brod.start_producer/2 when needed
+      # auto_start_producers: true
+    ]
+  ]
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

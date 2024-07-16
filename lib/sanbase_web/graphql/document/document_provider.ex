@@ -240,6 +240,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
     # `histogram_data` does not have complexity checks right now.
     temp = selections -- ["timeseries_data", "aggregated_timeseries_data"]
     common_parts = selections -- temp
+
     Enum.map(common_parts, fn _ -> metric end)
   end
 end

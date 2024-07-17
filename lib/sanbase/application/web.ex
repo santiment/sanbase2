@@ -30,7 +30,8 @@ defmodule Sanbase.Application.Web do
       ),
 
       # Sweeping the Guardian JWT refresh tokens
-      {Guardian.DB.Token.SweeperServer, []},
+      {Guardian.DB.Sweeper, [interval: 20 * 60 * 1000]},
+
       # Rehydrating cache
       Sanbase.Cache.RehydratingCache.Supervisor,
 

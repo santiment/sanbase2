@@ -12,12 +12,7 @@ defmodule Sanbase.Mixfile do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.html": :test
-      ],
-      source_url: "https://github.com/santiment/sanbase2/",
+      # source_url: "https://github.com/santiment/sanbase2/",
       homepage_url: "https://app.santiment.net/projects",
       # Supress errors that should not be shown
       xref: [exclude: [Oban, ExAdmin]],
@@ -99,7 +94,6 @@ defmodule Sanbase.Mixfile do
       {:ex_keccak, "~> 0.7"},
       {:ex_machina, "~> 2.2", only: [:dev, :test]},
       {:ex_unit_notifier, "~> 1.0", only: :test},
-      {:excoveralls, "~> 0.8", optional: true, only: [:test]},
       {:expletive, "~> 0.1.0"},
       {:exprof, "~> 0.2.0"},
       {:extwitter, "~> 0.12"},
@@ -108,8 +102,10 @@ defmodule Sanbase.Mixfile do
       {:floki, "~> 0.20"},
       {:fuzzy_compare, "~> 1.0"},
       {:gettext, "~> 0.11"},
-      {:guardian_db, "~> 2.0"},
-      {:guardian, "~> 2.0"},
+      {:guardian_db, "~> 3.0"},
+      # Guardian is pinned as in 2.3.2 the way they get times
+      # internally is modified, so our mocked tests fail
+      {:guardian, "== 2.3.1"},
       {:gun, "~> 2.0", hex: :remedy_gun, override: true},
       {:hackney, "~> 1.17", override: true},
       {:hammer, "~> 6.0"},
@@ -168,8 +164,7 @@ defmodule Sanbase.Mixfile do
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.9", override: true},
       {:waffle, "~> 1.1"},
-      {:websockex, "~> 0.4.3"},
-      {:poison, "~> 5.0"}
+      {:websockex, "~> 0.4.3"}
     ]
   end
 

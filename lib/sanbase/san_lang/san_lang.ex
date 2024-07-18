@@ -41,24 +41,24 @@ defmodule Sanbase.SanLang do
          result <- Interpreter.eval(ast, env) do
       {:ok, result}
     else
-      {:error, {line, :san_lang_parser, errors_list}} ->
+      {:error, {{line, column}, :san_lang_parser, errors_list}} ->
         {:error,
          """
-         Parser error on line #{line}: #{to_string(errors_list)}
+         Parser error on location #{line}:#{column} : #{to_string(errors_list)}
          """}
 
-      {:error, {line, :san_lang_lexer, error_tuple}, _} ->
+      {:error, {{line, column}, :san_lang_lexer, error_tuple}, _} ->
         case error_tuple do
           {:illegal, token} ->
             {:error,
              """
-             Lexer error on line #{line}: Illegal token '#{to_string(token)}'
+             Lexer error on location #{line}:#{column} : Illegal token '#{to_string(token)}'
              """}
 
           tuple ->
             {:error,
              """
-             Lexer error on line #{line}: #{inspect(tuple)}
+             Lexer error on location #{line}:#{column} : #{inspect(tuple)}
              """}
         end
     end

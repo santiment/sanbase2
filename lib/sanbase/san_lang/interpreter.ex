@@ -36,6 +36,14 @@ defmodule Sanbase.SanLang.Interpreter do
     Map.get(env_var, key)
   end
 
+  def eval({:access_expr, env_var_or_identifier, key}, env) do
+    # The acessed type is an env var or an identifier
+    map = eval(env_var_or_identifier, env)
+    # The key can be a string, or an identifier if used from inside a map/filter/reduce
+    key = eval(key, env)
+    Map.get(map, key)
+  end
+
   # Comparison
   def eval({{:comparison_expr, {op, _}}, lhs, rhs}, env) when op in ~w(== != < > <= >=)a,
     do: apply(Kernel, op, [eval(lhs, env), eval(rhs, env)])
@@ -43,14 +51,6 @@ defmodule Sanbase.SanLang.Interpreter do
   # Named Function Calls
   def eval({:function_call, {:identifier, _, function_name}, args}, env) do
     eval_function_call(function_name, args, env)
-  end
-
-  def eval({:access_expr, env_var_or_identifier, key}, env) do
-    # The acessed type is an env var or an identifier
-    map = eval(env_var_or_identifier, env)
-    # The key can be a string, or an identifier if used from inside a map/filter/reduce
-    key = eval(key, env)
-    Map.get(map, key)
   end
 
   def eval_list({:list, list_elements}, env) do

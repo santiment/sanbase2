@@ -39,9 +39,17 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
       {:error, {:disable_alert, _}} = error ->
         error
 
+      {:error, :target_empty_list} ->
+        # There's nothing to be triggered
+        {:ok, %{settings | triggered?: false}}
+
       _ ->
         {:ok, %{settings | triggered?: false}}
     end
+  end
+
+  def get_data(%{filtered_target: %{list: []}}) do
+    {:error, :target_empty_list}
   end
 
   def get_data(%{filtered_target: %{list: target_list, type: type}} = settings) do

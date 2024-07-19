@@ -118,13 +118,20 @@ defmodule Sanbase.Alert.Trigger do
     filtered_target = remove_targets_on_cooldown(target, trigger)
     trigger_settings = %{trigger_settings | filtered_target: filtered_target}
 
-    case Sanbase.Alert.Settings.evaluate(trigger_settings, trigger) do
-      {:ok, trigger_settings} ->
-        trigger = %Trigger{trigger | settings: trigger_settings}
-        {:ok, trigger}
+    case filtered_target do
+      %{list: []} ->
+        settings = %{trigger_settings | triggered?: false}
+        {:ok, %{trigger | settings: settings}}
 
-      {:error, error} ->
-        {:error, error}
+      _ ->
+        case Sanbase.Alert.Settings.evaluate(trigger_settings, trigger) do
+          {:ok, trigger_settings} ->
+            trigger = %Trigger{trigger | settings: trigger_settings}
+            {:ok, trigger}
+
+          {:error, error} ->
+            {:error, error}
+        end
     end
   end
 

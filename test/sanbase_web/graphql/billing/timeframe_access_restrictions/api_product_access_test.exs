@@ -650,10 +650,30 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "Business MAX has not historica or realtime restrictions API access", context do
+    test "Business MAX has not historical or realtime restrictions API access", context do
       data = setup_subscription("BUSINESS_MAX")
       {from, to} = from_to(5 * 360, 1)
       metric = "mean_age"
+      slug = context.project.slug
+      selector = %{slug: slug}
+      query = metric_query(metric, selector, from, to)
+      result = execute_query(data.apikey_conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "Business MAX has not historical or realtime restrictions API access when user also has Sanbase PRO",
+         context do
+      user = insert(:user, email: "sanbase_pro_and_business_max@example.com")
+      insert(:subscription_pro_sanbase, user: user)
+      insert(:subscription_business_max_monthly, user: user)
+
+      {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
+      apikey_conn = setup_apikey_auth(build_conn(), apikey)
+      data = %{user: user, apikey: apikey, apikey_conn: apikey_conn}
+
+      {from, to} = from_to(5 * 360, 1)
+      metric = "mean_realized_price_usd_1d"
       slug = context.project.slug
       selector = %{slug: slug}
       query = metric_query(metric, selector, from, to)

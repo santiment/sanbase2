@@ -24,6 +24,7 @@ defmodule Mix.Tasks.List.Schema.Modules.Without.Admin do
 
     modules
     |> Enum.reject(fn module -> module in schema_modules_with_admin end)
+    # credo:disable-for-next-line
     |> Enum.each(&IO.inspect(&1))
   end
 end

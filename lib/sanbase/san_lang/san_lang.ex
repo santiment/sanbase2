@@ -34,33 +34,12 @@ defmodule Sanbase.SanLang do
   """
   @spec eval(String.t(), Environment.t()) :: {:ok, any()} | {:error, String.t()}
   def eval(input, env \\ Environment.new()) when is_binary(input) do
-    input_charlist = String.to_charlist(input)
-
-    with {:ok, tokens, _} <- :san_lang_lexer.string(input_charlist),
-         {:ok, ast} <- :san_lang_parser.parse(tokens),
+    with {:ok, ast} <- string_to_ast(input),
          result <- Interpreter.eval(ast, env) do
       {:ok, result}
     else
-      {:error, {{line, column}, :san_lang_parser, errors_list}} ->
-        {:error,
-         """
-         Parser error on location #{line}:#{column} : #{to_string(errors_list)}
-         """}
-
-      {:error, {{line, column}, :san_lang_lexer, error_tuple}, _} ->
-        case error_tuple do
-          {:illegal, token} ->
-            {:error,
-             """
-             Lexer error on location #{line}:#{column} : Illegal token '#{to_string(token)}'
-             """}
-
-          tuple ->
-            {:error,
-             """
-             Lexer error on location #{line}:#{column} : #{inspect(tuple)}
-             """}
-        end
+      error ->
+        handle_error(error)
     end
   end
 
@@ -70,5 +49,40 @@ defmodule Sanbase.SanLang do
   @spec eval(String.t(), Environment.t()) :: any() | no_return
   def eval!(input, env \\ Environment.new()) when is_binary(input) do
     eval(input, env) |> to_bang()
+  end
+
+  defp string_to_ast(input) when is_binary(input) do
+    input_charlist = String.to_charlist(input)
+
+    with {:ok, tokens, _} <- :san_lang_lexer.string(input_charlist),
+         {:ok, ast} <- :san_lang_parser.parse(tokens) do
+      {:ok, ast}
+    end
+  end
+
+  defp handle_error({:error, {{line, column}, :san_lang_parser, errors_list}}) do
+    {:error,
+     """
+     Parser error on location #{line}:#{column}
+     Reason: #{to_string(errors_list)}
+     """}
+  end
+
+  defp handle_error({:error, {{line, column}, :san_lang_lexer, error_tuple}, _}) do
+    case error_tuple do
+      {:illegal, token} ->
+        {:error,
+         """
+         Lexer error on location #{line}:#{column}
+         Illegal token '#{to_string(token)}'
+         """}
+
+      tuple ->
+        {:error,
+         """
+         Lexer error on location #{line}:#{column}
+         Reason: #{inspect(tuple)}
+         """}
+    end
   end
 end

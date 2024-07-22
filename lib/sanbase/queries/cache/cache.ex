@@ -106,8 +106,8 @@ defmodule Sanbase.Queries.Cache do
 
   # This should not be called without a user and private query.
   def get_cached_executions(query, querying_user_id) do
-    with {:ok, query} <- get_cached_executions_query(query, querying_user_id),
-         result = Sanbase.Repo.all(query) do
+    with {:ok, query} <- get_cached_executions_query(query, querying_user_id) do
+      result = Sanbase.Repo.all(query)
       {:ok, result}
     end
   end

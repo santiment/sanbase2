@@ -31,15 +31,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   end
 
   def available_metrics_extended(%Project{} = project, args, resolution) do
-    with {:ok, metrics} <- available_metrics(project, args, resolution) do
-      list =
-        Enum.map(metrics, fn m ->
-          {:ok, m} = Metric.metadata(m)
-
-          m
-        end)
-
-      {:ok, list}
+    case available_metrics(project, args, resolution) do
+      {:ok, metrics} -> {:ok, add_metadata_to_metrics(metrics)}
+      {:nocache, {:ok, metrics}} -> {:ok, add_metadata_to_metrics(metrics)}
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -185,5 +180,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         # as the graphql request will timeout at some point and stop the recursion
         maybe_register_and_get(cache_key, fun, slug, query, attempts - 1)
     end
+  end
+
+  defp add_metadata_to_metrics(metrics) do
+    Enum.map(metrics, fn m ->
+      {:ok, m} = Metric.metadata(m)
+
+      m
+    end)
   end
 end

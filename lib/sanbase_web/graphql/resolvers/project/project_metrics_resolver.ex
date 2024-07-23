@@ -78,7 +78,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     {:ok, %{slug: slug}} = Sanbase.Project.Selector.args_to_selector(%{slug: slug})
 
     with true <- Metric.has_metric?(metric),
-         true <- Metric.is_not_deprecated?(metric),
+         false <- Metric.hard_deprecated?(metric),
          include_incomplete_data = Map.get(args, :include_incomplete_data, false),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to) do

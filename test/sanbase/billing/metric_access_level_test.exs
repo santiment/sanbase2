@@ -630,7 +630,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "ecosystem_dev_activity_contributors_count_7d",
         "ecosystem_github_activity_contributors_count_7d",
         "gini_index",
-        "annual_inflation_rate"
+        "annual_inflation_rate",
+        "m2_money_supply"
       ]
       |> Enum.sort()
 

@@ -6316,5 +6316,25 @@
     "has_incomplete_data": false,
     "data_type": "timeseries",
     "docs_links": ["https://academy.santiment.net/metrics/bitcoin-etf-volume"]
+  },
+  {
+    "human_readable_name": "M2 money supply",
+    "name": "m2_money_supply",
+    "metric": "m2_money_supply",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "7d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": false,
+    "data_type": "timeseries",
+    "docs_links": ["https://academy.santiment.net/metrics/m2-money-supply"]
   }
 ]

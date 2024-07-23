@@ -72,8 +72,8 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
   A query can be restricted but still accessible by not-paid users or users with
   lower plans. In this case historical and/or realtime data access can be cut off
   """
-  @spec is_restricted?(query_or_argument) :: boolean()
-  def is_restricted?(query_or_argument),
+  @spec restricted?(query_or_argument) :: boolean()
+  def restricted?(query_or_argument),
     do: query_or_argument not in @free_query_or_argument_mapset
 
   @spec plan_has_access?(query_or_argument, requested_product, plan_name) :: boolean()

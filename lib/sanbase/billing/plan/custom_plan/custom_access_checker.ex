@@ -10,8 +10,8 @@ defmodule Sanbase.Billing.Plan.CustomAccessChecker do
   @type product_code :: String.t()
   @type plan_name :: String.t()
 
-  def is_restricted?(query_or_argument) do
-    Sanbase.Billing.Plan.StandardAccessChecker.is_restricted?(query_or_argument)
+  def restricted?(query_or_argument) do
+    Sanbase.Billing.Plan.StandardAccessChecker.restricted?(query_or_argument)
   end
 
   def plan_has_access?(query_or_argument, product_code, plan_name) do

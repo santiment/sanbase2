@@ -263,7 +263,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          } = resolution,
          middleware_args
        ) do
-    if Plan.AccessChecker.is_restricted?(query_or_argument) do
+    if Plan.AccessChecker.restricted?(query_or_argument) do
       restricted_query(resolution, middleware_args, query_or_argument)
     else
       not_restricted_query(resolution, middleware_args)

@@ -170,7 +170,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   the `text` field as it will be filled only for those insights.
   """
   def pulse_text(%Post{} = post, _args, _resolution) do
-    case Post.is_pulse?(post) do
+    case Post.pulse?(post) do
       true -> {:ok, post.text}
       _ -> {:ok, nil}
     end

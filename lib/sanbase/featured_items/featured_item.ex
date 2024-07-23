@@ -138,7 +138,7 @@ defmodule Sanbase.FeaturedItem do
         ) ::
           :ok | {:error, Ecto.Changeset.t()}
   def update_item(%Post{} = post, featured?) do
-    case Post.is_published?(post) || featured? == false do
+    case Post.published?(post) || featured? == false do
       true -> update_item(:post_id, post.id, featured?)
       false -> {:error, "Not published post cannot be made featured."}
     end

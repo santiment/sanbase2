@@ -11,7 +11,7 @@ defmodule Sanbase.AvailableSlugs do
   # There are 2 special cases that are not a project slug but refer to big groups
   # of projects and there is marketcap and volume data for them
   @group_of_slugs ["TOTAL_MARKET", "TOTAL_ERC20"]
-  @non_project_slugs ~w(s-and-p-500 gold crude-oil dxy gbtc ibit fbtc arkb btco bitb hodl m2-money-supply)
+  @non_project_slugs ~w(s-and-p-500 gold crude-oil dxy gbtc ibit fbtc arkb btco bitb hodl m2-money)
 
   def non_project_slugs(), do: @non_project_slugs
   @ets_table :available_projects_slugs_ets_table

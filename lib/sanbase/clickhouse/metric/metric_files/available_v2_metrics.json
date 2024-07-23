@@ -6318,9 +6318,9 @@
     "docs_links": ["https://academy.santiment.net/metrics/bitcoin-etf-volume"]
   },
   {
-    "human_readable_name": "M2 money supply",
-    "name": "m2_money_supply",
-    "metric": "m2_money_supply",
+    "human_readable_name": "Money Supply",
+    "name": "money_supply",
+    "metric": "money_supply",
     "version": "2019-01-01",
     "access": "free",
     "selectors": [

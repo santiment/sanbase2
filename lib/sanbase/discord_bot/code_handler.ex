@@ -293,34 +293,17 @@ defmodule Sanbase.DiscordBot.CodeHandler do
 
   def metadata_from_options(options_map) do
     {:ok, channel} = Nostrum.Api.get_channel(options_map["channel_or_thread"])
-    now = DateTime.utc_now()
-
-    tranform_fns = %{
-      "yesterday" => fn now -> Timex.shift(now, days: -1) end,
-      "now" => fn now -> now end,
-      "1 day ago" => fn now -> Timex.shift(now, days: -1) end,
-      "2 days ago" => fn now -> Timex.shift(now, days: -2) end,
-      "3 days ago" => fn now -> Timex.shift(now, days: -3) end,
-      "4 days ago" => fn now -> Timex.shift(now, days: -4) end,
-      "5 days ago" => fn now -> Timex.shift(now, days: -5) end,
-      "6 days ago" => fn now -> Timex.shift(now, days: -6) end,
-      "last week" => fn now -> Timex.shift(now, weeks: -1) end,
-      "last 2 weeks" => fn now -> Timex.shift(now, weeks: -14) end,
-      "last month" => fn now -> Timex.shift(now, months: -1) end
-    }
+    from_dt = text_to_datetime(options_map["from_dt"])
+    to_dt = text_to_datetime(options_map["to_dt"])
 
     cond do
-      options_map["from_dt"] not in Map.keys(tranform_fns) ->
+      :unsupported_datetime_representation == from_dt ->
         {:error, "Invalid `from` datetime option"}
 
-      options_map["to_dt"] not in Map.keys(tranform_fns) ->
+      :unsupported_datetime_representation == to_dt ->
         {:error, "Invalid `to` datetime option"}
 
-      options_map["from_dt"] in Map.keys(tranform_fns) and
-          options_map["to_dt"] in Map.keys(tranform_fns) ->
-        from_dt = tranform_fns[options_map["from_dt"]].(now)
-        to_dt = tranform_fns[options_map["to_dt"]].(now)
-
+      true ->
         {:ok,
          %{
            channel: channel.id,
@@ -447,4 +430,17 @@ defmodule Sanbase.DiscordBot.CodeHandler do
     |> ActionRow.append(gen_button)
     |> ActionRow.append(save_button)
   end
+
+  defp text_to_datetime("now"), do: DateTime.utc_now()
+  defp text_to_datetime("yesterday"), do: Timex.shift(DateTime.utc_now(), days: -1)
+  defp text_to_datetime("1 day ago"), do: Timex.shift(DateTime.utc_now(), days: -1)
+  defp text_to_datetime("2 days ago"), do: Timex.shift(DateTime.utc_now(), days: -2)
+  defp text_to_datetime("3 days ago"), do: Timex.shift(DateTime.utc_now(), days: -3)
+  defp text_to_datetime("4 days ago"), do: Timex.shift(DateTime.utc_now(), days: -4)
+  defp text_to_datetime("5 days ago"), do: Timex.shift(DateTime.utc_now(), days: -5)
+  defp text_to_datetime("6 days ago"), do: Timex.shift(DateTime.utc_now(), days: -6)
+  defp text_to_datetime("last week"), do: Timex.shift(DateTime.utc_now(), weeks: -1)
+  defp text_to_datetime("last 2 weeks"), do: Timex.shift(DateTime.utc_now(), weeks: -14)
+  defp text_to_datetime("last month"), do: Timex.shift(DateTime.utc_now(), months: -1)
+  defp text_to_datetime(_), do: :unsupported_datetime_representation
 end

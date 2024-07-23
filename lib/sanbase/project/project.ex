@@ -389,7 +389,7 @@ defmodule Sanbase.Project do
     infrastructure
   end
 
-  def is_erc20?(%Project{} = project) do
+  def erc20?(%Project{} = project) do
     project
     |> Repo.preload([:infrastructure, :contract_addresses])
     |> case do
@@ -401,11 +401,11 @@ defmodule Sanbase.Project do
     end
   end
 
-  def is_currency?(%Project{} = project) do
-    not is_erc20?(project)
+  def currency?(%Project{} = project) do
+    not erc20?(project)
   end
 
-  def is_trending?(%Project{} = project, trending_words_mapset) do
+  def trending?(%Project{} = project, trending_words_mapset) do
     # Project is trending if the intersection of [name, ticker, slug]
     # and the trending words is not empty
     [project.ticker, project.name, project.slug]

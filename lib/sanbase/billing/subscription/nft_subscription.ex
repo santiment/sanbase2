@@ -10,12 +10,11 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
 
   # Run every 10 minutes
   def run do
-    # Only run on prod
-    if is_dev_or_stage?() do
-      :ok
-    else
+    if prod?() do
       maybe_create()
       maybe_remove()
+    else
+      :ok
     end
   end
 
@@ -94,7 +93,7 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
     SanbaseNFTInterface.nft_subscriptions(user_id)
   end
 
-  defp is_dev_or_stage?() do
-    Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) in ["dev", "stage"]
+  defp prod?() do
+    Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) in ["prod"]
   end
 end

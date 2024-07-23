@@ -60,7 +60,7 @@ defmodule Sanbase.Alert.UserTrigger do
     ut |> cast(attrs, [])
   end
 
-  def is_public?(%__MODULE__{trigger: %{is_public: is_public}}), do: is_public
+  def public?(%__MODULE__{trigger: %{is_public: is_public}}), do: is_public
 
   @doc false
   @spec create_changeset(%UserTrigger{}, map()) :: Ecto.Changeset.t()

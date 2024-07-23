@@ -145,42 +145,42 @@ defmodule Sanbase.FeaturedItem do
   end
 
   def update_item(%UserList{} = user_list, featured?) do
-    case UserList.is_public?(user_list) || featured? == false do
+    case UserList.public?(user_list) || featured? == false do
       true -> update_item(:user_list_id, user_list.id, featured?)
       false -> {:error, "Private watchlists cannot be made featured."}
     end
   end
 
   def update_item(%UserTrigger{} = user_trigger, featured?) do
-    case UserTrigger.is_public?(user_trigger) || featured? == false do
+    case UserTrigger.public?(user_trigger) || featured? == false do
       true -> update_item(:user_trigger_id, user_trigger.id, featured?)
       false -> {:error, "Private user triggers cannot be made featured."}
     end
   end
 
   def update_item(%ChartConfiguration{} = configuration, featured?) do
-    case ChartConfiguration.is_public?(configuration) || featured? == false do
+    case ChartConfiguration.public?(configuration) || featured? == false do
       true -> update_item(:chart_configuration_id, configuration.id, featured?)
       false -> {:error, "Private chart configurations cannot be made featured."}
     end
   end
 
   def update_item(%TableConfiguration{} = configuration, featured?) do
-    case TableConfiguration.is_public?(configuration) || featured? == false do
+    case TableConfiguration.public?(configuration) || featured? == false do
       true -> update_item(:table_configuration_id, configuration.id, featured?)
       false -> {:error, "Private table configurations cannot be made featured."}
     end
   end
 
   def update_item(%Dashboard{} = dashboard, featured?) do
-    case Dashboard.is_public?(dashboard) || featured? == false do
+    case Dashboard.public?(dashboard) || featured? == false do
       true -> update_item(:dashboard_id, dashboard.id, featured?)
       false -> {:error, "Private table dashboards cannot be made featured."}
     end
   end
 
   def update_item(%Query{} = query, featured?) do
-    case Query.is_public?(query) || featured? == false do
+    case Query.public?(query) || featured? == false do
       true -> update_item(:query_id, query.id, featured?)
       false -> {:error, "Private table queries cannot be made featured."}
     end

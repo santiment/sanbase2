@@ -175,7 +175,7 @@ defmodule Sanbase.UserList do
     |> Repo.one()
   end
 
-  def is_public?(%__MODULE__{is_public: is_public}), do: is_public
+  def public?(%__MODULE__{is_public: is_public}), do: is_public
   def is_screener?(%__MODULE__{is_screener: is_screener}), do: is_screener
   def type(%__MODULE__{type: type}), do: type
 

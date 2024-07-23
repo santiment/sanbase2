@@ -8,7 +8,7 @@ defmodule Sanbase.Queries.QueryMetadata do
   database.
   """
   @env Application.compile_env(:sanbase, :env)
-  @is_prod @env == :prod
+  @prod? @env == :prod
   @type t :: map()
 
   @doc ~s"""
@@ -20,7 +20,7 @@ defmodule Sanbase.Queries.QueryMetadata do
     %{
       sanbase_user_id: user.id,
       product: product_code |> to_string() |> String.downcase(),
-      query_ran_from_prod_marker: @is_prod
+      query_ran_from_prod_marker: @prod?
     }
   end
 
@@ -47,7 +47,7 @@ defmodule Sanbase.Queries.QueryMetadata do
     %{
       sanbase_user_id: user_id,
       product: "REFRESH_JOB",
-      query_ran_from_prod_marker: @is_prod
+      query_ran_from_prod_marker: @prod?
     }
   end
 

@@ -31,15 +31,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   end
 
   def available_metrics_extended(%Project{} = project, args, resolution) do
-    with {:ok, metrics} <- available_metrics(project, args, resolution) do
-      list =
-        Enum.map(metrics, fn m ->
-          {:ok, m} = Metric.metadata(m)
+    fun = fn metrics ->
+      Enum.map(metrics, fn m ->
+        {:ok, m} = Metric.metadata(m)
+        m
+      end)
+    end
 
-          m
-        end)
+    case available_metrics(project, args, resolution) do
+      {:ok, metrics} ->
+        {:ok, fun.(metrics)}
 
-      {:ok, list}
+      {:nocache, {:ok, metrics}} ->
+        {:nocache, {:ok, fun.(metrics)}}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

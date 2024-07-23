@@ -107,26 +107,26 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
     |> Enum.map(fn {_, name} -> name end)
   end
 
-  def is_historical_data_freely_available?(query_or_argument) do
+  def historical_data_freely_available?(query_or_argument) do
     case query_or_argument do
       {:metric, metric} ->
-        Sanbase.Metric.is_historical_data_freely_available?(metric)
+        Sanbase.Metric.historical_data_freely_available?(metric)
 
       {:signal, signal} ->
-        Sanbase.Signal.is_historical_data_freely_available?(signal)
+        Sanbase.Signal.historical_data_freely_available?(signal)
 
       {:query, _} ->
         false
     end
   end
 
-  def is_realtime_data_freely_available?(query_or_argument) do
+  def realtime_data_freely_available?(query_or_argument) do
     case query_or_argument do
       {:metric, metric} ->
-        Sanbase.Metric.is_realtime_data_freely_available?(metric)
+        Sanbase.Metric.realtime_data_freely_available?(metric)
 
       {:signal, signal} ->
-        Sanbase.Signal.is_realtime_data_freely_available?(signal)
+        Sanbase.Signal.realtime_data_freely_available?(signal)
 
       {:query, _} ->
         false
@@ -156,7 +156,7 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
           subscription_product,
           plan_name
         ) do
-      if not is_historical_data_freely_available?(query_or_argument) do
+      if not historical_data_freely_available?(query_or_argument) do
         # product_code is not needed as these modules are named Api* and Sanbase*
         unquote(module).historical_data_in_days(subscription_product, plan_name)
       end
@@ -182,7 +182,7 @@ defmodule Sanbase.Billing.Plan.StandardAccessChecker do
           subscription_product,
           plan_name
         ) do
-      if not is_realtime_data_freely_available?(query_or_argument) do
+      if not realtime_data_freely_available?(query_or_argument) do
         # product_code is not needed as these modules are named Api* and Sanbase*
         unquote(module).realtime_data_cut_off_in_days(subscription_product, plan_name)
       end

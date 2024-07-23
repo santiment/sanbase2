@@ -63,12 +63,12 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     end
   end
 
-  def is_historical_data_freely_available?(query_or_argument) do
-    StandardAccessChecker.is_historical_data_freely_available?(query_or_argument)
+  def historical_data_freely_available?(query_or_argument) do
+    StandardAccessChecker.historical_data_freely_available?(query_or_argument)
   end
 
-  def is_realtime_data_freely_available?(query_or_argument) do
-    StandardAccessChecker.is_realtime_data_freely_available?(query_or_argument)
+  def realtime_data_freely_available?(query_or_argument) do
+    StandardAccessChecker.realtime_data_freely_available?(query_or_argument)
   end
 
   @doc """

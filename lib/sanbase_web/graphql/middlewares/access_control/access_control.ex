@@ -374,8 +374,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       {_, _} ->
         middleware_args = %{
           allow_historical_data:
-            AccessChecker.is_historical_data_freely_available?(query_or_argument),
-          allow_realtime_data: AccessChecker.is_realtime_data_freely_available?(query_or_argument)
+            AccessChecker.historical_data_freely_available?(query_or_argument),
+          allow_realtime_data: AccessChecker.realtime_data_freely_available?(query_or_argument)
         }
 
         %{

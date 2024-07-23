@@ -169,7 +169,7 @@
         {Credo.Check.Readability.Specs, false},
         {Credo.Check.Readability.SinglePipe, false},
         {Credo.Check.Readability.WithCustomTaggedTuple, []},
-        {Credo.Check.Refactor.ABCSize, []},
+        {Credo.Check.Refactor.ABCSize, [max_size: 35]},
         {Credo.Check.Refactor.AppendSingleItem, []},
         {Credo.Check.Refactor.DoubleBooleanNegation, []},
         {Credo.Check.Refactor.ModuleDependencies, [max_deps: 40]},

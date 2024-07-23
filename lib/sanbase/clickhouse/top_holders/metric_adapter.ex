@@ -205,7 +205,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   defp projects_with_supported_infrastructure() do
     result =
-      Project.List.projects(preload: [:infrastructure])
+      Project.List.projects(preload: [:infrastructure, :contract_addresses])
       |> Enum.filter(fn project ->
         case Project.infrastructure_real_code(project) do
           {:ok, infr_code} ->

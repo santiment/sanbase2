@@ -385,8 +385,8 @@ defmodule Sanbase.ApiCallLimit do
   defp user_has_limits?(%User{}), do: true
 
   defp remote_ip_has_limits?(remote_ip) do
-    not (Sanbase.Utils.IP.is_san_cluster_ip?(remote_ip) or
-           Sanbase.Utils.IP.is_localhost?(remote_ip))
+    not (Sanbase.Utils.IP.san_cluster_ip?(remote_ip) or
+           Sanbase.Utils.IP.localhost?(remote_ip))
   end
 
   defp plan_to_api_call_limits(plan) do

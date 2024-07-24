@@ -76,7 +76,7 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
     subscription = Sanbase.Billing.Subscription.by_id(event.data.subscription_id)
 
     cond do
-      Subscription.is_trialing_sanbase_pro?(subscription) ->
+      Subscription.trialing_sanbase_pro?(subscription) ->
         EmailJobs.send_trial_started_email(subscription)
         EmailJobs.schedule_trial_will_end_email(subscription)
 
@@ -90,7 +90,7 @@ defmodule Sanbase.EventBus.BillingEventSubscriber do
             :ok
         end
 
-      Subscription.is_active_sanbase_pro?(subscription) ->
+      Subscription.active_sanbase_pro?(subscription) ->
         Sanbase.Accounts.EmailJobs.send_pro_started_email(subscription)
 
       true ->

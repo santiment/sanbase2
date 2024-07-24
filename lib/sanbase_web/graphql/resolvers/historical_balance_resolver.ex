@@ -158,12 +158,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   end
 
   defp validate_historical_balance_selector(%{infrastructure: "ETH"} = selector) do
-    cond do
-      not Regex.match?(Sanbase.BlockchainAddress.ethereum_regex(), selector.address) ->
-        {:error, "Invalid Ethereum address: #{selector.address}"}
-
+    case Regex.match?(Sanbase.BlockchainAddress.ethereum_regex(), selector.address) do
       true ->
         {:ok, selector}
+
+      false ->
+        {:error, "Invalid Ethereum address: #{selector.address}"}
     end
   end
 

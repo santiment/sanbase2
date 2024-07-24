@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
   alias Sanbase.Dashboard
   alias SanbaseWeb.Graphql.SanbaseDataloader
+  alias SanbaseWeb.Graphql.Resolvers.QueriesResolver
 
   require Logger
 
@@ -35,7 +36,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   def update_dashboard(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with true <- is_dashboard_owner?(args.id, user.id),
          {:ok, dashboard_schema} <- Dashboard.update(args.id, args) do
-      {:ok, atomize_dashboard_panels_sql_keys(dashboard_schema)}
+      {:ok, QueriesResolver.atomize_dashboard_panels_sql_keys(dashboard_schema)}
     end
   end
 
@@ -115,7 +116,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
 
     with true <- can_view_dashboard?(args.id, user_id_or_nil),
          {:ok, dashboard_schema} <- Dashboard.load_schema(args.id) do
-      {:ok, atomize_dashboard_panels_sql_keys(dashboard_schema)}
+      {:ok, QueriesResolver.atomize_dashboard_panels_sql_keys(dashboard_schema)}
     end
   end
 
@@ -169,7 +170,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
   def get_dashboard_schema_history(_root, args, %{context: %{auth: %{current_user: user}}}) do
     with true <- is_dashboard_owner?(args.id, user.id),
          {:ok, dashboard_schema_history} <- Dashboard.History.get_history(args.id, args.hash) do
-      {:ok, atomize_dashboard_panels_sql_keys(dashboard_schema_history)}
+      {:ok, QueriesResolver.atomize_dashboard_panels_sql_keys(dashboard_schema_history)}
     end
   end
 
@@ -199,7 +200,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     panel
     |> Map.put(:dashboard_id, dashboard.id)
     |> Map.put(:dashboard_parameters, dashboard.parameters)
-    |> atomize_panel_sql_keys()
+    |> QueriesResolver.atomize_panel_sql_keys()
   end
 
   defp can_view_dashboard?(id, user_id) do
@@ -226,38 +227,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.DashboardResolver do
     case Dashboard.has_credits_left?(user_id) do
       true -> true
       false -> {:error, "The user with id #{user_id} has no credits left"}
-    end
-  end
-
-  defp atomize_dashboard_panels_sql_keys(struct) do
-    panels = Enum.map(struct.panels, &atomize_panel_sql_keys/1)
-
-    struct
-    |> Map.put(:panels, panels)
-  end
-
-  defp atomize_panel_sql_keys(panel) do
-    case panel do
-      %{sql: %{} = sql} ->
-        atomized_sql =
-          Map.new(sql, fn
-            {k, v} when is_binary(k) ->
-              # Ignore old, no longer existing keys like san_query_id
-              try do
-                {String.to_existing_atom(k), v}
-              rescue
-                _ -> {nil, nil}
-              end
-
-            {k, v} ->
-              {k, v}
-          end)
-          |> Map.delete(nil)
-
-        %{panel | sql: atomized_sql}
-
-      panel ->
-        panel
     end
   end
 

@@ -461,26 +461,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     Dashboards.delete_image_widget(dashboard_id, text_widget_id, user.id)
   end
 
-  # Private functions
-
-  defp get_global_param_one_value(value_map) do
-    if map_size(value_map) == 1 do
-      value = Map.values(value_map) |> List.first()
-      {:ok, value}
-    else
-      {:error,
-       "Error adding dashboard global parameter: the `value` input object must set only a single field"}
-    end
-  end
-
-  defp atomize_dashboard_panels_sql_keys(struct) do
+  def atomize_dashboard_panels_sql_keys(struct) do
     panels = Enum.map(struct.panels, &atomize_panel_sql_keys/1)
 
     struct
     |> Map.put(:panels, panels)
   end
 
-  defp atomize_panel_sql_keys(panel) do
+  def atomize_panel_sql_keys(panel) do
     case panel do
       %{sql: %{} = sql} ->
         atomized_sql =
@@ -502,6 +490,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
 
       panel ->
         panel
+    end
+  end
+
+  # Private functions
+
+  defp get_global_param_one_value(value_map) do
+    if map_size(value_map) == 1 do
+      value = Map.values(value_map) |> List.first()
+      {:ok, value}
+    else
+      {:error,
+       "Error adding dashboard global parameter: the `value` input object must set only a single field"}
     end
   end
 end

@@ -402,7 +402,7 @@ defmodule Sanbase.Billing.Subscription do
 
   def user_sanbase_plan(user_id) do
     case get_user_subscription(user_id, @product_sanbase) do
-      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> name
+      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS", "MAX"] -> name
       _ -> nil
     end
   end
@@ -428,19 +428,19 @@ defmodule Sanbase.Billing.Subscription do
     subscription = Repo.preload(subscription, :plan)
 
     subscription.plan.product_id == @product_sanbase and subscription.status == :trialing and
-      subscription.plan.name in ["PRO", "PRO_PLUS"]
+      subscription.plan.name in ["PRO", "PRO_PLUS", "MAX"]
   end
 
   def active_sanbase_pro?(subscription) do
     subscription = Repo.preload(subscription, :plan)
 
     subscription.plan.product_id == @product_sanbase and subscription.status == :active and
-      subscription.plan.name in ["PRO", "PRO_PLUS"]
+      subscription.plan.name in ["PRO", "PRO_PLUS", "MAX"]
   end
 
   def user_has_sanbase_pro?(user_id) do
     case get_user_subscription(user_id, @product_sanbase) do
-      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS"] -> true
+      {:ok, %__MODULE__{plan: %{name: name}}} when name in ["PRO", "PRO_PLUS", "MAX"] -> true
       _ -> false
     end
   end

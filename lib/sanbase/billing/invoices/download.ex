@@ -76,7 +76,7 @@ defmodule Sanbase.Billing.Invoices.Download do
   end
 
   def do_list(params) do
-    Stripe.Invoice.list(params)
+    Sanbase.StripeApi.list_invoices(params)
     |> elem(1)
     |> Map.get(:data, [])
     |> Enum.map(fn invoice ->

@@ -250,7 +250,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   defp choose_default_card(customer) do
     if is_map(customer.invoice_settings) and customer.invoice_settings.default_payment_method do
       pm_id = customer.invoice_settings.default_payment_method
-      {:ok, pm} = Stripe.PaymentMethod.retrieve(pm_id)
+      {:ok, pm} = StripeApi.retrieve_payment_method(pm_id)
       pm.card
     else
       customer.default_source && Map.from_struct(customer.default_source)

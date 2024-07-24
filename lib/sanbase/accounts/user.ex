@@ -382,7 +382,7 @@ defmodule Sanbase.Accounts.User do
     )
     |> Repo.all()
     |> Enum.each(fn %{email: email, stripe_customer_id: stripe_customer_id} ->
-      Stripe.Customer.update(stripe_customer_id, %{email: email})
+      Sanbase.StripeApi.update_customer(stripe_customer_id, %{email: email})
     end)
   end
 

@@ -14,81 +14,6 @@ defmodule Sanbase.StripeApi do
           items: list(subscription_item)
         }
 
-  def attach_payment_method_to_customer(user, payment_method_id) do
-    # Step 1: Attach payment method to the customer
-    {:ok, user} = Billing.create_or_update_stripe_customer(user)
-
-    params = %{
-      customer: user.stripe_customer_id,
-      payment_method: payment_method_id
-    }
-
-    Stripe.PaymentMethod.attach(params)
-
-    # Step 2: Set this payment method as default for the customer
-    update_params = %{
-      invoice_settings: %{default_payment_method: payment_method_id}
-    }
-
-    Stripe.Customer.update(user.stripe_customer_id, update_params)
-  end
-
-  def detach_payment_method(stripe_customer_id) do
-    with {:ok, customer} <- Stripe.Customer.retrieve(stripe_customer_id),
-         {:ok, %Stripe.PaymentMethod{}} <-
-           Stripe.PaymentMethod.detach(%{
-             payment_method: customer.invoice_settings.default_payment_method
-           }) do
-      :ok
-    end
-  end
-
-  # Stripe docs: https://stripe.com/docs/payments/setupintents/lifecycle
-  # Stripe API: https://stripe.com/docs/api/setup_intents
-  def create_setup_intent(%User{} = user) do
-    case Billing.create_or_update_stripe_customer(user) do
-      {:ok, user} ->
-        Stripe.SetupIntent.create(%{
-          customer: user.stripe_customer_id,
-          usage: "off_session",
-          automatic_payment_methods: %{
-            enabled: true
-          }
-        })
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @spec create_customer(%User{}, nil | String.t()) ::
-          {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
-  def create_customer(%User{} = user, nil) do
-    Stripe.Customer.create(%{
-      description: user.username,
-      email: user.email
-    })
-  end
-
-  def create_customer(%User{} = user, card_token) do
-    Stripe.Customer.create(%{
-      description: user.username,
-      email: user.email,
-      source: card_token
-    })
-  end
-
-  @spec update_customer(%User{stripe_customer_id: binary()}, String.t()) ::
-          {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
-  def update_customer(%User{stripe_customer_id: stripe_customer_id}, card_token)
-      when is_binary(stripe_customer_id) do
-    Stripe.Customer.update(stripe_customer_id, %{source: card_token})
-  end
-
-  def retrieve_customer(%User{stripe_customer_id: stripe_customer_id}) do
-    Stripe.Customer.retrieve(stripe_customer_id)
-  end
-
   def create_product(%Product{name: name}) do
     Stripe.Product.create(%{name: name, type: "service"})
   end
@@ -109,68 +34,34 @@ defmodule Sanbase.StripeApi do
     })
   end
 
-  @spec create_subscription(subscription) ::
-          {:ok, %Stripe.Subscription{}} | {:error, %Stripe.Error{}}
-  def create_subscription(%{customer: _customer, items: _items} = subscription) do
-    Stripe.Subscription.create(subscription, expand: ["latest_invoice.payment_intent"])
+  @spec create_customer_with_card(%User{}, nil | String.t()) ::
+          {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
+  def create_customer_with_card(%User{} = user, nil) do
+    Stripe.Customer.create(%{
+      description: user.username,
+      email: user.email
+    })
   end
 
-  def update_subscription(stripe_id, params) do
-    Stripe.Subscription.update(stripe_id, params, expand: ["latest_invoice.payment_intent"])
+  def create_customer_with_card(%User{} = user, card_token) do
+    Stripe.Customer.create(%{
+      description: user.username,
+      email: user.email,
+      source: card_token
+    })
   end
 
-  def cancel_subscription(stripe_id) do
-    stripe_id
-    |> update_subscription(%{cancel_at_period_end: true})
-  end
-
-  def delete_subscription(stripe_id) do
-    Stripe.Subscription.delete(stripe_id)
-  end
-
-  def upgrade_downgrade(db_subscription, plan) do
-    with {:ok, params} <- get_upgrade_downgrade_subscription_params(db_subscription, plan),
-         # Remove coupon for free basic API subscription
-         {:ok, params} <- maybe_remove_coupon(params, db_subscription, plan),
-         {:ok, stripe_subscription} <- update_subscription(db_subscription.stripe_id, params) do
-      {:ok, stripe_subscription}
-    end
-  end
-
-  def get_upgrade_downgrade_subscription_params(db_subscription, plan) do
-    with {:ok, item_id} <- get_subscription_first_item_id(db_subscription.stripe_id) do
-      params = %{items: [%{id: item_id, plan: plan.stripe_id}]}
-      {:ok, params}
-    end
-  end
-
-  def retrieve_subscription(stripe_id) do
-    Stripe.Subscription.retrieve(stripe_id, expand: ["latest_invoice.payment_intent"])
-  end
-
-  def create_coupon(%{percent_off: percent_off, duration: duration}) do
-    Stripe.Coupon.create(%{percent_off: percent_off, duration: duration})
-  end
-
-  def create_promo_coupon(promo_args) do
-    Stripe.Coupon.create(promo_args)
-  end
-
-  def retrieve_coupon(coupon_id) do
-    Stripe.Coupon.retrieve(coupon_id)
-  end
-
-  def list_payments(%User{stripe_customer_id: stripe_customer_id})
+  @spec update_customer_card(%User{stripe_customer_id: binary()}, String.t()) ::
+          {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
+  def update_customer_card(%User{stripe_customer_id: stripe_customer_id}, card_token)
       when is_binary(stripe_customer_id) do
-    Stripe.Charge.list(%{customer: stripe_customer_id})
+    Stripe.Customer.update(stripe_customer_id, %{source: card_token})
   end
 
-  def list_payments(_) do
-    {:ok, []}
-  end
-
-  def upcoming_invoice(stripe_id) do
-    Stripe.Invoice.upcoming(%{subscription: stripe_id})
+  @spec update_customer(String.t(), map()) ::
+          {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
+  def update_customer(stripe_customer_id, params) when is_binary(stripe_customer_id) do
+    Stripe.Customer.update(stripe_customer_id, params)
   end
 
   def fetch_default_card(%User{stripe_customer_id: stripe_customer_id})
@@ -208,12 +99,149 @@ defmodule Sanbase.StripeApi do
     end
   end
 
+  def retrieve_payment_method(payment_method_id) do
+    Stripe.PaymentMethod.retrieve(payment_method_id)
+  end
+
+  def retrieve_customer(%User{stripe_customer_id: stripe_customer_id}) do
+    Stripe.Customer.retrieve(stripe_customer_id)
+  end
+
+  def attach_payment_method_to_customer(user, payment_method_id) do
+    # Step 1: Attach payment method to the customer
+    {:ok, user} = Billing.create_or_update_stripe_customer(user) |> dbg()
+
+    params = %{
+      customer: user.stripe_customer_id,
+      payment_method: payment_method_id
+    }
+
+    {:ok, pm} = Stripe.PaymentMethod.attach(params) |> dbg()
+
+    # Step 2: Set this payment method as default for the customer
+    update_params = %{
+      invoice_settings: %{default_payment_method: pm.id}
+    }
+
+    with {:ok, _} <- update_customer(user.stripe_customer_id, update_params) do
+      {:ok, user}
+    end
+  end
+
+  def detach_payment_method(stripe_customer_id) do
+    with {:ok, customer} <- Stripe.Customer.retrieve(stripe_customer_id),
+         {:ok, %Stripe.PaymentMethod{}} <-
+           Stripe.PaymentMethod.detach(%{
+             payment_method: customer.invoice_settings.default_payment_method
+           }) do
+      :ok
+    end
+  end
+
+  # Stripe docs: https://stripe.com/docs/payments/setupintents/lifecycle
+  # Stripe API: https://stripe.com/docs/api/setup_intents
+  def create_setup_intent(%User{} = user) do
+    case Billing.create_or_update_stripe_customer(user) do
+      {:ok, user} ->
+        Stripe.SetupIntent.create(%{
+          customer: user.stripe_customer_id,
+          usage: "off_session",
+          automatic_payment_methods: %{
+            enabled: true
+          }
+        })
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @spec create_subscription(subscription) ::
+          {:ok, %Stripe.Subscription{}} | {:error, %Stripe.Error{}}
+  def create_subscription(%{customer: _customer, items: _items} = subscription) do
+    Stripe.Subscription.create(subscription, expand: ["latest_invoice.payment_intent"])
+  end
+
+  def update_subscription(stripe_id, params) do
+    Stripe.Subscription.update(stripe_id, params, expand: ["latest_invoice.payment_intent"])
+  end
+
+  def cancel_subscription(stripe_id) do
+    stripe_id
+    |> update_subscription(%{cancel_at_period_end: true})
+  end
+
+  def delete_subscription(stripe_id) do
+    Stripe.Subscription.delete(stripe_id)
+  end
+
+  def retrieve_subscription(stripe_id) do
+    Stripe.Subscription.retrieve(stripe_id, expand: ["latest_invoice.payment_intent"])
+  end
+
+  def list_subscriptions(params, kw_list \\ []) do
+    Stripe.Subscription.list(params, kw_list)
+  end
+
+  def upgrade_downgrade(db_subscription, plan) do
+    with {:ok, params} <- get_upgrade_downgrade_subscription_params(db_subscription, plan),
+         # Remove coupon for free basic API subscription
+         {:ok, params} <- maybe_remove_coupon(params, db_subscription, plan),
+         {:ok, stripe_subscription} <- update_subscription(db_subscription.stripe_id, params) do
+      {:ok, stripe_subscription}
+    end
+  end
+
+  def get_upgrade_downgrade_subscription_params(db_subscription, plan) do
+    with {:ok, item_id} <- get_subscription_first_item_id(db_subscription.stripe_id) do
+      params = %{items: [%{id: item_id, plan: plan.stripe_id}]}
+      {:ok, params}
+    end
+  end
+
+  def create_coupon(%{percent_off: percent_off, duration: duration}) do
+    Stripe.Coupon.create(%{percent_off: percent_off, duration: duration})
+  end
+
+  def create_promo_coupon(promo_args) do
+    Stripe.Coupon.create(promo_args)
+  end
+
+  def retrieve_coupon(coupon_id) do
+    Stripe.Coupon.retrieve(coupon_id)
+  end
+
+  def list_payments(%User{stripe_customer_id: stripe_customer_id})
+      when is_binary(stripe_customer_id) do
+    Stripe.Charge.list(%{customer: stripe_customer_id})
+  end
+
+  def list_payments(_) do
+    {:ok, []}
+  end
+
+  def upcoming_invoice(stripe_id) do
+    Stripe.Invoice.upcoming(%{subscription: stripe_id})
+  end
+
+  def list_invoices(params, kw_list \\ []) do
+    Stripe.Invoice.list(params, kw_list)
+  end
+
+  def list_charges(params, kw_list \\ []) do
+    Stripe.Charge.list(params, kw_list)
+  end
+
   def add_credit(customer_id, amount, trx_id) do
     Stripe.CustomerBalanceTransaction.create(customer_id, %{
       amount: amount,
       currency: "USD",
       description: "https://etherscan.io/tx/#{trx_id}"
     })
+  end
+
+  def construct_event(body, signature, webhook_secret) do
+    Stripe.Webhook.construct_event(body, signature, webhook_secret)
   end
 
   # Helpers
@@ -254,5 +282,10 @@ defmodule Sanbase.StripeApi do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  def delete_customer(user) do
+    Stripe.Customer.delete(user.stripe_customer_id)
+    User.update_field(user, :stripe_customer_id, nil)
   end
 end

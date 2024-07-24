@@ -110,7 +110,7 @@ defmodule Sanbase.Alerts.FreezeAlertsTest do
   #   # The BillingEventSubscriber has a special handler that reacts to these events and
   #   # unfreezes the alerts, if necessary.
   #   Sanbase.Mock.prepare_mock2(
-  #     &Sanbase.StripeApi.create_customer/2,
+  #     &Sanbase.StripeApi.create_customer_with_card/2,
   #     Sanbase.StripeApiTestResponse.create_or_update_customer_resp()
   #   )
   #   |> Sanbase.Mock.prepare_mock2(

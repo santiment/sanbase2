@@ -18,9 +18,13 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     {StripeApi, [:passthrough],
      [create_plan: fn _ -> StripeApiTestResponse.create_plan_resp() end]},
     {StripeApi, [:passthrough],
-     [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
+     [
+       create_customer_with_card: fn _, _ ->
+         StripeApiTestResponse.create_or_update_customer_resp()
+       end
+     ]},
     {StripeApi, [:passthrough],
-     [update_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
+     [update_customer_card: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
     {StripeApi, [:passthrough],
      [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
     {StripeApi, [:passthrough],
@@ -258,7 +262,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     test "when creating customer in Stripe fails - logs the error and returns generic error",
          context do
       with_mock StripeApi, [:passthrough],
-        create_customer: fn _, _ ->
+        create_customer_with_card: fn _, _ ->
           {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
         end do
         query = subscribe_mutation(context.plans.plan_essential.id)
@@ -274,7 +278,11 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     test "when creating coupon fails - logs the error and returns generic error", context do
       with_mocks([
         {StripeApi, [:passthrough],
-         [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
+         [
+           create_customer_with_card: fn _, _ ->
+             StripeApiTestResponse.create_or_update_customer_resp()
+           end
+         ]},
         {StripeApi, [:passthrough],
          [
            create_coupon: fn _ ->
@@ -296,7 +304,11 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
          context do
       with_mocks([
         {StripeApi, [:passthrough],
-         [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
+         [
+           create_customer_with_card: fn _, _ ->
+             StripeApiTestResponse.create_or_update_customer_resp()
+           end
+         ]},
         {StripeApi, [:passthrough],
          [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
         {StripeApi, [:passthrough],

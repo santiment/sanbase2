@@ -145,7 +145,7 @@ defmodule Sanbase.Billing.Subscription.Timeseries do
   def fetch_subs(_, _, 5), do: :error
 
   def fetch_subs(opts, kw_list, attempt) do
-    case Stripe.Subscription.list(opts, kw_list) do
+    case Sanbase.StripeApi.list_subscriptions(opts, kw_list) do
       {:ok, subscriptions} -> {:ok, subscriptions}
       {:error, _} -> fetch_subs(opts, kw_list, attempt + 1)
     end

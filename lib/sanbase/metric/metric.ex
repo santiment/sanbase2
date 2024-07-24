@@ -90,15 +90,21 @@ defmodule Sanbase.Metric do
     end
   end
 
-  def is_not_deprecated?(metric) do
+  def hard_deprecated?(metric) do
     now = DateTime.utc_now()
     hard_deprecate_after = Map.get(@deprecated_metrics_map, metric)
 
-    # The metric is not deprecated if `hard_deprecate_after` is nil or if the the
-    # date is in the future
-    case is_nil(hard_deprecate_after) or DateTime.compare(now, hard_deprecate_after) == :lt do
-      true -> true
-      false -> {:error, "The metric #{metric} is deprecated since #{hard_deprecate_after}"}
+    # The metric is deprecated if `hard_deprecate_after` is nil
+    # or if the the date is in the future
+    case hard_deprecate_after do
+      nil ->
+        false
+
+      _ ->
+        case DateTime.compare(now, hard_deprecate_after) do
+          :lt -> false
+          _ -> {:error, "The metric #{metric} is deprecated since #{hard_deprecate_after}"}
+        end
     end
   end
 
@@ -685,16 +691,16 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Checks if historical data is allowed for a given `metric`
   """
-  @spec is_historical_data_freely_available?(metric) :: boolean
-  def is_historical_data_freely_available?(metric) do
+  @spec historical_data_freely_available?(metric) :: boolean
+  def historical_data_freely_available?(metric) do
     get_in(@access_map, [metric, "historical"]) == :free
   end
 
   @doc ~s"""
   Checks if realtime data is allowed for a given `metric`
   """
-  @spec is_realtime_data_freely_available?(metric) :: boolean
-  def is_realtime_data_freely_available?(metric) do
+  @spec realtime_data_freely_available?(metric) :: boolean
+  def realtime_data_freely_available?(metric) do
     get_in(@access_map, [metric, "realtime"]) == :free
   end
 

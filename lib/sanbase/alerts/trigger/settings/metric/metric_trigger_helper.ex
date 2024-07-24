@@ -59,9 +59,10 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
     # An alternative would be to rewrite the remove_targets_on_cooldown function in the trigger.ex
     # file, but then the argument `:list` will no longer be list.
     selector =
-      cond do
-        type == :text and length(target_list) == 1 -> %{text: hd(target_list)}
-        true -> %{type => target_list}
+      if type == :text and length(target_list) == 1 do
+        %{text: hd(target_list)}
+      else
+        %{type => target_list}
       end
 
     case fetch_metric(selector, settings) do

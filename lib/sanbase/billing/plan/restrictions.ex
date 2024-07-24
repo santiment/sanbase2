@@ -32,7 +32,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
         no_access_map(type_str, name_str)
 
       true ->
-        case AccessChecker.is_restricted?(query_or_argument) do
+        case AccessChecker.restricted?(query_or_argument) do
           false ->
             not_restricted_access_map(type_str, name_str)
 

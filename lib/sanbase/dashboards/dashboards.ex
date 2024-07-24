@@ -1017,7 +1017,6 @@ defmodule Sanbase.Dashboards do
   end
 
   defp mask_dashboard_not_viewable_parts(%Dashboard{} = dashboard, querying_user_id) do
-    # TODO: Make sure if this is the desired behavior.
     # When viewing a dashboard, hide the SQL query text and query parameters
     # if the query is private and the querying user is not the owner of the query
     masked_queries =

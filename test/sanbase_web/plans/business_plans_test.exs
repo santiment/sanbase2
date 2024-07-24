@@ -59,35 +59,35 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
       user = insert(:user, email: "sanbase_pro_plus@example.com")
       insert(:subscription_pro_plus_sanbase, user: user)
       {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
-      assert quota.api_calls_limits == %{month: 80000, minute: 100, hour: 4000}
+      assert quota.api_calls_limits == %{month: 80_000, minute: 100, hour: 4000}
     end
 
     test "when plan is Sanbase MAX", _context do
       user = insert(:user, email: "sanbase_max@example.com")
       insert(:subscription_max_sanbase, user: user)
       {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
-      assert quota.api_calls_limits == %{month: 80000, minute: 100, hour: 4000}
+      assert quota.api_calls_limits == %{month: 80_000, minute: 100, hour: 4000}
     end
 
     test "when plan is Sanapi PRO", _context do
       user = insert(:user, email: "api_pro@example.com")
       insert(:subscription_pro, user: user)
       {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
-      assert quota.api_calls_limits == %{month: 600_000, minute: 600, hour: 30000}
+      assert quota.api_calls_limits == %{month: 600_000, minute: 600, hour: 30_000}
     end
 
     test "when plan is BUSINESS_PRO", _context do
       user = insert(:user, email: "api_business_pro@example.com")
       insert(:subscription_business_pro_monthly, user: user)
       {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
-      assert quota.api_calls_limits == %{month: 600_000, minute: 600, hour: 30000}
+      assert quota.api_calls_limits == %{month: 600_000, minute: 600, hour: 30_000}
     end
 
     test "when plan is BUSINESS_MAX", _context do
       user = insert(:user, email: "api_business_max@example.com")
       insert(:subscription_business_max_monthly, user: user)
       {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, user, :apikey)
-      assert quota.api_calls_limits == %{month: 1_200_000, minute: 1200, hour: 60000}
+      assert quota.api_calls_limits == %{month: 1_200_000, minute: 1200, hour: 60_000}
     end
 
     test "when plan is Sanapi CUSTOM", _context do
@@ -123,7 +123,7 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
     |> json_response(200)
 
     {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, context.business_pro_user, :apikey)
-    assert quota.api_calls_remaining == %{month: 599_999, minute: 599, hour: 29999}
+    assert quota.api_calls_remaining == %{month: 599_999, minute: 599, hour: 29_999}
   end
 
   test "BUSINESS_MAX after api call remaining count", context do
@@ -131,7 +131,7 @@ defmodule SanbaseWeb.Plans.BusinessPlansTest do
     |> json_response(200)
 
     {:ok, quota} = Sanbase.ApiCallLimit.get_quota(:user, context.user, :apikey)
-    assert quota.api_calls_remaining == %{month: 1_199_999, minute: 1199, hour: 59999}
+    assert quota.api_calls_remaining == %{month: 1_199_999, minute: 1199, hour: 59_999}
   end
 
   test "BUSINESS_MAX user no historical data or realtime restrictions", %{user: user} do

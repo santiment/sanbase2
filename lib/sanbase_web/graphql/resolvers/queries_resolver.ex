@@ -36,16 +36,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
     queried_user_id = Map.get(args, :user_id, querying_user_id)
 
-    if not is_nil(queried_user_id) do
+    if is_nil(queried_user_id) do
+      {:error,
+       "Error getting user queries: neither userId is provided, nor the query is executed by a logged in user."}
+    else
       Queries.get_user_queries(
         queried_user_id,
         querying_user_id,
         page: page,
         page_size: page_size
       )
-    else
-      {:error,
-       "Error getting user queries: neither userId is provided, nor the query is executed by a logged in user."}
     end
   end
 
@@ -87,14 +87,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     query_parameters = if query_parameters == "{}", do: %{}, else: query_parameters
 
     with :ok <-
-           Queries.user_can_execute_query(user, context.subscription_product, context.auth.plan),
-         query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user) do
+           Queries.user_can_execute_query(user, context.subscription_product, context.auth.plan) do
       Process.put(
         :queries_dynamic_repo,
         Queries.user_plan_to_dynamic_repo(context.subscription_product, context.auth.plan)
       )
 
       query_metadata = QueryMetadata.from_resolution(resolution)
+      query = Queries.get_ephemeral_query_struct(query_text, query_parameters, user)
       Queries.run_query(query, user, query_metadata)
     end
   end
@@ -124,10 +124,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
   def get_dashboard(_root, %{id: id}, resolution) do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
 
-    with {:ok, dashboard} <- Dashboards.get_dashboard(id, querying_user_id),
-         # For backwards compatibility, properly provide the panels.
-         # The Frontend will migrate to queries once they detect panels
-         dashboard = atomize_dashboard_panels_sql_keys(dashboard) do
+    with {:ok, dashboard} <- Dashboards.get_dashboard(id, querying_user_id) do
+      # For backwards compatibility, properly provide the panels.
+      # The Frontend will migrate to queries once they detect panels
+      dashboard = atomize_dashboard_panels_sql_keys(dashboard)
       {:ok, dashboard}
     end
   end
@@ -140,16 +140,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.QueriesResolver do
     querying_user_id = get_in(resolution.context.auth, [:current_user, Access.key(:id)])
     queried_user_id = Map.get(args, :user_id, querying_user_id)
 
-    if not is_nil(queried_user_id) do
+    if is_nil(queried_user_id) do
+      {:error,
+       "Error getting user dashboards: neither userId is provided, nor the query is executed by a logged in user."}
+    else
       Dashboards.user_dashboards(
         queried_user_id,
         querying_user_id,
         page: page,
         page_size: page_size
       )
-    else
-      {:error,
-       "Error getting user dashboards: neither userId is provided, nor the query is executed by a logged in user."}
     end
   end
 

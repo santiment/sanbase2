@@ -96,7 +96,7 @@ defmodule Sanbase.Project.AvailableQueries do
   @bitcoin_specific_queries []
 
   defp blockchain_metric_queries(%Project{} = project) do
-    case {project, Project.is_erc20?(project)} do
+    case {project, Project.erc20?(project)} do
       {%Project{slug: "ethereum"}, _} ->
         @mineable_specific_queries ++
           @ethereum_specific_queries

@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
 
   def erc20_market_segments(_parent, _args, _resolution) do
     filter = fn %{projects: projects} ->
-      Enum.any?(projects, &Project.is_erc20?/1)
+      Enum.any?(projects, &Project.erc20?/1)
     end
 
     market_segments = market_segments(filter)
@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
 
   def currencies_market_segments(_parent, _args, _resolution) do
     filter = fn %{projects: projects} ->
-      Enum.any?(projects, &Project.is_currency?/1)
+      Enum.any?(projects, &Project.currency?/1)
     end
 
     market_segments = market_segments(filter)

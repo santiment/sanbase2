@@ -64,6 +64,7 @@ if config_env() == :prod do
   config :sanbase2, SanbaseWeb.Endpoint,
     url: [host: host, port: port],
     http: [
+      :inet6,
       port: port,
       protocol_options: [
         max_header_name_length: 64,

@@ -100,7 +100,7 @@ defmodule Sanbase.Queries.Query do
     :crypto.hash(:sha256, binary) |> Base.encode64() |> binary_part(0, 32)
   end
 
-  def is_public?(%__MODULE__{} = query), do: query.is_public
+  def public?(%__MODULE__{} = query), do: query.is_public
 
   def normalize(text) do
     text

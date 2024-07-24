@@ -8,10 +8,10 @@ defmodule Sanbase.Accounts.User.Name do
     name = String.downcase(name) |> String.trim()
 
     with true <- valid_utf8_string?(name, "Name"),
-         true <- no_forbidden_characters?(name, "Name"),
          true <- valid_length?(name, "Name"),
-         true <- is_not_forbidden?(name, "Name"),
-         true <- is_not_swear?(name, "Name") do
+         false <- has_forbidden_characters?(name, "Name"),
+         false <- forbidden?(name, "Name"),
+         false <- swear?(name, "Name") do
       true
     end
   end
@@ -22,11 +22,11 @@ defmodule Sanbase.Accounts.User.Name do
     username = String.downcase(username) |> String.trim()
 
     with true <- valid_ascii_string?(username, "Username"),
-         true <- no_forbidden_characters?(username, "Username"),
          true <- valid_length?(username, "Username"),
-         true <- is_not_taken?(username, :username, "Username"),
-         true <- is_not_forbidden?(username, "Username"),
-         true <- is_not_swear?(username, "Username") do
+         false <- has_forbidden_characters?(username, "Username"),
+         false <- taken?(username, :username, "Username"),
+         false <- forbidden?(username, "Username"),
+         false <- swear?(username, "Username") do
       true
     end
   end
@@ -50,10 +50,10 @@ defmodule Sanbase.Accounts.User.Name do
     end
   end
 
-  defp no_forbidden_characters?(value, fieldname) do
+  defp has_forbidden_characters?(value, fieldname) do
     case String.contains?(value, [">", "<", "/", "\\"]) do
+      false -> false
       true -> {:error, "#{fieldname} must not contain the forbidden characters >, <, /, \\"}
-      false -> true
     end
   end
 
@@ -64,7 +64,7 @@ defmodule Sanbase.Accounts.User.Name do
     end
   end
 
-  defp is_not_taken?(value, field, fieldname) do
+  defp taken?(value, field, fieldname) do
     query =
       from(u in Sanbase.Accounts.User,
         where: fragment("lower(?)", field(u, ^field)) == ^value,
@@ -72,7 +72,7 @@ defmodule Sanbase.Accounts.User.Name do
       )
 
     case Sanbase.Repo.one(query) do
-      0 -> true
+      0 -> false
       _ -> {:error, "#{fieldname} is taken"}
     end
   end
@@ -94,27 +94,27 @@ defmodule Sanbase.Accounts.User.Name do
     "<js>",
     "</js>"
   ]
-  defp is_not_forbidden?(value, fieldname) do
+  defp forbidden?(value, fieldname) do
     case value in @forbiden_names or
            Enum.any?(@forbiden_names, fn u ->
              String.starts_with?(value, u) or String.ends_with?(value, u)
            end) do
+      false ->
+        false
+
       true ->
         {:error, "#{fieldname} is not allowed. Choose another #{String.downcase(fieldname)}"}
-
-      false ->
-        true
     end
   end
 
   @config Expletive.configure(blacklist: Expletive.Blacklist.english())
-  defp is_not_swear?(value, fieldname) do
+  defp swear?(value, fieldname) do
     case Expletive.profane?(value, @config) do
+      false ->
+        false
+
       true ->
         {:error, "#{fieldname} is not allowed. Choose another #{String.downcase(fieldname)}"}
-
-      false ->
-        true
     end
   end
 end

@@ -272,7 +272,7 @@ defmodule SanbaseWeb.GenericAdmin.UserTrigger do
     %{
       trigger
       | is_featured: is_featured,
-        is_public: Sanbase.Alert.UserTrigger.is_public?(trigger)
+        is_public: Sanbase.Alert.UserTrigger.public?(trigger)
     }
   end
 

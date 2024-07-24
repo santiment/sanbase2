@@ -77,15 +77,15 @@ defmodule Sanbase.Billing.SubscriptionTest do
     end
   end
 
-  describe "#is_restricted?" do
+  describe "#restricted?" do
     test "network_growth and daily_active_deposits are restricted" do
-      assert AccessChecker.is_restricted?({:query, :network_growth})
-      assert AccessChecker.is_restricted?({:query, :daily_active_deposits})
+      assert AccessChecker.restricted?({:query, :network_growth})
+      assert AccessChecker.restricted?({:query, :daily_active_deposits})
     end
 
     test "all_projects and history_price are not restricted" do
-      refute AccessChecker.is_restricted?({:query, :all_projects})
-      refute AccessChecker.is_restricted?({:query, :history_price})
+      refute AccessChecker.restricted?({:query, :all_projects})
+      refute AccessChecker.restricted?({:query, :history_price})
     end
   end
 

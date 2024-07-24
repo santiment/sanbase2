@@ -518,17 +518,17 @@ defimpl Sanbase.Alert, for: Any do
     """
   end
 
-  defp is_prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
+  defp prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
 
   defp preview_url do
-    case is_prod?() do
+    case prod?() do
       true -> "https://preview.santiment.net"
       false -> "https://preview-stage.santiment.net"
     end
   end
 
   defp base_url do
-    case is_prod?() do
+    case prod?() do
       true -> "https://app.santiment.net"
       false -> "https://app-stage.santiment.net"
     end

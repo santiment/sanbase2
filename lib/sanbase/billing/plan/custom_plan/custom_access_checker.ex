@@ -10,8 +10,8 @@ defmodule Sanbase.Billing.Plan.CustomAccessChecker do
   @type product_code :: String.t()
   @type plan_name :: String.t()
 
-  def is_restricted?(query_or_argument) do
-    Sanbase.Billing.Plan.StandardAccessChecker.is_restricted?(query_or_argument)
+  def restricted?(query_or_argument) do
+    Sanbase.Billing.Plan.StandardAccessChecker.restricted?(query_or_argument)
   end
 
   def plan_has_access?(query_or_argument, product_code, plan_name) do
@@ -22,16 +22,14 @@ defmodule Sanbase.Billing.Plan.CustomAccessChecker do
     CustomPlan.Access.get_available_metrics_for_plan(plan_name, product_code, restriction_type)
   end
 
-  def is_historical_data_freely_available?(query_or_argument) do
-    Sanbase.Billing.Plan.StandardAccessChecker.is_historical_data_freely_available?(
+  def historical_data_freely_available?(query_or_argument) do
+    Sanbase.Billing.Plan.StandardAccessChecker.historical_data_freely_available?(
       query_or_argument
     )
   end
 
-  def is_realtime_data_freely_available?(query_or_argument) do
-    Sanbase.Billing.Plan.StandardAccessChecker.is_realtime_data_freely_available?(
-      query_or_argument
-    )
+  def realtime_data_freely_available?(query_or_argument) do
+    Sanbase.Billing.Plan.StandardAccessChecker.realtime_data_freely_available?(query_or_argument)
   end
 
   @doc """

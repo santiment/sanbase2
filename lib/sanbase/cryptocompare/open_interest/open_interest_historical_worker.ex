@@ -44,32 +44,17 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
     %{"market" => market, "instrument" => instrument, "timestamp" => timestamp} = args
-
     limit = Map.get(args, "limit", @default_limit)
 
     case get_data(market, instrument, limit, timestamp) do
       {:ok, min_timestamp, []} when is_integer(min_timestamp) ->
         :ok = maybe_schedule_next_job(min_timestamp, args)
 
-        :ok
-
       {:ok, _min_timestamp, []} ->
         :ok
 
       {:ok, min_timestamp, data} ->
-        :ok = export_data(data)
-
-        {min, max} = Enum.min_max_by(data, & &1.timestamp)
-        :ok = maybe_schedule_next_job(min_timestamp, args)
-
-        {:ok, _} =
-          ExporterProgress.create_or_update(
-            "#{market}_#{instrument}",
-            to_string(@queue),
-            min.timestamp,
-            max.timestamp
-          )
-
+        {:ok, _} = export_data_and_update_progress(data, min_timestamp, args)
         :ok
 
       {:error, :first_timestamp_reached} ->
@@ -114,6 +99,21 @@ defmodule Sanbase.Cryptocompare.OpenInterest.HistoricalWorker do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  defp export_data_and_update_progress(data, min_timestamp, args) do
+    :ok = export_data(data)
+
+    {min, max} = Enum.min_max_by(data, & &1.timestamp)
+    :ok = maybe_schedule_next_job(min_timestamp, args)
+
+    {:ok, _} =
+      ExporterProgress.create_or_update(
+        "#{args["market"]}_#{args["instrument"]}",
+        to_string(@queue),
+        min.timestamp,
+        max.timestamp
+      )
   end
 
   defp process_json_response(http_response_body) do

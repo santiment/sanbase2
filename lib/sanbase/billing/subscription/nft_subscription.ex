@@ -9,7 +9,7 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
   @sanbase_pro_plan Sanbase.Billing.Plan.Metadata.current_san_stake_plan()
 
   # Run every 10 minutes
-  def run do
+  def run() do
     if prod?() do
       maybe_create()
       maybe_remove()
@@ -18,32 +18,41 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
     end
   end
 
-  def maybe_create do
-    addresses = Repo.all(EthAccount) |> Enum.map(& &1.address)
+  @doc ~s"""
+
+  """
+  def maybe_create() do
+    eth_accounts = Repo.all(EthAccount)
+    addresses = eth_accounts |> Enum.map(& &1.address)
+    address_to_user_id_map = Map.new(eth_accounts, &{&1.address, &1.user_id})
 
     addresses
     |> Enum.chunk_every(100)
     |> Enum.each(fn addr_chunk ->
-      balances = balances(addr_chunk)
+      foo(addr_chunk, address_to_user_id_map)
+    end)
+  end
 
-      user_ids =
-        Enum.zip(addr_chunk, balances)
-        |> Enum.filter(fn {_, balance} -> balance > 0 end)
-        |> Enum.map(fn {address, _} -> EthAccount.by_address(address).user_id end)
+  defp foo(addresses, address_to_user_id_map) do
+    balances = balances(addresses)
 
-      user_ids
-      |> Enum.filter(fn user_id ->
-        resp = nft_subscriptions(user_id)
+    user_ids =
+      Enum.zip(addresses, balances)
+      |> Enum.filter(fn {_, balance} -> balance > 0 end)
+      |> Enum.map(fn {address, _} -> Map.get(address_to_user_id_map, address) end)
 
-        valid_nft? = resp.has_valid_nft
+    user_ids
+    |> Enum.filter(fn user_id ->
+      resp = nft_subscriptions(user_id)
 
-        no_active_sanbase_sub? =
-          not LiquiditySubscription.user_has_active_sanbase_subscriptions?(user_id)
+      valid_nft? = resp.has_valid_nft
 
-        if valid_nft? and no_active_sanbase_sub? do
-          create_nft_subscription(user_id)
-        end
-      end)
+      no_active_sanbase_sub? =
+        not LiquiditySubscription.user_has_active_sanbase_subscriptions?(user_id)
+
+      if valid_nft? and no_active_sanbase_sub? do
+        create_nft_subscription(user_id)
+      end
     end)
   end
 

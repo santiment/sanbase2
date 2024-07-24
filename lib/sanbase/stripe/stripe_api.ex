@@ -240,10 +240,6 @@ defmodule Sanbase.StripeApi do
     })
   end
 
-  def construct_event(body, signature, webhook_secret) do
-    Stripe.Webhook.construct_event(body, signature, webhook_secret)
-  end
-
   # Helpers
 
   defp maybe_remove_coupon(params, db_subscription, _plan) do
@@ -287,5 +283,11 @@ defmodule Sanbase.StripeApi do
   def delete_customer(user) do
     Stripe.Customer.delete(user.stripe_customer_id)
     User.update_field(user, :stripe_customer_id, nil)
+  end
+end
+
+defmodule Sanbase.StripeApi.Webhook do
+  def construct_event(body, signature, webhook_secret) do
+    Stripe.Webhook.construct_event(body, signature, webhook_secret)
   end
 end

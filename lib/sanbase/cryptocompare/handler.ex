@@ -7,17 +7,56 @@ defmodule Sanbase.Cryptocompare.Handler do
 
   @type option :: :module | :timestamps_key | :process_function | :remove_known_timestamps
 
-  def execute_http_request(url, query_params) do
-    headers = [{"authorization", "Apikey #{api_key()}"}]
+  @doc ~s"""
+  Get data from the Cryptocompare API.
+  The body of the successful result is processed by the process_json_response_function/1
+  passed as the argument.
 
-    url = url <> "?" <> URI.encode_query(query_params)
+  The opts need to provide the following arguments:
+  - market
+  - instrument
+  - timestamp
+  - limit
+  - queue -- the oban queue
+  """
+  @spec get_data(String.t(), (String.t() -> {:ok, map()}), Keyword.t()) ::
+          {:error, HTTPoison.Error.t()}
+          | {:error, :first_timestamp_reached}
+          | {:error, :rate_limit}
+          | {:ok, min_timestamp :: non_neg_integer(), data_list :: list()}
+  def get_data(url, process_json_response_function, opts)
+      when is_function(process_json_response_function, 1) do
+    timestamps_key = "#{opts[:market]}_#{opts[:instrument]}"
 
-    HTTPoison.get(url, headers, recv_timeout: 15_000)
+    case execute_http_request(url, opts) do
+      {:ok, %{status_code: 200} = http_response} ->
+        handle_http_response(http_response,
+          queue: opts[:queue],
+          timestamps_key: timestamps_key,
+          process_function: process_json_response_function,
+          remove_known_timestamps: true
+        )
+
+      {:ok, %{status_code: 404}} ->
+        # The error is No HOUR entries available on or before <timestamp>
+        {:error, :first_timestamp_reached}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
-  def handle_http_response(http_response, opts) do
-    module = Keyword.fetch!(opts, :module)
-    queue = module.queue()
+  def get_markets_and_instruments() do
+    cache_key = {__MODULE__, :get_markets_and_instruments}
+    Sanbase.Cache.get_or_store({cache_key, 600}, &do_get_markets_and_instruments/0)
+
+    do_get_markets_and_instruments()
+  end
+
+  # Private function
+
+  defp handle_http_response(http_response, opts) do
+    queue = Keyword.fetch!(opts, :queue)
     timestamps_key = Keyword.fetch!(opts, :timestamps_key)
     process_function = Keyword.fetch!(opts, :process_function)
 
@@ -37,14 +76,20 @@ defmodule Sanbase.Cryptocompare.Handler do
     end
   end
 
-  def get_markets_and_instruments() do
-    cache_key = {__MODULE__, :get_markets_and_instruments}
-    Sanbase.Cache.get_or_store({cache_key, 600}, &do_get_markets_and_instruments/0)
+  defp execute_http_request(url, params) do
+    headers = [{"authorization", "Apikey #{api_key()}"}]
 
-    do_get_markets_and_instruments()
+    query_params = [
+      market: params[:market],
+      instrument: params[:instrument],
+      to_ts: params[:timestamp],
+      limit: params[:limit]
+    ]
+
+    url = url <> "?" <> URI.encode_query(query_params)
+
+    HTTPoison.get(url, headers, recv_timeout: 15_000)
   end
-
-  # Private function
 
   defp do_get_markets_and_instruments() do
     url = "https://data-api.cryptocompare.com/futures/v1/markets/instruments"

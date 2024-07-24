@@ -154,6 +154,7 @@ defmodule Sanbase.Accounts.EmailJobs do
       case subscription.plan.name do
         "PRO" -> "PRO"
         "PRO_PLUS" -> "PRO+"
+        "MAX" -> "MAX"
         plan -> plan
       end
 

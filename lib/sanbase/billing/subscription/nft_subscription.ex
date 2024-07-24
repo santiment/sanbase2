@@ -19,7 +19,7 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
   end
 
   @doc ~s"""
-
+  Create NFT subscription for users who have valid NFTs and no active Sanbase subscription
   """
   def maybe_create() do
     eth_accounts = Repo.all(EthAccount)
@@ -29,30 +29,7 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
     addresses
     |> Enum.chunk_every(100)
     |> Enum.each(fn addr_chunk ->
-      foo(addr_chunk, address_to_user_id_map)
-    end)
-  end
-
-  defp foo(addresses, address_to_user_id_map) do
-    balances = balances(addresses)
-
-    user_ids =
-      Enum.zip(addresses, balances)
-      |> Enum.filter(fn {_, balance} -> balance > 0 end)
-      |> Enum.map(fn {address, _} -> Map.get(address_to_user_id_map, address) end)
-
-    user_ids
-    |> Enum.filter(fn user_id ->
-      resp = nft_subscriptions(user_id)
-
-      valid_nft? = resp.has_valid_nft
-
-      no_active_sanbase_sub? =
-        not LiquiditySubscription.user_has_active_sanbase_subscriptions?(user_id)
-
-      if valid_nft? and no_active_sanbase_sub? do
-        create_nft_subscription(user_id)
-      end
+      maybe_create_nft_subscription(addr_chunk, address_to_user_id_map)
     end)
   end
 
@@ -92,6 +69,31 @@ defmodule Sanbase.Billing.Subscription.NFTSubscription do
     |> Subscription.Query.all_active_subscriptions_for_plan(@sanbase_pro_plan)
     |> Subscription.Query.nft_subscriptions()
     |> Repo.all()
+  end
+
+  # Private functions
+
+  defp maybe_create_nft_subscription(addresses, address_to_user_id_map) do
+    balances = balances(addresses)
+
+    user_ids =
+      Enum.zip(addresses, balances)
+      |> Enum.filter(fn {_, balance} -> balance > 0 end)
+      |> Enum.map(fn {address, _} -> Map.get(address_to_user_id_map, address) end)
+
+    user_ids
+    |> Enum.filter(fn user_id ->
+      resp = nft_subscriptions(user_id)
+
+      valid_nft? = resp.has_valid_nft
+
+      no_active_sanbase_sub? =
+        not LiquiditySubscription.user_has_active_sanbase_subscriptions?(user_id)
+
+      if valid_nft? and no_active_sanbase_sub? do
+        create_nft_subscription(user_id)
+      end
+    end)
   end
 
   defp balances(addresses) do

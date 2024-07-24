@@ -93,40 +93,44 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
   end
 
   def get_data(%__MODULE__{filtered_target: %{list: target_list, type: :slug}} = settings) do
-    to = Timex.now()
-    from = Timex.shift(to, seconds: -str_to_sec(settings.time_window))
-
     data =
       target_list
       |> Project.by_slug()
       |> Enum.map(fn %Project{} = project ->
-        {:ok, eth_addresses} = Project.eth_addresses(project)
-
-        {:ok, project_balance_data} =
-          eth_addresses
-          |> Enum.map(&String.downcase/1)
-          |> balance_change(settings.asset.slug, from, to)
-
-        {balance_start, balance_end, balance_change} =
-          project_balance_data
-          |> Enum.reduce({0, 0, 0}, fn
-            %{} = map, {start_acc, end_acc, change_acc} ->
-              {
-                start_acc + map.balance_start,
-                end_acc + map.balance_end,
-                change_acc + map.balance_change_amount
-              }
-          end)
-
-        {project, from,
-         %{
-           balance_start: balance_start,
-           balance_end: balance_end,
-           balance_change: balance_change
-         }}
+        {_project, _from, _balances_map} =
+          project_eth_addresses_balance(project, settings)
       end)
 
     {:ok, data}
+  end
+
+  defp project_eth_addresses_balance(project, settings) do
+    to = Timex.now()
+    from = Timex.shift(to, seconds: -str_to_sec(settings.time_window))
+    {:ok, eth_addresses} = Project.eth_addresses(project)
+
+    {:ok, project_balance_data} =
+      eth_addresses
+      |> Enum.map(&String.downcase/1)
+      |> balance_change(settings.asset.slug, from, to)
+
+    {balance_start, balance_end, balance_change} =
+      project_balance_data
+      |> Enum.reduce({0, 0, 0}, fn
+        %{} = map, {start_acc, end_acc, change_acc} ->
+          {
+            start_acc + map.balance_start,
+            end_acc + map.balance_end,
+            change_acc + map.balance_change_amount
+          }
+      end)
+
+    {project, from,
+     %{
+       balance_start: balance_start,
+       balance_end: balance_end,
+       balance_change: balance_change
+     }}
   end
 
   defp balance_change(addresses, slug, from, to) do

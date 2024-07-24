@@ -38,34 +38,13 @@ defmodule Sanbase.Project.Multichain do
     |> Sanbase.Repo.update()
   end
 
-  def find_missing_data_by_prefix() do
+  def fill_missing_data_by_prefix() do
     ecosystems_map = Sanbase.Ecosystem.get_ecosystems() |> Map.new(fn e -> {e.name, e.id} end)
 
     Project.List.projects()
     |> Enum.filter(& &1.multichain_project_group_key)
     |> Enum.each(fn project ->
-      case matching_prefix(project.slug) do
-        {:error, :nomatch} ->
-          :ok
-
-        {:ok, {prefix, ecosystem}} ->
-          if not Map.has_key?(ecosystems_map, ecosystem) do
-            raise("""
-            Ecosystem #{ecosystem} should exist but it does not.
-            Attempted to use it to set multichain values for projects with a specified prefix.
-            """)
-          end
-
-          # The prefix is a string like arb-, p-, o-, etc. (with the trailing hyphen included)
-          # All projects with the same string after the prefix are considered to be grouped together.
-          key = String.trim_leading(project.slug, prefix)
-
-          {:ok, _} =
-            mark_multichain(project,
-              multichain_project_group_key: key,
-              ecosystem_id: ecosystems_map[ecosystem]
-            )
-      end
+      maybe_mark_as_multichain(project, ecosystems_map)
     end)
   end
 
@@ -73,6 +52,31 @@ defmodule Sanbase.Project.Multichain do
     case Enum.find(@prefix_mapping, fn {k, _v} -> String.starts_with?(slug, k) end) do
       {prefix, ecosystem} -> {:ok, {prefix, ecosystem}}
       nil -> {:error, :nomatch}
+    end
+  end
+
+  defp maybe_mark_as_multichain(project, ecosystems_map) do
+    case matching_prefix(project.slug) do
+      {:error, :nomatch} ->
+        :ok
+
+      {:ok, {prefix, ecosystem}} ->
+        if not Map.has_key?(ecosystems_map, ecosystem) do
+          raise("""
+          Ecosystem #{ecosystem} should exist but it does not.
+          Attempted to use it to set multichain values for projects with a specified prefix.
+          """)
+        end
+
+        # The prefix is a string like arb-, p-, o-, etc. (with the trailing hyphen included)
+        # All projects with the same string after the prefix are considered to be grouped together.
+        key = String.trim_leading(project.slug, prefix)
+
+        {:ok, _} =
+          mark_multichain(project,
+            multichain_project_group_key: key,
+            ecosystem_id: ecosystems_map[ecosystem]
+          )
     end
   end
 end

@@ -135,13 +135,13 @@ defmodule Sanbase.Alert.UserTrigger do
   @impl Sanbase.Entity.Behaviour
   def public_and_user_entity_ids_query(user_id, opts) do
     base_entity_ids_query(opts)
-    |> where([ul], trigger_is_public() or ul.user_id == ^user_id)
+    |> where([ul], public_trigger?() or ul.user_id == ^user_id)
   end
 
   @impl Sanbase.Entity.Behaviour
   def public_entity_ids_query(opts) do
     base_entity_ids_query(opts)
-    |> where([ul], trigger_is_public())
+    |> where([ul], public_trigger?())
   end
 
   @impl Sanbase.Entity.Behaviour
@@ -185,7 +185,7 @@ defmodule Sanbase.Alert.UserTrigger do
   """
   @spec all_public_triggers() :: list(%UserTrigger{})
   def all_public_triggers() do
-    from(ut in base_query(), where: trigger_is_public(), preload: [:tags])
+    from(ut in base_query(), where: public_trigger?(), preload: [:tags])
     |> Repo.all()
     |> Enum.map(&trigger_in_struct/1)
   end
@@ -229,7 +229,7 @@ defmodule Sanbase.Alert.UserTrigger do
   def get_all_triggers_by_type(type) do
     from(
       ut in base_query(),
-      where: trigger_type_is(type),
+      where: trigger_type_equals?(type),
       preload: [{:user, :user_settings}, :tags]
     )
     |> Repo.all()
@@ -244,7 +244,7 @@ defmodule Sanbase.Alert.UserTrigger do
   def get_active_triggers_by_type(type) do
     from(
       ut in base_query(),
-      where: trigger_type_is(type) and trigger_is_active(),
+      where: trigger_type_equals?(type) and trigger_active?(),
       preload: [{:user, :user_settings}, :tags]
     )
     |> Repo.all()
@@ -424,7 +424,7 @@ defmodule Sanbase.Alert.UserTrigger do
   defp by_user_and_id_query(nil, trigger_id) do
     from(
       ut in base_query(),
-      where: ut.id == ^trigger_id and trigger_is_public(),
+      where: ut.id == ^trigger_id and public_trigger?(),
       preload: [:featured_item, :tags]
     )
   end
@@ -432,7 +432,7 @@ defmodule Sanbase.Alert.UserTrigger do
   defp by_user_and_id_query(user_id, trigger_id) do
     from(
       ut in base_query(),
-      where: ut.id == ^trigger_id and (trigger_is_public() or ut.user_id == ^user_id),
+      where: ut.id == ^trigger_id and (public_trigger?() or ut.user_id == ^user_id),
       preload: [:featured_item, :tags]
     )
   end
@@ -445,7 +445,7 @@ defmodule Sanbase.Alert.UserTrigger do
 
   defp public_user_triggers_for(user_id) do
     from(ut in base_query(),
-      where: ut.user_id == ^user_id and trigger_is_public(),
+      where: ut.user_id == ^user_id and public_trigger?(),
       preload: [:featured_item, :tags]
     )
     |> Repo.all()
@@ -505,7 +505,7 @@ defmodule Sanbase.Alert.UserTrigger do
     case Keyword.get(opts, :filter) do
       %{slugs: slugs} ->
         from(ut in query,
-          where: trigger_target_is_slug(slugs)
+          where: slug_trigger_target?(slugs)
         )
 
       _ ->

@@ -52,7 +52,7 @@ defmodule Sanbase.Mailer do
 
     case subscription do
       %Subscription{} = subscription ->
-        Subscription.is_trialing_sanbase_pro?(subscription)
+        Subscription.trialing_sanbase_pro?(subscription)
 
       _ ->
         false
@@ -64,7 +64,7 @@ defmodule Sanbase.Mailer do
 
     case subscription do
       %Subscription{cancel_at_period_end: false} = subscription ->
-        Subscription.is_trialing_sanbase_pro?(subscription) and has_card?(user)
+        Subscription.trialing_sanbase_pro?(subscription) and has_card?(user)
 
       _ ->
         false

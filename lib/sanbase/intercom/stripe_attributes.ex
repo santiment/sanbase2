@@ -10,7 +10,7 @@ defmodule Sanbase.Intercom.StripeAttributes do
   alias Sanbase.Intercom
 
   def run do
-    if is_prod?() do
+    if prod?() do
       all_stats = all_stats()
 
       user_ids =
@@ -192,5 +192,5 @@ defmodule Sanbase.Intercom.StripeAttributes do
     end)
   end
 
-  defp is_prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
+  defp prod?(), do: Sanbase.Utils.Config.module_get(Sanbase, :deployment_env) == "prod"
 end

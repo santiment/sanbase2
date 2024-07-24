@@ -195,10 +195,10 @@ defmodule Sanbase.Alert.Scheduler do
       alerts_count: alerts_count
     } = info_map
 
-    # TODO: Fix logging. It can print:  Batch 1/4, with size 63. Alerts 339-402 out of 221.
     Logger.info("""
     [#{run_uuid}] Run batch of alerts of type #{type}. Batch #{index}/#{batches_count}, \
-    with size #{batch_map.batch_size}. Alerts #{batch_map.alerts_from}-#{batch_map.alerts_to} \
+    with size #{batch_map.batch_size}. \
+    Alerts #{batch_map.alerts_from}-#{Enum.min([batch_map.alerts_to, alerts_count])} \
     out of #{alerts_count}.
     """)
   end

@@ -61,9 +61,10 @@ if config_env() == :prod do
   port = String.to_integer(System.get_env("PORT") || "4000")
   parity_url = System.get_env("PARITY_URL")
 
-  config :sanbase2, SanbaseWeb.Endpoint,
+  config :sanbase, SanbaseWeb.Endpoint,
     url: [host: host, port: port],
     http: [
+      :inet6,
       port: port,
       protocol_options: [
         max_header_name_length: 64,

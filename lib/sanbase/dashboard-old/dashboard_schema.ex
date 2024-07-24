@@ -152,7 +152,7 @@ defmodule Sanbase.Dashboard.Schema do
     |> where([ul], ul.user_id == ^user_id)
   end
 
-  def is_public?(%__MODULE__{is_public: is_public}), do: is_public
+  def public?(%__MODULE__{is_public: is_public}), do: is_public
 
   def user_dashboards(user_id) do
     query =

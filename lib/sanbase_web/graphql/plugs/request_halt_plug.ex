@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
   end
 
   def halt_sansheets_request?(conn, %{auth: %{plan: plan_name} = auth}) do
-    case is_sansheets_request(conn) and plan_name == "FREE" do
+    case sansheets_request?(conn) and plan_name == "FREE" do
       true ->
         user_id = get_in(auth, [:current_user, Access.key(:id)])
 
@@ -184,7 +184,7 @@ defmodule SanbaseWeb.Graphql.RequestHaltPlug do
 
   defguard no_auth_header(header) when header in [[], ["null"], [""], nil]
 
-  defp is_sansheets_request(conn) do
+  defp sansheets_request?(conn) do
     case Plug.Conn.get_req_header(conn, "user-agent") do
       [user_agent] -> String.contains?(user_agent, "Google-Apps-Script")
       _ -> false

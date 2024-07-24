@@ -42,12 +42,8 @@ defmodule Sanbase.Geoip.Data do
     |> Ecto.Multi.run(:create_geoip, fn _repo, %{get_geoip: result} ->
       case result do
         :not_found ->
-          case Geoip.fetch_geo_data(remote_ip) do
-            {:ok, data} ->
-              create(remote_ip, data)
-
-            {:error, _} = error ->
-              error
+          with {:ok, data} <- Geoip.fetch_geo_data(remote_ip) do
+            create(remote_ip, data)
           end
 
         geoip_data ->
@@ -55,11 +51,7 @@ defmodule Sanbase.Geoip.Data do
       end
     end)
     |> Repo.transaction()
-    |> case do
-      {:ok, %{create_geoip: geoip_data}} -> {:ok, geoip_data}
-      {:error, :create_geoip, reason, _changes} -> reason
-      _ -> {:error, :unexpected_error}
-    end
+    |> handle_transaction_result(:create_geoip)
   end
 
   def create(remote_ip, data) do
@@ -76,5 +68,12 @@ defmodule Sanbase.Geoip.Data do
       })
 
     Repo.insert(changeset)
+  end
+
+  defp handle_transaction_result(result, field) do
+    case result do
+      {:ok, map} -> {:ok, map[field]}
+      {:error, _, reason, _} -> {:error, reason}
+    end
   end
 end

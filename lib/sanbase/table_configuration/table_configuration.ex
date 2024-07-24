@@ -41,7 +41,7 @@ defmodule Sanbase.TableConfiguration do
     get_table_configuration(table_configuration_id, querying_user_id)
   end
 
-  def is_public?(%__MODULE__{is_public: is_public}), do: is_public
+  def public?(%__MODULE__{is_public: is_public}), do: is_public
 
   def user_table_configurations(user_id, querying_user_id) do
     user_table_configurations_query(user_id, querying_user_id)

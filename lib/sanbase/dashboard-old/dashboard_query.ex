@@ -97,20 +97,20 @@ defmodule Sanbase.Dashboard.Query do
   end
 
   defp extend_query_with_prod_marker(query) do
-    case is_prod?() do
+    case prod?() do
       true -> "-- __query_ran_from_prod_marker__ \n" <> query
       false -> query
     end
   end
 
   defp extend_query_metadata(%{} = query_metadata) do
-    case is_prod?() do
+    case prod?() do
       true -> Map.put(query_metadata, :query_ran_from_prod_marker, true)
       false -> query_metadata
     end
   end
 
-  defp is_prod?() do
+  defp prod?() do
     Application.get_env(:sanbase, :env) == :prod
   end
 

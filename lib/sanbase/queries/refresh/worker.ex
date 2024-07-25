@@ -47,7 +47,8 @@ defmodule Sanbase.Queries.RefreshWorker do
       "(UNKNOWN_IDENTIFIER)",
       "(ACCESS_DENIED)",
       "(UNKNOWN_TABLE)",
-      "(MEMORY_LIMIT_EXCEEDED)"
+      "(MEMORY_LIMIT_EXCEEDED)",
+      "(AMBIGUOUS_COLUMN_NAME)"
     ]
 
     has_non_retryable_error? =

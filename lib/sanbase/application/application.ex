@@ -257,6 +257,13 @@ defmodule Sanbase.Application do
         )
       end
 
+    clickhouse_read_only_on_queries =
+      start_in_and_if(
+        fn -> Sanbase.ClickhouseRepo.ReadOnly end,
+        [:dev, :prod],
+        fn -> container_type() in ["queries"] and Sanbase.ClickhouseRepo.enabled?() end
+      )
+
     [
       # Start the PubSub
       {Phoenix.PubSub, name: Sanbase.PubSub},
@@ -286,6 +293,9 @@ defmodule Sanbase.Application do
 
       # Start the Clickhouse Repos
       clickhouse_children,
+
+      # Start the Clickhouse ReadOnly Repo for queries pod
+      clickhouse_read_only_on_queries,
 
       # Star the API call service
       Sanbase.ApiCallLimit.ETS,

@@ -183,7 +183,7 @@ defmodule Sanbase.Project.ListSelector do
 
           raise("""
           There is probably a cycle in the base_projects of #{watchlist_args_to_str(original_args)}."
-          The watchlists seen so far: #{watchlists_seen}
+          The watchlists seen so far: #{inspect(watchlists_seen)}
           """)
         else
           Process.put(@cycle_detection_key, %{

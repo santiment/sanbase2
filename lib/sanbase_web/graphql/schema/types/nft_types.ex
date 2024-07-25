@@ -55,6 +55,7 @@ defmodule SanbaseWeb.Graphql.NftTypes do
     field(:amount, :float)
     field(:quantity, :float)
     field(:quantities, list_of(:nft_quantity))
+    field(:price_usd, :float)
     field(:nft, :nft)
   end
 

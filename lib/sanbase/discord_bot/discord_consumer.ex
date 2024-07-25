@@ -86,14 +86,8 @@ defmodule Sanbase.DiscordConsumer do
 
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
     cond do
-      LegacyCommandHandler.is_command?(msg.content) ->
+      LegacyCommandHandler.command?(msg.content) ->
         do_handle_command(msg)
-
-      LegacyCommandHandler.is_test_command?(msg.content) ->
-        warm_up(msg)
-        result = LegacyCommandHandler.handle_command("test", msg)
-        log(msg, "test COMMAND RESULT #{inspect(result)}")
-        :ok
 
       msg_contains_bot_mention?(msg) ->
         warm_up(msg)

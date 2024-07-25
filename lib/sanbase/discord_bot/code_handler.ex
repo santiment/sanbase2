@@ -33,73 +33,22 @@ defmodule Sanbase.DiscordBot.CodeHandler do
     if focused_option do
       autocomplete(interaction, focused_option.name)
     else
-      case metadata_from_options(options_map) do
+      with {:ok, metadata_from_options} <- metadata_from_options(options_map),
+           metadata <- Map.merge(metadata, metadata_from_options),
+           :ok <- check_from_to(interaction, metadata) do
+        summarize_channel_or_thread(interaction, metadata, options_map)
+      else
+        {:error, :from_to_check} ->
+          send_error_message(
+            interaction,
+            "The 'to' datetime should be greater than the 'from' datetime."
+          )
+
         {:error, error} ->
-          content = """
-          #{error}
-          """
+          send_error_message(interaction, error)
 
-          Utils.handle_interaction_response(interaction, content, [])
-
-        {:ok, metadata_from_options} ->
-          metadata = Map.merge(metadata, metadata_from_options)
-
-          if metadata[:to_dt] <= metadata[:from_dt] do
-            content = """
-            The 'to' datetime should be greater than the 'from' datetime.
-            """
-
-            Utils.handle_interaction_response(interaction, content, [])
-          else
-            case metadata.is_thread do
-              false ->
-                case AiServer.summarize_channel(
-                       metadata.channel,
-                       Map.take(metadata, [:from_dt, :to_dt])
-                     ) do
-                  {:ok, summary} ->
-                    content = """
-                    📝 Summary for channel: #{metadata.channel_name} from: `#{options_map["from_dt"]}`, to: `#{options_map["to_dt"]}`
-
-                    #{summary}
-                    """
-
-                    Utils.handle_interaction_response(interaction, content, [])
-
-                  {:error, error} ->
-                    Logger.error(
-                      "Failed to summarize channel: #{metadata.channel_name}, #{inspect(error)}"
-                    )
-
-                    generic_error_message(interaction)
-                end
-
-              true ->
-                case AiServer.summarize_thread(
-                       metadata.channel,
-                       Map.take(metadata, [:from_dt, :to_dt])
-                     ) do
-                  {:ok, summary} ->
-                    content = """
-                    📝 Summary for thread: #{metadata.channel_name} from: `#{options_map["from_dt"]}`, to: `#{options_map["to_dt"]}`
-
-                    #{summary}
-                    """
-
-                    Utils.handle_interaction_response(interaction, content, [])
-
-                  {:error, error} ->
-                    Logger.error(
-                      "Failed to summarize thread: #{metadata.channel_name}, #{inspect(error)}"
-                    )
-
-                    generic_error_message(interaction)
-                end
-
-              _ ->
-                generic_error_message(interaction)
-            end
-          end
+        _ ->
+          generic_error_message(interaction)
       end
     end
   end
@@ -284,7 +233,7 @@ defmodule Sanbase.DiscordBot.CodeHandler do
       channel: to_string(interaction.channel_id),
       guild_id: to_string(interaction.guild_id),
       channel_name: channel_name,
-      is_thread: is_thread?(interaction.channel),
+      is_thread: thread?(interaction.channel),
       guild_name: guild_name,
       discord_user: interaction.user.username <> interaction.user.discriminator,
       user_is_team_member: user_is_team_member
@@ -306,11 +255,11 @@ defmodule Sanbase.DiscordBot.CodeHandler do
       true ->
         {:ok,
          %{
-           channel: channel.id,
+           channel: to_string(channel.id),
            channel_name: channel.name,
-           is_thread: is_thread?(channel),
-           from_dt: DateTime.to_unix(from_dt),
-           to_dt: DateTime.to_unix(to_dt)
+           is_thread: thread?(channel),
+           from_dt: DateTime.to_unix(from_dt) |> to_string(),
+           to_dt: DateTime.to_unix(to_dt) |> to_string()
          }}
     end
   end
@@ -363,11 +312,84 @@ defmodule Sanbase.DiscordBot.CodeHandler do
 
   # helpers
 
-  defp is_thread?(%Nostrum.Struct.Channel{type: 11}) do
+  defp summarize_channel_or_thread(interaction, metadata, options_map) do
+    case metadata.is_thread do
+      false ->
+        case AiServer.summarize_channel(
+               metadata.channel,
+               Map.take(metadata, [:from_dt, :to_dt])
+             ) do
+          {:ok, summary} ->
+            content = """
+            📝 Summary for channel: #{metadata.channel_name} from: `#{options_map["from_dt"]}`, to: `#{options_map["to_dt"]}`
+
+            #{summary}
+            """
+
+            Utils.handle_interaction_response(interaction, content, [])
+
+          {:error, error} ->
+            Logger.error(
+              "Failed to summarize channel: #{metadata.channel_name}, #{inspect(error)}"
+            )
+
+            generic_error_message(interaction)
+        end
+
+      true ->
+        case AiServer.summarize_thread(
+               metadata.channel,
+               Map.take(metadata, [:from_dt, :to_dt])
+             ) do
+          {:ok, summary} ->
+            content = """
+            📝 Summary for thread: #{metadata.channel_name} from: `#{options_map["from_dt"]}`, to: `#{options_map["to_dt"]}`
+
+            #{summary}
+            """
+
+            Utils.handle_interaction_response(interaction, content, [])
+
+          {:error, error} ->
+            Logger.error(
+              "Failed to summarize thread: #{metadata.channel_name}, #{inspect(error)}"
+            )
+
+            generic_error_message(interaction)
+        end
+
+      _ ->
+        generic_error_message(interaction)
+    end
+  end
+
+  defp check_from_to(interaction, metadata) do
+    if metadata[:to_dt] > metadata[:from_dt] do
+      :ok
+    else
+      content = """
+      The 'to' datetime should be greater than the 'from' datetime.
+      """
+
+      Utils.handle_interaction_response(interaction, content, [])
+
+      {:error, :from_to_check}
+    end
+  end
+
+  defp send_error_message(interaction, error) do
+    content = """
+    #{error}
+    """
+
+    Utils.handle_interaction_response(interaction, content, [])
+  end
+
+  defp thread?(%Nostrum.Struct.Channel{type: 11}) do
     true
   end
 
-  defp is_thread?(_), do: false
+  defp thread?(_), do: false
 
   defp create_modal(interaction, id) do
     changes_input =

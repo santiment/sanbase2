@@ -11,7 +11,6 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Component.{ActionRow, TextInput}
   alias Sanbase.Utils.Config
-  alias Sanbase.DiscordBot.AiServer
 
   @prefix "!q "
   @ai_prefix "!ai "
@@ -49,20 +48,16 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     end
   end
 
-  def is_command?(content) do
+  def command?(content) do
     String.starts_with?(content, @prefix)
   end
 
-  def is_ai_command?(content) do
+  def ai_command?(content) do
     String.starts_with?(content, @ai_prefix)
   end
 
-  def is_docs_command?(content) do
+  def docs_command?(content) do
     String.starts_with?(content, @docs_prefix)
-  end
-
-  def is_test_command?(content) do
-    String.starts_with?(content, "!test")
   end
 
   def handle_interaction("query", interaction) do
@@ -288,22 +283,6 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     end
   end
 
-  def handle_command("test", msg) do
-    {:ok, loading_msg} = loading_msg(msg)
-
-    query = String.trim(msg.content, "!test")
-
-    links = AiServer.search_insights(query)
-
-    content =
-      case links do
-        [] -> "No results found"
-        _ -> Enum.map(links, &"<#{&1}>") |> Enum.join("\n")
-      end
-
-    Nostrum.Api.edit_message(msg.channel_id, loading_msg.id, content: content)
-  end
-
   def handle_command("invalid_command", msg) do
     Nostrum.Api.create_message(msg.channel_id,
       content: "<:bangbang:1045078993604452465> Invalid command entered!",
@@ -337,14 +316,6 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
   end
 
   # private
-
-  defp loading_msg(msg) do
-    Nostrum.Api.create_message(
-      msg.channel_id,
-      content: ":robot: Thinking...",
-      message_reference: %{message_id: msg.id}
-    )
-  end
 
   def get_guild_channel(nil, _), do: {nil, nil}
   def get_guild_channel(_, nil), do: {nil, nil}
@@ -714,56 +685,57 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
         |> Enum.reject(fn {_, idx} -> idx == dt_idx end)
         |> Enum.map(fn {c, _} -> c end)
 
-      chart_type = fn column_name ->
-        result = String.split(column_name, "_")
-
-        if length(result) > 1 do
-          case List.last(result) do
-            "bar" -> "bar"
-            "line" -> "line"
-            "area" -> "area"
-            "fline" -> "filledLine"
-            _ -> "bar"
-          end
-        else
-          "bar"
-        end
-      end
-
       map =
         data_columns
         |> Enum.with_index()
-        |> Enum.into(%{}, fn {name, idx} -> {to_string(idx), %{node: chart_type.(name)}} end)
+        |> Enum.into(%{}, fn {name, idx} -> {to_string(idx), %{node: chart_type(name)}} end)
 
       settings =
-        %{
-          wm: data_columns,
-          ws: map
-        }
+        %{wm: data_columns, ws: map}
         |> Jason.encode!()
         |> URI.encode()
 
       chart =
         "https://#{img_prefix_url()}/chart/dashboard/#{dd.id}/#{panel_id}?settings=#{settings}"
 
-      HTTPoison.get(chart)
-      |> case do
-        {:ok, response} ->
-          if is_image?(response) do
-            %Embed{}
-            |> put_title(dd.name)
-            |> put_url(chart)
-            |> put_image(chart)
-            |> List.wrap()
-          else
-            []
-          end
-
-        _ ->
-          []
-      end
+      maybe_create_embed(chart, dd.name)
     else
       []
+    end
+  end
+
+  defp chart_type(column_name) do
+    result = String.split(column_name, "_")
+
+    if length(result) > 1 do
+      case List.last(result) do
+        "bar" -> "bar"
+        "line" -> "line"
+        "area" -> "area"
+        "fline" -> "filledLine"
+        _ -> "bar"
+      end
+    else
+      "bar"
+    end
+  end
+
+  defp maybe_create_embed(chart, name) do
+    HTTPoison.get(chart)
+    |> case do
+      {:ok, response} ->
+        if image?(response) do
+          %Embed{}
+          |> put_title(name)
+          |> put_url(chart)
+          |> put_image(chart)
+          |> List.wrap()
+        else
+          []
+        end
+
+      _ ->
+        []
     end
   end
 
@@ -779,7 +751,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     end
   end
 
-  defp is_image?(response) do
+  defp image?(response) do
     content_type =
       response.headers
       |> Enum.into(%{})
@@ -858,7 +830,7 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
     HTTPoison.get(chart, [basic_auth_header()])
     |> case do
       {:ok, response} ->
-        if is_image?(response) do
+        if image?(response) do
           [%{body: response.body, name: "chart_#{short_url.short_url}.jpeg"}]
         else
           []
@@ -946,10 +918,5 @@ defmodule Sanbase.DiscordBot.LegacyCommandHandler do
       |> Base.encode64()
 
     {"Authorization", "Basic #{credentials}"}
-  end
-
-  def is_pro?(user_roles_in_santiment) do
-    MapSet.intersection(MapSet.new(pro_roles()), MapSet.new(user_roles_in_santiment))
-    |> Enum.any?()
   end
 end

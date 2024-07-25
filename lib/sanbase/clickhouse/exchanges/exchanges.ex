@@ -73,7 +73,13 @@ defmodule Sanbase.Clickhouse.Exchanges do
 
     sql = """
     WITH address_hashes AS (
-        SELECT cityHash64(address)
+        SELECT
+            cityHash64(address) AS address_hash, address,
+            if(
+                dictGet('labels', 'key', label_id) = 'centralized_exchange',
+                'centralized_exchange',
+                'decentralized_exchange'
+            ) AS cex_or_dex_label
         FROM current_label_addresses
         WHERE blockchain = {{blockchain}}
             AND label_id IN (
@@ -82,19 +88,20 @@ defmodule Sanbase.Clickhouse.Exchanges do
             )
     ),
     exchange_label_ids AS (
-        SELECT label_id
-        FROM current_label_addresses
+        SELECT label_id, cex_or_dex_label
+        FROM current_label_addresses cla
+        LEFT JOIN address_hashes ah USING address
         WHERE
             blockchain = {{blockchain}}
             AND label_id IN (SELECT label_id FROM label_metadata WHERE key = 'owner')
-            AND cityHash64(address) IN address_hashes
+            AND cityHash64(address) IN (SELECT address_hash FROM address_hashes)
             AND dictGet('labels', 'value', label_id) != ''
     ),
     interesting_metrics AS (
         SELECT *
         FROM labeled_intraday_metrics_v2
         WHERE
-            label_id IN (exchange_label_ids)
+            label_id IN (SELECT label_id FROM exchange_label_ids)
             AND blockchain = {{blockchain}}
             AND #{asset_id_filter(%{slug: slug}, argument_name: "slug")}
             AND metric_id = dictGet(metrics_by_name, 'metric_id', 'combined_labeled_balance')
@@ -128,9 +135,9 @@ defmodule Sanbase.Clickhouse.Exchanges do
         FROM interesting_metrics
         GROUP BY label_id
     )
-    SELECT
-        dictGet(labels, 'value', latest_balance.label_id) AS AS owner, # the exchange name
-        '' AS cex_or_dex_label, # TODO: Implement
+    SELECT DISTINCT
+        dictGet(labels, 'value', latest_balance.label_id) AS owner,
+        exchange_label_ids.cex_or_dex_label,
         latest_balance.latest_balance,
         balance_1d.balance_1d - latest_balance AS balance_change_1d,
         balance_7d.balance_7d - latest_balance AS balance_change_7d,
@@ -141,6 +148,7 @@ defmodule Sanbase.Clickhouse.Exchanges do
     LEFT JOIN balance_7d ON (balance_7d.label_id = latest_balance.label_id)
     LEFT JOIN balance_30d ON (balance_30d.label_id = latest_balance.label_id)
     LEFT JOIN first_seen ON (first_seen.label_id = latest_balance.label_id)
+    LEFT JOIN exchange_label_ids ON (exchange_label_ids.label_id = latest_balance.label_id)
     ORDER BY latest_balance DESC
     LIMIT {{limit}}
     """

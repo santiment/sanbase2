@@ -973,7 +973,7 @@ CREATE TABLE public.dashboard_query_mappings (
 CREATE TABLE public.dashboards (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
-    description character varying(255),
+    description text,
     is_public boolean DEFAULT false NOT NULL,
     panels jsonb,
     user_id bigint,
@@ -9556,3 +9556,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240415100155);
 INSERT INTO public."schema_migrations" (version) VALUES (20240424082842);
 INSERT INTO public."schema_migrations" (version) VALUES (20240531121027);
 INSERT INTO public."schema_migrations" (version) VALUES (20240723122118);
+INSERT INTO public."schema_migrations" (version) VALUES (20240725122924);

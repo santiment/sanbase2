@@ -9,7 +9,7 @@ defmodule Sanbase.TemplateMailer do
   @sender_name "Santiment"
   @post_sign_up_from {"Maksim from Santiment", "maksim.t@santiment.net"}
 
-  def send(rcpt_email, template_slug, vars) do
+  def send(rcpt_email, template_slug, vars) when is_binary(rcpt_email) and rcpt_email != "" do
     template = Sanbase.Email.Template.templates()[template_slug]
     vars = Map.put(vars, :current_year, Date.utc_today().year)
     from = generate_from(template_slug)
@@ -34,6 +34,10 @@ defmodule Sanbase.TemplateMailer do
       Logger.info("Missing email template: #{template_slug}")
       :ok
     end
+  end
+
+  def send(_, _template_slug, _vars) do
+    {:error, "invalid email"}
   end
 
   def generate_from(template_slug) do

@@ -239,8 +239,9 @@ defmodule Sanbase.Application do
   """
   @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
   def common_children() do
-    clickhouse_repos = [
-      Sanbase.ClickhouseRepo.ReadOnly,
+    clickhouse_readonly = [Sanbase.ClickhouseRepo.ReadOnly]
+
+    clickhouse_readonly_per_plan = [
       Sanbase.ClickhouseRepo.FreeUser,
       Sanbase.ClickhouseRepo.SanbaseProUser,
       Sanbase.ClickhouseRepo.SanbaseMaxUser,
@@ -248,8 +249,19 @@ defmodule Sanbase.Application do
       Sanbase.ClickhouseRepo.BusinessMaxUser
     ]
 
-    clickhouse_children =
-      for repo <- clickhouse_repos do
+    clickhouse_readonly_children =
+      for repo <- clickhouse_readonly do
+        start_in_and_if(
+          fn -> repo end,
+          [:dev, :prod],
+          fn ->
+            container_type() in ["web", "queries", "all"] and Sanbase.ClickhouseRepo.enabled?()
+          end
+        )
+      end
+
+    clickhouse_readonly_per_plan_children =
+      for repo <- clickhouse_readonly_per_plan do
         start_in_and_if(
           fn -> repo end,
           [:dev, :prod],
@@ -284,8 +296,11 @@ defmodule Sanbase.Application do
         fn -> Sanbase.ClickhouseRepo.enabled?() end
       ),
 
-      # Start the Clickhouse Repos
-      clickhouse_children,
+      # Start the main clickhouse read-only repos
+      clickhouse_readonly_children,
+
+      # Start the clickhouse read-only repos for different plans
+      clickhouse_readonly_per_plan_children,
 
       # Star the API call service
       Sanbase.ApiCallLimit.ETS,
